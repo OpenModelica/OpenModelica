@@ -104,6 +104,26 @@ protected uniontype AnnotationType
   record DIAGRAM_ANNOTATION end DIAGRAM_ANNOTATION;
 end AnnotationType;
 
+protected uniontype GraphicEnvCache
+  "Used by buildEnvForGraphicProgram to avoid excessive work."
+  record GRAPHIC_ENV_NO_CACHE
+    Absyn.Program program;
+    Absyn.Path modelPath;
+  end GRAPHIC_ENV_NO_CACHE;
+
+  record GRAPHIC_ENV_PARTIAL_CACHE
+    Absyn.Program program;
+    Absyn.Path modelPath;
+    FCore.Cache cache;
+    FCore.Graph env;
+  end GRAPHIC_ENV_PARTIAL_CACHE;
+
+  record GRAPHIC_ENV_FULL_CACHE
+    FCore.Cache cache;
+    FCore.Graph env;
+  end GRAPHIC_ENV_FULL_CACHE;
+end GraphicEnvCache;
+
 public function evaluate
 "This function evaluates expressions or statements feed interactively to the compiler.
   inputs:   (GlobalScript.Statements, GlobalScript.SymbolTable, bool /* verbose */)
@@ -3396,7 +3416,7 @@ algorithm
     case (_, _)
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
+        (_,env) = Inst.makeEnvFromProgram(p_1);
         ((_,_,(comps,_,_))) = GlobalScriptUtil.traverseClasses(p, NONE(), extractAllComponentsVisitor,(GlobalScript.COMPONENTS({},0),p,env), true) "traverse protected";
       then
         comps;
@@ -3998,7 +4018,7 @@ algorithm
                      // of the derived class is returned, which can be a totally different scope.
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(p_1);
         (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr,classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(_,_)))),env_1) =
         Lookup.lookupClass(cache,env, p_class);
       then env_1;
@@ -4006,7 +4026,7 @@ algorithm
     case (_,_)
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(p_1);
         (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, p_class);
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
@@ -6722,7 +6742,7 @@ algorithm
         old_path = Absyn.crefToPath(old_class) "class in package" ;
         new_path = Absyn.crefToPath(new_name);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),pa_1, Absyn.IDENT(""));
+        (_,env) = Inst.makeEnvFromProgram(pa_1);
         ((p_1,_,(_,_,_,path_str_lst,_))) = GlobalScriptUtil.traverseClasses(p, NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
@@ -6736,7 +6756,7 @@ algorithm
         old_path_no_last = Absyn.stripLast(old_path);
         new_path = Absyn.joinPaths(old_path_no_last, new_path_1);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),pa_1, Absyn.IDENT(""));
+        (_,env) = Inst.makeEnvFromProgram(pa_1);
         ((p_1,_,(_,_,_,path_str_lst,_))) = GlobalScriptUtil.traverseClasses(p,NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
@@ -9265,7 +9285,7 @@ algorithm
       equation
         cdef = getPathedClassInProgram(modelpath, p);
         (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
-        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(p_1);
         (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
         lst = getInheritedClassesHelper(c, cdef, env_1);
         failure({} = lst);
@@ -9340,7 +9360,7 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
-        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(p_1);
         (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
         str = getNthInheritedClass2(c, cdef, n, env_1);
       then
@@ -9383,7 +9403,7 @@ algorithm
       equation
         cdef = inClass;
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(p_1);
         (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache, env, modelpath);
         str = getNthInheritedClass2(c, cdef, n, env_1);
       then
@@ -9761,7 +9781,7 @@ algorithm
       equation
         modelpath = Absyn.crefToPath(model_);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(p_1);
         (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
         str = getNthComponent2(c, cdef, n, env_1);
@@ -9893,7 +9913,7 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
-        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(p_1);
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath);
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
@@ -9921,32 +9941,25 @@ protected function getComponentAnnotations " This function takes a `ComponentRef
    Both public and protected components are returned, but they need to
    be in the same order as get_componentsfunctions, i.e. first public
    components then protected ones."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.ComponentRef inClassPath;
   input Absyn.Program inProgram;
   output String outString;
+protected
+  Absyn.Path model_path;
+  Absyn.Class cdef;
+  list<Absyn.Element> comps1, comps2, comps;
 algorithm
-  outString := matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      list<Absyn.Element> comps1,comps2,comps;
-      String s1,str;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-
-    case (model_,p)
-      equation
-        modelpath = Absyn.crefToPath(model_);
-        cdef = getPathedClassInProgram(modelpath, p);
-        comps1 = getPublicComponentsInClass(cdef);
-        comps2 = getProtectedComponentsInClass(cdef);
-        comps = listAppend(comps1, comps2);
-        s1 = getComponentAnnotationsFromElts(comps, cdef, p, modelpath);
-        str = stringAppendList({"{", s1, "}"});
-      then
-        str;
-    else "Error";
-  end matchcontinue;
+  try
+    model_path := Absyn.crefToPath(inClassPath);
+    cdef := getPathedClassInProgram(model_path, inProgram);
+    comps1 := getPublicComponentsInClass(cdef);
+    comps2 := getProtectedComponentsInClass(cdef);
+    comps := listAppend(comps1, comps2);
+    outString := getComponentAnnotationsFromElts(comps, cdef, inProgram, model_path);
+    outString := stringAppendList({"{", outString, "}"});
+  else
+    outString := "Error";
+  end try;
 end getComponentAnnotations;
 
 protected function getNthComponentAnnotation "
@@ -12521,7 +12534,7 @@ algorithm
         lineProgram = modelicaAnnotationProgram(Config.getAnnotationVersion());
         fargs = createFuncargsFromElementargs(mod);
         p_1 = SCodeUtil.translateAbsyn2SCode(lineProgram);
-        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(), p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(p_1);
         (_,newexp,prop) = StaticScript.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT(annName,{}),fargs), false,Prefix.NOPRE(), info) "impl" ;
         (cache, newexp, prop) = Ceval.cevalIfConstant(cache, env, newexp, prop, false, info);
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
@@ -12818,54 +12831,44 @@ protected
   FCore.Graph env;
   list<String> res;
   Absyn.Program placementProgram;
+  GraphicEnvCache cache;
 algorithm
   placementProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
   graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
-  (_,env) := Inst.makeEnvFromProgram(FCore.emptyCache(), graphicProgramSCode, Absyn.IDENT(""));
-  res := getComponentitemsAnnotations(comps, env, inClass, inFullProgram, inModelPath);
+  (_,env) := Inst.makeEnvFromProgram(graphicProgramSCode);
+  cache := GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath);
+  res := getComponentitemsAnnotations(comps, env, inClass, cache);
   resStr := stringDelimitList(res, ",");
 end getComponentAnnotationsFromElts;
 
 protected function getComponentitemsAnnotations
 "Helper function to getComponentAnnotationsFromElts"
-  input list<Absyn.Element> inAbsynElementLst;
+  input list<Absyn.Element> inElements;
   input FCore.Graph inEnv;
   input Absyn.Class inClass;
-  input Absyn.Program inFullProgram;
-  input Absyn.Path inModelPath;
-  output list<String> outStringLst;
+  input GraphicEnvCache inCache;
+  output list<String> outStringLst = {};
+protected
+  list<String> res;
+  GraphicEnvCache cache = inCache;
+  list<Absyn.ComponentItem> items;
+  Option<Absyn.ConstrainClass> cc;
 algorithm
-  outStringLst := matchcontinue (inAbsynElementLst,inEnv,inClass,inFullProgram,inModelPath)
-    local
-      list<String> res1,res2,res;
-      list<Absyn.ComponentItem> items;
-      list<Absyn.Element> rest;
-      FCore.Graph env;
-      Option<Absyn.ConstrainClass> cc;
+  for e in listReverse(inElements) loop
+    outStringLst := matchcontinue e
+      case Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = items), constrainClass = cc)
+        algorithm
+          (res, cache) := getComponentitemsAnnotationsFromItems(items,
+            getAnnotationsFromConstraintClass(cc), inEnv, inClass, cache);
+        then
+          listAppend(res, outStringLst);
 
-    case ({},_,_,_,_) then {};
+      case Absyn.ELEMENT(specification = Absyn.COMPONENTS())
+        then "{}" :: outStringLst;
 
-    case ((Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = items), constrainClass = cc) :: rest),env,_,_,_)
-      equation
-        res1 = getComponentitemsAnnotationsFromItems(items, getAnnotationsFromConstraintClass(cc), env, inClass, inFullProgram, inModelPath);
-        res2 = getComponentitemsAnnotations(rest, env, inClass, inFullProgram, inModelPath);
-        res = listAppend(res1, res2);
-      then
-        res;
-
-    case ((Absyn.ELEMENT(specification = Absyn.COMPONENTS(), constrainClass = cc) :: rest),env,_,_,_)
-      equation
-        res2 = getComponentitemsAnnotations(rest, env, inClass, inFullProgram, inModelPath);
-        res = "{}"::res2;
-      then
-        res;
-
-    case ((_ :: rest),env,_,_,_)
-      equation
-        res = getComponentitemsAnnotations(rest, env,inClass,inFullProgram,inModelPath);
-      then
-        res;
-  end matchcontinue;
+      else outStringLst;
+    end matchcontinue;
+  end for;
 end getComponentitemsAnnotations;
 
 protected function getAnnotationsFromConstraintClass
@@ -12882,168 +12885,119 @@ end getAnnotationsFromConstraintClass;
 
 protected function getComponentitemsAnnotationsElArgs
 "Helper function to getComponentitemsAnnotationsFromItems."
-  input list<Absyn.ElementArg> inElArgLst;
+  input list<Absyn.ElementArg> inElementArgs;
   input FCore.Graph inEnv;
   input Absyn.Class inClass;
-  input Absyn.Program inFullProgram;
-  input Absyn.Path inModelPath;
-  output list<String> outStringLst;
+  input GraphicEnvCache inCache;
+  output list<String> outStringLst = {};
+  output GraphicEnvCache outCache = inCache;
+protected
+  String str, ann_name;
+  Absyn.Exp eq_aexp;
+  DAE.Exp eq_dexp;
+  DAE.Properties prop;
+  SourceInfo info;
+  FCore.Cache cache;
+  FCore.Graph env, env2;
+  list<Absyn.ElementArg> mod;
+  SCode.Element c;
+  SCode.Mod smod;
+  DAE.Mod dmod;
+  DAE.DAElist dae;
 algorithm
-  outStringLst := matchcontinue (inElArgLst,inEnv,inClass,inFullProgram,inModelPath)
-    local
-      FCore.Graph env,env_1,env_2;
-      SCode.Element c,c_1;
-      SCode.Mod mod_1;
-      DAE.Mod mod_2;
-      DAE.DAElist dae;
-      Connect.Sets cs;
-      DAE.Type t;
-      ClassInf.State state;
-      String gexpstr,gexpstr_1,annName;
-      list<String> res;
-      list<Absyn.ElementArg> mod, rest;
-      FCore.Cache cache;
-      SourceInfo info;
-      Absyn.Exp expAbsyn;
-      DAE.Exp expDae;
-      DAE.Properties prop;
+  for e in listReverse(inElementArgs) loop
+    str := matchcontinue e
+      case Absyn.MODIFICATION(
+          path = Absyn.IDENT(ann_name),
+          modification = SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(eq_aexp))),
+          info = info)
+        algorithm
+          (cache, env, _, outCache) := buildEnvForGraphicProgram(outCache, {});
 
-    // handle empty
-    case ({},_,_,_,_) then {};
+          (_, eq_dexp, prop) :=
+            StaticScript.elabGraphicsExp(cache, env, eq_aexp, false, Prefix.NOPRE(), info);
 
-    // handle non-classes annotations
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(annName),
-        modification = SOME(Absyn.CLASSMOD({},Absyn.EQMOD(expAbsyn))), info = info) :: rest,env,_,_,_)
-      equation
-        (cache, env, _) = buildEnvForGraphicProgram(inFullProgram, inModelPath, {}, annName);
+          (cache, eq_dexp, prop) := Ceval.cevalIfConstant(cache, env, eq_dexp, prop, false, info);
+          eq_dexp := ExpressionSimplify.simplify1(eq_dexp);
+          Print.clearErrorBuf() "Clear any error messages generated by the annotations.";
 
-        (_,expDae,prop) = StaticScript.elabGraphicsExp(cache, env, expAbsyn, false, Prefix.NOPRE(), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add SourceInfo to this function's input
-        (cache, expDae, prop) = Ceval.cevalIfConstant(cache, env, expDae, prop, false, Absyn.dummyInfo);
-        (expDae,_) = ExpressionSimplify.simplify1(expDae);
-        Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations.";
+          str := ExpressionDump.printExpStr(eq_dexp);
+        then
+          stringAppendList({ann_name, "=", str});
 
-        gexpstr = ExpressionDump.printExpStr(expDae);
+      case Absyn.MODIFICATION(
+          path = Absyn.IDENT(ann_name),
+          modification = SOME(Absyn.CLASSMOD(mod, Absyn.NOMOD())),
+          info = info)
+        algorithm
+          (cache, env, _, outCache) := buildEnvForGraphicProgram(outCache, mod);
 
-        gexpstr_1 = stringAppendList({annName,"=",gexpstr});
-        res = getComponentitemsAnnotationsElArgs(rest, env, inClass,inFullProgram,inModelPath);
-      then
-        (gexpstr_1 :: res);
+          (cache, c, env2) := Lookup.lookupClass(cache, inEnv, Absyn.IDENT(ann_name));
+          smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,
+            Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
+          (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(),
+            smod, false, Mod.COMPONENT(ann_name), Absyn.dummyInfo);
 
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(annName),
-        modification = SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), info = info) :: rest,env,_,_,_)
-      equation
-        (cache, env_2, _) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, annName);
-
-        (cache,c,env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(annName));
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-        (cache,mod_2) = Mod.elabMod(cache, env_2, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Mod.COMPONENT(annName), Absyn.dummyInfo);
-        c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
-        (_,_,_,_,dae,_,_,_,_,_) =
-          Inst.instClass(cache, env_1, InnerOuter.emptyInstHierarchy,
-            UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), c_1, {}, false,
+          c := SCode.classSetPartial(c, SCode.NOT_PARTIAL());
+          (_, _, _, _, dae) := Inst.instClass(cache, env2, InnerOuter.emptyInstHierarchy,
+            UnitAbsyn.noStore, dmod, Prefix.NOPRE(), c, {}, false,
             InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
-        gexpstr = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
-        gexpstr_1 = stringAppendList({annName,"(",gexpstr,")"});
-        res = getComponentitemsAnnotationsElArgs(rest, env, inClass,inFullProgram,inModelPath);
-      then
-        (gexpstr_1 :: res);
+          str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
+        then
+          stringAppendList({ann_name, "(", str, ")"});
 
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(annName),
-        modification = SOME(Absyn.CLASSMOD(_,Absyn.NOMOD()))) :: rest,env,_,_,_)
-      equation
-        gexpstr_1 = stringAppendList({annName,"(error)"});
-        res = getComponentitemsAnnotationsElArgs(rest, env, inClass,inFullProgram,inModelPath);
-      then
-        (gexpstr_1 :: res);
+      case Absyn.MODIFICATION(
+          path = Absyn.IDENT(ann_name),
+          modification = SOME(Absyn.CLASSMOD(_, Absyn.NOMOD())))
+        then stringAppendList({ann_name, "(error)"});
 
-    // handle annotation(Dialog);
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(annName),
-        modification = NONE()) :: rest,env,_,_,_)
-      equation
-        (cache,_, _) = buildEnvForGraphicProgram(inFullProgram, inModelPath, {}, annName);
+      case Absyn.MODIFICATION(path = Absyn.IDENT(ann_name), modification = NONE())
+        algorithm
+          (cache, _, _, outCache) := buildEnvForGraphicProgram(outCache, {});
 
-        (cache,c,env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(annName));
-        mod_2 = DAE.NOMOD();
-        c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
-        (_,_,_,_,dae,_,_,_,_,_) =
-          Inst.instClass(cache, env_1, InnerOuter.emptyInstHierarchy,
-            UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), c_1, {}, false,
+          (cache, c, env) := Lookup.lookupClass(cache, inEnv, Absyn.IDENT(ann_name));
+          c := SCode.classSetPartial(c, SCode.NOT_PARTIAL());
+          (_, _, _, _, dae) := Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy,
+            UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(), c, {}, false,
             InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
-        gexpstr = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
-        gexpstr_1 = stringAppendList({annName,"(",gexpstr,")"});
-        res = getComponentitemsAnnotationsElArgs(rest, env, inClass,inFullProgram,inModelPath);
-      then
-        (gexpstr_1 :: res);
+          str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
+        then
+          stringAppendList({ann_name, "(", str, ")"});
 
-  end matchcontinue;
+    end matchcontinue;
+
+    outStringLst := str :: outStringLst;
+  end for;
 end getComponentitemsAnnotationsElArgs;
 
 protected function getComponentitemsAnnotationsFromItems
 "Helper function to getComponentitemsAnnotations."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
+  input list<Absyn.ComponentItem> inComponentItems;
   input list<Absyn.ElementArg> ccAnnotations;
   input FCore.Graph inEnv;
   input Absyn.Class inClass;
-  input Absyn.Program inFullProgram;
-  input Absyn.Path inModelPath;
-  output list<String> outStringLst;
+  input GraphicEnvCache inCache;
+  output list<String> outStringLst = {};
+  output GraphicEnvCache outCache = inCache;
+protected
+  list<Absyn.ElementArg> annotations;
+  list<String> res;
+  String str;
 algorithm
-  outStringLst := match (inAbsynComponentItemLst,ccAnnotations,inEnv,inClass,inFullProgram,inModelPath)
-    local
-      FCore.Graph env;
-      String gexpstr,gexpstr_1;
-      list<String> res;
-      list<Absyn.ElementArg>  annotations;
-      list<Absyn.ComponentItem> rest;
+  for comp in listReverse(inComponentItems) loop
+    annotations := match comp
+      case Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(annotation_ =
+          SOME(Absyn.ANNOTATION(annotations)))))
+        then listAppend(annotations, ccAnnotations);
+      else ccAnnotations;
+    end match;
 
-    // handle empty
-    case ({},_,_,_,_,_) then {};
-
-    case ((Absyn.COMPONENTITEM(comment = SOME(
-      Absyn.COMMENT(
-            SOME(Absyn.ANNOTATION(annotations)),
-            _))) :: rest),_,env,_,_,_)
-      equation
-        annotations = listAppend(annotations, ccAnnotations);
-        res = getComponentitemsAnnotationsElArgs(annotations,env,inClass,inFullProgram,inModelPath);
-        gexpstr = stringDelimitList(res, ", ");
-        gexpstr_1 = stringAppendList({"{",gexpstr,"}"});
-        res = getComponentitemsAnnotationsFromItems(rest, ccAnnotations, env, inClass,inFullProgram,inModelPath);
-      then
-        (gexpstr_1 :: res);
-
-    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(_,_))) :: rest),_,env,_,_,_)
-      equation
-        annotations = ccAnnotations;
-        res = getComponentitemsAnnotationsElArgs(annotations,env,inClass,inFullProgram,inModelPath);
-        gexpstr = stringDelimitList(res, ", ");
-        gexpstr_1 = stringAppendList({"{",gexpstr,"}"});
-        res = getComponentitemsAnnotationsFromItems(rest, ccAnnotations, env, inClass,inFullProgram,inModelPath);
-      then
-        (gexpstr_1 :: res);
-
-    case ((Absyn.COMPONENTITEM(comment = NONE()) :: (rest as (_ :: _))),_,env, _,_,_)
-      equation
-        annotations = ccAnnotations;
-        res = getComponentitemsAnnotationsElArgs(annotations,env,inClass,inFullProgram,inModelPath);
-        gexpstr = stringDelimitList(res, ", ");
-        gexpstr_1 = stringAppendList({"{",gexpstr,"}"});
-        res = getComponentitemsAnnotationsFromItems(rest, ccAnnotations, env, inClass,inFullProgram,inModelPath);
-      then
-        (gexpstr_1 :: res);
-
-    case ({Absyn.COMPONENTITEM(comment = NONE())},_,env,_,_,_)
-      equation
-        annotations = ccAnnotations;
-        res = getComponentitemsAnnotationsElArgs(annotations,env,inClass,inFullProgram,inModelPath);
-        gexpstr = stringDelimitList(res, ", ");
-        gexpstr_1 = stringAppendList({"{",gexpstr,"}"});
-      then
-        {gexpstr_1};
-
-  end match;
+    (res, outCache) := getComponentitemsAnnotationsElArgs(annotations, inEnv, inClass, outCache);
+    str := stringDelimitList(res, ", ");
+    outStringLst := stringAppendList({"{", str, "}"}) :: outStringLst;
+  end for;
 end getComponentitemsAnnotationsFromItems;
 
 protected function getComponentAnnotation
@@ -13214,69 +13168,99 @@ algorithm
 end getComponentitemsModification;
 
 protected function buildEnvForGraphicProgram
-"@author: adrpo
-  if the annotation modification contains anything but *literals*
-  we need to instantiate the class to be able to populate the
-  modifiers inside the annotation!"
-  input Absyn.Program inFullProgram "the full modelica program";
-  input Absyn.Path inModelPath "the path to the class where the annotation is";
-  input list<Absyn.ElementArg> inAnnotationMod "the annotation modification";
-  input String inAnnotationClass "the annotation class i.e. Line, Icon, etc";
+  "Builds an environment for instantiating graphical annotations. If the
+   annotation modification only contains literals we only need to make an
+   environment from the program, otherwise we need to fully instantiate the
+   class used. To avoid doing this work over and over this function takes and
+   returns a GraphicEnvCache, which is used to save the state between multiple
+   calls to this function.
+
+   This function is called by getAnnotationString, which expects to get back an
+   Absyn.Program where the graphical annotation classes have been added. Since
+   this is only used by getAnnotationString so far, and it always calls this
+   function with an empty cache, this function returns a dummy program when
+   called with a non-empty cache. The generated absyn program could easily be
+   added to the cache if necessary though."
+  input GraphicEnvCache inCache;
+  input list<Absyn.ElementArg> inAnnotationMod;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output Absyn.Program outGraphicProgram;
+  output GraphicEnvCache outGraphicEnvCache;
 algorithm
-  (outCache, outEnv, outGraphicProgram) :=
-  matchcontinue(inFullProgram, inModelPath, inAnnotationMod, inAnnotationClass)
+  (outCache, outEnv, outGraphicProgram, outGraphicEnvCache) := match inCache
     local
-      FCore.Cache cache;
-      FCore.Graph env;
-      list<SCode.Element> graphicProgramSCode;
-      Absyn.Program graphicProgram;
-      Boolean b1, b2;
+      Absyn.Program absyn_program;
+      SCode.Program scode_program;
 
-    // the annotation contains references to the model, do full instantiation of the class!
-    case (_, _, _, _)
-      equation
-        false = Absyn.onlyLiteralsInAnnotationMod(inAnnotationMod);
-        graphicProgram = modelicaAnnotationProgram(Config.getAnnotationVersion());
-        graphicProgram = updateProgram(graphicProgram, inFullProgram);
-        graphicProgramSCode = SCodeUtil.translateAbsyn2SCode(graphicProgram);
+    // Class already fully instantiated, return cached data.
+    case GRAPHIC_ENV_FULL_CACHE()
+      then (inCache.cache, inCache.env, Absyn.dummyProgram, inCache);
 
-        // debugging
-        // print("Get annotation via full instantiation of: " + Absyn.pathString(inModelPath) + "\n");
-        // print("Annotation to get: (" + stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") + ")\n");
-        // print("Annotation class: " + inAnnotationClass + "\n");
-
-        // fully instantiate the class that contains the annotation!
-        // set check model on so that partial classes can be instantiated!
-        b1 = Flags.getConfigBool(Flags.CHECK_MODEL);
-        b2 = Config.getEvaluateParametersInAnnotations();
-        Flags.setConfigBool(Flags.CHECK_MODEL, true);
-        Config.setEvaluateParametersInAnnotations(true); // set to evaluate the parameters!
-        (cache,env,_,_) = Inst.instantiateClass(FCore.emptyCache(),InnerOuter.emptyInstHierarchy,graphicProgramSCode,inModelPath);
-        Config.setEvaluateParametersInAnnotations(b2);
-        Flags.setConfigBool(Flags.CHECK_MODEL, b1);
+    // Partial cache, instantiate class to make full cache if needed.
+    case GRAPHIC_ENV_PARTIAL_CACHE()
+      algorithm
+        if Absyn.onlyLiteralsInAnnotationMod(inAnnotationMod) then
+          outCache := inCache.cache;
+          outEnv := inCache.env;
+          outGraphicEnvCache := inCache;
+          outGraphicProgram := inCache.program;
+        else
+          (outCache, outEnv, outGraphicProgram) :=
+            buildEnvForGraphicProgramFull(inCache.program, inCache.modelPath);
+          outGraphicEnvCache := GRAPHIC_ENV_FULL_CACHE(outCache, outEnv);
+        end if;
       then
-        (cache, env, graphicProgram);
+        (outCache, outEnv, outGraphicProgram, outGraphicEnvCache);
 
-    // the annotation contains only literals, so we don't need to instantiate the class
-    case (_, _, _, _)
-      equation
-        true = Absyn.onlyLiteralsInAnnotationMod(inAnnotationMod);
-        // debugging
-        // print("Get annotation via small instantiation of: " + Absyn.pathString(inModelPath) + "\n");
-        // print("Annotation to get: (" + stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") + ")\n");
-        // print("Annotation class: " + inAnnotationClass + "\n");
-
-        graphicProgram = modelicaAnnotationProgram(Config.getAnnotationVersion());
-        graphicProgramSCode = SCodeUtil.translateAbsyn2SCode(graphicProgram);
-        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(), graphicProgramSCode, Absyn.IDENT(inAnnotationClass));
+    // No cache, make partial or full cache as needed.
+    case GRAPHIC_ENV_NO_CACHE()
+      algorithm
+        if Absyn.onlyLiteralsInAnnotationMod(inAnnotationMod) then
+          outGraphicProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
+          scode_program := SCodeUtil.translateAbsyn2SCode(outGraphicProgram);
+          (outCache, outEnv) := Inst.makeEnvFromProgram(scode_program);
+          outGraphicEnvCache :=
+            GRAPHIC_ENV_PARTIAL_CACHE(inCache.program, inCache.modelPath, outCache, outEnv);
+        else
+          (outCache, outEnv, outGraphicProgram) :=
+            buildEnvForGraphicProgramFull(inCache.program, inCache.modelPath);
+          outGraphicEnvCache := GRAPHIC_ENV_FULL_CACHE(outCache, outEnv);
+        end if;
       then
-        (cache, env, graphicProgram);
+        (outCache, outEnv, outGraphicProgram, outGraphicEnvCache);
 
-  end matchcontinue;
+  end match;
 end buildEnvForGraphicProgram;
+
+protected function buildEnvForGraphicProgramFull
+  "Helper function to buildEnvForGraphicProgram. Builds an environment by fully
+   instantiating the currently used class."
+  input Absyn.Program inProgram;
+  input Absyn.Path inModelPath;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
+  output Absyn.Program outProgram;
+protected
+  Boolean check_model, eval_param;
+  Absyn.Program graphic_program;
+  SCode.Program scode_program;
+algorithm
+  graphic_program := modelicaAnnotationProgram(Config.getAnnotationVersion());
+  outProgram := updateProgram(graphic_program, inProgram);
+  scode_program := SCodeUtil.translateAbsyn2SCode(outProgram);
+
+  check_model := Flags.getConfigBool(Flags.CHECK_MODEL);
+  eval_param := Config.getEvaluateParametersInAnnotations();
+  Flags.setConfigBool(Flags.CHECK_MODEL, true);
+  Config.setEvaluateParametersInAnnotations(true);
+
+  (outCache, outEnv) := Inst.instantiateClass(FCore.emptyCache(),
+    InnerOuter.emptyInstHierarchy, scode_program, inModelPath);
+
+  Config.setEvaluateParametersInAnnotations(eval_param);
+  Flags.setConfigBool(Flags.CHECK_MODEL, check_model);
+end buildEnvForGraphicProgramFull;
 
 protected function getAnnotationString
   "Renders an annotation as a string."
@@ -13314,7 +13298,7 @@ algorithm
         (stripped_mod, graphic_mod) := stripGraphicsAndInteractionModification(mod);
 
         (cache, env, graphic_prog) :=
-          buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, ann_name);
+          buildEnvForGraphicProgram(GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), mod);
 
         smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())),
           SCode.NOT_FINAL(), SCode.NOT_EACH(), info);

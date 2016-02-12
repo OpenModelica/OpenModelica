@@ -1636,7 +1636,7 @@ algorithm
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
         (sp, st) = GlobalScriptUtil.symbolTableToSCode(st);
-        (cache, env) = Inst.makeEnvFromProgram(FCore.emptyCache(), sp, Absyn.IDENT(""));
+        (cache, env) = Inst.makeEnvFromProgram(sp);
         (cache,(cl as SCode.CLASS(name=name,encapsulatedPrefix=encflag,restriction=restr)),env) = Lookup.lookupClass(cache, env, classpath, NONE());
         env = FGraph.openScope(env, encflag, SOME(name), FGraph.restrictionToScopeType(restr));
         (_, env) = Inst.partialInstClassIn(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),

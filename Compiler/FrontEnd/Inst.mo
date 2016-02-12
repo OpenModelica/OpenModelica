@@ -4472,9 +4472,7 @@ end updateComponentInEnv3;
 
 public function makeEnvFromProgram
 "This function takes a SCode.Program and builds an environment."
-  input FCore.Cache inCache;
   input SCode.Program prog;
-  input SCode.Path path;
   output FCore.Cache outCache;
   output FCore.Graph env_1;
 protected
@@ -4482,7 +4480,7 @@ protected
   FCore.Cache cache;
 algorithm
   // prog := scodeFlatten(prog, path);
-  (cache, env) := Builtin.initialGraph(inCache);
+  (cache, env) := Builtin.initialGraph(FCore.emptyCache());
   env_1 := FGraphBuildEnv.mkProgramGraph(prog, FCore.USERDEFINED(),env);
   outCache := cache;
 end makeEnvFromProgram;

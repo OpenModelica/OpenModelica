@@ -290,7 +290,7 @@ algorithm
     case (st as GlobalScript.SYMBOLTABLE(lstVarVal = vars))
       equation
         (p_1,st) = symbolTableToSCode(st);
-        (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache(), p_1, Absyn.IDENT(""));
+        (_,env) = Inst.makeEnvFromProgram(p_1);
         // Reverse the variable list to make sure iterators overwrite other
         // variables (iterators are appended to the front of the list).
         vars = listReverse(vars);
