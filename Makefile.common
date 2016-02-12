@@ -321,9 +321,6 @@ install-dirs:
 	mkdir -p ${INSTALL_DOCDIR}/omc/testmodels
 	mkdir -p ${INSTALL_MANDIR}/man1/
 	mkdir -p ${INSTALL_LOCALEDIR}
-	test ! -d ${builddir_share}/omnotebook/ || mkdir -p ${INSTALL_SHAREDIR}/omnotebook/
-	test ! -d ${builddir_share}/omshell/nls/ || mkdir -p ${INSTALL_SHAREDIR}/omshell/nls/
-	test ! -d ${builddir_share}/omedit/nls/ || mkdir -p ${INSTALL_SHAREDIR}/omedit/nls/
 	mkdir -p ${INSTALL_SHAREDIR}/omc/scripts ${INSTALL_JAVADIR}
 
 install: install-dirs
@@ -346,10 +343,6 @@ install: install-dirs
 	# cp -p ${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
 	# Shared data
 	cp -p ${builddir_share}/omc/*.* ${builddir_share}/omc/runtime ${INSTALL_SHAREDIR}/omc/
-	test ! -d ${builddir_share}/omnotebook/ || cp -rp ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook/
-	test ! -d ${builddir_share}/omshell/ || cp -p ${builddir_share}/omshell/*.xml ${INSTALL_SHAREDIR}/omshell/
-	test ! -d ${builddir_share}/omshell/nls/ || cp -p ${builddir_share}/omshell/nls/*.qm ${INSTALL_SHAREDIR}/omshell/nls/
-	test ! -d ${builddir_share}/omedit/nls/ || cp -p ${builddir_share}/omedit/nls/*.qm ${INSTALL_SHAREDIR}/omedit/nls/
 	# Scripts
 	cp -rp ${builddir_share}/omc/scripts/*.* ${builddir_share}/omc/scripts/OpenTurns ${INSTALL_SHAREDIR}/omc/scripts
 	# Java
