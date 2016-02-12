@@ -2358,12 +2358,16 @@ void SystemImpl__gettextInit(const char *locale)
   if (!res && *locale) {
     fprintf(stderr, gettext("Warning: Failed to set locale: '%s'\n"), locale);
   }
+  if (!setlocale(LC_NUMERIC, "C")) {
+    fprintf(stderr, gettext("Warning: Failed to set LC_NUMERIC to C locale\n"), locale);
+  }
   clocale = setlocale(LC_CTYPE, NULL);
   int have_utf8 = strcmp(nl_langinfo(CODESET), "UTF-8") == 0;
   /* We succesfully forced a new non-system locale; let's clear some variables */
   if (*locale) {
     unsetenv("LANG");
     unsetenv("LANGUAGE");
+    unsetenv("LC_ALL");
   }
   /* Try to make sure we force UTF-8; else gettext will fail */
   if (have_utf8)
