@@ -3407,30 +3407,35 @@ protected function jacobianConstant "author: PA
   Checks if Jacobian is constant, i.e. all expressions in each equation are constant."
   input list<tuple<Integer, Integer, BackendDAE.Equation>> inTplIntegerIntegerEquationLst;
   output Boolean outBoolean;
+protected
+  DAE.Exp e1,e2, e;
+  tuple<Integer, Integer, BackendDAE.Equation> tpl;
+  BackendDAE.Equation eqn;
 algorithm
-  outBoolean := matchcontinue (inTplIntegerIntegerEquationLst)
-    local
-      DAE.Exp e1,e2,e;
-      list<tuple<Integer, Integer, BackendDAE.Equation>> eqns;
-    case ({}) then true;
-    case (((_,_,BackendDAE.EQUATION(exp = e1,scalar = e2))::eqns)) /* TODO: Algorithms and ArrayEquations */
-      equation
-        true = Expression.isConst(e1);
-        true = Expression.isConst(e2);
-      then
-        jacobianConstant(eqns);
-    case (((_,_,BackendDAE.RESIDUAL_EQUATION(exp = e))::eqns))
-      equation
-        true = Expression.isConst(e);
-      then
-        jacobianConstant(eqns);
-    case (((_,_,BackendDAE.SOLVED_EQUATION(exp = e))::eqns))
-      equation
-        true = Expression.isConst(e);
-      then
-        jacobianConstant(eqns);
-    else false;
-  end matchcontinue;
+  /* TODO: Algorithms and ArrayEquations */
+
+  for tpl in inTplIntegerIntegerEquationLst loop
+    eqn := Util.tuple33(tpl);
+    outBoolean := match eqn
+      case BackendDAE.EQUATION(exp = e1,scalar = e2)
+        then Expression.isConst(e1) and Expression.isConst(e2);
+      case BackendDAE.RESIDUAL_EQUATION(exp = e)
+        then Expression.isConst(e);
+      case BackendDAE.SOLVED_EQUATION(exp = e)
+        then Expression.isConst(e);
+      case BackendDAE.ARRAY_EQUATION(left=e1, right=e2)
+        then Expression.isConst(e1) and Expression.isConst(e2);
+      case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2)
+        then Expression.isConst(e1) and Expression.isConst(e2);
+      else false;
+      end match;
+
+    if not outBoolean then
+      break;
+    end if;
+
+  end for;
+
 end jacobianConstant;
 
 protected function varsNotInRelations
@@ -3499,24 +3504,15 @@ protected function rhsConstant "author: PA
   input BackendDAE.Variables vars;
   input BackendDAE.EquationArray eqns;
   output Boolean outBoolean;
+protected
+  BackendVarTransform.VariableReplacements repl;
 algorithm
-  outBoolean:=
-  matchcontinue (vars,eqns)
-    local
-      Boolean res;
-      BackendVarTransform.VariableReplacements repl;
-    case (_,_)
-      equation
-        0 = BackendDAEUtil.equationSize(eqns);
-      then
-        true;
-    case (_,_)
-      equation
-        repl = BackendDAEUtil.makeZeroReplacements(vars);
-        ((_,res,_)) = BackendEquation.traverseEquationArray_WithStop(eqns,rhsConstant2,(vars,true,repl));
-      then
-        res;
-  end matchcontinue;
+  if BackendDAEUtil.equationSize(eqns) == 0 then
+    outBoolean:= true;
+  else
+    repl := BackendDAEUtil.makeZeroReplacements(vars);
+    ((_,outBoolean,_)) := BackendEquation.traverseEquationArray_WithStop(eqns,rhsConstant2,(vars,true,repl));
+  end if;
 end rhsConstant;
 
 protected function rhsConstant2 "Helper function to rhsConstant, traverses equation list."
