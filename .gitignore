@@ -101,6 +101,7 @@ SimulationRuntime/build_c/
 Compiler/OpenModelicaSetup
 # Compiler files
 Compiler/Makefile
+Compiler/OpenModelicaBootstrappingHeader.h
 Compiler/OpenModelicaBootstrappingHeader.h.log
 Compiler/Script/Makefile
 Compiler/Script/OpenModelicaScriptingAPI.mo
