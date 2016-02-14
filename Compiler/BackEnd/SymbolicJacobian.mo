@@ -2324,7 +2324,7 @@ protected function checkForSymbolicJacobian
 protected
   Boolean b1, b2;
 algorithm
-  if not Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) then
+  if not Flags.isSet(Flags.FORCE_NLS_ANALYTIC_JACOBIAN) then
     (b1, _) := BackendEquation.traverseExpsOfEquationList_WithStop(inResidualEqns, traverserhasEqnNonDiffParts, ({}, true, false));
     (b2, _) := BackendEquation.traverseExpsOfEquationList_WithStop(inOtherEqns, traverserhasEqnNonDiffParts, ({}, true, false));
     if not (b1 and b2) then
@@ -2393,7 +2393,7 @@ algorithm
 
       case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), NONE(), linear=false, mixedSystem=mixedSystem), _, _, _)
         equation
-          false = Flags.isSet(Flags.DISABLE_NLS_ANALYTIC_JACOBIAN);
+          true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
 
           // generate jacobian name
           name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
@@ -2417,7 +2417,7 @@ algorithm
       // dynamic tearing
       case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), SOME(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts2, residualequations=residualequations2, otherEqnVarTpl=otherEqnVarTpl2)), linear=b, mixedSystem=mixedSystem), _, _, _)
         equation
-          true = (Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) and not b) or b;
+          true = (not Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) and not b) or b;
 
           // Get Jacobian for strict tearing set
 
@@ -2465,7 +2465,7 @@ algorithm
 
       case (BackendDAE.EQUATIONSYSTEM(eqns=residualequations, vars=iterationvarsInts, mixedSystem=mixedSystem), _, _, _)
         equation
-          false = Flags.isSet(Flags.DISABLE_NLS_ANALYTIC_JACOBIAN);
+          true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
           //generate jacobian name
           name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
 

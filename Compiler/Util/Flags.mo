@@ -335,8 +335,8 @@ constant DebugFlag PEDANTIC = DEBUG_FLAG(84, "pedantic", false,
   Util.gettext("Switch into pedantic debug-mode, to get much more feedback."));
 constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(85, "showEquationSource", false,
   Util.gettext("Display the element source information in the dumped DAE for easier debugging."));
-constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(86, "NLSanalyticJacobian", false,
-  Util.gettext("Enables analytical jacobian for all non-linear strong components."));
+constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(86, "NLSanalyticJacobian", true,
+  Util.gettext("Enables analytical jacobian for non-linear strong components without user-defined function calls, for that see forceNLSanalyticJacobian"));
 constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(87, "inlineSolver", false,
   Util.gettext("Generates code for inline solver."));
 constant DebugFlag HPCOM = DEBUG_FLAG(88, "hpcom", false,
@@ -478,8 +478,8 @@ constant DebugFlag DEBUG_ALGLOOP_JACOBIAN = DEBUG_FLAG(154, "debugAlgebraicLoops
   Util.gettext("Dumps debug output while creating symbolic jacobians for non-linear systems."));
 constant DebugFlag DISABLE_JACSCC = DEBUG_FLAG(155, "disableJacsforSCC", false,
   Util.gettext("Disables calculation of jacobians to detect if a SCC is linear or non-linear. By disabling all SCC will handled like non-linear."));
-constant DebugFlag DISABLE_NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(156, "NLSanalyticJacobianDisable", false,
-  Util.gettext("Disables analytical jacobian for all non-linear strong components for the sake of performance."));
+constant DebugFlag FORCE_NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(156, "forceNLSanalyticJacobian", false,
+  Util.gettext("Forces calculation analytical jacobian also for non-linear strong components with user-defined functions."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -642,7 +642,7 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_EXCLUDED_EXP,
   DEBUG_ALGLOOP_JACOBIAN,
   DISABLE_JACSCC,
-  DISABLE_NLS_ANALYTIC_JACOBIAN
+  FORCE_NLS_ANALYTIC_JACOBIAN
 };
 
 public
@@ -811,7 +811,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("addScaledVars_inputs", Util.notrans("added var_norm = var/nominal, where var is input")),
     ("addTimeAsState", Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0")),
     ("calculateStateSetsJacobians", Util.gettext("Generates analytical jacobian for dynamic state selection sets.")),
-    ("calculateStrongComponentJacobians", Util.gettext("Generates analytical jacobian for torn linear and non-linear strong components. By default non-linear components with user-defined function calls are skipped. See also debug flags: NLSanalyticJacobian and NLSanalyticJacobianDisable")),
+    ("calculateStrongComponentJacobians", Util.gettext("Generates analytical jacobian for torn linear and non-linear strong components. By default non-linear components with user-defined function calls are skipped. See also debug flags: NLSanalyticJacobian and forceNLSanalyticJacobian")),
     ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
     ("countOperations", Util.gettext("Count the mathematical operations of the system.")),
     ("cseBinary", Util.gettext("Common Sub-expression Elimination")),
