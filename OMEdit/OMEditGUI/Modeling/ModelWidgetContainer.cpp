@@ -91,7 +91,6 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   qreal vertical = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridVertical() : pGraphicalViewsPage->getDiagramViewGridVertical();
   mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
   setExtentRectangle(left, bottom, right, top);
-  centerOn(sceneRect().center());
   scale(1.0, -1.0);     // invert the drawing area.
   setIsCustomScale(false);
   setAddClassAnnotationNeeded(false);
@@ -111,8 +110,8 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
 void GraphicsView::setExtentRectangle(qreal left, qreal bottom, qreal right, qreal top)
 {
   mExtentRectangle = QRectF(left, bottom, fabs(left - right), fabs(bottom - top));
-  QRectF sceneRectangle = mExtentRectangle.adjusted(left * 2, bottom * 2, right * 2, top * 2);
-  setSceneRect(sceneRectangle);
+  setSceneRect(mExtentRectangle);
+  centerOn(mExtentRectangle.center());
 }
 
 void GraphicsView::setIsCreatingConnection(bool enable)
