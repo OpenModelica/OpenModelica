@@ -1537,25 +1537,20 @@ public function equationNth1 "author: PA
   input BackendDAE.EquationArray inEquationArray;
   input Integer inPos "one-based indexing";
   output BackendDAE.Equation outEquation;
+protected
+  Integer n;
+  array<Option<BackendDAE.Equation>> arr;
+  String str;
 algorithm
-  outEquation := matchcontinue (inEquationArray, inPos)
-    local
-      BackendDAE.Equation e;
-      Integer n;
-      array<Option<BackendDAE.Equation>> arr;
-      String str;
-
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement=n, equOptArr=arr), _) equation
-      true = intLe(inPos, n);
-      SOME(e) = arr[inPos];
-    then e;
-
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement=n), _) equation
-      str = "BackendEquation.equationNth1 failed; numberOfElement=" + intString(n) + "; pos=" + intString(inPos);
-      print(str + "\n");
-      Error.addInternalError(str, sourceInfo());
-    then fail();
-  end matchcontinue;
+  BackendDAE.EQUATION_ARRAY(numberOfElement=n, equOptArr=arr) := inEquationArray;
+  if intLe(inPos, n) then
+    outEquation := Util.getOption(arr[inPos]);
+  else
+    str := "BackendEquation.equationNth1 failed; numberOfElement=" + intString(n) + "; pos=" + intString(inPos);
+    print(str + "\n");
+    Error.addInternalError(str, sourceInfo());
+    fail();
+  end if;
 end equationNth1;
 
 public function equationNthSize
