@@ -2760,7 +2760,7 @@ algorithm
         crexp = negateExpression(negated, crexp, crexp, " ALIAS_2 ");
         rows = List.removeOnTrue(r, intEq, iMT[i]);
         arrayUpdate(iMT, i, {});
-        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i, exp, SOME(crexp), globalnegated1, derReplacement, mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
+        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i, exp, SOME(crexp), globalnegated1, derReplaceState, mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
       then
         (vars, eqnslst, shared, repl, vsattr);
 
