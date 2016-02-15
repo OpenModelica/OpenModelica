@@ -85,25 +85,16 @@ protected function listEquation1
   input Integer inPos "initially call this with 1";
   input Integer inSize "initially call this with 0";
   input array<Option<BackendDAE.Equation>> inEquOptArr;
-  output Integer outSize;
-  output array<Option<BackendDAE.Equation>> outEquOptArr;
+  output Integer outSize = inSize;
+  output array<Option<BackendDAE.Equation>> outEquOptArr = inEquOptArr;
+protected
+  Integer pos = inPos;
 algorithm
-  (outSize, outEquOptArr) := match (inEquationList, inPos, inSize, inEquOptArr)
-    local
-      BackendDAE.Equation eq;
-      list<BackendDAE.Equation> rest;
-      Integer size;
-      array<Option<BackendDAE.Equation>> equOptArr;
-
-    case ({}, _, _, _)
-    then (inSize, inEquOptArr);
-
-    case (eq::rest, _, _, _) equation
-      size = equationSize(eq);
-      equOptArr = arrayUpdate(inEquOptArr, inPos, SOME(eq));
-      (size, equOptArr) = listEquation1(rest, inPos+1, size+inSize, equOptArr);
-    then (size, equOptArr);
-  end match;
+  for eq in inEquationList loop
+    outSize := outSize + equationSize(eq);
+    outEquOptArr := arrayUpdate(outEquOptArr, pos, SOME(eq));
+    pos := pos + 1;
+  end for;
 end listEquation1;
 
 public function emptyEqns "
