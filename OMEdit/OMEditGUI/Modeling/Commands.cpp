@@ -402,6 +402,7 @@ void UpdateComponentAttributesCommand::redo()
   if (mpComponent->getComponentInfo()->getName().compare(mNewComponentInfo.getName()) != 0) {
     // if renameComponentInClass command is successful update the component with new name
     if (pOMCProxy->renameComponentInClass(modelName, mpComponent->getComponentInfo()->getName(), mNewComponentInfo.getName())) {
+      mpComponent->renameComponentInConnections(mNewComponentInfo.getName());
       mpComponent->getComponentInfo()->setName(mNewComponentInfo.getName());
       mpComponent->componentNameHasChanged();
       if (mpComponent->getLibraryTreeItem()->isConnector()) {
@@ -544,6 +545,7 @@ void UpdateComponentAttributesCommand::undo()
   if (mpComponent->getComponentInfo()->getName().compare(mOldComponentInfo.getName()) != 0) {
     // if renameComponentInClass command is successful update the component with new name
     if (pOMCProxy->renameComponentInClass(modelName, mpComponent->getComponentInfo()->getName(), mOldComponentInfo.getName())) {
+      mpComponent->renameComponentInConnections(mOldComponentInfo.getName());
       mpComponent->getComponentInfo()->setName(mOldComponentInfo.getName());
       mpComponent->componentNameHasChanged();
       if (mpComponent->getLibraryTreeItem()->isConnector()) {

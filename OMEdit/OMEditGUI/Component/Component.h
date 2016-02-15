@@ -198,6 +198,7 @@ public:
   void shapeAdded();
   void shapeUpdated();
   void shapeDeleted();
+  void renameComponentInConnections(QString newName);
   void addInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
   void removeInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
   void renameInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo, QString interfacePoint);
