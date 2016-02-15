@@ -645,8 +645,8 @@ protected function traverseExpsOfEquationListList_WithStop<T> "author: Frenkel T
   input list<list<BackendDAE.Equation>> inEquations;
   input FuncExpType func;
   input T inTypeA;
-  output Boolean outBoolean;
-  output T outTypeA;
+  output Boolean outBoolean = true;
+  output T outTypeA = inTypeA;
 
   partial function FuncExpType
     input DAE.Exp inExp;
@@ -656,23 +656,14 @@ protected function traverseExpsOfEquationListList_WithStop<T> "author: Frenkel T
     output T outA;
   end FuncExpType;
 algorithm
-  (outBoolean, outTypeA) := match (inEquations, func, inTypeA)
-    local
-      T arg;
-      list<BackendDAE.Equation> eqn;
-      list<list<BackendDAE.Equation>> eqns;
-      Boolean b;
 
-    case ({}, _, _)
-    then (true, inTypeA);
+  for eqn in inEquations loop
+    (outBoolean, outTypeA) := traverseExpsOfEquationList_WithStop(eqn, func, outTypeA);
+    if not outBoolean then
+      break;
+    end if;
+  end for;
 
-    case (eqn::eqns, _, _) equation
-      (b, arg) = traverseExpsOfEquationList_WithStop(eqn, func, inTypeA);
-      if b then
-        (b, arg) = traverseExpsOfEquationListList_WithStop(eqns, func, arg);
-      end if;
-    then (b, arg);
-  end match;
 end traverseExpsOfEquationListList_WithStop;
 
 public function traverseExpsOfEquation<T> "author: Frenkel TUD 2010-11
