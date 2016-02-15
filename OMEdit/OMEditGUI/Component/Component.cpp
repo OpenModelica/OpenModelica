@@ -948,6 +948,39 @@ void Component::shapeDeleted()
   }
 }
 
+/*!
+ * \brief Component::renameComponentInConnections
+ * Called when OMCProxy::renameComponentInClass() is used. Updates the components name in connections list.\n
+ * So that next OMCProxy::updateConnection() uses the new name. Ticket #3683.
+ * \param newName
+ */
+void Component::renameComponentInConnections(QString newName)
+{
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    return;
+  }
+  foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
+    // update start component name
+    Component *pStartComponent = pConnectionLineAnnotation->getStartComponent();
+    if (pStartComponent->getRootParentComponent() == this) {
+      QString startComponentName = pConnectionLineAnnotation->getStartComponentName();
+      startComponentName.replace(getName(), newName);
+      pConnectionLineAnnotation->setStartComponentName(startComponentName);
+      pConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(pConnectionLineAnnotation->getStartComponentName())
+                                            .arg(pConnectionLineAnnotation->getEndComponentName()));
+    }
+    // update end component name
+    Component *pEndComponent = pConnectionLineAnnotation->getEndComponent();
+    if (pEndComponent->getRootParentComponent() == this) {
+      QString endComponentName = pConnectionLineAnnotation->getEndComponentName();
+      endComponentName.replace(getName(), newName);
+      pConnectionLineAnnotation->setEndComponentName(endComponentName);
+      pConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(pConnectionLineAnnotation->getStartComponentName())
+                                            .arg(pConnectionLineAnnotation->getEndComponentName()));
+    }
+  }
+}
+
 void Component::addInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo)
 {
   // Add the Interfacepoint to the list.
