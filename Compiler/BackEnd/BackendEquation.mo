@@ -1092,8 +1092,8 @@ protected function traverseExpsOfExpList<T> "author Frenkel TUD:
   input list<DAE.Exp> inExpl;
   input FuncExpType rel;
   input T inExtArg;
-  output list<DAE.Exp> outExpl;
-  output T outTypeA;
+  output list<DAE.Exp> outExpl = {};
+  output T outTypeA = inExtArg;
 
   partial function FuncExpType
     input DAE.Exp inExp;
@@ -1102,20 +1102,13 @@ protected function traverseExpsOfExpList<T> "author Frenkel TUD:
     output T outA;
   end FuncExpType;
 algorithm
-  (outExpl, outTypeA) := match (inExpl)
-    local
-      DAE.Exp e, e1;
-      list<DAE.Exp> expl1, res;
-      T extArg;
 
-    case {}
-    then ({}, inExtArg);
+  for e in inExpl loop
+    (e, outTypeA) := rel(e, outTypeA);
+    outExpl := e :: outExpl;
+  end for;
 
-    case e::res equation
-      (e1, extArg) = rel(e, inExtArg);
-      (expl1, extArg) = traverseExpsOfExpList(res, rel, extArg);
-    then (e1::expl1, extArg);
-  end match;
+   outExpl := listReverse(outExpl);
 end traverseExpsOfExpList;
 
 protected function traverseExpsOfExpList_WithStop<T> "author Frenkel TUD
