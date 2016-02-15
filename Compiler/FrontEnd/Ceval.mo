@@ -88,6 +88,7 @@ protected import Util;
 protected import ValuesUtil;
 protected import ClassInf;
 protected import Global;
+protected import MetaModelica.Dangerous.listReverseInPlace;
 
 public function ceval "
   This function is used when the value of a constant expression is
@@ -4415,30 +4416,23 @@ public function cevalList "This function does constant
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output FCore.Cache outCache;
-  output list<Values.Value> outValuesValueLst;
+  output FCore.Cache outCache = inCache;
+  output list<Values.Value> outValuesValueLst = {};
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+protected
+  list<DAE.Exp> expLstNew = inExpExpLst;
+  DAE.Exp exp;
+  Values.Value v;
+  Option<GlobalScript.SymbolTable> st = inST;
+
 algorithm
-  (outCache,outValuesValueLst,outInteractiveInteractiveSymbolTableOption) :=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
-    local
-      FCore.Graph env;
-      Absyn.Msg msg;
-      Values.Value v;
-      DAE.Exp exp;
-      Boolean impl;
-      Option<GlobalScript.SymbolTable> st;
-      list<Values.Value> vs;
-      list<DAE.Exp> exps;
-      FCore.Cache cache;
-    case (cache,_,{},_,st,_,_) then (cache,{},st);
-    case (cache,env,(exp :: exps ),impl,st,msg,_)
-      equation
-        (cache,v,st) = ceval(cache,env, exp, impl, st,msg,numIter+1);
-        (cache,vs,st) = cevalList(cache,env, exps, impl, st,msg,numIter);
-      then
-        (cache,v :: vs,st);
-  end match;
+  while not listEmpty(expLstNew) loop
+    exp::expLstNew := expLstNew;
+    (outCache, v, st) := ceval(outCache, inEnv, exp, inBoolean, st, inMsg, numIter+1);
+    outValuesValueLst := v :: outValuesValueLst;
+  end while;
+  outValuesValueLst := listReverseInPlace(outValuesValueLst);
+  outInteractiveInteractiveSymbolTableOption := st;
 end cevalList;
 
 public function cevalCref "Evaluates ComponentRef, i.e. variables, by

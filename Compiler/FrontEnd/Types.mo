@@ -79,6 +79,7 @@ protected import System;
 protected import ValuesUtil;
 protected import DAEUtil;
 protected import SCodeDump;
+protected import MetaModelica.Dangerous.listReverseInPlace;
 
 public function discreteType "Succeeds for all the discrete types, Integer, String, Boolean and enumeration."
   input DAE.Type inType;
@@ -4190,30 +4191,21 @@ public function matchTypeList
   input DAE.Type expType;
   input DAE.Type expectedType;
   input Boolean printFailtrace;
-  output list<DAE.Exp> outExp;
-  output list<DAE.Type> outTypeLst;
+  output list<DAE.Exp> outExp = {};
+  output list<DAE.Type> outTypeLst = {};
+protected
+  list<DAE.Exp> expLstNew = exps;
+  DAE.Exp exp, e_1;
+  Type tp;
 algorithm
-  (outExp,outTypeLst):=
-  matchcontinue (exps,expType,expectedType,printFailtrace)
-    local
-      DAE.Exp e,e_1;
-      list<DAE.Exp> e_2, rest;
-      Type tp,t1,t2;
-      list<DAE.Type> res;
-    case ({},_,_,_) then ({},{});
-    case (e::rest,t1,t2,_)
-      equation
-        (e_1,tp) = matchType(e,t1,t2,printFailtrace);
-        (e_2,res) = matchTypeList(rest,t1,t2,printFailtrace);
-      then
-        (e_1::e_2,(tp :: res));
-    case (_,_,_,true)
-      equation
-        true = Flags.isSet(Flags.TYPES);
-        Debug.trace("- matchTypeList failed\n");
-      then
-        fail();
-  end matchcontinue;
+  while not listEmpty(expLstNew) loop
+    exp::expLstNew := expLstNew;
+    (e_1, tp) := matchType(exp, expType, expectedType, printFailtrace);
+    outExp := e_1 :: outExp;
+    outTypeLst := tp :: outTypeLst;
+  end while;
+  outExp := listReverseInPlace(outExp);
+  outTypeLst := listReverseInPlace(outTypeLst);
 end matchTypeList;
 
 public function matchTypeTuple
