@@ -1567,40 +1567,31 @@ end equationNthSize;
 public function equationNthSize1
   input list<BackendDAE.Equation> inEqns;
   input Integer pos;
-  input Integer acc;
+  input Integer inAcc;
   output BackendDAE.Equation outEquation;
+protected
+  Integer acc = inAcc;
+  Integer size;
+  String str;
 algorithm
-  outEquation := matchcontinue (inEqns, pos, acc)
-    local
-      BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> eqns;
-      Integer size;
-      array<Option<BackendDAE.Equation>> arr;
-      String str;
 
-    case ({}, _, _) equation
-      str = "BackendEquation.equationNthSize1 failed";
-      print(str + "\n");
-      Error.addInternalError(str, sourceInfo());
-    then fail();
+  for eqn in inEqns loop
+    size := equationSize(eqn);
+    if (pos >= acc) and (pos < acc+size) then
+      outEquation := eqn;
+      return;
+    elseif (pos >= acc+size) then
+      acc := acc + size;
+    else
+     break;
+    end if;
+  end for;
 
-    case (eqn::_, _, _) equation
-      size = equationSize(eqn);
-      true = (pos >= acc);
-      true = (pos < acc+size);
-    then eqn;
+  str := "BackendEquation.equationNthSize1 failed";
+  print(str + "\n");
+  Error.addInternalError(str, sourceInfo());
+  fail();
 
-    case (eqn::eqns, _, _) equation
-      size = equationSize(eqn);
-      true = (pos >= acc+size);
-    then equationNthSize1(eqns, pos, acc+size);
-
-    else equation
-      str = "BackendEquation.equationNthSize1 failed";
-      print(str + "\n");
-      Error.addInternalError(str, sourceInfo());
-    then fail();
-  end matchcontinue;
 end equationNthSize1;
 
 public function equationDelete "author: Frenkel TUD 2010-12
