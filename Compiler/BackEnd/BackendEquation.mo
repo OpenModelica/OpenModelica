@@ -135,7 +135,7 @@ algorithm
     then {elt};
 
     case (BackendDAE.EQUATION_ARRAY(numberOfElement=n, equOptArr=arr)) equation
-      lst = equationList2(arr, n, {});
+      lst = equationList2(arr, n);
     then lst;
 
     case (_) equation
@@ -150,15 +150,9 @@ protected function equationList2 "author: PA
   outputs: BackendDAE.Equation list"
   input array<Option<BackendDAE.Equation>> arr;
   input Integer pos;
-  input list<BackendDAE.Equation> iAcc;
   output list<BackendDAE.Equation> outEquationLst;
 algorithm
-  outEquationLst := match (arr, pos, iAcc)
-    case (_, 0, _)
-    then iAcc;
-
-    else equationList2(arr, pos-1, List.consOption(arr[pos], iAcc));
-  end match;
+  outEquationLst := list(Util.getOption(arr[i]) for i guard isSome(arr[i]) in 1:pos);
 end equationList2;
 
 public function getWhenEquationExpr "Get the left and right hand parts from an equation appearing in a when clause"
