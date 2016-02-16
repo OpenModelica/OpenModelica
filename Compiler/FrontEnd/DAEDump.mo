@@ -2747,11 +2747,15 @@ algorithm
     local
       IOStream.IOStream str;
       list<DAE.Element> v,o,ie,ia,e,a,ca,co;
+      list<compWithSplitElements> sm;
 
     case (_, str)
      equation
        // classify DAE
-       (v,ie,ia,e,a,_,co,_) = DAEUtil.splitElements(l);
+       (v,ie,ia,e,a,_,co,_,sm) = DAEUtil.splitElements(l);
+
+       // dump components with split elements (e.g., state machines)
+       str = dumpCompWithSplitElementsStream(sm, str);
 
        // dump variables
        str = dumpVarsStream(v, false, str);
@@ -2772,6 +2776,54 @@ algorithm
        str;
   end match;
 end dumpElementsStream;
+
+public function dumpCompWithSplitElementsStream "Dump components with split elements (e.g., state machines) to a stream."
+  input list<compWithSplitElements> inCompLst;
+  input IOStream.IOStream inStream;
+  output IOStream.IOStream outStream;
+algorithm
+  outStream := match (inCompLst, inStream)
+    local
+      String name;
+      splitElements spltElems;
+      Option<SCode.Comment> comment;
+      String cstr;
+      IOStream.IOStream str;
+      list<compWithSplitElements> xs;
+      list<DAE.Element> v,o,ie,ia,e,a,ca,co;
+      list<compWithSplitElements> sm;
+
+    case ({}, str) then str;
+
+    case (COMP_WITH_SPLIT(name=name, spltElems=spltElems, comment=comment) :: xs, str)
+      algorithm
+        try
+          SOME(SCode.COMMENT(comment=SOME(cstr))) := comment;
+          cstr := " \"" + cstr + "\"";
+        else
+          cstr := "";
+        end try;
+        SPLIT_ELEMENTS(v,ie,ia,e,a,co,_,_,sm) := spltElems;
+
+        str := IOStream.append(str, name + cstr + "\n");
+
+	      str := dumpCompWithSplitElementsStream(sm, str);
+	      str := dumpVarsStream(v, false, str);
+	      str := IOStream.append(str, if listEmpty(ie) then "" else "initial equation\n");
+	      str := dumpInitialEquationsStream(ie, str);
+	      str := dumpInitialAlgorithmsStream(ia, str);
+	      str := IOStream.append(str, if listEmpty(e) then "" else "equation\n");
+	      str := dumpEquationsStream(e, str);
+	      str := dumpAlgorithmsStream(a, str);
+	      str := IOStream.append(str, if listEmpty(co) then "" else "constraint\n");
+	      str := dumpConstraintStream(co, str);
+
+        str := IOStream.append(str, "end " + name + cstr + ";\n");
+        str := dumpCompWithSplitElementsStream(xs, str);
+      then
+        str;
+  end match;
+end dumpCompWithSplitElementsStream;
 
 public function dumpAlgorithmsStream "Dump algorithms to a stream."
   input list<DAE.Element> inElementLst;
