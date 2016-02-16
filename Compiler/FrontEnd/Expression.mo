@@ -7518,7 +7518,7 @@ public function isImpure "author: lochel
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := isConstWork(inExp, true);
+  outBoolean := isConstWork(inExp);
   (_, outBoolean) := traverseExpTopDown(inExp, isImpureWork, false);
 end isImpure;
 
@@ -7578,7 +7578,7 @@ public function isConst
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := isConstWork(inExp,true);
+  outBoolean := isConstWork(inExp);
 end isConst;
 
 public function isEvaluatedConst
@@ -7611,10 +7611,9 @@ end isEvaluatedConstWork;
 protected function isConstWork
 "Returns true if an expression is constant"
   input DAE.Exp inExp;
-  input Boolean inRes;
-  output Boolean outBoolean;
+  output Boolean outBoolean = false;
 algorithm
-  outBoolean := match (inExp,inRes)
+  outBoolean := match (inExp)
     local
       Boolean res;
       Operator op;
@@ -7623,56 +7622,96 @@ algorithm
       list<DAE.Exp> ae;
       list<list<DAE.Exp>> matrix;
 
-    case (_,false) then false;
-    case (DAE.ICONST(),_) then true;
-    case (DAE.RCONST(),_) then true;
-    case (DAE.BCONST(),_) then true;
-    case (DAE.SCONST(),_) then true;
-    case (DAE.ENUM_LITERAL(),_) then true;
+    case (DAE.ICONST()) then true;
+    case (DAE.RCONST()) then true;
+    case (DAE.BCONST()) then true;
+    case (DAE.SCONST()) then true;
+    case (DAE.ENUM_LITERAL()) then true;
 
-    case (DAE.UNARY(exp = e),_) then isConstWork(e,true);
+    case (DAE.UNARY(exp = e)) then isConstWork(e);
 
-    case (DAE.CAST(exp = e),_) then isConstWork(e,true);
+    case (DAE.CAST(exp = e)) then isConstWork(e);
 
-    case (DAE.BINARY(e1,_,e2),_) then isConstWork(e1,isConstWork(e2,true));
+    case (DAE.BINARY(e1,_,e2))
+      equation
+        res = isConstWork(e2);
+      then
+        if res then isConstWork(e1) else false;
 
-    case (DAE.IFEXP(e,e1,e2),_) then isConstWork(e,isConstWork(e1,isConstWork(e2,true)));
+    case (DAE.IFEXP(e,e1,e2))
+      equation
+        res = isConstWork(e2);
+        if res then
+          res = isConstWork(e1);
+        end if;
+      then
+        if res then isConstWork(e) else false;
 
-    case (DAE.LBINARY(exp1=e1,exp2=e2),_) then isConstWork(e1,isConstWork(e2,true));
+    case (DAE.LBINARY(exp1=e1,exp2=e2))
+      equation
+        res = isConstWork(e2);
+      then
+        if res then isConstWork(e1) else false;
 
-    case (DAE.LUNARY(exp=e),_) then isConstWork(e,true);
+    case (DAE.LUNARY(exp=e)) then isConstWork(e);
 
-    case (DAE.RELATION(exp1=e1,exp2=e2),_) then isConstWork(e1,isConstWork(e2,true));
+    case (DAE.RELATION(exp1=e1,exp2=e2))
+      equation
+        res = isConstWork(e2);
+      then
+        if res then isConstWork(e1) else false;
 
-    case (DAE.ARRAY(array = ae),_) then isConstWorkList(ae,true);
+    case (DAE.ARRAY(array = ae)) then isConstWorkList(ae);
 
-    case (DAE.MATRIX(matrix = matrix),_) then isConstWorkListList(matrix, true);
+    case (DAE.MATRIX(matrix = matrix)) then isConstWorkListList(matrix);
 
-    case (DAE.RANGE(start=e1,step=NONE(),stop=e2),_) then isConstWork(e1,isConstWork(e2,true));
+    case (DAE.RANGE(start=e1,step=NONE(),stop=e2))
+      equation
+        res = isConstWork(e2);
+      then
+        if res then isConstWork(e1) else false;
 
-    case (DAE.RANGE(start=e,step=SOME(e1),stop=e2),_) then isConstWork(e,isConstWork(e1,isConstWork(e2,true)));
+    case (DAE.RANGE(start=e,step=SOME(e1),stop=e2))
+      equation
+        res = isConstWork(e2);
+        if res then
+          res = isConstWork(e1);
+        end if;
+      then
+        if res then isConstWork(e) else false;
 
-    case (DAE.PARTEVALFUNCTION(expList = ae),_) then isConstWorkList(ae,true);
+    case (DAE.PARTEVALFUNCTION(expList = ae)) then isConstWorkList(ae);
 
-    case (DAE.TUPLE(PR = ae),_) then isConstWorkList(ae,true);
+    case (DAE.TUPLE(PR = ae)) then isConstWorkList(ae);
 
-    case (DAE.ASUB(exp=e,sub=ae),_) then isConstWorkList(ae,isConstWork(e,true));
+    case (DAE.ASUB(exp=e,sub=ae))
+      equation
+        res = isConstWork(e);
+      then
+        if res then isConstWorkList(ae) else false;
 
-    case (DAE.TSUB(exp=e),_) then isConstWork(e,true);
+    case (DAE.TSUB(exp=e)) then isConstWork(e);
 
-    case (DAE.SIZE(exp=e,sz=NONE()),_) then isConstWork(e,true);
+    case (DAE.SIZE(exp=e,sz=NONE())) then isConstWork(e);
 
-    case (DAE.SIZE(exp=e1,sz=SOME(e2)),_) then isConstWork(e1,isConstWork(e2,true));
+    case (DAE.SIZE(exp=e1,sz=SOME(e2)))
+      equation
+        res = isConstWork(e2);
+      then
+        if res then isConstWork(e1) else false;
 
-    case (DAE.CALL(expLst=ae, attr=DAE.CALL_ATTR(builtin=false, isImpure=false)),_) then isConstWorkList(ae,true);
+    case (DAE.CALL(expLst=ae, attr=DAE.CALL_ATTR(builtin=false, isImpure=false))) then isConstWorkList(ae);
 
-    case (DAE.RECORD(exps=ae),_) then isConstWorkList(ae,true);
+    case (DAE.RECORD(exps=ae)) then isConstWorkList(ae);
 
       /*TODO:Make this work for multiple iters, guard exps*/
-    case (DAE.REDUCTION(expr=e1,iterators={DAE.REDUCTIONITER(exp=e2)}),_)
-      then isConstWork(e1,isConstWork(e2,true));
+    case (DAE.REDUCTION(expr=e1,iterators={DAE.REDUCTIONITER(exp=e2)}))
+      equation
+        res = isConstWork(e2);
+      then
+        if res then isConstWork(e1) else false;
 
-    case(DAE.BOX(exp=e),_) then isConstWork(e,true);
+    case(DAE.BOX(exp=e)) then isConstWork(e);
 
     else false;
   end match;
@@ -7681,24 +7720,22 @@ end isConstWork;
 protected function isConstValueWork
 "Returns true if an expression is a constant value"
   input DAE.Exp inExp;
-  input Boolean inRes;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp,inRes)
+  outBoolean := match (inExp)
     local
       Boolean res;
       DAE.Exp e,e1,e2;
       list<DAE.Exp> ae;
       list<list<DAE.Exp>> matrix;
 
-    case (_,false) then false;
-    case (DAE.ICONST(),_) then true;
-    case (DAE.RCONST(),_) then true;
-    case (DAE.BCONST(),_) then true;
-    case (DAE.SCONST(),_) then true;
-    case (DAE.ENUM_LITERAL(),_) then true;
-    case (DAE.ARRAY(array = ae),_) then isConstValueWorkList(ae,true);
-    case (DAE.MATRIX(matrix = matrix),_) then isConstValueWorkListList(matrix, true);
+    case (DAE.ICONST()) then true;
+    case (DAE.RCONST()) then true;
+    case (DAE.BCONST()) then true;
+    case (DAE.SCONST()) then true;
+    case (DAE.ENUM_LITERAL()) then true;
+    case (DAE.ARRAY(array = ae)) then isConstValueWorkList(ae);
+    case (DAE.MATRIX(matrix = matrix)) then isConstValueWorkListList(matrix);
     else false;
 
   end match;
@@ -7709,70 +7746,73 @@ public function isConstValue
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := isConstValueWork(inExp,true);
+  outBoolean := isConstValueWork(inExp);
 end isConstValue;
 
 public function isConstWorkList
 "Returns true if a list of expressions is constant"
   input list<DAE.Exp> inExps;
-  input Boolean inBoolean;
   output Boolean outBoolean;
+protected
+  DAE.Exp e;
+  list<DAE.Exp> exps;
+  Boolean b = true;
 algorithm
-  outBoolean := match (inExps,inBoolean)
-    local
-      DAE.Exp e; list<DAE.Exp> exps;
-    case (_,false) then false;
-    case ({},_) then true;
-    case (e::exps,_) then isConstWorkList(exps,isConstWork(e,true));
-  end match;
+  exps := inExps;
+  while b and not listEmpty(exps) loop
+    e::exps := exps;
+    b := isConstWork(e);
+  end while;
+  outBoolean := b;
 end isConstWorkList;
 
 protected function isConstWorkListList
   input list<list<DAE.Exp>> inExps;
-  input Boolean inIsConst;
   output Boolean outIsConst;
+protected
+  list<DAE.Exp> e;
+  list<list<DAE.Exp>> exps;
+  Boolean b = true;
 algorithm
-  outIsConst := match(inExps, inIsConst)
-    local
-      list<DAE.Exp> e;
-      list<list<DAE.Exp>> exps;
-
-    case (_, false) then false;
-    case (e :: exps, _) then isConstWorkListList(exps, isConstWorkList(e, true));
-    case ({}, _) then true;
-    else false;
-  end match;
+  exps := inExps;
+  while b and not listEmpty(exps) loop
+    e::exps := exps;
+    b := isConstWorkList(e);
+  end while;
+  outIsConst := b;
 end isConstWorkListList;
 
-public function isConstValueWorkList
+protected function isConstValueWorkList
 "Returns true if a list of expressions is a constant value"
   input list<DAE.Exp> inExps;
-  input Boolean inBoolean;
   output Boolean outBoolean;
+protected
+  DAE.Exp e;
+  list<DAE.Exp> exps;
+  Boolean b = true;
 algorithm
-  outBoolean := match (inExps,inBoolean)
-    local
-      DAE.Exp e; list<DAE.Exp> exps;
-    case (_,false) then false;
-    case ({},_) then true;
-    case (e::exps,_) then isConstValueWorkList(exps,isConstValueWork(e,true));
-  end match;
+  exps := inExps;
+  while b and not listEmpty(exps) loop
+    e::exps := exps;
+    b := isConstValueWork(e);
+  end while;
+  outBoolean := b;
 end isConstValueWorkList;
 
 protected function isConstValueWorkListList
   input list<list<DAE.Exp>> inExps;
-  input Boolean inIsConst;
   output Boolean outIsConst;
+protected
+  list<DAE.Exp> e;
+  list<list<DAE.Exp>> exps;
+  Boolean b = true;
 algorithm
-  outIsConst := match(inExps, inIsConst)
-    local
-      list<DAE.Exp> e;
-      list<list<DAE.Exp>> exps;
-
-    case (_, false) then false;
-    case (e :: exps, _) then isConstValueWorkListList(exps, isConstWorkList(e, true));
-    else false;
-  end match;
+  exps := inExps;
+  while b and not listEmpty(exps) loop
+    e::exps := exps;
+    b := isConstValueWorkList(e);
+  end while;
+  outIsConst := b;
 end isConstValueWorkListList;
 
 public function isNotConst
@@ -9655,7 +9695,7 @@ algorithm
 
     case (DAE.DIM_INTEGER(0) :: _) then true;
     case (_ :: rest_dims) then arrayContainZeroDimension(rest_dims);
-    case ({}) then false;
+    else false;
 
   end match;
 end arrayContainZeroDimension;
@@ -9668,9 +9708,9 @@ algorithm
   wholedim := match(inDim)
     local
       DAE.Dimensions rest_dims;
-    case ({}) then false;
     case (DAE.DIM_UNKNOWN() :: _) then true;
     case (_ :: rest_dims) then arrayContainWholeDimension(rest_dims);
+    else false;
   end match;
 end arrayContainWholeDimension;
 
@@ -9718,7 +9758,6 @@ algorithm
         b2 = isNotComplex(e2);
       then b2;
     else
-    then
       true;
   end match;
 end isNotComplex;

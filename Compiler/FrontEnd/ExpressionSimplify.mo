@@ -402,7 +402,7 @@ algorithm
     // normal (pure) call
     case DAE.CALL(path=Absyn.IDENT(idn),expLst=expl, attr=DAE.CALL_ATTR(isImpure=false))
       equation
-        true = Expression.isConstWorkList(expl, true);
+        true = Expression.isConstWorkList(expl);
       then simplifyBuiltinConstantCalls(idn,inExp);
 
     // simplify some builtin calls, like cross, etc

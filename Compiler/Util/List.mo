@@ -408,6 +408,7 @@ algorithm
     local
       list<T> l;
       list<list<T>> ll;
+      list<list<T>> ol = {};
 
     case ({}, _) then {inList};
 
@@ -415,7 +416,14 @@ algorithm
       then {listAppend(l, inList)};
 
     case (l :: ll, _)
-      then l :: appendLastList(ll, inList);
+      algorithm
+        while not listEmpty(ll) loop
+          ol := l::ol;
+          l::ll := ll;
+        end while;
+        ol := listAppend(l, inList) :: ol;
+        outListList := listReverseInPlace(ol);
+      then ol;
 
   end match;
 end appendLastList;
