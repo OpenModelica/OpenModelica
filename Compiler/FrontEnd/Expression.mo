@@ -5771,6 +5771,9 @@ algorithm
         (riters,ext_arg) = traverseReductionIteratorsTopDown(riters, rel, ext_arg);
       then (DAE.REDUCTION(reductionInfo,e1,riters),ext_arg);
 
+    case (_, DAE.EMPTY(), _, _)
+      then (inExp, inArg);
+
     // MetaModelica list
     case (_,DAE.CONS(e1,e2),rel,ext_arg)
       equation
