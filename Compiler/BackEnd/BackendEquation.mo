@@ -1116,8 +1116,8 @@ protected function traverseExpsOfExpList_WithStop<T> "author Frenkel TUD
   input list<DAE.Exp> inExpl;
   input FuncExpType rel;
   input T inExtArg;
-  output Boolean outBoolean;
-  output T outTypeA;
+  output Boolean outBoolean = true;
+  output T outTypeA = inExtArg;
   partial function FuncExpType
     input DAE.Exp inExp;
     input T inTypeA;
@@ -1125,23 +1125,15 @@ protected function traverseExpsOfExpList_WithStop<T> "author Frenkel TUD
     output Boolean cont;
     output T outA;
   end FuncExpType;algorithm
-  (outBoolean, outTypeA) := match(inExpl)
-    local
-      DAE.Exp e;
-      list<DAE.Exp> res;
-      T extArg;
-      Boolean b;
 
-    case {}
-    then (true, inExtArg);
 
-    case e::res equation
-      (_, b, extArg) = rel(e, inExtArg);
-      if b then
-        (b, extArg) = traverseExpsOfExpList_WithStop(res, rel, extArg);
-      end if;
-    then (b, extArg);
-  end match;
+  for e in inExpl loop
+    (_, outBoolean, outTypeA) := rel(e, outTypeA);
+    if not outBoolean then
+      break;
+    end if;
+  end for;
+
 end traverseExpsOfExpList_WithStop;
 
 public function traverseEquationArray<T> "author: Frenkel TUD
