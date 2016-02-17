@@ -65,7 +65,7 @@ public function elementVars
 protected
   list<DAE.Element> ld;
 algorithm
-  ld := List.filter(ild, isVarQ);
+  ld := List.filterOnTrue(ild, isVarQ);
   vars := List.map(ld, daeInOutSimVar);
 end elementVars;
 
@@ -697,7 +697,7 @@ algorithm
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
-        vars = List.filter(daeElts, isVarQ);
+        vars = List.filterOnTrue(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
         info = DAEUtil.getElementSourceFileInfo(source);
@@ -716,7 +716,7 @@ algorithm
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
-        vars = List.filter(daeElts, isVarNotInputNotOutput);
+        vars = List.filterOnTrue(daeElts, isVarNotInputNotOutput);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
         info = DAEUtil.getElementSourceFileInfo(source);
@@ -735,7 +735,7 @@ algorithm
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
-        vars = List.filter(daeElts, isVarQ);
+        vars = List.filterOnTrue(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
         info = DAEUtil.getElementSourceFileInfo(source);
@@ -1469,16 +1469,18 @@ end matchMetarecordCalls;
 protected function isVarQ
 "Succeeds if inElement is a variable or constant that is not input."
   input DAE.Element inElement;
+  output Boolean outB;
 algorithm
-  _ := match (inElement)
+  outB := match (inElement)
     local
       DAE.VarKind vk;
       DAE.VarDirection vd;
     case DAE.VAR(kind=vk, direction=vd)
-      equation
-        isVarVarOrConstant(vk);
-        isDirectionNotInput(vd);
-      then ();
+      guard
+        isVarVarOrConstant(vk) and
+        isDirectionNotInput(vd)
+      then true;
+    else false;
   end match;
 end isVarQ;
 
@@ -1486,43 +1488,51 @@ protected function isVarNotInputNotOutput
 "Succeeds if inElement is a variable or constant that is not input or output.
 needed in kernel functions since they shouldn't have output vars."
   input DAE.Element inElement;
+  output Boolean outB;
 algorithm
-  _ := match (inElement)
+  outB := match (inElement)
     local
       DAE.VarKind vk;
       DAE.VarDirection vd;
     case DAE.VAR(kind=vk, direction=vd)
-      equation
-        isVarVarOrConstant(vk);
-        isDirectionNotInputNotOutput(vd);
-      then ();
+      guard
+        isVarVarOrConstant(vk) and
+        isDirectionNotInputNotOutput(vd)
+      then true;
+    else false;
   end match;
 end isVarNotInputNotOutput;
 
 protected function isVarVarOrConstant
   input DAE.VarKind inVarKind;
+  output Boolean outB;
 algorithm
-  _ := match (inVarKind)
-    case DAE.VARIABLE() then ();
-    case DAE.PARAM() then ();
-    case DAE.CONST() then ();
+  outB := match (inVarKind)
+    case DAE.VARIABLE() then true;
+    case DAE.PARAM() then true;
+    case DAE.CONST() then true;
+    else false;
   end match;
 end isVarVarOrConstant;
 
 protected function isDirectionNotInput
   input DAE.VarDirection inVarDirection;
+  output Boolean outB;
 algorithm
-  _ := match (inVarDirection)
-    case DAE.OUTPUT() then ();
-    case DAE.BIDIR() then ();
+  outB := match (inVarDirection)
+    case DAE.OUTPUT() then true;
+    case DAE.BIDIR() then true;
+    else false;
   end match;
 end isDirectionNotInput;
 
 protected function isDirectionNotInputNotOutput
   input DAE.VarDirection inVarDirection;
+  output Boolean outB;
 algorithm
-  _ := match (inVarDirection)
-    case DAE.BIDIR() then ();
+  outB := match (inVarDirection)
+    case DAE.BIDIR() then true;
+    else false;
   end match;
 end isDirectionNotInputNotOutput;
 

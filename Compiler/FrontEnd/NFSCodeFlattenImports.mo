@@ -133,7 +133,7 @@ algorithm
     case (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), _, _)
       equation
         // Lookup elements.
-        el = List.filter(el, isNotImport);
+        el = List.filterOnTrue(el, isNotImport);
         (el, env) = List.mapFold(el, flattenElement, inEnv);
 
         // Lookup equations and algorithm names.
@@ -184,10 +184,11 @@ end flattenDerivedClassDef;
 
 protected function isNotImport
   input SCode.Element inElement;
+  output Boolean outB;
 algorithm
-  _ := match(inElement)
-    case SCode.IMPORT() then fail();
-    else ();
+  outB := match(inElement)
+    case SCode.IMPORT() then false;
+    else true;
   end match;
 end isNotImport;
 

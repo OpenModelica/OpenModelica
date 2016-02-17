@@ -544,7 +544,7 @@ protected
   list<Integer> vars,vars_1;
 algorithm
   vars := BackendDAEUtil.varsInEqn(m, i);
-  vars_1 := List.filter1(vars, isNotVMarked, (imark, vmark));
+  vars_1 := List.filter1OnTrue(vars, isNotVMarked, (imark, vmark));
  (outAssignments1,outAssignments2) := forallUnmarkedVarsInEqnBody(m, mt, i, imark, emark, vmark, vars_1, ass1, ass2);
 end forallUnmarkedVarsInEqn;
 
@@ -553,12 +553,13 @@ protected function isNotVMarked
   This function succeds for variables that are not marked."
   input Integer i;
   input tuple<Integer,array<Integer>> inTpl;
+  output Boolean outB;
 protected
   Integer imark;
   array<Integer> vmark;
 algorithm
   (imark,vmark) := inTpl;
-  false := intEq(imark,vmark[i]);
+  outB := not intEq(imark,vmark[i]);
 end isNotVMarked;
 
 protected function forallUnmarkedVarsInEqnBody

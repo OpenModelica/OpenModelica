@@ -3865,16 +3865,17 @@ public function removeBuiltinsFromTopScope
   input Program inProgram;
   output Program outProgram;
 algorithm
-  outProgram := List.filter(inProgram, isNotBuiltinClass);
+  outProgram := List.filterOnTrue(inProgram, isNotBuiltinClass);
 end removeBuiltinsFromTopScope;
 
 protected function isNotBuiltinClass
   input Element inClass;
+  output Boolean b;
 algorithm
-  _ := match(inClass)
+  b := match(inClass)
     case CLASS(classDef = PARTS(externalDecl =
-      SOME(EXTERNALDECL(lang = SOME("builtin"))))) then fail();
-    else ();
+      SOME(EXTERNALDECL(lang = SOME("builtin"))))) then false;
+    else true;
   end match;
 end isNotBuiltinClass;
 

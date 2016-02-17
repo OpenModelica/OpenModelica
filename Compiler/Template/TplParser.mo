@@ -737,7 +737,7 @@ algorithm
     case ( (id, TplAbsyn.TEMPLATE_DEF(args = iargs)) )
       equation
         iargs =  TplAbsyn.imlicitTxtArg :: iargs;
-        oargs = List.filter(iargs, TplAbsyn.isText);
+        oargs = List.filterOnTrue(iargs, TplAbsyn.isText);
       then ( (id, TplAbsyn.TI_FUN_TYPE(iargs,oargs,{})) );
 
     else

@@ -686,7 +686,7 @@ algorithm
         //TODO: should be done some checks for uniqueness / keywords collisions ...
         //tplname = encodeIdent(tplname);
         iargs = imlicitTxtArg :: encArgs;
-        oargs = List.filter(iargs, isText);
+        oargs = List.filterOnTrue(iargs, isText);
         stmts = listReverse(stmts);
         stmts = addOutPrefixes(stmts, oargs, {});
         (stmts, locals, accMMDecls) = inlineLastFunIfSingleCall(iargs, oargs, stmts, locals, accMMDecls);
@@ -2673,8 +2673,8 @@ algorithm
         fname = listMapFunPrefix + intString(listLength(accMMDecls));
         iargs = imlicitTxtArg :: ("items",argtype) :: encodedExtargs;
         assignedIdents = getAssignedIdents(mapstmts, {});
-        //oargs = List.filter(extargs, isText);
-        oargs = List.filter1(encodedExtargs, isAssignedText, assignedIdents);
+        //oargs = List.filterOnTrue(extargs, isText);
+        oargs = List.filter1OnTrue(encodedExtargs, isAssignedText, assignedIdents);
         oargs = imlicitTxtArg :: oargs;
         lhsArgs = List.map(oargs, Util.tuple21);
         inMapExtargvals =  List.map(encodedExtargs, makeMMArgValue);
@@ -2779,8 +2779,8 @@ algorithm
         fname = scalarMapFunPrefix + intString(listLength(accMMDecls));
         iargs = imlicitTxtArg :: ("it",argtype) :: encodedExtargs;
         assignedIdents = getAssignedIdents(mapstmts, {});
-        //oargs = List.filter(extargs, isText); //it can be actually Text, but not to be as output stream
-        oargs = List.filter1(encodedExtargs, isAssignedText, assignedIdents);
+        //oargs = List.filterOnTrue(extargs, isText); //it can be actually Text, but not to be as output stream
+        oargs = List.filter1OnTrue(encodedExtargs, isAssignedText, assignedIdents);
         oargs = imlicitTxtArg :: oargs;
         mapstmts = listReverse(mapstmts);
         //add indexed value if needed
@@ -3107,7 +3107,7 @@ algorithm
 
         iargs = imlicitTxtArg :: (matchArgName, exptype) :: encodedExtargs;
 
-        oargs = List.filter1(encodedExtargs, isAssignedText, assignedIdents);
+        oargs = List.filter1OnTrue(encodedExtargs, isAssignedText, assignedIdents);
         oargs = imlicitTxtArg :: oargs;
 
         funLocals = listAppend(encodedExtargs, funLocals);
@@ -3198,25 +3198,29 @@ end makeMMArgValue;
 
 public function isText
   input tuple<Ident, TypeSignature> inArg;
+  output Boolean outB;
 algorithm
-  _:= match(inArg)
+  outB := match(inArg)
     case ( (_ , TEXT_TYPE()) )
-      then ();
+      then true;
+    else false;
   end match;
 end isText;
 
-function isAssignedText
+protected function isAssignedText
   input tuple<Ident, TypeSignature> inArg;
   input list<Ident> inAssignedTexts;
+  output Boolean outB;
 algorithm
-  _:= match(inArg, inAssignedTexts)
+  outB := match(inArg, inAssignedTexts)
     local
       Ident ident;
       list<Ident> assignedTexts;
     case ( (ident , TEXT_TYPE()), assignedTexts )
-      equation
-        true = listMember(ident,assignedTexts);
-      then ();
+      guard
+        listMember(ident,assignedTexts)
+      then true;
+    else false;
   end match;
 end isAssignedText;
 
@@ -5876,7 +5880,7 @@ algorithm
       equation
         TEMPLATE_DEF(args = iargs)  =  lookupTupleList(templateDefs, templname);
         iargs = imlicitTxtArg :: iargs;
-        oargs = List.filter(iargs, isText); //just for now, it is not inferred from the usage
+        oargs = List.filterOnTrue(iargs, isText); //just for now, it is not inferred from the usage
         //not encoding templates now
         //templname = encodeIdent(templname);
         //fname = IDENT( templname );

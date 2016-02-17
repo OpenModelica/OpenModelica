@@ -5343,8 +5343,8 @@ algorithm
      */
     case (id,els,SCode.EXTERNALDECL(lang = lang))
       equation
-        (outvar :: {}) = List.filter(els, isOutputVar);
-        invars = List.filter(els, isInputVar);
+        (outvar :: {}) = List.filterOnTrue(els, isOutputVar);
+        invars = List.filterOnTrue(els, isInputVar);
         explists = List.map(invars, instExtMakeCrefs);
         exps = List.flatten(explists);
         {Absyn.CREF(retcref)} = instExtMakeCrefs(outvar);
@@ -5353,7 +5353,7 @@ algorithm
         extdecl;
     case (id,els,SCode.EXTERNALDECL(lang = lang))
       equation
-        inoutvars = List.filter(els, isInoutVar);
+        inoutvars = List.filterOnTrue(els, isInoutVar);
         explists = List.map(inoutvars, instExtMakeCrefs);
         exps = List.flatten(explists);
         extdecl = SCode.EXTERNALDECL(SOME(id),lang,NONE(),exps,NONE());
@@ -5371,29 +5371,30 @@ end instExtMakeExternaldecl;
 protected function isInoutVar
 "Succeds for Elements that are input or output components"
   input SCode.Element inElement;
+  output Boolean b;
 algorithm
-  _ := matchcontinue (inElement)
-    local SCode.Element e;
-    case e equation isOutputVar(e); then ();
-    case e equation isInputVar(e); then ();
-  end matchcontinue;
+  b := isOutputVar(inElement) or isInputVar(inElement);
 end isInoutVar;
 
 protected function isOutputVar
 "Succeds for element that is output component"
   input SCode.Element inElement;
+  output Boolean b;
 algorithm
-  _ := match (inElement)
-    case SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.OUTPUT())) then ();
+  b := match (inElement)
+    case SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.OUTPUT())) then true;
+    else false;
   end match;
 end isOutputVar;
 
 protected function isInputVar
 "Succeds for element that is input component"
   input SCode.Element inElement;
+  output Boolean b;
 algorithm
-  _ := match (inElement)
-    case SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.INPUT())) then ();
+  b := match (inElement)
+    case SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.INPUT())) then true;
+    else false;
   end match;
 end isInputVar;
 

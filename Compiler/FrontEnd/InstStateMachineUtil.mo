@@ -422,7 +422,7 @@ algorithm
   outOuterAcc := match inElem
     case DAE.SM_COMP(componentRef=componentRef, dAElist=dAElist)
       algorithm
-			  outerOutputs := List.filter(dAElist, isOuterOutput);
+			  outerOutputs := List.filterOnTrue(dAElist, isOuterOutput);
 			  outerOutputCrefs := List.map(outerOutputs, DAEUtil.varCref);
 			  outerOutputCrefToSMCompCref := List.map(outerOutputCrefs, function Util.makeTuple(inValue2=componentRef));
 		  then List.fold(outerOutputCrefToSMCompCref, BaseHashTable.addUnique, outOuterAcc);
@@ -435,13 +435,15 @@ Author: BTH
 Helper function to collectOuterOutputs.
 "
   input DAE.Element inElem;
+  output Boolean outB;
 algorithm
-  _ := match inElem
+  outB := match inElem
     local
       DAE.VarDirection direction;
       Absyn.InnerOuter innerOuter;
-    case DAE.VAR(direction=direction as DAE.OUTPUT(), innerOuter=innerOuter as Absyn.OUTER()) then ();
-    case DAE.VAR(direction=direction as DAE.OUTPUT(), innerOuter=innerOuter as Absyn.INNER_OUTER()) then ();
+    case DAE.VAR(direction=direction as DAE.OUTPUT(), innerOuter=innerOuter as Absyn.OUTER()) then true;
+    case DAE.VAR(direction=direction as DAE.OUTPUT(), innerOuter=innerOuter as Absyn.INNER_OUTER()) then true;
+    else false;
   end match;
 end isOuterOutput;
 

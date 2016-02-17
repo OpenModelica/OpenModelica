@@ -483,7 +483,7 @@ algorithm
         Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,fieldNameList,Util.SUCCESS(),info);
         (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
         namedPatterns = List.thread3Tuple(patterns, fieldNameList, List.map(fieldTypeList,Types.simplifyType));
-        namedPatterns = List.filter(namedPatterns, filterEmptyPattern);
+        namedPatterns = List.filterOnTrue(namedPatterns, filterEmptyPattern);
       then (cache,DAE.PAT_CALL_NAMED(fqPath,namedPatterns));
 
     case (cache,_,_,_,_,_,_)
@@ -1403,7 +1403,7 @@ algorithm
       list<DAE.Pattern> patterns;
     case ((DAE.PAT_CALL_NAMED(name, namedPatterns),a))
       equation
-        namedPatterns = List.filter(namedPatterns, filterEmptyPattern);
+        namedPatterns = List.filterOnTrue(namedPatterns, filterEmptyPattern);
         pat = if listEmpty(namedPatterns) then DAE.PAT_WILD() else DAE.PAT_CALL_NAMED(name, namedPatterns);
       then ((pat,a));
     case ((pat as DAE.PAT_CALL_TUPLE(patterns),a))
@@ -2347,10 +2347,11 @@ end traverseCasesTopDown;
 
 protected function filterEmptyPattern
   input tuple<DAE.Pattern,String,DAE.Type> tpl;
+  output Boolean outB;
 algorithm
-  _ := match tpl
-    case ((DAE.PAT_WILD(),_,_)) then fail();
-    else ();
+  outB := match tpl
+    case ((DAE.PAT_WILD(),_,_)) then false;
+    else true;
   end match;
 end filterEmptyPattern;
 

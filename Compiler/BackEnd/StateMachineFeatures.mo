@@ -504,7 +504,7 @@ algorithm
     crefLocalsSet := List.fold(List.map(outLocal, BackendVariable.varCref), BaseHashSet.add, HashSet.emptyHashSet());
     crefSharedSet := List.fold(List.map(outShared, BackendVariable.varCref), BaseHashSet.add, HashSet.emptyHashSet());
     // collect all inner outer outputs together with the index of the state they occur in
-    outStateInnerOuters := listAppend(outStateInnerOuters, List.map(List.filter(outLocal,filterInnerOuters), function Util.makeTuple(inValue1=i)));
+    outStateInnerOuters := listAppend(outStateInnerOuters, List.map(List.filterOnTrue(outLocal,filterInnerOuters), function Util.makeTuple(inValue1=i)));
 
     // SMS_PRE.initialState.activeState == i
     relExp := DAE.RELATION(activeStateRefExp, DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
@@ -600,8 +600,12 @@ end addInnerOuterConnection;
 protected function filterInnerOuters "
 Helper function to synthesizeAutomatonEqsModeToDataflow"
   input BackendDAE.Var inElement;
+  output Boolean outB;
 algorithm
-  BackendDAE.VAR(innerOuter=DAE.INNER_OUTER()) := inElement;
+  outB := match inElement
+    case BackendDAE.VAR(innerOuter=DAE.INNER_OUTER()) then true;
+    else false;
+  end match;
 end filterInnerOuters;
 
 protected function handleResets "

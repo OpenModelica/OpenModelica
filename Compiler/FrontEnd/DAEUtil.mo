@@ -1422,13 +1422,15 @@ algorithm
 end isAfterIndexInlineFunc;
 
 public function isParameter "author: LS
-  Succeeds if element is parameter.
+  True if element is parameter.
 "
   input DAE.Element inElement;
+  output Boolean outB;
 algorithm
-  _:=
+  outB :=
   match (inElement)
-    case DAE.VAR(kind = DAE.PARAM()) then ();
+    case DAE.VAR(kind = DAE.PARAM()) then true;
+    else false;
   end match;
 end isParameter;
 

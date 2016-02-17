@@ -5500,7 +5500,7 @@ algorithm
       list<ElementItem> elts1,elts2;
     case (PUBLIC(elts1),elts2)
       equation
-        elts1 = List.filter(elts1,filterAnnotationItem);
+        elts1 = List.filterOnTrue(elts1,filterAnnotationItem);
       then listAppend(elts1,elts2);
     else elts;
   end match;
@@ -5508,8 +5508,12 @@ end getFunctionInterfaceParts;
 
 protected function filterAnnotationItem
   input ElementItem elt;
+  output Boolean outB;
 algorithm
-  ELEMENTITEM() := elt;
+  outB := match elt
+    case ELEMENTITEM() then true;
+    else false;
+  end match;
 end filterAnnotationItem;
 
 public function getExternalDecl
