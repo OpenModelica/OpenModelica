@@ -1031,7 +1031,7 @@ public function nonImplicitRefFromScope
   input Scope inScope;
   output Ref outRef;
 algorithm
-  outRef := matchcontinue(inScope)
+  outRef := match(inScope)
     local
       Ref r;
       Scope rest;
@@ -1045,7 +1045,7 @@ algorithm
     case (_::rest)
       then
         nonImplicitRefFromScope(rest);
-  end matchcontinue;
+  end match;
 end nonImplicitRefFromScope;
 
 public function namesUpToParentName

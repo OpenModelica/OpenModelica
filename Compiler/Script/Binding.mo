@@ -82,23 +82,19 @@ algorithm
 end inferBindings;
 
 protected function inferBindingClientList
-input list<Client_e> client_list "list of nodes for which the binding is inferred";
-input Absyn.Class vmodel;
-input Absyn.Program env;
-output Absyn.Class out_vmodel;
-//output String bindingExpression;
- algorithm
-  out_vmodel := matchcontinue(client_list)
-   local
-     Client_e ce;
-     list<Client_e> rest;
-     Absyn.Class upd_vmodel;
-    case {} then vmodel;
-    case ce::rest
-      equation
-         upd_vmodel = inferBindingClient(ce, vmodel, env);
-        then inferBindingClientList(rest, upd_vmodel, env);
-   end matchcontinue;
+  input list<Client_e> client_list "list of nodes for which the binding is inferred";
+  input Absyn.Class vmodel;
+  input Absyn.Program env;
+  output Absyn.Class out_vmodel = vmodel;
+  //output String bindingExpression;
+protected
+ Client_e ce;
+ list<Client_e> rest = client_list;
+algorithm
+  while not listEmpty(rest) loop
+    ce::rest := rest;
+    out_vmodel := inferBindingClient(ce, out_vmodel, env);
+  end while;
 end inferBindingClientList;
 
 protected function inferBindingClient
@@ -305,7 +301,7 @@ protected function applyModifier
   input String instance_name;
   output list<Absyn.ComponentItem> out_comps;
   algorithm
-  out_comps := matchcontinue(comps)
+  out_comps := match(comps)
    local
      list<Absyn.ComponentItem> rest;
     Absyn.ComponentItem cnew;
@@ -323,7 +319,7 @@ protected function applyModifier
         then cnew::applyModifier(rest, exp, instance_name);
     case _::rest
         then applyModifier(rest, exp, instance_name);
-   end matchcontinue;
+   end match;
 end applyModifier;
 
 
@@ -441,7 +437,7 @@ protected function applyTemplate
   input list<Absyn.Exp>  in_es;
   output list<Absyn.Exp>  out_es;
   algorithm
-  out_es := matchcontinue(comps)
+  out_es := match(comps)
    local
      list<Absyn.ComponentItem> rest;
      Absyn.Ident name;
@@ -451,7 +447,7 @@ protected function applyTemplate
         then applyTemplate(exp, rest, parseExpression(exp, name)::in_es);
     case _::rest
         then applyTemplate(exp, rest, in_es);
-   end matchcontinue;
+   end match;
 end applyTemplate;
 
 protected function parseExpression
@@ -510,10 +506,10 @@ algorithm
       equation
         new_crf = updateCRF(crf, fargs);
       then (Absyn.CREF(new_crf));
-     case(_)
-       equation
-         // print(Dump.dumpExpStr(in_eq) + "\n");
-       then (in_eq);
+    else
+      equation
+        // print(Dump.dumpExpStr(in_eq) + "\n");
+      then (in_eq);
   end match;
 end parseExpression;
 
@@ -535,7 +531,7 @@ protected function updateCRF
       new_cRef = updateCRF(cRef, name);
        then Absyn.CREF_QUAL(id, subscripts, new_cRef);
   case (Absyn.CREF_IDENT("getPath", subscripts)) then Absyn.CREF_IDENT(name, subscripts);
-  case _ then    componentRef;
+  else    componentRef;
   end matchcontinue;
 end updateCRF;
 
@@ -682,20 +678,18 @@ output Boolean isClient;
 output String iname;
 algorithm
 
-  (isClient, iname) := matchcontinue(clients)
+  (isClient, iname) := match(clients)
    local
       list<Absyn.Class> parents;
      Absyn.Class current_ci;
      String name, inst;
      list<Client> rest;
     case {} then (false, "");
-    case CLIENT(name, inst)::rest
-      equation
-        true = (name == ci_name);
+    case CLIENT(name, inst)::rest guard (name == ci_name)
         then (true, inst);
     case _::rest
         then isClientInMediator(ci_name, rest);
-   end matchcontinue;
+   end match;
 end isClientInMediator;
 
 
@@ -705,19 +699,18 @@ input Ident name;
 input list<Client> clients;
 output Boolean isM;
   algorithm
- isM := matchcontinue(clients)
-   local
-     String className;
-   String instance;
-   list<Client> rest;
+ isM := match(clients)
+    local
+      String className;
+      String instance;
+      list<Client> rest;
     case {} then false;
     case CLIENT(className, instance)::rest
-      equation
-       className = name;
+      guard stringEq(className, name)
         then true;
     case _::rest
         then specifiesBindingFor(name, rest);
-   end matchcontinue;
+   end match;
 end specifiesBindingFor;
 
 
@@ -834,19 +827,18 @@ input  list<Absyn.NamedArg> argNames;
 input  String name;
 output  String val;
   algorithm
-  val := matchcontinue(argNames)
+  val := match(argNames)
    local
     String str, nname;
      list<Absyn.NamedArg> rest;
     case {}
         then "";
     case Absyn.NAMEDARG(nname, Absyn.STRING(str))::rest
-        equation
-           true = (nname == name);
+        guard (nname == name)
         then str;
     case _::rest
         then getArg(rest, name);
-   end matchcontinue;
+   end match;
 end getArg;
 
 
@@ -855,7 +847,7 @@ input list<SCode.Element> elems;
 output Boolean result;
 output Option<SCode.Mod> mods;
   algorithm
-  (result, mods) := matchcontinue(elems)
+  (result, mods) := match(elems)
    local
      list<SCode.Element> rest;
      SCode.Element el;
@@ -867,7 +859,7 @@ output Option<SCode.Mod> mods;
         then (true, SOME(mod));
     case el::rest
         then isMediator(rest);
-   end matchcontinue;
+   end match;
 end isMediator;
 
 protected function getValue
