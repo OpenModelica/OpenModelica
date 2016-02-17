@@ -2694,7 +2694,8 @@ protected function buildModelFMU " author: Frenkel TUD
   output GlobalScript.SymbolTable st;
 protected
   Boolean staticSourceCodeFMU;
-  String filenameprefix, quote, fmutmp, thisplatform, cmd, logfile;
+  String filenameprefix, quote, dquote, fmutmp, thisplatform, cmd, logfile,
+         makefileStr, CC, CFLAGS, LDFLAGS, LIBS, dir;
   GlobalScript.SimulationOptions defaulSimOpt;
   SimCode.SimulationSettings simSettings;
   list<String> libs;
@@ -2723,6 +2724,7 @@ algorithm
   isWindows := System.os() == "Windows_NT";
   // compile
   quote := if isWindows then "" else "'";
+  dquote := if isWindows then "\"" else "'";
   CevalScript.compileModel(filenameprefix+"_FMU" , libs);
   if Config.simCodeTarget() == "Cpp" then
     // Cpp FMUs are not source-code FMUs
@@ -2730,16 +2732,48 @@ algorithm
   end if;
 
   fmutmp := filenameprefix + ".fmutmp";
-  logfile := filenameprefix+".log";
+  logfile := filenameprefix + ".log";
 
-  thisplatform := " CC="+quote+System.getCCompiler()+quote+
-      " CFLAGS="+quote+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","")+quote+
-      " LDFLAGS="+quote+("-L'"+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc' "+
-                         "-Wl,-rpath,'"+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc' "+
+  CC := quote+System.getCCompiler()+quote;
+  CFLAGS := quote+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","")+quote;
+  LDFLAGS := quote+("-L"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc"+dquote+" "+
+                         "-Wl,-rpath,"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc"+dquote+" "+
                          System.getLDFlags()+" ");
 
+  if isWindows then
+    dir := fmutmp + "/sources/";
+    makefileStr := System.readFile(dir + "Makefile.in");
+    // replace @XX@ variables in the Makefile
+    makefileStr := System.stringReplace(makefileStr, "@CC@", CC);
+    makefileStr := System.stringReplace(makefileStr, "@CFLAGS@", CFLAGS);
+    makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS+System.getRTLibsSim()+quote);
+    makefileStr := System.stringReplace(makefileStr, "@LIBS@", "");
+    makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", ".dll");
+    makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
+    makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
+    makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", "win32");
+    makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "");
+    makefileStr := System.stringReplace(makefileStr, "\r\n", "\n");
+    System.writeFile(dir + "Makefile", makefileStr);
+    if System.regularFileExists(dir + logfile) then
+      System.removeFile(dir + logfile);
+    end if;
+    try
+      CevalScript.compileModel(filenameprefix, libs, workingDir=dir, makeVars={});
+    else
+      outValue := Values.STRING("");
+      return;
+    end try;
+    System.removeDirectory(fmutmp);
+    return;
+  end if;
+
+  thisplatform := " CC="+CC+
+                  " CFLAGS="+CFLAGS+
+                  " LDFLAGS="+LDFLAGS;
+
   for platform in platforms loop
-    cmd := "cd \"" +  fmutmp+"/sources\" && ./configure "+
+    cmd := "cd \"" +  fmutmp + "/sources\" && ./configure "+
       (if platform == "dynamic" then
         " --with-dynamic-om-runtime"+thisplatform+System.getRTLibsSim()+quote
       elseif platform == "static" then
@@ -2758,7 +2792,7 @@ algorithm
       Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
       return;
     end if;
-    CevalScript.compileModel(filenameprefix , libs, workingDir=fmutmp+"/sources", makeVars={});
+    CevalScript.compileModel(filenameprefix, libs, workingDir=fmutmp+"/sources", makeVars={});
   end for;
 
   System.removeDirectory(fmutmp);
