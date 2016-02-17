@@ -21,6 +21,7 @@ CombiTable1DBug.mos \
 ComplexAlgebraicLoop.mos \
 ComplexFun.mos \
 DiscreteVectorStateSpace.mos \
+Elevator.mos \
 EquationCallIntegerArray.mos \
 ExtendsBasic.mos  \
 FrameTest.mos \
