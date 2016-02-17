@@ -8877,19 +8877,20 @@ algorithm
 //        then list(newEQFun(i, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst) for i in 2:N-1);
         then creatFieldEqs(lhs_exp, rhs_exp, domainCr, N, comment, info, fieldLst);
 
-      //left boundary extrapolation
-      case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
-                  domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left")),
-                  comment = comment, info = info))
-        equation
-//          Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})) = rhs_exp;
-//          Absyn.CREF(fieldCr as Absyn.CREF_IDENT()) = lhs_exp;
+        //left boundary extrapolation
+/*        case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+                      domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left")),
+                      comment = comment, info = info))
+            equation
+//              Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})) = rhs_exp;
+//              Absyn.CREF(fieldCr as Absyn.CREF_IDENT()) = lhs_exp;
           fieldCr = matchExtrapAndField(lhs_exp, rhs_exp);
           domainCr1 = Absyn.CREF_IDENT(name, subscripts);
           (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
         then
           {extrapolateFieldEq(false, fieldCr, domainCr1, N, comment, info, fieldLst)};
-
+*/
+/*
       //right boundary extrapolation
       case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
                   domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right")),
@@ -8897,47 +8898,103 @@ algorithm
         equation
 //          Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})) = rhs_exp;
 //          Absyn.CREF(fieldCr as Absyn.CREF_IDENT()) = lhs_exp;
+
           fieldCr = matchExtrapAndField(lhs_exp, rhs_exp);
           domainCr1 = Absyn.CREF_IDENT(name, subscripts);
           (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
         then
-          {extrapolateFieldEq(true, fieldCr, domainCr1, N, comment, info, fieldLst)};
-      //left boundary condition
+          {extrapolateFieldEq(true, fieldCr, domainCr1, N, comment, info, fieldLst)};*/
+      //left boundary condition or extrapolation
       case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
                   domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left")),
                   comment = comment, info = info))
         equation
           domainCr1 = Absyn.CREF_IDENT(name, subscripts);
           (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+          (lhs_exp, _) = Absyn.traverseExp(lhs_exp, extrapFieldTraverseFun, 1);
+          (rhs_exp, _) = Absyn.traverseExp(rhs_exp, extrapFieldTraverseFun, 1);
         then
           {newEQFun(1, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst)};
-      //right boundary condition
+      //right boundary condition or extrapolation
       case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
                   domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right")),
                   comment = comment, info = info))
         equation
           domainCr1 = Absyn.CREF_IDENT(name, subscripts);
           (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+          (lhs_exp, _) = Absyn.traverseExp(lhs_exp, extrapFieldTraverseFun, N);
+          (rhs_exp, _) = Absyn.traverseExp(rhs_exp, extrapFieldTraverseFun, N);
         then
           {newEQFun(N, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst)};
-
     end matchcontinue;
 
   outDiscretizedEQs := listAppend(inDiscretizedEQs, newDiscretizedEQs);
 end discretizePDE;
 
+protected function extrapFieldTraverseFun
+  input Absyn.Exp inExp;
+  input Integer inN "If N = 1 then left extrapolation, right extrapolation otherwise";
+  output Absyn.Exp outExp;
+  output Integer outN = inN;
+algorithm
+  outExp := match inExp
+    local
+      Absyn.Ident name;
+      list<Absyn.Subscript> subscripts;
+      Integer i;
+    case Absyn.CALL(
+                          function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}),
+                          functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(Absyn.CREF_IDENT(name,subscripts))})
+                    )
+    equation
+      if inN == 1 then
+        i = 1;
+      else
+        i = -1;
+      end if;
+    then
+      Absyn.BINARY(
+               Absyn.BINARY(
+                 Absyn.INTEGER(2),
+                 Absyn.MUL(),
+                 Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(inN+i))::subscripts))
+               ),
+               Absyn.SUB(),
+               Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(inN+2*i))::subscripts))
+             );
+    else
+      inExp;
+  end match;
+
+
+end extrapFieldTraverseFun;
+
+
+
+
+
+
+
+//TODO: remove never called:
 protected function matchExtrapAndField
   input Absyn.Exp lhs_exp;
   input Absyn.Exp rhs_exp;
   output Absyn.ComponentRef fieldCr;
+  protected String s;
 algorithm
+  s := "Ahoj";
   fieldCr := match (lhs_exp, rhs_exp)
     local
-      Absyn.ComponentRef fcr;
-    case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})), Absyn.CREF(fcr as Absyn.CREF_IDENT()))
+      Absyn.ComponentRef fcr, fcr_arg;
+    case (Absyn.CALL(
+                          function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}),
+                          functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(fcr_arg as Absyn.CREF_IDENT())})
+                    ),
+         Absyn.CREF(fcr as Absyn.CREF_IDENT())
+         )
     then
       fcr;
-    case (Absyn.CREF(fcr as Absyn.CREF_IDENT()),Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})))
+    case (Absyn.CREF(fcr as Absyn.CREF_IDENT()),Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(fcr_arg as Absyn.CREF_IDENT())})))
     then
       fcr;
   end match;
