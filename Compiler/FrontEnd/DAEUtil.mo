@@ -5418,20 +5418,16 @@ end avlTreeToList2;
 public function avlTreeAddLst "Adds a list of (key,value) pairs"
   input list<tuple<DAE.AvlKey,DAE.AvlValue>> inValues;
   input DAE.AvlTree inTree;
-  output DAE.AvlTree outTree;
+  output DAE.AvlTree outTree = inTree;
+protected
+  DAE.AvlKey key;
+  list<tuple<DAE.AvlKey,DAE.AvlValue>> values = inValues;
+  DAE.AvlValue val;
 algorithm
-  outTree := match(inValues,inTree)
-    local
-      DAE.AvlKey key;
-      list<tuple<DAE.AvlKey,DAE.AvlValue>> values;
-      DAE.AvlValue val;
-      DAE.AvlTree tree;
-    case({},tree) then tree;
-    case((key,val)::values,tree) equation
-      tree = avlTreeAdd(tree,key,val);
-      tree = avlTreeAddLst(values,tree);
-    then tree;
-  end match;
+  while not listEmpty(values) loop
+    (key,val)::values := values;
+    outTree := avlTreeAdd(outTree,key,val);
+  end while;
 end avlTreeAddLst;
 
 public function avlTreeAdd "
@@ -5526,54 +5522,50 @@ end balance;
 protected function doBalance "perform balance if difference is > 1 or < -1"
   input Integer difference;
   input DAE.AvlTree inBt;
-  output DAE.AvlTree outBt;
+  output DAE.AvlTree outBt = inBt;
 algorithm
-  outBt := matchcontinue(difference,inBt)
-    local DAE.AvlTree bt;
-    case(-1,bt) then computeHeight(bt);
-    case(0,bt) then computeHeight(bt);
-    case(1,bt) then computeHeight(bt);
-      /* d < -1 or d > 1 */
-    case(_,bt) equation
-      bt = doBalance2(difference,bt);
-    then bt;
-    else inBt;
-  end matchcontinue;
+  if difference < -1 or difference > 1 then
+    try
+      outBt :=  doBalance2(difference, inBt);
+    else
+      outBt  := inBt;
+    end try;
+  else
+    outBt := computeHeight(inBt);
+  end if;
 end doBalance;
 
 protected function doBalance2 "help function to doBalance"
   input Integer difference;
   input DAE.AvlTree inBt;
   output DAE.AvlTree outBt;
+protected
+  DAE.AvlTree bt = inBt;
 algorithm
-  outBt := matchcontinue(difference,inBt)
-    local DAE.AvlTree bt;
-    case(_,bt) equation
-      true = difference < 0;
-      bt = doBalance3(bt);
-      bt = rotateLeft(bt);
-     then bt;
-    case(_,bt) equation
-      true = difference > 0;
-      bt = doBalance4(bt);
-      bt = rotateRight(bt);
-     then bt;
-  end matchcontinue;
+  if difference < 0 then
+    bt := doBalance3(bt);
+    bt := rotateLeft(bt);
+  end if;
+  if difference > 0 then
+    bt := doBalance4(bt);
+    bt := rotateRight(bt);
+  end if;
+  outBt := bt;
 end doBalance2;
 
 protected function doBalance3 "help function to doBalance2"
   input DAE.AvlTree inBt;
   output DAE.AvlTree outBt;
 algorithm
-  outBt := matchcontinue(inBt)
+  outBt := match(inBt)
   local DAE.AvlTree rr,bt;
-    case(bt) equation
-      true = differenceInHeight(getOption(rightNode(bt))) > 0;
+    case(bt) guard differenceInHeight(getOption(rightNode(bt))) > 0
+    equation
       rr = rotateRight(getOption(rightNode(bt)));
       bt = setRight(bt,SOME(rr));
     then bt;
     else inBt;
-  end matchcontinue;
+  end match;
 end doBalance3;
 
 protected function doBalance4 "help function to doBalance2"
@@ -5582,8 +5574,8 @@ protected function doBalance4 "help function to doBalance2"
 algorithm
   outBt := match(inBt)
   local DAE.AvlTree rl,bt;
-  case(bt) equation
-      true = differenceInHeight(getOption(leftNode(bt))) < 0;
+  case(bt) guard differenceInHeight(getOption(leftNode(bt))) < 0
+    equation
       rl = rotateLeft(getOption(leftNode(bt)));
       bt = setLeft(bt,SOME(rl));
     then bt;

@@ -986,31 +986,28 @@ public function translateEitemlist
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input SCode.Visibility inVisibility;
   output list<SCode.Element> outElementLst;
+protected
+  list<SCode.Element> l = {};
+  list<Absyn.ElementItem> es = inAbsynElementItemLst;
+  Absyn.ElementItem ei;
+  SCode.Visibility vis;
+  Absyn.Element e;
 algorithm
-  outElementLst := match (inAbsynElementItemLst,inVisibility)
-    local
-      list<SCode.Element> l,e_1,es_1;
-      list<Absyn.ElementItem> es;
-      SCode.Visibility vis;
-      Absyn.Element e;
-
-    case ({},_) then {};
-    case ((Absyn.ELEMENTITEM(element = e) :: es),vis)
-      equation
-        // fprintln(Flags.TRANSLATE, "translating element: " + Dump.unparseElementStr(1, e));
-        e_1 = translateElement(e, vis);
-        es_1 = translateEitemlist(es, vis);
-        l = listAppend(e_1, es_1);
-      then l;
-
-    case ((Absyn.LEXER_COMMENT() :: es),vis)
-      then translateEitemlist(es, vis);
-
-    case ((_ :: es),vis)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"SCodeUtil.translateEitemlist failed"});
-      then translateEitemlist(es, vis);
-  end match;
+  while not listEmpty(es) loop
+    ei::es := es;
+    _ := match (ei)
+      local
+        list<SCode.Element> e_1;
+      case (Absyn.ELEMENTITEM(element = e))
+        equation
+          // fprintln(Flags.TRANSLATE, "translating element: " + Dump.unparseElementStr(1, e));
+          e_1 = translateElement(e, inVisibility);
+          l = listAppend(l, e_1);
+        then ();
+      else ();
+    end match;
+  end while;
+  outElementLst := l;
 end translateEitemlist;
 
 // stefan

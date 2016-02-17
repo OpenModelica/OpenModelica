@@ -2162,16 +2162,13 @@ end balance;
 protected function doBalance
   "Performs balance if difference is > 1 or < -1"
   input Integer difference;
-  input AvlTree bt;
+  input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := match(difference, bt)
-    case(-1, _) then computeHeight(bt);
-    case( 0, _) then computeHeight(bt);
-    case( 1, _) then computeHeight(bt);
-    // d < -1 or d > 1
-    else doBalance2(difference < 0, bt);
-  end match;
+  outBt := if difference < -1 or difference > 1 then
+    doBalance2(difference < 0, inBt)
+  else
+    computeHeight(inBt);
 end doBalance;
 
 protected function doBalance2
