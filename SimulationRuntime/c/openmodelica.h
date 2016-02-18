@@ -154,14 +154,12 @@ struct type_desc_s {
 #define semiLinear(x,positiveSlope,negativeSlope) (x>=0?positiveSlope*x:negativeSlope*x)
 
 /* sign function */
-#define sign(v) (v>0?1:(v<0?-1:0))
+static inline int sign(double v)
+{
+  return v > 0 ? 1 : v < 0 ? -1 : 0;
+}
 
-#if defined(_MSC_VER)
-#define fmax(x, y) ((x>y)?x:y)
-#define fmin(x, y) ((x<y)?x:y)
-#define snprintf sprintf_s
-#define trunc(a) ((double)((int)(a)))
-#endif
+#include "util/omc_msvc.h"
 
 /* initial and terminal function calls */
 #define initial() data->simulationInfo->initial

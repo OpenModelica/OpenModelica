@@ -30,6 +30,11 @@
 
 /* Stack overflow handling */
 
+#if defined(linux) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE 1
+/* for pthread_getattr_np */
+#endif
+
 #include "meta_modelica.h"
 
 void* mmc_getStacktraceMessages_threadData(threadData_t *threadData)
@@ -49,11 +54,6 @@ int mmc_hasStacktraceMessages(threadData_t *threadData)
 {
   return threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] != 0;
 }
-
-#if defined(linux) && !defined(_GNU_SOURCE)
-#define _GNU_SOURCE 1
-/* for pthread_getattr_np */
-#endif
 
 pthread_key_t mmc_stack_overflow_jumper;
 

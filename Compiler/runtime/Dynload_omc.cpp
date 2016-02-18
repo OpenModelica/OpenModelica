@@ -37,7 +37,6 @@ extern "C" {
 #endif
 
 #include "openmodelica.h"
-#include "modelica.h"
 #include "meta_modelica.h"
 #define ADD_METARECORD_DEFINITIONS static
 #include "OpenModelicaBootstrappingHeader.h"

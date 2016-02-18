@@ -41,41 +41,7 @@
 extern "C" {
 #endif
 
-/* adrpo: extreme windows crap! */
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#define DLLImport   __declspec( dllimport )
-#define DLLExport   __declspec( dllexport )
-#else
-#define DLLImport /* extern */
-#define DLLExport /* nothing */
-#endif
-
-#if defined(IMPORT_INTO)
-#define DLLDirection DLLImport
-#else /* we export from the dll */
-#define DLLDirection DLLExport
-#endif
-
-#if defined(__MINGW32__) || defined(_MSC_VER)
- #define WIN32_LEAN_AND_MEAN
-#if !defined(NOMINMAX)
- #define NOMINMAX
- #include <windows.h>
-#endif
-#endif
-
-#include <stdlib.h>
-#include <limits.h>
-
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#define EXIT(code) exit(code)
-#else
-/* We need to patch exit() on Unix systems
- * It does not change the exit code of simulations for some reason! */
-#include <unistd.h>
-#define EXIT(code) {fflush(NULL); _exit(code);}
-#endif
-
+#include "util/omc_msvc.h"
 #include "omc_inline.h"
 
 #include "util/modelica_string.h"
@@ -98,22 +64,6 @@ extern "C" {
 #include "meta/meta_modelica.h"
 #include "meta/meta_modelica_builtin.h"
 #include "util/varinfo.h"
-
-
-/* math functions (-lm)*/
-
-/* Special Modelica builtin functions*/
-#define smooth(P,EXP)    (EXP)
-#define semiLinear(x,positiveSlope,negativeSlope) (x>=0?positiveSlope*x:negativeSlope*x)
-
-/* sign function */
-#define sign(v) (v>0?1:(v<0?-1:0))
-
-#if defined(_MSC_VER)
-#define fmax(x, y) ((x>y)?x:y)
-#define fmin(x, y) ((x<y)?x:y)
-#define snprintf sprintf_s
-#endif
 
 #if defined(__cplusplus)
 }

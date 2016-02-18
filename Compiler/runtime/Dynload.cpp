@@ -34,7 +34,11 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include "openmodelica.h"
-#include "modelica.h"
+#include "util/read_write.h"
+#include "util/real_array.h"
+#include "util/string_array.h"
+#include "util/boolean_array.h"
+#include "util/integer_array.h"
 #include "systemimpl.h"
 #include "errorext.h"
 #include "meta_modelica_builtin.h"

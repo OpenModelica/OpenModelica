@@ -2,10 +2,9 @@
  provides a simple function to do a full pivot search while doing an LU factorization
 */
 
-#include "util/modelica.h"
-
 #include <math.h>
 #include <assert.h>
+#include "openmodelica.h"
 
 /* Matrixes using column major order (as in Fortran) */
 #ifndef set_matrix_elt
