@@ -1076,8 +1076,11 @@ algorithm
         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,cr::iOutput,iBody,iRepl);
       then
         (oInputs,oOutput,oBody,repl);
-    case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),ty=tp,binding=binding)::rest,_,_,_,_)
+    case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),binding=binding)::rest,_,_,_,_)
       equation
+        // use type of cref, since var type is different
+        // and has no hint on array or record type
+        tp = ComponentReference.crefTypeFull(cr);
         false = Expression.isArrayType(tp);
         false = Expression.isRecordType(tp);
         repl = addOptBindingReplacements(cr,binding,iRepl);
