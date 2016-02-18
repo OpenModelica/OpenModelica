@@ -568,7 +568,6 @@ algorithm
       //print("\nExp-Cref\nDifferentiate exp: " + se1);
 
       (res, functionTree) = differentiateCrefs(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1, expStack);
-      (res,_) = ExpressionSimplify.simplify1(res);
 
       //se1 = ExpressionDump.printExpStr(res);
       //print("\nresults to exp: " + se1);
@@ -602,7 +601,7 @@ algorithm
       //print("\nExp-BINARY\nDifferentiate exp: " + se1);
 
       (res, functionTree) = differentiateBinary(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1, expStack);
-      (res,_) = ExpressionSimplify.simplify1(res);
+      (res) = ExpressionSimplify.simplifyBinaryExp(res);
 
       //se1 = ExpressionDump.printExpStr(res);
       //print("\nresults to exp: " + se1);
@@ -616,7 +615,7 @@ algorithm
       (res, functionTree) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1, expStack);
 
       res = DAE.UNARY(op,res);
-      (res, _) = ExpressionSimplify.simplify1(res);
+      (res) = ExpressionSimplify.simplifyUnaryExp(res);
 
       //se1 = ExpressionDump.printExpStr(res);
       //print("\nresults to exp: " + se1);

@@ -98,6 +98,36 @@ algorithm
   end match;
 end condsimplify;
 
+public function simplifyBinaryExp
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inExp)
+  local
+    DAE.Exp e1, e2;
+    DAE.Operator op;
+    case DAE.BINARY(exp1 = e1,operator = op, exp2 = e2)
+    then simplifyBinary(inExp, op, e1, e2);
+
+    else inExp;
+  end match;
+end simplifyBinaryExp;
+
+public function simplifyUnaryExp
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inExp)
+  local
+    DAE.Exp e1;
+    DAE.Operator op;
+    case DAE.UNARY(exp = e1,operator = op)
+    then simplifyUnary(inExp, op, e1);
+
+    else inExp;
+  end match;
+end simplifyUnaryExp;
+
 protected function simplifyWithOptions "Simplifies expressions"
   input DAE.Exp inExp;
   input ExpressionSimplifyTypes.Options options;
