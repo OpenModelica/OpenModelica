@@ -3544,7 +3544,8 @@ algorithm
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> creating SimCode equations for Matrix " + name + " time: " + realString(clock()) + "\n");
         end if;
-        (columnEquations, _, uniqueEqIndex, tempvars) = createEquations(false, false, false, false, syst, shared, comps, iuniqueEqIndex, itempvars);
+        // generate also discrete equations, they might be introduced by wrapFunctionCalls
+        (columnEquations, _, uniqueEqIndex, tempvars) = createEquations(false, false, true, false, syst, shared, comps, iuniqueEqIndex, itempvars);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> created all SimCode equations for Matrix " + name +  " time: " + realString(clock()) + "\n");
         end if;
@@ -3786,7 +3787,8 @@ algorithm
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> creating SimCode equations for Matrix " + name + " time: " + realString(clock()) + "\n");
         end if;
-        (columnEquations, _, uniqueEqIndex, _) = createEquations(false, false, false, false, syst, shared, comps, iuniqueEqIndex, {});
+        // generate also discrete equations, they might be introduced by wrapFunctionCalls
+        (columnEquations, _, uniqueEqIndex, _) = createEquations(false, false, true, false, syst, shared, comps, iuniqueEqIndex, {});
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> created all SimCode equations for Matrix " + name +  " time: " + realString(clock()) + "\n");
         end if;
