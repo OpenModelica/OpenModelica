@@ -1,0 +1,112 @@
+// name: cseFunctionCall7
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  package types
+    record R
+      Real r1;
+      Integer r2;
+    end R;
+  end types;
+  
+  package functions
+    function f6
+      input Real x1;
+      input Real x2;
+      output types.R y;
+    algorithm
+      y.r1 := x1*x2;
+      y.r2 := 42+23;
+    end f6;
+    
+    function f5
+      input Real x1;
+      input Real x2;
+      input types.R r;
+      output Real y1;
+      output Real y2[2];
+    protected
+      Integer z;
+    algorithm
+      y1 := if x1>x2 then sin(x1) else cos(x2);
+      z := integer(ceil(y1));
+      for i in 1:z loop
+        y1 := y1+x1*x2+r.r1*r.r2;
+      end for;
+      y2 := {r.r1,r.r2};
+    end f5;
+  end functions;
+  
+ model FunctionCallTest7
+    import CSE.functions.*;
+    import CSE.types.*;
+    Real x;
+    Real y,z;
+    Real a[2],b[2];
+    R r;
+  equation
+    x = sin(time*cos(time))*r.r1;
+    (y,a) = f5(time, x, f6(time, x));
+    (z,b) = f5(time, x, f6(time, x));
+    r = f6(time,time);
+  end FunctionCallTest7;
+
+end CSE;
+"); getErrorString();
+
+//setCommandLineOptions("--preOptModules=unitChecking,evaluateReplaceProtectedFinalEvaluateParameters,stateMachineElab,simplifyIfEquations,expandDerOperator,clockPartitioning,CSE_EachCall,findStateOrder,introduceDerAlias,inputDerivativesForDynOpt,replaceEdgeChange,inlineArrayEqn,removeSimpleEquations,comSubExp,sortEqnsVars"); getErrorString();
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.FunctionCallTest7); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// ########### Updated Variable List ########### (16)
+// ========================================
+// 1: r.r1:VARIABLE() .CSE.FunctionCallTest7, .CSE.types.R, .Real type: Real
+// 2: b[2]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real [2]
+// 3: b[1]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real [2]
+// 4: a[2]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real [2]
+// 5: a[1]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real [2]
+// 6: z:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real
+// 7: y:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real
+// 8: x:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real
+// 9: $cse6:VARIABLE()  type: Real unreplaceable
+// 10: $cse5[2]:VARIABLE()  type: Real [2] unreplaceable
+// 11: $cse5[1]:VARIABLE()  type: Real [2] unreplaceable
+// 12: $cse4:VARIABLE()  type: Real unreplaceable
+// 13: $cse3.r2:DISCRETE()  type: Integer unreplaceable
+// 14: $cse3.r1:VARIABLE()  type: Real unreplaceable
+// 15: $cse2:VARIABLE()  type: Real unreplaceable
+// 16: $cse1:VARIABLE()  type: Real unreplaceable
+//
+//
+// ########### Updated Equation List ########### (11, 16)
+// ========================================
+// 1/1 (1): x = $cse2 * r.r1   [dynamic]
+// 2/2 (2): a = $cse5   [dynamic]
+// 3/4 (2): b = $cse5   [dynamic]
+// 4/6 (1): r.r1 = $cse6   [dynamic]
+// 5/7 (1): $cse6 = CSE.functions.f6_eval4(time, time)   [binding]
+// 6/8 (1): z = $cse4   [dynamic]
+// 7/9 (1): y = $cse4   [dynamic]
+// 8/10 (3): ($cse4, $cse5) = CSE.functions.f5(time, x, $cse3)   [binding]
+// 9/13 (2): $cse3 = CSE.functions.f6(time, x)   [binding]
+// 10/15 (1): $cse2 = sin(time * $cse1)   [binding]
+// 11/16 (1): $cse1 = cos(time)   [binding]
+//
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest7_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult

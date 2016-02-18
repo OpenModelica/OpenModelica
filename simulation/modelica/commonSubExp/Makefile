@@ -5,6 +5,24 @@ cse1.mos \
 cse2.mos \
 cse3.mos \
 cseFunctionCall.mos \
+cseFunctionCall1.mos \
+cseFunctionCall2.mos \
+cseFunctionCall3.mos \
+cseFunctionCall4.mos \
+cseFunctionCall4b.mos \
+cseFunctionCall4c.mos \
+cseFunctionCall4d.mos \
+cseFunctionCall5.mos \
+cseFunctionCall6.mos \
+cseFunctionCall7.mos \
+cseFunctionCall8.mos \
+cseTestCall1.mos \
+cseTestCall2.mos \
+cseTestCall3.mos \
+cseTestCall4.mos \
+cseTestCall5.mos \
+cseTestCall6.mos \
+cseTestCall7.mos \
 comSubExp1.mos \
 ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1.mos
 

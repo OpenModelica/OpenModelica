@@ -1,0 +1,56 @@
+// name: cseTestCall2
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  model TestCall2
+    record foo
+       Real x;
+       Real y;
+    end foo;
+    foo f;
+    function func
+      input Real r;
+      output Real s;
+      output Real t;
+    algorithm 
+      s := r;
+      t := r+1;
+    end func;
+  equation 
+   (f.x,f.y) = func(time);
+  end TestCall2;
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.TestCall2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// ########### Updated Variable List ########### (2)
+// ========================================
+// 1: f.y:VARIABLE() .CSE.TestCall2, .CSE.TestCall2.foo, .Real type: Real
+// 2: f.x:VARIABLE() .CSE.TestCall2, .CSE.TestCall2.foo, .Real type: Real
+//
+//
+// ########### Updated Equation List ########### (2, 2)
+// ========================================
+// 1/1 (1): f.y = 1.0 + time   [dynamic]
+// 2/2 (1): f.x = time   [dynamic]
+//
+// record SimulationResult
+//     resultFile = "CSE.TestCall2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.TestCall2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult

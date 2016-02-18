@@ -1,0 +1,56 @@
+// name: cseTestCall5
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  model TestCall5
+    record rec
+      Real x;
+    end rec;
+    
+    rec a;
+    
+    function f
+      input Real s;
+      output rec t;
+    algorithm
+      t.x := s;
+    end f;       
+    
+  equation 
+    a = f(time);
+  end TestCall5;
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.TestCall5); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// ########### Updated Variable List ########### (2)
+// ========================================
+// 1: a.x:VARIABLE() .CSE.TestCall5, .CSE.TestCall5.rec, .Real type: Real
+// 2: $cse1.x:VARIABLE()  type: Real unreplaceable
+//
+//
+// ########### Updated Equation List ########### (2, 2)
+// ========================================
+// 1/1 (1): a = $cse1   [binding]
+// 2/2 (1): $cse1 = CSE.TestCall5.f(time)   [binding]
+//
+// record SimulationResult
+//     resultFile = "CSE.TestCall5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.TestCall5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult

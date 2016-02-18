@@ -1,0 +1,54 @@
+// name: cseTestCall3
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  model TestCall3
+    record rec
+       Real x;
+    end rec;
+    
+    rec a;
+    Real b;
+    
+    function f
+      input rec s;
+      output Real t;
+    algorithm
+      t := s.x;
+    end f;       
+
+  equation 
+    a.x = 5.0;
+    b = f(a);
+  end TestCall3;
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.TestCall3); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// ########### Updated Variable List ########### (0)
+// ========================================
+//
+//
+// ########### Updated Equation List ########### (0, 0)
+// ========================================
+//
+// record SimulationResult
+//     resultFile = "CSE.TestCall3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.TestCall3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,58 @@
+// name: cseTestCall4
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  model TestCall4
+    Real x,y;
+    final parameter Real c = 3;
+  equation
+    x = sin(time) + 2;
+    y = sin(time) + c;
+  end TestCall4;
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.TestCall4); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// ########### Updated Variable List ########### (2)
+// ========================================
+// 1: y:VARIABLE() .CSE.TestCall4, .Real type: Real
+// 2: $cse1:VARIABLE()  type: Real unreplaceable
+//
+//
+// ########### Updated Equation List ########### (2, 2)
+// ========================================
+// 1/1 (1): y = 3.0 + $cse1   [dynamic]
+// 2/2 (1): $cse1 = sin(time)   [binding]
+//
+//
+// ########### Updated Variable List ########### (2)
+// ========================================
+// 1: x:VARIABLE() .CSE.TestCall4, .Real type: Real
+// 2: $cse2:VARIABLE()  type: Real unreplaceable
+//
+//
+// ########### Updated Equation List ########### (2, 2)
+// ========================================
+// 1/1 (1): x = 2.0 + $cse2   [dynamic]
+// 2/2 (1): $cse2 = sin(time)   [binding]
+//
+// record SimulationResult
+//     resultFile = "CSE.TestCall4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.TestCall4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult
