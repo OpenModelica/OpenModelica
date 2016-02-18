@@ -23,7 +23,7 @@ eli_lst := matchcontinue(in_put)
     case(in_put1)
       equation
             
-        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(), Absyn.INPUT(),{});
+        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(), Absyn.INPUT(),Absyn.NONFIELD(),{});
         tSpec = Absyn.TPATH(Absyn.IDENT("Real"),NONE());
         com = Absyn.COMPONENTITEM(Absyn.COMPONENT(in_put1,{},NONE()),NONE(),NONE())::{};
         info=SOURCEINFO("",false,0,0,0,0,0.0);        
@@ -128,7 +128,7 @@ algorithm
         eli_in_lst = transform_in_put_lst(in_ident1);      
         
         info=SOURCEINFO("",false,0,0,0,0,0.0);
-        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(), Absyn.OUTPUT(),{});
+        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(), Absyn.OUTPUT(),Absyn.NONFIELD(),{});
         tSpec = Absyn.TPATH(Absyn.IDENT("Real"),NONE());
         com = Absyn.COMPONENTITEM(Absyn.COMPONENT(fname,{},NONE()),NONE(),NONE())::{};
         

@@ -2299,7 +2299,7 @@ algorithm
     case(AbsynMat.DECL(ident,NONE()),true,all_idents1)
       equation
         in_put = ident;
-        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(), Absyn.INPUT(),{});
+        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(), Absyn.INPUT(),Absyn.NONFIELD(),{});
         tSpec = Absyn.TPATH(Absyn.IDENT("Real"),NONE());
         com = Absyn.COMPONENTITEM(Absyn.COMPONENT(in_put,{},NONE()),NONE(),NONE())::{};
         info=SOURCEINFO("",false,0,0,0,0,0.0);
@@ -2313,7 +2313,7 @@ algorithm
         (typ,subscp1) = output_type(ident,all_idents);
         data_type = ret_typ(typ);      
         out_put = ident;
-        attr1 = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(), Absyn.OUTPUT(),{});
+        attr1 = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(), Absyn.OUTPUT(),Absyn.NONFIELD(),{});
         tSpec1 = Absyn.TPATH(Absyn.IDENT("Real"),NONE());
         com1 = Absyn.COMPONENTITEM(Absyn.COMPONENT(out_put,subscp1,NONE()),NONE(),SOME(Absyn.COMMENT(NONE(),SOME(testcomment2))))::{};
         info1=SOURCEINFO("",false,0,0,0,0,0.0);
@@ -2559,7 +2559,7 @@ algorithm
         ary_type1 = prt_mtx_vec_type(type_lst);
         (typ,subscp1) = output_type(ident1,all_idents1);
         data_type = ret_typ(typ);        
-        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(),Absyn.BIDIR(),Absyn.NOSUB()::{});  // Absyn.NOSUB()::{} = Real[:] 
+        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(),Absyn.BIDIR(),Absyn.NONFIELD(),Absyn.NOSUB()::{});  // Absyn.NOSUB()::{} = Real[:] 
         tSpec = Absyn.TPATH(Absyn.IDENT(data_type),NONE());
         com = Absyn.COMPONENTITEM(Absyn.COMPONENT(ident1,{},SOME(modfic)),NONE(),NONE())::{}; //modification
         info=SOURCEINFO("",false,0,0,0,0,0.0);
@@ -2570,7 +2570,7 @@ algorithm
       equation
          print("\n Modification 2 Vector \n");
         ary_type1 = prt_mtx_vec_type(type_lst);
-        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(),Absyn.BIDIR(),Absyn.NOSUB()::{});  // Absyn.NOSUB()::{} = Real[:] 
+        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(),Absyn.BIDIR(),Absyn.NONFIELD(),Absyn.NOSUB()::{});  // Absyn.NOSUB()::{} = Real[:] 
         tSpec = Absyn.TPATH(Absyn.IDENT(ary_type1),NONE());
         com = Absyn.COMPONENTITEM(Absyn.COMPONENT(ident1,{},SOME(modfic)),NONE(),NONE())::{}; //modification
         info=Absyn.INFO("",false,0,0,0,0,Absyn.TIMESTAMP(System.getCurrentTime(),System.getCurrentTime()));
@@ -2582,7 +2582,7 @@ algorithm
         (typ,subscp1) = output_type(ident1,all_idents1);
         data_type = ret_typ(typ);          
         ary_type1 = prt_mtx_vec_type(type_lst);
-        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(),Absyn.BIDIR(),{});  
+        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(),Absyn.BIDIR(),Absyn.NONFIELD(),{});
         tSpec = Absyn.TPATH(Absyn.IDENT(data_type),NONE());
         com = Absyn.COMPONENTITEM(Absyn.COMPONENT(ident1,subscp1,SOME(modfic)),NONE(),NONE())::{}; // Absyn.NOSUB() = Real[:,:] 
         info=SOURCEINFO("",false,0,0,0,0,0.0);
@@ -2670,7 +2670,7 @@ algorithm
         data_type1=checkscalartype(data_type);
         ary_type = asg_type(ident1,type_lst1);
         ary_type1 = lsttostring(ary_type);
-        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(),Absyn.BIDIR(),{});
+        attr = Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(),Absyn.BIDIR(),Absyn.NONFIELD(),{});
         tSpec = Absyn.TPATH(Absyn.IDENT(data_type1),NONE());
         com = Absyn.COMPONENTITEM(Absyn.COMPONENT(ident1,subscp1,NONE()),NONE(),NONE())::{};
         info=SOURCEINFO("",false,0,0,0,0,0.0);
