@@ -323,6 +323,8 @@ algorithm
     then (inExp, inTuple);
     case (DAE.CALL(path=Absyn.IDENT("noClock")), _)
     then (inExp, inTuple);
+    case (DAE.CALL(path=Absyn.IDENT("sign")), _)
+    then (inExp, inTuple);
     case (_, _) guard(Expression.isImpureCall(inExp))
     then (inExp, inTuple);
 
