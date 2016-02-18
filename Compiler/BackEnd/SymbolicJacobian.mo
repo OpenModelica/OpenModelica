@@ -2981,8 +2981,7 @@ algorithm
       BackendDAE.Shared shared;
     case (vars,eqns,m,_,_)
       equation
-        eqn_lst = BackendEquation.equationList(eqns);
-        (jac, shared) = calculateJacobianRows(eqn_lst,vars,m,1,1,differentiateIfExp,iShared,BackendDAEUtil.varsInEqn);
+        (jac, shared) = calculateJacobianRows(eqns,vars,m,1,1,differentiateIfExp,iShared,BackendDAEUtil.varsInEqn);
       then
         (SOME(jac),shared);
     else (NONE(), iShared);  /* no analytic jacobian available */
@@ -2997,7 +2996,7 @@ protected function calculateJacobianRows "author: PA
   variables {x,y,z} on index x1,y1,z1 gives
   {(e1,x1,3a), (e1,y1,5z), (e1,z1,5y+2z)}"
   replaceable type Type_a subtypeof Any;
-  input list<BackendDAE.Equation> inEquationLst;
+  input BackendDAE.EquationArray inEquationArray;
   input BackendDAE.Variables vars;
   input Type_a m;
   input Integer eqn_indx;
@@ -3013,17 +3012,25 @@ protected function calculateJacobianRows "author: PA
     output list<Integer> outIntegerLst;
   end varsInEqnFunc;
 protected
-  Integer size, i, j;
+  Integer size, i, j, n, k;
+  BackendDAE.Equation eqn;
+  array<Option<BackendDAE.Equation>> equOptArr;
 algorithm
   i := eqn_indx;
   j := scalar_eqn_indx;
   size := 0;
-  for eqn in inEquationLst loop
-    (outLst, size, oShared) := calculateJacobianRow(eqn, vars,  m, i, j, differentiateIfExp, oShared, varsInEqn, outLst);
-    i := i+1;
-    j := j+size;
+  (n, equOptArr) := match inEquationArray case BackendDAE.EQUATION_ARRAY(numberOfElement = n, equOptArr = equOptArr) then (n, equOptArr); end match;
+  // print("CalcJac(Eqs:" + intString(n) + ")\n");
+  for k in 1:n loop
+    if isSome(equOptArr[k]) then
+      eqn := Util.getOption(equOptArr[k]);
+      (outLst, size, oShared) := calculateJacobianRow(eqn, vars,  m, i, j, differentiateIfExp, oShared, varsInEqn, outLst);
+      i := i+1;
+      j := j+size;
+    end if;
   end for;
-  outLst := listReverse(outLst);
+  outLst := MetaModelica.Dangerous.listReverseInPlace(outLst);
+  // print("END_CalcJac(Size:" + intString(listLength(outLst)) + ")\n");
 end calculateJacobianRows;
 
 protected function calculateJacobianRow "author: PA
@@ -3065,11 +3072,13 @@ algorithm
       DAE.ComponentRef cr;
       String str;
       BackendDAE.Shared shared;
+
     // residual equations
     case (BackendDAE.EQUATION(exp = e1,scalar=e2,source=source),_,_,_,_,_,_,_,_)
       equation
         var_indxs = fvarsInEqn(m, eqn_indx);
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index";
+        // Remove duplicates and get in correct order: ascending index
+        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq);
         var_indxs_1 = List.sort(var_indxs_1,intGt);
         (eqns, shared) = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
@@ -3079,7 +3088,8 @@ algorithm
     case (BackendDAE.RESIDUAL_EQUATION(exp=e,source=source),_,_,_,_,_,_,_,_)
       equation
         var_indxs = fvarsInEqn(m, eqn_indx);
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index";
+        // Remove duplicates and get in correct order: ascending index
+        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq);
         var_indxs_1 = List.sort(var_indxs_1,intGt);
         (eqns, shared) = calculateJacobianRow2(e, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
@@ -3089,8 +3099,10 @@ algorithm
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2,source=source),_,_,_,_,_,_,_,_)
       equation
         e1 = Expression.crefExp(cr);
+
         var_indxs = fvarsInEqn(m, eqn_indx);
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index";
+        // Remove duplicates and get in correct order: ascending index
+        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq);
         var_indxs_1 = List.sort(var_indxs_1,intGt);
         (eqns, shared) = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
@@ -3105,8 +3117,10 @@ algorithm
         subslst = Expression.dimensionSizesSubscripts(ds);
         subslst = Expression.rangesToSubscripts(subslst);
         expl = List.map1r(subslst,Expression.applyExpSubscripts,e);
+
         var_indxs = fvarsInEqn(m, eqn_indx);
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index";
+        // Remove duplicates and get in correct order: ascending index
+        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq);
         var_indxs_1 = List.sort(var_indxs_1,intGt);
         (eqns, shared) = calculateJacobianRowLst(expl, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
         size = List.fold(ds,intMul,1);
@@ -3179,8 +3193,8 @@ algorithm
         ((e, _)) := Expression.replaceExp(inExp, dcrexp, Expression.crefExp(dcr));
       end if;
       (e_1, oShared) := Differentiate.differentiateExpCrefFullJacobian(inExp, cr, vars, oShared);
-      (e_2, _) := ExpressionSimplify.simplify(e_1);
-      outLst := calculateJacobianRow3(eqn_indx, vindx, e_2, source, outLst);
+      // e_1 already simplified in Differentiate.differentiateExpCrefFullJacobian!
+      outLst := calculateJacobianRow3(eqn_indx, vindx, e_1, source, outLst);
     end for;
     outLst := listAppend(outLst, iAcc);
   else
