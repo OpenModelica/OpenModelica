@@ -1590,6 +1590,14 @@ algorithm
         (exp_1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then (exp_1, inFuncs);
 
+    case ("sum",_)
+      equation
+        tp = Expression.typeof(exp);
+        (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs, maxIter, expStack);
+        exp_2 = Expression.makePureBuiltinCall("sum",{exp_1},tp);
+      then
+       (exp_2, funcs);
+
     case ("max",DAE.ARRAY(array=expl,ty=tp))
       equation
         tp = Types.arrayElementType(tp);
