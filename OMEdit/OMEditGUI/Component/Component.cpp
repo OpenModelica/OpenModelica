@@ -809,9 +809,9 @@ void Component::applyRotation(qreal angle)
 void Component::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
 {
   // handle component position, rotation and scale changes
-  connect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()));
+  connect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()), Qt::UniqueConnection);
   if (!pConnectorLineAnnotation->isInheritedShape()) {
-    connect(this, SIGNAL(transformHasChanged()), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation()));
+    connect(this, SIGNAL(transformHasChanged()), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation()), Qt::UniqueConnection);
   }
 }
 
