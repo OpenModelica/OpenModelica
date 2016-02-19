@@ -367,34 +367,47 @@ element_list [void **ann] returns [void* ast]
 @init {
   int first = 0, last = 0;
   e.ast = 0;
-  ast = 0;
-  first = omc_first_comment;
+  ast = mmc_mk_nil();
   last = LT(1)->getTokenIndex(LT(1));
-  omc_first_comment = last;
   a = 0;
-  s = 0;
-  es = 0;
+  for (;omc_first_comment<last;omc_first_comment++) {
+    pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
+    if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+      ast = mmc_mk_cons(Absyn__LEXER_5fCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+    }
+  }
 } :
-  (((  e=element
-     | ( { ModelicaParser_langStd < 31 || 1 }? a=annotation {*ann = mmc_mk_cons(a, *ann);} )
-    ) s=SEMICOLON
-   ) es=element_list[ann]
-  )?
+  ((
+     ( e=element {a=0;}
+     | ( { ann && (ModelicaParser_langStd < 31 || 1) }? a=annotation {*ann = mmc_mk_cons(a, *ann);} )
+     )
+  ) SEMICOLON
     {
-      if (e.ast) {
-        ast = mmc_mk_cons(Absyn__ELEMENTITEM(e.ast), es);
-      } else if (a) {
-        ast = es;
-      } else {
-        ast = mmc_mk_nil();
-      }
-      for (;first<last;last--) {
-        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+      for (;omc_first_comment<last;omc_first_comment++) {
+        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
           ast = mmc_mk_cons(Absyn__LEXER_5fCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
         }
       }
+      if (!a) {
+        ast=mmc_mk_cons(Absyn__ELEMENTITEM(e.ast), ast);
+      }
+      last = LT(1)->getTokenIndex(LT(1));
     }
+  )*
+
+  {
+    for (;omc_first_comment<last;omc_first_comment++) {
+      pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
+      if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+        ast = mmc_mk_cons(Absyn__LEXER_5fCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+      }
+    }
+    ast = listReverseInPlace(ast);
+    if (ann) {
+      *ann = listReverseInPlace(*ann);
+    }
+  }
   ;
 
 element returns [void* ast]
