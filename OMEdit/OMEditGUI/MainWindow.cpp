@@ -771,7 +771,10 @@ void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
   }
   QString instantiateModelResult = mpOMCProxy->instantiateModel(pLibraryTreeItem->getNameStructure());
   if (!instantiateModelResult.isEmpty()) {
-    QString windowTitle = QString(Helper::instantiateModel).append(" - ").append(pLibraryTreeItem->getName());
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                tr("Instantiation of %1 completed successfully.").arg(pLibraryTreeItem->getNameStructure()),
+                                                Helper::scriptingKind, Helper::notificationLevel));
+    QString windowTitle = QString(Helper::instantiateModel).append(" - ").append(pLibraryTreeItem->getNameStructure());
     InformationDialog *pInformationDialog = new InformationDialog(windowTitle, instantiateModelResult, true, this);
     pInformationDialog->show();
   }
@@ -800,7 +803,10 @@ void MainWindow::checkModel(LibraryTreeItem *pLibraryTreeItem)
   }
   QString checkModelResult = mpOMCProxy->checkModel(pLibraryTreeItem->getNameStructure());
   if (!checkModelResult.isEmpty()) {
-    QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeItem->getName());
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                tr("Check of %1 completed successfully.").arg(pLibraryTreeItem->getNameStructure()),
+                                                Helper::scriptingKind, Helper::notificationLevel));
+    QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeItem->getNameStructure());
     InformationDialog *pInformationDialog = new InformationDialog(windowTitle, checkModelResult, false, this);
     pInformationDialog->show();
   }
