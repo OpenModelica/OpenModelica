@@ -765,10 +765,18 @@ void AddConnectionCommand::redo()
 {
   // Add the start component connection details.
   Component *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
-  pStartComponent->getRootParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
+  if (pStartComponent->getRootParentComponent()) {
+    pStartComponent->getRootParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
+  } else {
+    pStartComponent->addConnectionDetails(mpConnectionLineAnnotation);
+  }
   // Add the end component connection details.
   Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
-  pEndComponent->getRootParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
+  if (pEndComponent->getRootParentComponent()) {
+    pEndComponent->getRootParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
+  } else {
+    pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
+  }
   mpConnectionLineAnnotation->getGraphicsView()->addConnectionToList(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->getGraphicsView()->addItem(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->emitAdded();
@@ -785,10 +793,18 @@ void AddConnectionCommand::undo()
 {
   // Remove the start component connection details.
   Component *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
-  pStartComponent->getRootParentComponent()->removeConnectionDetails(mpConnectionLineAnnotation);
+  if (pStartComponent->getRootParentComponent()) {
+    pStartComponent->getRootParentComponent()->removeConnectionDetails(mpConnectionLineAnnotation);
+  } else {
+    pStartComponent->removeConnectionDetails(mpConnectionLineAnnotation);
+  }
   // Remove the end component connection details.
   Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
-  pEndComponent->getRootParentComponent()->removeConnectionDetails(mpConnectionLineAnnotation);
+  if (pEndComponent->getRootParentComponent()) {
+    pEndComponent->getRootParentComponent()->removeConnectionDetails(mpConnectionLineAnnotation);
+  } else {
+    pEndComponent->removeConnectionDetails(mpConnectionLineAnnotation);
+  }
   mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromList(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->getGraphicsView()->removeItem(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->emitDeleted();
@@ -861,8 +877,8 @@ void DeleteConnectionCommand::redo()
   }
   // Remove the end component connection details.
   Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
-  if (pEndComponent->getParentComponent()) {
-    pEndComponent->getParentComponent()->removeConnectionDetails(mpConnectionLineAnnotation);
+  if (pEndComponent->getRootParentComponent()) {
+    pEndComponent->getRootParentComponent()->removeConnectionDetails(mpConnectionLineAnnotation);
   } else {
     pEndComponent->removeConnectionDetails(mpConnectionLineAnnotation);
   }
@@ -887,8 +903,8 @@ void DeleteConnectionCommand::undo()
   }
   // Add the end component connection details.
   Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
-  if (pEndComponent->getParentComponent()) {
-    pEndComponent->getParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
+  if (pEndComponent->getRootParentComponent()) {
+    pEndComponent->getRootParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
   } else {
     pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
   }
