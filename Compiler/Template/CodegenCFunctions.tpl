@@ -4796,7 +4796,29 @@ case BINARY(__) then
         let &preExp += '<%tmp%> *= <%tmp%>;<%\n%>'
         '(<%tmp%> * <%tmp%>)'
       case SOME(i) then 'real_int_pow(threadData, <%e1%>, <%i%>)'
-      else 'pow(<%e1%>, <%e2%>)'
+      else
+        let tmp1 = tempDecl("modelica_real", &varDecls)
+        let tmp2 = tempDecl("modelica_real", &varDecls)
+        let tmp3 = tempDecl("modelica_real", &varDecls)
+        let &preExp += '<%tmp1%> = <%e1%>;<%\n%>'
+        let &preExp += '<%tmp2%> = <%e2%>;<%\n%>'
+        let &preExp +=
+          <<
+          if(<%tmp1%> < 0.0 && <%tmp2%> != 0.0 && abs(<%tmp2%>) < 1.0)
+          {
+            <%tmp3%> = -pow(-<%tmp1%>, <%tmp2%>);
+          }
+          else
+          {
+            <%tmp3%> = pow(<%tmp1%>, <%tmp2%>);
+          }
+          if(<%tmp3%> != <%tmp3%>)
+          {
+            throwStreamPrint(threadData, "Invalid root: (%g)^(%g)", <%tmp1%>, <%tmp2%>);
+          }
+          >>
+        '<%tmp3%>'
+
   case UMINUS(__) then daeExpUnary(exp, context, &preExp, &varDecls, &auxFunction)
   case ADD_ARR(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
