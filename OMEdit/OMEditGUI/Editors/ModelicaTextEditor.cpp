@@ -314,17 +314,27 @@ void ModelicaTextEditor::showContextMenu(QPoint point)
   delete pMenu;
 }
 
-//! Reimplementation of QPlainTextEdit::setPlainText method.
-//! Makes sure we dont update if the passed text is same.
-//! @param text the string to set.
+/*!
+ * \brief ModelicaTextEditor::setPlainText
+ * Reimplementation of QPlainTextEdit::setPlainText method.
+ * Makes sure we dont update if the passed text is same.
+ * \param text the string to set.
+ */
 void ModelicaTextEditor::setPlainText(const QString &text)
 {
+  QMap<int, int> leadingSpacesMap;
   QString contents = text;
+  // store and remove leading spaces
+  if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
+    leadingSpacesMap = StringHandler::getLeadingSpaces(contents);
+    contents = removeLeadingSpaces(contents);
+  } else {
+    mpPlainTextEdit->setPlainText(contents);
+  }
+  // Only set the text when it is really new
   if (contents != mpPlainTextEdit->toPlainText()) {
     mForceSetPlainText = true;
     if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
-      QMap<int, int> leadingSpacesMap = StringHandler::getLeadingSpaces(contents);
-      contents = removeLeadingSpaces(contents);
       mpPlainTextEdit->setPlainText(contents);
       storeLeadingSpaces(leadingSpacesMap);
     } else {
