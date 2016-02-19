@@ -90,6 +90,10 @@ private:
   QLineEdit *mpStartTimeTextBox;
   Label *mpStopTimeLabel;
   QLineEdit *mpStopTimeTextBox;
+  QRadioButton *mpNumberofIntervalsRadioButton;
+  QSpinBox *mpNumberofIntervalsSpinBox;
+  QRadioButton *mpIntervalRadioButton;
+  QLineEdit *mpIntervalTextBox;
   QGroupBox *mpIntegrationGroupBox;
   Label *mpMethodLabel;
   QComboBox *mpMethodComboBox;
@@ -118,8 +122,6 @@ private:
   QCheckBox *mpLaunchAlgorithmicDebuggerCheckBox;
   // Output Tab
   QWidget *mpOutputTab;
-  Label *mpNumberofIntervalLabel;
-  QSpinBox *mpNumberofIntervalsSpinBox;
   Label *mpOutputFormatLabel;
   QComboBox *mpOutputFormatComboBox;
   Label *mpFileNameLabel;
