@@ -3930,39 +3930,34 @@ template expToFormatString(Exp exp, Context context, Text &preExp, Text &varDecl
   'MMC_STRINGDATA(<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
 end expToFormatString;
 
-template assertCommonVar(Text condVar, Text msgVar, Context context, Text &preExpMsg, Text &varDecls, builtin.SourceInfo info)
+template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDecls, builtin.SourceInfo info)
 ::=
   match context
   case FUNCTION_CONTEXT(__) then
     <<
-    if(!<%condVar%>)
+    if(!(<%condVar%>))
     {
-        <%preExpMsg%>
-        FILE_INFO info = {<%infoArgs(info)%>};
-        omc_assert(threadData, info, <%msgVar%>);
-    }<%\n%>
+      FILE_INFO info = {<%infoArgs(info)%>};
+      omc_assert(threadData, info, <%msgVar%>);
+    }
     >>
   // OpenCL doesn't have support for variadic args. So message should be just a single string.
   case PARALLEL_FUNCTION_CONTEXT(__) then
     <<
-    if(!<%condVar%>)
+    if(!(<%condVar%>))
     {
-        <%preExpMsg%>
-        FILE_INFO info = omc_dummyFileInfo;
-        omc_assert(threadData, info, "Common assertion failed");
+      FILE_INFO info = omc_dummyFileInfo;
+      omc_assert(threadData, info, "Common assertion failed");
     }
     >>
   else
     <<
-    if(!<%condVar%>)
+    if(!(<%condVar%>))
     {
-        <%preExpMsg%>
-        {
-          FILE_INFO info = {<%infoArgs(info)%>};
-          omc_assert_warning(info, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
-          throwStreamPrintWithEquationIndexes(threadData, equationIndexes, <%msgVar%>);
-        }
-    }<%\n%>
+      FILE_INFO info = {<%infoArgs(info)%>};
+      omc_assert_warning(info, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
+      throwStreamPrintWithEquationIndexes(threadData, equationIndexes, <%msgVar%>);
+    }
     >>
 end assertCommonVar;
 
@@ -4775,12 +4770,13 @@ case BINARY(__) then
     '(<%e1%>) / <%tvar%>'
   case POW(__) then
     if isHalf(exp2) then
-      (let tmp = tempDecl(expTypeFromExpModelica(exp1),&varDecls)
-       let ass = '(<%tmp%> >= 0.0)'
-       let &preExpMsg = buffer ""
-       let retPre = assertCommonVar(ass,'"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(printExpStr(exp1))%>) was %g should be >= 0", <%tmp%>', context, &preExpMsg, &varDecls, dummyInfo)
-       let &preExp += '<%tmp%> = <%e1%>; <%\n%><%retPre%>'
-       'sqrt(<%tmp%>)')
+      let tmp = tempDecl(expTypeFromExpModelica(exp1),&varDecls)
+      let &preExp +=
+        <<
+        <%tmp%> = <%e1%>;
+        <%assertCommonVar('<%tmp%> >= 0.0', '"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(printExpStr(exp1))%>) was %g should be >= 0", <%tmp%>', context, &varDecls, dummyInfo)%>
+        >>
+      'sqrt(<%tmp%>)'
     else match realExpIntLit(exp2)
       case SOME(2) then
         let tmp = tempDecl("modelica_real", &varDecls)
@@ -4792,18 +4788,21 @@ case BINARY(__) then
         '(<%tmp%> * <%tmp%> * <%tmp%>)'
       case SOME(4) then
         let tmp = tempDecl("modelica_real", &varDecls)
-        let &preExp += '<%tmp%> = <%e1%>;<%\n%>'
-        let &preExp += '<%tmp%> *= <%tmp%>;<%\n%>'
+        let &preExp +=
+          <<
+          <%tmp%> = <%e1%>;
+          <%tmp%> *= <%tmp%>;
+          >>
         '(<%tmp%> * <%tmp%>)'
       case SOME(i) then 'real_int_pow(threadData, <%e1%>, <%i%>)'
       else
         let tmp1 = tempDecl("modelica_real", &varDecls)
         let tmp2 = tempDecl("modelica_real", &varDecls)
         let tmp3 = tempDecl("modelica_real", &varDecls)
-        let &preExp += '<%tmp1%> = <%e1%>;<%\n%>'
-        let &preExp += '<%tmp2%> = <%e2%>;<%\n%>'
         let &preExp +=
           <<
+          <%tmp1%> = <%e1%>;
+          <%tmp2%> = <%e2%>;
           if(<%tmp1%> < 0.0 && <%tmp2%> != 0.0 && abs(<%tmp2%>) < 1.0)
           {
             <%tmp3%> = -pow(-<%tmp1%>, <%tmp2%>);
@@ -5450,50 +5449,55 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name="sqrt"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     (if isPositiveOrZero(e1)
-     then
-       'sqrt(<%argStr%>)'
-     else
-       let tmp = tempDecl(expTypeFromExpModelica(e1),&varDecls)
-       let ass = '(<%tmp%> >= 0.0)'
-       let &preExpMsg = buffer ""
-       let retPre = assertCommonVar(ass,'"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be >= 0", <%tmp%>', context, &preExpMsg, &varDecls, dummyInfo)
-       let &preExp += '<%tmp%> = <%argStr%>; <%\n%><%retPre%>'
+      then
+        'sqrt(<%argStr%>)'
+      else
+        let tmp = tempDecl(expTypeFromExpModelica(e1), &varDecls)
+        let &preExp +=
+          <<
+          <%tmp%> = <%argStr%>;
+          <%assertCommonVar('<%tmp%> >= 0.0', '"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be >= 0", <%tmp%>', context, &varDecls, dummyInfo)%>
+          >>
        'sqrt(<%tmp%>)')
 
   case CALL(path=IDENT(name="log"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let tmp = tempDecl(expTypeFromExpModelica(e1),&varDecls)
-    let ass = '(<%tmp%> > 0.0)'
-    let &preExpMsg = buffer ""
-    let retPre = assertCommonVar(ass,'"Model error: Argument of log(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be > 0", <%tmp%>', context, &preExpMsg, &varDecls, dummyInfo)
-    let &preExp += '<%tmp%> = <%argStr%>;<%retPre%>'
+    let &preExp +=
+      <<
+      <%tmp%> = <%argStr%>;
+      <%assertCommonVar('<%tmp%> > 0.0', '"Model error: Argument of log(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be > 0", <%tmp%>', context, &varDecls, dummyInfo)%>
+      >>
     'log(<%tmp%>)'
 
   case CALL(path=IDENT(name="log10"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let tmp = tempDecl(expTypeFromExpModelica(e1),&varDecls)
-    let ass = '(<%tmp%> > 0.0)'
-    let &preExpMsg = buffer ""
-    let retPre = assertCommonVar(ass,'"Model error: Argument of log10(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be > 0", <%tmp%>', context, &preExpMsg, &varDecls, dummyInfo)
-    let &preExp += '<%tmp%> = <%argStr%>;<%retPre%>'
+    let &preExp +=
+      <<
+      <%tmp%> = <%argStr%>;
+      <%assertCommonVar('<%tmp%> > 0.0','"Model error: Argument of log10(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be > 0", <%tmp%>', context, &varDecls, dummyInfo)%>
+      >>
     'log10(<%tmp%>)'
 
   case CALL(path=IDENT(name="acos"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let tmp = tempDecl("modelica_real",&varDecls)
-    let ass = '(<%tmp%> >= -1.0 && <%tmp%> <= 1.0)'
-    let &preExpMsg = buffer ""
-    let retPre = assertCommonVar(ass,'"Model error: Argument of <%Util.escapeModelicaStringToCString(printExpStr(call))%> outside the domain -1.0 <= %g <= 1.0", <%tmp%>', context, &preExpMsg, &varDecls, dummyInfo)
-    let &preExp += '<%tmp%> = <%argStr%>;<%retPre%>'
+    let &preExp +=
+      <<
+      <%tmp%> = <%argStr%>;
+      <%assertCommonVar('<%tmp%> >= -1.0 && <%tmp%> <= 1.0', '"Model error: Argument of <%Util.escapeModelicaStringToCString(printExpStr(call))%> outside the domain -1.0 <= %g <= 1.0", <%tmp%>', context, &varDecls, dummyInfo)%>
+      >>
     'acos(<%tmp%>)'
 
   case CALL(path=IDENT(name="asin"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let tmp = tempDecl("modelica_real",&varDecls)
-    let ass = '(<%tmp%> >= -1.0 && <%tmp%> <= 1.0)'
-    let &preExpMsg = buffer ""
-    let retPre = assertCommonVar(ass,'"Model error: Argument of <%Util.escapeModelicaStringToCString(printExpStr(call))%> outside the domain -1.0 <= %g <= 1.0", <%tmp%>', context, &preExpMsg, &varDecls, dummyInfo)
-    let &preExp += '<%tmp%> = <%argStr%>;<%retPre%>'
+    let &preExp +=
+      <<
+      <%tmp%> = <%argStr%>;
+      <%assertCommonVar('<%tmp%> >= -1.0 && <%tmp%> <= 1.0', '"Model error: Argument of <%Util.escapeModelicaStringToCString(printExpStr(call))%> outside the domain -1.0 <= %g <= 1.0", <%tmp%>', context, &varDecls, dummyInfo)%>
+      >>
     'asin(<%tmp%>)'
 
   /* Begin code generation of event triggering math functions */
