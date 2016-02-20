@@ -154,7 +154,7 @@ QStringList ModelicaTextEditor::getClassNames(QString *errorString)
     if (!modelicaText.startsWith("within")) {
       stringToParse = QString("within %1;%2").arg(pLibraryTreeItem->parent()->getNameStructure()).arg(modelicaText);
     }
-    classNames = pOMCProxy->parseString(stringToParse, pLibraryTreeItem->getNameStructure());
+    classNames = pOMCProxy->parseString(stringToParse, pLibraryTreeItem->getFileName());
   }
   // if user is defining multiple top level classes.
   if (classNames.size() > 1) {
