@@ -323,6 +323,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           <Clock><Periodic
                   baseInterval="<%bi%>"
                   <%if intGt(fnom, 1) then 'subSampleFactor="'+fnom+'"'%>
+                  <%if intGt(fres, 1) then 'superSampleFactor="'+fres+'"'%>
                   <%if intGt(snom, 0) then 'shiftCounter="'+snom+'"'%>
                   /></Clock>
           >>

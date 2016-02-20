@@ -9806,7 +9806,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
           <<
           <%preExp%>
-          _clockInterval[<%i%>] = <%intvl%> * <%fres%>.0 / <%fnom%>.0;
+          _clockInterval[<%i%>] = <%intvl%> * <%fnom%>.0 / <%fres%>.0;
           _clockShift[<%i%>] = <%snom%>.0 / <%sres%>.0;
           _clockTime[<%i%>] = _simTime + _clockShift[<%i%>] * _clockInterval[<%i%>];
           <%i%> ++;
