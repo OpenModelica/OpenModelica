@@ -469,7 +469,7 @@ protected
   BackendDAE.StrongComponent comp;
   Integer eqIdx, varIdx;
 algorithm
-  outSubClocks := arrayCreate(BackendVariable.varsSize(inVars), (BackendDAE.SUBCLOCK(MMath.RAT0, MMath.RAT0, NONE()), 0));
+  outSubClocks := arrayCreate(BackendVariable.varsSize(inVars), (BackendDAE.DEFAULT_SUBCLOCK, 0));
   for comp in inComps loop
     outClockKind := matchcontinue comp
       case BackendDAE.SINGLEEQUATION(eqIdx, varIdx)
@@ -757,7 +757,17 @@ algorithm
       then oldSolverMethod;
     else
       algorithm
-        Error.addMessage(Error.SUBCLOCK_CONFLICT, {});
+        oldMethod := match oldSolverMethod
+          local String s;
+          case SOME(s) then s;
+          case NONE() then "";
+        end match;
+        newMethod := match newSolverMethod
+          local String s;
+          case SOME(s) then s;
+          case NONE() then "";
+        end match;
+        Error.addMessage(Error.SUBCLOCK_CONFLICT, {"solver", oldMethod, newMethod});
       then fail();
   end match;
 
@@ -776,14 +786,32 @@ algorithm
     case SOME(BackendDAE.SUBCLOCK(oldFactor, oldShift, oldSolverMethod))
       algorithm
         BackendDAE.SUBCLOCK(newFactor, newShift, newSolverMethod) := newSubClk;
-        newFactor := setFactorOrShift(oldFactor, newFactor);
-        newShift := setFactorOrShift(oldShift, newShift);
+        newFactor := setFactor(oldFactor, newFactor);
+        newShift := setShift(oldShift, newShift);
         newSolverMethod := setSolverMethod(oldSolverMethod, newSolverMethod);
       then BackendDAE.SUBCLOCK(newFactor, newShift, newSolverMethod);
   end match;
 end setSubClock;
 
-protected function setFactorOrShift
+protected function setFactor
+  input MMath.Rational oldVal;
+  input MMath.Rational newVal;
+  output MMath.Rational outVal;
+algorithm
+  outVal := match (oldVal, newVal)
+    case (MMath.RATIONAL(1, 1), _) then newVal;
+    case (_, MMath.RATIONAL(1, 1)) then oldVal;
+    else
+      algorithm
+        if not MMath.equals(oldVal, newVal) then
+          Error.addMessage(Error.SUBCLOCK_CONFLICT, {"factor", MMath.rationalString(oldVal), MMath.rationalString(newVal)});
+          fail();
+        end if;
+     then newVal;
+  end match;
+end setFactor;
+
+protected function setShift
   input MMath.Rational oldVal;
   input MMath.Rational newVal;
   output MMath.Rational outVal;
@@ -794,12 +822,12 @@ algorithm
     else
       algorithm
         if not MMath.equals(oldVal, newVal) then
-          Error.addMessage(Error.SUBCLOCK_CONFLICT, {});
+          Error.addMessage(Error.SUBCLOCK_CONFLICT, {"shift", MMath.rationalString(oldVal), MMath.rationalString(newVal)});
           fail();
         end if;
      then newVal;
   end match;
-end setFactorOrShift;
+end setShift;
 
 protected function collectSubclkInfoExp
   input DAE.Exp inExp;
