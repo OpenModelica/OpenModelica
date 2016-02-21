@@ -712,7 +712,7 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }
@@ -723,7 +723,7 @@ void MainWindow::simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryT
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }
@@ -734,7 +734,7 @@ void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeIt
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }
@@ -745,7 +745,7 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }
@@ -756,7 +756,7 @@ void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }
@@ -788,7 +788,7 @@ void MainWindow::checkModel(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }
@@ -820,7 +820,7 @@ void MainWindow::checkAllModels(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }
@@ -844,7 +844,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }
@@ -872,7 +872,7 @@ void MainWindow::exportModelXML(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }
@@ -896,7 +896,7 @@ void MainWindow::exportModelFigaro(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }
@@ -994,7 +994,7 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }

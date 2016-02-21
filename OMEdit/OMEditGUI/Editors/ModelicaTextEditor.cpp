@@ -185,13 +185,14 @@ QStringList ModelicaTextEditor::getClassNames(QString *errorString)
 /*!
  * \brief ModelicaTextEditor::validateText
  * When user make some changes in the ModelicaTextEditor text then this method validates the text and show text correct options.
+ * \param pLibraryTreeItem
  * \return
  */
-bool ModelicaTextEditor::validateText()
+bool ModelicaTextEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
 {
   if (mTextChanged) {
     // if the user makes few mistakes in the text then dont let him change the perspective
-    if (!mpModelWidget->modelicaEditorTextChanged()) {
+    if (!mpModelWidget->modelicaEditorTextChanged(pLibraryTreeItem)) {
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
@@ -328,8 +329,6 @@ void ModelicaTextEditor::setPlainText(const QString &text)
   if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
     leadingSpacesMap = StringHandler::getLeadingSpaces(contents);
     contents = removeLeadingSpaces(contents);
-  } else {
-    mpPlainTextEdit->setPlainText(contents);
   }
   // Only set the text when it is really new
   if (contents != mpPlainTextEdit->toPlainText()) {

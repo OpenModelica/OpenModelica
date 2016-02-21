@@ -2738,13 +2738,14 @@ void ModelWidget::reDrawModelWidget()
 /*!
  * \brief ModelWidget::validateText
  * Validates the text of the editor.
+ * \param pLibraryTreeItem
  * \return Returns true if validation is successful otherwise return false.
  */
-bool ModelWidget::validateText()
+bool ModelWidget::validateText(LibraryTreeItem **pLibraryTreeItem)
 {
   ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
   if (pModelicaTextEditor) {
-    return pModelicaTextEditor->validateText();
+    return pModelicaTextEditor->validateText(pLibraryTreeItem);
   }
   TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
   if (pTLMEditor) {
@@ -2757,10 +2758,11 @@ bool ModelWidget::validateText()
  * \brief ModelWidget::modelicaEditorTextChanged
  * Called when Modelica text has been changed by user manually.\n
  * Updates the LibraryTreeItem and ModelWidget with new changes.
+ * \param pLibraryTreeItem
  * \return
  * \sa ModelicaTextEditor::getClassNames()
  */
-bool ModelWidget::modelicaEditorTextChanged()
+bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
 {
   QString errorString;
   ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
@@ -2805,26 +2807,29 @@ bool ModelWidget::modelicaEditorTextChanged()
      * Update the LibraryTreeItem with new class name and then refresh it.
      */
     int row = mpLibraryTreeItem->row();
-    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem, true);
+    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem);
+    mpLibraryTreeItem->setModelWidget(0);
     QString name = StringHandler::getLastWordAfterDot(className);
-    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, mpLibraryTreeItem->parent(), false, false, true, row);
+    LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, mpLibraryTreeItem->parent(), false, false, true, row);
+    pNewLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
     pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     // make the new created LibraryTreeItem selected
-    QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pLibraryTreeItem);
+    QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pNewLibraryTreeItem);
     LibraryTreeProxyModel *pLibraryTreeProxyModel = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeProxyModel();
     QModelIndex proxyIndex = pLibraryTreeProxyModel->mapFromSource(modelIndex);
     LibraryTreeView *pLibraryTreeView = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeView();
     pLibraryTreeView->selectionModel()->clearSelection();
     pLibraryTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
     // update class text
-    pLibraryTreeItem->setClassText(modelicaText);
-    pLibraryTreeItem->setModelWidget(this);
-    setLibraryTreeItem(pLibraryTreeItem);
-    setModelFilePathLabel(pLibraryTreeItem->getFileName());
+    pNewLibraryTreeItem->setClassText(modelicaText);
+    pNewLibraryTreeItem->setModelWidget(this);
+    setLibraryTreeItem(pNewLibraryTreeItem);
+    setModelFilePathLabel(pNewLibraryTreeItem->getFileName());
     reDrawModelWidget();
-    if (pLibraryTreeItem->isInPackageOneFile()) {
+    if (pNewLibraryTreeItem->isInPackageOneFile()) {
       updateModelicaTextManually(stringToLoad);
     }
+    *pLibraryTreeItem = pNewLibraryTreeItem;
   }
   return true;
 }
@@ -3528,7 +3533,7 @@ void ModelWidget::showIconView(bool checked)
 {
   // validate the modelica text before switching to icon view
   if (checked) {
-    if (!validateText()) {
+    if (!validateText(&mpLibraryTreeItem)) {
       mpTextViewToolButton->setChecked(true);
       return;
     }
@@ -3559,7 +3564,7 @@ void ModelWidget::showDiagramView(bool checked)
 {
   // validate the modelica text before switching to diagram view
   if (checked) {
-    if (!validateText()) {
+    if (!validateText(&mpLibraryTreeItem)) {
       mpTextViewToolButton->setChecked(true);
       return;
     }
@@ -3623,7 +3628,7 @@ void ModelWidget::makeFileWritAble()
 void ModelWidget::showDocumentationView()
 {
   // validate the modelica text before switching to documentation view
-  if (!validateText()) {
+  if (!validateText(&mpLibraryTreeItem)) {
     mpTextViewToolButton->setChecked(true);
     return;
   }

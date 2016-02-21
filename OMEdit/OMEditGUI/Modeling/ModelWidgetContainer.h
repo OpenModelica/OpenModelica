@@ -353,8 +353,8 @@ public:
   void createModelWidgetComponents();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void reDrawModelWidget();
-  bool validateText();
-  bool modelicaEditorTextChanged();
+  bool validateText(LibraryTreeItem **pLibraryTreeItem);
+  bool modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem);
   void updateChildClasses(LibraryTreeItem *pLibraryTreeItem);
   void clearSelection();
   void updateClassAnnotationIfNeeded();
