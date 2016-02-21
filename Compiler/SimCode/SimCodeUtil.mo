@@ -638,8 +638,12 @@ protected
 algorithm
   for i in 1:arrayLength(basePartitions) loop
     basePartition := basePartitions[i];
-    simSubPartitions := List.map(Array.getRange(off, off + basePartition.nSubClocks - 1, subPartitions), Util.getOption);
-    simSubPartitions := listReverse(simSubPartitions);
+    if basePartition.nSubClocks > 0 then
+      simSubPartitions := List.map(Array.getRange(off, off + basePartition.nSubClocks - 1, subPartitions), Util.getOption);
+      simSubPartitions := listReverse(simSubPartitions);
+    else
+      simSubPartitions := {};
+    end if;
     off := off + basePartition.nSubClocks;
     clockedPartitions := SimCode.CLOCKED_PARTITION(basePartition.clock, simSubPartitions)::clockedPartitions;
   end for;
