@@ -47,6 +47,7 @@
 
 class MainWindow;
 class ModelWidget;
+class LibraryTreeItem;
 
 class CommentDefinition
 {
@@ -77,7 +78,7 @@ public:
   ModelicaTextEditor(ModelWidget *pParent);
   QString getLastValidText() {return mLastValidText;}
   QStringList getClassNames(QString *errorString);
-  bool validateText();
+  bool validateText(LibraryTreeItem **pLibraryTreeItem);
   QString removeLeadingSpaces(QString contents);
   void storeLeadingSpaces(QMap<int, int> leadingSpacesMap);
   QString getPlainText();
