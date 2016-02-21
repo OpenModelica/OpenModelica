@@ -313,7 +313,11 @@ algorithm
   factorStr := "factor(" + MMath.rationalString(subClock.factor) + ")";
   shiftStr := "shift(" + MMath.rationalString(subClock.shift) + ")";
   solverStr := "solver(" + optionString(subClock.solver) + ")";
-  subClockString := factorStr + " " + shiftStr + " " + solverStr;
+  if stringLength(solverStr) > 8 then
+    subClockString := factorStr + " " + shiftStr + " " + solverStr;
+  else
+    subClockString := factorStr + " " + shiftStr + " ";
+  end if;
 end subClockString;
 
 public function optionString
