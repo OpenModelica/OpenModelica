@@ -108,7 +108,7 @@ endif
 
 
 revision:
-	test ! -e .git || cp -puf common/pre-commit.sh `git rev-parse --git-dir`/hooks/pre-commit
+	test ! -e .git || cp -puf common/pre-commit.sh `git rev-parse --git-dir`/hooks/pre-commit || echo "unlocated git"
 	@echo Current revision: $(CONFIG_REVISION)
 ifeq ($(CONFIG_REVISION),)
 	@if test -f revision.h; \
