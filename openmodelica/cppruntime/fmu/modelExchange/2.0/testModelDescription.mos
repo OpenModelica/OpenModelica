@@ -47,6 +47,15 @@ readFile("modelDescription.tmp.xml");
 //   <ModelExchange
 //     modelIdentifier=\"SID\">
 //   </ModelExchange>
+//   <TypeDefinitions>
+//     <Clocks>
+//       <Clock><Periodic
+//               baseInterval=\"0.1\"
+//               subSampleFactor=\"2\"
+//               shiftCounter=\"3\"
+//               /></Clock>
+//     </Clocks>
+//   </TypeDefinitions>
 //   <LogCategories>
 //     <Category name=\"logEvents\" />
 //     <Category name=\"logSingularLinearSystems\" />
@@ -141,13 +150,6 @@ readFile("modelDescription.tmp.xml");
 //     </DiscreteStates>
 //     <InitialUnknowns>
 //     </InitialUnknowns>
-//     <Clocks>
-//       <Clock><Periodic
-//               baseInterval=\"0.1\"
-//               subSampleFactor=\"2\"
-//               shiftCounter=\"3\"
-//               /></Clock>
-//     </Clocks>
 //   </ModelStructure>
 // </fmiModelDescription>
 // "
