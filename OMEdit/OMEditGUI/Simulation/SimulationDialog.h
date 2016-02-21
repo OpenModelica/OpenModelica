@@ -211,6 +211,8 @@ public:
   void showAlgorithmicDebugger(SimulationOptions simulationOptions);
   void simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime);
 public slots:
+  void numberOfIntervalsRadioToggled(bool toggle);
+  void intervalRadioToggled(bool toggle);
   void updateMethodToolTip(int index);
   void enableDasslOptions(QString method);
   void showIntegrationHelp();
