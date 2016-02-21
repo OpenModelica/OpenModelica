@@ -469,10 +469,6 @@ protected
   BackendDAE.StrongComponent comp;
   Integer eqIdx, varIdx, parentIdx;
 algorithm
-  if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
-    print("\n" + BackendDump.BORDER +
-          "\nClock propagation\n" + BackendDump.BORDER + "\n\n");
-  end if;
   outSubClocks := arrayCreate(BackendVariable.varsSize(inVars), (BackendDAE.DEFAULT_SUBCLOCK, 0));
   for comp in inComps loop
     outClockKind := matchcontinue comp
@@ -500,13 +496,13 @@ algorithm
             (clockKind, (subClock, parentIdx)) := getSubClock(exp, inVars, outSubClocks);
             arrayUpdate(outSubClocks, varIdx, (subClock, parentIdx));
           end if;
-          if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
+          /*
             print("var " + intString(varIdx) + ": " +
                   BackendDump.equationString(eq) + " ->\n    " +
                   ExpressionDump.printExpStr(exp) + ": " +
                   BackendDump.subClockString(subClock) +
                   " with parent " + intString(parentIdx) + ".\n");
-          end if;
+          */
         then setClockKind(outClockKind, clockKind);
       else
         algorithm
