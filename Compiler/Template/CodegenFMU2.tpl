@@ -64,7 +64,7 @@ case SIMCODE(__) then
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
     <%if isFMIMEType(FMUType) then ModelExchange(simCode)%>
     <%if isFMICSType(FMUType) then CoSimulation(simCode)%>
-    <%fmiTypeDefinitions(modelInfo, "2.0")%>
+    <%fmiTypeDefinitions(simCode, "2.0")%>
     <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then
     <<
     <LogCategories>
@@ -98,7 +98,7 @@ case SIMCODE(__) then
     >> %>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%fmiModelVariables(simCode, "2.0")%>
-    <%ModelStructure(simCode, modelStructure)%>
+    <%ModelStructure(modelStructure)%>
   </fmiModelDescription>
   >>
 end fmiModelDescription;

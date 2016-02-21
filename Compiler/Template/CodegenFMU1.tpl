@@ -62,7 +62,7 @@ case SIMCODE(__) then
   <<
   <fmiModelDescription
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
-    <%fmiTypeDefinitions(modelInfo, "1.0")%>
+    <%fmiTypeDefinitions(simCode, "1.0")%>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%fmiModelVariables(simCode, "1.0")%>
     <%if isFMICSType(FMUType) then Implementation()%>
