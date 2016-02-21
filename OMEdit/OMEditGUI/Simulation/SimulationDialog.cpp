@@ -137,13 +137,16 @@ void SimulationDialog::setUpForm()
   // Output Interval
   mpNumberofIntervalsRadioButton = new QRadioButton(tr("Number of Intervals:"));
   mpNumberofIntervalsRadioButton->setChecked(true);
+  connect(mpNumberofIntervalsRadioButton, SIGNAL(toggled(bool)), SLOT(numberOfIntervalsRadioToggled(bool)));
   mpNumberofIntervalsSpinBox = new QSpinBox;
   mpNumberofIntervalsSpinBox->setRange(0, std::numeric_limits<int>::max());
   mpNumberofIntervalsSpinBox->setSingleStep(100);
   mpNumberofIntervalsSpinBox->setValue(500);
   // Interval
   mpIntervalRadioButton = new QRadioButton(tr("Interval:"));
+  connect(mpIntervalRadioButton, SIGNAL(toggled(bool)), SLOT(intervalRadioToggled(bool)));
   mpIntervalTextBox = new QLineEdit("0.002");
+  mpIntervalTextBox->setEnabled(false);
   // set the layout for simulation interval groupbox
   QGridLayout *pSimulationIntervalGridLayout = new QGridLayout;
   pSimulationIntervalGridLayout->setColumnStretch(1, 1);
@@ -596,7 +599,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpIntervalTextBox->setText(QString::number(simulationOptions.interval));
     }
     mpCflagsTextBox->setEnabled(true);
-    mpNumberofIntervalsSpinBox->setEnabled(true);
     mpFileNameTextBox->setEnabled(true);
     mpSaveSimulationCheckbox->setEnabled(true);
     mpSimulateButton->setText(Helper::simulate);
@@ -641,8 +643,10 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpLaunchAlgorithmicDebuggerCheckBox->setChecked(simulationOptions.getLaunchAlgorithmicDebugger());
     // build only
     mpBuildOnlyCheckBox->setChecked(simulationOptions.getBuildOnly());
-    // Output Interval
+    // Number Of Intervals
     mpNumberofIntervalsSpinBox->setValue(simulationOptions.getNumberofIntervals());
+    // Interval
+    mpIntervalTextBox->setText(QString::number(simulationOptions.getStepSize()));
     // Output filename
     mpFileNameTextBox->setDisabled(true);
     // Variable filter
@@ -1119,6 +1123,42 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
 }
 
 /*!
+ * \brief SimulationDialog::numberOfIntervalsRadioToggled
+ * \param toggle
+ */
+void SimulationDialog::numberOfIntervalsRadioToggled(bool toggle)
+{
+  if (toggle) {
+    mpNumberofIntervalsSpinBox->setEnabled(true);
+    mpIntervalTextBox->setEnabled(false);
+    if (validate()) {
+      qreal startTime = mpStartTimeTextBox->text().toDouble();
+      qreal stopTime = mpStopTimeTextBox->text().toDouble();
+      qreal interval = mpIntervalTextBox->text().toDouble();
+      qreal numberOfIntervals = (stopTime - startTime) / interval;
+      mpNumberofIntervalsSpinBox->setValue(numberOfIntervals);
+    }
+  }
+}
+
+/*!
+ * \brief SimulationDialog::intervalRadioToggled
+ * \param toggle
+ */
+void SimulationDialog::intervalRadioToggled(bool toggle)
+{
+  if (toggle) {
+    mpNumberofIntervalsSpinBox->setEnabled(false);
+    mpIntervalTextBox->setEnabled(true);
+    if (validate()) {
+      qreal startTime = mpStartTimeTextBox->text().toDouble();
+      qreal stopTime = mpStopTimeTextBox->text().toDouble();
+      mpIntervalTextBox->setText(QString::number((stopTime - startTime) / mpNumberofIntervalsSpinBox->value()));
+    }
+  }
+}
+
+/*!
  * \brief SimulationDialog::updateMethodToolTip
  * Updates the Method combobox tooltip.
  * \param index
@@ -1129,9 +1169,11 @@ void SimulationDialog::updateMethodToolTip(int index)
 }
 
 /*!
-  Slot activated when mpMethodComboBox currentIndexChanged signal is raised.\n
-  Enables/disables the Dassl options group box
-  */
+ * \brief SimulationDialog::enableDasslOptions
+ * Slot activated when mpMethodComboBox currentIndexChanged signal is raised.\n
+ * Enables/disables the Dassl options group box
+ * \param method
+ */
 void SimulationDialog::enableDasslOptions(QString method)
 {
   if (method.compare("dassl") == 0) {
@@ -1144,9 +1186,10 @@ void SimulationDialog::enableDasslOptions(QString method)
 }
 
 /*!
-  Slot activated when mpMehtodHelpButton clicked signal is raised.\n
-  Opens the IntegrationAlgorithms.pdf file.
-  */
+ * \brief SimulationDialog::showIntegrationHelp
+ * Slot activated when mpMehtodHelpButton clicked signal is raised.\n
+ * Opens the IntegrationAlgorithms.pdf file.
+ */
 void SimulationDialog::showIntegrationHelp()
 {
   QUrl integrationAlgorithmsPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
@@ -1159,9 +1202,11 @@ void SimulationDialog::showIntegrationHelp()
 }
 
 /*!
-  Slot activated when mpBuildOnlyCheckBox checkbox is checked.\n
-  Makes sure that we only build the modelica model and don't run the simulation.
-  */
+ * \brief SimulationDialog::buildOnly
+ * Slot activated when mpBuildOnlyCheckBox checkbox is checked.\n
+ * Makes sure that we only build the modelica model and don't run the simulation.
+ * \param checked
+ */
 void SimulationDialog::buildOnly(bool checked)
 {
   mpLaunchAlgorithmicDebuggerCheckBox->setEnabled(!checked);
@@ -1169,27 +1214,31 @@ void SimulationDialog::buildOnly(bool checked)
 }
 
 /*!
-  Slot activated when mpModelSetupFileBrowseButton clicked signal is raised.\n
-  Allows user to select Model Setup File.
-  */
+ * \brief SimulationDialog::browseModelSetupFile
+ * Slot activated when mpModelSetupFileBrowseButton clicked signal is raised.\n
+ * Allows user to select Model Setup File.
+ */
 void SimulationDialog::browseModelSetupFile()
 {
   mpModelSetupFileTextBox->setText(StringHandler::getOpenFileName(this,QString(Helper::applicationName).append(" - ").append(Helper::chooseFile), NULL, Helper::xmlFileTypes, NULL));
 }
 
 /*!
-  Slot activated when mpEquationSystemInitializationFileBrowseButton clicked signal is raised.\n
-  Allows user to select Equation System Initialization File.
-  */
+ * \brief SimulationDialog::browseEquationSystemInitializationFile
+ * Slot activated when mpEquationSystemInitializationFileBrowseButton clicked signal is raised.\n
+ * Allows user to select Equation System Initialization File.
+ */
 void SimulationDialog::browseEquationSystemInitializationFile()
 {
   mpEquationSystemInitializationFileTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile), NULL, Helper::matFileTypes, NULL));
 }
 
 /*!
-  Slot activated when mpArchivedSimulationsListWidget itemDoubleClicked signal is raised.\n
-  Shows the archived SimulationOutputWidget.
-  */
+ * \brief SimulationDialog::showArchivedSimulation
+ * Slot activated when mpArchivedSimulationsListWidget itemDoubleClicked signal is raised.\n
+ * Shows the archived SimulationOutputWidget.
+ * \param pTreeWidgetItem
+ */
 void SimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem)
 {
   ArchivedSimulationItem *pArchivedSimulationItem = dynamic_cast<ArchivedSimulationItem*>(pTreeWidgetItem);
@@ -1202,9 +1251,10 @@ void SimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem)
 }
 
 /*!
-  Slot activated when mpSimulateButton clicked signal is raised.\n
-  Reads the simulation options set by the user and sends them to OMC by calling buildModel.
-  */
+ * \brief SimulationDialog::simulate
+ * Slot activated when mpSimulateButton clicked signal is raised.\n
+ * Reads the simulation options set by the user and sends them to OMC by calling buildModel.
+ */
 void SimulationDialog::simulate()
 {
   SimulationOptions simulationOptions;
