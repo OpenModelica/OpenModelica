@@ -455,7 +455,7 @@ algorithm
 end makeClockedSyst;
 
 protected function resolveClocks
-"Get from clock equation system array sub-clocks[varIdx] and base clock."
+"Get array of subClocks[varIdx] and common base from clock equation system."
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqs;
   input BackendDAE.StrongComponents inComps;
@@ -465,10 +465,14 @@ protected
   BackendDAE.Equation eq;
   DAE.Exp exp;
   DAE.ClockKind clockKind;
-  tuple<BackendDAE.SubClock, Integer> subClock;
+  BackendDAE.SubClock subClock;
   BackendDAE.StrongComponent comp;
-  Integer eqIdx, varIdx;
+  Integer eqIdx, varIdx, parentIdx;
 algorithm
+  if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
+    print("\n" + BackendDump.BORDER +
+          "\nClock propagation\n" + BackendDump.BORDER + "\n\n");
+  end if;
   outSubClocks := arrayCreate(BackendVariable.varsSize(inVars), (BackendDAE.DEFAULT_SUBCLOCK, 0));
   for comp in inComps loop
     outClockKind := matchcontinue comp
@@ -481,8 +485,28 @@ algorithm
             case BackendDAE.EQUATION(scalar = e) then e;
             case BackendDAE.SOLVED_EQUATION(exp = e) then e;
           end match;
-          (clockKind, subClock) := getSubClock(exp, inVars, outSubClocks);
-          arrayUpdate(outSubClocks, varIdx, subClock);
+          (clockKind, (subClock, parentIdx)) := getSubClock(exp, inVars, outSubClocks);
+          if parentIdx <> varIdx then
+            arrayUpdate(outSubClocks, varIdx, (subClock, parentIdx));
+          else
+            // can't determine clock from var itself;
+            // use alternative exp of unsolved equation instead
+            exp := match eq
+              local
+                DAE.Exp e;
+              case BackendDAE.EQUATION(exp = e) then e;
+              else exp;
+            end match;
+            (clockKind, (subClock, parentIdx)) := getSubClock(exp, inVars, outSubClocks);
+            arrayUpdate(outSubClocks, varIdx, (subClock, parentIdx));
+          end if;
+          if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
+            print("var " + intString(varIdx) + ": " +
+                  BackendDump.equationString(eq) + " ->\n    " +
+                  ExpressionDump.printExpStr(exp) + ": " +
+                  BackendDump.subClockString(subClock) +
+                  " with parent " + intString(parentIdx) + ".\n");
+          end if;
         then setClockKind(outClockKind, clockKind);
       else
         algorithm
@@ -559,7 +583,7 @@ algorithm
     case DAE.CREF(cr, _)
       algorithm
         i1 := getVarIdx(cr, inVars);
-       (subClock, _) := arrayGet(inSubClocks, i1);
+        (subClock, _) := arrayGet(inSubClocks, i1);
       then
         (DAE.INFERRED_CLOCK(), (subClock, i1));
 
@@ -573,24 +597,25 @@ algorithm
 end getSubClock;
 
 protected function getSubClock1
+"Helper for recursion in getSubClock"
   input DAE.Exp inExp;
   input BackendDAE.Variables inVars;
   input array<tuple<BackendDAE.SubClock, Integer>> inSubClocks;
   output DAE.ClockKind outClockKind;
   output tuple<BackendDAE.SubClock, Integer> outSubClock;
 protected
-  BackendDAE.SubClock subClk;
-  Integer parent;
+  BackendDAE.SubClock subClock;
+  Integer parentIdx;
 algorithm
-  (outClockKind, (subClk, parent)) := getSubClock(inExp, inVars, inSubClocks);
-  parent := match inExp
+  (outClockKind, (subClock, parentIdx)) := getSubClock(inExp, inVars, inSubClocks);
+  parentIdx := match inExp
     local
       DAE.ComponentRef cr;
     case DAE.CREF(cr, _)
       then getVarIdx(cr, inVars);
-    else parent;
+    else parentIdx;
   end match;
-  outSubClock := (subClk, parent);
+  outSubClock := (subClock, parentIdx);
 end getSubClock1;
 
 protected function setClockKind
@@ -757,16 +782,8 @@ algorithm
       then oldSolverMethod;
     else
       algorithm
-        oldMethod := match oldSolverMethod
-          local String s;
-          case SOME(s) then s;
-          case NONE() then "";
-        end match;
-        newMethod := match newSolverMethod
-          local String s;
-          case SOME(s) then s;
-          case NONE() then "";
-        end match;
+        oldMethod := BackendDump.optionString(oldSolverMethod);
+        newMethod := BackendDump.optionString(newSolverMethod);
         Error.addMessage(Error.SUBCLOCK_CONFLICT, {"solver", oldMethod, newMethod});
       then fail();
   end match;

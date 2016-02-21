@@ -295,24 +295,38 @@ end printBasePartitions;
 public function printSubPartitions
   input array<BackendDAE.SubPartition> subPartitions;
 protected
-  String factorStr, shiftStr, solverStr, eventStr;
-  BackendDAE.SubClock clk;
+  String subClockStr, eventStr;
 algorithm
   for i in 1:arrayLength(subPartitions) loop
-    clk := subPartitions[i].clock;
-    factorStr := "factor(" + MMath.rationalString(clk.factor) + ")";
-    shiftStr := "shift(" + MMath.rationalString(clk.shift) + ")";
-    solverStr := match clk.solver
-      local
-        String s;
-      case NONE() then "";
-      case SOME(s) then "solver(" + s + ")";
-    end match;
+    subClockStr := subClockString(subPartitions[i].clock);
     eventStr := "event(" + boolString(subPartitions[i].holdEvents) + ")";
-    print( intString(i) + ": " + factorStr + " " + shiftStr + " " +
-           solverStr + " " + eventStr + "\n");
+    print(intString(i) + ": " + subClockStr + " " + eventStr + "\n");
   end for;
 end printSubPartitions;
+
+public function subClockString
+  input BackendDAE.SubClock subClock;
+  output String subClockString;
+protected
+  String factorStr, shiftStr, solverStr;
+algorithm
+  factorStr := "factor(" + MMath.rationalString(subClock.factor) + ")";
+  shiftStr := "shift(" + MMath.rationalString(subClock.shift) + ")";
+  solverStr := "solver(" + optionString(subClock.solver) + ")";
+  subClockString := factorStr + " " + shiftStr + " " + solverStr;
+end subClockString;
+
+public function optionString
+  input Option<String> option;
+  output String optionString;
+algorithm
+  optionString := match option
+    local
+      String s;
+    case SOME(s) then s;
+    else "";
+  end match;
+end optionString;
 
 public function printBackendDAEType "This is a helper for printShared."
   input BackendDAE.BackendDAEType btp;

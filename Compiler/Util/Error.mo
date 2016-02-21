@@ -828,9 +828,9 @@ public constant Message CLOCKED_DSICRETE_CONT_CONFLICT = MESSAGE(568, TRANSLATIO
 public constant Message INVALID_CLOCK_EQUATION = MESSAGE(569, TRANSLATION(), ERROR(),
   Util.gettext("Invalid form of clock equation"));
 public constant Message SUBCLOCK_CONFLICT = MESSAGE(570, TRANSLATION(), ERROR(),
-  Util.gettext("Partitions have different sub-clock %ss (%s) and (%s)."));
+  Util.gettext("Partition has different sub-clock %ss (%s) and (%s)."));
 public constant Message CLOCK_CONFLICT = MESSAGE(571, TRANSLATION(), ERROR(),
-  Util.gettext("Partitions have different base clocks."));
+  Util.gettext("Partition has different base clocks."));
 public constant Message EXEC_STAT = MESSAGE(572, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Performance of %s: time %s/%s"));
 public constant Message EXEC_STAT_GC = MESSAGE(573, TRANSLATION(), NOTIFICATION(),
