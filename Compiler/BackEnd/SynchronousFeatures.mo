@@ -619,13 +619,41 @@ protected function setClockKind
   input DAE.ClockKind inClockKind;
   output DAE.ClockKind outClockKind;
 algorithm
-  outClockKind := match (inOldClockKind, inClockKind)
+  outClockKind := matchcontinue (inOldClockKind, inClockKind)
+    local
+      DAE.Exp e1, e2;
+      Integer i1, i2;
+      Real r1, r2;
+      String s1, s2;
     case (DAE.INFERRED_CLOCK(), _) then inClockKind;
     case (_, DAE.INFERRED_CLOCK()) then inOldClockKind;
+    case (DAE.INTEGER_CLOCK(intervalCounter = e1, resolution = i1),
+          DAE.INTEGER_CLOCK(intervalCounter = e2, resolution = i2))
+      equation
+        true = Expression.expEqual(e1, e1);
+        true = (i1 == i2);
+      then inClockKind;
+    case (DAE.REAL_CLOCK(interval = e1),
+          DAE.REAL_CLOCK(interval = e2))
+      equation
+        true = Expression.expEqual(e1, e1);
+      then inClockKind;
+    case (DAE.BOOLEAN_CLOCK(condition = e1, startInterval = r1),
+          DAE.BOOLEAN_CLOCK(condition = e2, startInterval = r2))
+      equation
+        true = Expression.expEqual(e1, e1);
+        true = (r1 == r2);
+      then inClockKind;
+    case (DAE.SOLVER_CLOCK(c = e1, solverMethod = s1),
+          DAE.SOLVER_CLOCK(c = e2, solverMethod = s2))
+      equation
+        true = Expression.expEqual(e1, e1);
+        true = stringEqual(s1, s2);
+      then inClockKind;
     else
       equation Error.addMessage(Error.CLOCK_CONFLICT, {});
       then fail();
-  end match;
+  end matchcontinue;
 end setClockKind;
 
 protected function getSubClkFromVars
