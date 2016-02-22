@@ -247,10 +247,11 @@ protected function fixElementItems
   output list<Absyn.Class> outMetaClasses = {};
 protected
   Integer index = 0;
-  Boolean singleton = listLength(inElementItems) == 1;
+  Boolean singleton = sum(if Absyn.isElementItem(e) then 1 else 0 for e in inElementItems) == 1;
   Absyn.Class c;
   Absyn.Restriction r;
 algorithm
+
   outElementItems := list(match e
     case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
         Absyn.CLASSDEF(class_ = c as Absyn.CLASS(restriction = Absyn.R_RECORD()))))

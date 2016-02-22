@@ -6711,6 +6711,16 @@ algorithm
   end match;
 end isElementItemClass;
 
+public function isElementItem
+  input ElementItem inElement;
+  output Boolean outIsClass;
+algorithm
+  outIsClass := match inElement
+    case ELEMENTITEM() then true;
+    else false;
+  end match;
+end isElementItem;
+
 public function isElementItemClassNamed
   input String inName;
   input ElementItem inElement;
