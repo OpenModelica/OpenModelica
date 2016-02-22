@@ -18,6 +18,7 @@ import sys
 import os
 import shlex
 import subprocess
+from datetime import date
 
 if not 'OPENMODELICAHOME' in os.environ:
   os.environ['OPENMODELICAHOME'] = os.path.abspath('../../../build')
@@ -65,7 +66,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'OpenModelica User\'s Guide'
-copyright = u'2015, Open Source Modelica Consortium'
+copyright = u' %d, Open Source Modelica Consortium' % (date.today().year)
 author = u'Open Source Modelica Consortium'
 
 # The version info for the project you're documenting, acts as replacement for
