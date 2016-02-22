@@ -38,56 +38,58 @@ encapsulated package InstUtil
   This package supports Inst*.mo
 "
 
-public import Absyn;
-public import ClassInf;
-public import DAE;
-public import FCore;
-public import GlobalScript;
-public import InnerOuter;
-public import InstTypes;
-public import Mod;
-public import Prefix;
-public import SCode;
-public import UnitAbsyn;
-public import Values;
-public import HashTable;
-public import HashTable5;
+import Absyn;
+import ClassInf;
+import DAE;
+import FCore;
+import GlobalScript;
+import InnerOuter;
+import InstTypes;
+import Mod;
+import Prefix;
+import SCode;
+import UnitAbsyn;
+import Values;
+import HashTable;
+import HashTable5;
 
-protected import List;
-protected import BaseHashTable;
-protected import Expression;
-protected import Error;
-protected import Util;
-protected import ComponentReference;
-protected import Patternm;
-protected import DAEUtil;
-protected import DAEDump;
-protected import Types;
-protected import Debug;
-protected import PrefixUtil;
-protected import ExpressionDump;
-protected import Flags;
-protected import FGraph;
-protected import FNode;
-protected import SCodeDump;
-protected import Lookup;
-protected import ValuesUtil;
-protected import Static;
-protected import Ceval;
-protected import Dump;
-protected import Config;
-protected import Inst;
-protected import InstFunction;
-protected import InstSection;
-protected import System;
-protected import ErrorExt;
-protected import InstExtends;
-protected import Graph;
-protected import UnitAbsynBuilder;
-protected import UnitChecker;
-protected import NFSCodeFlatten;
-protected import HashSet;
-protected import BaseHashSet;
+protected
+import List;
+import BaseHashTable;
+import Expression;
+import Error;
+import Util;
+import ComponentReference;
+import Patternm;
+import DAEUtil;
+import DAEDump;
+import Types;
+import Debug;
+import PrefixUtil;
+import ExpressionDump;
+import Flags;
+import FGraph;
+import FNode;
+import SCodeDump;
+import Lookup;
+import ValuesUtil;
+import Static;
+import Ceval;
+import Dump;
+import Config;
+import Inst;
+import InstFunction;
+import InstSection;
+import System;
+import ErrorExt;
+import InstExtends;
+import Graph;
+import UnitAbsynBuilder;
+import UnitChecker;
+import NFSCodeFlatten;
+import HashSet;
+import BaseHashSet;
+import MetaModelica.Dangerous.listReverseInPlace;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
@@ -697,45 +699,30 @@ public function equalityConstraint
   input FCore.Graph inEnv;
   input list<SCode.Element> inCdefelts;
   input SourceInfo info;
-  output DAE.EqualityConstraint outResult;
+  output DAE.EqualityConstraint outResult=NONE();
+protected
+  list<SCode.Element> els;
+  Absyn.Path path;
+  Integer dimension;
+  DAE.InlineType inlineType;
 algorithm
-  outResult := matchcontinue(inEnv,inCdefelts,info)
-  local
-      list<SCode.Element> tail, els;
-      FCore.Graph env;
-      Absyn.Path path;
-      Integer dimension;
-      DAE.InlineType inlineType;
-      SCode.Element el;
-
-    case(_,{},_) then NONE();
-
-    case(env, (el as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION(_),
-         classDef = SCode.PARTS(elementLst = els))) :: _, _)
-      equation
-        SOME(path) = FGraph.getScopePath(env);
-        path = Absyn.joinPaths(path, Absyn.IDENT("equalityConstraint"));
-        path = Absyn.makeFullyQualified(path);
-        /*(cache, env,_) = implicitFunctionTypeInstantiation(cache, env, classDef);
-        (cache, types,_) = Lookup.lookupFunctionsInEnv(cache, env, path, info);
-        length = listLength(types);
-        print("type count: ");
-        print(intString(length));
-        print("\n");*/
-        dimension = equalityConstraintOutputDimension(els);
-        /*print("dimension: ");
-        print(intString(dimension));
-        print("\n");*/
-        // adrpo: get the inline type of the function
-        inlineType = isInlineFunc(el);
-      then
-        SOME((path, dimension, inlineType));
-
-    case(env, _ :: tail, _)
-      then
-        equalityConstraint(env, tail, info);
-
-  end matchcontinue;
+  try
+    SOME(path) := FGraph.getScopePath(inEnv);
+    path := Absyn.joinPaths(path, Absyn.IDENT("equalityConstraint"));
+    path := Absyn.makeFullyQualified(path);
+  else
+    return;
+  end try;
+  for el in inCdefelts loop
+    try
+      SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION(), classDef = SCode.PARTS(elementLst = els)) := el;
+      dimension := equalityConstraintOutputDimension(els);
+      inlineType := isInlineFunc(el);
+      outResult := SOME((path, dimension, inlineType));
+      return;
+    else
+    end try;
+  end for;
 end equalityConstraint;
 
 public function handleUnitChecking
@@ -1319,35 +1306,10 @@ public function constantEls
  Used buy partialInstClassdef to instantiate constants in packages."
   input list<SCode.Element> elements;
   output list<SCode.Element> outElements;
+protected
+  SCode.Attributes attr;
 algorithm
-  outElements := matchcontinue (elements)
-    local
-      SCode.Attributes attr;
-      SCode.Element el;
-      list<SCode.Element> els,els1;
-      SCode.Comment cmt;
-
-    case ({}) then {};
-
-    // constants
-    case ((el as SCode.COMPONENT(attributes=attr))::els)
-     equation
-        true = SCode.isConstant(SCode.attrVariability(attr)); // or SCode.getEvaluateAnnotation(cmt);
-        els1 = constantEls(els);
-    then (el::els1);
-
-    /*/ final parameters
-    case ((el as SCode.COMPONENT(prefixes = SCode.PREFIXES(finalPrefix = SCode.FINAL()), attributes=attr))::els)
-     equation
-        true = SCode.isParameterOrConst(SCode.attrVariability(attr));
-        els1 = constantEls(els);
-    then (el::els1);*/
-
-    case (_::els)
-      equation
-        els1 = constantEls(els);
-     then els1;
-  end matchcontinue;
+  outElements := list(el for el guard match el case SCode.COMPONENT(attributes=attr) then SCode.isConstant(SCode.attrVariability(attr)); else false; end match in elements);
 end constantEls;
 
 public function constantAndParameterEls
@@ -1356,26 +1318,10 @@ public function constantAndParameterEls
  Used by partialInstClassdef to instantiate constants and parameters in packages."
   input list<SCode.Element> elements;
   output list<SCode.Element> outElements;
+protected
+  SCode.Attributes attr;
 algorithm
-  outElements := matchcontinue (elements)
-    local
-      SCode.Attributes attr;
-      SCode.Element el;
-      list<SCode.Element> els,els1;
-
-    case ({}) then {};
-
-    case ((el as SCode.COMPONENT(attributes=attr))::els)
-     equation
-        true = SCode.isParameterOrConst(SCode.attrVariability(attr));
-        els1 = constantAndParameterEls(els);
-    then (el::els1);
-
-    case (_::els)
-      equation
-        els1 = constantAndParameterEls(els);
-     then els1;
-  end matchcontinue;
+  outElements := list(el for el guard match el case SCode.COMPONENT(attributes=attr) then SCode.isParameterOrConst(SCode.attrVariability(attr)); else false; end match in elements);
 end constantAndParameterEls;
 
 protected function removeBindings
@@ -1496,18 +1442,7 @@ public function addNomod
   input list<SCode.Element> inElements;
   output list<tuple<SCode.Element, DAE.Mod>> outElements;
 algorithm
-  outElements := match(inElements)
-    local
-      list<tuple<SCode.Element, DAE.Mod>> res;
-      SCode.Element x;
-      list<SCode.Element> xs;
-    case {} then {};
-    case ((x :: xs))
-      equation
-        res = addNomod(xs);
-      then
-        ((x,DAE.NOMOD()) :: res);
-  end match;
+  outElements := list((x,DAE.NOMOD()) for x in inElements);
 end addNomod;
 
 public function sortElementList
@@ -6537,61 +6472,53 @@ This function splits the Element list into four lists
 3. Extends elements
 4. Components"
   input list<SCode.Element> elts;
-  output list<SCode.Element> cdefImpElts;
-  output list<SCode.Element> classextendsElts;
-  output list<SCode.Element> extElts;
-  output list<SCode.Element> compElts;
+  output list<SCode.Element> cdefImpElts={};
+  output list<SCode.Element> classextendsElts={};
+  output list<SCode.Element> extElts={};
+  output list<SCode.Element> compElts={};
 algorithm
-  (cdefImpElts,classextendsElts,extElts,compElts) := match (elts)
-    local
-      list<SCode.Element> comps,xs;
-      SCode.Element cdef,imp,ext,comp;
+  for elt in elts loop
+    _ := match elt
+      case SCode.CLASS()
+        algorithm
+          if match elt.classDef case SCode.CLASS_EXTENDS() then true; else false; end match then
+            // class definitions with class extends
+            classextendsElts := elt :: classextendsElts;
+          else
+            // class definitions without class extends
+            cdefImpElts := elt :: cdefImpElts;
+          end if;
+        then ();
 
-    // empty case
-    case ({}) then ({},{},{},{});
+      // imports
+      case SCode.IMPORT()
+        algorithm
+          cdefImpElts := elt :: cdefImpElts;
+        then ();
 
-    // class definitions with class extends
-    case ((cdef as SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))::xs)
-      equation
-        (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
-      then
-        (cdefImpElts,cdef :: classextendsElts,extElts,comps);
+      // units
+      case SCode.DEFINEUNIT()
+        algorithm
+          cdefImpElts := elt :: cdefImpElts;
+        then ();
 
-    // class definitions without class extends
-    case (((cdef as SCode.CLASS()) :: xs))
-      equation
-        (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
-      then
-        (cdef :: cdefImpElts,classextendsElts,extElts,comps);
+      // extends elements
+      case SCode.EXTENDS()
+        algorithm
+          extElts := elt :: extElts;
+        then ();
 
-    // imports
-    case (((imp as SCode.IMPORT()) :: xs))
-      equation
-        (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
-      then
-        (imp :: cdefImpElts,classextendsElts,extElts,comps);
-
-    // units
-    case (((imp as SCode.DEFINEUNIT()) :: xs))
-      equation
-        (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
-      then
-        (imp :: cdefImpElts,classextendsElts,extElts,comps);
-
-    // extends elements
-    case((ext as SCode.EXTENDS())::xs)
-      equation
-        (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
-      then
-        (cdefImpElts,classextendsElts,ext::extElts,comps);
-
-    // components
-    case ((comp as SCode.COMPONENT()) :: xs)
-      equation
-        (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
-      then
-        (cdefImpElts,classextendsElts,extElts,comp::comps);
-  end match;
+      // components
+      case SCode.COMPONENT()
+        algorithm
+          compElts := elt :: compElts;
+        then ();
+    end match;
+  end for;
+  cdefImpElts := listReverseInPlace(cdefImpElts);
+  classextendsElts := listReverseInPlace(classextendsElts);
+  extElts := listReverseInPlace(extElts);
+  compElts := listReverseInPlace(compElts);
 end splitElts;
 
 public function splitEltsNoComponents "
