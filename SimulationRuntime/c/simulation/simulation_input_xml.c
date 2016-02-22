@@ -907,7 +907,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
     /* read override values from file */
     infoStreamPrint(LOG_SOLVER, 0, "read override values from file: %s", overrideFile);
 
-    infile = fopen(overrideFile, "r");
+    infile = fopen(overrideFile, "rb");
     if (0==infile) {
       throwStreamPrint(NULL, "simulation_input_xml.c: could not open the file given to -overrideFile=%s", overrideFile);
     }
