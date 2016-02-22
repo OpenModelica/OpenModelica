@@ -304,6 +304,10 @@ General Tab
 
 -  *Stop Time* – the simulation stop time.
 
+-  *Number of Intervals* – the simulation number of intervals.
+
+-  *Interval* – the length of one interval (i.e., stepsize)
+
 -  *Method* – the simulation solver. See section :ref:`cruntime-integration-methods` for solver details.
 
 -  *Tolerance* – the simulation tolerance.
@@ -322,8 +326,6 @@ General Tab
 
 Output Tab
 ~~~~~~~~~~
-
--  *Number of Intervals* – the simulation number of intervals.
 
 -  *Output Format* – the simulation result file output format.
 
