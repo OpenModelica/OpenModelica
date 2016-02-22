@@ -29,7 +29,7 @@
  */
 
 /*
- * file simulation_input_xml.cpp
+ * file simulation_input_xml.c
  * this file reads the model input from Model_init.xml
  * file using the Expat XML parser.
  * basically a structure with maps is created (see omc_ModelInput)
@@ -314,7 +314,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     }
 
     if (fail) {
-      throwStreamPrint(NULL, "simulation_input_xml.cpp: error reading the xml file, found unknown class: %s  for variable: %s",ct,findHashStringString(v,"name"));
+      throwStreamPrint(NULL, "simulation_input_xml.c: error reading the xml file, found unknown class: %s  for variable: %s",ct,findHashStringString(v,"name"));
     }
 
     /* add the ScalarVariable map to the correct map! */
@@ -444,14 +444,14 @@ void read_input_xml(MODEL_DATA* modelData,
       /* no file given on the command line? use the default
        * model_name defined in generated code for model.*/
       if (0 > GC_asprintf((char**)&filename, "%s_init.xml", modelData->modelFilePrefix)) {
-        throwStreamPrint(NULL, "simulation_input_xml.cpp: Error: can not allocate memory.");
+        throwStreamPrint(NULL, "simulation_input_xml.c: Error: can not allocate memory.");
       }
     }
 
     /* open the file and fail on error. we open it read-write to be sure other processes can overwrite it */
     file = fopen(filename, "r");
     if(!file) {
-      throwStreamPrint(NULL, "simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename);
+      throwStreamPrint(NULL, "simulation_input_xml.c: Error: can not read file %s as setup file to the generated simulation code.",filename);
     }
   }
   /* create the XML parser */
@@ -459,7 +459,7 @@ void read_input_xml(MODEL_DATA* modelData,
   if(!parser)
   {
     fclose(file);
-    throwStreamPrint(NULL, "simulation_input_xml.cpp: Error: couldn't allocate memory for the XML parser!");
+    throwStreamPrint(NULL, "simulation_input_xml.c: Error: couldn't allocate memory for the XML parser!");
   }
   /* set our user data */
   XML_SetUserData(parser, &mi);
@@ -476,7 +476,7 @@ void read_input_xml(MODEL_DATA* modelData,
       if(XML_STATUS_ERROR == XML_Parse(parser, buf, len, done))
       {
         fclose(file);
-        warningStreamPrint(LOG_STDOUT, 0, "simulation_input_xml.cpp: Error: failed to read the XML file %s: %s at line %lu\n",
+        warningStreamPrint(LOG_STDOUT, 0, "simulation_input_xml.c: Error: failed to read the XML file %s: %s at line %lu\n",
             filename,
             XML_ErrorString(XML_GetErrorCode(parser)),
             XML_GetCurrentLineNumber(parser));
@@ -487,7 +487,7 @@ void read_input_xml(MODEL_DATA* modelData,
     fclose(file);
   } else if(XML_STATUS_ERROR == XML_Parse(parser, modelData->initXMLData, strlen(modelData->initXMLData), 1)) { /* Got the full string already */
     fprintf(stderr, "%s, %s %lu\n", modelData->initXMLData, XML_ErrorString(XML_GetErrorCode(parser)), XML_GetCurrentLineNumber(parser));
-    warningStreamPrint(LOG_STDOUT, 0, "simulation_input_xml.cpp: Error: failed to read the XML data %s: %s at line %lu\n",
+    warningStreamPrint(LOG_STDOUT, 0, "simulation_input_xml.c: Error: failed to read the XML data %s: %s at line %lu\n",
              modelData->initXMLData,
              XML_ErrorString(XML_GetErrorCode(parser)),
              XML_GetCurrentLineNumber(parser));
@@ -891,7 +891,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
   mmc_sint_t i;
   char* overrideStr = NULL;
   if((override != NULL) && (overrideFile != NULL)) {
-    throwStreamPrint(NULL, "simulation_input_xml.cpp: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
+    throwStreamPrint(NULL, "simulation_input_xml.c: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
   }
 
   if(override != NULL) {
@@ -909,7 +909,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
 
     infile = fopen(overrideFile, "r");
     if (0==infile) {
-      throwStreamPrint(NULL, "simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
+      throwStreamPrint(NULL, "simulation_input_xml.c: could not open the file given to -overrideFile=%s", overrideFile);
     }
 
     free(overrideStr);
@@ -921,7 +921,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
     errno = 0;
     if (1 != fread(line, n, 1, infile)) {
       free(line);
-      throwStreamPrint(NULL, "simulation_input_xml.cpp: could not read overrideFile %s: %s", overrideFile, strerror(errno));
+      throwStreamPrint(NULL, "simulation_input_xml.c: could not read overrideFile %s: %s", overrideFile, strerror(errno));
     }
     line[n] = '\0';
     overrideLine = (char*) malloc(n+1);
@@ -1039,7 +1039,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
     // give a warning if an override is not used #3204
     HASH_ITER(hh, mOverridesUses, it, ittmp) {
       if (it->val == OMC_OVERRIDE_UNUSED) {
-        warningStreamPrint(LOG_STDOUT, 0, "simulation_input_xml.cpp: override variable name not found in model: %s\n", it->id);
+        warningStreamPrint(LOG_STDOUT, 0, "simulation_input_xml.c: override variable name not found in model: %s\n", it->id);
       }
     }
 
