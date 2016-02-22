@@ -1747,10 +1747,10 @@ algorithm
         (listReverse(inElst), inVars, inEqns, inTpl);
     case ({}, _, _, _, _, _, _)
       then
-        (listAppend(listReverse(inElst), inB), inVars, inEqns, inTpl);
+        (List.append_reverse(inElst, inB), inVars, inEqns, inTpl);
     case (_, {}, _, _, _, _, _)
       then
-        (listAppend(listReverse(inElst), inA), inVars, inEqns, inTpl);
+        (List.append_reverse(inElst, inA), inVars, inEqns, inTpl);
     case ((ca, _)::resta, (cb, _)::restb, _, _, _, _, _)
       equation
         true = intEq(ca, cb);

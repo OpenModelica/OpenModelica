@@ -5780,7 +5780,7 @@ algorithm
       end match;
 
       // Reassemble the item list and return.
-      outComponents := listAppend(listReverse(outComponents), item :: rest_items);
+      outComponents := List.append_reverse(outComponents, item :: rest_items);
       outFound := true;
       outContinue := false;
       return;
@@ -5874,7 +5874,7 @@ algorithm
       end match;
 
       // Reassemble the item list and return.
-      outComponents := listAppend(listReverse(outComponents), item :: rest_items);
+      outComponents := List.append_reverse(outComponents, item :: rest_items);
       outFound := true;
       outContinue := false;
       return;
@@ -5986,7 +5986,7 @@ algorithm
           else ();
         end match;
 
-        outSubMods := listAppend(listReverse(outSubMods), rest_submods);
+        outSubMods := List.append_reverse(outSubMods, rest_submods);
         return;
       end if;
 
@@ -13968,7 +13968,7 @@ algorithm
     case ((elt :: rest),b,access,env,_)
       equation
         res = getComponentInfo(elt, b, access, env);
-      then getComponentsInfo2(rest, b, access, env, listAppend(listReverse(res),acc));
+      then getComponentsInfo2(rest, b, access, env, List.append_reverse(res,acc));
   end match;
 end getComponentsInfo2;
 
@@ -15637,7 +15637,7 @@ algorithm
 
     if name == inName then
       cls := inFunc(cls);
-      classes := listAppend(listReverse(acc), cls :: classes);
+      classes := List.append_reverse(acc, cls :: classes);
       outProgram := Absyn.PROGRAM(classes, wi);
       break;
     end if;
@@ -18103,7 +18103,7 @@ algorithm
       end match;
 
       // Reassemble the item list and return.
-      outComponents := listAppend(listReverse(outComponents), item :: rest_items);
+      outComponents := List.append_reverse(outComponents, item :: rest_items);
       outFound := true;
       outContinue := false;
       return;

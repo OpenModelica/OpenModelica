@@ -3161,7 +3161,7 @@ algorithm
   end if;
 
   // Assemble the class list again with the class in the correct position.
-  outClasses := listAppend(listReverse(acc), cls :: rest);
+  outClasses := List.append_reverse(acc, cls :: rest);
 end moveClassInClassList;
 
 protected function moveClassInClass
@@ -3250,7 +3250,7 @@ algorithm
     acc := mergeClassPartWithList(part, acc);
   end if;
 
-  outClassParts := listAppend(listReverse(acc), rest);
+  outClassParts := List.append_reverse(acc, rest);
 end moveClassInClassParts;
 
 protected function mergeClassPartWithList
@@ -3312,7 +3312,7 @@ algorithm
     acc := listAppend(if inOffset > 0 then parts else listReverse(parts), acc);
   end while;
 
-  outClassParts := listAppend(listReverse(acc), rest);
+  outClassParts := List.append_reverse(acc, rest);
 end moveClassInClassParts2;
 
 protected function moveClassInClassParts3
@@ -3418,7 +3418,7 @@ algorithm
     elements := e :: elements;
   end if;
 
-  outElements := listAppend(listReverse(acc), elements);
+  outElements := List.append_reverse(acc, elements);
 end moveClassInClassPart2;
 
 protected function makeClassPart
@@ -3466,7 +3466,7 @@ algorithm
     if same_part_type then
       // The class and the class part has the same protection, insert the class
       // into the part.
-      elems := listAppend(listReverse(elems_before), inClass :: elems_after);
+      elems := List.append_reverse(elems_before, inClass :: elems_after);
       outClassParts := {makeClassPart(elems, inIsPublic)};
       outMoved := true;
     elseif not reached_end then
@@ -3617,7 +3617,7 @@ algorithm
       if not Absyn.isEmptyClassPart(part) or listEmpty(acc) or listEmpty(rest) then
         rest := part :: rest;
       end if;
-      outClassParts := listAppend(listReverse(acc), rest);
+      outClassParts := List.append_reverse(acc, rest);
       break;
     else
       acc := part :: acc;
@@ -3716,7 +3716,7 @@ algorithm
     case (_, Absyn.PROTECTED()) then Absyn.PROTECTED({cls}) :: last :: rest;
   end match;
 
-  outClassParts := listAppend(listReverse(acc), listReverse(rest));
+  outClassParts := List.append_reverse(acc, listReverse(rest));
 end moveClassToBottomInClassParts;
 
 protected function copyClass

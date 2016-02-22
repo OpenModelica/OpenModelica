@@ -751,7 +751,7 @@ algorithm
       equation
         true = func(arg,value);
       then
-        listAppend(listReverse(iAcc),arglst);
+        List.append_reverse(iAcc,arglst);
     case (arg::arglst,_,_,_)
       then
         removeFirstOnTrue(arglst,func,value,arg::iAcc);

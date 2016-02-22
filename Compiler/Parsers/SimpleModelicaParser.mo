@@ -1992,7 +1992,7 @@ algorithm
           n::work := work;
           (n, tokens) := replaceFirstTokensInTreeWork(n, tokens);
           if listEmpty(tokens) then
-            tree.nodes := listAppend(listReverse(acc), n::work);
+            tree.nodes := List.append_reverse(acc, n::work);
             return;
           else
             acc := n::acc;

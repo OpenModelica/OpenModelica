@@ -2322,7 +2322,7 @@ algorithm
       slst = List.map(dims, intString);
       var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), slst, false, true, false, NONE());
       tempvars = createTempVarsforCrefs(rest, {var});
-    then listAppend(listReverse(tempvars), itempvars);
+    then List.append_reverse(tempvars, itempvars);
   end match;
 end createArrayTempVar;
 

@@ -1564,7 +1564,7 @@ algorithm
     end if;
   end while;
 
-  outArgs := listAppend(listReverse(outArgs), rest_args);
+  outArgs := List.append_reverse(outArgs, rest_args);
   _ := List.map2(outArgs,System.iconv,"UTF-8","UTF-8");
   Error.assertionOrAddSourceMessage(numError == Error.getNumErrorMessages(), Error.UTF8_COMMAND_LINE_ARGS, {}, Util.dummyInfo);
   saveFlags(flags);

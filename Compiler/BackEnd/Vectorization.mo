@@ -901,7 +901,7 @@ algorithm
       varLst = varLstIn;
     end if;
     tplLst = (cref0,intMax(idx0,idx1),tailCrefs0)::rest;
-    tplLst = listAppend(listReverse(tplLst),tplLstFoldIn);
+    tplLst = List.append_reverse(tplLst,tplLstFoldIn);
   then (tplLst,varLst);
 
   case((cref0,idx0,tailCrefs0)::rest,_,(cref1,idx1,tailCrefs1),_,_)

@@ -10205,7 +10205,7 @@ algorithm
 
       // Found a valid slot, fill it and reconstruct the slot list.
       slot := SLOT(DAE.FUNCARG(fa2, ty1, c2, prl, binding), true, SOME(inExp), inDims, idx, ses);
-      outSlotLst := listAppend(listReverse(outSlotLst), slot :: rest_slots);
+      outSlotLst := List.append_reverse(outSlotLst, slot :: rest_slots);
       return;
     end if;
 

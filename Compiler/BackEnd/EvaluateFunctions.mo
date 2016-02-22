@@ -278,8 +278,8 @@ algorithm
         // get the input exps from the call
         exps = List.map1(exps0,evaluateConstantFunctionCallExp,funcsIn);
         scalarExp = List.map1(exps,expandComplexEpressions,funcsIn);
-				allInputExps = List.flatten(scalarExp);
-				  //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+        allInputExps = List.flatten(scalarExp);
+          //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
 
         if listEmpty(elements) then  // its a record
         //-----------------------its a record-----------------------
@@ -1913,7 +1913,7 @@ algorithm
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
           print("evaluated for-statements to:\n"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         end if;
-        stmts2 = listAppend(listReverse(stmts1),lstIn);
+        stmts2 = List.append_reverse(stmts1,lstIn);
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
       then (rest,(funcTree,repl,idx));
 

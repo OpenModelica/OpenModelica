@@ -583,7 +583,7 @@ algorithm
     case (_, _, NFSCodeEnv.PROCESSED_MODIFIER(modifier = item) :: rest_redecls)
         guard stringEqual(NFSCodeEnv.getItemName(item), inName)
       then
-        listAppend(listReverse(inOutRedeclares), NFSCodeEnv.PROCESSED_MODIFIER(inRedeclare) :: rest_redecls);
+        List.append_reverse(inOutRedeclares, NFSCodeEnv.PROCESSED_MODIFIER(inRedeclare) :: rest_redecls);
 
     case (_, _, redecl :: rest_redecls)
       then

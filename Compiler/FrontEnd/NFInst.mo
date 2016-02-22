@@ -239,7 +239,7 @@ algorithm
       case ELEMENT_DEF(element = ext as SCode.EXTENDS())
         algorithm
           (el, outEnv) := partialInstExtends(ext, outEnv);
-          outElements := listAppend(listReverse(el), outElements);
+          outElements := List.append_reverse(el, outElements);
         then
           ();
 

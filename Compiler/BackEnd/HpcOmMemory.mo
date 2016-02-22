@@ -1524,29 +1524,29 @@ import Util;
           intParamVarsStart = paramVarsStart + listLength(paramVars);
 
           (filledCacheLines, lastCacheLine, currentScVarIdx) = createCacheMapDefaultCppRuntime0(algVars, currentScVarIdx, algVarsStart, scVarCLMapping, filledCacheLines, iScVarTaskMapping, iSchedulerInfo, lastCacheLine, iCacheLineSize, iSimCodeVarTypes);
-          allVars = listAppend(listReverse(algVars), allVars);
+          allVars = List.append_reverse(algVars, allVars);
           //print("algVars finished\n");
 
           (filledCacheLines, lastCacheLine, currentScVarIdx) = createCacheMapDefaultCppRuntime0(discreteAlgVars, currentScVarIdx, discreteAlgVarsStart, scVarCLMapping, filledCacheLines, iScVarTaskMapping, iSchedulerInfo, lastCacheLine, iCacheLineSize, iSimCodeVarTypes);
-          allVars = listAppend(listReverse(discreteAlgVars), allVars);
+          allVars = List.append_reverse(discreteAlgVars, allVars);
           //print("discreteAlgVars finished\n");
 
           //print("\n\nParamVarsStart: " + intString(paramVarsStart) + "\n");
           (filledCacheLines, lastCacheLine, currentScVarIdx) = createCacheMapDefaultCppRuntime0(paramVars, currentScVarIdx, paramVarsStart, scVarCLMapping, filledCacheLines, iScVarTaskMapping, iSchedulerInfo, lastCacheLine, iCacheLineSize, iSimCodeVarTypes);
-          allVars = listAppend(listReverse(paramVars), allVars);
+          allVars = List.append_reverse(paramVars, allVars);
           //print("paramVars finished\n");
 
           (filledCacheLines, lastCacheLine, currentScVarIdx) = createCacheMapDefaultCppRuntime0(aliasVars, currentScVarIdx, aliasVarsStart, scVarCLMapping, filledCacheLines, iScVarTaskMapping, iSchedulerInfo, lastCacheLine, iCacheLineSize, iSimCodeVarTypes);
-          allVars = listAppend(listReverse(aliasVars), allVars);
+          allVars = List.append_reverse(aliasVars, allVars);
 
           //print("\n\nIntAlgVarsStart: " + intString(intAlgVarsStart) + "\n");
           (filledCacheLines, lastCacheLine, currentScVarIdx) = createCacheMapDefaultCppRuntime0(intAlgVars, currentScVarIdx, intAlgVarsStart, scVarCLMapping, filledCacheLines, iScVarTaskMapping, iSchedulerInfo, lastCacheLine, iCacheLineSize, iSimCodeVarTypes);
-          allVars = listAppend(listReverse(intAlgVars), allVars);
+          allVars = List.append_reverse(intAlgVars, allVars);
           //print("intAlgVars finished\n");
 
           //print("\n\nIntParamVarsStart: " + intString(intParamVarsStart) + "\n");
           (filledCacheLines, lastCacheLine, currentScVarIdx) = createCacheMapDefaultCppRuntime0(intParamVars, currentScVarIdx, intAlgVarsStart, scVarCLMapping, filledCacheLines, iScVarTaskMapping, iSchedulerInfo, lastCacheLine, iCacheLineSize, iSimCodeVarTypes);
-          allVars = listAppend(listReverse(intParamVars), allVars);
+          allVars = List.append_reverse(intParamVars, allVars);
           //print("intAlgVars finished\n");
 
           cacheMap = UNIFORM_CACHEMAP(iCacheLineSize, allVars, lastCacheLine::filledCacheLines);

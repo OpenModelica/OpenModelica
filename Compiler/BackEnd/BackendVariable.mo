@@ -2912,7 +2912,7 @@ algorithm
   try
     cr := varCref(inVar);
     (_, indices) := getVar(cr, inVars);
-    outIndices := listAppend(listReverse(indices), inIndices);
+    outIndices := List.append_reverse(indices, inIndices);
   else
     outIndices := inIndices;
   end try;

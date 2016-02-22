@@ -3835,7 +3835,7 @@ algorithm
       equation
         if (ComponentReference.crefPrefixOf(inCref, name))
         then
-          all = listAppend(listReverse(inPrefix), rest);
+          all = List.append_reverse(inPrefix, rest);
           b = true;
         else
           (all, b) = removeReferenceFromConnects(rest, inCref, e::inPrefix);

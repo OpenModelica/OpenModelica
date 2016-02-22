@@ -1625,7 +1625,7 @@ algorithm
     outIsEqual := not (Util.sourceInfoIsEmpty(info1) or
                        Util.sourceInfoIsEmpty(info2)) and
                   Util.sourceInfoIsEqual(info1, info2);
-	end if;
+  end if;
 end merge_isEqual;
 
 public function isFinalMod
@@ -1850,7 +1850,7 @@ algorithm
       outSubMods := sm1 :: outSubMods;
     end for;
 
-    outSubMods := listAppend(listReverse(outSubMods), submods2);
+    outSubMods := List.append_reverse(outSubMods, submods2);
   end if;
 end mergeSubs;
 

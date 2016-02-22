@@ -47,6 +47,7 @@ import Print;
 
 protected
 
+import List;
 import System;
 
 public
@@ -204,13 +205,13 @@ algorithm
   //   slow down the rest of Myer's diff algorithm
   // Check if either sequence is empty. Trivial to diff.
   if len1 < 1 and len2 < 1 then
-    out := listAppend(listReverse(prefixes), suffixes);
+    out := List.append_reverse(prefixes, suffixes);
     return;
   elseif len1 < 1 then
-    out := listAppend(listReverse(prefixes), (Diff.Add, list(arr2[e] for e in start2:end2))::suffixes);
+    out := List.append_reverse(prefixes, (Diff.Add, list(arr2[e] for e in start2:end2))::suffixes);
     return;
   elseif len2 < 1 then
-    out := listAppend(listReverse(prefixes), (Diff.Delete, list(arr1[e] for e in start1:end1))::suffixes);
+    out := List.append_reverse(prefixes, (Diff.Delete, list(arr1[e] for e in start1:end1))::suffixes);
     return;
   end if;
   // Note the horrible syntax for short-circuit evaluation
@@ -236,7 +237,7 @@ algorithm
       else myersGreedyDiff(arr1,arr2,equals,start1,end1,start2,end2);
     end matchcontinue;
     // TODO: cleanup
-    out := listAppend(listReverse(prefixes), listAppend(out, suffixes));
+    out := List.append_reverse(prefixes, listAppend(out, suffixes));
     return;
   end if;
   fail();

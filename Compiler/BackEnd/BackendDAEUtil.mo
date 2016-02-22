@@ -5404,7 +5404,7 @@ algorithm
         explst1 = List.map3(explst1,getEqnsysRhsExp,v,funcs,SOME(repl));
         explst1 = List.map(explst1,Expression.negate);
         explst1 = ExpressionSimplify.simplifyList(explst1, {});
-        explst = listAppend(listReverse(explst1),explst);
+        explst = List.append_reverse(explst1,explst);
         sources = List.consN(BackendEquation.equationSize(eqn), source, sources);
       then (eqn,(v,explst,sources,funcs,repl));
 

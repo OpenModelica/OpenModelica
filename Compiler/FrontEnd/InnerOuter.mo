@@ -1717,7 +1717,7 @@ algorithm
         (erest, _) = List.splitEqualPrefix(listReverse(erest), listReverse(eicp), ComponentReference.crefFirstIdentEqual);
 
         // Combine the parts into a new cref.
-        erest = listAppend(listReverse(erest), esuffix);
+        erest = List.append_reverse(erest, esuffix);
         eifull = listAppend(epre, erest);
         ic = ComponentReference.implode(eifull);
         // print("C:" + ComponentReference.printComponentRefStr(ic) + "\n");
