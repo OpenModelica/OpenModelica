@@ -16,4 +16,4 @@ OpenModelica users guide using Sphinx (Python Documentation Generator).
 - Install `ompython`. See OpenModelica OMPython instructions on how to install OMPython.
 - Install `pandoc` and make sure its in PATH.
 - Install `gnuplot` and make sure its in PATH.
-- Install `inkspace` and make sure its in PATH.
+- Install `inkscape` and make sure its in PATH.
