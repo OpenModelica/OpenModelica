@@ -931,13 +931,15 @@ public constant Message FILE_NOT_FOUND_ERROR = MESSAGE(7007, SCRIPTING(), ERROR(
 public constant Message UNKNOWN_FMU_VERSION = MESSAGE(7008, SCRIPTING(), ERROR(),
   Util.gettext("Unknown FMU version %s. Only version 1.0 & 2.0 are supported."));
 public constant Message UNKNOWN_FMU_TYPE = MESSAGE(7009, SCRIPTING(), ERROR(),
-  Util.gettext("Unknown FMU type %s. Supported types are me (model exchange) & cs (co-simulation)."));
+  Util.gettext("Unknown FMU type %s. Supported types are me (model exchange), cs (co-simulation) & me_cs (model exchange & co-simulation)."));
+public constant Message FMU_EXPORT_NOT_SUPPORTED = MESSAGE(7010, SCRIPTING(), ERROR(),
+  Util.gettext("Export of FMU type %s for version %s is not supported. Supported combinations are me (model exchange) for versions 1.0 & 2.0, cs (co-simulation) & me_cs (model exchange & co-simulation) for version 2.0."));
 // FIGARO_ERROR added by Alexander Carlqvist
-public constant Message FIGARO_ERROR = MESSAGE(7010, SCRIPTING(), ERROR(),
+public constant Message FIGARO_ERROR = MESSAGE(7011, SCRIPTING(), ERROR(),
   Util.notrans("Figaro: %s."));
-public constant Message SUSAN_NOTIFY = MESSAGE(7011, TRANSLATION(), NOTIFICATION(),
+public constant Message SUSAN_NOTIFY = MESSAGE(7012, TRANSLATION(), NOTIFICATION(),
   Util.notrans("%s"));
-public constant Message PDEModelica_ERROR = MESSAGE(7012, TRANSLATION(), ERROR(),
+public constant Message PDEModelica_ERROR = MESSAGE(7013, TRANSLATION(), ERROR(),
   Util.gettext("PDEModelica: %s"));
 
 protected import ErrorExt;

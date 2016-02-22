@@ -265,6 +265,24 @@ algorithm
   end match;
 end checkFMIType;
 
+public function canExportFMU
+  input String inFMUVersion;
+  input String inFMIType;
+  output Boolean success;
+algorithm
+  success := match (inFMUVersion, inFMIType)
+    case ("1", "me") then true;
+    case ("1.0", "me") then true;
+    case ("2", "me") then true;
+    case ("2.0", "me") then true;
+    case ("2", "cs") then true;
+    case ("2.0", "cs") then true;
+    case ("2", "me_cs") then true;
+    case ("2.0", "me_cs") then true;
+    else false;
+  end match;
+end canExportFMU;
+
 public function isFMIMEType "Checks if FMU type is model exchange"
   input String inFMIType;
   output Boolean success;

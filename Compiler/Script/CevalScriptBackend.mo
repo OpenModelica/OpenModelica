@@ -2712,6 +2712,11 @@ algorithm
     Error.addMessage(Error.UNKNOWN_FMU_TYPE, {FMUType});
     return;
   end if;
+  if not FMI.canExportFMU(FMUVersion, FMUType) then
+    outValue := Values.STRING("");
+    Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED, {FMUType, FMUVersion});
+    return;
+  end if;
   filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then Absyn.pathString(className) else inFileNamePrefix,".","_");
   defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(st, className, filenameprefix, SOME(defaultSimulationOptions));
   simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
