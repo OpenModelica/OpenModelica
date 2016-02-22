@@ -27,12 +27,12 @@
     <message>
         <location filename="../../Debugger/Attach/AttachToProcessDialog.cpp" line="55"/>
         <source>Attach to Process ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>プロセスIDにアタッチ:</translation>
     </message>
     <message>
         <location filename="../../Debugger/Attach/AttachToProcessDialog.cpp" line="59"/>
         <source>Filter Processes</source>
-        <translation type="unfinished"></translation>
+        <translation>プロセスをフィルタ</translation>
     </message>
 </context>
 <context>
@@ -40,52 +40,52 @@
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1111"/>
         <source>Shows the Find/Replace window</source>
-        <translation type="unfinished">検索/置換ウィンドウを表示</translation>
+        <translation>検索/置換ウィンドウを表示</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1115"/>
         <source>Clear Find/Replace Texts</source>
-        <translation type="unfinished">検索/置換の文字列をクリア</translation>
+        <translation>検索/置換の文字列をクリア</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1116"/>
         <source>Clears the Find/Replace text items</source>
-        <translation type="unfinished">検索/置換の文字列をクリア</translation>
+        <translation>検索/置換の文字列をクリア</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1119"/>
         <source>Go to Line</source>
-        <translation type="unfinished">行へ飛ぶ</translation>
+        <translation>行へ飛ぶ</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1120"/>
         <source>Shows the Go to Line Number window</source>
-        <translation type="unfinished">行番号ジャンプ用ウィンドウの表示</translation>
+        <translation>行番号ジャンプ用ウィンドウの表示</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1124"/>
         <source>Show Tabs and Spaces</source>
-        <translation type="unfinished"></translation>
+        <translation>タブとスペースを表示</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1125"/>
         <source>Shows the Tabs and Spaces</source>
-        <translation type="unfinished"></translation>
+        <translation>タブとスペースを表示</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1129"/>
         <source>Toggle Breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>ブレークポイント設定</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1132"/>
         <source>Toggle Comment Selection</source>
-        <translation type="unfinished">選択部分をコメント化</translation>
+        <translation>選択部分をコメント化</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="569"/>
         <source>&lt;b&gt;Information: &lt;/b&gt;Breakpoints are only allowed on saved classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;情報 &lt;/b&gt;ブレークポイントは保存されたクラスにのみ認められます.</translation>
     </message>
 </context>
 <context>
@@ -93,52 +93,52 @@
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="53"/>
         <source>%1 Breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ブレークポイント</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="58"/>
         <source>File Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイル名:</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="65"/>
         <source>Browse Classes</source>
-        <translation type="unfinished"></translation>
+        <translation>クラスをブラウズ</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="68"/>
         <source>File System</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイルシステム</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="72"/>
         <source>Line Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>行番号:</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="75"/>
         <source>Enabled:</source>
-        <translation type="unfinished"></translation>
+        <translation>可能にする:</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="78"/>
         <source>Ignore Count:</source>
-        <translation type="unfinished"></translation>
+        <translation>無視する数:</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="82"/>
         <source>Condition:</source>
-        <translation type="unfinished"></translation>
+        <translation>条件:</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="84"/>
         <source>* Use &quot;%1&quot; to set condition on simulation time.</source>
-        <translation type="unfinished"></translation>
+        <translation>* &quot;#1&quot; を使ってシミュレーション時間に条件を設定する .</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="132"/>
         <source>Select Class</source>
-        <translation type="unfinished"></translation>
+        <translation>クラスを選択</translation>
     </message>
 </context>
 <context>
@@ -146,7 +146,7 @@
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="264"/>
         <source>File</source>
-        <translation type="unfinished">ファイル</translation>
+        <translation>ファイル</translation>
     </message>
 </context>
 <context>
@@ -154,37 +154,37 @@
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="92"/>
         <source>Go to File</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイルへ行く</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="93"/>
         <source>Goto file location</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイルのある場所へ行く</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="97"/>
         <source>Adds a breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>ブレークポイントを追加</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="101"/>
         <source>Edits a breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>ブレークポイントを編集</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="105"/>
         <source>Deletes a breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>ブレークポイントを削除</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="108"/>
         <source>Delete All</source>
-        <translation type="unfinished"></translation>
+        <translation>すべて削除</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointsWidget.cpp" line="109"/>
         <source>Deletes all the breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>全てのブレークポイントを削除する</translation>
     </message>
 </context>
 <context>
@@ -193,14 +193,14 @@
         <location filename="../../Component/Component.cpp" line="371"/>
         <location filename="../../Component/Component.cpp" line="1670"/>
         <source>&lt;b&gt;%1&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; %2</translation>
     </message>
     <message>
         <location filename="../../Component/Component.cpp" line="422"/>
         <location filename="../../Component/Component.cpp" line="468"/>
         <location filename="../../Component/Component.cpp" line="1666"/>
         <source>&lt;b&gt;%1&lt;/b&gt; %2&lt;br /&gt;&lt;br /&gt;Component declared in %3</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; %2&lt;br /&gt;&lt;br /&gt; %3 の中で宣言されたコンポーネント</translation>
     </message>
     <message>
         <location filename="../../Component/Component.cpp" line="1157"/>
@@ -216,17 +216,17 @@
     <message>
         <location filename="../../Component/Component.cpp" line="1986"/>
         <source>Cannot show parameters window for component &lt;b&gt;%1&lt;/b&gt;. Did not find type &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>コンポーネント &lt;b&gt;%1&lt;/b&gt; のためのパラメータウインドウが表示できません. タイプ &lt;b&gt; %2 &lt;/b&gt;がありません .</translation>
     </message>
     <message>
         <location filename="../../Component/Component.cpp" line="1990"/>
         <source>Opening %1 %2 parameters window</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 の %2 パラメータウィンドウを開く</translation>
     </message>
     <message>
         <location filename="../../Component/Component.cpp" line="2004"/>
         <source>Opening %1 %2 attributes window</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 の %2 属性ウィンドウを開く</translation>
     </message>
 </context>
 <context>
@@ -239,17 +239,17 @@
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="943"/>
         <source>%1 - %2 - %3 in %4</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 - %3 in %4</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="972"/>
         <source>Dimensions:</source>
-        <translation type="unfinished"></translation>
+        <translation>次元:</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="974"/>
         <source>Array of dimensions e.g {1, 5, 2}</source>
-        <translation type="unfinished"></translation>
+        <translation>配列の次元 例えば  {1, 5, 2}</translation>
     </message>
 </context>
 <context>
@@ -262,7 +262,7 @@
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="435"/>
         <source>%1 - %2 - %3 in %4</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 - %3 in %4</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="469"/>
@@ -280,7 +280,7 @@
     <message>
         <location filename="../../Annotations/LineAnnotation.cpp" line="757"/>
         <source>Connect to only parts of the connectors, by giving indicies below.</source>
-        <translation type="unfinished"></translation>
+        <translation>下にインデックスを与えてコネクタの部品だけに接続する.</translation>
     </message>
 </context>
 <context>
@@ -288,37 +288,37 @@
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="61"/>
         <source>Your Email (in case you want us to contact you regarding this error):</source>
-        <translation type="unfinished"></translation>
+        <translation>あなたのメールアドレス（このエラーに関してコンタクトを取りたい場合）:</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="64"/>
         <source>Describe in a few words what you were doing when the error occurred:</source>
-        <translation type="unfinished"></translation>
+        <translation>エラー発生時の何をしていたのか簡単に記述して下さい:</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="67"/>
         <source>Following selected files will be sent alongwith the crash report,</source>
-        <translation type="unfinished"></translation>
+        <translation>以下の選択されたファイルがクラッシュレポートと一緒に送付されます,</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="94"/>
         <source>Send Report</source>
-        <translation type="unfinished"></translation>
+        <translation>レポートを送付する</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="146"/>
         <source>We can&apos;t contact you with a possible solution if you don&apos;t provide a valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>有効なメールアドレスがないと可能なソリューションについてコンタクトすることができません.</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="147"/>
         <source>Send without e-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>メールアドレスなしで送付</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="148"/>
         <source>Let me enter e-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>メールアドレスを入力する</translation>
     </message>
 </context>
 <context>
@@ -326,37 +326,37 @@
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="258"/>
         <source>Name:</source>
-        <translation type="unfinished">名前:</translation>
+        <translation>名前:</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="261"/>
         <source>Program:</source>
-        <translation type="unfinished"></translation>
+        <translation>プログラム :</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="271"/>
         <source>GDB Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>GDB パス :</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="276"/>
         <source>Arguments:</source>
-        <translation type="unfinished"></translation>
+        <translation>引数:</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="280"/>
         <source>Saves the debug configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>デバグの設定を保存する</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="282"/>
         <source>Reset</source>
-        <translation type="unfinished">リセット</translation>
+        <translation>リセット</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="283"/>
         <source>Resets the debug configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>デバグの設定をリセット</translation>
     </message>
 </context>
 <context>
@@ -364,27 +364,27 @@
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="427"/>
         <source>New Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい設定</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="433"/>
         <source>Delete Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>設定を削除</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="464"/>
         <source>Saves all the debug configurations</source>
-        <translation type="unfinished"></translation>
+        <translation>全てのデバグ設定を保存</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="466"/>
         <source>Save &amp;&amp; Debug</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;&amp; デバグを保尊</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="467"/>
         <source>Saves all the debug configurations and starts debugging the active debug configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>全てのデバグ設定を保存しアクティブな設定でダバグを開始する</translation>
     </message>
 </context>
 <context>
@@ -392,37 +392,37 @@
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="51"/>
         <source>Stack Frames Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>フレームブラウザをスタック</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="59"/>
         <source>BreakPoints Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>ブレークポイントブラウザ</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="67"/>
         <source>Locals Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>ローカルのブラウザ</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="76"/>
         <source>Debugger CLI</source>
-        <translation type="unfinished"></translation>
+        <translation>デバガCLI</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="84"/>
         <source>Output Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>アウトプットブラウザ</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="193"/>
         <source>&amp;Debug</source>
-        <translation type="unfinished"></translation>
+        <translation>デバグ（&amp;D）</translation>
     </message>
     <message>
         <location filename="../../Debugger/DebuggerMainWindow.cpp" line="201"/>
         <source>&amp;View</source>
-        <translation type="unfinished">ビュー(&amp;V)</translation>
+        <translation>ビュー(&amp;V)</translation>
     </message>
 </context>
 <context>
@@ -430,57 +430,57 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3351"/>
         <source>GDB Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>GDBパス:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3367"/>
         <source>GDB Command Timeout:</source>
-        <translation type="unfinished"></translation>
+        <translation>BDBコマンド　タイムアウト:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3369"/>
         <source> seconds</source>
-        <translation type="unfinished"> 秒</translation>
+        <translation> 秒</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3374"/>
         <source>GDB Output Limit:</source>
-        <translation type="unfinished"></translation>
+        <translation>GDB出力の制限:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3376"/>
         <source> characters</source>
-        <translation type="unfinished"></translation>
+        <translation>文字数</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3381"/>
         <source>Display C frames</source>
-        <translation type="unfinished"></translation>
+        <translation>Cのフレームを表示する</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3384"/>
         <source>Display unknown frames</source>
-        <translation type="unfinished"></translation>
+        <translation>未知のフレームを表示する</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3387"/>
         <source>Clear old output on a new run</source>
-        <translation type="unfinished"></translation>
+        <translation>新規実行時に以前の出力をクリアする</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3390"/>
         <source>Clear old log on a new run</source>
-        <translation type="unfinished"></translation>
+        <translation>新規実行時に以前のログをクリアする</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3409"/>
         <source>Always show %1 after compilation</source>
-        <translation type="unfinished">常にコンパイル後に %1 を表示</translation>
+        <translation>常にコンパイル後に %1 を表示</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3410"/>
         <source>Generate Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>操作を作る</translation>
     </message>
 </context>
 <context>
@@ -501,7 +501,7 @@
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="772"/>
         <source>Select Path</source>
-        <translation type="unfinished"></translation>
+        <translation>パスを選択</translation>
     </message>
 </context>
 <context>
@@ -509,12 +509,12 @@
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1233"/>
         <source>Figaro Mode:</source>
-        <translation type="unfinished">Figaroモード:</translation>
+        <translation>Figaroモード:</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1274"/>
         <source>Exporting model as Figaro</source>
-        <translation type="unfinished">Figaroとしてモデルを書き出し</translation>
+        <translation>Figaroとしてモデルを書き出し</translation>
     </message>
 </context>
 <context>
@@ -522,27 +522,27 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3460"/>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>書き出し</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3474"/>
         <source>Model Exchange</source>
-        <translation type="unfinished"></translation>
+        <translation>Model Exchange</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3475"/>
         <source>Co-Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Co-Simulation</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3476"/>
         <source>Model Exchange and Co-Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Model ExchangeとCo-Simulation</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3486"/>
         <source>FMU Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU名:</translation>
     </message>
 </context>
 <context>
@@ -550,27 +550,27 @@
     <message>
         <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="36"/>
         <source>Fetch Interface Data</source>
-        <translation type="unfinished"></translation>
+        <translation>インターフェースデータの取入れ</translation>
     </message>
     <message>
         <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="50"/>
         <source>Fetch Again</source>
-        <translation type="unfinished"></translation>
+        <translation>再取入れ</translation>
     </message>
     <message>
         <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="102"/>
         <source>Fetching interface data for &lt;b&gt;%1&lt;/b&gt; is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt; %1 &lt;/b&gt;のインターフェースデータ取入れをキャンセル.</translation>
     </message>
     <message>
         <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="124"/>
         <source>Fetching interface data for &lt;b&gt;%1&lt;/b&gt;...</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt; %1 &lt;/b&gt;のインターフェースデータ取入れ...</translation>
     </message>
     <message>
         <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="171"/>
         <source>Fetched interface data for &lt;b&gt;%1&lt;/b&gt;...</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt; %1 &lt;/b&gt;のインターフェースデータ取入れ済...</translation>
     </message>
 </context>
 <context>
@@ -578,12 +578,12 @@
     <message>
         <location filename="../../TLM/FetchInterfaceDataThread.cpp" line="113"/>
         <source>TLMManager process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMマネージャプロセスが失敗, コード%1 で終了.</translation>
     </message>
     <message>
         <location filename="../../TLM/FetchInterfaceDataThread.cpp" line="115"/>
         <source>TLMManager process finished successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMマネージャプロセスが成功しました.</translation>
     </message>
 </context>
 <context>
@@ -591,17 +591,17 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3283"/>
         <source>Figaro Library:</source>
-        <translation type="unfinished"></translation>
+        <translation>Fifaroライブラリ:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3289"/>
         <source>Tree generation options:</source>
-        <translation type="unfinished"></translation>
+        <translation>ツリー生成操作:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3295"/>
         <source>Figaro Processor:</source>
-        <translation type="unfinished"></translation>
+        <translation>Figaroプロセッサ:</translation>
     </message>
 </context>
 <context>
@@ -609,37 +609,37 @@
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1269"/>
         <source>Find:</source>
-        <translation type="unfinished">検索文字列:</translation>
+        <translation>検索文字列:</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1292"/>
         <source>Replace With:</source>
-        <translation type="unfinished">置換文字列:</translation>
+        <translation>置換文字列:</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1296"/>
         <source>Case Sensitive</source>
-        <translation type="unfinished"></translation>
+        <translation>大文字・小文字の区別</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1297"/>
         <source>Whole Words</source>
-        <translation type="unfinished">単語全体一致</translation>
+        <translation>単語全体一致</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1298"/>
         <source>Regular Expressions</source>
-        <translation type="unfinished">正規表現</translation>
+        <translation>正規表現</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1300"/>
         <source>Replace</source>
-        <translation type="unfinished">置換</translation>
+        <translation>置換</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1302"/>
         <source>Replace All</source>
-        <translation type="unfinished">全置換</translation>
+        <translation>全置換</translation>
     </message>
 </context>
 <context>
@@ -647,40 +647,42 @@
     <message>
         <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1482"/>
         <source>%1 GDB arguments are &quot;%2&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 GDB引数は &quot;%2&quot;</translation>
     </message>
     <message>
         <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1485"/>
         <source>GDB crashed with the error %1. GDB arguments are &quot;%2&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>GDBが %1 エラーでクラッシュ.  GDB引数は &quot;%2&quot;</translation>
     </message>
     <message>
         <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1488"/>
         <source>Following error has occurred %1. GDB arguments are &quot;%2&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>次のエラーが発生 %1 GDB 引数は&quot;%2&quot;</translation>
     </message>
     <message numerus="yes">
         <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1539"/>
         <source>The gdb process has not responded to a command within %n second(s). This could mean it is stuck in an endless loop or taking longer than expected to perform the operation.
 You can choose between waiting longer or abort debugging.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>GDBのプロセスがコマンドに %n秒以内に反応しません.  無限ループに入ったか操作を行うと予期した時間より長く時間がかかっているようです.
+継続して待つか、デバグを終了するか選択できます.</numerusform>
         </translation>
     </message>
     <message>
         <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1545"/>
         <source>Debugger not responding</source>
-        <translation type="unfinished"></translation>
+        <translation>デバガが反応していません</translation>
     </message>
     <message>
         <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1548"/>
         <source>Give GDB more time</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>デバグをやめる</translatorcomment>
+        <translation>GDBに長い時間を与える</translation>
     </message>
     <message>
         <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1549"/>
         <source>Stop debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>デバグをやめる</translation>
     </message>
 </context>
 <context>
@@ -688,7 +690,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="67"/>
         <source>Send</source>
-        <translation type="unfinished">送る</translation>
+        <translation>送る</translation>
     </message>
 </context>
 <context>
@@ -742,12 +744,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="596"/>
         <source>Metamodel &lt;b&gt;%1&lt;/b&gt; has unsaved changes. Do you want to save?</source>
-        <translation type="unfinished"></translation>
+        <translation>メタモデル &lt;b&gt; %1 &lt;/b&gt; は保存していない変更があります. 保存しますか?</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="598"/>
         <source>TLM co-simulation session is already running. Only one session is allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>TLM co-simulationセッションはすでに実行中です.. 1つのセッションだけが許されます.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="530"/>
@@ -775,22 +777,24 @@ You can choose between waiting longer or abort debugging.</source>
         <source>Following error has occurred. 
 
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>次のエラーが発生.
+
+%1</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="526"/>
         <source>&lt;br /&gt;&lt;br /&gt;If you cannot find the source of the error, you can always &lt;b&gt;revert to the last correct version&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br /&gt;&lt;br /&gt;エラー原因が分らない場合、&lt;b&gt; 最後の正しいバージョンに戻す&lt;/b&gt;ことが常に可能です..</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="532"/>
         <source>Unable to open file &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイル &lt;b&gt; %1 &lt;/b&gt;を開くことができません.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="534"/>
         <source>Unable to save the file &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイルを保存できません &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="538"/>
@@ -850,67 +854,67 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="572"/>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt;? Everything contained inside this class will also be deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>このクラスに含まれる全てが削除されます. &lt;b&gt;%1&lt;/b&gt;を削除しても良いですか.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="574"/>
         <source>Are you sure you want to unload &lt;b&gt;%1&lt;/b&gt;?</source>
-        <translation type="unfinished"></translation>
+        <translation>本当に &lt;b&gt;%1&lt;/b&gt;をアンロードしていいですか?</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="576"/>
         <source>The Modifier &lt;b&gt;%1&lt;/b&gt; format is invalid. The correct format is &lt;b&gt;phi(start=1)&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>修飾子 &lt;b&gt;%1&lt;/b&gt;書式が不正です. 正しい書式は &lt;b&gt;phi(start=1)&lt;/b&gt; です</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="578"/>
         <source>The operations were not generated. Check Generate Operations in &lt;b&gt;%1-&gt;Debugger-&gt;Transformational Debugger&lt;/b&gt; OR you must set the +d=infoXmlOperations flag via &lt;b&gt;%2-&gt;Simulation-&gt;OMC Flags&lt;/b&gt; and simulate again.</source>
-        <translation type="unfinished"></translation>
+        <translation>操作は生成されていません..生成された操作を &lt;b&gt;%1-&gt;Debugger-&gt;Transformational Debugger&lt;/b&gt; の中でチェックして下さい.  または+d=infoXmlOperations フラグを &lt;b&gt;%2-&gt;Simulation-&gt;OMC Flags&lt;/b&gt; を通じて設定し再度シミュレートして下さい.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="594"/>
         <source>TLM Manager executable path is not set. Set it via &lt;b&gt;%1-&gt;TLM&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMマネージャの実行パスがセットされていません.  &lt;b&gt;%1-&gt;TLM&lt;/b&gt;を通じてセットして下さい</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="600"/>
         <source>Terminal command is not set. You can define a new terminal command in &lt;b&gt;%1-&gt;General-&gt;Terminal Command&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>最終コマンドがセットされていません. 新たな最終コマンドを&lt;b&gt;%1-&gt;General-&gt;Terminal Command&lt;/b&gt;.の中で定義することができます.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="580"/>
         <source>A debug configuration with name &lt;b&gt;%1&lt;/b&gt; already exists. Error occurred while saving the debug configuration &lt;b&gt;%2&lt;b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>デバグ設定名&lt;b&gt; %1 &lt;/b&gt; がすでに存在しています.  エラーがデバグ設定 &lt;b&gt;%2&lt;b&gt;を保存している間に発生しました.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="582"/>
         <source>Maximum &lt;b&gt;%1&lt;/b&gt; debug configurations are allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>最大 &lt;b&gt;%1 &lt;b&gt;.デバグ設定が認められます.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="584"/>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt; debug configuration?</source>
-        <translation type="unfinished"></translation>
+        <translation>デバグ設定&lt;b&gt;%1&lt;/b&gt;を本当に削除してよいですか?</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="586"/>
         <source>A debugging session is already running. Only one debugging session is allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>デバグセッションがすでに実行中です. 一つのダバグセッションのみが認められます.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="588"/>
         <source>Unable to find the class &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>クラス &lt;b&gt; %1 &lt;/b&gt;が見つかりません.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="590"/>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not saved. Breakpoints are only allowed on saved classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>クラス &lt;b&gt; %1 &lt;/b&gt; が保存できません. ブレークポイントは保存されたクラスにのみ認められます.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="592"/>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not a modelica class. Breakpoints are only allowed on modelica classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>クラス &lt;b&gt;%1&lt;/b&gt; はModelicaのコードではありません. ブレークポイントはModelicaクラスにのみ認められます.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="518"/>
@@ -937,12 +941,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="544"/>
         <source>Redefining class(es) &lt;b&gt;%1&lt;/b&gt; which already exist(s).</source>
-        <translation type="unfinished"></translation>
+        <translation>すでに存在するクラス &lt;b&gt;%1&lt;/b&gt;を再定義します.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="546"/>
         <source>Only single nonstructured entity is allowed to be stored in the file. &lt;b&gt;%1&lt;/b&gt; contains following classes &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>一つの非構造エンティティのみを次のクラス &lt;b&gt;%2&lt;/b&gt;を含むファイル &lt;b&gt; %1 &lt;/b&gt; の中に保存することが認められます.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="552"/>
@@ -957,7 +961,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="564"/>
         <source>The FMU %1.fmu is generated at %2</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU %1.fmuが %2に生成されます</translation>
     </message>
 </context>
 <context>
@@ -1020,7 +1024,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1173"/>
         <source>Toolbar Icon Size: *</source>
-        <translation type="unfinished"></translation>
+        <translation>ツールバー アイコンサイズ: *</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1178"/>
@@ -1030,12 +1034,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1180"/>
         <source>Terminal Command:</source>
-        <translation type="unfinished"></translation>
+        <translation>ターミナル コマンド:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1193"/>
         <source>Terminal Command Arguments:</source>
-        <translation type="unfinished"></translation>
+        <translation>ターミナルコマンドの引数:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1213"/>
@@ -1120,12 +1124,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1145"/>
         <source>Language: *</source>
-        <translation type="unfinished"></translation>
+        <translation>言語: *</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1215"/>
         <source>Library Icon Size: *</source>
-        <translation type="unfinished"></translation>
+        <translation>ライブラリ アイオンサイズ: *</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1233"/>
@@ -1138,12 +1142,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1598"/>
         <source>Enter line number (%1 to %2):</source>
-        <translation type="unfinished"></translation>
+        <translation>行番号 (%1 から %2 まで):</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1601"/>
         <source>Enter line number (1 to %1):</source>
-        <translation type="unfinished"></translation>
+        <translation>行番号 (1 から %1 まで):</translation>
     </message>
 </context>
 <context>
@@ -1169,57 +1173,59 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="243"/>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not saved. You can only drag &amp; drop saved classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>クラス &lt;b&gt;%1&lt;/b&gt; はセーブされません. ドラグ&amp; ドロップでのみクラスをセーブできます.</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="898"/>
         <source>Manhattanize</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>???</translatorcomment>
+        <translation>高層化する</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="899"/>
         <source>Manhattanize the lines</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>What is manhattanize?</translatorcomment>
+        <translation>行を高層化する</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="915"/>
         <source>Bring to Front</source>
-        <translation type="unfinished"></translation>
+        <translation>前方に移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="916"/>
         <source>Brings the item to front</source>
-        <translation type="unfinished"></translation>
+        <translation>アイテムを前へ移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="920"/>
         <source>Bring Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>前へ移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="921"/>
         <source>Brings the item one level forward</source>
-        <translation type="unfinished"></translation>
+        <translation>アイテムを1レベル前へ移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="925"/>
         <source>Send to Back</source>
-        <translation type="unfinished"></translation>
+        <translation>後方へ移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="926"/>
         <source>Sends the item to back</source>
-        <translation type="unfinished"></translation>
+        <translation>アイテムを後ろへ移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="930"/>
         <source>Send Backward</source>
-        <translation type="unfinished"></translation>
+        <translation>後ろへ移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="931"/>
         <source>Sends the item one level backward</source>
-        <translation type="unfinished"></translation>
+        <translation>アイテムを1レベル後ろへ送る</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="935"/>
@@ -1410,7 +1416,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="376"/>
         <source>Unload the TLM/Text file</source>
-        <translation type="unfinished"></translation>
+        <translation>TLM/テキストファイルをアンロードする</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="378"/>
@@ -1420,27 +1426,27 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="379"/>
         <source>Simulates the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelicaクラスをシミュレーションする</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="381"/>
         <source>Re-simulates the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelicaクラスを再シミュレーションする</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="384"/>
         <source>Simulate with Transformational Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>変換デバガ付でシミュレート</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="385"/>
         <source>Simulates the Modelica class with Transformational Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>変換デバガ付でModelicaクラスをシミュレーションする</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="387"/>
         <source>Simulates the Modelica class with Algorithmic Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>アルゴリズムデバガ付きでModelicaクラスをシミュレーションする</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="390"/>
@@ -1500,37 +1506,37 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="322"/>
         <source>Add</source>
-        <translation type="unfinished">追加</translation>
+        <translation>追加</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="325"/>
         <source>Save a file</source>
-        <translation type="unfinished">ファイルを保存</translation>
+        <translation>ファイルを保存</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="326"/>
         <source>Save As</source>
-        <translation type="unfinished">別名で保存</translation>
+        <translation>別名で保存</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="327"/>
         <source>Save a copy of the class in a new file</source>
-        <translation type="unfinished"></translation>
+        <translation>クラスのコピーを新しいファイルに保存</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="328"/>
         <source>Save Total</source>
-        <translation type="unfinished"></translation>
+        <translation>すべて保存</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="329"/>
         <source>Save class with all used classes</source>
-        <translation type="unfinished"></translation>
+        <translation>使用しているクラスと一緒にクラスを保存</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="330"/>
         <source>Apply</source>
-        <translation type="unfinished">適用</translation>
+        <translation>適用</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="331"/>
@@ -1606,7 +1612,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="357"/>
         <source>Import ngspice netlist</source>
-        <translation type="unfinished"></translation>
+        <translation>ngspiceのネットリストを読み込み</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="358"/>
@@ -1616,12 +1622,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="359"/>
         <source>Converts ngspice netlist(s) to Modelica code</source>
-        <translation type="unfinished"></translation>
+        <translation>ng SpiceのネットリストをModelicaコードに変換</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="360"/>
         <source>Line</source>
-        <translation type="unfinished">行</translation>
+        <translation>行</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="361"/>
@@ -1646,17 +1652,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="365"/>
         <source>OpenModelica Compiler CLI</source>
-        <translation type="unfinished"></translation>
+        <translation>おOpenModelicaコンパイラ　CLI</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="372"/>
         <source>Duplicate</source>
-        <translation type="unfinished">複製</translation>
+        <translation>複製</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="373"/>
         <source>Duplicates the item</source>
-        <translation type="unfinished">アイテムを複製</translation>
+        <translation>アイテムを複製</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="374"/>
@@ -1671,27 +1677,27 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="377"/>
         <source>Refresh</source>
-        <translation type="unfinished">リフレッシュ</translation>
+        <translation>リフレッシュ</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="380"/>
         <source>Re-simulate</source>
-        <translation type="unfinished">再シミュレーション</translation>
+        <translation>再シミュレーション</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="382"/>
         <source>Re-simulate Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>再シミュレーションのセットアップ</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="383"/>
         <source>Setup re-simulation settings</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="386"/>
         <source>Simulate with Algorithmic Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>アルゴリズムデバガでシミュレート</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="388"/>
@@ -1706,7 +1712,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="391"/>
         <source>Re-simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>再シミュレーション</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="393"/>
@@ -1796,17 +1802,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="415"/>
         <source>Font and Colors</source>
-        <translation type="unfinished">フォントと色</translation>
+        <translation>フォントと色</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="416"/>
         <source>Font Family:</source>
-        <translation type="unfinished">フォント種類:</translation>
+        <translation>フォント種類:</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="417"/>
         <source>Font Size:</source>
-        <translation type="unfinished">フォントサイズ:</translation>
+        <translation>フォントサイズ:</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="419"/>
@@ -1866,22 +1872,22 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="435"/>
         <source>Working Directory:</source>
-        <translation type="unfinished">作業ディレクトリ:</translation>
+        <translation>作業ディレクトリ:</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="438"/>
         <source>Text View</source>
-        <translation type="unfinished"></translation>
+        <translation>テキストビュー</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="440"/>
         <source>Search Classes</source>
-        <translation type="unfinished"></translation>
+        <translation>クラスを検索</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="445"/>
         <source>Create Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>コネクションを作成</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="450"/>
@@ -1961,132 +1967,132 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="465"/>
         <source>Fraction</source>
-        <translation type="unfinished">割合</translation>
+        <translation>割合</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="466"/>
         <source>&lt;b&gt;Info: &lt;/b&gt;Update the actual model in &lt;b&gt;Modeling&lt;/b&gt; perspective and simulate again. This is only shown for debugging purpose. Your changes will not be saved.</source>
-        <translation type="unfinished">&lt;b&gt;情報&lt;/b&gt; &lt;b&gt;モデリング&lt;/b&gt;で実際のモデルを更新しシミュレーションを再度行ってください. これはデバグプロセスのためだけに表示されます. 変更は保存されません.</translation>
+        <translation>&lt;b&gt;情報&lt;/b&gt; &lt;b&gt;モデリング&lt;/b&gt;で実際のモデルを更新しシミュレーションを再度行ってください. これはデバグプロセスのためだけに表示されます. 変更は保存されません.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="467"/>
         <source>Algorithmic Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>アルゴリズムデバガ</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="468"/>
         <source>Debug Configurations</source>
-        <translation type="unfinished"></translation>
+        <translation>デバグの設定</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="469"/>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>再開</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="470"/>
         <source>Interrupt</source>
-        <translation type="unfinished"></translation>
+        <translation>中断</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="471"/>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation>終了</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="472"/>
         <source>Step Over</source>
-        <translation type="unfinished"></translation>
+        <translation>ステップオーバー</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="473"/>
         <source>Step Into</source>
-        <translation type="unfinished"></translation>
+        <translation>ステップイン</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="474"/>
         <source>Step Return</source>
-        <translation type="unfinished"></translation>
+        <translation>ステップリターン</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="475"/>
         <source>Attach to Running Process</source>
-        <translation type="unfinished"></translation>
+        <translation>実行中プロセスへアタッチ</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="476"/>
         <source>Crash Report</source>
-        <translation type="unfinished"></translation>
+        <translation>クラッシュレポート</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="477"/>
         <source>Parsing of JSON file failed</source>
-        <translation type="unfinished"></translation>
+        <translation>JSONファイルの構文解釈に失敗</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="478"/>
         <source>Expand All</source>
-        <translation type="unfinished">すべて展開</translation>
+        <translation>すべて展開</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="479"/>
         <source>Collapse All</source>
-        <translation type="unfinished"></translation>
+        <translation>すべて畳む</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="480"/>
         <source>Version</source>
-        <translation type="unfinished">バージョン</translation>
+        <translation>バージョン</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="481"/>
         <source>unlimited</source>
-        <translation type="unfinished"></translation>
+        <translation>無制限</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="482"/>
         <source>Simulation Output</source>
-        <translation type="unfinished">シミュレーション出力</translation>
+        <translation>シミュレーション出力</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="483"/>
         <source>Cancel Simulation</source>
-        <translation type="unfinished">シミュレーションをキャンセル</translation>
+        <translation>シミュレーションをキャンセル</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="484"/>
         <source>Fetch Interface Data</source>
-        <translation type="unfinished"></translation>
+        <translation>インターフェースデータを取混む</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="485"/>
         <source>Fetches the interface data for TLM co-simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>TLM コシミュレーションのインターフェースデータを取込む</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="486"/>
         <source>TLM Co-Simulation Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMコシミュレーションの設定</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="487"/>
         <source>Opens the TLM co-simulation setup</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMコシミュレーションの設定を開く</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="488"/>
         <source>TLM Co-Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMコシミュレーション</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="489"/>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>実行</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="490"/>
         <source>Finished</source>
-        <translation type="unfinished"></translation>
+        <translation>終了</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="309"/>
@@ -2299,12 +2305,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1501"/>
         <source>System Libraries *</source>
-        <translation type="unfinished"></translation>
+        <translation>システムライブラリ *</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1503"/>
         <source>The system libraries are read from the MODELICAPATH and are always read-only.</source>
-        <translation type="unfinished"></translation>
+        <translation>システムライブラリはMODELICAPATHから読み込まれ常に読込専用です.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1515"/>
@@ -2324,7 +2330,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1546"/>
         <source>User Libraries *</source>
-        <translation type="unfinished"></translation>
+        <translation>ユーザライブラリ *</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1554"/>
@@ -2353,7 +2359,7 @@ You can choose between waiting longer or abort debugging.</source>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1627"/>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1735"/>
         <source>while deleting </source>
-        <translation type="unfinished">削除中 </translation>
+        <translation>削除中 </translation>
     </message>
 </context>
 <context>
@@ -2361,52 +2367,52 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2134"/>
         <source>Move Up</source>
-        <translation type="unfinished"></translation>
+        <translation>上に移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2135"/>
         <source>Moves the class one level up</source>
-        <translation type="unfinished"></translation>
+        <translation>クラスを1レベル上げる</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2138"/>
         <source>Move Down</source>
-        <translation type="unfinished"></translation>
+        <translation>下に移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2139"/>
         <source>Moves the class one level down</source>
-        <translation type="unfinished"></translation>
+        <translation>クラスを1レベル下げる</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2142"/>
         <source>Move to Top</source>
-        <translation type="unfinished"></translation>
+        <translation>最上位に移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2143"/>
         <source>Moves the class to top</source>
-        <translation type="unfinished"></translation>
+        <translation>クラスを最上位に移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2146"/>
         <source>Move to Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>最下位に移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2147"/>
         <source>Moves the class to bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>クラスを最下位に移動</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2150"/>
         <source>Order</source>
-        <translation type="unfinished"></translation>
+        <translation>順序</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2338"/>
         <source>Deletes the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>Modlicaクラスを削除</translation>
     </message>
 </context>
 <context>
@@ -2417,33 +2423,33 @@ You can choose between waiting longer or abort debugging.</source>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3152"/>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3237"/>
         <source>Saving %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1を保存中</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3003"/>
         <source>Unable to save the file, unknown library type.</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイルをセーブできあません.未知のライブラリタイプです.</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3156"/>
         <source>%1 - Save %2 %3 as Modelica File</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 -%2.%3をModelicaファイルとして保存</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3242"/>
         <source>%1 - Save %2 %3 as Modelica Directorty</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 -%2.%3をModelicaディレクトリとして保存</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3347"/>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3389"/>
         <source>Save File</source>
-        <translation type="unfinished">ファイルを保存</translation>
+        <translation>ファイルを保存</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3461"/>
         <source>%1 - Save %2 %3 as Total File</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2.%3を全体ファイルとして保存</translation>
     </message>
 </context>
 <context>
@@ -2451,7 +2457,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Debugger/Locals/LocalsWidget.cpp" line="251"/>
         <source>&lt;uninitialized variable&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;初期化されていない変数&gt;</translation>
     </message>
 </context>
 <context>
@@ -2459,17 +2465,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Debugger/Locals/LocalsWidget.cpp" line="337"/>
         <source>Name</source>
-        <translation type="unfinished">名前</translation>
+        <translation>名前</translation>
     </message>
     <message>
         <location filename="../../Debugger/Locals/LocalsWidget.cpp" line="337"/>
         <source>Type</source>
-        <translation type="unfinished">タイプ</translation>
+        <translation>タイプ</translation>
     </message>
     <message>
         <location filename="../../Debugger/Locals/LocalsWidget.cpp" line="337"/>
         <source>Value</source>
-        <translation type="unfinished">値</translation>
+        <translation>値</translation>
     </message>
 </context>
 <context>
@@ -2557,52 +2563,52 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2500"/>
         <source>Close Window</source>
-        <translation type="unfinished"></translation>
+        <translation>ウィンドウを閉じる</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2501"/>
         <source>Closes the active window</source>
-        <translation type="unfinished"></translation>
+        <translation>アクティブなウィンドウを閉じる</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2504"/>
         <source>Close All Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>全てのウィンドウを閉じる</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2505"/>
         <source>Closes all windows</source>
-        <translation type="unfinished"></translation>
+        <translation>全てのウィンドウを閉じる</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2508"/>
         <source>Close All Windows But This</source>
-        <translation type="unfinished"></translation>
+        <translation>このウィンドウを残して他を全て閉じる</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2509"/>
         <source>Closes all windows except active window</source>
-        <translation type="unfinished"></translation>
+        <translation>アクティブウィンドウを残して他を全て閉じる</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2516"/>
         <source>Tile Windows Horizontally</source>
-        <translation type="unfinished"></translation>
+        <translation>ウィンドウを水平にタイル状に並べる</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2517"/>
         <source>Arranges all child windows in a horizontally tiled pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>全ての子ウィンドウを水平タイル状にアレンジする</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2520"/>
         <source>Tile Windows Vertically</source>
-        <translation type="unfinished"></translation>
+        <translation>ウィンドウを垂直にタイル状に並べる</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2521"/>
         <source>Arranges all child windows in a vertically tiled pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>全ての子ウィンドウを垂直方向にタイル状にアレンジする</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2615"/>
@@ -2754,7 +2760,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="1855"/>
         <source>Importing ngspice netlist and converting to Modelica code</source>
-        <translation type="unfinished"></translation>
+        <translation>ngスパイスのネットリストを読み込みModelicaコードに変換する</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="1936"/>
@@ -2789,32 +2795,32 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2396"/>
         <source>New MetaModel</source>
-        <translation type="unfinished"></translation>
+        <translation>新しいメタモデル</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2397"/>
         <source>Create New MetaModel File</source>
-        <translation type="unfinished"></translation>
+        <translation>新しいメタモデルファイルを作成する</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2400"/>
         <source>Open MetaModel</source>
-        <translation type="unfinished"></translation>
+        <translation>メタモデルファイルを開く</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2401"/>
         <source>Opens the MetaModel file(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>メタモデルファイル(複数可)を開く</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2404"/>
         <source>Load External Model(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>外部のモデル(複数)をロード</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2405"/>
         <source>Loads the External Model(s) for the TLM meta-modeling</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMメタモデリングのための外部モデルをロード</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2432"/>
@@ -2864,32 +2870,32 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2641"/>
         <source>Modelica By Example</source>
-        <translation type="unfinished"></translation>
+        <translation>例によるModelica</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2642"/>
         <source>Opens the Modelica By Example online book</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelicaをオンラインブックの例から開く</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2645"/>
         <source>Modelica Web Reference</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelicaの参考Web</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2646"/>
         <source>Opens the Modelica Web Reference</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelicaの参考Webを開く</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2711"/>
         <source>New Parametric Plot Window</source>
-        <translation type="unfinished"></translation>
+        <translation>新規X-Y（パラメトリック）プロットウィンドウ</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2712"/>
         <source>Inserts new parametric plot window</source>
-        <translation type="unfinished"></translation>
+        <translation>新規X-Y（パラメトリック）プロットウィンドウを挿入</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2614"/>
@@ -2900,82 +2906,83 @@ You can choose between waiting longer or abort debugging.</source>
         <location filename="../../MainWindow.cpp" line="103"/>
         <location filename="../../MainWindow.cpp" line="118"/>
         <source>Can&apos;t open file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイル %1を開けません.</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="148"/>
         <source>Changes to welcome perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>起動時の見え方(%1)への変更</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="153"/>
         <source>Changes to modeling perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>モデリングの見え方(%1)への変更</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="158"/>
         <source>Changes to plotting perspective (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>プロットの見え方(%1)への変更</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2010"/>
         <source>Unable to run terminal command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>終了コマンド &lt;b&gt;%1&lt;/b&gt;を引数 &lt;b&gt;%2&lt;/b&gt;で実行できません.</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2445"/>
         <source>Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>元に戻す</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2450"/>
         <source>Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>繰り返す</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2512"/>
         <source>Cascade Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>ウィンドウのカスケード</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2513"/>
         <source>Arranges all the child windows in a cascade pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>全ての子ウィンドウをカスケードパターンでアレンジする</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2584"/>
         <source>Shows OpenModelica Compiler CLI</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelicaコンパイラ CLI を表示</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2588"/>
         <source>OpenModelica Compiler Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelicaコンパイラ Diff</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2589"/>
         <source>Shows OpenModelica Compiler Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelicaコンパイラ Diffを表示</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2606"/>
         <source>Open Working Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>作業フォルダを開く</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2607"/>
         <source>Opens the current working directory</source>
-        <translation type="unfinished"></translation>
+        <translation>現在の作業フォルダを開く</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2610"/>
         <source>Open Terminal</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>what is terminal?</translatorcomment>
+        <translation>端末を開く</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2611"/>
         <source>Opens the terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>端末を開く</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2620"/>
@@ -2990,12 +2997,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2625"/>
         <source>OpenModelica Users Guide (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelicaのユーザガイド(PDF)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2626"/>
         <source>Opens the OpenModelica Users Guide (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelicaのユーザガイド(PDF)を開く</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2629"/>
@@ -3060,7 +3067,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2724"/>
         <source>Export to Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>クリップボードへ書き出し</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2767"/>
@@ -3105,7 +3112,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2870"/>
         <source>E&amp;xport</source>
-        <translation type="unfinished"></translation>
+        <translation>エクスポート(&amp;E)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2878"/>
@@ -3155,7 +3162,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="3151"/>
         <source>TLM Simulation Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMシミュレーションツールバー</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="1002"/>
@@ -3183,32 +3190,32 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2696"/>
         <source>Output size:</source>
-        <translation type="unfinished"></translation>
+        <translation>出力サイズ:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2697"/>
         <source>Specifies the maximum number of rows the Messages Browser may have. If there are more rows then the rows are removed from the beginning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Message Browserが持つ列数の最大を決めて下さい.　列数が多い場合、前側の列が取り除かれます.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2705"/>
         <source>Reset messages number before checking, instantiation &amp;&amp; simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>チェック前にメッセージ数をリセット: インスタンス化 &amp;&amp; シミュレーション</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2730"/>
         <source>Notification Color:</source>
-        <translation type="unfinished"></translation>
+        <translation>通知用色:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2737"/>
         <source>Warning Color:</source>
-        <translation type="unfinished"></translation>
+        <translation>警告色:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2744"/>
         <source>Error Color:</source>
-        <translation type="unfinished"></translation>
+        <translation>エラー色:</translation>
     </message>
 </context>
 <context>
@@ -3216,27 +3223,27 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/MessagesWidget.cpp" line="111"/>
         <source>Select All</source>
-        <translation type="unfinished">すべて選択</translation>
+        <translation>すべて選択</translation>
     </message>
     <message>
         <location filename="../../Modeling/MessagesWidget.cpp" line="113"/>
         <source>Selects all the Messages</source>
-        <translation type="unfinished">すべてのメッセージを選択</translation>
+        <translation>すべてのメッセージを選択</translation>
     </message>
     <message>
         <location filename="../../Modeling/MessagesWidget.cpp" line="117"/>
         <source>Copy the Message</source>
-        <translation type="unfinished">メッセージをコピー</translation>
+        <translation>メッセージをコピー</translation>
     </message>
     <message>
         <location filename="../../Modeling/MessagesWidget.cpp" line="119"/>
         <source>Clear All</source>
-        <translation type="unfinished"></translation>
+        <translation>すべてクリア</translation>
     </message>
     <message>
         <location filename="../../Modeling/MessagesWidget.cpp" line="120"/>
         <source>clears the Messages Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>メッセージブラウザをクリア</translation>
     </message>
 </context>
 <context>
@@ -3244,12 +3251,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2393"/>
         <source>Connection declared in</source>
-        <translation type="unfinished"></translation>
+        <translation>以下の中え宣言された接続</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2494"/>
         <source>Writable</source>
-        <translation type="unfinished">書き込み可能</translation>
+        <translation>書き込み可能</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2504"/>
@@ -3265,7 +3272,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3331"/>
         <source>Unable to find component %1 while parsing connection %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>部品%1を接続 %2の構文解析で見つかりません.</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3596"/>
@@ -3340,27 +3347,27 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Editors/ModelicaTextEditor.cpp" line="150"/>
         <source>Start and End modifiers are different</source>
-        <translation type="unfinished">開始と終了の修飾子が異なります</translation>
+        <translation>開始と終了の修飾子が異なります</translation>
     </message>
     <message>
         <location filename="../../Editors/ModelicaTextEditor.cpp" line="203"/>
         <source>Fix error(s) manually</source>
-        <translation type="unfinished"></translation>
+        <translation>エラーをマニュアルで修正</translation>
     </message>
     <message>
         <location filename="../../Editors/ModelicaTextEditor.cpp" line="204"/>
         <source>Revert to last correct version</source>
-        <translation type="unfinished"></translation>
+        <translation>最後の正しいバージョンに戻す</translation>
     </message>
     <message>
         <location filename="../../Editors/ModelicaTextEditor.cpp" line="263"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;You are changing a system library class. System libraries are always read-only. Your changes will not be saved.</source>
-        <translation type="unfinished">&lt;b&gt;警告&lt;/b&gt;システムライブラリのクラスを変更しています. システムライブラリは読込み専用です.変更は保存されません.</translation>
+        <translation>&lt;b&gt;警告&lt;/b&gt;システムライブラリのクラスを変更しています. システムライブラリは読込み専用です.変更は保存されません.</translation>
     </message>
     <message>
         <location filename="../../Editors/ModelicaTextEditor.cpp" line="266"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;You are changing a read-only class.</source>
-        <translation type="unfinished">&lt;b&gt;警告&lt;/b&gt;読込専用のクラスを変更しています.</translation>
+        <translation>&lt;b&gt;警告&lt;/b&gt;読込専用のクラスを変更しています.</translation>
     </message>
 </context>
 <context>
@@ -3378,42 +3385,42 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1907"/>
         <source>Tabs and Indentation</source>
-        <translation type="unfinished"></translation>
+        <translation>タブとインデント</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1909"/>
         <source>Tab Policy:</source>
-        <translation type="unfinished"></translation>
+        <translation>タブのポリシー:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1911"/>
         <source>Spaces Only</source>
-        <translation type="unfinished"></translation>
+        <translation>スペースのみ</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1912"/>
         <source>Tabs Only</source>
-        <translation type="unfinished"></translation>
+        <translation>タブのみ</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1914"/>
         <source>Tab Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>タブのサイズ:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1919"/>
         <source>Indent Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>インデントのサイズ:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1933"/>
         <source>Syntax Highlight and Text Wrapping</source>
-        <translation type="unfinished"></translation>
+        <translation>構文のハイライトとテキストのラッピング</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1938"/>
         <source>Match Parentheses within Comments and Quotes</source>
-        <translation type="unfinished"></translation>
+        <translation>コメントと引用でのカッコの整合</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1966"/>
@@ -3492,7 +3499,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="109"/>
         <source>* To enable OpenModelica Compiler CLI start OMEdit with argument --OMCLogger=true</source>
-        <translation type="unfinished"></translation>
+        <translation>* OpenModelicaコンパイラ CLIを有効にするには OMEditの引数 --OMCLogger=trueにして起動</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="113"/>
@@ -3502,22 +3509,22 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="131"/>
         <source>OMC Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>OMC Diff</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="132"/>
         <source>Before</source>
-        <translation type="unfinished"></translation>
+        <translation>前</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="134"/>
         <source>After</source>
-        <translation type="unfinished"></translation>
+        <translation>後</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="136"/>
         <source>Merged</source>
-        <translation type="unfinished"></translation>
+        <translation>マージ後</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="493"/>
@@ -3527,12 +3534,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="1005"/>
         <source>Unable to set the component modifier value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>コマンド&lt;b&gt;%1&lt;/b&gt;を用いて部品修飾子の値をセットできません</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="1057"/>
         <source>Unable to set the extends modifier value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>コマンド&lt;b&gt;%1&lt;/b&gt;を用いて拡張の修飾子の値をセットできません</translation>
     </message>
 </context>
 <context>
@@ -3563,7 +3570,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="933"/>
         <source>* The changes will take effect after restart.</source>
-        <translation type="unfinished"></translation>
+        <translation>* 変更は再起動後反映されます.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="965"/>
@@ -3578,12 +3585,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1018"/>
         <source>TLM</source>
-        <translation type="unfinished"></translation>
+        <translation>TLM</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1022"/>
         <source>TLM Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMエディタ</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="978"/>
@@ -3593,7 +3600,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="986"/>
         <source>Messages</source>
-        <translation type="unfinished">メッセージ</translation>
+        <translation>メッセージ</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="990"/>
@@ -3603,17 +3610,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1002"/>
         <source>Plotting</source>
-        <translation type="unfinished">プロット</translation>
+        <translation>プロット</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1010"/>
         <source>Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>デバガ</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1014"/>
         <source>FMI</source>
-        <translation type="unfinished"></translation>
+        <translation>FMI</translation>
     </message>
 </context>
 <context>
@@ -3621,17 +3628,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="276"/>
         <source>true: start-value is used to initialize</source>
-        <translation type="unfinished"></translation>
+        <translation>true: 開始時の値が初期化に使用される</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="282"/>
         <source>false: start-value is only a guess-value</source>
-        <translation type="unfinished"></translation>
+        <translation>false: 開始時の値が推測値としてのみ使用される</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="288"/>
         <source>inherited: (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>継承される (%1)</translation>
     </message>
 </context>
 <context>
@@ -3647,27 +3654,27 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3157"/>
         <source>Auto Scale</source>
-        <translation type="unfinished"></translation>
+        <translation>自動スケール</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3158"/>
         <source>Auto scale the plot to fit in view when variable is plotted.</source>
-        <translation type="unfinished"></translation>
+        <translation>変数プロット時にビューにフィットするように自動スケールプロット.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3164"/>
         <source>Plotting View Mode</source>
-        <translation type="unfinished">プロットビューモード</translation>
+        <translation>プロットビューモード</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3165"/>
         <source>Tabbed View</source>
-        <translation type="unfinished">タブ形式ビュー</translation>
+        <translation>タブ形式ビュー</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3167"/>
         <source>SubWindow View</source>
-        <translation type="unfinished">サブウィンドウビュー</translation>
+        <translation>サブウィンドウビュー</translation>
     </message>
 </context>
 <context>
@@ -3675,12 +3682,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Debugger/Attach/ProcessListModel.cpp" line="313"/>
         <source>Process ID</source>
-        <translation type="unfinished"></translation>
+        <translation>プロセスID</translation>
     </message>
     <message>
         <location filename="../../Debugger/Attach/ProcessListModel.cpp" line="313"/>
         <source>Name</source>
-        <translation type="unfinished">名前</translation>
+        <translation>名前</translation>
     </message>
 </context>
 <context>
@@ -3688,7 +3695,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="441"/>
         <source>Path</source>
-        <translation type="unfinished">パス</translation>
+        <translation>パス</translation>
     </message>
 </context>
 <context>
@@ -3833,22 +3840,22 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="412"/>
         <source>Move point up</source>
-        <translation type="unfinished"></translation>
+        <translation>点を上に上げる</translation>
     </message>
     <message>
         <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="417"/>
         <source>Move point down</source>
-        <translation type="unfinished"></translation>
+        <translation>点を下に下げる</translation>
     </message>
     <message>
         <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="423"/>
         <source>Add new point</source>
-        <translation type="unfinished"></translation>
+        <translation>点を追加</translation>
     </message>
     <message>
         <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="428"/>
         <source>Remove point</source>
-        <translation type="unfinished"></translation>
+        <translation>点を削除</translation>
     </message>
 </context>
 <context>
@@ -3907,7 +3914,8 @@ You can choose between waiting longer or abort debugging.</source>
         <location filename="../../Simulation/SimulationDialog.cpp" line="275"/>
         <source>The name is used as a prefix for the output files. This is just a name not the path.
 If you want to change the output path then update the working directory in Options/Preferences.</source>
-        <translation type="unfinished"></translation>
+        <translation>名称は出力ファイルのプリフィックスとして使用されます. 名称でありパスではありません.
+出力パスを変更してアップデートしたい場合は作業ディレクトリを Options/Preferencesで変更して下さい.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="283"/>
@@ -3917,17 +3925,17 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="286"/>
         <source>Protected Variables</source>
-        <translation type="unfinished"></translation>
+        <translation>保護された変数</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="288"/>
         <source>Equidistant Time Grid</source>
-        <translation type="unfinished"></translation>
+        <translation>等間隔の時間グリッド</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="291"/>
         <source>Store Variables at Events</source>
-        <translation type="unfinished"></translation>
+        <translation>イベントでの編巣を保存</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="325"/>
@@ -4189,147 +4197,148 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="510"/>
         <source>Class</source>
-        <translation type="unfinished"></translation>
+        <translation>クラス</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="510"/>
         <source>DateTime</source>
-        <translation type="unfinished"></translation>
+        <translation>日付時間</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="510"/>
         <source>Start Time</source>
-        <translation type="unfinished"></translation>
+        <translation>開始時間</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="510"/>
         <source>Stop Time</source>
-        <translation type="unfinished"></translation>
+        <translation>終了時間</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="510"/>
         <source>Status</source>
-        <translation type="unfinished"></translation>
+        <translation>状態</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="1223"/>
         <source>Translating %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1を変換中.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="1237"/>
         <source>Generated code for the target compiler &lt;b&gt;%1&lt;/b&gt; at %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>ターゲットコンパイラ %2の&lt;b&gt;%1&lt;/b&gt;のためのコード生成完了.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="1248"/>
         <source>Generated code for the target language &lt;b&gt;%1&lt;/b&gt; at %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>ターゲット言語 %2の&lt;b&gt;%1&lt;/b&gt;のためのコード生成完了.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="166"/>
         <source>Integration help</source>
-        <translation type="unfinished"></translation>
+        <translation>インテグレーションのヘルプ</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="172"/>
         <source>DASSL Options</source>
-        <translation type="unfinished"></translation>
+        <translation>DASSLのオプション</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="174"/>
         <source>Jacobian:</source>
-        <translation type="unfinished"></translation>
+        <translation>ヤコビアン:</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="176"/>
         <source>Colored Numerical</source>
-        <translation type="unfinished"></translation>
+        <translation>色を付けた数値</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="178"/>
         <source>Colored Symbolical</source>
-        <translation type="unfinished"></translation>
+        <translation>色をつけたシンボル</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="180"/>
         <source>Internal Numerical</source>
-        <translation type="unfinished"></translation>
+        <translation>内部数値</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="182"/>
         <source>Symbolical</source>
-        <translation type="unfinished"></translation>
+        <translation>シンボル</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="184"/>
         <source>Numerical</source>
-        <translation type="unfinished"></translation>
+        <translation>数値</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="187"/>
         <source>Root Finding</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>what is ROOT?</translatorcomment>
+        <translation type="unfinished">ルートの検索</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="188"/>
         <source>Activates the internal root finding procedure of dassl</source>
-        <translation type="unfinished"></translation>
+        <translation>DASSLの内部ルート探索手順を開始する</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="191"/>
         <source>Restart After Event</source>
-        <translation type="unfinished"></translation>
+        <translation>イベントの後でリスタート</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="192"/>
         <source>Activates the restart of dassl after an event is performed</source>
-        <translation type="unfinished"></translation>
+        <translation>イベント実行後にDASSLのリスタートを有効にする</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="195"/>
         <source>Initial Step Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>初期ステップサイズ:</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="198"/>
         <source>Maximum Step Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>最大ステップサイズ:</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="201"/>
         <source>Maximum Integration Order:</source>
-        <translation type="unfinished"></translation>
+        <translation>最大積分次数:</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="236"/>
         <source>Use 1 processor if you encounter problems during compilation.</source>
-        <translation type="unfinished"></translation>
+        <translation>コンパイル中に問題があった場合プロセッサを1つ使う.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="238"/>
         <source>Build Only</source>
-        <translation type="unfinished"></translation>
+        <translation>構築のみ</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="241"/>
         <source>Launch Transformational Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>変換デバガを起動する</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="243"/>
         <source>Launch Algorithmic Debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>アルゴリズムデバガを起動する</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="273"/>
         <source>File Name Prefix (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイル名のプリフィクス（オプション）:</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="277"/>
         <source>Result File (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>結果ファイル(オプション):</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="294"/>
@@ -4369,7 +4378,7 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="519"/>
         <source>Archived Simulations</source>
-        <translation type="unfinished"></translation>
+        <translation>アーカイブされたシミュレーション</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="533"/>
@@ -4382,19 +4391,19 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="64"/>
         <source>Select All</source>
-        <translation type="unfinished">すべて選択</translation>
+        <translation>すべて選択</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="66"/>
         <source>Selects all the Messages</source>
-        <translation type="unfinished">すべてのメッセージを選択</translation>
+        <translation>すべてのメッセージを選択</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="70"/>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="73"/>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="76"/>
         <source>Copy the Message</source>
-        <translation type="unfinished">メッセージをコピー</translation>
+        <translation>メッセージをコピー</translation>
     </message>
 </context>
 <context>
@@ -4403,42 +4412,42 @@ If you want to change the output path then update the working directory in Optio
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="189"/>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="387"/>
         <source>Cancel Compilation</source>
-        <translation type="unfinished">コンパイルのキャンセル</translation>
+        <translation>コンパイルのキャンセル</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="222"/>
         <source>Compilation</source>
-        <translation type="unfinished">コンパイル</translation>
+        <translation>コンパイル</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="384"/>
         <source>Compiling &lt;b&gt;%1&lt;/b&gt;. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;b&gt;%1&lt;/b&gt;をコンパイル中. しばらくお待ちください.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="421"/>
         <source>Compilation of &lt;b&gt;%1&lt;/b&gt; is finished.</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;b&gt;%1&lt;/b&gt;のコンパイルが終了.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="441"/>
         <source>Running simulation of &lt;b&gt;%1&lt;/b&gt;. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;b&gt;%1&lt;/b&gt;のシミュレーション実行中. しばらくお待ちください.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="512"/>
         <source>Simulation of &lt;b&gt;%1&lt;/b&gt; is finished.</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;b&gt;%1&lt;/b&gt;のシミュレーションが終了.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="527"/>
         <source>Compilation of &lt;b&gt;%1&lt;/b&gt; is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;b&gt;%1&lt;/b&gt;のコンパイルがキャンセルされました.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="534"/>
         <source>Simulation of &lt;b&gt;%1&lt;/b&gt; is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;b&gt;%1&lt;/b&gt;のシミュレーションがキャンセルされました.</translation>
     </message>
 </context>
 <context>
@@ -4456,12 +4465,12 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2574"/>
         <source>Target Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>ターゲット言語:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2585"/>
         <source>Target Compiler:</source>
-        <translation type="unfinished"></translation>
+        <translation>ターゲットコンパイラ:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2596"/>
@@ -4486,22 +4495,22 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2605"/>
         <source>Structured</source>
-        <translation type="unfinished"></translation>
+        <translation>構造化</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2606"/>
         <source>Shows the simulation output in the form of tree structure.</source>
-        <translation type="unfinished"></translation>
+        <translation>ツリー構造の形式でシミュレーション出力を表示.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2608"/>
         <source>Formatted Text</source>
-        <translation type="unfinished"></translation>
+        <translation>書式ありテキスト</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2609"/>
         <source>Shows the simulation output in the form of formatted text.</source>
-        <translation type="unfinished"></translation>
+        <translation>書式つきテキストで形式でシミュレーション出力を表示.</translation>
     </message>
 </context>
 <context>
@@ -4509,22 +4518,22 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Simulation/SimulationProcessThread.cpp" line="171"/>
         <source>Compilation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>コンパイルプロセスが失敗. コード %1で終了.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationProcessThread.cpp" line="173"/>
         <source>Compilation process finished successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>コンパイルプロセスが成功.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationProcessThread.cpp" line="224"/>
         <source>Simulation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>シミュレーションプロセスが失敗. コード %1で終了.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationProcessThread.cpp" line="226"/>
         <source>Simulation process finished successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>シミュレーションプロセスが成功.。</translation>
     </message>
 </context>
 <context>
@@ -4532,22 +4541,23 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Debugger/StackFrames/StackFramesWidget.cpp" line="169"/>
         <source>Function</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>Fnction???</translatorcomment>
+        <translation>機能</translation>
     </message>
     <message>
         <location filename="../../Debugger/StackFrames/StackFramesWidget.cpp" line="169"/>
         <source>File</source>
-        <translation type="unfinished">ファイル</translation>
+        <translation>ファイル</translation>
     </message>
     <message>
         <location filename="../../Debugger/StackFrames/StackFramesWidget.cpp" line="234"/>
         <source>Create Full Backtrace</source>
-        <translation type="unfinished"></translation>
+        <translation>フルバックトレースを作成</translation>
     </message>
     <message>
         <location filename="../../Debugger/StackFrames/StackFramesWidget.cpp" line="235"/>
         <source>Creates a full backtrace of the program</source>
-        <translation type="unfinished"></translation>
+        <translation>プログラムの完全なバックトレースを作成</translation>
     </message>
 </context>
 <context>
@@ -4555,7 +4565,7 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Debugger/StackFrames/StackFramesWidget.cpp" line="395"/>
         <source>Threads:</source>
-        <translation type="unfinished"></translation>
+        <translation>スレッド:</translation>
     </message>
 </context>
 <context>
@@ -4563,32 +4573,32 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Util/StringHandler.cpp" line="261"/>
         <source>Syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>シンタックス</translation>
     </message>
     <message>
         <location filename="../../Util/StringHandler.cpp" line="263"/>
         <source>Grammar</source>
-        <translation type="unfinished"></translation>
+        <translation>文法</translation>
     </message>
     <message>
         <location filename="../../Util/StringHandler.cpp" line="265"/>
         <source>Translation</source>
-        <translation type="unfinished"></translation>
+        <translation>変換</translation>
     </message>
     <message>
         <location filename="../../Util/StringHandler.cpp" line="267"/>
         <source>Symbolic</source>
-        <translation type="unfinished"></translation>
+        <translation>シンボル</translation>
     </message>
     <message>
         <location filename="../../Util/StringHandler.cpp" line="269"/>
         <source>Simulation</source>
-        <translation type="unfinished">シミュレーション</translation>
+        <translation>シミュレーション</translation>
     </message>
     <message>
         <location filename="../../Util/StringHandler.cpp" line="271"/>
         <source>Scripting</source>
-        <translation type="unfinished"></translation>
+        <translation>スクリプト</translation>
     </message>
     <message>
         <location filename="../../Util/StringHandler.cpp" line="295"/>
@@ -4608,7 +4618,7 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Util/StringHandler.cpp" line="302"/>
         <source>Unknown</source>
-        <translation type="unfinished">未知数</translation>
+        <translation>未知数</translation>
     </message>
 </context>
 <context>
@@ -4616,27 +4626,27 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1183"/>
         <source>SubModel Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>サブモデルの属性</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1203"/>
         <source>Simulation Tool</source>
-        <translation type="unfinished"></translation>
+        <translation>シミュレーションツール</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1214"/>
         <source>Start Command:</source>
-        <translation type="unfinished"></translation>
+        <translation>開始コマンド:</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1218"/>
         <source>Model File:</source>
-        <translation type="unfinished"></translation>
+        <translation>モデル ファイル:</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1222"/>
         <source>Exact Step Flag</source>
-        <translation type="unfinished"></translation>
+        <translation>厳密なステップフラグ</translation>
     </message>
 </context>
 <context>
@@ -4644,88 +4654,88 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="66"/>
         <source>TLM Plugin Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMプラグインのパス:</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="72"/>
         <source>TLM Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMマネージャ</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="74"/>
         <source>Manager Process:</source>
-        <translation type="unfinished"></translation>
+        <translation>マネージャプロセス:</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="80"/>
         <source>Monitor Process:</source>
-        <translation type="unfinished"></translation>
+        <translation>モニタープロセス:</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="86"/>
         <source>Server Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>サーバポート:</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="87"/>
         <source>Set the server network port for communication with the simulation tools</source>
-        <translation type="unfinished"></translation>
+        <translation>シミュレーションツールとのコミュニケーション用サーバネットワークポートをセットする</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="90"/>
         <source>Monitor Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>モニターポート:</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="91"/>
         <source>Set the port for monitoring connections</source>
-        <translation type="unfinished"></translation>
+        <translation>モニターする接続のポートをセット</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="94"/>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="115"/>
         <source>Debug Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>デバグモード</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="107"/>
         <source>TLM Monitor</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMモニター</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="109"/>
         <source>Number Of Steps:</source>
-        <translation type="unfinished"></translation>
+        <translation>:ステップの数:</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="112"/>
         <source>Time Step Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>タイムステップサイズ:</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="129"/>
         <source>Show TLM Co-Simulation Output Window</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMコシミュレーション出力ウィンドウを表示</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="232"/>
         <source>Enter manager process.</source>
-        <translation type="unfinished"></translation>
+        <translation>プロセスマネージャを入力.</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="238"/>
         <source>Enter monitor process.</source>
-        <translation type="unfinished"></translation>
+        <translation>モニタープロセスを入力.</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="244"/>
         <source>Enter a monitor port.</source>
-        <translation type="unfinished"></translation>
+        <translation>モニタープロセスを入力.</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="292"/>
         <source>Failed to get my hostname, check that name resolves, e.g. /etc/hosts has %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ホスト名の取得に失敗. 名前解決をチェックして下さい. 例えば /etc/hostname が %1を持つか</translation>
     </message>
 </context>
 <context>
@@ -4733,47 +4743,47 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="57"/>
         <source>Manager Output</source>
-        <translation type="unfinished"></translation>
+        <translation>マネージャ出力</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="59"/>
         <source>Stop Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>マネージャを停止</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="63"/>
         <source>Open Manager Log File</source>
-        <translation type="unfinished"></translation>
+        <translation>マネージャログファイルを開く</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="74"/>
         <source>Monitor Output</source>
-        <translation type="unfinished"></translation>
+        <translation>モニター出力</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="76"/>
         <source>Stop Monitor</source>
-        <translation type="unfinished"></translation>
+        <translation>モニターを停止</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="80"/>
         <source>Open Monitor Log File</source>
-        <translation type="unfinished"></translation>
+        <translation>モニターログファイルを開く</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="152"/>
         <source>Co-Simulation using &lt;b&gt;%1&lt;/b&gt; meta model is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt;のメタモデルを使ったコシミュレーションがキャンセルされました.</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="197"/>
         <source>Running co-simulation using the &lt;b&gt;%1&lt;/b&gt; meta model. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt;を使ったメタモデルのコシミュレーションを実行中です.しばらくお待ちください.</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="240"/>
         <source>Co-simulation using the &lt;b&gt;%1&lt;/b&gt; meta model is finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt;を使ったメタモデルのコシミュレーションが終了しました.</translation>
     </message>
 </context>
 <context>
@@ -4781,22 +4791,22 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../TLM/TLMCoSimulationThread.cpp" line="149"/>
         <source>TLMManager process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMマネージャプロエスが失敗しました. コード %1で終了.</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationThread.cpp" line="151"/>
         <source>TLMManager process finished successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMマネージャプロセスが成功しました.</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationThread.cpp" line="211"/>
         <source>TLMMonitor process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMモニタープロセスが失敗しました.コード %1で終了.</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationThread.cpp" line="213"/>
         <source>TLMMonitor process finished successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMモニタープロセスが成功しました.</translation>
     </message>
 </context>
 <context>
@@ -4804,37 +4814,37 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1333"/>
         <source>TLM Connection Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>TLM接続属性</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1348"/>
         <source>From:</source>
-        <translation type="unfinished"></translation>
+        <translation>開始:</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1354"/>
         <source>To:</source>
-        <translation type="unfinished"></translation>
+        <translation>終了:</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1360"/>
         <source>Delay:</source>
-        <translation type="unfinished"></translation>
+        <translation>遅延:</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1363"/>
         <source>Zf:</source>
-        <translation type="unfinished"></translation>
+        <translation>Zf:</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1365"/>
         <source>Zfr:</source>
-        <translation type="unfinished"></translation>
+        <translation>Zfr:</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1369"/>
         <source>Alpha:</source>
-        <translation type="unfinished"></translation>
+        <translation>Alpha:</translation>
     </message>
 </context>
 <context>
@@ -4842,62 +4852,62 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3667"/>
         <source>Tabs and Indentation</source>
-        <translation type="unfinished"></translation>
+        <translation>タブとインデント</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3669"/>
         <source>Tab Policy:</source>
-        <translation type="unfinished"></translation>
+        <translation>タブのポリシー:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3671"/>
         <source>Spaces Only</source>
-        <translation type="unfinished"></translation>
+        <translation>スペースのみ</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3672"/>
         <source>Tabs Only</source>
-        <translation type="unfinished"></translation>
+        <translation>タブのみ</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3674"/>
         <source>Tab Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>タブのサイズ:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3679"/>
         <source>Indent Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>インデントのサイズ:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3693"/>
         <source>Syntax Highlight and Text Wrapping</source>
-        <translation type="unfinished"></translation>
+        <translation>構文のハイライトとテキストのラッピング</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3695"/>
         <source>Enable Syntax Highlighting</source>
-        <translation type="unfinished">構文ハイライトを使用</translation>
+        <translation>構文ハイライトを使用</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3698"/>
         <source>Enable Line Wrapping</source>
-        <translation type="unfinished">行の折り返しを使用</translation>
+        <translation>行の折り返しを使用</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3723"/>
         <source>Item Color:</source>
-        <translation type="unfinished">アイテムの色:</translation>
+        <translation>アイテムの色:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3728"/>
         <source>Items:</source>
-        <translation type="unfinished">アイテム:</translation>
+        <translation>アイテム:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3737"/>
         <source>Preview:</source>
-        <translation type="unfinished">プレビュー:</translation>
+        <translation>プレビュー:</translation>
     </message>
 </context>
 <context>
@@ -4905,17 +4915,17 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3575"/>
         <source>TLM Plugin Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMプラグインパス:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3581"/>
         <source>TLM Manager Process:</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMマネージャプロセス:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3587"/>
         <source>TLM Monitor Process:</source>
-        <translation type="unfinished"></translation>
+        <translation>TLMモニタープロセス:</translation>
     </message>
 </context>
 <context>
@@ -4996,27 +5006,27 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Util/Utilities.cpp" line="67"/>
         <source>Show/hide filters</source>
-        <translation type="unfinished"></translation>
+        <translation>表示/非表示フィルター</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="77"/>
         <source>Case Sensitive</source>
-        <translation type="unfinished"></translation>
+        <translation>大文字・小文字の区別</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="80"/>
         <source>Regular Expression</source>
-        <translation type="unfinished">正規表現</translation>
+        <translation>正規表現</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="81"/>
         <source>A rich Perl-like pattern matching syntax.</source>
-        <translation type="unfinished"></translation>
+        <translation>リッチなPerlの様なパターンマッチングシンタックス.</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="82"/>
         <source>Wildcard</source>
-        <translation type="unfinished">ワイルドカード</translation>
+        <translation>ワイルドカード</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="83"/>
@@ -5026,12 +5036,12 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Util/Utilities.cpp" line="84"/>
         <source>Fixed String</source>
-        <translation type="unfinished">固定ストリング</translation>
+        <translation>固定ストリング</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="85"/>
         <source>Fixed string matching.</source>
-        <translation type="unfinished">Fixed string matching.</translation>
+        <translation>固定ストリングでのマッチング.</translation>
     </message>
 </context>
 <context>
@@ -5076,12 +5086,12 @@ Variable: %3</source>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="978"/>
         <source>You must select a class to re-simulate.</source>
-        <translation type="unfinished"></translation>
+        <translation>再シミュレーションするクラスを選択しなければなりません.</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="996"/>
         <source>You cannot re-simulate this class.&lt;br /&gt;This is just a result file loaded via menu &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>このクラスを再実行できません&lt;br /&gt; これはメニュー &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.でロードされた結果ファイルです.</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="1020"/>
