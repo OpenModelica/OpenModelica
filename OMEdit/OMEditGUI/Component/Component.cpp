@@ -530,18 +530,21 @@ bool Component::hasNonExistingClass()
       return nonExistingClassFound;
     }
   }
-  foreach (Component *pChildComponent, mComponentsList) {
-    nonExistingClassFound = pChildComponent->hasNonExistingClass();
-    if (nonExistingClassFound) {
-      return nonExistingClassFound;
-    }
-    foreach (Component *pInheritedComponent, pChildComponent->getInheritedComponentsList()) {
-      nonExistingClassFound = pInheritedComponent->hasNonExistingClass();
-      if (nonExistingClassFound) {
-        return nonExistingClassFound;
-      }
-    }
-  }
+  /* Ticket #3706
+   * Don't check components because we should not display class as missing one of components class is missing.
+   */
+//  foreach (Component *pChildComponent, mComponentsList) {
+//    nonExistingClassFound = pChildComponent->hasNonExistingClass();
+//    if (nonExistingClassFound) {
+//      return nonExistingClassFound;
+//    }
+//    foreach (Component *pInheritedComponent, pChildComponent->getInheritedComponentsList()) {
+//      nonExistingClassFound = pInheritedComponent->hasNonExistingClass();
+//      if (nonExistingClassFound) {
+//        return nonExistingClassFound;
+//      }
+//    }
+//  }
   return nonExistingClassFound;
 }
 
