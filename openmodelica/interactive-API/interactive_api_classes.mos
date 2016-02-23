@@ -42,11 +42,6 @@ addConnection(a.n,b.z,A.test);
 addConnection(a.n[1],b.z[2],A.test);
 getNthConnection(A.test,1);
 getClassNames(A);
-copyClass(A, "B");
-getClassNames();
-copyClass(A, "B", test2);
-getClassNames(test2);
-
 
 clear();
 
@@ -163,14 +158,6 @@ getClassNames(A);
 // {a.n[1],b.z[2], ""}
 // Evaluating: getClassNames(A)
 // {test}
-// Evaluating: copyClass(A, "B")
-// true
-// Evaluating: getClassNames()
-// {B,test2,A}
-// Evaluating: copyClass(A, "B", test2)
-// true
-// Evaluating: getClassNames(test2)
-// {B}
 // Evaluating: clear()
 // true
 // Evaluating: getAnnotationVersion()

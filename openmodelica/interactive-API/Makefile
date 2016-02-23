@@ -11,6 +11,7 @@ Bug3282.mos \
 Bug3417.mos \
 Bug3520.mos \
 ConvertUnits.mos \
+CopyClass.mos \
 choicesAllMatching.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
