@@ -24,6 +24,7 @@ test_06.mos \
 test_07.mos \
 testknownvar.mos \
 testMathFuncs.mos \
+ticket3701.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
