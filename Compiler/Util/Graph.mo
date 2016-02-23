@@ -143,12 +143,15 @@ algorithm
 
     // If the remaining graph is empty we don't need to do much more, just
     // append the rest of the start nodes to the result.
-    case ((node1, {}) :: rest_start, {}, _, _)
-      equation
-        (result, _) = topologicalSort2(rest_start, {}, node1 :: inAccumNodes,
-            inEqualFunc);
-      then
-        (result, {});
+    case (rest_start, {}, _, _)
+      algorithm
+        result := inAccumNodes;
+        for n in rest_start loop
+          (node1,{}) := n;
+          result := node1 :: result;
+        end for;
+        result := listReverse(result);
+      then (result, {});
 
     case ((node1, {}) :: rest_start, rest_rest, _, _)
       equation
