@@ -378,32 +378,22 @@ element_list [void **ann] returns [void* ast]
   }
 } :
   ((
-     ( e=element {a=0;}
+     ( e=element {ast=mmc_mk_cons(Absyn__ELEMENTITEM(e.ast), ast);}
      | ( { ann && (ModelicaParser_langStd < 31 || 1) }? a=annotation {*ann = mmc_mk_cons(a, *ann);} )
      )
   ) SEMICOLON
     {
+      last = LT(1)->getTokenIndex(LT(1));
       for (;omc_first_comment<last;omc_first_comment++) {
         pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
           ast = mmc_mk_cons(Absyn__LEXER_5fCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
         }
       }
-      if (!a) {
-        ast=mmc_mk_cons(Absyn__ELEMENTITEM(e.ast), ast);
-      }
-      last = LT(1)->getTokenIndex(LT(1));
     }
   )*
-
   {
-    for (;omc_first_comment<last;omc_first_comment++) {
-      pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
-      if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-        ast = mmc_mk_cons(Absyn__LEXER_5fCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
-      }
-    }
-    ast = listReverseInPlace(ast);
+    $ast = listReverseInPlace($ast);
     if (ann) {
       *ann = listReverseInPlace(*ann);
     }
@@ -715,34 +705,37 @@ constraint_clause [void **ann] returns [void* ast] :
 
 equation_annotation_list [void **ann] returns [void* ast]
 @init {
-  int first,last;
-  $ast = 0;
-  first = omc_first_comment;
+  int last, haveEq;
+  ast = mmc_mk_nil();
   last = LT(1)->getTokenIndex(LT(1));
-  omc_first_comment = last;
   ea = 0;
   eq.ast = 0;
-  es = 0;
+  for (;omc_first_comment<last;omc_first_comment++) {
+    pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
+    if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+      ast = mmc_mk_cons(Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+    }
+  }
 } :
-  { LA(1) == END_IDENT || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }?
+  (
+  { LA(1) != END_IDENT && LA(1) != CONSTRAINT && LA(1) != EQUATION && LA(1) != T_ALGORITHM && LA(1)!=INITIAL && LA(1) != PROTECTED && LA(1) != PUBLIC }? =>
+  ( eq=equation SEMICOLON { ast = mmc_mk_cons(eq.ast,ast); }
+  | ea=annotation SEMICOLON {*ann = mmc_mk_cons(ea,*ann);}
+  )
     {
-      ast = mmc_mk_nil();
-      for (;first<last;last--) {
-        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+      last = LT(1)->getTokenIndex(LT(1));
+      for (;omc_first_comment<last;omc_first_comment++) {
+        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
           ast = mmc_mk_cons(Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
         }
       }
     }
-  |
-  ( eq=equation SEMICOLON | ea=annotation SEMICOLON {*ann = mmc_mk_cons(ea,*ann);}) es=equation_annotation_list[ann]
+  )*
     {
-      ast = ea ? es : mmc_mk_cons(eq.ast,es);
-      for (;first<last;last--) {
-        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
-        if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-          ast = mmc_mk_cons(Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
-        }
+      ast = listReverseInPlace(ast);
+      if (ann) {
+      *ann = listReverseInPlace(*ann);
       }
     }
   ;
@@ -771,27 +764,20 @@ initial_algorithm_clause [void **ann] returns [void* ast]
 
 algorithm_annotation_list [void **ann, int matchCase] returns [void* ast]
 @init {
-  int first,last,isalg = 0;
-  $ast = 0;
-  first = omc_first_comment;
+  int last,isalg = 0;
+  $ast = mmc_mk_nil();
   last = LT(1)->getTokenIndex(LT(1));
-  omc_first_comment = last;
-  a = 0;
-  al.ast = 0;
-  as.ast = 0;
-} :
-  { matchCase ? LA(1) == THEN : (LA(1) == END_IDENT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC) }?
-    {
-      $ast = mmc_mk_nil();
-      for (;first<last;last--) {
-        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
-        if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-          $ast = mmc_mk_cons(Absyn__ALGORITHMITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),$ast);
-        }
-      }
+  for (;omc_first_comment<last;omc_first_comment++) {
+    pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
+    if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+      $ast = mmc_mk_cons(Absyn__ALGORITHMITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),$ast);
     }
-  |
-  ( al=algorithm SEMICOLON | a=annotation SEMICOLON {
+  }
+} :
+  (
+    { matchCase ? LA(1) != THEN : (LA(1) != END_IDENT && LA(1) != EQUATION && LA(1) != T_ALGORITHM && LA(1)!=INITIAL && LA(1) != PROTECTED && LA(1) != PUBLIC) }?=>
+  ( al=algorithm SEMICOLON { $ast = mmc_mk_cons(al.ast,$ast); }
+  | a=annotation SEMICOLON {
       if (ann) {
         *ann = mmc_mk_cons(a,*ann);
       } else {
@@ -800,18 +786,22 @@ algorithm_annotation_list [void **ann, int matchCase] returns [void* ast]
               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition,
               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
       }
-    }) as=algorithm_annotation_list[ann,matchCase]
-  {
-    if (a) {
-      $ast = as.ast;
-    } else {
-      $ast = mmc_mk_cons(al.ast,as.ast);
     }
-    for (;first<last;last--) {
-      pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+  )
+  {
+    last = LT(1)->getTokenIndex(LT(1));
+    for (;omc_first_comment<last;omc_first_comment++) {
+      pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
       if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
         $ast = mmc_mk_cons(Absyn__ALGORITHMITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),$ast);
       }
+    }
+  }
+  )*
+  {
+    $ast = listReverseInPlace($ast);
+    if (ann) {
+    *ann = listReverseInPlace(*ann);
     }
   }
   ;
