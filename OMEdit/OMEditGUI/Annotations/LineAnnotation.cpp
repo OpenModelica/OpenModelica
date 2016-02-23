@@ -495,6 +495,7 @@ QString LineAnnotation::getTLMShapeAnnotation()
 
 void LineAnnotation::addPoint(QPointF point)
 {
+  prepareGeometryChange();
   mPoints.append(point);
   if (mPoints.size() > 1) {
     if (mGeometries.size() == 0) {
@@ -513,6 +514,7 @@ void LineAnnotation::addPoint(QPointF point)
 
 void LineAnnotation::removePoint(int index)
 {
+  prepareGeometryChange();
   if (mPoints.size() > index) {
     mPoints.removeAt(index);
   }
@@ -547,6 +549,7 @@ void LineAnnotation::clearPoints()
   */
 void LineAnnotation::updateStartPoint(QPointF point)
 {
+  prepareGeometryChange();
   manhattanizeShape();
   removeRedundantPointsGeometriesAndCornerItems();
   qreal dx = point.x() - mPoints[0].x();
@@ -584,6 +587,7 @@ void LineAnnotation::updateStartPoint(QPointF point)
   */
 void LineAnnotation::updateEndPoint(QPointF point)
 {
+  prepareGeometryChange();
   if (mLineType == LineAnnotation::ConnectionType) {
     if (!mpGraphicsView->isCreatingConnection()) {
       manhattanizeShape();
@@ -630,6 +634,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
 
 void LineAnnotation::moveAllPoints(qreal offsetX, qreal offsetY)
 {
+  prepareGeometryChange();
   for(int i = 0 ; i < mPoints.size() ; i++) {
     mPoints[i] = QPointF(mPoints[i].x()+offsetX, mPoints[i].y()+offsetY);
     /* updated the corresponding CornerItem */
@@ -658,6 +663,7 @@ void LineAnnotation::setShapeFlags(bool enable)
 
 void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 {
+  prepareGeometryChange();
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
   setLineType(pLineAnnotation->getLineType());
   setStartComponent(pLineAnnotation->getStartComponent());
