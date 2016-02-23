@@ -3462,11 +3462,11 @@ algorithm
   outM := match(inM)
   local
     BackendDAE.IncidenceMatrix m,m1;
-    case (NONE()) then NONE();
     case (SOME(m))
       equation
         m1 = arrayCopy(m);
       then SOME(m1);
+    else then NONE();
    end match;
 end copyIncidenceMatrix;
 
@@ -5453,15 +5453,15 @@ algorithm
   outExp := match(inExp,inVariables,funcs,oRepl)
     local
       BackendVarTransform.VariableReplacements repl;
-    case (_,_,_,NONE())
+    case (_,_,_,SOME(repl))
       equation
-        repl = makeZeroReplacements(inVariables);
        (outExp,(_,_,_,true)) = Expression.traverseExpTopDown(inExp, getEqnsysRhsExp1, (repl,inVariables,funcs,true));
        (outExp,_) = ExpressionSimplify.simplify(outExp);
       then
         outExp;
-    case (_,_,_,SOME(repl))
+    else
       equation
+        repl = makeZeroReplacements(inVariables);
        (outExp,(_,_,_,true)) = Expression.traverseExpTopDown(inExp, getEqnsysRhsExp1, (repl,inVariables,funcs,true));
        (outExp,_) = ExpressionSimplify.simplify(outExp);
       then
@@ -6355,12 +6355,12 @@ algorithm
       BackendDAE.Equation eqn;
       Type_a ext_arg_1;
       Boolean b;
-    case (NONE(),_,_) then (true,inTypeA);
     case (SOME(eqn),_,_)
       equation
         (b,ext_arg_1) = BackendEquation.traverseExpsOfEquation_WithStop(eqn,func,inTypeA);
       then
         (b,ext_arg_1);
+    else (true,inTypeA);
   end match;
 end traverseBackendDAEExpsOptEqnWithStop;
 
@@ -6383,12 +6383,12 @@ algorithm
     local
       BackendDAE.Equation eqn;
      Type_a ext_arg_1;
-    case (NONE(),_,_) then (NONE(),inTypeA);
     case (SOME(eqn),_,_)
       equation
         (eqn,ext_arg_1) = BackendEquation.traverseExpsOfEquation(eqn,func,inTypeA);
       then
         (SOME(eqn),ext_arg_1);
+    else (NONE(),inTypeA);
   end match;
 end traverseBackendDAEExpsOptEqnWithUpdate;
 

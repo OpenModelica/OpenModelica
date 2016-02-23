@@ -500,7 +500,7 @@ algorithm
       then
         SOME(exp);
 
-    case NONE() then inOptExp;
+    else inOptExp;
   end match;
 end flattenModOptExp;
 
@@ -614,7 +614,7 @@ algorithm
       then
         SOME(exp);
 
-    case (NONE(), _, _) then inExp;
+    else inExp;
   end match;
 end flattenOptExp;
 

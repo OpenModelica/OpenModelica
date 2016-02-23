@@ -4164,7 +4164,7 @@ algorithm
     case(SimCode.SES_IFEQUATION(index=idx,ifbranches=ifs,elsebranch=elsebranch,source=source),_)
       equation
         expLst = List.map(ifs,Util.tuple21);
-        (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE(),{},false);
+        (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE());
         simEqSysLstLst = List.map(ifs,Util.tuple22);
         (simEqSysLstLst,_) = List.map1_2(simEqSysLstLst,replaceInSimEqSystemLst,replIn);
         ifs = List.threadMap(expLst,simEqSysLstLst,Util.makeTuple);
@@ -4180,7 +4180,7 @@ algorithm
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx,partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,residual=simEqSysLst,jacobianMatrix=jac,indexLinearSystem=idxLS)),_)
       equation
         (simVars,bLst) = List.map1_2(simVars,replaceCrefInSimVar,replIn);
-        (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE(),{},false);
+        (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE());
         changed = List.fold(bLst,boolOr,changed);
         simJac = List.map1(simJac,replaceInSimJac,replIn);
         simEqSys = SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(idx,pom,simVars,expLst,simJac,simEqSysLst,jac,sources,idxLS), NONE());
@@ -4188,7 +4188,7 @@ algorithm
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,eqs=simEqSysLst,crefs=crefs,indexNonLinearSystem=idxNLS,linearTearing=lt,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),_)
       equation
         expLst = List.map(crefs,Expression.crefExp);
-        (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE(),{},false);
+        (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE());
         crefs = List.map(expLst,Expression.expCref);
         (simEqSysLst,bLst) = List.map1_2(simEqSysLst,replaceExpsInSimEqSystem,replIn);
         changed = changed or List.fold(bLst,boolOr,false);

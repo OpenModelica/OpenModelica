@@ -1265,7 +1265,7 @@ algorithm
       // traverse the residualEquations
       equation
         repl = arrayGet(replArr,i+1);
-        (h_i,_) = BackendVarTransform.replaceExpList1(resExpsIn, repl, NONE(), {}, {});
+        (h_i,_) = BackendVarTransform.replaceExpList1(resExpsIn, repl, NONE());
         h_iArr = arrayUpdate(h_iArrIn,i+1,h_i);
       then h_iArr;
     else

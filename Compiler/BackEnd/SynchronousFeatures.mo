@@ -619,7 +619,7 @@ protected function setClockKind
   input DAE.ClockKind inClockKind;
   output DAE.ClockKind outClockKind;
 algorithm
-  outClockKind := matchcontinue (inOldClockKind, inClockKind)
+  outClockKind := match (inOldClockKind, inClockKind)
     local
       DAE.Exp e1, e2;
       Integer i1, i2;
@@ -629,31 +629,31 @@ algorithm
     case (_, DAE.INFERRED_CLOCK()) then inOldClockKind;
     case (DAE.INTEGER_CLOCK(intervalCounter = e1, resolution = i1),
           DAE.INTEGER_CLOCK(intervalCounter = e2, resolution = i2))
-      equation
-        true = Expression.expEqual(e1, e2);
-        true = (i1 == i2);
+      guard
+        Expression.expEqual(e1, e2) and
+        (i1 == i2)
       then inClockKind;
     case (DAE.REAL_CLOCK(interval = e1),
           DAE.REAL_CLOCK(interval = e2))
-      equation
-        true = Expression.expEqual(e1, e2);
+      guard
+        Expression.expEqual(e1, e2)
       then inClockKind;
     case (DAE.BOOLEAN_CLOCK(condition = e1, startInterval = r1),
           DAE.BOOLEAN_CLOCK(condition = e2, startInterval = r2))
-      equation
-        true = Expression.expEqual(e1, e2);
-        true = (r1 == r2);
+      guard
+        Expression.expEqual(e1, e2) and
+        (r1 == r2)
       then inClockKind;
     case (DAE.SOLVER_CLOCK(c = e1, solverMethod = s1),
           DAE.SOLVER_CLOCK(c = e2, solverMethod = s2))
-      equation
-        true = Expression.expEqual(e1, e2);
-        true = stringEqual(s1, s2);
+      guard
+        Expression.expEqual(e1, e2) and
+        stringEqual(s1, s2)
       then inClockKind;
     else
       equation Error.addMessage(Error.CLOCK_CONFLICT, {});
       then fail();
-  end matchcontinue;
+  end match;
 end setClockKind;
 
 protected function getSubClkFromVars
@@ -1775,9 +1775,9 @@ protected function printPartitionType
   output String out;
 algorithm
   out := match isClockedPartition
-    case NONE() then "UNSPECIFIED_PARTITION";
     case SOME(false) then "CONT_PARTITION";
     case SOME(true) then "CLOCKED_PARTITION";
+    else "UNSPECIFIED_PARTITION";
   end match;
 end printPartitionType;
 
@@ -1896,9 +1896,9 @@ protected function getPartitionConflictError
 algorithm
   (msg, tokens) := match inComp
     local DAE.ComponentRef cr;
-    case NONE() then (Error.CONT_CLOCKED_PARTITION_CONFLICT_EQ, {});
     case SOME(cr) then ( Error.CONT_CLOCKED_PARTITION_CONFLICT_VAR,
                          {ComponentReference.printComponentRefStr(cr)} );
+    else (Error.CONT_CLOCKED_PARTITION_CONFLICT_EQ, {});
   end match;
 end getPartitionConflictError;
 
