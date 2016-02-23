@@ -630,24 +630,24 @@ algorithm
     case (DAE.INTEGER_CLOCK(intervalCounter = e1, resolution = i1),
           DAE.INTEGER_CLOCK(intervalCounter = e2, resolution = i2))
       equation
-        true = Expression.expEqual(e1, e1);
+        true = Expression.expEqual(e1, e2);
         true = (i1 == i2);
       then inClockKind;
     case (DAE.REAL_CLOCK(interval = e1),
           DAE.REAL_CLOCK(interval = e2))
       equation
-        true = Expression.expEqual(e1, e1);
+        true = Expression.expEqual(e1, e2);
       then inClockKind;
     case (DAE.BOOLEAN_CLOCK(condition = e1, startInterval = r1),
           DAE.BOOLEAN_CLOCK(condition = e2, startInterval = r2))
       equation
-        true = Expression.expEqual(e1, e1);
+        true = Expression.expEqual(e1, e2);
         true = (r1 == r2);
       then inClockKind;
     case (DAE.SOLVER_CLOCK(c = e1, solverMethod = s1),
           DAE.SOLVER_CLOCK(c = e2, solverMethod = s2))
       equation
-        true = Expression.expEqual(e1, e1);
+        true = Expression.expEqual(e1, e2);
         true = stringEqual(s1, s2);
       then inClockKind;
     else
