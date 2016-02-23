@@ -44,7 +44,7 @@ getDocumentationAnnotation(Modelica.Math.Matrices.LAPACK.dgeev);
 // This package contains a direct interface to the LAPACK subroutines
 // </p>
 // 
-// </html>",""}
+// </html>","",""}
 // Evaluating: getDocumentationAnnotation(Modelica.Math.Matrices.LAPACK.dgeev)
 // {"Lapack documentation
 //     Purpose
@@ -121,5 +121,5 @@ getDocumentationAnnotation(Modelica.Math.Matrices.LAPACK.dgeev);
 //                   eigenvalues, and no eigenvectors have been computed;
 //                   elements i+1:N of WR and WI contain eigenvalues which
 //                   have converged.
-// ",""}
+// ","",""}
 // endResult

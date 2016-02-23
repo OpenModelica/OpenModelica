@@ -80,6 +80,10 @@ addConnection(a.n,b.z,A.test);
 addConnection(a.n[1],b.z[2],A.test);
 getNthConnection(A.test,1);
 getClassNames(A);
+loadString("model M
+  annotation(Documentation(info=\"html info\", __OpenModelica_infoHeader=\"html header info\"));
+end M;");
+getDocumentationAnnotation(M);
 
 
 // Result:
@@ -141,7 +145,7 @@ getClassNames(A);
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDocumentationAnnotation(A.test)
-// {"<HTML>foo</HTML>","1.0"}
+// {"<HTML>foo</HTML>","1.0",""}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentCount(A.test)
@@ -217,7 +221,7 @@ getClassNames(A);
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDocumentationAnnotation(A.test)
-// {"<HTML>foo</HTML>","1.0"}
+// {"<HTML>foo</HTML>","1.0",""}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentCount(A.test)
@@ -234,4 +238,10 @@ getClassNames(A);
 // {a.n[1],b.z[2], ""}
 // Evaluating: getClassNames(A)
 // {test}
+// Evaluating: loadString("model M
+//   annotation(Documentation(info=\"html info\", __OpenModelica_infoHeader=\"html header info\"));
+// end M;")
+// true
+// Evaluating: getDocumentationAnnotation(M)
+// {"html info","","html header info"}
 // endResult
