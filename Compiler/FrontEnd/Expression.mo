@@ -9636,6 +9636,17 @@ algorithm
   end match;
 end isExpCrefOrIfExp;
 
+public function isExpIfExp
+"Returns true if expression is an if expression"
+  input DAE.Exp e;
+  output Boolean res;
+algorithm
+  res := match(e)
+    case(DAE.IFEXP()) then true;
+    else false;
+  end match;
+end isExpIfExp;
+
 public function operatorEqual
 "Helper function to expEqual."
   input DAE.Operator inOperator1;

@@ -243,7 +243,12 @@ protected function wrapFunctionCalls3
   output DAE.Exp outExp;
   output tuple<tuple<HashTableExpToExp.HashTable, Integer, list<BackendDAE.Equation>, list<BackendDAE.Var>, DAE.FunctionTree>, DAE.ElementSource> outTuple;
 algorithm
-  (outExp, outTuple) := Expression.traverseExpBottomUp(inExp, wrapFunctionCalls_main, inTuple);
+  if Expression.isExpIfExp(inExp) then
+    outExp  := inExp;
+    outTuple := inTuple;
+  else
+    (outExp, outTuple) := Expression.traverseExpBottomUp(inExp, wrapFunctionCalls_main, inTuple);
+  end if;
 end wrapFunctionCalls3;
 
 protected function wrapFunctionCalls_main
