@@ -12108,12 +12108,12 @@ end getExperimentAnnotationString2;
 
 public function getDocumentationAnnotationString
   input Option<Absyn.Modification> mod;
-  output tuple<String,String> docStr;
+  output tuple<String,String,String> docStr;
 algorithm
   docStr := match (mod)
     local
       list<Absyn.ElementArg> arglst;
-      String info, revisions;
+      String info, revisions, infoHeader;
       Boolean partialInst;
     case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
       equation
@@ -12121,8 +12121,9 @@ algorithm
         System.setPartialInstantiation(true);
         info = getDocumentationAnnotationInfo(arglst);
         revisions = getDocumentationAnnotationRevision(arglst);
+        infoHeader = getDocumentationAnnotationInfoHeader(arglst);
         System.setPartialInstantiation(partialInst);
-      then ((info,revisions));
+      then ((info,revisions,infoHeader));
   end match;
 end getDocumentationAnnotationString;
 
@@ -12178,6 +12179,32 @@ algorithm
       then ss;
     end matchcontinue;
 end getDocumentationAnnotationRevision;
+
+protected function getDocumentationAnnotationInfoHeader
+"Helper function to getDocumentationAnnotationString"
+  input list<Absyn.ElementArg> eltArgs;
+  output String str;
+algorithm
+  str := matchcontinue (eltArgs)
+    local
+      Absyn.Exp exp;
+      list<Absyn.ElementArg> xs;
+      String s;
+      String ss;
+      DAE.Exp dexp;
+    case ({}) then "";
+    case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "__OpenModelica_infoHeader"),
+          modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::_)
+      equation
+        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, Prefix.NOPRE(), Absyn.dummyInfo);
+        (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
+      then s;
+    case (_::xs)
+      equation
+        ss = getDocumentationAnnotationInfoHeader(xs);
+      then ss;
+    end matchcontinue;
+end getDocumentationAnnotationInfoHeader;
 
 protected function getNthPublicConnectorStr
 "Helper function to getNthConnector."
