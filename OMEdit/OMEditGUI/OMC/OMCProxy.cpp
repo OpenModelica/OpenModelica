@@ -35,7 +35,6 @@
  *
  */
 
-
 #include <OMC/Parser/OMCOutputLexer.h>
 #include <OMC/Parser/OMCOutputParser.h>
 #include "meta/meta_modelica.h"
@@ -1253,19 +1252,33 @@ QStringList OMCProxy::getComponentAnnotations(QString className)
   return StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(getResult()));
 }
 
-/*!
-  Returns the documentation annotation of a model.\n
-  The documenation is not standardized, so for any non-standard html documentation add <pre></pre> tags.
-  \param className - is the name of the model.
-  \return the documentation.
-  */
-QString OMCProxy::getDocumentationAnnotation(QString className)
+QString OMCProxy::getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibraryTreeItem, QString infoHeader)
 {
-  QList<QString> docsList = mpOMCInterface->getDocumentationAnnotation(className);
+  if (pLibraryTreeItem && !pLibraryTreeItem->isRootItem()) {
+    QList<QString> docsList = mpOMCInterface->getDocumentationAnnotation(pLibraryTreeItem->getNameStructure());
+    infoHeader.prepend(docsList.at(2)); // __OpenModelica_infoHeader section is the 3rd item in the list
+    return getDocumentationAnnotationInfoHeader(pLibraryTreeItem->parent(), infoHeader);
+  } else {
+    return infoHeader;
+  }
+}
+
+/*!
+ * \brief OMCProxy::getDocumentationAnnotation
+ * Returns the documentation annotation of a model.\n
+ * The documenation is not standardized, so for any non-standard html documentation add <pre></pre> tags.
+ * \param pLibraryTreeItem
+ * \return the documentation
+ */
+QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
+{
+  QList<QString> docsList = mpOMCInterface->getDocumentationAnnotation(pLibraryTreeItem->getNameStructure());
+  QString infoHeader = "";
+  infoHeader = getDocumentationAnnotationInfoHeader(pLibraryTreeItem->parent(), infoHeader);
   // get the class comment and show it as the first line on the documentation page.
-  QString doc = getClassComment(className);
+  QString doc = getClassComment(pLibraryTreeItem->getNameStructure());
   if (!doc.isEmpty()) doc.prepend("<h4>").append("</h4>");
-  doc.prepend(QString("<h2>").append(className).append("</h2>"));
+  doc.prepend(QString("<h2>").append(pLibraryTreeItem->getNameStructure()).append("</h2>"));
   for (int ele = 0 ; ele < docsList.size() ; ele++) {
     QString docElement = docsList[ele];
     if (docElement.isEmpty()) {
@@ -1275,31 +1288,38 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
       doc += "<p style=\"font-size:12px;\"><strong><u>Information</u></strong></p>";
     } else if (ele == 1) {    // revisions section
       doc += "<p style=\"font-size:12px;\"><strong><u>Revisions</u></strong></p>";
+    } else if (ele == 2) {    // __OpenModelica_infoHeader section
+      infoHeader.append(docElement);
+      continue;
     }
-    int i,j;
-    /*
-     * Documentation may have the form
-     * text <HTML>...</html> text <html>...</HTML> [...]
-     * Nothing is standardized, but we will treat non-html tags as <pre>-formatted text
-     */
-    while (1) {
-      docElement = docElement.trimmed();
-      i = docElement.indexOf("<html>", 0, Qt::CaseInsensitive);
-      if (i == -1) break;
-      if (i != 0) {
-        doc += "<pre>" + docElement.left(i).replace("<","&lt;").replace(">","&gt;") + "</pre>";
-        docElement = docElement.remove(i);
-      }
-      j = docElement.indexOf("</html>", 0, Qt::CaseInsensitive);
-      if (j == -1) break;
-      doc += docElement.leftRef(j+7);
-      docElement = docElement.mid(j+7,-1);
-    }
-    if (docElement.length()) {
-      doc += "<pre>" + docElement.replace("<","&lt;").replace(">","&gt;") + "</pre>";
-    }
+    docElement = docElement.trimmed();
+    docElement.remove(QRegExp("<html>|</html>|<HTML>|</HTML>|<head>|</head>|<HEAD>|</HEAD>|<body>|</body>|<BODY>|</BODY>"));
+    doc += docElement;
+//    int i,j;
+//    /*
+//     * Documentation may have the form
+//     * text <HTML>...</html> text <html>...</HTML> [...]
+//     * Nothing is standardized, but we will treat non-html tags as <pre>-formatted text
+//     */
+//    while (1) {
+//      docElement = docElement.trimmed();
+//      i = docElement.indexOf("<html>", 0, Qt::CaseInsensitive);
+//      if (i == -1) break;
+//      if (i != 0) {
+//        doc += "<pre>" + docElement.left(i).replace("<","&lt;").replace(">","&gt;") + "</pre>";
+//        docElement = docElement.remove(i);
+//      }
+//      j = docElement.indexOf("</html>", 0, Qt::CaseInsensitive);
+//      if (j == -1) break;
+//      doc += docElement.leftRef(j+7);
+//      docElement = docElement.mid(j+7,-1);
+//    }
+//    if (docElement.length()) {
+//      doc += "<pre>" + docElement.replace("<","&lt;").replace(">","&gt;") + "</pre>";
+//    }
   }
-  QString documentation = makeDocumentationUriToFileName(doc);
+  QString documentation = QString("<html><head>%1</head><body>%2</body></html>").arg(infoHeader).arg(doc);
+  documentation = makeDocumentationUriToFileName(documentation);
   /*! @note We convert modelica:// to modelica:///.
     * This tells QWebview that these links doesn't have any host.
     * Why we are doing this. Because,
@@ -1312,10 +1332,13 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
 }
 
 /*!
-  Gets the class comment.
-  \param className - is the name of the class.
-  \return class comment.
-  */
+ * \brief OMCProxy::getClassComment
+ * Gets the class comment.
+ * \param className - is the name of the class.
+ * \return class comment.
+ * \param className
+ * \return
+ */
 QString OMCProxy::getClassComment(QString className)
 {
   return mpOMCInterface->getClassComment(className);
@@ -2192,32 +2215,55 @@ bool OMCProxy::clearCommandLineOptions()
  */
 QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
 {
+//  QDomDocument xmlDocument;
+//  if (xmlDocument.setContent(documentation)) {
+//    QDomNodeList imgTags = xmlDocument.elementsByTagName("img,script");
+//    for (int i = 0; i < imgTags.size(); i++) {
+//      QString src = imgTags.at(i).toElement().attribute("src");
+//      if (src.startsWith("modelica://")) {
+//        QString imgFileName = uriToFilename(src);
+//        imgTags.at(i).toElement().setAttribute("src", imgFileName);
+//      } else if (src.startsWith("file://")) {
+//        QString imgFileName = uriToFilename(src);
+//        // Windows absolute paths doesn't start with "/".
+//  #ifdef WIN32
+//        if (imgFileName.startsWith("/")) {
+//          imgFileName = imgFileName.mid(1);
+//        }
+//  #endif
+//        imgTags.at(i).toElement().setAttribute("src", imgFileName);
+//      } else {
+//        //! @todo The img src value starts with modelica:// for MSL 3.2.1. Handle the other cases in this else block.
+//      }
+//    }
+//    return xmlDocument.toString();
+//  }
+//  return documentation;
+
   QWebPage webPage;
   QWebFrame *pWebFrame = webPage.mainFrame();
   pWebFrame->setHtml(documentation);
   QWebElement webElement = pWebFrame->documentElement();
   QWebElementCollection imgTags = webElement.findAll("img,script");
-  foreach (QWebElement imgTag, imgTags)
-  {
+  foreach (QWebElement imgTag, imgTags) {
     QString src = imgTag.attribute("src");
     if (src.startsWith("modelica://")) {
       QString imgFileName = uriToFilename(src);
       imgTag.setAttribute("src", imgFileName);
     } else if (src.startsWith("file://")) {
       QString imgFileName = uriToFilename(src);
-      /*
-        Windows absolute paths doesn't start with "/".
-        */
+      // Windows absolute paths doesn't start with "/".
 #ifdef WIN32
-      if (imgFileName.startsWith("/"))
+      if (imgFileName.startsWith("/")) {
         imgFileName = imgFileName.mid(1);
+      }
 #endif
       imgTag.setAttribute("src", imgFileName);
     } else {
       //! @todo The img src value starts with modelica:// for MSL 3.2.1. Handle the other cases in this else block.
     }
   }
-  return webElement.toOuterXml();
+  return pWebFrame->toHtml();
 }
 
 /*!

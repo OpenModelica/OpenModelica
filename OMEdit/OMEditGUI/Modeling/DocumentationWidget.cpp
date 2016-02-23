@@ -123,10 +123,10 @@ DocumentationViewer* DocumentationWidget::getDocumentationViewer()
   return mpDocumentationViewer;
 }
 
-void DocumentationWidget::showDocumentation(QString className)
+void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
 {
   /* Create a local file with the html we want to view as otherwise JavaScript does not run properly. */
-  QString documentation = mpMainWindow->getOMCProxy()->getDocumentationAnnotation(className);
+  QString documentation = mpMainWindow->getOMCProxy()->getDocumentationAnnotation(pLibraryTreeItem);
   mDocumentationFile.open(QIODevice::WriteOnly | QIODevice::Text);
   QTextStream out(&mDocumentationFile);
   out.setCodec(Helper::utf8.toStdString().data());
@@ -134,18 +134,16 @@ void DocumentationWidget::showDocumentation(QString className)
   mDocumentationFile.close();
   mpDocumentationViewer->setUrl(mDocumentationFile.fileName());
 
-  if ((mDocumentationHistoryPos >= 0) && (className == mpDocumentationHistoryList->at(mDocumentationHistoryPos).mUrl))
-  {
+  if ((mDocumentationHistoryPos >= 0) && (pLibraryTreeItem == mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem)) {
     /* reload url */
   } else {
     /* new url */
     /* remove all following urls */
-    while (mpDocumentationHistoryList->count() > (mDocumentationHistoryPos+1))
-    {
+    while (mpDocumentationHistoryList->count() > (mDocumentationHistoryPos+1)) {
       mpDocumentationHistoryList->removeLast();
     }
     /* append new url */
-    mpDocumentationHistoryList->append(DocumentationHistory(className));
+    mpDocumentationHistoryList->append(DocumentationHistory(pLibraryTreeItem));
     mDocumentationHistoryPos++;
   }
 
@@ -164,19 +162,17 @@ void DocumentationWidget::showDocumentation(QString className)
 
 void DocumentationWidget::previousDocumentation()
 {
-  if (mDocumentationHistoryPos > 0)
-  {
-      mDocumentationHistoryPos--;
-      showDocumentation(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mUrl);
+  if (mDocumentationHistoryPos > 0) {
+    mDocumentationHistoryPos--;
+    showDocumentation(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
   }
 }
 
 void DocumentationWidget::nextDocumentation()
 {
-  if ((mDocumentationHistoryPos + 1) < mpDocumentationHistoryList->count())
-  {
-      mDocumentationHistoryPos++;
-      showDocumentation(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mUrl);
+  if ((mDocumentationHistoryPos + 1) < mpDocumentationHistoryList->count()) {
+    mDocumentationHistoryPos++;
+    showDocumentation(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
   }
 }
 
@@ -227,7 +223,7 @@ void DocumentationViewer::processLinkClick(QUrl url)
       LibraryTreeItem *pLibraryTreeItem = mpDocumentationWidget->getMainWindow()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(resourceLink);
       // send the new className to DocumentationWidget
       if (pLibraryTreeItem) {
-        mpDocumentationWidget->showDocumentation(pLibraryTreeItem->getNameStructure());
+        mpDocumentationWidget->showDocumentation(pLibraryTreeItem);
       }
     }
   } else { // if it is normal http request then check if its not redirected to https

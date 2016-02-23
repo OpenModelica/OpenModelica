@@ -43,8 +43,8 @@
 class DocumentationHistory
 {
 public:
-  QString mUrl;
-  DocumentationHistory(QString url) {mUrl = url;}
+  LibraryTreeItem *mpLibraryTreeItem;
+  DocumentationHistory(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
 };
 
 class ModelWidget;
@@ -59,7 +59,7 @@ public:
   QToolButton* getPreviousToolButton();
   QToolButton* getNextToolButton();
   DocumentationViewer* getDocumentationViewer();
-  void showDocumentation(QString className);
+  void showDocumentation(LibraryTreeItem *pLibraryTreeItem);
 private:
   MainWindow *mpMainWindow;
   QFile mDocumentationFile;

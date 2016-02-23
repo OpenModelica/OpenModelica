@@ -2081,7 +2081,7 @@ void Component::openClass()
 void Component::viewDocumentation()
 {
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  pMainWindow->getDocumentationWidget()->showDocumentation(mpLibraryTreeItem->getNameStructure());
+  pMainWindow->getDocumentationWidget()->showDocumentation(mpLibraryTreeItem);
   pMainWindow->getDocumentationDockWidget()->show();
 }
 

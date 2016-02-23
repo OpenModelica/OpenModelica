@@ -2444,7 +2444,7 @@ void LibraryTreeView::viewDocumentation()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->getDocumentationWidget()->showDocumentation(pLibraryTreeItem->getNameStructure());
+    mpLibraryWidget->getMainWindow()->getDocumentationWidget()->showDocumentation(pLibraryTreeItem);
     mpLibraryWidget->getMainWindow()->getDocumentationDockWidget()->show();
   }
 }

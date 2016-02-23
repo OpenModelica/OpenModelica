@@ -3632,7 +3632,7 @@ void ModelWidget::showDocumentationView()
     mpTextViewToolButton->setChecked(true);
     return;
   }
-  mpModelWidgetContainer->getMainWindow()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem()->getNameStructure());
+  mpModelWidgetContainer->getMainWindow()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem());
   mpModelWidgetContainer->getMainWindow()->getDocumentationDockWidget()->show();
 }
 
