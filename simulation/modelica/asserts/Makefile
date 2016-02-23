@@ -12,6 +12,8 @@ AssertTest7.mos \
 testAssertSolve.mos \
 TestAssert.mos \
 powAssert1.mos \
+powAssert2.mos \
+powAssert3.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
