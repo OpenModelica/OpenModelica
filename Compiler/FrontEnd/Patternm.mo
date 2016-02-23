@@ -763,16 +763,19 @@ algorithm
       DAE.Type ty;
     case (Absyn.MATCHCONTINUE(),_,_) then (DAE.MATCHCONTINUE(), cases);
     case (_,_,_)
-      equation
-        true = listLength(cases) > 2;
-        patternMatrix = List.transposeList(List.map(cases,getCasePatterns));
-        (optPatternMatrix,numNonEmptyColumns) = removeWildPatternColumnsFromMatrix(patternMatrix,{},0);
-        tpl = findPatternToConvertToSwitch(optPatternMatrix,1,numNonEmptyColumns,info);
-        (_,ty,_) = tpl;
-        str = Types.unparseType(ty);
+      algorithm
+        true := listLength(cases) > 2;
+        for c in cases loop
+          DAE.CASE(patternGuard=NONE()) := c;
+        end for;
+        patternMatrix := List.transposeList(List.map(cases,getCasePatterns));
+        (optPatternMatrix,numNonEmptyColumns) := removeWildPatternColumnsFromMatrix(patternMatrix,{},0);
+        tpl := findPatternToConvertToSwitch(optPatternMatrix,1,numNonEmptyColumns,info);
+        (_,ty,_) := tpl;
+        str := Types.unparseType(ty);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);
-        outType = DAE.MATCH(SOME(tpl));
-        outCases = optimizeSwitchedMatchCases(outType, cases);
+        outType := DAE.MATCH(SOME(tpl));
+        outCases := optimizeSwitchedMatchCases(outType, cases);
       then
         (outType, outCases);
 
