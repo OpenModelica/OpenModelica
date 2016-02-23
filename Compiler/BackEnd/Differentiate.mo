@@ -2468,6 +2468,10 @@ algorithm
     case ({}, _, _, _)
     then inAccum;
 
+    // skip for zero differentiation
+    case (expLst::rest, de::restDiff, _, _) guard Expression.isZero(de)
+    then createPartialSum(rest, restDiff, inCall, inAccum);
+
     case (expLst::rest, de::restDiff, DAE.TSUB(exp=DAE.CALL(path=path, attr=attr), ix =ix, ty=ty), _) equation
       res = DAE.TSUB(DAE.CALL(path, expLst, attr), ix, ty);
       ty = Expression.typeof(de);
