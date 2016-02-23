@@ -15,6 +15,7 @@ Bug2833.mos \
 Bug3023.mos \
 Bug3261.mos \
 Bug3323.mos \
+Bug3500.mos \
 Bug3687.mos \
 BugTest1830.mos \
 ChangeCorrect.mos \
