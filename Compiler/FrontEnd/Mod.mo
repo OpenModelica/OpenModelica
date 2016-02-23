@@ -154,7 +154,7 @@ algorithm
     case (cache,_,_,_,SCode.NOMOD(),_,_,_) then (cache,DAE.NOMOD());
 
     // no top binding
-    case (cache,env,ih,pre,SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = NONE(), info = info),impl,_,info)
+    case (cache,env,ih,pre,SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = NONE(), info = info),impl,_,_)
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, inModScope, info);
       then

@@ -1467,11 +1467,12 @@ algorithm
     case (DAE.TUPLE(exps1),e2,DAE.T_TUPLE(types = _::_),_,_,initial_)
       equation
         exps1 = List.map(exps1,Expression.emptyToWild);
+        checkNoDuplicateAssignments(exps1, DAEUtil.getElementSourceFileInfo(source));
         e1 = DAE.TUPLE(exps1);
         dae = makeDaeEquation(e1, e2, source, initial_);
       then dae;
 
-    case (e1,e2,DAE.T_TUPLE(),_,_,initial_)
+    case (e1,e2,DAE.T_TUPLE(),_,_,initial_) guard not Expression.isTuple(e1)
       equation
         dae = makeDaeEquation(e1, e2, source, initial_);
       then dae;
@@ -5016,6 +5017,7 @@ algorithm
         (cache,expl_1,cprops,attrs,_) =
           Static.elabExpCrefNoEvalList(cache, inEnv, expl, inImpl, NONE(), false, inPre, info);
         Static.checkAssignmentToInputs(expl, attrs, inEnv, info);
+        checkNoDuplicateAssignments(expl_1, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, inEnv, inIH, expl_1, inPre);
         source = DAEUtil.addElementSourceFileInfo(inSource, info);
         stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
@@ -5033,6 +5035,7 @@ algorithm
         (cache,expl_1,cprops,attrs,_) =
           Static.elabExpCrefNoEvalList(cache, inEnv, expl, inImpl, NONE(), false, inPre, info);
         Static.checkAssignmentToInputs(expl, attrs, inEnv, info);
+        checkNoDuplicateAssignments(expl_1, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, inEnv, inIH, expl_1, inPre);
         source = DAEUtil.addElementSourceFileInfo(inSource, info);
         stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
@@ -5044,7 +5047,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
         ty = Types.getPropType(prop);
         (e_1,ty) = Types.convertTupleToMetaTuple(e_1,ty);
-        (cache,pattern) = Patternm.elabPattern(cache,inEnv,left,ty,info);
+        (cache,pattern) = Patternm.elabPatternCheckDuplicateBindings(cache,inEnv,left,ty,info);
         source = DAEUtil.addElementSourceFileInfo(inSource, info);
         stmt = if Types.isEmptyOrNoRetcall(ty) then DAE.STMT_NORETCALL(e_1,source) else DAE.STMT_ASSIGN(DAE.T_UNKNOWN_DEFAULT,DAE.PATTERN(pattern),e_1,source);
       then (cache,{stmt});
@@ -5056,6 +5059,7 @@ algorithm
         (cache,expl_2,cprops,attrs,_) =
           Static.elabExpCrefNoEvalList(cache,inEnv, expl, inImpl,NONE(),false,inPre,info);
         Static.checkAssignmentToInputs(expl, attrs, inEnv, info);
+        checkNoDuplicateAssignments(expl_2, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, inEnv, inIH, expl_2, inPre);
         eprops = Types.propTuplePropList(eprop);
         source = DAEUtil.addElementSourceFileInfo(inSource, info);
@@ -5066,7 +5070,7 @@ algorithm
     /* Tuple with lhs being a tuple NOT of crefs => Error */
     case (_,e as Absyn.TUPLE(expressions = expl),_,_)
       equation
-        failure(_ = List.map(expl,Absyn.expCref));
+        false = List.all(expl, Absyn.isCref);
         s = Dump.printExpStr(e);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_CREFS_ONLY, {s}, info);
       then
@@ -5075,7 +5079,7 @@ algorithm
     case (cache,e1 as Absyn.TUPLE(expressions = expl),e_2,prop2)
       equation
         Absyn.CALL() = inRhs;
-        _ = List.map(expl,Absyn.expCref);
+        true = List.all(expl, Absyn.isCref);
         (cache,e_1,prop1,_) = Static.elabExp(cache,inEnv,e1,inImpl,NONE(),false,inPre,info);
         lt = Types.getPropType(prop1);
         rt = Types.getPropType(prop2);
@@ -5092,7 +5096,7 @@ algorithm
     /* Tuple with rhs not CALL or CONSTANT => Error */
     case (_,Absyn.TUPLE(expressions = expl),e_1,_)
       equation
-        _ = List.map(expl,Absyn.expCref);
+        true = List.all(expl, Absyn.isCref);
         failure(Absyn.CALL() = inRhs);
         s = ExpressionDump.printExpStr(e_1);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
@@ -5109,6 +5113,24 @@ algorithm
         fail();
   end matchcontinue;
 end instAssignment2;
+
+function checkNoDuplicateAssignments
+  input list<DAE.Exp> inExps;
+  input SourceInfo info;
+protected
+  DAE.Exp exp;
+  list<DAE.Exp> exps=inExps;
+algorithm
+  while not listEmpty(exps) loop
+    exp::exps := exps;
+    if Expression.isWild(exp) then
+      continue;
+    elseif listMember(exp, exps) then
+      Error.addSourceMessage(Error.DUPLICATE_DEFINITION, {ExpressionDump.printExpStr(exp)}, info);
+      fail();
+    end if;
+  end while;
+end checkNoDuplicateAssignments;
 
 protected function generateNoConstantBindingError
   input Option<Values.Value> emptyValueOpt;

@@ -72,6 +72,7 @@ import InstTypes;
 import InstUtil;
 import List;
 import Lookup;
+import MetaModelica.Dangerous;
 import MetaUtil;
 import SCodeUtil;
 import Static;
@@ -158,7 +159,20 @@ algorithm
   end match;
 end checkInvalidPatternNamedArgs;
 
-public function elabPattern
+public function elabPatternCheckDuplicateBindings
+  input FCore.Cache cache;
+  input FCore.Graph env;
+  input Absyn.Exp lhs;
+  input DAE.Type ty;
+  input SourceInfo info;
+  output FCore.Cache outCache;
+  output DAE.Pattern pattern;
+algorithm
+  (outCache,pattern) := elabPattern2(cache,env,lhs,ty,info,Error.getNumErrorMessages());
+  checkPatternsDuplicateAsBindings(pattern::{}, info);
+end elabPatternCheckDuplicateBindings;
+
+protected function elabPattern
   input FCore.Cache cache;
   input FCore.Graph env;
   input Absyn.Exp lhs;
@@ -169,6 +183,33 @@ public function elabPattern
 algorithm
   (outCache,pattern) := elabPattern2(cache,env,lhs,ty,info,Error.getNumErrorMessages());
 end elabPattern;
+
+protected function checkPatternsDuplicateAsBindings
+  input list<DAE.Pattern> patterns;
+  input SourceInfo info;
+protected
+  list<String> usedVariables;
+algorithm
+  (_, usedVariables) := traversePatternList(patterns, findBoundVariables, {});
+  usedVariables := List.sortedUniqueOnlyDuplicates(List.sort(usedVariables, Util.strcmpBool), stringEq);
+  if not listEmpty(usedVariables) then
+    Error.addSourceMessage(Error.DUPLICATE_DEFINITION, {stringDelimitList(usedVariables, ", ")}, info);
+    fail();
+  end if;
+end checkPatternsDuplicateAsBindings;
+
+protected function findBoundVariables
+  input DAE.Pattern pat;
+  input list<String> boundVars;
+  output DAE.Pattern outPat=pat;
+  output list<String> outBoundVars;
+algorithm
+  outBoundVars := match pat
+    case DAE.PAT_AS() then pat.id::boundVars;
+    case DAE.PAT_AS_FUNC_PTR() then pat.id::boundVars;
+    else boundVars;
+  end match;
+end findBoundVariables;
 
 protected function elabPattern2
   input FCore.Cache inCache;
@@ -1068,13 +1109,14 @@ algorithm
 end filterUnusedAsBindings;
 
 protected function removePatternAsBinding
-  input tuple<DAE.Pattern,tuple<HashTableStringToPath.HashTable,SourceInfo>> inTpl;
-  output tuple<DAE.Pattern,tuple<HashTableStringToPath.HashTable,SourceInfo>> outTpl;
+  input DAE.Pattern inPat;
+  input tuple<HashTableStringToPath.HashTable,SourceInfo> inTpl;
+  output DAE.Pattern pat=inPat;
+  output tuple<HashTableStringToPath.HashTable,SourceInfo> outTpl=inTpl;
 algorithm
-  outTpl := matchcontinue inTpl
+  pat := matchcontinue (pat,inTpl)
     local
       HashTableStringToPath.HashTable ht;
-      DAE.Pattern pat;
       String id;
       SourceInfo info;
       tuple<HashTableStringToPath.HashTable,SourceInfo> tpl;
@@ -1082,12 +1124,15 @@ algorithm
       equation
         true = BaseHashTable.hasKey(id, ht);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING, {id}, info);
-      then ((pat,tpl));
+      then pat;
     case ((DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),tpl as (ht,_)))
       equation
         true = BaseHashTable.hasKey(id, ht);
-      then ((pat,tpl));
-    else simplifyPattern(inTpl);
+      then pat;
+    else
+      algorithm
+        pat := simplifyPattern(inPat, 1);
+      then pat;
   end matchcontinue;
 end removePatternAsBinding;
 
@@ -1118,7 +1163,7 @@ algorithm
       then (exp,ht);
     case (exp as DAE.PATTERN(pattern=pat),ht)
       equation
-        ((_,ht)) = traversePattern((pat,ht), addPatternAsBindings);
+        (_,ht) = traversePattern(pat, addPatternAsBindings, ht);
       then (exp,ht);
     case (exp as DAE.MATCHEXPRESSION(cases=cases),ht)
       equation
@@ -1207,7 +1252,7 @@ algorithm
       then (DAE.CREF(DAE.WILD(),ty),extra);
     case (DAE.PATTERN(pattern=pat),extra)
       equation
-        ((pat,extra)) = traversePattern((pat,extra), checkDefUsePattern);
+        (pat,extra) = traversePattern(pat, checkDefUsePattern, extra);
       then (DAE.PATTERN(pat),extra);
     else (inExp,inTpl);
   end matchcontinue;
@@ -1215,10 +1260,12 @@ end checkDefUse;
 
 protected function checkDefUsePattern
 "Replace unused assignments with wildcards"
-  input tuple<DAE.Pattern,tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,SourceInfo>> inTpl;
-  output tuple<DAE.Pattern,tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,SourceInfo>> outTpl;
+  input DAE.Pattern inPat;
+  input tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,SourceInfo> inTpl;
+  output DAE.Pattern outPat=inPat;
+  output tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,SourceInfo> outTpl=inTpl;
 algorithm
-  outTpl := matchcontinue inTpl
+  outPat := matchcontinue (inPat,inTpl)
     local
       AvlTreeString.AvlTree localsTree,useTree;
       String name;
@@ -1232,15 +1279,18 @@ algorithm
         AvlTreeString.avlTreeGet(localsTree,name);
         failure(_ = AvlTreeString.avlTreeGet(useTree,name));
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
-      then ((pat,extra));
+      then pat;
     case ((DAE.PAT_AS_FUNC_PTR(id=name,pat=pat),extra as (localsTree,useTree,info)))
       equation
         // TODO: Can skip matchcontinue and failure if there was an AvlTree.exists(key)
         AvlTreeString.avlTreeGet(localsTree,name);
         failure(_ = AvlTreeString.avlTreeGet(useTree,name));
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
-      then ((pat,extra));
-    else simplifyPattern(inTpl);
+      then pat;
+    else
+      algorithm
+        (pat,_) := simplifyPattern(inPat,1);
+      then pat;
   end matchcontinue;
 end checkDefUsePattern;
 
@@ -1271,7 +1321,7 @@ algorithm
       then (exp,tree);
     case (exp as DAE.PATTERN(pattern=pat),tree)
       equation
-        ((_,tree)) = traversePattern((pat,tree), usePatternAsBindings);
+        (_,tree) = traversePattern(pat, usePatternAsBindings, tree);
       then (exp,tree);
     case (exp as DAE.MATCHEXPRESSION(cases=cases),tree)
       equation
@@ -1332,23 +1382,17 @@ end useLocalCrefSubs;
 
 protected function usePatternAsBindings
   "Traverse patterns and as-bindings as variable references in the hashtable"
-  input tuple<DAE.Pattern,AvlTreeString.AvlTree> inTpl;
-  output tuple<DAE.Pattern,AvlTreeString.AvlTree> outTpl;
+  input DAE.Pattern inPat;
+  input AvlTreeString.AvlTree inTree;
+  output DAE.Pattern outPat=inPat;
+  output AvlTreeString.AvlTree outTree=inTree;
 algorithm
-  outTpl := matchcontinue inTpl
-    local
-      AvlTreeString.AvlTree tree;
-      DAE.Pattern pat;
-      String id;
-    case ((pat as DAE.PAT_AS(id=id),tree))
-      equation
-        tree = AvlTreeString.avlTreeAdd(tree, id, 1);
-      then ((pat,tree));
-    case ((pat as DAE.PAT_AS_FUNC_PTR(id=id),tree))
-      equation
-        tree = AvlTreeString.avlTreeAdd(tree, id, 1);
-      then ((pat,tree));
-    else inTpl;
+  outTree := matchcontinue inPat
+    case DAE.PAT_AS()
+      then AvlTreeString.avlTreeAdd(inTree, inPat.id, 1);
+    case DAE.PAT_AS_FUNC_PTR()
+      then AvlTreeString.avlTreeAdd(inTree, inPat.id, 1);
+    else inTree;
   end matchcontinue;
 end usePatternAsBindings;
 
@@ -1393,94 +1437,84 @@ end addCasesLocalCref;
 
 protected function simplifyPattern
   "Simplifies a pattern, for example (_,_,_)=>_. For use with traversePattern"
-  input tuple<DAE.Pattern,A> itpl;
-  output tuple<DAE.Pattern,A> otpl;
+  input DAE.Pattern inPat;
+  input A extra;
+  output DAE.Pattern outPat;
+  output A outExtra=extra;
   replaceable type A subtypeof Any;
 algorithm
-  otpl := match itpl
+  outPat := match inPat
     local
       Absyn.Path name;
-      A a;
       DAE.Pattern pat,pat2;
       list<tuple<DAE.Pattern, String, DAE.Type>> namedPatterns;
       list<DAE.Pattern> patterns;
-    case ((DAE.PAT_CALL_NAMED(name, namedPatterns),a))
+    case DAE.PAT_CALL_NAMED(name, namedPatterns)
       equation
         namedPatterns = List.filterOnTrue(namedPatterns, filterEmptyPattern);
-        pat = if listEmpty(namedPatterns) then DAE.PAT_WILD() else DAE.PAT_CALL_NAMED(name, namedPatterns);
-      then ((pat,a));
-    case ((pat as DAE.PAT_CALL_TUPLE(patterns),a))
-      equation
-        pat2 = if allPatternsWild(patterns) then DAE.PAT_WILD() else pat;
-      then ((pat2,a));
-    case ((pat as DAE.PAT_META_TUPLE(patterns),a))
-      equation
-        pat2 = if allPatternsWild(patterns) then DAE.PAT_WILD() else pat;
-      then ((pat2,a));
-    else itpl;
+      then if listEmpty(namedPatterns) then DAE.PAT_WILD() else DAE.PAT_CALL_NAMED(name, namedPatterns);
+    case DAE.PAT_CALL_TUPLE(patterns)
+      then if allPatternsWild(patterns) then DAE.PAT_WILD() else inPat;
+    case DAE.PAT_META_TUPLE(patterns)
+      then if allPatternsWild(patterns) then DAE.PAT_WILD() else inPat;
+    else inPat;
   end match;
 end simplifyPattern;
 
 protected function addPatternAsBindings
   "Traverse patterns and as-bindings as variable references in the hashtable"
-  input tuple<DAE.Pattern,HashTableStringToPath.HashTable> inTpl;
-  output tuple<DAE.Pattern,HashTableStringToPath.HashTable> outTpl;
+  input DAE.Pattern inPat;
+  input HashTableStringToPath.HashTable inHt;
+  output DAE.Pattern pat=inPat;
+  output HashTableStringToPath.HashTable ht=inHt;
 algorithm
-  outTpl := matchcontinue inTpl
+  ht := matchcontinue inPat
     local
-      HashTableStringToPath.HashTable ht;
-      DAE.Pattern pat;
       String id;
-    case ((pat as DAE.PAT_AS(id=id),ht))
-      equation
-        ht = BaseHashTable.add((id,Absyn.IDENT("")), ht);
-      then ((pat,ht));
-    case ((pat as DAE.PAT_AS_FUNC_PTR(id=id),ht))
-      equation
-        ht = BaseHashTable.add((id,Absyn.IDENT("")), ht);
-      then ((pat,ht));
-    else inTpl;
+    case DAE.PAT_AS(id=id)
+      then BaseHashTable.add((id,Absyn.IDENT("")), ht);
+    case DAE.PAT_AS_FUNC_PTR(id=id)
+      then BaseHashTable.add((id,Absyn.IDENT("")), ht);
+    else ht;
   end matchcontinue;
 end addPatternAsBindings;
 
-protected function traversePatternList
-  input list<DAE.Pattern> ipats;
+public function traversePatternList<TypeA>
+  input list<DAE.Pattern> inPatterns;
   input Func func;
-  input TypeA ia;
-  output list<DAE.Pattern> outPats;
-  output TypeA oa;
+  input TypeA inExtra;
+  output list<DAE.Pattern> outPatterns={};
+  output TypeA extra=inExtra;
   partial function Func
-    input tuple<DAE.Pattern,TypeA> inTpl;
-    output tuple<DAE.Pattern,TypeA> outTpl;
+    input DAE.Pattern inPattern;
+    input TypeA inExtra;
+    output DAE.Pattern outPattern;
+    output TypeA outExtra;
   end Func;
-  replaceable type TypeA subtypeof Any;
+protected
+  DAE.Pattern p;
 algorithm
-  (outPats,oa) := match (ipats,func,ia)
-    local
-      DAE.Pattern pat;
-      list<DAE.Pattern> pats;
-      TypeA a;
-
-    case ({},_,a) then ({},a);
-    case (pat::pats,_,a)
-      equation
-        ((pat,a)) = traversePattern((pat,a),func);
-        (pats,a) = traversePatternList(pats,func,a);
-      then (pat::pats,a);
-  end match;
+  for pat in inPatterns loop
+    (p, extra) := traversePattern(pat, func, extra);
+    outPatterns := p :: outPatterns;
+  end for;
+  outPatterns := Dangerous.listReverseInPlace(outPatterns);
 end traversePatternList;
 
-public function traversePattern
-  input tuple<DAE.Pattern,TypeA> inTpl;
+public function traversePattern<TypeA>
+  input DAE.Pattern inPattern;
   input Func func;
-  output tuple<DAE.Pattern,TypeA> outTpl;
+  input TypeA inExtra;
+  output DAE.Pattern outPattern;
+  output TypeA extra=inExtra;
   partial function Func
-    input tuple<DAE.Pattern,TypeA> inTpl;
-    output tuple<DAE.Pattern,TypeA> outTpl;
+    input DAE.Pattern inPattern;
+    input TypeA inExtra;
+    output DAE.Pattern outPattern;
+    output TypeA outExtra;
   end Func;
-  replaceable type TypeA subtypeof Any;
 algorithm
-  outTpl := match (inTpl,func)
+  (outPattern,extra) := match inPattern
     local
       TypeA a;
       DAE.Pattern pat,pat1,pat2;
@@ -1495,68 +1529,68 @@ algorithm
       Boolean knownSingleton;
       list<DAE.Var> fieldVars;
       DAE.Attributes attr;
-    case ((DAE.PAT_AS(id,ty,attr,pat2),a),_)
+    case DAE.PAT_AS(id,ty,attr,pat2)
       equation
-        ((pat2,a)) = traversePattern((pat2,a),func);
+        (pat2,extra) = traversePattern(pat2,func,extra);
         pat = DAE.PAT_AS(id,ty,attr,pat2);
-        outTpl = func((pat,a));
-      then outTpl;
-    case ((DAE.PAT_AS_FUNC_PTR(id,pat2),a),_)
+        (pat,extra) = func(pat,extra);
+      then (pat,extra);
+    case DAE.PAT_AS_FUNC_PTR(id,pat2)
       equation
-        ((pat2,a)) = traversePattern((pat2,a),func);
+        (pat2,extra) = traversePattern(pat2,func,extra);
         pat = DAE.PAT_AS_FUNC_PTR(id,pat2);
-        outTpl = func((pat,a));
-      then outTpl;
-    case ((DAE.PAT_CALL(name,index,pats,fieldVars,knownSingleton),a),_)
+        (pat,extra) = func(pat,extra);
+      then (pat,extra);
+    case DAE.PAT_CALL(name,index,pats,fieldVars,knownSingleton)
       equation
-        (pats,a) = traversePatternList(pats, func, a);
+        (pats,extra) = traversePatternList(pats, func, extra);
         pat = DAE.PAT_CALL(name,index,pats,fieldVars,knownSingleton);
-        outTpl = func((pat,a));
-      then outTpl;
-    case ((DAE.PAT_CALL_NAMED(name,namedpats),a),_)
+        (pat,extra) = func(pat,extra);
+      then (pat,extra);
+    case DAE.PAT_CALL_NAMED(name,namedpats)
       equation
         pats = List.map(namedpats,Util.tuple31);
         fields = List.map(namedpats,Util.tuple32);
         types = List.map(namedpats,Util.tuple33);
-        (pats,a) = traversePatternList(pats, func, a);
+        (pats,extra) = traversePatternList(pats, func, extra);
         namedpats = List.thread3Tuple(pats, fields, types);
         pat = DAE.PAT_CALL_NAMED(name,namedpats);
-        outTpl = func((pat,a));
-      then outTpl;
-    case ((DAE.PAT_CALL_TUPLE(pats),a),_)
+        (pat,extra) = func(pat,extra);
+      then (pat,extra);
+    case DAE.PAT_CALL_TUPLE(pats)
       equation
-        (pats,a) = traversePatternList(pats, func, a);
+        (pats,extra) = traversePatternList(pats, func, extra);
         pat = DAE.PAT_CALL_TUPLE(pats);
-        outTpl = func((pat,a));
-      then outTpl;
-    case ((DAE.PAT_META_TUPLE(pats),a),_)
+        (pat,extra) = func(pat,extra);
+      then (pat,extra);
+    case DAE.PAT_META_TUPLE(pats)
       equation
-        (pats,a) = traversePatternList(pats, func, a);
+        (pats,extra) = traversePatternList(pats, func, extra);
         pat = DAE.PAT_META_TUPLE(pats);
-        outTpl = func((pat,a));
-      then outTpl;
-    case ((DAE.PAT_CONS(pat1,pat2),a),_)
+        (pat,extra) = func(pat,extra);
+      then (pat,extra);
+    case DAE.PAT_CONS(pat1,pat2)
       equation
-        ((pat1,a)) = traversePattern((pat1,a),func);
-        ((pat2,a)) = traversePattern((pat2,a),func);
+        (pat1,extra) = traversePattern(pat1,func,extra);
+        (pat2,extra) = traversePattern(pat2,func,extra);
         pat = DAE.PAT_CONS(pat1,pat2);
-        outTpl = func((pat,a));
-      then outTpl;
-    case ((pat as DAE.PAT_CONSTANT(),a),_)
+        (pat,extra) = func(pat,extra);
+      then (pat,extra);
+    case (pat as DAE.PAT_CONSTANT())
       equation
-        outTpl = func((pat,a));
-      then outTpl;
-    case ((DAE.PAT_SOME(pat1),a),_)
+        (pat,extra) = func(pat,extra);
+      then (pat,extra);
+    case DAE.PAT_SOME(pat1)
       equation
-        ((pat1,a)) = traversePattern((pat1,a),func);
+        (pat1,extra) = traversePattern(pat1,func,extra);
         pat = DAE.PAT_SOME(pat1);
-        outTpl = func((pat,a));
-      then outTpl;
-    case ((pat as DAE.PAT_WILD(),a),_)
+        (pat,extra) = func(pat,extra);
+      then (pat,extra);
+    case (pat as DAE.PAT_WILD())
       equation
-        outTpl = func((pat,a));
-      then outTpl;
-    case ((pat,_),_)
+        (pat,extra) = func(pat,extra);
+      then (pat,extra);
+    case pat
       equation
         str = "Patternm.traversePattern failed: " + patternStr(pat);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -2017,6 +2051,7 @@ algorithm
         patterns = convertExpToPatterns(pattern);
         patterns = if listLength(tys)==1 then {pattern} else patterns;
         (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
+        checkPatternsDuplicateAsBindings(elabPatterns, patternInfo);
         // open a pattern type scope
         env = FGraph.openNewScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.patternTypeScope), NONE());
         // and add the ID as pattern types to it
@@ -2450,28 +2485,30 @@ protected function checkLocalShadowing
   input SCode.Element elt;
   input FCore.Graph env;
   input tuple<FCore.Cache,Boolean> inTpl;
-  output tuple<FCore.Cache,Boolean> outTpl;
+  output tuple<FCore.Cache,Boolean> outTpl=inTpl;
+protected
+  String name;
+  FCore.Cache cache;
+  Boolean b;
+  SourceInfo info;
+  SCode.Variability var;
 algorithm
-  outTpl := matchcontinue (elt,env,inTpl)
-    local
-      String name;
-      FCore.Cache cache;
-      Boolean b;
-      SourceInfo info;
-    case (SCode.COMPONENT(name=name),_,(cache,_))
-      equation
-        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{})));
-      then inTpl;
-    case (SCode.COMPONENT(name=name),_,(cache,b))
-      equation
-        (cache,DAE.ATTR(variability=SCode.CONST()),_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{}));
-        // Allow shadowing constants. Should be safe since they become values pretty much straight away.
-      then ((cache,b));
-    case (SCode.COMPONENT(name=name,info=info),_,(cache,_))
-      equation
-        Error.addSourceMessage(Error.MATCH_SHADOWING,{name},info);
-      then ((cache,true));
-  end matchcontinue;
+  SCode.COMPONENT(name=name, info=info) := elt;
+  (cache,_) := inTpl;
+  try
+    (cache,DAE.ATTR(variability=var),_,_,_,_,_,_,_) := Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{}));
+    b := match var
+      // Allow shadowing constants. Should be safe since they become values pretty much straight away.
+      case SCode.CONST() then true;
+      else false;
+    end match;
+  else
+    b := true;
+  end try;
+  if not b then
+    Error.addSourceMessage(Error.MATCH_SHADOWING,{name},info);
+    outTpl := (cache,true);
+  end if;
 end checkLocalShadowing;
 
 public function resultExps
@@ -2570,8 +2607,8 @@ protected
 algorithm
   (pat1,i1) := tpl1;
   (pat2,i2) := tpl2;
-  ((_,c1)) := traversePattern((pat1,0),patternComplexity);
-  ((_,c2)) := traversePattern((pat2,0),patternComplexity);
+  (_,c1) := traversePattern(pat1,patternComplexity,0);
+  (_,c2) := traversePattern(pat2,patternComplexity,0);
   // If both complexities are equal, keep the original ordering
   // If c1 is 0, and c2 is not 0 we move the left pattern to the end.
   // Else we move the cheaper pattern to the beginning
@@ -2579,25 +2616,26 @@ algorithm
 end sortPatternsByComplexityWork;
 
 protected function patternComplexity
-  input tuple<DAE.Pattern,Integer> inTpl;
-  output tuple<DAE.Pattern,Integer> outTpl;
+  input DAE.Pattern inPat;
+  input Integer inComplexity;
+  output DAE.Pattern outPat=inPat;
+  output Integer i=inComplexity;
 algorithm
-  outTpl := match inTpl
+  i := match inPat
     local
       DAE.Pattern p;
       DAE.Exp exp;
-      Integer i;
-    case ((p as DAE.PAT_CONSTANT(exp=exp),i))
+    case DAE.PAT_CONSTANT(exp=exp)
       equation
         (_,i) = Expression.Expression.traverseExpBottomUp(exp,constantComplexity,i);
-      then ((p,i));
-    case ((p as DAE.PAT_CONS(),i))
-      then ((p,i+5));
-    case ((p as DAE.PAT_CALL(knownSingleton=false),i))
-      then ((p,i+5));
-    case ((p as DAE.PAT_SOME(),i))
-      then ((p,i+5));
-    else inTpl;
+      then i;
+    case DAE.PAT_CONS()
+      then i+5;
+    case DAE.PAT_CALL(knownSingleton=false)
+      then i+5;
+    case DAE.PAT_SOME()
+      then i+5;
+    else i;
   end match;
 end patternComplexity;
 
@@ -2621,48 +2659,41 @@ algorithm
 end constantComplexity;
 
 protected function addEnvKnownAsBindings
-  input tuple<DAE.Pattern,FCore.Graph> inTpl;
-  output tuple<DAE.Pattern,FCore.Graph> outTpl;
+  input DAE.Pattern inPat;
+  input FCore.Graph inEnv;
+  output DAE.Pattern pat=inPat;
+  output FCore.Graph env=inEnv;
 algorithm
-  outTpl := match inTpl
-    local
-      Absyn.Path name,path;
-      String id,scope;
-      DAE.Type ty;
-      FCore.Graph env;
-      DAE.Pattern pat;
-      list<DAE.Var> fields;
-      Integer index;
-      Boolean knownSingleton;
-    case ((DAE.PAT_AS(pat=pat),_))
-      then addEnvKnownAsBindings2(inTpl,findFirstNonAsPattern(pat));
-    else inTpl;
+  env := match pat
+    case DAE.PAT_AS()
+      then addEnvKnownAsBindings2(pat,env,findFirstNonAsPattern(pat.pat));
+    else env;
   end match;
 end addEnvKnownAsBindings;
 
 protected function addEnvKnownAsBindings2
-  input tuple<DAE.Pattern,FCore.Graph> inTpl;
+  input DAE.Pattern inPat;
+  input FCore.Graph inEnv;
   input DAE.Pattern firstPattern;
-  output tuple<DAE.Pattern,FCore.Graph> outTpl;
+  output FCore.Graph env=inEnv;
 algorithm
-  outTpl := match (inTpl,firstPattern)
+  env := match (inPat,firstPattern)
     local
       Absyn.Path name,path;
       String id,scope;
       DAE.Type ty;
-      FCore.Graph env;
       DAE.Pattern pat;
       list<DAE.Var> fields;
       Integer index;
       Boolean knownSingleton;
       DAE.Attributes attr;
-    case ((pat as DAE.PAT_AS(id=id,attr=attr),env),DAE.PAT_CALL(index=index,fields=fields,knownSingleton=knownSingleton,name=name))
+    case (DAE.PAT_AS(id=id,attr=attr),DAE.PAT_CALL(index=index,fields=fields,knownSingleton=knownSingleton,name=name))
       equation
          path = Absyn.stripLast(name);
          ty = DAE.T_METARECORD(path,index,fields,knownSingleton,{name});
          env = FGraph.mkComponentNode(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), FCore.VAR_DAE(), FGraph.empty());
-      then ((pat,env));
-    else inTpl;
+      then env;
+    else env;
   end match;
 end addEnvKnownAsBindings2;
 
