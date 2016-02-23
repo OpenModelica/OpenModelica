@@ -1,0 +1,54 @@
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=nogen");
+loadString("
+function f1
+  input Real x1,x2;
+  output Real x;
+algorithm
+  x := match (x1,x2)
+    case (x,x) then x;
+  end match;
+end f1;","<f1>");
+loadString("
+function f
+  input Real x1,x2;
+  output Real o1=x1,o2=x2;
+end f;
+function f2
+  input Real x1,x2;
+  output Real x;
+algorithm
+  (x,x) := f(x1,x2);
+end f2;
+","<f2>");getErrorString();
+loadString("
+model M
+  Real x;
+equation
+  (x,x) = f(time,2*time);
+end M;
+","<M>");
+f1(1.0,2.0);getErrorString();
+setCommandLineOptions("-g=Modelica");
+f2(1.0,2.0);getErrorString();
+instantiateModel(M);getErrorString();
+
+// Result:
+// true
+// true
+// true
+// ""
+// true
+//
+// "[<f1>:7:10-7:16:writable] Error: The same variable is being defined twice: x.
+// "
+// true
+//
+// "[<f2>:10:3-10:20:writable] Error: The same variable is being defined twice: x.
+// "
+// ""
+// "[<M>:5:3-5:25:writable] Error: The same variable is being defined twice: x.
+// Error: Error occurred while flattening model M
+// "
+// endResult
