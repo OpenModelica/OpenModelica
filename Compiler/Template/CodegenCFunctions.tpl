@@ -4799,21 +4799,65 @@ case BINARY(__) then
         let tmp1 = tempDecl("modelica_real", &varDecls)
         let tmp2 = tempDecl("modelica_real", &varDecls)
         let tmp3 = tempDecl("modelica_real", &varDecls)
+        let tmp4 = tempDecl("modelica_real", &varDecls) //fractpart
+        let tmp5 = tempDecl("modelica_real", &varDecls) //intpart
+        let tmp6 = tempDecl("modelica_real", &varDecls) //intpart
+        let tmp7 = tempDecl("modelica_real", &varDecls) //fractpart
         let &preExp +=
           <<
           <%tmp1%> = <%e1%>;
           <%tmp2%> = <%e2%>;
-          if(<%tmp1%> < 0.0 && <%tmp2%> != 0.0 && abs(<%tmp2%>) < 1.0)
+          if(<%tmp1%> < 0.0 && <%tmp2%> != 0.0)
           {
-            <%tmp3%> = -pow(-<%tmp1%>, <%tmp2%>);
+            <%tmp4%> = modf(<%tmp2%>, &<%tmp5%>);
+
+            if(<%tmp4%> > 0.5)
+            {
+              <%tmp4%> -= 1.0;
+              <%tmp5%> += 1.0;
+            }
+            else if(<%tmp4%> < -0.5)
+            {
+              <%tmp4%> += 1.0;
+              <%tmp5%> -= 1.0;
+            }
+
+            if(fabs(<%tmp4%>) < 1e-10)
+              <%tmp3%> = pow(<%tmp1%>, <%tmp5%>);
+            else
+            {
+              <%tmp7%> = modf(1.0/<%tmp2%>, &<%tmp6%>);
+              if(<%tmp7%> > 0.5)
+              {
+                <%tmp7%> -= 1.0;
+                <%tmp6%> += 1.0;
+              }
+              else if(<%tmp7%> < -0.5)
+              {
+                <%tmp7%> += 1.0;
+                <%tmp6%> -= 1.0;
+              }
+              if(fabs(<%tmp7%>) < 1e-10 && ((unsigned long)<%tmp6%> & 1))
+              {
+                <%tmp3%> = -pow(-<%tmp1%>, <%tmp4%>)*pow(<%tmp1%>, <%tmp5%>);
+              }
+              else
+              {
+                <%if acceptMetaModelicaGrammar()
+                  then '<%generateThrow()%>;<%\n%>'
+                  else 'throwStreamPrint(threadData, "Invalid root: (%g)^(%g)", <%tmp1%>, <%tmp2%>);<%\n%>'%>
+              }
+            }
           }
           else
           {
             <%tmp3%> = pow(<%tmp1%>, <%tmp2%>);
           }
-          if(<%tmp3%> != <%tmp3%>)
+          if(isnan(<%tmp3%>) || isinf(<%tmp3%>))
           {
-            throwStreamPrint(threadData, "Invalid root: (%g)^(%g)", <%tmp1%>, <%tmp2%>);
+            <%if acceptMetaModelicaGrammar()
+              then '<%generateThrow()%>;<%\n%>'
+              else 'throwStreamPrint(threadData, "Invalid root: (%g)^(%g)", <%tmp1%>, <%tmp2%>);<%\n%>'%>
           }
           >>
         '<%tmp3%>'
