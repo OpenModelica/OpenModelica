@@ -812,12 +812,8 @@ algorithm
          with variable indexes.*/
       outVarLst := inAccumVarLst;
       for cr_ in crefs loop
-        if Expression.isArrayType(ComponentReference.crefTypeFull(cr_)) then
-          arrayDim := ComponentReference.crefDims(cr_);
-          outVarLst := BackendVariable.createCSEArrayVar(cr_, ComponentReference.crefTypeFull(cr_), arrayDim)::outVarLst;
-        else
-          outVarLst := BackendVariable.createCSEVar(cr_, ComponentReference.crefTypeFull(cr_))::outVarLst;
-        end if;
+        arrayDim := ComponentReference.crefDims(cr_);
+        outVarLst := BackendVariable.createCSEArrayVar(cr_, ComponentReference.crefTypeFull(cr_), arrayDim)::outVarLst;
       end for;
     then outVarLst;
 
