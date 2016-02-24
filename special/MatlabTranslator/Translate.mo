@@ -3009,7 +3009,7 @@ algorithm
     list<String> f_call1, f_call2, f_call3, f_call4, fnc_hdl_ident1, no_ident;
     Absyn.Info info;
     list<AbsynMat.Statement> stmt_lst2;
-    case(AbsynMat.STATEMENT_APPEND(AbsynMat.STATEMENT(NONE(),NONE(),SOME(AbsynMat.START(usr_fnc,sep,stmt_lst2)),NONE()),sep)::{},f_call4,fnc_hdl_ident1)
+    case(AbsynMat.STATEMENT_APPEND(AbsynMat.STATEMENT(NONE(),NONE(),SOME(AbsynMat.START(usr_fnc,sep,stmt_lst2)),NONE()),_)::{},f_call4,fnc_hdl_ident1)
     equation
     (mod_class2,f_call1) = sub_function(stmt_lst2,f_call4,fnc_hdl_ident1); 
     f_call3 = listAppend(f_call1,f_call4);
