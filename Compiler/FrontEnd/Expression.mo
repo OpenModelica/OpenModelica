@@ -12173,18 +12173,17 @@ protected function traversingextendArrExp "author: Frenkel TUD 2010-07.
   output DAE.Exp outExp;
   output Boolean outExpanded;
 algorithm
-  (outExp, outExpanded) := matchcontinue(inExp)
+  (outExp, outExpanded) := match(inExp)
     local
       DAE.ComponentRef cr;
       DAE.Type ty;
       DAE.Dimension id, jd;
       Integer i, j;
       list<DAE.Exp> expl;
-      DAE.Exp e, e_new;
+      DAE.Exp e;
       list<DAE.Var> varLst;
       Absyn.Path name;
       list<list<DAE.Exp>> mat;
-      Boolean b;
 
     // CASE for Matrix
     case DAE.CREF(ty=ty as DAE.T_ARRAY(dims={id, jd}))
@@ -12192,58 +12191,33 @@ algorithm
         i = dimensionSize(id);
         j = dimensionSize(jd);
         expl = expandExpression(inExp);
-        mat = makeMatrix(expl,j);
-        e_new = DAE.MATRIX(ty,i,mat);
-        (e, b) = traverseExpBottomUp(e_new, traversingextendArrExp, true);
+        mat = makeMatrix(expl, j);
+        e = DAE.MATRIX(ty, i, mat);
       then
-        (e, b);
-
-    // CASE for Matrix and checkModel is on
-    case DAE.CREF(ty=ty as DAE.T_ARRAY(dims={_, _}))
-      equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        i = dimensionSize(DAE.DIM_INTEGER(1));
-        j = dimensionSize(DAE.DIM_INTEGER(1));
-        expl = expandExpression(inExp);
-        mat = makeMatrix(expl,j);
-        e_new = DAE.MATRIX(ty,i,mat);
-        (e, b) = traverseExpBottomUp(e_new, traversingextendArrExp, true);
-      then
-        (e, b);
+        (e, true);
 
     // CASE for Array
     case DAE.CREF(ty=ty as DAE.T_ARRAY())
       equation
         expl = expandExpression(inExp);
-        e_new = DAE.ARRAY(ty,true,expl);
-        (e, b) = traverseExpBottomUp(e_new, traversingextendArrExp, true);
+        e = DAE.ARRAY(ty, true, expl);
       then
-        (e, b);
-
-    // CASE for Array and checkModel is on
-    case DAE.CREF(ty=ty as DAE.T_ARRAY())
-      equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        expl = expandExpression(inExp);
-        e_new = DAE.ARRAY(ty,true,expl);
-        (e, b) = traverseExpBottomUp(e_new, traversingextendArrExp, true);
-      then
-        (e, b);
+        (e, true);
 
     // CASE for Records
     case DAE.CREF(componentRef=cr, ty=ty as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(name)))
       equation
-        expl = List.map1(varLst,generateCrefsExpFromExpVar,cr);
+        expl = List.map1(varLst, generateCrefsExpFromExpVar, cr);
         i = listLength(expl);
-        true = intGt(i,0);
-        e_new = DAE.CALL(name,expl,DAE.CALL_ATTR(ty,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-        (e, b) = traverseExpBottomUp(e_new, traversingextendArrExp, true);
+        true = intGt(i, 0);
+        e = DAE.CALL(name, expl, DAE.CALL_ATTR(ty, false, false, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
+        (e, _) = traverseExpBottomUp(e, traversingextendArrExp, true);
       then
-        (e, b);
+        (e, true);
 
     else (inExp, inExpanded);
 
-  end matchcontinue;
+  end match;
 end traversingextendArrExp;
 
 protected function insertSubScripts"traverses the subscripts of the templSubScript and searches for wholedim. the value replaces the wholedim.
