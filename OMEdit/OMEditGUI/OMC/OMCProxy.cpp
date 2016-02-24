@@ -1295,30 +1295,15 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
     docElement = docElement.trimmed();
     docElement.remove(QRegExp("<html>|</html>|<HTML>|</HTML>|<head>|</head>|<HEAD>|</HEAD>|<body>|</body>|<BODY>|</BODY>"));
     doc += docElement;
-//    int i,j;
-//    /*
-//     * Documentation may have the form
-//     * text <HTML>...</html> text <html>...</HTML> [...]
-//     * Nothing is standardized, but we will treat non-html tags as <pre>-formatted text
-//     */
-//    while (1) {
-//      docElement = docElement.trimmed();
-//      i = docElement.indexOf("<html>", 0, Qt::CaseInsensitive);
-//      if (i == -1) break;
-//      if (i != 0) {
-//        doc += "<pre>" + docElement.left(i).replace("<","&lt;").replace(">","&gt;") + "</pre>";
-//        docElement = docElement.remove(i);
-//      }
-//      j = docElement.indexOf("</html>", 0, Qt::CaseInsensitive);
-//      if (j == -1) break;
-//      doc += docElement.leftRef(j+7);
-//      docElement = docElement.mid(j+7,-1);
-//    }
-//    if (docElement.length()) {
-//      doc += "<pre>" + docElement.replace("<","&lt;").replace(">","&gt;") + "</pre>";
-//    }
   }
-  QString documentation = QString("<html><head>%1</head><body>%2</body></html>").arg(infoHeader).arg(doc);
+  QString documentation = QString("<html>\n"
+                                  "  <head>\n"
+                                  "    %1\n"
+                                  "  </head>\n"
+                                  "  <body>\n"
+                                  "    %2\n"
+                                  "  </body>\n"
+                                  "</html>").arg(infoHeader).arg(doc);
   documentation = makeDocumentationUriToFileName(documentation);
   /*! @note We convert modelica:// to modelica:///.
     * This tells QWebview that these links doesn't have any host.
@@ -2215,34 +2200,10 @@ bool OMCProxy::clearCommandLineOptions()
  */
 QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
 {
-//  QDomDocument xmlDocument;
-//  if (xmlDocument.setContent(documentation)) {
-//    QDomNodeList imgTags = xmlDocument.elementsByTagName("img,script");
-//    for (int i = 0; i < imgTags.size(); i++) {
-//      QString src = imgTags.at(i).toElement().attribute("src");
-//      if (src.startsWith("modelica://")) {
-//        QString imgFileName = uriToFilename(src);
-//        imgTags.at(i).toElement().setAttribute("src", imgFileName);
-//      } else if (src.startsWith("file://")) {
-//        QString imgFileName = uriToFilename(src);
-//        // Windows absolute paths doesn't start with "/".
-//  #ifdef WIN32
-//        if (imgFileName.startsWith("/")) {
-//          imgFileName = imgFileName.mid(1);
-//        }
-//  #endif
-//        imgTags.at(i).toElement().setAttribute("src", imgFileName);
-//      } else {
-//        //! @todo The img src value starts with modelica:// for MSL 3.2.1. Handle the other cases in this else block.
-//      }
-//    }
-//    return xmlDocument.toString();
-//  }
-//  return documentation;
-
   QWebPage webPage;
+  webPage.settings()->setAttribute(QWebSettings::JavascriptEnabled, false);
   QWebFrame *pWebFrame = webPage.mainFrame();
-  pWebFrame->setHtml(documentation);
+  pWebFrame->setContent(QByteArray(documentation.toStdString().c_str()), "text/html");
   QWebElement webElement = pWebFrame->documentElement();
   QWebElementCollection imgTags = webElement.findAll("img,script");
   foreach (QWebElement imgTag, imgTags) {
@@ -2263,7 +2224,7 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
       //! @todo The img src value starts with modelica:// for MSL 3.2.1. Handle the other cases in this else block.
     }
   }
-  return pWebFrame->toHtml();
+  return webElement.toOuterXml();
 }
 
 /*!
@@ -2278,16 +2239,16 @@ QString OMCProxy::uriToFilename(QString uri)
   result = result.prepend("{").append("}");
   QStringList results = StringHandler::unparseStrings(result);
   /* the second argument of uriToFilename result is error string. */
-  if (results.size() > 1 && !results.at(1).isEmpty())
-  {
+  if (results.size() > 1 && !results.at(1).isEmpty()) {
     QString errorString = results.at(1);
     mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString,
                                                                  Helper::scriptingKind, Helper::errorLevel));
   }
-  if (results.size() > 0)
+  if (results.size() > 0) {
     return results.first();
-  else
+  } else {
     return "";
+  }
 }
 
 /*!
