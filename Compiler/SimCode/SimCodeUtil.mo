@@ -389,12 +389,12 @@ algorithm
     algebraicEquations := List.filterOnFalse(algebraicEquations, listEmpty);
 
     if Flags.isSet(Flags.EXEC_HASH) then
-      print("*** SimCode -> generate cref2simVar hastable: " + realString(clock()) + "\n");
+      print("*** SimCode -> generate cref2simVar hashtable: " + realString(clock()) + "\n");
     end if;
     (crefToSimVarHT, mixedArrayVars) := createCrefToSimVarHT(modelInfo);
     modelInfo := setMixedArrayVars(mixedArrayVars, modelInfo);
     if Flags.isSet(Flags.EXEC_HASH) then
-      print("*** SimCode -> generate cref2simVar hastable done!: " + realString(clock()) + "\n");
+      print("*** SimCode -> generate cref2simVar hashtable done!: " + realString(clock()) + "\n");
     end if;
 
     backendMapping := setBackendVarMapping(inBackendDAE, crefToSimVarHT, modelInfo, backendMapping);
@@ -10623,7 +10623,8 @@ algorithm
   end matchcontinue;
 end setUpSystMapping;
 
-protected function setBackendVarMapping"sets the varmapping in the backendmapping.
+protected function setBackendVarMapping
+"sets the varmapping in the backendmapping.
 author:Waurich TUD 2014-04"
   input BackendDAE.BackendDAE dae;
   input SimCode.HashTableCrefToSimVar ht;
@@ -10647,16 +10648,26 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       array<list<SimCodeVar.SimVar>> simVarMapping;
+      SimCode.HashTableCrefToSimVar htStates;
+      Integer size;
     case(_,_,_,_)
       equation
         SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping,eqMatch=eqMatch,varMatch=varMatch,eqTree=tree,simVarMapping=simVarMapping) = bmapIn;
-        SimCode.MODELINFO(varInfo=varInfo,vars=allVars) = modelInfo;
         BackendDAE.DAE(eqs=eqs) = dae;
+
+        //get Backend vars and index
         vars = BackendVariable.equationSystemsVarsLst(eqs,{});
         crefs = List.map(vars,BackendVariable.varCref);
-        bVarIdcs = List.intRange(listLength(crefs));
+        size = listLength(crefs);
+        bVarIdcs = List.intRange(size);
         simVars = List.map1(crefs,SimCodeFunctionUtil.get,ht);
-        simVarIdcs = List.map2(simVars,getSimVarIndex,varInfo,allVars);
+
+        // get states and create hash table
+        SimCode.MODELINFO(varInfo=varInfo,vars=allVars) = modelInfo;
+        htStates = List.fold(allVars.stateVars, addSimVarToHashTable, SimCodeFunctionUtil.emptyHashTableSized(size));
+
+        // produce mapping
+        simVarIdcs = List.map2(simVars,getSimVarIndex,varInfo,htStates);
         varMapping = makeVarMapTuple(simVarIdcs,bVarIdcs,{});
         List.fold1(simVars, fillSimVarMapping, simVarMapping, 1);
         //print(stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),"\n")+"\n");
@@ -10679,41 +10690,24 @@ algorithm
   oVarIdx := iVarIdx + 1;
 end fillSimVarMapping;
 
-protected function getSimVarIndex"gets the index from a SimVar and calculates the place in the localData array
+protected function getSimVarIndex
+"gets the index from a SimVar and calculates the place in the localData array
 author:Waurich TUD 2014-04"
   input SimCodeVar.SimVar var;
   input SimCode.VarInfo varInfo;
-  input SimCodeVar.SimVars allVars;
+  input SimCode.HashTableCrefToSimVar htStates;
   output Integer idx;
+protected
+  Integer offset;
 algorithm
-  idx := matchcontinue(var,varInfo,allVars)
-    local
-      Boolean isState;
-      Integer i, offset;
-      list<Boolean> bLst;
-      list<SimCodeVar.SimVar> states;
-    case(_,_,_)
-      equation
-      // is stateVar
-      SimCodeVar.SIMVARS(stateVars = states) = allVars;
-      bLst = List.map1(states,compareSimVarName,var);
-      isState = List.fold(bLst,boolOr,false);
-      true = isState;
-      SimCodeVar.SIMVAR(index=i) = var;
-    then
-      i;
-    case(_,_,_)
-      equation
-      // is not a stateVar
-      SimCodeVar.SIMVARS(stateVars = states) = allVars;
-      bLst = List.map1(states,compareSimVarName,var);
-      isState = List.fold(bLst,boolOr,false);
-      false = isState;
-      SimCode.VARINFO(numStateVars=offset) = varInfo;
-      SimCodeVar.SIMVAR(index=i) = var;
-    then
-      i+2*offset;
-  end matchcontinue;
+  try
+    _ := SimCodeFunctionUtil.get(var.name, htStates);
+    idx := var.index;
+  else
+    offset := varInfo.numStateVars;
+    idx := var.index;
+    idx := idx+2*offset;
+  end try;
 end getSimVarIndex;
 
 protected function makeVarMapTuple"builds a tuple for the varMapping. ((simvarindex,backendvarindex))
