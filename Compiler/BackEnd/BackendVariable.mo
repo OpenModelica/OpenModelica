@@ -812,23 +812,20 @@ public function isVarNonDiscreteAlg
 algorithm
   result := match (var)
     local
-      BackendDAE.VarKind kind;
-      BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
 
     /* Real non discrete variable */
     case (BackendDAE.VAR(varType = DAE.T_REAL(_,_))) equation
-      then isVarAlg(var) or isOptInputVar(kind);
+      then (isVarAlg(var) and not isVarDiscreteRealAlg(var)) or isOptInputVar(var);
 
     else false;
   end match;
 end isVarNonDiscreteAlg;
 
-protected function isOptInputVar
-  input BackendDAE.VarKind kind;
+public function isOptInputVar
+  input BackendDAE.Var var;
   output Boolean b;
 algorithm
-  b := match(kind)
+  b := match(var.varKind)
      case BackendDAE.OPT_LOOP_INPUT()
      then true;
      case BackendDAE.OPT_INPUT_WITH_DER()
@@ -839,7 +836,7 @@ algorithm
   end match;
 end isOptInputVar;
 
-public function isVarDiscreteAlg
+public function isVarDiscreteRealAlg
   input BackendDAE.Var var;
   output Boolean result;
 algorithm
@@ -855,81 +852,25 @@ algorithm
 
     else false;
   end match;
-end isVarDiscreteAlg;
-
-public function isVarStringAlg
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result := match (var)
-    local
-      BackendDAE.VarKind kind;
-      BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
-
-    /* string variable */
-    case (BackendDAE.VAR(varType = DAE.T_STRING()))
-      then isVarAlg(var);
-
-    else false;
-  end match;
-end isVarStringAlg;
-
-public function isVarIntAlg
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result := match (var)
-    local
-      BackendDAE.VarKind kind;
-      BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
-    /* int variable */
-    case (BackendDAE.VAR(varType = DAE.T_INTEGER()))
-      then isVarAlg(var);
-    /* enum variable */
-    case (BackendDAE.VAR(varType = DAE.T_ENUMERATION()))
-      then isVarAlg(var);
-
-    else false;
-  end match;
-end isVarIntAlg;
-
-public function isVarBoolAlg
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result :=
-  matchcontinue (var)
-    local
-      BackendDAE.VarKind kind;
-      BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
-    /* bool variable */
-    case (BackendDAE.VAR(varType = DAE.T_BOOL()))
-      then isVarAlg(var);
-
-    else false;
-  end matchcontinue;
-end isVarBoolAlg;
+end isVarDiscreteRealAlg;
 
 public function isVarAlg
   input BackendDAE.Var var;
   output Boolean result;
 algorithm
-  b := match(var.varKind)
-         case BackendDAE.VARIABLE()
-         then true;
-         case BackendDAE.DISCRETE()
-         then true;
-         case BackendDAE.DUMMY_DER()
-         then true;
-         case BackendDAE.DUMMY_STATE()
-         then true;
-         case BackendDAE.CLOCKED_STATE()
-         then true;
-         else false;
-      end match;
+  result := match(var.varKind)
+     case BackendDAE.VARIABLE()
+     then true;
+     case BackendDAE.DISCRETE()
+     then true;
+     case BackendDAE.DUMMY_DER()
+     then true;
+     case BackendDAE.DUMMY_STATE()
+     then true;
+     case BackendDAE.CLOCKED_STATE()
+     then true;
+     else false;
+  end match;
 end isVarAlg;
 
 public function isVarConst
