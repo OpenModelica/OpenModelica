@@ -16,7 +16,7 @@ model List3
       local
         String s,s1,s2;
         AList rest;
-      case {s,s}
+      case {s,_}
       then ();
       case {s1,s2}
         equation
