@@ -649,7 +649,7 @@ algorithm
     String fname;
     list<AbsynMat.Statement> stmt_lst2;
     list<AbsynMat.Expression> exp_lst2, exp_lst3, exp_lst4;
-    case(AbsynMat.STATEMENT_APPEND(AbsynMat.STATEMENT(NONE(),NONE(),SOME(AbsynMat.START(usr_fnc,sep,stmt_lst2)),NONE()),sep)::{})
+    case(AbsynMat.STATEMENT_APPEND(AbsynMat.STATEMENT(NONE(),NONE(),SOME(AbsynMat.START(usr_fnc,sep,stmt_lst2)),NONE()),_)::{})
     equation
     (exp_lst2) = sub_function(stmt_lst2); 
     (exp_lst3) = user_function(usr_fnc); 
