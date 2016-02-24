@@ -2174,7 +2174,6 @@ void LibraryTreeView::createActions()
   mpSaveAsAction = new QAction(QIcon(":/Resources/icons/saveas.svg"), Helper::saveAs, this);
   mpSaveAsAction->setStatusTip(Helper::saveAsTip);
   connect(mpSaveAsAction, SIGNAL(triggered()), SLOT(saveAsClass()));
-  mpSaveAsAction->setEnabled(false);
   // Save Total action
   mpSaveTotalAction = new QAction(Helper::saveTotal, this);
   mpSaveTotalAction->setStatusTip(Helper::saveTotalTip);
@@ -2639,7 +2638,7 @@ void LibraryTreeView::duplicateClass()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    DuplicateClassDialog *pCopyClassDialog = new DuplicateClassDialog(pLibraryTreeItem, mpLibraryWidget->getMainWindow());
+    DuplicateClassDialog *pCopyClassDialog = new DuplicateClassDialog(false, pLibraryTreeItem, mpLibraryWidget->getMainWindow());
     pCopyClassDialog->exec();
   }
 }
@@ -3107,9 +3106,8 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
     return;
   }
-  DuplicateClassDialog *pDuplicateClassDialog = new DuplicateClassDialog(pLibraryTreeItem, mpMainWindow);
+  DuplicateClassDialog *pDuplicateClassDialog = new DuplicateClassDialog(true, pLibraryTreeItem, mpMainWindow);
   pDuplicateClassDialog->exec();
-  saveLibraryTreeItem(pLibraryTreeItem);
 }
 
 /*!

@@ -4022,7 +4022,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   }
   // update the actions of the menu and toolbars
   getMainWindow()->getSaveAction()->setEnabled(enabled);
-  //  getMainWindow()->getSaveAsAction()->setEnabled(enabled);
+  getMainWindow()->getSaveAsAction()->setEnabled(enabled);
   //  getMainWindow()->getSaveAllAction()->setEnabled(enabled);
   getMainWindow()->getSaveTotalAction()->setEnabled(enabled && modelica);
   getMainWindow()->getShowGridLinesAction()->setEnabled(enabled && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
