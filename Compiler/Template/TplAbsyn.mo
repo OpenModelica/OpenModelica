@@ -2519,6 +2519,7 @@ algorithm
       list<MMExp> mmargs;
       list<Ident> lhsArgs;
       TemplPackage tplPackage;
+      MMExp exp;
 
     case ( _, _, {}, _)
       then
@@ -2535,10 +2536,11 @@ algorithm
     //a text argument that is input and output
     //an actual parameter ident ... non-internal idents all starts with "_"
     //- put it out
-    case ( MM_IDENT(IDENT(txtarg)) :: mmargs, _ :: iargs, _ :: oargs, tplPackage)
+    case ((exp as MM_IDENT(IDENT(txtarg))) :: mmargs, _ :: iargs, _ :: oargs, tplPackage)
       equation
         // obsolete ... "_" = stringGetStringChar(txtarg, 1);
         //areEqualInOutArgs(iarg , oarg);
+        false = listMember(exp, mmargs); // This makes only the last Text argument be cached, but it is the simplest solution
         lhsArgs = elabOutTextArgs(mmargs, iargs, oargs, tplPackage);
       then
         ( txtarg :: lhsArgs );
