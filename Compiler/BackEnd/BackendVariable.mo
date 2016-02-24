@@ -817,25 +817,27 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
 
     /* Real non discrete variable */
-    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_), varType = DAE.T_REAL(_,_)))
-      then true;
-
-    case (BackendDAE.VAR(varKind = kind, varType = DAE.T_REAL(_,_))) equation
-      kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DUMMY_DER(), BackendDAE.DUMMY_STATE(), BackendDAE.OPT_INPUT_WITH_DER(), BackendDAE.OPT_INPUT_DER()};
-      then listMember(kind, kind_lst) or isOptLoopInput(kind);
+    case (BackendDAE.VAR(varType = DAE.T_REAL(_,_))) equation
+      then isVarAlg(var) or isOptInputVar(kind);
 
     else false;
   end match;
 end isVarNonDiscreteAlg;
 
-protected function isOptLoopInput
+protected function isOptInputVar
   input BackendDAE.VarKind kind;
   output Boolean b;
 algorithm
-  b := match(kind) case(BackendDAE.OPT_LOOP_INPUT()) then true;
-                   else false;
-       end match;
-end isOptLoopInput;
+  b := match(kind)
+     case BackendDAE.OPT_LOOP_INPUT()
+     then true;
+     case BackendDAE.OPT_INPUT_WITH_DER()
+     then true;
+     case BackendDAE.OPT_INPUT_DER()
+     then true;
+     else false;
+  end match;
+end isOptInputVar;
 
 public function isVarDiscreteAlg
   input BackendDAE.Var var;
@@ -855,7 +857,6 @@ algorithm
   end match;
 end isVarDiscreteAlg;
 
-/* TODO: Is this correct? */
 public function isVarStringAlg
   input BackendDAE.Var var;
   output Boolean result;
@@ -867,12 +868,8 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
 
     /* string variable */
-    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_), varType = DAE.T_STRING()))
-      then true;
-
-    case (BackendDAE.VAR(varKind = kind, varType = DAE.T_STRING())) equation
-      kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(), BackendDAE.DUMMY_STATE()};
-      then listMember(kind, kind_lst);
+    case (BackendDAE.VAR(varType = DAE.T_STRING()))
+      then isVarAlg(var);
 
     else false;
   end match;
@@ -888,23 +885,11 @@ algorithm
       BackendDAE.Type typeVar;
       list<BackendDAE.VarKind> kind_lst;
     /* int variable */
-    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_), varType = DAE.T_INTEGER()))
-      then true;
-
-    case (BackendDAE.VAR(varKind = kind,
-                     varType = DAE.T_INTEGER()))
-      equation
-
-        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-                    BackendDAE.DUMMY_STATE()};
-      then listMember(kind, kind_lst);
-    case (BackendDAE.VAR(varKind = kind,
-                     varType = DAE.T_ENUMERATION()))
-      equation
-
-        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-                    BackendDAE.DUMMY_STATE()};
-      then listMember(kind, kind_lst);
+    case (BackendDAE.VAR(varType = DAE.T_INTEGER()))
+      then isVarAlg(var);
+    /* enum variable */
+    case (BackendDAE.VAR(varType = DAE.T_ENUMERATION()))
+      then isVarAlg(var);
 
     else false;
   end match;
@@ -920,20 +905,32 @@ algorithm
       BackendDAE.VarKind kind;
       BackendDAE.Type typeVar;
       list<BackendDAE.VarKind> kind_lst;
-    /* int variable */
-    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_), varType = DAE.T_BOOL()))
-      then true;
-
-    case (BackendDAE.VAR(varKind = kind,
-                     varType = DAE.T_BOOL()))
-      equation
-        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-                    BackendDAE.DUMMY_STATE()};
-      then listMember(kind, kind_lst);
+    /* bool variable */
+    case (BackendDAE.VAR(varType = DAE.T_BOOL()))
+      then isVarAlg(var);
 
     else false;
   end matchcontinue;
 end isVarBoolAlg;
+
+public function isVarAlg
+  input BackendDAE.Var var;
+  output Boolean result;
+algorithm
+  b := match(var.varKind)
+         case BackendDAE.VARIABLE()
+         then true;
+         case BackendDAE.DISCRETE()
+         then true;
+         case BackendDAE.DUMMY_DER()
+         then true;
+         case BackendDAE.DUMMY_STATE()
+         then true;
+         case BackendDAE.CLOCKED_STATE()
+         then true;
+         else false;
+      end match;
+end isVarAlg;
 
 public function isVarConst
   input BackendDAE.Var var;
