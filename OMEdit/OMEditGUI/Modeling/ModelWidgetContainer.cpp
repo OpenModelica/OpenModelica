@@ -1338,7 +1338,8 @@ void GraphicsView::flipVertical()
 void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 {
   // check if the class is system library
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() ||
+      mpModelWidget->getLibraryTreeItem()->getRestriction() == StringHandler::Package) {
     event->ignore();
     return;
   }
