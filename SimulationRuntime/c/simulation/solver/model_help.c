@@ -1343,7 +1343,7 @@ const char *context_string[CONTEXT_MAX] = {
 void setContext(DATA* data, double* currentTime, int currentContext){
   data->simulationInfo->currentContextOld =  data->simulationInfo->currentContext;
   data->simulationInfo->currentContext =  currentContext;
-  infoStreamPrint(LOG_SOLVER, 0, "+++ Set context %s +++ at time %f", context_string[data->simulationInfo->currentContext], *currentTime);
+  infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Set context %s +++ at time %f", context_string[data->simulationInfo->currentContext], *currentTime);
   if (currentContext == CONTEXT_JACOBIAN){
     data->simulationInfo->currentJacobianEval = 0;
   }
@@ -1358,7 +1358,7 @@ void setContext(DATA* data, double* currentTime, int currentContext){
 void increaseJacContext(DATA* data){
   if (data->simulationInfo->currentContext == CONTEXT_JACOBIAN){
     data->simulationInfo->currentJacobianEval++;
-    infoStreamPrint(LOG_SOLVER, 0, "+++ Increase Jacobian column context %s +++ to %d", context_string[data->simulationInfo->currentContext], data->simulationInfo->currentJacobianEval);
+    infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Increase Jacobian column context %s +++ to %d", context_string[data->simulationInfo->currentContext], data->simulationInfo->currentJacobianEval);
   }
 }
 
@@ -1369,6 +1369,6 @@ void increaseJacContext(DATA* data){
  * Restores previous context in simulation info object
  */
 void unsetContext(DATA* data){
-  infoStreamPrint(LOG_SOLVER, 0, "--- Unset context %s ---", context_string[data->simulationInfo->currentContext]);
+  infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "--- Unset context %s ---", context_string[data->simulationInfo->currentContext]);
   data->simulationInfo->currentContext =  data->simulationInfo->currentContextOld;
 }

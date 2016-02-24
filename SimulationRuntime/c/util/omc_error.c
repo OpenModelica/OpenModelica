@@ -68,6 +68,7 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_RES_INIT",
   "LOG_SIMULATION",
   "LOG_SOLVER",
+  "LOG_SOLVER_CONTEXT",
   "LOG_SOTI",
   "LOG_STATS",
   "LOG_STATS_V",
@@ -110,6 +111,7 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "outputs residuals of the initialization",            /* LOG_RES_INIT */
   "additional information about simulation process",    /* LOG_SIMULATION */
   "additional information about solver process",        /* LOG_SOLVER */
+  "context information during the solver process",      /* LOG_SOLVER_CONTEXT" */
   "final solution of the initialization",               /* LOG_SOTI */
   "additional statistics about timer/events/solver",    /* LOG_STATS */
   "additional statistics for LOG_STATS",                /* LOG_STATS_V */
