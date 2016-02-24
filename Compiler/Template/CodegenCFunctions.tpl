@@ -3042,9 +3042,9 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
       case T_METALIST(__)
       case T_METATYPE(ty=T_METALIST(__)) then
         <<
-        for (<%tvar%> = <%evar%>; !listEmpty(<%tvar%>); <%tvar%>=listRest(<%tvar%>))
+        for (<%tvar%> = <%evar%>; !listEmpty(<%tvar%>); <%tvar%>=MMC_CDR(<%tvar%>))
         {
-          <%iterName%> = listHead(<%tvar%>);
+          <%iterName%> = MMC_CAR(<%tvar%>);
           <%body%>
         }
         >>
