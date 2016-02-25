@@ -3735,92 +3735,65 @@ protected function copyClass
   output Absyn.Program outProg;
 protected
   Absyn.Class cls;
-  String old_name, orig_file, pkg_name, delim, cls_path_str;
-  String pkg_path, library_path, src_path, dst_path;
-  Boolean package_file, same_package;
+  String orig_file, delim, cls_path_str;
+  String pkg_path, library_path, dst_path;
   Integer len, delim_len;
   Absyn.Path cls_path = inClassPath;
 algorithm
-  Absyn.CLASS(name = old_name, info = SOURCEINFO(fileName = orig_file)) := inClass;
-  len := stringLength(orig_file);
-  delim := System.pathDelimiter();
-  delim_len := stringLength(delim);
-
-  // Get the name of the file the class is stored in.
-  pkg_name := System.basename(orig_file);
-
-  // Figure out what the package is called.
-  if pkg_name == "package.mo" then
-    // Get the part before package.mo.
-    pkg_path := System.dirname(orig_file);
-    pkg_name := System.basename(pkg_path);
-    package_file := true;
-  else
-    // Remove the .mo suffix.
-    pkg_path := substring(orig_file, 1, len - 3);
-    pkg_name := substring(pkg_name, 1, stringLength(pkg_name) - 3);
-    package_file := false;
-  end if;
-
-  // Figure out what the base path for the library is.
-  len := stringLength(pkg_path);
-  while true loop
-    cls_path_str := Absyn.pathString(cls_path, delim);
-
-    // Check if the given class path matches the end of the path.
-    if substring(pkg_path, len - stringLength(cls_path_str) + 1, len) == cls_path_str then
-      library_path := substring(pkg_path, 1, len - stringLength(cls_path_str) - delim_len);
-      break;
-    end if;
-
-    if Absyn.pathIsIdent(cls_path) then
-      library_path := pkg_path;
-      break;
-    end if;
-
-    // Remove the last part of the class path and try again.
-    cls_path := Absyn.stripLast(cls_path);
-  end while;
-
-  same_package := pkg_name == old_name;
-
-  // If the class is inside the package.mo of another class, put it in a new
-  // file by removing the /package part from the source path.
-  src_path := pkg_path;
-  if package_file and not same_package then
-    src_path := src_path + delim + "package";
-  end if;
+  Absyn.CLASS(info = SOURCEINFO(fileName = orig_file)) := inClass;
 
   dst_path := match inWithin
-    // The destination is the top scope.
+    // Destination is top scope, put the copy in a new file.
     case Absyn.TOP()
       algorithm
-        dst_path := library_path + delim + inName;
-      then
-        dst_path;
+        len := stringLength(orig_file);
+        delim := System.pathDelimiter();
+        delim_len := stringLength(delim);
 
-    // The destination is within a package.
+        // Figure out what the package is called.
+        if System.basename(orig_file) == "package.mo" then
+          // Get the part before package.mo.
+          pkg_path := System.dirname(orig_file);
+        else
+          // Remove the .mo suffix.
+          pkg_path := substring(orig_file, 1, len - 3);
+        end if;
+
+        // Figure out what the base path for the library is.
+        len := stringLength(pkg_path);
+        while true loop
+          cls_path_str := Absyn.pathString(cls_path, delim);
+
+          // Check if the given class path matches the end of the path.
+          if substring(pkg_path, len - stringLength(cls_path_str) + 1, len) == cls_path_str then
+            library_path := substring(pkg_path, 1, len - stringLength(cls_path_str) - delim_len);
+            break;
+          end if;
+
+          if Absyn.pathIsIdent(cls_path) then
+            library_path := pkg_path;
+            break;
+          end if;
+
+          // Remove the last part of the class path and try again.
+          cls_path := Absyn.stripLast(cls_path);
+        end while;
+      then
+        library_path + delim + inName + ".mo";
+
+    // Destination is within another class, put the copy in the same file as the
+    // destination class.
     case Absyn.WITHIN()
       algorithm
-        if Absyn.pathIsIdent(inClassPath) then
-          // The source is the top scope.
-          dst_path := library_path + delim + Absyn.pathString(inWithin.path, delim) + delim + inName;
-        else
-          // The source is within a package.
-          if same_package or
-             not Absyn.pathEqual(Absyn.stripLast(inClassPath), inWithin.path) then
-            dst_path := library_path + delim + Absyn.pathString(inWithin.path, delim) + delim + inName;
-          else
-            src_path := pkg_path;
-            dst_path := src_path;
-          end if;
-        end if;
+        Absyn.CLASS(info = SOURCEINFO(fileName = dst_path)) :=
+          Interactive.getPathedClassInProgram(inWithin.path, inProg);
       then
         dst_path;
+
   end match;
 
-  // Replace src_path with dst_path in every SourceInfo in the class.
-  cls := moveClassInfo(inClass, src_path, dst_path);
+  // Replace the filename of each element with the new path.
+  cls := moveClassInfo(inClass, dst_path);
   // Change the name of the class and put it in as a copy in the program.
   cls := Absyn.setClassName(cls, inName);
   outProg := Interactive.updateProgram(Absyn.PROGRAM({cls}, inWithin), inProg);
@@ -3828,24 +3801,14 @@ end copyClass;
 
 protected function moveSourceInfo
   input SourceInfo inInfo;
-  input String srcPath;
   input String dstPath;
   output SourceInfo outInfo = inInfo;
 algorithm
   _ := match outInfo
-    local
-      String fn;
-      Integer fn_len, src_len;
 
-    case SOURCEINFO(fileName = fn)
+    case SOURCEINFO()
       algorithm
-        src_len := stringLength(srcPath);
-        if System.strncmp(srcPath, fn, src_len) == 0 then
-          fn_len := stringLength(fn);
-          outInfo.fileName := dstPath + substring(fn, src_len + 1, fn_len);
-        else
-          outInfo.fileName := "<interactive>";
-        end if;
+        outInfo.fileName := dstPath;
       then
         ();
 
@@ -3854,7 +3817,6 @@ end moveSourceInfo;
 
 protected function moveClassInfo
   input Absyn.Class inClass;
-  input String srcPath;
   input String dstPath;
   output Absyn.Class outClass = inClass;
 protected
@@ -3863,8 +3825,8 @@ algorithm
   _ := match outClass
     case Absyn.CLASS(info = info as SOURCEINFO())
       algorithm
-        outClass.body := moveClassDefInfo(outClass.body, srcPath, dstPath);
-        outClass.info := moveSourceInfo(info, srcPath, dstPath);
+        outClass.body := moveClassDefInfo(outClass.body, dstPath);
+        outClass.info := moveSourceInfo(info, dstPath);
       then
         ();
   end match;
@@ -3872,54 +3834,53 @@ end moveClassInfo;
 
 protected function moveClassDefInfo
   input Absyn.ClassDef inClassDef;
-  input String srcPath;
   input String dstPath;
   output Absyn.ClassDef outClassDef = inClassDef;
 algorithm
   _ := match outClassDef
     case Absyn.PARTS()
       algorithm
-        outClassDef.classParts := list(moveClassPartInfo(cp, srcPath, dstPath)
+        outClassDef.classParts := list(moveClassPartInfo(cp, dstPath)
           for cp in outClassDef.classParts);
-        outClassDef.ann := list(moveAnnotationInfo(a, srcPath, dstPath)
+        outClassDef.ann := list(moveAnnotationInfo(a, dstPath)
           for a in outClassDef.ann);
       then
         ();
 
     case Absyn.DERIVED()
       algorithm
-        outClassDef.arguments := list(moveElementArgInfo(e, srcPath, dstPath)
+        outClassDef.arguments := list(moveElementArgInfo(e, dstPath)
           for e in outClassDef.arguments);
-          outClassDef.comment := moveCommentInfo(outClassDef.comment, srcPath, dstPath);
+          outClassDef.comment := moveCommentInfo(outClassDef.comment, dstPath);
       then
         ();
 
     case Absyn.ENUMERATION()
       algorithm
-        outClassDef.comment := moveCommentInfo(outClassDef.comment, srcPath, dstPath);
+        outClassDef.comment := moveCommentInfo(outClassDef.comment, dstPath);
       then
         ();
 
     case Absyn.OVERLOAD()
       algorithm
-        outClassDef.comment := moveCommentInfo(outClassDef.comment, srcPath, dstPath);
+        outClassDef.comment := moveCommentInfo(outClassDef.comment, dstPath);
       then
         ();
 
     case Absyn.CLASS_EXTENDS()
       algorithm
-        outClassDef.modifications := list(moveElementArgInfo(e, srcPath, dstPath)
+        outClassDef.modifications := list(moveElementArgInfo(e, dstPath)
           for e in outClassDef.modifications);
-        outClassDef.parts := list(moveClassPartInfo(cp, srcPath, dstPath)
+        outClassDef.parts := list(moveClassPartInfo(cp, dstPath)
           for cp in outClassDef.parts);
-        outClassDef.ann := list(moveAnnotationInfo(a, srcPath, dstPath)
+        outClassDef.ann := list(moveAnnotationInfo(a, dstPath)
            for a in outClassDef.ann);
       then
         ();
 
     case Absyn.PDER()
       algorithm
-        outClassDef.comment := moveCommentInfo(outClassDef.comment, srcPath, dstPath);
+        outClassDef.comment := moveCommentInfo(outClassDef.comment, dstPath);
       then
         ();
 
@@ -3929,7 +3890,6 @@ end moveClassDefInfo;
 
 protected function moveClassPartInfo
   input Absyn.ClassPart inPart;
-  input String srcPath;
   input String dstPath;
   output Absyn.ClassPart outPart;
 algorithm
@@ -3942,27 +3902,27 @@ algorithm
       Option<Absyn.Annotation> ann;
 
     case Absyn.PUBLIC(el)
-      then Absyn.PUBLIC(list(moveElementItemInfo(e, srcPath, dstPath) for e in el));
+      then Absyn.PUBLIC(list(moveElementItemInfo(e, dstPath) for e in el));
 
     case Absyn.PROTECTED(el)
-      then Absyn.PROTECTED(list(moveElementItemInfo(e, srcPath, dstPath) for e in el));
+      then Absyn.PROTECTED(list(moveElementItemInfo(e, dstPath) for e in el));
 
     case Absyn.EQUATIONS(eq)
-      then Absyn.EQUATIONS(list(moveEquationItemInfo(e, srcPath, dstPath) for e in eq));
+      then Absyn.EQUATIONS(list(moveEquationItemInfo(e, dstPath) for e in eq));
 
     case Absyn.INITIALEQUATIONS(eq)
-      then Absyn.INITIALEQUATIONS(list(moveEquationItemInfo(e, srcPath, dstPath) for e in eq));
+      then Absyn.INITIALEQUATIONS(list(moveEquationItemInfo(e, dstPath) for e in eq));
 
     case Absyn.ALGORITHMS(alg)
-      then Absyn.ALGORITHMS(list(moveAlgorithmItemInfo(e, srcPath, dstPath) for e in alg));
+      then Absyn.ALGORITHMS(list(moveAlgorithmItemInfo(e, dstPath) for e in alg));
 
     case Absyn.INITIALALGORITHMS(alg)
-      then Absyn.INITIALALGORITHMS(list(moveAlgorithmItemInfo(e, srcPath, dstPath) for e in alg));
+      then Absyn.INITIALALGORITHMS(list(moveAlgorithmItemInfo(e, dstPath) for e in alg));
 
     case Absyn.EXTERNAL(ext, ann)
       algorithm
-        ext := moveExternalDeclInfo(ext, srcPath, dstPath);
-        ann := moveAnnotationOptInfo(ann, srcPath, dstPath);
+        ext := moveExternalDeclInfo(ext, dstPath);
+        ann := moveAnnotationOptInfo(ann, dstPath);
       then
         Absyn.EXTERNAL(ext, ann);
 
@@ -3972,7 +3932,6 @@ end moveClassPartInfo;
 
 protected function moveAnnotationOptInfo
   input Option<Absyn.Annotation> inAnnotation;
-  input String srcPath;
   input String dstPath;
   output Option<Absyn.Annotation> outAnnotation;
 algorithm
@@ -3980,21 +3939,20 @@ algorithm
     local
       Absyn.Annotation a;
 
-    case SOME(a) then SOME(moveAnnotationInfo(a, srcPath, dstPath));
+    case SOME(a) then SOME(moveAnnotationInfo(a, dstPath));
     else inAnnotation;
   end match;
 end moveAnnotationOptInfo;
 
 protected function moveAnnotationInfo
   input Absyn.Annotation inAnnotation;
-  input String srcPath;
   input String dstPath;
   output Absyn.Annotation outAnnotation = inAnnotation;
 algorithm
   _ := match outAnnotation
     case Absyn.ANNOTATION()
       algorithm
-        outAnnotation.elementArgs := list(moveElementArgInfo(e, srcPath, dstPath)
+        outAnnotation.elementArgs := list(moveElementArgInfo(e, dstPath)
           for e in outAnnotation.elementArgs);
       then
         ();
@@ -4003,35 +3961,33 @@ end moveAnnotationInfo;
 
 protected function moveElementItemInfo
   input Absyn.ElementItem inElement;
-  input String srcPath;
   input String dstPath;
   output Absyn.ElementItem outElement;
 algorithm
   outElement := match inElement
     case Absyn.ELEMENTITEM()
-      then Absyn.ELEMENTITEM(moveElementInfo(inElement.element, srcPath, dstPath));
+      then Absyn.ELEMENTITEM(moveElementInfo(inElement.element, dstPath));
     else inElement;
   end match;
 end moveElementItemInfo;
 
 protected function moveElementInfo
   input Absyn.Element inElement;
-  input String srcPath;
   input String dstPath;
   output Absyn.Element outElement = inElement;
 algorithm
   _ := match outElement
     case Absyn.ELEMENT()
       algorithm
-        outElement.specification := moveElementSpecInfo(outElement.specification, srcPath, dstPath);
-        outElement.constrainClass := moveConstrainClassInfo(outElement.constrainClass, srcPath, dstPath);
-        outElement.info := moveSourceInfo(outElement.info, srcPath, dstPath);
+        outElement.specification := moveElementSpecInfo(outElement.specification, dstPath);
+        outElement.constrainClass := moveConstrainClassInfo(outElement.constrainClass, dstPath);
+        outElement.info := moveSourceInfo(outElement.info, dstPath);
       then
         ();
 
     case Absyn.TEXT()
       algorithm
-        outElement.info := moveSourceInfo(outElement.info, srcPath, dstPath);
+        outElement.info := moveSourceInfo(outElement.info, dstPath);
       then
         ();
 
@@ -4041,23 +3997,22 @@ end moveElementInfo;
 
 protected function moveElementArgInfo
   input Absyn.ElementArg inArg;
-  input String srcPath;
   input String dstPath;
   output Absyn.ElementArg outArg = inArg;
 algorithm
   _ := match outArg
     case Absyn.MODIFICATION()
       algorithm
-        outArg.modification := moveModificationInfo(outArg.modification, srcPath, dstPath);
-        outArg.info := moveSourceInfo(outArg.info, srcPath, dstPath);
+        outArg.modification := moveModificationInfo(outArg.modification, dstPath);
+        outArg.info := moveSourceInfo(outArg.info, dstPath);
       then
         ();
 
     case Absyn.REDECLARATION()
       algorithm
-        outArg.elementSpec := moveElementSpecInfo(outArg.elementSpec, srcPath, dstPath);
-        outArg.constrainClass := moveConstrainClassInfo(outArg.constrainClass, srcPath, dstPath);
-        outArg.info := moveSourceInfo(outArg.info, srcPath, dstPath);
+        outArg.elementSpec := moveElementSpecInfo(outArg.elementSpec, dstPath);
+        outArg.constrainClass := moveConstrainClassInfo(outArg.constrainClass, dstPath);
+        outArg.info := moveSourceInfo(outArg.info, dstPath);
       then
         ();
 
@@ -4066,7 +4021,6 @@ end moveElementArgInfo;
 
 protected function moveModificationInfo
   input Option<Absyn.Modification> inMod;
-  input String srcPath;
   input String dstPath;
   output Option<Absyn.Modification> outMod;
 algorithm
@@ -4077,8 +4031,8 @@ algorithm
 
     case SOME(Absyn.CLASSMOD(el, eq))
       algorithm
-        el := list(moveElementArgInfo(e, srcPath, dstPath) for e in el);
-        eq := moveEqModInfo(eq, srcPath, dstPath);
+        el := list(moveElementArgInfo(e, dstPath) for e in el);
+        eq := moveEqModInfo(eq, dstPath);
       then
         SOME(Absyn.CLASSMOD(el, eq));
 
@@ -4088,20 +4042,18 @@ end moveModificationInfo;
 
 protected function moveEqModInfo
   input Absyn.EqMod inEqMod;
-  input String srcPath;
   input String dstPath;
   output Absyn.EqMod outEqMod;
 algorithm
   outEqMod := match inEqMod
     case Absyn.EQMOD()
-      then Absyn.EQMOD(inEqMod.exp, moveSourceInfo(inEqMod.info, srcPath, dstPath));
+      then Absyn.EQMOD(inEqMod.exp, moveSourceInfo(inEqMod.info, dstPath));
     else inEqMod;
   end match;
 end moveEqModInfo;
 
 protected function moveConstrainClassInfo
   input Option<Absyn.ConstrainClass> inCC;
-  input String srcPath;
   input String dstPath;
   output Option<Absyn.ConstrainClass> outCC;
 algorithm
@@ -4112,8 +4064,8 @@ algorithm
 
     case SOME(Absyn.CONSTRAINCLASS(spec, cmt))
       algorithm
-        spec := moveElementSpecInfo(spec, srcPath, dstPath);
-        cmt := moveCommentInfo(cmt, srcPath, dstPath);
+        spec := moveElementSpecInfo(spec, dstPath);
+        cmt := moveCommentInfo(cmt, dstPath);
       then
         SOME(Absyn.CONSTRAINCLASS(spec, cmt));
 
@@ -4123,7 +4075,6 @@ end moveConstrainClassInfo;
 
 protected function moveCommentInfo
   input Option<Absyn.Comment> inComment;
-  input String srcPath;
   input String dstPath;
   output Option<Absyn.Comment> outComment;
 algorithm
@@ -4134,7 +4085,7 @@ algorithm
 
     case SOME(Absyn.COMMENT(SOME(a), c))
       algorithm
-        a := moveAnnotationInfo(a, srcPath, dstPath);
+        a := moveAnnotationInfo(a, dstPath);
       then
         SOME(Absyn.COMMENT(SOME(a), c));
 
@@ -4144,7 +4095,6 @@ end moveCommentInfo;
 
 protected function moveEquationItemInfo
   input Absyn.EquationItem inEquation;
-  input String srcPath;
   input String dstPath;
   output Absyn.EquationItem outEquation;
 algorithm
@@ -4156,8 +4106,8 @@ algorithm
 
     case Absyn.EQUATIONITEM(eq, cmt, info)
       algorithm
-        cmt := moveCommentInfo(cmt, srcPath, dstPath);
-        info := moveSourceInfo(info, srcPath, dstPath);
+        cmt := moveCommentInfo(cmt, dstPath);
+        info := moveSourceInfo(info, dstPath);
       then
         Absyn.EQUATIONITEM(eq, cmt, info);
 
@@ -4167,7 +4117,6 @@ end moveEquationItemInfo;
 
 protected function moveAlgorithmItemInfo
   input Absyn.AlgorithmItem inAlgorithm;
-  input String srcPath;
   input String dstPath;
   output Absyn.AlgorithmItem outAlgorithm;
 algorithm
@@ -4179,8 +4128,8 @@ algorithm
 
     case Absyn.ALGORITHMITEM(alg, cmt, info)
       algorithm
-        cmt := moveCommentInfo(cmt, srcPath, dstPath);
-        info := moveSourceInfo(info, srcPath, dstPath);
+        cmt := moveCommentInfo(cmt, dstPath);
+        info := moveSourceInfo(info, dstPath);
       then
         Absyn.ALGORITHMITEM(alg, cmt, info);
 
@@ -4190,35 +4139,34 @@ end moveAlgorithmItemInfo;
 
 protected function moveElementSpecInfo
   input Absyn.ElementSpec inSpec;
-  input String srcPath;
   input String dstPath;
   output Absyn.ElementSpec outSpec = inSpec;
 algorithm
   _ := match outSpec
     case Absyn.CLASSDEF()
       algorithm
-        outSpec.class_ := moveClassInfo(outSpec.class_, srcPath, dstPath);
+        outSpec.class_ := moveClassInfo(outSpec.class_, dstPath);
       then
         ();
 
     case Absyn.EXTENDS()
       algorithm
-        outSpec.elementArg := list(moveElementArgInfo(e, srcPath, dstPath)
+        outSpec.elementArg := list(moveElementArgInfo(e, dstPath)
           for e in outSpec.elementArg);
-        outSpec.annotationOpt := moveAnnotationOptInfo(outSpec.annotationOpt, srcPath, dstPath);
+        outSpec.annotationOpt := moveAnnotationOptInfo(outSpec.annotationOpt, dstPath);
       then
         ();
 
     case Absyn.IMPORT()
       algorithm
-        outSpec.comment := moveCommentInfo(outSpec.comment, srcPath, dstPath);
-        outSpec.info := moveSourceInfo(outSpec.info, srcPath, dstPath);
+        outSpec.comment := moveCommentInfo(outSpec.comment, dstPath);
+        outSpec.info := moveSourceInfo(outSpec.info, dstPath);
       then
         ();
 
     case Absyn.COMPONENTS()
       algorithm
-        outSpec.components := list(moveComponentItemInfo(c, srcPath, dstPath)
+        outSpec.components := list(moveComponentItemInfo(c, dstPath)
           for c in outSpec.components);
       then
         ();
@@ -4228,7 +4176,6 @@ end moveElementSpecInfo;
 
 protected function moveComponentItemInfo
   input Absyn.ComponentItem inComponent;
-  input String srcPath;
   input String dstPath;
   output Absyn.ComponentItem outComponent;
 protected
@@ -4237,14 +4184,13 @@ protected
   Option<Absyn.Comment> cmt;
 algorithm
   Absyn.COMPONENTITEM(comp, cond, cmt) := inComponent;
-  comp := moveComponentInfo(comp, srcPath, dstPath);
-  cmt := moveCommentInfo(cmt, srcPath, dstPath);
+  comp := moveComponentInfo(comp, dstPath);
+  cmt := moveCommentInfo(cmt, dstPath);
   outComponent := Absyn.COMPONENTITEM(comp, cond, cmt);
 end moveComponentItemInfo;
 
 protected function moveComponentInfo
   input Absyn.Component inComponent;
-  input String srcPath;
   input String dstPath;
   output Absyn.Component outComponent = inComponent;
 algorithm
@@ -4252,7 +4198,7 @@ algorithm
     case Absyn.COMPONENT()
       algorithm
         outComponent.modification :=
-          moveModificationInfo(outComponent.modification, srcPath, dstPath);
+          moveModificationInfo(outComponent.modification, dstPath);
       then
         ();
   end match;
@@ -4260,7 +4206,6 @@ end moveComponentInfo;
 
 protected function moveExternalDeclInfo
   input Absyn.ExternalDecl inExtDecl;
-  input String srcPath;
   input String dstPath;
   output Absyn.ExternalDecl outExtDecl = inExtDecl;
 algorithm
@@ -4268,7 +4213,7 @@ algorithm
     case Absyn.EXTERNALDECL()
       algorithm
         outExtDecl.annotation_ :=
-          moveAnnotationOptInfo(outExtDecl.annotation_, srcPath, dstPath);
+          moveAnnotationOptInfo(outExtDecl.annotation_, dstPath);
       then
         ();
   end match;
