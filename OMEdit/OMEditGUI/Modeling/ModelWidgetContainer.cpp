@@ -2791,7 +2791,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   } else {
     stringToLoad = modelicaText;
     // only use OMCProxy::loadString merge when LibraryTreeItem::SaveFolderStructure i.e., package.mo
-    if (!pOMCProxy->loadString(stringToLoad, mpLibraryTreeItem->getFileName(), Helper::utf8, mpLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure)) {
+    if (!pOMCProxy->loadString(stringToLoad, className, Helper::utf8, mpLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure)) {
       return false;
     }
   }
@@ -2810,7 +2810,10 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
      * Update the LibraryTreeItem with new class name and then refresh it.
      */
     int row = mpLibraryTreeItem->row();
-    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem);
+    /* if a class inside a package one file is renamed then it is already deleted by calling loadString using the whole package contents
+     * so we tell unloadLibraryTreeItem to don't try deleteClass since it will only produce error
+     */
+    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem, !mpLibraryTreeItem->isInPackageOneFile());
     mpLibraryTreeItem->setModelWidget(0);
     QString name = StringHandler::getLastWordAfterDot(className);
     LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, mpLibraryTreeItem->parent(), false, false, true, row);

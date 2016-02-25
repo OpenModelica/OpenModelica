@@ -248,7 +248,7 @@ public:
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
-  bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass);
   bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
   void moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top);

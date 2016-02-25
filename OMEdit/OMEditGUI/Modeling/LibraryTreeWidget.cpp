@@ -1716,16 +1716,17 @@ bool LibraryTreeModel::unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bo
 
 /*!
  * \brief LibraryTreeModel::unloadLibraryTreeItem
- * Removes the LibraryTreeItem and deletes the Modelica class if deleteClass argument is false.
+ * Removes the LibraryTreeItem and deletes the Modelica class if doDeleteClass argument is true.
  * \param pLibraryTreeItem
+ * \param doDeleteClass
  * \return
  */
-bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass)
 {
   /* Delete the class in OMC.
    * If deleteClass is successful remove the class from Library Browser.
    */
-  if (mpLibraryWidget->getMainWindow()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
+  if (!doDeleteClass || mpLibraryWidget->getMainWindow()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
     /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
      * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
      * The following code overcomes this issue. It stores the next index expand state and then apply it after deletion.
