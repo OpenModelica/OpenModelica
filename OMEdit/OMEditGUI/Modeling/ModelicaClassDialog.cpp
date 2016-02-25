@@ -810,8 +810,8 @@ void DuplicateClassDialog::duplicateClass()
     pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, false, false, true);
     pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
     pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
+    pLibraryTreeModel->updateLibraryTreeItemClassText(pLibraryTreeItem);
     if (mSaveAs) {
-      pLibraryTreeModel->updateLibraryTreeItemClassText(pLibraryTreeItem);
       mpMainWindow->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
     }
   }
