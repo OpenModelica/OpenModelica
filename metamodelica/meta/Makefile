@@ -105,6 +105,7 @@ StringBoxed.mos \
 SwitchString.mos \
 TailRecursion.mo \
 TailRecursionNoretcall.mos \
+Ticket2974.mos \
 Ticket3005.mos \
 ThreadedReduction.mos \
 Try.mos \
