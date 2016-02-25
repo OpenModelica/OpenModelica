@@ -132,7 +132,7 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
   out.setCodec(Helper::utf8.toStdString().data());
   out << documentation;
   mDocumentationFile.close();
-  mpDocumentationViewer->setUrl(mDocumentationFile.fileName());
+  mpDocumentationViewer->setUrl(QUrl::fromLocalFile(mDocumentationFile.fileName()));
 
   if ((mDocumentationHistoryPos >= 0) && (pLibraryTreeItem == mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem)) {
     /* reload url */

@@ -781,6 +781,12 @@ OMCInterface::getClassInformation_res OMCProxy::getClassInformation(QString clas
   OMCInterface::getClassInformation_res classInformation = mpOMCInterface->getClassInformation(className);
   QString comment = classInformation.comment.replace("\\\"", "\"");
   comment = makeDocumentationUriToFileName(comment);
+  // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
+#ifdef WIN32
+  comment.replace("src=\"file:///", "src=\"");
+#else
+  comment.replace("src=\"file://", "src=\"");
+#endif
   classInformation.comment = comment;
   return classInformation;
 }
@@ -2200,9 +2206,10 @@ bool OMCProxy::clearCommandLineOptions()
  */
 QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
 {
-  QWebPage webPage;
-  webPage.settings()->setAttribute(QWebSettings::JavascriptEnabled, false);
-  QWebFrame *pWebFrame = webPage.mainFrame();
+  QWebPage *pWebPage = new QWebPage;
+  pWebPage->settings()->setAttribute(QWebSettings::JavascriptEnabled, false);
+  connect(pWebPage, SIGNAL(loadFinished(bool)), pWebPage, SLOT(deleteLater()));
+  QWebFrame *pWebFrame = pWebPage->mainFrame();
   pWebFrame->setContent(QByteArray(documentation.toStdString().c_str()), "text/html");
   QWebElement webElement = pWebFrame->documentElement();
   QWebElementCollection imgTags = webElement.findAll("img,script");
@@ -2210,16 +2217,11 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
     QString src = imgTag.attribute("src");
     if (src.startsWith("modelica://")) {
       QString imgFileName = uriToFilename(src);
-      imgTag.setAttribute("src", imgFileName);
-    } else if (src.startsWith("file://")) {
-      QString imgFileName = uriToFilename(src);
-      // Windows absolute paths doesn't start with "/".
 #ifdef WIN32
-      if (imgFileName.startsWith("/")) {
-        imgFileName = imgFileName.mid(1);
-      }
+      imgTag.setAttribute("src", "file:///" + imgFileName);
+#else
+      imgTag.setAttribute("src", "file://" + imgFileName);
 #endif
-      imgTag.setAttribute("src", imgFileName);
     } else {
       //! @todo The img src value starts with modelica:// for MSL 3.2.1. Handle the other cases in this else block.
     }

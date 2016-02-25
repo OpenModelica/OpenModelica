@@ -1434,6 +1434,12 @@ void Component::updateToolTip()
   QString comment = mpComponentInfo->getComment().replace("\\\"", "\"");
   OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   comment = pOMCProxy->makeDocumentationUriToFileName(comment);
+  // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
+#ifdef WIN32
+  comment.replace("src=\"file:///", "src=\"");
+#else
+  comment.replace("src=\"file://", "src=\"");
+#endif
 
   if (mIsInheritedComponent || mComponentType == Component::Port) {
     setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Component declared in %4").arg(mpComponentInfo->getClassName())
