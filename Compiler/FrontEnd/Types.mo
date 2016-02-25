@@ -5814,50 +5814,25 @@ public function matchTypePolymorphic "Like matchType, except we also
 bind polymorphic variabled. Used when elaborating calls."
   input DAE.Exp iexp;
   input DAE.Type iactual;
-  input DAE.Type iexpected;
+  input DAE.Type expected;
   input Option<Absyn.Path> envPath "to detect which polymorphic types are recursive";
   input InstTypes.PolymorphicBindings ipolymorphicBindings;
   input Boolean printFailtrace;
-  output DAE.Exp outExp;
-  output DAE.Type outType;
-  output InstTypes.PolymorphicBindings outBindings;
+  output DAE.Exp exp=iexp;
+  output DAE.Type actual=iactual;
+  output InstTypes.PolymorphicBindings polymorphicBindings=ipolymorphicBindings;
+protected
+  constant Boolean debug=false;
 algorithm
-  (outExp,outType,outBindings):=
-  matchcontinue (iexp,iactual,iexpected,envPath,ipolymorphicBindings,printFailtrace)
-    local
-      DAE.Exp e,e_1,exp;
-      Type e_type,expected_type,e_type_1,actual,expected;
-      InstTypes.PolymorphicBindings polymorphicBindings;
-
-    case (exp,actual,expected,_,polymorphicBindings,_)
-      equation
-        false = Config.acceptMetaModelicaGrammar();
-        (e_1,e_type_1) = matchType(exp,actual,expected,printFailtrace);
-      then
-        (e_1,e_type_1,polymorphicBindings);
-    case (exp,actual,expected,_,polymorphicBindings,_)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        {} = getAllInnerTypesOfType(expected, isPolymorphic);
-        (e_1,e_type_1) = matchType(exp,actual,expected,printFailtrace);
-      then
-        (e_1,e_type_1,polymorphicBindings);
-    case (exp,actual,expected,_,polymorphicBindings,_)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        _::_ = getAllInnerTypesOfType(expected, isPolymorphic);
-        // print("match type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + "\n");
-        (exp,actual) = matchType(exp,actual,DAE.T_METABOXED(DAE.T_UNKNOWN_DEFAULT,DAE.emptyTypeSource),printFailtrace);
-        // print("matched type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + " (boxed)\n");
-        polymorphicBindings = subtypePolymorphic(getUniontypeIfMetarecordReplaceAllSubtypes(actual),getUniontypeIfMetarecordReplaceAllSubtypes(expected),envPath,polymorphicBindings);
-        // print("match type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + " and bindings " + polymorphicBindingsStr(polymorphicBindings) + " (OK)\n");
-      then
-        (exp,actual,polymorphicBindings);
-    case (e,e_type,expected_type,_,_,true)
-      equation
-        printFailure(Flags.TYPES, "matchTypePolymorphic", e, e_type, expected_type);
-      then fail();
-  end matchcontinue;
+  if (if not Config.acceptMetaModelicaGrammar() then true else listEmpty(getAllInnerTypesOfType(expected, isPolymorphic))) then
+    (exp,actual) := matchType(exp,actual,expected,printFailtrace);
+  else
+    if debug then print("match type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + "\n"); end if;
+    (exp,actual) := matchType(exp,actual,DAE.T_METABOXED(DAE.T_UNKNOWN_DEFAULT,DAE.emptyTypeSource), printFailtrace);
+    if debug then print("matched type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + " (boxed)\n"); end if;
+    polymorphicBindings := subtypePolymorphic(getUniontypeIfMetarecordReplaceAllSubtypes(actual), getUniontypeIfMetarecordReplaceAllSubtypes(expected), envPath, polymorphicBindings);
+    if debug then print("match type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + " and bindings " + polymorphicBindingsStr(polymorphicBindings) + " (OK)\n"); end if;
+  end if;
 end matchTypePolymorphic;
 
 public function matchTypePolymorphicWithError "Like matchType, except we also
@@ -6486,22 +6461,18 @@ protected function checkValidBindings
   input InstTypes.PolymorphicBindings unsolvedBindings;
   input SourceInfo info;
   input list<Absyn.Path> pathLst;
+protected
+  String bindingsStr, solvedBindingsStr, unsolvedBindingsStr, pathStr;
+  list<DAE.Type> tys;
 algorithm
-  _ := matchcontinue (bindings, solvedBindings, unsolvedBindings, info, pathLst)
-    local
-      String bindingsStr, solvedBindingsStr, unsolvedBindingsStr, pathStr;
-
-    case (_,_,{},_,_) then ();
-
-    else
-      equation
-        pathStr = stringDelimitList(list(Absyn.pathString(p) for p in pathLst), ", ");
-        bindingsStr = polymorphicBindingsStr(bindings);
-        solvedBindingsStr = polymorphicBindingsStr(solvedBindings);
-        unsolvedBindingsStr = polymorphicBindingsStr(unsolvedBindings);
-        Error.addSourceMessage(Error.META_UNSOLVED_POLYMORPHIC_BINDINGS, {pathStr,bindingsStr,solvedBindingsStr,unsolvedBindingsStr},info);
-      then fail();
-  end matchcontinue;
+  if not listEmpty(unsolvedBindings) then
+    pathStr := stringDelimitList(list(Absyn.pathString(p) for p in pathLst), ", ");
+    bindingsStr := polymorphicBindingsStr(bindings);
+    solvedBindingsStr := polymorphicBindingsStr(solvedBindings);
+    unsolvedBindingsStr := polymorphicBindingsStr(unsolvedBindings);
+    Error.addSourceMessage(Error.META_UNSOLVED_POLYMORPHIC_BINDINGS, {pathStr,bindingsStr,solvedBindingsStr,unsolvedBindingsStr},info);
+    fail();
+  end if;
 end checkValidBindings;
 
 protected function solvePolymorphicBindingsLoop
@@ -6801,6 +6772,13 @@ algorithm
       then addPolymorphicBinding("$" + id,actual,inBindings);
 
     case (DAE.T_METAPOLYMORPHIC(name = id),_)
+      algorithm
+        if stringGet(id,1)<>stringCharInt("$") then
+          // We allow things like inner type variables of function pointers,
+          // but not things like accepting T1 can be tuple<T2,T3>.
+          // print("Not adding METAPOLYMORPHIC $$"+id+"="+unparseType(expected)+"\n");
+          fail();
+        end if;
       then addPolymorphicBinding("$$" + id,expected,inBindings);
 
     case (DAE.T_METABOXED(ty = ty1),ty2)
@@ -6849,23 +6827,20 @@ algorithm
 
     // MM Function Reference. sjoelund
     case (DAE.T_FUNCTION(farg1,ty1,_,{path1}),DAE.T_FUNCTION(farg2,ty2,_,{_}))
-      equation
-        true = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1); // Don't rename the result type for recursive calls...
-        tList1 = List.map(farg1, funcArgType);
-        tList2 = List.map(farg2, funcArgType);
-        bindings = subtypePolymorphicList(tList1,tList2,envPath,inBindings);
-        bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
-      then bindings;
-
-    case (DAE.T_FUNCTION(source = {path1}),DAE.T_FUNCTION(farg2,ty2,_,{_}))
-      equation
-        false = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1);
-        prefix = "$" + Absyn.pathString(path1) + ".";
-        (DAE.T_FUNCTION(farg1,ty1,_,_),_) = traverseType(actual, prefix, prefixTraversedPolymorphicType);
-        tList1 = List.map(farg1, funcArgType);
-        tList2 = List.map(farg2, funcArgType);
-        bindings = subtypePolymorphicList(tList1,tList2,envPath,inBindings);
-        bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
+      algorithm
+        if Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1) then // Don't rename the result type for recursive calls...
+          tList1 := List.map(farg1, funcArgType);
+          tList2 := List.map(farg2, funcArgType);
+          bindings := subtypePolymorphicList(tList1,tList2,envPath,inBindings);
+          bindings := subtypePolymorphic(ty1,ty2,envPath,bindings);
+        else
+          prefix := "$" + Absyn.pathString(path1) + ".";
+          (DAE.T_FUNCTION(farg1,ty1,_,_),_) := traverseType(actual, prefix, prefixTraversedPolymorphicType);
+          tList1 := List.map(farg1, funcArgType);
+          tList2 := List.map(farg2, funcArgType);
+          bindings := subtypePolymorphicList(tList1,tList2,envPath,inBindings);
+          bindings := subtypePolymorphic(ty1,ty2,envPath,bindings);
+        end if;
       then bindings;
 
     case (DAE.T_UNKNOWN(),ty2)
