@@ -1951,6 +1951,9 @@ algorithm
                   ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = false))
       then List.consOnTrue(not listMember(name, inAcc), name, inAcc);
 
+    case DAE.PARTEVALFUNCTION(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name = name)))
+      then List.consOnTrue(not listMember(name, inAcc), name, inAcc);
+
     else inAcc;
   end match;
 end matchQualifiedCalls;
