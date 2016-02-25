@@ -187,8 +187,8 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
   mpDocumentationWidget = pParent;
-  zoomFact = 1.;
-  setZoomFactor(zoomFact);
+  mZoomFactor = 1.;
+  setZoomFactor(mZoomFactor);
   // set DocumentationViewer settings
   settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
   settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
@@ -198,6 +198,13 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
   page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
   connect(page(), SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
   connect(page(), SIGNAL(linkHovered(QString,QString,QString)), SLOT(processLinkHover(QString,QString,QString)));
+  createActions();
+}
+
+void DocumentationViewer::createActions()
+{
+  page()->action(QWebPage::SelectAll)->setShortcut(QKeySequence("Ctrl+a"));
+  page()->action(QWebPage::Copy)->setShortcut(QKeySequence("Ctrl+c"));
 }
 
 /*!
@@ -241,10 +248,11 @@ void DocumentationViewer::requestFinished()
   QNetworkReply *reply = qobject_cast<QNetworkReply*>(const_cast<QObject*>(sender()));
   QUrl possibleRedirectedUrl = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
   //if the url contains https
-  if (possibleRedirectedUrl.toString().contains("https"))
+  if (possibleRedirectedUrl.toString().contains("https")) {
     QDesktopServices::openUrl(possibleRedirectedUrl);
-  else
+  } else {
     load(reply->url());
+  }
   reply->deleteLater();
 }
 
@@ -254,26 +262,22 @@ void DocumentationViewer::processLinkHover(QString link, QString title, QString 
 {
   Q_UNUSED(title);
   Q_UNUSED(textContent);
-  if (link.isEmpty())
+  if (link.isEmpty()) {
     mpDocumentationWidget->getMainWindow()->getStatusBar()->clearMessage();
-  else
+  } else {
     mpDocumentationWidget->getMainWindow()->getStatusBar()->showMessage(link);
+  }
 }
 
 //! Shows a context menu when user right click on the Messages tree.
 //! Slot activated when DocumentationViewer::customContextMenuRequested() signal is raised.
 void DocumentationViewer::showContextMenu(QPoint point)
 {
-  Q_UNUSED(point);
-  //! @todo Create the documentation actions here like the example below and then show them in the menu.
-  /*QAction *pTestAction = new QAction(QIcon(":/Resources/icons/options.svg"), tr("Properties"), this);
-  pTestAction->setStatusTip(tr("Shows the component properties"));
-  connect(pTestAction, SIGNAL(triggered()), mpDocumentationWidget, SLOT(previousDocumentation()));
-
   QMenu menu(this);
-  menu.addAction(pTestAction);
+  // add QWebPage default actions
+  menu.addAction(page()->action(QWebPage::SelectAll));
+  menu.addAction(page()->action(QWebPage::Copy));
   menu.exec(mapToGlobal(point));
-  */
 }
 
 QWebView* DocumentationViewer::createWindow(QWebPage::WebWindowType type)
@@ -287,59 +291,61 @@ QWebView* DocumentationViewer::createWindow(QWebPage::WebWindowType type)
   return webView;
 }
 
-//! Reimplementation of keypressevent.
-//! Defines what to do for backspace and shift+backspace buttons.
+/*!
+ * \brief DocumentationViewer::keyPressEvent
+ * Reimplementation of keypressevent.
+ * Defines what to do for backspace and shift+backspace buttons.
+ * \param event
+ */
 void DocumentationViewer::keyPressEvent(QKeyEvent *event)
 {
-  if (event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Backspace)
-  {
-    if (mpDocumentationWidget->getNextToolButton()->isEnabled())
-    {
+  bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
+  bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
+  if (shiftModifier && !controlModifier && event->key() == Qt::Key_Backspace) {
+    if (mpDocumentationWidget->getNextToolButton()->isEnabled()) {
       mpDocumentationWidget->nextDocumentation();
     }
-  }
-  else if (event->key() == Qt::Key_Backspace)
-  {
-    if (mpDocumentationWidget->getPreviousToolButton()->isEnabled())
-    {
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Backspace) {
+    if (mpDocumentationWidget->getPreviousToolButton()->isEnabled()) {
       mpDocumentationWidget->previousDocumentation();
     }
-  }
-  else
-  {
+  } else if (controlModifier && event->key() == Qt::Key_A) {
+    page()->triggerAction(QWebPage::SelectAll);
+  } else {
     QWebView::keyPressEvent(event);
   }
 }
 
-//! Reimplementation of wheelevent.
-//! Defines what to do for control+scrolling the wheel
+/*!
+ * \brief DocumentationViewer::wheelEvent
+ * Reimplementation of wheelevent.
+ * Defines what to do for control+scrolling the wheel
+ * \param event
+ */
 void DocumentationViewer::wheelEvent(QWheelEvent *event)
 {
-  if (event->orientation() == Qt::Vertical && event->modifiers().testFlag(Qt::ControlModifier))
-  {
-      zoomFact+=event->delta()/120.;
-      if (zoomFact > 5.) zoomFact = 5.;
-      if (zoomFact < .1) zoomFact = .1;
-      setZoomFactor(zoomFact);
-  }
-  else
-  {
+  if (event->orientation() == Qt::Vertical && event->modifiers().testFlag(Qt::ControlModifier)) {
+      mZoomFactor+=event->delta()/120.;
+      if (mZoomFactor > 5.) mZoomFactor = 5.;
+      if (mZoomFactor < .1) mZoomFactor = .1;
+      setZoomFactor(mZoomFactor);
+  } else {
     QWebView::wheelEvent(event);
   }
 }
 
-//! Reimplementation of mousedoubleclickevent.
-//! Defines what to do for control+doubleclick
+/*!
+ * \brief DocumentationViewer::mouseDoubleClickEvent
+ * Reimplementation of mousedoubleclickevent.
+ * Defines what to do for control+doubleclick
+ * \param event
+ */
 void DocumentationViewer::mouseDoubleClickEvent(QMouseEvent *event)
 {
-  if (event->modifiers().testFlag(Qt::ControlModifier))
-  {
-    zoomFact=1.;
-    setZoomFactor(zoomFact);
-  }
-  else
-  {
+  if (event->modifiers().testFlag(Qt::ControlModifier)) {
+    mZoomFactor=1.;
+    setZoomFactor(mZoomFactor);
+  } else {
     QWebView::mouseDoubleClickEvent(event);
   }
 }
-

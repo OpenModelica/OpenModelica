@@ -78,9 +78,11 @@ class DocumentationViewer : public QWebView
   Q_OBJECT
 private:
   DocumentationWidget *mpDocumentationWidget;
-  qreal zoomFact;
+  qreal mZoomFactor;
 public:
   DocumentationViewer(DocumentationWidget *pParent);
+private:
+  void createActions();
 public slots:
   void processLinkClick(QUrl url);
   void requestFinished();
