@@ -625,13 +625,11 @@ algorithm
     (outCache, args, consts, _, tty, _, slots) := elabTypes(outCache, inEnv, pos_args,
       named_args, {tty}, true, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),
       NONE(), inPrefix, inInfo);
-
     if not Types.isFunctionPointer(tty) then
       (outCache, path) := Inst.makeFullyQualified(outCache, inEnv, path);
       (outCache, Util.SUCCESS()) := instantiateDaeFunction(outCache, inEnv,
         path, false, NONE(), true);
     end if;
-
     tty2 := stripExtraArgsFromType(slots, tty);
     tty2 := Types.makeFunctionPolymorphicReference(tty2);
     ty := Types.simplifyType(tty2);

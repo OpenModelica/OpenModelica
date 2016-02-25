@@ -54,6 +54,7 @@ import GC;
 import Graph;
 import List;
 import Mod;
+import Patternm;
 import SCode;
 
 public
@@ -1147,7 +1148,9 @@ function findLiteralsHelper
 algorithm
   exp := inExp;
   tpl := inTpl;
-  (exp, tpl) := Expression.traverseExpBottomUp(exp, replaceLiteralExp, tpl);
+  (exp, tpl) := Expression.traverseExpBottomUp(exp,
+    function Patternm.traverseConstantPatternsHelper(func=replaceLiteralExp),
+    tpl);
   (exp, tpl) := Expression.traverseExpTopDown(exp, replaceLiteralArrayExp, tpl);
 end findLiteralsHelper;
 

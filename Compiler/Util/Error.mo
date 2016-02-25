@@ -905,6 +905,8 @@ public constant Message META_ALL_EMPTY = MESSAGE(5036, TRANSLATION(), NOTIFICATI
   Util.gettext("All patterns in call were empty: %s."));
 public constant Message DUPLICATE_DEFINITION = MESSAGE(5037, TRANSLATION(), ERROR(),
   Util.gettext("The same variable is being defined twice: %s."));
+public constant Message PATTERN_VAR_NOT_VARIABLE = MESSAGE(5038, TRANSLATION(), ERROR(),
+  Util.gettext("Identifiers need to point to local or output variables. Variable %s is %s."));
 
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   Util.notrans("%s"));

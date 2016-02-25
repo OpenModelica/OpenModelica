@@ -244,6 +244,7 @@ algorithm
       DAE.Properties prop;
       DAE.Const const;
       Values.Value val;
+      SCode.Variability variability;
 
     case (cache,_,Absyn.INTEGER(i),_,_,_)
       equation
@@ -334,7 +335,17 @@ algorithm
         (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
 
-    case (cache,_,Absyn.CREF(),ty1,_,_) guard Types.isEnumeration(Types.unboxedType(ty1))
+    case (cache,_,Absyn.CREF(),ty1,_,_)
+      guard
+        Types.isBoxedType(ty1) or
+        (match Types.unboxedType(ty1)
+          case DAE.T_ENUMERATION() then true;
+          case DAE.T_INTEGER() then true;
+          case DAE.T_REAL() then true;
+          case DAE.T_STRING() then true;
+          case DAE.T_BOOL() then true;
+          else false;
+        end match)
       equation
         (cache,elabExp,DAE.PROP(type_=ty2, constFlag=const),_) = Static.elabExp(cache,env,inLhs,false,NONE(),false,Prefix.NOPRE(),info);
         et = validPatternType(ty1,ty2,inLhs,info);
@@ -354,11 +365,15 @@ algorithm
       then (cache,pattern);
 
     case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,_,_)
-      equation
-        (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_,_,_) = Lookup.lookupIdent(cache,env,id);
+      algorithm
+        (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr as DAE.ATTR(variability=variability)),_,_,_,_) := Lookup.lookupIdent(cache,env,id);
+        if SCode.isParameterOrConst(variability) then
+          Error.addSourceMessage(Error.PATTERN_VAR_NOT_VARIABLE, {id, SCodeDump.unparseVariability(variability)}, info);
+          fail();
+        end if;
         Static.checkAssignmentToInput(inLhs, attr, env, false, info);
-        et = validPatternType(ty2,ty1,inLhs,info);
-        pattern = if Types.isFunctionType(ty2) then DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()) else DAE.PAT_AS(id,et,attr,DAE.PAT_WILD());
+        et := validPatternType(ty2,ty1,inLhs,info);
+        pattern := if Types.isFunctionType(ty2) then DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()) else DAE.PAT_AS(id,et,attr,DAE.PAT_WILD());
       then (cache,pattern);
 
     case (cache,_,Absyn.AS(id,_),_,_,_)
@@ -2310,6 +2325,80 @@ algorithm
       then fail();
   end matchcontinue;
 end fixCaseReturnTypes2;
+
+public function traverseConstantPatternsHelper<T>
+  input DAE.Exp inExp;
+  input T inT;
+  input FuncExpType func;
+  output DAE.Exp outExp;
+  output T outT=inT;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input T inTypeT;
+    output DAE.Exp outExp;
+    output T outT;
+  end FuncExpType;
+algorithm
+  outExp := match inExp
+    local
+      list<DAE.MatchCase> cases, cases2;
+      DAE.MatchCase case_;
+      list<DAE.Pattern> patterns;
+    case outExp as DAE.MATCHEXPRESSION(cases=cases)
+      algorithm
+        cases2 := {};
+        for c in cases loop
+          case_ := c;
+          case_ := match case_
+            case DAE.CASE()
+              algorithm
+               (patterns, outT) := traversePatternList(case_.patterns, function traverseConstantPatternsHelper2(func=func), outT);
+               if not valueEq(case_.patterns, patterns) then
+                 case_.patterns := patterns;
+               end if;
+              then case_;
+          end match;
+          cases2 := case_::cases2;
+        end for;
+        cases2 := Dangerous.listReverseInPlace(cases2);
+        if not valueEq(cases,cases2) then
+          outExp.cases := cases2;
+        end if;
+        (outExp,outT) := func(outExp,outT);
+      then outExp;
+    else
+      algorithm
+        (outExp,outT) := func(inExp,outT);
+      then outExp;
+  end match;
+end traverseConstantPatternsHelper;
+
+function traverseConstantPatternsHelper2<T>
+  input DAE.Pattern inPattern;
+  input T inExtra;
+  input FuncExpType func;
+  output DAE.Pattern outPattern;
+  output T extra=inExtra;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input T inTypeT;
+    output DAE.Exp outExp;
+    output T outT;
+  end FuncExpType;
+algorithm
+  outPattern := match inPattern
+    local
+      DAE.Exp exp;
+    case outPattern as DAE.PAT_CONSTANT()
+      algorithm
+        (exp, extra) := func(outPattern.exp, extra);
+        if not referenceEq(outPattern.exp, exp) then
+          outPattern.exp := exp;
+        end if;
+      then outPattern;
+    else inPattern;
+  end match;
+end traverseConstantPatternsHelper2;
 
 public function traverseCases
   replaceable type A subtypeof Any;

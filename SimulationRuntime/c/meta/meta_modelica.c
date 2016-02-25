@@ -134,7 +134,7 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
     return d1 == d2;
   }
   if (MMC_HDRISSTRING(h_lhs)) {
-    return 0 == strcmp(MMC_STRINGDATA(lhs),MMC_STRINGDATA(rhs));
+    return MMC_STRLEN(lhs)==MMC_STRLEN(rhs) && 0 == strcmp(MMC_STRINGDATA(lhs),MMC_STRINGDATA(rhs));
   }
 
   numslots = MMC_HDRSLOTS(h_lhs);

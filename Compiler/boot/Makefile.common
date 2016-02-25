@@ -63,6 +63,7 @@ bootstrap-from-tarball: $(PATCHES)
 	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC)
 	# Patch _main.c to avoid a new tarball
 	$(PATCH_SOURCES)
+	echo '#include "Patternm.h"' >> build/SimCodeFunctionUtil_includes.h
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
 	touch build/OpenModelicaScriptingAPI.h
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=$(BOOTSTRAP_OMC)

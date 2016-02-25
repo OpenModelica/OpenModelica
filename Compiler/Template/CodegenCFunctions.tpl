@@ -3800,10 +3800,14 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
         case c as SCONST(__) then
           let escstr = Util.escapeModelicaStringToCString(c.string)
           'if (<%unescapedStringLength(escstr)%> != MMC_STRLEN(<%urhs%>) || strcmp("<%escstr%>", MMC_STRINGDATA(<%urhs%>)) != 0) <%onPatternFail%>;<%\n%>'
+        case c as SHARED_LITERAL(exp=d as SCONST(__)) then
+          let escstr = Util.escapeModelicaStringToCString(d.string)
+          'if (<%unescapedStringLength(escstr)%> != MMC_STRLEN(<%urhs%>) || strcmp(MMC_STRINGDATA(_OMC_LIT<%c.index%>), MMC_STRINGDATA(<%urhs%>)) != 0) <%onPatternFail%>;<%\n%>'
         case c as BCONST(__) then 'if (<%boolStrC(c.bool)%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
         case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         case c as ENUM_LITERAL() then 'if (<%c.index%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
+        case c as SHARED_LITERAL() then 'if (!valueEq(_OMC_LIT<%c.index%>, <%urhs%>)) <%onPatternFail%>;<%\n%>'
         else error(sourceInfo(), 'UNKNOWN_CONSTANT_PATTERN <%printExpStr(p.exp)%>')
       %>>>
   case p as PAT_SOME(__) then
@@ -6655,7 +6659,8 @@ template switchIndex(Pattern pattern, Integer extraArg)
 ::=
   match pattern
     case PAT_CALL(__) then 'case <%getValueCtor(index)%>'
-    case PAT_CONSTANT(exp=e as SCONST(__)) then 'case <%stringHashDjb2Mod(e.string,extraArg)%> /* <%e.string%> */'
+    case PAT_CONSTANT(exp=e as SCONST(__))
+    case PAT_CONSTANT(exp=SHARED_LITERAL(exp=e as SCONST(__))) then 'case <%stringHashDjb2Mod(e.string,extraArg)%> /* <%e.string%> */'
     case PAT_CONSTANT(exp=e as ICONST(__)) then 'case <%e.integer%>'
     else 'default'
 end switchIndex;
