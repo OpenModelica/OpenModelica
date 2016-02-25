@@ -578,10 +578,9 @@ algorithm
     then (Expression.makeConstZero(tp), inFunctionTree);
 
     // differentiate homotopy
-    // lochel: see #3305 - this is commented out since it breaks Modelica.Fluid.Examples.HeatingSystem.
-    //case DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::_) equation
-    //  (e1, functionTree) = differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, inExpStack);
-    //then (e1, functionTree);
+    case DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::_) equation
+      (e1, functionTree) = differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, inExpStack);
+    then (e1, functionTree);
 
     // differentiate call
     case DAE.CALL() equation
