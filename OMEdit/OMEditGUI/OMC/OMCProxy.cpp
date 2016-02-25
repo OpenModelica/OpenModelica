@@ -1626,6 +1626,10 @@ QString OMCProxy::diffModelicaFileListings(QString before, QString after)
   if (mpMainWindow->getOptionsDialog()->getModelicaTextEditorPage()->getPreserveTextIndentationCheckBox()->isChecked()) {
     sendCommand("diffModelicaFileListings(\"" + escapedBefore + "\", \"" + escapedAfter + "\", OpenModelica.Scripting.DiffFormat.plain)");
     result = StringHandler::unparse(getResult());
+    printMessagesStringInternal();
+    if (result.isEmpty()) {
+      result = after; // use omc pretty-printing since diffModelicaFileListings() failed.
+    }
   } else {
     result = after;
   }
