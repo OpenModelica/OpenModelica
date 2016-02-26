@@ -2216,15 +2216,19 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
   QWebFrame *pWebFrame = pWebPage->mainFrame();
   pWebFrame->setContent(QByteArray(documentation.toStdString().c_str()), "text/html");
   QWebElement webElement = pWebFrame->documentElement();
-  QWebElementCollection imgTags = webElement.findAll("img,script");
-  foreach (QWebElement imgTag, imgTags) {
-    QString src = imgTag.attribute("src");
-    if (src.startsWith("modelica://")) {
-      QString imgFileName = uriToFilename(src);
+  QWebElementCollection tags = webElement.findAll("img,script,link");
+  foreach (QWebElement tag, tags) {
+    QString attributeName = "src";
+    if (tag.tagName().toLower().compare("link") == 0) {
+      attributeName = "href";
+    }
+    QString attributeValue = tag.attribute(attributeName);
+    if (attributeValue.startsWith("modelica://")) {
+      QString imgFileName = uriToFilename(attributeValue);
 #ifdef WIN32
-      imgTag.setAttribute("src", "file:///" + imgFileName);
+      tag.setAttribute(attributeName, "file:///" + imgFileName);
 #else
-      imgTag.setAttribute("src", "file://" + imgFileName);
+      imgTag.setAttribute(attributeName, "file://" + imgFileName);
 #endif
     } else {
       //! @todo The img src value starts with modelica:// for MSL 3.2.1. Handle the other cases in this else block.
