@@ -2205,9 +2205,9 @@ algorithm
                 addedBeforeDeleted := true;
                 before := List.flatten(listReverse(acc));
               end if;
+              acc := {};
             end if;
           end for;
-          acc := {};
         then ();
       case (Diff.Delete, lst)
         algorithm

@@ -881,8 +881,16 @@ algorithm
         if true then
           // Do a sanity check
           s3 := Dump.unparseStr(Parser.parsestring(s2));
+          SimCodeFunctionUtil.execStat("sanity parsestring(s2)");
           s5 := printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
-          s4 := Dump.unparseStr(Parser.parsestring(s5));
+          try
+            s4 := Dump.unparseStr(Parser.parsestring(s5));
+            SimCodeFunctionUtil.execStat("sanity parsestring(s5)");
+          else
+            System.writeFile("SanityCheckFail.mo", s5);
+            Error.addInternalError("Failed to parse merged string (see generated file SanityCheckFail.mo)\n", sourceInfo());
+            fail();
+          end try;
           if not StringUtil.equalIgnoreSpace(s3, s4) then
             Error.addInternalError("After merging the strings, the semantics changed for some reason (will simply return s2):\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
             sanityCheckFailed := true;
