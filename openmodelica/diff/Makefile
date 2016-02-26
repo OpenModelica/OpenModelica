@@ -11,6 +11,7 @@ ChangeSourceFile.mos \
 LargeFileChange.mos \
 ListFile.mos \
 removeComponentModifiers.mos \
+Tables.mos \
 TestDiffListAPI.mos \
 Ticket3619.mos \
 ticket3642.mos \

@@ -1,0 +1,6 @@
+// status: correct
+
+readFile("Tables.expected.mo")==diffModelicaFileListings(readFile("Tables.old.mo"),readFile("Tables.new.mo"),OpenModelica.Scripting.DiffFormat.plain);
+// Result:
+// true
+// endResult
