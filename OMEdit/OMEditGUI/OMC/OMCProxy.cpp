@@ -2228,7 +2228,7 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
 #ifdef WIN32
       tag.setAttribute(attributeName, "file:///" + imgFileName);
 #else
-      imgTag.setAttribute(attributeName, "file://" + imgFileName);
+      tag.setAttribute(attributeName, "file://" + imgFileName);
 #endif
     } else {
       //! @todo The img src value starts with modelica:// for MSL 3.2.1. Handle the other cases in this else block.
