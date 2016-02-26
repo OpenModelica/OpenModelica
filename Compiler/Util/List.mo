@@ -116,18 +116,28 @@ public function fill<T>
      Example: fill(2, 3) => {2, 2, 2}"
   input T inElement;
   input Integer inCount;
-  output list<T> outList;
+  output list<T> outList = {};
+protected
+  Integer i = 0;
 algorithm
-  outList := list(inElement for i in 1:inCount);
+  while i < inCount loop
+    outList := inElement :: outList;
+    i := i + 1;
+  end while;
 end fill;
 
 public function intRange
   "Returns a list of n integers from 1 to inStop.
      Example: listIntRange(3) => {1,2,3}"
   input Integer inStop;
-  output list<Integer> outRange;
+  output list<Integer> outRange = {};
+protected
+  Integer i = inStop;
 algorithm
-  outRange := list(i for i in 1:inStop);
+  while i > 0 loop
+    outRange := i :: outRange;
+    i := i - 1;
+  end while;
 end intRange;
 
 public function intRange2
@@ -135,12 +145,21 @@ public function intRange2
      Example listIntRange2(3,5) => {3,4,5}"
   input Integer inStart;
   input Integer inStop;
-  output list<Integer> outRange;
+  output list<Integer> outRange = {};
 protected
-  Integer step;
+  Integer i = inStop;
 algorithm
-  step := if inStart < inStop then 1 else -1;
-  outRange := list(i for i in inStart:step:inStop);
+  if inStart < inStop then
+    while i >= inStart loop
+      outRange := i :: outRange;
+      i := i - 1;
+    end while;
+  else
+    while i <= inStart loop
+      outRange := i :: outRange;
+      i := i + 1;
+    end while;
+  end if;
 end intRange2;
 
 public function intRange3
@@ -182,7 +201,7 @@ algorithm
       T e;
 
     case SOME(e) then {e};
-    case NONE() then {};
+    else {};
   end match;
 end fromOption;
 
@@ -575,8 +594,12 @@ algorithm
       T e;
       list<T> rest;
 
-    case {e} then e;
-    case (_ :: rest) then last(rest);
+    case (e :: rest)
+      algorithm
+        while not listEmpty(rest) loop
+          e::rest := rest;
+        end while;
+      then e;
   end match;
 end last;
 
@@ -584,17 +607,13 @@ public function lastListOrEmpty<T>
   "Returns the last element(list) of a list of lists. Returns empty list
   if the outer list is empty."
   input list<list<T>> inListList;
-  output list<T> outLastList;
+  output list<T> outLastList = {};
+protected
+  list<list<T>> rest = inListList;
 algorithm
-  outLastList := match(inListList)
-    local
-      list<T> elist;
-      list<list<T>> restlist;
-
-    case {} then {};
-    case {elist} then elist;
-    case (_ :: restlist) then lastListOrEmpty(restlist);
-  end match;
+  while not listEmpty(rest) loop
+    outLastList :: rest := rest;
+  end while;
 end lastListOrEmpty;
 
 public function secondLast<T>
@@ -680,7 +699,11 @@ public function stripFirst<T>
   input list<T> inList;
   output list<T> outList;
 algorithm
-  outList := if listEmpty(inList) then {} else listRest(inList);
+  if listEmpty(inList) then
+    outList := {};
+  else
+    _::outList := inList;
+  end if;
 end stripFirst;
 
 public function stripLast<T>

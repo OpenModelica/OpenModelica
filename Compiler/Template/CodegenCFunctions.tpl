@@ -514,10 +514,10 @@ template functionPrototype(String fname, list<Variable> fargs, list<Variable> ou
     else
       (fargs |> var => ", " + funArgDefinition(var) )
   let outarg = (match outVars
-    case {} then "void"
     case var::_ then (match var
-    case VARIABLE(__) then if boxed then varTypeBoxed(var) else varType(var)
-    case FUNCTION_PTR(__) then "modelica_fnptr"))
+      case VARIABLE(__) then if boxed then varTypeBoxed(var) else varType(var)
+      case FUNCTION_PTR(__) then "modelica_fnptr")
+    else "void")
   let boxPtrStr = if boxed then "boxptr" else "omc"
   if outVars then
     let outargs = List.rest(outVars) |> var => ", " + (match var
@@ -990,8 +990,8 @@ case FUNCTION(__) then
     '/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
     <%freeConstructedExternalObjects%>
     <%match outVars
-       case {} then 'return;'
        case v::_ then 'return <%funArgName(v)%>;'
+       else 'return;'
     %>
   }
   <% if inFunc then generateInFunc(fname,functionArguments,outVars) %>
@@ -1014,7 +1014,7 @@ template generateInFunc(Text fname, list<Variable> functionArguments, list<Varia
         case v::_ then '<%funArgName(v)%> = '
       %>omc_<%fname%>(threadData<%functionArguments |> var => (", " + funArgName(var) )%><%List.restOrEmpty(outVars) |> var => (", &" + funArgName(var) )%>);
     MMC_CATCH_TOP(return 1)
-    <% match outVars case {} then "write_noretcall(outVar);" case first::_ then writeOutVar(first) %>
+    <% match outVars case first::_ then writeOutVar(first) else "write_noretcall(outVar);" %>
     <% List.restOrEmpty(outVars) |> var => writeOutVar(var) ;separator="\n"; empty %>
     fflush(NULL);
     return 0;
@@ -1158,8 +1158,8 @@ case PARALLEL_FUNCTION(__) then
     <%outVarAssign%>
 
     <%match outVars
-       case {} then 'return;'
        case v::_ then 'return <%funArgName(v)%>;'
+       else 'return;'
     %>
    }
    >>
@@ -1229,8 +1229,8 @@ case KERNEL_FUNCTION(__) then
 
     // return
     <%match outVars
-       case {} then 'return;'
        case var::_ then 'return <%funArgName(var)%>;'
+       else 'return;'
     %>
   }
 
@@ -1317,8 +1317,8 @@ case efn as EXTERNAL_FUNCTION(__) then
     <%callPart%>
     <%outVarAssign%>
     <%match outVars
-       case {} then 'return;'
        case v::_ then 'return <%funArgName(v)%>;'
+       else 'return;'
     %>
   }
   >>
@@ -4317,13 +4317,13 @@ template daeExpListToCons(list<Exp> listItems, Context context, Text &preExp,
  "Helper to daeExpList."
 ::=
   match listItems
-  case {} then "MMC_REFSTRUCTLIT(mmc_nil)"
   case e :: rest then
     let expPart = daeExp(e, context, &preExp, &varDecls, &auxFunction)
     let restList = daeExpListToCons(rest, context, &preExp, &varDecls, &auxFunction)
     <<
     mmc_mk_cons(<%expPart%>, <%restList%>)
     >>
+  else "MMC_REFSTRUCTLIT(mmc_nil)"
 end daeExpListToCons;
 
 

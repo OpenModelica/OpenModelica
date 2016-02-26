@@ -2792,7 +2792,7 @@ algorithm
         str = r(a);
       then
         str;
-    case (NONE(),_) then "";
+    else "";
   end match;
 end getOptionStr;
 
@@ -2850,8 +2850,8 @@ protected function getHeight "Retrieve the height of a node"
   output Integer height;
 algorithm
   height := match (bt)
-    case(NONE()) then 0;
     case(SOME(FCore.CAVLTREENODE(height = height))) then height;
+    else 0;
   end match;
 end getHeight;
 

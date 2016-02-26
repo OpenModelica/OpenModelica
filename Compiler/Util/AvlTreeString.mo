@@ -203,8 +203,8 @@ input Option<AvlTree> t;
 output AvlTree outT;
 algorithm
   outT := match(t)
-    case(NONE()) then NODE(NONE(),0,NONE(),NONE());
     case(SOME(outT)) then outT;
+    else NODE(NONE(),0,NONE(),NONE());
   end match;
 end createEmptyAvlIfNone;
 
@@ -414,41 +414,27 @@ public function avlTreeGet
   input AvlTree inAvlTree;
   input AvlKey inKey;
   output AvlValue outValue;
+protected
+  AvlKey rkey;
+  Integer sc;
+  AvlTree tree = inAvlTree;
 algorithm
-  outValue := match (inAvlTree,inKey)
-    local
-      AvlKey rkey,key;
-    case (NODE(value = SOME(VALUE(key=rkey))),key)
-      then avlTreeGet2(inAvlTree,avlKeyCompare(key,rkey),key);
-  end match;
+  while true loop
+    NODE(value = SOME(VALUE(key = rkey))) := tree;
+    sc := avlKeyCompare(inKey, rkey);
+    if sc == 0 then
+      // Found match.
+      NODE(value = SOME(VALUE(value = outValue))) := tree;
+      return;
+    elseif sc > 0 then
+      // Search to the right.
+      NODE(right = SOME(tree)) := tree;
+    else
+      // Search to the left.
+      NODE(left = SOME(tree)) := tree;
+    end if;
+  end while;
 end avlTreeGet;
-
-protected function avlTreeGet2
-  "Get a value from the binary tree given a key."
-  input AvlTree inAvlTree;
-  input Integer keyComp "0=get value from current node, 1=search right subtree, -1=search left subtree";
-  input AvlKey inKey;
-  output AvlValue outValue;
-algorithm
-  outValue := match (inAvlTree,keyComp,inKey)
-    local
-      AvlKey key;
-      AvlValue rval;
-      AvlTree left,right;
-
-    // hash func Search to the right
-    case (NODE(value = SOME(VALUE(value=rval))),0,_)
-      then rval;
-
-    // search to the right
-    case (NODE(right = SOME(right)),1,key)
-      then avlTreeGet(right, key);
-
-    // search to the left
-    case (NODE(left = SOME(left)),-1,key)
-      then avlTreeGet(left, key);
-  end match;
-end avlTreeGet2;
 
 protected function getOptionStr "Retrieve the string from a string option.
   If NONE() return empty string."
@@ -471,7 +457,7 @@ algorithm
         str = r(a);
       then
         str;
-    case (NONE(),_) then "";
+    else "";
   end match;
 end getOptionStr;
 
@@ -528,8 +514,8 @@ protected function getHeight "Retrieve the height of a node"
   output Integer height;
 algorithm
   height := match(bt)
-    case(NONE()) then 0;
     case(SOME(NODE(height = height))) then height;
+    else 0;
   end match;
 end getHeight;
 

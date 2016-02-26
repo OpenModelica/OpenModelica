@@ -46,6 +46,7 @@ protected import Util;
 
 public import Tpl;
 protected import TplCodegen;
+protected import MetaModelica.Dangerous.listReverseInPlace;
 
 
 /* Input AST */
@@ -577,7 +578,7 @@ algorithm
       equation
         tp = fullyQualifyTemplatePackage(inTplPackage);
         TEMPL_PACKAGE(name, astDefs, templateDefs, annotationFooter) = tp;
-        mmDeclarations = importDeclarations(astDefs, {});
+        mmDeclarations = importDeclarations(astDefs);
         mmDeclarations
          = transformTemplateDefs(templateDefs, tp, mmDeclarations);
         mmDeclarations = listReverse(mmDeclarations);
@@ -609,26 +610,15 @@ end fullyQualifyTemplatePackage;
 
 public function importDeclarations
   input list<ASTDef> inASTDefs;
-  input list<MMDeclaration> inAccMMDecls;
-
-  output list<MMDeclaration> outMMDecls;
+  output list<MMDeclaration> outMMDecls = {};
+protected
+  PathIdent importPackage;
+  Boolean isDefault;
 algorithm
-  outMMDecls := match (inASTDefs, inAccMMDecls)
-    local
-      list<ASTDef> restASTDefs;
-      PathIdent importPackage;
-      Boolean isDefault;
-      list<MMDeclaration> accMMDecls;
-
-    case ( {} , accMMDecls )
-      then accMMDecls;
-
-    case ( AST_DEF(importPackage = importPackage, isDefault = isDefault) :: restASTDefs, accMMDecls )
-      then
-        importDeclarations(restASTDefs,
-                          (MM_IMPORT(isDefault, importPackage) :: accMMDecls));
-
-  end match;
+  for astDef in inASTDefs loop
+    AST_DEF(importPackage = importPackage, isDefault = isDefault) := astDef;
+    outMMDecls := MM_IMPORT(isDefault, importPackage) :: outMMDecls;
+  end for;
 end importDeclarations;
 
 public function transformTemplateDefs
@@ -934,38 +924,22 @@ public function addOutTextAssigns
   input TypedIdents inTextArgs;
   input list<tuple<Ident,Ident>> inTranslatedTextArgs;
 
-  output list<MMExp> outStmts;
+  output list<MMExp> outStmts = {};
+protected
+  String outident;
+  tuple<Ident, TypeSignature> id;
+  Ident ident;
 algorithm
-  (outStmts) := matchcontinue (inTextArgs, inTranslatedTextArgs)
-    local
-      list<MMExp> stmts;
-      TypedIdents restArgs;
-      Ident ident;
-      String outident;
-      list<tuple<Ident,Ident>> trIdents;
-
-    case (  {} , _)
-      then ( {} );
-
-    case (  (ident, _) :: restArgs , trIdents)
-      equation
-        _ = lookupTupleList(trIdents, ident);
-        stmts = addOutTextAssigns( restArgs, trIdents);
-      then ( stmts );
-
-    case ( (ident, _) :: restArgs , trIdents)
-      equation
-        //failure(_ = lookupTupleList(trIdents, ident));
-        outident = outPrefix + ident;
-        stmts = addOutTextAssigns( restArgs, trIdents);
-      then ( MM_ASSIGN({outident},MM_IDENT(IDENT(ident))) :: stmts );
-
+  for id in inTextArgs loop
+    (ident,_) := id;
+    try
+      _ := lookupTupleList(inTranslatedTextArgs, ident);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!addOutTextAssigns failed\n");
-      then
-        fail();
-  end matchcontinue;
+      outident := outPrefix + ident;
+      outStmts := MM_ASSIGN({outident},MM_IDENT(IDENT(ident))) :: outStmts;
+    end try;
+  end for;
+  outStmts := listReverseInPlace(outStmts);
 end addOutTextAssigns;
 
 
@@ -974,24 +948,17 @@ public function isAssignedIdent
   input Ident inIdent;
 
   output Boolean outIsAssigned;
+protected
+  list<Ident> largs;
 algorithm
-  (outIsAssigned) := match (inStatementList, inIdent)
-    local
-      Ident ident;
-      list<Ident> largs;
-      list<MMExp> rest;
-
-    case ( {}, _ )  then  false;
-
-    case ( MM_ASSIGN(lhsArgs = largs) :: _, ident ) guard listMember(ident, largs)
-      then
-        true;
-
-    case ( _ :: rest, ident )
-      then
-        isAssignedIdent(rest, ident);
-
-  end match;
+  for st in inStatementList loop
+    MM_ASSIGN(lhsArgs = largs) := st;
+    if listMember(inIdent, largs) then
+      outIsAssigned := true;
+      return;
+    end if;
+  end for;
+  outIsAssigned := false;
 end isAssignedIdent;
 
 
