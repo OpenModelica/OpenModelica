@@ -1,7 +1,7 @@
 /* ModelicaMatIO.h - MAT file I/O functions header
 
-   Copyright (C) 2005-2013, Christopher C. Hulbert
-   Copyright (C) 2013-2015, Modelica Association and ITI GmbH
+   Copyright (C) 2005-2016, Christopher C. Hulbert
+   Copyright (C) 2013-2016, Modelica Association and ITI GmbH
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -50,13 +50,13 @@
 #define MATIO_MINOR_VERSION 5
 
 /* Matio release level number */
-#define MATIO_RELEASE_LEVEL 2
+#define MATIO_RELEASE_LEVEL 6
 
 /* Matio version number */
-#define MATIO_VERSION 152
+#define MATIO_VERSION 156
 
 /* Matio version string */
-#define MATIO_VERSION_STR "1.5.2"
+#define MATIO_VERSION_STR "1.5.6"
 
 /* Default file format */
 #define MAT_FT_DEFAULT MAT_FT_MAT5
@@ -75,7 +75,7 @@
 #define HAVE_MATIO_UINT64_T 1
 #endif
 
-/* Define to 1 if you have the <stdint.h> header file. */
+/* Have the <stdint.h> header file */
 #if defined(_WIN32)
 #if defined(_MSC_VER) && _MSC_VER >= 1600
 #define HAVE_MATIO_STDINT_H 1
@@ -135,7 +135,7 @@ typedef uint8_t mat_uint8_t;
 #endif
 
 /** @defgroup MAT Matlab MAT File I/O Library */
-/** @defgroup mat_util MAT File I/O Utitlity Functions */
+/** @defgroup mat_util MAT File I/O Utility Functions */
 /** @if mat_devman @defgroup mat_internal Internal Functions @endif */
 
 /** @brief MAT file access types
@@ -155,10 +155,10 @@ enum mat_acc {
  */
 enum mat_ft {
     MAT_FT_MAT73  = 0x0200,   /**< @brief Matlab version 7.3 file             */
-    MAT_FT_MAT5   = 0x0100,   /**< @brief Matlab level-5 file                 */
-    MAT_FT_MAT4   = 0x0010    /**< @brief Version 4 file                      */
+    MAT_FT_MAT5   = 0x0100,   /**< @brief Matlab version 5 file               */
+    MAT_FT_MAT4   = 0x0010,   /**< @brief Matlab version 4 file               */
+    MAT_FT_UNDEFINED =   0    /**< @brief Undefined version                   */
 };
-
 
 /** @brief Matlab data types
  *
@@ -210,9 +210,9 @@ enum matio_classes {
     MAT_C_UINT16   = 11, /**< @brief Matlab unsigned 16-bit integer class  */
     MAT_C_INT32    = 12, /**< @brief Matlab signed 32-bit integer class    */
     MAT_C_UINT32   = 13, /**< @brief Matlab unsigned 32-bit integer class  */
-    MAT_C_INT64    = 14, /**< @brief Matlab unsigned 32-bit integer class  */
-    MAT_C_UINT64   = 15, /**< @brief Matlab unsigned 32-bit integer class  */
-    MAT_C_FUNCTION = 16 /**< @brief Matlab unsigned 32-bit integer class  */
+    MAT_C_INT64    = 14, /**< @brief Matlab signed 64-bit integer class    */
+    MAT_C_UINT64   = 15, /**< @brief Matlab unsigned 64-bit integer class  */
+    MAT_C_FUNCTION = 16  /**< @brief Matlab function class                 */
 };
 
 /** @brief Matlab array flags
@@ -273,15 +273,15 @@ struct matvar_internal;
  * @ingroup MAT
  */
 typedef struct matvar_t {
-    size_t nbytes;                     /**< Number of bytes for the MAT variable */
-    int    rank;                       /**< Rank (Number of dimensions) of the data */
+    size_t nbytes;                    /**< Number of bytes for the MAT variable */
+    int    rank;                      /**< Rank (Number of dimensions) of the data */
     enum matio_types   data_type;     /**< Data type(MAT_T_*) */
     int   data_size;                  /**< Bytes / element for the data */
     enum matio_classes class_type;    /**< Class type in Matlab(MAT_C_DOUBLE, etc) */
     int   isComplex;                  /**< non-zero if the data is complex, 0 if real */
     int   isGlobal;                   /**< non-zero if the variable is global */
     int   isLogical;                  /**< non-zero if the variable is logical */
-    size_t *dims;                    /**< Array of lengths for each dimension */
+    size_t *dims;                     /**< Array of lengths for each dimension */
     char *name;                       /**< Name of the variable */
     void *data;                       /**< Pointer to the data */
     int   mem_conserve;               /**< 1 if Memory was conserved with data */
@@ -300,7 +300,7 @@ typedef struct mat_sparse_t {
                                *  data[k].  0 <= k <= nzmax
                                */
     int nir;                 /**< number of elements in ir */
-    int *jc;                 /**< Array size N+1 (N is number of columsn) with
+    int *jc;                 /**< Array size N+1 (N is number of columns) with
                                *  jc[k] being the index into ir/data of the
                                *  first non-zero element for row k.
                                */
@@ -382,6 +382,8 @@ EXTERN int        Mat_VarWriteData(mat_t *mat,matvar_t *matvar,void *data,
 
 /* Other functions */
 EXTERN int       Mat_CalcSingleSubscript(int rank,int *dims,int *subs);
+EXTERN int       Mat_CalcSingleSubscript2(int rank,size_t *dims,size_t *subs,size_t *index);
 EXTERN int      *Mat_CalcSubscripts(int rank,int *dims,int index);
+EXTERN size_t   *Mat_CalcSubscripts2(int rank,size_t *dims,size_t index);
 
 #endif /* MODELICAMATIO_H */

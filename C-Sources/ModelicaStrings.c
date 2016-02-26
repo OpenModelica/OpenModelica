@@ -1,6 +1,6 @@
 /* ModelicaStrings.c - External functions for Modelica.Functions.Strings
 
-   Copyright (C) 2002-2015, Modelica Association and DLR
+   Copyright (C) 2002-2016, Modelica Association and DLR
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,10 @@
                       functions shall be visible outside of the DLL
 
    Release Notes:
+      Feb. 26, 2016: by Hans Olsson, DS AB
+                     Build hash code on the unsigned characters in
+                     ModelicaStrings_hashString (ticket #1926)
+
       Oct. 27, 2015: by Thomas Beutlich, ITI GmbH
                      Added nonnull attributes/annotations (ticket #1436)
 
@@ -524,7 +528,7 @@ Modelica_ERROR:
     return;
 }
 
-MODELICA_EXPORT int ModelicaStrings_hashString(const char* str) {
+MODELICA_EXPORT int ModelicaStrings_hashString(const char* inStr) {
     /* Compute an unsigned int hash code from a character string
      *
      * Author: Arash Partow - 2002                                            *
@@ -539,7 +543,9 @@ MODELICA_EXPORT int ModelicaStrings_hashString(const char* str) {
      */
     unsigned int hash = 0xAAAAAAAA;
     unsigned int i    = 0;
-    unsigned int len  = (unsigned int)strlen(str);
+    unsigned int len  = (unsigned int)strlen(inStr);
+    const unsigned char *str = (const unsigned char*)(inStr);
+    /* Use unsigned char to be independent of compiler settings */
 
     union hash_tag {
         unsigned int iu;

@@ -2,15 +2,22 @@ All *.c files in this directory should be compiled by a tool vendor
 to the following object libraries
 
 - ModelicaExternalC (.lib, .dll, .a, .so, depending on tool and OS) containing:
-  ModelicaInternal.c
-  ModelicaStrings.c
-  ModelicaRandom.c
   ModelicaFFT.c
+  ModelicaInternal.c
+  ModelicaRandom.c
+  ModelicaStrings.c
   win32_dirent.c (for Visual C++ on Windows)
+
+- ModelicaIO (.lib, .dll, .a, .so, depending on tool and OS) containing:
+  ModelicaIO.c
+
+- ModelicaMatIO (.lib, .dll, .a, .so, depending on tool and OS) containing:
+  ModelicaMatIO.c
 
 - ModelicaStandardTables (.lib, .dll, .a, .so, depending on tool and OS) containing:
   ModelicaStandardTables.c
-  ModelicaMatIO.c
+
+- zlib (.lib, .dll, .a, .so, depending on tool and OS) containing:
   zlib/*.c
 
 When the library annotation "ModelicaExternalC" or "ModelicaStandardTables"
@@ -26,4 +33,4 @@ Additionally, a tool vendor has to provide library "lapack"
 and this library should be used in the linker when a model is compiled
 that uses this library in its library annotation.
 
-October 06, 2015.
+January 14, 2016.

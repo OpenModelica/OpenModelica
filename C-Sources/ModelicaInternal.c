@@ -1,6 +1,6 @@
-/* ModelicaInternal.c - External functions for Modelica.Utilities.Internal
+/* ModelicaInternal.c - External functions for Modelica.Utilities
 
-   Copyright (C) 2002-2015, Modelica Association and DLR
+   Copyright (C) 2002-2016, Modelica Association and DLR
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -37,8 +37,8 @@
    _MSC_VER       : Microsoft Visual C++
    __GNUC__       : GNU C compiler
    NO_FILE_SYSTEM : A file system is not present (e.g. on dSPACE or xPC).
-   NO_PID         : No getpid is present
-   NO_TIME        : No API to retrieve current time
+   NO_PID         : Function getpid is not present (e.g. on dSPACE)
+   NO_TIME        : Function gettimeofday is not present (e.g. on dSPACE)
    MODELICA_EXPORT: Prefix used for function calls. If not defined, blank is used
                     Useful definitions:
                     - "static" that is all functions become static
@@ -49,7 +49,7 @@
 
    Release Notes:
       Dec. 10, 2015: by Martin Otter, DLR
-                     Added flags NO_PID and NO_TIME ()
+                     Added flags NO_PID and NO_TIME (ticket #1805)
 
       Oct. 27, 2015: by Thomas Beutlich, ITI GmbH
                      Added nonnull attributes/annotations (ticket #1436)
@@ -113,6 +113,17 @@
 #include <string.h>
 #include "ModelicaUtilities.h"
 
+/* The standard way to detect posix is to check _POSIX_VERSION,
+ * which is defined in <unistd.h>
+ */
+#if defined(__unix__) || defined(__linux__) || defined(__APPLE_CC__)
+  #include <unistd.h>
+#endif
+
+#if !defined(_POSIX_) && defined(_POSIX_VERSION)
+  #define _POSIX_ 1
+#endif
+
 static void ModelicaNotExistError(const char* name) {
   /* Print error message if a function is not implemented */
     ModelicaFormatError("C-Function \"%s\" is called\n"
@@ -162,51 +173,29 @@ MODELICA_EXPORT void ModelicaInternal_getenv(const char* name, int convertToSlas
     ModelicaNotExistError("ModelicaInternal_getenv"); }
 MODELICA_EXPORT void ModelicaInternal_setenv(const char* name, const char* value, int convertFromSlash) {
     ModelicaNotExistError("ModelicaInternal_setenv"); }
-MODELICA_EXPORT int ModelicaInternal_getpid(void) {
-    ModelicaNotExistError("ModelicaInternal_getpid"); return 0; }
-MODELICA_EXPORT void ModelicaInternal_getTime(int* ms, int* sec, int* min, int* hour, int* mday, int* mon, int* year) {
-    ModelicaNotExistError("ModelicaInternal_getTime"); }
 #else
 
 #define uthash_fatal(msg) ModelicaFormatMessage("Error: %s\n", msg); break
 #include "uthash.h"
 #include "gconstructor.h"
 
-/* The standard way to detect posix is to check _POSIX_VERSION,
- * which is defined in <unistd.h>
- */
-#if defined(__unix__) || defined(__linux__) || defined(__APPLE_CC__)
-  #include <unistd.h>
-#endif
-
-#if !defined(_POSIX_) && defined(_POSIX_VERSION)
-  #define _POSIX_ 1
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <time.h>
 
 #if defined(__WATCOMC__)
   #include <direct.h>
   #include <sys/types.h>
   #include <sys/stat.h>
-  #include <sys/timeb.h>
-  #include <process.h>
 #elif defined(__BORLANDC__)
   #include <direct.h>
   #include <sys/types.h>
   #include <sys/stat.h>
-  #include <sys/timeb.h>
-  #include <process.h>
   #include <dirent.h>
 #elif defined(_WIN32)
   #include <direct.h>
   #include <sys/types.h>
   #include <sys/stat.h>
-  #include <sys/timeb.h>
-  #include <process.h>
 
   #if defined(__MINGW32__) || defined(__CYGWIN__) /* MinGW and Cygwin have dirent.h */
     #include <dirent.h>
@@ -219,7 +208,6 @@ MODELICA_EXPORT void ModelicaInternal_getTime(int* ms, int* sec, int* min, int* 
   #include <unistd.h>
   #include <sys/types.h>
   #include <sys/stat.h>
-  #include <sys/time.h>
 #endif
 
 /*
@@ -1158,8 +1146,28 @@ MODELICA_EXPORT void ModelicaInternal_setenv(const char* name, const char* value
 #endif
 }
 
+#endif
+
 /* Low-level time and pid functions */
 /* Some parts from: http://nadeausoftware.com/articles/2012/04/c_c_tip_how_measure_elapsed_real_time_benchmarking */
+
+#if !defined(NO_PID)
+  #if defined(__WATCOMC__) || defined(__BORLANDC__) || defined(_WIN32)
+    #include <process.h>
+  #elif defined(NO_FILE_SYSTEM) && (defined(_POSIX_) || defined(__GNUC__))
+    #include <unistd.h>
+    #include <sys/types.h>
+  #endif
+#endif
+
+#if !defined(NO_TIME)
+  #include <time.h>
+  #if defined(__WATCOMC__) || defined(__BORLANDC__) || defined(_WIN32)
+    #include <sys/timeb.h>
+  #elif defined(_POSIX_) || defined(__GNUC__)
+    #include <sys/time.h>
+  #endif
+#endif
 
 MODELICA_EXPORT int ModelicaInternal_getpid(void) {
 #if defined(NO_PID)
@@ -1210,7 +1218,7 @@ MODELICA_EXPORT void ModelicaInternal_getTime(int* ms, int* sec, int* min, int* 
 #else
     {
         struct timeval tv;
-        gettimeofday(&tv,NULL);
+        gettimeofday(&tv, NULL);
         ms0 = tv.tv_usec/1000; /* Convert microseconds to milliseconds */
     }
 #endif
@@ -1225,5 +1233,3 @@ MODELICA_EXPORT void ModelicaInternal_getTime(int* ms, int* sec, int* min, int* 
     *year = tlocal->tm_year;
 #endif
 }
-
-#endif

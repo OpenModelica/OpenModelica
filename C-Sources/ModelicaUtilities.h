@@ -1,6 +1,6 @@
 /* ModelicaUtilities.h - External utility functions header
 
-   Copyright (C) 2010-2015, Modelica Association and DLR
+   Copyright (C) 2010-2016, Modelica Association and DLR
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -52,20 +52,44 @@ extern "C" {
   be present to avoid warnings or errors.
 
   The following macros handle noreturn attributes according to the latest
-  C11/C++11 standard with fallback to GNU or MSVC extensions if using an
-  older compiler.
+  C11/C++11 standard with fallback to GNU, Clang or MSVC extensions if using
+  an older compiler.
 */
 
 #if __STDC_VERSION__ >= 201112L
 #define MODELICA_NORETURN _Noreturn
 #define MODELICA_NORETURNATTR
 #elif __cplusplus >= 201103L
+#if (defined(__GNUC__) && __GNUC__ >= 5) || \
+    (defined(__GNUC__) && defined(__GNUC_MINOR__) && __GNUC__ == 4 && __GNUC_MINOR__ >= 8)
 #define MODELICA_NORETURN [[noreturn]]
 #define MODELICA_NORETURNATTR
-#elif defined(__GNUC__)
+#elif (defined(__GNUC__) && __GNUC__ >= 3) || \
+      (defined(__GNUC__) && defined(__GNUC_MINOR__) && __GNUC__ == 2 && __GNUC_MINOR__ >= 8)
 #define MODELICA_NORETURN
 #define MODELICA_NORETURNATTR __attribute__((noreturn))
-#elif defined(_MSC_VER) || defined(__BORLANDC__)
+#elif defined(__GNUC__)
+#define MODELICA_NORETURN
+#define MODELICA_NORETURNATTR
+#else
+#define MODELICA_NORETURN [[noreturn]]
+#define MODELICA_NORETURNATTR
+#endif
+#elif defined(__clang__)
+#if __has_attribute(noreturn)
+#define MODELICA_NORETURN
+#define MODELICA_NORETURNATTR __attribute__((noreturn))
+#else
+#define MODELICA_NORETURN
+#define MODELICA_NORETURNATTR
+#endif
+#elif (defined(__GNUC__) && __GNUC__ >= 3) || \
+      (defined(__GNUC__) && defined(__GNUC_MINOR__) && __GNUC__ == 2 && __GNUC_MINOR__ >= 8) || \
+      (defined(__SUNPRO_C) && __SUNPRO_C >= 0x5110)
+#define MODELICA_NORETURN
+#define MODELICA_NORETURNATTR __attribute__((noreturn))
+#elif (defined(_MSC_VER) && _MSC_VER >= 1200) || \
+       defined(__BORLANDC__)
 #define MODELICA_NORETURN __declspec(noreturn)
 #define MODELICA_NORETURNATTR
 #else
