@@ -57,7 +57,7 @@ for HDF_FIRST in Yes No; do
       HDF5="Yes"
       if test "$HDF_FIRST" = "Yes" && test "$host" = "$build" && apt-cache show libhdf5-dev > /dev/null 2>&1; then
         HDF5_INSTALL_CMD="apt-get install libhdf5-dev"
-        if gksudo --description "HDF5 is an optional dependency of ModelicaTables used to read Matlab 7.3 files. $HDF5_INSTALL_CMD" $HDF5_INSTALL_CMD; then
+        if gksudo --description "HDF5 is an optional dependency of ModelicaTables used to read MATLAB 7.3 files. $HDF5_INSTALL_CMD" $HDF5_INSTALL_CMD; then
           continue
         else
           HDF5="No";
