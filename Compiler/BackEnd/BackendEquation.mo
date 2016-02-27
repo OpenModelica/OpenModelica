@@ -119,29 +119,15 @@ public function equationList "author: PA
   Transform the expandable BackendDAE.Equation array to a list of Equations."
   input BackendDAE.EquationArray inEquationArray;
   output list<BackendDAE.Equation> outEquationLst;
+protected
+  array<Option<BackendDAE.Equation>> arr;
+  Integer n;
 algorithm
-  outEquationLst := matchcontinue (inEquationArray)
-    local
-      array<Option<BackendDAE.Equation>> arr;
-      BackendDAE.Equation elt;
-      Integer n, size;
-      list<BackendDAE.Equation> lst;
+  BackendDAE.EQUATION_ARRAY(numberOfElement=n, equOptArr=arr) := inEquationArray;
 
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement=0))
-    then {};
-
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement=1, equOptArr=arr)) equation
-      SOME(elt) = arr[1];
-    then {elt};
-
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement=n, equOptArr=arr)) equation
-      lst = equationList2(arr, n);
-    then lst;
-
-    case (_) equation
-      print("- BackendDAEUtil.equationList failed\n");
-    then fail();
-  end matchcontinue;
+  outEquationLst  := if n == 0 then {}
+                     elseif n == 1 and isSome((arr[1])) then {Util.getOption(arr[1])}
+                     else equationList2(arr, n);
 end equationList;
 
 protected function equationList2 "author: PA
@@ -344,20 +330,22 @@ protected function traversingStateRefFinder "author: Frenkel TUD 2011-05"
   output DAE.Exp outExp;
   output tuple<list<DAE.ComponentRef>, BackendDAE.Variables> outTpl;
 algorithm
-  (outExp,outTpl) := matchcontinue (inExp,inTpl)
+  outExp := inExp;
+
+  (outTpl) := match (inExp,inTpl)
     local
       BackendDAE.Variables vars;
       list<DAE.ComponentRef> crefs;
       DAE.ComponentRef cr;
-      DAE.Exp e;
 
-    case (e as DAE.CREF(componentRef=cr), (crefs, vars)) equation
-      true = BackendVariable.isState(cr, vars);
+    case (DAE.CREF(componentRef=cr), (crefs, vars))
+      guard BackendVariable.isState(cr, vars)
+    equation
       crefs = List.unionEltOnTrue(cr, crefs, ComponentReference.crefEqual);
-    then (e, (crefs, vars));
+    then (crefs, vars);
 
-    else (inExp,inTpl);
-  end matchcontinue;
+    else inTpl;
+  end match;
 end traversingStateRefFinder;
 
 public function assertWithCondTrue "author: Frenkel TUD 2012-12"
@@ -387,23 +375,23 @@ protected function traversingParamRefFinder "author: marcusw
   output DAE.Exp outExp;
   output tuple<list<BackendDAE.Var>, list<Integer>, BackendDAE.Variables> outTpl;
 algorithm
-  (outExp,outTpl) := matchcontinue(inExp,inTpl)
+  outExp := inExp;
+  outTpl := match(inExp,inTpl)
     local
       BackendDAE.Variables allVars;
       list<BackendDAE.Var> vars, foundVars;
       list<Integer> varIdc, foundVarsIdc;
       DAE.ComponentRef cr;
-      DAE.Exp e;
 
-    case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), (vars, varIdc, allVars))
-      then (e, (vars, varIdc, allVars));
-    case (e as DAE.CREF(componentRef=cr), (vars, varIdc, allVars)) equation
+    case (DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), _)
+      then inTpl;
+    case ( DAE.CREF(componentRef=cr), (vars, varIdc, allVars)) equation
       //print("traversingParamRefFinder: try to get Variable " + ComponentReference.crefStr(cr) + "\n");
       (foundVars, foundVarsIdc) = BackendVariable.getVar(cr, allVars);
       (vars, varIdc) = traversingParamRefFinder0(foundVars, foundVarsIdc, vars, varIdc);
-      then (e, (vars, varIdc, allVars));
-    else (inExp,inTpl);
-  end matchcontinue;
+      then (vars, varIdc, allVars);
+    else inTpl;
+  end match;
 end traversingParamRefFinder;
 
 protected function traversingParamRefFinder0
@@ -450,24 +438,29 @@ protected function traversingRelationsforIterationVars
   output DAE.Exp outExp;
   output tuple<list<Integer>, BackendDAE.Variables> outTpl;
 algorithm
-  (outExp,outTpl) := matchcontinue (inExp,inTpl)
+  outExp := inExp;
+  outTpl := match (inExp,inTpl)
     local
       BackendDAE.Variables vars;
       list<Integer> indexes;
-      DAE.Exp e, e1, e2;
+      DAE.Exp e1, e2;
       Integer index;
       list<BackendDAE.Var> vlst1,vlst2;
 
-    case (e as DAE.RELATION(exp1=e1, exp2=e2, index=index), (indexes, vars))
+    case (DAE.RELATION(exp1=e1, exp2=e2, index=index), (indexes, vars))
       equation
         vlst1 = expressionVars(e1, vars);
         vlst2 = expressionVars(e2, vars);
         //if lists are not empty continue
-        _::_ = listAppend(vlst1, vlst2);
-    then (e, (index::indexes, vars));
+        if not(listEmpty(vlst1) and listEmpty(vlst2)) then
+          outTpl = (index::indexes, vars);
+        else
+          outTpl = inTpl;
+        end if;
+    then (outTpl);
 
-    else (inExp,inTpl);
-  end matchcontinue;
+    else (inTpl);
+  end match;
 end traversingRelationsforIterationVars;
 
 public function equationsCrefs "author: PA
@@ -1315,15 +1308,15 @@ public function equationEqual "
   input BackendDAE.Equation e2;
   output Boolean res;
 algorithm
-  res := matchcontinue (e1, e2)
+  res := match (e1, e2)
     local
       DAE.Exp e11, e12, e21, e22, exp1, exp2;
       DAE.ComponentRef cr1, cr2;
       DAE.Algorithm alg1, alg2;
       list<DAE.Exp> explst1, explst2;
 
-    case (_, _) equation
-      true = referenceEq(e1, e2);
+    case (_, _)
+      guard referenceEq(e1, e2)
     then true;
 
     case (BackendDAE.EQUATION(exp=e11, scalar=e12), BackendDAE.EQUATION(exp=e21, scalar=e22)) equation
@@ -1357,7 +1350,7 @@ algorithm
     then res;
 
     else false;
-  end matchcontinue;
+  end match;
 end equationEqual;
 
 public function addEquations "author: wbraun
@@ -1404,34 +1397,43 @@ algorithm
   end match;
 end findFirstUnusedEquOptEntryWork;
 
-
 public function addEquation "author: PA
   Adds an equation to an EquationArray."
   input BackendDAE.Equation inEquation;
   input BackendDAE.EquationArray inEquationArray;
   output BackendDAE.EquationArray outEquationArray;
-protected
-  Integer size, numberOfElement, arrSize, expandsize, index, n_1;
-  array<Option<BackendDAE.Equation>> equOptArr, arr_1;
 algorithm
-  BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) := inEquationArray;
-  n_1 := numberOfElement + 1;
+  outEquationArray := matchcontinue (inEquationArray)
+    local
+      Integer n_1, numberOfElement, arrSize, expandsize, expandsize_1, newsize, size, index;
+      array<Option<BackendDAE.Equation>> arr_1, equOptArr, arr_2;
+      Real rsize, rexpandsize;
 
-  if  (numberOfElement < arrSize) then //"Have space to add array elt."
-    index := findFirstUnusedEquOptEntry(n_1, arrSize, equOptArr);
-    arr_1 := arrayUpdate(equOptArr, index, SOME(inEquation));
-  else
-    // Do NOT Have space to add array elt. Expand array 1.4 times
-    expandsize := intMax(realInt(intReal(arrSize) * 0.4), 1);
-    arrSize := expandsize + arrSize;
+    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) equation
+      (numberOfElement < arrSize) = true "Have space to add array elt.";
+      n_1 = numberOfElement + 1;
+      index = findFirstUnusedEquOptEntry(n_1, arrSize, equOptArr);
+      arr_1 = arrayUpdate(equOptArr, index, SOME(inEquation));
+      size = equationSize(inEquation) + size;
+    then BackendDAE.EQUATION_ARRAY(size, n_1, arrSize, arr_1);
 
-    arr_1 := Array.expand(expandsize, equOptArr, NONE());
-    arr_1 := arrayUpdate(arr_1, n_1, SOME(inEquation));
-  end if;
+    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) equation /* Do NOT Have space to add array elt. Expand array 1.4 times */
+      (numberOfElement < arrSize) = false;
+      rsize = intReal(arrSize);
+      rexpandsize = rsize * 0.4;
+      expandsize = realInt(rexpandsize);
+      expandsize_1 = intMax(expandsize, 1);
+      newsize = expandsize_1 + arrSize;
+      arr_1 = Array.expand(expandsize_1, equOptArr, NONE());
+      n_1 = numberOfElement + 1;
+      arr_2 = arrayUpdate(arr_1, n_1, SOME(inEquation));
+      size = equationSize(inEquation) + size;
+    then BackendDAE.EQUATION_ARRAY(size, n_1, newsize, arr_2);
 
-  size := equationSize(inEquation) + size;
-  outEquationArray := BackendDAE.EQUATION_ARRAY(size, n_1, arrSize, arr_1);
-
+    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) equation
+      print("- BackendEquation.addEquation failed\nArraySize: " + intString(arrSize) + "\nnumberOfElement " + intString(numberOfElement) + "\nSize " + intString(size) + "\narraySize " + intString(arrayLength(equOptArr)));
+    then fail();
+  end matchcontinue;
 end addEquation;
 
 public function equationAddDAE "author: Frenkel TUD 2011-05"
@@ -1626,31 +1628,23 @@ public function equationRemove "author: Frenkel TUD 2012-09
   input Integer inPos "one-based indexing";
   input BackendDAE.EquationArray inEquationArray;
   output BackendDAE.EquationArray outEquationArray;
+protected
+  Integer numberOfElement, arrSize, size, eqnsize;
+  array<Option<BackendDAE.Equation>> equOptArr;
 algorithm
-  outEquationArray := matchcontinue (inPos, inEquationArray)
-    local
-      Integer numberOfElement, arrSize, size, size1, eqnsize;
-      array<Option<BackendDAE.Equation>> equOptArr;
-      BackendDAE.Equation eqn;
+  BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) := inEquationArray;
 
-    case (_, BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr)) equation
-      true = intLe(inPos, numberOfElement);
-      SOME(eqn) = equOptArr[inPos];
-      equOptArr = arrayUpdate(equOptArr, inPos, NONE());
-      eqnsize = equationSize(eqn);
-      size1 = size - eqnsize;
-    then BackendDAE.EQUATION_ARRAY(size1, numberOfElement, arrSize, equOptArr);
-
-    //case (_, BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfElement, equOptArr=equOptArr)) equation
-    //  true = intLe(inPos, numberOfElement);
-    //  NONE() = equOptArr[inPos];
-    //then inEquationArray;
-
-    else equation
-      print("BackendDAE.equationRemove failed\n");
-      Error.addInternalError("BackendDAE.equationRemove failed", sourceInfo());
-    then fail();
-  end matchcontinue;
+  if intLe(inPos, numberOfElement) then
+    if isSome(equOptArr[inPos]) then
+      eqnsize := equationSize(Util.getOption(equOptArr[inPos]));
+      equOptArr := arrayUpdate(equOptArr, inPos, NONE());
+      outEquationArray := BackendDAE.EQUATION_ARRAY(size - eqnsize, numberOfElement, arrSize, equOptArr);
+      return ;
+    end if;
+  end if;
+  print("BackendDAE.equationRemove failed\n");
+  Error.addInternalError("BackendDAE.equationRemove failed", sourceInfo());
+  fail();
 end equationRemove;
 
 public function compressEquations "author: Frenkel TUD 2012-11
