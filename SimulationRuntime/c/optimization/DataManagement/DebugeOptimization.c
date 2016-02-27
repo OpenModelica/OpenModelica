@@ -73,7 +73,7 @@ void debugeSteps(OptData * optData, modelica_real*vopt, modelica_real * lambda){
   }
   for(j=0,k=0;j<nsi;++j){
   for(jj=0;jj<np;++jj, k += nJ){
-    fprintf(pFile, "\n", name);
+    fprintf(pFile, "\n");
     tmp = (modelica_real) optData->time.t[j][jj];
     fprintf(pFile, "%lf", tmp);
     for(i = 0; i < nx; ++i){
