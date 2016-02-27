@@ -1404,43 +1404,34 @@ algorithm
   end match;
 end findFirstUnusedEquOptEntryWork;
 
+
 public function addEquation "author: PA
   Adds an equation to an EquationArray."
   input BackendDAE.Equation inEquation;
   input BackendDAE.EquationArray inEquationArray;
   output BackendDAE.EquationArray outEquationArray;
+protected
+  Integer size, numberOfElement, arrSize, expandsize, index, n_1;
+  array<Option<BackendDAE.Equation>> equOptArr, arr_1;
 algorithm
-  outEquationArray := matchcontinue (inEquationArray)
-    local
-      Integer n_1, numberOfElement, arrSize, expandsize, expandsize_1, newsize, size, index;
-      array<Option<BackendDAE.Equation>> arr_1, equOptArr, arr_2;
-      Real rsize, rexpandsize;
+  BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) := inEquationArray;
+  n_1 := numberOfElement + 1;
 
-    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) equation
-      (numberOfElement < arrSize) = true "Have space to add array elt.";
-      n_1 = numberOfElement + 1;
-      index = findFirstUnusedEquOptEntry(n_1, arrSize, equOptArr);
-      arr_1 = arrayUpdate(equOptArr, index, SOME(inEquation));
-      size = equationSize(inEquation) + size;
-    then BackendDAE.EQUATION_ARRAY(size, n_1, arrSize, arr_1);
+  if  (numberOfElement < arrSize) then //"Have space to add array elt."
+    index := findFirstUnusedEquOptEntry(n_1, arrSize, equOptArr);
+    arr_1 := arrayUpdate(equOptArr, index, SOME(inEquation));
+  else
+    // Do NOT Have space to add array elt. Expand array 1.4 times
+    expandsize := intMax(realInt(intReal(arrSize) * 0.4), 1);
+    arrSize := expandsize + arrSize;
 
-    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) equation /* Do NOT Have space to add array elt. Expand array 1.4 times */
-      (numberOfElement < arrSize) = false;
-      rsize = intReal(arrSize);
-      rexpandsize = rsize * 0.4;
-      expandsize = realInt(rexpandsize);
-      expandsize_1 = intMax(expandsize, 1);
-      newsize = expandsize_1 + arrSize;
-      arr_1 = Array.expand(expandsize_1, equOptArr, NONE());
-      n_1 = numberOfElement + 1;
-      arr_2 = arrayUpdate(arr_1, n_1, SOME(inEquation));
-      size = equationSize(inEquation) + size;
-    then BackendDAE.EQUATION_ARRAY(size, n_1, newsize, arr_2);
+    arr_1 := Array.expand(expandsize, equOptArr, NONE());
+    arr_1 := arrayUpdate(arr_1, n_1, SOME(inEquation));
+  end if;
 
-    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) equation
-      print("- BackendEquation.addEquation failed\nArraySize: " + intString(arrSize) + "\nnumberOfElement " + intString(numberOfElement) + "\nSize " + intString(size) + "\narraySize " + intString(arrayLength(equOptArr)));
-    then fail();
-  end matchcontinue;
+  size := equationSize(inEquation) + size;
+  outEquationArray := BackendDAE.EQUATION_ARRAY(size, n_1, arrSize, arr_1);
+
 end addEquation;
 
 public function equationAddDAE "author: Frenkel TUD 2011-05"
