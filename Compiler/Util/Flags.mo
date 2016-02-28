@@ -480,6 +480,9 @@ constant DebugFlag DISABLE_JACSCC = DEBUG_FLAG(155, "disableJacsforSCC", false,
   Util.gettext("Disables calculation of jacobians to detect if a SCC is linear or non-linear. By disabling all SCC will handled like non-linear."));
 constant DebugFlag FORCE_NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(156, "forceNLSanalyticJacobian", false,
   Util.gettext("Forces calculation analytical jacobian also for non-linear strong components with user-defined functions."));
+constant DebugFlag DUMP_LOOPS = DEBUG_FLAG(157, "dumpLoops", false,
+  Util.gettext("Dumps loop equation."));
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -642,7 +645,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_EXCLUDED_EXP,
   DEBUG_ALGLOOP_JACOBIAN,
   DISABLE_JACSCC,
-  FORCE_NLS_ANALYTIC_JACOBIAN
+  FORCE_NLS_ANALYTIC_JACOBIAN,
+  DUMP_LOOPS
 };
 
 public

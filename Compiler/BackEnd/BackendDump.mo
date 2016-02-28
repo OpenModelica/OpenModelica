@@ -1063,13 +1063,15 @@ algorithm
         vlst1 = List.flatten(List.map(eqnsvartpllst,Util.tuple22));
         elst1 = List.map(eqnsvartpllst,Util.tuple21);
         varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
+        print("\ninternal vars\n");
         printVarList(varlst);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        print("\nresidual vars\n");
         printVarList(varlst);
-        print("\n");
+        print("\ninternal equation\n");
         eqnlst = BackendEquation.getEqns(elst1,eqns);
         printEquationList(eqnlst);
-        print("\n");
+        print("\nresidual equations\n");
         eqnlst = BackendEquation.getEqns(elst,eqns);
         printEquationList(eqnlst);
         print("\n");
@@ -1125,6 +1127,33 @@ algorithm
         ();
   end matchcontinue;
 end dumpEqnsSolved2;
+
+public function dumpLoops "author: vitalij"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  BackendDAE.StrongComponents comps;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.Variables vars;
+  Integer isyst = 1;
+algorithm
+    _ := match outDAE.shared
+            case BackendDAE.SHARED(backendDAEType=BackendDAE.SIMULATION()) then print("SIMULATION\n");
+            case BackendDAE.SHARED(backendDAEType=BackendDAE.INITIALSYSTEM()) then print("INITIALSYSTEM\n");
+            else print("UNKNOWN\n");
+            end match;
+
+   for syst in inDAE.eqs loop
+     print("\nsystem " + intString(isyst) + "\n");
+     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps)) := syst;
+     for comp in comps loop
+       if BackendEquation.isEquationsSystem(comp) or BackendEquation.isTornSystem(comp) then
+         dumpEqnsSolved2({comp}, eqns, vars);
+       end if;
+     end for;
+   isyst := isyst + 1;
+   end for;
+end dumpLoops;
 
 public function dumpComponentsAdvanced "author: Frenkel TUD
   Prints the blocks of the BLT sorting on stdout."

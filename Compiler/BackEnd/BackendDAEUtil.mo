@@ -6548,7 +6548,9 @@ algorithm
   if Flags.isSet(Flags.DUMP_EQNINORDER) then
     BackendDump.dumpEqnsSolved(outSimDAE, "indxdae: eqns in order");
   end if;
-
+  if Flags.isSet(Flags.DUMP_LOOPS) then
+    BackendDump.dumpLoops(outSimDAE);
+  end if;
   checkBackendDAEWithErrorMsg(outSimDAE);
 end getSolvedSystem;
 
