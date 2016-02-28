@@ -26,8 +26,7 @@ system("diff -uZ old.mo merged.mo | egrep -v '^(@@|---|[+][+][+])'")
 
 // Result:
 // true
-// "Warning: Requested package Modelica of version 3.2.2, but this package was already loaded with version trunk. You might experience problems if these versions are incompatible.
-// "
+// ""
 // true
 // true
 // ""
