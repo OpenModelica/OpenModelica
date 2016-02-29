@@ -43,6 +43,9 @@
 #include "SimulationOutputWidget.h"
 #include "FetchInterfaceDataDialog.h"
 #include "TLMCoSimulationOutputWidget.h"
+#ifdef WIN32
+#include "version.h"
+#endif
 
 MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent)
   : QMainWindow(parent), mDebug(debug), mExitApplicationStatus(false)
@@ -3293,9 +3296,15 @@ AboutOMEditWidget::AboutOMEditWidget(MainWindow *pMainWindow)
   // OMEdit intro text
   Label *pIntroLabel = new Label(Helper::applicationIntroText);
   pIntroLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() + 3 + MAC_FONT_FACTOR));
+#ifdef WIN32
+  Label *pOMEditVersionLabel = new Label(GIT_SHA);
+#else
+  Label *pOMEditVersionLabel = new Label;
+#endif
+  pOMEditVersionLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() - 3 + MAC_FONT_FACTOR));
   // OpenModelica compiler info
   Label *pConnectedLabel = new Label(QString("Connected to ").append(Helper::OpenModelicaVersion));
-  pConnectedLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() - 2 + MAC_FONT_FACTOR));
+  pConnectedLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() - 3 + MAC_FONT_FACTOR));
   // about text
   QString aboutText = QString("Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />")
       .append("Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.<br /><br />")
@@ -3346,11 +3355,12 @@ AboutOMEditWidget::AboutOMEditWidget(MainWindow *pMainWindow)
   pMainLayout->setContentsMargins(45, 200, 45, 20);
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(pIntroLabel, 1, 0, 1, 1, Qt::AlignHCenter);
-  pMainLayout->addWidget(pConnectedLabel, 2, 0, 1, 1, Qt::AlignHCenter);
-  pMainLayout->addLayout(pAboutLayout, 3, 0, 1, 1);
-  pMainLayout->addWidget(pContributorsHeading, 4, 0, 1, 1);
-  pMainLayout->addWidget(pScrollArea, 5, 0, 1, 1);
-  pMainLayout->addWidget(pCloseButton, 6, 0, 1, 1, Qt::AlignRight);
+  pMainLayout->addWidget(pOMEditVersionLabel, 2, 0, 1, 1, Qt::AlignHCenter);
+  pMainLayout->addWidget(pConnectedLabel, 3, 0, 1, 1, Qt::AlignHCenter);
+  pMainLayout->addLayout(pAboutLayout, 4, 0, 1, 1);
+  pMainLayout->addWidget(pContributorsHeading, 5, 0, 1, 1);
+  pMainLayout->addWidget(pScrollArea, 6, 0, 1, 1);
+  pMainLayout->addWidget(pCloseButton, 7, 0, 1, 1, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 

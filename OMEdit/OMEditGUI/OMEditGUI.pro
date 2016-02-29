@@ -30,7 +30,7 @@
 
 QT += network core gui webkit xml xmlpatterns svg
 greaterThan(QT_MAJOR_VERSION, 4) {
-    QT *= printsupport widgets webkitwidgets
+  QT *= printsupport widgets webkitwidgets
 }
 
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
@@ -65,7 +65,7 @@ win32 {
     QMAKE_CXXFLAGS += -g
     QMAKE_LFLAGS_RELEASE =
     # required for backtrace
-    LIBS += -L$$(OMDEV)/tools/mingw/bin -limagehlp -lbfd -LF:/msys/mingw64/lib/binutils -lintl -liberty
+    LIBS += -L$$(OMDEV)/tools/mingw/bin -limagehlp -lbfd -lintl -liberty
   }
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \
@@ -83,7 +83,7 @@ win32 {
   # options.  For systems using the GNU linker, it is necessary to use
   # the -rdynamic linker option.  Note that names of "static" functions
   # are not exposed, and won't be available in the backtrace.
-  CONFIG(release, debug|release){
+  CONFIG(release, debug|release) {
     QMAKE_LFLAGS_RELEASE += -rdynamic
   }
 }
