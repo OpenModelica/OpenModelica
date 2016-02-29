@@ -726,6 +726,7 @@ algorithm
       list<Absyn.Path> paths;
       list<Absyn.NamedArg> nargs;
       list<Absyn.Class> classes;
+      list<Absyn.ElementArg> eltargs;
       Absyn.Within within_;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -1490,7 +1491,15 @@ algorithm
       then
         (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(p,NONE(),ic,iv,cf,lf));
 
-    case (cache,_,"addClassAnnotation",_,st as GlobalScript.SYMBOLTABLE(),_)
+    case (cache,_,"addClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},GlobalScript.SYMBOLTABLE(p,_,ic,iv,cf,lf),_)
+      algorithm
+        absynClass := Interactive.getPathedClassInProgram(classpath, p);
+        absynClass := Interactive.addClassAnnotationToClass(absynClass, Absyn.ANNOTATION(eltargs));
+        p := Interactive.updateProgram(Absyn.PROGRAM({absynClass}, if Absyn.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(Absyn.stripLast(classpath))), p);
+      then
+        (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(p,NONE(),ic,iv,cf,lf));
+
+    case (cache,_,"addClassAnnotation",{_,v},st as GlobalScript.SYMBOLTABLE(),_)
       then
         (cache,Values.BOOL(false),st);
 

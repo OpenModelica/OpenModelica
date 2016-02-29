@@ -325,6 +325,7 @@ NL: '\r\n' | '\n' | '\r';
 CODE : '$Code';
 CODE_NAME : '$TypeName';
 CODE_EXP : '$Exp';
+CODE_ANNOTATION : '$annotation';
 CODE_VAR : '$Var';
 
 STRING : '"' STRING_GUTS '"'

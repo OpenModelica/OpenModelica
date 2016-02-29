@@ -1805,6 +1805,12 @@ algorithm
       then
         (inExp, ty, ty, SOME(Values.ARRAY({},{0})), fn);
 
+    case (Absyn.IDENT(name = "$array"), _)
+      algorithm
+        ty := List.foldr(dims, Types.liftArray, inType);
+      then
+        (inExp, ty, ty, SOME(Values.ARRAY({},{0})), fn);
+
     case (Absyn.IDENT(name = "list"), _)
       algorithm
         (exp, ty) := Types.matchType(inExp, inType, DAE.T_METABOXED_DEFAULT, true);
@@ -12339,6 +12345,7 @@ algorithm
       DAE.Properties prop;
       DAE.Type ty;
       DAE.CodeType ct2;
+      Absyn.CodeNode cn;
 
     // first; try to elaborate the exp (maybe there is a binding in the environment that says v is a VariableName
     case (_,_)
@@ -12351,8 +12358,15 @@ algorithm
       then
         dexp;
 
+    case (Absyn.CODE(code=Absyn.C_MODIFICATION()),DAE.C_EXPRESSION_OR_MODIFICATION())
+      then DAE.CODE(exp.code,DAE.T_UNKNOWN_DEFAULT);
+    case (Absyn.CODE(code=Absyn.C_EXPRESSION()),DAE.C_EXPRESSION())
+      then DAE.CODE(exp.code,DAE.T_UNKNOWN_DEFAULT);
+
     // Expression
     case (_,DAE.C_EXPRESSION())
+      then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.T_UNKNOWN_DEFAULT);
+    case (_,DAE.C_EXPRESSION_OR_MODIFICATION())
       then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.T_UNKNOWN_DEFAULT);
 
     // Type Name

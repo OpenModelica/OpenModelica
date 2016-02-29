@@ -334,6 +334,7 @@ algorithm
         "OpenModelica" = Absyn.pathLastIdent(path2);
       then Util.assoc(name,{
         ("Expression",    DAE.T_CODE(DAE.C_EXPRESSION(),DAE.emptyTypeSource)),
+        ("ExpressionOrModification",    DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION(),DAE.emptyTypeSource)),
         ("TypeName",      DAE.T_CODE(DAE.C_TYPENAME(),DAE.emptyTypeSource)),
         ("VariableName",  DAE.T_CODE(DAE.C_VARIABLENAME(),DAE.emptyTypeSource)),
         ("VariableNames", DAE.T_CODE(DAE.C_VARIABLENAMES(),DAE.emptyTypeSource))

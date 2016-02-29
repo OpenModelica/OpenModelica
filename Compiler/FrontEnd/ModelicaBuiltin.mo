@@ -828,6 +828,7 @@ type $Code "Code quoting is not a uniontype yet because that would require enabl
 Besides, it has special semantics."
 
 type Expression "An expression of some kind" end Expression;
+type ExpressionOrModification "An expression or modification of some kind" end ExpressionOrModification;
 type TypeName "A path, for example the name of a class, e.g. A.B.C or .A.B" end TypeName;
 type VariableName "A variable name, e.g. a.b or a[1].b[3].c" end VariableName;
 type VariableNames "An array of variable names, e.g. {a.b,a[1].b[3].c}, or a single VariableName" end VariableNames;
@@ -931,6 +932,7 @@ end Internal;
 package Scripting
 
 import OpenModelica.$Code.Expression;
+import OpenModelica.$Code.ExpressionOrModification;
 import OpenModelica.$Code.TypeName;
 import OpenModelica.$Code.VariableName;
 import OpenModelica.$Code.VariableNames;
@@ -2810,7 +2812,7 @@ end closeSimulationResultFile;
 
 function addClassAnnotation
   input TypeName class_;
-  input Expression annotate;
+  input ExpressionOrModification annotate;
   output Boolean bool;
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
@@ -2819,6 +2821,7 @@ and the annotation to set.</p>
 <p>Usage: addClassAnnotation(Modelica, annotate = Documentation(info = \"&lt;html&gt;&lt;/html&gt;\"))</p>
 </html>"));
 end addClassAnnotation;
+
 
 function getParameterNames
   input TypeName class_;

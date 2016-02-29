@@ -98,6 +98,7 @@ protected import Types;
 protected import UnitAbsyn;
 protected import Util;
 protected import ValuesUtil;
+import MetaModelica.Dangerous;
 
 protected uniontype AnnotationType
   record ICON_ANNOTATION end ICON_ANNOTATION;
@@ -9139,7 +9140,7 @@ algorithm
   outProgram := updateProgram(Absyn.PROGRAM({cls}, class_within), inProgram);
 end addClassAnnotation;
 
-protected function addClassAnnotationToClass
+public function addClassAnnotationToClass
   "Adds an annotation to a given class."
   input Absyn.Class inClass;
   input Absyn.Annotation inAnnotation;
@@ -15815,26 +15816,27 @@ protected function annotationListToAbsyn
   for instance {annotation = Placement( ...) } is converted to ANNOTATION(Placement(...))"
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   output Absyn.Annotation outAnnotation;
+protected
+  list<Absyn.ElementArg> args={};
 algorithm
-  outAnnotation := matchcontinue (inAbsynNamedArgLst)
-    local
-      Absyn.ElementArg eltarg;
-      Absyn.Exp e;
-      Absyn.Annotation annres;
-      Absyn.NamedArg a;
-      list<Absyn.NamedArg> al;
-    case ({}) then Absyn.ANNOTATION({});
-    case ((Absyn.NAMEDARG(argName = "annotate",argValue = e) :: _))
-      equation
-        eltarg = recordConstructorToModification(e);
-      then
-        Absyn.ANNOTATION({eltarg});
-    case ((_ :: al))
-      equation
-        annres = annotationListToAbsyn(al);
-      then
-        annres;
-  end matchcontinue;
+  for arg in inAbsynNamedArgLst loop
+    args := match arg
+      local
+        Absyn.ElementArg eltarg;
+        Absyn.Exp e;
+        Absyn.Annotation annres;
+        Absyn.NamedArg a;
+        list<Absyn.NamedArg> al;
+        String name;
+      case Absyn.NAMEDARG(argName = "annotate",argValue = e)
+        equation
+          eltarg = recordConstructorToModification(e);
+        then eltarg::args;
+      case Absyn.NAMEDARG(argName = "comment") then args;
+      else args;
+    end match;
+  end for;
+  outAnnotation := Absyn.ANNOTATION(Dangerous.listReverseInPlace(args));
 end annotationListToAbsyn;
 
 protected function recordConstructorToModification
