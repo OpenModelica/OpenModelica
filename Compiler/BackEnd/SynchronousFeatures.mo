@@ -468,7 +468,9 @@ protected
   BackendDAE.SubClock subClock;
   BackendDAE.StrongComponent comp;
   Integer eqIdx, varIdx, parentIdx;
+  MMath.Rational clockFactor;
 algorithm
+  clockFactor := MMath.RAT1;
   outSubClocks := arrayCreate(BackendVariable.varsSize(inVars), (BackendDAE.DEFAULT_SUBCLOCK, 0));
   for comp in inComps loop
     outClockKind := matchcontinue comp
@@ -482,9 +484,7 @@ algorithm
             case BackendDAE.SOLVED_EQUATION(exp = e) then e;
           end match;
           (clockKind, (subClock, parentIdx)) := getSubClock(exp, inVars, outSubClocks);
-          if parentIdx <> varIdx then
-            arrayUpdate(outSubClocks, varIdx, (subClock, parentIdx));
-          else
+          if parentIdx == varIdx then
             // can't determine clock from var itself;
             // use alternative exp of unsolved equation instead
             exp := match eq
@@ -494,8 +494,13 @@ algorithm
               else exp;
             end match;
             (clockKind, (subClock, parentIdx)) := getSubClock(exp, inVars, outSubClocks);
-            arrayUpdate(outSubClocks, varIdx, (subClock, parentIdx));
           end if;
+          (clockKind, clockFactor) := setClockKind(outClockKind, clockKind, clockFactor);
+          if parentIdx == 0 then
+            // adapt uppermost subClock in the tree
+            subClock.factor := MMath.multRational(subClock.factor, clockFactor);
+          end if;
+          arrayUpdate(outSubClocks, varIdx, (subClock, parentIdx));
           /*
             print("var " + intString(varIdx) + ": " +
                   BackendDump.equationString(eq) + " ->\n    " +
@@ -503,7 +508,7 @@ algorithm
                   BackendDump.subClockString(subClock) +
                   " with parent " + intString(parentIdx) + ".\n");
           */
-        then setClockKind(outClockKind, clockKind);
+        then clockKind;
       else
         algorithm
           print("internal error -- SynchronousFeatures.resolveClocks failure\r\n");
@@ -617,39 +622,48 @@ end getSubClock1;
 protected function setClockKind
   input DAE.ClockKind inOldClockKind;
   input DAE.ClockKind inClockKind;
+  input MMath.Rational inClockFactor;
   output DAE.ClockKind outClockKind;
+  output MMath.Rational outClockFactor;
 algorithm
-  outClockKind := match (inOldClockKind, inClockKind)
+  (outClockKind, outClockFactor) := match (inOldClockKind, inClockKind)
     local
       DAE.Exp e1, e2;
-      Integer i1, i2;
+      Integer i1, i2, ie1, ie2;
       Real r1, r2;
       String s1, s2;
-    case (DAE.INFERRED_CLOCK(), _) then inClockKind;
-    case (_, DAE.INFERRED_CLOCK()) then inOldClockKind;
+    case (DAE.INFERRED_CLOCK(), _) then (inClockKind, inClockFactor);
+    case (_, DAE.INFERRED_CLOCK()) then (inOldClockKind, inClockFactor);
     case (DAE.INTEGER_CLOCK(intervalCounter = e1, resolution = i1),
           DAE.INTEGER_CLOCK(intervalCounter = e2, resolution = i2))
       guard
         Expression.expEqual(e1, e2) and
         (i1 == i2)
-      then inClockKind;
+      then (inClockKind, inClockFactor);
+    case (DAE.INTEGER_CLOCK(intervalCounter = e1, resolution = i1),
+          DAE.INTEGER_CLOCK(intervalCounter = e2, resolution = i2))
+      // stay with old clock and adapt clock factor to new clock
+      algorithm
+        DAE.ICONST(ie1) := e1;
+        DAE.ICONST(ie2) := e2;
+      then (inOldClockKind, MMath.divRational(MMath.multRational(inClockFactor, MMath.RATIONAL(ie2, i2)), MMath.RATIONAL(ie1, i1)));
     case (DAE.REAL_CLOCK(interval = e1),
           DAE.REAL_CLOCK(interval = e2))
       guard
         Expression.expEqual(e1, e2)
-      then inClockKind;
+      then (inClockKind, inClockFactor);
     case (DAE.BOOLEAN_CLOCK(condition = e1, startInterval = r1),
           DAE.BOOLEAN_CLOCK(condition = e2, startInterval = r2))
       guard
         Expression.expEqual(e1, e2) and
         (r1 == r2)
-      then inClockKind;
+      then (inClockKind, inClockFactor);
     case (DAE.SOLVER_CLOCK(c = e1, solverMethod = s1),
           DAE.SOLVER_CLOCK(c = e2, solverMethod = s2))
       guard
         Expression.expEqual(e1, e2) and
         stringEqual(s1, s2)
-      then inClockKind;
+      then (inClockKind, inClockFactor);
     else
       equation Error.addMessage(Error.CLOCK_CONFLICT, {});
       then fail();
