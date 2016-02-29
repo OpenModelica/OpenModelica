@@ -357,8 +357,8 @@ void ModelicaClassDialog::createModelicaClass()
   // show the ModelWidget
   pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true);
   if (pLibraryTreeItem->getModelWidget()) {
-    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->addClassAnnotation();
-    pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->addClassAnnotation();
+    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->addClassAnnotation(false);
+    pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->addClassAnnotation(false);
     pLibraryTreeItem->getModelWidget()->updateModelicaText();
   }
   accept();

@@ -250,7 +250,7 @@ public slots:
   void zoomOut();
   void selectAll();
   void clearSelection();
-  void addClassAnnotation();
+  void addClassAnnotation(bool alwaysAdd = true);
   void showGraphicsViewProperties();
   void manhattanizeItems();
   void deleteItems();

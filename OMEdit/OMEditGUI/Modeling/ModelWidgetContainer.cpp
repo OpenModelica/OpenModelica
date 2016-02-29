@@ -1167,8 +1167,9 @@ void GraphicsView::clearSelection()
  * \brief GraphicsView::addClassAnnotation
  * Adds the annotation string of Icon and Diagram layer to the model. Also creates the model icon in the tree.
  * If some custom models are cross referenced then update them accordingly.
+ * \param alwaysAdd - if false then skip the OMCProxy::addClassAnnotation() if annotation is empty.
  */
-void GraphicsView::addClassAnnotation()
+void GraphicsView::addClassAnnotation(bool alwaysAdd)
 {
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
     return;
@@ -1219,6 +1220,12 @@ void GraphicsView::addClassAnnotation()
     annotationString = QString("annotate=%1(graphics={%2})").arg(viewType).arg(graphicsList.join(","));
   } else {
     annotationString = QString("annotate=%1()").arg(viewType);
+    /* Ticket #3731
+     * Return from here since we don't want empty Icon & Diagram annotations.
+     */
+    if (!alwaysAdd) {
+      return;
+    }
   }
   // add the class annotation to model through OMC
   if (pMainWindow->getOMCProxy()->addClassAnnotation(mpModelWidget->getLibraryTreeItem()->getNameStructure(), annotationString)) {
