@@ -1478,9 +1478,10 @@ protected
   TokenId id;
   Boolean b;
 algorithm
+  tree := {};
   (tokens, tree) := scan(tokens, tree, TokenId.ANNOTATION);
   (tokens, tree) := class_modification(tokens, tree);
-  outTree := makeNodePrependTree(listReverse(tree), inTree);
+  outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "annotation")))::inTree;
 end _annotation;
 
 protected

@@ -2,6 +2,7 @@
 import DiffAlgorithm;
 protected
 import Error;
+import StringUtil;
 public
 %}
 
@@ -205,7 +206,13 @@ algorithm
     case TokenId.BLOCK_COMMENT
       then valueEq(blockCommentCanonical(ta),blockCommentCanonical(tb));
     case TokenId.LINE_COMMENT then tokenContentEq(ta,tb);
-    case TokenId.STRING then tokenContentEq(ta,tb);
+    case TokenId.STRING
+      algorithm
+        b := tokenContentEq(ta,tb);
+        if not b then
+          b := if 0<>StringUtil.findChar(tokenContent(ta), stringCharInt("\n")) then valueEq(blockCommentCanonical(ta),blockCommentCanonical(tb)) else false;
+        end if;
+      then b;
     case TokenId.WHITESPACE then true; // tokenContent(ta)==tokenContent(tb);
     else true;
   end match;
