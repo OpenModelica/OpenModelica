@@ -8,11 +8,8 @@ import CodegenUtil.*;
 * -type to string template functions
 * -string for temp var template functions
 * -exp to string template functions
-*
+* -accessors to SimCode attributes
 */
-
-
-
 
 /*******************************************************************************************************************************************************
 * cref to string template functions
@@ -1742,6 +1739,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
   case CALL(path=IDENT(name="interval")) then
     '_clockInterval[clockIndex - 1]'
 
+  case CALL(path=IDENT(name="$_clkfire"), expLst={arg as ICONST(__)}) then
+    '_time_conditions[<%arg.integer%> - 1 + <%timeEventLength(simCode)%>] = (_simTime > _clockTime[<%arg.integer%> - 1])'
+
   case CALL(path=IDENT(name="$getPart"), expLst={e1}) then
     daeExp(e1, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
@@ -3095,6 +3095,25 @@ end daeExpUnbox;
 /*******************************************************************************************************************************************************
 * end of exp to string template functions
 ********************************************************************************************************************************************************/
+
+template zeroCrossLength(SimCode simCode)
+::=
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
+      let size = listLength(zeroCrossings)
+      <<
+      <%intSub(listLength(zeroCrossings), vi.numTimeEvents)%>
+      >>
+end zeroCrossLength;
+
+template timeEventLength(SimCode simCode)
+::=
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
+      <<
+      <%vi.numTimeEvents%>
+      >>
+end timeEventLength;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenCppCommon;

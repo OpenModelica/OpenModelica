@@ -255,24 +255,5 @@ template jacobianMatrixXML(Integer indexJacobian, list<JacobianColumn> jacobianC
   >>
 end jacobianMatrixXML;
 
-template zeroCrossLength(SimCode simCode)
-::=
-  match simCode
-    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
-      let size = listLength(zeroCrossings)
-      <<
-      <%intSub(listLength(zeroCrossings), vi.numTimeEvents)%>
-      >>
-end zeroCrossLength;
-
-template timeEventLength(SimCode simCode)
-::=
-  match simCode
-    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
-      <<
-      <%vi.numTimeEvents%>
-      >>
-end timeEventLength;
-
 annotation(__OpenModelica_Interface="backend");
 end CodegenCppInit;

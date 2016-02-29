@@ -10,6 +10,7 @@ package CodegenCppHpcom
 import interface SimCodeBackendTV;
 import interface SimCodeTV;
 import CodegenUtil.*;
+import CodegenCppCommon.*;
 import CodegenCppInit.*;
 import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 
