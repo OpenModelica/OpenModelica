@@ -1339,7 +1339,10 @@ algorithm
 
     // Figure out the type of the reduction.
     c := exp_const; // Types.constAnd(exp_const, iter_const);
-    fn := Absyn.crefToPath(inReductionFn);
+    fn := match inReductionFn
+      case Absyn.CREF_IDENT("$array",{}) then Absyn.IDENT("array");
+      else Absyn.crefToPath(inReductionFn);
+    end match;
     (outCache, exp, exp_ty, res_ty, v, fn) := reductionType(outCache, inEnv, fn,
       exp, exp_ty, Types.unboxedType(exp_ty), dims, has_guard_exp, inInfo);
     outProperties := DAE.PROP(exp_ty, c);
@@ -1727,6 +1730,7 @@ algorithm
       Absyn.ComponentRef cr, cr1, cr2;
       FCore.Graph env;
 
+    case Absyn.IDENT("$array") then (inEnv, NONE());
     case Absyn.IDENT("array") then (inEnv, NONE());
     case Absyn.IDENT("list") then (inEnv, NONE());
     case Absyn.IDENT("listReverse") then (inEnv, NONE());

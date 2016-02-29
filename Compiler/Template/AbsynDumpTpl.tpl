@@ -510,7 +510,7 @@ match eq
     let eq_str = dumpEquation(equation_)
     let cmt_str = dumpCommentOpt(comment)
     '<%eq_str%><%cmt_str%>;'
-  case EQUATIONITEMCOMMENT(__) then System.trimWhitespace(comment)
+  case EQUATIONITEMCOMMENT(__) then (System.trimWhitespace(comment) ; absIndent=0)
 end dumpEquationItem;
 
 template dumpEquationItems(list<Absyn.EquationItem> eql)
@@ -591,7 +591,7 @@ match alg
     let alg_str = dumpAlgorithm(algorithm_)
     let cmt_str = dumpCommentOpt(comment)
     '<%alg_str%><%cmt_str%>;'
-  case ALGORITHMITEMCOMMENT(__) then System.trimWhitespace(comment)
+  case ALGORITHMITEMCOMMENT(__) then (System.trimWhitespace(comment) ; absIndent=0)
 end dumpAlgorithmItem;
 
 template dumpAlgorithm(Absyn.Algorithm alg)
@@ -748,7 +748,7 @@ match exp
   case INTEGER(__) then value
   case REAL(__) then value
   case CREF(__) then dumpCref(componentRef)
-  case STRING(__) then '"<%value%>"'
+  case STRING(__) then ('"<%value ; absIndent=0%>"')
   case BOOL(__) then value
   case e as BINARY(__) then
     let lhs_str = dumpOperand(exp1, e, true)
@@ -774,6 +774,9 @@ match exp
     let op_str = dumpOperator(op)
     '<%lhs_str%> <%op_str%> <%rhs_str%>'
   case IFEXP(__) then dumpIfExp(exp)
+  case CALL(function_=Absyn.CREF_IDENT(name="$array")) then
+    let args_str = dumpFunctionArgs(functionArgs)
+    '{<%args_str%>}'
   case CALL(__) then
     let func_str = dumpCref(function_)
     let args_str = dumpFunctionArgs(functionArgs)

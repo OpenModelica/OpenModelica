@@ -119,8 +119,10 @@ goto rule ## func ## Ex; }}
   #define Absyn__NONFIELD NULL
   /* Treat PDE equations as normal equations */
   #define Absyn__EQ_5fPDE(A1,A2,A3) Absyn__EQ_5fEQUALS(A1,A2)
+  #define ARRAY_REDUCTION_NAME "array"
   #else
   #define Absyn__ATTR__BOOTSTRAPPING Absyn__ATTR
+  #define ARRAY_REDUCTION_NAME "\$array"
   #endif
 }
 
@@ -1332,7 +1334,7 @@ primary returns [void* ast]
           "Empty array constructors are not valid in Modelica.", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $ast = Absyn__ARRAY(for_or_el.ast);
       } else {
-        $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("array"), mmc_mk_nil()),for_or_el.ast);
+        $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon(ARRAY_REDUCTION_NAME), mmc_mk_nil()),for_or_el.ast);
       }
     }
   | T_END { $ast = Absyn__END; }

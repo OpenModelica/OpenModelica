@@ -15,9 +15,9 @@ settingsStr :=
   "// " + configure + "\n" +
   "// " + systemInfo
   ;
-setCommandLineOptions("+d=nogen");
+setCommandLineOptions("-d=nogen");
 if not regularFileExists("CustomCommands.mos") then
-  customCommands := "setCommandLineOptions(\"+d=nogen,initialization,backenddaeinfo,discreteinfo,stateselection\");
+  customCommands := "setCommandLineOptions(\"-d=nogen,initialization,backenddaeinfo,discreteinfo,stateselection\");
 setMatchingAlgorithm(\"PFPlusExt\");
 setIndexReductionMethod(\"dynamicStateSelection\");";
   writeFile("CustomCommands.mos",customCommands);
@@ -48,7 +48,7 @@ library:=$TypeName(Modelica);
 libraryVersion:="default";
 end if;
 
-setCommandLineOptions({"+g=Modelica","+d=nogen"});
+setCommandLineOptions({"-g=Modelica","-d=nogen"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 log:="BuildModelRecursive.html";
 default_tolerance:=1e-6;
@@ -417,7 +417,7 @@ system("chmod go+r BuildModelRecursive.tar.gz");
 /* Some useful CustomCommands.mos examples:
 
 // MSL regression testing suite:
-setCommandLineOptions("+d=nogen,initialization,backenddaeinfo,discreteinfo,stateselection");
+setCommandLineOptions("-d=nogen,initialization,backenddaeinfo,discreteinfo,stateselection");
 setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
 
