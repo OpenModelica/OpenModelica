@@ -297,6 +297,7 @@ QString Helper::tlmCoSimulationSetupTip;
 QString Helper::tlmCoSimulation;
 QString Helper::running;
 QString Helper::finished;
+QString Helper::newVariable;
 
 void Helper::initHelperVariables()
 {
@@ -487,6 +488,7 @@ void Helper::initHelperVariables()
   Helper::tlmCoSimulation = tr("TLM Co-Simulation");
   Helper::running = tr("Running");
   Helper::finished = tr("Finished");
+  Helper::newVariable = tr("<New Variable>");
 }
 
 QString GUIMessages::getMessage(int type)

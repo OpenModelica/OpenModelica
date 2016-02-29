@@ -1043,14 +1043,18 @@ void GraphicsView::addConnection(Component *pComponent)
       // check of any of starting or ending components are array
       bool showConnectionArrayDialog = false;
       if ((pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
+          (!pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getLibraryTreeItem() && pStartComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+          (pStartComponent->getParentComponent() && pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
           (pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray()) ||
           (pComponent->getParentComponent() && pComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
+          (!pComponent->getParentComponent() && pComponent->getRootParentComponent()->getLibraryTreeItem() && pComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+          (pComponent->getParentComponent() && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
           (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray())) {
         showConnectionArrayDialog = true;
       }
       if (showConnectionArrayDialog) {
-        ConnectionArray *pConnectionArray = new ConnectionArray(this, mpConnectionLineAnnotation,
-                                                                mpModelWidget->getModelWidgetContainer()->getMainWindow());
+        CreateConnectionDialog *pConnectionArray = new CreateConnectionDialog(this, mpConnectionLineAnnotation,
+                                                                              mpModelWidget->getModelWidgetContainer()->getMainWindow());
         // if user cancels the array connection
         if (!pConnectionArray->exec()) {
           removeCurrentConnection();
@@ -3355,7 +3359,7 @@ void ModelWidget::getModelConnections()
     // get start and end components
     QStringList startComponentList = connectionList.at(0).split(".");
     QStringList endComponentList = connectionList.at(1).split(".");
-    QString errorMessage = tr("Unable to find component %1 while parsing connection %2.").arg(connectionList.at(0)).arg(connectionString);
+    QString errorMessage = tr("Unable to find component %1 while parsing connection %2.");
     // get start component
     Component *pStartComponent = 0;
     if (startComponentList.size() > 0) {
@@ -3387,7 +3391,8 @@ void ModelWidget::getModelConnections()
     }
     // show error message if start component is not found.
     if (!pStartConnectorComponent) {
-      pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
+      pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                                  errorMessage.arg(connectionList.at(0)).arg(connectionString),
                                                                   Helper::scriptingKind, Helper::errorLevel));
       continue;
     }
@@ -3398,7 +3403,7 @@ void ModelWidget::getModelConnections()
       if (endComponentName.contains("[")) {
         endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
       }
-      pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentList.at(0));
+      pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentName);
     }
     // get the end connector
     if (pEndComponent) {
@@ -3419,7 +3424,8 @@ void ModelWidget::getModelConnections()
     }
     // show error message if end component is not found.
     if (!pEndConnectorComponent) {
-      pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
+      pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                                  errorMessage.arg(connectionList.at(1)).arg(connectionString),
                                                                   Helper::scriptingKind, Helper::errorLevel));
       continue;
     }

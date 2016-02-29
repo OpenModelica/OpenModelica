@@ -745,7 +745,391 @@ void LineAnnotation::duplicate()
   pLineAnnotation->setSelected(true);
 }
 
-ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)
+/*!
+ * \class ExpandableConnectorTreeItem
+ * \brief Contains the information about the expandable connector item.
+ */
+/*!
+ * \brief ExpandableConnectorTreeItem::ExpandableConnectorTreeItem
+ * Used for creating the root item.
+ */
+ExpandableConnectorTreeItem::ExpandableConnectorTreeItem()
+{
+  mIsRootItem = true;
+  mpParentExpandableConnectorTreeItem = 0;
+  setName("");
+  setArray(false);
+  setArrayIndex("");
+  setRestriction(StringHandler::Model);
+  setNewVariable(false);
+}
+
+/*!
+ * \brief ExpandableConnectorTreeItem::ExpandableConnectorTreeItem
+ * Used for creatind the expandable item.
+ * \param name
+ * \param array
+ * \param arrayIndex
+ * \param restriction
+ * \param newVariable
+ * \param pParentExpandableConnectorTreeItem
+ */
+ExpandableConnectorTreeItem::ExpandableConnectorTreeItem(QString name, bool array, QString arrayIndex,
+                                                         StringHandler::ModelicaClasses restriction, bool newVariable,
+                                                         ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
+{
+  mIsRootItem = false;
+  mpParentExpandableConnectorTreeItem = pParentExpandableConnectorTreeItem;
+  setName(name);
+  setArray(array);
+  setArrayIndex(arrayIndex);
+  setRestriction(restriction);
+  setNewVariable(newVariable);
+}
+
+/*!
+ * \brief ExpandableConnectorTreeItem::~ExpandableConnectorTreeItem
+ * Destructor for ExpandableConnectorTreeItem
+ */
+ExpandableConnectorTreeItem::~ExpandableConnectorTreeItem()
+{
+  qDeleteAll(mChildren);
+  mChildren.clear();
+}
+
+/*!
+ * \brief ExpandableConnectorTreeItem::data
+ * Returns the data stored under the given role for the item referred to by the column.
+ * \param column
+ * \param role
+ * \return
+ */
+QVariant ExpandableConnectorTreeItem::data(int column, int role) const
+{
+  switch (column) {
+    case 0:
+      switch (role) {
+        case Qt::DisplayRole:
+          return mName;
+        case Qt::DecorationRole:
+          switch (mRestriction) {
+            case StringHandler::ExpandableConnector:
+              return QIcon(":/Resources/icons/connect-mode.svg");
+              break;
+            case StringHandler::Connector:
+              return QIcon(":/Resources/icons/connector-icon.svg");
+              break;
+            default:
+              return QVariant();
+              break;
+          }
+        default:
+          return QVariant();
+      }
+    default:
+      return QVariant();
+  }
+}
+
+/*!
+ * \brief ExpandableConnectorTreeItem::row
+ * Returns the row number corresponding to ExpandableConnectorTreeItem.
+ * \return
+ */
+int ExpandableConnectorTreeItem::row() const
+{
+  if (mpParentExpandableConnectorTreeItem) {
+    return mpParentExpandableConnectorTreeItem->mChildren.indexOf(const_cast<ExpandableConnectorTreeItem*>(this));
+  }
+
+  return 0;
+}
+
+/*!
+ * \class ExpandableConnectorTreeProxyModel
+ * \brief A sort filter proxy model for Expandable connectors treeview.
+ */
+/*!
+ * \brief ExpandableConnectorTreeProxyModel::ExpandableConnectorTreeProxyModel
+ * \param pCreateConnectionDialog
+ */
+ExpandableConnectorTreeProxyModel::ExpandableConnectorTreeProxyModel(CreateConnectionDialog *pCreateConnectionDialog)
+  : QSortFilterProxyModel(pCreateConnectionDialog)
+{
+  mpCreateConnectionDialog = pCreateConnectionDialog;
+}
+
+/*!
+ * \class ExpandableConnectorTreeModel
+ * \brief A model for Expandable connectors treeview.
+ */
+/*!
+ * \brief ExpandableConnectorTreeModel::ExpandableConnectorTreeModel
+ * \param pCreateConnectionDialog
+ */
+ExpandableConnectorTreeModel::ExpandableConnectorTreeModel(CreateConnectionDialog *pCreateConnectionDialog)
+  : QAbstractItemModel(pCreateConnectionDialog)
+{
+  mpCreateConnectionDialog = pCreateConnectionDialog;
+  mpRootExpandableConnectorTreeItem = new ExpandableConnectorTreeItem;
+}
+
+/*!
+ * \brief ExpandableConnectorTreeModel::columnCount
+ * Returns the number of columns for the children of the given parent.
+ * \param parent
+ * \return
+ */
+int ExpandableConnectorTreeModel::columnCount(const QModelIndex &parent) const
+{
+  Q_UNUSED(parent);
+  return 1;
+}
+
+/*!
+ * \brief ExpandableConnectorTreeModel::rowCount
+ * Returns the number of rows under the given parent.
+ * When the parent is valid it means that rowCount is returning the number of children of parent.
+ * \param parent
+ * \return
+ */
+int ExpandableConnectorTreeModel::rowCount(const QModelIndex &parent) const
+{
+  ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem;
+  if (parent.column() > 0) {
+    return 0;
+  }
+
+  if (!parent.isValid()) {
+    pParentExpandableConnectorTreeItem = mpRootExpandableConnectorTreeItem;
+  } else {
+    pParentExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(parent.internalPointer());
+  }
+  return pParentExpandableConnectorTreeItem->getChildren().size();
+}
+
+/*!
+ * \brief ExpandableConnectorTreeModel::headerData
+ * Returns the data for the given role and section in the header with the specified orientation.
+ * \param section
+ * \param orientation
+ * \param role
+ * \return
+ */
+QVariant ExpandableConnectorTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+  Q_UNUSED(section);
+  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+    return tr("Connector");
+  }
+  return QVariant();
+}
+
+/*!
+ * \brief ExpandableConnectorTreeModel::index
+ * Returns the index of the item in the model specified by the given row, column and parent index.
+ * \param row
+ * \param column
+ * \param parent
+ * \return
+ */
+QModelIndex ExpandableConnectorTreeModel::index(int row, int column, const QModelIndex &parent) const
+{
+  if (!hasIndex(row, column, parent)) {
+    return QModelIndex();
+  }
+
+  ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem;
+  if (!parent.isValid()) {
+    pParentExpandableConnectorTreeItem = mpRootExpandableConnectorTreeItem;
+  } else {
+    pParentExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(parent.internalPointer());
+  }
+
+  ExpandableConnectorTreeItem *pChildExpandableConnectorTreeItem = pParentExpandableConnectorTreeItem->child(row);
+  if (pChildExpandableConnectorTreeItem) {
+    return createIndex(row, column, pChildExpandableConnectorTreeItem);
+  } else {
+    return QModelIndex();
+  }
+}
+
+/*!
+ * \brief ExpandableConnectorTreeModel::parent
+ * Finds the parent for QModelIndex
+ * \param index
+ * \return
+ */
+QModelIndex ExpandableConnectorTreeModel::parent(const QModelIndex &index) const
+{
+  if (!index.isValid()) {
+    return QModelIndex();
+  }
+
+  ExpandableConnectorTreeItem *pChildExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(index.internalPointer());
+  ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem = pChildExpandableConnectorTreeItem->parent();
+  if (pParentExpandableConnectorTreeItem == mpRootExpandableConnectorTreeItem)
+    return QModelIndex();
+
+  return createIndex(pParentExpandableConnectorTreeItem->row(), 0, pParentExpandableConnectorTreeItem);
+}
+
+/*!
+ * \brief ExpandableConnectorTreeModel::data
+ * Returns the LibraryTreeItem data.
+ * \param index
+ * \param role
+ * \return
+ */
+QVariant ExpandableConnectorTreeModel::data(const QModelIndex &index, int role) const
+{
+  if (!index.isValid()) {
+    return QVariant();
+  }
+
+
+  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(index.internalPointer());
+  return pExpandableConnectorTreeItem->data(index.column(), role);
+}
+
+/*!
+ * \brief ExpandableConnectorTreeModel::flags
+ * Returns the LibraryTreeItem flags.
+ * \param index
+ * \return
+ */
+Qt::ItemFlags ExpandableConnectorTreeModel::flags(const QModelIndex &index) const
+{
+  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(index.internalPointer());
+  if (pExpandableConnectorTreeItem &&
+      ((pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector) ||
+      (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent()->getRestriction() == StringHandler::ExpandableConnector))) {
+    return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  } else {
+    return 0;
+  }
+}
+
+/*!
+ * \brief ExpandableConnectorTreeModel::findFirstEnabledItem
+ * \param pExpandableConnectorTreeItem
+ * Finds the first enabled item and returns its index.
+ * \return
+ */
+QModelIndex ExpandableConnectorTreeModel::findFirstEnabledItem(ExpandableConnectorTreeItem *pExpandableConnectorTreeItem)
+{
+  for (int i = 0 ; i < pExpandableConnectorTreeItem->getChildren().size(); i++) {
+    QModelIndex index = expandableConnectorTreeItemIndex(pExpandableConnectorTreeItem->child(i));
+    if (index.isValid() && index.flags() & Qt::ItemIsEnabled) {
+      return index;
+    }
+    index = findFirstEnabledItem(pExpandableConnectorTreeItem->child(i));
+    if (index.isValid() && index.flags() & Qt::ItemIsEnabled) {
+      return index;
+    }
+  }
+  return QModelIndex();
+}
+
+/*!
+ * \brief ExpandableConnectorTreeModel::expandableConnectorTreeItemIndex
+ * Finds the QModelIndex attached to ExpandableConnectorTreeItem.
+ * \param pExpandableConnectorTreeItem
+ * \return
+ */
+QModelIndex ExpandableConnectorTreeModel::expandableConnectorTreeItemIndex(const ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) const
+{
+  return expandableConnectorTreeItemIndexHelper(pExpandableConnectorTreeItem, mpRootExpandableConnectorTreeItem, QModelIndex());
+}
+
+void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(Component *pComponent,
+                                                                     ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
+{
+  StringHandler::ModelicaClasses restriction = StringHandler::Model;
+  if (pComponent->getLibraryTreeItem()) {
+    restriction = pComponent->getLibraryTreeItem()->getRestriction();
+  }
+  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pComponent->getName(),
+                                                                                              pComponent->getComponentInfo()->isArray(),
+                                                                                              pComponent->getComponentInfo()->getArrayIndex(),
+                                                                                              restriction, false,
+                                                                                              pParentExpandableConnectorTreeItem);
+  int row = pParentExpandableConnectorTreeItem->getChildren().size();
+  QModelIndex index = expandableConnectorTreeItemIndex(pParentExpandableConnectorTreeItem);
+  beginInsertRows(index, row, row);
+  pParentExpandableConnectorTreeItem->insertChild(row, pExpandableConnectorTreeItem);
+  endInsertRows();
+  if (pComponent->getLibraryTreeItem()) {
+    foreach (Component *pChildComponent, pComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+      createExpandableConnectorTreeItem(pChildComponent, pExpandableConnectorTreeItem);
+    }
+  }
+  // create add variable item only if item is expandable connector
+  if (pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector) {
+    ExpandableConnectorTreeItem *pNewVariableExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(Helper::newVariable, false, "",
+                                                                                                           StringHandler::Model, true,
+                                                                                                           pExpandableConnectorTreeItem);
+    int row = pExpandableConnectorTreeItem->getChildren().size();
+    QModelIndex index = expandableConnectorTreeItemIndex(pExpandableConnectorTreeItem);
+    beginInsertRows(index, row, row);
+    pExpandableConnectorTreeItem->insertChild(row, pNewVariableExpandableConnectorTreeItem);
+    endInsertRows();
+  }
+}
+
+/*!
+ * \brief ExpandableConnectorTreeModel::expandableConnectorTreeItemIndexHelper
+ * Helper function for ExpandableConnectorTreeModel::expandableConnectorTreeItemIndex()
+ * \param pExpandableConnectorTreeItem
+ * \param pParentExpandableConnectorTreeItem
+ * \param parentIndex
+ * \return
+ */
+QModelIndex ExpandableConnectorTreeModel::expandableConnectorTreeItemIndexHelper(const ExpandableConnectorTreeItem *pExpandableConnectorTreeItem,
+                                                                                 const ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem,
+                                                                                 const QModelIndex &parentIndex) const
+{
+  if (pExpandableConnectorTreeItem == pParentExpandableConnectorTreeItem) {
+    return parentIndex;
+  }
+  for (int i = pParentExpandableConnectorTreeItem->getChildren().size(); --i >= 0; ) {
+    const ExpandableConnectorTreeItem *childItem = pParentExpandableConnectorTreeItem->getChildren().at(i);
+    QModelIndex childIndex = index(i, 0, parentIndex);
+    QModelIndex index = expandableConnectorTreeItemIndexHelper(pExpandableConnectorTreeItem, childItem, childIndex);
+    if (index.isValid()) {
+      return index;
+    }
+  }
+  return QModelIndex();
+}
+
+/*!
+ * \class ExpandableConnectorTreeView
+ * \brief A tree view for Expandable connectors.
+ */
+/*!
+ * \brief ExpandableConnectorTreeView::ExpandableConnectorTreeView
+ * \param pCreateConnectionDialog
+ */
+ExpandableConnectorTreeView::ExpandableConnectorTreeView(CreateConnectionDialog *pCreateConnectionDialog)
+  : QTreeView(pCreateConnectionDialog), mpCreateConnectionDialog(pCreateConnectionDialog)
+{
+  setItemDelegate(new ItemDelegate(this));
+  setTextElideMode(Qt::ElideMiddle);
+  setIndentation(Helper::treeIndentation);
+}
+
+/*!
+ * \class CreateConnectionDialog
+ * \brief A dialog interface for making expandable & array connections.
+ */
+/*!
+ * \brief CreateConnectionDialog::CreateConnectionDialog
+ * \param pGraphicsView
+ * \param pConnectionLineAnnotation
+ * \param pParent
+ */
+CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)
   : QDialog(pParent, Qt::WindowTitleHint), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::createConnection));
@@ -758,27 +1142,83 @@ ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pC
   mpHorizontalLine = new QFrame();
   mpHorizontalLine->setFrameShape(QFrame::HLine);
   mpHorizontalLine->setFrameShadow(QFrame::Sunken);
-  // Description text
-  mpDescriptionLabel = new Label(tr("Connect to only parts of the connectors, by giving indicies below."));
-  if (mpConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
-    mpStartRootComponentLabel = new Label(mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getName());
-    if (mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
-      mpStartRootComponentSpinBox = createSpinBox(mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getComponentInfo()->getArrayIndex());
+  // Start expandable connector treeview
+  mpStartExpandableConnectorTreeView = 0;
+  if ((!mpConnectionLineAnnotation->getStartComponent()->getParentComponent() && mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+      (mpConnectionLineAnnotation->getStartComponent()->getParentComponent() && mpConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
+    mpStartExpandableConnectorTreeModel = new ExpandableConnectorTreeModel(this);
+    mpStartExpandableConnectorTreeProxyModel = new ExpandableConnectorTreeProxyModel(this);
+    mpStartExpandableConnectorTreeProxyModel->setDynamicSortFilter(true);
+    mpStartExpandableConnectorTreeProxyModel->setSourceModel(mpStartExpandableConnectorTreeModel);
+    mpStartExpandableConnectorTreeView = new ExpandableConnectorTreeView(this);
+    mpStartExpandableConnectorTreeView->setModel(mpStartExpandableConnectorTreeProxyModel);
+    if (mpConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
+      mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpConnectionLineAnnotation->getStartComponent()->getParentComponent(),
+                                                                             mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
+    } else {
+      mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpConnectionLineAnnotation->getStartComponent(),
+                                                                             mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
+    }
+    mpStartExpandableConnectorTreeView->expandAll();
+    mpStartExpandableConnectorTreeView->setSortingEnabled(true);
+    mpStartExpandableConnectorTreeView->sortByColumn(0, Qt::AscendingOrder);
+    connect(mpStartExpandableConnectorTreeView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
+            SLOT(startConnectorChanged(QModelIndex,QModelIndex)));
+  }
+  // End expandable connector treeview
+  mpEndExpandableConnectorTreeView = 0;
+  if ((!mpConnectionLineAnnotation->getEndComponent()->getParentComponent() && mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+      (mpConnectionLineAnnotation->getEndComponent()->getParentComponent() && mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
+    mpEndExpandableConnectorTreeModel = new ExpandableConnectorTreeModel(this);
+    mpEndExpandableConnectorTreeProxyModel = new ExpandableConnectorTreeProxyModel(this);
+    mpEndExpandableConnectorTreeProxyModel->setDynamicSortFilter(true);
+    mpEndExpandableConnectorTreeProxyModel->setSourceModel(mpEndExpandableConnectorTreeModel);
+    mpEndExpandableConnectorTreeView = new ExpandableConnectorTreeView(this);
+    mpEndExpandableConnectorTreeView->setModel(mpEndExpandableConnectorTreeProxyModel);
+    if (mpConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
+      mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpConnectionLineAnnotation->getEndComponent()->getParentComponent(),
+                                                                           mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
+    } else {
+      mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpConnectionLineAnnotation->getEndComponent(),
+                                                                           mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
+    }
+    mpEndExpandableConnectorTreeView->expandAll();
+    mpEndExpandableConnectorTreeView->setSortingEnabled(true);
+    mpEndExpandableConnectorTreeView->sortByColumn(0, Qt::AscendingOrder);
+    connect(mpEndExpandableConnectorTreeView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
+            SLOT(endConnectorChanged(QModelIndex,QModelIndex)));
+  }
+  // Indexes Description text
+  mpIndexesDescriptionLabel = new Label(tr("Specify the indexes below to connect to the parts of the connectors."));
+  mpStartRootComponentSpinBox = 0;
+  mpStartComponentSpinBox = 0;
+  mpEndRootComponentSpinBox = 0;
+  mpEndComponentSpinBox = 0;
+  // only create normal start connector controls if start connector is not expandable
+  if (!mpStartExpandableConnectorTreeView) {
+    if (mpConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
+      mpStartRootComponentLabel = new Label(mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getName());
+      if (mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
+        mpStartRootComponentSpinBox = createSpinBox(mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getComponentInfo()->getArrayIndex());
+      }
+    }
+    mpStartComponentLabel = new Label(mpConnectionLineAnnotation->getStartComponent()->getName());
+    if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray()) {
+      mpStartComponentSpinBox = createSpinBox(mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->getArrayIndex());
     }
   }
-  mpStartComponentLabel = new Label(mpConnectionLineAnnotation->getStartComponent()->getName());
-  if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray()) {
-    mpStartComponentSpinBox = createSpinBox(mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->getArrayIndex());
-  }
-  if (mpConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
-    mpEndRootComponentLabel = new Label(mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getName());
-    if (mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
-      mpEndRootComponentSpinBox = createSpinBox(mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getComponentInfo()->getArrayIndex());
+  // only create normal end connector controls if end connector is not expandable
+  if (!mpEndExpandableConnectorTreeView) {
+    if (mpConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
+      mpEndRootComponentLabel = new Label(mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getName());
+      if (mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
+        mpEndRootComponentSpinBox = createSpinBox(mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getComponentInfo()->getArrayIndex());
+      }
     }
-  }
-  mpEndComponentLabel = new Label(mpConnectionLineAnnotation->getEndComponent()->getName());
-  if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray()) {
-    mpEndComponentSpinBox = createSpinBox(mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->getArrayIndex());
+    mpEndComponentLabel = new Label(mpConnectionLineAnnotation->getEndComponent()->getName());
+    if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray()) {
+      mpEndComponentSpinBox = createSpinBox(mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->getArrayIndex());
+    }
   }
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
@@ -786,53 +1226,84 @@ ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pC
   connect(mpOkButton, SIGNAL(clicked()), SLOT(createArrayConnection()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelArrayConnection()));
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
   // add buttons
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Create a layout
-  QGridLayout *pMainLayout = new QGridLayout;
-  pMainLayout->setAlignment(Qt::AlignTop);
-  pMainLayout->addWidget(mpHeading, 0, 0, 1, 2);
-  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
-  pMainLayout->addWidget(mpDescriptionLabel, 2, 0, 1, 2);
-  pMainLayout->addWidget(new Label("connect("), 3, 0);
+  mpMainLayout = new QGridLayout;
+  mpMainLayout->setAlignment(Qt::AlignTop);
+  mpMainLayout->addWidget(mpHeading, 0, 0, 1, 2);
+  mpMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
+  int row = 2;
+  if (mpStartExpandableConnectorTreeView && mpEndExpandableConnectorTreeView) {
+    QHBoxLayout *pExpandableTreeHorizontalLayout = new QHBoxLayout;
+    pExpandableTreeHorizontalLayout->addWidget(mpStartExpandableConnectorTreeView);
+    pExpandableTreeHorizontalLayout->addWidget(mpEndExpandableConnectorTreeView);
+    mpMainLayout->addLayout(pExpandableTreeHorizontalLayout, row, 0, 1, 2);
+    row++;
+  } else if (mpStartExpandableConnectorTreeView) {
+    mpMainLayout->addWidget(mpStartExpandableConnectorTreeView, row, 0, 1, 2);
+    row++;
+  } else if (mpEndExpandableConnectorTreeView) {
+    mpMainLayout->addWidget(mpEndExpandableConnectorTreeView, row, 0, 1, 2);
+    row++;
+  }
+  if (mpStartRootComponentSpinBox || mpStartComponentSpinBox || mpEndRootComponentSpinBox || mpEndComponentSpinBox) {
+    mpMainLayout->addWidget(mpIndexesDescriptionLabel, row, 0, 1, 2);
+    row++;
+  }
+  mpMainLayout->addWidget(new Label("connect("), row, 0);
   // connection start horizontal layout
-  QHBoxLayout *pConnectionStartHorizontalLayout = new QHBoxLayout;
-  pConnectionStartHorizontalLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  if (mpConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
-    pConnectionStartHorizontalLayout->addWidget(mpStartRootComponentLabel);
-    if (mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
-      pConnectionStartHorizontalLayout->addWidget(mpStartRootComponentSpinBox);
+  mpConnectionStartHorizontalLayout = new QHBoxLayout;
+  mpConnectionStartHorizontalLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  if (mpStartExpandableConnectorTreeView) {
+    QModelIndex modelIndex = mpStartExpandableConnectorTreeModel->findFirstEnabledItem(mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
+    QModelIndex proxyIndex = mpStartExpandableConnectorTreeProxyModel->mapFromSource(modelIndex);
+    startConnectorChanged(proxyIndex, QModelIndex());
+  } else {
+    if (mpConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
+      mpConnectionStartHorizontalLayout->addWidget(mpStartRootComponentLabel);
+      if (mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
+        mpConnectionStartHorizontalLayout->addWidget(mpStartRootComponentSpinBox);
+      }
+      mpConnectionStartHorizontalLayout->addWidget(new Label("."));
     }
-    pConnectionStartHorizontalLayout->addWidget(new Label("."));
+    mpConnectionStartHorizontalLayout->addWidget(mpStartComponentLabel);
+    if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray()) {
+      mpConnectionStartHorizontalLayout->addWidget(mpStartComponentSpinBox);
+    }
+    mpConnectionStartHorizontalLayout->addWidget(new Label(","));
   }
-  pConnectionStartHorizontalLayout->addWidget(mpStartComponentLabel);
-  if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray()) {
-    pConnectionStartHorizontalLayout->addWidget(mpStartComponentSpinBox);
-  }
-  pConnectionStartHorizontalLayout->addWidget(new Label(","));
-  pMainLayout->addLayout(pConnectionStartHorizontalLayout, 3, 1, 1, 1, Qt::AlignLeft);
-  pMainLayout->addItem(new QSpacerItem(1, 1), 4, 0);
+  mpMainLayout->addLayout(mpConnectionStartHorizontalLayout, row, 1, 1, 1, Qt::AlignLeft);
+  row++;
+  mpMainLayout->addItem(new QSpacerItem(1, 1), row, 0);
   // connection end horizontal layout
-  QHBoxLayout *pConnectionEndHorizontalLayout = new QHBoxLayout;
-  pConnectionEndHorizontalLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  if (mpConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
-    pConnectionEndHorizontalLayout->addWidget(mpEndRootComponentLabel);
-    if (mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
-      pConnectionEndHorizontalLayout->addWidget(mpEndRootComponentSpinBox);
+  mpConnectionEndHorizontalLayout = new QHBoxLayout;
+  mpConnectionEndHorizontalLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  if (mpEndExpandableConnectorTreeView) {
+    QModelIndex modelIndex = mpEndExpandableConnectorTreeModel->findFirstEnabledItem(mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
+    QModelIndex proxyIndex = mpEndExpandableConnectorTreeProxyModel->mapFromSource(modelIndex);
+    endConnectorChanged(proxyIndex, QModelIndex());
+  } else {
+    if (mpConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
+      mpConnectionEndHorizontalLayout->addWidget(mpEndRootComponentLabel);
+      if (mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
+        mpConnectionEndHorizontalLayout->addWidget(mpEndRootComponentSpinBox);
+      }
+      mpConnectionEndHorizontalLayout->addWidget(new Label("."));
     }
-    pConnectionEndHorizontalLayout->addWidget(new Label("."));
+    mpConnectionEndHorizontalLayout->addWidget(mpEndComponentLabel);
+    if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray()) {
+      mpConnectionEndHorizontalLayout->addWidget(mpEndComponentSpinBox);
+    }
+    mpConnectionEndHorizontalLayout->addWidget(new Label(");"));
   }
-  pConnectionEndHorizontalLayout->addWidget(mpEndComponentLabel);
-  if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray()) {
-    pConnectionEndHorizontalLayout->addWidget(mpEndComponentSpinBox);
-  }
-  pConnectionEndHorizontalLayout->addWidget(new Label(");"));
-  pMainLayout->addLayout(pConnectionEndHorizontalLayout, 4, 1, 1, 1, Qt::AlignLeft);
-  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 2, Qt::AlignRight);
-  setLayout(pMainLayout);
+  mpMainLayout->addLayout(mpConnectionEndHorizontalLayout, row, 1, 1, 1, Qt::AlignLeft);
+  row++;
+  mpMainLayout->addWidget(mpButtonBox, row, 0, 1, 2, Qt::AlignRight);
+  setLayout(mpMainLayout);
 }
 
 /*!
@@ -841,7 +1312,7 @@ ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pC
  * \param arrayIndex
  * \return
  */
-QSpinBox* ConnectionArray::createSpinBox(QString arrayIndex)
+QSpinBox* CreateConnectionDialog::createSpinBox(QString arrayIndex)
 {
   QSpinBox *pSpinBox = new QSpinBox;
   pSpinBox->setPrefix("[");
@@ -856,42 +1327,178 @@ QSpinBox* ConnectionArray::createSpinBox(QString arrayIndex)
 }
 
 /*!
+ * \brief CreateConnectionDialog::createComponentNameFromLayout
+ * Creates a component name from the layout controls. Used when we have expandable connectors.
+ * \param pLayout
+ * \return
+ */
+QString CreateConnectionDialog::createComponentNameFromLayout(QHBoxLayout *pLayout)
+{
+  QString componentName;
+  int i = 0;
+  while (QLayoutItem* pLayoutItem = pLayout->itemAt(i)) {
+    if (dynamic_cast<Label*>(pLayoutItem->widget())) {
+      Label *pLabel = dynamic_cast<Label*>(pLayoutItem->widget());
+      if (pLabel->text().compare(",") != 0 && pLabel->text().compare(");") != 0) {  // "," & ");" are fixed labels so we skip them here.
+        componentName += pLabel->text();
+      }
+    } else if (dynamic_cast<QSpinBox*>(pLayoutItem->widget())) {
+      QSpinBox *pSpinBox = dynamic_cast<QSpinBox*>(pLayoutItem->widget());
+      if (pSpinBox->value() > 0) {
+        componentName += QString("[%1]").arg(pSpinBox->value());
+      }
+    } else if (dynamic_cast<QLineEdit*>(pLayoutItem->widget())) {
+      QLineEdit *pLineEdit = dynamic_cast<QLineEdit*>(pLayoutItem->widget());
+      if (pLineEdit->text().isEmpty()) {
+        componentName += "ERROR";
+      } else {
+        componentName += pLineEdit->text();
+      }
+    }
+    i++;
+  }
+  return componentName;
+}
+
+/*!
+ * \brief CreateConnectionDialog::startConnectorChanged
+ * Updates the start component name in the connection.
+ * \param current
+ * \param previous
+ */
+void CreateConnectionDialog::startConnectorChanged(const QModelIndex &current, const QModelIndex &previous)
+{
+  Q_UNUSED(previous);
+
+  while (QLayoutItem* pLayoutItem = mpConnectionStartHorizontalLayout->takeAt(0)) {
+    if (pLayoutItem->widget()) {
+      delete pLayoutItem->widget();
+    }
+  }
+  mStartConnectorsList.clear();
+
+  QModelIndex currentIndex = mpStartExpandableConnectorTreeProxyModel->mapToSource(current);
+  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(currentIndex.internalPointer());
+  if (!pExpandableConnectorTreeItem) {
+    return;
+  }
+
+  mStartConnectorsList.append(pExpandableConnectorTreeItem);
+  while (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent() != mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem()) {
+    pExpandableConnectorTreeItem = pExpandableConnectorTreeItem->parent();
+    mStartConnectorsList.prepend(pExpandableConnectorTreeItem);
+  }
+
+  for (int i = 0 ; i < mStartConnectorsList.size() ; i++) {
+    if (mStartConnectorsList.at(i)->isArray()) {
+      mpConnectionStartHorizontalLayout->addWidget(new Label(mStartConnectorsList.at(i)->getName()));
+      mpConnectionStartHorizontalLayout->addWidget(createSpinBox(mStartConnectorsList.at(i)->getArrayIndex()));
+    } else if (mStartConnectorsList.at(i)->isNewVariable()) {
+      QLineEdit *pNewVariableTextBox = new QLineEdit;
+      pNewVariableTextBox->setPlaceholderText(Helper::newVariable);
+      mpConnectionStartHorizontalLayout->addWidget(pNewVariableTextBox);
+    } else {
+      mpConnectionStartHorizontalLayout->addWidget(new Label(mStartConnectorsList.at(i)->getName()));
+    }
+    if (i < mStartConnectorsList.size() -  1) {
+      mpConnectionStartHorizontalLayout->addWidget(new Label("."));
+    }
+  }
+  mpConnectionStartHorizontalLayout->addWidget(new Label(","));
+}
+
+/*!
+ * \brief CreateConnectionDialog::endConnectorChanged
+ * Updates the end component name in the connection.
+ * \param current
+ * \param previous
+ */
+void CreateConnectionDialog::endConnectorChanged(const QModelIndex &current, const QModelIndex &previous)
+{
+  Q_UNUSED(previous);
+
+  while (QLayoutItem* pLayoutItem = mpConnectionEndHorizontalLayout->takeAt(0)) {
+    if (pLayoutItem->widget()) {
+      delete pLayoutItem->widget();
+    }
+  }
+  mEndConnectorsList.clear();
+
+  QModelIndex currentIndex = mpEndExpandableConnectorTreeProxyModel->mapToSource(current);
+  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(currentIndex.internalPointer());
+  if (!pExpandableConnectorTreeItem) {
+    return;
+  }
+
+  mEndConnectorsList.append(pExpandableConnectorTreeItem);
+  while (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent() != mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem()) {
+    pExpandableConnectorTreeItem = pExpandableConnectorTreeItem->parent();
+    mEndConnectorsList.prepend(pExpandableConnectorTreeItem);
+  }
+
+  for (int i = 0 ; i < mEndConnectorsList.size() ; i++) {
+    if (mEndConnectorsList.at(i)->isArray()) {
+      mpConnectionEndHorizontalLayout->addWidget(new Label(mEndConnectorsList.at(i)->getName()));
+      mpConnectionEndHorizontalLayout->addWidget(createSpinBox(mEndConnectorsList.at(i)->getArrayIndex()));
+    } else if (mEndConnectorsList.at(i)->isNewVariable()) {
+      QLineEdit *pNewVariableTextBox = new QLineEdit;
+      pNewVariableTextBox->setPlaceholderText(Helper::newVariable);
+      mpConnectionEndHorizontalLayout->addWidget(pNewVariableTextBox);
+    } else {
+      mpConnectionEndHorizontalLayout->addWidget(new Label(mEndConnectorsList.at(i)->getName()));
+    }
+    if (i < mEndConnectorsList.size() -  1) {
+      mpConnectionEndHorizontalLayout->addWidget(new Label("."));
+    }
+  }
+  mpConnectionEndHorizontalLayout->addWidget(new Label(");"));
+}
+
+/*!
  * \brief ConnectionArray::createArrayConnection
  * Slot activated when mpOkButton clicked SIGNAL is raised. Creates an array connection.
  */
-void ConnectionArray::createArrayConnection()
+void CreateConnectionDialog::createArrayConnection()
 {
   QString startComponentName, endComponentName;
   // set start component name
-  if (mpConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
-    startComponentName = mpConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName();
-    if (mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
-      if (mpStartRootComponentSpinBox->value() > 0) {
-        startComponentName += QString("[%1]").arg(mpStartRootComponentSpinBox->value());
+  if (mpStartExpandableConnectorTreeView) {
+    startComponentName = createComponentNameFromLayout(mpConnectionStartHorizontalLayout);
+  } else {
+    if (mpConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
+      startComponentName = mpConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName();
+      if (mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
+        if (mpStartRootComponentSpinBox->value() > 0) {
+          startComponentName += QString("[%1]").arg(mpStartRootComponentSpinBox->value());
+        }
       }
+      startComponentName += ".";
     }
-    startComponentName += ".";
-  }
-  startComponentName += mpConnectionLineAnnotation->getStartComponent()->getName();
-  if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray()) {
-    if (mpStartComponentSpinBox->value() > 0) {
-      startComponentName += QString("[%1]").arg(mpStartComponentSpinBox->value());
+    startComponentName += mpConnectionLineAnnotation->getStartComponent()->getName();
+    if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray()) {
+      if (mpStartComponentSpinBox->value() > 0) {
+        startComponentName += QString("[%1]").arg(mpStartComponentSpinBox->value());
+      }
     }
   }
   // set end component name
-  if (mpConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
-    endComponentName = mpConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName();
-    if (mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
-      if (mpEndRootComponentSpinBox->value() > 0) {
-        endComponentName += QString("[%1]").arg(mpEndRootComponentSpinBox->value());
+  if (mpEndExpandableConnectorTreeView) {
+    endComponentName = createComponentNameFromLayout(mpConnectionEndHorizontalLayout);
+  } else {
+    if (mpConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
+      endComponentName = mpConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName();
+      if (mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
+        if (mpEndRootComponentSpinBox->value() > 0) {
+          endComponentName += QString("[%1]").arg(mpEndRootComponentSpinBox->value());
+        }
       }
+      endComponentName += ".";
     }
-    endComponentName += ".";
-  }
-  endComponentName += mpConnectionLineAnnotation->getEndComponent()->getName();
-  if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray()) {
-    if (mpEndComponentSpinBox->value() > 0) {
-      endComponentName += QString("[%1]").arg(mpEndComponentSpinBox->value());
+    endComponentName += mpConnectionLineAnnotation->getEndComponent()->getName();
+    if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray()) {
+      if (mpEndComponentSpinBox->value() > 0) {
+        endComponentName += QString("[%1]").arg(mpEndComponentSpinBox->value());
+      }
     }
   }
   mpConnectionLineAnnotation->setStartComponentName(startComponentName);
@@ -900,13 +1507,4 @@ void ConnectionArray::createArrayConnection()
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
   mpGraphicsView->getModelWidget()->updateModelicaText();
   accept();
-}
-
-/*!
- * \brief ConnectionArray::cancelArrayConnection
- * Slot activated when mpCancelButton clicked SIGNAL is raised.
- */
-void ConnectionArray::cancelArrayConnection()
-{
-  reject();
 }

@@ -304,6 +304,7 @@ public:
   static QString tlmCoSimulation;
   static QString running;
   static QString finished;
+  static QString newVariable;
 };
 
 class GUIMessages : public QObject

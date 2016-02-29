@@ -469,6 +469,7 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon()
       case StringHandler::Class:
         return QIcon(":/Resources/icons/class-icon.svg");
       case StringHandler::Connector:
+        return QIcon(":/Resources/icons/connector-icon.svg");
       case StringHandler::ExpandableConnector:
         return QIcon(":/Resources/icons/connect-mode.svg");
       case StringHandler::Record:
@@ -1044,7 +1045,7 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, Libr
     return root;
   }
   for (int i = root->getChildren().size(); --i >= 0; ) {
-    if (LibraryTreeItem *item = findLibraryTreeItem(name, root->getChildren().at(i))) {
+    if (LibraryTreeItem *item = findLibraryTreeItem(name, root->getChildren().at(i), caseSensitivity)) {
       return item;
     }
   }

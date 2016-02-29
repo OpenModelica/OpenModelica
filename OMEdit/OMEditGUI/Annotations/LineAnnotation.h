@@ -106,17 +106,106 @@ public slots:
   void duplicate();
 };
 
-class ConnectionArray : public QDialog
+class ExpandableConnectorTreeItem : public QObject
 {
   Q_OBJECT
 public:
-  ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent = 0);
+  ExpandableConnectorTreeItem();
+  ExpandableConnectorTreeItem(QString name, bool array, QString arrayIndex, StringHandler::ModelicaClasses restriction, bool newVariable,
+                              ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
+  ~ExpandableConnectorTreeItem();
+  bool isRootItem() {return mIsRootItem;}
+  QList<ExpandableConnectorTreeItem*> getChildren() const {return mChildren;}
+  void setName(QString name) {mName = name;}
+  const QString& getName() const {return mName;}
+  void setArray(bool array) {mArray = array;}
+  bool isArray() {return mArray;}
+  void setArrayIndex(QString arrayIndex) {mArrayIndex = arrayIndex;}
+  const QString& getArrayIndex() const {return mArrayIndex;}
+  void setRestriction(StringHandler::ModelicaClasses restriction) {mRestriction = restriction;}
+  StringHandler::ModelicaClasses getRestriction() {return mRestriction;}
+  void setNewVariable(bool newVariable) {mNewVariable = newVariable;}
+  bool isNewVariable() {return mNewVariable;}
+  void insertChild(int position, ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) {mChildren.insert(position, pExpandableConnectorTreeItem);}
+  ExpandableConnectorTreeItem* child(int row) {return mChildren.value(row);}
+  QVariant data(int column, int role = Qt::DisplayRole) const;
+  int row() const;
+  ExpandableConnectorTreeItem* parent() {return mpParentExpandableConnectorTreeItem;}
+private:
+  bool mIsRootItem;
+  ExpandableConnectorTreeItem *mpParentExpandableConnectorTreeItem;
+  QList<ExpandableConnectorTreeItem*> mChildren;
+  QString mName;
+  bool mArray;
+  QString mArrayIndex;
+  StringHandler::ModelicaClasses mRestriction;
+  bool mNewVariable;
+};
+
+class CreateConnectionDialog;
+
+class ExpandableConnectorTreeProxyModel : public QSortFilterProxyModel
+{
+  Q_OBJECT
+public:
+  ExpandableConnectorTreeProxyModel(CreateConnectionDialog *pCreateConnectionDialog);
+private:
+  CreateConnectionDialog *mpCreateConnectionDialog;
+};
+
+class ExpandableConnectorTreeModel : public QAbstractItemModel
+{
+  Q_OBJECT
+public:
+  ExpandableConnectorTreeModel(CreateConnectionDialog *pCreateConnectionDialog);
+  ExpandableConnectorTreeItem* getRootExpandableConnectorTreeItem() {return mpRootExpandableConnectorTreeItem;}
+  int columnCount(const QModelIndex &parent = QModelIndex()) const;
+  int rowCount(const QModelIndex &parent = QModelIndex()) const;
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
+  QModelIndex parent(const QModelIndex & index) const;
+  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+  Qt::ItemFlags flags(const QModelIndex &index) const;
+  QModelIndex findFirstEnabledItem(ExpandableConnectorTreeItem *pExpandableConnectorTreeItem);
+  QModelIndex expandableConnectorTreeItemIndex(const ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) const;
+  void createExpandableConnectorTreeItem(Component *pComponent, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
+private:
+  CreateConnectionDialog *mpCreateConnectionDialog;
+  ExpandableConnectorTreeItem *mpRootExpandableConnectorTreeItem;
+
+  QModelIndex expandableConnectorTreeItemIndexHelper(const ExpandableConnectorTreeItem *pExpandableConnectorTreeItem,
+                                                     const ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem,
+                                                     const QModelIndex &parentIndex) const;
+};
+
+class ExpandableConnectorTreeView : public QTreeView
+{
+  Q_OBJECT
+public:
+  ExpandableConnectorTreeView(CreateConnectionDialog *pCreateConnectionDialog);
+private:
+  CreateConnectionDialog *mpCreateConnectionDialog;
+};
+
+class CreateConnectionDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  CreateConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent = 0);
 private:
   GraphicsView *mpGraphicsView;
   LineAnnotation *mpConnectionLineAnnotation;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
-  Label *mpDescriptionLabel;
+  ExpandableConnectorTreeModel *mpStartExpandableConnectorTreeModel;
+  ExpandableConnectorTreeProxyModel *mpStartExpandableConnectorTreeProxyModel;
+  ExpandableConnectorTreeView *mpStartExpandableConnectorTreeView;
+  QList<ExpandableConnectorTreeItem*> mStartConnectorsList;
+  ExpandableConnectorTreeModel *mpEndExpandableConnectorTreeModel;
+  ExpandableConnectorTreeProxyModel *mpEndExpandableConnectorTreeProxyModel;
+  ExpandableConnectorTreeView *mpEndExpandableConnectorTreeView;
+  QList<ExpandableConnectorTreeItem*> mEndConnectorsList;
+  Label *mpIndexesDescriptionLabel;
   Label *mpStartRootComponentLabel;
   QSpinBox *mpStartRootComponentSpinBox;
   Label *mpStartComponentLabel;
@@ -128,11 +217,16 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+  QGridLayout *mpMainLayout;
+  QHBoxLayout *mpConnectionStartHorizontalLayout;
+  QHBoxLayout *mpConnectionEndHorizontalLayout;
 
   QSpinBox* createSpinBox(QString arrayIndex);
+  QString createComponentNameFromLayout(QHBoxLayout *pLayout);
 public slots:
+  void startConnectorChanged(const QModelIndex &current, const QModelIndex &previous);
+  void endConnectorChanged(const QModelIndex &current, const QModelIndex &previous);
   void createArrayConnection();
-  void cancelArrayConnection();
 };
 
 #endif // LINEANNOTATION_H
