@@ -6370,7 +6370,7 @@ protected
   list<SimCodeVar.SimVar> mixedArrayVars;
   SimCodeVar.SimVar simvar;
   SimCodeVar.SimVar derivSimvar;
-  Boolean isalias;
+  Boolean isalias, isAlg, isParam, isConst;
   DAE.ComponentRef name;
   Integer len;
 algorithm
@@ -6382,6 +6382,7 @@ algorithm
   simvar := dlowvarToSimvar(dlowVar, SOME(inAliasVars), inVars);
   derivSimvar := derVarFromStateVar(simvar);
   isalias := isAliasVar(simvar);
+
 
   // update HashSet
   outHS := BaseHashSet.add(simvar.name, outHS);
@@ -6404,54 +6405,89 @@ algorithm
   end if;
 
   // figure out in which lists to put it
-  stateVars := List.consOnTrue((not isalias) and
-    (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)), simvar, stateVars);
-  derivativeVars := List.consOnTrue((not isalias) and
-    (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)), derivSimvar, derivativeVars);
-  algVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarNonDiscreteAlg(dlowVar), simvar, algVars);
-  discreteAlgVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarDiscreteAlg(dlowVar), simvar, discreteAlgVars);
-  intAlgVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarIntAlg(dlowVar), simvar, intAlgVars);
-  boolAlgVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAlgVars);
-  inputVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarOnTopLevelAndInputNoDerInput(dlowVar), simvar, inputVars);
-  outputVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarOnTopLevelAndOutput(dlowVar), simvar, outputVars);
-  paramVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarParam(dlowVar), simvar, paramVars);
-  intParamVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarIntParam(dlowVar), simvar, intParamVars);
-  boolParamVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarBoolParam(dlowVar), simvar, boolParamVars);
-  stringAlgVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarStringAlg(dlowVar), simvar, stringAlgVars);
-  stringParamVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarStringParam(dlowVar), simvar, stringParamVars);
-  extObjVars := List.consOnTrue((not isalias) and
-    BackendVariable.isExtObj(dlowVar), simvar, extObjVars);
-  aliasVars := List.consOnTrue( isalias and
-    BackendVariable.isVarNonDiscreteAlg(dlowVar), simvar, aliasVars);
-  intAliasVars := List.consOnTrue( isalias and
-    BackendVariable.isVarIntAlg(dlowVar), simvar, intAliasVars);
-  boolAliasVars := List.consOnTrue( isalias and
-    BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAliasVars);
-  stringAliasVars := List.consOnTrue( isalias and
-    BackendVariable.isVarStringAlg(dlowVar), simvar, stringAliasVars);
-  constVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarConst(dlowVar), simvar, constVars);
-  intConstVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarIntConst(dlowVar), simvar, intConstVars);
-  boolConstVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarBoolConst(dlowVar), simvar, boolConstVars);
-  stringConstVars := List.consOnTrue((not isalias) and
-    BackendVariable.isVarStringConst(dlowVar), simvar, stringConstVars);
-  realOptimizeConstraintsVars := List.consOnTrue((not isalias) and
-    BackendVariable.isRealOptimizeConstraintsVars(dlowVar), simvar, realOptimizeConstraintsVars);
-  realOptimizeFinalConstraintsVars := List.consOnTrue((not isalias) and
-    BackendVariable.isRealOptimizeFinalConstraintsVars(dlowVar), simvar, realOptimizeFinalConstraintsVars);
+  isAlg := BackendVariable.isVarAlg(dlowVar);
+  isParam := BackendVariable.BackendVariable.isParam(dlowVar);
+  isConst := BackendVariable.BackendVariable.isConst(dlowVar);
+
+  // for inputs and outputs we have additional lists
+  if BackendVariable.isVarOnTopLevelAndInputNoDerInput(dlowVar) then
+    inputVars := simvar::inputVars;
+  end if;
+  if BackendVariable.isVarOnTopLevelAndOutput(dlowVar) then
+    outputVars := simvar::outputVars;
+  end if;
+  // check if alias
+  if isalias then
+    if Types.isReal(dlowVar.varType) then
+      aliasVars := simvar::aliasVars;
+    elseif Types.isInteger(dlowVar.varType) or  Types.isEnumeration(dlowVar.varType) then
+      intAliasVars := simvar::intAliasVars;
+    elseif Types.isBoolean(dlowVar.varType) then
+      boolAliasVars := simvar::boolAliasVars;
+    elseif Types.isString(dlowVar.varType) then
+      stringAliasVars := simvar::stringAliasVars;
+    end if;
+  // check for states
+  elseif BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar) then
+    stateVars := simvar::stateVars;
+    derivativeVars := derivSimvar::derivativeVars;
+  // check for algebraic varibales
+  elseif isAlg or isParam or isConst then
+    // Real vars
+    if Types.isReal(dlowVar.varType) then
+      if isAlg then
+        if BackendVariable.isVarDiscrete(dlowVar) then
+          discreteAlgVars := simvar::discreteAlgVars;
+        else
+          algVars := simvar::algVars;
+        end if;
+      elseif isParam then
+        paramVars := simvar::paramVars;
+      elseif isConst then
+        constVars := simvar::constVars;
+      end if;
+    // Integer vars
+    elseif Types.isInteger(dlowVar.varType) or  Types.isEnumeration(dlowVar.varType) then
+      if isAlg then
+        intAlgVars := simvar::intAlgVars;
+      elseif isParam then
+        intParamVars := simvar::intParamVars;
+      elseif isConst then
+        intConstVars := simvar::intConstVars;
+      end if;
+    // Boolean vars
+    elseif Types.isBoolean(dlowVar.varType) then
+      if isAlg then
+        boolAlgVars := simvar::boolAlgVars;
+      elseif isParam then
+        boolParamVars := simvar::boolParamVars;
+      elseif isConst then
+        boolConstVars := simvar::boolConstVars;
+      end if;
+    // String vars
+    elseif Types.isString(dlowVar.varType) then
+      if isAlg then
+        stringAlgVars := simvar::stringAlgVars;
+      elseif isParam then
+        stringParamVars := simvar::stringParamVars;
+      elseif isConst then
+        stringConstVars := simvar::stringConstVars;
+      end if;
+    end if;
+  // external objects
+  elseif BackendVariable.isExtObj(dlowVar) then
+    extObjVars := simvar::extObjVars;
+  // optimize constraints
+  elseif BackendVariable.isRealOptimizeConstraintsVars(dlowVar) then
+    realOptimizeConstraintsVars := simvar::realOptimizeConstraintsVars;
+  // optimize final constraints vars
+  elseif BackendVariable.isRealOptimizeFinalConstraintsVars(dlowVar) then
+    realOptimizeFinalConstraintsVars := simvar::realOptimizeFinalConstraintsVars;
+  elseif BackendVariable.isOptInputVar(dlowVar) then
+    algVars := simvar::algVars;
+  else
+    Error.addInternalError("Failed to find the correct SimVar list for Var: " + BackendDump.varString(dlowVar), sourceInfo());
+  end if;
 
   varsOut := SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars,
     aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
