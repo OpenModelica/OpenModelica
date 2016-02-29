@@ -193,14 +193,14 @@
         <location filename="../../Component/Component.cpp" line="371"/>
         <location filename="../../Component/Component.cpp" line="1670"/>
         <source>&lt;b&gt;%1&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; %2</translation>
     </message>
     <message>
         <location filename="../../Component/Component.cpp" line="422"/>
         <location filename="../../Component/Component.cpp" line="468"/>
         <location filename="../../Component/Component.cpp" line="1666"/>
         <source>&lt;b&gt;%1&lt;/b&gt; %2&lt;br /&gt;&lt;br /&gt;Component declared in %3</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; %2&lt;br /&gt;&lt;br /&gt; 组建在 %3 中声明</translation>
     </message>
     <message>
         <location filename="../../Component/Component.cpp" line="1157"/>
@@ -216,7 +216,7 @@
     <message>
         <location filename="../../Component/Component.cpp" line="1986"/>
         <source>Cannot show parameters window for component &lt;b&gt;%1&lt;/b&gt;. Did not find type &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>不能显示组件t &lt;b&gt;%1&lt;/b&gt; 的参数窗口。未找到类型 &lt;b&gt;%2&lt;/b&gt; 。</translation>
     </message>
     <message>
         <location filename="../../Component/Component.cpp" line="1990"/>
@@ -280,7 +280,7 @@
     <message>
         <location filename="../../Annotations/LineAnnotation.cpp" line="757"/>
         <source>Connect to only parts of the connectors, by giving indicies below.</source>
-        <translation type="unfinished"></translation>
+        <translation>根据下面给定信息，仅连接到连接器部件。</translation>
     </message>
 </context>
 <context>
@@ -308,17 +308,17 @@
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="146"/>
         <source>We can&apos;t contact you with a possible solution if you don&apos;t provide a valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>如果你未提供邮件地址，有了可能的解决方法我们也无法联系到你。</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="147"/>
         <source>Send without e-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>没有邮件也发送</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="148"/>
         <source>Let me enter e-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>输入邮件</translation>
     </message>
 </context>
 <context>
@@ -527,17 +527,17 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3474"/>
         <source>Model Exchange</source>
-        <translation type="unfinished"></translation>
+        <translation>模型交互</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3475"/>
         <source>Co-Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>联合仿真</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3476"/>
         <source>Model Exchange and Co-Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>模型交互和联合仿真</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3486"/>
@@ -550,27 +550,27 @@
     <message>
         <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="36"/>
         <source>Fetch Interface Data</source>
-        <translation type="unfinished"></translation>
+        <translation>获取接口数据</translation>
     </message>
     <message>
         <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="50"/>
         <source>Fetch Again</source>
-        <translation type="unfinished"></translation>
+        <translation>继续获取</translation>
     </message>
     <message>
         <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="102"/>
         <source>Fetching interface data for &lt;b&gt;%1&lt;/b&gt; is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>取消 &lt;b&gt;%1&lt;/b&gt; 接口数据的获取。</translation>
     </message>
     <message>
         <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="124"/>
         <source>Fetching interface data for &lt;b&gt;%1&lt;/b&gt;...</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 接口数据获取中……</translation>
     </message>
     <message>
         <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="171"/>
         <source>Fetched interface data for &lt;b&gt;%1&lt;/b&gt;...</source>
-        <translation type="unfinished"></translation>
+        <translation>已获取 &lt;b&gt;%1&lt;/b&gt; 接口数据……</translation>
     </message>
 </context>
 <context>
@@ -578,12 +578,12 @@
     <message>
         <location filename="../../TLM/FetchInterfaceDataThread.cpp" line="113"/>
         <source>TLMManager process failed. Exited with code %1.</source>
-        <translation type="unfinished">TLM 管理器进程失败，退出错误码 %1 。</translation>
+        <translation>TLM 管理器进程失败，退出错误码 %1 。</translation>
     </message>
     <message>
         <location filename="../../TLM/FetchInterfaceDataThread.cpp" line="115"/>
         <source>TLMManager process finished successfully.</source>
-        <translation type="unfinished">TLM 管理器进程已成功结束。</translation>
+        <translation>TLM 管理器进程已成功结束。</translation>
     </message>
 </context>
 <context>
@@ -822,7 +822,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="572"/>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt;? Everything contained inside this class will also be deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>你确定要删除 &lt;b&gt;%1&lt;/b&gt; 吗？所以保护在该类内的内容都将被删除。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="574"/>
@@ -872,7 +872,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="596"/>
         <source>Metamodel &lt;b&gt;%1&lt;/b&gt; has unsaved changes. Do you want to save?</source>
-        <translation type="unfinished"></translation>
+        <translation>元模型 &lt;b&gt;%1&lt;/b&gt; 的修改尚未保存，是否需要保存？</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="598"/>
@@ -892,7 +892,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="526"/>
         <source>&lt;br /&gt;&lt;br /&gt;If you cannot find the source of the error, you can always &lt;b&gt;revert to the last correct version&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br /&gt;&lt;br /&gt;如果无法找到错误代码，你可以 &lt;b&gt; 回退到最后正确版本 &lt;.b&gt; 。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="528"/>
@@ -907,12 +907,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="532"/>
         <source>Unable to open file &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>不能打开文件 &lt;b&gt;%1&lt;/b&gt; 。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="534"/>
         <source>Unable to save the file &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>不能保存文件 &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="540"/>
@@ -948,17 +948,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="578"/>
         <source>The operations were not generated. Check Generate Operations in &lt;b&gt;%1-&gt;Debugger-&gt;Transformational Debugger&lt;/b&gt; OR you must set the +d=infoXmlOperations flag via &lt;b&gt;%2-&gt;Simulation-&gt;OMC Flags&lt;/b&gt; and simulate again.</source>
-        <translation type="unfinished"></translation>
+        <translation>操作未被生成。在  &lt;b&gt;%1-&gt;Debugger-&gt;Transformational Debugger&lt;/b&gt; 中检查生成选项或者设置 +d=infoXmlOperations flag via &lt;b&gt;%2-&gt;Simulation-&gt;OMC Flags&lt;/b&gt; 然后重新运行仿真。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="594"/>
         <source>TLM Manager executable path is not set. Set it via &lt;b&gt;%1-&gt;TLM&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>TLM管理器运行路径未设置，通过 &lt;b&gt;%1-&gt;TLM&lt;/b&gt; 进行设置</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="600"/>
         <source>Terminal command is not set. You can define a new terminal command in &lt;b&gt;%1-&gt;General-&gt;Terminal Command&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>终端命令未设置，可以在 &lt;b&gt;%1-&gt;General-&gt;Terminal Command&lt;/b&gt; 中定义新的终端命令。</translation>
     </message>
 </context>
 <context>
@@ -1031,12 +1031,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1180"/>
         <source>Terminal Command:</source>
-        <translation type="unfinished"></translation>
+        <translation>终端命令：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1193"/>
         <source>Terminal Command Arguments:</source>
-        <translation type="unfinished"></translation>
+        <translation>终端命令参数：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1213"/>
@@ -1170,57 +1170,57 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="243"/>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not saved. You can only drag &amp; drop saved classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>类 &lt;b&gt;%1&lt;/b&gt; 未保存，只能对保存过的类进行拖放操作。</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="898"/>
         <source>Manhattanize</source>
-        <translation type="unfinished">曼哈顿化</translation>
+        <translation>曼哈顿化</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="899"/>
         <source>Manhattanize the lines</source>
-        <translation type="unfinished">曼哈顿化行</translation>
+        <translation>曼哈顿化行</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="915"/>
         <source>Bring to Front</source>
-        <translation type="unfinished"></translation>
+        <translation>置于顶层</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="916"/>
         <source>Brings the item to front</source>
-        <translation type="unfinished"></translation>
+        <translation>项目前移</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="920"/>
         <source>Bring Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>后移</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="921"/>
         <source>Brings the item one level forward</source>
-        <translation type="unfinished"></translation>
+        <translation>上移一层</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="925"/>
         <source>Send to Back</source>
-        <translation type="unfinished"></translation>
+        <translation>后置</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="926"/>
         <source>Sends the item to back</source>
-        <translation type="unfinished"></translation>
+        <translation>项目后置</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="930"/>
         <source>Send Backward</source>
-        <translation type="unfinished"></translation>
+        <translation>置于底层</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="931"/>
         <source>Sends the item one level backward</source>
-        <translation type="unfinished"></translation>
+        <translation>项目后移一层</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="935"/>
@@ -1411,7 +1411,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="376"/>
         <source>Unload the TLM/Text file</source>
-        <translation type="unfinished"></translation>
+        <translation>卸载 TLM/Text文件</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="378"/>
@@ -1511,27 +1511,27 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="325"/>
         <source>Save a file</source>
-        <translation type="unfinished">保存一个文件</translation>
+        <translation>保存一个文件</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="326"/>
         <source>Save As</source>
-        <translation type="unfinished">另存为</translation>
+        <translation>另存为</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="327"/>
         <source>Save a copy of the class in a new file</source>
-        <translation type="unfinished"></translation>
+        <translation>保存该类的一个拷贝到新文件</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="328"/>
         <source>Save Total</source>
-        <translation type="unfinished"></translation>
+        <translation>全部保存</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="329"/>
         <source>Save class with all used classes</source>
-        <translation type="unfinished"></translation>
+        <translation>保存类和全部使用的类</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="330"/>
@@ -1627,7 +1627,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="360"/>
         <source>Line</source>
-        <translation>行</translation>
+        <translation>直线</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="361"/>
@@ -1877,12 +1877,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="440"/>
         <source>Search Classes</source>
-        <translation type="unfinished"></translation>
+        <translation>查找类</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="445"/>
         <source>Create Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>建立连接</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="450"/>
@@ -2037,7 +2037,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="480"/>
         <source>Version</source>
-        <translation type="unfinished">版本</translation>
+        <translation>版本</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="481"/>
@@ -2057,37 +2057,37 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="484"/>
         <source>Fetch Interface Data</source>
-        <translation type="unfinished"></translation>
+        <translation>获取接口数据</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="485"/>
         <source>Fetches the interface data for TLM co-simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>获取TLM联合仿真接口数据</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="486"/>
         <source>TLM Co-Simulation Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>TLM联合仿真设置</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="487"/>
         <source>Opens the TLM co-simulation setup</source>
-        <translation type="unfinished"></translation>
+        <translation>打开 TLM 联合仿真设置</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="488"/>
         <source>TLM Co-Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>TLM 联合仿真</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="489"/>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>正在运行</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="490"/>
         <source>Finished</source>
-        <translation type="unfinished"></translation>
+        <translation>结束</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="414"/>
@@ -2356,7 +2356,7 @@ You can choose between waiting longer or abort debugging.</source>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1627"/>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1735"/>
         <source>while deleting </source>
-        <translation type="unfinished">当删除时</translation>
+        <translation>当在删除时</translation>
     </message>
 </context>
 <context>
@@ -2364,52 +2364,52 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2134"/>
         <source>Move Up</source>
-        <translation type="unfinished"></translation>
+        <translation>上移</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2135"/>
         <source>Moves the class one level up</source>
-        <translation type="unfinished"></translation>
+        <translation>类上移一层</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2138"/>
         <source>Move Down</source>
-        <translation type="unfinished"></translation>
+        <translation>下移</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2139"/>
         <source>Moves the class one level down</source>
-        <translation type="unfinished"></translation>
+        <translation>类下移一层</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2142"/>
         <source>Move to Top</source>
-        <translation type="unfinished"></translation>
+        <translation>移到定层</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2143"/>
         <source>Moves the class to top</source>
-        <translation type="unfinished"></translation>
+        <translation>移动类到顶层</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2146"/>
         <source>Move to Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>移到底层</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2147"/>
         <source>Moves the class to bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>移动类到底层</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2150"/>
         <source>Order</source>
-        <translation type="unfinished"></translation>
+        <translation>次序</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2338"/>
         <source>Deletes the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>删除 Modelica 类</translation>
     </message>
 </context>
 <context>
@@ -2420,33 +2420,33 @@ You can choose between waiting longer or abort debugging.</source>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3152"/>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3237"/>
         <source>Saving %1</source>
-        <translation type="unfinished">保存 %1</translation>
+        <translation>保存 %1</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3003"/>
         <source>Unable to save the file, unknown library type.</source>
-        <translation type="unfinished">无法保持稳健，库类型未知。</translation>
+        <translation>无法保持稳健，库类型未知。</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3156"/>
         <source>%1 - Save %2 %3 as Modelica File</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - 保存 %2 %3 为 Modelica 文件</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3242"/>
         <source>%1 - Save %2 %3 as Modelica Directorty</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - 保存 %2 %3 为 Modelica 目录</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3347"/>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3389"/>
         <source>Save File</source>
-        <translation type="unfinished">保存文件</translation>
+        <translation>保存文件</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3461"/>
         <source>%1 - Save %2 %3 as Total File</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - 保存 %2 %3 为全部文件</translation>
     </message>
 </context>
 <context>
@@ -2550,32 +2550,32 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2500"/>
         <source>Close Window</source>
-        <translation type="unfinished"></translation>
+        <translation>关闭窗口</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2501"/>
         <source>Closes the active window</source>
-        <translation type="unfinished"></translation>
+        <translation>关闭活动窗口</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2504"/>
         <source>Close All Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>关闭全部窗口</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2505"/>
         <source>Closes all windows</source>
-        <translation type="unfinished"></translation>
+        <translation>关闭全部窗口</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2508"/>
         <source>Close All Windows But This</source>
-        <translation type="unfinished"></translation>
+        <translation>关闭除此之外的全部窗口</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2509"/>
         <source>Closes all windows except active window</source>
-        <translation type="unfinished"></translation>
+        <translation>关闭除活动窗口之外的全部窗口</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2516"/>
@@ -2791,32 +2791,32 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2396"/>
         <source>New MetaModel</source>
-        <translation type="unfinished"></translation>
+        <translation>新元模型</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2397"/>
         <source>Create New MetaModel File</source>
-        <translation type="unfinished"></translation>
+        <translation>新建元模型文件</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2400"/>
         <source>Open MetaModel</source>
-        <translation type="unfinished"></translation>
+        <translation>打开元模型</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2401"/>
         <source>Opens the MetaModel file(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>打开元模型文件</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2404"/>
         <source>Load External Model(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>载入元模型</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2405"/>
         <source>Loads the External Model(s) for the TLM meta-modeling</source>
-        <translation type="unfinished"></translation>
+        <translation>载入 TLM 元模型的外部模型</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2432"/>
@@ -2922,17 +2922,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2010"/>
         <source>Unable to run terminal command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法使用参数 &lt;b&gt;%2&lt;/b&gt; 运行终端命令 &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2445"/>
         <source>Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>撤销</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2450"/>
         <source>Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>重复</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2512"/>
@@ -2952,32 +2952,32 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2588"/>
         <source>OpenModelica Compiler Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelic编译器区别</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2589"/>
         <source>Shows OpenModelica Compiler Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>显示OpenModelic编译器区别</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2606"/>
         <source>Open Working Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>打开工作目录</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2607"/>
         <source>Opens the current working directory</source>
-        <translation type="unfinished"></translation>
+        <translation>打开当前工作目录</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2610"/>
         <source>Open Terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>打卡终端窗口</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2611"/>
         <source>Opens the terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>打开终端窗口</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2620"/>
@@ -2992,12 +2992,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2625"/>
         <source>OpenModelica Users Guide (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelic用户手册 (PDF)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2626"/>
         <source>Opens the OpenModelica Users Guide (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>打开OpenModelic用户手册 (PDF)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2629"/>
@@ -3107,7 +3107,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2870"/>
         <source>E&amp;xport</source>
-        <translation type="unfinished"></translation>
+        <translation>导出(&amp;x)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2878"/>
@@ -3195,7 +3195,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2705"/>
         <source>Reset messages number before checking, instantiation &amp;&amp; simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>检查、实例化和仿真前重置信息数</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2730"/>
@@ -3246,7 +3246,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2393"/>
         <source>Connection declared in</source>
-        <translation type="unfinished"></translation>
+        <translation>连接声明于</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2494"/>
@@ -3267,7 +3267,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3331"/>
         <source>Unable to find component %1 while parsing connection %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>解析 %2 时未找到组件 %1 .</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3596"/>
@@ -3347,12 +3347,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Editors/ModelicaTextEditor.cpp" line="203"/>
         <source>Fix error(s) manually</source>
-        <translation type="unfinished"></translation>
+        <translation>手工修复错误</translation>
     </message>
     <message>
         <location filename="../../Editors/ModelicaTextEditor.cpp" line="204"/>
         <source>Revert to last correct version</source>
-        <translation type="unfinished"></translation>
+        <translation>恢复到最后正确版本</translation>
     </message>
     <message>
         <location filename="../../Editors/ModelicaTextEditor.cpp" line="263"/>
@@ -3410,7 +3410,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1938"/>
         <source>Match Parentheses within Comments and Quotes</source>
-        <translation type="unfinished"></translation>
+        <translation>在注释和引用中匹配括号</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1940"/>
@@ -3504,22 +3504,22 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="131"/>
         <source>OMC Diff</source>
-        <translation type="unfinished"></translation>
+        <translation>OMC 区别</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="132"/>
         <source>Before</source>
-        <translation type="unfinished"></translation>
+        <translation>之前</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="134"/>
         <source>After</source>
-        <translation type="unfinished"></translation>
+        <translation>之后</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="136"/>
         <source>Merged</source>
-        <translation type="unfinished"></translation>
+        <translation>合并</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="493"/>
@@ -3529,12 +3529,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="1005"/>
         <source>Unable to set the component modifier value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>使用命令 &lt;b&gt;%1&lt;/b&gt; 不能修改组件调节器值</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="1057"/>
         <source>Unable to set the extends modifier value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>使用命令 &lt;b&gt;%1&lt;/b&gt; 不能修改扩展调节器值</translation>
     </message>
 </context>
 <context>
@@ -3914,7 +3914,7 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="277"/>
         <source>Result File (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>结果文件（可选）：</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="283"/>
@@ -4216,7 +4216,7 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="510"/>
         <source>Status</source>
-        <translation type="unfinished"></translation>
+        <translation>状态</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="1223"/>
@@ -4226,12 +4226,12 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="1237"/>
         <source>Generated code for the target compiler &lt;b&gt;%1&lt;/b&gt; at %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>为 %2 的目标编译器 &lt;b&gt;%1&lt;/b&gt; 生成代码。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="1248"/>
         <source>Generated code for the target language &lt;b&gt;%1&lt;/b&gt; at %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>为 %2 的目标语言 &lt;b&gt;%1&lt;/b&gt; 生成代码</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="166"/>
@@ -4331,7 +4331,7 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="273"/>
         <source>File Name Prefix (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>文件名前缀（可选）：</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="294"/>
@@ -4458,12 +4458,12 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2574"/>
         <source>Target Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>目标语言：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2585"/>
         <source>Target Compiler:</source>
-        <translation type="unfinished"></translation>
+        <translation>目标编译器：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="2596"/>
@@ -4618,27 +4618,27 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1183"/>
         <source>SubModel Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>子模型属性</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1203"/>
         <source>Simulation Tool</source>
-        <translation type="unfinished"></translation>
+        <translation>仿真工具</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1214"/>
         <source>Start Command:</source>
-        <translation type="unfinished">启动命令：</translation>
+        <translation>启动命令：</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1218"/>
         <source>Model File:</source>
-        <translation type="unfinished">模型文件：</translation>
+        <translation>模型文件：</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="1222"/>
         <source>Exact Step Flag</source>
-        <translation type="unfinished"></translation>
+        <translation>提取步骤标志</translation>
     </message>
 </context>
 <context>
@@ -4707,7 +4707,7 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="129"/>
         <source>Show TLM Co-Simulation Output Window</source>
-        <translation type="unfinished"></translation>
+        <translation>显示 TLM 联合仿真输出窗口</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="232"/>
@@ -4998,42 +4998,42 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Util/Utilities.cpp" line="67"/>
         <source>Show/hide filters</source>
-        <translation type="unfinished"></translation>
+        <translation>显示/隐藏过滤器</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="77"/>
         <source>Case Sensitive</source>
-        <translation type="unfinished">大小写敏感</translation>
+        <translation>大小写敏感</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="80"/>
         <source>Regular Expression</source>
-        <translation type="unfinished">正则表达式</translation>
+        <translation>正则表达式</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="81"/>
         <source>A rich Perl-like pattern matching syntax.</source>
-        <translation type="unfinished"></translation>
+        <translation>rich Perl模式匹配语法。</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="82"/>
         <source>Wildcard</source>
-        <translation type="unfinished">通配符</translation>
+        <translation>通配符</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="83"/>
         <source>A simple pattern matching syntax similar to that used by shells (command interpreters) for &quot;file globbing&quot;.</source>
-        <translation type="unfinished">一个用于文件通配符的类似在命令行使用的简单匹配句法。</translation>
+        <translation>一个用于文件通配符的类似在命令行使用的简单匹配句法。</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="84"/>
         <source>Fixed String</source>
-        <translation type="unfinished">固定字符串</translation>
+        <translation>固定字符串</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="85"/>
         <source>Fixed string matching.</source>
-        <translation type="unfinished">固定字符串匹配。</translation>
+        <translation>固定字符串匹配。</translation>
     </message>
 </context>
 <context>
