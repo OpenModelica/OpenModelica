@@ -19,6 +19,7 @@ configure
 /OMEdit/OMEditGUI/Debugger/Parser/GDBMIOutputParser.h
 /OMEdit/OMEditGUI/Debugger/Parser/Makefile.lib.unix
 /OMEdit/OMEditGUI/Debugger/Parser/libGDBMIParser.a
+/OMEdit/OMEditGUI/version.h
 /OMEdit/OMEditGUI/Makefile
 OMEdit/OMEditGUI/Makefile.Debug
 OMEdit/OMEditGUI/Makefile.Release
