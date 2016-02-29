@@ -3,6 +3,7 @@ libModelicaExternalC_la_SOURCES      = ../../C-Sources/ModelicaFFT.c ../../C-Sou
 libModelicaIO_la_SOURCES             = ../../C-Sources/ModelicaIO.c
 libModelicaMatIO_la_SOURCES          = ../../C-Sources/ModelicaMatIO.c
 libModelicaStandardTables_la_SOURCES = ../../C-Sources/ModelicaStandardTables.c
+libModelicaStandardTables_la_LIBADD  = libModelicaMatIO.la
 
 # If the OS does not have zlib available, compile it and include it together with libModelicaStandardTables
 if INCLUDEZLIB
