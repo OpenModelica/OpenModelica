@@ -1,4 +1,4 @@
-### Creating and maintaining a new Translation File .ts
+## Creating and maintaining a new Translation File .ts
 
 - Open OMEditGUI.pro and add a new language entry in TRANSLATIONS variable.
 - The format for the language entry is <OMEdit_<language_code>.ts>. For correct <language_code> see http://www.loc.gov/standards/iso639-2/php/code_list.php.
@@ -9,6 +9,6 @@
   - Mark finished translations (green checkbox)
 - Do not try to edit the ts-files manually. You will forget things.
 
-### Creating a .qm file
+## Creating a .qm file
 
 - Generating .qm files from .ts files is performed by the Makefile. You don't need to worry.
