@@ -425,7 +425,7 @@ sanity-check: omc
 	$(OMBUILDDIR)/bin/omc Examples/SanityCheck.mos
 
 MODELICAEXTERNALC=3rdParty/ModelicaExternalC
-ModelicaExternalC: $(LIBMODELICAEXTERNALC) $(LIBMODELICASTANDARDTABLES)
+ModelicaExternalC: $(LIBMODELICAEXTERNALC) $(LIBMODELICASTANDARDTABLES) $(LIBMODELICAIO) $(LIBMODELICAMATIO) $(LIBMODELICAZLIB)
 $(LIBMODELICAEXTERNALC):
 	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || ./autogen.sh))
 	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || (./configure ${MSL321_CONFIG_EXTRA_FLAGS} "--host=$(host)" --libdir="$(OMBUILDDIR)/$(LIB_OMC)/" CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" $(MSL_EXTRA_ARGS) && $(MAKE) clean)))
@@ -435,6 +435,15 @@ $(LIBMODELICAEXTERNALC):
 	@test -f "$@"
 $(LIBMODELICASTANDARDTABLES): $(LIBMODELICAEXTERNALC)
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libModelicaStandardTables.0.dylib "$@"
+	@test -f "$@"
+$(LIBMODELICAZLIB): $(LIBMODELICAEXTERNALC)
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libzlib.0.dylib "$@"
+	@test -f "$@"
+$(LIBMODELICAIO): $(LIBMODELICAEXTERNALC)
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libModelicaIO.0.dylib "$@"
+	@test -f "$@"
+$(LIBMODELICAMATIO): $(LIBMODELICAEXTERNALC)
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libModelicaMatIO.0.dylib "$@"
 	@test -f "$@"
 
 git-clean:

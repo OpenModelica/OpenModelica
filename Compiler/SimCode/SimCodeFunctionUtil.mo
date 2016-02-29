@@ -2149,7 +2149,7 @@ algorithm
 
     case Absyn.STRING(str)
       algorithm
-        if str=="ModelicaStandardTables" then
+        if System.os()=="Windows_NT" and str=="ModelicaStandardTables" then
           (strs,names) := getLibraryStringInGccFormat(Absyn.STRING("ModelicaMatIO"));
         else
           strs := {};

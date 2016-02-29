@@ -60,6 +60,9 @@ endif
 LIB_OMC=lib/@host_short@/omc
 LIBMODELICAEXTERNALC=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaExternalC@SHREXT@
 LIBMODELICASTANDARDTABLES=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaStandardTables@SHREXT@
+LIBMODELICAZLIB=@OMBUILDDIR@/lib/@host_short@/omc/libzlib@SHREXT@
+LIBMODELICAIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaIO@SHREXT@
+LIBMODELICAMATIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaMatIO@SHREXT@
 
 include Makefile.common
 
