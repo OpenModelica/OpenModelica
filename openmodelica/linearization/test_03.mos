@@ -45,7 +45,7 @@ list(linear_simple__test);
 //   parameter Integer l = 0;
 //   // top-level outputs
 //   parameter Real x0[1] = {2};
-//   parameter Real u0[0] = array(i for i in 1:0);
+//   parameter Real u0[0] = {i for i in 1:0};
 //   parameter Real A[1, 1] = [0.3333333333333333];
 //   parameter Real B[1, 0] = zeros(1, 0);
 //   parameter Real C[0, 1] = zeros(0, 1);

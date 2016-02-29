@@ -137,9 +137,9 @@ readFile("BranchingDynamicPipes.mo");
 //           Wb_flows = dxs * (vs * dxs * (crossAreas * dxs) * (port_b.p - port_a.p + sum(flowModel.dps_fg) - system.g * (dheights * mediums.d))) * nParallel;
 //         else
 //           if modelStructure == .Modelica.Fluid.Types.ModelStructure.av_vb or modelStructure == .Modelica.Fluid.Types.ModelStructure.av_b then
-//             Wb_flows[2:n - 1] = array(vs[i] * crossAreas[i] * ((mediums[i + 1].p - mediums[i - 1].p) / 2 + (flowModel.dps_fg[i - 1] + flowModel.dps_fg[i]) / 2 - system.g * dheights[i] * mediums[i].d) for i in 2:n - 1) * nParallel;
+//             Wb_flows[2:n - 1] = {vs[i] * crossAreas[i] * ((mediums[i + 1].p - mediums[i - 1].p) / 2 + (flowModel.dps_fg[i - 1] + flowModel.dps_fg[i]) / 2 - system.g * dheights[i] * mediums[i].d) for i in 2:n - 1} * nParallel;
 //           else
-//             Wb_flows[2:n - 1] = array(vs[i] * crossAreas[i] * ((mediums[i + 1].p - mediums[i - 1].p) / 2 + (flowModel.dps_fg[i] + flowModel.dps_fg[i + 1]) / 2 - system.g * dheights[i] * mediums[i].d) for i in 2:n - 1) * nParallel;
+//             Wb_flows[2:n - 1] = {vs[i] * crossAreas[i] * ((mediums[i + 1].p - mediums[i - 1].p) / 2 + (flowModel.dps_fg[i] + flowModel.dps_fg[i + 1]) / 2 - system.g * dheights[i] * mediums[i].d) for i in 2:n - 1} * nParallel;
 //           end if;
 //           if modelStructure == .Modelica.Fluid.Types.ModelStructure.av_vb then
 //             Wb_flows[1] = vs[1] * crossAreas[1] * ((mediums[2].p - mediums[1].p) / 2 + flowModel.dps_fg[1] / 2 - system.g * dheights[1] * mediums[1].d) * nParallel;
@@ -180,7 +180,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //         partial model PartialTwoPortFlow  \"Base class for distributed flow models\" 
 //           extends Modelica.Fluid.Interfaces.PartialTwoPort(final port_a_exposesState = modelStructure == .Modelica.Fluid.Types.ModelStructure.av_b or modelStructure == .Modelica.Fluid.Types.ModelStructure.av_vb, final port_b_exposesState = modelStructure == .Modelica.Fluid.Types.ModelStructure.a_vb or modelStructure == .Modelica.Fluid.Types.ModelStructure.av_vb);
-//           extends Modelica.Fluid.Interfaces.PartialDistributedVolume(final n = nNodes, final fluidVolumes = array(crossAreas[i] * lengths[i] for i in 1:n) * nParallel);
+//           extends Modelica.Fluid.Interfaces.PartialDistributedVolume(final n = nNodes, final fluidVolumes = {crossAreas[i] * lengths[i] for i in 1:n} * nParallel);
 //           parameter Real nParallel(min = 1) = 1 \"Number of identical parallel flow devices\";
 //           parameter .Modelica.SIunits.Length[n] lengths \"lengths of flow segments\";
 //           parameter .Modelica.SIunits.Area[n] crossAreas \"cross flow areas of flow segments\";
@@ -206,7 +206,7 @@ readFile("BranchingDynamicPipes.mo");
 //           Medium.MassFlowRate[n + 1, Medium.nXi] mXi_flows \"Independent mass flow rates across segment boundaries\";
 //           Medium.MassFlowRate[n + 1, Medium.nC] mC_flows \"Trace substance mass flow rates across segment boundaries\";
 //           Medium.EnthalpyFlowRate[n + 1] H_flows \"Enthalpy flow rates of fluid across segment boundaries\";
-//           .Modelica.SIunits.Velocity[n] vs = array(0.5 * (m_flows[i] + m_flows[i + 1]) / mediums[i].d / crossAreas[i] for i in 1:n) / nParallel \"mean velocities in flow segments\";
+//           .Modelica.SIunits.Velocity[n] vs = {0.5 * (m_flows[i] + m_flows[i + 1]) / mediums[i].d / crossAreas[i] for i in 1:n} / nParallel \"mean velocities in flow segments\";
 //         protected
 //           .Modelica.SIunits.Length[nFM] pathLengths \"Lengths along flow path\";
 //           .Modelica.SIunits.Length[nFM] dheightsFM \"Differences in heights between flow segments\";
@@ -416,7 +416,7 @@ readFile("BranchingDynamicPipes.mo");
 //             parameter .Modelica.SIunits.ReynoldsNumber Re_turbulent = 4000 \"Start of turbulent regime, depending on type of flow device\";
 //             parameter Boolean show_Res = false \"= true, if Reynolds numbers are included for plotting\" annotation(Evaluate = true);
 //             .Modelica.SIunits.ReynoldsNumber[n] Res = Modelica.Fluid.Pipes.BaseClasses.CharacteristicNumbers.ReynoldsNumber(vs, rhos, mus, dimensions) if show_Res \"Reynolds numbers\";
-//             Medium.MassFlowRate[n - 1] m_flows_turbulent = array(nParallel * (crossAreas[i] + crossAreas[i + 1]) / (dimensions[i] + dimensions[i + 1]) * mus_act[i] * Re_turbulent for i in 1:n - 1) if show_Res \"Start of turbulent flow\";
+//             Medium.MassFlowRate[n - 1] m_flows_turbulent = {nParallel * (crossAreas[i] + crossAreas[i + 1]) / (dimensions[i] + dimensions[i + 1]) * mus_act[i] * Re_turbulent for i in 1:n - 1} if show_Res \"Start of turbulent flow\";
 //           protected
 //             parameter Boolean use_rho_nominal = false \"= true, if rho_nominal is used, otherwise computed from medium\" annotation(Evaluate = true);
 //             parameter .Modelica.SIunits.Density rho_nominal = Medium.density_pTX(Medium.p_default, Medium.T_default, Medium.X_default) \"Nominal density (e.g., rho_liquidWater = 995, rho_air = 1.2)\";
@@ -436,12 +436,12 @@ readFile("BranchingDynamicPipes.mo");
 //               end for;
 //             end if;
 //             if use_Ib_flows then
-//               Ib_flows = nParallel * array(rhos[i] * vs[i] * vs[i] * crossAreas[i] - rhos[i + 1] * vs[i + 1] * vs[i + 1] * crossAreas[i + 1] for i in 1:n - 1);
+//               Ib_flows = nParallel * {rhos[i] * vs[i] * vs[i] * crossAreas[i] - rhos[i + 1] * vs[i + 1] * vs[i + 1] * crossAreas[i + 1] for i in 1:n - 1};
 //             else
 //               Ib_flows = zeros(n - 1);
 //             end if;
-//             Fs_p = nParallel * array(0.5 * (crossAreas[i] + crossAreas[i + 1]) * (Medium.pressure(states[i + 1]) - Medium.pressure(states[i])) for i in 1:n - 1);
-//             dps_fg = array(Fs_fg[i] / nParallel * 2 / (crossAreas[i] + crossAreas[i + 1]) for i in 1:n - 1);
+//             Fs_p = nParallel * {0.5 * (crossAreas[i] + crossAreas[i + 1]) * (Medium.pressure(states[i + 1]) - Medium.pressure(states[i])) for i in 1:n - 1};
+//             dps_fg = {Fs_fg[i] / nParallel * 2 / (crossAreas[i] + crossAreas[i + 1]) for i in 1:n - 1};
 //           end PartialStaggeredFlowModel;
 //
 //           partial model PartialGenericPipeFlow  \"GenericPipeFlow: Pipe flow pressure loss and gravity with replaceable WallFriction package\" 
@@ -471,9 +471,9 @@ readFile("BranchingDynamicPipes.mo");
 //             end for;
 //             if continuousFlowReversal then
 //               if from_dp and not WallFriction.dp_is_zero then
-//                 m_flows = homotopy(actual = WallFriction.massFlowRate_dp(dps_fg - array(g * dheights[i] * rhos_act[i] for i in 1:n - 1), rhos_act, rhos_act, mus_act, mus_act, pathLengths_internal, diameters, (crossAreas[1:n - 1] + crossAreas[2:n]) / 2, (roughnesses[1:n - 1] + roughnesses[2:n]) / 2, dp_small / (n - 1), Res_turbulent_internal) * nParallel, simplified = m_flow_nominal / dp_nominal * (dps_fg - g * dheights * rho_nominal));
+//                 m_flows = homotopy(actual = WallFriction.massFlowRate_dp(dps_fg - {g * dheights[i] * rhos_act[i] for i in 1:n - 1}, rhos_act, rhos_act, mus_act, mus_act, pathLengths_internal, diameters, (crossAreas[1:n - 1] + crossAreas[2:n]) / 2, (roughnesses[1:n - 1] + roughnesses[2:n]) / 2, dp_small / (n - 1), Res_turbulent_internal) * nParallel, simplified = m_flow_nominal / dp_nominal * (dps_fg - g * dheights * rho_nominal));
 //               else
-//                 dps_fg = homotopy(actual = WallFriction.pressureLoss_m_flow(m_flows / nParallel, rhos_act, rhos_act, mus_act, mus_act, pathLengths_internal, diameters, (crossAreas[1:n - 1] + crossAreas[2:n]) / 2, (roughnesses[1:n - 1] + roughnesses[2:n]) / 2, m_flow_small / nParallel, Res_turbulent_internal) + array(g * dheights[i] * rhos_act[i] for i in 1:n - 1), simplified = dp_nominal / m_flow_nominal * m_flows + g * dheights * rho_nominal);
+//                 dps_fg = homotopy(actual = WallFriction.pressureLoss_m_flow(m_flows / nParallel, rhos_act, rhos_act, mus_act, mus_act, pathLengths_internal, diameters, (crossAreas[1:n - 1] + crossAreas[2:n]) / 2, (roughnesses[1:n - 1] + roughnesses[2:n]) / 2, m_flow_small / nParallel, Res_turbulent_internal) + {g * dheights[i] * rhos_act[i] for i in 1:n - 1}, simplified = dp_nominal / m_flow_nominal * m_flows + g * dheights * rho_nominal);
 //               end if;
 //             else
 //               if from_dp and not WallFriction.dp_is_zero then
@@ -531,7 +531,7 @@ readFile("BranchingDynamicPipes.mo");
 //             Prs = Medium.prandtlNumber(states);
 //             Res = CharacteristicNumbers.ReynoldsNumber(vs, ds, mus, diameters);
 //             Nus = CharacteristicNumbers.NusseltNumber(alphas, diameters, lambdas);
-//             Q_flows = array(alphas[i] * surfaceAreas[i] * (heatPorts[i].T - Ts[i]) * nParallel for i in 1:n);
+//             Q_flows = {alphas[i] * surfaceAreas[i] * (heatPorts[i].T - Ts[i]) * nParallel for i in 1:n};
 //           end PartialPipeFlowHeatTransfer;
 //
 //           model LocalPipeFlowHeatTransfer  \"LocalPipeFlowHeatTransfer: Laminar and turbulent forced convection in pipes, local coefficients\" 
@@ -1071,10 +1071,10 @@ readFile("BranchingDynamicPipes.mo");
 //         equation
 //           for i in 1:nPorts loop
 //             assert(cardinality(ports[i]) <= 1, \"
-//             each ports[i] of boundary shall at most be connected to one component.
-//             If two or more connections are present, ideal mixing takes
-//             place with these connections, which is usually not the intention
-//             of the modeller. Increase nPorts to add an additional port.
+//         each ports[i] of boundary shall at most be connected to one component.
+//         If two or more connections are present, ideal mixing takes
+//         place with these connections, which is usually not the intention
+//         of the modeller. Increase nPorts to add an additional port.
 //             \");
 //             ports[i].p = medium.p;
 //             ports[i].h_outflow = medium.h;
@@ -1138,7 +1138,7 @@ readFile("BranchingDynamicPipes.mo");
 //         .Modelica.SIunits.Temperature[n] Ts = Medium.temperature(states) \"Temperatures defined by fluid states\";
 //       equation
 //         if use_k then
-//           Q_flows = heatPorts.Q_flow + array(k * surfaceAreas[i] * (T_ambient - heatPorts[i].T) for i in 1:n);
+//           Q_flows = heatPorts.Q_flow + {k * surfaceAreas[i] * (T_ambient - heatPorts[i].T) for i in 1:n};
 //         else
 //           Q_flows = heatPorts.Q_flow;
 //         end if;
@@ -1280,7 +1280,7 @@ readFile("BranchingDynamicPipes.mo");
 //           der(m_flows) = zeros(m);
 //         end if;
 //       equation
-//         Is = array(m_flows[i] * pathLengths[i] for i in 1:m);
+//         Is = {m_flows[i] * pathLengths[i] for i in 1:m};
 //         if momentumDynamics == Types.Dynamics.SteadyState then
 //           zeros(m) = Ib_flows - Fs_p - Fs_fg;
 //         else
@@ -1312,16 +1312,16 @@ readFile("BranchingDynamicPipes.mo");
 //         String X_str;
 //       algorithm
 //         assert(not singleState or singleState and define_p, \"
-//         Wrong value of parameter define_p (= false) in model \\\"\" + modelName + \"\\\":
-//         The selected medium \\\"\" + mediumName + \"\\\" has Medium.singleState=true.
-//         Therefore, an boundary density cannot be defined and
-//         define_p = true is required.
+//       Wrong value of parameter define_p (= false) in model \\\"\" + modelName + \"\\\":
+//       The selected medium \\\"\" + mediumName + \"\\\" has Medium.singleState=true.
+//       Therefore, an boundary density cannot be defined and
+//       define_p = true is required.
 //         \");
 //         for i in 1:nX loop
 //           assert(X_boundary[i] >= 0.0, \"
-//           Wrong boundary mass fractions in medium \\\"\" + mediumName + \"\\\" in model \\\"\" + modelName + \"\\\":
-//           The boundary value X_boundary(\" + String(i) + \") = \" + String(X_boundary[i]) + \"
-//           is negative. It must be positive.
+//       Wrong boundary mass fractions in medium \\\"\" + mediumName + \"\\\" in model \\\"\" + modelName + \"\\\":
+//       The boundary value X_boundary(\" + String(i) + \") = \" + String(X_boundary[i]) + \"
+//       is negative. It must be positive.
 //           \");
 //         end for;
 //         if nX > 0 and abs(sum(X_boundary) - 1.0) > 1.e-10 then
@@ -2092,9 +2092,9 @@ readFile("BranchingDynamicPipes.mo");
 //           AbsolutePressure p_steam_sat \"partial saturation pressure of steam\";
 //         equation
 //           assert(T >= 190 and T <= 647, \"
-//           Temperature T is not in the allowed range
-//           190.0 K <= (T =\" + String(T) + \" K) <= 647.0 K
-//           required from medium model \\\"\" + mediumName + \"\\\".\");
+//         Temperature T is not in the allowed range
+//         190.0 K <= (T =\" + String(T) + \" K) <= 647.0 K
+//         required from medium model \\\"\" + mediumName + \"\\\".\");
 //           MM = 1 / (Xi[Water] / MMX[Water] + (1.0 - Xi[Water]) / MMX[Air]);
 //           p_steam_sat = min(saturationPressure(T), 0.999 * p);
 //           X_sat = min(p_steam_sat * k_mair / max(100 * .Modelica.Constants.eps, p - p_steam_sat) * (1 - Xi[Water]), 1.0) \"Water content at saturation with respect to actual water content\";
@@ -3219,7 +3219,7 @@ readFile("BranchingDynamicPipes.mo");
 //           algorithm
 //             V[:, n + 1] := ones(size(u, 1));
 //             for j in n:(-1):1 loop
-//               V[:, j] := array(u[i] * V[i, j + 1] for i in 1:size(u, 1));
+//               V[:, j] := {u[i] * V[i, j + 1] for i in 1:size(u, 1)};
 //             end for;
 //             p := Modelica.Math.Matrices.leastSquares(V, y);
 //           end fitting;
