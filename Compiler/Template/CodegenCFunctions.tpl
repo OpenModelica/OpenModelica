@@ -5611,35 +5611,60 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let arr_tp_str = '<%expTypeArray(ty)%>'
     let tvar = tempDecl(expTypeModelica(ty), &varDecls)
     let &preExp += '<%tvar%> = max_<%arr_tp_str%>(<%expVar%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="min"), attr=CALL_ATTR(ty = ty), expLst={array}) then
     let expVar = daeExp(array, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = '<%expTypeArray(ty)%>'
     let tvar = tempDecl(expTypeModelica(ty), &varDecls)
     let &preExp += '<%tvar%> = min_<%arr_tp_str%>(<%expVar%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="fill"), expLst=val::dims, attr=CALL_ATTR(ty = ty)) then
     let valExp = daeExp(val, context, &preExp, &varDecls, &auxFunction)
     let dimsExp = (dims |> dim =>
       daeExp(dim, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
-    let ty_str = '<%expTypeArray(ty)%>'
+    let ty_str = expTypeArray(ty)
     let tvar = tempDecl(ty_str, &varDecls)
     let &preExp += 'fill_alloc_<%ty_str%>(&<%tvar%>, <%valExp%>, <%listLength(dims)%>, <%dimsExp%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
-  case call as CALL(path=IDENT(name="vector")) then
-    error(sourceInfo(),'vector() call does not have a C implementation <%printExpStr(call)%>')
+  case call as CALL(path=IDENT(name="vector"), expLst={exp}, attr=CALL_ATTR(ty=ty)) then
+    let ndim = listLength(getDimensionSizes(Expression.typeof(exp)))
+    let tvarc = tempDecl("int", &varDecls)
+    let tvardata = tempDecl("void *", &varDecls)
+    let nElts = tempDecl("int", &varDecls)
+    let val = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+    let szElt = 'sizeof(<%expTypeModelica(ty)%>)'
+    let dims =
+      (getDimensionSizes(Expression.typeof(exp)) |> sz hasindex ix fromindex 1 =>
+      (match sz
+      case 0 then 'if (size_of_dimension_base_array(<%val%>, <%ix%>)>1) <%tvarc%>++;<%\n%>'
+      case 1 then ""
+      else '<%tvarc%>++;<%\n%>')
+      ; empty)
+    let ty_str = expTypeArray(ty)
+    let tvar = tempDecl(ty_str, &varDecls)
+    let &preExp += // Why doesn't Susan allow me to use <<< here?
+'
+<%dims%>if (<%tvarc%> > 1) {
+  throwStreamPrint(threadData, "Called vector with >1 dimensions with size >1: <%Util.escapeModelicaStringToCString(printExpStr(exp))%>");
+}
+<%nElts%> = base_array_nr_of_elements(<%val%>);
+<%tvardata%> = omc_alloc_interface.malloc(<%szElt%>*<%nElts%>);
+memcpy(<%tvardata%>, <%val%>.data, <%szElt%>*<%nElts%>);
+simple_alloc_1d_base_array(&<%tvar%>, <%nElts%>, <%tvardata%>);
+'
+    tvar
 
   case CALL(path=IDENT(name="cat"), expLst=dim::arrays, attr=CALL_ATTR(ty = ty)) then
     let dim_exp = daeExp(dim, context, &preExp, &varDecls, &auxFunction)
     let arrays_exp = (arrays |> array =>
       daeExp(array, context, &preExp, &varDecls, &auxFunction) ;separator=", &")
-    let ty_str = '<%expTypeArray(ty)%>'
+    let ty_str = expTypeArray(ty)
     let tvar = tempDecl(ty_str, &varDecls)
     let &preExp += 'cat_alloc_<%ty_str%>(<%dim_exp%>, &<%tvar%>, <%listLength(arrays)%>, &<%arrays_exp%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="promote"), expLst={A, n}) then
     let var1 = daeExp(A, context, &preExp, &varDecls, &auxFunction)
@@ -5647,28 +5672,28 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'promote_alloc_<%arr_tp_str%>(&<%var1%>, <%var2%>, &<%tvar%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="transpose"), expLst={A}) then
     let var1 = daeExp(A, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'transpose_alloc_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="symmetric"), expLst={A}) then
     let var1 = daeExp(A, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'symmetric_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="skew"), expLst={A}) then
     let var1 = daeExp(A, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'skew_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="cross"), expLst={v1, v2}) then
     let var1 = daeExp(v1, context, &preExp, &varDecls, &auxFunction)
@@ -5676,14 +5701,14 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let arr_tp_str = expTypeFromExpArray(v1)
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'cross_alloc_<%arr_tp_str%>(&<%var1%>, &<%var2%>, &<%tvar%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="identity"), expLst={A}) then
     let var1 = daeExp(A, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = expTypeFromExpArray(A)
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="diagonal"), expLst={A as ARRAY(__)}) then
     let arr_tp_str = expTypeFromExpArray(A)
@@ -5692,7 +5717,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
       '<%daeExp(e, context, &preExp, &varDecls, &auxFunction)%>'
     ;separator=", ")
     let &preExp += 'diagonal_alloc_<%arr_tp_str%>(&<%tvar%>, <%listLength(A.array)%>, <%params%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="String"), expLst={s, format}) then
     let tvar = tempDecl("modelica_string", &varDecls)
@@ -5701,7 +5726,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let formatExp = daeExp(format, context, &preExp, &varDecls, &auxFunction)
     let typeStr = expTypeFromExpModelica(s)
     let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string_format(<%sExp%>, <%formatExp%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="String"), expLst={s, minlen, leftjust}) then
     let tvar = tempDecl("modelica_string", &varDecls)
@@ -5716,13 +5741,13 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     match typeStr
     case "modelica_real" then
       let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, 6);<%\n%>'
-      '<%tvar%>'
+      tvar
     case "modelica_string" then
       let &preExp += '<%tvar%> = <%sExp%>;<%\n%>'
-      '<%tvar%>'
+      tvar
     else
     let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%><%enumStr%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
-    '<%tvar%>'
+    tvar
     end match
 
   case CALL(path=IDENT(name="String"), expLst={s, minlen, leftjust, signdig}) then
@@ -5732,7 +5757,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let leftjustExp = daeExp(leftjust, context, &preExp, &varDecls, &auxFunction)
     let signdigExp = daeExp(signdig, context, &preExp, &varDecls, &auxFunction)
     let &preExp += '<%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="delay"), expLst={ICONST(integer=index), e, d, delayMax}) then
     let tvar = tempDecl("modelica_real", &varDecls)
@@ -5741,7 +5766,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let var2 = daeExp(d, context, &preExp, &varDecls, &auxFunction)
     let var3 = daeExp(delayMax, context, &preExp, &varDecls, &auxFunction)
     let &preExp += '<%tvar%> = delayImpl(data, threadData, <%index%>, <%var1%>, data->localData[0]->timeValue, <%var2%>, <%var3%>);<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name="Integer"), expLst={toBeCasted}) then
     let castedVar = daeExp(toBeCasted, context, &preExp, &varDecls, &auxFunction)
@@ -5769,7 +5794,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let tvar = tempDecl("modelica_metatype", &varDecls)
     let expPart = daeExp(s1, context, &preExp, &varDecls, &auxFunction)
     let &preExp += '<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%expPart%>), <%i%>));<%\n%>'
-    '<%tvar%>'
+    tvar
 
   case CALL(path=IDENT(name = "mmc_unbox_record"), expLst={s1}, attr=CALL_ATTR(ty=ty)) then
     let argStr = daeExp(s1, context, &preExp, &varDecls, &auxFunction)
@@ -6048,7 +6073,7 @@ case CAST(__) then
     let to = expTypeShort(ty)
     let from = expTypeFromExpShort(exp)
     let &preExp += '<%tevar%> = <%expVar%>;<%\n%>cast_<%from%>_array_to_<%to%>(&<%tevar%>, &<%tvar%>);<%\n%>'
-    '<%tvar%>'
+    tvar
   case ty1 as T_COMPLEX(complexClassType=rec as RECORD(__)) then
     match typeof(exp)
       case ty2 as T_COMPLEX(__) then
