@@ -1980,7 +1980,7 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFileHelper(LibraryTreeI
   LibraryTreeItem *pFoundLibraryTreeItem = 0;
   for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-    if ((pChildLibraryTreeItem->getFileName().compare(fileName) == 0) && pLibraryTreeItem->inRange(lineNumber)) {
+    if ((pChildLibraryTreeItem->getFileName().compare(fileName) == 0) && pChildLibraryTreeItem->inRange(lineNumber)) {
       return pChildLibraryTreeItem;
     }
   }
