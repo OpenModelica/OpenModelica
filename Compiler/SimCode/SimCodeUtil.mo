@@ -92,6 +92,7 @@ import HpcOmSimCode;
 import Inline;
 import List;
 import Matching;
+import MetaModelica.Dangerous;
 import PriorityQueue;
 import SimCodeDump;
 import SimCodeFunctionUtil;
@@ -5926,7 +5927,7 @@ protected function preCalculateStartValues1"try to solve the start equation for 
   output BackendDAE.Variables varArr = varsIn;
 protected
   Integer eqIdx, varIdx, varIdx0;
-  list<Integer> rest, newEqIdcs;
+  list<Integer> rest, newEqIdcs, workList={};
   list<list<Integer>> mEntries;
   BackendDAE.Equation eq;
   BackendDAE.EquationArray eqArr;
@@ -5935,8 +5936,16 @@ protected
   DAE.ComponentRef cref;
   DAE.Exp lhs,rhs;
 algorithm
+  // Implement a FIFO queue using two lists:
+  // 'rest' contains the elements in the correct order while 'workList'
+  // contains the rest of the elements in reverse order (in order to
+  // easier add new elements to the queue)
   rest := eqIndexes;
-  while not listEmpty(rest) loop
+  while not listEmpty(rest) or not listEmpty(workList) loop
+    if listEmpty(rest) then
+      rest := Dangerous.listReverseInPlace(workList);
+      workList := {};
+    end if;
     eqIdx::rest := rest;
     try
       {varIdx0} := arrayGet(m,eqIdx);
@@ -5958,7 +5967,7 @@ algorithm
       //check these equations again
       newEqIdcs := arrayGet(mT,varIdx0);
       newEqIdcs := List.deleteMember(newEqIdcs,eqIdx);
-      rest := listAppend(rest,newEqIdcs); // Appending to the end of the list is slow :(
+      workList := List.append_reverse(newEqIdcs,workList);
       //print("check these equations again: "+stringDelimitList(List.map(newEqIdcs,intString),", ")+"\n");
       // replace the var with the new start value in these equations
       eqLst := List.map1r(newEqIdcs,BackendEquation.equationNth1,eqs);
@@ -5971,6 +5980,7 @@ algorithm
     else
     end try;
   end while;
+
 end preCalculateStartValues1;
 
 protected function artificialVarKind "an artificial var is introduced during compilation and has a start-value that does not come from the model"
