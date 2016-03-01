@@ -5646,7 +5646,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let ty_str = expTypeArray(ty)
     let tvar = tempDecl(ty_str, &varDecls)
     let &preExp += // Why doesn't Susan allow me to use <<< here?
-'
+'<%tvarc%>=0;
 <%dims%>if (<%tvarc%> > 1) {
   throwStreamPrint(threadData, "Called vector with >1 dimensions with size >1: <%Util.escapeModelicaStringToCString(printExpStr(exp))%>");
 }
