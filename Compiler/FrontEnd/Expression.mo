@@ -2747,12 +2747,12 @@ algorithm
         e = expMul(e, e1);
         fx1 = List.map1(fx1,expMul,e1);
         if not isZero(e) then
-	        if expHasCrefNoPreOrStart(e1,cr) then
-	          fx1 = e :: fx1;
-	          f1 = {};
-	        else
-	          f1 = {e};
-	        end if;
+          if expHasCrefNoPreOrStart(e1,cr) then
+            fx1 = e :: fx1;
+            f1 = {};
+          else
+            f1 = {e};
+          end if;
         end if;
         //f1 = List.flatten(List.map1(fx1,allTermsForCref, cr));
       then
@@ -2769,12 +2769,12 @@ algorithm
         e = expMul(e, e2);
         fx1 = List.map1(fx1,expMul,e2);
         if not isZero(e) then
-	        if expHasCrefNoPreOrStart(e1,cr) then
-	          fx1 = e :: fx1;
-	          f1 = {};
-	        else
-	          f1 = {e};
-	        end if;
+          if expHasCrefNoPreOrStart(e1,cr) then
+            fx1 = e :: fx1;
+            f1 = {};
+          else
+            f1 = {e};
+          end if;
         end if;
         //fx1 = List.flatten(List.map1(fx1,allTermsForCref, cr));
       then
@@ -2791,12 +2791,12 @@ algorithm
         e = makeDiv(e, e2);
         fx1 = List.map1(fx1,makeDiv,e2);
         if not isZero(e) then
-	        if expHasCrefNoPreOrStart(e1,cr) then
-	          fx1 = e :: fx1;
-	          f1 = {};
-	        else
-	          f1 = {e};
-	        end if;
+          if expHasCrefNoPreOrStart(e1,cr) then
+            fx1 = e :: fx1;
+            f1 = {};
+          else
+            f1 = {e};
+          end if;
         end if;
         //fx1 = List.flatten(List.map1(fx1,allTermsForCref, cr));
       then
@@ -12126,6 +12126,11 @@ algorithm
         crlst := ComponentReference.expandCref(cr,true);
         outExps := List.map(crlst, crefToExp);
       then outExps;
+
+    case (DAE.UNARY(operator=DAE.UMINUS()))
+      algorithm
+        expl := list(DAE.UNARY(inExp.operator, exp) for exp in expandExpression(inExp.exp));
+      then expl;
 
     case DAE.ARRAY(_,_,expl)
       algorithm
