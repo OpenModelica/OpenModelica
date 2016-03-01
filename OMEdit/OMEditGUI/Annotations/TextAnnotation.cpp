@@ -223,9 +223,11 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
   applyLinePattern(painter);
   /* Don't apply the fill patterns on Text shapes. */
   /*applyFillPattern(painter);*/
+  qreal dx = ((-boundingRect().left()) - boundingRect().right());
+  qreal dy = ((-boundingRect().top()) - boundingRect().bottom());
   // first we invert the painter since we have our coordinate system inverted.
   painter->scale(1.0, -1.0);
-  painter->translate(0, ((-boundingRect().top()) - boundingRect().bottom()));
+  painter->translate(0, dy);
   mTextString = StringHandler::removeFirstLastQuotes(mTextString);
   mTextString = StringHandler::unparse(QString("\"").append(mTextString).append("\""));
   QFont font;
@@ -264,20 +266,36 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
     if (pComponent && pComponent->mTransformation.isValid()) {
       QPointF extent1 = pComponent->mTransformation.getExtent1();
       QPointF extent2 = pComponent->mTransformation.getExtent2();
-      qreal dy = ((-boundingRect().top()) - boundingRect().bottom());
-      // if horizontal flip
-      if (extent2.x() < extent1.x()) {
-        painter->scale(-1.0, 1.0);
-      }
-      // if vertical flip
-      if (extent2.y() < extent1.y()) {
-        painter->scale(1.0, -1.0);
-        painter->translate(0, dy);
-      }
-      qreal angle = StringHandler::getNormalizedAngle(pComponent->mTransformation.getRotateAngle());
-      if (angle == 180) {
-        painter->scale(-1.0, -1.0);
-        painter->translate(0, dy);
+      qreal componentAngle = StringHandler::getNormalizedAngle(pComponent->mTransformation.getRotateAngle());
+      qreal shapeAngle = StringHandler::getNormalizedAngle(getRotation());
+      // if shape has its own angle
+      if (shapeAngle > 0) {
+        shapeAngle = StringHandler::getNormalizedAngle(pComponent->mTransformation.getRotateAngle() + getRotation());
+        if (shapeAngle == 180) {
+          painter->scale(-1.0, -1.0);
+          painter->translate(dx, dy);
+        }
+        if (extent2.x() < extent1.x()) {  // if vertical flip
+          painter->scale(1.0, -1.0);
+          painter->translate(0, dy);
+        }
+        if (extent2.y() < extent1.y()) {  // if horizontal flip
+          painter->scale(-1.0, 1.0);
+          painter->translate(dx, 0);
+        }
+      } else {
+        if (componentAngle == 180) {
+          painter->scale(-1.0, -1.0);
+          painter->translate(dx, dy);
+        }
+        if (extent2.x() < extent1.x()) {  // if horizontal flip
+          painter->scale(-1.0, 1.0);
+          painter->translate(dx, 0);
+        }
+        if (extent2.y() < extent1.y()) {  // if vertical flip
+          painter->scale(1.0, -1.0);
+          painter->translate(0, dy);
+        }
       }
     }
   } else {

@@ -944,11 +944,13 @@ void GraphicsView::createActions()
   // Flip Horizontal Action
   mpFlipHorizontalAction = new QAction(QIcon(":/Resources/icons/flip-horizontal.svg"), tr("Flip Horizontal"), this);
   mpFlipHorizontalAction->setStatusTip(tr("Flips the item horizontally"));
+  mpFlipHorizontalAction->setShortcut(QKeySequence("h"));
   mpFlipHorizontalAction->setDisabled(isSystemLibrary);
   connect(mpFlipHorizontalAction, SIGNAL(triggered()), SLOT(flipHorizontal()));
   // Flip Vertical Action
   mpFlipVerticalAction = new QAction(QIcon(":/Resources/icons/flip-vertical.svg"), tr("Flip Vertical"), this);
   mpFlipVerticalAction->setStatusTip(tr("Flips the item vertically"));
+  mpFlipVerticalAction->setShortcut(QKeySequence("v"));
   mpFlipVerticalAction->setDisabled(isSystemLibrary);
   connect(mpFlipVerticalAction, SIGNAL(triggered()), SLOT(flipVertical()));
 }
@@ -1804,6 +1806,14 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     mpModelWidget->getUndoStack()->beginMacro("Rotate anti clockwise by key press");
     emit keyPressRotateAntiClockwise();
     mpModelWidget->getUndoStack()->endMacro();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_H && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Flip horizontal by key press");
+    emit keyPressFlipHorizontal();
+    mpModelWidget->getUndoStack()->endMacro();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_V && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Flip vertical by key press");
+    emit keyPressFlipVertical();
+    mpModelWidget->getUndoStack()->endMacro();
   } else if (event->key() == Qt::Key_Escape && isCreatingConnection()) {
     removeCurrentConnection();
   } else {
@@ -1865,6 +1875,12 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
     mpModelWidget->updateClassAnnotationIfNeeded();
     mpModelWidget->updateModelicaText();
   } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_H && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_V && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
     mpModelWidget->updateModelicaText();
   } else {

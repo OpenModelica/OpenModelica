@@ -228,6 +228,8 @@ signals:
   void keyPressDelete();
   void keyPressRotateClockwise();
   void keyPressRotateAntiClockwise();
+  void keyPressFlipHorizontal();
+  void keyPressFlipVertical();
   void keyPressUp();
   void keyPressShiftUp();
   void keyPressCtrlUp();
