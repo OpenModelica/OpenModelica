@@ -38,6 +38,9 @@
 #include <OMC/Parser/OMCOutputLexer.h>
 #include <OMC/Parser/OMCOutputParser.h>
 #include "meta/meta_modelica.h"
+#ifdef WIN32
+#include "version.h"
+#endif
 
 extern "C" {
 void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
@@ -255,6 +258,9 @@ bool OMCProxy::initializeOMC()
   setCommandLineOptions("+locale=" + settingsLocale.name());
   // get OpenModelica version
   Helper::OpenModelicaVersion = getVersion();
+#ifdef WIN32
+  sendCommand("\"" +  QString(GIT_SHA) + "\"");
+#endif
   // set OpenModelicaHome variable
   Helper::OpenModelicaHome = mpOMCInterface->getInstallationDirectoryPath();
 #ifdef WIN32
