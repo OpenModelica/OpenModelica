@@ -1242,6 +1242,7 @@ algorithm
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- InstSection.unroll failed: " + ValuesUtil.valString(inValue));
+    fail();
   end try;
 end unroll;
 
