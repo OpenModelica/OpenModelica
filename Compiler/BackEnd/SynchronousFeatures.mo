@@ -467,10 +467,13 @@ protected
   DAE.ClockKind clockKind;
   BackendDAE.SubClock subClock;
   BackendDAE.StrongComponent comp;
-  Integer eqIdx, varIdx, parentIdx;
+  Integer eqIdx, varIdx, parentIdx, grandParentIdx;
   MMath.Rational clockFactor;
+  DAE.ClockKind branchClockKind;
 algorithm
   clockFactor := MMath.RAT1;
+  branchClockKind := DAE.INFERRED_CLOCK();
+  grandParentIdx := 0;
   outSubClocks := arrayCreate(BackendVariable.varsSize(inVars), (BackendDAE.DEFAULT_SUBCLOCK, 0));
   for comp in inComps loop
     outClockKind := matchcontinue comp
@@ -495,12 +498,32 @@ algorithm
             end match;
             (clockKind, (subClock, parentIdx)) := getSubClock(exp, inVars, outSubClocks);
           end if;
+          if parentIdx == 0 then
+            // start clock of new branch
+            branchClockKind := DAE.INFERRED_CLOCK();
+            grandParentIdx := 0;
+          end if;
+          (branchClockKind, _) := setClockKind(branchClockKind, clockKind, clockFactor);
           (clockKind, clockFactor) := setClockKind(outClockKind, clockKind, clockFactor);
           if parentIdx == 0 then
-            // adapt uppermost subClock in the tree
+            // adapt uppermost subClock in a branch to possibly multiple bases
             subClock.factor := MMath.multRational(subClock.factor, clockFactor);
           end if;
-          arrayUpdate(outSubClocks, varIdx, (subClock, parentIdx));
+          grandParentIdx := match branchClockKind
+            case DAE.INFERRED_CLOCK()
+              guard parentIdx <> 0
+              algorithm
+                // apply the inverse subClock to a parent without base as
+                // the clock propagates backwards
+                subClock.factor := MMath.divRational(MMath.RAT1, subClock.factor);
+                subClock.shift := MMath.subRational(MMath.RAT0, subClock.shift);
+                arrayUpdate(outSubClocks, parentIdx, (subClock, grandParentIdx));
+              then parentIdx;
+            else
+              algorithm
+                arrayUpdate(outSubClocks, varIdx, (subClock, parentIdx));
+              then parentIdx;
+          end match;
           /*
             print("var " + intString(varIdx) + ": " +
                   BackendDump.equationString(eq) + " ->\n    " +
