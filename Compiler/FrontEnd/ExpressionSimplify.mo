@@ -1067,8 +1067,8 @@ algorithm
     // If the argument to min/max is an array, try to flatten it.
     case (DAE.CALL(path=Absyn.IDENT(name),expLst={e as DAE.ARRAY()},
         attr=DAE.CALL_ATTR(ty=tp)))
+      guard name=="max" or name=="min"
       equation
-        true = stringEq(name, "max") or stringEq(name, "min");
         expl = Expression.flattenArrayExpToList(e);
         e1 = Expression.makeScalarArray(expl, tp);
         false = Expression.expEqual(e, e1);
@@ -1076,7 +1076,14 @@ algorithm
         Expression.makePureBuiltinCall(name, {e1}, tp);
 
     // min/max function on arrays of only 1 element
-    case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array={e})})) then e;
+    case (DAE.CALL(path=Absyn.IDENT(name),expLst={DAE.ARRAY(array=expl as {e})}))
+      guard name=="max" or name=="min"
+      algorithm
+        if Expression.isArrayType(Expression.typeof(e)) then
+          exp.expLst := expl;
+          e := exp;
+        end if;
+      then e;
     case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array={e})})) then e;
 
     case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
