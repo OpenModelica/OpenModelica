@@ -22,19 +22,19 @@ getErrorString();
 // ========================================
 // SingleEquation: 4
 // 1: a:VARIABLE() .PartEvalFunc.functionTest4, .Real type: Real
-// 1/1 (1): a = time    [dynamic]
+// 1/1 (1): a = time   [dynamic]
 //
-// ComplexEquation:
+// SingleEquation: 3
 // 1: r2.y:VARIABLE() .PartEvalFunc.functionTest4, .PartEvalFunc.record1, .Real type: Real
 // 1/1 (1): r2.y = PartEvalFunc.recfunc_eval1(PartEvalFunc.record1(2.0, a), a)   [dynamic]
 //
 // SingleEquation: 2
 // 1: c:VARIABLE() .PartEvalFunc.functionTest4, .Real type: Real
-// 1/1 (1): c = r2.y + a    [dynamic]
+// 1/1 (1): c = r2.y + a   [dynamic]
 //
 // SingleEquation: 1
 // 1: d:STATE(1,c)() .PartEvalFunc.functionTest4, .Real type: Real
-// 1/1 (1): c = der(d)    [dynamic]
+// 1/1 (1): c = der(d)   [dynamic]
 //
 //
 // record SimulationResult
