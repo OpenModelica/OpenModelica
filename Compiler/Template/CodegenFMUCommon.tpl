@@ -432,7 +432,8 @@ end FmiUnknownAttributes;
 
 template FmiUnknownDependencies(list<Integer> dependencies)
 ::=
-  if intGt(listLength(dependencies), 0) then
+  // Note: dependencies="" means no dependencies;
+  // missing dependencies means dependent on all knowns (see FMI 2.0 spec).
   <<
    dependencies="<%dependencies |> dependency => dependency ;separator=" "%>"
   >>
