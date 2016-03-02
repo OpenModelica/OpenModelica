@@ -69,6 +69,6 @@ else # version is not empty, update it if it changed
 		else echo version has changed. updating version.h; \mv version.h.tmp version.h; \
 		fi; \
 	else \
-		echo "#define GIT_SHA \"$(GIT_SHA)\"" > version.h; echo Retrieved version number. version.h was created; \
+		echo "#define GIT_SHA \"OMEdit $(GIT_SHA)\"" > version.h; echo Retrieved version number. version.h was created; \
 	fi;
 endif
