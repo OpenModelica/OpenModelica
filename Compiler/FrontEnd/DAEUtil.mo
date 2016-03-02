@@ -6991,6 +6991,30 @@ algorithm
   end match;
 end addAdditionalComment;
 
+public function addAnnotation
+  input DAE.ElementSource source;
+  input SCode.Comment comment;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := match (source,comment)
+    local
+      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
+      list<Absyn.Path> typeLst "the absyn type of the element" ;
+      list<Absyn.Within> partOfLst "the models this element came from" ;
+      Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+      list<DAE.SymbolicOperation> operations;
+      list<SCode.Comment> commentLst;
+      Boolean b;
+      SCode.Comment c;
+
+    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, commentLst),SCode.COMMENT(annotation_=SOME(_)))
+      then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment::commentLst);
+    else source;
+
+  end match;
+end addAnnotation;
+
 public function getCommentsFromSource
   input DAE.ElementSource source;
   output list<SCode.Comment> outComments;

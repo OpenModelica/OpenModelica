@@ -271,17 +271,29 @@ protected function makeAssignment2
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 algorithm
-  outStatement := match (lhs, lhprop, rhs, rhprop, source)
+  outStatement := match lhs
     local
       DAE.ComponentRef c;
       DAE.Exp rhs_1, e3, e1;
       DAE.Type t, ty;
       list<DAE.Exp> ea2;
 
-    case (DAE.CREF(), _, _, _, _) guard not Types.isPropArray(lhprop)
-      equation
-        (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, true);
-        t = getPropExpType(lhprop);
+    case DAE.CREF() guard not Types.isPropArray(lhprop)
+      algorithm
+        rhs_1 := Types.matchProp(rhs, rhprop, lhprop, true);
+        t := getPropExpType(lhprop);
+        _ := match rhs_1
+          case DAE.CALL(attr=DAE.CALL_ATTR(builtin=true), path=Absyn.IDENT("listAppend"), expLst=(e1 as DAE.CREF())::_)
+            guard Expression.expEqual(lhs, e1)
+            algorithm
+              print(stringDelimitList(list(SCodeDump.printCommentAndAnnotationStr(comment) for comment in DAEUtil.getCommentsFromSource(source)), "\n"));
+              if not max(SCode.commentHasBooleanNamedAnnotation(comment, "__OpenModelica_DisableListAppendWarning") for comment in DAEUtil.getCommentsFromSource(source)) then
+                Error.addSourceMessage(Error.LIST_REVERSE_WRONG_ORDER, {ExpressionDump.printExpStr(e1)}, DAEUtil.getElementSourceFileInfo(source));
+                fail();
+              end if;
+            then ();
+          else ();
+        end match;
       then
         DAE.STMT_ASSIGN(t, lhs, rhs_1, source);
         /* TODO: Use this when we have fixed states in BackendDAE .lower(...)
@@ -293,7 +305,7 @@ algorithm
       then
         DAE.STMT_ASSIGN(t, e1, rhs_1);
       */
-    case (DAE.CREF(), _, _, _, _) // guard Types.isPropArray(lhprop)
+    case DAE.CREF() // guard Types.isPropArray(lhprop)
       equation
         (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
         ty = Types.getPropType(lhprop);
@@ -301,7 +313,7 @@ algorithm
       then
         DAE.STMT_ASSIGN_ARR(t, lhs, rhs_1, source);
 
-    case(e3 as DAE.ASUB(_, _), _, _, _, _)
+    case e3 as DAE.ASUB(_, _)
       equation
         (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, true);
         //false = Types.isPropArray(lhprop);

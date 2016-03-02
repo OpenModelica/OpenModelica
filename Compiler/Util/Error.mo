@@ -907,6 +907,8 @@ public constant Message DUPLICATE_DEFINITION = MESSAGE(5037, TRANSLATION(), ERRO
   Util.gettext("The same variable is being defined twice: %s."));
 public constant Message PATTERN_VAR_NOT_VARIABLE = MESSAGE(5038, TRANSLATION(), ERROR(),
   Util.gettext("Identifiers need to point to local or output variables. Variable %s is %s."));
+public constant Message LIST_REVERSE_WRONG_ORDER = MESSAGE(5039, TRANSLATION(), NOTIFICATION(),
+  Util.gettext("%1:=listAppend(%1, _) has the first argument in the \"wrong\" order.\n  It is very slow to keep appending a linked list (scales like O(N²)).\n  Consider building the list in the reverse order in order to improve performance (scales like O(N) even if you need to reverse a lot of lists). Use annotation __OpenModelica_DisableListAppendWarning=true to disable this message for a certain assignment."));
 
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   Util.notrans("%s"));
