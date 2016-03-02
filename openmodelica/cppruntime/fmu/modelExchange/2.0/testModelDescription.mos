@@ -141,12 +141,12 @@ readFile("modelDescription.tmp.xml");
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"4\" />
+//       <Unknown index=\"4\" dependencies=\"\" />
 //     </Outputs>
 //     <Derivatives>
 //     </Derivatives>
 //     <DiscreteStates>
-//       <Unknown index=\"3\" />
+//       <Unknown index=\"3\" dependencies=\"\" />
 //     </DiscreteStates>
 //     <InitialUnknowns>
 //     </InitialUnknowns>
