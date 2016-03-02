@@ -116,8 +116,7 @@ readFile("BranchingDynamicPipes.mo");
 //     Your model is using an outer \\\"system\\\" component but
 //     an inner \\\"system\\\" component is not defined.
 //     For simulation drag Modelica.Fluid.System into your model
-//     to specify system properties.
-//     \"); 
+//     to specify system properties.\"); 
 //     end System;
 //
 //     package Pipes  \"Devices for conveying fluid\" 

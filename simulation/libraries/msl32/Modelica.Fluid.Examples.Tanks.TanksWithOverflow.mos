@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.Tanks.TanksWithOverflow);
 compareVars :=
 {
@@ -24,61 +24,11 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Compilation
+// OpenModelicaModelTesting.Kind.SuppressedSimulation
 // Modelica.Fluid.Examples.Tanks.TanksWithOverflow
 // {"upperTank.level","upperTank.medium.h","lowerTank.level","lowerTank.medium.h"}
-// Compilation succeeded
-// Warning: Alias set with different nominal values
-//  * candidate: massFlowRate.medium.sat.psat(nominal = 1000000.0)
-//  * candidate: massFlowRate.medium.state.p(nominal = 1000000.0)
-//  * candidate: massFlowRate.medium.p(nominal = 100000.0)
-//  * candidate: upperTank.ports[1].p(nominal = 1000000.0)
-//  * candidate: massFlowRate.ports[1].p(nominal = 1000000.0)
-// => select value from massFlowRate.ports[1].p(nominal = 1000000.0) for variable: massFlowRate.ports[1].p
-// Warning: Alias set with several free start values
-//  * candidate: lowerTank.medium.h(start = lowerTank.h_start)
-//  * candidate: lowerTank.ports[2].h_outflow(start = 100000.0)
-//  * candidate: overflow.flowModel.states[2].h(start = 100000.0)
-//  * candidate: lowerTank.ports[1].h_outflow(start = 100000.0)
-//  * candidate: pipe.flowModel.states[2].h(start = 100000.0)
-//  * candidate: lowerTank.medium.state.h(start = 100000.0)
-//  * candidate: lowerTank.heatTransfer.states[1].h(start = 100000.0)
-// => select value from lowerTank.medium.h(start = lowerTank.h_start) for variable: lowerTank.medium.h
-// Warning: Alias set with several free start values
-//  * candidate: upperTank.medium.h(start = upperTank.h_start)
-//  * candidate: upperTank.ports[3].h_outflow(start = 100000.0)
-//  * candidate: overflow.flowModel.states[1].h(start = 100000.0)
-//  * candidate: upperTank.ports[2].h_outflow(start = 100000.0)
-//  * candidate: pipe.flowModel.states[1].h(start = 100000.0)
-//  * candidate: upperTank.ports[1].h_outflow(start = 100000.0)
-//  * candidate: upperTank.medium.state.h(start = 100000.0)
-//  * candidate: upperTank.heatTransfer.states[1].h(start = 100000.0)
-// => select value from upperTank.medium.h(start = upperTank.h_start) for variable: upperTank.medium.h
-// Warning: Alias set with several free start values
-//  * candidate: lowerTank.heatTransfer.states[1].T(start = 500.0)
-//  * candidate: lowerTank.medium.state.T(start = 500.0)
-//  * candidate: lowerTank.medium.T(start = lowerTank.T_start)
-// => select value from lowerTank.medium.T(start = lowerTank.T_start) for variable: lowerTank.heatTransfer.Ts[1]
-// Warning: Alias set with different nominal values
-//  * candidate: lowerTank.medium.T(nominal = 500.0)
-//  * candidate: lowerTank.medium.state.T(nominal = 500.0)
-//  * candidate: lowerTank.heatTransfer.states[1].T(nominal = 500.0)
-//  * candidate: lowerTank.heatTransfer.heatPorts[1].T(nominal = 300.0)
-//  * candidate: lowerTank.heatTransfer.Ts[1](nominal = 300.0)
-// => select value from lowerTank.heatTransfer.Ts[1](nominal = 300.0) for variable: lowerTank.heatTransfer.Ts[1]
-// Warning: Alias set with several free start values
-//  * candidate: upperTank.heatTransfer.states[1].T(start = 500.0)
-//  * candidate: upperTank.medium.state.T(start = 500.0)
-//  * candidate: upperTank.medium.T(start = upperTank.T_start)
-// => select value from upperTank.medium.T(start = upperTank.T_start) for variable: upperTank.heatTransfer.Ts[1]
-// Warning: Alias set with different nominal values
-//  * candidate: upperTank.medium.T(nominal = 500.0)
-//  * candidate: upperTank.medium.state.T(nominal = 500.0)
-//  * candidate: upperTank.heatTransfer.states[1].T(nominal = 500.0)
-//  * candidate: upperTank.heatTransfer.heatPorts[1].T(nominal = 300.0)
-//  * candidate: upperTank.heatTransfer.Ts[1](nominal = 300.0)
-// => select value from upperTank.heatTransfer.Ts[1](nominal = 300.0) for variable: upperTank.heatTransfer.Ts[1]
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Simulation options: startTime = 0.0, stopTime = 25000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Tanks.TanksWithOverflow', options = '', outputFormat = 'mat', variableFilter = 'time|upperTank.level|upperTank.medium.h|lowerTank.level|lowerTank.medium.h', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Fluid.Examples.Tanks.TanksWithOverflow_res.mat
 // "true
 // "
 // ""
