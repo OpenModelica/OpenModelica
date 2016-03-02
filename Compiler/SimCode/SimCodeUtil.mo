@@ -5893,9 +5893,9 @@ algorithm
   // insert start values for crefs and build incidence matrix
     //BackendDump.dumpVariables(vars,"VAR BEFORE");
     //BackendDump.dumpEquationList(eqLst,"EQS BEFORE");
-  allVars := BackendVariable.mergeVariables(vars,knownVars);
   eqs := BackendEquation.copyEquationArray(systIn.orderedEqs);
-  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs,replaceCrefWithStartValue,allVars);
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs,replaceCrefWithStartValue,knownVars);
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs,replaceCrefWithStartValue,vars);
     //BackendDump.dumpEquationList(eqLst,"EQS AFTER");
   vars1 := BackendVariable.listVar1(noStartVarLst);
   syst := BackendDAEUtil.createEqSystem(vars1, eqs);
