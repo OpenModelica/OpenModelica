@@ -360,6 +360,7 @@ void GraphicsView::addComponentToClass(Component *pComponent)
     if (pComponent->getLibraryTreeItem()) {
       className = StringHandler::makeClassNameRelative(pComponent->getLibraryTreeItem()->getNameStructure(),
                                                        mpModelWidget->getLibraryTreeItem()->getNameStructure());
+      pComponent->getComponentInfo()->setClassName(className);
     } else {
       className = pComponent->getComponentInfo()->getClassName();
     }
