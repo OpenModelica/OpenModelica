@@ -211,8 +211,10 @@ algorithm
 
     // compute system for lambda=0
     if useHomotopy then
+      initdae0 := BackendDAEUtil.setFunctionTree(initdae0, BackendDAEUtil.getFunctions(initdae.shared));
       initdae0 := BackendDAEUtil.postOptimizeDAE(initdae0, (replaceHomotopyWithSimplified, "replaceHomotopyWithSimplified")::initOptModules, matchingAlgorithm, daeHandler);
       outInitDAE_lambda0 := SOME(initdae0);
+      initdae := BackendDAEUtil.setFunctionTree(initdae, BackendDAEUtil.getFunctions(initdae0.shared));
     else
       outInitDAE_lambda0 := NONE();
     end if;
