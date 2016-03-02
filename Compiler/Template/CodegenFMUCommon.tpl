@@ -441,7 +441,6 @@ end FmiUnknownDependencies;
 
 template FmiUnknownDependenciesKind(list<String> dependenciesKind)
 ::=
-  if intGt(listLength(dependenciesKind), 0) then
   <<
    dependenciesKind="<%dependenciesKind |> dependencyKind => dependencyKind ;separator=" "%>"
   >>
