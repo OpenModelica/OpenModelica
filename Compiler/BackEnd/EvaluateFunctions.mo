@@ -558,9 +558,9 @@ algorithm
         end if;
 
         // build the new partial function
-        elements = listAppend(allInputs,updatedVarOutputs);
-        elements = listAppend(elements,protectVars);
-        elements = listAppend(elements,algs);
+        elements = listAppend(protectVars,algs);
+        elements = listAppend(updatedVarOutputs,elements);
+        elements = listAppend(allInputs,elements);
         elements = List.unique(elements);
         (func,path) = updateFunctionBody(func,elements,idx, updatedVarOutputs, allOutputs);
         funcs = if funcIsPartConst then DAEUtil.addDaeFunction({func},funcs) else funcs;

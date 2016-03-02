@@ -887,7 +887,7 @@ algorithm
         markTVars(tSel_always,ass1);
         (_,unsolv,_) = List.intersection1OnTrue(unsolvables,tSel_always,intEq);
         // equations not yet assigned containing the tvars
-        vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always,{});
+        vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Assignable equations containing new tvars:\n");
           BackendDump.dumpAdjacencyRowEnhanced(vareqns);
@@ -916,26 +916,17 @@ protected function findVareqns
   input CompFunc inCompFunc;
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
   input list<Integer> tSel_alwaysIn;
-  input list<tuple<Integer,BackendDAE.Solvability>> vareqnsIn;
-  output list<tuple<Integer,BackendDAE.Solvability>> vareqnsOut;
+  output list<tuple<Integer,BackendDAE.Solvability>> vareqnsOut = {};
   partial function CompFunc
     input array<Integer> inValue;
     input tuple<Integer,BackendDAE.Solvability> inElement;
     output Boolean outIsEqual;
   end CompFunc;
 algorithm
-  vareqnsOut := match(ass2In,inCompFunc,mt,tSel_alwaysIn,vareqnsIn)
-    local
-    Integer tvar;
-      list<Integer> rest;
-      list<tuple<Integer,BackendDAE.Solvability>> vareqns;
-  case(_,_,_,{},_)
-     then List.unique(vareqnsIn);
-  case(_,_,_,tvar::rest,_)
-    equation
-      vareqns = List.removeOnTrue(ass2In,inCompFunc,mt[tvar]);
-       then findVareqns(ass2In,inCompFunc,mt,rest,listAppend(vareqnsIn,vareqns));
- end match;
+  for tvar in tSel_alwaysIn loop
+    vareqnsOut := List.append_reverse(List.removeOnTrue(ass2In,inCompFunc,mt[tvar]), vareqnsOut);
+  end for;
+  vareqnsOut := List.unique(vareqnsOut);
 end findVareqns;
 
 
@@ -1414,13 +1405,14 @@ protected function tearingBFS1 " function checks for possible assignments and ca
   input BackendDAE.AdjacencyMatrixElementEnhanced inNextQueue;
   output BackendDAE.AdjacencyMatrixElementEnhanced outNextQueue;
 algorithm
-  outNextQueue := matchcontinue(rows,size,c,mt,ass1,ass2,inNextQueue)
+  outNextQueue := match(rows,size,c,mt,ass1,ass2,inNextQueue)
     local
     // there is only one variable assignable from this equation and the equation is solvable for this variable
     case (_,_,_,_,_,_,_)
+      guard
+        intEq(listLength(rows),size) and
+        solvableLst(rows)
       equation
-        true = intEq(listLength(rows),size);
-        true = solvableLst(rows);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Assign Eqns: " + stringDelimitList(List.map(c,intString),", ") + "\n");
         end if;
@@ -1428,15 +1420,16 @@ algorithm
         // make assignment and get next equations
         tearingBFS2(rows,c,mt,ass1,ass2,inNextQueue);
 /*    case (_,_,_,_,_,_,_)
+      guard
+        intEq(listLength(rows),size) and
+        not solvableLst(rows);
       equation
-        true = intEq(listLength(rows),size);
-        false = solvableLst(rows);
           //fcall(Flags.TEARING_DUMPVERBOSE, print,"cannot Assign Var" + intString(r) + " with Eqn " + intString(c) + "\n");
       then
         inNextQueue;
 */
     else inNextQueue;
-  end matchcontinue;
+  end match;
 end tearingBFS1;
 
 
@@ -2990,7 +2983,7 @@ algorithm
   end if;
 
   // 2. Collect all variables from different potential-sets in one list
-  selectedvars := listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(potentials1,potentials2),potentials3),potentials4),potentials5),potentials6),potentials7),potentials8),potentials9),potentials10);
+  selectedvars := listAppend(potentials1,listAppend(potentials2,listAppend(potentials3,listAppend(potentials4,listAppend(potentials5,listAppend(potentials6,listAppend(potentials7,listAppend(potentials8,listAppend(potentials9,potentials10)))))))));
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: "+ stringDelimitList(List.map(selectedvars,intString),",")+"\n(All potentials)\n\n");
   end if;

@@ -1677,7 +1677,7 @@ algorithm
         (l1, l2) = getExpsFromConstrainClass(rp);
         (_, se) = Absyn.getExpsFromArrayDimOpt(ado);
         (l3, l4) = getExpsFromMod(m);
-        l1 = listAppend(listAppend(se, l1), l3);
+        l1 = listAppend(se, listAppend(l1, l3));
         l2 = listAppend(l2, l4);
       then
         (l1, l2);
@@ -1707,7 +1707,7 @@ algorithm
         (l1, l2) = getExpsFromConstrainClass(rp);
         (_, se) = Absyn.getExpsFromArrayDim(ad);
         (l3, l4) = getExpsFromMod(m);
-        l1 = listAppend(listAppend(se, l1), l3);
+        l1 = listAppend(se, listAppend(l1, l3));
         l2 = listAppend(l2, l4);
       then
         (l1, l2);
@@ -6769,7 +6769,7 @@ protected function extractCorrectClassMod2
   input list<DAE.SubMod> premod;
   output DAE.Mod omod;
   output list<DAE.SubMod> restmods;
-algorithm (omod,restmods) := matchcontinue( smod , name , premod)
+algorithm (omod,restmods) := match( smod , name , premod)
   local
     DAE.Mod mod;
     DAE.SubMod sub;
@@ -6779,9 +6779,10 @@ algorithm (omod,restmods) := matchcontinue( smod , name , premod)
     case({},_,_) then (DAE.NOMOD(),premod);
 
   case(DAE.NAMEMOD(id, mod) :: rest, _, _)
+    guard
+      stringEq(id, name)
     equation
-        true = stringEq(id, name);
-    rest2 = listAppend(premod,rest);
+      rest2 = listAppend(premod,rest);
     then
       (mod, rest2);
 
@@ -6790,14 +6791,7 @@ algorithm (omod,restmods) := matchcontinue( smod , name , premod)
     (mod,rest2) = extractCorrectClassMod2(rest,name,premod);
     then
       (mod, sub::rest2);
-
-  else
-    equation
-      true = Flags.isSet(Flags.FAILTRACE);
-      Debug.trace("- extract_Correct_Class_Mod_2 failed\n");
-    then
-      fail();
-  end matchcontinue;
+  end match;
 end extractCorrectClassMod2;
 
 public function traverseModAddFinal

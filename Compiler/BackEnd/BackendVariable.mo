@@ -57,6 +57,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import HashSet;
 protected import List;
+protected import MetaModelica.Dangerous;
 protected import Util;
 protected import Types;
 
@@ -2043,21 +2044,17 @@ end listVar1;
 
 public function equationSystemsVarsLst
   input BackendDAE.EqSystems systs;
-  input list<BackendDAE.Var> inVars;
-  output list<BackendDAE.Var> outVars;
+  output list<BackendDAE.Var> outVars = {};
+protected
+  list<BackendDAE.Var> vars;
+  BackendDAE.Variables v;
 algorithm
-  outVars := match (systs)
-    local
-      BackendDAE.EqSystems rest;
-      list<BackendDAE.Var> vars, vars1;
-      BackendDAE.Variables v;
-
-    case {} then inVars;
-    case BackendDAE.EQSYSTEM(orderedVars=v)::rest equation
-      vars = varList(v);
-      vars1 = listAppend(inVars,vars);
-    then equationSystemsVarsLst(rest,vars1);
-  end match;
+  for es in systs loop
+    BackendDAE.EQSYSTEM(orderedVars=v) := es;
+    vars := varList(v);
+    outVars := List.append_reverse(vars, outVars);
+  end for;
+  outVars := MetaModelica.Dangerous.listReverseInPlace(outVars);
 end equationSystemsVarsLst;
 
 public function daeVars "returns orderedVars"

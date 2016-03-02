@@ -347,16 +347,16 @@ algorithm
     (LinearMatrices, uniqueEqIndex) := createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
 
     // collect jacobian equation only for equantion info file
-    jacobianEquations := collectAllJacobianEquations(LinearMatrices, {});
+    jacobianEquations := collectAllJacobianEquations(LinearMatrices);
 
     // collect symbolic jacobians in linear loops of the overall jacobians
     (_, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacs) := countandIndexAlgebraicLoops({}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, LinearMatrices);
 
-    jacobianEquations := collectAllJacobianEquations(SymbolicJacsStateSelect, jacobianEquations);
+    jacobianEquations := listAppend(collectAllJacobianEquations(SymbolicJacsStateSelect), jacobianEquations);
     SymbolicJacsNLS := listAppend(SymbolicJacsStateSelectInternal, SymbolicJacsNLS);
     SymbolicJacsNLS := listAppend(SymbolicJacsStateSelect, SymbolicJacsNLS);
     SymbolicJacs := listAppend(SymbolicJacsNLS, SymbolicJacs);
-    jacobianSimvars := collectAllJacobianVars(SymbolicJacs, {});
+    jacobianSimvars := collectAllJacobianVars(SymbolicJacs);
     modelInfo := setJacobianVars(jacobianSimvars, modelInfo);
     execStat("simCode: created linear, non-linear and system jacobian parts");
 
@@ -4018,87 +4018,35 @@ end addLinearizationMatrixes;
 
 protected function collectAllJacobianEquations
   input list<SimCode.JacobianMatrix> inJacobianMatrix;
-  input list<SimCode.SimEqSystem> inAccum;
-  output list<SimCode.SimEqSystem> outEqn;
+  output list<SimCode.SimEqSystem> outEqn = {};
+protected
+  list<SimCode.JacobianColumn> column;
+  list<SimCode.SimEqSystem> tmp;
 algorithm
-  outEqn :=
-  match(inJacobianMatrix, inAccum)
-      local
-        list<SimCode.JacobianColumn> column;
-        list<SimCode.SimEqSystem> tmp, tmp1;
-        list<SimCode.JacobianMatrix> rest;
-    case ({},_) then inAccum;
-
-    case ((column, _, _, _, _, _, _)::rest, _)
-      equation
-        tmp = appendAllequation(column, {});
-        tmp1 = listAppend(tmp, inAccum);
-        tmp1 = collectAllJacobianEquations(rest, tmp1);
-      then tmp1;
-end match;
+  for m in inJacobianMatrix loop
+    (column, _, _, _, _, _, _) := m;
+    for c in column loop
+      (tmp,_,_) := c;
+      outEqn := listAppend(tmp, outEqn);
+    end for;
+  end for;
 end collectAllJacobianEquations;
-
-protected function appendAllequation
-  input list<SimCode.JacobianColumn> inJacobianColumn;
-  input list<SimCode.SimEqSystem> inAccum;
-  output list<SimCode.SimEqSystem> outEqn;
-algorithm
-  outEqn :=
-  match(inJacobianColumn, inAccum)
-      local
-        list<SimCode.SimEqSystem> tmp, tmp1;
-        list<SimCode.JacobianColumn> rest;
-    case ({}, _) then inAccum;
-
-    case (((tmp, _, _)::rest), _)
-      equation
-        tmp1 = listAppend(tmp, inAccum);
-        tmp1 = appendAllequation(rest, tmp1);
-      then tmp1;
-end match;
-end appendAllequation;
 
 protected function collectAllJacobianVars
   input list<SimCode.JacobianMatrix> inJacobianMatrix;
-  input list<SimCodeVar.SimVar> inAccum;
-  output list<SimCodeVar.SimVar> outEqn;
+  output list<SimCodeVar.SimVar> outEqn = {};
+protected
+  list<SimCode.JacobianColumn> column;
+  list<SimCodeVar.SimVar> tmp;
 algorithm
-  outEqn :=
-  match(inJacobianMatrix, inAccum)
-      local
-        list<SimCode.JacobianColumn> column;
-        list<SimCodeVar.SimVar> tmp, tmp1;
-        list<SimCode.JacobianMatrix> rest;
-    case ({},_) then inAccum;
-
-    case ((column, _, _, _, _, _, _)::rest, _)
-      equation
-        tmp = appendAllVars(column, {});
-        tmp1 = listAppend(tmp, inAccum);
-        tmp1 = collectAllJacobianVars(rest, tmp1);
-      then tmp1;
-end match;
+  for m in inJacobianMatrix loop
+    (column, _, _, _, _, _, _) := m;
+    for c in column loop
+      (_,tmp,_) := c;
+      outEqn := listAppend(tmp, outEqn);
+    end for;
+  end for;
 end collectAllJacobianVars;
-
-protected function appendAllVars
-  input list<SimCode.JacobianColumn> inJacobianColumn;
-  input list<SimCodeVar.SimVar> inAccum;
-  output list<SimCodeVar.SimVar> outEqn;
-algorithm
-  outEqn :=
-  match(inJacobianColumn, inAccum)
-      local
-        list<SimCodeVar.SimVar> tmp, tmp1;
-        list<SimCode.JacobianColumn> rest;
-    case ({}, _) then inAccum;
-
-    case (((_, tmp, _)::rest), _)
-      equation
-        tmp1 = listAppend(tmp, inAccum);
-        tmp1 = appendAllVars(rest, tmp1);
-      then tmp1;
-end match;
-end appendAllVars;
 
 protected function sortSparsePattern
   input list<SimCodeVar.SimVar> inSimVars;
@@ -5583,8 +5531,9 @@ algorithm
   varasserts := {};
   for p in inAllPrimaryParameters loop
     varasserts2 := createVarAsserts(p);
-    varasserts := listAppend(varasserts, varasserts2);
+    varasserts := List.append_reverse(varasserts2, varasserts);
   end for;
+  varasserts := MetaModelica.Dangerous.listReverseInPlace(varasserts);
   (simvarasserts, outUniqueEqIndex) := List.mapFold(varasserts, dlowAlgToSimEqSystem, outUniqueEqIndex);
 
   outParameterEquations := listAppend(outParameterEquations, simvarasserts);
@@ -10708,7 +10657,7 @@ algorithm
         BackendDAE.DAE(eqs=eqs) = dae;
 
         //get Backend vars and index
-        vars = BackendVariable.equationSystemsVarsLst(eqs,{});
+        vars = BackendVariable.equationSystemsVarsLst(eqs);
         crefs = List.map(vars,BackendVariable.varCref);
         size = listLength(crefs);
         bVarIdcs = List.intRange(size);

@@ -2655,15 +2655,15 @@ algorithm
     String matrixName;
 
     case ({}, _, _, _, _, _, _, _)
-    then (inElementsDer, inFunctionTree, inElementsNoDer, inBooleanLst);
+    then (MetaModelica.Dangerous.listReverseInPlace(inElementsDer), inFunctionTree, MetaModelica.Dangerous.listReverseInPlace(inElementsNoDer), MetaModelica.Dangerous.listReverseInPlace(inBooleanLst));
 
     case ((var1 as DAE.VAR(componentRef = cref, ty= (DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD())),  binding=SOME(binding)))::rest, _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), _, _, _, _, _) equation
       dcref = createDiffedCrefName(cref, matrixName);
       var = DAEUtil.replaceCrefInVar(dcref, var1);
       (dbinding, functions) = differentiateExp(binding, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, expStack);
       var = DAEUtil.replaceBindungInVar(dbinding, var);
-      vars = listAppend(inElementsDer, {var});
-      blst = listAppend(inBooleanLst, {true});
+      vars = var::inElementsDer;
+      blst = true::inBooleanLst;
       (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, vars, inElementsNoDer, blst, maxIter, expStack);
     then (vars, functions, elementsNoDer, blst);
 
@@ -2674,10 +2674,10 @@ algorithm
       //crefLst = List.map1(varLst,Expression.generateCrefsFromExpVar,dcref);
       //tpLst = List.map(varLst,Types.getVarType);
       //newVars = List.threadMap1(crefLst, tpLst, DAEUtil.replaceCrefandTypeInVar, var);
-      //elementsNoDer = listAppend(inElementsNoDer, newVars);
+      //elementsNoDer = List.append_reverse(newVars,inElementsNoDer);
 
-      vars = listAppend(inElementsDer, {var});
-      blst = listAppend(inBooleanLst, {true});
+      vars = var::inElementsDer;
+      blst = true::inBooleanLst;
       (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, vars, inElementsNoDer, blst, maxIter, expStack);
     then (vars, functions, elementsNoDer, blst);
 
@@ -2686,8 +2686,8 @@ algorithm
       crefLst = Expression.extractCrefsFromExp(binding);
       ({},{}) = BackendVariable.getVarLst(crefLst, timevars, {}, {});
 
-      vars = listAppend(inElementsNoDer, {var});
-      blst = listAppend(inBooleanLst, {false});
+      vars = var::inElementsNoDer;
+      blst = false::inBooleanLst;
       (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, inElementsDer, vars, blst, maxIter, expStack);
     then (vars, functions, elementsNoDer, blst);
 
@@ -2699,8 +2699,8 @@ algorithm
       var = DAEUtil.replaceCrefInVar(dcref, var1);
       (dbinding, functions) = differentiateExp(binding, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, expStack);
       var = DAEUtil.replaceBindungInVar(dbinding, var);
-      vars = listAppend(inElementsDer, {var});
-      blst = listAppend(inBooleanLst, {true});
+      vars = var::inElementsDer;
+      blst = true::inBooleanLst;
       (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, functions, vars, inElementsNoDer, blst, maxIter, expStack);
     then (vars, functions, elementsNoDer, blst);
 
@@ -2710,14 +2710,14 @@ algorithm
       (e, functions) = differentiateCrefs(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, expStack);
       dcref = Expression.expCref(e);
       var = DAEUtil.replaceCrefInVar(dcref, var1);
-      vars = listAppend(inElementsDer, {var});
-      blst = listAppend(inBooleanLst, {true});
+      vars = var::inElementsDer;
+      blst = true::inBooleanLst;
       (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, functions, vars, inElementsNoDer, blst, maxIter, expStack);
     then (vars, functions, elementsNoDer, blst);
 
     case((var as DAE.VAR())::rest, _, _, _, _, _, _, _) equation
-      elementsNoDer = listAppend(inElementsNoDer, {var});
-      blst = listAppend(inBooleanLst, {false});
+      elementsNoDer = var::inElementsNoDer;
+      blst = false::inBooleanLst;
       (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, inElementsDer, elementsNoDer, blst, maxIter, expStack);
     then (vars, functions, elementsNoDer, blst);
   end matchcontinue;

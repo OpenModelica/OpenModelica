@@ -6143,19 +6143,20 @@ end getUniontypePathsElements;
 
 protected function getDAEDeclsFromValueblocks
   input list<DAE.Exp> exps;
-  output list<DAE.Element> outEls;
+  output list<DAE.Element> outEls = {};
 algorithm
-  outEls := matchcontinue (exps)
-    local
-      list<DAE.Exp> rest;
-      list<DAE.Element> els1,els2;
-    case {} then {};
-    case DAE.MATCHEXPRESSION(localDecls = els1)::rest
-      equation
-        els2 = getDAEDeclsFromValueblocks(rest);
-      then listAppend(els1,els2);
-    case _::rest then getDAEDeclsFromValueblocks(rest);
-  end matchcontinue;
+  for ex in exps loop
+    _ := match ex
+      local
+        list<DAE.Element> els1;
+      case DAE.MATCHEXPRESSION(localDecls = els1)
+        algorithm
+          outEls := List.append_reverse(els1, outEls);
+        then ();
+      else ();
+    end match;
+  end for;
+  outEls := MetaModelica.Dangerous.listReverseInPlace(outEls);
 end getDAEDeclsFromValueblocks;
 
 // protected function transformDerInline "This is not used.
@@ -7123,7 +7124,7 @@ algorithm
 
     case (true, _, DAE.DAE(els))
       equation
-        els = sortDAEElementsInModelicaCodeOrder(inElements, els, {});
+        els = sortDAEElementsInModelicaCodeOrder(inElements, els);
       then DAE.DAE(els);
 
   end match;
@@ -7134,32 +7135,25 @@ protected function sortDAEElementsInModelicaCodeOrder
  sort the DAE elements back in the order they are in the file"
   input list<tuple<SCode.Element, DAE.Mod>> inElements;
   input list<DAE.Element> inDaeEls;
-  input list<DAE.Element> inAcc;
-  output list<DAE.Element> outDaeEls;
+  output list<DAE.Element> outDaeEls = {};
+protected
+  list<DAE.Element> rest = inDaeEls;
 algorithm
-  outDaeEls := match(inElements, inDaeEls, inAcc)
-    local
-      list<DAE.Element> dae, named, rest, els, acc;
-      Absyn.Ident name;
-      list<tuple<SCode.Element, DAE.Mod>> restEl;
-
-    case ({}, _, _) then listAppend(inAcc, inDaeEls);
-
-    case (((SCode.COMPONENT(name = name),_))::restEl, dae, acc)
-      equation
-        (named, rest) = splitVariableNamed(dae, name, {}, {});
-        acc = listAppend(acc, named);
-        els = sortDAEElementsInModelicaCodeOrder(restEl, rest, acc);
-      then
-        els;
-
-    case (((_,_))::restEl, dae, acc)
-      equation
-        els = sortDAEElementsInModelicaCodeOrder(restEl, dae, acc);
-      then
-        els;
-
-  end match;
+  for e in inElements loop
+    _ := match e
+      local
+        list<DAE.Element> named;
+        Absyn.Ident name;
+      case (SCode.COMPONENT(name = name),_)
+        algorithm
+          (named, rest) := splitVariableNamed(rest, name, {}, {});
+          outDaeEls := List.append_reverse(named, outDaeEls);
+        then ();
+      else ();
+    end match;
+  end for;
+  outDaeEls := List.append_reverse(inDaeEls, outDaeEls);
+  outDaeEls := MetaModelica.Dangerous.listReverseInPlace(outDaeEls);
 end sortDAEElementsInModelicaCodeOrder;
 
 protected function splitVariableNamed
