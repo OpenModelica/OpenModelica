@@ -143,6 +143,9 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
   }
   comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
+    comp->functions = functions;
+    comp->loggingOn = loggingOn;
+    comp->state = modelInstantiated;
     comp->instanceName = functions.allocateMemory(1 + strlen(instanceName), sizeof(char));
     comp->GUID = functions.allocateMemory(1 + strlen(GUID), sizeof(char));
     /* Cannot use functions.allocateMemory since the pointer might not be stored on the stack of the parent */
@@ -173,8 +176,6 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
     functions.logger(NULL, instanceName, fmiError, "error", "fmiInstantiateModel: Out of memory.");
     return NULL;
   }
-  if (comp->loggingOn) comp->functions.logger(NULL, instanceName, fmiOK, "log",
-      "fmiInstantiateModel: GUID=%s", GUID);
   /* intialize modelData */
   fmu1_model_interface_setupDataStruc(comp->fmuData);
   useStream[LOG_STDOUT] = 1;
@@ -189,9 +190,6 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
 
   strcpy((char*)comp->instanceName, (const char*)instanceName);
   strcpy((char*)comp->GUID, (const char*)GUID);
-  comp->functions = functions;
-  comp->loggingOn = loggingOn;
-  comp->state = modelInstantiated;
 
   /* read input vars */
   //input_function(comp->fmuData);
