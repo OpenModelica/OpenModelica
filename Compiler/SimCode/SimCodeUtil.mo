@@ -302,7 +302,7 @@ algorithm
     // just the algorithms without outputs
 
     algebraicEquations := listAppend(algebraicEquations, removedEquations::{});
-    allEquations := listAppend(allEquations, removedEquations);
+    allEquations := List.append_reverse(allEquations, removedEquations);
 
     // state set stuff
     (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) := createStateSets(dlow, {}, uniqueEqIndex, tempvars);
@@ -353,8 +353,8 @@ algorithm
     (_, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacs) := countandIndexAlgebraicLoops({}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, LinearMatrices);
 
     jacobianEquations := collectAllJacobianEquations(SymbolicJacsStateSelect, jacobianEquations);
-    SymbolicJacsStateSelect := listAppend(SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal);
-    SymbolicJacsNLS := listAppend(SymbolicJacsNLS, SymbolicJacsStateSelect);
+    SymbolicJacsNLS := listAppend(SymbolicJacsStateSelectInternal, SymbolicJacsNLS);
+    SymbolicJacsNLS := listAppend(SymbolicJacsStateSelect, SymbolicJacsNLS);
     SymbolicJacs := listAppend(SymbolicJacsNLS, SymbolicJacs);
     jacobianSimvars := collectAllJacobianVars(SymbolicJacs, {});
     modelInfo := setJacobianVars(jacobianSimvars, modelInfo);
@@ -1020,8 +1020,8 @@ algorithm
     case ({}, symJac::restSymJacs, _, _, _, _, _, _)
       equation
         (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex);
-        symjacs = listAppend(symjacs,inSymJacsAcc);
-        (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork({}, restSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, inEqnsAcc, symJac::symjacs);
+        symjacs = symJac::listAppend(symjacs,inSymJacsAcc);
+        (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork({}, restSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, inEqnsAcc, symjacs);
       then (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
 
     // No dynamic tearing
@@ -1204,6 +1204,7 @@ algorithm
   foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
   (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otempvars,
   oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
+  oequationsForZeroCrossings := Dangerous.listReverseInPlace(oequationsForZeroCrossings);
 end createEquationsForSystems;
 
 protected function createEquationsForSystems1
@@ -1251,8 +1252,8 @@ algorithm
 
         odeEquations = List.consOnTrue(not listEmpty(odeEquations1), odeEquations1, odeEquations);
         algebraicEquations = List.consOnTrue(not listEmpty(algebraicEquations1), algebraicEquations1, algebraicEquations);
-        allEquations = listAppend(allEquations, allEquations1);
-        equationsForZeroCrossings = listAppend(equationsForZeroCrossings, equationsForZeroCrossings1);
+        allEquations = List.append_reverse(allEquations1, allEquations);
+        equationsForZeroCrossings = List.append_reverse(equationsForZeroCrossings1, equationsForZeroCrossings);
 
       then ( uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars,
              eqSccMapping, eqBackendSimCodeMapping, backendMapping, listLength(comps) + sccOffset );
@@ -5217,7 +5218,7 @@ protected
   BackendDAE.EquationArray  removedEqs;
   list<SimCodeVar.SimVar> tempvars;
   Integer uniqueEqIndex;
-  list<SimCode.SimEqSystem> allEquations, solvedEquations, removedEquations, aliasEquations, removedInitialEquations;
+  list<SimCode.SimEqSystem> allEquations, knownVarEquations, solvedEquations, removedEquations, aliasEquations, removedInitialEquations;
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
   BackendDAE.Variables knvars, aliasVars;
@@ -5225,17 +5226,19 @@ algorithm
   BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars, aliasVars=aliasVars)) := inInitDAE;
   removedEqs := BackendDAEUtil.collapseRemovedEqs(inInitDAE);
   // generate equations from the known unfixed variables
-  ((uniqueEqIndex, allEquations)) := BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (iuniqueEqIndex, {}));
+  ((uniqueEqIndex, knownVarEquations)) := BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (iuniqueEqIndex, {}));
   // generate equations from the solved systems
   (uniqueEqIndex, _, _, solvedEquations, _, tempvars, _, _, _, _) :=
       createEquationsForSystems(systs, shared, uniqueEqIndex, {}, itempvars, 0, SimCode.NO_MAPPING());
-  allEquations := listAppend(allEquations, solvedEquations);
   // generate equations from the removed equations
   ((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
-  allEquations := listAppend(allEquations, removedEquations);
   // generate equations from the alias variables
   ((uniqueEqIndex, aliasEquations)) := BackendVariable.traverseBackendDAEVars(aliasVars, traverseAliasVarsToSimEqSystem, (uniqueEqIndex, {}));
-  allEquations := listAppend(allEquations, aliasEquations);
+
+  allEquations := Dangerous.listReverseInPlace(aliasEquations);
+  allEquations := listAppend(removedEquations, allEquations);
+  allEquations := List.append_reverse(solvedEquations, allEquations);
+  allEquations := listAppend(knownVarEquations, allEquations);
 
   // generate equations from removed initial equations
   (removedInitialEquations, uniqueEqIndex, tempvars) := createNonlinearResidualEquations(inRemovedEqnLst, uniqueEqIndex, tempvars);
@@ -5257,7 +5260,7 @@ protected function createInitialEquations_lambda0 "author: lochel"
 protected
   list<SimCodeVar.SimVar> tempvars;
   Integer uniqueEqIndex;
-  list<SimCode.SimEqSystem> allEquations, solvedEquations, aliasEquations;
+  list<SimCode.SimEqSystem> allEquations, knownEquations, solvedEquations, aliasEquations;
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
   BackendDAE.Variables knvars, aliasVars;
@@ -5265,14 +5268,14 @@ algorithm
   BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars, aliasVars=aliasVars)) := inInitDAE;
 
   // generate equations from the known unfixed variables
-  ((uniqueEqIndex, allEquations)) := BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (iuniqueEqIndex, {}));
+  ((uniqueEqIndex, knownEquations)) := BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (iuniqueEqIndex, {}));
   // generate equations from the solved systems
   (uniqueEqIndex, _, _, solvedEquations, _, tempvars, _, _, _, _) :=
       createEquationsForSystems(systs, shared, uniqueEqIndex, {}, itempvars, 0, SimCode.NO_MAPPING());
-  allEquations := listAppend(allEquations, solvedEquations);
   // generate equations from the alias variables
   ((uniqueEqIndex, aliasEquations)) := BackendVariable.traverseBackendDAEVars(aliasVars, traverseAliasVarsToSimEqSystem, (uniqueEqIndex, {}));
-  allEquations := listAppend(allEquations, aliasEquations);
+  allEquations := List.append_reverse(solvedEquations, aliasEquations);
+  allEquations := listAppend(knownEquations, allEquations);
 
   // output
   outInitialEqns := allEquations;
