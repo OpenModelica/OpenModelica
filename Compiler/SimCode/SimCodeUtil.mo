@@ -5866,7 +5866,7 @@ protected
   list<Integer> varMap;
   array<Integer> varMapArr;
   BackendDAE.Variables vars, allVars, vars1;
-  BackendDAE.EquationArray eqs, eqs1;
+  BackendDAE.EquationArray eqs;
   BackendDAE.Matching matching;
   BackendDAE.IncidenceMatrix mStart;
   BackendDAE.IncidenceMatrixT mTStart;
@@ -5879,32 +5879,32 @@ protected
   list<Integer> stateIdcs;
   list<BackendDAE.VarKind> stateKinds;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs) := systIn;
+  vars := systIn.orderedVars;
   // set the varkInd for states to variable, reverse this later with the help of the stateinfo
   stateInfo := List.fold1(List.intRange(BackendVariable.varsSize(vars)),getStateInfo,vars,{});// which var is a state and save the kind
   (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setVarKindForStates,BackendDAE.VARIABLE());
 
   // replace every var or param by its startvalue or binding, make a system of variables withput startvalues
-  allVars := BackendVariable.mergeVariables(vars,knownVars);
+
   varLst := BackendVariable.varList(vars);
-  eqLst := BackendEquation.equationList(eqs);
   varMap := List.intRange(BackendVariable.varsSize(vars));
   (noStartVarLst,varMap) := List.filterOnTrueSync(varLst, BackendVariable.varHasNoStartValue, varMap);
 
   // insert start values for crefs and build incidence matrix
     //BackendDump.dumpVariables(vars,"VAR BEFORE");
     //BackendDump.dumpEquationList(eqLst,"EQS BEFORE");
-  (eqLst, _) := BackendEquation.traverseExpsOfEquationList(eqLst,replaceCrefWithStartValue,allVars);
+  allVars := BackendVariable.mergeVariables(vars,knownVars);
+  eqs := BackendEquation.copyEquationArray(systIn.orderedEqs);
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs,replaceCrefWithStartValue,allVars);
     //BackendDump.dumpEquationList(eqLst,"EQS AFTER");
-  eqs1 := BackendEquation.listEquation(eqLst);
   vars1 := BackendVariable.listVar1(noStartVarLst);
-  syst := BackendDAEUtil.createEqSystem(vars1, eqs1);
+  syst := BackendDAEUtil.createEqSystem(vars1, eqs);
   (syst, mStart, mTStart) := BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE());
     //BackendDump.dumpIncidenceMatrix(mStart);
     //BackendDump.dumpIncidenceMatrixT(mTStart);
   // solve equations for new start values and assign start values to variables
   varMapArr := listArray(varMap);
-  vars := preCalculateStartValues1(List.intRange(arrayLength(mStart)), mStart, mTStart, varMapArr, eqs1, vars);
+  vars := preCalculateStartValues1(List.intRange(arrayLength(mStart)), mStart, mTStart, varMapArr, eqs, vars);
 
   // reset the varKinds for the states
   stateIdcs := List.map(stateInfo, Util.tuple21);
