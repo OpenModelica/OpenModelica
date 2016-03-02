@@ -181,7 +181,7 @@ protected function evalFunctions_findFuncs "traverses the lhs and rhs exps of an
 algorithm
   (eqOut,tplOut) := matchcontinue(eqIn,tplIn)
     local
-      Integer sizeL,sizeR,size,idx;
+      Integer sizeL,sizeR,size,idx,oldSize;
       Boolean b1,b2,changed, changed1;
       BackendDAE.Equation eq;
       BackendDAE.EquationAttributes attr;
@@ -215,7 +215,7 @@ algorithm
         end if;
       then
         (eqIn,tplIn);
-    case(BackendDAE.COMPLEX_EQUATION(left=exp1, right=exp2, source=source, attr=attr),_)
+    case(BackendDAE.COMPLEX_EQUATION(left=exp1, right=exp2, source=source, attr=attr, size=oldSize),_)
       equation
         b1 = Expression.containFunctioncall(exp1);
         b2 = Expression.containFunctioncall(exp2);
@@ -231,7 +231,7 @@ algorithm
         shared = BackendDAEUtil.setSharedFunctionTree(shared, funcs);
         sizeL = getScalarExpSize(lhsExp);
         sizeR = getScalarExpSize(rhsExp);
-        size = intMax(sizeR,sizeL);
+        size = intMin(intMax(sizeR,sizeL), oldSize);
         eq = if intEq(size,0) then BackendDAE.EQUATION(lhsExp,rhsExp,source,attr) else BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,attr);
         //since tuple=tuple is not supported, these equations are converted into a list of simple equations
         (eq,addEqs) = convertTupleEquations(eq,addEqs);
