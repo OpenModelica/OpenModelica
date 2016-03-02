@@ -467,12 +467,14 @@ protected
   DAE.ClockKind clockKind;
   BackendDAE.SubClock subClock;
   BackendDAE.StrongComponent comp;
-  Integer eqIdx, varIdx, parentIdx, grandParentIdx;
+  Integer eqIdx, varIdx, updateIdx, parentIdx;
   MMath.Rational clockFactor;
   DAE.ClockKind branchClockKind;
+  array<DAE.ClockKind> clockKinds;
 algorithm
   clockFactor := MMath.RAT1;
   branchClockKind := DAE.INFERRED_CLOCK();
+  clockKinds := arrayCreate(BackendVariable.varsSize(inVars), DAE.INFERRED_CLOCK());
   outSubClocks := arrayCreate(BackendVariable.varsSize(inVars), (BackendDAE.DEFAULT_SUBCLOCK, 0));
   for comp in inComps loop
     outClockKind := matchcontinue comp
@@ -500,34 +502,40 @@ algorithm
           if parentIdx == 0 then
             // start clock of new branch
             branchClockKind := DAE.INFERRED_CLOCK();
+          else
+            // get previously obtained clock
+            branchClockKind := arrayGet(clockKinds, parentIdx);
           end if;
           (branchClockKind, _) := setClockKind(branchClockKind, clockKind, clockFactor);
+          arrayUpdate(clockKinds, varIdx, branchClockKind);
           (clockKind, clockFactor) := setClockKind(outClockKind, clockKind, clockFactor);
           if parentIdx == 0 then
             // adapt uppermost subClock in a branch to possibly multiple bases
             subClock.factor := MMath.multRational(subClock.factor, clockFactor);
           end if;
-          outSubClocks := match branchClockKind
+          updateIdx := match branchClockKind
             case DAE.INFERRED_CLOCK()
               guard parentIdx <> 0
               algorithm
-                // apply the inverse subClock to a parent without base as
-                // the clock propagates backwards
+                // apply inverse clock conversion to a parent without base
+                // as the clock propagates backwards
                 subClock.factor := MMath.divRational(MMath.RAT1, subClock.factor);
                 subClock.shift := MMath.subRational(MMath.RAT0, subClock.shift);
-                (_, grandParentIdx) := arrayGet(outSubClocks, parentIdx);
+                updateIdx := parentIdx;
+                (_, parentIdx) := arrayGet(outSubClocks, updateIdx);
               then
-                arrayUpdate(outSubClocks, parentIdx, (subClock, grandParentIdx));
+                updateIdx;
             else
               // regular subClock update
-              arrayUpdate(outSubClocks, varIdx, (subClock, parentIdx));
+              varIdx;
           end match;
+          arrayUpdate(outSubClocks, updateIdx, (subClock, parentIdx));
           /*
             print("var " + intString(varIdx) + ": " +
                   BackendDump.equationString(eq) + " ->\n    " +
                   ExpressionDump.printExpStr(exp) + ": " +
-                  BackendDump.subClockString(subClock) +
-                  " with parent " + intString(parentIdx) + ".\n");
+                  BackendDump.subClockString(subClock) + "\n    update " +
+                  intString(updateIdx) + " parent " + intString(parentIdx) + ".\n");
           */
         then clockKind;
       else
