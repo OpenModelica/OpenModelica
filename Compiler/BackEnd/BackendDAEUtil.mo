@@ -1418,7 +1418,7 @@ protected
 algorithm
   (vars, varsLst) := inTpl;
   varLst2 := BackendEquation.expressionVars(inExp, vars);
-  varsLst := listAppend(varsLst, varLst2);
+  varsLst := listAppend(varLst2, varsLst);
   exp := inExp;
   outTpl := (vars, varsLst);
 end varsCollector;
@@ -4151,7 +4151,7 @@ algorithm
         lstall = List.map(row, Util.tuple21);
         (_, lst, _) = List.intersection1OnTrue(lstall, lst, intEq);
         _ = List.fold1(lst, markNegativ, rowmark, mark);
-        row = listAppend(row,row1);
+        row = listAppend(row1,row);
       then
         (row,size);
 
@@ -4189,8 +4189,7 @@ algorithm
         (row,size) = adjacencyRowEnhanced(inVariables, eqn, mark, rowmark, kvars, trytosolve);
         lst = List.map(row,Util.tuple21);
         lst = List.intersectionOnTrue(lst, inLstAllBranch,intEq);
-        row = listAppend(row,iRow);
-     then adjacencyRowEnhancedEqnLstIfBranches(rest, inVariables, mark, rowmark, kvars, trytosolve, (lst, row, size + iSize));
+     then adjacencyRowEnhancedEqnLstIfBranches(rest, inVariables, mark, rowmark, kvars, trytosolve, (lst, listAppend(row,iRow), size + iSize));
   end match;
 end adjacencyRowEnhancedEqnLstIfBranches;
 
@@ -8482,8 +8481,8 @@ algorithm
     then (vars,vidxs,{eq},{eidx});
   case(BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(residualequations=eidxs,tearingvars=vidxs, otherEqnVarTpl=otherEqnVarTpl)),_,_)
     equation
-      eidxs = listAppend(eidxs,List.map(otherEqnVarTpl,Util.tuple21));
-      vidxs = listAppend(vidxs,List.flatten(List.map(otherEqnVarTpl,Util.tuple22)));
+      eidxs = listAppend(List.map(otherEqnVarTpl,Util.tuple21),eidxs);
+      vidxs = listAppend(List.flatten(List.map(otherEqnVarTpl,Util.tuple22)),vidxs);
       vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
       eqs = BackendEquation.getEqns(eidxs,eqArr);
     then (vars,vidxs,eqs,eidxs);
