@@ -7670,6 +7670,7 @@ algorithm
         name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
         inlineType = isInlineFunc(cl);
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
+        isImpure = if isImpure then true else SCode.hasBooleanNamedAnnotationInClass(cl,"__ModelicaAssociation_Impure");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_NON_PARALLEL()));
 
     //parallel functions: There are some builtin functions.
@@ -7701,7 +7702,7 @@ algorithm
         isBuiltin = if SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
         // In Modelica 3.2 and before, external functions with side-effects are not marked
-        isImpure = SCode.isRestrictionImpure(restriction,hasOutVars or Config.languageStandardAtLeast(Config.LanguageStandard.'3.3'));
+        isImpure = SCode.hasBooleanNamedAnnotationInClass(cl,"__ModelicaAssociation_Impure") or SCode.isRestrictionImpure(restriction,hasOutVars or Config.languageStandardAtLeast(Config.LanguageStandard.'3.3'));
       then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,isBuiltin,DAE.FP_NON_PARALLEL());
   end matchcontinue;
 end getFunctionAttributes;
