@@ -123,7 +123,7 @@ else # revision is not empty, update it if it changed
 		else echo Revision has changed. updating revision.h; \mv revision.h.tmp revision.h; touch Compiler/runtime/omc_config.h; \
 		fi; \
 	else \
-		echo "#define CONFIG_REVISION \"$(CONFIG_REVISION)\"" > revision.h; echo Retrieved revision number. revision.h was created; \
+		echo "#define CONFIG_REVISION \"OpenModelica $(CONFIG_REVISION)\"" > revision.h; echo Retrieved revision number. revision.h was created; \
 	fi;
 endif
 
