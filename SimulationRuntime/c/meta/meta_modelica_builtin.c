@@ -417,6 +417,14 @@ modelica_metatype listReverseInPlace(modelica_metatype lst)
   return prev;
 }
 
+void boxptr_listSetRest(threadData_t *threadData, modelica_metatype cellToDestroy, modelica_metatype newRest)
+{
+  if (MMC_NILTEST(cellToDestroy)) {
+    MMC_THROW_INTERNAL();
+  }
+  MMC_CDR(cellToDestroy) = newRest;
+}
+
 modelica_metatype listAppend(modelica_metatype lst1,modelica_metatype lst2)
 {
   int length = 0, i = 0;

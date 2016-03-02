@@ -901,6 +901,13 @@ function listReverseInPlace<A> "O(n). A destructive listReverse. May cause segme
 external "builtin";
 end listReverseInPlace;
 
+function listSetRest<A> "O(1). A destructive operation changing the \"rest\" part of a cons-cell.
+NOTE: Make sure you do NOT create cycles as infinite lists are not handled well in the compiler."
+  input list<A> inConsCell "A non-empty list";
+  input list<A> inNewRest;
+external "builtin";
+end listSetRest;
+
 end Dangerous;
 
 end MetaModelica;
