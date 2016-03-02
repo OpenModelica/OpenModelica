@@ -298,14 +298,14 @@ algorithm
         // Jacobian of a Linear System is always linear
         (jac_tp, jacConstant) = SymbolicJacobian.analyzeJacobian(vars_1, eqns_1, jac);
 
-	      // if Jacobian is constant, then check if it is singular
-	      if jacConstant and isSome(jac) then
-	        true = analyzeConstantJacobian(Util.getOption(jac), arrayLength(mt), var_lst, eqn_lst, shared);
-	      end if;
-	    else
-	      jac = NONE();
-	      jac_tp = BackendDAE.JAC_NO_ANALYTIC();
-	    end if;
+        // if Jacobian is constant, then check if it is singular
+        if jacConstant and isSome(jac) then
+          true = analyzeConstantJacobian(Util.getOption(jac), arrayLength(mt), var_lst, eqn_lst, shared);
+        end if;
+      else
+        jac = NONE();
+        jac_tp = BackendDAE.JAC_NO_ANALYTIC();
+      end if;
     then BackendDAE.EQUATIONSYSTEM(comp, varindxs, BackendDAE.FULL_JACOBIAN(jac), jac_tp, mixedSystem);
 
     case (_, eqn_lst, var_varindx_lst) equation
@@ -491,10 +491,8 @@ algorithm
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
       eqnlst1 = BackendEquation.getEqns(List.map(eqnvartpllst, Util.tuple21), inEquationArray);
       varlst1 = List.map1r(List.flatten(List.map(eqnvartpllst, Util.tuple22)), BackendVariable.getVarAt, inVariables);
-      eqnlst = listAppend(eqnlst, eqnlst1);
-      varlst = listAppend(varlst, varlst1);
       e = listHead(elst);
-    then (eqnlst, varlst, e);
+    then (listAppend(eqnlst, eqnlst1), listAppend(varlst, varlst1), e);
 
     else equation
       true = Flags.isSet(Flags.FAILTRACE);
