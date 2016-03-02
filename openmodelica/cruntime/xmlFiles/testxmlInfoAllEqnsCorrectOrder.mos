@@ -506,30 +506,6 @@ readFile("testModel_info.xml");getErrorString();
 //       <type>Real</type>
 //     </source>
 //   </variable>
-//   <variable name=\"$STATESET2.J.$pDERStateSetJac4.dummyVarStateSetJac4\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
-//   <variable name=\"$PRE.$STATESET2.J.$pDERStateSetJac4.dummyVarStateSetJac4\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
-//   <variable name=\"$STATESET1.J.$pDERStateSetJac5.dummyVarStateSetJac5\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
-//   <variable name=\"$PRE.$STATESET1.J.$pDERStateSetJac5.dummyVarStateSetJac5\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
 //   <variable name=\"der(xd.$pDERNLSJac0.dummyVarNLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
@@ -681,6 +657,30 @@ readFile("testModel_info.xml");getErrorString();
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.$res1.$pDERLSJac3.dummyVarLSJac3\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET2.J.$pDERStateSetJac4.dummyVarStateSetJac4\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$STATESET2.J.$pDERStateSetJac4.dummyVarStateSetJac4\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET1.J.$pDERStateSetJac5.dummyVarStateSetJac5\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$STATESET1.J.$pDERStateSetJac5.dummyVarStateSetJac5\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
