@@ -105,8 +105,7 @@ extern "C" {
 #define _In_z_
 #define _Inout_
 #endif
-                                                       
-                                                 
+
 void* ModelicaStandardTables_CombiTimeTable_init(_In_z_ const char* tableName,
                                                  _In_z_ const char* fileName,
                                                  _In_ double* table, size_t nRow,
@@ -152,7 +151,7 @@ double ModelicaStandardTables_CombiTimeTable_read(void* tableID, int force,
      -> verbose: Print message that file is loading
      <- RETURN: = 1, if table was successfully read from file
   */
-                                                           
+
 double ModelicaStandardTables_CombiTimeTable_minimumTime(void* tableID);
   /* Return minimum time defined in table (= table[1,1]) */
 
@@ -236,8 +235,8 @@ double ModelicaStandardTables_CombiTable1D_read(void* tableID, int force,
      -> force: Read only if forced or not yet read
      -> verbose: Print message that file is loading
      <- RETURN: = 1, if table was successfully read from file
-  */              
-                                           
+  */
+
 double ModelicaStandardTables_CombiTable1D_getValue(void* tableID, int icol,
                                                     double u);
   /* Interpolate in table
@@ -297,7 +296,7 @@ double ModelicaStandardTables_CombiTable2D_read(void* tableID, int force,
      -> verbose: Print message that file is loading
      <- RETURN: = 1, if table was successfully read from file
   */
-   
+
 double ModelicaStandardTables_CombiTable2D_getValue(void* tableID, double u1,
                                                     double u2);
   /* Interpolate in table
@@ -320,44 +319,7 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* tableID, double u1,
      -> der_u2: Derivative value of second independent variable
      <- RETURN: Derivative of interpolated value
   */
-  
-  
-void* ModelicaStandardTables_CombiTimeTable_initWithRead(_In_z_ const char* tableName,
-                                                         _In_z_ const char* fileName,
-                                                         _In_ double* table, size_t nRow,
-                                                         size_t nColumn,
-                                                         double startTime,
-                                                         _In_ int* columns,
-                                                         size_t nCols, int smoothness,
-                                                         int extrapolation,
-                                                         int verbose) MODELICA_NONNULLATTR;
-  /* Initialize 1-dim. table where first column is time and read table date from file */
 
-
-void* ModelicaStandardTables_CombiTable1D_initWithRead(_In_z_ const char* tableName,
-                                                       _In_z_ const char* fileName,
-                                                       _In_ double* table, size_t nRow,
-                                                       size_t nColumn,
-                                                       _In_ int* columns,
-                                                       size_t nCols, 
-                                                       int smoothness,
-                                                       int verbose) MODELICA_NONNULLATTR;
-  /* Initialize 1-dim. table defined by matrix, where first column
-     is x-axis and further columns of matrix are interpolated, and
-     read the table data 
-  */ 
-     
-void* ModelicaStandardTables_CombiTable2D_initWithRead(_In_z_ const char* tableName,
-                                                       _In_z_ const char* fileName,
-                                                       _In_ double* table, size_t nRow,
-                                                       size_t nColumn, 
-                                                       int smoothness,
-                                                       int verbose) MODELICA_NONNULLATTR;
-  /* Initialize 2-dim. table defined by matrix, where first column
-     is x-axis, first row is y-axis and the matrix elements are the
-     z-values, and read the table data
-  */                 
-                                                      
 #if defined(__cplusplus)
 }
 #endif

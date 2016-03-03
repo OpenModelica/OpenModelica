@@ -1,6 +1,6 @@
 /* ModelicaInternal.c - External functions for Modelica.Utilities
 
-   Copyright (C) 2002-2016, Modelica Association and DLR
+   Copyright (C) 2002-2016, Modelica Association, DLR and ITI GmbH
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,10 @@
                       functions shall be visible outside of the DLL
 
    Release Notes:
+      Mar. 02, 2016: by Thomas Beutlich, ITI GmbH
+                     Fixed repeated opening of cached file in case of line miss in
+                     ModelicaStreams_openFileForReading (ticket #1939)
+
       Dec. 10, 2015: by Martin Otter, DLR
                      Added flags NO_PID and NO_TIME (ticket #1805)
 
@@ -74,7 +78,7 @@
                      later (ticket #1433)
 
       May 21, 2013:  by Martin Otter, DLR
-                     Included the improvements from DS Lund:
+                     Included the improvements from DS Lund (ticket #1104):
                      - Changed implementation of print to do nothing in case of
                        missing file-system. Otherwise we just end up with an
                        error message that is not written, and the failure in
@@ -723,24 +727,24 @@ static void deleteCS(void) {
 
 static void CacheFileForReading(FILE* fp, const char* fileName, int line) {
     FileCache* fv;
-    if (fileName == 0) {
+    if (fileName == NULL) {
         /* Do not add, close file */
-        if (fp) {
+        if (fp != NULL) {
             fclose(fp);
         }
         return;
     }
     MUTEX_LOCK();
     HASH_FIND(hh, fileCache, fileName, (unsigned)strlen(fileName), fv);
-    if (fv) {
+    if (fv != NULL) {
         fv->fp = fp;
         fv->line = line;
     }
     else {
         fv = (FileCache*)malloc(sizeof(FileCache));
-        if (fv) {
+        if (fv != NULL) {
             char* key = (char*)malloc((strlen(fileName) + 1)*sizeof(char));
-            if (key) {
+            if (key != NULL) {
                 strcpy(key, fileName);
                 fv->fileName = key;
                 fv->fp = fp;
@@ -756,8 +760,8 @@ static void CloseCachedFile(const char* fileName) {
     FileCache* fv;
     MUTEX_LOCK();
     HASH_FIND(hh, fileCache, fileName, (unsigned)strlen(fileName), fv);
-    if (fv) {
-        if (fv->fp) {
+    if (fv != NULL) {
+        if (fv->fp != NULL) {
             fclose(fv->fp);
         }
         free(fv->fileName);
@@ -775,15 +779,33 @@ static FILE* ModelicaStreams_openFileForReading(const char* fileName, int line) 
     MUTEX_LOCK();
     HASH_FIND(hh, fileCache, fileName, (unsigned)strlen(fileName), fv);
     /* Open file */
-    if (fv && fv->fp && line != 0 && line >= fv->line) {
+    if (fv != NULL) {
         /* Cached value */
-        line -= fv->line;
-        fp = fv->fp;
-        fv->fp = 0;
-        MUTEX_UNLOCK();
+        if (fv->fp != NULL) {
+            if (line != 0 && line >= fv->line) {
+                line -= fv->line;
+                fp = fv->fp;
+            }
+            else {
+                if ( fseek(fv->fp, 0L, SEEK_SET) == 0 ) {
+                    fp = fv->fp;
+                }
+                else {
+                    fclose(fv->fp);
+                    fp = NULL;
+                }
+            }
+            fv->fp = NULL;
+        }
+        else {
+            fp = NULL;
+        }
     }
     else {
-        MUTEX_UNLOCK();
+        fp = NULL;
+    }
+    MUTEX_UNLOCK();
+    if (fp == NULL) {
         fp = fopen(fileName, "r");
         if ( fp == NULL ) {
             ModelicaFormatError("Not possible to open file \"%s\" for reading:\n"

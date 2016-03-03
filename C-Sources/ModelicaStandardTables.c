@@ -3076,69 +3076,6 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
     return der_y;
 }
 
-
-
-/* ----- Additional interface functions ------ */
-void* ModelicaStandardTables_CombiTimeTable_initWithRead(const char* tableName,
-                                                         const char* fileName,
-                                                         double* table,
-                                                         size_t nRow, size_t nColumn,
-                                                         double startTime, int* cols,
-                                                         size_t nCols, int smoothness,
-                                                         int extrapolation,
-                                                         int verbose) {
-   void* tableID = ModelicaStandardTables_CombiTimeTable_init(tableName, fileName, table, nRow, nColumn,
-                                                              startTime, cols, nCols, smoothness, extrapolation);
-   double success;
-   
-   if ( tableID == NULL ) return NULL;                                                         
-   success = ModelicaStandardTables_CombiTimeTable_read(tableID, 0, verbose);
-   if ( success == 0.0 ) {
-      ModelicaStandardTables_CombiTimeTable_close(tableID);
-      return NULL;
-   }
-   return tableID;
-}                                                            
-            
-void* ModelicaStandardTables_CombiTable1D_initWithRead(_In_z_ const char* tableName,
-                                                       _In_z_ const char* fileName,
-                                                       _In_ double* table, size_t nRow,
-                                                       size_t nColumn,
-                                                       _In_ int* columns,
-                                                       size_t nCols, 
-                                                       int smoothness,
-                                                       int verbose) {
-   void* tableID = ModelicaStandardTables_CombiTable1D_init(tableName, fileName, table, nRow, nColumn,
-                                                            columns, nCols, smoothness);
-   double success;
-   
-   if ( tableID == NULL ) return NULL;                                                         
-   success = ModelicaStandardTables_CombiTable1D_read(tableID, 0, verbose);
-   if ( success == 0.0 ) {
-      ModelicaStandardTables_CombiTable1D_close(tableID);
-      return NULL;
-   }
-   return tableID;
-}                        
-     
-void* ModelicaStandardTables_CombiTable2D_initWithRead(_In_z_ const char* tableName,
-                                                       _In_z_ const char* fileName,
-                                                       _In_ double* table, size_t nRow,
-                                                       size_t nColumn, 
-                                                       int smoothness,
-                                                       int verbose) {
-   void* tableID = ModelicaStandardTables_CombiTable2D_init(tableName, fileName, table, nRow, nColumn, smoothness);
-   double success;
-   
-   if ( tableID == NULL ) return NULL;                                                         
-   success = ModelicaStandardTables_CombiTable2D_read(tableID, 0, verbose);
-   if ( success == 0.0 ) {
-      ModelicaStandardTables_CombiTable2D_close(tableID);
-      return NULL;
-   }
-   return tableID;
-}                                                           
-                                      
 /* ----- Internal functions ----- */
 
 static int isNearlyEqual(double x, double y) {
