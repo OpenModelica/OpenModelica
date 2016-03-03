@@ -38,12 +38,8 @@ source equation(s) to the position of the bug.
 Load a Model to Debug
 ~~~~~~~~~~~~~~~~~~~~~
 
-Load an interesting model. We will use the package `Debugging.mo <https://github.com/OpenModelica/OpenModelica-testsuite/blob/master/openmodelica/debugging/Debugging.mo>`__
+Load an interesting model. We will use the package `Debugging.mo <https://github.com/OpenModelica/OMCompiler/blob/master/Examples/Debugging.mo>`__
 since it contains suitable, broken models to demonstrate common errors.
-
-.. todo ::
-
-  Include Debugging.mo in the test models in the distribution?
 
 Simulate and Start the Debugger
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
