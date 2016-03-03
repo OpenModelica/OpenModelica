@@ -1,9 +1,11 @@
-# Users Guide 
+# Users Guide
 OpenModelica users guide using Sphinx (Python Documentation Generator).
 
 ## Build instructions
 
 ### Unix
+
+- Install the dependencies using `pip install -r source/requirements.txt`
 
 ### Windows MinGW
 - Install `Python 2.7`.
