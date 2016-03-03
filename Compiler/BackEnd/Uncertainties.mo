@@ -681,7 +681,7 @@ protected function getMathematicaVarStr
   protected String s1;
 algorithm
   (states,algs,outputs,inputsStates) := MathematicaDump.printMmaVarsStr(vars);
-  out := "{"+Util.stringDelimitListNonEmptyElts(listAppend(listAppend(states,algs),listAppend(outputs,inputsStates)),",")+"}";
+  out := "{"+Util.stringDelimitListNonEmptyElts(listAppend(states,listAppend(algs,listAppend(outputs,inputsStates))),",")+"}";
 end getMathematicaVarStr;
 
 protected function getMathematicaEqStr

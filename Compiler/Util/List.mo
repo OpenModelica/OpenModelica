@@ -474,7 +474,7 @@ protected
 algorithm
   true := (inN > 0);
   (lst1, lst2) := split(inList, inN-1);
-  outList := listAppend(listAppend(lst1,{inElement}),lst2);
+  outList := listAppend(lst1,inElement::lst2);
 end insert;
 
 public function insertListSorted<T>
@@ -546,7 +546,7 @@ algorithm
   true := (inN > 0);
   (lst1, lst2) := split(inList, inN-1);
   lst2 := stripFirst(lst2);
-  outList := listAppend(listAppend(lst1,{inElement}),lst2);
+  outList := listAppend(lst1,inElement::lst2);
 end set;
 
 public function first<T>

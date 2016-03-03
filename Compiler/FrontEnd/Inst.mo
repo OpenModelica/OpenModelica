@@ -4212,7 +4212,7 @@ algorithm
         crefs = InstUtil.getCrefFromMod(m);
         crefs2 = InstUtil.getCrefFromDim(ad);
         crefs3 = InstUtil.getCrefFromCond(cond);
-        crefs_1 = listAppend(listAppend(crefs, crefs2),crefs3);
+        crefs_1 = listAppend(crefs, listAppend(crefs2,crefs3));
         crefs_2 = InstUtil.removeCrefFromCrefs(crefs_1, cref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,SOME(updatedComps)) = updateComponentsInEnv2(cache, env, ih, pre, DAE.NOMOD(), crefs_2, ci_state, impl, SOME(updatedComps), SOME(cref));
@@ -4267,7 +4267,7 @@ algorithm
         crefs = InstUtil.getCrefFromMod(m);
         crefs2 = InstUtil.getCrefFromDim(ad);
         crefs3 = InstUtil.getCrefFromCond(cond);
-        crefs_1 = listAppend(listAppend(crefs, crefs2),crefs3);
+        crefs_1 = listAppend(crefs,listAppend(crefs2,crefs3));
         crefs = Mod.getUntypedCrefs(cmod);
         crefs_1 = listAppend(crefs_1, crefs);
         crefs_2 = InstUtil.removeCrefFromCrefs(crefs_1, cref);

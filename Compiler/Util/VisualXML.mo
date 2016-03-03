@@ -112,7 +112,7 @@ algorithm
     //print("ALL VISUALS "+stringDelimitList(List.map(allVisuals,ComponentReference.printComponentRefStr)," |")+"\n");
 
   //fill theses visualization objects with information
-  allVarLst := listAppend(listAppend(knownVarLst,allVarLst),aliasVarLst);
+  allVarLst := listAppend(knownVarLst,listAppend(allVarLst,aliasVarLst));
   (visuals,_) := List.mapFold(allVisuals, fillVisualizationObjects,allVarLst);
     //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
 

@@ -2622,7 +2622,7 @@ algorithm
         beqns = List.removeOnTrue(eorphan, intEq, beqns);
         //  print("Mark all Index BEqns " + stringDelimitList(List.map(beqns, intString), ", ") + "\n");
         lst = List.select2(m[eorphan], unmarked, rowmarks, mark);
-        lst = listAppend(listAppend(vorphans, lst), bvars);
+        lst = listAppend(vorphans, listAppend(lst, bvars));
         //  print("Set eorphan " + intString(eorphan) + ": " + stringDelimitList(List.map(lst, intString), ", ") + "\n");
         arrayUpdate(m, eorphan, lst);
 

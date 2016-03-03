@@ -163,7 +163,7 @@ algorithm
   if not listEmpty(tokens) then
     error(tokens, tree, {});
   end if;
-  outTree := makeNode(listReverse(listAppend(listAppend(tree, outTree), inTree)), label=LEAF(makeToken(TokenId.IDENT, "$program")))::{};
+  outTree := makeNode(listReverse(listAppend(tree, listAppend(outTree, inTree))), label=LEAF(makeToken(TokenId.IDENT, "$program")))::{};
 end stored_definition;
 
 protected
@@ -2696,7 +2696,7 @@ package First "First token possible for a given non-terminal in the Modelica 3 g
     TokenId.ASSIGN
   };
   constant list<TokenId> component_clause = listAppend(type_prefix,name);
-  constant list<TokenId> element = listAppend(listAppend(component_clause, class_definition), {
+  constant list<TokenId> element = listAppend(component_clause, listAppend(class_definition, {
     TokenId.IMPORT,
     TokenId.EXTENDS,
     TokenId.REDECLARE,
@@ -2704,7 +2704,7 @@ package First "First token possible for a given non-terminal in the Modelica 3 g
     TokenId.INNER,
     TokenId.OUTER,
     TokenId.REPLACEABLE
-  });
+  }));
   constant list<TokenId> statement = {
     TokenId.DOT,
     TokenId.IDENT,
