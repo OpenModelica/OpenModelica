@@ -1,0 +1,56 @@
+// name: AddClassAnnotation
+// keywords: 
+// status: correct
+//
+// Tests the addClassAnnotation API.
+//
+
+loadString("
+  model PA
+    annotation (Icon(graphics={Polygon(lineColor={0,0,127}, fillColor={0,0,127},
+      fillPattern=FillPattern.Solid, points={{-100.0,100.0},{100.0,0.0},{-100.0,-100.0}})}));
+  end PA;
+
+  model PB end PB;
+
+  type DA = Real annotation (Icon(graphics={Polygon(lineColor={0,0,127}, fillColor={0,0,127},
+      fillPattern=FillPattern.Solid, points={{-100.0,100.0},{100.0,0.0},{-100.0,-100.0}})}));
+
+  type DB = Real;
+
+  type EA = enumeration(a, b, c) annotation (Icon(graphics={Polygon(lineColor={0,0,127}, fillColor={0,0,127},
+      fillPattern=FillPattern.Solid, points={{-100.0,100.0},{100.0,0.0},{-100.0,-100.0}})}));
+
+  type EB = enumeration(x, y, z);
+"); getErrorString();
+
+addClassAnnotation(PA, annotate=Icon(graphics={Polygon(lineColor={0,0,127},fillColor={0,0,127},fillPattern=FillPattern.Solid,points={{0,50},{100,0},{0,-50},{0,50}}),Rectangle(lineColor={0,0,255},fillColor={0,0,255},extent={{-100,100},{100,-100}})}));
+addClassAnnotation(PB, annotate=Icon(graphics={Polygon(lineColor={0,0,127},fillColor={0,0,127},fillPattern=FillPattern.Solid,points={{0,50},{100,0},{0,-50},{0,50}}),Rectangle(lineColor={0,0,255},fillColor={0,0,255},extent={{-100,100},{100,-100}})}));
+addClassAnnotation(DA, annotate=Icon(graphics={Polygon(lineColor={0,0,127},fillColor={0,0,127},fillPattern=FillPattern.Solid,points={{0,50},{100,0},{0,-50},{0,50}}),Rectangle(lineColor={0,0,255},fillColor={0,0,255},extent={{-100,100},{100,-100}})}));
+addClassAnnotation(DB, annotate=Icon(graphics={Polygon(lineColor={0,0,127},fillColor={0,0,127},fillPattern=FillPattern.Solid,points={{0,50},{100,0},{0,-50},{0,50}}),Rectangle(lineColor={0,0,255},fillColor={0,0,255},extent={{-100,100},{100,-100}})}));
+addClassAnnotation(EA, annotate=Icon(graphics={Polygon(lineColor={0,0,127},fillColor={0,0,127},fillPattern=FillPattern.Solid,points={{0,50},{100,0},{0,-50},{0,50}}),Rectangle(lineColor={0,0,255},fillColor={0,0,255},extent={{-100,100},{100,-100}})}));
+addClassAnnotation(EB, annotate=Icon(graphics={Polygon(lineColor={0,0,127},fillColor={0,0,127},fillPattern=FillPattern.Solid,points={{0,50},{100,0},{0,-50},{0,50}}),Rectangle(lineColor={0,0,255},fillColor={0,0,255},extent={{-100,100},{100,-100}})}));
+
+getIconAnnotation(PA);
+getIconAnnotation(PB);
+getIconAnnotation(DA);
+getIconAnnotation(DB);
+getIconAnnotation(EA);
+getIconAnnotation(EB);
+
+// Result:
+// true
+// ""
+// true
+// true
+// true
+// true
+// true
+// true
+// {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,{Polygon(true, {0.0, 0.0}, 0, {0, 0, 127}, {0, 0, 127}, LinePattern.Solid, FillPattern.Solid, 0.25, {{0, 50}, {100, 0}, {0, -50}, {0, 50}}, Smooth.None), Rectangle(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 255}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, {{-100, 100}, {100, -100}}, 0)}}
+// {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,{Polygon(true, {0.0, 0.0}, 0, {0, 0, 127}, {0, 0, 127}, LinePattern.Solid, FillPattern.Solid, 0.25, {{0, 50}, {100, 0}, {0, -50}, {0, 50}}, Smooth.None), Rectangle(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 255}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, {{-100, 100}, {100, -100}}, 0)}}
+// {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,{Polygon(true, {0.0, 0.0}, 0, {0, 0, 127}, {0, 0, 127}, LinePattern.Solid, FillPattern.Solid, 0.25, {{0, 50}, {100, 0}, {0, -50}, {0, 50}}, Smooth.None), Rectangle(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 255}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, {{-100, 100}, {100, -100}}, 0)}}
+// {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,{Polygon(true, {0.0, 0.0}, 0, {0, 0, 127}, {0, 0, 127}, LinePattern.Solid, FillPattern.Solid, 0.25, {{0, 50}, {100, 0}, {0, -50}, {0, 50}}, Smooth.None), Rectangle(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 255}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, {{-100, 100}, {100, -100}}, 0)}}
+// {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,{Polygon(true, {0.0, 0.0}, 0, {0, 0, 127}, {0, 0, 127}, LinePattern.Solid, FillPattern.Solid, 0.25, {{0, 50}, {100, 0}, {0, -50}, {0, 50}}, Smooth.None), Rectangle(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 255}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, {{-100, 100}, {100, -100}}, 0)}}
+// {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,{Polygon(true, {0.0, 0.0}, 0, {0, 0, 127}, {0, 0, 127}, LinePattern.Solid, FillPattern.Solid, 0.25, {{0, 50}, {100, 0}, {0, -50}, {0, 50}}, Smooth.None), Rectangle(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 255}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, {{-100, 100}, {100, -100}}, 0)}}
+// endResult

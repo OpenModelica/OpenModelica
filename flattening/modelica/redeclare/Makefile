@@ -45,6 +45,7 @@ RedeclareInClassModification.mo \
 RedeclareLocalClass.mo \
 RedeclareModifierInvalid1.mo \
 RedeclareModifierInvalid2.mo \
+RedeclareNoCC1.mo \
 RedeclareRecordComponent1.mo \
 RedeclareVisibility.mo \
 BranchingDynamicPipes.mo \

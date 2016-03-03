@@ -32,14 +32,303 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: nonlinear_system.problem11
-// assert            | debug   | Solving non-linear system 4 failed at time=0.
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// stdout            | warning | While solving non-linear system an assertion failed during initialization.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Division by zero x_2_SeedNLSJac0 / a
+// assert            | debug   | Solving non-linear system 7 failed at time=0.
 // |                 | |       | For more information please use -lv LOG_NLS.
 // assert            | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
 // ""
-// 
-// 
+//
+//
 // true
 // START: simplifyLoops
 // ------ Tearing ------
@@ -81,7 +370,7 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 //     messages = ""
 // end SimulationResult;
 // ""
-// {0.0,2.842170943040401e-16,5.861977570020825e-16,8.926193117986258e-16,2.260414078136817e-15}
+// {0.0,2.398081733190338e-16,4.707345624410663e-16,7.638334409421079e-16,2.122746423083299e-15}
 // {5.561552812808831,5.409227846355742,4.987172179760111,4.393026202256716,4.663465947951011}
 // true
 // START: simplifyLoops
@@ -134,6 +423,6 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 //     messages = ""
 // end SimulationResult;
 // ""
-// {0.0,2.842170943040401e-16,5.861977570020825e-16,9.459100169806337e-16,2.393640841091836e-15}
-// {5.561552812808831,5.409227846355742,4.987172179760109,4.393026202256716,4.663465947951011}
+// {0.0,2.398081733190338e-16,4.707345624410663e-16,7.638334409421079e-16,2.122746423083299e-15}
+// {5.561552812808831,5.409227846355742,4.987172179760111,4.393026202256716,4.663465947951011}
 // endResult

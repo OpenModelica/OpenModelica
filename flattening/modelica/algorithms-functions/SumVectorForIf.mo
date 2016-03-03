@@ -36,7 +36,7 @@ end SumVector;
 //     if v[i] > 0.0 then
 //       sum := sum + v[i];
 //     elseif v[i] > -1.0 then
-//       sum := sum + v[i] + -1.0;
+//       sum := -1.0 + sum + v[i];
 //     else
 //       sum := sum - v[i];
 //     end if;

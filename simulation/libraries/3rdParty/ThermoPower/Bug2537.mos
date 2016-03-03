@@ -7,7 +7,7 @@
 //
 
 loadFile("Bug2537.mo"); getErrorString();
-setCommandLineOptions("+cseCall"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
 simulate(ThermoPower.Examples.CISE.CISESim120501); getErrorString();
 
 // Result:

@@ -21,7 +21,7 @@ model testOptdaedump
   Real y = exp(time^3) + x;
 end testOptdaedump;
 "); getErrorString();
-setCommandLineOptions("+cseCall");
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls");
 setDebugFlags("optdaedump"); getErrorString();
 buildModel(testOptdaedump); getErrorString();
 
@@ -32,7 +32,7 @@ buildModel(testOptdaedump); getErrorString();
 // true
 // ""
 //
-// pre-optimization module unitChecking:
+// pre-optimization module evaluateReplaceProtectedFinalEvaluateParameters (simulation):
 //
 //
 // unknown partition
@@ -46,8 +46,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = testOptdaedump.f(time)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -113,7 +113,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module evaluateAllParameters:
+// pre-optimization module simplifyIfEquations (simulation):
 //
 //
 // unknown partition
@@ -127,8 +127,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = testOptdaedump.f(time)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -194,7 +194,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module evaluateReplaceProtectedFinalEvaluateParameters:
+// pre-optimization module expandDerOperator (simulation):
 //
 //
 // unknown partition
@@ -208,8 +208,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = testOptdaedump.f(time)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -275,7 +275,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module stateMachineElab:
+// pre-optimization module removeEqualFunctionCalls (simulation):
 //
 //
 // unknown partition
@@ -289,8 +289,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = testOptdaedump.f(time)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -300,6 +300,18 @@ buildModel(testOptdaedump); getErrorString();
 // State Sets
 // ========================================
 //
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 2
+// 1: 2
+// 2: 2 1
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 2
+// 1: 2
+// 2: 2 1
 //
 // no matching
 //
@@ -356,250 +368,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module simplifyIfEquations:
-//
-//
-// unknown partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// pre-optimization module expandDerOperator:
-//
-//
-// unknown partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// pre-optimization module removeEqualFunctionCalls:
-//
-//
-// unknown partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// pre-optimization module clockPartitioning:
+// pre-optimization module clockPartitioning (simulation):
 //
 //
 // unspecified partition
@@ -613,8 +382,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = testOptdaedump.f(time)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -680,7 +449,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module findStateOrder:
+// pre-optimization module findStateOrder (simulation):
 //
 //
 // unspecified partition
@@ -694,8 +463,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = testOptdaedump.f(time)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -761,7 +530,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module introduceDerAlias:
+// pre-optimization module replaceEdgeChange (simulation):
 //
 //
 // unspecified partition
@@ -775,8 +544,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = testOptdaedump.f(time)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -842,7 +611,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module inputDerivativesForDynOpt:
+// pre-optimization module inlineArrayEqn (simulation):
 //
 //
 // unspecified partition
@@ -856,8 +625,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = testOptdaedump.f(time)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -923,7 +692,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module replaceEdgeChange:
+// pre-optimization module removeSimpleEquations (simulation):
 //
 //
 // unspecified partition
@@ -937,8 +706,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = testOptdaedump.f(time)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -1004,7 +773,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module inlineArrayEqn:
+// pre-optimization module comSubExp (simulation):
 //
 //
 // unspecified partition
@@ -1018,8 +787,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = testOptdaedump.f(time)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -1085,7 +854,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module removeSimpleEquations:
+// pre-optimization module evalFunc (simulation):
 //
 //
 // unspecified partition
@@ -1099,8 +868,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = testOptdaedump.f(time)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -1166,7 +935,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module comSubExp:
+// pre-optimization module encapsulateWhenConditions (simulation):
 //
 //
 // unspecified partition
@@ -1180,332 +949,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// pre-optimization module resolveLoops:
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// pre-optimization module evalFunc:
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// pre-optimization module sortEqnsVars:
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// pre-optimization module encapsulateWhenConditions:
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): x = testOptdaedump.f(time)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = testOptdaedump.f(time)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -1586,8 +1031,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): y = exp(time ^ 3.0) + x    [binding]
-// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -1667,8 +1112,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): y = exp(time ^ 3.0) + x    [binding]
-// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -1760,8 +1205,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): y = exp(time ^ 3.0) + x    [binding]
-// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -1851,190 +1296,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): y = exp(time ^ 3.0) + x    [binding]
-// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 2 variables and equations
-// var 1 is solved in eqn 1
-// var 2 is solved in eqn 2
-//
-//
-// StrongComponents
-// ========================================
-// {2:2}
-// {1:1}
-//
-//
-//
-// BackendDAEType: initialization
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module simplifyLoops (initialization):
-//
-//
-// unknown partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): y = exp(time ^ 3.0) + x    [binding]
-// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 2 variables and equations
-// var 1 is solved in eqn 1
-// var 2 is solved in eqn 2
-//
-//
-// StrongComponents
-// ========================================
-// {2:2}
-// {1:1}
-//
-//
-//
-// BackendDAEType: initialization
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module recursiveTearing (initialization):
-//
-//
-// unknown partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): y = exp(time ^ 3.0) + x    [binding]
-// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -2124,8 +1387,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): y = exp(time ^ 3.0) + x    [binding]
-// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -2215,8 +1478,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): y = exp(time ^ 3.0) + x    [binding]
-// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -2306,8 +1569,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): y = exp(time ^ 3.0) + x    [binding]
-// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -2398,8 +1661,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+// 1/1 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -2475,98 +1738,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module simplifyConstraints (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module CSE (simulation):
+// post-optimization module wrapFunctionCalls (simulation):
 //
 //
 // unspecified partition
@@ -2576,109 +1748,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module relaxSystem (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -2766,14 +1843,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -2861,14 +1938,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -2956,204 +2033,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module solveLinearSystem (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module addScaledVars (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -3241,14 +2128,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -3336,299 +2223,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module symEuler (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module reshufflePost (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module reduceDynamicOptimization (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -3716,394 +2318,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module simplifyLoops (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module recursiveTearing (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module partlintornsystem (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module countOperations (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -4191,204 +2413,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module extendDynamicOptimization (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module addTimeAsState (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -4476,14 +2508,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -4571,14 +2603,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -4666,204 +2698,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module generateSymbolicJacobian (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-//
-//
-// StrongComponents
-// ========================================
-// {3:3}
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// post-optimization module generateSymbolicLinearization (simulation):
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -4951,14 +2793,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -5046,14 +2888,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -5141,14 +2983,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE() .testOptdaedump, .Real type: Real
 // 2: x:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: $cse1:VARIABLE()  type: Real
+// 3: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
-// 2/2 (1): y = $cse1 + x    [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
 //
 //
 // Simple Equations (0, 0)

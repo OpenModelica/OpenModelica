@@ -79,7 +79,7 @@ val(k,0.0); getErrorString();
 //  * Non-linear Jacobian: 1 {2}
 //  * Without analytic Jacobian: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 1 {1 2}
+//  * Linear torn systems: 1 {(1,100.0%) 2}
 //  * Non-linear torn systems: 0
 // "
 // 1.0

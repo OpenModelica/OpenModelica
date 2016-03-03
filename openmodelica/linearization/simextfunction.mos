@@ -44,7 +44,7 @@ getErrorString();
 //   parameter Integer l = 0;
 //   // top-level outputs
 //   parameter Real x0[2] = {1, -1};
-//   parameter Real u0[0] = array(i for i in 1:0);
+//   parameter Real u0[0] = {i for i in 1:0};
 //   parameter Real A[2, 2] = [0.5403023058681398, 0.8414709848078965; 0.8414709848078965, 0.5403023058681398];
 //   parameter Real B[2, 0] = zeros(2, 0);
 //   parameter Real C[0, 2] = zeros(0, 2);
@@ -83,7 +83,7 @@ getErrorString();
 //   parameter Integer l = 0;
 //   // top-level outputs
 //   parameter Real x0[2] = {1.398992320427181, -1.398992320427181};
-//   parameter Real u0[0] = array(i for i in 1:0);
+//   parameter Real u0[0] = {i for i in 1:0};
 //   parameter Real A[2, 2] = [0.1709600740012847, 1.378396295717794; 1.378396295717794, 0.1709600740012847];
 //   parameter Real B[2, 0] = zeros(2, 0);
 //   parameter Real C[0, 2] = zeros(0, 2);

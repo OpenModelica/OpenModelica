@@ -15,7 +15,7 @@ model Ex
   parameter Foo2.T f2 = Foo2.T.One;
 end Ex;
 
-partial class Foo
+class Foo
   replaceable type T = enumeration(:);
 end Foo;
 

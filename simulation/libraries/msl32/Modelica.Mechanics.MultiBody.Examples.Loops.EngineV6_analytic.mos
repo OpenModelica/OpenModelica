@@ -53,10 +53,10 @@ runScript(modelTesting);getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 1 {1 392}
+//  * Linear torn systems: 1 {(1,100.0%) 392}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 303
+//  * Number of independent subsystems: 310
 //  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
@@ -72,9 +72,9 @@ runScript(modelTesting);getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 1 {1 331}
+//  * Linear torn systems: 1 {(1,100.0%) 331}
 //  * Non-linear torn systems: 0
-// 
+//
 // "true
 // "
 // ""

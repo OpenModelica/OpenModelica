@@ -1,10 +1,13 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+EngineV6_evalParams.mos \
+EngineV6_output.mos \
 Bug1687.mos \
 Bug1728.mos \
 Bug1987.mos \
 Bug2432.mos \
+Bug2536.mos \
 Bug2633.mos \
 Bug2704.mos \
 Bug2788.mos \
@@ -12,12 +15,15 @@ Bug2833.mos \
 Bug3023.mos \
 Bug3261.mos \
 Bug3323.mos \
+Bug3500.mos \
+Bug3687.mos \
 BugTest1830.mos \
 ChangeCorrect.mos \
 CombiTable1DBug.mos \
 ComplexAlgebraicLoop.mos \
 ComplexFun.mos \
 DiscreteVectorStateSpace.mos \
+Elevator.mos \
 EquationCallIntegerArray.mos \
 ExtendsBasic.mos  \
 FrameTest.mos \

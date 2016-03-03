@@ -70,6 +70,7 @@ MatchCaseInteractive3.mos \
 MatchDotNotation.mos \
 MatchElse1.mos \
 MatchIfEquation1.mos \
+MatchNoRetCall.mos \
 MatchShadowing.mo \
 OptimizeContinue.mo \
 OptimizeMatchToIfExp.mo \
@@ -100,9 +101,12 @@ ReturnInTryBlock.mos \
 Shadowing1.mos \
 Shadowing2.mos \
 Simplify1.mos \
+StringBoxed.mos \
 SwitchString.mos \
 TailRecursion.mo \
 TailRecursionNoretcall.mos \
+Ticket2974.mos \
+Ticket3005.mos \
 ThreadedReduction.mos \
 Try.mos \
 TupleInteractive.mos \

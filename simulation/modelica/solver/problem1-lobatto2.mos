@@ -3,7 +3,7 @@
 // teardown_command: rm -f testSolver.problem1* output.log
 
 loadFile("testSolverPackage.mo"); getErrorString();
-simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="lobatto2"); getErrorString();
+simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="trapezoid"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem1_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem1.mat",
@@ -47,7 +47,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.000002, numberOfIntervals = 1000, tolerance = 0.000001, method = 'lobatto2', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.000002, numberOfIntervals = 1000, tolerance = 0.000001, method = 'trapezoid', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.

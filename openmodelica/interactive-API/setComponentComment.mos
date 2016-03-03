@@ -4,7 +4,6 @@
 // Subset of the Graphical API for components
 //
 
-// loadModel(Modelica); getErrorString();
 loadFile("setComponentComment.mo"); getErrorString();
 list(model1); getErrorString();
 getComponents(model1); getErrorString();

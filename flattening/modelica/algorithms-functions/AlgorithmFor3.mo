@@ -24,7 +24,7 @@ end AlgorithmFor3;
 //   Real a[4];
 // algorithm
 //   a[1] := 1.0;
-//   for i in 1:N + -1 loop
+//   for i in 1:-1 + N loop
 //     a[1 + i] := 1.0 + a[i];
 //   end for;
 // end AlgorithmFor3;

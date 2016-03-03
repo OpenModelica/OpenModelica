@@ -37,7 +37,7 @@ end AlgorithmSection;
 //   z = w;
 // algorithm
 //   x1 := z + x;
-//   x2 := y + -5.0;
+//   x2 := -5.0 + y;
 //   x3 := x2 + y;
 // end AlgorithmSection;
 // endResult

@@ -238,7 +238,7 @@ end ArrayAsAlias;
 //   parameter Real w.defaultJointWidth(quantity = "Length", unit = "m") = 0.05 * w.nominalLength "Default for the fixed width of a shape representing a joint";
 //   parameter Real w.defaultForceLength(quantity = "Length", unit = "m") = 0.1 * w.nominalLength "Default for the fixed length of a shape representing a force (e.g. damper)";
 //   parameter Real w.defaultForceWidth(quantity = "Length", unit = "m") = 0.05 * w.nominalLength "Default for the fixed width of a shape represening a force (e.g. spring, bushing)";
-//   parameter Real w.defaultBodyDiameter(quantity = "Length", unit = "m") = w.nominalLength / 9.0 "Default for diameter of sphere representing the center of mass of a body";
+//   parameter Real w.defaultBodyDiameter(quantity = "Length", unit = "m") = 0.1111111111111111 * w.nominalLength "Default for diameter of sphere representing the center of mass of a body";
 //   parameter Real w.defaultWidthFraction = 20.0 "Default for shape width as a fraction of shape length (e.g., for Parts.FixedTranslation)";
 //   parameter Real w.defaultArrowDiameter(quantity = "Length", unit = "m") = 0.025 * w.nominalLength "Default for arrow diameter (e.g., of forces, torques, sensors)";
 //   parameter Real w.defaultFrameDiameterFraction = 40.0 "Default for arrow diameter of a coordinate system as a fraction of axis length";

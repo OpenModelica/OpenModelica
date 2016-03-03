@@ -1,14 +1,17 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
+AddClassAnnotation.mos \
 ArraySlicing.mos \
 Bug2871.mos \
 Bug2943.mos \
 Bug2882.mos \
 Bug3269_deleteFile.mos \
 Bug3282.mos \
+Bug3417.mos \
 Bug3520.mos \
 ConvertUnits.mos \
+CopyClass.mos \
 choicesAllMatching.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
@@ -23,6 +26,7 @@ ForStatement6.mos \
 ForStatement7.mos \
 ForStatement8.mos \
 getClassNames.mos \
+GetComponents.mos \
 getDialogAnnotation.mos \
 IfStatementIllegal.mos \
 IfStatement.mos\
@@ -40,6 +44,7 @@ ListMultilineComment.mos \
 loadFileInteractiveQualified.mos \
 matrices.mos \
 Modelica.Media.Examples.getComponents.mos \
+MoveClass.mos \
 ProtectedHandlingBug2917.mos \
 refactorGraphAnn1.mos \
 refactorGraphAnn2.mos \
@@ -50,6 +55,7 @@ saveShort.mos \
 saveTotalModel.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \
+setSourceFileListFile.mos \
 showDoc.mos \
 simplify.mos \
 stringSplit.mos \

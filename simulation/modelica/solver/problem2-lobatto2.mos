@@ -4,7 +4,7 @@
 
 stopTime := 321.8122;
 loadFile("testSolverPackage.mo"); getErrorString();
-simulate(testSolver.problem2, stopTime=stopTime, numberOfIntervals=3000, method="lobatto2", tolerance=1e-12); getErrorString();
+simulate(testSolver.problem2, stopTime=stopTime, numberOfIntervals=3000, method="trapezoid", tolerance=1e-12); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem2.mat",
@@ -29,7 +29,7 @@ res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.
 });
 getErrorString();
 
-val(y[1], stopTime); 
+val(y[1], stopTime);
 val(y[2], stopTime);
 val(y[3], stopTime);
 val(y[4], stopTime);
@@ -55,7 +55,7 @@ val(der(y[8]), stopTime);
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 0.000000000001, method = 'lobatto2', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 0.000000000001, method = 'trapezoid', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.

@@ -2,6 +2,9 @@ TEST=../../../rtest -v
 
 TESTFILES=\
 Annotations.mo \
+BuiltinTime1.mo \
+BuiltinTimeInvalid1.mo \
+BuiltinTimeInvalid2.mo \
 CondDeclaration.mo \
 Constant1.mo \
 Constant2.mo \

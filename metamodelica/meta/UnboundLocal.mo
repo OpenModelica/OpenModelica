@@ -3,7 +3,7 @@
 
 model UnboundLocal
   function g
-    input Real time;
+    input Real t;
     output Real x = 1;
     output Real y = 1;
   end g;
@@ -86,7 +86,7 @@ end UnboundLocal;
 // end UnboundLocal.f;
 //
 // function UnboundLocal.g
-//   input Real time;
+//   input Real t;
 //   output Real x = 1.0;
 //   output Real y = 1.0;
 // end UnboundLocal.g;

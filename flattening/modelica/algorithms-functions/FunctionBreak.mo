@@ -34,7 +34,7 @@ end FunctionBreak;
 //   protected Integer i;
 // algorithm
 //   i := 0;
-//   a := y + -1.0;
+//   a := -1.0 + y;
 //   while 0.1 * /*Real*/(i) < y loop
 //     a := 0.5 + a;
 //     if a > y then

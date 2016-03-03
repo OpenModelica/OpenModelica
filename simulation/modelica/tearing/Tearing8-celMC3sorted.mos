@@ -9,7 +9,7 @@ loadFile("Tearing8.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC3 +d=sortEqnsAndVars"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC3 --preOptModules+=sortEqnsVars"); getErrorString();
 simulate(Tearing8); getErrorString();
 
 val(R1.i,0.2); getErrorString();
@@ -66,7 +66,7 @@ val(R1.v,0.2); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 1 {7 22}
+//  * Linear torn systems: 1 {(7,67.3%) 22}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
@@ -85,7 +85,7 @@ val(R1.v,0.2); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 1 {9 20}
+//  * Linear torn systems: 1 {(9,42.0%) 20}
 //  * Non-linear torn systems: 0
 // "
 // 0.3170188387650511

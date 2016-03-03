@@ -16,6 +16,7 @@ CM.mos \
 CM2.mos \
 DM.mos \
 DMwarm.mos \
+DMwarmCsv.mos \
 LoopTest.mos \
 LRB.mos \
 LRB2.mos \
@@ -38,6 +39,7 @@ testAlgLoop3.mos \
 testAlgLoop4.mos \
 testAlgLoop5.mos \
 testAlgLoop6.mos \
+testAlgLoop7.mos \
 testAlgLoop8.mos \
 testAlgLoop9.mos \
 testAlgLoop10.mos \
@@ -47,6 +49,7 @@ TFC.mos \
 TFC2.mos \
 TFC3.mos \
 TFC4.mos \
+TFC5.mos \
 TFC6.mos \
 TFC7.mos \
 TFC8.mos \
@@ -59,8 +62,7 @@ TT3.mos \
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES = \
-TFC5.mos \
-testAlgLoop7.mos \
+
 
 
 # Dependency files that are not .mo .mos or Makefile

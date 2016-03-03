@@ -16009,7 +16009,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </variable>
 // <variable id=\"623\" name=\"world.defaultBodyDiameter\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Default for diameter of sphere representing the center of mass of a body\">
 // <bindValueExpression>
-// <bindExpression string=\"world.nominalLength / 9.0\">
+// <bindExpression string=\"0.1111111111111111 * world.nominalLength\">
 // </bindExpression>
 // </bindValueExpression>
 // <classesNames>
@@ -17822,7 +17822,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </variable>
 // <variable id=\"705\" name=\"body.cylinderDiameter\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Diameter of cylinder\">
 // <bindValueExpression>
-// <bindExpression string=\"body.sphereDiameter / 3.0\">
+// <bindExpression string=\"0.3333333333333333 * body.sphereDiameter\">
 // </bindExpression>
 // </bindValueExpression>
 // <classesNames>
@@ -26646,11 +26646,11 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </aliasVariables>
 // </variables>
 // <equations dimension=\"30\">
-// <equation id=\"1\">rev.tau = 0.001 * body.z_a[3] + 0.001 * body.w_a[1] * body.w_a[2] + -0.001 * body.w_a[2] * body.w_a[1] + body.r_CM[2] * rev.frame_b.f[1] - body.r_CM[1] * rev.frame_b.f[2]
+// <equation id=\"1\">rev.tau = 0.001 * body.z_a[3] + 0.001 * body.w_a[1] * body.w_a[2] + 0.001 * (-body.w_a[2]) * body.w_a[1] + body.r_CM[2] * rev.frame_b.f[1] - body.r_CM[1] * rev.frame_b.f[2]
 // </equation>
-// <equation id=\"2\">-rev.frame_b.t[2] = 0.001 * body.z_a[2] + 0.001 * body.w_a[3] * body.w_a[1] + -0.001 * body.w_a[1] * body.w_a[3] + body.r_CM[1] * rev.frame_b.f[3] - body.r_CM[3] * rev.frame_b.f[1]
+// <equation id=\"2\">-rev.frame_b.t[2] = 0.001 * body.z_a[2] + 0.001 * body.w_a[3] * body.w_a[1] + 0.001 * (-body.w_a[1]) * body.w_a[3] + body.r_CM[1] * rev.frame_b.f[3] - body.r_CM[3] * rev.frame_b.f[1]
 // </equation>
-// <equation id=\"3\">-rev.frame_b.t[1] = 0.001 * body.z_a[1] + 0.001 * body.w_a[2] * body.w_a[3] + -0.001 * body.w_a[3] * body.w_a[2] + body.r_CM[3] * rev.frame_b.f[2] - body.r_CM[2] * rev.frame_b.f[3]
+// <equation id=\"3\">-rev.frame_b.t[1] = 0.001 * body.z_a[1] + 0.001 * body.w_a[2] * body.w_a[3] + 0.001 * (-body.w_a[3]) * body.w_a[2] + body.r_CM[3] * rev.frame_b.f[2] - body.r_CM[2] * rev.frame_b.f[3]
 // </equation>
 // <equation id=\"4\">-rev.frame_b.f[3] = (body.z_a[1] * body.r_CM[2] + body.w_a[1] * (body.w_a[3] * body.r_CM[1] - body.w_a[1] * body.r_CM[3]) + body.w_a[2] * (body.w_a[3] * body.r_CM[2] - body.w_a[2] * body.r_CM[3]) - body.z_a[2] * body.r_CM[1]) * body.m
 // </equation>
@@ -26855,7 +26855,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //   input Real[3] w(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;) &quot;Angular velocity from frame 2 with respect to frame 1, resolved in frame 2&quot;;
 //   output Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 // algorithm
-//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{2.0 * (Q[1] ^ 2.0 + Q[4] ^ 2.0) + -1.0, 2.0 * (Q[1] * Q[2] + Q[3] * Q[4]), 2.0 * (Q[1] * Q[3] - Q[2] * Q[4])}, {2.0 * (Q[2] * Q[1] - Q[3] * Q[4]), 2.0 * (Q[2] ^ 2.0 + Q[4] ^ 2.0) + -1.0, 2.0 * (Q[2] * Q[3] + Q[1] * Q[4])}, {2.0 * (Q[3] * Q[1] + Q[2] * Q[4]), 2.0 * (Q[3] * Q[2] - Q[1] * Q[4]), 2.0 * (Q[3] ^ 2.0 + Q[4] ^ 2.0) + -1.0}}, {w[1], w[2], w[3]});
+//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{-1.0 + 2.0 * (Q[1] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[1] * Q[2] + Q[3] * Q[4]), 2.0 * (Q[1] * Q[3] - Q[2] * Q[4])}, {2.0 * (Q[2] * Q[1] - Q[3] * Q[4]), -1.0 + 2.0 * (Q[2] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[2] * Q[3] + Q[1] * Q[4])}, {2.0 * (Q[3] * Q[1] + Q[2] * Q[4]), 2.0 * (Q[3] * Q[2] - Q[1] * Q[4]), -1.0 + 2.0 * (Q[3] ^ 2.0 + Q[4] ^ 2.0)}}, {w[1], w[2], w[3]});
 // end Modelica.Mechanics.MultiBody.Frames.from_Q;
 //
 //
@@ -27073,7 +27073,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //   input Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
 //   output Real[1] residue &quot;Residue constraint (shall be zero)&quot;;
 // algorithm
-//   residue := {Q[1] ^ 2.0 + Q[2] ^ 2.0 + Q[3] ^ 2.0 + Q[4] ^ 2.0 + -1.0};
+//   residue := {-1.0 + Q[1] ^ 2.0 + Q[2] ^ 2.0 + Q[3] ^ 2.0 + Q[4] ^ 2.0};
 // end Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint;
 //
 //

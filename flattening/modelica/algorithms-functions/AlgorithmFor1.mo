@@ -24,7 +24,7 @@ end AlgorithmFor1;
 // algorithm
 //   a[1] := 1.0;
 //   for i in {2, 3, 4, 5} loop
-//     a[i] := 1.0 + a[i + -1];
+//     a[i] := 1.0 + a[-1 + i];
 //   end for;
 // end AlgorithmFor1;
 // endResult

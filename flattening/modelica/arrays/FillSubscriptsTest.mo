@@ -4110,7 +4110,7 @@ end Manifold;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0);
 // algorithm
-//   psat := Buildings.Utilities.Math.Functions.spliceFunction(Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.saturationPressureLiquid(Tsat), Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.sublimationPressureIce(Tsat), Tsat + -273.16, 1.0);
+//   psat := Buildings.Utilities.Math.Functions.spliceFunction(Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.saturationPressureLiquid(Tsat), Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.sublimationPressureIce(Tsat), -273.16 + Tsat, 1.0);
 // end Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.saturationPressure;
 //
 // function Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.saturationPressureLiquid
@@ -4237,7 +4237,7 @@ end Manifold;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0);
 // algorithm
-//   psat := Buildings.Utilities.Math.Functions.spliceFunction(Buildings.Fluid.Sources.Boundary_pT$sou_2.Medium.saturationPressureLiquid(Tsat), Buildings.Fluid.Sources.Boundary_pT$sou_2.Medium.sublimationPressureIce(Tsat), Tsat + -273.16, 1.0);
+//   psat := Buildings.Utilities.Math.Functions.spliceFunction(Buildings.Fluid.Sources.Boundary_pT$sou_2.Medium.saturationPressureLiquid(Tsat), Buildings.Fluid.Sources.Boundary_pT$sou_2.Medium.sublimationPressureIce(Tsat), -273.16 + Tsat, 1.0);
 // end Buildings.Fluid.Sources.Boundary_pT$sou_2.Medium.saturationPressure;
 //
 // function Buildings.Fluid.Sources.Boundary_pT$sou_2.Medium.saturationPressureLiquid
@@ -5001,7 +5001,7 @@ end Manifold;
 //               is negative. It must be positive.
 //               ");
 //   end for;
-//   if nX > 0 and abs(sum(X_boundary) + -1.0) > 1e-10 then
+//   if nX > 0 and abs(-1.0 + sum(X_boundary)) > 1e-10 then
 //     X_str := "";
 //     for i in 1:nX loop
 //       X_str := X_str + "   X_boundary[" + String(i, 0, true) + "] = " + String(X_boundary[i], 0, true, 6) + " \"" + substanceNames[i] + "\"
@@ -5301,7 +5301,7 @@ end Manifold;
 //   input Real Celsius(quantity = "ThermodynamicTemperature", unit = "degC");
 //   output Real Kelvin(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
 // algorithm
-//   Kelvin := Celsius + 273.15;
+//   Kelvin := 273.15 + Celsius;
 // end Modelica.SIunits.Conversions.from_degC;
 //
 // function Modelica.SIunits.Conversions.to_bar
@@ -6388,7 +6388,7 @@ end Manifold;
 //             Temperature T is not in the allowed range
 //             200.0 K <= (T =" + String(sou_2.medium.T, 0, true, 6) + " K) <= 423.15 K
 //             required from medium model \"" + "Moist air unsaturated perfect gas" + "\".");
-//   sou_2.medium.MM = 1.0 / (34.52428788658843 + sou_2.medium.Xi[1] / 0.01801528 - sou_2.medium.Xi[1] / 0.0289651159);
+//   sou_2.medium.MM = 1.0 / (34.52428788658843 + 20.98414717520355 * sou_2.medium.Xi[1]);
 //   sou_2.medium.p_steam_sat = min(Buildings.Fluid.Sources.Boundary_pT$sou_2.Medium.saturationPressure(sou_2.medium.T), 0.999 * sou_2.medium.p);
 //   sou_2.medium.X_sat = min(0.6219647130774989 * sou_2.medium.p_steam_sat * (1.0 - sou_2.medium.Xi[1]) / max(1e-13, sou_2.medium.p - sou_2.medium.p_steam_sat), 1.0);
 //   sou_2.medium.X_steam = sou_2.medium.Xi[1];
@@ -6425,7 +6425,7 @@ end Manifold;
 //             Temperature T is not in the allowed range
 //             200.0 K <= (T =" + String(sin_2.medium.T, 0, true, 6) + " K) <= 423.15 K
 //             required from medium model \"" + "Moist air unsaturated perfect gas" + "\".");
-//   sin_2.medium.MM = 1.0 / (34.52428788658843 + sin_2.medium.Xi[1] / 0.01801528 - sin_2.medium.Xi[1] / 0.0289651159);
+//   sin_2.medium.MM = 1.0 / (34.52428788658843 + 20.98414717520355 * sin_2.medium.Xi[1]);
 //   sin_2.medium.p_steam_sat = min(Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.saturationPressure(sin_2.medium.T), 0.999 * sin_2.medium.p);
 //   sin_2.medium.X_sat = min(0.6219647130774989 * sin_2.medium.p_steam_sat * (1.0 - sin_2.medium.Xi[1]) / max(1e-13, sin_2.medium.p - sin_2.medium.p_steam_sat), 1.0);
 //   sin_2.medium.X_steam = sin_2.medium.Xi[1];

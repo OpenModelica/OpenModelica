@@ -6,7 +6,6 @@ ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.mos \
 ThermoSysPro.Examples.SimpleExamples.TestCheckValve.mos \
 ThermoSysPro.Examples.SimpleExamples.TestControlValve.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.mos \
-ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger.mos \
 ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.mos \
 ThermoSysPro.Examples.SimpleExamples.TestIdealCheckValve.mos \
@@ -21,7 +20,6 @@ ThermoSysPro.Examples.SimpleExamples.TestSensors.mos \
 ThermoSysPro.Examples.SimpleExamples.TestSimpleEvaporatorWaterSteamFlueGases.mos \
 ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser.mos \
 ThermoSysPro.Examples.SimpleExamples.TestSingularPressureLoss.mos \
-ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump1.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump2.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.mos \
@@ -49,6 +47,7 @@ ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.mos \
+ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicTwoPhaseFlowPipe.mos \
 ThermoSysPro.Examples.SimpleExamples.TestFan.mos \
 ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.mos \
@@ -57,6 +56,7 @@ ThermoSysPro.Examples.SimpleExamples.TestJunctions3.mos \
 ThermoSysPro.Examples.SimpleExamples.TestJunctions4.mos \
 ThermoSysPro.Examples.SimpleExamples.TestJunctions5.mos \
 ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe.mos \
+ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStaticDrum1.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.mos \

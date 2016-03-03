@@ -1,0 +1,45 @@
+// name:     Test for bug 2588
+// keywords: modelica output flat
+// status:   correct
+//
+
+loadString("
+package foo
+  connector bInput = input Boolean \"'input Boolean' as connector\";
+  connector bOutput = output Boolean \"'output Boolean' as connector\";
+
+  model M1
+    bOutput signal(start=true, fixed=false);
+  equation
+    signal = time > 0.5;
+  end M1;
+
+  model M2
+    bInput signal;
+    Real x(start=1, fixed=true);
+    discrete Real t0(start=0, fixed=true);
+  equation
+    when edge(signal) then
+      t0 =  time;
+    end when;
+    der(x) = if signal then 1 else 0;
+  end M2;
+
+  model M1_M2
+    M1 control;
+    M2 machine;
+  equation
+    connect(control.signal, machine.signal);
+  end M1_M2;
+end foo;
+"); getErrorString();
+
+setCommandLineOptions("+modelicaOutput"); getErrorString();
+loadString(instantiateModel(foo.M1_M2)); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""

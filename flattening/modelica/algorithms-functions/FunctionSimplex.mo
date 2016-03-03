@@ -119,7 +119,7 @@ end FunctionSimplex;
 // Result:
 // function misc_simplex1
 //   input Real[:, :] matr;
-//   output Real[size(matr, 2) + -1] x;
+//   output Real[-1 + size(matr, 2)] x;
 //   output Real z;
 //   output Integer q;
 //   output Integer p;
@@ -127,8 +127,8 @@ end FunctionSimplex;
 //   protected Integer N;
 //   protected Real[size(matr, 1), size(matr, 2)] a;
 // algorithm
-//   N := size(a, 1) + -1;
-//   M := size(a, 2) + -1;
+//   N := -1 + size(a, 1);
+//   M := -1 + size(a, 2);
 //   a := matr;
 //   p := 0;
 //   q := 0;
@@ -173,8 +173,8 @@ end FunctionSimplex;
 //   protected Integer N;
 // algorithm
 //   a := b;
-//   N := size(a, 1) + -1;
-//   M := size(a, 2) + -1;
+//   N := -1 + size(a, 1);
+//   M := -1 + size(a, 2);
 //   for j in 1:N loop
 //     for k in 1:M loop
 //       if j <> p and k <> q then

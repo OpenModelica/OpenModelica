@@ -332,13 +332,13 @@ readFile("testModel_info.xml");getErrorString();
 //       <type>Real</type>
 //     </source>
 //   </variable>
-//   <variable name=\"$TMP$VAR$35$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//   <variable name=\"$TMP$VAR$43$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"$PRE.$TMP$VAR$35$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//   <variable name=\"$PRE.$TMP$VAR$43$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
@@ -506,42 +506,6 @@ readFile("testModel_info.xml");getErrorString();
 //       <type>Real</type>
 //     </source>
 //   </variable>
-//   <variable name=\"$STATESET2.J.$pDERStateSetJac2.dummyVarStateSetJac2\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
-//   <variable name=\"$PRE.$STATESET2.J.$pDERStateSetJac2.dummyVarStateSetJac2\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
-//   <variable name=\"$STATESET1.J.$pDERStateSetJac3.dummyVarStateSetJac3\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
-//   <variable name=\"$PRE.$STATESET1.J.$pDERStateSetJac3.dummyVarStateSetJac3\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
-//   <variable name=\"der(yd.$pDERNLSJac0.dummyVarNLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
-//   <variable name=\"$PRE.der(yd.$pDERNLSJac0.dummyVarNLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
 //   <variable name=\"der(xd.$pDERNLSJac0.dummyVarNLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
@@ -549,6 +513,54 @@ readFile("testModel_info.xml");getErrorString();
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.der(xd.$pDERNLSJac0.dummyVarNLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$res5.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$res5.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$res4.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$res4.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$res3.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$res3.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$res2.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$res2.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
@@ -566,13 +578,13 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"u.$pDERNLSJac1.dummyVarNLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//   <variable name=\"$res2.$pDERNLSJac1.dummyVarNLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"$PRE.u.$pDERNLSJac1.dummyVarNLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//   <variable name=\"$PRE.$res2.$pDERNLSJac1.dummyVarNLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
@@ -585,6 +597,90 @@ readFile("testModel_info.xml");getErrorString();
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.$res1.$pDERNLSJac1.dummyVarNLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"der(yd.$pDERLSJac2.dummyVarLSJac2)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der(yd.$pDERLSJac2.dummyVarLSJac2)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"der(xd.$pDERLSJac2.dummyVarLSJac2)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der(xd.$pDERLSJac2.dummyVarLSJac2)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$res1.$pDERLSJac2.dummyVarLSJac2\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$res1.$pDERLSJac2.dummyVarLSJac2\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"u.$pDERLSJac3.dummyVarLSJac3\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.u.$pDERLSJac3.dummyVarLSJac3\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$res1.$pDERLSJac3.dummyVarLSJac3\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$res1.$pDERLSJac3.dummyVarLSJac3\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET2.J.$pDERStateSetJac4.dummyVarStateSetJac4\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$STATESET2.J.$pDERStateSetJac4.dummyVarStateSetJac4\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET1.J.$pDERStateSetJac5.dummyVarStateSetJac5\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$STATESET1.J.$pDERStateSetJac5.dummyVarStateSetJac5\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
@@ -633,7 +729,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <depends name=\"b\" />
 //       <depends name=\"s\" />
 //       <depends name=\"a\" />
-//       <rhs>(-a) * DIVISION(s, b)</rhs>
+//       <rhs>DIVISION((-a) * s, b)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"15\" lineEnd=\"15\" colStart=\"3\" colEnd=\"12\"/>
@@ -693,7 +789,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"8\" parent=\"14\">
+//   <equation index=\"8\" parent=\"20\">
 //     <assign>
 //       <defines name=\"der(xd)\" />
 //       <depends name=\"L\" />
@@ -706,41 +802,136 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"9\" parent=\"14\">
+//   <equation index=\"9\" parent=\"20\">
 //     <residual>-4.91 + -0.5 * $DER.yd - Fo * DIVISION(y, L)</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"10\" parent=\"14\">
+//   <equation index=\"10\" parent=\"20\">
 //     <residual>2.0 * (x * $DER.xd + xd ^ 2.0 + y * $DER.yd + yd ^ 2.0)</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"11\" parent=\"14\">
+//   <equation index=\"11\" parent=\"20\">
 //     <residual>2.0 * (x * xd + y * yd)</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"12\" parent=\"14\">
+//   <equation index=\"12\" parent=\"20\">
 //     <residual>/*Real*/($STATESET1.A[2]) * xd + /*Real*/($STATESET1.A[1]) * yd - $STATESET1.x</residual>
 //     <source>
 //       <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"13\" parent=\"14\">
-//     <residual>x ^ 2.0 + y ^ 2.0 + -1.0</residual>
+//   <equation index=\"13\" parent=\"20\">
+//     <residual>-1.0 + x ^ 2.0 + y ^ 2.0</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"14\">
+//   <equation index=\"14\" parent=\"20\">
+//     <assign>
+//       <defines name=\"der(xd.$pDERNLSJac0.dummyVarNLSJac0)\" />
+//       <depends name=\"Fo\" />
+//       <depends name=\"xSeedNLSJac0\" />
+//       <depends name=\"L\" />
+//       <depends name=\"FoSeedNLSJac0\" />
+//       <depends name=\"x\" />
+//       <rhs>2.0 * ((-x) * DIVISION(FoSeedNLSJac0, L) - xSeedNLSJac0 * DIVISION(Fo, L))</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"21\" lineEnd=\"21\" colStart=\"3\" colEnd=\"24\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"15\" parent=\"20\">
+//     <assign>
+//       <defines name=\"$res1.$pDERNLSJac0.dummyVarNLSJac0\" />
+//       <depends name=\"ySeedNLSJac0\" />
+//       <depends name=\"y\" />
+//       <depends name=\"xSeedNLSJac0\" />
+//       <depends name=\"x\" />
+//       <rhs>2.0 * (x * xSeedNLSJac0 + y * ySeedNLSJac0)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"16\" parent=\"20\">
+//     <assign>
+//       <defines name=\"$res2.$pDERNLSJac0.dummyVarNLSJac0\" />
+//       <depends name=\"ydSeedNLSJac0\" />
+//       <depends name=\"$STATESET1.A[1]\" />
+//       <depends name=\"xdSeedNLSJac0\" />
+//       <depends name=\"$STATESET1.A[2]\" />
+//       <rhs>/*Real*/($STATESET1.A[2]) * xdSeedNLSJac0 + /*Real*/($STATESET1.A[1]) * ydSeedNLSJac0</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"17\" parent=\"20\">
+//     <assign>
+//       <defines name=\"$res3.$pDERNLSJac0.dummyVarNLSJac0\" />
+//       <depends name=\"yd\" />
+//       <depends name=\"ySeedNLSJac0\" />
+//       <depends name=\"ydSeedNLSJac0\" />
+//       <depends name=\"y\" />
+//       <depends name=\"xd\" />
+//       <depends name=\"xSeedNLSJac0\" />
+//       <depends name=\"xdSeedNLSJac0\" />
+//       <depends name=\"x\" />
+//       <rhs>2.0 * (x * xdSeedNLSJac0 + xSeedNLSJac0 * xd + y * ydSeedNLSJac0 + ySeedNLSJac0 * yd)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"18\" parent=\"20\">
+//     <assign>
+//       <defines name=\"$res4.$pDERNLSJac0.dummyVarNLSJac0\" />
+//       <depends name=\"ydSeedNLSJac0\" />
+//       <depends name=\"yd\" />
+//       <depends name=\"der(yd)\" />
+//       <depends name=\"ySeedNLSJac0\" />
+//       <depends name=\"xdSeedNLSJac0\" />
+//       <depends name=\"xd\" />
+//       <depends name=\"der(xd)\" />
+//       <depends name=\"xSeedNLSJac0\" />
+//       <depends name=\"der(xd.$pDERNLSJac0.dummyVarNLSJac0)\" />
+//       <depends name=\"x\" />
+//       <rhs>2.0 * (x * $DER.xd.$pDERNLSJac0.dummyVarNLSJac0 + xSeedNLSJac0 * $DER.xd + 2.0 * xd * xdSeedNLSJac0 + ySeedNLSJac0 * $DER.yd + 2.0 * yd * ydSeedNLSJac0)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"19\" parent=\"20\">
+//     <assign>
+//       <defines name=\"$res5.$pDERNLSJac0.dummyVarNLSJac0\" />
+//       <depends name=\"y\" />
+//       <depends name=\"FoSeedNLSJac0\" />
+//       <depends name=\"L\" />
+//       <depends name=\"ySeedNLSJac0\" />
+//       <depends name=\"Fo\" />
+//       <rhs>(-Fo) * DIVISION(ySeedNLSJac0, L) - FoSeedNLSJac0 * DIVISION(y, L)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"20\">
 //     <nonlinear indexNonlinear=\"0\">
 //       <defines name=\"y\" />
 //       <defines name=\"Fo\" />
@@ -755,7 +946,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <eq index=\"9\"/>
 //     </nonlinear>
 //   </equation>
-//   <equation index=\"15\">
+//   <equation index=\"21\">
 //     <assign>
 //       <defines name=\"$STATESET2.x\" />
 //       <depends name=\"x\" />
@@ -768,7 +959,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"16\">
+//   <equation index=\"22\">
 //     <assign>
 //       <defines name=\"der(y)\" />
 //       <depends name=\"yd\" />
@@ -779,7 +970,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"17\">
+//   <equation index=\"23\">
 //     <assign>
 //       <defines name=\"der(x)\" />
 //       <depends name=\"xd\" />
@@ -790,7 +981,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"18\">
+//   <equation index=\"24\">
 //     <assign>
 //       <defines name=\"der($STATESET2.x)\" />
 //       <depends name=\"der(x)\" />
@@ -803,7 +994,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"19\">
+//   <equation index=\"25\">
 //     <assign>
 //       <defines name=\"der($STATESET1.x)\" />
 //       <depends name=\"der(xd)\" />
@@ -820,28 +1011,55 @@ readFile("testModel_info.xml");getErrorString();
 // <removed-initial-equations size=\"0\">
 // </removed-initial-equations>
 // <equations size=\"11\">
-//   <equation index=\"20\" parent=\"22\">
+//   <equation index=\"26\" parent=\"30\">
 //     <residual>/*Real*/($STATESET2.A[2]) * x + /*Real*/($STATESET2.A[1]) * y - $STATESET2.x</residual>
 //     <source>
 //       <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"21\" parent=\"22\">
-//     <residual>x ^ 2.0 + y ^ 2.0 + -1.0</residual>
+//   <equation index=\"27\" parent=\"30\">
+//     <residual>-1.0 + x ^ 2.0 + y ^ 2.0</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"22\">
+//   <equation index=\"28\" parent=\"30\">
+//     <assign>
+//       <defines name=\"$res1.$pDERNLSJac1.dummyVarNLSJac1\" />
+//       <depends name=\"ySeedNLSJac1\" />
+//       <depends name=\"y\" />
+//       <depends name=\"xSeedNLSJac1\" />
+//       <depends name=\"x\" />
+//       <rhs>2.0 * (x * xSeedNLSJac1 + y * ySeedNLSJac1)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"29\" parent=\"30\">
+//     <assign>
+//       <defines name=\"$res2.$pDERNLSJac1.dummyVarNLSJac1\" />
+//       <depends name=\"ySeedNLSJac1\" />
+//       <depends name=\"$STATESET2.A[1]\" />
+//       <depends name=\"xSeedNLSJac1\" />
+//       <depends name=\"$STATESET2.A[2]\" />
+//       <rhs>/*Real*/($STATESET2.A[2]) * xSeedNLSJac1 + /*Real*/($STATESET2.A[1]) * ySeedNLSJac1</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"30\">
 //     <nonlinear indexNonlinear=\"1\">
 //       <defines name=\"y\" />
 //       <defines name=\"x\" />
-//       <eq index=\"21\"/>
-//       <eq index=\"20\"/>
+//       <eq index=\"27\"/>
+//       <eq index=\"26\"/>
 //     </nonlinear>
 //   </equation>
-//   <equation index=\"23\">
+//   <equation index=\"31\">
 //     <linear size=\"2\" nnz=\"4\">
 //       <defines name=\"yd\" />
 //       <defines name=\"xd\" />
@@ -873,7 +1091,7 @@ readFile("testModel_info.xml");getErrorString();
 //       </source>
 //     </linear>
 //   </equation>
-//   <equation index=\"24\">
+//   <equation index=\"32\">
 //     <assign>
 //       <defines name=\"der(y)\" />
 //       <depends name=\"yd\" />
@@ -883,7 +1101,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"25\">
+//   <equation index=\"33\">
 //     <assign>
 //       <defines name=\"der($STATESET2.x)\" />
 //       <depends name=\"xd\" />
@@ -896,7 +1114,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"26\">
+//   <equation index=\"34\">
 //     <assign>
 //       <defines name=\"der(x)\" />
 //       <depends name=\"xd\" />
@@ -906,7 +1124,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"27\" parent=\"33\">
+//   <equation index=\"35\" parent=\"41\">
 //     <assign>
 //       <defines name=\"der(xd)\" />
 //       <depends name=\"L\" />
@@ -919,7 +1137,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"28\" parent=\"33\">
+//   <equation index=\"36\" parent=\"41\">
 //     <assign>
 //       <defines name=\"der(yd)\" />
 //       <depends name=\"L\" />
@@ -932,54 +1150,54 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"29\" parent=\"33\">
+//   <equation index=\"37\" parent=\"41\">
 //     <residual>2.0 * (x * $DER.xd + xd ^ 2.0 + y * $DER.yd + yd ^ 2.0)</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"30\" parent=\"33\">
+//   <equation index=\"38\" parent=\"41\">
 //     <assign>
-//       <defines name=\"der(xd.$pDERNLSJac0.dummyVarNLSJac0)\" />
+//       <defines name=\"der(xd.$pDERLSJac2.dummyVarLSJac2)\" />
 //       <depends name=\"L\" />
-//       <depends name=\"FoSeedNLSJac0\" />
+//       <depends name=\"FoSeedLSJac2\" />
 //       <depends name=\"x\" />
-//       <rhs>2.0 * (-x) * DIVISION(FoSeedNLSJac0, L)</rhs>
+//       <rhs>2.0 * (-x) * DIVISION(FoSeedLSJac2, L)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"21\" lineEnd=\"21\" colStart=\"3\" colEnd=\"24\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"31\" parent=\"33\">
+//   <equation index=\"39\" parent=\"41\">
 //     <assign>
-//       <defines name=\"der(yd.$pDERNLSJac0.dummyVarNLSJac0)\" />
+//       <defines name=\"der(yd.$pDERLSJac2.dummyVarLSJac2)\" />
 //       <depends name=\"L\" />
 //       <depends name=\"y\" />
-//       <depends name=\"FoSeedNLSJac0\" />
-//       <rhs>2.0 * (-FoSeedNLSJac0) * DIVISION(y, L)</rhs>
+//       <depends name=\"FoSeedLSJac2\" />
+//       <rhs>2.0 * (-FoSeedLSJac2) * DIVISION(y, L)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"32\" parent=\"33\">
+//   <equation index=\"40\" parent=\"41\">
 //     <assign>
-//       <defines name=\"$res1.$pDERNLSJac0.dummyVarNLSJac0\" />
-//       <depends name=\"der(yd.$pDERNLSJac0.dummyVarNLSJac0)\" />
+//       <defines name=\"$res1.$pDERLSJac2.dummyVarLSJac2\" />
+//       <depends name=\"der(yd.$pDERLSJac2.dummyVarLSJac2)\" />
 //       <depends name=\"y\" />
-//       <depends name=\"der(xd.$pDERNLSJac0.dummyVarNLSJac0)\" />
+//       <depends name=\"der(xd.$pDERLSJac2.dummyVarLSJac2)\" />
 //       <depends name=\"x\" />
-//       <rhs>2.0 * (x * $DER.xd.$pDERNLSJac0.dummyVarNLSJac0 + y * $DER.yd.$pDERNLSJac0.dummyVarNLSJac0)</rhs>
+//       <rhs>2.0 * (x * $DER.xd.$pDERLSJac2.dummyVarLSJac2 + y * $DER.yd.$pDERLSJac2.dummyVarLSJac2)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"33\">
+//   <equation index=\"41\">
 //     <linear size=\"1\" nnz=\"0\">
 //       <defines name=\"Fo\" />
 //       <row>
@@ -988,18 +1206,18 @@ readFile("testModel_info.xml");getErrorString();
 //       <matrix>
 //       </matrix>
 //       <residuals>
-//       <eq index=\"27\"/>
-//       <eq index=\"28\"/>
-//       <eq index=\"29\"/>
+//       <eq index=\"35\"/>
+//       <eq index=\"36\"/>
+//       <eq index=\"37\"/>
 //       </residuals>
 //       <jacobian>
-//       <eq index=\"30\"/>
-//       <eq index=\"31\"/>
-//       <eq index=\"32\"/>
+//       <eq index=\"38\"/>
+//       <eq index=\"39\"/>
+//       <eq index=\"40\"/>
 //       </jacobian>
 //     </linear>
 //   </equation>
-//   <equation index=\"34\">
+//   <equation index=\"42\">
 //     <assign>
 //       <defines name=\"der($STATESET1.x)\" />
 //       <depends name=\"der(xd)\" />
@@ -1012,9 +1230,9 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"35\">
+//   <equation index=\"43\">
 //     <assign>
-//       <defines name=\"$TMP$VAR$35$0X$ABS\" />
+//       <defines name=\"$TMP$VAR$43$0X$ABS\" />
 //       <depends name=\"s\" />
 //       <rhs>if initial() then $_start(s) else $_initialGuess(s)</rhs>
 //     </assign>
@@ -1022,19 +1240,19 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"36\">
+//   <equation index=\"44\">
 //     <assign>
 //       <defines name=\"s\" />
 //       <depends name=\"time\" />
-//       <depends name=\"$TMP$VAR$35$0X$ABS\" />
-//       <rhs>$_signNoNull($TMP$VAR$35$0X$ABS) * abs(time ^ 0.5)</rhs>
+//       <depends name=\"$TMP$VAR$43$0X$ABS\" />
+//       <rhs>$_signNoNull($TMP$VAR$43$0X$ABS) * abs(time ^ 0.5)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"16\" lineEnd=\"16\" colStart=\"3\" colEnd=\"11\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"37\">
+//   <equation index=\"45\">
 //     <assign>
 //       <defines name=\"t\" />
 //       <depends name=\"b\" />
@@ -1047,7 +1265,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"38\" parent=\"42\">
+//   <equation index=\"46\" parent=\"50\">
 //     <assign>
 //       <defines name=\"u\" />
 //       <depends name=\"a\" />
@@ -1060,41 +1278,41 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"39\" parent=\"42\">
+//   <equation index=\"47\" parent=\"50\">
 //     <residual>t * v + s * u - time</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"17\" lineEnd=\"17\" colStart=\"3\" colEnd=\"15\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"40\" parent=\"42\">
+//   <equation index=\"48\" parent=\"50\">
 //     <assign>
-//       <defines name=\"u.$pDERNLSJac1.dummyVarNLSJac1\" />
+//       <defines name=\"u.$pDERLSJac3.dummyVarLSJac3\" />
 //       <depends name=\"a\" />
-//       <depends name=\"vSeedNLSJac1\" />
+//       <depends name=\"vSeedLSJac3\" />
 //       <depends name=\"b\" />
-//       <rhs>b * DIVISION(vSeedNLSJac1, a)</rhs>
+//       <rhs>DIVISION(b * vSeedLSJac3, a)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"18\" lineEnd=\"18\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"41\" parent=\"42\">
+//   <equation index=\"49\" parent=\"50\">
 //     <assign>
-//       <defines name=\"$res1.$pDERNLSJac1.dummyVarNLSJac1\" />
-//       <depends name=\"u.$pDERNLSJac1.dummyVarNLSJac1\" />
+//       <defines name=\"$res1.$pDERLSJac3.dummyVarLSJac3\" />
+//       <depends name=\"u.$pDERLSJac3.dummyVarLSJac3\" />
 //       <depends name=\"s\" />
-//       <depends name=\"vSeedNLSJac1\" />
+//       <depends name=\"vSeedLSJac3\" />
 //       <depends name=\"t\" />
-//       <rhs>t * vSeedNLSJac1 + s * u.$pDERNLSJac1.dummyVarNLSJac1</rhs>
+//       <rhs>t * vSeedLSJac3 + s * u.$pDERLSJac3.dummyVarLSJac3</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"17\" lineEnd=\"17\" colStart=\"3\" colEnd=\"15\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"42\">
+//   <equation index=\"50\">
 //     <linear size=\"1\" nnz=\"0\">
 //       <defines name=\"v\" />
 //       <row>
@@ -1103,18 +1321,18 @@ readFile("testModel_info.xml");getErrorString();
 //       <matrix>
 //       </matrix>
 //       <residuals>
-//       <eq index=\"38\"/>
-//       <eq index=\"39\"/>
+//       <eq index=\"46\"/>
+//       <eq index=\"47\"/>
 //       </residuals>
 //       <jacobian>
-//       <eq index=\"40\"/>
-//       <eq index=\"41\"/>
+//       <eq index=\"48\"/>
+//       <eq index=\"49\"/>
 //       </jacobian>
 //     </linear>
 //   </equation>
 // </equations>
 // <start-equations size=\"4\">
-//   <equation index=\"43\">
+//   <equation index=\"51\">
 //     <assign>
 //       <defines name=\"$STATESET1.x\" />
 //       <depends name=\"xd\" />
@@ -1127,7 +1345,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"44\">
+//   <equation index=\"52\">
 //     <assign>
 //       <defines name=\"$STATESET2.x\" />
 //       <depends name=\"x\" />
@@ -1140,7 +1358,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"45\">
+//   <equation index=\"53\">
 //     <assign>
 //       <defines name=\"u\" />
 //       <depends name=\"b\" />
@@ -1154,7 +1372,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <type>Real</type>
 //     </source>
 //   </equation>
-//   <equation index=\"46\">
+//   <equation index=\"54\">
 //     <assign>
 //       <defines name=\"s\" />
 //       <depends name=\"b\" />
@@ -1176,7 +1394,7 @@ readFile("testModel_info.xml");getErrorString();
 // <max-equations size=\"0\">
 // </max-equations>
 // <parameter-equations size=\"1\">
-//   <equation index=\"47\">
+//   <equation index=\"55\">
 //     <assign>
 //       <defines name=\"b\" />
 //       <depends name=\"a\" />
@@ -1193,28 +1411,28 @@ readFile("testModel_info.xml");getErrorString();
 // <assertions size=\"0\">
 // </assertions>
 // <jacobian-equations>
-//   <equation index=\"48\">
+//   <equation index=\"56\">
 //     <assign>
-//       <defines name=\"$STATESET2.J.$pDERStateSetJac2.dummyVarStateSetJac2\" />
-//       <depends name=\"ySeedStateSetJac2\" />
+//       <defines name=\"$STATESET2.J.$pDERStateSetJac4.dummyVarStateSetJac4\" />
+//       <depends name=\"ySeedStateSetJac4\" />
 //       <depends name=\"y\" />
-//       <depends name=\"xSeedStateSetJac2\" />
+//       <depends name=\"xSeedStateSetJac4\" />
 //       <depends name=\"x\" />
-//       <rhs>2.0 * (x * xSeedStateSetJac2 + y * ySeedStateSetJac2)</rhs>
+//       <rhs>2.0 * (x * xSeedStateSetJac4 + y * ySeedStateSetJac4)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"49\">
+//   <equation index=\"57\">
 //     <assign>
-//       <defines name=\"$STATESET1.J.$pDERStateSetJac3.dummyVarStateSetJac3\" />
-//       <depends name=\"ydSeedStateSetJac3\" />
+//       <defines name=\"$STATESET1.J.$pDERStateSetJac5.dummyVarStateSetJac5\" />
+//       <depends name=\"ydSeedStateSetJac5\" />
 //       <depends name=\"y\" />
-//       <depends name=\"xdSeedStateSetJac3\" />
+//       <depends name=\"xdSeedStateSetJac5\" />
 //       <depends name=\"x\" />
-//       <rhs>2.0 * (x * xdSeedStateSetJac3 + y * ydSeedStateSetJac3)</rhs>
+//       <rhs>2.0 * (x * xdSeedStateSetJac5 + y * ydSeedStateSetJac5)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>

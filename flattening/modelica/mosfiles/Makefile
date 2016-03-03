@@ -5,6 +5,7 @@ Array1.mos \
 BaseClass1.mos \
 cat.mos \
 ComplexConnect.mos \
+DuplicateDefinition.mos \
 DuplicateFunctions.mos \
 EnzMM.mos \
 ErrorFunctionCallNumArgs.mos \

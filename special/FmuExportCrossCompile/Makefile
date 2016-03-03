@@ -8,12 +8,15 @@ OMC=../../../build/bin/omc
 # FMUCHECKERBIN=~/bin/
 WINE32=$(shell which fmuCheck.win32.exe)
 WINE64=$(shell which fmuCheck.win64.exe)
+DARWIN32=$(shell which fmuCheck.darwin32)
+DARWIN64=$(shell which fmuCheck.darwin64)
 
 test: clean
 	$(OMC) fmuExportCrossCompile.mos
 	unzip -q FmuExportCrossCompile.fmu -d FmuExportCrossCompile.fmutmp
 	$(MAKE) check-files
 	$(MAKE) fmu-check
+	cp FmuExportCrossCompile.fmu FmuExportCrossCompile-archive.fmu
 	$(MAKE) clean
 check-files:
 	@file FmuExportCrossCompile.fmutmp/binaries/win32/FmuExportCrossCompile.dll | grep "PE32 executable (DLL) (console) Intel 80386, for MS Windows" || (file FmuExportCrossCompile.fmutmp/binaries/win32/FmuExportCrossCompile.dll ; false)
@@ -26,14 +29,21 @@ check-files:
 fmu-check:
 	@test ! -z "$(WINE32)" || (echo Did not find fmuCheck.win32.exe on the PATH; false)
 	@test ! -z "$(WINE64)" || (echo Did not find fmuCheck.win64.exe on the PATH; false)
-	wine $(WINE32) -f -n 2000 -k me -o win32-me.csv FmuExportCrossCompile.fmu
+	@test ! -z "$(DARWIN32)" || (echo Did not find fmuCheck.darwin32 on the PATH; false)
+	@test ! -z "$(DARWIN64)" || (echo Did not find fmuCheck.darwin64 on the PATH; false)
+	wine $(WINE32) -f -n 2000 -d -k me -o win32-me.csv FmuExportCrossCompile.fmu
 	WINEARCH=win64 WINEPREFIX=~/.wine64 wine $(WINE64) -f -k me -o win64-me.csv FmuExportCrossCompile.fmu
-	wine $(WINE32) -f -n 2000 -k cs -o win32-cs.csv FmuExportCrossCompile.fmu
+	wine $(WINE32) -f -n 2000 -d -k cs -o win32-cs.csv FmuExportCrossCompile.fmu
 	WINEARCH=win64 WINEPREFIX=~/.wine64 wine $(WINE64) -f -k cs -o win64-cs.csv FmuExportCrossCompile.fmu
-	fmuCheck.linux32 -f -n 2000 -k me -o linux32-me.csv FmuExportCrossCompile.fmu
-	fmuCheck.linux64 -f -n 2000 -k me -o linux64-me.csv FmuExportCrossCompile.fmu
-	fmuCheck.linux32 -f -n 2000 -k cs -o linux32-cs.csv FmuExportCrossCompile.fmu
-	fmuCheck.linux64 -f -n 2000 -k cs -o linux64-cs.csv FmuExportCrossCompile.fmu
+	fmuCheck.linux32 -f -n 2000 -d -k me -o linux32-me.csv FmuExportCrossCompile.fmu
+	fmuCheck.linux64 -f -n 2000 -d -k me -o linux64-me.csv FmuExportCrossCompile.fmu
+	fmuCheck.linux32 -f -n 2000 -d -k cs -o linux32-cs.csv FmuExportCrossCompile.fmu
+	fmuCheck.linux64 -f -n 2000 -d -k cs -o linux64-cs.csv FmuExportCrossCompile.fmu
+	dyld64 $(DARWIN64) -f -n 2000 -d -k me -o darwin64-me.csv FmuExportCrossCompile.fmu
+	dyld64 $(DARWIN64) -f -n 2000 -d -k cs -o darwin64-cs.csv FmuExportCrossCompile.fmu
+	# Need to find a working version of dyld32 to test this
+	#dyld32 $(DARWIN32) -f -n 2000 -d -k me -o darwin32-me.csv FmuExportCrossCompile.fmu
+	#dyld32 $(DARWIN32) -f -n 2000 -d -k cs -o darwin32-cs.csv FmuExportCrossCompile.fmu
 	$(OMC) check-files.mos
 clean:
 	rm -rf FmuExportCrossCompile.fmu* FmuExportCrossCompile.c FmuExportCrossCompile.makefile FmuExportCrossCompile.log FmuExportCrossCompile.o FmuExportCrossCompile.libs FmuExportCrossCompile_* *.csv

@@ -43,8 +43,8 @@ runScript(modelTesting);getErrorString();
 // |                 | |       | | For more information simulate with -lv LOG_NLS
 //
 // Files Equal!
-// [Modelica 3.2.1/Fluid/Interfaces.mo:740:9-745:39:writable] Notification: From here:
-// [Modelica 3.2.1/Fluid/Interfaces.mo:332:3-334:69:writable] Warning: Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627
+// [Modelica 3.2.1/Fluid/Interfaces.mo:734:9-739:39:writable] Notification: From here:
+// [Modelica 3.2.1/Fluid/Interfaces.mo:327:3-329:69:writable] Warning: Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627
 // 	first:  Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start, stateSelect = if momentumDynamics == Modelica.Fluid.Types.Dynamics.SteadyState then StateSelect.default else StateSelect.prefer) "mass flow rates between states"
 // 	second: Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start) "Mass flow rate in design flow direction"
 // Continue ....
@@ -98,6 +98,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: pump.heatTransfer.heatPorts[1].T(nominal = 300.0)
 //  * candidate: pump.heatTransfer.Ts[1](nominal = 300.0)
 // => select value from pump.heatTransfer.Ts[1](nominal = 300.0) for variable: pump.heatTransfer.Ts[1]
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 //
 // "true
 // "

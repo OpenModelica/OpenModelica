@@ -1,0 +1,39 @@
+// name: Modelica_Synchronous.Examples.Elementary.RealSignals.SampleClocked
+// keywords: simulation Modelica_Synchronous examples
+// status: correct
+//
+// Simulation Results
+// Modelica_Synchronous
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica_Synchronous.Examples.Elementary.RealSignals.SampleClocked);
+compareVars :=
+{"sample.y"};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica_Synchronous.Examples.Elementary.RealSignals.SampleClocked
+// {"sample.y"}
+// "Modelica_Synchronous
+// \"\"
+// true
+// \"Modelica_Synchronous\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Synchronous.Examples.Elementary.RealSignals.SampleClocked', options = '', outputFormat = 'mat', variableFilter = 'time|step.y', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica_Synchronous.Examples.Elementary.RealSignals.SampleClocked_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

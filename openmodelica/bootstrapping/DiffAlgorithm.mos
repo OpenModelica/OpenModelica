@@ -6,6 +6,7 @@ prefixPath := if ""==getEnvironmentVar("OMCOMPILERSOURCES") then "../../../OMCom
 echo(true);
 loadFiles({
   prefixPath + "Util/DiffAlgorithm.mo",
+  prefixPath + "Util/List.mo",
   prefixPath + "Util/Print.mo"
 });
 getErrorString();

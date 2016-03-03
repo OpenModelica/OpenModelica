@@ -12,7 +12,7 @@ package qssTests
 end qssTests;
 "); getErrorString();
 
-setCommandLineOptions("+addTimeAsState"); getErrorString();
+setCommandLineOptions("--postOptModules+=addTimeAsState"); getErrorString();
 simulate(qssTests.example9, method="qss"); getErrorString();
 val(x, {0.0, 1.0}); getErrorString();
 

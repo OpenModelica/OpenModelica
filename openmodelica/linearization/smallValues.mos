@@ -36,7 +36,7 @@ readFile("linear_VanDerPolSmallValue.log"); // Check that output log is emtpy
 //   parameter Integer l = 0;
 //   // top-level outputs
 //   parameter Real x0[2] = {1, 2};
-//   parameter Real u0[0] = array(i for i in 1:0);
+//   parameter Real u0[0] = {i for i in 1:0};
 //   parameter Real A[2, 2] = [0, 1; -2.200000000000004, 0];
 //   parameter Real B[2, 0] = zeros(2, 0);
 //   parameter Real C[0, 2] = zeros(0, 2);

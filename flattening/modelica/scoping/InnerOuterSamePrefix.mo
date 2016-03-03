@@ -3698,7 +3698,7 @@ end InnerOuterSamePrefix;// Result:
 //   input Real[4] Q "Quaternions orientation object to rotate frame 1 into frame 2";
 //   output Real[1] residue "Residue constraint (shall be zero)";
 // algorithm
-//   residue := {Q[1] ^ 2.0 + Q[2] ^ 2.0 + Q[3] ^ 2.0 + Q[4] ^ 2.0 + -1.0};
+//   residue := {-1.0 + Q[1] ^ 2.0 + Q[2] ^ 2.0 + Q[3] ^ 2.0 + Q[4] ^ 2.0};
 // end Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint;
 //
 // function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation "Inline before index reduction" "Return absolute orientation object from another absolute and a relative orientation object"
@@ -3825,7 +3825,7 @@ end InnerOuterSamePrefix;// Result:
 //   input Real[3] w(quantity = "AngularVelocity", unit = "rad/s") "Angular velocity from frame 2 with respect to frame 1, resolved in frame 2";
 //   output Modelica.Mechanics.MultiBody.Frames.Orientation R "Orientation object to rotate frame 1 into frame 2";
 // algorithm
-//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{2.0 * (Q[1] ^ 2.0 + Q[4] ^ 2.0) + -1.0, 2.0 * (Q[1] * Q[2] + Q[3] * Q[4]), 2.0 * (Q[1] * Q[3] - Q[2] * Q[4])}, {2.0 * (Q[2] * Q[1] - Q[3] * Q[4]), 2.0 * (Q[2] ^ 2.0 + Q[4] ^ 2.0) + -1.0, 2.0 * (Q[2] * Q[3] + Q[1] * Q[4])}, {2.0 * (Q[3] * Q[1] + Q[2] * Q[4]), 2.0 * (Q[3] * Q[2] - Q[1] * Q[4]), 2.0 * (Q[3] ^ 2.0 + Q[4] ^ 2.0) + -1.0}}, {w[1], w[2], w[3]});
+//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{-1.0 + 2.0 * (Q[1] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[1] * Q[2] + Q[3] * Q[4]), 2.0 * (Q[1] * Q[3] - Q[2] * Q[4])}, {2.0 * (Q[2] * Q[1] - Q[3] * Q[4]), -1.0 + 2.0 * (Q[2] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[2] * Q[3] + Q[1] * Q[4])}, {2.0 * (Q[3] * Q[1] + Q[2] * Q[4]), 2.0 * (Q[3] * Q[2] - Q[1] * Q[4]), -1.0 + 2.0 * (Q[3] ^ 2.0 + Q[4] ^ 2.0)}}, {w[1], w[2], w[3]});
 // end Modelica.Mechanics.MultiBody.Frames.from_Q;
 //
 // function Modelica.Mechanics.MultiBody.Frames.from_nxy "Return fixed orientation object from n_x and n_y vectors"
@@ -3979,7 +3979,7 @@ end InnerOuterSamePrefix;// Result:
 //   parameter Real pendulum.world.defaultJointWidth(quantity = "Length", unit = "m") = 0.05 * pendulum.world.nominalLength "Default for the fixed width of a shape representing a joint";
 //   parameter Real pendulum.world.defaultForceLength(quantity = "Length", unit = "m") = 0.1 * pendulum.world.nominalLength "Default for the fixed length of a shape representing a force (e.g., damper)";
 //   parameter Real pendulum.world.defaultForceWidth(quantity = "Length", unit = "m") = 0.05 * pendulum.world.nominalLength "Default for the fixed width of a shape representing a force (e.g., spring, bushing)";
-//   parameter Real pendulum.world.defaultBodyDiameter(quantity = "Length", unit = "m") = pendulum.world.nominalLength / 9.0 "Default for diameter of sphere representing the center of mass of a body";
+//   parameter Real pendulum.world.defaultBodyDiameter(quantity = "Length", unit = "m") = 0.1111111111111111 * pendulum.world.nominalLength "Default for diameter of sphere representing the center of mass of a body";
 //   parameter Real pendulum.world.defaultWidthFraction = 20.0 "Default for shape width as a fraction of shape length (e.g., for Parts.FixedTranslation)";
 //   parameter Real pendulum.world.defaultArrowDiameter(quantity = "Length", unit = "m") = 0.025 * pendulum.world.nominalLength "Default for arrow diameter (e.g., of forces, torques, sensors)";
 //   parameter Real pendulum.world.defaultFrameDiameterFraction = 40.0 "Default for arrow diameter of a coordinate system as a fraction of axis length";
@@ -4768,7 +4768,7 @@ end InnerOuterSamePrefix;// Result:
 //   final parameter Real pendulum.pendulum.innerRadius(quantity = "Length", unit = "m", min = 0.0) = 0.5 * pendulum.pendulum.innerDiameter "Inner-Radius of cylinder";
 //   final parameter Real pendulum.pendulum.mo(quantity = "Mass", unit = "kg", min = 0.0) = 3.141592653589793 * pendulum.pendulum.density * pendulum.pendulum.length * pendulum.pendulum.radius ^ 2.0 "Mass of cylinder without hole";
 //   final parameter Real pendulum.pendulum.mi(quantity = "Mass", unit = "kg", min = 0.0) = 3.141592653589793 * pendulum.pendulum.density * pendulum.pendulum.length * pendulum.pendulum.innerRadius ^ 2.0 "Mass of hole of cylinder";
-//   final parameter Real pendulum.pendulum.I22(quantity = "MomentOfInertia", unit = "kg.m2") = (pendulum.pendulum.mo * (pendulum.pendulum.length ^ 2.0 + 3.0 * pendulum.pendulum.radius ^ 2.0) - pendulum.pendulum.mi * (pendulum.pendulum.length ^ 2.0 + 3.0 * pendulum.pendulum.innerRadius ^ 2.0)) / 12.0 "Inertia with respect to axis through center of mass, perpendicular to cylinder axis";
+//   final parameter Real pendulum.pendulum.I22(quantity = "MomentOfInertia", unit = "kg.m2") = 0.08333333333333333 * (pendulum.pendulum.mo * (pendulum.pendulum.length ^ 2.0 + 3.0 * pendulum.pendulum.radius ^ 2.0) - pendulum.pendulum.mi * (pendulum.pendulum.length ^ 2.0 + 3.0 * pendulum.pendulum.innerRadius ^ 2.0)) "Inertia with respect to axis through center of mass, perpendicular to cylinder axis";
 //   final parameter Real pendulum.pendulum.m(quantity = "Mass", unit = "kg", min = 0.0) = pendulum.pendulum.mo - pendulum.pendulum.mi "Mass of cylinder";
 //   final parameter Real pendulum.pendulum.R.T[1,1] = 1.0 "Transformation matrix from world frame to local frame";
 //   final parameter Real pendulum.pendulum.R.T[1,2] = 0.0 "Transformation matrix from world frame to local frame";
@@ -4854,7 +4854,7 @@ end InnerOuterSamePrefix;// Result:
 //   Integer pendulum.pendulum.body.sphereColor[1](min = 0, max = 255) "Color of sphere";
 //   Integer pendulum.pendulum.body.sphereColor[2](min = 0, max = 255) "Color of sphere";
 //   Integer pendulum.pendulum.body.sphereColor[3](min = 0, max = 255) "Color of sphere";
-//   parameter Real pendulum.pendulum.body.cylinderDiameter(quantity = "Length", unit = "m", min = 0.0) = pendulum.pendulum.body.sphereDiameter / 3.0 "Diameter of cylinder";
+//   parameter Real pendulum.pendulum.body.cylinderDiameter(quantity = "Length", unit = "m", min = 0.0) = 0.3333333333333333 * pendulum.pendulum.body.sphereDiameter "Diameter of cylinder";
 //   Integer pendulum.pendulum.body.cylinderColor[1](min = 0, max = 255) "Color of cylinder";
 //   Integer pendulum.pendulum.body.cylinderColor[2](min = 0, max = 255) "Color of cylinder";
 //   Integer pendulum.pendulum.body.cylinderColor[3](min = 0, max = 255) "Color of cylinder";

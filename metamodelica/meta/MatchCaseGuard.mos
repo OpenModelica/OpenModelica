@@ -20,6 +20,6 @@ fac({1,2,3,4,5,100000});getErrorString();
 // true
 // ""
 // {1,2,6,24,120,0}
-// "[<interactive>:6:3-11:12:writable] Notification: Tail recursion of: fac(ii + -1, acc * ii) with input vars: i,acc
+// "[<interactive>:6:3-11:12:writable] Notification: Tail recursion of: fac(-1 + ii, acc * ii) with input vars: i,acc
 // "
 // endResult

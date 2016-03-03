@@ -48,7 +48,7 @@ val(v4,0.0); getErrorString();
 //  * Torn equation systems: 2
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 2 {1 1,1 1}
+//  * Linear torn systems: 2 {(1,100.0%) 1,(1,100.0%) 1}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
@@ -67,7 +67,7 @@ val(v4,0.0); getErrorString();
 //  * Torn equation systems: 2
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 2 {1 1,1 1}
+//  * Linear torn systems: 2 {(1,100.0%) 1,(1,100.0%) 1}
 //  * Non-linear torn systems: 0
 // "
 // 0.0

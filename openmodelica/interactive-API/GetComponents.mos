@@ -1,0 +1,63 @@
+// name: GetComponents
+// keywords: 
+// status: correct
+//
+// Tests the getComponents API functions.
+//
+
+loadString("
+  model A
+    Real x;
+    Real y;
+  end A;
+
+  model B
+    extends Foo;
+    Real a;
+    Real b;
+  end B;
+
+  model C
+    A a;
+    B b;
+  end C;
+
+  model D
+    parameter Real r1 = 0.1 annotation(Dialog(group = \"Group\", tab = \"Tab\")), r2;
+  end D;
+
+  model E
+    Foo f;
+    A a;
+  end E;
+
+  model F
+    model G
+      type T = Real;
+
+      model F
+        model H
+          F.G.T x;
+        end H;
+      end F;
+    end G;
+  end F;
+"); getErrorString();
+
+getComponents(A);
+getComponents(B);
+getComponents(C);
+getComponents(D);
+getComponents(E);
+getComponents(F.G.F.H);
+
+// Result:
+// true
+// ""
+// {{Real,x,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,y,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{Real,a,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,b,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{A,a,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{B,b,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{Real,r1,"", "public", false, false, false, false, "parameter", "none", "unspecified",{}},{Real,r2,"", "public", false, false, false, false, "parameter", "none", "unspecified",{}}}
+// {{Foo,f,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{A,a,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{F.G.F.G.T,x,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// endResult

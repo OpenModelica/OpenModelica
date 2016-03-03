@@ -358,7 +358,7 @@ end Philosopher_DiningTable;
 //   if so[3] <= 0.0 and so[3] >= 0.0 then
 //     so[3] := 1.0;
 //   end if;
-//   x := so[1] / 30269.0 + so[2] / 30307.0 + so[3] / 3023.0 - div(so[1] / 30269.0 + so[2] / 30307.0 + so[3] / 3023.0, 1.0);
+//   x := 3.303710066404573e-05 * so[1] + 3.299567756623883e-05 * so[2] + 0.0003307972213033411 * so[3] - div(3.303710066404573e-05 * so[1] + 3.299567756623883e-05 * so[2] + 0.0003307972213033411 * so[3], 1.0);
 // end Philosopher.Random.random;
 //
 // class Philosopher_DiningTable

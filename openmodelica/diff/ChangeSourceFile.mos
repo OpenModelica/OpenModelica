@@ -26,7 +26,7 @@ getErrorString();
 // ""
 // true
 // ""
-// "model M1
+// "within ;model M1
 //     Real a;
 //     Real b;
 //   Real c;

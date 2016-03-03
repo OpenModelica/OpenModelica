@@ -36,7 +36,7 @@ echo(false); // turns of output
 //   parameter Integer l = 0;
 //   // top-level outputs
 //   parameter Real x0[4] = {1, -2, 3, -5};
-//   parameter Real u0[0] = array(i for i in 1:0);
+//   parameter Real u0[0] = {i for i in 1:0};
 //   parameter Real A[4, 4] = [-3, 2, 0, 0; -7, 0, -5, 1; -1, 0, -1, 4; 0, 1, -1, 5];
 //   parameter Real B[4, 0] = zeros(4, 0);
 //   parameter Real C[0, 4] = zeros(0, 4);

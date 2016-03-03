@@ -1,0 +1,27 @@
+// status: correct
+
+echo(false);
+s1 := "model M1
+  A a(abc = 23) annotation(Placement(visible = true, transformation(origin={10,30},    extent = {{-30, -30}, {30, 30}}, rotation = 180)));
+end M1;";
+loadString(s1, "M1.mo");
+getErrorString();
+removeComponentModifiers(M1, "a");
+getErrorString();
+answer := "model M1
+  A a annotation(Placement(visible = true, transformation(origin={10,30},    extent = {{-30, -30}, {30, 30}}, rotation = 180)));
+end M1;";
+s2 := listFile(M1);
+if answer<>diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain) then
+  print("\nFailed \n");
+  print("\nStart model:\n\n" + s1 + "\n");
+  print("\nremoveComponentModifiers + listFile:\n\n" + s2 + "\n");
+  print("\nDiff:\n\n" + diffModelicaFileListings(s1, s2) + "\n");
+  print(getErrorString());
+  exit(1);
+end if;
+print("OK\n");
+
+// Result:
+// OK
+// endResult

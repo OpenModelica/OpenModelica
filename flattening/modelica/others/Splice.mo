@@ -15,10 +15,10 @@ end Splice;
 //   parameter Real myArray[3] = 3.0;
 //   parameter Real myArray[4] = 4.0;
 //   parameter Real myArray[5] = 5.0;
-//   parameter Real mySumArray[1] = sum(myArray[1:1]);
-//   parameter Real mySumArray[2] = sum(myArray[1:2]);
-//   parameter Real mySumArray[3] = sum(myArray[1:3]);
-//   parameter Real mySumArray[4] = sum(myArray[1:4]);
-//   parameter Real mySumArray[5] = sum(myArray[1:5]);
+//   parameter Real mySumArray[1] = myArray[1];
+//   parameter Real mySumArray[2] = myArray[1] + myArray[2];
+//   parameter Real mySumArray[3] = myArray[1] + myArray[2] + myArray[3];
+//   parameter Real mySumArray[4] = myArray[1] + myArray[2] + myArray[3] + myArray[4];
+//   parameter Real mySumArray[5] = myArray[1] + myArray[2] + myArray[3] + myArray[4] + myArray[5];
 // end Splice;
 // endResult

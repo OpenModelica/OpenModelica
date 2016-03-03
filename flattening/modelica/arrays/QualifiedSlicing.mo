@@ -24,7 +24,7 @@ end QualifiedSlicing;
 // equation
 //   v[1].x[1] = sin(time);
 //   v[1].x[2] = cos(time);
-//   v[2].x[1] = sin(time + -0.5);
-//   v[2].x[2] = cos(time + -0.5);
+//   v[2].x[1] = sin(-0.5 + time);
+//   v[2].x[2] = cos(-0.5 + time);
 // end QualifiedSlicing;
 // endResult

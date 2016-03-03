@@ -6,7 +6,8 @@
 loadModel(Modelica, {"3.2.1"}); getErrorString();
 
 loadFile("ElectricalCircuit1.mo"); getErrorString();
-setDebugFlags("backenddaeinfo,stateselection,resolveLoops"); getErrorString();
+setDebugFlags("backenddaeinfo,stateselection"); getErrorString();
+setCommandLineOptions("--preOptModules+=resolveLoops"); getErrorString();
 simulate(ElectricalCircuit1); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.mat",
@@ -19,6 +20,8 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
   "C3.i",
   "C3.v"});
 // Result:
+// true
+// ""
 // true
 // ""
 // true
@@ -52,7 +55,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 //  * Torn equation systems: 4
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 4 {2 6,1 2,1 2,1 2}
+//  * Linear torn systems: 4 {(2,100.0%) 6,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 7
@@ -71,7 +74,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 //  * Torn equation systems: 4
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 4 {1 6,1 2,1 2,1 2}
+//  * Linear torn systems: 4 {(1,100.0%) 6,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2}
 //  * Non-linear torn systems: 0
 // "
 // {"Files Equal!"}

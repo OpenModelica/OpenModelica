@@ -4,7 +4,7 @@
 
 loadString("model AlgortihmTupleAssign
   function f
-    input Real time;
+    input Real t;
     output String str = \"abc\";
     output Real x=-1.0,y = 1.5;
   end f;

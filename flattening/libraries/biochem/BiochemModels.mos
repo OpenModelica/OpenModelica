@@ -1098,7 +1098,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytosol.vpfk.s1.r = cytosol.vpfk.nS1 * cytosol.vpfk.rr;
 //   cytosol.vpfk.p1.r = (-cytosol.vpfk.nP1) * cytosol.vpfk.rr;
 //   cytosol.vpfk.p2.r = (-cytosol.vpfk.nP2) * cytosol.vpfk.rr;
-//   cytosol.vldh.rr = cytosol.vldh.e0 * (cytosol.vldh.s2.c * cytosol.vldh.s1.c * cytosol.vldh.kf / (cytosol.vldh.kmb * cytosol.vldh.kia) - cytosol.vldh.kr * cytosol.vldh.p1.c * cytosol.vldh.m1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq)) / (cytosol.vldh.s2.c * (1.0 / cytosol.vldh.kia + (1.0 / (cytosol.vldh.kmb * cytosol.vldh.kia) + cytosol.vldh.p1.c / (cytosol.vldh.kia * cytosol.vldh.kip * cytosol.vldh.kmb)) * cytosol.vldh.s1.c + cytosol.vldh.kmq * cytosol.vldh.p1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq * cytosol.vldh.kia)) + (1.0 + cytosol.vldh.s1.c / cytosol.vldh.k1ib) * (1.0 + cytosol.vldh.s1.c * cytosol.vldh.kma / (cytosol.vldh.kmb * cytosol.vldh.kia) + cytosol.vldh.kmq * cytosol.vldh.p1.c / (cytosol.vldh.kiq * cytosol.vldh.kmp)) + cytosol.vldh.m1.c / cytosol.vldh.kiq + cytosol.vldh.s1.c * cytosol.vldh.kma * cytosol.vldh.m1.c / (cytosol.vldh.kia * cytosol.vldh.kiq * cytosol.vldh.kmb) + cytosol.vldh.p1.c * cytosol.vldh.m1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq) + cytosol.vldh.s1.c * cytosol.vldh.p1.c * cytosol.vldh.m1.c / (cytosol.vldh.kib * cytosol.vldh.kiq * cytosol.vldh.kmp));
+//   cytosol.vldh.rr = cytosol.vldh.e0 * (cytosol.vldh.s2.c * cytosol.vldh.s1.c * cytosol.vldh.kf / (cytosol.vldh.kmb * cytosol.vldh.kia) - cytosol.vldh.kr * cytosol.vldh.p1.c * cytosol.vldh.m1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq)) / (cytosol.vldh.s2.c * (1.0 / cytosol.vldh.kia + (1.0 / (cytosol.vldh.kmb * cytosol.vldh.kia) + cytosol.vldh.p1.c / (cytosol.vldh.kia * cytosol.vldh.kip * cytosol.vldh.kmb)) * cytosol.vldh.s1.c + cytosol.vldh.kmq * cytosol.vldh.p1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq * cytosol.vldh.kia)) + (1.0 + cytosol.vldh.s1.c / cytosol.vldh.k1ib) * (1.0 + cytosol.vldh.s1.c * cytosol.vldh.kma / (cytosol.vldh.kia * cytosol.vldh.kmb) + cytosol.vldh.kmq * cytosol.vldh.p1.c / (cytosol.vldh.kiq * cytosol.vldh.kmp)) + cytosol.vldh.m1.c / cytosol.vldh.kiq + cytosol.vldh.s1.c * cytosol.vldh.kma * cytosol.vldh.m1.c / (cytosol.vldh.kia * cytosol.vldh.kiq * cytosol.vldh.kmb) + cytosol.vldh.p1.c * cytosol.vldh.m1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq) + cytosol.vldh.s1.c * cytosol.vldh.p1.c * cytosol.vldh.m1.c / (cytosol.vldh.kib * cytosol.vldh.kiq * cytosol.vldh.kmp));
 //   cytosol.vldh.s1.r = cytosol.vldh.nS1 * cytosol.vldh.rr;
 //   cytosol.vldh.s2.r = cytosol.vldh.nS2 * cytosol.vldh.rr;
 //   cytosol.vldh.p1.r = (-cytosol.vldh.nP1) * cytosol.vldh.rr;
@@ -1108,7 +1108,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytosol.vpdh.s2.r = cytosol.vpdh.nS2 * cytosol.vpdh.rr;
 //   cytosol.vpdh.p1.r = (-cytosol.vpdh.nP1) * cytosol.vpdh.rr;
 //   cytosol.vpdh.m1.r = 0.0;
-//   cytosol.jak.rr = cytosol.jak.KcatAK * (cytosol.jak.m1.c * cytosol.jak.s1.c - cytosol.jak.p1.c ^ 2.0) / (1.0 + 10.0 * (cytosol.jak.s1.c + cytosol.jak.p1.c) + cytosol.jak.m1.c * (10.0 + 100.0 * cytosol.jak.s1.c) + cytosol.jak.p1.c * (10.0 + 100.0 * cytosol.jak.p1.c + cytosol.jak.s1.c / 3.49));
+//   cytosol.jak.rr = cytosol.jak.KcatAK * (cytosol.jak.m1.c * cytosol.jak.s1.c - cytosol.jak.p1.c ^ 2.0) / (1.0 + 10.0 * (cytosol.jak.s1.c + cytosol.jak.p1.c) + cytosol.jak.m1.c * (10.0 + 100.0 * cytosol.jak.s1.c) + cytosol.jak.p1.c * (10.0 + 100.0 * cytosol.jak.p1.c + 0.2865329512893983 * cytosol.jak.s1.c));
 //   cytosol.jak.s1.r = cytosol.jak.nS1 * cytosol.jak.rr;
 //   cytosol.jak.p1.r = (-cytosol.jak.nP1) * cytosol.jak.rr;
 //   cytosol.jak.m1.r = 0.0;
@@ -1121,7 +1121,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytosol.jatpase.rr = cytosol.jatpase.KcatATPase * cytosol.jatpase.s1.c / (0.05 + cytosol.jatpase.s1.c);
 //   cytosol.jatpase.s1.r = cytosol.jatpase.nS1 * cytosol.jatpase.rr;
 //   cytosol.jatpase.p1.r = (-cytosol.jatpase.nP1) * cytosol.jatpase.rr;
-//   cytosol.jck.rr = cytosol.jck.KcatCK * (1.84331797235023 * cytosol.jck.s1.c * cytosol.jck.s2.c + -293.33 * cytosol.jck.p1.c * cytosol.jck.p2.c) / (1.0 + cytosol.jck.s2.c / 34.9 + 1.25 * cytosol.jck.p2.c + cytosol.jck.s1.c * (1.43 + cytosol.jck.s2.c / 10.85) + cytosol.jck.p1.c * (16.7 + 10.0 * cytosol.jck.p2.c + cytosol.jck.s2.c / 2.1));
+//   cytosol.jck.rr = cytosol.jck.KcatCK * (1.84331797235023 * cytosol.jck.s1.c * cytosol.jck.s2.c + -293.33 * cytosol.jck.p1.c * cytosol.jck.p2.c) / (1.0 + 0.02865329512893983 * cytosol.jck.s2.c + 1.25 * cytosol.jck.p2.c + cytosol.jck.s1.c * (1.43 + 0.09216589861751152 * cytosol.jck.s2.c) + cytosol.jck.p1.c * (16.7 + 10.0 * cytosol.jck.p2.c + 0.4761904761904762 * cytosol.jck.s2.c));
 //   cytosol.jck.s1.r = cytosol.jck.nS1 * cytosol.jck.rr;
 //   cytosol.jck.s2.r = cytosol.jck.nS2 * cytosol.jck.rr;
 //   cytosol.jck.p1.r = (-cytosol.jck.nP1) * cytosol.jck.rr;

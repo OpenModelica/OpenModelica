@@ -8,7 +8,7 @@ loadModel(Modelica);
 loadString("
 model test_Bug3049
    output Modelica.SIunits.AbsolutePressure p1 = 1e5;
-   output Modelica.Media.Water.WaterIF97_base.AbsolutePressure p2 = 2e5;
+   output Modelica.Media.Water.StandardWater.AbsolutePressure p2 = 2e5;
    output Modelica.SIunits.AbsolutePressure p3(nominal = 1e7) = 1e5;
 end test_Bug3049;
 ");

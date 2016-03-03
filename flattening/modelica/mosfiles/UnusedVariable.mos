@@ -21,6 +21,6 @@ translateModel(M);getErrorString();
 //
 // equations:
 // 1 : 1.5 = 5.0
-// Error: pre-optimization module clockPartitioning failed.
+// Error: pre-optimization module clockPartitioning (simulation) failed.
 // "
 // endResult

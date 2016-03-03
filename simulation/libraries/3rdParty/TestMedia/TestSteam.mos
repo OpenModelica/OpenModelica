@@ -273,7 +273,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected constant Real hstar(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) = 2300000.0 \"normalization enthalpy\";
 //   protected constant Real pstar(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) = 100000000.0 \"normalization pressure\";
 //   protected constant Real Tstar(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) = 760.0 \"normalization temperature\";
-//   protected Real eta = h / 2300000.0 \"normalized specific enthalpy\";
+//   protected Real eta = 4.347826086956522e-07 * h \"normalized specific enthalpy\";
 //   protected Real pi = 1e-08 * p \"normalized specific pressure\";
 // algorithm
 //   T := 760.0 * (0.793929190615421 + -1.33645667811215e-07 / (0.24 + pi) ^ 12.0 + 4.55912656802978e-06 * (0.24 + pi) ^ -12.0 * (-0.615 + eta) + -1.46294640700979e-05 * (0.24 + pi) ^ -12.0 * (-0.615 + eta) ^ 2.0 + 0.0063934131297008 * (0.24 + pi) ^ -12.0 * (-0.615 + eta) ^ 6.0 + 372.783927268847 * (0.24 + pi) ^ -12.0 * (-0.615 + eta) ^ 14.0 + -7186.54377460447 * (0.24 + pi) ^ -12.0 * (-0.615 + eta) ^ 16.0 + 573494.7521034 * (0.24 + pi) ^ -12.0 * (-0.615 + eta) ^ 20.0 + -2675693.29111439 * (0.24 + pi) ^ -12.0 * (-0.615 + eta) ^ 22.0 + -3.34066283302614e-05 * (0.24 + pi) ^ -10.0 * (-0.615 + eta) + -0.0245479214069597 * (0.24 + pi) ^ -10.0 * (-0.615 + eta) ^ 5.0 + 47.8087847764996 * (0.24 + pi) ^ -10.0 * (-0.615 + eta) ^ 12.0 + 7.646641318189041e-06 / (0.24 + pi) ^ 8.0 + 0.00128350627676972 * (0.24 + pi) ^ -8.0 * (-0.615 + eta) ^ 2.0 + 0.0171219081377331 * (0.24 + pi) ^ -8.0 * (-0.615 + eta) ^ 4.0 + -8.510073045832129 * (0.24 + pi) ^ -8.0 * (-0.615 + eta) ^ 10.0 + -0.0136513461629781 * (0.24 + pi) ^ -5.0 * (-0.615 + eta) ^ 2.0 + -3.84460997596657e-06 / (0.24 + pi) ^ 3.0 + 0.00337423807911655 * (0.24 + pi) ^ -2.0 * (-0.615 + eta) + -0.551624873066791 * (0.24 + pi) ^ -2.0 * (-0.615 + eta) ^ 3.0 + 0.72920227710747 * (0.24 + pi) ^ -2.0 * (-0.615 + eta) ^ 4.0 + -0.009925227573760411 / (0.24 + pi) + -0.119308831407288 * (-0.615 + eta) ^ 2.0 / (0.24 + pi) + 0.454270731799386 * (-0.615 + eta) + 0.20999859125991 * (0.24 + pi) * (-0.615 + eta) + -0.00642109823904738 * (0.24 + pi) ^ 3.0 + -0.023515586860454 * (0.24 + pi) ^ 3.0 * (-0.615 + eta) + 0.00252233108341612 * (0.24 + pi) ^ 4.0 + -0.00764885133368119 * (0.24 + pi) ^ 4.0 * (-0.615 + eta) ^ 3.0 + 0.0136176427574291 * (0.24 + pi) ^ 10.0 * (-0.615 + eta) ^ 4.0 + -0.0133027883575669 * (0.24 + pi) ^ 12.0 * (-0.615 + eta) ^ 5.0);
@@ -290,7 +290,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected constant Real pstar(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) = 100000000.0 \"normalization pressure\";
 //   protected constant Real hstar(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) = 2800000.0 \"normalization enthalpy\";
 //   protected Real pi = 1e-08 * p \"normalized specific pressure\";
-//   protected Real eta = h / 2800000.0 \"normalized specific enthalpy\";
+//   protected Real eta = 3.571428571428572e-07 * h \"normalized specific enthalpy\";
 // algorithm
 //   T := 860.0 * (0.861095729446704 + 3.2325457364492e-05 / (0.298 + pi) ^ 12.0 + -0.000127575556587181 * (0.298 + pi) ^ -12.0 * (-0.72 + eta) + -0.000475851877356068 / (0.298 + pi) ^ 10.0 + 0.00156183014181602 * (0.298 + pi) ^ -10.0 * (-0.72 + eta) + 0.105724860113781 * (0.298 + pi) ^ -10.0 * (-0.72 + eta) ^ 5.0 + -85.85142211325341 * (0.298 + pi) ^ -10.0 * (-0.72 + eta) ^ 10.0 + 724.140095480911 * (0.298 + pi) ^ -10.0 * (-0.72 + eta) ^ 12.0 + 0.00296475810273257 / (0.298 + pi) ^ 8.0 + -0.00592721983365988 * (0.298 + pi) ^ -8.0 * (-0.72 + eta) + -0.0126305422818666 * (0.298 + pi) ^ -8.0 * (-0.72 + eta) ^ 2.0 + -0.115716196364853 * (0.298 + pi) ^ -8.0 * (-0.72 + eta) ^ 4.0 + 84.90009697395951 * (0.298 + pi) ^ -8.0 * (-0.72 + eta) ^ 10.0 + -0.0108602260086615 / (0.298 + pi) ^ 6.0 + 0.0154304475328851 * (0.298 + pi) ^ -6.0 * (-0.72 + eta) + 0.0750455441524466 * (0.298 + pi) ^ -6.0 * (-0.72 + eta) ^ 2.0 + 0.0252520973612982 / (0.298 + pi) ^ 4.0 + -0.0602507901232996 * (0.298 + pi) ^ -4.0 * (-0.72 + eta) + -3.07622221350501 * (0.298 + pi) ^ -3.0 * (-0.72 + eta) ^ 5.0 + -0.0574011959864879 / (0.298 + pi) ^ 2.0 + 5.03471360939849 * (0.298 + pi) ^ -2.0 * (-0.72 + eta) ^ 4.0 + -0.925081888584834 * (-0.72 + eta) ^ 2.0 / (0.298 + pi) + 3.91733882917546 * (-0.72 + eta) ^ 4.0 / (0.298 + pi) + -77.314600713019 * (-0.72 + eta) ^ 6.0 / (0.298 + pi) + 9493.087620985871 * (-0.72 + eta) ^ 10.0 / (0.298 + pi) + -1410437.19679409 * (-0.72 + eta) ^ 14.0 / (0.298 + pi) + 8491662.30819026 * (-0.72 + eta) ^ 16.0 / (0.298 + pi) + 0.32334644281172 * (-0.72 + eta) ^ 2.0 + 0.873281936020439 * (0.298 + pi) * (-0.72 + eta) + -0.436653048526683 * (0.298 + pi) ^ 3.0 * (-0.72 + eta) + 0.286596714529479 * (0.298 + pi) ^ 5.0 * (-0.72 + eta) + -0.131778331276228 * (0.298 + pi) ^ 6.0 * (-0.72 + eta) + 0.00676682064330275 * (0.298 + pi) ^ 8.0 * (-0.72 + eta));
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.T3b_ph;
@@ -405,7 +405,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   f.d := d;
 //   f.R := 461.526;
 //   f.tau := 647.096 / T;
-//   f.delta := if d == 322.0 and T == 647.096 then 0.999999999999999 else abs(d / 322.0);
+//   f.delta := if d == 322.0 and T == 647.096 then 0.999999999999999 else abs(0.003105590062111801 * d);
 //   o[1] := f.tau ^ 2.0;
 //   o[2] := o[1] ^ 2.0;
 //   o[3] := o[2] * f.tau;
@@ -471,7 +471,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   g.p := p;
 //   g.T := T;
 //   g.R := 461.526;
-//   g.pi := p / 16530000.0;
+//   g.pi := 6.049606775559589e-08 * p;
 //   g.tau := 1386.0 / T;
 //   pi1 := 7.1 - g.pi;
 //   tau1 := -1.222 + g.tau;
@@ -719,7 +719,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   eta := 5e-07 * h;
 //   etabc := 0.001 * h;
 //   if pi < 4.0 then
-//     eta2a := eta + -2.1;
+//     eta2a := -2.1 + eta;
 //     o[1] := eta2a ^ 2.0;
 //     o[2] := o[1] ^ 2.0;
 //     o[3] := pi ^ 2.0;
@@ -727,8 +727,8 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //     o[5] := o[3] * pi;
 //     T := 1089.8952318288 + (1.844574935579 + -0.0061707422868339 * pi) * pi + eta2a * (849.51654495535 + -4.1792700549624 * pi + eta2a * (-107.81748091826 + (6.2478196935812 + -0.31078046629583 * pi) * pi + eta2a * (33.153654801263 + -17.344563108114 * pi + o[2] * (-7.4232016790248 + pi * (-200.58176862096 + 11.670873077107 * pi) + o[1] * (271.96065473796 * pi + o[1] * (eta2a * (1.3865724283226 * o[4] + o[1] * o[2] * (3091.9688604755 * pi + o[1] * (11.765048724356 + o[2] * (o[2] * (o[2] * (o[4] * (235988.32556514 + 7399.9835474766 * pi) + o[1] * (19127.72923966 * o[3] * o[4] + o[1] * (o[3] * (128127984.04046 + -551966.9703006 * o[5]) + o[1] * (o[1] * (2822454697.3002 * o[3] + o[1] * (o[3] * (-3594897141.0703 + 3715408.5996233 * o[5]) + o[1] * pi * (252266.40357872 + pi * (1722734991.3197 + pi * (12848734.66465 + (-13105236.545054 + -415351.64835634 * o[3]) * pi))))) + -985549096.23276 * o[3])))) + -62.459855192507 * o[3] * o[4] * pi) + -13551.334240775 * o[5])))) + -455.11318285818 * pi))))));
 //   elseif pi < 905.84278514723 + (-0.67955786399241 + 0.00012809002730136 * etabc) * etabc then
-//     eta2b := eta + -2.6;
-//     pi2b := pi + -2.0;
+//     eta2b := -2.6 + eta;
+//     pi2b := -2.0 + pi;
 //     o[1] := pi2b ^ 2.0;
 //     o[2] := o[1] * pi2b;
 //     o[3] := o[1] ^ 2.0;
@@ -738,7 +738,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //     o[7] := o[5] ^ 2.0;
 //     T := 1489.5041079516 + 0.9374714737793201 * pi2b + eta2b * (743.0779831403401 + o[2] * (0.00011032831789999 + -1.7565233969407e-18 * o[1] * o[3]) + eta2b * (-97.70831879783699 + pi2b * (3.3593118604916 + pi2b * (-0.021810755324761 + pi2b * (0.00018955248387902 + (2.8640237477456e-07 + -8.1456365207833e-14 * o[2]) * pi2b))) + o[5] * (3.3809355601454 * pi2b + o[4] * (o[5] * (2.4742464705674 + (0.16844539671904 + o[1] * (0.0030891541160537 + -1.0779857357512e-05 * pi2b)) * pi2b + o[6] * (-0.63281320016026 + pi2b * (0.73875745236695 + (-0.046333324635812 + o[1] * (-7.6462712454814e-05 + 2.821728163504e-07 * pi2b)) * pi2b) + o[6] * (1.1385952129658 + pi2b * (-0.47128737436186 + o[1] * (0.0013555504554949 + (1.4052392818316e-05 + 1.2704902271945e-06 * pi2b) * pi2b)) + o[5] * (-0.47811863648625 + (0.15020273139707 + o[2] * (-3.1083814331434e-05 + o[1] * (-1.1030139238909e-08 + -2.5180545682962e-11 * pi2b))) * pi2b + o[5] * o[7] * (0.0085208123431544 + pi2b * (-0.002176411421975 + pi2b * (7.1280351959551e-05 + o[1] * (-1.0302738212103e-06 + (7.3803353468292e-08 + 8.6934156344163e-15 * o[3]) * pi2b)))))))) + -0.10829784403677 * o[1]))));
 //   else
-//     eta2c := eta + -1.8;
+//     eta2c := -1.8 + eta;
 //     pi2c := 25.0 + pi;
 //     o[1] := pi2c ^ 2.0;
 //     o[2] := o[1] ^ 2.0;
@@ -805,7 +805,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected constant Real pstar(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) = 100000000.0 \"normalization pressure\";
 //   protected constant Real hstar(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) = 2100000.0 \"normalization enthalpy\";
 //   protected Real pi = 1e-08 * p \"normalized specific pressure\";
-//   protected Real eta = h / 2100000.0 \"normalized specific enthalpy\";
+//   protected Real eta = 4.761904761904762e-07 * h \"normalized specific enthalpy\";
 // algorithm
 //   v := 0.0028 * (0.560394465163593 + (0.128 + pi) ^ -12.0 * (0.00529944062966028 * (-0.727 + eta) ^ 6.0 + -0.170099690234461 * (-0.727 + eta) ^ 8.0) + 11.1323814312927 * (0.128 + pi) ^ -12.0 * (-0.727 + eta) ^ 12.0 + -2178.98123145125 * (0.128 + pi) ^ -12.0 * (-0.727 + eta) ^ 18.0 + -0.000506061827980875 * (0.128 + pi) ^ -10.0 * (-0.727 + eta) ^ 4.0 + 0.556495239685324 * (0.128 + pi) ^ -10.0 * (-0.727 + eta) ^ 7.0 + -9.43672726094016 * (0.128 + pi) ^ -10.0 * (-0.727 + eta) ^ 10.0 + -0.297856807561527 * (0.128 + pi) ^ -8.0 * (-0.727 + eta) ^ 5.0 + 93.9353943717186 * (0.128 + pi) ^ -8.0 * (-0.727 + eta) ^ 12.0 + 0.0192944939465981 * (0.128 + pi) ^ -6.0 * (-0.727 + eta) ^ 3.0 + 0.421740664704763 * (0.128 + pi) ^ -6.0 * (-0.727 + eta) ^ 4.0 + -3689141.2628233 * (0.128 + pi) ^ -6.0 * (-0.727 + eta) ^ 22.0 + -0.00737566847600639 * (0.128 + pi) ^ -4.0 * (-0.727 + eta) ^ 2.0 + -0.354753242424366 * (0.128 + pi) ^ -4.0 * (-0.727 + eta) ^ 3.0 + -1.99768169338727 * (0.128 + pi) ^ -3.0 * (-0.727 + eta) ^ 7.0 + 1.15456297059049 * (0.128 + pi) ^ -2.0 * (-0.727 + eta) ^ 3.0 + 5683.6687581596 * (0.128 + pi) ^ -2.0 * (-0.727 + eta) ^ 16.0 + 0.00808169540124668 / (0.128 + pi) + 0.172416341519307 * (-0.727 + eta) / (0.128 + pi) + 1.04270175292927 * (-0.727 + eta) ^ 2.0 / (0.128 + pi) + -0.297691372792847 * (-0.727 + eta) ^ 3.0 / (0.128 + pi) + 0.275234661176914 * (-0.727 + eta) + -0.148347894866012 * (0.128 + pi) + -0.0651142513478515 * (0.128 + pi) * (-0.727 + eta) + -2.92468715386302 * (0.128 + pi) * (-0.727 + eta) ^ 2.0 + 0.0664876096952665 * (0.128 + pi) ^ 2.0 + 3.52335014263844 * ((0.128 + pi) * (-0.727 + eta)) ^ 2.0 + -0.0146340792313332 * (0.128 + pi) ^ 3.0 + -2.24503486668184 * (0.128 + pi) ^ 4.0 * (-0.727 + eta) ^ 2.0 + 1.10533464706142 * (0.128 + pi) ^ 5.0 * (-0.727 + eta) ^ 2.0 + -0.0408757344495612 * (0.128 + pi) ^ 8.0 * (-0.727 + eta) ^ 2.0);
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.v3a_ph;
@@ -821,7 +821,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected constant Real pstar(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) = 100000000.0 \"normalization pressure\";
 //   protected constant Real hstar(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) = 2800000.0 \"normalization enthalpy\";
 //   protected Real pi = 1e-08 * p \"normalized specific pressure\";
-//   protected Real eta = h / 2800000.0 \"normalized specific enthalpy\";
+//   protected Real eta = 3.571428571428572e-07 * h \"normalized specific enthalpy\";
 // algorithm
 //   v := 0.008800000000000001 * (0.169490044091791 + -2.25196934336318e-09 / (0.06610000000000001 + pi) ^ 12.0 + 1.40674363313486e-08 * (0.06610000000000001 + pi) ^ -12.0 * (-0.72 + eta) + 2.3378408528056e-06 / (0.06610000000000001 + pi) ^ 8.0 + -3.31833715229001e-05 * (0.06610000000000001 + pi) ^ -8.0 * (-0.72 + eta) + 0.00107956778514318 * (0.06610000000000001 + pi) ^ -8.0 * (-0.72 + eta) ^ 3.0 + -0.271382067378863 * (0.06610000000000001 + pi) ^ -8.0 * (-0.72 + eta) ^ 6.0 + 1.07202262490333 * (0.06610000000000001 + pi) ^ -8.0 * (-0.72 + eta) ^ 7.0 + -0.853821329075382 * (0.06610000000000001 + pi) ^ -8.0 * (-0.72 + eta) ^ 8.0 + -2.15214194340526e-05 / (0.06610000000000001 + pi) ^ 6.0 + 0.00076965608822273 * (0.06610000000000001 + pi) ^ -6.0 * (-0.72 + eta) + -0.00431136580433864 * (0.06610000000000001 + pi) ^ -6.0 * (-0.72 + eta) ^ 2.0 + 0.453342167309331 * (0.06610000000000001 + pi) ^ -6.0 * (-0.72 + eta) ^ 5.0 + -0.507749535873652 * (0.06610000000000001 + pi) ^ -6.0 * (-0.72 + eta) ^ 6.0 + -100.475154528389 * (0.06610000000000001 + pi) ^ -6.0 * (-0.72 + eta) ^ 10.0 + -0.219201924648793 * (0.06610000000000001 + pi) ^ -4.0 * (-0.72 + eta) ^ 3.0 + -3.21087965668917 * (0.06610000000000001 + pi) ^ -4.0 * (-0.72 + eta) ^ 6.0 + 607.567815637771 * (0.06610000000000001 + pi) ^ -4.0 * (-0.72 + eta) ^ 10.0 + 0.000557686450685932 / (0.06610000000000001 + pi) ^ 3.0 + 0.18749904002955 * (0.06610000000000001 + pi) ^ -3.0 * (-0.72 + eta) ^ 2.0 + 0.00905368030448107 * (0.06610000000000001 + pi) ^ -2.0 * (-0.72 + eta) + 0.285417173048685 * (0.06610000000000001 + pi) ^ -2.0 * (-0.72 + eta) ^ 2.0 + 0.0329924030996098 / (0.06610000000000001 + pi) + 0.239897419685483 * (-0.72 + eta) / (0.06610000000000001 + pi) + 4.82754995951394 * (-0.72 + eta) ^ 4.0 / (0.06610000000000001 + pi) + -11.8035753702231 * (-0.72 + eta) ^ 5.0 / (0.06610000000000001 + pi) + -0.0179967222507787 * (0.06610000000000001 + pi) + 0.0371810116332674 * (0.06610000000000001 + pi) * (-0.72 + eta) + -0.0536288335065096 * ((0.06610000000000001 + pi) * (-0.72 + eta)) ^ 2.0 + 1.6069710109252 * (0.06610000000000001 + pi) ^ 2.0 * (-0.72 + eta) ^ 6.0);
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.v3b_ph;
@@ -848,7 +848,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Integer subregion \"1 for subregion 3a, 2 for subregion 3b\";
 // algorithm
 //   if p < 22064000.0 then
-//     subregion := if h < 10.0 + Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p(p) then 1 else if h > Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p(p) + -10.0 then 2 else 0;
+//     subregion := if h < 10.0 + Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p(p) then 1 else if h > -10.0 + Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p(p) then 2 else 0;
 //     assert(subregion <> 0, \"inverse iteration of dt from ph called in 2 phase region: this can not work\");
 //   else
 //     subregion := if h < Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.h3ab_p(p) then 1 else 2;
@@ -904,7 +904,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   if dout < 322.0 then
 //     Tmin := 647.096 * (1.0 + -1e-06 * (-322.0 + dout) ^ 2.0);
 //   else
-//     Tmin := 647.096 * (1.0 - (-322.0 + dout) ^ 2.0 / 1440000.0);
+//     Tmin := 647.096 * (1.0 + -6.944444444444445e-07 * (-322.0 + dout) ^ 2.0);
 //   end if;
 //   if Tin < Tmin then
 //     Tout := Tmin;
@@ -942,7 +942,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //     if abs(relerr) < reldh then
 //       found := true;
 //     end if;
-//     dT := dh / (g.tau ^ 2.0 * g.gtautau * -461.526);
+//     dT := -0.002166725168246209 * dh / (g.tau ^ 2.0 * g.gtautau);
 //     T := T - dT;
 //     i := 1 + i;
 //   end while;
@@ -962,7 +962,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real tau1 \"dimensionless temperature\";
 // algorithm
 //   tau := 1386.0 / T;
-//   pi1 := 7.1 - p / 16530000.0;
+//   pi1 := 7.1 + -6.049606775559589e-08 * p;
 //   assert(p > 611.657, \"IF97 medium function hofpT1  called with too low pressure
 //   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
 //   tau1 := -1.222 + tau;
@@ -1058,10 +1058,10 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real gpi \"dimensionless Gibbs-derivative w.r.t. pi\";
 //   protected Real[11] o \"auxiliary variables\";
 // algorithm
-//   pi := p / 16530000.0;
+//   pi := 6.049606775559589e-08 * p;
 //   tau := 1386.0 / T;
 //   pi1 := 7.1 - pi;
-//   tau1 := tau + -1.222;
+//   tau1 := -1.222 + tau;
 //   o[1] := tau1 ^ 2.0;
 //   o[2] := o[1] ^ 2.0;
 //   o[3] := o[2] ^ 2.0;
@@ -1074,7 +1074,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   o[10] := o[3] ^ 2.0;
 //   o[11] := o[10] ^ 2.0;
 //   gpi := pi1 * (pi1 * ((9.5038934535162e-05 + o[2] * (8.4812393955936e-06 + 2.55615384360309e-09 * o[4])) / o[2] + pi1 * ((8.970112763199999e-06 + (2.60684891582404e-06 + 5.7366919751696e-13 * o[2] * o[3]) * o[5]) / o[6] + pi1 * (2.02584984300585e-06 / o[3] + o[7] * pi1 * (o[8] * o[9] * pi1 * (o[7] * (o[7] * o[8] * (pi1 * (pi1 * (2.99318679335866e-24 * pi1 / (o[11] * o[3] * tau1) + -5.65070932023524e-23 / (o[11] * o[3])) + 3.5842867920213e-22 / (o[1] * o[11] * o[2] * tau1)) + -7.63737668221055e-22 / (o[1] * o[11] * o[2])) + -3.33001080055983e-19 / (o[1] * o[10] * o[2] * o[3] * tau1)) + 1.44400475720615e-17 / (o[10] * o[2] * o[3] * tau1)) + (1.01874413933128e-08 + 1.39398969845072e-09 * o[6]) / (o[1] * o[3] * tau1))))) + (0.00094368642146534 + o[5] * (0.00060003561586052 + (-9.5322787813974e-05 + o[1] * (8.828369066169199e-06 + 1.45389992595188e-15 * o[1] * o[2] * o[3])) * tau1)) / o[5]) + (-0.00028319080123804 + o[1] * (0.00060706301565874 + o[4] * (0.018990068218419 + tau1 * (0.032529748770505 + (0.021841717175414 + 5.283835796993e-05 * o[1]) * tau1)))) / (o[3] * tau1);
-//   d := p / (gpi * pi * T * 461.526);
+//   d := 0.002166725168246209 * p / (gpi * pi * T);
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.d1n;
 //
 // function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.d2n \"density in region 2  as function of p and T\"
@@ -1089,7 +1089,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // algorithm
 //   pi := 1e-06 * p;
 //   tau := 540.0 / T;
-//   tau2 := tau + -0.5;
+//   tau2 := -0.5 + tau;
 //   o[1] := tau2 ^ 2.0;
 //   o[2] := o[1] * tau2;
 //   o[3] := o[1] ^ 2.0;
@@ -1103,7 +1103,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   o[11] := o[3] * o[5] * tau2;
 //   o[12] := o[5] ^ 2.0;
 //   gpi := (1.0 + pi * (-0.0017731742473213 + tau2 * (-0.017834862292358 + tau2 * (-0.045996013696365 + (-0.057581259083432 + -0.05032527872793 * o[2]) * tau2)) + pi * (tau2 * (-6.6065283340406e-05 + (-0.0003789797503263 + o[1] * (-0.007878555448671 + o[2] * (-0.087594591301146 + -5.3349095828174e-05 * o[6]))) * tau2) + pi * (6.1445213076927e-08 + (1.31612001853305e-06 + o[1] * (-9.683303171571e-05 + o[2] * (-0.0045101773626444 + -0.122004760687947 * o[6]))) * tau2 + pi * (tau2 * (-3.15389238237468e-09 + (5.116287140914e-08 + 1.92901490874028e-06 * tau2) * tau2) + pi * (1.14610381688305e-05 * o[1] * o[3] * tau2 + pi * (o[2] * (-1.00288598706366e-10 + o[7] * (-0.012702883392813 + -143.374451604624 * o[1] * o[5] * tau2)) + pi * (-4.1341695026989e-17 + o[1] * o[4] * (-8.8352662293707e-06 + -0.272627897050173 * o[8]) * tau2 + pi * (o[4] * (9.0049690883672e-11 + -65.8490727183984 * o[3] * o[4] * o[5]) + pi * (1.78287415218792e-07 * o[7] + pi * (o[3] * (1.0406965210174e-18 + o[1] * (-1.0234747095929e-12 + -1.0018179379511e-08 * o[3]) * o[3]) + o[10] * o[9] * ((-1.29412653835176e-09 + 1.71088510070544 * o[11]) * o[6] + o[9] * (o[9] * (o[3] * o[5] * (1.78371690710842e-23 + o[1] * o[3] * o[4] * (6.1258633752464e-12 + -8.4004935396416e-05 * o[7]) * tau2) + pi * (pi * (8.32192847496054e-05 * o[12] * o[3] * o[5] * tau2 + pi * (o[1] * o[4] * o[5] * (1.75410265428146e-27 + (1.32995316841867e-15 + -2.26487297378904e-05 * o[1] * o[5]) * o[8]) * pi + -2.93678005497663e-14 * o[1] * o[12] * o[3] * tau2)) + -1.24017662339842e-24 * o[11])) + -6.05920510335078 * o[12] * o[4] * o[5] * tau2))))))))))))) / pi;
-//   d := p / (gpi * pi * T * 461.526);
+//   d := 0.002166725168246209 * p / (gpi * pi * T);
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.d2n;
 //
 // function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.dewcurve_p \"properties on the dew curve\"
@@ -1150,7 +1150,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
 //   protected Real x \"auxiliary variable\";
 // algorithm
-//   x := acos(p / 22064000.0);
+//   x := acos(4.532269760696156e-08 * p);
 //   h := 2087546.84511715 * (1.0 + x * (-0.4945586958175176 + x * (1.346800016564904 + x * (-3.889388153209752 + x * (6.679385472887931 + x * (-6.75820241066552 + x * (3.558919744656498 + (-0.717981855497894 + -0.0001152032945617821 * x) * x)))))));
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p_R4b;
 //
@@ -1160,7 +1160,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real pi1 \"dimensionless pressure\";
 //   protected Real[3] o \"vector of auxiliary variables\";
 // algorithm
-//   pi1 := 7.1 - p / 16530000.0;
+//   pi1 := 7.1 + -6.049606775559589e-08 * p;
 //   assert(p > 611.657, \"IF97 medium function hlowerofp1 called with too low pressure
 //   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
 //   o[1] := pi1 ^ 2.0;
@@ -1220,7 +1220,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real pi1 \"dimensionless pressure\";
 //   protected Real[3] o \"vector of auxiliary variables\";
 // algorithm
-//   pi1 := 7.1 - p / 16530000.0;
+//   pi1 := 7.1 + -6.049606775559589e-08 * p;
 //   assert(p > 611.657, \"IF97 medium function hupperofp1 called with too low pressure
 //   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
 //   o[1] := pi1 ^ 2.0;
@@ -1266,7 +1266,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
 //   protected Real x \"auxiliary variable\";
 // algorithm
-//   x := acos(p / 22064000.0);
+//   x := acos(4.532269760696156e-08 * p);
 //   h := 2087546.84511715 * (1.0 + x * (0.4880153718655694 + x * (0.2079670746250689 + x * (-6.084122698421623 + x * (25.08887602293532 + x * (-48.38215180269516 + x * (45.66489164833212 + (-16.98555442961553 + 0.0006616936460057692 * x) * x)))))));
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p_R4b;
 //
@@ -1378,7 +1378,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real x \"auxiliary variable\";
 // algorithm
 //   if p < 22064000.0 then
-//     x := acos(p / 22064000.0);
+//     x := acos(4.532269760696156e-08 * p);
 //     dl := 322.0 * (1.0 + x * (1.903224079094824 + x * (-2.531486180240112 + x * (-8.191449323843552 + x * (94.34196116778385 + x * (-369.3676833623383 + x * (796.6627910598293 + x * (-994.5385383600702 + x * (673.2581177021598 + (-191.4307733640516 + 0.00052536560808895 * x) * x)))))))));
 //   else
 //     dl := 322.0;
@@ -1391,7 +1391,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real x \"auxiliary variable\";
 // algorithm
 //   if p < 22064000.0 then
-//     x := acos(p / 22064000.0);
+//     x := acos(4.532269760696156e-08 * p);
 //     dv := 322.0 * (1.0 + x * (-1.84638508033626 + x * (-1.144787271887849 + x * (59.18702203076563 + x * (-403.5391431811611 + x * (1437.200724533239 + x * (-3015.853540307519 + x * (3740.579034867006 + x * (-2537.375817253895 + (725.8761975803782 + -0.001115111165833234 * x) * x)))))))));
 //   else
 //     dv := 322.0;
@@ -1622,7 +1622,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   input Real Celsius(quantity = \"ThermodynamicTemperature\", unit = \"degC\") \"Celsius value\";
 //   output Real Kelvin(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"Kelvin value\";
 // algorithm
-//   Kelvin := Celsius + 273.15;
+//   Kelvin := 273.15 + Celsius;
 // end Modelica.SIunits.Conversions.from_degC;
 //
 // function TestMedia.TestModels.TestSteam.Medium.FluidConstants \"Automatically generated record constructor for TestMedia.TestModels.TestSteam.Medium.FluidConstants\"

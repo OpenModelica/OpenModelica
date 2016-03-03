@@ -23,6 +23,8 @@ Lookup10.mo \
 Lookup11.mo \
 LookupArray.mo \
 InnerEnumeration.mo \
+PartialLookup1.mo \
+PartialLookup2.mo \
 ProtectedStructural.mo \
 
 
