@@ -679,7 +679,7 @@ modelica_real realMaxLit(void)
 
 modelica_integer intMaxLit(void)
 {
-  return INT_MAX / 2;
+  return LONG_MAX / 2;
 }
 
 modelica_boolean setStackOverflowSignal(modelica_boolean inSignal)
