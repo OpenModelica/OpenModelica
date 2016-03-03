@@ -1,4 +1,4 @@
-lib_LTLIBRARIES = libModelicaExternalC.la libModelicaIO.la libModelicaMatIO.la libModelicaStandardTables.la libzlib.la
+lib_LTLIBRARIES = libModelicaExternalC.la libModelicaMatIO.la libModelicaIO.la libModelicaStandardTables.la libzlib.la
 libModelicaExternalC_la_SOURCES      = ../../C-Sources/ModelicaFFT.c ../../C-Sources/ModelicaInternal.c ../../C-Sources/ModelicaRandom.c ../../C-Sources/ModelicaStrings.c
 libModelicaIO_la_SOURCES             = ../../C-Sources/ModelicaIO.c
 libModelicaIO_la_LIBADD              = libModelicaMatIO.la
