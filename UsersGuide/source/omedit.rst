@@ -545,8 +545,8 @@ annotation of the model.
 Global head section in documentation
 ------------------------------------
 
-In you want to use same styles or same javascript for the classes contained inside a package.
-You can define ``__OpenModelica_infoHeader`` annotation inside the ``Documentation`` annotation of the package.
+If you want to use same styles or same JavaScript for the classes contained inside a package then 
+you can define ``__OpenModelica_infoHeader`` annotation inside the ``Documentation`` annotation of a package.
 For example,
 
 .. code-block :: modelica
@@ -568,6 +568,33 @@ For example,
 In the above example model ``M`` does not need to define the javascript function ``HelloWorld``.
 It is only defined once at the package level using the ``__OpenModelica_infoHeader`` and then all classes 
 contained in the package can use it.
+
+In addition styles and JavaScript can be added from file locations using Modelica URIs.
+Example: 
+
+.. code-block :: modelica
+
+  package P
+    model M
+      annotation(Documentation(info="<html>
+        <a href=\"javascript:HelloWorld()\">Click here</a>
+      </html>"));
+    end M;
+   annotation(Documentation(__OpenModelica_infoHeader="
+       <script type=\"text/javascript\">
+          src=\"modelica://P/Resources/hello.js\">
+         }
+       </script>"));
+  end P;
+
+Where the file ``Resources/hello.js`` then contains:
+
+.. code-block :: javascript
+
+  function HelloWorld() {
+    alert("Hello World!");
+  }
+
 
 Settings
 --------
