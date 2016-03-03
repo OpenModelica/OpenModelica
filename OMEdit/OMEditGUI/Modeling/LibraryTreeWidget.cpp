@@ -398,7 +398,12 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
  */
 bool LibraryTreeItem::isFilePathValid() {
   // Since now we set the fileName via loadString() & parseString() so might get filename as className/<interactive>.
-  return QFile::exists(mFileName);
+  QFileInfo fileInfo(mFileName);
+  /* Ticket #3723
+   * The only valid path for us is the absolute because we might have file name Test.C in OMEdit's working copy and
+   * then this function will return true. Because Qt thinks its a relative path.
+   */
+  return fileInfo.exists() && !fileInfo.isRelative();
 }
 
 /*!
