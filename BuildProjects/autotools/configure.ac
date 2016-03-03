@@ -1,6 +1,6 @@
 dnl Init
 AC_PREREQ([2.63])
-AC_INIT([Modelica Standard Library Tables],[3.2.1],[https://trac.modelica.org/Modelica],[libmodelicastandardtables],[https://modelica.org])
+AC_INIT([Modelica Standard Library Tables],[3.2.2],[https://trac.modelica.org/Modelica],[libmodelicastandardtables],[https://modelica.org])
 
 AM_INIT_AUTOMAKE([subdir-objects])
 AC_CONFIG_MACRO_DIR([m4])
@@ -10,11 +10,13 @@ AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_MAKE_SET
 LT_INIT([disable-static])
-
+AC_SUBST(LIBZLIB)
+AC_SUBST(LIBHDF5)
 dnl Check for HDF5, etc
 
 AC_SEARCH_LIBS([floor],[m])
 
+LIBS_BEFORE="$LIBS"
 ZLIB="Yes"
 STATIC_ZLIB="No"
 AC_ARG_ENABLE(hdf5,
@@ -25,12 +27,16 @@ AC_ARG_ENABLE(shared-tables,
   [  --enable-shared-tables[=yes] Adds support for shared tables, reducing file I/O and reducing memory footprint],[test "xyes" = x"$enableval" && SHARED_TABLES="Yes"],[SHARED_TABLES="Yes"])
 AC_ARG_ENABLE(static-zlib, [  --enable-static-zlib[=no]],[test "xyes" = x"$enableval" && STATIC_ZLIB="Yes"],[STATIC_ZLIB="No"])
 
+LIBZLIB="libzlib.la"
 if test "$ZLIB" = "Yes"; then
   AC_CHECK_HEADERS(zlib.h,[AC_SEARCH_LIBS([gzclose], [z], [ZLIB="Yes"], [ZLIB="No"])],[ZLIB="No"])
   if test "$ZLIB" = "No" && test -d ../../C-Sources/zlib; then
     ZLIB="Yes, from sources"
+  else
+    LIBZLIB="$LIBS"
   fi
 fi
+LIBS="$LIBS_BEFORE"
 
 AM_CONDITIONAL([INCLUDEZLIB], [test "$ZLIB" = "Yes, from sources" -o "$STATIC_ZLIB" = "Yes"])
 
@@ -57,7 +63,7 @@ for HDF_FIRST in Yes No; do
       HDF5="Yes"
       if test "$HDF_FIRST" = "Yes" && test "$host" = "$build" && apt-cache show libhdf5-dev > /dev/null 2>&1; then
         HDF5_INSTALL_CMD="apt-get install libhdf5-dev"
-        if gksudo --description "HDF5 is an optional dependency of ModelicaTables used to read MATLAB 7.3 files. $HDF5_INSTALL_CMD" $HDF5_INSTALL_CMD; then
+        if gksudo --description "HDF5 is an optional dependency of ModelicaMatIO used to read/write MATLAB 7.3 files. $HDF5_INSTALL_CMD" $HDF5_INSTALL_CMD; then
           continue
         else
           HDF5="No";
@@ -101,8 +107,10 @@ done
 
 if test "$HDF5" = "No"; then
   AC_MSG_RESULT([1.8 API not available])
-  LIBS=$LIBS_BEFORE
+else
+  LIBHDF5="$LIBS"
 fi
+LIBS=$LIBS_BEFORE
 
 fi
 
@@ -119,9 +127,9 @@ if test "$SHARED_TABLES" = "Yes"; then
 CPPFLAGS="$CPPFLAGS -DTABLE_SHARE=1"
 fi
 
-echo "Modelica Standard Tables may use ZLIB: $ZLIB"
-echo "Modelica Standard Tables may use HDF5: $HDF5"
-echo "Modelica Standard Tables may use MAT7.3: $HDF5"
+echo "ModelicaMatIO may use ZLIB: $ZLIB"
+echo "ModelicaMatIO may use HDF5: $HDF5"
+echo "ModelicaMatIO may use MAT7.3: $HDF5"
 
 if test "$libdir" = '${exec_prefix}/lib'; then
   # It is hard to detect where to put the libraries if we cross-compile. Let the tool decide where to put it.
