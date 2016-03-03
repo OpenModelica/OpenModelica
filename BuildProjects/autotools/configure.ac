@@ -27,7 +27,6 @@ AC_ARG_ENABLE(shared-tables,
   [  --enable-shared-tables[=yes] Adds support for shared tables, reducing file I/O and reducing memory footprint],[test "xyes" = x"$enableval" && SHARED_TABLES="Yes"],[SHARED_TABLES="Yes"])
 AC_ARG_ENABLE(static-zlib, [  --enable-static-zlib[=no]],[test "xyes" = x"$enableval" && STATIC_ZLIB="Yes"],[STATIC_ZLIB="No"])
 
-LIBZLIB="libzlib.la"
 if test "$ZLIB" = "Yes"; then
   AC_CHECK_HEADERS(zlib.h,[AC_SEARCH_LIBS([gzclose], [z], [ZLIB="Yes"], [ZLIB="No"])],[ZLIB="No"])
   if test "$ZLIB" = "No" && test -d ../../C-Sources/zlib; then
