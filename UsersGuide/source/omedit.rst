@@ -542,6 +542,33 @@ added to the icon annotation of the model. Similarly, any user defined
 shape drawn on a Diagram View of the model will be added to the diagram
 annotation of the model.
 
+Global head section in documentation
+------------------------------------
+
+In you want to use same styles or same javascript for the classes contained inside a package.
+You can define ``__OpenModelica_infoHeader`` annotation inside the ``Documentation`` annotation of the package.
+For example,
+
+.. code-block :: modelica
+
+  package P
+    model M
+      annotation(Documentation(info="<html>
+        <a href=\"javascript:HelloWorld()\">Click here</a>
+      </html>"));
+    end M;
+   annotation(Documentation(__OpenModelica_infoHeader="
+       <script type=\"text/javascript\">
+         function HelloWorld() {
+           alert(\"Hello World!\");
+         }
+       </script>"));
+  end P;
+
+In the above example model ``M`` does not need to define the javascript function ``HelloWorld``.
+It is only defined once at the package level using the ``__OpenModelica_infoHeader`` and then all classes 
+contained in the package can use it.
+
 Settings
 --------
 
