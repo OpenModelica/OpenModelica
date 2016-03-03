@@ -684,26 +684,26 @@ Graphical Views
 
 -  Extent
 
--  *Left* – Defines the left extent point for the view.
+  -  *Left* – Defines the left extent point for the view.
 
--  *Bottom* – Defines the bottom extent point for the view.
+  -  *Bottom* – Defines the bottom extent point for the view.
 
--  *Right* – Defines the right extent point for the view.
+  -  *Right* – Defines the right extent point for the view.
 
--  *Top* – Defines the top extent point for the view.
+  -  *Top* – Defines the top extent point for the view.
 
 -  Grid
 
--  *Horizontal* – Defines the horizontal size of the view grid.
+  -  *Horizontal* – Defines the horizontal size of the view grid.
 
--  *Vertical* – Defines the vertical size of the view grid.
+  -  *Vertical* – Defines the vertical size of the view grid.
 
 -  Component
 
--  *Scale factor* – Defines the initial scale factor for the component
+  -  *Scale factor* – Defines the initial scale factor for the component
    dragged on the view.
 
--  *Preserve aspect ratio* – If true then the component’s aspect ratio
+  -  *Preserve aspect ratio* – If true then the component’s aspect ratio
    is preserved while scaling.
 
 .. _omedit-settings-simulation :
