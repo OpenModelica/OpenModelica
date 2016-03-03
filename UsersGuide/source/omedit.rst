@@ -546,7 +546,7 @@ Global head section in documentation
 ------------------------------------
 
 If you want to use same styles or same JavaScript for the classes contained inside a package then 
-you can define ``__OpenModelica_infoHeader` `annotation inside the ``Documentation`` annotation of a package.
+you can define ``__OpenModelica_infoHeader`` annotation inside the ``Documentation`` annotation of a package.
 For example,
 
 .. code-block :: modelica
