@@ -823,7 +823,7 @@ Different kinds of calls with returned results:
   getConnectionCount(BouncingBall)
   getInheritanceCount(BouncingBall)
   getComponentModifierValue(BouncingBall,e)
-  getComponentModifierNames(BouncingBall,e)
+  getComponentModifierNames(BouncingBall,"e")
   getClassRestriction(BouncingBall)
   getVersion() // Version of the currently running OMC
 
