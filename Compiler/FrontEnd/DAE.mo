@@ -1245,7 +1245,7 @@ uniontype ClockKind
 
   record INTEGER_CLOCK
     Exp intervalCounter;
-    Integer resolution;
+    Exp resolution " integer type >= 1 ";
   end INTEGER_CLOCK;
 
   record REAL_CLOCK
@@ -1254,12 +1254,12 @@ uniontype ClockKind
 
   record BOOLEAN_CLOCK
     Exp condition;
-    Real startInterval;
+    Exp startInterval " real type >= 0.0 ";
   end BOOLEAN_CLOCK;
 
   record SOLVER_CLOCK
     Exp c;
-    String solverMethod;
+    Exp solverMethod " string type ";
   end SOLVER_CLOCK;
 end ClockKind;
 
@@ -1295,8 +1295,8 @@ uniontype Exp "Expressions
     Boolean bool "Bool constants" ;
   end BCONST;
 
-  record CLKCONST
-    ClockKind clk "Clock constants" ;
+  record CLKCONST "Clock constructors"
+    ClockKind clk "Clock kinds";
   end CLKCONST;
 
   record ENUM_LITERAL "Enumeration literal"

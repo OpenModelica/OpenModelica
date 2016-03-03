@@ -195,16 +195,19 @@ match clk
   case INFERRED_CLOCK(__) then "Clock()"
   case INTEGER_CLOCK(__) then
     let ic_str = dumpExp(intervalCounter, stringDelimiter)
-    'Clock(<%ic_str%>, <%resolution%>)'
+    let re_str = dumpExp(resolution, stringDelimiter)
+    'Clock(<%ic_str%>, <%re_str%>)'
   case REAL_CLOCK(__) then
     let interval_str = dumpExp(interval, stringDelimiter)
     'Clock(<%interval_str%>)'
   case BOOLEAN_CLOCK(__) then
     let condition_str = dumpExp(condition, stringDelimiter)
-    'Clock(<%condition_str%>, <%startInterval%>)'
+    let si_str = dumpExp(startInterval, stringDelimiter)
+    'Clock(<%condition_str%>, <%si_str%>)'
   case SOLVER_CLOCK(__) then
     let clk_str = dumpExp(c, stringDelimiter)
-    'Clock(<%clk_str%>, "<%solverMethod%>")'
+    let sm_str = dumpExp(solverMethod, stringDelimiter)
+    'Clock(<%clk_str%>, <%sm_str%>)'
 end dumpClockKind;
 
 

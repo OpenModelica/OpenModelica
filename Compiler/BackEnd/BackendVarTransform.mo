@@ -1037,7 +1037,7 @@ algorithm
   matchcontinue (inExp,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
       DAE.ComponentRef cr;
-      DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3;
+      DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3, solverMethod, resolution, startInterval;
       DAE.Type t,tp;
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
@@ -1055,9 +1055,6 @@ algorithm
       DAE.CallAttributes attr;
       DAE.Ident ident;
       HashTable2.HashTable derConst;
-      String solverMethod;
-      Integer resolution;
-      Real startInterval;
 
       // Note: Most of these functions check if a subexpression did a replacement.
       // If it did not, we do not create a new copy of the expression (to save some memory).
@@ -1153,27 +1150,34 @@ algorithm
     // INTEGER_CLOCK
     case (DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter=e, resolution=resolution)), repl, cond)
       equation
-        e = replaceExp(e, repl, cond);
+        (e, c1) = replaceExp(e, repl, cond);
+        (resolution, c2) = replaceExp(resolution, repl, cond);
+        c3 = c1 or c2;
       then
-        (DAE.CLKCONST(DAE.INTEGER_CLOCK(e, resolution)), true);
+        (DAE.CLKCONST(DAE.INTEGER_CLOCK(e, resolution)), c3);
     // REAL_CLOCK
     case (DAE.CLKCONST(DAE.REAL_CLOCK(interval=e)), repl, cond)
       equation
-        e = replaceExp(e, repl, cond);
+        (e, c1) = replaceExp(e, repl, cond);
       then
-        (DAE.CLKCONST(DAE.REAL_CLOCK(e)), true);
+        (DAE.CLKCONST(DAE.REAL_CLOCK(e)), c1);
     // BOOLEAN_CLOCK
     case (DAE.CLKCONST(DAE.BOOLEAN_CLOCK(condition=e, startInterval=startInterval)), repl, cond)
       equation
-        e = replaceExp(e, repl, cond);
+        (e, c1) = replaceExp(e, repl, cond);
+        (startInterval, c2) = replaceExp(startInterval, repl, cond);
+        c3 = c1 or c2;
       then
-        (DAE.CLKCONST(DAE.BOOLEAN_CLOCK(e, startInterval)), true);
+        (DAE.CLKCONST(DAE.BOOLEAN_CLOCK(e, startInterval)), c3);
     // SOLVER_CLOCK
     case (DAE.CLKCONST(DAE.SOLVER_CLOCK(c=e, solverMethod=solverMethod)), repl, cond)
       equation
-        e = replaceExp(e, repl, cond);
+        (e, c1) = replaceExp(e, repl, cond);
+        (solverMethod, c2) = replaceExp(solverMethod, repl, cond);
+        c3 = c1 or c2;
       then
-        (DAE.CLKCONST(DAE.SOLVER_CLOCK(e, solverMethod)), true);
+        (DAE.CLKCONST(DAE.SOLVER_CLOCK(e, solverMethod)), c3);
+
     case ((e as DAE.PARTEVALFUNCTION(path,expl,tp,t)),repl,cond)
         guard replaceExpCond(cond, e)
       equation

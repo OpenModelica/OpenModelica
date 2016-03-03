@@ -327,14 +327,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
                   /></Clock>
           >>
         ; separator="\n")
-      case INTEGER_CLOCK(intervalCounter=ic as ICONST(integer=bic), resolution=res) then
+      case INTEGER_CLOCK(intervalCounter=ic as ICONST(integer=bic), resolution=res as ICONST(integer=resi)) then
         (subPartitions |> subPartition =>
           match subPartition
           case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
           <<
           <Clock><Periodic
                   intervalCounter="<%bic%>"
-                  resolution="<%res%>"
+                  resolution="<%resi%>"
                   <%if intGt(fnom, 1) then 'subSampleFactor="'+fnom+'"'%>
                   <%if intGt(snom, 0) then 'shiftCounter="'+snom+'"'%>
                   /></Clock>

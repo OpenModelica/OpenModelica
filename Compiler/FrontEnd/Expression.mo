@@ -1551,14 +1551,14 @@ public function getClockInterval
   input DAE.ClockKind inClk;
   output DAE.Exp outIntvl;
 protected
-  DAE.Exp e;
+  DAE.Exp e, er;
   Integer res;
 algorithm
   outIntvl := match inClk
     case DAE.REAL_CLOCK(e)
       then e;
-    case DAE.INTEGER_CLOCK(e, res)
-      then DAE.BINARY(e, DAE.DIV(DAE.T_REAL_DEFAULT), DAE.RCONST(res));
+    case DAE.INTEGER_CLOCK(e, er)
+      then DAE.BINARY(e, DAE.DIV(DAE.T_REAL_DEFAULT), er);
     else
       then DAE.RCONST(0.0);
   end match;
@@ -5504,31 +5504,37 @@ protected function traverseExpClk
 algorithm
   (outClk, outArg) := match inClk
     local
-      DAE.Exp e, e1;
+      DAE.Exp e, e1, e2, ea, eb;
       Real intvl;
       Integer i1, i2;
       Type_a arg;
       String str;
       DAE.ClockKind clk;
-    case DAE.INTEGER_CLOCK(e, i1)
+    case DAE.INTEGER_CLOCK(e1, e2)
       equation
-        (e1, arg) = traverseExpBottomUp(e, func, inArg);
-        clk = if referenceEq(e1, e) then inClk else DAE.INTEGER_CLOCK(e1, i1);
+        (ea, arg) = traverseExpBottomUp(e1, func, inArg);
+        (eb, arg) = traverseExpBottomUp(e2, func, inArg);
+        clk = if referenceEq(ea, e1) and referenceEq(eb, e2)
+              then inClk else DAE.INTEGER_CLOCK(ea, eb);
       then (clk, arg);
     case DAE.REAL_CLOCK(e)
       equation
         (e1, arg) = traverseExpBottomUp(e, func, inArg);
         clk = if referenceEq(e1, e) then inClk else DAE.REAL_CLOCK(e1);
       then (clk, arg);
-    case DAE.BOOLEAN_CLOCK(e, intvl)
+    case DAE.BOOLEAN_CLOCK(e1, e2)
       equation
-        (e1, arg) = traverseExpBottomUp(e, func, inArg);
-        clk = if referenceEq(e1, e) then inClk else DAE.BOOLEAN_CLOCK(e1, intvl);
+        (ea, arg) = traverseExpBottomUp(e1, func, inArg);
+        (eb, arg) = traverseExpBottomUp(e2, func, inArg);
+        clk = if referenceEq(ea, e1) and referenceEq(eb, e2)
+              then inClk else DAE.BOOLEAN_CLOCK(ea, eb);
       then (clk, arg);
-    case DAE.SOLVER_CLOCK(e, str)
+    case DAE.SOLVER_CLOCK(e1, e2)
       equation
-        (e1, arg) = traverseExpBottomUp(e, func, inArg);
-        clk = if referenceEq(e1, e) then inClk else DAE.SOLVER_CLOCK(e1, str);
+        (ea, arg) = traverseExpBottomUp(e1, func, inArg);
+        (eb, arg) = traverseExpBottomUp(e2, func, inArg);
+        clk = if referenceEq(ea, e1) and referenceEq(eb, e2)
+              then inClk else DAE.SOLVER_CLOCK(ea, eb);
       then (clk, arg);
     else (inClk, inArg);
   end match;
@@ -5551,31 +5557,38 @@ protected function traverseExpTopDownClockHelper
 algorithm
   (outClk, outArg) := match inClk
     local
-      DAE.Exp e, e1;
+      DAE.Exp e, e1, e2, ea, eb;
       Real intvl;
       Integer i1, i2;
       Type_a arg;
       String str;
       DAE.ClockKind clk;
-    case DAE.INTEGER_CLOCK(e, i1)
+
+    case DAE.INTEGER_CLOCK(e1, e2)
       equation
-        (e1, arg) = traverseExpTopDown(e, func, inArg);
-        clk = if referenceEq(e1, e) then inClk else DAE.INTEGER_CLOCK(e1, i1);
+        (ea, arg) = traverseExpTopDown(e1, func, inArg);
+        (eb, arg) = traverseExpTopDown(e2, func, inArg);
+        clk = if referenceEq(ea, e1) and referenceEq(eb, e2)
+              then inClk else DAE.INTEGER_CLOCK(ea, eb);
       then (clk, arg);
     case DAE.REAL_CLOCK(e)
       equation
         (e1, arg) = traverseExpTopDown(e, func, inArg);
         clk = if referenceEq(e1, e) then inClk else DAE.REAL_CLOCK(e1);
       then (clk, arg);
-    case DAE.BOOLEAN_CLOCK(e, intvl)
+    case DAE.BOOLEAN_CLOCK(e1, e2)
       equation
-        (e1, arg) = traverseExpTopDown(e, func, inArg);
-        clk = if referenceEq(e1, e) then inClk else DAE.BOOLEAN_CLOCK(e1, intvl);
+        (ea, arg) = traverseExpTopDown(e1, func, inArg);
+        (eb, arg) = traverseExpTopDown(e2, func, inArg);
+        clk = if referenceEq(ea, e1) and referenceEq(eb, e2)
+              then inClk else DAE.BOOLEAN_CLOCK(ea, eb);
       then (clk, arg);
-    case DAE.SOLVER_CLOCK(e, str)
+    case DAE.SOLVER_CLOCK(e1, e2)
       equation
-        (e1, arg) = traverseExpTopDown(e, func, inArg);
-        clk = if referenceEq(e1, e) then inClk else DAE.SOLVER_CLOCK(e1, str);
+        (ea, arg) = traverseExpTopDown(e1, func, inArg);
+        (eb, arg) = traverseExpTopDown(e2, func, inArg);
+        clk = if referenceEq(ea, e1) and referenceEq(eb, e2)
+              then inClk else DAE.SOLVER_CLOCK(ea, eb);
       then (clk, arg);
     else (inClk, inArg);
   end match;

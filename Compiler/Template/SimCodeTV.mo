@@ -1372,7 +1372,7 @@ package DAE
 
     record INTEGER_CLOCK
       Exp intervalCounter;
-      Integer resolution;
+      Exp resolution;
     end INTEGER_CLOCK;
 
     record REAL_CLOCK
@@ -1381,12 +1381,12 @@ package DAE
 
     record BOOLEAN_CLOCK
       Exp condition;
-      Real startInterval;
+      Exp startInterval;
     end BOOLEAN_CLOCK;
 
     record SOLVER_CLOCK
       Exp c;
-      String solverMethod;
+      Exp solverMethod;
     end SOLVER_CLOCK;
   end ClockKind;
 

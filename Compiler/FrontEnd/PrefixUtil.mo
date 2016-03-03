@@ -1375,15 +1375,12 @@ public function prefixClockKind "Add the supplied prefix to the clock kind"
 algorithm
   (outCache, outClkKind) := match (inCache, inEnv, inIH, inClkKind, inPrefix)
     local
-      DAE.Exp e;
+      DAE.Exp e,resolution,interval,method;
       DAE.ClockKind clkKind;
       FCore.Cache cache;
       FCore.Graph env;
       InstanceHierarchy ih;
       Prefix.Prefix p;
-      Integer resolution;
-      Real interval;
-      String method;
 
     // clock kinds
     case (cache, env, ih, DAE.INFERRED_CLOCK(), p)
@@ -1392,6 +1389,7 @@ algorithm
     case (cache, env, ih, DAE.INTEGER_CLOCK(e, resolution), p)
       equation
         (cache, e) = prefixExp(cache, env, ih, e, p);
+        (cache, resolution) = prefixExp(cache, env, ih, resolution, p);
         clkKind = DAE.INTEGER_CLOCK(e, resolution);
       then
         (cache, clkKind);
@@ -1406,6 +1404,7 @@ algorithm
     case (cache, env, ih, DAE.BOOLEAN_CLOCK(e, interval), p)
       equation
         (cache, e) = prefixExp(cache, env, ih, e, p);
+        (cache, interval) = prefixExp(cache, env, ih, interval, p);
         clkKind = DAE.BOOLEAN_CLOCK(e, interval);
       then
         (cache, clkKind);
@@ -1413,6 +1412,7 @@ algorithm
     case (cache, env, ih, DAE.SOLVER_CLOCK(e, method), p)
       equation
         (cache, e) = prefixExp(cache, env, ih, e, p);
+        (cache, method) = prefixExp(cache, env, ih, method, p);
         clkKind = DAE.SOLVER_CLOCK(e, method);
       then
         (cache, clkKind);

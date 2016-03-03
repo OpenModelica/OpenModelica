@@ -368,11 +368,14 @@ template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Tex
 match baseClock
   case DAE.BOOLEAN_CLOCK(__) then
     let cond = cref(expCref(condition))
+    let &preExp = buffer ""
+    let si = daeExp(startInterval, contextOther, &preExp, &varDecls, &auxFunction)
     <<
+    <%preExp%>
     if (data->simulationInfo->clocksData[i].cnt > 0)
       data->simulationInfo->clocksData[i].interval = data->localData[0]->timeValue - data->simulationInfo->clocksData[i].timepoint;
     else
-      data->simulationInfo->clocksData[i].interval = <%startInterval%>;
+      data->simulationInfo->clocksData[i].interval = <%si%>;
     >>
   else
     let &preExp = buffer ""

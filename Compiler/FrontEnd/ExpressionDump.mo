@@ -1786,26 +1786,22 @@ Return textual representation of a ClockKind."
 algorithm
   outString := match inClockKind
     local
-      Real startInterval;
-      Integer resolution;
-      DAE.Exp intervalCounter, interval, condition;
-      String solverMethod;
-      DAE.Exp c;
+      DAE.Exp c, intervalCounter, interval, condition, resolution, startInterval, solverMethod;
 
     case DAE.INFERRED_CLOCK()
     then "Clock()";
 
     case DAE.INTEGER_CLOCK(intervalCounter=intervalCounter, resolution=resolution)
-    then "Clock(" + dumpExpStr(intervalCounter,0) + ", " + intString(resolution) + ")";
+    then "Clock(" + dumpExpStr(intervalCounter,0) + ", " + dumpExpStr(resolution,0) + ")";
 
     case DAE.REAL_CLOCK(interval=interval)
     then "Clock(" + dumpExpStr(interval,0) + ")";
 
     case DAE.BOOLEAN_CLOCK(condition=condition, startInterval=startInterval)
-    then "Clock(" + dumpExpStr(condition,0) + ", " + realString(startInterval) + ")";
+    then "Clock(" + dumpExpStr(condition,0) + ", " + dumpExpStr(startInterval,0) + ")";
 
     case DAE.SOLVER_CLOCK(c=c, solverMethod=solverMethod)
-    then "Clock(" + dumpExpStr(c,0) + ", \"" + solverMethod + "\")";
+    then "Clock(" + dumpExpStr(c,0) + ", " + dumpExpStr(solverMethod,0) + ")";
   end match;
 end clockKindString;
 

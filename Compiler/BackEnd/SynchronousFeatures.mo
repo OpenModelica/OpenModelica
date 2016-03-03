@@ -556,9 +556,8 @@ protected function getSubClock
 algorithm
   (outClockKind, outSubClock) := match inExp
     local
-      DAE.Exp e1, e2, e3;
+      DAE.Exp e1, e2, e3, solverMethod;
       String solverMethodStr;
-      Option<String> solverMethod;
       BackendDAE.SubClock subClock;
       DAE.ClockKind clockKind;
       MMath.Rational factor, shift;
@@ -567,9 +566,10 @@ algorithm
       BackendDAE.Var var;
       Integer i1, i2, parentIdx;
 
-    case DAE.CLKCONST(DAE.SOLVER_CLOCK(e1, solverMethodStr))
+    case DAE.CLKCONST(DAE.SOLVER_CLOCK(e1, solverMethod))
       algorithm
         (clockKind, (subClock, parentIdx)) := getSubClock1(e1, inVars, inSubClocks);
+        DAE.SCONST(solverMethodStr) := solverMethod;
         subClock.solver := SOME(solverMethodStr);
       then
         (clockKind, (subClock, parentIdx));
@@ -657,41 +657,40 @@ protected function setClockKind
 algorithm
   (outClockKind, outClockFactor) := match (inOldClockKind, inClockKind)
     local
-      DAE.Exp e1, e2;
+      DAE.Exp e1, e2, ei1, ei2, er1, er2, es1, es2;
       Integer i1, i2, ie1, ie2;
       Real r1, r2;
       String s1, s2;
     case (DAE.INFERRED_CLOCK(), _) then (inClockKind, inClockFactor);
     case (_, DAE.INFERRED_CLOCK()) then (inOldClockKind, inClockFactor);
-    case (DAE.INTEGER_CLOCK(intervalCounter = e1, resolution = i1),
-          DAE.INTEGER_CLOCK(intervalCounter = e2, resolution = i2))
+    case (DAE.INTEGER_CLOCK(intervalCounter = e1, resolution = ei1),
+          DAE.INTEGER_CLOCK(intervalCounter = e2, resolution = ei2))
       guard
-        Expression.expEqual(e1, e2) and
-        (i1 == i2)
+        Expression.expEqual(e1, e2) and Expression.expEqual(ei1, ei2)
       then (inClockKind, inClockFactor);
-    case (DAE.INTEGER_CLOCK(intervalCounter = e1, resolution = i1),
-          DAE.INTEGER_CLOCK(intervalCounter = e2, resolution = i2))
+    case (DAE.INTEGER_CLOCK(intervalCounter = e1, resolution = ei1),
+          DAE.INTEGER_CLOCK(intervalCounter = e2, resolution = ei2))
       // stay with old clock and adapt clock factor to new clock
       algorithm
         DAE.ICONST(ie1) := e1;
         DAE.ICONST(ie2) := e2;
+        DAE.ICONST(i1) := ei1;
+        DAE.ICONST(i2) := ei2;
       then (inOldClockKind, MMath.divRational(MMath.multRational(inClockFactor, MMath.RATIONAL(ie2, i2)), MMath.RATIONAL(ie1, i1)));
     case (DAE.REAL_CLOCK(interval = e1),
           DAE.REAL_CLOCK(interval = e2))
       guard
         Expression.expEqual(e1, e2)
       then (inClockKind, inClockFactor);
-    case (DAE.BOOLEAN_CLOCK(condition = e1, startInterval = r1),
-          DAE.BOOLEAN_CLOCK(condition = e2, startInterval = r2))
+    case (DAE.BOOLEAN_CLOCK(condition = e1, startInterval = er1),
+          DAE.BOOLEAN_CLOCK(condition = e2, startInterval = er2))
       guard
-        Expression.expEqual(e1, e2) and
-        (r1 == r2)
+        Expression.expEqual(e1, e2) and Expression.expEqual(er1, er2)
       then (inClockKind, inClockFactor);
-    case (DAE.SOLVER_CLOCK(c = e1, solverMethod = s1),
-          DAE.SOLVER_CLOCK(c = e2, solverMethod = s2))
+    case (DAE.SOLVER_CLOCK(c = e1, solverMethod = es1),
+          DAE.SOLVER_CLOCK(c = e2, solverMethod = es2))
       guard
-        Expression.expEqual(e1, e2) and
-        stringEqual(s1, s2)
+        Expression.expEqual(e1, e2) and Expression.expEqual(es1, es2)
       then (inClockKind, inClockFactor);
     else
       equation Error.addMessage(Error.CLOCK_CONFLICT, {});
@@ -1430,10 +1429,8 @@ protected function substClock
   output list<BackendDAE.Var> outNewVars;
   output Integer outCnt;
 protected
-  DAE.Exp e;
+  DAE.Exp e, i, f;
   Integer cnt;
-  Integer i;
-  Real f;
   list<BackendDAE.Equation> eqs;
   list<BackendDAE.Var> vars;
 algorithm

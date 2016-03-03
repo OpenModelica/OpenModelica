@@ -4607,7 +4607,7 @@ algorithm
         (cache, intervalCounter, prop1, _) = elabExpInExpression(cache,env,aintervalCounter,impl,NONE(),true,pre,info);
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         (intervalCounter,_) = Types.matchType(intervalCounter,ty1,DAE.T_INTEGER_DEFAULT,true);
-        call = DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter, 1));
+        call = DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter, DAE.ICONST(1)));
       then (cache, call, prop);
 
     // clock with Integer interval "Clock(intervalCounter, resolution)"
@@ -4619,9 +4619,10 @@ algorithm
         ty2 = Types.arrayElementType(Types.getPropType(prop2));
         (intervalCounter,_) = Types.matchType(intervalCounter,ty1,DAE.T_INTEGER_DEFAULT,true);
         (resolution,_) = Types.matchType(resolution,ty2,DAE.T_INTEGER_DEFAULT,true);
-        iResolution = Expression.expInt(resolution);
-        true = iResolution >= 1;
-        call = DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter, iResolution));
+        // TODO! check if expression resolution is >= 1
+        // iResolution = Expression.expInt(resolution);
+        // true = iResolution >= 1;
+        call = DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter, resolution));
       then (cache, call, prop);
 
     // clock with Real interval "Clock(interval)"
@@ -4640,7 +4641,7 @@ algorithm
         astartInterval = Absyn.REAL("0.0");
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         (condition,_) = Types.matchType(condition,ty1,DAE.T_BOOL_DEFAULT,true);
-        call = DAE.CLKCONST(DAE.BOOLEAN_CLOCK(condition, 0));
+        call = DAE.CLKCONST(DAE.BOOLEAN_CLOCK(condition, DAE.RCONST(0.0)));
       then (cache, call, prop);
 
     // Boolean Clock (clock triggered by zero-crossing events) "Clock(condition, startInterval)"
@@ -4652,9 +4653,10 @@ algorithm
         ty2 = Types.arrayElementType(Types.getPropType(prop2));
         (condition,_) = Types.matchType(condition,ty1,DAE.T_BOOL_DEFAULT,true);
         (startInterval,_) = Types.matchType(startInterval,ty2,DAE.T_REAL_DEFAULT,true);
-        rStartInterval = Expression.toReal(startInterval);
-        true = rStartInterval >= 0.0;
-        call = DAE.CLKCONST(DAE.BOOLEAN_CLOCK(condition, rStartInterval));
+        // TODO! check if expression startInterval is >= 0.0
+        // rStartInterval = Expression.toReal(startInterval);
+        // true = rStartInterval >= 0.0;
+        call = DAE.CLKCONST(DAE.BOOLEAN_CLOCK(condition, startInterval));
       then (cache, call, prop);
 
     // Solver Clock "Clock(c, solverMethod)"
@@ -4666,8 +4668,19 @@ algorithm
         ty2 = Types.arrayElementType(Types.getPropType(prop2));
         (c,_) = Types.matchType(c,ty1,DAE.T_CLOCK_DEFAULT,true);
         (solverMethod,_) = Types.matchType(solverMethod,ty2,DAE.T_STRING_DEFAULT,true);
-        strSolverMethod = Expression.sconstEnumNameString(solverMethod);
-        call = DAE.CLKCONST(DAE.SOLVER_CLOCK(c, strSolverMethod));
+        call = DAE.CLKCONST(DAE.SOLVER_CLOCK(c, solverMethod));
+      then (cache, call, prop);
+
+    // Solver Clock "Clock(c, solverMethod=solverMethod)" with named arguments
+    case (cache,env,{ac},{Absyn.NAMEDARG(argName="solverMethod", argValue=asolverMethod)},impl,pre,_)
+      equation
+        (cache, c, prop1, _) = elabExpInExpression(cache,env,ac,impl,NONE(),true,pre,info);
+        (cache, solverMethod, prop2, _) = elabExpInExpression(cache,env,asolverMethod,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        ty2 = Types.arrayElementType(Types.getPropType(prop2));
+        (c,_) = Types.matchType(c,ty1,DAE.T_CLOCK_DEFAULT,true);
+        (solverMethod,_) = Types.matchType(solverMethod,ty2,DAE.T_STRING_DEFAULT,true);
+        call = DAE.CLKCONST(DAE.SOLVER_CLOCK(c, solverMethod));
       then (cache, call, prop);
 
   end matchcontinue;
@@ -6894,7 +6907,7 @@ algorithm
       list<Absyn.NamedArg> nargs;
       Boolean impl;
       Absyn.Path fn_1;
-      String fnstr,argstr,prestr,s,name,env_str;
+      String fnstr,argstr,prestr,s,s1,s2,name,env_str;
       list<String> argstrs;
       FCore.Cache cache;
       Prefix.Prefix pre;
@@ -6905,18 +6918,20 @@ algorithm
       then
         (cache,e,prop,st);
 
-    case (_,_,fn,args,_,_,_,pre,_)
+    case (_,_,fn,args,nargs,_,_,pre,_)
       equation
         true = hasBuiltInHandler(fn);
         true = numErrorMessages == Error.getNumErrorMessages();
         name = Absyn.printComponentRefStr(fn);
-        s = stringDelimitList(List.map(args, Dump.printExpStr), ", ");
+        s1 = stringDelimitList(List.map(args, Dump.printExpStr), ", ");
+        s2 = stringDelimitList(List.map(nargs, Dump.printNamedArgStr), ", ");
+        s = if s2 == "" then s1 else s1 + ", " + s2;
         s = stringAppendList({name,"(",s,").\n"});
         prestr = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,prestr}, info);
       then fail();
 
-    /* Interactive mode */
+    // Interactive mode
     case (cache,env,fn,args,nargs,(impl as true),st,pre,_)
       equation
         false = hasBuiltInHandler(fn);
@@ -6927,7 +6942,7 @@ algorithm
       then
         (cache,e,prop,st);
 
-    /* Non-interactive mode */
+    // Non-interactive mode
     case (cache,env,fn,args,nargs,(impl as false),st,pre,_)
       equation
         false = hasBuiltInHandler(fn);
@@ -6952,6 +6967,7 @@ algorithm
         Debug.traceln(prestr);
       then
         fail();
+
     case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
       equation
         (cache,e,prop,st) = BackendInterface.elabCallInteractive(cache, env, fn, args, nargs, impl, st, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
@@ -6960,6 +6976,7 @@ algorithm
         end if;
       then
         (cache,e,prop,st);
+
     else
         equation
           true=ErrorExt.isTopCheckpoint("elabCall_InteractiveFunction");
