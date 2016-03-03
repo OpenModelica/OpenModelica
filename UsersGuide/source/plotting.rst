@@ -67,9 +67,9 @@ their allowed values are listed below.
 +------------------+-------------------------------------+-------------------------------------------------------------------------------------------------------------+
 | **Option**       | **Default value**                   | **Description**                                                                                             |
 +------------------+-------------------------------------+-------------------------------------------------------------------------------------------------------------+
-| fileName         | The result of the last simulation   | The name of the result-file containing the variables to plot                                                |
+| fileName         | "<default>"                         | The name of the result-file containing the variables to plot. <default> will read the last simulation result|
 +------------------+-------------------------------------+-------------------------------------------------------------------------------------------------------------+
-| grid             | true                                | Determines whether or not a grid is shown in the diagram.                                                   |
+| grid             | "detailed"                          | Sets the grid for the plot i.e simple, detailed, none.                                                      |
 +------------------+-------------------------------------+-------------------------------------------------------------------------------------------------------------+
 | title            | ""                                  | This text will be used as the diagram title.                                                                |
 +------------------+-------------------------------------+-------------------------------------------------------------------------------------------------------------+
@@ -94,4 +94,10 @@ their allowed values are listed below.
 | legendPosition   | "top"                               | Defines the position of the legend in the diagram. Possible values are left, right, top, bottom and none.   |
 +------------------+-------------------------------------+-------------------------------------------------------------------------------------------------------------+
 | externalWindow   | false                               | Opens a new OMPlot window if set to true otherwise update the current opened window.                        |
++------------------+-------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| footer           | ""                                  | This text will be used as the diagram footer.                                                               |
++------------------+-------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| autoScale        | true                                | Use auto scale while plotting.                                                                              |
++------------------+-------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| forceOMPlot      | false                               | If true launches OMPlot and doesn't call callback function even if it is defined.                           |
 +------------------+-------------------------------------+-------------------------------------------------------------------------------------------------------------+
