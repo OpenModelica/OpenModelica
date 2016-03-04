@@ -473,9 +473,9 @@ protected
   array<DAE.ClockKind> clockKinds;
 algorithm
   clockFactor := MMath.RAT1;
-  branchClockKind := DAE.INFERRED_CLOCK();
   clockKinds := arrayCreate(BackendVariable.varsSize(inVars), DAE.INFERRED_CLOCK());
   outSubClocks := arrayCreate(BackendVariable.varsSize(inVars), (BackendDAE.DEFAULT_SUBCLOCK, 0));
+  exp := DAE.CLKCONST(DAE.INFERRED_CLOCK());
   for comp in inComps loop
     outClockKind := matchcontinue comp
       case BackendDAE.SINGLEEQUATION(eqIdx, varIdx)
@@ -540,7 +540,7 @@ algorithm
         then clockKind;
       else
         algorithm
-          print("internal error -- SynchronousFeatures.resolveClocks failure\r\n");
+          print("Internal error -- SynchronousFeatures.resolveClocks failed for " + ExpressionDump.printExpStr(exp) + ".\n");
         then fail();
     end matchcontinue;
   end for;
