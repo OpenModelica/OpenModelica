@@ -858,10 +858,12 @@ function referenceDebugString<A>
 </html>"));
 end referenceDebugString;
 
-impure function isPresent
-  input OpenModelica.$Code.TypeName ident;
-  output Boolean b=true;
-annotation(Documentation(info="<html>
+function isPresent<T>
+  input T ident;
+  output Boolean b;
+algorithm
+  b:=true;
+annotation(__OpenModelica_EarlyInline=true, __OpenModelica_BuiltinPtr = true, Documentation(info="<html>
 <p>From Modelica 2.x:</p>
 <p>Returns true if the formal <strike>input or</strike> output argument <i>ident</i>
 is present as an actual argument of the function call. If the argument is not

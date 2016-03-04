@@ -1346,7 +1346,7 @@ algorithm
 
     if b then
       outTrueList := e :: outTrueList;
-    else
+    elseif isPresent(outFalseList) then
       outFalseList := e :: outFalseList;
     end if;
   end while;
@@ -1600,14 +1600,14 @@ algorithm
   for e in inList1 loop
     if isMemberOnTrue(e, inList2, inCompFunc) then
       outIntersection := e :: outIntersection;
-    else
+    elseif isPresent(outList1Rest) then
       outList1Rest := e :: outList1Rest;
     end if;
   end for;
 
   outIntersection := listReverseInPlace(outIntersection);
-  outList1Rest := listReverseInPlace(outList1Rest);
-  outList2Rest := setDifferenceOnTrue(inList2, outIntersection, inCompFunc);
+  outList1Rest := if isPresent(outList1Rest) then listReverseInPlace(outList1Rest) else {};
+  outList2Rest := if isPresent(outList2Rest) then setDifferenceOnTrue(inList2, outIntersection, inCompFunc) else {};
 end intersection1OnTrue;
 
 public function setDifferenceIntN
