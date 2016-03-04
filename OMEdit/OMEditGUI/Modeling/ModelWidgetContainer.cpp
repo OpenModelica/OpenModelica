@@ -366,6 +366,28 @@ void GraphicsView::addComponentToClass(Component *pComponent)
     }
     pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), className, mpModelWidget->getLibraryTreeItem()->getNameStructure(),
                                              pComponent->getPlacementAnnotation());
+    // get uses annotation of the class
+    QString packageName = StringHandler::getFirstWordBeforeDot(pComponent->getLibraryTreeItem()->getNameStructure());
+    LibraryTreeItem *pPackageLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(packageName);
+    if (pPackageLibraryTreeItem) {
+      QList<QList<QString > > usesAnnotation = pMainWindow->getOMCProxy()->getUses(mpModelWidget->getLibraryTreeItem()->getNameStructure());
+      QStringList newUsesAnnotation;
+      for (int i = 0 ; i < usesAnnotation.size() ; i++) {
+        for (int j = 0 ; j < usesAnnotation.at(i).size() ; j++) {
+          if (usesAnnotation.at(i).at(0).compare(packageName) == 0) {
+            return; // if the package is already in uses annotation of class then simply return without doing anything.
+          } else {
+            newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(usesAnnotation.at(i).at(0)).arg(usesAnnotation.at(i).at(1)));
+          }
+        }
+      }
+      // if the package has version only then add the uses annotation
+      if (!pPackageLibraryTreeItem->mClassInformation.version.isEmpty()) {
+        newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(packageName).arg(pPackageLibraryTreeItem->mClassInformation.version));
+        QString usesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(newUsesAnnotation.join(","));
+        pMainWindow->getOMCProxy()->addClassAnnotation(mpModelWidget->getLibraryTreeItem()->getNameStructure(), usesAnnotationString);
+      }
+    }
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
     QFileInfo fileInfo(pComponent->getLibraryTreeItem()->getFileName());
@@ -3806,10 +3828,8 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     return;
   }
   // get the preferred view to display
-  mpMainWindow->getOMCProxy()->sendCommand(QString("getNamedAnnotation(").append(pModelWidget->getLibraryTreeItem()->getNameStructure()).append(", preferredView)"));
-  QStringList preferredViewList = StringHandler::unparseStrings(mpMainWindow->getOMCProxy()->getResult());
-  if (!preferredViewList.isEmpty()) {
-    QString preferredView = preferredViewList.at(0);
+  QString preferredView = pModelWidget->getLibraryTreeItem()->mClassInformation.preferredView;
+  if (preferredView.isEmpty()) {
     if (preferredView.compare("info") == 0) {
       pModelWidget->showDocumentationView();
       loadPreviousViewType(pModelWidget);

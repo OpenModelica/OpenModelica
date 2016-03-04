@@ -2507,6 +2507,19 @@ bool OMCProxy::inferBindings(QString className)
 }
 
 /*!
+ * \brief OMCProxy::getUses
+ * Returns the uses annotation.
+ * \param className
+ * \return
+ */
+QList<QList<QString > > OMCProxy::getUses(QString className)
+{
+  QList<QList<QString > > result = mpOMCInterface->getUses(className);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
   */

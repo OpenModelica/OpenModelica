@@ -3229,14 +3229,16 @@ void MainWindow::dropEvent(QDropEvent *event)
 }
 
 /*!
-  Reimplementation of resizeEvent.\n
-  Resizes the AboutOMEditWidget whenever the MainWindow is resized.
-  */
+ * \brief MainWindow::resizeEvent
+ * Reimplementation of resizeEvent.\n
+ * Resizes the AboutOMEditWidget whenever the MainWindow is resized.
+ * \param event
+ */
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
-  if (mpAboutOMEditDialog)
-    if (mpAboutOMEditDialog->isVisible())
-      mpAboutOMEditDialog->setGeometry(QRect(rect().center() - QPoint(262, 235), rect().center() + QPoint(262, 235)));
+  if (mpAboutOMEditDialog && mpAboutOMEditDialog->isVisible()) {
+    mpAboutOMEditDialog->setGeometry(QRect(rect().center() - QPoint(262, 235), rect().center() + QPoint(262, 235)));
+  }
   QMainWindow::resizeEvent(event);
 }
 

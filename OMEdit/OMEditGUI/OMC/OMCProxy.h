@@ -227,6 +227,7 @@ public:
   bool moveClassToTop(QString className);
   bool moveClassToBottom(QString className);
   bool inferBindings(QString className);
+  QList<QList<QString > > getUses(QString className);
 signals:
   void commandFinished();
 public slots:
