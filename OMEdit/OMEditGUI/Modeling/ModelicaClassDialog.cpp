@@ -965,10 +965,14 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   : QDialog(pGraphicsView, Qt::WindowTitleHint)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::properties));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::properties).append(" - ")
+                 .append(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   setMinimumWidth(400);
-  setModal(true);
   mpGraphicsView = pGraphicsView;
+  // tab widget
+  mpTabWidget = new QTabWidget;
+  // graphics tab
+  QWidget *pGraphicsWidget = new QWidget;
   // create extent points group box
   mpExtentGroupBox = new QGroupBox(Helper::extent);
   mpLeftLabel = new Label(QString(Helper::left).append(":"));
@@ -1048,6 +1052,89 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
     mpCopyProperties->setText(tr("Copy properties to Icon layer"));
   }
   mpCopyProperties->setChecked(true);
+  // Graphics tab layout
+  QVBoxLayout *pGraphicsWidgetLayout = new QVBoxLayout;
+  pGraphicsWidgetLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGraphicsWidgetLayout->addWidget(mpExtentGroupBox);
+  pGraphicsWidgetLayout->addWidget(mpGridGroupBox);
+  pGraphicsWidgetLayout->addWidget(mpComponentGroupBox);
+  pGraphicsWidgetLayout->addWidget(mpCopyProperties);
+  pGraphicsWidget->setLayout(pGraphicsWidgetLayout);
+  mpTabWidget->addTab(pGraphicsWidget, tr("Graphics"));
+  // version tab
+  QWidget *pVersionWidget = new QWidget;
+  mpVersionLabel = new Label(Helper::version);
+  mpVersionTextBox = new QLineEdit(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version);
+  // uses annotation
+  mpUsesGroupBox = new QGroupBox(tr("Uses"));
+  mpUsesTableWidget = new QTableWidget;
+  mpUsesTableWidget->setTextElideMode(Qt::ElideMiddle);
+  mpUsesTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+  mpUsesTableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+  mpUsesTableWidget->setColumnCount(2);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+  mpUsesTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+#else /* Qt4 */
+  mpUsesTableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+#endif
+  mpUsesTableWidget->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
+  QStringList headerLabels;
+  headerLabels << Helper::library << Helper::version;
+  mpUsesTableWidget->setHorizontalHeaderLabels(headerLabels);
+  // get the uses annotation
+  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  QList<QList<QString> > usesAnnotation = pOMCProxy->getUses(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure());
+  mpUsesTableWidget->setRowCount(usesAnnotation.size());
+  for (int i = 0 ; i < usesAnnotation.size() ; i++) {
+    QTableWidgetItem *pLibraryTableWidgetItem = new QTableWidgetItem(usesAnnotation.at(i).at(0));
+    pLibraryTableWidgetItem->setFlags(pLibraryTableWidgetItem->flags() | Qt::ItemIsEditable);
+    mpUsesTableWidget->setItem(i, 0, pLibraryTableWidgetItem);
+    QTableWidgetItem *pVersionTableWidgetItem = new QTableWidgetItem(usesAnnotation.at(i).at(1));
+    pVersionTableWidgetItem->setFlags(pVersionTableWidgetItem->flags() | Qt::ItemIsEditable);
+    mpUsesTableWidget->setItem(i, 1, pVersionTableWidgetItem);
+  }
+  // uses navigation buttons
+  mpMoveUpButton = new QToolButton;
+  mpMoveUpButton->setObjectName("ShapePointsButton");
+  mpMoveUpButton->setIcon(QIcon(":/Resources/icons/up.svg"));
+  mpMoveUpButton->setToolTip(Helper::moveUp);
+  connect(mpMoveUpButton, SIGNAL(clicked()), SLOT(moveUp()));
+  mpMoveDownButton = new QToolButton;
+  mpMoveDownButton->setObjectName("ShapePointsButton");
+  mpMoveDownButton->setIcon(QIcon(":/Resources/icons/down.svg"));
+  mpMoveDownButton->setToolTip(Helper::moveDown);
+  connect(mpMoveDownButton, SIGNAL(clicked()), SLOT(moveDown()));
+  // uses manipulation buttons
+  mpAddUsesAnnotationButton = new QToolButton;
+  mpAddUsesAnnotationButton->setObjectName("ShapePointsButton");
+  mpAddUsesAnnotationButton->setIcon(QIcon(":/Resources/icons/add-icon.svg"));
+  mpAddUsesAnnotationButton->setToolTip(tr("Add new uses annotation"));
+  connect(mpAddUsesAnnotationButton, SIGNAL(clicked()), SLOT(addUsesAnnotation()));
+  mpRemoveUsesAnnotationButton = new QToolButton;
+  mpRemoveUsesAnnotationButton->setObjectName("ShapePointsButton");
+  mpRemoveUsesAnnotationButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
+  mpRemoveUsesAnnotationButton->setToolTip(tr("Remove uses annotation"));
+  connect(mpRemoveUsesAnnotationButton, SIGNAL(clicked()), SLOT(removeUsesAnnotation()));
+  mpUsesButtonBox = new QDialogButtonBox(Qt::Vertical);
+  mpUsesButtonBox->addButton(mpMoveUpButton, QDialogButtonBox::ActionRole);
+  mpUsesButtonBox->addButton(mpMoveDownButton, QDialogButtonBox::ActionRole);
+  mpUsesButtonBox->addButton(mpAddUsesAnnotationButton, QDialogButtonBox::ActionRole);
+  mpUsesButtonBox->addButton(mpRemoveUsesAnnotationButton, QDialogButtonBox::ActionRole);
+  // uses Group Box layout
+  QGridLayout *pUsesGroupBoxLayout = new QGridLayout;
+  pUsesGroupBoxLayout->setAlignment(Qt::AlignTop);
+  pUsesGroupBoxLayout->setColumnStretch(0, 1);
+  pUsesGroupBoxLayout->addWidget(mpUsesTableWidget, 0, 0);
+  pUsesGroupBoxLayout->addWidget(mpUsesButtonBox, 0, 1);
+  mpUsesGroupBox->setLayout(pUsesGroupBoxLayout);
+  // Version tab layout
+  QGridLayout *pVersionGridLayout = new QGridLayout;
+  pVersionGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pVersionGridLayout->addWidget(mpVersionLabel, 0, 0);
+  pVersionGridLayout->addWidget(mpVersionTextBox, 0, 1);
+  pVersionGridLayout->addWidget(mpUsesGroupBox, 1, 0, 1, 2);
+  pVersionWidget->setLayout(pVersionGridLayout);
+  mpTabWidget->addTab(pVersionWidget, Helper::version);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -1063,20 +1150,114 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
-  pMainLayout->addWidget(mpExtentGroupBox);
-  pMainLayout->addWidget(mpGridGroupBox);
-  pMainLayout->addWidget(mpComponentGroupBox);
-  pMainLayout->addWidget(mpCopyProperties);
+  pMainLayout->addWidget(mpTabWidget);
   pMainLayout->addWidget(mpButtonBox, 0, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
 /*!
-  Saves the new GraphicsView properties in the form of coordinate system annotation.\n
-  Slot activated when mpOkButton clicked signal is raised.
-  */
+ * \brief GraphicsViewProperties::movePointUp
+ * Moves the uses annotation up.\n
+ */
+void GraphicsViewProperties::moveUp()
+{
+  if (mpUsesTableWidget->selectedItems().size() > 0) {
+    int row = mpUsesTableWidget->selectedItems().at(0)->row();
+    if (row == 0) {
+      return;
+    }
+    QTableWidgetItem *pSourceLibraryItem = mpUsesTableWidget->takeItem(row, 0);
+    QTableWidgetItem *pSourceVersionItem = mpUsesTableWidget->takeItem(row, 1);
+    QTableWidgetItem *pDestinationLibraryItem = mpUsesTableWidget->takeItem(row - 1, 0);
+    QTableWidgetItem *pDestinationVersionItem = mpUsesTableWidget->takeItem(row - 1, 1);
+    mpUsesTableWidget->setItem(row - 1, 0, pSourceLibraryItem);
+    mpUsesTableWidget->setItem(row - 1, 1, pSourceVersionItem);
+    mpUsesTableWidget->setItem(row, 0, pDestinationLibraryItem);
+    mpUsesTableWidget->setItem(row, 1, pDestinationVersionItem);
+    mpUsesTableWidget->setCurrentCell(row - 1, 0);
+  }
+}
+
+/*!
+ * \brief GraphicsViewProperties::movePointDown
+ * Moves the uses annotation down.\n
+ */
+void GraphicsViewProperties::moveDown()
+{
+  if (mpUsesTableWidget->selectedItems().size() > 0) {
+    int row = mpUsesTableWidget->selectedItems().at(0)->row();
+    if (row == mpUsesTableWidget->rowCount() - 1) {
+      return;
+    }
+    QTableWidgetItem *pSourceLibraryItem = mpUsesTableWidget->takeItem(row, 0);
+    QTableWidgetItem *pSourceVersionItem = mpUsesTableWidget->takeItem(row, 1);
+    QTableWidgetItem *pDestinationLibraryItem = mpUsesTableWidget->takeItem(row + 1, 0);
+    QTableWidgetItem *pDestinationVersionItem = mpUsesTableWidget->takeItem(row + 1, 1);
+    mpUsesTableWidget->setItem(row + 1, 0, pSourceLibraryItem);
+    mpUsesTableWidget->setItem(row + 1, 1, pSourceVersionItem);
+    mpUsesTableWidget->setItem(row, 0, pDestinationLibraryItem);
+    mpUsesTableWidget->setItem(row, 1, pDestinationVersionItem);
+    mpUsesTableWidget->setCurrentCell(row + 1, 0);
+  }
+}
+
+/*!
+ * \brief GraphicsViewProperties::addUsesAnnotation
+ * Adds a new row for uses annotation.
+ */
+void GraphicsViewProperties::addUsesAnnotation()
+{
+  int row = mpUsesTableWidget->rowCount();
+  if (mpUsesTableWidget->selectedItems().size() > 0) {
+    row = mpUsesTableWidget->selectedItems().at(0)->row() + 1;
+  }
+  mpUsesTableWidget->insertRow(row);
+  QTableWidgetItem *pLibraryTableWidgetItem = new QTableWidgetItem("");
+  pLibraryTableWidgetItem->setFlags(pLibraryTableWidgetItem->flags() | Qt::ItemIsEditable);
+  mpUsesTableWidget->setItem(row, 0, pLibraryTableWidgetItem);
+  QTableWidgetItem *pVersionTableWidgetItem = new QTableWidgetItem("");
+  pVersionTableWidgetItem->setFlags(pVersionTableWidgetItem->flags() | Qt::ItemIsEditable);
+  mpUsesTableWidget->setItem(row, 1, pVersionTableWidgetItem);
+}
+
+/*!
+ * \brief GraphicsViewProperties::removeUsesAnnotation
+ * Removes the selected uses annotaton row.
+ */
+void GraphicsViewProperties::removeUsesAnnotation()
+{
+  if (mpUsesTableWidget->selectedItems().size() > 0) {
+    mpUsesTableWidget->removeRow(mpUsesTableWidget->selectedItems().at(0)->row());
+  }
+}
+
+/*!
+ * \brief GraphicsViewProperties::saveGraphicsViewProperties
+ * Saves the new GraphicsView properties in the form of coordinate system annotation.\n
+ * Slot activated when mpOkButton clicked signal is raised.
+ */
 void GraphicsViewProperties::saveGraphicsViewProperties()
 {
+  // we need to set focus on the OK button otherwise QTableWidget doesn't read any active cell editing value.
+  mpOkButton->setFocus(Qt::ActiveWindowFocusReason);
+  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  // validate uses
+  for (int i = 0 ; i < mpUsesTableWidget->rowCount() ; i++) {
+    QTableWidgetItem *pUsesTableWidgetItem = mpUsesTableWidget->item(i, 0); /* library value */
+    if (pUsesTableWidgetItem->text().isEmpty()) {
+      QMessageBox::critical(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(Helper::library), Helper::ok);
+      mpUsesTableWidget->editItem(pUsesTableWidgetItem);
+      return;
+    }
+    pUsesTableWidgetItem = mpUsesTableWidget->item(i, 1); /* version value */
+    if (pUsesTableWidgetItem->text().isEmpty()) {
+      QMessageBox::critical(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(Helper::version), Helper::ok);
+      mpUsesTableWidget->editItem(pUsesTableWidgetItem);
+      return;
+    }
+  }
   // save the old CoOrdinateSystem
   CoOrdinateSystem oldCoOrdinateSystem = mpGraphicsView->mCoOrdinateSystem;
   // construct a new CoOrdinateSystem
@@ -1093,10 +1274,26 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
   qreal horizontal = mpHorizontalSpinBox->value();
   qreal vertical = mpVerticalSpinBox->value();
   newCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
+  // save old version
+  QString oldVersion = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version;
+  // save the old uses annotation
+  QList<QList<QString> > usesAnnotation = pMainWindow->getOMCProxy()->getUses(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure());
+  QStringList oldUsesAnnotation;
+  for (int i = 0 ; i < usesAnnotation.size() ; i++) {
+    oldUsesAnnotation.append(QString("%1(version=\"%2\")").arg(usesAnnotation.at(i).at(0)).arg(usesAnnotation.at(i).at(1)));
+  }
+  QString oldUsesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(oldUsesAnnotation.join(","));
+  // new uses annotation
+  QStringList newUsesAnnotation;
+  for (int i = 0 ; i < mpUsesTableWidget->rowCount() ; i++) {
+    newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(mpUsesTableWidget->item(i, 0)->text()).arg(mpUsesTableWidget->item(i, 1)->text()));
+  }
+  QString newUsesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(newUsesAnnotation.join(","));
   // push the CoOrdinateSystem change to undo stack
-  UpdateCoOrdinateSystemCommand *pUpdateCoOrdinateSystemCommand = new UpdateCoOrdinateSystemCommand(mpGraphicsView, oldCoOrdinateSystem,
-                                                                                                    newCoOrdinateSystem,
-                                                                                                    mpCopyProperties->isChecked());
+  UpdateCoOrdinateSystemCommand *pUpdateCoOrdinateSystemCommand;
+  pUpdateCoOrdinateSystemCommand = new UpdateCoOrdinateSystemCommand(mpGraphicsView, oldCoOrdinateSystem, newCoOrdinateSystem,
+                                                                     mpCopyProperties->isChecked(), oldVersion, mpVersionTextBox->text(),
+                                                                     oldUsesAnnotationString, newUsesAnnotationString);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateCoOrdinateSystemCommand);
   mpGraphicsView->getModelWidget()->updateModelicaText();
   accept();

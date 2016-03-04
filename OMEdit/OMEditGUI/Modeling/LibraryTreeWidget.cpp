@@ -2186,12 +2186,12 @@ void LibraryTreeView::createActions()
   mpSaveTotalAction->setStatusTip(Helper::saveTotalTip);
   connect(mpSaveTotalAction, SIGNAL(triggered()), SLOT(saveTotalClass()));
   // Move class up action
-  mpMoveUpAction = new QAction(QIcon(":/Resources/icons/up.svg"), tr("Move Up"), this);
+  mpMoveUpAction = new QAction(QIcon(":/Resources/icons/up.svg"), Helper::moveUp, this);
   mpMoveUpAction->setShortcut(QKeySequence("Ctrl+Up"));
   mpMoveUpAction->setStatusTip(tr("Moves the class one level up"));
   connect(mpMoveUpAction, SIGNAL(triggered()), SLOT(moveClassUp()));
   // Move class down action
-  mpMoveDownAction = new QAction(QIcon(":/Resources/icons/down.svg"), tr("Move Down"), this);
+  mpMoveDownAction = new QAction(QIcon(":/Resources/icons/down.svg"), Helper::moveDown, this);
   mpMoveDownAction->setShortcut(QKeySequence("Ctrl+Down"));
   mpMoveDownAction->setStatusTip(tr("Moves the class one level down"));
   connect(mpMoveDownAction, SIGNAL(triggered()), SLOT(moveClassDown()));

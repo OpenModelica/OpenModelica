@@ -305,6 +305,9 @@ public:
   static QString running;
   static QString finished;
   static QString newVariable;
+  static QString library;
+  static QString moveUp;
+  static QString moveDown;
 };
 
 class GUIMessages : public QObject
@@ -343,6 +346,7 @@ public:
     PLOT_PARAMETRIC_DIFF_FILES,
     FILE_FORMAT_NOT_SUPPORTED,
     ENTER_VALID_NUMBER,
+    ENTER_VALUE,
     ITEM_DROPPED_ON_ITSELF,
     MAKE_REPLACEABLE_IF_PARTIAL,
     INNER_MODEL_NAME_CHANGED,

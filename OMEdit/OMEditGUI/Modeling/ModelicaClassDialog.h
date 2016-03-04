@@ -204,6 +204,7 @@ public:
   GraphicsViewProperties(GraphicsView *pGraphicsView);
 private:
   GraphicsView *mpGraphicsView;
+  QTabWidget *mpTabWidget;
   QGroupBox *mpExtentGroupBox;
   Label *mpLeftLabel;
   DoubleSpinBox *mpLeftSpinBox;
@@ -223,10 +224,23 @@ private:
   DoubleSpinBox *mpScaleFactorSpinBox;
   QCheckBox *mpPreserveAspectRatioCheckBox;
   QCheckBox *mpCopyProperties;
+  Label *mpVersionLabel;
+  QLineEdit *mpVersionTextBox;
+  QGroupBox *mpUsesGroupBox;
+  QTableWidget *mpUsesTableWidget;
+  QToolButton *mpMoveUpButton;
+  QToolButton *mpMoveDownButton;
+  QToolButton *mpAddUsesAnnotationButton;
+  QToolButton *mpRemoveUsesAnnotationButton;
+  QDialogButtonBox *mpUsesButtonBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 private slots:
+  void moveUp();
+  void moveDown();
+  void addUsesAnnotation();
+  void removeUsesAnnotation();
   void saveGraphicsViewProperties();
 };
 

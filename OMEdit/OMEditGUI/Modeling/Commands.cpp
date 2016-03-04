@@ -945,13 +945,19 @@ void UpdateClassExperimentAnnotationCommand::undo()
 }
 
 UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem,
-                                                             CoOrdinateSystem newCoOrdinateSystem, bool copyProperties, QUndoCommand *pParent)
+                                                             CoOrdinateSystem newCoOrdinateSystem, bool copyProperties, QString oldVersion,
+                                                             QString newVersion, QString oldUsesAnnotationString,
+                                                             QString newUsesAnnotationString, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpGraphicsView = pGraphicsView;
   mOldCoOrdinateSystem = oldCoOrdinateSystem;
   mNewCoOrdinateSystem = newCoOrdinateSystem;
   mCopyProperties = copyProperties;
+  mOldVersion = oldVersion;
+  mNewVersion = newVersion;
+  mOldUsesAnnotationString = oldUsesAnnotationString;
+  mNewUsesAnnotationString = newUsesAnnotationString;
   setText(QString("Update %1 CoOrdinate System").arg(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
 }
 
@@ -982,6 +988,14 @@ void UpdateCoOrdinateSystemCommand::redo()
     pGraphicsView->addClassAnnotation();
     pGraphicsView->scene()->update();
   }
+  // version
+  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  QString versionAnnotation = QString("annotate=version(\"%1\")").arg(mNewVersion);
+  if (pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), versionAnnotation)) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version = mNewVersion;
+  }
+  // uses annotation
+  pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mNewUsesAnnotationString);
 }
 
 /*!
@@ -1011,4 +1025,12 @@ void UpdateCoOrdinateSystemCommand::undo()
     pGraphicsView->addClassAnnotation();
     pGraphicsView->scene()->update();
   }
+  // version
+  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  QString versionAnnotation = QString("annotate=version(\"%1\")").arg(mOldVersion);
+  if (pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), versionAnnotation)) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version = mOldVersion;
+  }
+  // uses annotation
+  pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mOldUsesAnnotationString);
 }

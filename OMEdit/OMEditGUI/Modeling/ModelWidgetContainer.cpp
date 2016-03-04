@@ -373,12 +373,10 @@ void GraphicsView::addComponentToClass(Component *pComponent)
       QList<QList<QString > > usesAnnotation = pMainWindow->getOMCProxy()->getUses(mpModelWidget->getLibraryTreeItem()->getNameStructure());
       QStringList newUsesAnnotation;
       for (int i = 0 ; i < usesAnnotation.size() ; i++) {
-        for (int j = 0 ; j < usesAnnotation.at(i).size() ; j++) {
-          if (usesAnnotation.at(i).at(0).compare(packageName) == 0) {
-            return; // if the package is already in uses annotation of class then simply return without doing anything.
-          } else {
-            newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(usesAnnotation.at(i).at(0)).arg(usesAnnotation.at(i).at(1)));
-          }
+        if (usesAnnotation.at(i).at(0).compare(packageName) == 0) {
+          return; // if the package is already in uses annotation of class then simply return without doing anything.
+        } else {
+          newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(usesAnnotation.at(i).at(0)).arg(usesAnnotation.at(i).at(1)));
         }
       }
       // if the package has version only then add the uses annotation
@@ -1272,7 +1270,7 @@ void GraphicsView::addClassAnnotation(bool alwaysAdd)
 void GraphicsView::showGraphicsViewProperties()
 {
   GraphicsViewProperties *pGraphicsViewProperties = new GraphicsViewProperties(this);
-  pGraphicsViewProperties->show();
+  pGraphicsViewProperties->exec();
 }
 
 /*!

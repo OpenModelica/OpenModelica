@@ -298,6 +298,9 @@ QString Helper::tlmCoSimulation;
 QString Helper::running;
 QString Helper::finished;
 QString Helper::newVariable;
+QString Helper::library;
+QString Helper::moveUp;
+QString Helper::moveDown;
 
 void Helper::initHelperVariables()
 {
@@ -489,6 +492,9 @@ void Helper::initHelperVariables()
   Helper::running = tr("Running");
   Helper::finished = tr("Finished");
   Helper::newVariable = tr("<New Variable>");
+  Helper::library = tr("Library");
+  Helper::moveUp = tr("Move Up");
+  Helper::moveDown = tr("Move Down");
 }
 
 QString GUIMessages::getMessage(int type)
@@ -555,6 +561,8 @@ QString GUIMessages::getMessage(int type)
       return tr("The file <b>%1</b> is not a valid Modelica file. The file format is not supported. You can only open <b>%2</b>.");
     case ENTER_VALID_NUMBER:
       return tr("Enter a valid number value for <b>%1</b>.");
+    case ENTER_VALUE:
+      return tr("Enter a value for <b>%1</b>.");
     case ITEM_DROPPED_ON_ITSELF:
       return tr("You cannot drop an item on itself.");
     case MAKE_REPLACEABLE_IF_PARTIAL:

@@ -371,6 +371,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
 #else /* Qt4 */
   mpPointsTableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
 #endif
+  mpPointsTableWidget->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
   QStringList headerLabels;
   headerLabels << "X" << "Y";
   mpPointsTableWidget->setHorizontalHeaderLabels(headerLabels);
@@ -690,6 +691,8 @@ void ShapePropertiesDialog::saveShapeProperties()
 
 bool ShapePropertiesDialog::applyShapeProperties()
 {
+  // we need to set focus on the OK button otherwise QTableWidget doesn't read any active cell editing value.
+  mpOkButton->setFocus(Qt::ActiveWindowFocusReason);
   // save the old annotation before applying anything.
   mOldAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
   /* validate points */

@@ -186,7 +186,8 @@ class UpdateCoOrdinateSystemCommand : public QUndoCommand
 {
 public:
   UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem, CoOrdinateSystem newCoOrdinateSystem,
-                                bool copyProperties, QUndoCommand *pParent = 0);
+                                bool copyProperties, QString oldVersion, QString newVersion, QString oldUsesAnnotationString,
+                                QString newUsesAnnotationString, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
@@ -194,6 +195,10 @@ private:
   CoOrdinateSystem mOldCoOrdinateSystem;
   CoOrdinateSystem mNewCoOrdinateSystem;
   bool mCopyProperties;
+  QString mOldVersion;
+  QString mNewVersion;
+  QString mOldUsesAnnotationString;
+  QString mNewUsesAnnotationString;
 };
 
 class UpdateClassExperimentAnnotationCommand : public QUndoCommand
