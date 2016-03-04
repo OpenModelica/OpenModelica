@@ -92,7 +92,7 @@ org.openmodelica.test.TestRecord \
 org.openmodelica.test.TestSmartProxy \
 org.openmodelica.test.TestDefinitionsParser
 
-antlr_compile = @"$(JAVA)" -jar $(antlr) -fo src/org/openmodelica/corba/parser
+antlr_compile = "$(JAVA)" -jar $(antlr) -fo src/org/openmodelica/corba/parser
 
 build: modelica_java.jar
 
@@ -101,19 +101,16 @@ build: modelica_java.jar
 clean:
 	rm -rf bin-jar modelica_java.jar log.txt $(grammars:%.g=%Lexer.java) $(grammars:%.g=%Parser.java) $(grammars:%.g=%.tokens)
 
+# ANTLR gives errors with Java8, but still generates the files
 %Lexer.java: %.g
-	$(antlr_compile) $<
+	-$(antlr_compile) $<
+	test -f "$@"
 %Parser.java: %.g
-	$(antlr_compile) $<
+	-$(antlr_compile) $<
+	test -f "$@"
 %.tokens: %.g
-	$(antlr_compile) $<
-
-%Lexer.java: %.g
-	$(antlr_compile) $<
-%Parser.java: %.g
-	$(antlr_compile) $<
-%.tokens: %.g
-	$(antlr_compile) $<
+	-$(antlr_compile) $<
+	test -f "$@"
 
 install-nomodelica:
 	cp $(antlr) $(antlr_depends) $(OMBUILDDIR)/share/omc/java
