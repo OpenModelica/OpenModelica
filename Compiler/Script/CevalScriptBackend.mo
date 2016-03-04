@@ -830,7 +830,7 @@ algorithm
     case (cache,_,"getClassInformation",_,st,_)
       then (cache,Values.TUPLE({Values.STRING(""),Values.STRING(""),Values.BOOL(false),Values.BOOL(false),Values.BOOL(false),Values.STRING(""),
                                 Values.BOOL(false),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.ARRAY({},{0}),
-                                Values.BOOL(false),Values.BOOL(false)}),st);
+                                Values.BOOL(false),Values.BOOL(false),Values.STRING(""),Values.STRING("")}),st);
 
     case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       algorithm
@@ -6449,7 +6449,7 @@ protected function getClassInformation
   input Absyn.Program p;
   output Values.Value res_1;
 protected
-  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol;
+  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol,version,preferredView;
   String dim_str,lastIdent;
   Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly,isProtectedClass,isDocClass;
   Absyn.Restriction restr;
@@ -6469,6 +6469,8 @@ algorithm
     isProtectedClass := Interactive.isProtectedClass(classPath, lastIdent, p);
   end if;
   isDocClass := Interactive.getDocumentationClassAnnotation(path, p);
+  version := CevalScript.getPackageVersion(path, p);
+  Absyn.STRING(preferredView) := Interactive.getNamedAnnotation(path, p, Absyn.IDENT("preferredView"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
   res_1 := Values.TUPLE({
     Values.STRING(res),
     Values.STRING(cmt),
@@ -6483,7 +6485,9 @@ algorithm
     Values.INTEGER(ec),
     getClassDimensions(cdef),
     Values.BOOL(isProtectedClass),
-    Values.BOOL(isDocClass)
+    Values.BOOL(isDocClass),
+    Values.STRING(version),
+    Values.STRING(preferredView)
   });
 end getClassInformation;
 

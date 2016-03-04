@@ -3658,6 +3658,8 @@ function getClassInformation
   output String dimensions[:];
   output Boolean isProtectedClass;
   output Boolean isDocumentationClass;
+  output String version;
+  output String preferredView;
 external "builtin";
 annotation(
   Documentation(info="<html>

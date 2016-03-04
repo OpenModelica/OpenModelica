@@ -1689,7 +1689,7 @@ algorithm
   end match;
 end getVariableNames;
 
-protected function getPackageVersion
+public function getPackageVersion
   input Absyn.Path path;
   input Absyn.Program p;
   output String version;
