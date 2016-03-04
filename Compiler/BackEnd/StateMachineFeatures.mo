@@ -1986,7 +1986,7 @@ algorithm
     end for;
     // If refinement was possible, update hierarchy level and return refined composition
     if wasRefined then
-      refiningNew := listReverse(refiningNew);
+      refiningNew := MetaModelica.Dangerous.listReverseInPlace(refiningNew);
       refiningSuper := arrayUpdate(refiningSuper, i, (crefState,refiningNew));
       cOut := R(crefIS, refiningSuper);
       return;

@@ -597,7 +597,7 @@ algorithm
     outEquations := eq::outEquations;
   end for;
 
-  outEquations := listReverse(outEquations);
+  outEquations := MetaModelica.Dangerous.listReverseInPlace(outEquations);
 end traverseExpsOfEquationList;
 
 public function traverseExpsOfEquationList_WithStop "author: Frenkel TUD 2012-09
@@ -1095,7 +1095,7 @@ algorithm
     outExpl := e :: outExpl;
   end for;
 
-   outExpl := listReverse(outExpl);
+   outExpl := MetaModelica.Dangerous.listReverseInPlace(outExpl);
 end traverseExpsOfExpList;
 
 protected function traverseExpsOfExpList_WithStop<T> "author Frenkel TUD

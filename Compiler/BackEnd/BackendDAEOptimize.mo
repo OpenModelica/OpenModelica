@@ -102,7 +102,7 @@ algorithm
       else eq::removedEqsList;
     end match;
   end for;
-  shared.removedEqs := BackendEquation.listEquation(listReverse(removedEqsList));
+  shared.removedEqs := BackendEquation.listEquation(MetaModelica.Dangerous.listReverseInPlace(removedEqsList));
   outDAE.shared := shared;
 end simplifyAllExpressions;
 
@@ -4291,7 +4291,7 @@ algorithm
             end if;
             expLst := e :: expLst;
           end for; // lhs
-          left := DAE.TUPLE(listReverse(expLst));
+          left := DAE.TUPLE(MetaModelica.Dangerous.listReverseInPlace(expLst));
           eqn := BackendDAE.COMPLEX_EQUATION(size, left, right, source, attr);
           eqns := BackendEquation.setAtIndex(eqns, i, eqn);
         end if; // lhs <-> rhs

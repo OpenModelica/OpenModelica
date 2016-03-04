@@ -534,7 +534,7 @@ algorithm
 
       // get the equation that will be replaced and the rest
       (crossEqs,eqs,_) = List.intersection1OnTrue(loop1,eqCrossLstIn,intEq);  // replace a crossEq in the loop
-      (replEqs,_,_) = List.intersection1OnTrue(replEqsIn,loop1,intEq);  // just consider the already replaced equations in this loop
+      replEqs = List.intersectionOnTrue(replEqsIn,loop1,intEq);  // just consider the already replaced equations in this loop
 
       // first try to replace a non cross node, otherwise an already replaced eq, or if none of them is available take a crossnode (THIS IS NOT YET CLEAR)
       if not listEmpty(eqs) then
@@ -909,7 +909,7 @@ algorithm
         varEqs = List.map1(vars,Array.getIndexFirst,mT);
         eqs = List.flatten(varEqs);
         eqs = List.unique(eqs);
-        (eqs,_,_) = List.intersection1OnTrue(eqs,loopIn,intEq);
+        eqs = List.intersectionOnTrue(eqs,loopIn,intEq);
         next = listHead(eqs);
         rest = List.deleteMember(loopIn,next);
         rest = sortLoop(rest,m,mT,next::sortLoopIn);
@@ -1141,7 +1141,7 @@ protected
   list<Integer> eqVars,crossVars;
 algorithm
   eqVars := arrayGet(mIn,eq);
-  (crossVars,_,_) := List.intersection1OnTrue(eqVars,varCrossLst,intEq);
+  crossVars := List.intersectionOnTrue(eqVars,varCrossLst,intEq);
   numCrossVars := listLength(crossVars);
   if numCrossVars == 0 then
     arrayGetAppendLst(1,{eq},priorities);
@@ -1173,7 +1173,7 @@ algorithm
   // check if its worth to resolve the loop. Therefore compare the amount of vars in and outside the loop
   (_,nonLoopVars,_) := List.intersection1OnTrue(allVars,loopVars,intEq);
   //print("nonLoopVars : "+stringDelimitList(List.map(nonLoopVars,intString),",")+"\n");
-  (eqCrossLst,_,_) := List.intersection1OnTrue(loopVars,eqCrossLst,intEq);
+  eqCrossLst := List.intersectionOnTrue(loopVars,eqCrossLst,intEq);
   numInLoop := listLength(loopVars);
   numOutLoop := listLength(nonLoopVars);
   r1 := intGe(numInLoop,numOutLoop-1) and intLe(numInLoop,6);
@@ -1992,7 +1992,7 @@ algorithm
         //BackendDump.dumpIncidenceMatrix(m);
         vars1 = List.map(arrayGet(me,startEq),Util.tuple21);
         vars2 = List.map(arrayGet(me,nextEq),Util.tuple21);
-        (vars1,_,_) = List.intersection1OnTrue(vars1,vars2,intEq);
+        vars1 = List.intersectionOnTrue(vars1,vars2,intEq);
         numEqs = List.map(List.map1(vars1,Array.getIndexFirst,meT),listLength);
         (_,vars1) = List.filter1OnTrueSync(numEqs,intEq,2,vars1);
         sharedVar = listHead(vars1);

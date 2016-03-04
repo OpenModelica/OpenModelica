@@ -161,7 +161,7 @@ algorithm
     outComps := acomp :: outComps;
   end for;
 
-  outComps := listReverse(outComps);
+  outComps := MetaModelica.Dangerous.listReverseInPlace(outComps);
 end analyseStrongComponentsScalar;
 
 protected function analyseStrongComponentScalar "author: Frenkel TUD 2011-05"

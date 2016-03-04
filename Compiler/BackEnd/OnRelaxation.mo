@@ -571,7 +571,7 @@ algorithm
         vlst = List.map1r(rlst, BackendVariable.getVarAt, vars);
         blst = List.map(vlst, BackendVariable.isFlowVar);
         foundflow = Util.boolOrList(blst);
-        rlst = selectNonFlows(rlst, blst, {});
+        rlst = selectNonFlows(rlst, blst);
         foundflow = generateCliquesResidual1(rlst, ass1, ass2, m, mt, mark, rowmarks, colummarks, foundflow, vars);
         generateCliquesResidual2(rlst, ass1, ass2, m, mt, mark+1, rowmarks, colummarks, o::partner);
         constraints = if not foundflow then listAppend(o::partner, iconstraints) else iconstraints;
@@ -598,82 +598,53 @@ protected function generateCliquesResidual1 "author: Frenkel TUD 2012-05"
   input array<Integer> colummarks;
   input Boolean ifoundFlow;
   input BackendDAE.Variables vars;
-  output Boolean ofoundFlow;
+  output Boolean ofoundFlow = ifoundFlow;
+protected
+  Integer e;
+  list<Integer> next, rlst;
+  Boolean b1;
+  list<Boolean> blst;
+  list<BackendDAE.Var> vlst;
 algorithm
-  ofoundFlow := matchcontinue(rows, ass1, ass2, m, mt, mark, rowmarks, colummarks, ifoundFlow, vars)
-    local
-      Integer e, r;
-      list<Integer> rest, next, rlst;
-      Boolean b, b1;
-      list<Boolean> blst;
-      list<BackendDAE.Var> vlst;
-    case ({}, _, _, _, _, _, _, _, _, _)
-      then
-        ifoundFlow;
-    case (r::rest, _, _, _, _, _, _, _, _, _)
-      equation
-        //  print("check Var " + intString(r)  + " ass[e]: " + intString(ass1[r]) + "\n");
-        false = intEq(rowmarks[r], mark);
-        // remove orphans
-        next = List.select1(mt[r], isNoResOrphan, ass2);
-        // remove visited
-        next = List.select2(next, unmarked, colummarks, mark);
-        // remove assigned equation of this row
-        next = List.removeOnTrue(ass1[r], intEq, next);
-        //  print("Eqns use Var " + intString(r) + " : " + stringDelimitList(List.map(next, intString), ", ") + "\n");
-        false = listEmpty(next);
-      then
-        generateCliquesResidual1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, ifoundFlow, vars);
-    case (r::rest, _, _, _, _, _, _, _, _, _)
-      equation
-        false = intEq(rowmarks[r], mark);
-        // remove orphans
-        next = List.select1(mt[r], isNoResOrphan, ass2);
-        // remove visited
-        next = List.select2(next, unmarked, colummarks, mark);
-        // remove assigned equation of this row
-        next = List.removeOnTrue(ass1[r], intEq, next);
-        true = listEmpty(next);
+  for r in rows loop
+    if not intEq(rowmarks[r], mark) then
+      // remove orphans
+      next := List.select1(mt[r], isNoResOrphan, ass2);
+      // remove visited
+      next := List.select2(next, unmarked, colummarks, mark);
+      // remove assigned equation of this row
+      next := List.removeOnTrue(ass1[r], intEq, next);
+      if listEmpty(next) then
         arrayUpdate(rowmarks, r, mark);
-        e = ass1[r];
+        e := ass1[r];
         // print("Go From " + intString(r) + " to " + intString(e) + "\n");
         arrayUpdate(colummarks, e, mark);
-        rlst = ass2[e];
-        next = List.fold1(rlst, List.removeOnTrue, intEq, m[e]);
-        vlst = List.map1r(next, BackendVariable.getVarAt, vars);
-        blst = List.map(vlst, BackendVariable.isFlowVar);
-        b1 = Util.boolOrList(blst);
-        next = selectNonFlows(next, blst, {});
-        b = generateCliquesResidual1(next, ass1, ass2, m, mt, mark, rowmarks, colummarks, b1 or ifoundFlow, vars);
-      then
-        generateCliquesResidual1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, b, vars);
-    case (_::rest, _, _, _, _, _, _, _, _, _)
-      then
-        generateCliquesResidual1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, ifoundFlow, vars);
-  end matchcontinue;
+        rlst := ass2[e];
+        next := List.fold1(rlst, List.removeOnTrue, intEq, m[e]);
+        vlst := List.map1r(next, BackendVariable.getVarAt, vars);
+        blst := List.map(vlst, BackendVariable.isFlowVar);
+        b1 := Util.boolOrList(blst);
+        next := selectNonFlows(next, blst);
+        ofoundFlow := generateCliquesResidual1(next, ass1, ass2, m, mt, mark, rowmarks, colummarks, b1 or ofoundFlow, vars);
+      end if;
+    end if;
+  end for;
 end generateCliquesResidual1;
 
 protected function selectNonFlows
   input list<Integer> rows;
   input list<Boolean> flowFlag;
-  input list<Integer> iAcc;
-  output list<Integer> oAcc;
+  output list<Integer> oAcc = {};
+protected
+  list<Boolean> brest = flowFlag;
+  Boolean b;
 algorithm
-  oAcc := match(rows, flowFlag, iAcc)
-    local
-      Integer r;
-      list<Integer> rest;
-      list<Boolean> brest;
-    case({}, _, _)
-      then
-        iAcc;
-    case(r::rest, false::brest, _)
-      then
-        selectNonFlows(rest, brest, r::iAcc);
-    case(_::rest, true::brest, _)
-      then
-        selectNonFlows(rest, brest, iAcc);
-  end match;
+  for r in rows loop
+    b::brest := brest;
+    if not b then
+      oAcc := r::oAcc;
+    end if;
+  end for;
 end selectNonFlows;
 
 protected function generateCliquesResidual2 "author: Frenkel TUD 2012-05"
@@ -687,7 +658,7 @@ protected function generateCliquesResidual2 "author: Frenkel TUD 2012-05"
   input array<Integer> colummarks;
   input list<Integer> orphan;
 algorithm
-  _ := matchcontinue(eqns, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan)
+  _ := match(eqns, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan)
     local
       Integer e, r;
       list<Integer> rest, lst, rlst, lst1;
@@ -695,8 +666,9 @@ algorithm
       then
         ();
     case (r::rest, _, _, _, _, _, _, _, _)
+      guard
+        not intEq(rowmarks[r], mark)
       equation
-        false = intEq(rowmarks[r], mark);
         // marked?
         e = ass1[r];
         rlst = ass2[e];
@@ -718,7 +690,7 @@ algorithm
         generateCliquesResidual2(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan);
       then
         ();
-  end matchcontinue;
+  end match;
 end generateCliquesResidual2;
 
 protected function prepairOrphansOrder "author: Frenkel TUD 2012-07"
@@ -738,7 +710,7 @@ protected function prepairOrphansOrder "author: Frenkel TUD 2012-07"
   output list<Integer> oroots;
   output list<Integer> oconstraints;
 algorithm
-  (omark, oroots, oconstraints) := matchcontinue(inOrphans, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphans, vars, iroots, iconstraints)
+  (omark, oroots, oconstraints) := match(inOrphans, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphans, vars, iroots, iconstraints)
     local
       list<Integer> rest, roots, constraints, elst, rlst;
       Integer o;
@@ -749,8 +721,9 @@ algorithm
       then
        (mark, iroots, iconstraints);
     case (o::rest, _, _, _, _, _, _, _, _, _, _, _)
+      guard
+        not intEq(rowmarks[o], mark)
       equation
-        false = intEq(rowmarks[o], mark);
         arrayUpdate(rowmarks, o, mark);
         elst = mt[o];
         rlst = List.flatten(List.map1r(elst, arrayGet, ass2));
@@ -772,7 +745,7 @@ algorithm
         (omark, roots, constraints) = prepairOrphansOrder(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphans, vars, iroots, iconstraints);
       then
         (omark, roots, constraints);
-  end matchcontinue;
+  end match;
 end prepairOrphansOrder;
 
 protected function prepairOrphansOrder1 "author: Frenkel TUD 2012-05"
@@ -789,61 +762,38 @@ protected function prepairOrphansOrder1 "author: Frenkel TUD 2012-05"
   input list<Integer> prer;
   input Boolean ifoundFlow;
   input BackendDAE.Variables vars;
-  output Boolean ofoundFlow;
+  output Boolean ofoundFlow = ifoundFlow;
+protected
+  list<Integer> next, r, elst;
+  Boolean b1;
+  list<Boolean> blst;
+  list<BackendDAE.Var> vlst;
 algorithm
-  ofoundFlow := matchcontinue(eqns, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, prer, ifoundFlow, vars)
-    local
-      Integer e;
-      list<Integer> rest, next, r, elst;
-      Boolean b, b1;
-      list<Boolean> blst;
-      list<BackendDAE.Var> vlst;
-    case ({}, _, _, _, _, _, _, _, _, _, _, _, _)
-      then
-        ifoundFlow;
-    case (e::rest, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        //  print("check Eqn " + intString(e)  + " ass[e]: " + stringDelimitList(List.map(ass2[e], intString), ", ") + "\n");
-        false = intEq(colummarks[e], mark);
-        // remove orphans
-        next = List.select1(m[e], isNoOrphan, ass1);
-        // remove visited
-        next = List.select2(next, unmarked, rowmarks, mark);
-        // remove assigned
-        next = List.fold1(ass2[e], List.removeOnTrue, intEq, next);
-        //  print("Used Vars of " + intString(e) + " : " + stringDelimitList(List.map(next, intString), ", ") + "\n");
-        false = listEmpty(next);
-      then
-        prepairOrphansOrder1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, prer, ifoundFlow, vars);
-    case (e::rest, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        false = intEq(colummarks[e], mark);
-        // remove orphans
-        next = List.select1(m[e], isNoOrphan, ass1);
-        // remove visited
-        next = List.select2(next, unmarked, rowmarks, mark);
-        // remove assigned
-        next = List.fold1(ass2[e], List.removeOnTrue, intEq, next);
-        true = listEmpty(next);
+  for e in eqns loop
+    if not intEq(colummarks[e], mark) then
+      // remove orphans
+      next := List.select1(m[e], isNoOrphan, ass1);
+      // remove visited
+      next := List.select2(next, unmarked, rowmarks, mark);
+      // remove assigned
+      next := List.fold1(ass2[e], List.removeOnTrue, intEq, next);
+      if listEmpty(next) then
         arrayUpdate(colummarks, e, mark);
-        r = ass2[e];
+        r := ass2[e];
         // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(r, intString), ", ") + "\n");
         List.map2_0(r, doMark, rowmarks, mark);
-        elst = List.select1(List.map1r(r, arrayGet, ass1), intGt, 0);
-        next = List.flatten(List.map1r(r, arrayGet, mt));
-        next = List.fold1(elst, List.removeOnTrue, intEq, next);
+        elst := List.select1(List.map1r(r, arrayGet, ass1), intGt, 0);
+        next := List.flatten(List.map1r(r, arrayGet, mt));
+        next := List.fold1(elst, List.removeOnTrue, intEq, next);
         List.map2_0(r, addPreOrphan, preorphan, orphans);
-        vlst = List.map1r(r, BackendVariable.getVarAt, vars);
-        blst = List.map(vlst, BackendVariable.isFlowVar);
-        b1 = Util.boolOrList(blst);
+        vlst := List.map1r(r, BackendVariable.getVarAt, vars);
+        blst := List.map(vlst, BackendVariable.isFlowVar);
+        b1 := Util.boolOrList(blst);
         // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(next, intString), ", ") + "\n");
-        b = prepairOrphansOrder1(next, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, r, b1 or ifoundFlow, vars);
-      then
-        prepairOrphansOrder1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, prer, b, vars);
-    case (_::rest, _, _, _, _, _, _, _, _, _, _, _, _)
-      then
-        prepairOrphansOrder1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, prer, ifoundFlow, vars);
-  end matchcontinue;
+        ofoundFlow := prepairOrphansOrder1(next, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, r, b1 or ofoundFlow, vars);
+      end if;
+    end if;
+  end for;
 end prepairOrphansOrder1;
 
 protected function prepairOrphansOrder2 "author: Frenkel TUD 2012-07"
@@ -1816,7 +1766,7 @@ protected function removeFromCol "author: Frenkel TUD 2012-05"
   input list<tuple<Integer, DAE.Exp>> inAcc;
   output list<tuple<Integer, DAE.Exp>> outAcc;
 algorithm
-  outAcc := matchcontinue(i, inTpl, inAcc)
+  outAcc := match(i, inTpl, inAcc)
     local
       DAE.Exp e;
       Integer c;
@@ -1825,8 +1775,9 @@ algorithm
         then
           listReverse(inAcc);
       case (_, (c, _)::rest, _)
+        guard
+          intEq(i, c)
         equation
-          true = intEq(i, c);
           acc = listReverse(inAcc);
           acc = listAppend(acc, rest);
         then
@@ -1834,7 +1785,7 @@ algorithm
       case (_, (c, e)::rest, _)
         then
           removeFromCol(i, rest, (c, e)::inAcc);
-  end matchcontinue;
+  end match;
 end removeFromCol;
 
 protected function makeDummyVar "author: Frenkel TUD 2012-05"
@@ -2772,7 +2723,7 @@ algorithm
       equation
         r = ass2[c];
         //  print("Process Colum " + intString(c) + " Rows " + stringDelimitList(List.map(r, intString), ", ") + "  " + boolString(b) +"\n");
-        (colums1, b2) = getIndexQueque1(r, c, mT, mark, rowmarks, {}, false);
+        (colums1, b2) = getIndexQueque1(r, c, mT, mark, rowmarks);
         //  BackendDump.debuglst((colums1, intString, ", ", "\n"));
         b1 = not listEmpty(colums);
         // cons next rows in front to jump over marked nodes
@@ -2790,36 +2741,21 @@ protected function getIndexQueque1
   input BackendDAE.IncidenceMatrixT mT;
   input Integer mark;
   input array<Integer> rowmarks;
-  input list<Integer> icolums;
-  input Boolean ib;
-  output list<Integer> ocolums;
-  output Boolean ob;
+  output list<Integer> ocolums = {};
+  output Boolean ob = false;
+protected
+  list<Integer> colums;
 algorithm
-  (ocolums, ob) := matchcontinue (rows, c, mT, mark, rowmarks, icolums, ib)
-    local
-      Integer r;
-      list<Integer> rest, colums;
-    case ({}, _, _, _, _, _, _)
-      equation
-        rest = List.unique(icolums);
-      then
-        (rest, ib);
-    case (r::rest, _, _, _, _, _, _)
-      equation
-        true = intEq(rowmarks[r], mark);
-        //  print("Go from: " + intString(c) + " to " + intString(r) + "\n");
-        colums = List.select(mT[r], Util.intPositive);
-        colums = List.removeOnTrue(c, intEq , colums);
-        colums = listAppend(colums, icolums);
-        (ocolums, ob) = getIndexQueque1(rest, c, mT, mark, rowmarks, colums, true);
-      then
-        (ocolums, ob);
-    case (_::rest, _, _, _, _, _, _)
-      equation
-        (ocolums, ob) = getIndexQueque1(rest, c, mT, mark, rowmarks, icolums, ib);
-      then
-        (ocolums, ob);
-  end matchcontinue;
+  for r in rows loop
+    if intEq(rowmarks[r], mark) then
+      //  print("Go from: " + intString(c) + " to " + intString(r) + "\n");
+      ob := true;
+      colums := List.select(mT[r], Util.intPositive);
+      colums := List.removeOnTrue(c, intEq , colums);
+      ocolums := listAppend(colums, ocolums);
+    end if;
+  end for;
+  ocolums := List.unique(ocolums);
 end getIndexQueque1;
 
 protected function unmarked

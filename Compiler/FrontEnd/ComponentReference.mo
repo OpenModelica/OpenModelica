@@ -140,7 +140,7 @@ protected function hashSubscript "help function"
   input DAE.Subscript sub;
   output Integer hash;
 algorithm
- hash := matchcontinue(sub)
+ hash := match(sub)
    local
      DAE.Exp exp;
      Integer i;
@@ -150,7 +150,7 @@ algorithm
    case(DAE.SLICE(exp)) then Expression.hashExp(exp);
    case(DAE.INDEX(exp)) then Expression.hashExp(exp);
    case(DAE.WHOLE_NONEXP(exp)) then Expression.hashExp(exp);
- end matchcontinue;
+ end match;
 end hashSubscript;
 
 public function createEmptyCrefMemory
@@ -809,7 +809,7 @@ protected function crefLexicalCompareubsAtEnd2
   input list<Integer> inSubs2;
   output Integer outCompared;
 algorithm
-  outCompared := matchcontinue(identsCompared, inSubs1, inSubs2)
+  outCompared := match(identsCompared, inSubs1, inSubs2)
     local
       Integer sub1, sub2;
       list<Integer> rest1, rest2;
@@ -832,14 +832,14 @@ algorithm
       then 1;
 
     case (0, sub1::rest1, sub2::rest2)
-      equation
-        true = intEq(sub1,sub2);
+      guard
+        intEq(sub1,sub2)
        then
          crefLexicalCompareubsAtEnd2(0, rest1,rest2);
 
     case (0, sub1::_, sub2::_)
-      equation
-        true = intGe(sub1,sub2);
+      guard
+        intGe(sub1,sub2)
        then 1;
 
     case (0, _::_, _::_)
@@ -851,7 +851,7 @@ algorithm
        then
          fail();
 
-  end matchcontinue;
+  end match;
 end crefLexicalCompareubsAtEnd2;
 
 public function crefContainedIn
@@ -2566,21 +2566,15 @@ end stripArrayCref;
 protected function removeSliceSubs "
 helper function for stripCrefIdentSliceSubs"
   input list<DAE.Subscript> subs;
-  output list<DAE.Subscript> osubs;
+  output list<DAE.Subscript> osubs = {};
 algorithm
-  osubs := matchcontinue(subs)
-    local DAE.Subscript s; list<DAE.Subscript> rest;
-
-    case({}) then {};
-
-    case(DAE.SLICE()::rest) then removeSliceSubs(rest);
-
-    case (s::rest)
-      equation
-        osubs = removeSliceSubs(rest);
-      then
-        s::osubs;
-  end matchcontinue;
+  for s in subs loop
+    osubs := match s
+      case DAE.SLICE() then osubs;
+      else s::osubs;
+    end match;
+  end for;
+  osubs := MetaModelica.Dangerous.listReverseInPlace(osubs);
 end removeSliceSubs;
 
 public function crefStripSubs "

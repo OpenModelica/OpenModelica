@@ -491,7 +491,7 @@ public function insertListSorted<T>
     output Boolean inRes;
   end CompareFunc;
 algorithm
-  outList := listReverse(insertListSorted1(inList, inList2, inCompFunc, {}));
+  outList := listReverseInPlace(insertListSorted1(inList, inList2, inCompFunc, {}));
 end insertListSorted;
 
 protected function insertListSorted1<T>
@@ -716,7 +716,7 @@ algorithm
     outList := {};
   else
     _ :: outList := listReverse(inList);
-    outList := listReverse(outList);
+    outList := listReverseInPlace(outList);
   end if;
 end stripLast;
 
@@ -1306,7 +1306,7 @@ public function splitLast<T>
   output list<T> outRest;
 algorithm
   outLast :: outRest := listReverse(inList);
-  outRest := listReverse(outRest);
+  outRest := listReverseInPlace(outRest);
 end splitLast;
 
 public function splitEqualParts<T>
@@ -1508,30 +1508,23 @@ public function intersectionIntN
   input list<Integer> inList2;
   input Integer inN;
   output list<Integer> outResult;
+protected
+  array<Integer> a;
 algorithm
-  outResult := match(inList1,inList2,inN)
-    local
-      array<Integer> a;
-
-    case (_,_,_) guard(intGt(inN, 0))
-      equation
-        a = arrayCreate(inN, 0);
-        a = addPos(inList1, a, 1);
-        a = addPos(inList2, a, 1);
-      then
-        intersectionIntVec(a, inList1, inN, {});
-
-    else {};
-
- end match;
+  if inN > 0 then
+    a := arrayCreate(inN, 0);
+    a := addPos(inList1, a, 1);
+    a := addPos(inList2, a, 1);
+    outResult := intersectionIntVec(a, inList1);
+  else
+    outResult := {};
+  end if;
 end intersectionIntN;
 
 protected function intersectionIntVec
   "Helper function to intersectionIntN."
   input array<Integer> inArray;
   input list<Integer> inList1;
-  input Integer inIndex;
-  input list<Integer> iAcc;
   output list<Integer> outResult = {};
 algorithm
   for i in inList1 loop
@@ -1771,7 +1764,7 @@ algorithm
     outUnion := unionElt(e, outUnion);
   end for;
 
-  outUnion := listReverse(outUnion);
+  outUnion := listReverseInPlace(outUnion);
 end unionAppendonUnion;
 
 public function unionOnTrue<T>
@@ -4163,8 +4156,8 @@ algorithm
     outList2 := ret2 :: outList2;
   end for;
 
-  outList1 := listReverse(outList1);
-  outList2 := listReverse(outList2);
+  outList1 := listReverseInPlace(outList1);
+  outList2 := listReverseInPlace(outList2);
 end threadMap_2;
 
 public function threadMapList<T1, T2, TO>
@@ -4213,8 +4206,8 @@ algorithm
     outList2 := ret2 :: outList2;
   end for;
 
-  outList1 := listReverse(outList1);
-  outList2 := listReverse(outList2);
+  outList1 := listReverseInPlace(outList1);
+  outList2 := listReverseInPlace(outList2);
 end threadMapList_2;
 
 public function threadTupleList<T1, T2>

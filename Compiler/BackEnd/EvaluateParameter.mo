@@ -1210,7 +1210,7 @@ algorithm
       sys.removedEqs := remEqsSys;
       systs2 := sys::systs2;
     end for;
-    systs2 := listReverse(systs2);
+    systs2 := MetaModelica.Dangerous.listReverseInPlace(systs2);
 
     // replace all init eqs, removed eqs, external var-bindings and alias var bindings, event-infos
     initEqs := shared.initialEqs;

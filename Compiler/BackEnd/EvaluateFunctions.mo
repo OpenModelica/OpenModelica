@@ -1053,7 +1053,7 @@ algorithm
         //print("scalars to check\n"+stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         false = listEmpty(scalars);
-        (constVars,_,_) = List.intersection1OnTrue(scalars,constCrefs,ComponentReference.crefEqual);
+        constVars = List.intersectionOnTrue(scalars,constCrefs,ComponentReference.crefEqual);
         //print("constVars\n"+stringDelimitList(List.map(constVars,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         const = intEq(listLength(scalars),listLength(constVars));

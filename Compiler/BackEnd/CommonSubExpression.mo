@@ -111,7 +111,7 @@ algorithm
 
     eqs := syst::eqs;
   end for;
-  eqs := listReverse(eqs);
+  eqs := MetaModelica.Dangerous.listReverseInPlace(eqs);
 
   System.tmpTickSetIndex(index, Global.backendDAE_cseIndex);
   outDAE := BackendDAE.DAE(eqs, shared);

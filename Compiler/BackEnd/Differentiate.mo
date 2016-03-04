@@ -2595,17 +2595,16 @@ algorithm
       tp = DAEUtil.getFunctionType(func);
       dtp = Types.extendsFunctionTypeArgs(tp, inputVarsDer, outputVarsDer, blst);
 
-      inputVars = listAppend(inputVars, inputVarsDer);
-      protectedVars = listAppend(protectedVars, protectedVarsDer);
-      funcbodyDer = listAppend(inputVars, outputVarsDer);
-      funcbodyDer = listAppend(funcbodyDer, protectedVars);
-
       //change output vars to protected vars and direction bidir
       newProtectedVars = List.map1(outputVars, DAEUtil.setElementVarVisibility, DAE.PROTECTED());
       newProtectedVars = List.map1(newProtectedVars, DAEUtil.setElementVarDirection, DAE.BIDIR());
-      funcbodyDer = listAppend(funcbodyDer, newProtectedVars);
 
-      funcbodyDer = listAppend(funcbodyDer, {DAE.ALGORITHM(DAE.ALGORITHM_STMTS(derbodyStmts), DAE.emptyElementSource)});
+      funcbodyDer = listAppend(newProtectedVars, {DAE.ALGORITHM(DAE.ALGORITHM_STMTS(derbodyStmts), DAE.emptyElementSource)});
+      funcbodyDer = listAppend(protectedVarsDer, funcbodyDer);
+      funcbodyDer = listAppend(protectedVars, funcbodyDer);
+      funcbodyDer = listAppend(outputVarsDer, funcbodyDer);
+      funcbodyDer = listAppend(inputVarsDer, funcbodyDer);
+      funcbodyDer = listAppend(inputVars, funcbodyDer);
 
       isImpure = DAEUtil.getFunctionImpureAttribute(func);
       dinl = DAEUtil.getFunctionInlineType(func);

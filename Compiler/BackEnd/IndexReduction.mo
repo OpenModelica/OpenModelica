@@ -1297,7 +1297,7 @@ algorithm
       osysts := syst :: osysts;
     end if;
   end for;
-  osysts := listReverse(osysts);
+  osysts := MetaModelica.Dangerous.listReverseInPlace(osysts);
 end mapdynamicStateSelection;
 
 protected function dynamicStateSelectionWork

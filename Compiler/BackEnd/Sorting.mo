@@ -117,7 +117,7 @@ algorithm
       arrayUpdate(onStack, eqn2, false);
       SCC := eqn2::SCC;
     end while;
-    outComponents := listReverse(SCC)::outComponents;
+    outComponents := MetaModelica.Dangerous.listReverseInPlace(SCC)::outComponents;
   end if;
 end StrongConnect;
 
@@ -194,7 +194,7 @@ algorithm
       arrayUpdate(onStack, eqn2, false);
       SCC := eqn2::SCC;
     end while;
-    outComponents := listReverse(SCC)::outComponents;
+    outComponents := MetaModelica.Dangerous.listReverseInPlace(SCC)::outComponents;
   end if;
 end StrongConnectTransposed;
 
