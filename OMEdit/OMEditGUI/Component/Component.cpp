@@ -1311,12 +1311,12 @@ void Component::hideResizerItems()
 void Component::getScale(qreal *sx, qreal *sy)
 {
   qreal angle = mTransformation.getRotateAngle();
-  if (transform().type() == QTransform::TxScale) {
+  if (transform().type() == QTransform::TxScale || transform().type() == QTransform::TxTranslate) {
     *sx = transform().m11() / (cos(angle * (M_PI / 180)));
     *sy = transform().m22() / (cos(angle * (M_PI / 180)));
   } else {
-    *sx = transform().m12() / sin(angle * (M_PI / 180));
-    *sy = -transform().m21() / sin(angle * (M_PI / 180));
+    *sx = transform().m12() / (sin(angle * (M_PI / 180)));
+    *sy = -transform().m21() / (sin(angle * (M_PI / 180)));
   }
 }
 
