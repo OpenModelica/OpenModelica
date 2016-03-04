@@ -858,6 +858,24 @@ function referenceDebugString<A>
 </html>"));
 end referenceDebugString;
 
+impure function isPresent
+  input OpenModelica.$Code.TypeName ident;
+  output Boolean b=true;
+annotation(Documentation(info="<html>
+<p>From Modelica 2.x:</p>
+<p>Returns true if the formal <strike>input or</strike> output argument <i>ident</i>
+is present as an actual argument of the function call. If the argument is not
+present, isPresent(ident) may return false [but may also return true e.g. for
+implementations that always compute all results]. isPresent() should be used for
+optimisation only and should not influence the results of outputs that are present
+in the output list. It can only be used in functions.</p>
+<p>OpenModelica returns false for other output formal parameters that are
+not present in the function call (except the first output, which is always
+considered present).</p>
+<p>OpenModelica gives a compile-time error if the variable is not an input or output formal parameter.</p>
+</html>"));
+end isPresent;
+
 package MetaModelica
 package Dangerous "Functions that skip bounds checking"
 

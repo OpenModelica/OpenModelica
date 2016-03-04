@@ -203,6 +203,7 @@ extern void boxptr_equality(threadData_t *,modelica_metatype, modelica_metatype)
 #define getGlobalRoot(X) nobox_getGlobalRoot(threadData,X)
 #define setGlobalRoot(X,V) boxptr_setGlobalRoot(threadData,mmc_mk_icon(X),V)
 #define valueConstructor(val) MMC_HDRCTOR(MMC_GETHDR(val))
+#define isPresent(X) ((out##X)!=NULL)
 
 extern modelica_metatype nobox_getGlobalRoot(threadData_t*,modelica_integer);
 extern void boxptr_setGlobalRoot(threadData_t*,modelica_metatype, modelica_metatype);

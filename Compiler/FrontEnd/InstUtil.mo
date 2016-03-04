@@ -8493,6 +8493,8 @@ algorithm
       list<DAE.MatchCase> cases;
       list<list<String>> unbounds;
     case (exp as DAE.SIZE(),arg) then (exp,false,arg);
+    case (exp as DAE.CALL(path=Absyn.IDENT("isPresent"), attr = DAE.CALL_ATTR(builtin = true)),arg)
+      then (exp,false,arg);
     case (exp as DAE.CREF(componentRef=cr),(unbound,info))
       equation
         b = listMember(ComponentReference.crefFirstIdent(cr),unbound);

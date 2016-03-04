@@ -6332,6 +6332,47 @@ algorithm
   outProperties := DAE.PROP(DAE.T_STRING_DEFAULT, DAE.C_CONST());
 end elabBuiltinGetInstanceName;
 
+protected function elabBuiltinIsPresent
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
+  input Prefix.Prefix inPrefix;
+  input SourceInfo info;
+  output FCore.Cache outCache = inCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+protected
+  String str;
+  Absyn.Direction direction;
+  Absyn.Exp exp;
+algorithm
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "isPresent", info);
+  if not FGraph.inFunctionScope(inEnv) then
+    Error.addSourceMessage(Error.IS_PRESENT_WRONG_SCOPE, {SCodeDump.restrString(FGraph.getScopeRestriction(FGraph.currentScope(inEnv)))}, info);
+  end if;
+  outExp := match listGet(inPosArgs, 1)
+    case Absyn.CREF(Absyn.CREF_IDENT(name=str))
+      algorithm
+        (outCache, DAE.TYPES_VAR(attributes=DAE.ATTR(direction=direction)), _, _, _, _) := Lookup.lookupIdentLocal(outCache, inEnv, str);
+        _ := match direction
+          case Absyn.BIDIR()
+            algorithm
+              Error.addSourceMessage(Error.IS_PRESENT_WRONG_DIRECTION, {}, info);
+            then fail();
+          else ();
+        end match;
+      then Expression.makeImpureBuiltinCall("isPresent", DAE.CREF(DAE.CREF_IDENT(str, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT)::{}, DAE.T_BOOL_DEFAULT);
+    case exp
+      algorithm
+        Error.addSourceMessage(Error.IS_PRESENT_INVALID_EXP, {Dump.printExpStr(exp)}, info);
+      then fail();
+  end match;
+
+  outProperties := DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR());
+end elabBuiltinIsPresent;
+
 protected function elabBuiltinVector
   "This function handles the built in vector operator."
   input FCore.Cache inCache;
@@ -6736,6 +6777,10 @@ algorithm
       equation
         true = Config.acceptMetaModelicaGrammar();
       then elabBuiltinNone;
+    case "isPresent"
+      equation
+        true = Config.acceptMetaModelicaGrammar();
+      then elabBuiltinIsPresent;
   end match;
 end elabBuiltinHandler;
 
