@@ -317,5 +317,26 @@ algorithm
   end for;
 end equalIgnoreSpace;
 
+function bytesToReadableUnit
+  input Integer bytes;
+  input Integer significantDigits=4;
+  input Real maxSizeInUnit=500 "If it is 1000, we print up to 1000GB before changing to X TB";
+  output String str;
+protected
+  constant Real TB = 1024^4, GB=1024^3, MB=1024^2, kB=1024;
+algorithm
+  if bytes > maxSizeInUnit*GB then
+    str := String(bytes/TB, significantDigits=significantDigits)+" TB";
+  elseif bytes > maxSizeInUnit*MB then
+    str := String(bytes/GB, significantDigits=significantDigits)+" GB";
+  elseif bytes > maxSizeInUnit*kB then
+    str := String(bytes/MB, significantDigits=significantDigits)+" MB";
+  elseif bytes > maxSizeInUnit then
+    str := String(bytes/kB, significantDigits=significantDigits)+" kB";
+  else
+    str := String(bytes);
+  end if;
+end bytesToReadableUnit;
+
 annotation(__OpenModelica_Interface="util");
 end StringUtil;

@@ -56,6 +56,7 @@ constant Integer flagsIndex = 16;
 constant Integer builtinGraphIndex = 17;
 constant Integer rewriteRulesIndex = 18;
 constant Integer stackoverFlowIndex = 19;
+constant Integer gcProfilingIndex = 20;
 
 // indexes in System.tick
 // ----------------------

@@ -56,6 +56,7 @@ import List;
 import Mod;
 import Patternm;
 import SCode;
+import StringUtil;
 
 public
 
@@ -2852,6 +2853,7 @@ public function execStatReset
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
   System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
+  setGlobalRoot(Global.gcProfilingIndex, GC.getProfStats());
 end execStatReset;
 
 public function execStat
@@ -2865,19 +2867,30 @@ public function execStat
 protected
   Real t, total;
   String timeStr, totalTimeStr, gcStr;
+  Integer memory, oldMemory, since, before;
+  GC.ProfStats stats, oldStats;
 algorithm
   if Flags.isSet(Flags.EXEC_STAT) then
+    (stats as GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before)) := GC.getProfStats();
+    memory := since+before;
+    oldStats := getGlobalRoot(Global.gcProfilingIndex);
+    (oldStats as GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before)) := oldStats;
+    oldMemory := since+before;
     t := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT);
     total := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
-    gcStr := GC.profStatsStr(GC.getProfStats(), head="", delimiter=" / ");
     timeStr := System.snprintff("%.4g", 20, t);
     totalTimeStr := System.snprintff("%.4g", 20, total);
     if Flags.isSet(Flags.GC_PROF) then
+      gcStr := GC.profStatsStr(stats, head="", delimiter=" / ");
       Error.addMessage(Error.EXEC_STAT_GC, {name, timeStr, totalTimeStr, gcStr});
     else
-      Error.addMessage(Error.EXEC_STAT, {name, timeStr, totalTimeStr});
+      Error.addMessage(Error.EXEC_STAT, {name, timeStr, totalTimeStr,
+          StringUtil.bytesToReadableUnit(memory-oldMemory, maxSizeInUnit=500, significantDigits=4),
+          StringUtil.bytesToReadableUnit(memory, maxSizeInUnit=500, significantDigits=4)
+      });
     end if;
     System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
+    setGlobalRoot(Global.gcProfilingIndex, stats);
   end if;
 end execStat;
 

@@ -70,7 +70,7 @@ function setForceUnmapOnGcollect
   external "C" GC_set_force_unmap_on_gcollect(forceUnmap) annotation(Library = {"omcgc"});
 end setForceUnmapOnGcollect;
 
-uniontype ProfStats // TODO: Support regular records in the bootstrapped compiler to avoid allocation to return the stats in the GC...
+uniontype ProfStats "TODO: Support regular records in the bootstrapped compiler to avoid allocation to return the stats in the GC..."
   record PROFSTATS
     Integer heapsize_full, free_bytes_full, unmapped_bytes, bytes_allocd_since_gc, allocd_bytes_before_gc, non_gc_bytes, gc_no, markers_m1, bytes_reclaimed_since_gc, reclaimed_bytes_before_gc;
   end PROFSTATS;
@@ -90,6 +90,7 @@ algorithm
       "unmapped_bytes: " + intString(stats.unmapped_bytes) + delimiter +
       "bytes_allocd_since_gc: " + intString(stats.bytes_allocd_since_gc) + delimiter +
       "allocd_bytes_before_gc: " + intString(stats.allocd_bytes_before_gc) + delimiter +
+      "total_allocd_bytes: " + intString(stats.bytes_allocd_since_gc+stats.allocd_bytes_before_gc) + delimiter +
       "non_gc_bytes: " + intString(stats.non_gc_bytes) + delimiter +
       "gc_no: " + intString(stats.gc_no) + delimiter +
       "markers_m1: " + intString(stats.markers_m1) + delimiter +
