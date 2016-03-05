@@ -6,6 +6,7 @@ WhenStatement1.mos \
 BouncingBall.mos \
 clockedTest.mos \
 clockedEventTest.mos \
+clockedSolverTest.mos \
 clockedTypesTest.mos \
 mathFunctionsTest.mos \
 functionPointerTest.mos \
