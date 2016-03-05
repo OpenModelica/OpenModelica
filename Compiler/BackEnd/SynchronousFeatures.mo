@@ -124,11 +124,13 @@ algorithm
   (contSysts, holdComps) := removeHoldExpsSyst(contSysts);
 
   (clockedSysts, shared) := subClockPartitioning1(clockedSysts, shared, holdComps);
+
+  (clockedSysts, shared) := solveContinuousEquations(clockedSysts, shared);
+
   shared := List.fold(clockedSysts, makePreviousFixed, shared);
 
   unpartRemEqs := createBoolClockWhenClauses(shared, unpartRemEqs);
   shared.removedEqs := BackendEquation.addEquations(unpartRemEqs, shared.removedEqs);
-
 
   systs := listAppend(contSysts, clockedSysts);
   outDAE := BackendDAE.DAE(systs, shared);
@@ -165,7 +167,89 @@ algorithm
   end for;
 end createBoolClockWhenClauses;
 
+protected function solveContinuousEquations
+"Convert continuous equations in clocked partitions to clocked equations.
+ author: rfranke"
+  input list<BackendDAE.EqSystem> inSysts;
+  input BackendDAE.Shared inShared;
+  output list<BackendDAE.EqSystem> outSysts = {};
+  output BackendDAE.Shared shared = inShared;
+algorithm
+  for syst1 in inSysts loop
+    syst1 := match syst1
+      local
+        BackendDAE.EquationArray eqs;
+        Integer idx;
+        BackendDAE.SubPartition subPartition;
+        String solverMethod;
+        BackendDAE.EqSystem syst;
+        list<BackendDAE.Equation> lstEqs;
+        BackendDAE.Equation eq;
+      case syst as BackendDAE.EQSYSTEM(orderedEqs = eqs)
+        algorithm
+          BackendDAE.CLOCKED_PARTITION(idx) := syst.partitionKind;
+          subPartition := shared.partitionsInfo.subPartitions[idx];
+          solverMethod := BackendDump.optionString(subPartition.clock.solver);
+          lstEqs := {};
+          for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
+            eq := BackendEquation.equationNth1(eqs, i);
+            (eq, solverMethod) := BackendEquation.traverseExpsOfEquation(eq, applySolverMethod1, solverMethod);
+            lstEqs := eq::lstEqs;
+          end for;
+          syst.orderedEqs := BackendEquation.listEquation(listReverse(lstEqs));
+        then syst;
+    end match;
+    outSysts := BackendDAEUtil.clearEqSyst(syst1) :: outSysts;
+  end for;
+end solveContinuousEquations;
+
+protected function applySolverMethod1 "helper to applySolverMethod"
+  input DAE.Exp inExp;
+  input String inSolverMethod;
+  output DAE.Exp outExp;
+  output String outSolverMethod;
+algorithm
+  (outExp, outSolverMethod) := Expression.traverseExpBottomUp(inExp, applySolverMethod, inSolverMethod);
+end applySolverMethod1;
+
+protected function applySolverMethod
+"Apply given solverMethod to convert continous-time to clocked expression.
+ So far ImplicitEuler, replacing der(x) -> (x - previous(x))/interval().
+ author: rfranke"
+  input DAE.Exp inExp;
+  input String inSolverMethod;
+  output DAE.Exp outExp;
+  output String outSolverMethod = inSolverMethod;
+algorithm
+  outExp := match inExp
+    local
+      List<DAE.Exp> expLst;
+      DAE.CallAttributes attr;
+      DAE.ComponentRef cr;
+      DAE.Type ty;
+      DAE.Exp exp;
+    case DAE.CALL(path = Absyn.IDENT(name = "der"),
+                  expLst = expLst as {DAE.CREF(componentRef = cr)},
+                  attr = attr as DAE.CALL_ATTR(ty = ty))
+      algorithm
+        outSolverMethod := "ImplicitEuler";
+        exp := DAE.CALL(Absyn.IDENT(name = "previous"), expLst, attr);
+        exp := DAE.BINARY(DAE.CREF(cr, ty), DAE.SUB(DAE.T_REAL_DEFAULT), exp);
+        exp := DAE.BINARY(exp, DAE.DIV(DAE.T_REAL_DEFAULT),
+                          DAE.CALL(Absyn.IDENT(name = "interval"), {},
+                                   DAE.callAttrBuiltinImpureReal));
+        if outSolverMethod <> inSolverMethod then
+          Error.addCompilerWarning("Solved clocked continuous equations with " +
+                                   outSolverMethod + " instead of specified " +
+                                   inSolverMethod + ".");
+        end if;
+      then exp;
+    else inExp;
+  end match;
+end applySolverMethod;
+
 protected function makePreviousFixed
+"Make sure an equation previous(x) = x is generated in the simCode."
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared = inShared;
@@ -181,7 +265,8 @@ algorithm
   BackendDAE.CLOCKED_PARTITION(idx) := inSyst.partitionKind;
   subPartition := outShared.partitionsInfo.subPartitions[idx];
 
-  if isNone(subPartition.clock.solver) then
+  //rfranke: don't know why partitions with solver shall be excluded here
+  //if isNone(subPartition.clock.solver) then
     isPrevVarArr := arrayCreate(BackendVariable.varsSize(inSyst.orderedVars), false);
 
     for i in 1:BackendDAEUtil.equationArraySize(inSyst.orderedEqs) loop
@@ -209,7 +294,7 @@ algorithm
 
     subPartition.prevVars := prevVars;
     arrayUpdate(outShared.partitionsInfo.subPartitions, idx, subPartition);
-  end if;
+  //end if;
 
 end makePreviousFixed;
 

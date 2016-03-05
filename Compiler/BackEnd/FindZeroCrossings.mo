@@ -591,8 +591,10 @@ algorithm
       list<BackendDAE.ZeroCrossing> zero_crossings;
       list<BackendDAE.ZeroCrossing> relations, sampleLst;
       Integer countMathFunctions;
+      Option<String> solver;
     //No zero crossing for clocked discrete partitions;
-    case SOME(BackendDAE.SUBCLOCK(solver=NONE()))
+    case SOME(BackendDAE.SUBCLOCK(solver = solver))
+      guard BackendDump.optionString(solver) <> "External"
       then (inSyst, inShared);
     else
       algorithm
