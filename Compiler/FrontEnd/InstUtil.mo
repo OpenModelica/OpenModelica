@@ -7880,7 +7880,9 @@ algorithm
     case (_,(elt1 as DAE.ALGORITHM(source=source))::elts,SOME(elt2),_,_,_)
       equation
         str = Absyn.pathString(path);
-        Error.addSourceMessage(Error.FUNCTION_MULTIPLE_ALGORITHM,{str},DAEUtil.getElementSourceFileInfo(source));
+        if not Config.acceptMetaModelicaGrammar() then
+          Error.addSourceMessage(Error.FUNCTION_MULTIPLE_ALGORITHM,{str},DAEUtil.getElementSourceFileInfo(source));
+        end if;
       then optimizeFunctionCheckForLocals(path,elts,SOME(elt1),elt2::acc,invars,outvars);
     case (_,(elt as DAE.ALGORITHM())::elts,NONE(),_,_,_)
       then optimizeFunctionCheckForLocals(path,elts,SOME(elt),acc,invars,outvars);
