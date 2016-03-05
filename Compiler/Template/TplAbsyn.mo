@@ -4719,7 +4719,7 @@ algorithm
     //not yet in locals
     case ( ident, _, _, _, localNames, locals)
       equation
-        failure( _ = lookupTupleList(localNames, ident) );
+        // already failed in first case: failure( _ = lookupTupleList(localNames, ident) );
         encIdent = addPostfixToIdent(inEncIdent, inPostfix);
         failure( _ = lookupTupleList(locals, encIdent));
       then
@@ -4730,7 +4730,7 @@ algorithm
     //re-use from locals
     case ( ident, _, _, _, localNames, locals)
       equation
-        failure( _ = lookupTupleList(localNames, ident) );
+        // already failed in first case: failure( _ = lookupTupleList(localNames, ident) );
         encIdent = addPostfixToIdent(inEncIdent, inPostfix);
         loctype = lookupTupleList(locals, encIdent);
         equality(loctype = inType);
@@ -4740,7 +4740,7 @@ algorithm
     //try the next postfix
     case ( ident, _, _, _, localNames, locals)
       equation
-        failure( _ = lookupTupleList(localNames, ident) );
+        // already failed in first case: failure( _ = lookupTupleList(localNames, ident) );
         encIdent = addPostfixToIdent(inEncIdent, inPostfix);
         loctype = lookupTupleList(locals, encIdent);
         failure(equality(loctype = inType));
