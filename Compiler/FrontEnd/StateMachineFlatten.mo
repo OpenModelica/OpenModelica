@@ -120,8 +120,8 @@ algorithm
   (flatSmLst, otherLst) := List.extractOnTrue(dAElist, isFlatSm);
   elementLst2 := List.fold2(flatSmLst, flatSmToDataFlow, NONE(), NONE(), {});
 
-  // FIXME HACK1 Wrap equations in when clauses hack (as long as clocked features are not fully supported)
-  if (not listEmpty(flatSmLst)) then
+  // FIXME HACK1 Wrap equations in when clauses hack (as long as clocked features are not fully supported in C runtime)
+  if (not listEmpty(flatSmLst) and not stringEqual(Config.simCodeTarget(), "Cpp")) then
     elementLst2 := wrapHack(cache, elementLst2);
   end if;
 
@@ -132,13 +132,13 @@ algorithm
   // traverse dae expressions for making substitutions activeState(x) -> x.active
   (outDAElist, _, (_,nOfSubstitutions)) := DAEUtil.traverseDAE(outDAElist, FCore.getFunctionTree(cache), Expression.traverseSubexpressionsHelper, (traversingSubsActiveState, 0));
 
-  if (not listEmpty(flatSmLst)) then
-    // FIXME HACK2 traverse dae expressions for making substitutions previous(x) -> pre(x) (as long as clocked features are not fully supported)
+  if (not listEmpty(flatSmLst) and not stringEqual(Config.simCodeTarget(), "Cpp")) then
+    // FIXME HACK2 traverse dae expressions for making substitutions previous(x) -> pre(x) (as long as clocked features are not fully supported in C runtime)
     (outDAElist, _, (_,nOfSubstitutions)) := DAEUtil.traverseDAE(outDAElist, FCore.getFunctionTree(cache), Expression.traverseSubexpressionsHelper, (traversingSubsPreForPrevious, 0));
-    // FIXME HACK3 traverse dae expressions for making substitutions sample(x, _) -> x (as long as clocked features are not fully supported)
+    // FIXME HACK3 traverse dae expressions for making substitutions sample(x, _) -> x (as long as clocked features are not fully supported in C runtime)
     (outDAElist, _, (_,nOfSubstitutions)) := DAEUtil.traverseDAE(outDAElist, FCore.getFunctionTree(cache), Expression.traverseSubexpressionsHelper, (traversingSubsXForSampleX, 0));
   end if;
-  //print("StateMachineFlatten.stateMachineToDataFlow: outDAElist:\n" + DAEDump.dumpStr(outDAElist,FCore.getFunctionTree(cache)));
+  // print("StateMachineFlatten.stateMachineToDataFlow: outDAElist:\n" + DAEDump.dumpStr(outDAElist,FCore.getFunctionTree(cache)));
 end stateMachineToDataFlow;
 
 protected function traversingSubsActiveState "
