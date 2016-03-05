@@ -201,6 +201,7 @@ algorithm
     end match;
     outSysts := BackendDAEUtil.clearEqSyst(syst1) :: outSysts;
   end for;
+  outSysts := listReverse(outSysts);
 end solveContinuousEquations;
 
 protected function applySolverMethod1 "helper to applySolverMethod"
