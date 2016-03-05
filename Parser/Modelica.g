@@ -1309,7 +1309,7 @@ primary returns [void* ast]
       errno = 0;
       double d = strtod(chars,&endptr);
       if (!(*endptr == 0 && errno==0)) {
-        c_add_source_message(NULL,2,ErrorType_syntax, ErrorLevel_error, "\%s cannot be represented by a double on this machine", &chars, 1, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1, ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+        c_add_source_message(NULL,2,ErrorType_syntax, ErrorLevel_error, "\%s cannot be represented by a double on this machine", (const char **)&chars, 1, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1, ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
         ModelicaParser_lexerError = ANTLR3_TRUE;
       }
       $ast = Absyn__REAL(mmc_mk_scon(chars));
@@ -1472,7 +1472,7 @@ function_arguments returns [void* ast]
 
 for_or_expression_list returns [void* ast, int isFor]
 @init{ e.ast = 0; el = 0; forind = 0; } :
-  ( {LA(1)==IDENT || LA(1)==OPERATOR && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}? { $ast = mmc_mk_nil(); $isFor = 0; }
+  ( {LA(1)==IDENT || (LA(1)==OPERATOR && LA(2) == EQUALS) || LA(1) == RPAR || LA(1) == RBRACE}? { $ast = mmc_mk_nil(); $isFor = 0; }
   | ( e=expression[1]
       ( (COMMA el=for_or_expression_list2)
       | (threaded=THREADED? FOR forind=for_indices)
