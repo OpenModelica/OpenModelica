@@ -390,6 +390,9 @@ protected function addUnreplaceable
   output HashSet.HashSet outUnreplaceable = inUnreplaceable;
 protected
   BackendDAE.Variables orderedVars;
+  Integer idx;
+  BackendDAE.SubPartition subPartition;
+  DAE.ComponentRef cr;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars) := syst;
   for var in BackendVariable.varList(orderedVars) loop
@@ -397,6 +400,14 @@ algorithm
       outUnreplaceable := BaseHashSet.add(BackendVariable.varCref(var), outUnreplaceable);
     end if;
   end for;
+  // add discrete states to unreplaceable (#3741)
+  if BackendDAEUtil.isClockedSyst(syst) then
+    BackendDAE.CLOCKED_PARTITION(idx) := syst.partitionKind;
+    subPartition := shared.partitionsInfo.subPartitions[idx];
+    for cr in subPartition.prevVars loop
+      outUnreplaceable := BaseHashSet.add(cr, outUnreplaceable);
+    end for;
+  end if;
 end addUnreplaceable;
 
 protected function fastAcausal1 "author: Frenkel TUD 2012-12
