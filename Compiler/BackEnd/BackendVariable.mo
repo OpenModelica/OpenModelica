@@ -592,6 +592,32 @@ algorithm
   end matchcontinue;
 end isNonStateVar;
 
+public function isClockedStateVar
+"Returns true for clocked state variables, false otherwise."
+  input BackendDAE.Var inVar;
+  output Boolean outBool;
+algorithm
+  outBool := match (inVar)
+    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE())) then true;
+    else false;
+  end match;
+end isClockedStateVar;
+
+public function isClockedState
+"Returns true for clocked state variables, false otherwise."
+  input DAE.ComponentRef inCref;
+  input BackendDAE.Variables inVars;
+  output Boolean outBool;
+algorithm
+  outBool :=
+  matchcontinue(inCref, inVars)
+    case(_, _) equation
+      ((BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE()) :: _),_) = getVar(inCref, inVars);
+    then true;
+    else false;
+  end matchcontinue;
+end isClockedState;
+
 public function varHasUncertainValueRefine "author: Daniel Hedberg, 2011-01
   modified by: Leonardo Laguna, 2012-01
 

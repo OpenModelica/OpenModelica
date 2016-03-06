@@ -2105,7 +2105,7 @@ algorithm
         v = BackendVariable.getVarAt(vars, i1);
         // update max
         (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
-        state = BackendVariable.isStateVar(v);
+        state = BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
         (rmax, smax, unremovable) = getAlias3(v, i1, state, replaceable_ and replaceble1, r, iRmax, iSmax, iUnremovable);
         // go deeper
         neg = if neg then not negate else negate;
@@ -2115,7 +2115,7 @@ algorithm
         v = BackendVariable.getVarAt(vars, i2);
         // update max
         (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
-        state = BackendVariable.isStateVar(v);
+        state = BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
         (rmax, smax, unremovable) = getAlias3(v, i2, state, replaceable_ and replaceble1, r, rmax, smax, unremovable);
         // go deeper
         (rmax, smax, unremovable, const, cont) = getAliasContinue(cont, next, SOME(i2), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, const);
@@ -2131,7 +2131,7 @@ algorithm
         v = BackendVariable.getVarAt(vars, i);
         // update max
         (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
-        state = BackendVariable.isStateVar(v);
+        state = BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
         (rmax, smax, unremovable) = getAlias3(v, i, state, replaceable_ and replaceble1, r, iRmax, iSmax, iUnremovable);
         // go deeper
         neg = if neg then not negate else negate;
@@ -4577,6 +4577,7 @@ algorithm
           end if;
           {cr} = cr_lst;
           false = BackendVariable.isState(cr,vars);
+          false = BackendVariable.isClockedState(cr,vars);
           false = BackendVariable.isOutput(cr,vars);
           false = BackendVariable.isDiscrete(cr,vars);
           eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,Expression.crefExp(cr),NONE());
@@ -4597,6 +4598,7 @@ algorithm
             // true = BackendVariable.isState(cr2,vars);
           // end if;
           false = BackendVariable.isState(cr1,vars) or BackendVariable.isState(cr2,vars);
+          false = BackendVariable.isClockedState(cr1,vars) or BackendVariable.isClockedState(cr2,vars);
           false = BackendVariable.isOutput(cr1,vars) or BackendVariable.isOutput(cr2,vars);
           false = BackendVariable.isDiscrete(cr1,vars) or BackendVariable.isDiscrete(cr2,vars);
 

@@ -250,7 +250,10 @@ algorithm
 end applySolverMethod;
 
 protected function makePreviousFixed
-"Make sure an equation previous(x) = x is generated in the simCode."
+"Collect discrete states and mark them for further processing.
+ Use VarKind CLOCKED_STATE. Moreover set the fixed attribute
+ and list the crefs of all discrete states in
+ outShared.partitionsInfo.subPartitions[subPartIdx].prevVars."
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared = inShared;
@@ -288,6 +291,7 @@ algorithm
     for i in 1:arrayLength(isPrevVarArr) loop
       if isPrevVarArr[i] then
         var := BackendVariable.setVarFixed(BackendVariable.getVarAt(inSyst.orderedVars, i), true);
+        var := BackendVariable.setVarKind(var, BackendDAE.CLOCKED_STATE(previousName = ComponentReference.crefPrefixPrevious(var.varName)));
         BackendVariable.setVarAt(inSyst.orderedVars, i, var);
         prevVars := var.varName::prevVars;
       end if;
