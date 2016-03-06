@@ -142,7 +142,7 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: xdFast:DISCRETE(fixed = true ) .SynchronousFeatures.ControlledMass, .Real type: Real
+// 1: xdFast:CLOCKED_STATE(fixed = true ) .SynchronousFeatures.ControlledMass, .Real type: Real
 // 2: $var2:VARIABLE()  type: Real
 //
 //
@@ -169,7 +169,7 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // Variables (4)
 // ========================================
 // 1: uOuter:DISCRETE(start = 0.0 ) .SynchronousFeatures.ControlledMass, .Real type: Real
-// 2: intE:DISCRETE(start = 0.0 fixed = true ) .SynchronousFeatures.ControlledMass, .Real type: Real
+// 2: intE:CLOCKED_STATE(start = 0.0 fixed = true ) .SynchronousFeatures.ControlledMass, .Real type: Real
 // 3: eOuter:DISCRETE() .SynchronousFeatures.ControlledMass, .Real type: Real
 // 4: xd:DISCRETE() .SynchronousFeatures.ControlledMass, .Real type: Real
 //
