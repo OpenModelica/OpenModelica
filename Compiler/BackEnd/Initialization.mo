@@ -93,7 +93,6 @@ protected
   BackendDAE.Variables vars, fixvars;
   Boolean b, b1, b2, useHomotopy;
   HashSet.HashSet hs "contains all pre variables";
-  HashSet.HashSet clkHS "contains all clocked variables";
   list<BackendDAE.Equation> removedEqns;
   list<BackendDAE.Var> dumpVars, dumpVars2;
   list<tuple<BackendDAEFunc.optimizationModule, String>> initOptModules;
@@ -119,7 +118,6 @@ algorithm
     SimCodeFunctionUtil.execStat("selectInitializationVariablesDAE (initialization)");
 
     hs := collectPreVariables(dae);
-    clkHS := collectClkVariables(dae);
     SimCodeFunctionUtil.execStat("collectPreVariables (initialization)");
 
     // collect vars and eqns for initial system
@@ -136,7 +134,7 @@ algorithm
     //end if;
     SimCodeFunctionUtil.execStat("collectInitialEqns (initialization)");
 
-    ((vars, fixvars, eqns, reeqns, _, _, _)) := List.fold(dae.eqs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs, clkHS, outAllPrimaryParameters)));
+    ((vars, fixvars, eqns, reeqns, _, _)) := List.fold(dae.eqs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs, outAllPrimaryParameters)));
     ((eqns, reeqns)) := BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
     SimCodeFunctionUtil.execStat("collectInitialBindings (initialization)");
 
@@ -576,44 +574,6 @@ algorithm
     else inHS;
   end match;
 end collectPreVariablesTraverseExp2;
-
-protected function collectClkVariables "author: rfranke"
-  input BackendDAE.BackendDAE inDAE;
-  output HashSet.HashSet outHS;
-algorithm
-  //BackendDump.dumpBackendDAE(inDAE, "inDAE");
-  outHS := List.fold(inDAE.eqs, collectClkVariablesEqSystem, HashSet.emptyHashSet());
-  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns( inDAE.shared.initialEqs, Expression.traverseSubexpressionsHelper,
-                                                             (collectClkVariablesTraverseExp, outHS) );
-  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns( inDAE.shared.removedEqs, Expression.traverseSubexpressionsHelper,
-                                                             (collectClkVariablesTraverseExp, outHS) );
-end collectClkVariables;
-
-public function collectClkVariablesEqSystem
-  input BackendDAE.EqSystem inSyst;
-  input HashSet.HashSet inHS;
-  output HashSet.HashSet outHS;
-algorithm
-  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns( inSyst.orderedEqs, Expression.traverseSubexpressionsHelper,
-                                                             (collectClkVariablesTraverseExp, inHS) );
-  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns( inSyst.removedEqs, Expression.traverseSubexpressionsHelper,
-                                                             (collectClkVariablesTraverseExp, outHS) );
-end collectClkVariablesEqSystem;
-
-public function collectClkVariablesTraverseExp
-  input DAE.Exp inExp;
-  input HashSet.HashSet inHS;
-  output DAE.Exp outExp = inExp;
-  output HashSet.HashSet outHS;
-algorithm
-  outHS := match (inExp)
-    case DAE.CALL(path=Absyn.IDENT(name="previous")) equation
-      (_, outHS) = Expression.traverseExpBottomUp(inExp, collectPreVariablesTraverseExp2, inHS);
-    then outHS;
-
-    else inHS;
-  end match;
-end collectClkVariablesTraverseExp;
 
 // =============================================================================
 // warn about iteration variables with default zero start attribute
@@ -1974,26 +1934,26 @@ end introducePreVarsForAliasVariables;
 protected function collectInitialVarsEqnsSystem "author: lochel
   This function collects variables and equations for the initial system out of an given EqSystem."
   input BackendDAE.EqSystem inEqSystem;
-  input tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet, HashSet.HashSet, list<BackendDAE.Var>> inTpl;
-  output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet, HashSet.HashSet, list<BackendDAE.Var>> outTpl;
+  input tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet, list<BackendDAE.Var>> inTpl;
+  output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet, list<BackendDAE.Var>> outTpl;
 protected
   BackendDAE.Variables vars, fixvars;
   BackendDAE.EquationArray eqns, reqns;
-  HashSet.HashSet hs, clkHS;
+  HashSet.HashSet hs;
   list<BackendDAE.Var> allPrimaryParameters;
 algorithm
-  (vars, fixvars, eqns, reqns, hs, clkHS, allPrimaryParameters) := inTpl;
+  (vars, fixvars, eqns, reqns, hs, allPrimaryParameters) := inTpl;
 
   outTpl := match inEqSystem
     case BackendDAE.EQSYSTEM(partitionKind = BackendDAE.CLOCKED_PARTITION(_)) equation
-      ((vars, eqns, clkHS)) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectInitialClockedVarsEqns, (vars, eqns, clkHS));
-    then (vars, fixvars, eqns, reqns, hs, clkHS, allPrimaryParameters);
+      ((vars, eqns)) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectInitialClockedVarsEqns, (vars, eqns));
+    then (vars, fixvars, eqns, reqns, hs, allPrimaryParameters);
 
     else equation
       ((vars, fixvars, eqns, hs, _)) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectInitialVars, (vars, fixvars, eqns, hs, allPrimaryParameters));
       ((eqns, reqns)) = BackendEquation.traverseEquationArray(inEqSystem.orderedEqs, collectInitialEqns, (eqns, reqns));
       //((fixvars, eqns)) = List.fold(inEqSystem.stateSets, collectInitialStateSetVars, (fixvars, eqns));
-    then (vars, fixvars, eqns, reqns, hs, clkHS, allPrimaryParameters);
+    then (vars, fixvars, eqns, reqns, hs, allPrimaryParameters);
   end match;
 end collectInitialVarsEqnsSystem;
 
@@ -2295,45 +2255,48 @@ protected function collectInitialClockedVarsEqns "author: rfranke
   This function creates initial equations for a clocked partition.
   Previous states are initialized with the states. All other variables are initialized with start values."
   input BackendDAE.Var inVar;
-  input tuple<BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet> inTpl;
+  input tuple<BackendDAE.Variables, BackendDAE.EquationArray> inTpl;
   output BackendDAE.Var outVar;
-  output tuple<BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet> outTpl;
+  output tuple<BackendDAE.Variables, BackendDAE.EquationArray> outTpl;
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  HashSet.HashSet clkHS;
 algorithm
-  (vars, eqns, clkHS) := inTpl;
+  (vars, eqns) := inTpl;
   (outVar, outTpl) := match inVar
     local
-      BackendDAE.Var var, previousVar;
-      DAE.ComponentRef cr, previousCR;
+      BackendDAE.Var var;
+      BackendDAE.VarKind kind;
+      DAE.ComponentRef cr;
       DAE.Type ty;
-      DAE.Exp crExp, previousExp, startExp;
-      Boolean previousUsed;
-    case (var as BackendDAE.VAR(varName=cr, varType=ty)) equation
-      previousUsed = BaseHashSet.has(cr, clkHS);
-      previousCR = ComponentReference.crefPrefixPrevious(cr);  // cr => $CLKPRE.cr
-      previousVar = BackendVariable.copyVarNewName(previousCR, var);
-      previousVar = BackendVariable.setVarKind(previousVar, BackendDAE.VARIABLE());
+      DAE.Exp crExp, startExp;
+    case (var as BackendDAE.VAR(varName=cr, varType=ty, varKind=kind)) equation
       crExp = Expression.crefExp(cr);
-      previousExp = Expression.crefExp(previousCR);
-      startExp = BackendVariable.varStartValue(var);
-      if previousUsed then
-        // create previous variable and initial equation
-        previousVar = BackendVariable.setVarDirection(previousVar, DAE.BIDIR());
-        previousVar = BackendVariable.setBindExp(previousVar, NONE());
-        previousVar = BackendVariable.setBindValue(previousVar, NONE());
-        previousVar = BackendVariable.setVarFixed(previousVar, true);
-        previousVar = BackendVariable.setVarStartValueOption(previousVar, SOME(DAE.CREF(cr, ty)));
-        vars = BackendVariable.addVar(previousVar, vars);
-        eqns = BackendEquation.addEquation(BackendDAE.EQUATION(previousExp, crExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
-        var = BackendVariable.setVarKind(var, BackendDAE.CLOCKED_STATE(previousName = previousCR));
-      end if;
+      // create previous variable and initial equation for discrete states
+      (vars, eqns) = match kind
+        local
+          BackendDAE.Var previousVar;
+          DAE.ComponentRef previousCR;
+          DAE.Exp previousExp;
+        case BackendDAE.CLOCKED_STATE(previousName=previousCR) equation
+          previousVar = BackendVariable.copyVarNewName(previousCR, var);
+          previousVar = BackendVariable.setVarKind(previousVar, BackendDAE.VARIABLE());
+          previousVar = BackendVariable.setVarDirection(previousVar, DAE.BIDIR());
+          previousVar = BackendVariable.setBindExp(previousVar, NONE());
+          previousVar = BackendVariable.setBindValue(previousVar, NONE());
+          previousVar = BackendVariable.setVarFixed(previousVar, true);
+          previousVar = BackendVariable.setVarStartValueOption(previousVar, SOME(DAE.CREF(cr, ty)));
+          previousExp = Expression.crefExp(previousCR);
+          vars = BackendVariable.addVar(previousVar, vars);
+          eqns = BackendEquation.addEquation(BackendDAE.EQUATION(previousExp, crExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
+          then (vars, eqns);
+        else (vars, eqns);
+      end match;
       // add clocked variable and initial equation
+      startExp = BackendVariable.varStartValue(var);
       vars = BackendVariable.addVar(var, vars);
       eqns = BackendEquation.addEquation(BackendDAE.EQUATION(crExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
-    then (var, (vars, eqns, clkHS));
+    then (var, (vars, eqns));
   end match;
 end collectInitialClockedVarsEqns;
 
