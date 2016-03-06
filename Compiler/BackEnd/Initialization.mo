@@ -2313,8 +2313,9 @@ algorithm
       Boolean previousUsed;
     case (var as BackendDAE.VAR(varName=cr, varType=ty)) equation
       previousUsed = BaseHashSet.has(cr, clkHS);
-      previousCR = ComponentReference.crefPrefixPrevious(cr);  // cr => $CLKPRRE.cr
+      previousCR = ComponentReference.crefPrefixPrevious(cr);  // cr => $CLKPRE.cr
       previousVar = BackendVariable.copyVarNewName(previousCR, var);
+      previousVar = BackendVariable.setVarKind(previousVar, BackendDAE.VARIABLE());
       crExp = Expression.crefExp(cr);
       previousExp = Expression.crefExp(previousCR);
       startExp = BackendVariable.varStartValue(var);
