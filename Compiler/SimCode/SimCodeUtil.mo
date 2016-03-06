@@ -1065,7 +1065,7 @@ algorithm
         (eqs2, symjacs2, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys, countNonLinSys+1, countMixedSys, countJacobians, {}, {});
         (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
         (symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs2) = countandIndexAlgebraicLoopsSymJac(symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(symjacs2,listAppend(symjacs,inSymJacs)), countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, SOME(symJac), linearTearing, homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, inNonLinSysIndex+1, SOME(symJac2), linearTearing2, homotopySupport2, mixedSystem2)))::inEqnsAcc, listAppend({symJac2, symJac}, inSymJacsAcc));
+        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(symjacs2,listAppend(symjacs,inSymJacs)), countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, SOME(symJac), linearTearing, homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, inNonLinSysIndex+1, SOME(symJac2), linearTearing2, homotopySupport2, mixedSystem2)))::inEqnsAcc, symJac2::symJac::inSymJacsAcc);
       then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
 
     case (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, NONE(), sources, _), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, vars2, beqs2, simJac2, eqs2, NONE(), sources2, _)))::rest, _, _, _, _, _, _, _)
@@ -1081,7 +1081,7 @@ algorithm
         (eqs2, symjacs2, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys+1, countNonLinSys, countMixedSys, countJacobians,  {}, {});
         (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
         (symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs2) = countandIndexAlgebraicLoopsSymJac(symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(symjacs2,listAppend(symjacs,inSymJacs)), countLinearSys, countNonLinSys, countMixedSys, countJacobians,  SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, SOME(symJac), sources, inLinearSysIndex), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, vars2, beqs2, simJac2, eqs2, SOME(symJac2), sources2, inLinearSysIndex+1)))::inEqnsAcc, listAppend({symJac2, symJac}, inSymJacsAcc));
+        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(symjacs2,listAppend(symjacs,inSymJacs)), countLinearSys, countNonLinSys, countMixedSys, countJacobians,  SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, SOME(symJac), sources, inLinearSysIndex), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, vars2, beqs2, simJac2, eqs2, SOME(symJac2), sources2, inLinearSysIndex+1)))::inEqnsAcc, symJac2::symJac::inSymJacsAcc);
       then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
 
     case (SimCode.SES_MIXED(index, cont, discVars, discEqs, _)::rest, _, _, _, _, _, _, _)
@@ -1154,7 +1154,7 @@ algorithm
     case ((eqns, vars, str)::rest, _, _, _, _, _) equation
       (eqns1, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symJacs) = countandIndexAlgebraicLoops(eqns, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, inSymJacs);
       (res1, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symJacs) = countandIndexAlgebraicLoopsSymJacColumn(rest, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symJacs);
-      result = listAppend({(eqns1, vars, str)},res1);
+      result = (eqns1, vars, str)::res1;
     then (result, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symJacs);
   end match;
 end countandIndexAlgebraicLoopsSymJacColumn;
@@ -4599,7 +4599,7 @@ algorithm
       (equations_, uniqueEqIndex, tempvars) = createEquationsfromList(eqns, inVars, genDiscrete, iuniqueEqIndex, itempvars, ei);
       ifbranch = ((condition, equations_));
       (ifbranches, uniqueEqIndex, tempvars) = createEquationsIfBranch(conditionList, eqnsLst, inVars, shared, genDiscrete, uniqueEqIndex, tempvars);
-      ifbranches = listAppend({ifbranch}, ifbranches);
+      ifbranches = ifbranch::ifbranches;
     then (ifbranches, uniqueEqIndex, tempvars);
 
     else equation
@@ -11176,9 +11176,9 @@ protected
   list<SimCode.SimEqSystem> odes;
 algorithm
   odes := listGet(simCodeOut.odeEquations, sysIdx);
-  odes := listAppend({simEqSys}, odes);
+  odes := simEqSys::odes;
   simCodeOut.odeEquations := List.set(simCodeOut.odeEquations, sysIdx, odes);
-  simCodeOut.allEquations := listAppend({simEqSys}, simCodeOut.allEquations);
+  simCodeOut.allEquations := simEqSys::simCodeOut.allEquations;
 end addSimEqSysToODEquations;
 
 public function addSimEqSysToInitialEquations"adds the given simEqSys to both to the initialEquations"

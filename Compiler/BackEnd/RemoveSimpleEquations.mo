@@ -3199,7 +3199,7 @@ protected function equalNonFreeStartValues "author: Frenkel TUD 2012-12"
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>, DAE.ComponentRef> iValue;
   output tuple<Option<DAE.Exp>, Option<DAE.Exp>, DAE.ComponentRef> oValue;
 algorithm
-  oValue := matchcontinue(iValues, knVars, iValue)
+  oValue := match(iValues, knVars, iValue)
     local
       list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> values;
       DAE.Exp e, e1, e2;
@@ -3213,8 +3213,8 @@ algorithm
       then
         equalNonFreeStartValues(values, knVars, iValue);
     case (((NONE(), cr))::values, _, (SOME(e2), _, _))
-      equation
-        true = Expression.isZero(e2);
+      guard
+        Expression.isZero(e2)
       then
         equalNonFreeStartValues(values, knVars, (NONE(), NONE(), cr));
     case (((SOME(e), _))::values, _, (SOME(e2), _, _))
@@ -3224,7 +3224,7 @@ algorithm
         true = Expression.expEqual(e1, e2);
       then
         equalNonFreeStartValues(values, knVars, iValue);
-  end matchcontinue;
+  end match;
 end equalNonFreeStartValues;
 
 protected function equalFreeStartValues "author: Frenkel TUD 2012-12"
@@ -3813,13 +3813,13 @@ algorithm
         ((_, (_, {startTimeE}, _))) = replaceOptExprTraverser((startTimeE, (irepl, {}, false)));
         ((_, (_, {finalTimeE}, _))) = replaceOptExprTraverser((finalTimeE, (irepl, {}, false)));
         (_, classAttributes) = replaceOptimicaExps({}, restClassAtr, irepl);
-        classAttributes = listAppend({DAE.OPTIMIZATION_ATTRS(objetiveE, objectiveIntegrandE, startTimeE, finalTimeE)}, classAttributes);
+        classAttributes = DAE.OPTIMIZATION_ATTRS(objetiveE, objectiveIntegrandE, startTimeE, finalTimeE)::classAttributes;
       then ({}, classAttributes);
     case (DAE.CONSTRAINT_EXPS(constraintLstExps)::rest, _, _)
       equation
         (constraintLstExps) = replaceOptimicaContraints(constraintLstExps, irepl);
         (constraintLst, _) = replaceOptimicaExps(rest, iclassAttributes, irepl);
-        constraintLst = listAppend({DAE.CONSTRAINT_EXPS(constraintLstExps)}, constraintLst);
+        constraintLst = DAE.CONSTRAINT_EXPS(constraintLstExps)::constraintLst;
       then (constraintLst, iclassAttributes);
   end match;
 end replaceOptimicaExps;
@@ -3838,7 +3838,7 @@ algorithm
       equation
         ((_, (_, {e}, _))) = replaceExprTraverser((e, (irepl, {}, false)));
         (constraintLst) = replaceOptimicaContraints(rest, irepl);
-        constraintLst = listAppend({e}, constraintLst);
+        constraintLst = e::constraintLst;
       then (constraintLst);
   end match;
 end replaceOptimicaContraints;
@@ -3911,7 +3911,7 @@ algorithm
     case ((exp, (repl, exps, b)))
       equation
         (exp1, b1) = BackendVarTransform.replaceExp(exp, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-        exps = listAppend({exp1}, exps);
+        exps = exp1::exps;
       then ((exp, (repl, exps, b or b1)));
   end match;
 end replaceExprTraverser;
@@ -3930,12 +3930,12 @@ algorithm
       Boolean b, b1;
     case ((NONE(), (repl, exps, b)))
       equation
-        exps = listAppend({NONE()}, exps);
+        exps = NONE()::exps;
       then ((NONE(), (repl, exps, b)));
     case ((SOME(exp), (repl, exps, b)))
       equation
         (exp1, b1) = BackendVarTransform.replaceExp(exp, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-        exps = listAppend({SOME(exp1)}, exps);
+        exps = SOME(exp1)::exps;
       then ((SOME(exp), (repl, exps, b or b1)));
   end match;
 end replaceOptExprTraverser;

@@ -393,7 +393,7 @@ algorithm
 
       (stmts, preStmts2, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
       preStmts = listAppend(preStmts, preStmts2);
-      stmts_ = listAppend({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)}, stmts);
+      stmts_ = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)::stmts;
     then (stmts_, preStmts, vars, index);
 
     // when statement
@@ -403,7 +403,7 @@ algorithm
       vars = listAppend(vars, inVars);
 
       (stmts, stmts_, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
-      stmts_ = listAppend({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)}, stmts_);
+      stmts_ = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)::stmts_;
       stmts_ = listAppend(stmts_, stmts);
     then (stmts_, preStmts, vars, index);
 
@@ -422,7 +422,7 @@ algorithm
 
       (stmts, preStmts2, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
       preStmts = listAppend(preStmts, preStmts2);
-      stmts_ = listAppend({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)}, stmts);
+      stmts_ = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)::stmts;
     then (stmts_, preStmts, vars, index);
 
     // when - elsewhen statement
@@ -435,7 +435,7 @@ algorithm
       preStmts = listAppend(preStmts, preStmts2);
 
       (stmts, stmts_, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
-      stmts_ = listAppend({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)}, stmts_);
+      stmts_ = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)::stmts_;
       stmts_ = listAppend(stmts_, stmts);
     then (stmts_, preStmts, vars, index);
 

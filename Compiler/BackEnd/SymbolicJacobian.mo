@@ -1434,7 +1434,7 @@ algorithm
       equation
         index = arrayGet(inColors, i);
         lst = arrayGet(inArray, index);
-        lst = listAppend({i},lst);
+        lst = i::lst;
         arrayUpdate(inArray, index, lst);
       then
         mapIndexColors(inColors, i-1, inArray);

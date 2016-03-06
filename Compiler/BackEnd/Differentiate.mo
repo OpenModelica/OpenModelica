@@ -411,7 +411,7 @@ algorithm
     case eqn::rest
       equation
         (eqn, funcs) = differentiateEquation(eqn,  inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        eqns = listAppend({eqn}, inEquationsAccum);
+        eqns = eqn::inEquationsAccum;
         (eqns, funcs) = differentiateEquations(rest, inDiffwrtCref, inInputData, inDiffType, eqns, funcs);
       then (eqns, funcs);
 
@@ -449,7 +449,7 @@ algorithm
     case eqns::rest
       equation
         (eqns, funcs) = differentiateEquations(eqns,  inDiffwrtCref, inInputData, inDiffType, {}, inFunctionTree);
-        eqnsLst = listAppend({eqns}, inEquationsLstAccum);
+        eqnsLst = eqns::inEquationsLstAccum;
         (eqnsLst, funcs) = differentiateEquationsLst(rest, inDiffwrtCref, inInputData, inDiffType, eqnsLst, funcs);
       then (eqnsLst, funcs);
 
@@ -774,7 +774,7 @@ end differentiateExp;
       // skip discrete statements
       case currStatement::restStatements guard( isDiscreteAssignStatment(currStatement) )
         equation
-          derivedStatements1 = listAppend({currStatement}, inStmtsAccum);
+          derivedStatements1 = currStatement::inStmtsAccum;
           (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, inFunctionTree, maxIter, expStack);
         then (derivedStatements2, functions);
 
@@ -882,31 +882,31 @@ end differentiateExp;
 
       case (currStatement as DAE.STMT_TERMINATE())::restStatements
         equation
-          derivedStatements1 = listAppend({currStatement}, inStmtsAccum);
+          derivedStatements1 = currStatement::inStmtsAccum;
           (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, inFunctionTree, maxIter, expStack);
         then (derivedStatements2, functions);
 
       case (currStatement as DAE.STMT_REINIT())::restStatements
         equation
-          derivedStatements1 = listAppend({currStatement}, inStmtsAccum);
+          derivedStatements1 = currStatement::inStmtsAccum;
           (derivedStatements1, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, inFunctionTree, maxIter, expStack);
         then (derivedStatements1, functions);
 
       case (currStatement as DAE.STMT_NORETCALL())::restStatements
         equation
-          derivedStatements1 = listAppend({currStatement}, inStmtsAccum);
+          derivedStatements1 = currStatement::inStmtsAccum;
           (derivedStatements1, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, inFunctionTree, maxIter, expStack);
         then (derivedStatements1, functions);
 
       case (currStatement as DAE.STMT_RETURN())::restStatements
         equation
-          derivedStatements1 = listAppend({currStatement}, inStmtsAccum);
+          derivedStatements1 = currStatement::inStmtsAccum;
           (derivedStatements1, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, inFunctionTree, maxIter, expStack);
         then (derivedStatements1, functions);
 
       case (currStatement as DAE.STMT_BREAK())::restStatements
         equation
-          derivedStatements1 = listAppend({currStatement}, inStmtsAccum);
+          derivedStatements1 = currStatement::inStmtsAccum;
           (derivedStatements1, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, inFunctionTree, maxIter, expStack);
         then (derivedStatements1, functions);
 

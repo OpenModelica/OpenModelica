@@ -7719,7 +7719,7 @@ protected
   BackendDAE.Variables knvars;
 algorithm
   BackendDAE.DAE(eqs=eqs,shared = BackendDAE.SHARED(knownVars=knvars)) := dae;
-  varLst := List.flatten(List.map(listAppend({knvars}, List.map(eqs, BackendVariable.daeVars)), BackendVariable.varList));
+  varLst := List.flatten(List.map(knvars::List.map(eqs, BackendVariable.daeVars), BackendVariable.varList));
 end getAllVarLst;
 
 public function isClockedSyst

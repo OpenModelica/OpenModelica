@@ -1707,7 +1707,7 @@ algorithm
           print("evaluated assignment to:\n"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         end if;
 
-        //stmts1 = listAppend({alg},lstIn);
+        //stmts1 = alg::lstIn;
         stmts1 = listAppend(stmts1,lstIn);
         //print("\nthe traverse LIST after :"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
@@ -1773,7 +1773,7 @@ algorithm
           print("evaluated array assignment to:\n"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         end if;
 
-        //stmts1 = listAppend({alg},lstIn);
+        //stmts1 = alg::lstIn;
         stmts1 = listAppend(stmts1,lstIn);
         //print("\nthe traverse LIST after :"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);

@@ -116,7 +116,7 @@ algorithm
       equation
         nm = nodename(typ);
         typlbl = makeLabel({typ});
-        newattr = listAppend({ATTR("label",typlbl)}, attr);
+        newattr = ATTR("label",typlbl)::attr;
         out = makeNode(nm, newattr);
         print(out);
         dumpChildren(nm, children);

@@ -1328,9 +1328,8 @@ algorithm
       equation
         res = Absyn.MODIFICATION(fi, e, Absyn.IDENT("Coordsys"), SOME(Absyn.CLASSMOD(args, eqMod)),com,mod_info) :: res;
         coord = getCoordSysAnn(listAppend(res,rest),p);
-        res = listAppend({Absyn.MODIFICATION(false, Absyn.NON_EACH(),
-        Absyn.IDENT("Diagram"),
-        SOME(Absyn.CLASSMOD({coord},Absyn.NOMOD())),NONE(),mod_info),Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT("Icon"), SOME(Absyn.CLASSMOD({coord},Absyn.NOMOD())),NONE(),mod_info)},res);
+        res = Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT("Diagram"), SOME(Absyn.CLASSMOD({coord},Absyn.NOMOD())),NONE(),mod_info)
+              :: Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT("Icon"), SOME(Absyn.CLASSMOD({coord},Absyn.NOMOD())),NONE(),mod_info) :: res;
         res = transformClassAnnList(rest,context,res,p);
       then List.deleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.IDENT("Coordsys"), SOME(Absyn.CLASSMOD(args, eqMod)),com,mod_info));
 
