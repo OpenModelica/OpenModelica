@@ -131,21 +131,21 @@ match class
     let cmt_str = dumpClassComment(cmt, options)
     let ann_str = dumpClassAnnotation(cmt, options)
     let cc_str = dumpReplaceableConstrainClass(prefixes, options)
-    let header_str = dumpClassHeader(classDef, name, cmt_str, options)
+    let header_str = dumpClassHeader(classDef, name, restriction, cmt_str, options)
     let footer_str = dumpClassFooter(classDef, cdef_str, name, cmt_str, ann_str, cc_str)
     <<
     <%prefixes_str%> <%header_str%> <%footer_str%>
     >>
 end dumpClass;
 
-template dumpClassHeader(SCode.ClassDef classDef, String name, String cmt, SCodeDumpOptions options)
+template dumpClassHeader(SCode.ClassDef classDef, String name, SCode.Restriction restr, String cmt, SCodeDumpOptions options)
 ::=
 match classDef
   case CLASS_EXTENDS(__)
     then
     let mod_str = dumpModifier(modifications, options)
     'extends <%name%><%mod_str%> <%cmt%>'
-  case PARTS(__) then '<%name%> <%cmt%>'
+  case PARTS(__) then '<%name%><%dumpRestrictionTypeVars(restr)%> <%cmt%>'
   else '<%name%>'
 end dumpClassHeader;
 
@@ -677,6 +677,14 @@ match restriction
   case R_UNIONTYPE(__) then 'uniontype'
   else errorMsg("SCodeDump.dumpRestriction: Unknown restriction.")
 end dumpRestriction;
+
+template dumpRestrictionTypeVars(SCode.Restriction restriction)
+::=
+match restriction
+  case R_UNIONTYPE(__) then
+    (if typeVars then ("<" + (typeVars |> tv => tv ; separator=";") + ">"))
+  else ""
+end dumpRestrictionTypeVars;
 
 template dumpFunctionRestriction(SCode.FunctionRestriction funcRest)
 ::=

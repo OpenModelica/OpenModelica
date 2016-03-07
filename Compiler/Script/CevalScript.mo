@@ -2123,7 +2123,7 @@ algorithm
   path := Absyn.joinPaths(pathPrefix, Absyn.IDENT(name));
   paths := if SCode.isFunction(elt) then path::acc else acc;
   pathsMetarecord := match elt
-    case SCode.CLASS(restriction=SCode.R_METARECORD(moved = true)) then path::accMetarecord;
+    case SCode.CLASS(restriction=SCode.R_METARECORD()) then path::accMetarecord;
     else accMetarecord;
   end match;
   elements := getNonPartialElementsForInstantiatedClass(sp, elt, path);

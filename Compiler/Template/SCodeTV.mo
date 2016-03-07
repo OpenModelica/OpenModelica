@@ -356,9 +356,11 @@ package SCode
     record R_METARECORD
       Absyn.Path name;
       Integer index;
+      list<String> typeVars;
     end R_METARECORD;
 
     record R_UNIONTYPE
+      list<String> typeVars;
     end R_UNIONTYPE;
   end Restriction;
 

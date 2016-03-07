@@ -603,6 +603,21 @@ algorithm
   end match;
 end last;
 
+public function lastElement<T>
+  "Returns the last cons-cell of a list. Fails if the list is empty. Also returns the list length."
+  input list<T> inList;
+  output list<T> lst;
+  output Integer listLength=0;
+protected
+  list<T> rest=inList;
+algorithm
+  false := listEmpty(rest);
+  while not listEmpty(rest) loop
+    (lst as (_::rest)) := rest;
+    listLength := listLength+1;
+  end while;
+end lastElement;
+
 public function lastListOrEmpty<T>
   "Returns the last element(list) of a list of lists. Returns empty list
   if the outer list is empty."

@@ -51,6 +51,31 @@ algorithm
   delst := LIST(arrayCreate(1,1),arrayCreate(1,lst),arrayCreate(1,lst));
 end new;
 
+impure function fromList
+  input list<T> lst;
+  output DoubleEndedList<T> delst;
+protected
+  list<T> head,tail,tmp;
+  Integer length=0;
+  T t;
+algorithm
+  if listEmpty(lst) then
+    delst := LIST(arrayCreate(1,0),arrayCreate(1,{}),arrayCreate(1,{}));
+    return;
+  end if;
+  t::tmp := lst;
+  head := {t};
+  tail := head;
+  length := 1;
+  for l in tmp loop
+    tmp := {l};
+    Dangerous.listSetRest(tail, tmp);
+    tail := tmp;
+    length := length+1;
+  end for;
+  delst := LIST(arrayCreate(1,length),arrayCreate(1,head),arrayCreate(1,tail));
+end fromList;
+
 impure function empty
   input T dummy;
   output DoubleEndedList<T> delst;
@@ -94,6 +119,37 @@ algorithm
   arrayUpdate(delst.front, 1, elt::lst);
 end push_front;
 
+function push_list_front
+  input DoubleEndedList<T> delst;
+  input list<T> lst;
+protected
+  Integer length=arrayGet(delst.length,1), lstLength;
+  list<T> work, tail={}, tmp;
+  T t;
+algorithm
+  lstLength := listLength(lst);
+  if lstLength==0 then
+    return;
+  end if;
+  arrayUpdate(delst.length, 1, length+lstLength);
+  t::tmp := lst;
+  work := {t};
+  tail := work;
+  for l in tmp loop
+    tmp := {l};
+    Dangerous.listSetRest(tail, tmp);
+    tail := tmp;
+  end for;
+  if length==0 then
+    arrayUpdate(delst.front, 1, work);
+    arrayUpdate(delst.back, 1, work);
+    return;
+  end if;
+  tmp := arrayGet(delst.front,1);
+  Dangerous.listSetRest(tail, tmp);
+  arrayUpdate(delst.front, 1, work);
+end push_list_front;
+
 function push_back<T>
   input DoubleEndedList<T> delst;
   input T elt;
@@ -112,6 +168,37 @@ algorithm
   Dangerous.listSetRest(arrayGet(delst.back,1), lst);
   arrayUpdate(delst.back, 1, lst);
 end push_back;
+
+function push_list_back
+  input DoubleEndedList<T> delst;
+  input list<T> lst;
+protected
+  Integer length=arrayGet(delst.length,1), lstLength;
+  list<T> work, tail={}, tmp;
+  T t;
+algorithm
+  lstLength := listLength(lst);
+  if lstLength==0 then
+    return;
+  end if;
+  arrayUpdate(delst.length, 1, length+lstLength);
+  t::tmp := lst;
+  work := {t};
+  tail := work;
+  for l in tmp loop
+    tmp := {l};
+    Dangerous.listSetRest(tail, tmp);
+    tail := tmp;
+  end for;
+  if length==0 then
+    arrayUpdate(delst.front, 1, work);
+    arrayUpdate(delst.back, 1, work);
+    return;
+  end if;
+  tmp := arrayGet(delst.back,1);
+  Dangerous.listSetRest(tmp, tail);
+  arrayUpdate(delst.back, 1, tail);
+end push_list_back;
 
 function toListAndClear
   input DoubleEndedList<T> delst;

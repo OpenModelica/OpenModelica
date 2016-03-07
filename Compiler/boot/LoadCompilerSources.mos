@@ -321,7 +321,7 @@ if true then /* Suppress output */
     "../Util/BaseAvlTree.mo",
     "../Util/AvlTreeString2.mo",
 
-    // "../Util/DoubleEndedList.mo",
+    "../Util/DoubleEndedList.mo",
     "../Util/DiffAlgorithm.mo",
     "../Util/FMI.mo",
     "../Util/FMIExt.mo",

@@ -79,6 +79,7 @@ import DAEDump;
 import DAEUtil;
 import Debug;
 import Differentiate;
+import DoubleEndedList;
 import Error;
 import EvaluateFunctions;
 import Expression;
@@ -11029,41 +11030,6 @@ algorithm
   b := listMember(bEq,bEq1);
 end findBEqs;
 
-/*
-This is wrong!
-public function getSimVarByIndex
-  input Integer idx;
-  input SimCodeVar.SimVars allSimVars;
-  output SimCodeVar.SimVar simVar;
-algorithm
-  simVar := matchcontinue(idx,allSimVars)
-    local
-      Integer size,idx2;
-      list<SimCodeVar.SimVar> stateVars,algVars;
-      SimCodeVar.SimVar var;
-  case(_,SimCodeVar.SIMVARS(stateVars=stateVars,algVars=algVars))
-    equation
-      size = listLength(stateVars);
-      true = idx > size;
-      //its not a stateVar
-      idx2 = idx - 2*size + 1;
-      var = listGet(algVars,idx2);
-      then var;
-  case(_,SimCodeVar.SIMVARS(stateVars=stateVars,algVars=algVars))
-    equation
-      size = listLength(stateVars);
-      true = idx <= size;
-      //its a stateVar
-      var = listGet(stateVars,idx);
-      then var;
-  else
-    equation
-      print("SimCodeUtil.getSimVarByIndex failed!\n");
-    then fail();
-  end matchcontinue;
-end getSimVarByIndex;
-*/
-
 public function getAssignedCrefsOfSimEq"gets the crefs of the vars that are assigned (the lhs) of the simEqSystems
 author:Waurich TUD 2014-05"
   input Integer idx;
@@ -11079,7 +11045,7 @@ algorithm
       equation
         simEqSyst = List.getMemberOnTrue(idx,allEqs,indexIsEqual);
         crefs = getSimEqSystemCrefsLHS(simEqSyst);
-    then crefs;
+      then crefs;
   end match;
 end getAssignedCrefsOfSimEq;
 
@@ -11098,17 +11064,15 @@ algorithm
     case(SimCode.SES_RESIDUAL())
       equation
         print("implement SES_RESIDUAL in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
-    then {};
+      then {};
     case(SimCode.SES_SIMPLE_ASSIGN(cref=cref))
-      equation
-    then {cref};
+      then {cref};
     case(SimCode.SES_ARRAY_CALL_ASSIGN(lhs=lhs))
-      equation
-    then {Expression.expCref(lhs)};
+      then {Expression.expCref(lhs)};
     case(SimCode.SES_IFEQUATION())
       equation
         print("implement SES_IFEQUATION in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
-    then {};
+      then {};
     case(SimCode.SES_ALGORITHM()) equation
       print("implement SES_ALGORITHM in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
     then {};
@@ -11117,20 +11081,15 @@ algorithm
     then {};
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(vars=simVars,residual=residual)))
       equation
-        crefs2 = List.flatten(List.map(residual,getSimEqSystemCrefsLHS));
-        crefs = list(SimCodeFunctionUtil.varName(v) for v in simVars);
-        crefs = listAppend(crefs,crefs2);
-    then crefs;
+        crefs = List.flatten(List.map(residual,getSimEqSystemCrefsLHS));
+        crefs2 = list(SimCodeFunctionUtil.varName(v) for v in simVars);
+      then listAppend(crefs2,crefs2);
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(crefs=crefs)))
-      equation
-    then crefs;
-    case(SimCode.SES_MIXED(discVars=simVars))
-      equation
-        crefs = list(SimCodeFunctionUtil.varName(v) for v in simVars);
       then crefs;
+    case(SimCode.SES_MIXED(discVars=simVars))
+      then list(SimCodeFunctionUtil.varName(v) for v in simVars);
     case(SimCode.SES_WHEN(whenStmtLst={BackendDAE.ASSIGN(left=cref)}))
-      equation
-    then {cref};
+      then {cref};
   end match;
 end getSimEqSystemCrefsLHS;
 
@@ -11600,10 +11559,11 @@ protected
    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> spTA, spTB;
    list<tuple<Integer, list<Integer>>> sparseInts;
    list<SimCode.FmiUnknown> derivatives, outputs, discreteStates;
-   list<SimCodeVar.SimVar> varsA, varsB, clockedStates;
+   list<SimCodeVar.SimVar> varsA, varsB, varsC, clockedStates;
    SimCode.HashTableCrefToSimVar crefSimVarHT;
    list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
    list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
+   DoubleEndedList<SimCodeVar.SimVar> delst;
 algorithm
   try
     //print("Start creating createFMIModelStructure\n");
@@ -11643,13 +11603,12 @@ algorithm
     spTA  := mergeSparsePatter(spTA, spTB, {});
     //print("-- merged matrixes CD\n");
 
-    varsB := getSimVars2Crefs(diffedCrefsB, crefSimVarHT);
-    varsA := getSimVars2Crefs(diffCrefsB, crefSimVarHT);
-    varsA := listAppend(varsA, varsB);
-    varsB := getSimVars2Crefs(diffedCrefsA, crefSimVarHT);
-    varsA := listAppend(varsA, varsB);
-    varsB := getSimVars2Crefs(diffCrefsA, crefSimVarHT);
-    varsA := listAppend(varsA, varsB);
+    delst := DoubleEndedList.fromList(getSimVars2Crefs(diffedCrefsB, crefSimVarHT));
+    DoubleEndedList.push_list_back(delst, getSimVars2Crefs(diffCrefsB, crefSimVarHT));
+    DoubleEndedList.push_list_back(delst, getSimVars2Crefs(diffedCrefsA, crefSimVarHT));
+    DoubleEndedList.push_list_back(delst, getSimVars2Crefs(diffCrefsA, crefSimVarHT));
+    varsA := DoubleEndedList.toListAndClear(delst);
+
     //print("-- created vars for CD\n");
 
     sparseInts := sortSparsePattern(varsA, spTA, true);
