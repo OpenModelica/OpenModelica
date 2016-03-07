@@ -150,7 +150,7 @@ algorithm
       equation
         // fprint(Flags.TRANSLATE, "Translating class:" + n + "\n");
         r_1 = translateRestriction(c, r); // uniontype will not get translated!
-        (d_1,cmt) = translateClassdef(d,file_info);
+        (d_1,cmt) = translateClassdef(d,file_info,r_1);
         sFin = SCode.boolFinal(f);
         sEnc = SCode.boolEncapsulated(e);
         sPar = SCode.boolPartial(p);
@@ -296,6 +296,7 @@ algorithm
       Integer index;
       Boolean singleton, isImpure, moved;
       Absyn.FunctionPurity purity;
+      list<String> typeVars;
 
     // ?? Only normal functions can have 'external'
     case (d,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(purity)))
@@ -333,9 +334,10 @@ algorithm
     case (_,Absyn.R_PREDEFINED_CLOCK()) then SCode.R_PREDEFINED_CLOCK();
     case (_,Absyn.R_PREDEFINED_ENUMERATION()) then SCode.R_PREDEFINED_ENUMERATION();
 
-    case (_,Absyn.R_METARECORD(name,index,singleton,moved)) //MetaModelica extension, added by x07simbj
-      then SCode.R_METARECORD(name,index,singleton,moved);
-    case (_,Absyn.R_UNIONTYPE()) then SCode.R_UNIONTYPE(); /*MetaModelica extension added by x07simbj */
+    case (_,Absyn.R_METARECORD(name,index,singleton,moved,typeVars)) //MetaModelica extension, added by x07simbj
+      then SCode.R_METARECORD(name,index,singleton,moved,typeVars);
+    case (Absyn.CLASS(body=Absyn.PARTS(typeVars=typeVars)),Absyn.R_UNIONTYPE()) then SCode.R_UNIONTYPE(typeVars); /*MetaModelica extension added by x07simbj */
+    case (_,Absyn.R_UNIONTYPE()) then SCode.R_UNIONTYPE({}); /*MetaModelica extension added by x07simbj */
 
   end match;
 end translateRestriction;
@@ -428,6 +430,7 @@ protected function translateClassdef
   LS: Divided the translateClassdef into separate functions for collecting the different parts"
   input Absyn.ClassDef inClassDef;
   input SourceInfo info;
+  input SCode.Restriction re;
   output SCode.ClassDef outClassDef;
   output SCode.Comment outComment;
 algorithm
@@ -471,6 +474,11 @@ algorithm
     case (Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmtString),_)
       equation
         // fprintln(Flags.TRANSLATE, "translating class parts");
+        typeVars = match re
+          case SCode.R_METARECORD() then List.union(typeVars, re.typeVars);
+          case SCode.R_UNIONTYPE() then List.union(typeVars, re.typeVars);
+          else typeVars;
+        end match;
         tvels = List.map1(typeVars, makeTypeVarElement, info);
         els = translateClassdefElements(parts);
         els = listAppend(tvels,els);
@@ -1172,7 +1180,7 @@ algorithm
       equation
         // fprintln(Flags.TRANSLATE, "translating local class: " + n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
-        (de_1,cmt) = translateClassdef(de,i);
+        (de_1,cmt) = translateClassdef(de,i,re_1);
         (_, redecl) = translateRedeclarekeywords(repl);
         sRed = SCode.boolRedeclare(redecl);
         sFin = SCode.boolFinal(finalPrefix);

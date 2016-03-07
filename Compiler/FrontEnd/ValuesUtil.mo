@@ -927,7 +927,7 @@ algorithm
         explist = List.map(vallist, valueExp);
         typelist = List.map(vallist, Types.typeOfValue);
         (explist,_) = Types.matchTypeTuple(explist, typelist, List.map(typelist, Types.boxIfUnboxedType), true);
-      then DAE.METARECORDCALL(path,explist,namelst,ix);
+      then DAE.METARECORDCALL(path,explist,namelst,ix,{});
 
     case (Values.META_FAIL())
       then DAE.CALL(Absyn.IDENT("fail"),{},DAE.callAttrBuiltinOther);

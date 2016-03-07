@@ -389,7 +389,7 @@ template recordDeclaration(RecordDeclaration recDecl)
     <<
     <%recordDefinition(dotPath(defPath),
                       underscorePath(defPath),
-                      (variables |> VARIABLE(__) => '"_<%crefStr(name)%>"' ;separator=","),
+                      (variables |> VARIABLE(__) => '"<%crefStr(name)%>"' ;separator=","),
                       listLength(variables))%>
     >>
   case RECORD_DECL_DEF(__) then

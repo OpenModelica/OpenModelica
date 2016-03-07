@@ -1144,7 +1144,7 @@ algorithm
         vars = valuesToVars(vl, ids);
         utPath = Absyn.stripLast(cname);
       then
-        DAE.T_METARECORD(utPath, index, vars, false /*We simply do not know...*/,{cname});
+        DAE.T_METARECORD(utPath, {} /* typeVar? */, index, vars, false /*We simply do not know...*/,{cname});
 
         // MetaModelica list type
     case Values.LIST(vl)
@@ -1562,19 +1562,19 @@ algorithm
       then Absyn.pathEqual(p1,p2);
 
     case (DAE.T_METAUNIONTYPE(source = {p1}),DAE.T_METARECORD(utPath=p2))
-      then Absyn.pathEqual(p1,p2);
+      then if Absyn.pathEqual(p1,p2) then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
 
     // If the record is the only one in the uniontype, of course their types match
     case (DAE.T_METARECORD(knownSingleton=true,utPath = p1),DAE.T_METAUNIONTYPE(source={p2}))
-      then Absyn.pathEqual(p1,p2);
+      then if Absyn.pathEqual(p1,p2) then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
 
     // <uniontype> = <uniontype>
     case (DAE.T_METAUNIONTYPE(source = {p1}), DAE.T_METAUNIONTYPE(source = {p2}))
-      then Absyn.pathEqual(p1,p2);
+      then if Absyn.pathEqual(p1,p2) then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
     case (DAE.T_METAUNIONTYPE(source = {p1}), DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}))
-      then Absyn.pathEqual(p1,p2);
+      then Absyn.pathEqual(p1,p2); // TODO: Remove?
     case(DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}), DAE.T_METAUNIONTYPE(source = {p1}))
-      then Absyn.pathEqual(p1,p2);
+      then Absyn.pathEqual(p1,p2); // TODO: Remove?
 
     case (DAE.T_CODE(ty = c1),DAE.T_CODE(ty = c2)) then valueEq(c1,c2);
 
@@ -2243,8 +2243,7 @@ algorithm
     case (DAE.T_METAUNIONTYPE(source = {p}))
       equation
         res = Absyn.pathStringNoQual(p);
-      then
-        res;
+      then if listEmpty(inType.typeVars) then res else (res+"<"+stringDelimitList(list(unparseType(tv) for tv in inType.typeVars), ",")+">");
 
     // MetaModelica uniontype (but we know which record in the UT it is)
 /*
@@ -4236,10 +4235,10 @@ algorithm
         (e_2,res) = matchTypeTuple(rest,ts1,ts2,printFailtrace);
       then
         (e_1::e_2,(tp :: res));
-    case (_,(_ :: _),(_ :: _),true)
+    case (_,(t1 :: _),(t2 :: _),true)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Types.matchTypeTuple failed\n");
+        Debug.trace("- Types.matchTypeTuple failed:"+Types.unparseType(t1)+" "+Types.unparseType(t2)+"\n");
       then
         fail();
   end matchcontinue;
@@ -4813,7 +4812,7 @@ algorithm
         tys1 = List.map(v, getVarType);
         tys2 = List.map(tys1, boxIfUnboxedType);
         (elist,_) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
-        e_1 = DAE.METARECORDCALL(path1, elist, l, -1);
+        e_1 = DAE.METARECORDCALL(path1, elist, l, -1, {});
       then (e_1,t2);
 
     case (DAE.RECORD(path = path1, exps = elist),
@@ -4828,17 +4827,8 @@ algorithm
         tys1 = List.map(v, getVarType);
         tys2 = List.map(tys1, boxIfUnboxedType);
         (elist,_) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
-        e_1 = DAE.METARECORDCALL(path1, elist, l, -1);
+        e_1 = DAE.METARECORDCALL(path1, elist, l, -1, {});
       then (e_1,t2);
-
-    case (DAE.CALL(),
-          DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),
-          DAE.T_METABOXED(),_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Not yet implemented: Converting record calls (not constructor) into boxed records\n");
-      then
-        fail();
 
     case (DAE.CREF(cref,_),
           t1 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = v, source = {path}),
@@ -4855,8 +4845,17 @@ algorithm
         crefList = List.map1r(crefList, ComponentReference.joinCrefs, cref);
         elist = List.threadMap(crefList, expTypes, Expression.makeCrefExp);
         (elist,_) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
-        e_1 = DAE.METARECORDCALL(path, elist, l, -1);
+        e_1 = DAE.METARECORDCALL(path, elist, l, -1, {});
       then (e_1,t2);
+
+    case (e,
+          DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),
+          DAE.T_METABOXED(),_)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Not yet implemented: Converting record into boxed records: "+ExpressionDump.printExpStr(e)+"\n");
+      then
+        fail();
 
     case (DAE.BOX(e),DAE.T_METABOXED(ty = t1),t2,_)
       equation
@@ -5793,7 +5792,7 @@ algorithm
     case (DAE.T_METARECORD(knownSingleton=false,utPath = path1), DAE.T_METARECORD(knownSingleton=false,utPath=path2))
       equation
         true = Absyn.pathEqual(path1,path2);
-      then DAE.T_METAUNIONTYPE({},false,DAE.NOT_SINGLETON(),{path1});
+      then DAE.T_METAUNIONTYPE({},inType1.typeVars,false,DAE.NOT_SINGLETON(),{path1});
 
     case (DAE.T_INTEGER(),DAE.T_REAL())
       then DAE.T_REAL_DEFAULT;
@@ -6075,6 +6074,9 @@ algorithm
       list<DAE.Const> cs;
       list<DAE.VarParallelism> ps;
       list<Option<DAE.Exp>> oe;
+      list<Absyn.Path> paths;
+      Boolean knownSingleton;
+      DAE.EvaluateSingletonType singletonType;
 
     case (DAE.T_METAPOLYMORPHIC(name = id),_,_,_)
       equation
@@ -6099,6 +6101,15 @@ algorithm
         t2 = fixPolymorphicRestype2(t1, prefix,bindings, info);
         t2 = boxIfUnboxedType(t2);
       then DAE.T_METAOPTION(t2,DAE.emptyTypeSource);
+
+    case (DAE.T_METAUNIONTYPE(typeVars={}),_,_,_)
+      then ty;
+
+    case (DAE.T_METAUNIONTYPE(typeVars=tys),_,_,_)
+      equation
+        tys = List.map3(tys, fixPolymorphicRestype2, prefix, bindings, info);
+        tys = List.map(tys, boxIfUnboxedType);
+      then DAE.T_METAUNIONTYPE(ty.paths,tys,ty.knownSingleton,ty.singletonType,ty.source);
 
     case (DAE.T_METATUPLE(types = tys),_,_,_)
       equation
@@ -6206,8 +6217,9 @@ algorithm
       case DAE.T_METAOPTION(ty = ty) then {ty};
       case DAE.T_TUPLE(types = tys) then tys;
       case DAE.T_METATUPLE(types = tys) then tys;
-      case DAE.T_METARECORD(fields = fields)
-        then List.map(fields, getVarType);
+      case DAE.T_METAUNIONTYPE(typeVars = tys) then tys;
+      case DAE.T_METARECORD(typeVars = tys, fields = fields)
+        then listAppend(tys, List.map(fields, getVarType));
       case DAE.T_COMPLEX(varLst = fields)
         then List.map(fields, getVarType);
       case DAE.T_SUBTYPE_BASIC(varLst = fields)
@@ -6453,9 +6465,10 @@ possible)."
 protected
   InstTypes.PolymorphicBindings unsolvedBindings;
 algorithm
-  // print("solvePoly " + Absyn.optPathString(path) + " " + polymorphicBindingsStr(bindings) + "\n");
+  // print("solvePoly " + polymorphicBindingsStr(bindings) + "\n");
   (solvedBindings,unsolvedBindings) := solvePolymorphicBindingsLoop(bindings, {}, {});
   checkValidBindings(bindings, solvedBindings, unsolvedBindings, info, pathLst);
+  // print("solved poly " + polymorphicBindingsStr(solvedBindings) + "\n");
 end solvePolymorphicBindings;
 
 protected function checkValidBindings
@@ -6822,7 +6835,7 @@ algorithm
     case (DAE.T_METAUNIONTYPE(source = {path1}),DAE.T_METAUNIONTYPE(source = {path2}))
       equation
         true = Absyn.pathEqual(path1,path2);
-      then inBindings;
+      then subtypePolymorphicList(actual.typeVars, expected.typeVars, envPath, inBindings);
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path1)),DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path2)))
       equation
@@ -7769,7 +7782,7 @@ algorithm
       Type funcRType;
       DAE.FunctionAttributes funcAttr;
       Boolean b;
-      list<DAE.Type> tys;
+      list<DAE.Type> tys, typeVars;
       DAE.CodeType ct;
       String str;
 
@@ -7801,7 +7814,7 @@ algorithm
       algorithm
         t.source := ts;
       then t;
-    case (DAE.T_METARECORD(p, i, v, b, _), ts) then DAE.T_METARECORD(p, i, v, b, ts);
+    case (DAE.T_METARECORD(p, typeVars, i, v, b, _), ts) then DAE.T_METARECORD(p, typeVars, i, v, b, ts);
     case (DAE.T_METAARRAY(t, _), ts) then DAE.T_METAARRAY(t, ts);
     case (DAE.T_METABOXED(t, _), ts) then DAE.T_METABOXED(t, ts);
     case (DAE.T_METAPOLYMORPHIC(str, _), ts) then DAE.T_METAPOLYMORPHIC(str, ts);
@@ -8196,7 +8209,7 @@ algorithm
     local
       Boolean b;
       Absyn.Path p;
-    case DAE.T_METARECORD(utPath=p,knownSingleton=b) then DAE.T_METAUNIONTYPE({},b,if b then DAE.EVAL_SINGLETON_KNOWN_TYPE(inTy) else DAE.NOT_SINGLETON(),{p});
+    case DAE.T_METARECORD(utPath=p,knownSingleton=b) then DAE.T_METAUNIONTYPE({},inTy.typeVars,b,if b then DAE.EVAL_SINGLETON_KNOWN_TYPE(inTy) else DAE.NOT_SINGLETON(),{p});
     else inTy;
   end match;
 end getUniontypeIfMetarecord;
@@ -8215,7 +8228,7 @@ protected function getUniontypeIfMetarecordTraverse
   output Integer odummy = dummy;
 algorithm
   oty := match ty
-    case DAE.T_METARECORD() then DAE.T_METAUNIONTYPE({},ty.knownSingleton,if ty.knownSingleton then DAE.EVAL_SINGLETON_KNOWN_TYPE(ty) else DAE.NOT_SINGLETON(),{ty.utPath});
+    case DAE.T_METARECORD() then DAE.T_METAUNIONTYPE({},ty.typeVars,ty.knownSingleton,if ty.knownSingleton then DAE.EVAL_SINGLETON_KNOWN_TYPE(ty) else DAE.NOT_SINGLETON(),{ty.utPath});
     else ty;
   end match;
 end getUniontypeIfMetarecordTraverse;
@@ -8909,6 +8922,24 @@ algorithm
     else ty;
   end match;
 end getMetaRecordIfSingleton;
+
+public function setTypeVariables
+  input DAE.Type ty;
+  input list<DAE.Type> typeVars;
+  output DAE.Type oty;
+algorithm
+  oty := match ty
+    case oty as DAE.T_METAUNIONTYPE()
+      algorithm
+        oty.typeVars := typeVars;
+      then oty;
+    case oty as DAE.T_METARECORD()
+      algorithm
+        oty.typeVars := typeVars;
+      then oty;
+    else ty;
+  end match;
+end setTypeVariables;
 
 annotation(__OpenModelica_Interface="frontend");
 end Types;

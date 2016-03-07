@@ -2012,7 +2012,7 @@ algorithm
       SCode.ClassDef classDef;
       Option<DAE.EqMod> eq;
       DAE.Dimensions dims;
-      Absyn.Path cn;
+      Absyn.Path cn, fq_class;
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod;
       FCore.Cache cache;
@@ -2040,6 +2040,7 @@ algorithm
       InstStateMachineUtil.SMNodeToFlatSMGroupTable smCompToFlatSM;
       //List<tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomLst;
       InstUtil.DomainFieldsLst domainFieldsLst;
+      list<String> typeVars;
 //      list<tuple<String,Integer>> domainNLst;
 
     /*// uncomment for debugging
@@ -2312,6 +2313,13 @@ algorithm
         eqConstraint = InstUtil.equalityConstraint(env5, els, info);
         ci_state6 = if isSome(ed) then ClassInf.assertTrans(ci_state6,ClassInf.FOUND_EXT_DECL(),info) else ci_state6;
         (cache,oty) = MetaUtil.fixUniontype(cache, env5, ci_state6, inClassDef6);
+        _ = match oty
+          case SOME(ty as DAE.T_METAUNIONTYPE(typeVars=_::_))
+            algorithm
+              Error.addSourceMessage(Error.UNIONTYPE_MISSING_TYPEVARS, {Types.unparseType(ty)}, info);
+            then fail();
+          else ();
+        end match;
       then
         (cache,env5,ih,store,dae,csets5,ci_state6,vars,oty,NONE(),eqConstraint,graph);
 
@@ -2399,15 +2407,8 @@ algorithm
           SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = ad), modifications = mod, attributes=DA),
           re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,callscope,graph,_,_,_,_,_)
       equation
-        // don't enter here
-        // false = true;
         false = Util.getStatefulBoolean(stopInst);
-
-        // no meta-modelica
-        // false = Config.acceptMetaModelicaGrammar();
-        // no types, enums or connectors please!
         false = valueEq(re, SCode.R_TYPE());
-        // false = SCode.isFunctionRestriction(re);
         false = valueEq(re, SCode.R_ENUMERATION());
         false = valueEq(re, SCode.R_PREDEFINED_ENUMERATION());
         false = SCode.isConnector(re);
@@ -2416,7 +2417,6 @@ algorithm
         (cache,SCode.CLASS(name=cn2,restriction=r),_) = Lookup.lookupClass(cache, env, cn, SOME(info));
 
         false = InstUtil.checkDerivedRestriction(re, r, cn2);
-
         // chain the redeclares
         mod = InstUtil.chainRedeclares(mods, mod);
 
@@ -2428,16 +2428,11 @@ algorithm
         // print("mods: " + Absyn.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
         mods_1 = Mod.merge(mods, mod_1, className);
 
-        //print("DEF:--->" + FGraph.printGraphPathStr(env) + " = " + Absyn.pathString(cn) + " mods: " + Mod.printModStr(mods_1) + "\n");
-        //System.startTimer();
-        // use instExtends for derived with no array dimensions and no modification (given via the mods_1)
         (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) =
         instClassdef2(cache, env, ih, store, mods_1, pre, ci_state, className,
            SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},{},NONE()),
            re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
            callscope, graph, inSets, instSingleCref,comment,info,stopInst);
-        //System.stopTimer();
-        //print("DEF:<---" + FGraph.printGraphPathStr(env) + " took: " + realString(System.getTimerIntervalTime()) + "\n");
         oDA = SCode.mergeAttributes(DA,oDA);
       then
         (cache,env,ih,store,dae,csets,ci_state,vars,bc,oDA,eqConstraint,graph);
@@ -2453,48 +2448,20 @@ algorithm
         // not a basic type, change class name!
         false = InstUtil.checkDerivedRestriction(re, r, cn2);
 
-        // change the class name to className!!
-        // package A2=A
-        // package A3=A(mods)
-        // will get you different function implementations for the different packages!
-        /*
-        fullEnvPath = Absyn.selectPathsOpt(FGraph.getScopePath(env), Absyn.IDENT(""));
-        fullClassName = "DE_" + Absyn.pathStringReplaceDot(fullEnvPath, "_") + "_D_" +
-                        Absyn.pathStringReplaceDot(Absyn.selectPathsOpt(FGraph.getScopePath(cenv), Absyn.IDENT("")), "_" ) + "." + cn2 + "_ED";
-        fullClassName = System.stringReplace(fullClassName, ".", "_");
-
-        // open a scope with a unique name in the base class environment so there is no collision
-        cenv_2 = FGraph.openScope(cenv, enc2, SOME(fullClassName), FGraph.classInfToScopeType(ci_state));
-        new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
-        */
-        // open a scope with the correct name
-
-        // className = className + "|" + PrefixUtil.printPrefixStr(pre) + "|" + cn2;
-
         cenv_2 = FGraph.openScope(cenv, enc2, SOME(className), FGraph.classInfToScopeType(ci_state));
         new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
 
         c = SCode.setClassName(className, c);
-
-        //print("Derived Env: " + FGraph.printGraphPathStr(cenv_2) + "\n");
-
         // chain the redeclares
         mod = InstUtil.chainRedeclares(mods, mod);
-
         // elab the modifiers in the parent environment!
         (parentEnv, _) = FGraph.stripLastScopeRef(env);
         (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, impl, Mod.DERIVED(cn), info);
         mods_1 = Mod.merge(mods, mod_1, className);
-
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
-        // inst_dims2 = InstUtil.instDimExpLst(dims, impl);
         inst_dims_1 = List.appendLastList(inst_dims, dims);
-
-        _ = Absyn.getArrayDimOptAsList(ad);
-        (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
-            inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
-
+        (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis, inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
         ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
         oDA = SCode.mergeAttributes(DA,oDA);
       then
@@ -2586,15 +2553,6 @@ algorithm
         Error.addSourceMessage(Error.META_POLYMORPHIC, {className}, info);
       then fail();
 
-    case (_,_,_,_,_,_,_,_,
-          SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(arrayDim=SOME(_))),
-          _,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        cns = Dump.unparseTypeSpec(tSpec);
-        Error.addSourceMessage(Error.META_INVALID_COMPLEX_TYPE, {cns}, info);
-      then fail();
-
     case (cache,env,ih,store,mods,pre,ci_state,_,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),modifications = mod, attributes=DA),
           re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,_,graph,_,_,_,_,_)
@@ -2603,6 +2561,38 @@ algorithm
         (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,oty,optDerAttr,outEqualityConstraint,outGraph)
         = instClassdef2(cache,env,ih,store,mods,pre,ci_state,className,SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),mod,DA),re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,inCallingScope,graph,inSets,instSingleCref,comment,info,stopInst);
       then (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,oty,optDerAttr,outEqualityConstraint,outGraph);
+
+    case (cache,env,ih,store,mods,pre,_,_,
+          SCode.DERIVED(Absyn.TCOMPLEX(cn,tSpecs,NONE()),modifications = mod, attributes=DA),
+          _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
+      equation
+        true = Config.acceptMetaModelicaGrammar();
+        false = Util.getStatefulBoolean(stopInst);
+        true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
+        false = listMember(Absyn.pathString(cn), {"tuple","Tuple","array","Array","Option","list","List"});
+        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r as SCode.R_UNIONTYPE(typeVars=typeVars),classDef=classDef)),cenv) = Lookup.lookupClass(cache, env, cn, SOME(info));
+        (cache,fq_class) = makeFullyQualified(cache,cenv,Absyn.IDENT(cn2));
+        new_ci_state = ClassInf.META_UNIONTYPE(fq_class, typeVars);
+        (cache,SOME(ty as DAE.T_METAUNIONTYPE())) = MetaUtil.fixUniontype(cache, env, new_ci_state, classDef);
+        (cache,_,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{}, inSets,info);
+        tys = list(Types.boxIfUnboxedType(t) for t in tys);
+        if not (listLength(tys)==listLength(typeVars)) then
+          Error.addSourceMessage(Error.UNIONTYPE_WRONG_NUM_TYPEVARS,{Absyn.pathString(fq_class),String(listLength(typeVars)),String(listLength(tys))},info);
+          fail();
+        end if;
+        ty = Types.setTypeVariables(ty, tys);
+        oDA = SCode.mergeAttributes(DA,oDA);
+        bc = SOME(ty);
+      then (cache,env,ih,store,DAE.emptyDae,csets,new_ci_state,{},bc,oDA,NONE(),graph);
+
+    case (_,_,_,_,_,_,_,_,
+          SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(arrayDim=SOME(_))),
+          _,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        true = Config.acceptMetaModelicaGrammar();
+        cns = Dump.unparseTypeSpec(tSpec);
+        Error.addSourceMessage(Error.META_INVALID_COMPLEX_TYPE, {cns}, info);
+      then fail();
 
     case (_,_,_,_,_,_,_,_,
           SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(path=cn,typeSpecs=tSpecs)),

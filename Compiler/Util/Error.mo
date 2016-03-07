@@ -914,6 +914,12 @@ public constant Message IS_PRESENT_WRONG_DIRECTION = MESSAGE(5041, TRANSLATION()
   Util.gettext("isPresent needs to be called on an input or output formal parameter."));
 public constant Message IS_PRESENT_INVALID_EXP = MESSAGE(5042, TRANSLATION(), ERROR(),
   Util.gettext("isPresent needs to be called on an input or output formal parameter, but got a non-identifier expression: %s."));
+public constant Message METARECORD_WITH_TYPEVARS = MESSAGE(5043, TRANSLATION(), ERROR(),
+  Util.gettext("Records inside uniontypes must not contain type variables (got: %s). Put them on the uniontype instead."));
+public constant Message UNIONTYPE_MISSING_TYPEVARS = MESSAGE(5044, TRANSLATION(), ERROR(),
+  Util.gettext("Uniontype %s has type variables, but they were not given in the declaration."));
+public constant Message UNIONTYPE_WRONG_NUM_TYPEVARS = MESSAGE(5045, TRANSLATION(), ERROR(),
+  Util.gettext("Uniontype %s has %s type variables, but got %s."));
 
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   Util.notrans("%s"));

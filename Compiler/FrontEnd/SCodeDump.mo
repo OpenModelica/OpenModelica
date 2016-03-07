@@ -165,7 +165,7 @@ algorithm
     case SCode.R_TYPE() then "type";
     case SCode.R_PACKAGE() then "package";
     case SCode.R_ENUMERATION() then "enumeration";
-    case SCode.R_METARECORD() then "metarecord";
+    case SCode.R_METARECORD() then "metarecord " + Absyn.pathString(inRestriction.name);
     case SCode.R_UNIONTYPE() then "uniontype";
     // predefined types
     case SCode.R_PREDEFINED_INTEGER() then "Integer";

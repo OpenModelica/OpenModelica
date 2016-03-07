@@ -153,6 +153,7 @@ uniontype State "- Machine states, the string contains the classname."
 
   record META_UNIONTYPE
     Absyn.Path path;
+    list<String> typeVars;
   end META_UNIONTYPE;
 
   record META_ARRAY
@@ -435,7 +436,7 @@ algorithm
       then TYPE_CLOCK(p);
     case (SCode.R_PREDEFINED_ENUMERATION(),p) then TYPE_ENUM(p);
      /* Meta Modelica extensions */
-    case (SCode.R_UNIONTYPE(),p) then META_UNIONTYPE(p);
+    case (SCode.R_UNIONTYPE(),p) then META_UNIONTYPE(p, inRestriction.typeVars);
     case (SCode.R_METARECORD(),p) then META_RECORD(p);
   end match;
 end start_dispatch;
@@ -767,39 +768,15 @@ algorithm
   end match;
 end isRecord;
 
-public function stateToSCodeRestriction
-"@author: adrpo
- ClassInf.State -> SCode.Restriction"
+public function isMetaRecord
   input State inState;
-  output SCode.Restriction outRestriction;
-  output Absyn.Path outPath;
+  output Boolean outIsRecord;
 algorithm
-  (outRestriction, outPath) := match (inState)
-    local Absyn.Path p; Boolean isExpandable, isImpure;
-
-    case UNKNOWN(p) then (SCode.R_CLASS(),p);
-    case OPTIMIZATION(p) then (SCode.R_OPTIMIZATION(),p);
-    case MODEL(p) then (SCode.R_MODEL(),p);
-      // mahge: TODO ClassInf.RECORD should contain isOperator.
-    case RECORD(p) then (SCode.R_RECORD(false),p);
-    case BLOCK(p) then (SCode.R_BLOCK(),p) ;
-    case CONNECTOR(p,isExpandable) then (SCode.R_CONNECTOR(isExpandable),p);
-    case TYPE(p) then (SCode.R_TYPE(),p);
-    case PACKAGE(p) then (SCode.R_PACKAGE(),p) ;
-    case FUNCTION(p,isImpure) then (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure)),p);
-    case ENUMERATION(p) then (SCode.R_ENUMERATION(),p);
-    case TYPE_INTEGER(p) then (SCode.R_PREDEFINED_INTEGER(),p);
-    case TYPE_REAL(p) then (SCode.R_PREDEFINED_REAL(),p);
-    case TYPE_STRING(p) then (SCode.R_PREDEFINED_STRING(),p);
-    case TYPE_BOOL(p) then (SCode.R_PREDEFINED_BOOLEAN(),p);
-    // BTH
-    case TYPE_CLOCK(p) then (SCode.R_PREDEFINED_CLOCK(),p);
-    case TYPE_ENUM(p) then (SCode.R_PREDEFINED_ENUMERATION(),p);
-     /* Meta Modelica extensions */
-    case META_UNIONTYPE(p) then (SCode.R_UNIONTYPE(),p);
-    case  META_RECORD(p) then (SCode.R_METARECORD(p, 0, false, false),p);
+  outIsRecord := match inState
+    case META_RECORD() then true;
+    else false;
   end match;
-end stateToSCodeRestriction;
+end isMetaRecord;
 
 annotation(__OpenModelica_Interface="frontend");
 end ClassInf;

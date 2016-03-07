@@ -3169,8 +3169,10 @@ protected
   Boolean singleton;
   DAE.TypeSource ts;
   FCore.Cache cache;
+  list<DAE.Type> typeVarsType;
+  list<String> typeVars;
 algorithm
-  SCode.CLASS(name=id,restriction=SCode.R_METARECORD(utPath,index,singleton),classDef=SCode.PARTS(elementLst = els)) := cdef;
+  SCode.CLASS(name=id,restriction=SCode.R_METARECORD(name=utPath,index=index,singleton=singleton,typeVars=typeVars),classDef=SCode.PARTS(elementLst = els)) := cdef;
   env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(id), SOME(FCore.CLASS_SCOPE()));
   // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + "\n");
   (cache,utPath) := Inst.makeFullyQualified(inCache,env,utPath);
@@ -3181,8 +3183,10 @@ algorithm
     ClassInf.META_RECORD(Absyn.IDENT("")), List.map1(els,Util.makeTuple,DAE.NOMOD()),
     {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
   varlst := Types.boxVarLst(varlst);
+  // for v in varlst loop print(Types.unparseType(v.ty)+"\n"); end for;
   ts := Types.mkTypeSource(SOME(path));
-  ftype := DAE.T_METARECORD(utPath,index,varlst,singleton,ts);
+  typeVarsType := list(DAE.T_METAPOLYMORPHIC(tv,{}) for tv in typeVars);
+  ftype := DAE.T_METARECORD(utPath,typeVarsType,index,varlst,singleton,ts);
   // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + " OK " + Types.unparseType(ftype) +"\n");
 end buildMetaRecordType;
 

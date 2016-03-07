@@ -88,9 +88,11 @@ uniontype Restriction
     Integer index; //Index in the uniontype
     Boolean singleton;
     Boolean moved; // true if moved outside uniontype, otherwise false.
+    list<String> typeVars;
   end R_METARECORD; /* added by x07simbj */
 
   record R_UNIONTYPE "Metamodelica extension"
+    list<String> typeVars;
   end R_UNIONTYPE; /* added by simbj */
 end Restriction;
 

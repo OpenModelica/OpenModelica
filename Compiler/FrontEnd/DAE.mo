@@ -830,7 +830,7 @@ constant Type T_METATYPE_DEFAULT    = T_METATYPE(T_UNKNOWN_DEFAULT, emptyTypeSou
 constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with unknown CiState";
 constant Type T_COMPLEX_DEFAULT_RECORD = T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with record CiState";
 
-constant Type T_SOURCEINFO_DEFAULT_METARECORD = T_METARECORD(Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO")), 1, {
+constant Type T_SOURCEINFO_DEFAULT_METARECORD = T_METARECORD(Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO")), {}, 1, {
     TYPES_VAR("fileName", dummyAttrVar, T_STRING_DEFAULT, UNBOUND(), NONE()),
     TYPES_VAR("isReadOnly", dummyAttrVar, T_BOOL_DEFAULT, UNBOUND(), NONE()),
     TYPES_VAR("lineNumberStart", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
@@ -839,7 +839,7 @@ constant Type T_SOURCEINFO_DEFAULT_METARECORD = T_METARECORD(Absyn.QUALIFIED("So
     TYPES_VAR("columnNumberEnd", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
     TYPES_VAR("lastModification", dummyAttrVar, T_REAL_DEFAULT, UNBOUND(), NONE())
   }, true, emptyTypeSource);
-constant Type T_SOURCEINFO_DEFAULT  = T_METAUNIONTYPE({Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO"))},true,EVAL_SINGLETON_KNOWN_TYPE(T_SOURCEINFO_DEFAULT_METARECORD),Absyn.IDENT("SourceInfo")::{});
+constant Type T_SOURCEINFO_DEFAULT  = T_METAUNIONTYPE({Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO"))},{},true,EVAL_SINGLETON_KNOWN_TYPE(T_SOURCEINFO_DEFAULT_METARECORD),Absyn.IDENT("SourceInfo")::{});
 
 // Arrays of unknown dimension, eg. Real[:]
 public constant Type T_ARRAY_REAL_NODIM    = T_ARRAY(T_REAL_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
@@ -970,6 +970,7 @@ public uniontype Type "models the different front-end and back-end types"
   record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
     // TODO: You can't trust these fields as it seems MetaUtil.fixUniontype is sent empty elements when running dependency analysis
     list<Absyn.Path> paths;
+    list<Type> typeVars;
     Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
     EvaluateSingletonType singletonType;
     TypeSource source;
@@ -979,6 +980,7 @@ public uniontype Type "models the different front-end and back-end types"
     Absyn.Path utPath "the path to its uniontype; this is what we match the type against";
     // If the metarecord constructor was added to the FunctionTree, this would
     // not be needed. They are used to create the datatype in the runtime...
+    list<Type> typeVars;
     Integer index; //The index in the uniontype
     list<Var> fields;
     Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
@@ -1469,6 +1471,7 @@ uniontype Exp "Expressions
     list<Exp> args;
     list<String> fieldNames;
     Integer index; //Index in the uniontype
+    list<Type> typeVars;
   end METARECORDCALL;
 
   record MATCHEXPRESSION
@@ -1619,6 +1622,7 @@ public uniontype Pattern "Patterns deconstruct expressions"
     Integer index;
     list<Pattern> patterns;
     list<Var> fields; // Needed to be able to bind a variable to the fields
+    list<Type> typeVars;
     Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
   end PAT_CALL;
   record PAT_CALL_NAMED "RECORD(pat1,...,patn); all patterns are named"

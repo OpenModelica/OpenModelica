@@ -48,6 +48,7 @@ import Error;
 import FGraph;
 import Flags;
 import List;
+import MetaModelica.Dangerous;
 import Lookup;
 import Types;
 
@@ -73,7 +74,8 @@ algorithm
           classes := c :: listAppend(meta_classes, classes);
         end for;
 
-        outProgram.classes := listReverse(classes);
+        outProgram.classes := Dangerous.listReverseInPlace(classes);
+        // print(Dump.unparseStr(outProgram));
       then
         ();
 
@@ -93,10 +95,12 @@ protected
   list<Absyn.ClassPart> parts;
 algorithm
   _ := match outClass
+    local
+      list<String> typeVars;
     case Absyn.CLASS(restriction = Absyn.R_UNIONTYPE(),
-        body = body as Absyn.PARTS(classParts = parts))
+        body = body as Absyn.PARTS(classParts = parts, typeVars=typeVars))
       algorithm
-        (parts, outMetaClasses) := fixClassParts(parts, outClass.name);
+        (parts, outMetaClasses) := fixClassParts(parts, outClass.name, body.typeVars);
         body.classParts := parts;
         outClass.body := body;
       then
@@ -105,7 +109,7 @@ algorithm
     case Absyn.CLASS(restriction = Absyn.R_UNIONTYPE(),
         body = body as Absyn.CLASS_EXTENDS(parts = parts))
       algorithm
-        (parts, outMetaClasses) := fixClassParts(parts, outClass.name);
+        (parts, outMetaClasses) := fixClassParts(parts, outClass.name, {});
         body.parts := parts;
         outClass.body := body;
       then
@@ -213,6 +217,7 @@ end convertElementToClass;
 protected function fixClassParts
   input list<Absyn.ClassPart> inClassParts;
   input Absyn.Ident inClassName;
+  input list<String> typeVars;
   output list<Absyn.ClassPart> outClassParts = {};
   output list<Absyn.Class> outMetaClasses = {};
 protected
@@ -222,7 +227,7 @@ algorithm
   outClassParts := list(match p
     case Absyn.PUBLIC()
       algorithm
-        (els, meta_classes) := fixElementItems(p.contents, inClassName);
+        (els, meta_classes) := fixElementItems(p.contents, inClassName, typeVars);
         p.contents := els;
         outMetaClasses := listAppend(meta_classes, outMetaClasses);
       then
@@ -230,7 +235,7 @@ algorithm
 
     case Absyn.PROTECTED()
       algorithm
-        (els, meta_classes) := fixElementItems(p.contents, inClassName);
+        (els, meta_classes) := fixElementItems(p.contents, inClassName, typeVars);
         p.contents := els;
         outMetaClasses := listAppend(meta_classes, outMetaClasses);
       then
@@ -243,6 +248,7 @@ end fixClassParts;
 protected function fixElementItems
   input list<Absyn.ElementItem> inElementItems;
   input String inName;
+  input list<String> typeVars;
   output list<Absyn.ElementItem> outElementItems;
   output list<Absyn.Class> outMetaClasses = {};
 protected
@@ -256,12 +262,19 @@ algorithm
     case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
         Absyn.CLASSDEF(class_ = c as Absyn.CLASS(restriction = Absyn.R_RECORD()))))
       algorithm
+        _ := match body as c.body
+          case Absyn.PARTS(typeVars=_::_)
+            algorithm
+              Error.addSourceMessage(Error.METARECORD_WITH_TYPEVARS, {stringDelimitList(body.typeVars, ",")}, c.info);
+            then fail();
+          else ();
+        end match;
         // Change the record into a metarecord and add it to the list of metaclasses.
-        r := Absyn.R_METARECORD(Absyn.IDENT(inName), index, singleton, true);
+        r := Absyn.R_METARECORD(Absyn.IDENT(inName), index, singleton, true, typeVars);
         c.restriction := r;
         outMetaClasses := c :: outMetaClasses;
         // Change the record into a metarecord and update the original class.
-        r := Absyn.R_METARECORD(Absyn.IDENT(inName), index, singleton, false);
+        r := Absyn.R_METARECORD(Absyn.IDENT(inName), index, singleton, false, typeVars);
         c.restriction := r;
         index := index + 1;
       then
@@ -284,17 +297,18 @@ algorithm
       Boolean b;
       Absyn.Path p,p2;
       list<Absyn.Path> paths;
-      list<String> names;
+      list<DAE.Type> typeVarsTypes;
+      list<String> names, typeVars;
       DAE.TypeSource ts;
       DAE.EvaluateSingletonType singletonType;
       SCode.Element c;
       FCore.Graph env_1;
 
-    case (ClassInf.META_UNIONTYPE(), SCode.PARTS())
+    case (ClassInf.META_UNIONTYPE(typeVars=typeVars), SCode.PARTS())
       algorithm
         p := Absyn.makeFullyQualified(inState.path);
-        names := SCode.elementNames(inClassDef.elementLst);
-        paths := list(Absyn.pathReplaceIdent(p, n) for n in names);
+        names := SCode.elementNames(list(e for e guard match e case SCode.CLASS(restriction=SCode.R_METARECORD()) then true; else false; end match in inClassDef.elementLst));
+        paths := list(Absyn.suffixPath(p, n) for n in names);
         b := listLength(paths)==1;
         if b then
           p2 := listGet(paths, 1);
@@ -302,9 +316,10 @@ algorithm
         else
           singletonType := DAE.NOT_SINGLETON();
         end if;
+        typeVarsTypes := list(DAE.T_METAPOLYMORPHIC(tv,{}) for tv in typeVars);
         ts := Types.mkTypeSource(SOME(p));
       then
-        SOME(DAE.T_METAUNIONTYPE(paths,b,singletonType,ts));
+        SOME(DAE.T_METAUNIONTYPE(paths,typeVarsTypes,b,singletonType,ts));
 
     else NONE();
   end match;

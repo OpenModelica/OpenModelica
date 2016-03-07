@@ -47,6 +47,11 @@ function disable
 external "C" GC_disable() annotation(Library = {"omcgc"});
 end disable;
 
+function free<T>
+  input T data;
+external "C" GC_free(data) annotation(Library = {"omcgc"});
+end free;
+
 function expandHeap
   input Real sz "To avoid the 32-bit signed limit on sizes";
   output Boolean success;

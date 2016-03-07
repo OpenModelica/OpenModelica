@@ -809,6 +809,7 @@ package Absyn
       Path name;
       Integer index;
       Boolean singleton;
+      list<String> typeVars;
     end R_METARECORD;
     record R_UNKNOWN  end R_UNKNOWN;
   end Restriction;

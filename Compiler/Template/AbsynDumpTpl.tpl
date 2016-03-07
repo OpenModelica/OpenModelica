@@ -159,7 +159,7 @@ match restriction
   case R_PREDEFINED_BOOLEAN(__) then "Boolean"
   case R_PREDEFINED_ENUMERATION(__) then "enumeration(:)"
   case R_UNIONTYPE(__) then "uniontype"
-  case R_METARECORD(__) then "metarecord"
+  case R_METARECORD(__) then 'metarecord<% if typeVars then ("<" + (typeVars |> tv => tv; separator=",") + ">") %>'
   case R_UNKNOWN(__) then "*unknown*"
 end dumpRestriction;
 

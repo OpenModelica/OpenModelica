@@ -464,7 +464,7 @@ algorithm
       list<Absyn.NamedArg> namedArgList,invalidArgs;
       list<Absyn.Exp> funcArgsNamedFixed,funcArgs;
       list<String> fieldNameList,fieldNamesNamed;
-      list<DAE.Type> fieldTypeList;
+      list<DAE.Type> fieldTypeList, typeVars;
       list<DAE.Var> fieldVarList;
       list<DAE.Pattern> patterns;
       list<tuple<DAE.Pattern,String,DAE.Type>> namedPatterns;
@@ -474,7 +474,7 @@ algorithm
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       algorithm
-        (cache,DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,knownSingleton = knownSingleton,source = {fqPath}),_) :=
+        (cache,DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,typeVars=typeVars,knownSingleton = knownSingleton,source = {fqPath}),_) :=
           Lookup.lookupType(cache, env, callPath, NONE());
         validUniontype(utPath1,utPath2,info,lhs);
 
@@ -517,7 +517,7 @@ algorithm
         funcArgs := listAppend(funcArgs,funcArgsNamedFixed);
         Util.SUCCESS() := checkInvalidPatternNamedArgs(invalidArgs,fieldNameList,Util.SUCCESS(),info);
         (cache,patterns) := elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
-      then (cache,DAE.PAT_CALL(fqPath,index,patterns,fieldVarList,knownSingleton));
+      then (cache,DAE.PAT_CALL(fqPath,index,patterns,fieldVarList,typeVars,knownSingleton));
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       equation
@@ -1535,7 +1535,7 @@ algorithm
       DAE.Pattern pat,pat1,pat2;
       list<DAE.Pattern> pats;
       list<String> fields;
-      list<DAE.Type> types;
+      list<DAE.Type> types, typeVars;
       String id,str;
       Option<DAE.Type> ty;
       Absyn.Path name;
@@ -1556,10 +1556,10 @@ algorithm
         pat = DAE.PAT_AS_FUNC_PTR(id,pat2);
         (pat,extra) = func(pat,extra);
       then (pat,extra);
-    case DAE.PAT_CALL(name,index,pats,fieldVars,knownSingleton)
+    case DAE.PAT_CALL(name,index,pats,fieldVars,typeVars,knownSingleton)
       equation
         (pats,extra) = traversePatternList(pats, func, extra);
-        pat = DAE.PAT_CALL(name,index,pats,fieldVars,knownSingleton);
+        pat = DAE.PAT_CALL(name,index,pats,fieldVars,typeVars,knownSingleton);
         (pat,extra) = func(pat,extra);
       then (pat,extra);
     case DAE.PAT_CALL_NAMED(name,namedpats)
@@ -2776,10 +2776,11 @@ algorithm
       Integer index;
       Boolean knownSingleton;
       DAE.Attributes attr;
-    case (DAE.PAT_AS(id=id,attr=attr),DAE.PAT_CALL(index=index,fields=fields,knownSingleton=knownSingleton,name=name))
+      list<DAE.Type> typeVars;
+    case (DAE.PAT_AS(id=id,attr=attr),DAE.PAT_CALL(index=index,typeVars=typeVars,fields=fields,knownSingleton=knownSingleton,name=name))
       equation
          path = Absyn.stripLast(name);
-         ty = DAE.T_METARECORD(path,index,fields,knownSingleton,{name});
+         ty = DAE.T_METARECORD(path,typeVars,index,fields,knownSingleton,{name});
          env = FGraph.mkComponentNode(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), FCore.VAR_DAE(), FGraph.empty());
       then env;
     else env;
