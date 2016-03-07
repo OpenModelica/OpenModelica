@@ -659,12 +659,12 @@ algorithm
       equation
         (terms,st) = buildTerms(env,dae,ht,st);
         (terms2,st) = buildTerms(env,compDae,ht,st) "to get bindings of scalar variables";
-        terms = listAppend(terms,terms2);
+        terms = listReverse(terms);
+        terms = List.append_reverse(terms2,terms);
         //print("built terms, store :"); printStore(st);
         //print("ht =");BaseHashTable.dumpHashTable(ht);
         st = createTypeParameterLocations(st);
         // print("built type param, store :"); printStore(st);
-        terms = listReverse(terms);
      then (UnitAbsyn.INSTSTORE(st,ht,res),terms);
     else equation
       print("instBuildUnitTerms failed!!\n");

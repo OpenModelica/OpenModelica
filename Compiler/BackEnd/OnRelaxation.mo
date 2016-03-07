@@ -60,6 +60,7 @@ protected import Matching;
 protected import Sorting;
 protected import SymbolicJacobian;
 protected import Util;
+protected import MetaModelica.Dangerous;
 
 
 /*
@@ -1385,31 +1386,26 @@ protected function getOrphansIncidenceMatrix
   input list<Integer> orphans;
   input array<Integer> invmap;
   input array<list<Integer>> vorphansarray;
-  input list<list<Integer>> m;
   input array<list<Integer>> mT;
   input Boolean addself;
   output array<list<Integer>> outM;
-  output array<list<Integer>> outMT;
+  output array<list<Integer>> outMT = mT;
+protected
+  list<list<Integer>> m = {};
+  list<Integer> lst;
+  Integer i;
+  array<list<Integer>> am, amT;
 algorithm
-  (outM, outMT) := match(orphans, invmap, vorphansarray, m, mT, addself)
-    local
-      Integer o, i;
-      list<Integer> rest, lst;
-      array<list<Integer>> am, amT;
-    case ({}, _, _, _, _, _)
-      then
-        (listArray(listReverse(m)), mT);
-    case (o::rest, _, _, _, _, _)
-      equation
-        //  print("getOrphansIncidenceMatrix for " + intString(o) + "\n");
-        lst = List.map1r(vorphansarray[o], arrayGet, invmap);
-        i = invmap[o];
-        lst = List.consOnTrue(addself, i, lst);
-        amT = List.fold1(lst, Array.consToElement, i, mT);
-        (am, amT) = getOrphansIncidenceMatrix(rest, invmap, vorphansarray, lst::m, amT, addself);
-      then
-        (am, amT);
-  end match;
+  for o in orphans loop
+    lst := List.map1r(vorphansarray[o], arrayGet, invmap);
+    i := invmap[o];
+    lst := List.consOnTrue(addself, i, lst);
+    outMT := List.fold1(lst, Array.consToElement, i, outMT);
+    m := lst::m;
+  end for;
+  m := Dangerous.listReverseInPlace(m);
+  outM := listArray(m);
+  outMT := mT;
 end getOrphansIncidenceMatrix;
 
 protected function getOrder
@@ -1456,7 +1452,7 @@ algorithm
   //  print("invmap\n");
   //  BackendDump.dumpMatching(invmap);
   range := List.intRange(size);
-  (m, mt) := getOrphansIncidenceMatrix(vorphans, invmap, vorphansarray, {}, arrayCreate(size, {}), true);
+  (m, mt) := getOrphansIncidenceMatrix(vorphans, invmap, vorphansarray, arrayCreate(size, {}), true);
   //  BackendDump.dumpIncidenceMatrix(m);
   //  BackendDump.dumpIncidenceMatrixT(mt);
   ass := listArray(range);
@@ -1466,7 +1462,7 @@ algorithm
   //  print("order: " + stringDelimitList(List.map(order, intString), ", ") + "\n");
   //  print("Links\n");
   //  BackendDump.dumpComponentsOLD(linkslst);
-  (m, mt) := getOrphansIncidenceMatrix(vorphans, invmap, vorphansarray, {}, arrayCreate(size, {}), false);
+  (m, mt) := getOrphansIncidenceMatrix(vorphans, invmap, vorphansarray, arrayCreate(size, {}), false);
   //  BackendDump.dumpIncidenceMatrix(m);
   //  BackendDump.dumpIncidenceMatrixT(mt);
   reduceOrphancMatrix(listReverse(comps), m);

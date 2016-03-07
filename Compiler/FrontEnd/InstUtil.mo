@@ -1678,9 +1678,9 @@ algorithm
         (_, se) = Absyn.getExpsFromArrayDimOpt(ado);
         (l3, l4) = getExpsFromMod(m);
         l1 = listAppend(se, listAppend(l1, l3));
-        l2 = listAppend(l2, l4);
+        l4 = listAppend(l2, l4);
       then
-        (l1, l2);
+        (l1, l4);
 
     // redeclare long class extends class, investigate cc and mods
     case (SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp),
@@ -1689,9 +1689,9 @@ algorithm
         (l1, l2) = getExpsFromConstrainClass(rp);
         (l3, l4) = getExpsFromMod(m);
         l1 = listAppend(l1, l3);
-        l2 = listAppend(l2, l4);
+        l4 = listAppend(l2, l4);
       then
-        (l1, l2);
+        (l1, l4);
 
     // redeclare long class, investigate cc
     case SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp)))
@@ -1708,9 +1708,9 @@ algorithm
         (_, se) = Absyn.getExpsFromArrayDim(ad);
         (l3, l4) = getExpsFromMod(m);
         l1 = listAppend(se, listAppend(l1, l3));
-        l2 = listAppend(l2, l4);
+        l4 = listAppend(l2, l4);
       then
-        (l1, l2);
+        (l1, l4);
 
   end match;
 end getExpsFromMod;
@@ -6330,12 +6330,9 @@ algorithm
         // sort the inners to put Modelica types first!
         (innerModelicaServices, innerModelica, innerOthers) = splitInners(innerElts, {}, {}, {});
 
-        sorted = listAppend(innerModelicaServices, innerModelica);
-        sorted = listAppend(sorted, innerOthers);
         // put the inner elements first
-        sorted = listAppend(sorted, innerouterElts);
         // put the innerouter elements second
-        sorted = listAppend(sorted, otherElts);
+        sorted = listAppend(innerModelicaServices, listAppend(innerModelica, listAppend(innerOthers, listAppend(innerouterElts, otherElts))));
       then
         sorted;
   end matchcontinue;

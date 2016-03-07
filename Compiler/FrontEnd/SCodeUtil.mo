@@ -630,17 +630,17 @@ algorithm
       equation
         es_1 = translateEitemlist(es, SCode.PUBLIC());
         els = translateClassdefElements(rest);
-        els_1 = listAppend(es_1, els);
+        els = listAppend(es_1, els);
       then
-        els_1;
+        els;
 
     case(Absyn.PROTECTED(contents = es) :: rest)
       equation
         es_1 = translateEitemlist(es, SCode.PROTECTED());
         els = translateClassdefElements(rest);
-        els_1 = listAppend(es_1, els);
+        els = listAppend(es_1, els);
       then
-        els_1;
+        els;
 
     case (_ :: rest) /* ignore all other than PUBLIC and PROTECTED, i.e. elements */
       then translateClassdefElements(rest);
@@ -2282,10 +2282,10 @@ algorithm
     case (SCode.MOD(f1, e1, subMods1, b1, info),
           SCode.MOD(_, _, subMods2, b2, _))
       equation
-        subMods1 = listAppend(subMods1, subMods2);
+        subMods2 = listAppend(subMods1, subMods2);
         b1 = if isSome(b1) then b1 else b2;
       then
-        SCode.MOD(f1, e1, subMods1, b1, info);
+        SCode.MOD(f1, e1, subMods2, b1, info);
 
     // failure
     else

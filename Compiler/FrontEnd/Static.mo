@@ -2911,9 +2911,9 @@ protected
 algorithm
   DAE.ARRAY(ty = ty1, scalar = sc, array = expl1) := inExp1;
   DAE.ARRAY(ty = ty2, array = expl2) := inExp2;
-  expl1 := listAppend(expl1, expl2);
+  expl2 := listAppend(expl1, expl2);
   ty1 := Expression.concatArrayType(ty1, ty2);
-  outExp := DAE.ARRAY(ty1, sc, expl1);
+  outExp := DAE.ARRAY(ty1, sc, expl2);
 end elabMatrixCatTwo3;
 
 protected function elabMatrixCatOne "author: PA
@@ -6475,8 +6475,8 @@ algorithm
       equation
         expl = flattenArray(expl);
         expl2 = flattenArray(rest_expl);
-        expl = listAppend(expl, expl2);
-      then expl;
+        expl2 = listAppend(expl, expl2);
+      then expl2;
 
     case ((DAE.MATRIX(matrix = {{e}}) :: rest_expl))
       equation
@@ -9239,9 +9239,9 @@ algorithm
         pty := evaluateFuncArgTypeDims(pty, inEnv, inCache);
         // append the vectorization dim if argument is vectorized.
         dims1 := Types.getDimensions(pty);
-        dims1 := listAppend(dims1,vdims);
+        vdims := listAppend(dims1,vdims);
         dims2 := Types.getDimensions(sty);
-        true := Expression.dimsEqual(dims1, dims2);
+        true := Expression.dimsEqual(vdims, dims2);
 
         outParam := Types.setFuncArgType(inParam, pty);
       then

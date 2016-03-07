@@ -94,7 +94,7 @@ protected import Inline;
 protected import InlineArrayEquations;
 protected import List;
 protected import Matching;
-protected import MetaModelica.Dangerous.listReverseInPlace;
+protected import MetaModelica.Dangerous;
 protected import OnRelaxation;
 protected import RemoveSimpleEquations;
 protected import ResolveLoops;
@@ -2264,8 +2264,10 @@ algorithm
     outIncidenceArrayT := fillincidenceMatrixT(row, row_indices, outIncidenceArrayT);
   end for;
 
-  outIncidenceArray := listArray(listReverse(iarr));
-  omapIncRowEqn := listArray(listReverse(imap));
+  iarr := Dangerous.listReverseInPlace(iarr);
+  imap := Dangerous.listReverseInPlace(imap);
+  outIncidenceArray := listArray(iarr);
+  omapIncRowEqn := listArray(imap);
 end incidenceMatrixDispatchScalar;
 
 protected function fillincidenceMatrixT
@@ -4126,7 +4128,7 @@ algorithm
     // special case for it initial() then ... else ... end if; only else branch needs to be checked
     case(_,BackendDAE.IF_EQUATION(conditions={DAE.CALL(path=Absyn.IDENT("initial"))},eqnstrue={_},eqnsfalse=eqnselse),_,_,_)
       equation
-        (row,size) = adjacencyRowEnhancedEqnLst(eqnselse,inVariables,mark,rowmark,kvars,{},0,trytosolve);
+        (row,size) = adjacencyRowEnhancedEqnLst(eqnselse,inVariables,mark,rowmark,kvars,trytosolve);
       then
         (row,size);
 
@@ -4144,7 +4146,7 @@ algorithm
         _ = List.fold1(lst,markNegativ,rowmark,mark);
         row1 = adjacencyRowEnhanced1(lst,DAE.RCONST(0.0),DAE.RCONST(0.0),vars,kvars,mark,rowmark,{},trytosolve);
 
-        (row, size) = adjacencyRowEnhancedEqnLst(eqnselse, vars, mark, rowmark, kvars, {}, 0, trytosolve);
+        (row, size) = adjacencyRowEnhancedEqnLst(eqnselse, vars, mark, rowmark, kvars, trytosolve);
         lst = List.map(row,Util.tuple21);
         (lst, row, size) = List.fold5(eqnslst, adjacencyRowEnhancedEqnLstIfBranches, vars, mark, rowmark, kvars, trytosolve, (lst, row, size));
 
@@ -4174,23 +4176,20 @@ protected function adjacencyRowEnhancedEqnLstIfBranches
   input Boolean trytosolve;
   input tuple<list<Integer>,BackendDAE.AdjacencyMatrixElementEnhanced,Integer> intpl;
   output tuple<list<Integer>,BackendDAE.AdjacencyMatrixElementEnhanced,Integer> outtpl;
+protected
+  BackendDAE.AdjacencyMatrixElementEnhanced row, iRow;
+  list<Integer> lst, inLstAllBranch;
+  Integer size, iSize;
 algorithm
-  outtpl := match(iEqns,inVariables,mark,rowmark,kvars,intpl)
-    local
-      BackendDAE.AdjacencyMatrixElementEnhanced row,iRow;
-      Integer size,iSize;
-      BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> rest;
-      list<Integer> lst,inLstAllBranch;
-    case ({},_,_,_,_,_) then intpl;
-    case (eqn::rest,_,_,_,_,_)
-      equation
-        (inLstAllBranch,iRow,iSize) = intpl;
-        (row,size) = adjacencyRowEnhanced(inVariables, eqn, mark, rowmark, kvars, trytosolve);
-        lst = List.map(row,Util.tuple21);
-        lst = List.intersectionOnTrue(lst, inLstAllBranch,intEq);
-     then adjacencyRowEnhancedEqnLstIfBranches(rest, inVariables, mark, rowmark, kvars, trytosolve, (lst, listAppend(row,iRow), size + iSize));
-  end match;
+  (inLstAllBranch,iRow,iSize) := intpl;
+  for eqn in iEqns loop
+    (row,size) := adjacencyRowEnhanced(inVariables, eqn, mark, rowmark, kvars, trytosolve);
+    lst := List.map(row,Util.tuple21);
+    inLstAllBranch := List.intersectionOnTrue(lst, inLstAllBranch,intEq);
+    iSize := iSize + size;
+    iRow := listAppend(row,iRow);
+  end for;
+  outtpl := (inLstAllBranch,iRow,iSize);
 end adjacencyRowEnhancedEqnLstIfBranches;
 
 protected function adjacencyRowEnhancedEqnLst
@@ -4199,27 +4198,18 @@ protected function adjacencyRowEnhancedEqnLst
   input Integer mark;
   input array<Integer> rowmark;
   input BackendDAE.Variables kvars;
-  input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
-  input Integer iSize;
   input Boolean trytosolve;
-  output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
-  output Integer oSize;
+  output BackendDAE.AdjacencyMatrixElementEnhanced outRow = {};
+  output Integer oSize = 0;
+protected
+  BackendDAE.AdjacencyMatrixElementEnhanced row;
+  Integer size;
 algorithm
-  (outRow,oSize) := match(iEqns,inVariables,mark,rowmark,kvars,iRow,iSize)
-    local
-      BackendDAE.AdjacencyMatrixElementEnhanced row;
-      Integer size;
-      BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> rest;
-    case ({},_,_,_,_,_,_) then (iRow,iSize);
-    case (eqn::rest,_,_,_,_,_,_)
-      equation
-        (row,size) = adjacencyRowEnhanced(inVariables,eqn,mark,rowmark,kvars,trytosolve);
-        row = listAppend(row,iRow);
-        (row,size) = adjacencyRowEnhancedEqnLst(rest,inVariables,mark,rowmark,kvars,row,size + iSize, trytosolve);
-      then
-        (row,size);
-  end match;
+  for eqn in iEqns loop
+    (row,size) := adjacencyRowEnhanced(inVariables,eqn,mark,rowmark,kvars,trytosolve);
+    outRow := listAppend(row,outRow);
+    oSize := oSize + size;
+  end for;
 end adjacencyRowEnhancedEqnLst;
 
 protected function adjacencyRowAlgorithmOutputs
@@ -7690,7 +7680,7 @@ algorithm
   if listEmpty(outSysts) then
     outSysts := {BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())};
   else
-    outSysts := listReverseInPlace(outSysts);
+    outSysts := Dangerous.listReverseInPlace(outSysts);
   end if;
 
   outShared.removedEqs := BackendEquation.addEquations(reqns, outShared.removedEqs);

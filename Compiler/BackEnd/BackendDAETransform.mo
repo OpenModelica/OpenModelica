@@ -62,6 +62,7 @@ protected import SymbolicJacobian;
 protected import System;
 protected import Util;
 protected import Values;
+protected import MetaModelica.Dangerous;
 
 // =============================================================================
 // strongComponents and stuff
@@ -137,7 +138,8 @@ algorithm
     acc := e :: acc;
   end for;
 
-  outAcc := listArray(listReverse(acc));
+  acc := Dangerous.listReverseInPlace(acc);
+  outAcc := listArray(acc);
 end varAssignmentNonScalar;
 
 protected function analyseStrongComponentsScalar "author: Frenkel TUD 2011-05
@@ -161,7 +163,7 @@ algorithm
     outComps := acomp :: outComps;
   end for;
 
-  outComps := MetaModelica.Dangerous.listReverseInPlace(outComps);
+  outComps := Dangerous.listReverseInPlace(outComps);
 end analyseStrongComponentsScalar;
 
 protected function analyseStrongComponentScalar "author: Frenkel TUD 2011-05"

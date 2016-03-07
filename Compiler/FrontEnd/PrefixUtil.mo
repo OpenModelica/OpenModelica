@@ -66,6 +66,7 @@ protected import Print;
 //protected import Util;
 protected import System;
 protected import Types;
+protected import MetaModelica.Dangerous;
 
 public function printPrefixStr "Prints a Prefix to a string."
   input Prefix.Prefix inPrefix;
@@ -1103,116 +1104,108 @@ protected function prefixStatements "Prefix statements.
   input FCore.Graph env;
   input InstanceHierarchy inIH;
   input list<DAE.Statement> stmts;
-  input list<DAE.Statement> accList;
   input Prefix.Prefix p;
-  output FCore.Cache outCache;
-  output list<DAE.Statement> outStmts;
+  output FCore.Cache outCache = cache;
+  output list<DAE.Statement> outStmts = {};
+protected
 algorithm
-  (outCache,outStmts) := match (cache,env,inIH,stmts,accList,p)
-    local
-      FCore.Cache localCache;
-      FCore.Graph localEnv;
+  for st in stmts loop
+    _ := match st
+      local
+        DAE.Type t;
+        DAE.Exp e,e1,e2,e3;
+        DAE.ElementSource source;
+        DAE.Statement elem;
+
       list<DAE.Statement> localAccList,rest;
       Prefix.Prefix pre;
       InstanceHierarchy ih;
-      DAE.ElementSource source;
-      DAE.Type t;
-      DAE.Statement elem;
       list<DAE.Statement> elems,sList,b;
       String s,id;
-      DAE.Exp e,e1,e2,e3;
       list<DAE.Exp> eLst;
       DAE.ComponentRef cRef;
       Boolean bool;
       DAE.Else elseBranch;
       Integer ix;
+      case DAE.STMT_ASSIGN(t,e1,e,source)
+        equation
+          (outCache,e1) = prefixExp(outCache,env,inIH,e1,p);
+          (outCache,e) = prefixExp(outCache,env,inIH,e,p);
+          elem = DAE.STMT_ASSIGN(t,e1,e,source);
+          outStmts = elem::outStmts;
+        then ();
 
-    case (localCache,_,_,{},localAccList,_) then (localCache,localAccList);
+      case DAE.STMT_TUPLE_ASSIGN(t,eLst,e,source)
+        equation
+          (outCache,e) = prefixExp(outCache,env,inIH,e,p);
+          (outCache,eLst) = prefixExpList(outCache,env,inIH,eLst,p);
+          elem = DAE.STMT_TUPLE_ASSIGN(t,eLst,e,source);
+          outStmts = elem::outStmts;
+        then ();
 
-    case (localCache,localEnv,ih,DAE.STMT_ASSIGN(t,e1,e,source) :: rest,localAccList,pre)
-      equation
-        (localCache,e1) = prefixExp(localCache,localEnv,ih,e1,pre);
-        (localCache,e) = prefixExp(localCache,localEnv,ih,e,pre);
-        elem = DAE.STMT_ASSIGN(t,e1,e,source);
-        localAccList = listAppend(localAccList,List.create(elem));
-        (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-      then (localCache,elems);
+      case DAE.STMT_ASSIGN_ARR(t,e1,e,source)
+        equation
+          (outCache,e1) = prefixExp(outCache,env,inIH,e1,p);
+          (outCache,e) = prefixExp(outCache,env,inIH,e,p);
+          elem = DAE.STMT_ASSIGN_ARR(t,e1,e,source);
+          outStmts = elem::outStmts;
+        then ();
 
-    case (localCache,localEnv,ih,DAE.STMT_TUPLE_ASSIGN(t,eLst,e,source) :: rest,localAccList,pre)
-      equation
-        (localCache,e) = prefixExp(localCache,localEnv,ih,e,pre);
-        (localCache,eLst) = prefixExpList(localCache,localEnv,ih,eLst,pre);
-        elem = DAE.STMT_TUPLE_ASSIGN(t,eLst,e,source);
-        localAccList = listAppend(localAccList,List.create(elem));
-        (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-      then (localCache,elems);
+      case DAE.STMT_FOR(t,bool,id,ix,e,sList,source)
+        equation
+          (outCache,e) = prefixExp(outCache,env,inIH,e,p);
+          (outCache,sList) = prefixStatements(outCache,env,inIH,sList,p);
+          elem = DAE.STMT_FOR(t,bool,id,ix,e,sList,source);
+          outStmts = elem::outStmts;
+        then ();
 
-    case (localCache,localEnv,ih,DAE.STMT_ASSIGN_ARR(t,e1,e,source) :: rest,localAccList,pre)
-      equation
-        (localCache,e1) = prefixExp(localCache,localEnv,ih,e1,pre);
-        (localCache,e) = prefixExp(localCache,localEnv,ih,e,pre);
-        elem = DAE.STMT_ASSIGN_ARR(t,e1,e,source);
-        localAccList = listAppend(localAccList,List.create(elem));
-        (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-      then (localCache,elems);
+      case DAE.STMT_IF(e1,sList,elseBranch,source)
+        equation
+          (outCache,e1) = prefixExp(outCache,env,inIH,e1,p);
+          (outCache,sList) = prefixStatements(outCache,env,inIH,sList,p);
+          (outCache,elseBranch) = prefixElse(outCache,env,inIH,elseBranch,p);
+          elem = DAE.STMT_IF(e1,sList,elseBranch,source);
+          outStmts = elem::outStmts;
+        then ();
 
-    case (localCache,localEnv,ih,DAE.STMT_FOR(t,bool,id,ix,e,sList,source) :: rest,localAccList,pre)
-      equation
-        (localCache,e) = prefixExp(localCache,localEnv,ih,e,pre);
-        (localCache,sList) = prefixStatements(localCache,localEnv,ih,sList,{},pre);
-        elem = DAE.STMT_FOR(t,bool,id,ix,e,sList,source);
-        localAccList = listAppend(localAccList,List.create(elem));
-        (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-      then (localCache,elems);
+      case DAE.STMT_WHILE(e1,sList,source)
+        equation
+          (outCache,e1) = prefixExp(outCache,env,inIH,e1,p);
+          (outCache,sList) = prefixStatements(outCache,env,inIH,sList,p);
+          elem = DAE.STMT_WHILE(e1,sList,source);
+          outStmts = elem::outStmts;
+        then ();
 
-  case (localCache,localEnv,ih,DAE.STMT_IF(e1,sList,elseBranch,source) :: rest,localAccList,pre)
-      equation
-        (localCache,e1) = prefixExp(localCache,localEnv,ih,e1,pre);
-        (localCache,sList) = prefixStatements(localCache,localEnv,ih,sList,{},pre);
-        (localCache,elseBranch) = prefixElse(localCache,localEnv,ih,elseBranch,pre);
-        elem = DAE.STMT_IF(e1,sList,elseBranch,source);
-        localAccList = listAppend(localAccList,List.create(elem));
-        (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-      then (localCache,elems);
+      case DAE.STMT_ASSERT(e1,e2,e3,source)
+        equation
+          (outCache,e1) = prefixExp(outCache,env,inIH,e1,p);
+          (outCache,e2) = prefixExp(outCache,env,inIH,e2,p);
+          (outCache,e3) = prefixExp(outCache,env,inIH,e3,p);
+          elem = DAE.STMT_ASSERT(e1,e2,e3,source);
+          outStmts = elem::outStmts;
+        then ();
 
-    case (localCache,localEnv,ih,DAE.STMT_WHILE(e1,sList,source) :: rest,localAccList,pre)
-      equation
-        (localCache,e1) = prefixExp(localCache,localEnv,ih,e1,pre);
-        (localCache,sList) = prefixStatements(localCache,localEnv,ih,sList,{},pre);
-        elem = DAE.STMT_WHILE(e1,sList,source);
-        localAccList = listAppend(localAccList,List.create(elem));
-        (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-      then (localCache,elems);
+      case DAE.STMT_FAILURE(b,source)
+        equation
+          (outCache,b) = prefixStatements(outCache,env,inIH,b,p);
+          elem = DAE.STMT_FAILURE(b,source);
+          outStmts = elem::outStmts;
+        then ();
 
-    case (localCache,localEnv,ih,DAE.STMT_ASSERT(e1,e2,e3,source) :: rest,localAccList,pre)
-      equation
-        (localCache,e1) = prefixExp(localCache,localEnv,ih,e1,pre);
-        (localCache,e2) = prefixExp(localCache,localEnv,ih,e2,pre);
-        (localCache,e3) = prefixExp(localCache,localEnv,ih,e3,pre);
-        elem = DAE.STMT_ASSERT(e1,e2,e3,source);
-        localAccList = listAppend(localAccList,List.create(elem));
-        (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-      then (localCache,elems);
-    case (localCache,localEnv,ih,DAE.STMT_FAILURE(b,source) :: rest,localAccList,pre)
-      equation
-        (localCache,b) = prefixStatements(localCache,localEnv,ih,b,{},pre);
-        elem = DAE.STMT_FAILURE(b,source);
-        localAccList = listAppend(localAccList,List.create(elem));
-        (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-      then (localCache,elems);
-    case (localCache,localEnv,ih,DAE.STMT_RETURN(source) :: rest,localAccList,pre)
+      case DAE.STMT_RETURN(source)
         equation
           elem = DAE.STMT_RETURN(source);
-          localAccList = listAppend(localAccList,List.create(elem));
-          (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-        then (localCache,elems);
-    case (localCache,localEnv,ih,DAE.STMT_BREAK(source) :: rest,localAccList,pre)
+          outStmts = elem::outStmts;
+        then ();
+
+      case DAE.STMT_BREAK(source)
         equation
           elem = DAE.STMT_BREAK(source);
-          localAccList = listAppend(localAccList,List.create(elem));
-          (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-        then (localCache,elems);
-  end match;
+          outStmts = elem::outStmts;
+        then ();
+    end match;
+  end for;
+  outStmts := Dangerous.listReverseInPlace(outStmts);
 end prefixStatements;
 
 protected function prefixElse "Prefix else statements.
@@ -1242,13 +1235,13 @@ algorithm
       equation
         (localCache,e) = prefixExp(localCache,localEnv,ih,e,pre);
         (localCache,el) = prefixElse(localCache,localEnv,ih,el,pre);
-        (localCache,lStmt) = prefixStatements(localCache,localEnv,ih,lStmt,{},pre);
+        (localCache,lStmt) = prefixStatements(localCache,localEnv,ih,lStmt,pre);
         stmt = DAE.ELSEIF(e,lStmt,el);
       then (localCache,stmt);
 
     case (localCache,localEnv,ih,DAE.ELSE(lStmt),pre)
       equation
-       (localCache,lStmt) = prefixStatements(localCache,localEnv,ih,lStmt,{},pre);
+       (localCache,lStmt) = prefixStatements(localCache,localEnv,ih,lStmt,pre);
         stmt = DAE.ELSE(lStmt);
       then (localCache,stmt);
   end match;
