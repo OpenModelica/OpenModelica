@@ -2004,12 +2004,21 @@ algorithm
       Integer n;
       SourceInfo info;
       SCode.Element cl;
+      SCode.Restriction restr;
 
     case (cache,env,_,{},_) then (cache,env);
-    case (cache,env,_,(cl as SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),info=info))::sp,_)
-      equation
-        (cache,env) = generateFunctions2(cache,env,p,fullScodeProgram,cl,name,info,cleanCache);
-        (cache,env) = generateFunctions(cache,env,p,fullScodeProgram,sp,cleanCache);
+    case (cache,env,_,(cl as SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=restr,info=info))::sp,_)
+      algorithm
+        _ := match restr
+          case SCode.R_PACKAGE() then ();
+          case SCode.R_UNIONTYPE() then ();
+          else
+            algorithm
+              Error.addSourceMessage(Error.INTERNAL_ERROR, {"Only package and uniontype is supported as top-level classes in OpenModelica."}, info);
+            then fail();
+        end match;
+        (cache,env) := generateFunctions2(cache,env,p,fullScodeProgram,cl,name,info,cleanCache);
+        (cache,env) := generateFunctions(cache,env,p,fullScodeProgram,sp,cleanCache);
       then (cache,env);
     case (cache,env,_,SCode.CLASS(encapsulatedPrefix=SCode.NOT_ENCAPSULATED(),name=name,info=info as SOURCEINFO(fileName=file))::_,_)
       equation
@@ -2699,6 +2708,7 @@ algorithm
       String str,name;
       SCode.Annotation ann;
       SourceInfo info;
+    case (SCode.CLASS(restriction=SCode.R_METARECORD(moved=true)),_) then ();
     case (SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(ann))),name::_)
       equation
         (Absyn.STRING(str),info) = SCode.getNamedAnnotation(ann,"__OpenModelica_Interface");
@@ -2706,6 +2716,7 @@ algorithm
       then ();
     else
       equation
+        print(SCodeDump.unparseElementStr(elt)+"\n");
         Error.addSourceMessage(Error.MISSING_INTERFACE_TYPE,{},SCode.elementInfo(elt));
       then fail();
   end matchcontinue;
