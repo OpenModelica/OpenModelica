@@ -104,7 +104,7 @@ public:
   bool isReadOnly() {return mReadOnly;}
   void setIsSaved(bool isSaved) {mIsSaved = isSaved;}
   bool isSaved() {return mIsSaved;}
-  bool isProtected() {return mClassInformation.isProtectedClass;}
+  bool isProtected() {return mLibraryType == LibraryTreeItem::Modelica ? mClassInformation.isProtectedClass : false;}
   bool isDocumentationClass();
   StringHandler::ModelicaClasses getRestriction() {return StringHandler::getModelicaClassType(mClassInformation.restriction);}
   bool isConnector() {return (getRestriction() == StringHandler::ExpandableConnector || getRestriction() == StringHandler::Connector);}
