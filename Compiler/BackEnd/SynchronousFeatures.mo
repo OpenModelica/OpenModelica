@@ -630,7 +630,8 @@ algorithm
         then clockKind;
       else
         algorithm
-          print("Internal error -- SynchronousFeatures.resolveClocks failed for " + ExpressionDump.printExpStr(exp) + ".\n");
+          Error.addInternalError("SynchronousFeatures.resolveClocks failed for " +
+                                 ExpressionDump.printExpStr(exp) + ".\n", sourceInfo());
         then fail();
     end matchcontinue;
   end for;
@@ -709,8 +710,8 @@ algorithm
 
     else
       algorithm
-        print("Internal error -- Function SynchronousFeatures.getSubClock failed for " +
-              ExpressionDump.printExpStr(inExp) + ".\n");
+        Error.addInternalError("SynchronousFeatures.getSubClock failed for " +
+                               ExpressionDump.printExpStr(inExp) + ".\n", sourceInfo());
       then
         fail();
   end match;
@@ -824,8 +825,8 @@ protected
 algorithm
   ixs := getVarIxs(cr, vars);
   if listLength(ixs) <> 1 then
-    Error.addInternalError( "Internal error -- Function SynchronousFeatures.getVarIdx failed for " +
-                            ComponentReference.crefStr(cr) + ".\n", sourceInfo() );
+    Error.addInternalError("SynchronousFeatures.getVarIdx failed for " +
+                           ComponentReference.crefStr(cr) + ".\n", sourceInfo());
     fail();
   end if;
   idx := List.first(ixs);
@@ -1867,7 +1868,7 @@ algorithm
       then false;
     else
       equation
-        print("Internal error -- Function SynchronousFeatures.isClockEquation failed.\n");
+        Error.addInternalError("SynchronousFeatures.isClockEquation failed.\n", sourceInfo());
       then fail();
   end match;
 end isClockEquation;
@@ -1999,7 +2000,7 @@ algorithm
       then (setClockedPartition(SOME(expClocked), inPartition, NONE(), info), (cr, refClocked)::inRefs);
     else
       equation
-        print("Internal error -- Function SynchronousFeatures.detectEqPartitionCall1 failed\n");
+        Error.addInternalError("SynchronousFeatures.detectEqPartitionCall1 failed\n", sourceInfo());
       then fail();
   end match;
 end detectEqPartitionCall1;
