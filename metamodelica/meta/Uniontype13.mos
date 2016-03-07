@@ -17,7 +17,7 @@ g:=Uniontype13.fooIdent(f);
 //     x = 3
 // end Uniontype13.UT.REC1;
 // record Uniontype13.foo
-//     _ut = record Uniontype13.UT.REC1
+//     ut = record Uniontype13.UT.REC1
 //     x = 3
 // end Uniontype13.UT.REC1;
 // end Uniontype13.foo;
