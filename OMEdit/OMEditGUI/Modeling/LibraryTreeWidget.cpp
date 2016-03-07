@@ -825,10 +825,11 @@ void LibraryTreeItem::handleIconUpdated()
  * \brief LibraryTreeProxyModel::LibraryTreeProxyModel
  * \param pLibraryWidget
  */
-LibraryTreeProxyModel::LibraryTreeProxyModel(LibraryWidget *pLibraryWidget)
+LibraryTreeProxyModel::LibraryTreeProxyModel(LibraryWidget *pLibraryWidget, bool showOnlyModelica)
   : QSortFilterProxyModel(pLibraryWidget)
 {
   mpLibraryWidget = pLibraryWidget;
+  mShowOnlyModelica = showOnlyModelica;
 }
 
 /*!
@@ -841,48 +842,32 @@ LibraryTreeProxyModel::LibraryTreeProxyModel(LibraryWidget *pLibraryWidget)
  */
 bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-  if (!filterRegExp().isEmpty()) {
-    QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
-    if (index.isValid()) {
-      // if any of children matches the filter, then current index matches the filter as well
-      int rows = sourceModel()->rowCount(index);
-      for (int i = 0 ; i < rows ; ++i) {
-        if (filterAcceptsRow(i, index)) {
-          return true;
-        }
+  QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
+  if (index.isValid()) {
+    LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
+    // if showOnlyModelica flag is enabled then filter out all other types of LibraryTreeItem e.g., TLM & Text.
+    if (mShowOnlyModelica && pLibraryTreeItem && pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
+      return false;
+    }
+    // if any of children matches the filter, then current index matches the filter as well
+    int rows = sourceModel()->rowCount(index);
+    for (int i = 0 ; i < rows ; ++i) {
+      if (filterAcceptsRow(i, index)) {
+        return true;
       }
-      // check current index itself
-      LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
-      if (pLibraryTreeItem) {
-        if (pLibraryTreeItem->isProtected() && !mpLibraryWidget->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getShowProtectedClasses()) {
-          return false;
-        } else {
-          return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
-        }
+    }
+    // check current index itself
+    if (pLibraryTreeItem) {
+      if (pLibraryTreeItem->isProtected() && !mpLibraryWidget->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getShowProtectedClasses()) {
+        return false;
       } else {
-        return sourceModel()->data(index).toString().contains(filterRegExp());
+        return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
       }
-      QString key = sourceModel()->data(index, filterRole()).toString();
-      return key.contains(filterRegExp());
     } else {
-      return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
+      return sourceModel()->data(index).toString().contains(filterRegExp());
     }
   } else {
-    QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
-    if (index.isValid()) {
-      LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
-      if (pLibraryTreeItem) {
-        if (pLibraryTreeItem->isProtected() && !mpLibraryWidget->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getShowProtectedClasses()) {
-          return false;
-        } else {
-          return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
-        }
-      } else {
-        return sourceModel()->data(index).toString().contains(filterRegExp());
-      }
-    } else {
-      return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
-    }
+    return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
   }
 }
 
@@ -2850,7 +2835,7 @@ LibraryWidget::LibraryWidget(MainWindow *pMainWindow)
   mpTreeSearchFilters->getCollapseAllButton()->hide();
   // create tree view
   mpLibraryTreeModel = new LibraryTreeModel(this);
-  mpLibraryTreeProxyModel = new LibraryTreeProxyModel(this);
+  mpLibraryTreeProxyModel = new LibraryTreeProxyModel(this, false);
   mpLibraryTreeProxyModel->setDynamicSortFilter(true);
   mpLibraryTreeProxyModel->setSourceModel(mpLibraryTreeModel);
   mpLibraryTreeView = new LibraryTreeView(this);

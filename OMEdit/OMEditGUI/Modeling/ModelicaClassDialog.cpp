@@ -57,7 +57,7 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(searchClasses()));
   connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(searchClasses()));
   // create the tree
-  mpLibraryTreeProxyModel = new LibraryTreeProxyModel(mpLibraryWidget);
+  mpLibraryTreeProxyModel = new LibraryTreeProxyModel(mpLibraryWidget, true);
   mpLibraryTreeProxyModel->setDynamicSortFilter(true);
   mpLibraryTreeProxyModel->setSourceModel(mpLibraryWidget->getLibraryTreeModel());
   mpLibraryTreeView = new QTreeView;

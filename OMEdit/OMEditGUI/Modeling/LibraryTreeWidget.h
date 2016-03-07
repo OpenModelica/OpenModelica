@@ -200,9 +200,10 @@ class LibraryTreeProxyModel : public QSortFilterProxyModel
 {
   Q_OBJECT
 public:
-  LibraryTreeProxyModel(LibraryWidget *pLibraryWidget);
+  LibraryTreeProxyModel(LibraryWidget *pLibraryWidget, bool showOnlyModelica);
 private:
   LibraryWidget *mpLibraryWidget;
+  bool mShowOnlyModelica;
 protected:
   virtual bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
 };
