@@ -4685,6 +4685,11 @@ algorithm
           end match;
    then (f,false);
   end matchcontinue;
+  if Expression.isZero(f) then
+  // see. https://trac.openmodelica.org/OpenModelica/ticket/3742#comment:12
+  // ExpressionSolve will fail for f == 0 --> internal loops inside tearing
+    fail();
+  end if;
   //print("\ntryToSolveOrDerive=>" +ExpressionDump.printExpStr( Expression.crefExp(cr)) + "\nIN: " + ExpressionDump.printExpStr(e) + "\nOUT: " + ExpressionDump.printExpStr(f));
 end tryToSolveOrDerive;
 
