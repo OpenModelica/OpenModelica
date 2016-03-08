@@ -525,61 +525,24 @@ protected function unelabSubmods
   input list<DAE.SubMod> inTypesSubModLst;
   output list<SCode.SubMod> outSCodeSubModLst;
 algorithm
-  outSCodeSubModLst:=
-  match (inTypesSubModLst)
-    local
-      list<SCode.SubMod> x_1,xs_1,res;
-      DAE.SubMod x;
-      list<DAE.SubMod> xs;
-    case ({}) then {};
-    case ((x :: xs))
-      equation
-        x_1 = unelabSubmod(x);
-        xs_1 = unelabSubmods(xs);
-        res = listAppend(x_1, xs_1);
-      then
-        res;
-  end match;
+  outSCodeSubModLst := list(match (x)
+      local
+        SCode.Mod m_1;
+        String i;
+        DAE.Mod m;
+      case (DAE.NAMEMOD(ident = i,mod = m))
+        equation
+          m_1 = unelabMod(m);
+        then
+          SCode.NAMEMOD(i,m_1);
+    end match for x in inTypesSubModLst);
 end unelabSubmods;
-
-protected function unelabSubmod
-"This function unelaborates on a submodification."
-  input DAE.SubMod inSubMod;
-  output list<SCode.SubMod> outSCodeSubModLst;
-algorithm
-  outSCodeSubModLst:=
-  match (inSubMod)
-    local
-      SCode.Mod m_1;
-      String i;
-      DAE.Mod m;
-      list<Absyn.Subscript> ss_1;
-      list<Integer> ss;
-    case (DAE.NAMEMOD(ident = i,mod = m))
-      equation
-        m_1 = unelabMod(m);
-      then
-        {SCode.NAMEMOD(i,m_1)};
-  end match;
-end unelabSubmod;
 
 protected function unelabSubscript
   input list<Integer> inIntegerLst;
-  output list<SCode.Subscript> outSCodeSubscriptLst;
+  output list<SCode.Subscript> outSCodeSubscriptLst = {};
 algorithm
-  outSCodeSubscriptLst:=
-  match (inIntegerLst)
-    local
-      list<Absyn.Subscript> xs;
-      Integer i;
-      list<Integer> is;
-    case ({}) then {};
-    case ((i :: is))
-      equation
-        xs = unelabSubscript(is);
-      then
-        (Absyn.SUBSCRIPT(Absyn.INTEGER(i)) :: xs);
-  end match;
+  outSCodeSubscriptLst := list(Absyn.SUBSCRIPT(Absyn.INTEGER(i)) for i in inIntegerLst);
 end unelabSubscript;
 
 public function updateMod
@@ -661,62 +624,21 @@ protected function updateSubmods ""
   input list<DAE.SubMod> inTypesSubModLst;
   input Boolean inBoolean;
   input SourceInfo info;
-  output FCore.Cache outCache;
+  output FCore.Cache outCache = inCache;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
-  (outCache,outTypesSubModLst):=
-  match (inCache,inEnv,inIH,inPrefix,inTypesSubModLst,inBoolean,info)
-    local
-      Boolean impl;
-      list<DAE.SubMod> x_1,xs_1,res,xs;
-      FCore.Graph env;
-      Prefix.Prefix pre;
-      DAE.SubMod x;
-      FCore.Cache cache;
-      InstanceHierarchy ih;
-
-    case (cache,_,_,_,{},_,_) then (cache,{});  /* impl */
-    case (cache,env,ih,pre,(x :: xs),impl,_)
-      equation
-        (cache,x_1) = updateSubmod(cache, env, ih, pre, x, impl, info);
-        (cache,xs_1) = updateSubmods(cache, env, ih, pre, xs, impl, info);
-        res = listAppend(x_1, xs_1);
-      then
-        (cache,res);
-  end match;
-end updateSubmods;
-
-protected function updateSubmod " "
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
-  input DAE.SubMod inSubMod;
-  input Boolean inBoolean;
-  input SourceInfo info;
-  output FCore.Cache outCache;
-  output list<DAE.SubMod> outTypesSubModLst;
-algorithm
-  (outCache,outTypesSubModLst):=
-  match (inCache,inEnv,inIH,inPrefix,inSubMod,inBoolean,info)
+  outTypesSubModLst := list(match x
     local
       DAE.Mod m_1,m;
-      FCore.Graph env;
-      Prefix.Prefix pre;
       String i;
-      Boolean impl;
-      FCore.Cache cache;
-      list<Integer> idxmod;
-      InstanceHierarchy ih;
 
-    case (cache,env,ih,pre,DAE.NAMEMOD(ident = i,mod = m),impl,_)
+    case DAE.NAMEMOD(ident = i,mod = m)
       equation
-        (cache,m_1) = updateMod(cache, env, ih, pre, m, impl, info);
+        (outCache,m_1) = updateMod(outCache, inEnv, inIH, inPrefix, m, inBoolean, info);
       then
-        (cache,{DAE.NAMEMOD(i,m_1)});
-
-  end match;
-end updateSubmod;
+        DAE.NAMEMOD(i,m_1);
+  end match for x in inTypesSubModLst);
+end updateSubmods;
 
 public function elabUntypedMod "This function is used to convert SCode.Mod into Mod, without
   adding correct type information. Instead, a undefined type will be
@@ -868,14 +790,14 @@ protected function compactSubMod2
   output SCode.SubMod outMod;
   output Boolean outFound;
 algorithm
-  (outMod, outFound) := matchcontinue(inExistingMod, inNewMod, inModScope, inName)
+  (outMod, outFound) := match(inExistingMod, inNewMod, inModScope, inName)
     local
       String name1, name2;
       SCode.SubMod submod;
 
     case (SCode.NAMEMOD(ident = name1), SCode.NAMEMOD(ident = name2), _, _)
-      equation
-        false = stringEqual(name1, name2);
+      guard
+        not stringEqual(name1, name2)
       then
         (inExistingMod, false);
 
@@ -885,7 +807,7 @@ algorithm
       then
         (submod, true);
 
-  end matchcontinue;
+  end match;
 end compactSubMod2;
 
 protected function mergeSubModsInSameScope

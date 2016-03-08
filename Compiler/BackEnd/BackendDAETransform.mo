@@ -129,16 +129,9 @@ public function varAssignmentNonScalar
   input array<Integer> mapIncRowEqn;
   output array<Integer> outAcc;
 protected
-  Integer e;
-  list<Integer> acc = {};
+  list<Integer> acc;
 algorithm
-  for i in 1:arrayLength(ass1) loop
-    e := ass1[i];
-    e := if e > 0 then mapIncRowEqn[e] else -1;
-    acc := e :: acc;
-  end for;
-
-  acc := Dangerous.listReverseInPlace(acc);
+  acc := list(if ass1[i] > 0 then mapIncRowEqn[ass1[i]] else -1 for i in 1:arrayLength(ass1));
   outAcc := listArray(acc);
 end varAssignmentNonScalar;
 

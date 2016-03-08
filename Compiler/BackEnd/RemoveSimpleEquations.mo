@@ -4531,12 +4531,9 @@ protected function removeStateDerInfo "BB,
 remove stateDerInfo! This information should be collected after removeSimpleEquations
 "
   input list<BackendDAE.Var> inVarList;
-  output list<BackendDAE.Var> vars = {};
+  output list<BackendDAE.Var> vars;
 algorithm
-  for var in inVarList loop
-    vars := (if BackendVariable.isStateVar(var) then BackendVariable.setStateDerivative(var, NONE()) else var) :: vars;
-  end for;
-  vars := MetaModelica.Dangerous.listReverseInPlace(vars);
+  vars := list(if BackendVariable.isStateVar(var) then BackendVariable.setStateDerivative(var, NONE()) else var for var in inVarList);
 end removeStateDerInfo;
 
 protected function findSimpleEquations "BB,
