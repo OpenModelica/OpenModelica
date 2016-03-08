@@ -953,7 +953,7 @@ void ComponentParameters::updateComponentParameters()
                                                                              oldComponentExtendsModifiersMap, newComponentModifiersMap,
                                                                              newComponentExtendsModifiersMap);
     mpComponent->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateComponentParametersCommand);
-    mpComponent->getGraphicsView()->getModelWidget()->updateModelicaText();
+    mpComponent->getGraphicsView()->getModelWidget()->updateModelText();
   }
   accept();
 }
@@ -1194,7 +1194,7 @@ void ComponentAttributes::updateComponentAttributes()
     UpdateComponentAttributesCommand *pUpdateComponentAttributesCommand = new UpdateComponentAttributesCommand(mpComponent, oldComponentInfo,
                                                                                                                newComponentInfo);
     pModelWidget->getUndoStack()->push(pUpdateComponentAttributesCommand);
-    pModelWidget->updateModelicaText();
+    pModelWidget->updateModelText();
   }
   accept();
 }

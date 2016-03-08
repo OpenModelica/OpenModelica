@@ -359,7 +359,7 @@ void ModelicaClassDialog::createModelicaClass()
   if (pLibraryTreeItem->getModelWidget()) {
     pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->addClassAnnotation(false);
     pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->addClassAnnotation(false);
-    pLibraryTreeItem->getModelWidget()->updateModelicaText();
+    pLibraryTreeItem->getModelWidget()->updateModelText();
   }
   accept();
 }
@@ -1295,7 +1295,7 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
                                                                      mpCopyProperties->isChecked(), oldVersion, mpVersionTextBox->text(),
                                                                      oldUsesAnnotationString, newUsesAnnotationString);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateCoOrdinateSystemCommand);
-  mpGraphicsView->getModelWidget()->updateModelicaText();
+  mpGraphicsView->getModelWidget()->updateModelText();
   accept();
 }
 

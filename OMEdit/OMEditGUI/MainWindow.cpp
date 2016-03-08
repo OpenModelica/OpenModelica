@@ -917,7 +917,7 @@ void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem)
   /* if MetaModel text is changed manually by user then validate it before fetaching the interface data. */
   if (pLibraryTreeItem->getModelWidget()) {
       TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-      if (pTLMEditor && !pTLMEditor->validateMetaModelText()) {
+      if (pTLMEditor && !pTLMEditor->validateText()) {
           return;
         }
     }
@@ -965,7 +965,7 @@ void MainWindow::TLMSimulate(LibraryTreeItem *pLibraryTreeItem)
   /* if MetaModel text is changed manually by user then validate it before starting the TLM co-simulation. */
   if (pLibraryTreeItem->getModelWidget()) {
       TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-      if (pTLMEditor && !pTLMEditor->validateMetaModelText()) {
+      if (pTLMEditor && !pTLMEditor->validateText()) {
           return;
         }
     }
@@ -1468,8 +1468,10 @@ void MainWindow::undo()
        (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
     pModelWidget->clearSelection();
     pModelWidget->getUndoStack()->undo();
-    pModelWidget->updateClassAnnotationIfNeeded();
-    pModelWidget->updateModelicaText();
+    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+      pModelWidget->updateClassAnnotationIfNeeded();
+    }
+    pModelWidget->updateModelText();
   }
 }
 
@@ -1485,8 +1487,10 @@ void MainWindow::redo()
        (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
     pModelWidget->clearSelection();
     pModelWidget->getUndoStack()->redo();
-    pModelWidget->updateClassAnnotationIfNeeded();
-    pModelWidget->updateModelicaText();
+    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+      pModelWidget->updateClassAnnotationIfNeeded();
+    }
+    pModelWidget->updateModelText();
   }
 }
 
@@ -3086,7 +3090,7 @@ void MainWindow::fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-    if (pTLMEditor && !pTLMEditor->validateMetaModelText()) {
+    if (pTLMEditor && !pTLMEditor->validateText()) {
       return;
     }
   }

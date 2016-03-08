@@ -1,4 +1,3 @@
-
 /*
  * This file is part of OpenModelica.
  *
@@ -32,68 +31,68 @@
 #include "TLMEditor.h"
 #include "ComponentProperties.h"
 
-TLMEditor::TLMEditor(ModelWidget *pModelWidget)
-  : BaseEditor(pModelWidget), mTextChanged(false)
+XMLDocument::XMLDocument()
+  : QDomDocument()
 {
-  connect(this, SIGNAL(focusOut()), mpModelWidget, SLOT(TLMEditorTextChanged()));
+
+}
+
+XMLDocument::XMLDocument(TLMEditor *pTLMEditor)
+  : QDomDocument()
+{
+  mpTLMEditor = pTLMEditor;
+}
+
+QString XMLDocument::toString() const
+{
+  TabSettings tabSettings = mpTLMEditor->getMainWindow()->getOptionsDialog()->getTLMTabSettings();
+  return QDomDocument::toString(tabSettings.getIndentSize());
+}
+
+
+TLMEditor::TLMEditor(ModelWidget *pModelWidget)
+  : BaseEditor(pModelWidget), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
+{
+  mXmlDocument = XMLDocument(this);
 }
 
 /*!
- * \brief TLMEditor::showContextMenu
- * Create a context menu.
- * \param point
+ * \brief TLMEditor::validateText
+ * When user make some changes in the TLMEditor text then this method validates the text.
+ * \return
  */
-void TLMEditor::showContextMenu(QPoint point)
-{
-  QMenu *pMenu = createStandardContextMenu();
-  pMenu->exec(mapToGlobal(point));
-  delete pMenu;
-}
-
-//! Slot activated when TLMEdit's QTextDocument contentsChanged SIGNAL is raised.
-//! Sets the model as modified so that user knows that his current TLM is not saved.
-void TLMEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
-{
-  Q_UNUSED(position);
-  if (mpModelWidget->isVisible()) {
-    if (charsRemoved == 0 && charsAdded == 0) {
-      return;
-    }
-    /* if user is changing the text. */
-    if (!mForceSetPlainText) {
-      //mpModelWidget->setModelModified();
-      mTextChanged = true;
-    }
-  }
-}
-
-bool TLMEditor::validateMetaModelText()
+bool TLMEditor::validateText()
 {
   if (mTextChanged) {
-    mXmlDocument.setContent(mpPlainTextEdit->toPlainText());
-    if (!emit focusOut()) {
-      return false;
+    // if the user makes few mistakes in the text then dont let him change the perspective
+    if (!mpModelWidget->TLMEditorTextChanged()) {
+      QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+      pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("MetaModel")
+                           .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
+                           .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
+      pMessageBox->addButton(tr("Fix error(s) manually"), QMessageBox::AcceptRole);
+      pMessageBox->addButton(tr("Revert to last correct version"), QMessageBox::RejectRole);
+      int answer = pMessageBox->exec();
+      switch (answer) {
+        case QMessageBox::RejectRole:
+          mTextChanged = false;
+          // revert back to last correct version
+          setPlainText(mLastValidText);
+          return true;
+        case QMessageBox::AcceptRole:
+        default:
+          mTextChanged = true;
+          return false;
+      }
     } else {
       mTextChanged = false;
+      mLastValidText = mpPlainTextEdit->toPlainText();
     }
   }
   return true;
-}
-
-/*!
- * \brief TLMEditor::setPlainText
- * Reimplementation of QPlainTextEdit::setPlainText method.
- * Makes sure we dont update if the passed text is same.
- * \param text the string to set.
- */
-void TLMEditor::setPlainText(const QString &text)
-{
-  if (text != mpPlainTextEdit->toPlainText()) {
-    mForceSetPlainText = true;
-    mpPlainTextEdit->setPlainText(text);
-    mXmlDocument.setContent(text);
-    mForceSetPlainText = false;
-  }
 }
 
 /*!
@@ -192,7 +191,7 @@ bool TLMEditor::addSubModel(QString name, QString exactStep, QString modelFile, 
     annotation.setAttribute("Rotation", rotation);
     subModel.appendChild(annotation);
     subModels.appendChild(subModel);
-    mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+    setPlainText(mXmlDocument.toString());
     return true;
   }
   return false;
@@ -215,7 +214,7 @@ void TLMEditor::createAnnotationElement(QDomElement subModel, QString visible, Q
   annotation.setAttribute("Extent", extent);
   annotation.setAttribute("Rotation", rotation);
   subModel.insertBefore(annotation, QDomNode());
-  mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+  setPlainText(mXmlDocument.toString());
 }
 
 /*!
@@ -241,7 +240,7 @@ void TLMEditor::updateSubModelPlacementAnnotation(QString name, QString visible,
           annotationElement.setAttribute("Origin", origin);
           annotationElement.setAttribute("Extent", extent);
           annotationElement.setAttribute("Rotation", rotation);
-          mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+          setPlainText(mXmlDocument.toString());
           return;
         }
       }
@@ -267,7 +266,7 @@ void TLMEditor::updateSubModelParameters(QString name, QString startCommand, QSt
     if (subModel.attribute("Name").compare(name) == 0) {
       subModel.setAttribute("StartCommand", startCommand);
       subModel.setAttribute("ExactStep", exactStepFlag);
-      mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+      setPlainText(mXmlDocument.toString());
       return;
      }
    }
@@ -321,7 +320,7 @@ bool TLMEditor::createConnection(QString from, QString to, QString delay, QStrin
     annotation.setAttribute("Points", points);
     connection.appendChild(annotation);
     connections.appendChild(connection);
-    mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+    setPlainText(mXmlDocument.toString());
     return true;
   }
   return false;
@@ -346,7 +345,7 @@ void TLMEditor::updateTLMConnectiontAnnotation(QString fromSubModel, QString toS
         QDomElement annotationElement = connectionChildren.at(j).toElement();
         if (annotationElement.tagName().compare("Annotation") == 0) {
           annotationElement.setAttribute("Points", points);
-          mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+          setPlainText(mXmlDocument.toString());
           return;
         }
       }
@@ -374,7 +373,7 @@ void TLMEditor::addInterfacesData(QDomElement interfaces)
         interfacePoint.setAttribute("Position",interfaceDataElement.attribute("Position"));
         interfacePoint.setAttribute("Angle321",interfaceDataElement.attribute("Angle321"));
         subModel.appendChild(interfacePoint);
-        mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+        setPlainText(mXmlDocument.toString());
 
         TLMInterfacePointInfo *pTLMInterfacePointInfo;
         pTLMInterfacePointInfo = new TLMInterfacePointInfo(subModel.attribute("Name"),"shaft3" , interfaceDataElement.attribute("name"));
@@ -424,7 +423,7 @@ bool TLMEditor::deleteSubModel(QString name)
       QDomElement subModels = getSubModelsElement();
       if (!subModels.isNull()) {
         subModels.removeChild(subModel);
-        mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+        setPlainText(mXmlDocument.toString());
         return true;
       }
       break;
@@ -450,13 +449,74 @@ bool TLMEditor::deleteConnection(QString startSubModelName, QString endSubModelN
       QDomElement connections = getConnectionsElement();
       if (!connections.isNull()) {
         connections.removeChild(connection);
-        mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+        setPlainText(mXmlDocument.toString());
         return true;
       }
       break;
     }
   }
   return false;
+}
+
+/*!
+ * \brief TLMEditor::showContextMenu
+ * Create a context menu.
+ * \param point
+ */
+void TLMEditor::showContextMenu(QPoint point)
+{
+  QMenu *pMenu = createStandardContextMenu();
+  pMenu->exec(mapToGlobal(point));
+  delete pMenu;
+}
+
+/*!
+ * \brief TLMEditor::setPlainText
+ * Reimplementation of QPlainTextEdit::setPlainText method.
+ * Makes sure we dont update if the passed text is same.
+ * \param text the string to set.
+ */
+void TLMEditor::setPlainText(const QString &text)
+{
+  if (text != mpPlainTextEdit->toPlainText()) {
+    mForceSetPlainText = true;
+    mXmlDocument.setContent(text);
+    // use the text from mXmlDocument so that we can map error to line numbers. We don't care about users formatting in the file.
+    mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+    mForceSetPlainText = false;
+    mLastValidText = text;
+  }
+}
+
+/*!
+ * \brief TLMEditor::contentsHasChanged
+ * Slot activated when TLMEdit's QTextDocument contentsChanged SIGNAL is raised.\n
+ * Sets the model as modified so that user knows that his current TLM is not saved.
+ * \param position
+ * \param charsRemoved
+ * \param charsAdded
+ */
+void TLMEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
+{
+  Q_UNUSED(position);
+  if (mpModelWidget->isVisible()) {
+    if (charsRemoved == 0 && charsAdded == 0) {
+      return;
+    }
+    /* if user is changing the read only file. */
+    if (mpModelWidget->getLibraryTreeItem()->isReadOnly() && !mForceSetPlainText) {
+      /* if user is changing the read-only class. */
+      mpMainWindow->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
+    } else {
+      /* if user is changing, the normal file. */
+      if (!mForceSetPlainText) {
+        mpModelWidget->setWindowTitle(QString(mpModelWidget->getLibraryTreeItem()->getNameStructure()).append("*"));
+        mpModelWidget->getLibraryTreeItem()->setIsSaved(false);
+        mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
+        mTextChanged = true;
+      }
+    }
+  }
 }
 
 //! @class TLMHighlighter

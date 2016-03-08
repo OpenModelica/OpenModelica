@@ -1063,7 +1063,7 @@ void SimulationDialog::saveSimulationOptions()
     pUpdateClassExperimentAnnotationCommand = new UpdateClassExperimentAnnotationCommand(mpMainWindow, mpLibraryTreeItem,
                                                                                          oldExperimentAnnotation, newExperimentAnnotation);
     mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
-    mpLibraryTreeItem->getModelWidget()->updateModelicaText();
+    mpLibraryTreeItem->getModelWidget()->updateModelText();
   } else {
     // send the simulations options annotation to OMC
     mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), newExperimentAnnotation);

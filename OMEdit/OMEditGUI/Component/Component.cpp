@@ -344,7 +344,8 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   createNonExistingComponent();
   createDefaultComponent();
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
-//    parseAnnotationString(Helper::defaultComponentAnnotationString);
+    mpDefaultComponentRectangle->setVisible(true);
+    mpDefaultComponentText->setVisible(true);
   } else {
     drawComponent();
   }
@@ -1711,7 +1712,7 @@ void Component::resizedComponent()
   UpdateComponentTransformationsCommand *pUpdateComponentCommand = new UpdateComponentTransformationsCommand(this, mOldTransformation,
                                                                                                              mTransformation);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateComponentCommand);
-  mpGraphicsView->getModelWidget()->updateModelicaText();
+  mpGraphicsView->getModelWidget()->updateModelText();
 }
 
 /*!

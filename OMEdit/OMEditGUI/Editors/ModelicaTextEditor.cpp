@@ -197,7 +197,7 @@ bool ModelicaTextEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_MODELICA_TEXT)
+      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("Modelica")
                            .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
                            .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
       pMessageBox->addButton(tr("Fix error(s) manually"), QMessageBox::AcceptRole);

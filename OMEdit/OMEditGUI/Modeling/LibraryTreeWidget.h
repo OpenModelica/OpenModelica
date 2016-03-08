@@ -359,6 +359,7 @@ public:
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openTLMOrTextFile(QFileInfo fileInfo, bool showProgress = true);
+  bool parseTLMFile(QFileInfo fileInfo);
   void parseAndLoadModelicaText(QString modelText);
   bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);

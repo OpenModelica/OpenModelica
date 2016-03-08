@@ -282,3 +282,30 @@ void FixedCheckBox::paintEvent(QPaintEvent *event)
     p.drawLines(lines);
   }
 }
+
+/*!
+ * \brief Utilities::parseTLMText
+ * Parses the MetaModel text against the schema.
+ * \param pMessageHandler
+ * \param contents
+ */
+void Utilities::parseTLMText(MessageHandler *pMessageHandler, QString contents)
+{
+  QFile schemaFile(QString(":/Resources/XMLSchema/tlmModelDescription.xsd"));
+  schemaFile.open(QIODevice::ReadOnly);
+  const QString schemaText(QString::fromUtf8(schemaFile.readAll()));
+  schemaFile.close();
+  const QByteArray schemaData = schemaText.toUtf8();
+
+  QXmlSchema schema;
+  schema.setMessageHandler(pMessageHandler);
+  schema.load(schemaData);
+  if (!schema.isValid()) {
+    pMessageHandler->setFailed(true);
+  } else {
+    QXmlSchemaValidator validator(schema);
+    if (!validator.validate(contents.toUtf8())) {
+      pMessageHandler->setFailed(true);
+    }
+  }
+}

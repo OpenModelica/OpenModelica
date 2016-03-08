@@ -1344,29 +1344,31 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
 {
   // set the library node not saved.
   pLibraryTreeItem->setIsSaved(false);
-  updateLibraryTreeItem(pLibraryTreeItem);
-  // update the containing parent LibraryTreeItem class text.
-  LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
-  // we also mark the containing parent class unsaved because it is very important for saving of single file packages.
-  pParentLibraryTreeItem->setIsSaved(false);
-  updateLibraryTreeItem(pParentLibraryTreeItem);
-  OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
-  QString before = pParentLibraryTreeItem->getClassText(this);
-  QString after = pOMCProxy->listFile(pParentLibraryTreeItem->getNameStructure());
-  QString contents = pOMCProxy->diffModelicaFileListings(before, after);
-  pParentLibraryTreeItem->setClassText(contents);
-  if (pParentLibraryTreeItem->getModelWidget()) {
-    pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getNameStructure()).append("*"));
-    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
-    if (pModelicaTextEditor) {
-      pModelicaTextEditor->setPlainText(contents);
+  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    updateLibraryTreeItem(pLibraryTreeItem);
+    // update the containing parent LibraryTreeItem class text.
+    LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
+    // we also mark the containing parent class unsaved because it is very important for saving of single file packages.
+    pParentLibraryTreeItem->setIsSaved(false);
+    updateLibraryTreeItem(pParentLibraryTreeItem);
+    OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
+    QString before = pParentLibraryTreeItem->getClassText(this);
+    QString after = pOMCProxy->listFile(pParentLibraryTreeItem->getNameStructure());
+    QString contents = pOMCProxy->diffModelicaFileListings(before, after);
+    pParentLibraryTreeItem->setClassText(contents);
+    if (pParentLibraryTreeItem->getModelWidget()) {
+      pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getNameStructure()).append("*"));
+      ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
+      if (pModelicaTextEditor) {
+        pModelicaTextEditor->setPlainText(contents);
+      }
     }
-  }
-  // if we first updated the parent class then the child classes needs to be updated as well.
-  if (pParentLibraryTreeItem != pLibraryTreeItem) {
-    pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8, false, false);
-    updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
-    pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
+    // if we first updated the parent class then the child classes needs to be updated as well.
+    if (pParentLibraryTreeItem != pLibraryTreeItem) {
+      pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8, false, false);
+      updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
+      pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
+    }
   }
 }
 
@@ -1832,7 +1834,7 @@ void LibraryTreeModel::moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool u
     // if we order in a package saved in one file strucutre then we should update its containing file item text.
     if (pContainingFileParentLibraryTreeItem != pLibraryTreeItem) {
       if (pLibraryTreeItem->getModelWidget()) {
-        pLibraryTreeItem->getModelWidget()->updateModelicaText();
+        pLibraryTreeItem->getModelWidget()->updateModelText();
       } else {
         updateLibraryTreeItemClassText(pLibraryTreeItem);
       }
@@ -1881,7 +1883,7 @@ void LibraryTreeModel::moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, boo
     // if we order in a package saved in one file strucutre then we should update its containing file item text.
     if (pContainingFileParentLibraryTreeItem != pLibraryTreeItem) {
       if (pLibraryTreeItem->getModelWidget()) {
-        pLibraryTreeItem->getModelWidget()->updateModelicaText();
+        pLibraryTreeItem->getModelWidget()->updateModelText();
       } else {
         updateLibraryTreeItemClassText(pLibraryTreeItem);
       }
@@ -1905,7 +1907,7 @@ void LibraryTreeModel::updateBindings(LibraryTreeItem *pLibraryTreeItem)
 {
   if (mpLibraryWidget->getMainWindow()->getOMCProxy()->inferBindings(pLibraryTreeItem->getNameStructure())) {
     if (pLibraryTreeItem->getModelWidget()) {
-      pLibraryTreeItem->getModelWidget()->updateModelicaText();
+      pLibraryTreeItem->getModelWidget()->updateModelText();
     } else {
       updateLibraryTreeItemClassText(pLibraryTreeItem);
     }
@@ -2992,7 +2994,9 @@ void LibraryWidget::openTLMOrTextFile(QFileInfo fileInfo, bool showProgress)
   // create a LibraryTreeItem for new loaded file.
   LibraryTreeItem *pLibraryTreeItem = 0;
   if (fileInfo.suffix().compare("xml") == 0) {
-    pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::TLM, fileInfo.completeBaseName(), true);
+    if (parseTLMFile(fileInfo)) {
+      pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::TLM, fileInfo.completeBaseName(), true);
+    }
   } else {
     pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.completeBaseName(), true);
   }
@@ -3004,6 +3008,43 @@ void LibraryWidget::openTLMOrTextFile(QFileInfo fileInfo, bool showProgress)
     mpMainWindow->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
   }
   if (showProgress) mpMainWindow->getStatusBar()->clearMessage();
+}
+
+/*!
+ * \brief LibraryWidget::parseTLMFile
+ * Parses the MetaModel file.
+ * \param fileInfo
+ * \return
+ */
+bool LibraryWidget::parseTLMFile(QFileInfo fileInfo)
+{
+  QString contents = "";
+  QFile file(fileInfo.absoluteFilePath());
+  if (!file.open(QIODevice::ReadOnly)) {
+    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileInfo.absoluteFilePath()).arg(file.errorString()),
+                          Helper::ok);
+    return false;
+  } else {
+    contents = QString(file.readAll());
+    file.close();
+
+    MessageHandler *pMessageHandler = new MessageHandler;
+    Utilities::parseTLMText(pMessageHandler, contents);
+    if (pMessageHandler->isFailed()) {
+      QTextDocument document;
+      document.setHtml(pMessageHandler->statusMessage());
+      MessagesWidget *pMessagesWidget = mpMainWindow->getMessagesWidget();
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, fileInfo.absoluteFilePath(), false, pMessageHandler->line(),
+                                                 pMessageHandler->column(), 0, 0, document.toPlainText(), Helper::scriptingKind,
+                                                 Helper::errorLevel));
+      delete pMessageHandler;
+      return false;
+    } else {
+      delete pMessageHandler;
+      return true;
+    }
+  }
 }
 
 /*!

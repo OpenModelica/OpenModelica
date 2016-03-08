@@ -152,12 +152,12 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
         QString newAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
         pModelWidget->getUndoStack()->push(new UpdateConnectionCommand(pLineAnnotation, mOldAnnotation, newAnnotation));
-        pModelWidget->updateModelicaText();
+        pModelWidget->updateModelText();
       } else {
         QString newAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
         pModelWidget->getUndoStack()->push(new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, newAnnotation));
         pModelWidget->updateClassAnnotationIfNeeded();
-        pModelWidget->updateModelicaText();
+        pModelWidget->updateModelText();
       }
     }
   }

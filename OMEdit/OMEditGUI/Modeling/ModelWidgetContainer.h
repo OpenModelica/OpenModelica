@@ -360,7 +360,7 @@ public:
   void updateChildClasses(LibraryTreeItem *pLibraryTreeItem);
   void clearSelection();
   void updateClassAnnotationIfNeeded();
-  void updateModelicaText();
+  void updateModelText();
   void updateModelicaTextManually(QString contents);
   void updateUndoRedoActions();
 private:

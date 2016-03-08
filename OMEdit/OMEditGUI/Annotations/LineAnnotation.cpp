@@ -1505,6 +1505,6 @@ void CreateConnectionDialog::createArrayConnection()
   mpConnectionLineAnnotation->setEndComponentName(endComponentName);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
-  mpGraphicsView->getModelWidget()->updateModelicaText();
+  mpGraphicsView->getModelWidget()->updateModelText();
   accept();
 }

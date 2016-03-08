@@ -839,14 +839,14 @@ bool ShapePropertiesDialog::applyShapeProperties()
     UpdateConnectionCommand *pUpdateConnectionCommand;
     pUpdateConnectionCommand = new UpdateConnectionCommand(mpLineAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation());
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateConnectionCommand);
-    mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelicaText();
+    mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelText();
   } else {
     // create a UpdateShapeCommand object and push it to the undo stack.
     UpdateShapeCommand *pUpdateShapeCommand;
     pUpdateShapeCommand = new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation());
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateShapeCommand);
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateClassAnnotationIfNeeded();
-    mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelicaText();
+    mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelText();
   }
   return true;
 }

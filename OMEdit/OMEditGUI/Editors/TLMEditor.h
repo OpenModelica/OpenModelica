@@ -41,14 +41,29 @@
 
 class MainWindow;
 class ModelWidget;
+class TLMEditor;
+
+/*!
+ * \class XMLDocument
+ * \brief Inherit from QDomDocument just to reimplement toString function with default argument 2.
+ */
+class XMLDocument : public QDomDocument
+{
+public:
+  XMLDocument();
+  XMLDocument(TLMEditor *pTLMEditor);
+  QString toString() const;
+private:
+  TLMEditor *mpTLMEditor;
+};
 
 class TLMEditor : public BaseEditor
 {
   Q_OBJECT
 public:
   TLMEditor(ModelWidget *pModelWidget);
-  bool validateMetaModelText();
-  void setPlainText(const QString &text);
+  QString getLastValidText() {return mLastValidText;}
+  bool validateText();
   QDomElement getSubModelsElement();
   QDomNodeList getSubModels();
   QDomElement getConnectionsElement();
@@ -65,49 +80,18 @@ public:
   void addInterfacesData(QDomElement interfaces);
   bool existInterfaceData(QString subModelName, QString interfaceName);
   bool deleteSubModel(QString name);
-  bool deleteConnection(QString startComponentName, QString endComponentName );
+  bool deleteConnection(QString startComponentName, QString endComponentName);
 private:
-  bool mForceSetPlainText;
+  QString mLastValidText;
   bool mTextChanged;
-  QDomDocument mXmlDocument;
-signals:
-  bool focusOut();
+  bool mForceSetPlainText;
+  XMLDocument mXmlDocument;
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:
+  void setPlainText(const QString &text);
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
   virtual void toggleCommentSelection() {}
-};
-
-/*!
-  \class MessageHandler
-  \brief Defines the appropriate error message of the parsed XML validated againast the XML Schema.
-         The class implementation and logic is inspired from Qt Creator sources.
-  */
-class MessageHandler : public QAbstractMessageHandler
-{
-public:
-  MessageHandler()
-      : QAbstractMessageHandler(0)
-  {
-  }
-  QString statusMessage() const { return m_description;}
-  int line() const { return m_sourceLocation.line();}
-  int column() const { return m_sourceLocation.column();}
-protected:
-  virtual void handleMessage(QtMsgType type, const QString &description,
-                             const QUrl &identifier, const QSourceLocation &sourceLocation)
-  {
-    Q_UNUSED(type);
-    Q_UNUSED(identifier);
-    m_messageType = type;
-    m_description = description;
-    m_sourceLocation = sourceLocation;
-  }
-private:
-  QtMsgType m_messageType;
-  QString m_description;
-  QSourceLocation m_sourceLocation;
 };
 
 class TLMEditorPage;

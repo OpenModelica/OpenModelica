@@ -45,6 +45,7 @@
 #include <QDoubleSpinBox>
 #include <QCheckBox>
 #include <QVariant>
+#include <QAbstractMessageHandler>
 
 #ifndef UTILITIES_H
 #define UTILITIES_H
@@ -271,6 +272,38 @@ inline QDataStream& operator>>(QDataStream& in, DebuggerConfiguration& configura
   in >> configurationSettings.GDBPath;
   in >> configurationSettings.arguments;
   return in;
+}
+
+/*!
+ * \class MessageHandler
+ * \brief Defines the appropriate error message of the parsed XML validated againast the XML Schema.\n
+ * The class implementation and logic is inspired from Qt Creator sources.
+ */
+class MessageHandler : public QAbstractMessageHandler
+{
+public:
+  MessageHandler() : QAbstractMessageHandler(0) {mFailed = false;}
+  QString statusMessage() const { return mDescription;}
+  int line() const { return mSourceLocation.line();}
+  int column() const { return mSourceLocation.column();}
+  void setFailed(bool failed) {mFailed = failed;}
+  bool isFailed() {return mFailed;}
+protected:
+  virtual void handleMessage(QtMsgType type, const QString &description, const QUrl &identifier, const QSourceLocation &sourceLocation)
+  {
+    Q_UNUSED(type);
+    Q_UNUSED(identifier);
+    mDescription = description;
+    mSourceLocation = sourceLocation;
+  }
+private:
+  QString mDescription;
+  QSourceLocation mSourceLocation;
+  bool mFailed;
+};
+
+namespace Utilities {
+  void parseTLMText(MessageHandler *pMessageHandler, QString contents);
 }
 
 #endif // UTILITIES_H

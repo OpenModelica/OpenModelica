@@ -194,7 +194,7 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
       message = Qt::convertFromPlainText(messageItem.getMessage()).remove("<p>").remove("</p>");
     }
   } else if(messageItem.getMessageItemType()== MessageItem::TLM) {
-    message = messageItem.getMessage().remove("<p>");
+    message = messageItem.getMessage().remove("<p>").remove("</p>");
   }
   if (messageItem.getFileName().isEmpty()) { // if custom error message
     errorMessage = message;

@@ -527,8 +527,8 @@ QString GUIMessages::getMessage(int type)
       return tr("Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.");
     case ERROR_OCCURRED:
       return tr("Following error has occurred. \n\n%1");
-    case ERROR_IN_MODELICA_TEXT:
-      return tr("Problems are found in Modelica Text. <br />");
+    case ERROR_IN_TEXT:
+      return tr("Problems are found in %1 Text. <br />");
     case REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY:
       return tr("<br /><br />If you cannot find the source of the error, you can always <b>revert to the last correct version</b>.");
     case NO_OPENMODELICA_KEYWORDS:
