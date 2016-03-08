@@ -2727,9 +2727,11 @@ algorithm
       then ();
     case (Absyn.TCOMPLEX(typeSpecs=tss),_)
       equation
-        str = Absyn.typeSpecString(ts);
-        Error.addSourceMessage(Error.TCOMPLEX_MULTIPLE_NAMES,{str},info);
-        List.map1_0(tss, checkTypeSpec, info);
+        if listMember(ts.path, {Absyn.IDENT("list"),Absyn.IDENT("List"),Absyn.IDENT("array"),Absyn.IDENT("Array"),Absyn.IDENT("polymorphic"),Absyn.IDENT("Option")}) then
+          str = Absyn.typeSpecString(ts);
+          Error.addSourceMessage(Error.TCOMPLEX_MULTIPLE_NAMES,{str},info);
+          List.map1_0(tss, checkTypeSpec, info);
+        end if;
       then ();
   end match;
 end checkTypeSpec;

@@ -318,6 +318,7 @@ if true then /* Suppress output */
     "../Template/TaskSystemDump.mo",
     "../Template/VisualXMLTpl.mo",
 
+    "../Util/AvlTree.mo",
     "../Util/BaseAvlTree.mo",
     "../Util/AvlTreeString2.mo",
 

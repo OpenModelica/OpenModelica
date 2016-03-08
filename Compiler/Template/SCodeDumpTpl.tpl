@@ -682,7 +682,7 @@ template dumpRestrictionTypeVars(SCode.Restriction restriction)
 ::=
 match restriction
   case R_UNIONTYPE(__) then
-    (if typeVars then ("<" + (typeVars |> tv => tv ; separator=";") + ">"))
+    (if typeVars then ("<" + (typeVars |> tv => tv ; separator=",") + ">"))
   else ""
 end dumpRestrictionTypeVars;
 
