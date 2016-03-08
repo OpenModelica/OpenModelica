@@ -1161,7 +1161,7 @@ for_indices returns [void* ast]
 
 for_index returns [void* ast]
 @init{ i = 0; e.ast = 0; guard.ast = 0; } :
-  (i=IDENT ((GUARD guard=expression[metamodelica_enabled()])? T_IN e=expression[metamodelica_enabled()])?
+  (i=IDENT (((IF|GUARD) guard=expression[metamodelica_enabled()])? T_IN e=expression[metamodelica_enabled()])?
    {
      ast = Absyn__ITERATOR(token_to_scon(i),mmc_mk_some_or_none(guard.ast),mmc_mk_some_or_none(e.ast));
    }
@@ -1750,7 +1750,7 @@ cases2 returns [void* ast]
 
 onecase returns [void* ast]
 @init{ pat.ast = 0; guard.ast = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp.ast = 0; } :
-  (CASE pat=pattern (GUARD guard=expression[metamodelica_enabled()])? cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN exp=expression[metamodelica_enabled()] SEMICOLON)
+  (CASE pat=pattern ((IF|GUARD) guard=expression[metamodelica_enabled()])? cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN exp=expression[metamodelica_enabled()] SEMICOLON)
     {
         if (es != NULL) {
           c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
