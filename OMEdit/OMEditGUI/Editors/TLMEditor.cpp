@@ -144,23 +144,6 @@ QDomNodeList TLMEditor::getConnections()
 }
 
 /*!
- * \brief TLMEditor::getSimulationToolStartCommand
- * Returns the simulation tool start command.
- * \return
- */
-QString TLMEditor::getSimulationToolStartCommand(QString name)
-{
-  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
-  for (int i = 0 ; i < subModelList.size() ; i++) {
-    QDomElement subModel = subModelList.at(i).toElement();
-    if (subModel.attribute("Name").compare(name) == 0) {
-      return subModel.attribute("StartCommand");
-    }
-  }
-  return "";
-}
-
-/*!
  * \brief TLMEditor::addSubModel
  * Adds a SubModel tag with Annotation tag as child of it.
  * \param name
@@ -270,26 +253,6 @@ void TLMEditor::updateSubModelParameters(QString name, QString startCommand, QSt
       return;
      }
    }
-}
-
-/*!
-  Checks whether the exact step flag is set to 1 or not.
-  \param subModelName - the name for the submodel to check.
-  \return true on success.
-  */
-bool TLMEditor::isExactStepFlagSet(QString subModelName)
-{
-  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
-  for (int i = 0 ; i < subModelList.size() ; i++) {
-    QDomElement subModel = subModelList.at(i).toElement();
-    if (subModel.attribute("Name").compare(subModelName) == 0) {
-        if (subModel.attribute("ExactStep").compare("1") == 0 ) {
-           return true;
-        }
-      }
-      break;
-    }
-  return false;
 }
 
 /*!

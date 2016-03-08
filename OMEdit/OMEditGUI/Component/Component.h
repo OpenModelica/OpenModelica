@@ -106,6 +106,18 @@ public:
   void setParameterValue(QString parameterValue) {mParameterValue = parameterValue;}
   QString getParameterValueWithoutFetching() const {return mParameterValue;}
   QString getParameterValue(OMCProxy *pOMCProxy, QString className);
+  // MetaModel attributes
+  void setStartCommand(QString startCommand) {mStartCommand = startCommand;}
+  QString getStartCommand() const {return mStartCommand;}
+  void setExactStep(bool exactStep) {mExactStep = exactStep;}
+  bool getExactStep() const {return mExactStep;}
+  void setModelFile(QString modelFile) {mModelFile = modelFile;}
+  QString getModelFile() const {return mModelFile;}
+  void setPosition(QString position) {mPosition = position;}
+  QString getPosition() const {return mPosition;}
+  void setAngle321(QString angle321) {mAngle321 = angle321;}
+  QString getAngle321() const {return mAngle321;}
+  // operator overloading
   bool operator==(const ComponentInfo &componentInfo) const;
   bool operator!=(const ComponentInfo &componentInfo) const;
 private:
@@ -129,6 +141,12 @@ private:
   QMap<QString, QString> mModifiersMap;
   bool mParameterValueLoaded;
   QString mParameterValue;
+  // MetaModel attributes
+  QString mStartCommand;
+  bool mExactStep;
+  QString mModelFile;
+  QString mPosition;
+  QString mAngle321;
 };
 
 class Component : public QObject, public QGraphicsItem

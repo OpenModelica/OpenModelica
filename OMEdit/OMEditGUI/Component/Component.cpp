@@ -75,6 +75,11 @@ ComponentInfo::ComponentInfo(QObject *pParent)
   mModifiersMap.clear();
   mParameterValueLoaded = false;
   mParameterValue = "";
+  mStartCommand = "";
+  mExactStep = false;
+  mModelFile = "";
+  mPosition = "";
+  mAngle321 = "";
 }
 
 /*!
@@ -301,7 +306,10 @@ bool ComponentInfo::operator==(const ComponentInfo &componentInfo) const
       (componentInfo.getOuter() == this->getOuter()) && (componentInfo.getCausality() == this->getCausality()) &&
       (componentInfo.getArrayIndex() == this->getArrayIndex()) &&
       (componentInfo.getModifiersMapWithoutFetching() == this->getModifiersMapWithoutFetching()) &&
-      (componentInfo.getParameterValueWithoutFetching() == this->getParameterValueWithoutFetching());
+      (componentInfo.getParameterValueWithoutFetching() == this->getParameterValueWithoutFetching()) &&
+      (componentInfo.getStartCommand() == this->getStartCommand()) && (componentInfo.getExactStep() == this->getExactStep()) &&
+      (componentInfo.getModelFile() == this->getModelFile()) && (componentInfo.getPosition() == this->getPosition()) &&
+      (componentInfo.getAngle321() == this->getAngle321());
 }
 
 /*!

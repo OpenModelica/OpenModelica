@@ -1344,8 +1344,8 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
 {
   // set the library node not saved.
   pLibraryTreeItem->setIsSaved(false);
+  updateLibraryTreeItem(pLibraryTreeItem);
   if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
-    updateLibraryTreeItem(pLibraryTreeItem);
     // update the containing parent LibraryTreeItem class text.
     LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
     // we also mark the containing parent class unsaved because it is very important for saving of single file packages.

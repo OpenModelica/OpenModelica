@@ -1283,19 +1283,15 @@ void SubModelAttributes::setUpDialog()
   */
 void SubModelAttributes::initializeDialog()
 {
-  // get component Name
+  // set Name
   mpNameTextBox->setText(mpComponent->getName());
-  // get the simulation start command and exact step flag of the submodel
-  LibraryTreeItem *pLibraryTreeItem = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
-  if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::TLM) {
-    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
-    mpStartCommandTextBox->setText(pTLMEditor->getSimulationToolStartCommand(mpComponent->getName()));
-    mpExactStepFlagCheckBox->setChecked(pTLMEditor->isExactStepFlagSet(mpComponent->getName()));
-  }
+  // set the start command
+  mpStartCommandTextBox->setText(mpComponent->getComponentInfo()->getStartCommand());
+  // set the exact step
+  mpExactStepFlagCheckBox->setChecked(mpComponent->getComponentInfo()->getExactStep());
   // get the simulation tool of the submodel
   mpSimulationToolComboBox->setCurrentIndex(StringHandler::getSimulationTool(mpStartCommandTextBox->text()));
-  QFileInfo fileInfo(mpComponent->getLibraryTreeItem()->getFileName());
-  mpModelFileTextBox->setText(fileInfo.fileName());
+  mpModelFileTextBox->setText(mpComponent->getComponentInfo()->getModelFile());
 }
 
 void SubModelAttributes::changeSimulationToolStartCommand(QString tool)
@@ -1307,7 +1303,6 @@ void SubModelAttributes::changeSimulationTool(QString simulationToolStartCommand
 {
   mpSimulationToolComboBox->setCurrentIndex(StringHandler::getSimulationTool(simulationToolStartCommand));
 }
-
 
 /*!
   Updates subModel parameters.\n

@@ -399,6 +399,8 @@ void GraphicsView::addComponentToClass(Component *pComponent)
       startCommand = "";
     }
     QString visible = pComponent->mTransformation.getVisible() ? "true" : "false";
+    pComponent->getComponentInfo()->setStartCommand(startCommand);
+    pComponent->getComponentInfo()->setModelFile(fileInfo.fileName());
     // add SubModel Element
     pTLMEditor->addSubModel(pComponent->getName(), "false", fileInfo.fileName(), startCommand, visible, pComponent->getTransformationOrigin(),
                             pComponent->getTransformationExtent(), QString::number(pComponent->mTransformation.getRotateAngle()));
@@ -3512,8 +3514,22 @@ void ModelWidget::getTLMComponents()
     LibraryTreeModel *pLibraryTreeModel = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel();
     LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(subModel.attribute("Name"));
     QStringList dialogAnnotation;
+    // get the attibutes of the submodel
+    ComponentInfo *pComponentInfo = new ComponentInfo;
+    pComponentInfo->setStartCommand(subModel.attribute("StartCommand"));
+    bool exactStep;
+    if (subModel.attribute("ExactStep").toLower().compare("1") == 0) {
+      exactStep = true;
+    } else if (subModel.attribute("ExactStep").toLower().compare("true") == 0) {
+      exactStep = true;
+    } else {
+      exactStep = false;
+    }
+    pComponentInfo->setExactStep(exactStep);
+    pComponentInfo->setModelFile(subModel.attribute("ModelFile"));
+    // add submodel as component to view.
     mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), pLibraryTreeItem, transformation, QPointF(0.0, 0.0), dialogAnnotation,
-                                              new ComponentInfo(), false, true);
+                                              pComponentInfo, false, true);
   }
 }
 
