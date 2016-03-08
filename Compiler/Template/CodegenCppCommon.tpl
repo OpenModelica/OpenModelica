@@ -162,6 +162,14 @@ template contextCref2(ComponentRef cr, Context context)
   else ""
 end contextCref2;
 
+template contextFunName(String funName, Context context)
+  "Generates a name in the Functions object depending on the context we're in."
+::=
+  match context
+  case FUNCTION_CONTEXT(__) then '<%funName%>'
+  else '_functions-><%funName%>'
+end contextFunName;
+
 template crefWithIndex(ComponentRef cr, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                        Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Return cref with index for the lhs of a for loop, i.e., _resistori_P_i."
@@ -542,7 +550,7 @@ case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let record_type_name = underscorePath(ClassInf.getStateName(record_state))
   let ret_type = '<%record_type_name%>RetType'
   let ret_var = tempDecl(ret_type, &varDecls)
-  let &preExp += '_functions-><%record_type_name%>(<%vars%>,<%ret_var%>);<%\n%>/*testfunction*/'
+  let &preExp += '<%contextFunName(record_type_name, context)%>(<%vars%>,<%ret_var%>);<%\n%>/*testfunction*/'
   '<%ret_var%>'
 end daeExpRecordCrefRhs;
 
@@ -2144,10 +2152,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
   case exp as CALL(attr=attr as CALL_ATTR(ty=T_NORETCALL(__))) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
-    let &preExp += match context
-                        case FUNCTION_CONTEXT(__) then '<%funName%>(<%argStr%>);<%\n%>'
-            /*multi_array else 'assign_array(<%retVar%> ,_functions.<%funName%>(<%argStr%>));<%\n%>'*/
-                        else '_functions-><%funName%>(<%argStr%>);<%\n%>'
+    let &preExp += '<%contextFunName(funName, context)%>(<%argStr%>);<%\n%>'
     ""
     /*Function calls with array return type*/
     case exp as CALL(attr=attr as CALL_ATTR(ty=T_ARRAY(ty=ty,dims=dims))) then
@@ -2156,13 +2161,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let funName = '<%underscorePath(path)%>'
     let retType = '<%funName%>RetType /* undefined */'
     let retVar = tempDecl(retType, &varDecls)
-    let &preExp += match context
-                        case FUNCTION_CONTEXT(__) then '(<%funName%>(<%argStr%><%if expLst then if retVar then "," %><%retVar%>));<%\n%>/*funccall*/'
-            /*multi_array else 'assign_array(<%retVar%> ,_functions.<%funName%>(<%argStr%>));<%\n%>'*/
-                        else '_functions-><%funName%>(<%argStr%><%if expLst then if retVar then "," %><%retVar%>);<%\n%>'
-
-
-
+    let &preExp += '<%contextFunName(funName, context)%>(<%argStr%><%if expLst then if retVar then "," %><%retVar%>);<%\n%>'
     '<%retVar%>'
    /*Function calls with tuple return type
    case exp as CALL(attr=attr as CALL_ATTR(ty=T_TUPLE(__))) then
@@ -2183,7 +2182,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let retType = '<%funName%>RetType /* undefined */'
     let retVar = tempDecl(retType, &varDecls)
     let &preExp += match context case FUNCTION_CONTEXT(__) then'<%funName%>(<%argStr%><%if explist then if retVar then "," %><%if retVar then '<%retVar%>'%>);<%\n%>'
-    else '_functions-><%funName%>(<%argStr%><%if explist then if retVar then "," %> <%if retVar then '<%retVar%>'%>);<%\n%>'
+    else '<%contextFunName(funName, context)%>(<%argStr%><%if explist then if retVar then "," %> <%if retVar then '<%retVar%>'%>);<%\n%>'
      '<%retVar%>'
 
 end daeExpCall;
@@ -2968,7 +2967,8 @@ template daeExpCallTuple(Exp call , Text additionalOutputs/* arguments 2..N */, 
         //'<%name%>(<%argStr%><%additionalOutputs%>)'
         '/*Closure?*/<%closure%> ? (<%typeCast1%> <%func%>) (<%argStrPointer%><%additionalOutputs%>) : (<%typeCast2%> <%func%>) (<%argStr%><%additionalOutputs%>)'
       else
-          '_functions-><%underscorePath(path)%>(<%argStr%>,<%additionalOutputs%>)'
+        let name = underscorePath(path)
+        '<%contextFunName(name, context)%>(<%argStr%>,<%additionalOutputs%>)'
 end daeExpCallTuple;
 
 template generateTypeCast(Type ty, list<DAE.Exp> es, Boolean isClosure, Text &preExp /*BUFP*/,
@@ -2987,10 +2987,8 @@ template daeExpSharedLiteral(Exp exp, Context context, Text &preExp /*BUFP*/, Te
  "Generates code for a match expression."
 ::=
   match exp case exp as SHARED_LITERAL(__) then
-    match context case FUNCTION_CONTEXT(__) then
-      ' _OMC_LIT<%exp.index%>'
-    else
-      '_functions->_OMC_LIT<%exp.index%>'
+    let lit = '_OMC_LIT<%exp.index%>'
+    '<%contextFunName(lit, context)%>'
 end daeExpSharedLiteral;
 
 
