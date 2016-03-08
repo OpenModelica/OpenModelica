@@ -545,8 +545,10 @@ algorithm
   expStack := inExp :: inExpStack;
   (outDiffedExp, outFunctionTree) := match inExp
     local
+      Absyn.Path p;
       Boolean b;
-      DAE.Exp e1, e2, e3, actual;
+      DAE.CallAttributes attr;
+      DAE.Exp e1, e2, e3, actual, simplified;
       DAE.Exp res, res1, res2;
       DAE.FunctionTree functionTree;
       DAE.Operator op;
@@ -578,9 +580,11 @@ algorithm
     then (Expression.makeConstZero(tp), inFunctionTree);
 
     // differentiate homotopy
-    case DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::_) equation
+    case DAE.CALL(path=p as Absyn.IDENT(name="homotopy"), expLst={actual, simplified}, attr=attr) equation
       (e1, functionTree) = differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, inExpStack);
-    then (e1, functionTree);
+      (e2, functionTree) = differentiateExp(simplified, inDiffwrtCref, inInputData, inDiffType, functionTree, maxIter, inExpStack);
+      res = DAE.CALL(p, {e1, e2}, attr);
+    then (res, functionTree);
 
     // differentiate call
     case DAE.CALL() equation
