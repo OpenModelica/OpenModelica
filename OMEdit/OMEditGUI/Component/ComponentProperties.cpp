@@ -1310,11 +1310,13 @@ void SubModelAttributes::changeSimulationTool(QString simulationToolStartCommand
   */
 void SubModelAttributes::updateSubModelParameters()
 {
-  QString exactStepFlag = mpExactStepFlagCheckBox->isChecked() ? "1" : "0";
+  QString exactStepFlag = mpExactStepFlagCheckBox->isChecked() ? "true" : "false";
   LibraryTreeItem *pLibraryTreeItem = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
   if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
     pTLMEditor->updateSubModelParameters(mpComponent->getName(), mpStartCommandTextBox->text(), exactStepFlag);
+    mpComponent->getComponentInfo()->setStartCommand(mpStartCommandTextBox->text());
+    mpComponent->getComponentInfo()->setExactStep(exactStepFlag.compare("true") == 0 ? true : false);
     accept();
   }
 }
