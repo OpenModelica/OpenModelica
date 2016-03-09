@@ -154,6 +154,15 @@ protected:
 };
 
 /**
+ * Add a const qualifier to force use of const methods
+ */
+template <typename T>
+const T& ConstArray(T& arr)
+{
+  return arr;
+}
+
+/**
  * Wrapper to convert a string array to c_str array
  */
 class CStrArray

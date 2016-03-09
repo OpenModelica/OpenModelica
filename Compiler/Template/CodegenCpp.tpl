@@ -5255,7 +5255,9 @@ case SIMEXTARG(cref=c, isInput =iI, outputIndex=oi, isArray=true, type_=t)then
       let arg = if extCStr then 'CStrArray(<%tmp%>)' else '<%tmp%>.getData()'
       '<%arg%>'
     else
-      let arg = if extCStr then 'CStrArray(<%name%>)' else '<%name%>.getData()/*testconvert*/'
+      let arg = if extCStr then 'CStrArray(<%name%>)'
+                else if iI then 'ConstArray(<%name%>).getData()'
+                else '<%name%>.getData()'
       '<%arg%>'
 end extCArrayArg;
 
@@ -5354,7 +5356,7 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls,
  "Helper to extFunCall. Creates one F77 call argument."
 ::=
   match extArg
-  case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t) then
+  case SIMEXTARG(cref=c, isInput=iI, outputIndex=oi, isArray=true, type_=t) then
     let varName = contextCref2(c, contextFunction)
     match type_
     case T_ARRAY(__) then
@@ -5370,8 +5372,9 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls,
         <%extName%>.getData()
         >>
       else
+        let extName = if iI then 'ConstArray(<%varName%>)' else '<%varName%>'
         <<
-        <%varName%>.getData()
+        <%extName%>.getData()
         >>
     end match
   case SIMEXTARG(cref=c, type_=t) then
