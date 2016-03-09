@@ -4026,17 +4026,32 @@ void ModelWidgetContainer::changeRecentModelsListSelection(bool moveDown)
  */
 void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
 {
-  switch (pModelWidget->getModelWidgetContainer()->getPreviousViewType()) {
-    case StringHandler::Icon:
-      pModelWidget->getIconViewToolButton()->setChecked(true);
-      break;
-    case StringHandler::ModelicaText:
-      pModelWidget->getTextViewToolButton()->setChecked(true);
-      break;
-    case StringHandler::Diagram:
-    default:
-      pModelWidget->getDiagramViewToolButton()->setChecked(true);
-      break;
+  if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    switch (pModelWidget->getModelWidgetContainer()->getPreviousViewType()) {
+      case StringHandler::Icon:
+        pModelWidget->getIconViewToolButton()->setChecked(true);
+        break;
+      case StringHandler::ModelicaText:
+        pModelWidget->getTextViewToolButton()->setChecked(true);
+        break;
+      case StringHandler::Diagram:
+      default:
+        pModelWidget->getDiagramViewToolButton()->setChecked(true);
+        break;
+    }
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
+    switch (pModelWidget->getModelWidgetContainer()->getPreviousViewType()) {
+      case StringHandler::ModelicaText:
+        pModelWidget->getTextViewToolButton()->setChecked(true);
+        break;
+      case StringHandler::Icon:
+      case StringHandler::Diagram:
+      default:
+        pModelWidget->getDiagramViewToolButton()->setChecked(true);
+        break;
+    }
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
+    pModelWidget->getTextViewToolButton()->setChecked(true);
   }
 }
 
