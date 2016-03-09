@@ -247,7 +247,18 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         return false;
       }
       QString name = getUniqueComponentName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
-      addComponentToView(name, pLibraryTreeItem, "", position, dialogAnnotation, new ComponentInfo(), true, false);
+      ComponentInfo *pComponentInfo = new ComponentInfo;
+      QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+      // create StartCommand depending on the external model file extension.
+      if (fileInfo.suffix().compare("mo") == 0) {
+        pComponentInfo->setStartCommand("StartTLMOpenModelica");
+      } else if (fileInfo.suffix().compare("in") == 0) {
+        pComponentInfo->setStartCommand("StartTLMBeast");
+      } else {
+        pComponentInfo->setStartCommand("");
+      }
+      pComponentInfo->setModelFile(fileInfo.fileName());
+      addComponentToView(name, pLibraryTreeItem, "", position, dialogAnnotation, pComponentInfo, true, false);
       return true;
     }
   } else {
@@ -387,22 +398,11 @@ void GraphicsView::addComponentToClass(Component *pComponent)
       }
     }
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
-    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
-    QFileInfo fileInfo(pComponent->getLibraryTreeItem()->getFileName());
-    // create StartCommand depending on the external model file extension.
-    QString startCommand;
-    if (fileInfo.suffix().compare("mo") == 0) {
-      startCommand = "StartTLMOpenModelica";
-    } else if (fileInfo.suffix().compare("in") == 0) {
-      startCommand = "StartTLMBeast";
-    } else {
-      startCommand = "";
-    }
     QString visible = pComponent->mTransformation.getVisible() ? "true" : "false";
-    pComponent->getComponentInfo()->setStartCommand(startCommand);
-    pComponent->getComponentInfo()->setModelFile(fileInfo.fileName());
     // add SubModel Element
-    pTLMEditor->addSubModel(pComponent->getName(), "false", fileInfo.fileName(), startCommand, visible, pComponent->getTransformationOrigin(),
+    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
+    pTLMEditor->addSubModel(pComponent->getName(), "false", pComponent->getComponentInfo()->getModelFile(),
+                            pComponent->getComponentInfo()->getStartCommand(), visible, pComponent->getTransformationOrigin(),
                             pComponent->getTransformationExtent(), QString::number(pComponent->mTransformation.getRotateAngle()));
   }
 }
