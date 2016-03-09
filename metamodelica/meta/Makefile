@@ -37,6 +37,7 @@ ForIterList.mos \
 ForIterArray.mos \
 FunctionPartialApplicationAsGeneralExp.mos \
 FunctionReturningArray.mos \
+IsPresent.mos \
 List1.mos \
 List2.mos \
 List3.mos \

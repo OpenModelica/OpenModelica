@@ -1,0 +1,73 @@
+// name: cseFunctionCall1
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  package functions
+    function f1
+      input Real x1;
+      input Real x2;
+      output Real y;
+    protected
+      Integer z;
+    algorithm
+      y := if x1>x2 then sin(x1) else cos(x2);
+      z := integer(ceil(y));
+      for i in 1:z loop
+        y := y+x1*x2;
+      end for;
+    end f1;
+  end functions;
+  
+  model FunctionCallTest1
+    import CSE.functions.*;
+    Real x,y,z;
+  equation
+    x = sin(time*cos(time));
+    der(y) = f1(time, x);
+    der(z) = f1(time, x);
+  end FunctionCallTest1;
+
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.FunctionCallTest1); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// ########### Updated Variable List ########### (6)
+// ========================================
+// 1: z:STATE(1)() .CSE.FunctionCallTest1, .Real type: Real
+// 2: y:STATE(1)() .CSE.FunctionCallTest1, .Real type: Real
+// 3: x:VARIABLE() .CSE.FunctionCallTest1, .Real type: Real
+// 4: $cse3:VARIABLE()  type: Real unreplaceable
+// 5: $cse2:VARIABLE()  type: Real unreplaceable
+// 6: $cse1:VARIABLE()  type: Real unreplaceable
+//
+//
+// ########### Updated Equation List ########### (6, 6)
+// ========================================
+// 1/1 (1): x = $cse2    [dynamic]
+// 2/2 (1): der(y) = $cse3    [dynamic]
+// 3/3 (1): der(z) = $cse3    [dynamic]
+// 4/4 (1): $cse3 = CSE.functions.f1(time, x)    [binding]
+// 5/5 (1): $cse2 = sin(time * $cse1)    [binding]
+// 6/6 (1): $cse1 = cos(time)    [binding]
+//
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// endResult

@@ -7,7 +7,8 @@ setCommandLineOptions("+simCodeTarget=Cpp");
 
 loadString("
 model DID \"Double Integrator Discrete-time\"
-  parameter Real dt = 0.1 \"sample time\";
+  parameter Integer intervalCounter = 1 \"sample interval\";
+  parameter Integer resolution = 10 \"resolution of sample interval\";
   parameter Real p = 1 \"gain for input\";
   parameter Real y1_start = 1 \"start value for first state\";
   parameter Real y2_start = 0 \"start value for second state\";
@@ -17,7 +18,7 @@ model DID \"Double Integrator Discrete-time\"
   Real xd2(start = y2_start);
   output Real y1, y2;
 equation
-  ud = sample(u, Clock(dt));
+  ud = sample(u, Clock(intervalCounter, resolution));
   xd1 = previous(xd1) + p * ud * interval(ud);
   xd2 = previous(xd2) + previous(xd1) * interval(xd1) + 0.5 * ud * interval()^2;
   y1 = hold(previous(xd1));

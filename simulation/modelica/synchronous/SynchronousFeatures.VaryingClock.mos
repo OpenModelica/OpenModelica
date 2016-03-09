@@ -41,8 +41,8 @@ translateModel(SynchronousFeatures.VaryingClock); getErrorString();
 // ========================================
 // 1: d0:VARIABLE() .SynchronousFeatures.VaryingClock, .Real type: Real
 // 2: d:VARIABLE() .SynchronousFeatures.VaryingClock, .Real type: Real
-// 3: v:VARIABLE(start = 0.2 fixed = true ) .SynchronousFeatures.VaryingClock, .Real type: Real
-// 4: nextInterval:DISCRETE(start = 1 fixed = true ) .SynchronousFeatures.VaryingClock, .Integer type: Integer
+// 3: v:CLOCKED_STATE(start = 0.2 fixed = true ) .SynchronousFeatures.VaryingClock, .Real type: Real
+// 4: nextInterval:CLOCKED_STATE(start = 1 fixed = true ) .SynchronousFeatures.VaryingClock, .Integer type: Integer
 //
 //
 // Equations (4, 4)
