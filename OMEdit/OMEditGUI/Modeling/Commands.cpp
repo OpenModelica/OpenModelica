@@ -914,36 +914,6 @@ void DeleteConnectionCommand::undo()
   mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation);
 }
 
-UpdateClassExperimentAnnotationCommand::UpdateClassExperimentAnnotationCommand(MainWindow *pMainWindow, LibraryTreeItem *pLibraryTreeItem,
-                                                                               QString oldExperimentAnnotation, QString newExperimentAnnotaiton,
-                                                                               QUndoCommand *pParent)
-  : QUndoCommand(pParent)
-{
-  mpMainWindow = pMainWindow;
-  mpLibraryTreeItem = pLibraryTreeItem;
-  mOldExperimentAnnotation = oldExperimentAnnotation;
-  mNewExperimentAnnotation = newExperimentAnnotaiton;
-  setText(QString("Update %1 experiment annotation").arg(mpLibraryTreeItem->getNameStructure()));
-}
-
-/*!
- * \brief UpdateClassExperimentAnnotationCommand::redo
- * Redo the UpdateClassExperimentAnnotationCommand.
- */
-void UpdateClassExperimentAnnotationCommand::redo()
-{
-  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mNewExperimentAnnotation);
-}
-
-/*!
- * \brief UpdateClassExperimentAnnotationCommand::undo
- * Undo the UpdateClassExperimentAnnotationCommand.
- */
-void UpdateClassExperimentAnnotationCommand::undo()
-{
-  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldExperimentAnnotation);
-}
-
 UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem,
                                                              CoOrdinateSystem newCoOrdinateSystem, bool copyProperties, QString oldVersion,
                                                              QString newVersion, QString oldUsesAnnotationString,
@@ -1033,4 +1003,70 @@ void UpdateCoOrdinateSystemCommand::undo()
   }
   // uses annotation
   pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mOldUsesAnnotationString);
+}
+
+UpdateClassExperimentAnnotationCommand::UpdateClassExperimentAnnotationCommand(MainWindow *pMainWindow, LibraryTreeItem *pLibraryTreeItem,
+                                                                               QString oldExperimentAnnotation, QString newExperimentAnnotaiton,
+                                                                               QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpMainWindow = pMainWindow;
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mOldExperimentAnnotation = oldExperimentAnnotation;
+  mNewExperimentAnnotation = newExperimentAnnotaiton;
+  setText(QString("Update %1 experiment annotation").arg(mpLibraryTreeItem->getNameStructure()));
+}
+
+/*!
+ * \brief UpdateClassExperimentAnnotationCommand::redo
+ * Redo the UpdateClassExperimentAnnotationCommand.
+ */
+void UpdateClassExperimentAnnotationCommand::redo()
+{
+  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mNewExperimentAnnotation);
+}
+
+/*!
+ * \brief UpdateClassExperimentAnnotationCommand::undo
+ * Undo the UpdateClassExperimentAnnotationCommand.
+ */
+void UpdateClassExperimentAnnotationCommand::undo()
+{
+  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldExperimentAnnotation);
+}
+
+UpdateSubModelAttributesCommand::UpdateSubModelAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo,
+                                                                 const ComponentInfo &newComponentInfo, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpComponent = pComponent;
+  mOldComponentInfo.updateComponentInfo(&oldComponentInfo);
+  mNewComponentInfo.updateComponentInfo(&newComponentInfo);
+  setText(QString("Update SubModel %1 Attributes").arg(mpComponent->getName()));
+}
+
+/*!
+ * \brief UpdateSubModelAttributesCommand::redo
+ * Redo the UpdateSubModelAttributesCommand.
+ */
+void UpdateSubModelAttributesCommand::redo()
+{
+  TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
+  pTLMEditor->updateSubModelParameters(mpComponent->getName(), mNewComponentInfo.getStartCommand(),
+                                       mNewComponentInfo.getExactStep() ? "true" : "false");
+  mpComponent->getComponentInfo()->setStartCommand(mNewComponentInfo.getStartCommand());
+  mpComponent->getComponentInfo()->setExactStep(mNewComponentInfo.getExactStep());
+}
+
+/*!
+ * \brief UpdateSubModelAttributesCommand::undo
+ * Undo the UpdateSubModelAttributesCommand.
+ */
+void UpdateSubModelAttributesCommand::undo()
+{
+  TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
+  pTLMEditor->updateSubModelParameters(mpComponent->getName(), mOldComponentInfo.getStartCommand(),
+                                       mOldComponentInfo.getExactStep() ? "true" : "false");
+  mpComponent->getComponentInfo()->setStartCommand(mOldComponentInfo.getStartCommand());
+  mpComponent->getComponentInfo()->setExactStep(mOldComponentInfo.getExactStep());
 }

@@ -1305,21 +1305,29 @@ void SubModelAttributes::changeSimulationTool(QString simulationToolStartCommand
 }
 
 /*!
-  Updates subModel parameters.\n
-  Slot activated when mpOkButton clicked signal is raised.
-  */
+ * \brief SubModelAttributes::updateSubModelParameters
+ * Updates subModel parameters.\n
+ * Slot activated when mpOkButton clicked signal is raised.
+ */
 void SubModelAttributes::updateSubModelParameters()
 {
-  QString exactStepFlag = mpExactStepFlagCheckBox->isChecked() ? "true" : "false";
-  LibraryTreeItem *pLibraryTreeItem = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
-  if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::TLM) {
-    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
-    pTLMEditor->updateSubModelParameters(mpComponent->getName(), mpStartCommandTextBox->text(), exactStepFlag);
-    mpComponent->getComponentInfo()->setStartCommand(mpStartCommandTextBox->text());
-    mpComponent->getComponentInfo()->setExactStep(exactStepFlag.compare("true") == 0 ? true : false);
-    accept();
+  // save the old ComponentInfo
+  ComponentInfo oldComponentInfo(mpComponent->getComponentInfo());
+  // Create a new ComponentInfo
+  ComponentInfo newComponentInfo(mpComponent->getComponentInfo());
+  newComponentInfo.setStartCommand(mpStartCommandTextBox->text());
+  newComponentInfo.setExactStep(mpExactStepFlagCheckBox->isChecked());
+  // If user has really changed the Component's attributes then push that change on the stack.
+  if (oldComponentInfo != newComponentInfo) {
+    UpdateSubModelAttributesCommand *pUpdateSubModelAttributesCommand = new UpdateSubModelAttributesCommand(mpComponent, oldComponentInfo,
+                                                                                                            newComponentInfo);
+    ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
+    pModelWidget->getUndoStack()->push(pUpdateSubModelAttributesCommand);
+    pModelWidget->updateModelText();
   }
+  accept();
 }
+
 TLMInterfacePointInfo::TLMInterfacePointInfo(QString name, QString className, QString interfaceName)
 {
   mName = name;

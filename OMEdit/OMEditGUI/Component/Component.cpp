@@ -121,6 +121,11 @@ void ComponentInfo::updateComponentInfo(const ComponentInfo *pComponentInfo)
   mModifiersMap = pComponentInfo->getModifiersMapWithoutFetching();
   mParameterValueLoaded = pComponentInfo->isParameterValueLoaded();
   mParameterValue = pComponentInfo->getParameterValueWithoutFetching();
+  mStartCommand = pComponentInfo->getStartCommand();
+  mExactStep = pComponentInfo->getExactStep();
+  mModelFile = pComponentInfo->getModelFile();
+  mPosition = pComponentInfo->getPosition();
+  mAngle321 = pComponentInfo->getAngle321();
 }
 
 /*!

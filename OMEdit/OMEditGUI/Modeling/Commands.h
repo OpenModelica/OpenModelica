@@ -116,7 +116,6 @@ private:
   bool mDuplicate;
 };
 
-class Parameter;
 class UpdateComponentParametersCommand : public QUndoCommand
 {
 public:
@@ -213,6 +212,19 @@ private:
   LibraryTreeItem *mpLibraryTreeItem;
   QString mOldExperimentAnnotation;
   QString mNewExperimentAnnotation;
+};
+
+class UpdateSubModelAttributesCommand : public QUndoCommand
+{
+public:
+  UpdateSubModelAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo, const ComponentInfo &newComponentInfo,
+                                  QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  Component *mpComponent;
+  ComponentInfo mOldComponentInfo;
+  ComponentInfo mNewComponentInfo;
 };
 
 #endif // COMMANDS_H
