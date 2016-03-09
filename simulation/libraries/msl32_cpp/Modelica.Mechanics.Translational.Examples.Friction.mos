@@ -26,7 +26,7 @@ compareVars :=
    "der(mass.v)"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

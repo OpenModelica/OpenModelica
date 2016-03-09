@@ -32,7 +32,7 @@ compareVars :=
    "ductIn.mediums[2].T"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

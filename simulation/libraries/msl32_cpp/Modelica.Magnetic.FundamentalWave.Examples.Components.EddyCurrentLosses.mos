@@ -18,7 +18,7 @@ compareVars :=
    "loss_m.Phi.im"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

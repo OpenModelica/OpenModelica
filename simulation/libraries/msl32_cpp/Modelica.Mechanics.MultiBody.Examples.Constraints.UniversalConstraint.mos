@@ -28,7 +28,7 @@ compareVars :=
    "freeMotionScalarInit.angle_d_3"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

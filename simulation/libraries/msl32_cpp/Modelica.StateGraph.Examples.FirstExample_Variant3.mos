@@ -16,7 +16,7 @@ compareVars :=
    "step.active"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

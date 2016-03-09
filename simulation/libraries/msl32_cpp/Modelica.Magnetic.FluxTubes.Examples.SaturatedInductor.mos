@@ -16,7 +16,7 @@ compareVars :=
    "coil.v"     // N*der(coil.Phi) = -v
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

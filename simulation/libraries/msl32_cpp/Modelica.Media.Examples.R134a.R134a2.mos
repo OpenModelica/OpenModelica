@@ -22,7 +22,7 @@ compareVars :=
    "ambient.port.m_flow"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

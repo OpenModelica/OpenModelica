@@ -181,7 +181,7 @@ compareVars :=
    "X2.X9.Q5.vbe"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

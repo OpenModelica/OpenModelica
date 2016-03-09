@@ -19,7 +19,7 @@ compareVars :=
    "smee.idq_sr[2]"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

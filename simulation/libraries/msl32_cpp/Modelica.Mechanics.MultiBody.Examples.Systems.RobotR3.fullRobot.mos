@@ -51,7 +51,7 @@ compareVars :=
    "mechanics.b2.body.w_a[1]"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

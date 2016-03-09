@@ -17,7 +17,7 @@ compareVars :=
    "source.voltageSource[3].pin_p.reference.gamma"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

@@ -22,7 +22,7 @@ compareVars :=
    "wheel1.der_angles[3]"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

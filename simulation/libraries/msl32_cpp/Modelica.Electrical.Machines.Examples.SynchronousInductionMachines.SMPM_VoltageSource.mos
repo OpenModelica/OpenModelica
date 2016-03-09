@@ -20,7 +20,7 @@ compareVars :=
    "voltageController.PI_q.x"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

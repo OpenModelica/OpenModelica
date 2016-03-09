@@ -26,7 +26,7 @@ compareVars :=
    "sink2.ports[1].h_outflow"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

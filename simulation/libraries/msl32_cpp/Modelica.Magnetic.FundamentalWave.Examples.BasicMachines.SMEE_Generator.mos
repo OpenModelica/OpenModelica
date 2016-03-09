@@ -24,7 +24,7 @@ compareVars :=
    "smeeM.stator.strayReluctance.port_p.Phi.re"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

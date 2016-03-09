@@ -23,7 +23,7 @@ compareVars :=
    "bodyOfConstraint.body.frame_a.r_0[3]"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

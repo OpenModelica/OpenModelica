@@ -91,7 +91,7 @@ compareVars :=
    "pipe4.flowModel.m_flows[5]"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

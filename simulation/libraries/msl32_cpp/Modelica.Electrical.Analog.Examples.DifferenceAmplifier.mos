@@ -23,7 +23,7 @@ compareVars :=
    "Transistor2.Tr.vbe"
 };
 
-runScript("common.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 
 runScript(modelTesting);getErrorString();
 

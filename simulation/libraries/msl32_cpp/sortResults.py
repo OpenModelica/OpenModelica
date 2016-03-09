@@ -16,16 +16,29 @@ import shutil
 NOGROUP = '_NoGroup'
 
 # GroupName, Words that must occur, Words that must not occur
-Groups = [('_Translation', 'g++', None), \
-          ('_Translation', 'Error building simulator', None), \
-          ('_Update', 'Please update the test', None), \
-          ('_Failed', 'failed', None), \
+Groups = [('_Flattening', 'Error occurred while flattening model', None), \
+          ('_Expression', 'Failed to elaborate expression', None), \
+          ('_Nonlinear', 'Error solving nonlinear system', None), \
+		      ('_Mixed', 'Your model contains a mixed system involving algorithms', None), \
+          ('_Initialization_convert', 'convertInitialResidualsIntoInitial', None), \
+          ('_Initial_Under', 'It was not possible to solve the under-determined initial system', None), \
+          ('_Initial_Over', 'It was not possible to solve the over-determined initial system', None), \
+          ('_Initial_NotUnique', 'Internal error It is not possible to determine unique', None), \
+          ('_Initialization', 'Error in initialization', None), \
+          ('_Initialization', 'The number of initial equations are not consistent with the number of unfixed variables', None), \
+          ('_Backend', 'Internal error Transformation Module', None), \
+          ('_Backend', 'Internal error IndexReduction.', None), \
+          ('_DivByZero', 'division by zero', None), \
+          ('_CodeGen', 'Error building simulator', None), \
+          ('_Unbalanced', 'Too many equations, overdetermined system', None), \
+          ('_Unbalanced', 'Too few equations, underdetermined system', None), \
+          ('_SimFailed', 'Simulation failed for model', None), \
+          ('_IntegratorFailed', 'Integrator failed', None), \
+		      ('_TableBug', ['n Table: NoName from File: NoName with Size', 'try to get', 'out of range!'], None), \
+          ('_SimExecFailed', 'Simulation execution failed for model', None), \
+          ('_UnknownVar', ['Get Data of Var', 'from file', 'failed'], None), \
           ('_NotEqual', 'Files not Equal!', None), \
-          ('_OK', 'Frontend succeeded', 'failed'), \
-          ('_OK', 'Translation succeeded', 'failed'), \
-          ('_OK', 'Compilation succeeded', 'failed'), \
-          ('_OK', 'Files Equal!', 'failed'), \
-          ('_OK', 'SimpleSimulation', ['failed', 'did not'])]
+          ('_OK', 'Files Equal!', 'failed')]
 
 def checkFile(fileName, groups):
 
@@ -132,13 +145,13 @@ def main():
         print "%s:\t%i"%(groupName,v)
 
 
-    #print "\n**** Details - groupwise ****"
-    #for k,v in sorted(models.items()):
-    #    groupName = k.replace('_', '')
-    #    print "%s (%i):"%(groupName, len(v))
-    #    for m in sorted(v):
-    #        modelName = m.replace('.mos.txt', '')
-    #        print "\t%s"%modelName
+    print "\n**** Details - groupwise ****"
+    for k,v in sorted(models.items()):
+        groupName = k.replace('_', '')
+        print "%s (%i):"%(groupName, len(v))
+        for m in sorted(v):
+            modelName = m.replace('.mos.txt', '')
+            print "\t%s"%modelName
 
     # Inverse Mapping
     inv_map = {}
@@ -148,9 +161,9 @@ def main():
             modelName = m.replace('.mos.txt', '')
             inv_map[modelName] = groupName
 
-    #print "\n**** Details - modelwise ****"
-    #for k,v in sorted(inv_map.items()):
-    #    print "%s -> %s"%(k, v)
+    print "\n**** Details - modelwise ****"
+    for k,v in sorted(inv_map.items()):
+        print "%s -> %s"%(k, v)
 
 if __name__ == '__main__':
     main()
