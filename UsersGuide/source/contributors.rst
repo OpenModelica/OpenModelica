@@ -32,6 +32,8 @@ Per Östlund, PELAB, Linköping University, Linköping, Sweden.
 
 |
 
+Anders Andersson, VTI, Linköping, Sweden.
+
 Peter Aronsson, MathCore Engineering AB, Linköping, Sweden.
 
 Bernhard Bachmann, Fachhochschule Bielefeld, Bielefeld, Germany.
@@ -46,7 +48,7 @@ Lena Buffoni, PELAB, Linköping University, Linköping, Sweden.
 
 Francesco Casella, Politecnico di Milano, Milan, Italy.
 
-Filippo Donida, Politecnico di Milano, Milan, Italy.
+Atiyah Elsheikh, AIT, Vinnea, Austria.
 
 Rüdiger Franke, ABB, Germany
 
@@ -58,11 +60,11 @@ Pavel Grozman, Equa AB, Stockholm, Sweden.
 
 Daniel Hedberg, MathCore Engineering AB, Linköping, Sweden.
 
-Zoheb Hossain, PELAB, Linköping University, Linköping, Sweden.
-
 Alf Isaksson, ABB Corporate Research, Västerås, Sweden.
 
 Daniel Kanth, Bosch-Rexroth, Lohr am Main, Germany.
+
+Henning Kiel, Bocholt, Germany.
 
 Tommi Karhela, VTT, Espoo, Finland.
 
@@ -70,9 +72,7 @@ Petter Krus, IEI, Linköping University, Linköping, Sweden.
 
 Juha Kortelainen, VTT, Espoo, Finland.
 
-Abhinn Kothari, PELAB, Linköping University, Linköping, Sweden.
-
-Leonardo Laguna, Wolfram MathCore AB, Linköping, Sweden
+Leonardo Laguna, Wolfram MathCore AB, Linköping, Sweden.
 
 Alexey Lebedev, Equa Simulation AB, Stockholm, Sweden.
 
@@ -80,19 +80,19 @@ Oliver Lenord, Siemens PLM, California, USA.
 
 Ariel Liebman, Energy Users Association of Australia, Victoria, Australia.
 
-Henrik Magnusson, Linköping, Sweden.
-
 Alachew Mengist, PELAB, Linköping University, Linköping, Sweden.
 
-Abhi Raj Metkar, CDAC, Trivandrum, Kerala, India.
+Abhir Raj Metkar, CDAC, Trivandrum, Kerala, India.
 
 Eric Meyers, Pratt & Whitney Rocketdyne, Palm City, Florida, USA.
 
-Tuomas Miettinen, VTT, Espoo, Finland.
+Lars Mikelsons, Bosch Rexroth, Lohr am Main, Germany.
 
 Afshin Moghadam, PELAB, Linköping University, Linköping, Sweden.
 
-Kannan Moudgalya, IIT Bombay, Mumbai, India
+Kannan Moudgalya, IIT Bombay, Mumbai, India.
+
+Kenneth Nealy, USA.
 
 Maroun Nemer, CEP Paristech, Ecole des Mines, Paris, France.
 
@@ -102,23 +102,19 @@ Peter Nordin, IEI, Linköping University, Linköping, Sweden.
 
 Arunkumar Palanisamy, PELAB, Linköping University, Linköping, Sweden.
 
-Karl Pettersson, IEI, Linköping University, Linköping, Sweden.
-
 Pavol Privitzer, Institute of Pathological Physiology, Praha, Czech Republic.
 
 Vitalij Ruge, Fachhochschule Bielefeld, Bielefeld, Germany.
 
-Reino Ruusu, VTT, Espoo, Finland.
-
 Per Sahlin, Equa Simulation AB, Stockholm, Sweden.
+
+Roland Samlaus, Bosch, Stuttgart, Germany.
 
 Wladimir Schamai, EADS, Hamburg, Germany.
 
 Gerhard Schmitz, University of Hamburg, Hamburg, Germany.
 
 Jan Šilar, Charles University, Prague, Czech Republic
-
-Ingo Staack, IEI, Linköping University, Linköping, Sweden.
 
 Kristian Stavåker, PELAB, Linköping University, Linköping, Sweden.
 
@@ -135,10 +131,6 @@ Mohsen Torabzadeh-Tari, PELAB, Linköping University, Linköping, Sweden.
 Marcus Walther, TU Dresden, Dresden, Germany
 
 Niklas Worschech, Bosch-Rexroth, Lohr am Main, Germany.
-
-Robert Wotzlaw, Goettingen, Germany.
-
-Azam Zia, PELAB, Linköping University, Linköping, Sweden.
 
 OpenModelica Contributors 2014
 ------------------------------
