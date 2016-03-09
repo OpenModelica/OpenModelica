@@ -532,7 +532,7 @@ void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
 void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectonLineAnnotation)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-  if(mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
     pTLMEditor->deleteConnection(pConnectonLineAnnotation->getStartComponentName(), pConnectonLineAnnotation->getEndComponentName());
   } else {
@@ -3473,17 +3473,19 @@ void ModelWidget::getModelConnections()
     QString connectionAnnotationString = pMainWindow->getOMCProxy()->getNthConnectionAnnotation(mpLibraryTreeItem->getNameStructure(), i);
     QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
     // Now parse the shapes available in list
+    QString lineShape = "";
     foreach (QString shape, shapesList) {
       if (shape.startsWith("Line")) {
-        shape = shape.mid(QString("Line").length());
-        shape = StringHandler::removeFirstLastBrackets(shape);
-        LineAnnotation *pConnectionLineAnnotation;
-        pConnectionLineAnnotation = new LineAnnotation(shape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
-        pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
-        pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
-        mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
+        lineShape = shape.mid(QString("Line").length());
+        lineShape = StringHandler::removeFirstLastBrackets(lineShape);
+        break;  // break the loop once we have got the line annotation.
       }
     }
+    LineAnnotation *pConnectionLineAnnotation;
+    pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
+    pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
+    pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
+    mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
   }
 }
 
