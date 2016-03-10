@@ -648,4 +648,3 @@ void MetaModelHighlighter::settingsChanged()
   initializeSettings();
   rehighlight();
 }
-

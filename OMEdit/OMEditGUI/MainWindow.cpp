@@ -2430,7 +2430,7 @@ void MainWindow::createActions()
   mpNewMetaModelFileAction->setStatusTip(tr("Create New MetaModel File"));
   connect(mpNewMetaModelFileAction, SIGNAL(triggered()), SLOT(createNewMetaModelFile()));
   // open MetaModel file action
-  mpOpenMetaModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open MetaModel"), this);
+  mpOpenMetaModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open MetaModel(s)"), this);
   mpOpenMetaModelFileAction->setStatusTip(tr("Opens the MetaModel file(s)"));
   connect(mpOpenMetaModelFileAction, SIGNAL(triggered()), SLOT(openMetaModelFile()));
   // load External Model action
