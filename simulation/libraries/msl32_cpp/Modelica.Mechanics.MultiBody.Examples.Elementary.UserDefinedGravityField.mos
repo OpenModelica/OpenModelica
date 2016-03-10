@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField);
 compareVars :=
 {
@@ -24,16 +24,11 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Instantiation
+// OpenModelicaModelTesting.Kind.Compilation
 // Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField
 // {"rev.phi","rev.w"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
-// Frontend failed
-// [lib/omlibrary/Modelica 3.2.1/Mechanics/MultiBody/Examples/Elementary/UserDefinedGravityField.mo:11:3-18:43:writable] Notification: From here:
-// [lib/omlibrary/Modelica 3.2.1/Mechanics/MultiBody/package.mo:1292:1-1296:15:writable] Error: Trying to redeclare function gravityAcceleration but function not declared as replaceable.
-// Error: Error occurred while flattening model Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Compilation succeeded
 // "true
 // "
 // ""

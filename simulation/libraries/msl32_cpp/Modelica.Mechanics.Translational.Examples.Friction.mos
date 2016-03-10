@@ -37,13 +37,11 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Mechanics.Translational.Examples.Friction
 // {"stop1.s","stop1.v","stop2.s","stop2.v","mass.s","mass.v","der(stop1.s)","der(stop1.v)","der(stop2.s)","der(stop2.v)","der(mass.s)","der(mass.v)"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Friction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Mechanics.Translational.Examples.Friction_res.mat
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-//
+// 
 // "true
 // "
 // ""

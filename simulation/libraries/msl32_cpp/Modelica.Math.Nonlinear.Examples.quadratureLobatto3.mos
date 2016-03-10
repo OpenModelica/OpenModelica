@@ -27,9 +27,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.Compilation
 // Modelica.Math.Nonlinear.Examples.quadratureLobatto3
 // {"q","qd"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Compilation succeeded
 // "true
 // "

@@ -31,11 +31,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.Translation
 // Modelica.Media.Examples.ReferenceAir.Inverse_sh_TX
 // {"h1","s1","Th","Ts","h2","s2"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Translation succeeded
-// "true
-// "
-// ""
+// The model now compiles. Please update the test.
 // endResult

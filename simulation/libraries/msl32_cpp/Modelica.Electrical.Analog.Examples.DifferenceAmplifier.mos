@@ -34,9 +34,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Electrical.Analog.Examples.DifferenceAmplifier
 // {"C1.v","C4.v","C5.v","C2.v","C3.v","Transistor1.Tr.vbc","Transistor1.Tr.vbe","Transistor2.Tr.vbc","Transistor2.Tr.vbe"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.DifferenceAmplifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Analog.Examples.DifferenceAmplifier_res.mat
 // "true

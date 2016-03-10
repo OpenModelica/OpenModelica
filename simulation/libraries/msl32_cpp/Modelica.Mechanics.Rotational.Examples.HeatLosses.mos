@@ -39,13 +39,11 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Mechanics.Rotational.Examples.HeatLosses
 // {"inertia1.w","inertia1.phi","inertia2.w","inertia2.phi","inertia3.w","inertia3.phi","inertia4.w","inertia4.phi","inertia5.w","inertia5.phi","inertia6.w","inertia6.phi","bearingFriction.mode","lossyGear.mode"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.HeatLosses', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Mechanics.Rotational.Examples.HeatLosses_res.mat
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-//
+// 
 // "true
 // "
 // ""

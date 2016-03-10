@@ -28,19 +28,10 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start
 // {"dcse.lesigma.i","loadInertia.phi","loadInertia.w"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start_res.mat
 // Files Equal!
-// [Modelica 3.2.1/Electrical/Machines.mo:13497:7-13501:42:writable] Error: Variable dcse.coreParameters: Duplicate modification of element final  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 on component m.
-// [Modelica 3.2.1/Electrical/Machines.mo:13497:7-13501:42:writable] Error: Variable dcse.coreParameters: Duplicate modification of element  = (typed)dcse.ViNominal, type:
-// DAE.PROP(Real(quantity = "ElectricPotential", unit = "V"), C_PARAM) and  = (typed)95.0 DAE.PROP(Real(min = 1e-60, quantity = "ElectricPotential", unit = "V"), C_CONST), value: 95.0 on component VRef.
-// [Modelica 3.2.1/Electrical/Machines.mo:13497:7-13501:42:writable] Error: Variable dcse.coreParameters: Duplicate modification of element final  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 on component m.
-// Error: Duplicate modification of element  = (typed)dcse.ViNominal, type:
-// DAE.PROP(Real(quantity = "ElectricPotential", unit = "V"), C_PARAM) and  = (typed)95.0 DAE.PROP(Real(min = 1e-60, quantity = "ElectricPotential", unit = "V"), C_CONST), value: 95.0 on component VRef.
-// 
 // "true
 // "
 // ""

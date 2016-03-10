@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Inverter);
 compareVars :=
 {
@@ -26,23 +26,11 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.SimpleSimulation
+// OpenModelicaModelTesting.Kind.Compilation
 // Modelica.Electrical.Spice3.Examples.Inverter
 // {"mp.Dinternal","mp.Sinternal","mn.Dinternal","mn.Sinternal"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
-// Simulation options: startTime = 0.0, stopTime = 9.999999999999999e-12, numberOfIntervals = 1999, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Inverter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
-// Result file: Modelica.Electrical.Spice3.Examples.Inverter_res.mat
-// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mp.p: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
-// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mp.p: Duplicate modification of element  {start  =(untyped) 2.0e-5}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
-// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
-// Error: Duplicate modification of element  {start  =(untyped) 2.0e-5}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
-// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mn.p: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
-// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mn.p: Duplicate modification of element  {start  =(untyped) 2.0e-5}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
-// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
-// Error: Duplicate modification of element  {start  =(untyped) 2.0e-5}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
-// 
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Compilation succeeded
 // "true
 // "
 // ""

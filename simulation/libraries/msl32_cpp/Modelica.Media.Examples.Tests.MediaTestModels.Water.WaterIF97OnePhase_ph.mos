@@ -27,9 +27,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.Compilation
 // Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97OnePhase_ph
 // {"volume.U","volume.m"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Compilation succeeded
 // Warning: Alias set with different nominal values
 //  * candidate: volume.medium.sat.psat(nominal = 1000000.0)

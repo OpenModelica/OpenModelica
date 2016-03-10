@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Electrical.Digital.Examples.Multiplexer);
 compareVars :=
 {
@@ -20,7 +20,7 @@ compareVars :=
    "Enable.y",
    "FF.q",
    "FF.qn",
-   "MUX.d",
+   "MUX.d"
  };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -28,11 +28,15 @@ simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 runScript(modelTesting);getErrorString();
 
 // Result:
-// Error processing file: Modelica.Electrical.Digital.Examples.Multiplexer.mos
-// [simulation/libraries/msl32_cpp/Modelica.Electrical.Digital.Examples.Multiplexer.mos:24:2-24:2:writable] Error: Parser error: LA(2) == EQUALS near: } (RBRACE)
-// 
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-// 
-// Execution failed!
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Electrical.Digital.Examples.Multiplexer
+// {"D0.y","D1.y","D2.y","D3.y","CLK.y","Enable.y","FF.q","FF.qn","MUX.d"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Compilation succeeded
+// "true
+// "
+// ""
 // endResult

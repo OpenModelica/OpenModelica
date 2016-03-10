@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces);
 compareVars :=
 {
@@ -24,13 +24,11 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Translation
+// OpenModelicaModelTesting.Kind.Compilation
 // Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces
 // {"prismatic.v","position.s"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
-// Translation succeeded
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Compilation succeeded
 // "true
 // "
 // ""

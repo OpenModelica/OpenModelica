@@ -35,14 +35,9 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.Translation
 // Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.NAND
 // {"Q1.vbc","Q1.vbe","Q2.vbc","Q2.vbe","Q3.vbc","Q3.vbe","Q4.vbc","Q4.vbe","Q5.vbc","Q5.vbe"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Translation succeeded
-// Warning: Ignoring unknown experiment annotation option: Interval = 0
-// [lib/omlibrary/Modelica 3.2.1/Electrical/Spice3.mo:11425:17-11425:45:writable] Warning: temp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// "true
-// "
-// ""
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// The model now compiles. Please update the test.
 // endResult

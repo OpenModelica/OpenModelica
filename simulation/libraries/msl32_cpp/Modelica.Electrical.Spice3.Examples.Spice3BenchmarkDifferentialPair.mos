@@ -33,9 +33,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair
 // {"Q1.vbe","Q1.vbc","Q1.vbx","Q1.vcs","Q2.vbe","Q2.vbc","Q2.vbx","Q2.vcs"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair_res.mat
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.

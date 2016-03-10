@@ -30,9 +30,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse
 // {"cDC1.v","cDC2.v","transformer1.l2sigma.inductor[1].i","transformer1.l2sigma.inductor[3].i"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse_res.mat
 // Note: Result files are now equal. Please update the test to do verified simulation!

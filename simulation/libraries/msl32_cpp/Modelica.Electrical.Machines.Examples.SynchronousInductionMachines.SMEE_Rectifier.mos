@@ -37,9 +37,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Rectifier
 // {"capacitor1.v","capacitor2.v","filter.x[1]","filter.x[2]","smee.idq_dr[1]","smee.idq_rr[2]","smee.idq_sr[1]","smee.idq_sr[2]","smee.lesigma.i","speed.phi","speed.w","voltageController.I.y"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 1.1, numberOfIntervals = 11000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Rectifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Rectifier_res.mat
 // "true
