@@ -11562,7 +11562,7 @@ case SES_SIMPLE_ASSIGN(__) then
   match cref
   case CREF_QUAL(ident = "$PRE")  then
     <<
-    <%cref(componentRef, useFlatArrayNotation)%> = <%expPart%>;
+    //<%cref(componentRef, useFlatArrayNotation)%> = <%expPart%>;
     _discrete_events->save( <%cref(componentRef, useFlatArrayNotation)%>);
     >>
   else
