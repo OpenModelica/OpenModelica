@@ -63,7 +63,7 @@ OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
   mpDebuggerPage = new DebuggerPage(this);
   mpFMIPage = new FMIPage(this);
   mpTLMPage = new TLMPage(this);
-  mpTLMEditorPage = new TLMEditorPage(this);
+  mpMetaModelEditorPage = new MetaModelEditorPage(this);
   // get the settings
   readSettings();
   // set up the Options Dialog
@@ -89,8 +89,8 @@ void OptionsDialog::readSettings()
   readDebuggerSettings();
   readFMISettings();
   readTLMSettings();
-  readTLMEditorSettings();
-  emit TLMEditorSettingsChanged();
+  readMetaModelEditorSettings();
+  emit MetaModelEditorSettingsChanged();
 }
 
 //! Reads the General section settings from omedit.ini
@@ -557,43 +557,43 @@ void OptionsDialog::readTLMSettings()
   }
 }
 
-//! Reads the TLM Text settings from omedit.ini
-void OptionsDialog::readTLMEditorSettings()
+//! Reads the MetaModelEditor settings from omedit.ini
+void OptionsDialog::readMetaModelEditorSettings()
 {
   int currentIndex;
-  if (mpSettings->contains("TLMEditor/tabPolicy")) {
-    currentIndex = mpTLMEditorPage->getTabPolicyComboBox()->findData(mpSettings->value("TLMEditor/tabPolicy").toInt());
-    mpTLMEditorPage->getTabPolicyComboBox()->setCurrentIndex(currentIndex);
+  if (mpSettings->contains("MetaModelEditor/tabPolicy")) {
+    currentIndex = mpMetaModelEditorPage->getTabPolicyComboBox()->findData(mpSettings->value("MetaModelEditor/tabPolicy").toInt());
+    mpMetaModelEditorPage->getTabPolicyComboBox()->setCurrentIndex(currentIndex);
   }
-  if (mpSettings->contains("TLMEditor/tabSize")) {
-    mpTLMEditorPage->getTabSizeSpinBox()->setValue(mpSettings->value("TLMEditor/tabSize").toInt());
+  if (mpSettings->contains("MetaModelEditor/tabSize")) {
+    mpMetaModelEditorPage->getTabSizeSpinBox()->setValue(mpSettings->value("MetaModelEditor/tabSize").toInt());
   }
-  if (mpSettings->contains("TLMEditor/indentSize")) {
-    mpTLMEditorPage->getIndentSpinBox()->setValue(mpSettings->value("TLMEditor/indentSize").toInt());
+  if (mpSettings->contains("MetaModelEditor/indentSize")) {
+    mpMetaModelEditorPage->getIndentSpinBox()->setValue(mpSettings->value("MetaModelEditor/indentSize").toInt());
   }
-  if (mpSettings->contains("TLMEditor/enableSyntaxHighlighting")) {
-    mpTLMEditorPage->getSyntaxHighlightingCheckbox()->setChecked(mpSettings->value("TLMEditor/enableSyntaxHighlighting").toBool());
+  if (mpSettings->contains("MetaModelEditor/enableSyntaxHighlighting")) {
+    mpMetaModelEditorPage->getSyntaxHighlightingCheckbox()->setChecked(mpSettings->value("MetaModelEditor/enableSyntaxHighlighting").toBool());
   }
-  if (mpSettings->contains("TLMEditor/enableLineWrapping")) {
-    mpTLMEditorPage->getLineWrappingCheckbox()->setChecked(mpSettings->value("TLMEditor/enableLineWrapping").toBool());
+  if (mpSettings->contains("MetaModelEditor/enableLineWrapping")) {
+    mpMetaModelEditorPage->getLineWrappingCheckbox()->setChecked(mpSettings->value("MetaModelEditor/enableLineWrapping").toBool());
   }
-  if (mpSettings->contains("TLMEditor/fontFamily")){
+  if (mpSettings->contains("MetaModelEditor/fontFamily")){
       // select font family item
-    currentIndex = mpTLMEditorPage->getFontFamilyComboBox()->findText(mpSettings->value("TLMEditor/fontFamily").toString(), Qt::MatchExactly);
-    mpTLMEditorPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
+    currentIndex = mpMetaModelEditorPage->getFontFamilyComboBox()->findText(mpSettings->value("MetaModelEditor/fontFamily").toString(), Qt::MatchExactly);
+    mpMetaModelEditorPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
   }
-  if (mpSettings->contains("TLMEditor/fontSize"))
-    mpTLMEditorPage->getFontSizeSpinBox()->setValue(mpSettings->value("TLMEditor/fontSize").toDouble());
-  if (mpSettings->contains("TLMEditor/textRuleColor"))
-    mpTLMEditorPage->setTextRuleColor(QColor(mpSettings->value("TLMEditor/textRuleColor").toUInt()));
-  if (mpSettings->contains("TLMEditor/commentRuleColor"))
-    mpTLMEditorPage->setCommentRuleColor(QColor(mpSettings->value("TLMEditor/commentRuleColor").toUInt()));
-  if (mpSettings->contains("TLMEditor/tagRuleColor"))
-    mpTLMEditorPage->setTagRuleColor(QColor(mpSettings->value("TLMEditor/tagRuleColor").toUInt()));
-  if (mpSettings->contains("TLMEditor/quotesRuleColor"))
-    mpTLMEditorPage->setQuotesRuleColor(QColor(mpSettings->value("TLMEditor/quotesRuleColor").toUInt()));
-  if (mpSettings->contains("TLMEditor/elementsRuleColor"))
-    mpTLMEditorPage->setElementRuleColor(QColor(mpSettings->value("TLMEditor/elementsRuleColor").toUInt()));
+  if (mpSettings->contains("MetaModelEditor/fontSize"))
+    mpMetaModelEditorPage->getFontSizeSpinBox()->setValue(mpSettings->value("MetaModelEditor/fontSize").toDouble());
+  if (mpSettings->contains("MetaModelEditor/textRuleColor"))
+    mpMetaModelEditorPage->setTextRuleColor(QColor(mpSettings->value("MetaModelEditor/textRuleColor").toUInt()));
+  if (mpSettings->contains("MetaModelEditor/commentRuleColor"))
+    mpMetaModelEditorPage->setCommentRuleColor(QColor(mpSettings->value("MetaModelEditor/commentRuleColor").toUInt()));
+  if (mpSettings->contains("MetaModelEditor/tagRuleColor"))
+    mpMetaModelEditorPage->setTagRuleColor(QColor(mpSettings->value("MetaModelEditor/tagRuleColor").toUInt()));
+  if (mpSettings->contains("MetaModelEditor/quotesRuleColor"))
+    mpMetaModelEditorPage->setQuotesRuleColor(QColor(mpSettings->value("MetaModelEditor/quotesRuleColor").toUInt()));
+  if (mpSettings->contains("MetaModelEditor/elementsRuleColor"))
+    mpMetaModelEditorPage->setElementRuleColor(QColor(mpSettings->value("MetaModelEditor/elementsRuleColor").toUInt()));
 }
 
 //! Saves the General section settings to omedit.ini
@@ -895,21 +895,21 @@ void OptionsDialog::saveTLMSettings()
   mpSettings->setValue("TLM/MonitorProcess", mpTLMPage->getTLMMonitorProcessTextBox()->text());
 }
 
-//! Saves the TLM settings to omedit.ini
-void OptionsDialog::saveTLMEditorSettings()
+//! Saves the MetaModelEditor settings to omedit.ini
+void OptionsDialog::saveMetaModelEditorSettings()
 {
-  mpSettings->setValue("TLMEditor/tabPolicy", mpTLMEditorPage->getTabPolicyComboBox()->itemData(mpModelicaTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
-  mpSettings->setValue("TLMEditor/tabSize", mpTLMEditorPage->getTabSizeSpinBox()->value());
-  mpSettings->setValue("TLMEditor/indentSize", mpTLMEditorPage->getIndentSpinBox()->value());
-  mpSettings->setValue("TLMEditor/enableSyntaxHighlighting", mpTLMEditorPage->getSyntaxHighlightingCheckbox()->isChecked());
-  mpSettings->setValue("TLMEditor/enableLineWrapping", mpTLMEditorPage->getLineWrappingCheckbox()->isChecked());
-  mpSettings->setValue("TLMEditor/fontFamily", mpTLMEditorPage->getFontFamilyComboBox()->currentFont().family());
-  mpSettings->setValue("TLMEditor/fontSize", mpTLMEditorPage->getFontSizeSpinBox()->value());
-  mpSettings->setValue("TLMEditor/textRuleColor", mpTLMEditorPage->getTextRuleColor().rgba());
-  mpSettings->setValue("TLMEditor/commentRuleColor", mpTLMEditorPage->getCommentRuleColor().rgba());
-  mpSettings->setValue("TLMEditor/tagRuleColor", mpTLMEditorPage->getTagRuleColor().rgba());
-  mpSettings->setValue("TLMEditor/quotesRuleColor", mpTLMEditorPage->getQuotesRuleColor().rgba());
-  mpSettings->setValue("TLMEditor/elementsRuleColor", mpTLMEditorPage->getElementRuleColor().rgba());
+  mpSettings->setValue("MetaModelEditor/tabPolicy", mpMetaModelEditorPage->getTabPolicyComboBox()->itemData(mpModelicaTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
+  mpSettings->setValue("MetaModelEditor/tabSize", mpMetaModelEditorPage->getTabSizeSpinBox()->value());
+  mpSettings->setValue("MetaModelEditor/indentSize", mpMetaModelEditorPage->getIndentSpinBox()->value());
+  mpSettings->setValue("MetaModelEditor/enableSyntaxHighlighting", mpMetaModelEditorPage->getSyntaxHighlightingCheckbox()->isChecked());
+  mpSettings->setValue("MetaModelEditor/enableLineWrapping", mpMetaModelEditorPage->getLineWrappingCheckbox()->isChecked());
+  mpSettings->setValue("MetaModelEditor/fontFamily", mpMetaModelEditorPage->getFontFamilyComboBox()->currentFont().family());
+  mpSettings->setValue("MetaModelEditor/fontSize", mpMetaModelEditorPage->getFontSizeSpinBox()->value());
+  mpSettings->setValue("MetaModelEditor/textRuleColor", mpMetaModelEditorPage->getTextRuleColor().rgba());
+  mpSettings->setValue("MetaModelEditor/commentRuleColor", mpMetaModelEditorPage->getCommentRuleColor().rgba());
+  mpSettings->setValue("MetaModelEditor/tagRuleColor", mpMetaModelEditorPage->getTagRuleColor().rgba());
+  mpSettings->setValue("MetaModelEditor/quotesRuleColor", mpMetaModelEditorPage->getQuotesRuleColor().rgba());
+  mpSettings->setValue("MetaModelEditor/elementsRuleColor", mpMetaModelEditorPage->getElementRuleColor().rgba());
 }
 
 //! Sets up the Options Widget dialog
@@ -1019,10 +1019,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pTLMItem = new QListWidgetItem(mpOptionsList);
   pTLMItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
   pTLMItem->setText(tr("TLM"));
-  // TLM Editor Item
-  QListWidgetItem *pTLMEditorItem = new QListWidgetItem(mpOptionsList);
-  pTLMEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  pTLMEditorItem->setText(tr("TLM Editor"));
+  // MetaModel Editor Item
+  QListWidgetItem *pMetaModelEditorItem = new QListWidgetItem(mpOptionsList);
+  pMetaModelEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+  pMetaModelEditorItem->setText(tr("MetaModel Editor"));
 }
 
 //! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
@@ -1044,7 +1044,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpDebuggerPage);
   mpPagesWidget->addWidget(mpFMIPage);
   mpPagesWidget->addWidget(mpTLMPage);
-  mpPagesWidget->addWidget(mpTLMEditorPage);
+  mpPagesWidget->addWidget(mpMetaModelEditorPage);
 }
 
 /*!
@@ -1079,12 +1079,12 @@ TabSettings OptionsDialog::getModelicaTabSettings()
   return tabSettings;
 }
 
-TabSettings OptionsDialog::getTLMTabSettings()
+TabSettings OptionsDialog::getMetaModelTabSettings()
 {
   TabSettings tabSettings;
-  tabSettings.setTabPolicy(mpTLMEditorPage->getTabPolicyComboBox()->itemData(mpTLMEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
-  tabSettings.setTabSize(mpTLMEditorPage->getTabSizeSpinBox()->value());
-  tabSettings.setIndentSize(mpTLMEditorPage->getIndentSpinBox()->value());
+  tabSettings.setTabPolicy(mpMetaModelEditorPage->getTabPolicyComboBox()->itemData(mpMetaModelEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
+  tabSettings.setTabSize(mpMetaModelEditorPage->getTabSizeSpinBox()->value());
+  tabSettings.setIndentSize(mpMetaModelEditorPage->getIndentSpinBox()->value());
   return tabSettings;
 }
 //! Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
@@ -1124,9 +1124,9 @@ void OptionsDialog::saveSettings()
   saveDebuggerSettings();
   saveFMISettings();
   saveTLMSettings();
-  saveTLMEditorSettings();
+  saveMetaModelEditorSettings();
   // emit the signal so that all syntax highlighters are updated
-  emit TLMEditorSettingsChanged();
+  emit MetaModelEditorSettingsChanged();
   // emit the signal so that all text editors can set line wrapping mode
   emit updateLineWrapping();
   mpSettings->sync();
@@ -3662,12 +3662,12 @@ void TLMPage::browseTLMMonitorProcess()
                                                                      NULL, Helper::exeFileTypes, NULL));
 }
 
-//! @class TLMEditorPage
-//! @brief Creates an interface for TLM Text settings.
+//! @class MetaModelEditorPage
+//! @brief Creates an interface for MetaModel Text settings.
 
 //! Constructor
 //! @param pOptionsDialog is the pointer to OptionsDialog
-TLMEditorPage::TLMEditorPage(OptionsDialog *pOptionsDialog)
+MetaModelEditorPage::MetaModelEditorPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
@@ -3758,9 +3758,9 @@ TLMEditorPage::TLMEditorPage(OptionsDialog *pOptionsDialog)
                      "</Model>\n");
   mpPreviewPlainTextBox->setPlainText(previewText);
   // highlight preview textbox
-  TLMHighlighter *pTLMHighlighter = new TLMHighlighter(this, mpPreviewPlainTextBox);
-  connect(this, SIGNAL(updatePreview()), pTLMHighlighter, SLOT(settingsChanged()));
-  connect(mpSyntaxHighlightingCheckbox, SIGNAL(toggled(bool)), pTLMHighlighter, SLOT(settingsChanged()));
+  MetaModelHighlighter *pMetaModelHighlighter = new MetaModelHighlighter(this, mpPreviewPlainTextBox);
+  connect(this, SIGNAL(updatePreview()), pMetaModelHighlighter, SLOT(settingsChanged()));
+  connect(mpSyntaxHighlightingCheckbox, SIGNAL(toggled(bool)), pMetaModelHighlighter, SLOT(settingsChanged()));
   // set fonts & colors groupbox layout
   QGridLayout *pFontsColorsGroupBoxLayout = new QGridLayout;
   pFontsColorsGroupBoxLayout->addWidget(mpFontFamilyLabel, 0, 0);
@@ -3783,10 +3783,10 @@ TLMEditorPage::TLMEditorPage(OptionsDialog *pOptionsDialog)
   setLayout(pMainLayout);
 }
 
-//! Adds the TLM Text settings rules to the mpItemsList.
-void TLMEditorPage::addListItems()
+//! Adds the MetaModelEditor settings rules to the mpItemsList.
+void MetaModelEditorPage::addListItems()
 {
-  // don't change the Data of items as it is being used in TLMEditorPage::pickColor slot to identify the items
+  // don't change the Data of items as it is being used in MetaModelEditorPage::pickColor slot to identify the items
   // Text
   mpTextItem = new QListWidgetItem(mpItemsList);
   mpTextItem->setText("Text");
@@ -3815,61 +3815,61 @@ void TLMEditorPage::addListItems()
 }
 
 /*!
- * \brief TLMEditorPage::setTextRuleColor
+ * \brief MetaModelEditorPage::setTextRuleColor
  * \param color
  */
-void TLMEditorPage::setTextRuleColor(QColor color)
+void MetaModelEditorPage::setTextRuleColor(QColor color)
 {
   mTextColor = color;
   mpTextItem->setForeground(color);
 }
 
 /*!
- * \brief TLMEditorPage::setTagRuleColor
+ * \brief MetaModelEditorPage::setTagRuleColor
  * \param color
  */
-void TLMEditorPage::setTagRuleColor(QColor color)
+void MetaModelEditorPage::setTagRuleColor(QColor color)
 {
   mTagColor = color;
   mpTagItem->setForeground(color);
 }
 
 /*!
- * \brief TLMEditorPage::setElementRuleColor
+ * \brief MetaModelEditorPage::setElementRuleColor
  * \param color
  */
-void TLMEditorPage::setElementRuleColor(QColor color)
+void MetaModelEditorPage::setElementRuleColor(QColor color)
 {
   mElementColor = color;
   mpElementItem->setForeground(color);
 }
 
 /*!
- * \brief TLMEditorPage::setQuotesRuleColor
+ * \brief MetaModelEditorPage::setQuotesRuleColor
  * \param color
  */
-void TLMEditorPage::setQuotesRuleColor(QColor color)
+void MetaModelEditorPage::setQuotesRuleColor(QColor color)
 {
   mQuotesColor = color;
   mpQuotesItem->setForeground(color);
 }
 
 /*!
- * \brief TLMEditorPage::setCommentRuleColor
+ * \brief MetaModelEditorPage::setCommentRuleColor
  * \param color
  */
-void TLMEditorPage::setCommentRuleColor(QColor color)
+void MetaModelEditorPage::setCommentRuleColor(QColor color)
 {
   mCommentColor = color;
   mpCommentItem->setForeground(color);
 }
 
 /*!
- * \brief TLMEditorPage::setLineWrapping
+ * \brief MetaModelEditorPage::setLineWrapping
  * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
  * Sets the mpPreviewPlainTextBox line wrapping mode.
  */
-void TLMEditorPage::setLineWrapping()
+void MetaModelEditorPage::setLineWrapping()
 {
   if (mpLineWrappingCheckbox->isChecked()) {
     mpPreviewPlainTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
@@ -3878,9 +3878,9 @@ void TLMEditorPage::setLineWrapping()
   }
 }
 
-//! Picks a color for one of the TLM Text Settings rules.
+//! Picks a color for one of the MetaModelEditor Settings rules.
 //! This method is called when mpColorPickButton clicked signal raised.
-void TLMEditorPage::pickColor()
+void MetaModelEditorPage::pickColor()
 {
   QListWidgetItem *item = mpItemsList->currentItem();
   QColor initialColor;

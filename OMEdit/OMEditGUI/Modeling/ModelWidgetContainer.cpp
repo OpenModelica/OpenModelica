@@ -235,7 +235,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
   }
   QStringList dialogAnnotation;
   // if we are dropping something on meta-model editor then we can skip Modelica stuff.
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
     if (!pLibraryTreeItem->isSaved()) {
       QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                tr("The class <b>%1</b> is not saved. You can only drag & drop saved classes.")
@@ -397,13 +397,13 @@ void GraphicsView::addComponentToClass(Component *pComponent)
         pMainWindow->getOMCProxy()->addClassAnnotation(mpModelWidget->getLibraryTreeItem()->getNameStructure(), usesAnnotationString);
       }
     }
-  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
+  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
     QString visible = pComponent->mTransformation.getVisible() ? "true" : "false";
     // add SubModel Element
-    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
-    pTLMEditor->addSubModel(pComponent->getName(), "false", pComponent->getComponentInfo()->getModelFile(),
-                            pComponent->getComponentInfo()->getStartCommand(), visible, pComponent->getTransformationOrigin(),
-                            pComponent->getTransformationExtent(), QString::number(pComponent->mTransformation.getRotateAngle()));
+    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
+    pMetaModelEditor->addSubModel(pComponent->getName(), "false", pComponent->getComponentInfo()->getModelFile(),
+                                  pComponent->getComponentInfo()->getStartCommand(), visible, pComponent->getTransformationOrigin(),
+                                  pComponent->getTransformationExtent(), QString::number(pComponent->mTransformation.getRotateAngle()));
   }
 }
 
@@ -446,9 +446,9 @@ void GraphicsView::deleteComponentFromClass(Component *pComponent)
     OMCProxy *pOMCProxy = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
     // delete the component from OMC
     pOMCProxy->deleteComponent(pComponent->getName(), mpModelWidget->getLibraryTreeItem()->getNameStructure());
-  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
-    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
-    pTLMEditor->deleteSubModel(pComponent->getName());
+  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
+    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
+    pMetaModelEditor->deleteSubModel(pComponent->getName());
   }
 }
 
@@ -505,7 +505,7 @@ bool GraphicsView::checkComponentName(QString componentName)
  */
 void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotation)
 {
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
     // show TLM connection attributes dialog
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     TLMConnectionAttributes *pTLMConnectionAttributes = new TLMConnectionAttributes(pConnectionLineAnnotation, pMainWindow);
@@ -532,9 +532,9 @@ void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
 void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectonLineAnnotation)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
-    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
-    pTLMEditor->deleteConnection(pConnectonLineAnnotation->getStartComponentName(), pConnectonLineAnnotation->getEndComponentName());
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
+    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
+    pMetaModelEditor->deleteConnection(pConnectonLineAnnotation->getStartComponentName(), pConnectonLineAnnotation->getEndComponentName());
   } else {
     pMainWindow->getOMCProxy()->deleteConnection(pConnectonLineAnnotation->getStartComponentName(),
                                                  pConnectonLineAnnotation->getEndComponentName(),
@@ -2611,7 +2611,7 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
       pMainLayout->addWidget(mpModelStatusBar);
-    } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::TLM) {
+    } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
       connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
@@ -2633,9 +2633,9 @@ void ModelWidget::createModelWidgetComponents()
       if (mpModelWidgetContainer->getMainWindow()->isDebug()) {
         mpUndoView = new QUndoView(mpUndoStack);
       }
-      // create an xml editor for TLM
-      mpEditor = new TLMEditor(this);
-      TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
+      // create an xml editor for MetaModel
+      mpEditor = new MetaModelEditor(this);
+      MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
       if (mpLibraryTreeItem->getFileName().isEmpty()) {
         QString defaultMetaModelText = QString("<?xml version='1.0' encoding='UTF-8'?>\n"
                                                "<!-- The root node is the meta-model -->\n"
@@ -2647,17 +2647,17 @@ void ModelWidget::createModelWidgetComponents()
                                                "  <!-- Parameters for the simulation -->\n"
                                                "  <SimulationParams StartTime=\"0\" StopTime=\"1\" />\n"
                                                "</Model>").arg(mpLibraryTreeItem->getName());
-        pTLMEditor->setPlainText(defaultMetaModelText);
+        pMetaModelEditor->setPlainText(defaultMetaModelText);
         mpLibraryTreeItem->setClassText(defaultMetaModelText);
       } else {
-        pTLMEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
+        pMetaModelEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
       }
-      mpTLMHighlighter = new TLMHighlighter(pMainWindow->getOptionsDialog()->getTLMEditorPage(), mpEditor->getPlainTextEdit());
+      mpMetaModelHighlighter = new MetaModelHighlighter(pMainWindow->getOptionsDialog()->getMetaModelEditorPage(), mpEditor->getPlainTextEdit());
       mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-      connect(pMainWindow->getOptionsDialog(), SIGNAL(TLMEditorSettingsChanged()), mpTLMHighlighter, SLOT(settingsChanged()));
-      // only get the TLM components and connectors if the TLM is not a new class.
+      connect(pMainWindow->getOptionsDialog(), SIGNAL(MetaModelEditorSettingsChanged()), mpMetaModelHighlighter, SLOT(settingsChanged()));
+      // only get the TLM submodels and connectors if the we are not creating a new class.
       if (!mpLibraryTreeItem->getFileName().isEmpty()) {
-        getTLMComponents();
+        getTLMSubModels();
         getTLMConnections();
       }
       mpIconGraphicsScene->clearSelection();
@@ -2735,8 +2735,8 @@ void ModelWidget::reDrawModelWidget()
   removeInheritedClassConnections();
   mpDiagramGraphicsView->scene()->clear();
   /* get model components, connection and shapes. */
-  if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
-    getTLMComponents();
+  if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    getTLMSubModels();
     getTLMConnections();
   } else {
     // Draw icon view
@@ -2795,9 +2795,9 @@ bool ModelWidget::validateText(LibraryTreeItem **pLibraryTreeItem)
   if (pModelicaTextEditor) {
     return pModelicaTextEditor->validateText(pLibraryTreeItem);
   }
-  TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
-  if (pTLMEditor) {
-    return pTLMEditor->validateText();
+  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
+  if (pMetaModelEditor) {
+    return pMetaModelEditor->validateText();
   }
   return true;
 }
@@ -3493,13 +3493,13 @@ void ModelWidget::getModelConnections()
 }
 
 /*!
- * \brief ModelWidget::getTLMComponents
- * Gets the components of the TLM and place them in the diagram GraphicsView.
+ * \brief ModelWidget::getTLMSubModels
+ * Gets the submodels of the TLM and place them in the diagram GraphicsView.
  */
-void ModelWidget::getTLMComponents()
+void ModelWidget::getTLMSubModels()
 {
-  TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
-  QDomNodeList subModels = pTLMEditor->getSubModels();
+  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
+  QDomNodeList subModels = pMetaModelEditor->getSubModels();
   for (int i = 0; i < subModels.size(); i++) {
     QString transformation;
     QDomElement subModel = subModels.at(i).toElement();
@@ -3540,13 +3540,13 @@ void ModelWidget::getTLMComponents()
 
 /*!
  * \brief ModelWidget::getTLMConnections
- * Reads the metamodel connections and draws them.
+ * Reads the TLM connections and draws them.
  */
 void ModelWidget::getTLMConnections()
 {
   MessagesWidget *pMessagesWidget = mpModelWidgetContainer->getMainWindow()->getMessagesWidget();
-  TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
-  QDomNodeList connections = pTLMEditor->getConnections();
+  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
+  QDomNodeList connections = pMetaModelEditor->getConnections();
   for (int i = 0; i < connections.size(); i++) {
     QDomElement connection = connections.at(i).toElement();
     // get start component
@@ -3722,18 +3722,18 @@ void ModelWidget::showDocumentationView()
 }
 
 /*!
- * \brief ModelWidget::TLMEditorTextChanged
- * Called when TLMEditor text has been changed by user manually.\n
+ * \brief ModelWidget::MetaModelEditorTextChanged
+ * Called when MetaModelEditor text has been changed by user manually.\n
  * Updates the LibraryTreeItem and ModelWidget with new changes.
  * \return
  */
-bool ModelWidget::TLMEditorTextChanged()
+bool ModelWidget::MetaModelEditorTextChanged()
 {
   MessageHandler *pMessageHandler = new MessageHandler;
-  Utilities::parseTLMText(pMessageHandler, mpEditor->getPlainTextEdit()->toPlainText());
+  Utilities::parseMetaModelText(pMessageHandler, mpEditor->getPlainTextEdit()->toPlainText());
   if (pMessageHandler->isFailed()) {
     MessagesWidget *pMessagesWidget = getModelWidgetContainer()->getMainWindow()->getMessagesWidget();
-    pMessagesWidget->addGUIMessage(MessageItem(MessageItem::TLM, getLibraryTreeItem()->getName(), false, pMessageHandler->line(),
+    pMessagesWidget->addGUIMessage(MessageItem(MessageItem::MetaModel, getLibraryTreeItem()->getName(), false, pMessageHandler->line(),
                                                pMessageHandler->column(), 0, 0, pMessageHandler->statusMessage(), Helper::syntaxKind,
                                                Helper::errorLevel));
     delete pMessageHandler;
@@ -3840,7 +3840,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
     pModelWidget->getTextViewToolButton()->setChecked(true);
   }
-  else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
+  else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
     if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
       loadPreviousViewType(pModelWidget);
     } else {
@@ -4061,7 +4061,7 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
         pModelWidget->getDiagramViewToolButton()->setChecked(true);
         break;
     }
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
     switch (pModelWidget->getModelWidgetContainer()->getPreviousViewType()) {
       case StringHandler::ModelicaText:
         pModelWidget->getTextViewToolButton()->setChecked(true);
@@ -4072,7 +4072,7 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
         pModelWidget->getDiagramViewToolButton()->setChecked(true);
         break;
     }
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
     pModelWidget->getTextViewToolButton()->setChecked(true);
   }
 }
@@ -4085,7 +4085,7 @@ void ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pItem)
 
 void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 {
-  bool enabled, modelica, text, TLM;
+  bool enabled, modelica, text, metaModel;
   ModelWidget *pModelWidget;
   LibraryTreeItem *pLibraryTreeItem;
   if (pSubWindow) {
@@ -4095,21 +4095,21 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
       modelica = true;
       text = false;
-      TLM = false;
+      metaModel = false;
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
       modelica = false;
       text = true;
-      TLM = false;
+      metaModel = false;
     } else {
       modelica = false;
       text = false;
-      TLM = true;
+      metaModel = true;
     }
   } else {
     enabled = false;
     modelica = false;
     text = false;
-    TLM = false;
+    metaModel = false;
     pModelWidget = 0;
     pLibraryTreeItem = 0;
   }
@@ -4143,8 +4143,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getExportAsImageAction()->setEnabled(enabled && modelica);
   getMainWindow()->getExportToClipboardAction()->setEnabled(enabled && modelica);
   getMainWindow()->getPrintModelAction()->setEnabled(enabled);
-  getMainWindow()->getFetchInterfaceDataAction()->setEnabled(enabled && TLM);
-  getMainWindow()->getTLMSimulationAction()->setEnabled(enabled && TLM);
+  getMainWindow()->getFetchInterfaceDataAction()->setEnabled(enabled && metaModel);
+  getMainWindow()->getTLMSimulationAction()->setEnabled(enabled && metaModel);
   /* disable the save actions if class is a system library class. */
   if (pModelWidget) {
     if (pModelWidget->getLibraryTreeItem()->isSystemLibrary()) {

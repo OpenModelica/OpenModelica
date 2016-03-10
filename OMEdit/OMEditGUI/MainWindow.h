@@ -226,7 +226,7 @@ private:
   QAction *mpLoadModelicaLibraryAction;
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
-  // TLM File Actions
+  // MetaModel File Actions
   QAction *mpNewMetaModelFileAction;
   QAction *mpOpenMetaModelFileAction;
   QAction *mpLoadExternModelAction;

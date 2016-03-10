@@ -58,7 +58,7 @@ class FigaroPage;
 class DebuggerPage;
 class FMIPage;
 class TLMPage;
-class TLMEditorPage;
+class MetaModelEditorPage;
 class TabSettings;
 
 class OptionsDialog : public QDialog
@@ -81,12 +81,12 @@ public:
   void readDebuggerSettings();
   void readFMISettings();
   void readTLMSettings();
-  void readTLMEditorSettings();
+  void readMetaModelEditorSettings();
   void saveGeneralSettings();
   void saveLibrariesSettings();
   void saveModelicaTextSettings();
   void saveTLMSettings();
-  void saveTLMEditorSettings();
+  void saveMetaModelEditorSettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
   void saveMessagesSettings();
@@ -114,14 +114,14 @@ public:
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
   TLMPage* getTLMPage() {return mpTLMPage;}
-  TLMEditorPage* getTLMEditorPage() {return mpTLMEditorPage;}
+  MetaModelEditorPage* getMetaModelEditorPage() {return mpMetaModelEditorPage;}
   void saveDialogGeometry();
   void show();
   TabSettings getModelicaTabSettings();
-  TabSettings getTLMTabSettings();
+  TabSettings getMetaModelTabSettings();
 signals:
   void modelicaTextSettingsChanged();
-  void TLMEditorSettingsChanged();
+  void MetaModelEditorSettingsChanged();
   void updateLineWrapping();
 public slots:
   void changePage(QListWidgetItem *current, QListWidgetItem *previous);
@@ -143,7 +143,7 @@ private:
   DebuggerPage *mpDebuggerPage;
   FMIPage *mpFMIPage;
   TLMPage *mpTLMPage;
-  TLMEditorPage *mpTLMEditorPage;
+  MetaModelEditorPage *mpMetaModelEditorPage;
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
@@ -754,11 +754,11 @@ private slots:
   void browseTLMMonitorProcess();
 };
 
-class TLMEditorPage : public QWidget
+class MetaModelEditorPage : public QWidget
 {
   Q_OBJECT
 public:
-  TLMEditorPage(OptionsDialog *pOptionsDialog);
+  MetaModelEditorPage(OptionsDialog *pOptionsDialog);
   QComboBox *getTabPolicyComboBox() {return mpTabPolicyComboBox;}
   QSpinBox *getTabSizeSpinBox() {return mpTabSizeSpinBox;}
   QSpinBox *getIndentSpinBox() {return mpIndentSpinBox;}

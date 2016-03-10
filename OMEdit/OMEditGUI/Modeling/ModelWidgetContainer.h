@@ -53,7 +53,7 @@
 #include "Helper.h"
 #include "BaseEditor.h"
 #include "ModelicaTextEditor.h"
-#include "TLMEditor.h"
+#include "MetaModelEditor.h"
 #include "TextEditor.h"
 
 class ModelWidget;
@@ -317,7 +317,7 @@ private slots:
 
 class ModelWidgetContainer;
 class ModelicaTextHighlighter;
-class TLMHighlighter;
+class MetaModelHighlighter;
 class Label;
 class ModelWidget : public QWidget
 {
@@ -385,7 +385,7 @@ private:
   QUndoView *mpUndoView;
   BaseEditor *mpEditor;
   ModelicaTextHighlighter *mpModelicaTextHighlighter;
-  TLMHighlighter *mpTLMHighlighter;
+  MetaModelHighlighter *mpMetaModelHighlighter;
   QStatusBar *mpModelStatusBar;
   bool mDiagramViewLoaded;
   bool mConnectionsLoaded;
@@ -408,7 +408,7 @@ private:
   void drawModelInheritedClassConnections(ModelWidget *pModelWidget);
   void removeInheritedClassConnections();
   void getModelConnections();
-  void getTLMComponents();
+  void getTLMSubModels();
   void getTLMConnections();
 private slots:
   void showIconView(bool checked);
@@ -417,7 +417,7 @@ private slots:
 public slots:
   void makeFileWritAble();
   void showDocumentationView();
-  bool TLMEditorTextChanged();
+  bool MetaModelEditorTextChanged();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
 protected:

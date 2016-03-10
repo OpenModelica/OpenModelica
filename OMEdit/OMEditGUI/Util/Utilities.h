@@ -303,7 +303,7 @@ private:
 };
 
 namespace Utilities {
-  void parseTLMText(MessageHandler *pMessageHandler, QString contents);
+  void parseMetaModelText(MessageHandler *pMessageHandler, QString contents);
 }
 
 #endif // UTILITIES_H

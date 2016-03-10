@@ -1051,9 +1051,9 @@ UpdateSubModelAttributesCommand::UpdateSubModelAttributesCommand(Component *pCom
  */
 void UpdateSubModelAttributesCommand::redo()
 {
-  TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
-  pTLMEditor->updateSubModelParameters(mpComponent->getName(), mNewComponentInfo.getStartCommand(),
-                                       mNewComponentInfo.getExactStep() ? "true" : "false");
+  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
+  pMetaModelEditor->updateSubModelParameters(mpComponent->getName(), mNewComponentInfo.getStartCommand(),
+                                             mNewComponentInfo.getExactStep() ? "true" : "false");
   mpComponent->getComponentInfo()->setStartCommand(mNewComponentInfo.getStartCommand());
   mpComponent->getComponentInfo()->setExactStep(mNewComponentInfo.getExactStep());
 }
@@ -1064,9 +1064,9 @@ void UpdateSubModelAttributesCommand::redo()
  */
 void UpdateSubModelAttributesCommand::undo()
 {
-  TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
-  pTLMEditor->updateSubModelParameters(mpComponent->getName(), mOldComponentInfo.getStartCommand(),
-                                       mOldComponentInfo.getExactStep() ? "true" : "false");
+  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
+  pMetaModelEditor->updateSubModelParameters(mpComponent->getName(), mOldComponentInfo.getStartCommand(),
+                                             mOldComponentInfo.getExactStep() ? "true" : "false");
   mpComponent->getComponentInfo()->setStartCommand(mOldComponentInfo.getStartCommand());
   mpComponent->getComponentInfo()->setExactStep(mOldComponentInfo.getExactStep());
 }

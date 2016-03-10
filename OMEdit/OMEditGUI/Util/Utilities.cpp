@@ -284,12 +284,12 @@ void FixedCheckBox::paintEvent(QPaintEvent *event)
 }
 
 /*!
- * \brief Utilities::parseTLMText
+ * \brief Utilities::parseMetaModelText
  * Parses the MetaModel text against the schema.
  * \param pMessageHandler
  * \param contents
  */
-void Utilities::parseTLMText(MessageHandler *pMessageHandler, QString contents)
+void Utilities::parseMetaModelText(MessageHandler *pMessageHandler, QString contents)
 {
   QFile schemaFile(QString(":/Resources/XMLSchema/tlmModelDescription.xsd"));
   schemaFile.open(QIODevice::ReadOnly);

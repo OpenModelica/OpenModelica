@@ -185,7 +185,7 @@ public:
   QAction* getAttributesAction() {return mpAttributesAction;}
   QAction* getOpenClassAction() {return mpOpenClassAction;}
   QAction* getViewDocumentationAction() {return mpViewDocumentationAction;}
-  QAction* getTLMAttributesAction() {return mpTLMAttributesAction;}
+  QAction* getSubModelAttributesAction() {return mpSubModelAttributesAction;}
   ComponentInfo* getComponentInfo() {return mpComponentInfo;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
   QList<Component*> getInheritedComponentsList() {return mInheritedComponentsList;}
@@ -242,7 +242,7 @@ private:
   QAction *mpAttributesAction;
   QAction *mpOpenClassAction;
   QAction *mpViewDocumentationAction;
-  QAction *mpTLMAttributesAction;
+  QAction *mpSubModelAttributesAction;
   ResizerItem *mpBottomLeftResizerItem;
   ResizerItem *mpTopLeftResizerItem;
   ResizerItem *mpTopRightResizerItem;
@@ -327,7 +327,7 @@ public slots:
   void showAttributes();
   void openClass();
   void viewDocumentation();
-  void showTLMAttributes();
+  void showSubModelAttributes();
 protected:
   virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);

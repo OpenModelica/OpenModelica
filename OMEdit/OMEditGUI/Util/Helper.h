@@ -189,7 +189,7 @@ public:
   static QString duplicateTip;
   static QString unloadClass;
   static QString unloadClassTip;
-  static QString unloadTLMOrTextTip;
+  static QString unloadMetaModelOrTextTip;
   static QString refresh;
   static QString simulate;
   static QString simulateTip;

@@ -74,7 +74,7 @@ public:
   enum LibraryType {
     Modelica,   /* Used to represent Modelica models. */
     Text,       /* Used to represent text based files. */
-    TLM         /* Used to represent TLM files. */
+    MetaModel   /* Used to represent MetaModel files. */
   };
   enum SaveContentsType {
     SaveInOneFile,
@@ -248,7 +248,7 @@ public:
   void showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text = QString(""), bool show = true);
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
-  bool unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
+  bool unloadMetaModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass);
   bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
@@ -300,7 +300,7 @@ private:
   QAction *mpSimulationSetupAction;
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
-  QAction *mpUnloadTLMFileAction;
+  QAction *mpUnloadMetaModelFileAction;
   QAction *mpExportFMUAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
@@ -332,7 +332,7 @@ public slots:
   void simulationSetup();
   void duplicateClass();
   void unloadClass();
-  void unloadTLMOrTextFile();
+  void unloadMetaModelOrTextFile();
   void exportModelFMU();
   void exportModelXML();
   void exportModelFigaro();
@@ -358,8 +358,8 @@ public:
   LibraryTreeView* getLibraryTreeView() {return mpLibraryTreeView;}
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
-  void openTLMOrTextFile(QFileInfo fileInfo, bool showProgress = true);
-  bool parseTLMFile(QFileInfo fileInfo);
+  void openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
+  bool parseMetaModelFile(QFileInfo fileInfo);
   void parseAndLoadModelicaText(QString modelText);
   bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
@@ -379,7 +379,7 @@ private:
   void saveChildLibraryTreeItemsOneFileHelper(LibraryTreeItem *pLibraryTreeItem);
   bool saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem);
   bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  bool saveTLMLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
 public slots:
   void searchClasses();

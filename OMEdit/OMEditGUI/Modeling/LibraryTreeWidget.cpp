@@ -465,7 +465,7 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon()
 {
   if (mLibraryType == LibraryTreeItem::Text) {
     return QIcon(":/Resources/icons/txt.svg");
-  } else if (mLibraryType == LibraryTreeItem::TLM) {
+  } else if (mLibraryType == LibraryTreeItem::MetaModel) {
     return QIcon(":/Resources/icons/tlm-icon.svg");
   } else {
     switch (getRestriction()) {
@@ -845,7 +845,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
   QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
   if (index.isValid()) {
     LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
-    // if showOnlyModelica flag is enabled then filter out all other types of LibraryTreeItem e.g., TLM & Text.
+    // if showOnlyModelica flag is enabled then filter out all other types of LibraryTreeItem e.g., MetaModel & Text.
     if (mShowOnlyModelica && pLibraryTreeItem && pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
       return false;
     }
@@ -1660,13 +1660,13 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
 }
 
 /*!
- * \brief LibraryTreeModel::unloadTLMOrTextFile
- * Unloads/deletes the TLM/Text class.
+ * \brief LibraryTreeModel::unloadMetaModelOrTextFile
+ * Unloads/deletes the MetaModel/Text class.
  * \param pLibraryTreeItem
  * \param askQuestion
  * \return
  */
-bool LibraryTreeModel::unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
+bool LibraryTreeModel::unloadMetaModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
 {
   if (askQuestion) {
     QMessageBox *pMessageBox = new QMessageBox(mpLibraryWidget->getMainWindow());
@@ -2242,11 +2242,11 @@ void LibraryTreeView::createActions()
   mpUnloadClassAction->setShortcut(QKeySequence::Delete);
   mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
   connect(mpUnloadClassAction, SIGNAL(triggered()), SLOT(unloadClass()));
-  // unload TLM/Text file Action
-  mpUnloadTLMFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
-  mpUnloadTLMFileAction->setShortcut(QKeySequence::Delete);
-  mpUnloadTLMFileAction->setStatusTip(Helper::unloadTLMOrTextTip);
-  connect(mpUnloadTLMFileAction, SIGNAL(triggered()), SLOT(unloadTLMOrTextFile()));
+  // unload MetaModel/Text file Action
+  mpUnloadMetaModelFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
+  mpUnloadMetaModelFileAction->setShortcut(QKeySequence::Delete);
+  mpUnloadMetaModelFileAction->setStatusTip(Helper::unloadMetaModelOrTextTip);
+  connect(mpUnloadMetaModelFileAction, SIGNAL(triggered()), SLOT(unloadMetaModelOrTextFile()));
   // Export FMU Action
   mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::exportFMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
@@ -2404,13 +2404,13 @@ void LibraryTreeView::showContextMenu(QPoint point)
         }
         break;
       case LibraryTreeItem::Text:
-        menu.addAction(mpUnloadTLMFileAction);
+        menu.addAction(mpUnloadMetaModelFileAction);
         break;
-      case LibraryTreeItem::TLM:
+      case LibraryTreeItem::MetaModel:
         menu.addAction(mpFetchInterfaceDataAction);
         menu.addAction(mpTLMCoSimulationAction);
         menu.addSeparator();
-        menu.addAction(mpUnloadTLMFileAction);
+        menu.addAction(mpUnloadMetaModelFileAction);
         break;
     }
     menu.exec(viewport()->mapToGlobal(point));
@@ -2650,14 +2650,14 @@ void LibraryTreeView::unloadClass()
 }
 
 /*!
- * \brief LibraryTreeView::unloadTLMOrTextFile
- * Unloads/Deletes the TLM/Text LibraryTreeItem.
+ * \brief LibraryTreeView::unloadMetaModelOrTextFile
+ * Unloads/Deletes the MetaModel/Text LibraryTreeItem.
  */
-void LibraryTreeView::unloadTLMOrTextFile()
+void LibraryTreeView::unloadMetaModelOrTextFile()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->unloadTLMOrTextFile(pLibraryTreeItem);
+    mpLibraryWidget->getLibraryTreeModel()->unloadMetaModelOrTextFile(pLibraryTreeItem);
   }
 }
 
@@ -2804,7 +2804,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
       if (isModelicaLibraryType) {
         unloadClass();
       } else {
-        unloadTLMOrTextFile();
+        unloadMetaModelOrTextFile();
       }
     } else {
       QTreeView::keyPressEvent(event);
@@ -2886,7 +2886,7 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
   if (fileInfo.suffix().compare("mo") == 0) {
     openModelicaFile(fileName, encoding, showProgress);
   } else {
-    openTLMOrTextFile(fileInfo, showProgress);
+    openMetaModelOrTextFile(fileInfo, showProgress);
   }
 }
 
@@ -2966,12 +2966,12 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
 }
 
 /*!
- * \brief LibraryWidget::openTLMOrTextFile
- * Opens a TLM/Text file and creates a LibraryTreeItem for it.
+ * \brief LibraryWidget::openMetaModelOrTextFile
+ * Opens a MetaModel/Text file and creates a LibraryTreeItem for it.
  * \param fileInfo
  * \param showProgress
  */
-void LibraryWidget::openTLMOrTextFile(QFileInfo fileInfo, bool showProgress)
+void LibraryWidget::openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgress)
 {
   if (showProgress) mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
   // check if the file is already loaded.
@@ -2994,8 +2994,8 @@ void LibraryWidget::openTLMOrTextFile(QFileInfo fileInfo, bool showProgress)
   // create a LibraryTreeItem for new loaded file.
   LibraryTreeItem *pLibraryTreeItem = 0;
   if (fileInfo.suffix().compare("xml") == 0) {
-    if (parseTLMFile(fileInfo)) {
-      pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::TLM, fileInfo.completeBaseName(), true);
+    if (parseMetaModelFile(fileInfo)) {
+      pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::MetaModel, fileInfo.completeBaseName(), true);
     }
   } else {
     pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.completeBaseName(), true);
@@ -3011,12 +3011,12 @@ void LibraryWidget::openTLMOrTextFile(QFileInfo fileInfo, bool showProgress)
 }
 
 /*!
- * \brief LibraryWidget::parseTLMFile
+ * \brief LibraryWidget::parseMetaModelFile
  * Parses the MetaModel file.
  * \param fileInfo
  * \return
  */
-bool LibraryWidget::parseTLMFile(QFileInfo fileInfo)
+bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo)
 {
   QString contents = "";
   QFile file(fileInfo.absoluteFilePath());
@@ -3030,7 +3030,7 @@ bool LibraryWidget::parseTLMFile(QFileInfo fileInfo)
     file.close();
 
     MessageHandler *pMessageHandler = new MessageHandler;
-    Utilities::parseTLMText(pMessageHandler, contents);
+    Utilities::parseMetaModelText(pMessageHandler, contents);
     if (pMessageHandler->isFailed()) {
       QTextDocument document;
       document.setHtml(pMessageHandler->statusMessage());
@@ -3113,8 +3113,8 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
       return false;
     }
     result = saveModelicaLibraryTreeItem(pLibraryTreeItem);
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::TLM) {
-    result = saveTLMLibraryTreeItem(pLibraryTreeItem);
+  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
+    result = saveMetaModelLibraryTreeItem(pLibraryTreeItem);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
     result = saveTextLibraryTreeItem(pLibraryTreeItem);
   } else {
@@ -3494,12 +3494,12 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
- * \brief LibraryWidget::saveTLMLibraryTreeItem
- * Saves a TLM LibraryTreeItem.
+ * \brief LibraryWidget::saveMetaModelLibraryTreeItem
+ * Saves a MetaModel LibraryTreeItem.
  * \param pLibraryTreeItem
  * \return
  */
-bool LibraryWidget::saveTLMLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   QString fileName;
   if (pLibraryTreeItem->getFileName().isEmpty()) {
@@ -3527,9 +3527,9 @@ bool LibraryWidget::saveTLMLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
       pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
     }
     // Create folders for the submodels and copy there source file in them.
-    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
+    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
     GraphicsView *pGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
-    QDomNodeList subModels = pTLMEditor->getSubModels();
+    QDomNodeList subModels = pMetaModelEditor->getSubModels();
     for (int i = 0; i < subModels.size(); i++) {
       QDomElement subModel = subModels.at(i).toElement();
       QString directoryName = subModel.attribute("Name");

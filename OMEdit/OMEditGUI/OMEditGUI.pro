@@ -108,7 +108,7 @@ SOURCES += main.cpp \
   Editors/DebuggerSourceEditor.cpp \
   Editors/TextEditor.cpp \
   Editors/CEditor.cpp \
-  Editors/TLMEditor.cpp \
+  Editors/MetaModelEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
   Component/Component.cpp \
   Annotations/ShapeAnnotation.cpp \
@@ -173,7 +173,7 @@ HEADERS  += Util/Helper.h \
   Editors/DebuggerSourceEditor.h \
   Editors/TextEditor.h \
   Editors/CEditor.h \
-  Editors/TLMEditor.h \
+  Editors/MetaModelEditor.h \
   Plotting/PlotWindowContainer.h \
   Component/Component.h \
   Annotations/ShapeAnnotation.h \

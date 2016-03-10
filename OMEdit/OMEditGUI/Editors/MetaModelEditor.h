@@ -29,8 +29,8 @@
  */
 
 
-#ifndef TLMEDITOR_H
-#define TLMEDITOR_H
+#ifndef METAMODELEDITOR_H
+#define METAMODELEDITOR_H
 
 #include <QSyntaxHighlighter>
 
@@ -41,7 +41,7 @@
 
 class MainWindow;
 class ModelWidget;
-class TLMEditor;
+class MetaModelEditor;
 
 /*!
  * \class XMLDocument
@@ -51,17 +51,17 @@ class XMLDocument : public QDomDocument
 {
 public:
   XMLDocument();
-  XMLDocument(TLMEditor *pTLMEditor);
+  XMLDocument(MetaModelEditor *pMetaModelEditor);
   QString toString() const;
 private:
-  TLMEditor *mpTLMEditor;
+  MetaModelEditor *mpMetaModelEditor;
 };
 
-class TLMEditor : public BaseEditor
+class MetaModelEditor : public BaseEditor
 {
   Q_OBJECT
 public:
-  TLMEditor(ModelWidget *pModelWidget);
+  MetaModelEditor(ModelWidget *pModelWidget);
   QString getLastValidText() {return mLastValidText;}
   bool validateText();
   QDomElement getSubModelsElement();
@@ -74,7 +74,7 @@ public:
   void updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
   void updateSubModelParameters(QString name, QString startCommand, QString exactStepFlag);
   bool createConnection(QString From, QString To, QString delay, QString alpha, QString zf, QString zfr, QString points);
-  void updateTLMConnectiontAnnotation(QString fromSubModel, QString toSubModel, QString points);
+  void updateConnection(QString fromSubModel, QString toSubModel, QString points);
   void addInterfacesData(QDomElement interfaces);
   bool existInterfaceData(QString subModelName, QString interfaceName);
   bool deleteSubModel(QString name);
@@ -92,18 +92,18 @@ public slots:
   virtual void toggleCommentSelection() {}
 };
 
-class TLMEditorPage;
-class TLMHighlighter : public QSyntaxHighlighter
+class MetaModelEditorPage;
+class MetaModelHighlighter : public QSyntaxHighlighter
 {
   Q_OBJECT
 public:
-  TLMHighlighter(TLMEditorPage *pTLMEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
+  MetaModelHighlighter(MetaModelEditorPage *pMetaModelEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
   void initializeSettings();
   void highlightMultiLine(const QString &text);
 protected:
   virtual void highlightBlock(const QString &text);
 private:
-  TLMEditorPage *mpTLMEditorPage;
+  MetaModelEditorPage *mpMetaModelEditorPage;
   QPlainTextEdit *mpPlainTextEdit;
   struct HighlightingRule
   {
@@ -123,4 +123,4 @@ private:
 public slots:
   void settingsChanged();
 };
-#endif // TLMEDITOR_H
+#endif // METAMODELEDITOR_H

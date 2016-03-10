@@ -287,7 +287,7 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
     gethostname(myname, MAXHOSTNAME);
     hp = gethostbyname((const char*) myname);
     if (hp == NULL) {
-      MessageItem messageItem(MessageItem::TLM, "", false, 0, 0, 0, 0,
+      MessageItem messageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
                               tr("Failed to get my hostname, check that name resolves, e.g. /etc/hosts has %1")
                               .arg(QString(myname)), Helper::scriptingKind, Helper::errorLevel);
       mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);

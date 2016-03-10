@@ -669,8 +669,8 @@ void BaseEditor::PlainTextEdit::updateCursorPosition()
 void BaseEditor::PlainTextEdit::setLineWrapping()
 {
   OptionsDialog *pOptionsDialog = mpBaseEditor->getMainWindow()->getOptionsDialog();
-  if (dynamic_cast<TLMEditor*>(mpBaseEditor)) {
-    if (pOptionsDialog->getTLMEditorPage()->getLineWrappingCheckbox()->isChecked()) {
+  if (dynamic_cast<MetaModelEditor*>(mpBaseEditor)) {
+    if (pOptionsDialog->getMetaModelEditorPage()->getLineWrappingCheckbox()->isChecked()) {
       setLineWrapMode(QPlainTextEdit::WidgetWidth);
     } else {
       setLineWrapMode(QPlainTextEdit::NoWrap);
@@ -716,8 +716,8 @@ void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lin
 void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
 {
   TabSettings tabSettings;
-  if (dynamic_cast<TLMEditor*>(mpBaseEditor)) {
-    tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTLMTabSettings();
+  if (dynamic_cast<MetaModelEditor*>(mpBaseEditor)) {
+    tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getMetaModelTabSettings();
   } else {  //! @todo we should check all editors here.
     tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
   }
@@ -949,8 +949,8 @@ void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   /*! @todo We should add formatter classes to handle this based on editor language i.e Modelica or C/C++. */
   if (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return) {
     TabSettings tabSettings;
-    if (dynamic_cast<TLMEditor*>(mpBaseEditor)) {
-      tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTLMTabSettings();
+    if (dynamic_cast<MetaModelEditor*>(mpBaseEditor)) {
+      tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getMetaModelTabSettings();
     } else {  //! @todo we should check all editors here.
       tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
     }

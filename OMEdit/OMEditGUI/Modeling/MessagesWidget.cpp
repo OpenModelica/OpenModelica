@@ -193,12 +193,12 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
     } else {
       message = Qt::convertFromPlainText(messageItem.getMessage()).remove("<p>").remove("</p>");
     }
-  } else if(messageItem.getMessageItemType()== MessageItem::TLM) {
+  } else if(messageItem.getMessageItemType()== MessageItem::MetaModel) {
     message = messageItem.getMessage().remove("<p>").remove("</p>");
   }
   if (messageItem.getFileName().isEmpty()) { // if custom error message
     errorMessage = message;
-  } else if (messageItem.getMessageItemType()== MessageItem::TLM ||
+  } else if (messageItem.getMessageItemType()== MessageItem::MetaModel ||
              mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(messageItem.getFileName())) {
     // If the class is only loaded in AST via loadString then create link for the error message.
     errorMessage = linkFormat.arg(messageItem.getFileName())

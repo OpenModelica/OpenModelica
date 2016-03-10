@@ -1457,10 +1457,10 @@ void TLMConnectionAttributes::initializeDialog()
   */
 void TLMConnectionAttributes::createTLMConnection()
 {
-  TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor());
+  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor());
   QString startFrom = mpStartSubModelNameTextBox->text().append(".").append(mpStartSubModelInterfacePointComboBox->currentText());
   QString endTo = mpEndSubModelNameTextBox->text().append(".").append(mpEndSubModelInterfacePointComboBox->currentText());
-  pTLMEditor->createConnection(startFrom, endTo, mpDelayTextBox->text(), mpAlphaTextBox->text(),mpZfTextBox->text(), mpZfrTextBox->text(),
-                               mpConnectionLineAnnotation->getTLMShapeAnnotation());
+  pMetaModelEditor->createConnection(startFrom, endTo, mpDelayTextBox->text(), mpAlphaTextBox->text(),mpZfTextBox->text(), mpZfrTextBox->text(),
+                                     mpConnectionLineAnnotation->getMetaModelShapeAnnotation());
   accept();
 }

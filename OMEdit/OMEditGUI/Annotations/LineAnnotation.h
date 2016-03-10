@@ -75,7 +75,7 @@ public:
   QPolygonF drawArrow(QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
   QString getOMCShapeAnnotation();
   QString getShapeAnnotation();
-  QString getTLMShapeAnnotation();
+  QString getMetaModelShapeAnnotation();
   void addPoint(QPointF point);
   void removePoint(int index);
   void clearPoints();

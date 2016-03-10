@@ -182,7 +182,7 @@ QString Helper::unloadClass;
 QString Helper::duplicate;
 QString Helper::duplicateTip;
 QString Helper::unloadClassTip;
-QString Helper::unloadTLMOrTextTip;
+QString Helper::unloadMetaModelOrTextTip;
 QString Helper::refresh;
 QString Helper::simulate;
 QString Helper::simulateTip;
@@ -376,7 +376,7 @@ void Helper::initHelperVariables()
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
-  Helper::unloadTLMOrTextTip = tr("Unload the TLM/Text file");
+  Helper::unloadMetaModelOrTextTip = tr("Unload the MetaModel/Text file");
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
   Helper::simulateTip = tr("Simulates the Modelica class");

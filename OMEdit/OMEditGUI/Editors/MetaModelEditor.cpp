@@ -28,7 +28,7 @@
  *
  */
 
-#include "TLMEditor.h"
+#include "MetaModelEditor.h"
 #include "ComponentProperties.h"
 
 XMLDocument::XMLDocument()
@@ -37,35 +37,35 @@ XMLDocument::XMLDocument()
 
 }
 
-XMLDocument::XMLDocument(TLMEditor *pTLMEditor)
+XMLDocument::XMLDocument(MetaModelEditor *pMetaModelEditor)
   : QDomDocument()
 {
-  mpTLMEditor = pTLMEditor;
+  mpMetaModelEditor = pMetaModelEditor;
 }
 
 QString XMLDocument::toString() const
 {
-  TabSettings tabSettings = mpTLMEditor->getMainWindow()->getOptionsDialog()->getTLMTabSettings();
+  TabSettings tabSettings = mpMetaModelEditor->getMainWindow()->getOptionsDialog()->getMetaModelTabSettings();
   return QDomDocument::toString(tabSettings.getIndentSize());
 }
 
 
-TLMEditor::TLMEditor(ModelWidget *pModelWidget)
+MetaModelEditor::MetaModelEditor(ModelWidget *pModelWidget)
   : BaseEditor(pModelWidget), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
 {
   mXmlDocument = XMLDocument(this);
 }
 
 /*!
- * \brief TLMEditor::validateText
- * When user make some changes in the TLMEditor text then this method validates the text.
+ * \brief MetaModelEditor::validateText
+ * When user make some changes in the MetaModelEditor text then this method validates the text.
  * \return
  */
-bool TLMEditor::validateText()
+bool MetaModelEditor::validateText()
 {
   if (mTextChanged) {
     // if the user makes few mistakes in the text then dont let him change the perspective
-    if (!mpModelWidget->TLMEditorTextChanged()) {
+    if (!mpModelWidget->MetaModelEditorTextChanged()) {
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
@@ -96,11 +96,11 @@ bool TLMEditor::validateText()
 }
 
 /*!
- * \brief TLMEditor::getSubModelsElement
+ * \brief MetaModelEditor::getSubModelsElement
  * Returns the SubModels element tag.
  * \return
  */
-QDomElement TLMEditor::getSubModelsElement()
+QDomElement MetaModelEditor::getSubModelsElement()
 {
   QDomNodeList subModels = mXmlDocument.elementsByTagName("SubModels");
   if (subModels.size() > 0) {
@@ -110,11 +110,11 @@ QDomElement TLMEditor::getSubModelsElement()
 }
 
 /*!
- * \brief TLMEditor::getConnectionsElement
+ * \brief MetaModelEditor::getConnectionsElement
  * Returns the Connections element tag.
  * \return
  */
-QDomElement TLMEditor::getConnectionsElement()
+QDomElement MetaModelEditor::getConnectionsElement()
 {
   QDomNodeList connections = mXmlDocument.elementsByTagName("Connections");
   if (connections.size() > 0) {
@@ -124,27 +124,27 @@ QDomElement TLMEditor::getConnectionsElement()
 }
 
 /*!
- * \brief TLMEditor::getSubModels
+ * \brief MetaModelEditor::getSubModels
  * Returns the list of SubModel tags.
  * \return
  */
-QDomNodeList TLMEditor::getSubModels()
+QDomNodeList MetaModelEditor::getSubModels()
 {
   return mXmlDocument.elementsByTagName("SubModel");
 }
 
 /*!
- * \brief TLMEditor::getConnections
+ * \brief MetaModelEditor::getConnections
  * Returns the list of Connection tags.
  * \return
  */
-QDomNodeList TLMEditor::getConnections()
+QDomNodeList MetaModelEditor::getConnections()
 {
   return mXmlDocument.elementsByTagName("Connection");
 }
 
 /*!
- * \brief TLMEditor::addSubModel
+ * \brief MetaModelEditor::addSubModel
  * Adds a SubModel tag with Annotation tag as child of it.
  * \param name
  * \param exactStep
@@ -156,7 +156,7 @@ QDomNodeList TLMEditor::getConnections()
  * \param rotation
  * \return
  */
-bool TLMEditor::addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin,
+bool MetaModelEditor::addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin,
                             QString extent, QString rotation)
 {
   QDomElement subModels = getSubModelsElement();
@@ -181,7 +181,7 @@ bool TLMEditor::addSubModel(QString name, QString exactStep, QString modelFile, 
 }
 
 /*!
- * \brief TLMEditor::createAnnotationElement
+ * \brief MetaModelEditor::createAnnotationElement
  * Creates an Annotation tag for SubModel.
  * \param subModel
  * \param visible
@@ -189,7 +189,7 @@ bool TLMEditor::addSubModel(QString name, QString exactStep, QString modelFile, 
  * \param extent
  * \param rotation
  */
-void TLMEditor::createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation)
+void MetaModelEditor::createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation)
 {
   QDomElement annotation = mXmlDocument.createElement("Annotation");
   annotation.setAttribute("Visible", visible);
@@ -201,7 +201,7 @@ void TLMEditor::createAnnotationElement(QDomElement subModel, QString visible, Q
 }
 
 /*!
- * \brief TLMEditor::updateSubModelPlacementAnnotation
+ * \brief MetaModelEditor::updateSubModelPlacementAnnotation
  * Updates the SubModel annotation.
  * \param name
  * \param visible
@@ -209,7 +209,7 @@ void TLMEditor::createAnnotationElement(QDomElement subModel, QString visible, Q
  * \param extent
  * \param rotation
  */
-void TLMEditor::updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation)
+void MetaModelEditor::updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -235,13 +235,13 @@ void TLMEditor::updateSubModelPlacementAnnotation(QString name, QString visible,
 }
 
 /*!
- * \brief TLMEditor::updateSubModelParameters
+ * \brief MetaModelEditor::updateSubModelParameters
  * Updates the SubModel parameters.
  * \param name
  * \param startCommand
  * \param ExactStepflag
  */
-void TLMEditor::updateSubModelParameters(QString name, QString startCommand, QString exactStepFlag)
+void MetaModelEditor::updateSubModelParameters(QString name, QString startCommand, QString exactStepFlag)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -256,7 +256,7 @@ void TLMEditor::updateSubModelParameters(QString name, QString startCommand, QSt
 }
 
 /*!
- * \brief TLMEditor::createConnection
+ * \brief MetaModelEditor::createConnection
  * Adds a a connection tag with Annotation tag as child of it.
  * \param from
  * \param to
@@ -267,7 +267,7 @@ void TLMEditor::updateSubModelParameters(QString name, QString startCommand, QSt
  * \param points
  * \return
  */
-bool TLMEditor::createConnection(QString from, QString to, QString delay, QString alpha, QString zf, QString zfr, QString points)
+bool MetaModelEditor::createConnection(QString from, QString to, QString delay, QString alpha, QString zf, QString zfr, QString points)
 {
   QDomElement connections = getConnectionsElement();
   if (!connections.isNull()) {
@@ -290,13 +290,13 @@ bool TLMEditor::createConnection(QString from, QString to, QString delay, QStrin
 }
 
 /*!
- * \brief TLMEditor::updateTLMConnectiontAnnotation
- * Updates the TLM connection annotation.
+ * \brief MetaModelEditor::updateConnection
+ * Updates the MetaModel connection annotation.
  * \param fromSubModel
  * \param toSubModel
  * \param points
  */
-void TLMEditor::updateTLMConnectiontAnnotation(QString fromSubModel, QString toSubModel, QString points)
+void MetaModelEditor::updateConnection(QString fromSubModel, QString toSubModel, QString points)
 {
   QDomNodeList connectionList = mXmlDocument.elementsByTagName("Connection");
   for (int i = 0 ; i < connectionList.size() ; i++) {
@@ -326,11 +326,11 @@ void TLMEditor::updateTLMConnectiontAnnotation(QString fromSubModel, QString toS
 }
 
 /*!
- * \brief TLMEditor::addInterfacesData
+ * \brief MetaModelEditor::addInterfacesData
  * Adds the InterfacePoint tag to SubModel.
  * \param interfaces
  */
-void TLMEditor::addInterfacesData(QDomElement interfaces)
+void MetaModelEditor::addInterfacesData(QDomElement interfaces)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -360,7 +360,7 @@ void TLMEditor::addInterfacesData(QDomElement interfaces)
   \param interfaceName - the name for the interface to check.
   \return true on success.
   */
-bool TLMEditor::existInterfaceData(QString subModelName, QString interfaceName)
+bool MetaModelEditor::existInterfaceData(QString subModelName, QString interfaceName)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -380,12 +380,12 @@ bool TLMEditor::existInterfaceData(QString subModelName, QString interfaceName)
 }
 
 /*!
- * \brief TLMEditor::deleteSubModel
+ * \brief MetaModelEditor::deleteSubModel
  * Delets a SubModel.
  * \param name
  * \return
  */
-bool TLMEditor::deleteSubModel(QString name)
+bool MetaModelEditor::deleteSubModel(QString name)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -404,12 +404,12 @@ bool TLMEditor::deleteSubModel(QString name)
 }
 
 /*!
- * \brief TLMEditor::deleteConnection
+ * \brief MetaModelEditor::deleteConnection
  * Delets a connection.
  * \param name
  * \return
  */
-bool TLMEditor::deleteConnection(QString startSubModelName, QString endSubModelName)
+bool MetaModelEditor::deleteConnection(QString startSubModelName, QString endSubModelName)
 {
   QDomNodeList connectionList = mXmlDocument.elementsByTagName("Connection");
   for (int i = 0 ; i < connectionList.size() ; i++) {
@@ -430,11 +430,11 @@ bool TLMEditor::deleteConnection(QString startSubModelName, QString endSubModelN
 }
 
 /*!
- * \brief TLMEditor::showContextMenu
+ * \brief MetaModelEditor::showContextMenu
  * Create a context menu.
  * \param point
  */
-void TLMEditor::showContextMenu(QPoint point)
+void MetaModelEditor::showContextMenu(QPoint point)
 {
   QMenu *pMenu = createStandardContextMenu();
   pMenu->exec(mapToGlobal(point));
@@ -442,12 +442,12 @@ void TLMEditor::showContextMenu(QPoint point)
 }
 
 /*!
- * \brief TLMEditor::setPlainText
+ * \brief MetaModelEditor::setPlainText
  * Reimplementation of QPlainTextEdit::setPlainText method.
  * Makes sure we dont update if the passed text is same.
  * \param text the string to set.
  */
-void TLMEditor::setPlainText(const QString &text)
+void MetaModelEditor::setPlainText(const QString &text)
 {
   if (text != mpPlainTextEdit->toPlainText()) {
     mForceSetPlainText = true;
@@ -460,14 +460,14 @@ void TLMEditor::setPlainText(const QString &text)
 }
 
 /*!
- * \brief TLMEditor::contentsHasChanged
- * Slot activated when TLMEdit's QTextDocument contentsChanged SIGNAL is raised.\n
- * Sets the model as modified so that user knows that his current TLM is not saved.
+ * \brief MetaModelEditor::contentsHasChanged
+ * Slot activated when MetaModelEditor's QTextDocument contentsChanged SIGNAL is raised.\n
+ * Sets the model as modified so that user knows that his current metamodel is not saved.
  * \param position
  * \param charsRemoved
  * \param charsAdded
  */
-void TLMEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
+void MetaModelEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
 {
   Q_UNUSED(position);
   if (mpModelWidget->isVisible()) {
@@ -490,55 +490,54 @@ void TLMEditor::contentsHasChanged(int position, int charsRemoved, int charsAdde
   }
 }
 
-//! @class TLMHighlighter
-//! @brief A syntax highlighter for TLMEditor.
+//! @class MetaModelHighlighter
+//! @brief A syntax highlighter for MetaModelEditor.
 
 //! Constructor
-TLMHighlighter::TLMHighlighter(TLMEditorPage *pTLMEditorPage, QPlainTextEdit *pPlainTextEdit)
+MetaModelHighlighter::MetaModelHighlighter(MetaModelEditorPage *pMetaModelEditorPage, QPlainTextEdit *pPlainTextEdit)
     : QSyntaxHighlighter(pPlainTextEdit->document())
 {
-  mpTLMEditorPage = pTLMEditorPage;
+  mpMetaModelEditorPage = pMetaModelEditorPage;
   mpPlainTextEdit = pPlainTextEdit;
   initializeSettings();
 }
 
 //! Initialized the syntax highlighter with default values.
-void TLMHighlighter::initializeSettings()
+void MetaModelHighlighter::initializeSettings()
 {
   QFont font;
-  font.setFamily(mpTLMEditorPage->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(mpTLMEditorPage->getFontSizeSpinBox()->value());
+  font.setFamily(mpMetaModelEditorPage->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(mpMetaModelEditorPage->getFontSizeSpinBox()->value());
   mpPlainTextEdit->document()->setDefaultFont(font);
-  mpPlainTextEdit->setTabStopWidth(mpTLMEditorPage->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
+  mpPlainTextEdit->setTabStopWidth(mpMetaModelEditorPage->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;
-  mTextFormat.setForeground(mpTLMEditorPage->getTextRuleColor());
-  mTagFormat.setForeground(mpTLMEditorPage->getTagRuleColor());
-  mElementFormat.setForeground(mpTLMEditorPage->getElementRuleColor());
-  mCommentFormat.setForeground(mpTLMEditorPage->getCommentRuleColor());
-  mQuotationFormat.setForeground(QColor(mpTLMEditorPage->getQuotesRuleColor()));
+  mTextFormat.setForeground(mpMetaModelEditorPage->getTextRuleColor());
+  mTagFormat.setForeground(mpMetaModelEditorPage->getTagRuleColor());
+  mElementFormat.setForeground(mpMetaModelEditorPage->getElementRuleColor());
+  mCommentFormat.setForeground(mpMetaModelEditorPage->getCommentRuleColor());
+  mQuotationFormat.setForeground(QColor(mpMetaModelEditorPage->getQuotesRuleColor()));
 
   rule.mPattern = QRegExp("\\b[A-Za-z_][A-Za-z0-9_]*");
   rule.mFormat = mTextFormat;
   mHighlightingRules.append(rule);
 
- // TLM Tags
-  QStringList TLMTags;
-  TLMTags << "<\\?"
-          << "<"
-          << "</"
-          << "\\?>"
-          << ">"
-          << "/>";
-  foreach (const QString &TLMTag, TLMTags)
-  {
-    rule.mPattern = QRegExp(TLMTag);
+  // MetaModel Tags
+  QStringList metaModelTags;
+  metaModelTags << "<\\?"
+                << "<"
+                << "</"
+                << "\\?>"
+                << ">"
+                << "/>";
+  foreach (const QString &metaModelTag, metaModelTags) {
+    rule.mPattern = QRegExp(metaModelTag);
     rule.mFormat = mTagFormat;
     mHighlightingRules.append(rule);
   }
 
- // TLM Elements
+ // MetaModel Elements
   QStringList elementPatterns;
   elementPatterns << "\\bxml\\b"
                   << "\\bModel\\b"
@@ -559,7 +558,7 @@ void TLMHighlighter::initializeSettings()
     mHighlightingRules.append(rule);
   }
 
-  // TLM Comments
+  // MetaModel Comments
   mCommentStartExpression = QRegExp("<!--");
   mCommentEndExpression = QRegExp("-->");
 }
@@ -568,7 +567,7 @@ void TLMHighlighter::initializeSettings()
   Highlights the multilines text.\n
   Quoted text.
   */
-void TLMHighlighter::highlightMultiLine(const QString &text)
+void MetaModelHighlighter::highlightMultiLine(const QString &text)
 {
   int index = 0, startIndex = 0;
   int blockState = previousBlockState();
@@ -621,14 +620,14 @@ void TLMHighlighter::highlightMultiLine(const QString &text)
 }
 
 //! Reimplementation of QSyntaxHighlighter::highlightBlock
-void TLMHighlighter::highlightBlock(const QString &text)
+void MetaModelHighlighter::highlightBlock(const QString &text)
 {
   /* Only highlight the text if user has enabled the syntax highlighting */
-  if (!mpTLMEditorPage->getSyntaxHighlightingCheckbox()->isChecked()) {
+  if (!mpMetaModelEditorPage->getSyntaxHighlightingCheckbox()->isChecked()) {
     return;
   }
   setCurrentBlockState(0);
-  setFormat(0, text.length(), mpTLMEditorPage->getTextRuleColor());
+  setFormat(0, text.length(), mpMetaModelEditorPage->getTextRuleColor());
   foreach (const HighlightingRule &rule, mHighlightingRules)
   {
     QRegExp expression(rule.mPattern);
@@ -644,7 +643,7 @@ void TLMHighlighter::highlightBlock(const QString &text)
 }
 
 //! Slot activated whenever ModelicaEditor text settings changes.
-void TLMHighlighter::settingsChanged()
+void MetaModelHighlighter::settingsChanged()
 {
   initializeSettings();
   rehighlight();
