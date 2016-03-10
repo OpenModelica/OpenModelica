@@ -8,7 +8,7 @@ package CSE
     Real x,y;
     Real A;
     Real B = 4.0;
-    Real C = time;
+    Real C = time+1.0;
     Real D;
     Real E;
     
@@ -70,19 +70,15 @@ simulate(CSE.TestCall1); getErrorString();
 // 1/1 (1): E = A + $cse3   [dynamic]
 // 2/2 (1): D = $cse1   [dynamic]
 // 3/3 (1): A = 4.0 * C   [dynamic]
-// 4/4 (1): C = time   [binding]
+// 4/4 (1): C = 1.0 + time   [binding]
 // 5/5 (1): $cse3 = log($cse2)   [binding]
 // 6/6 (1): $cse2 = log($cse1)   [binding]
 // 7/7 (1): $cse1 = log(A)   [binding]
 //
 // record SimulationResult
-//     resultFile = "",
+//     resultFile = "CSE.TestCall1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.TestCall1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Simulation execution failed for model: CSE.TestCall1
-// assert            | warning | The following assertion has been violated during initialization at time 0.000000
-// assert            | debug   | Model error: Argument of log(A) was 0 should be > 0
-// assert            | info    | simulation terminated by an assertion at initialization
-// "
+//     messages = ""
 // end SimulationResult;
 // ""
 // endResult
