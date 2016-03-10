@@ -44,3 +44,7 @@ PI c1(k=2, T=3); // fine
 PI c2(tf.b={33}); // error, b is declared as final
 end test3;
 
+model test4
+   type Distance = Real(final unit="m");
+   parameter Distance di(unit="mm")=0.125;
+end test4;

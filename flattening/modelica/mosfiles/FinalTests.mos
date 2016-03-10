@@ -1,8 +1,8 @@
 // name: FinalTests
 // keywords: final override
 // status: correct
-// 
-//  
+//
+//
 //
 loadFile("FinalTests.mo");
 instantiateModel(test1);
@@ -11,18 +11,28 @@ instantiateModel(test2);
 getErrorString();
 instantiateModel(test3);
 getErrorString();
+instantiateModel(test4);
+getErrorString();
 // Result:
 // true
 // ""
-// "Error: Trying to override final variable in component  and scope test1 by using modifiers:  = (typed)10 DAE.PROP(Integer, C_CONST), value: 10 and final  = (typed)1.123456 DAE.PROP(Real, C_CONST), value: 1.123456 that do not agree.
+// "[flattening/modelica/mosfiles/FinalTests.mo:3:3-3:49:writable] Notification: From here:
+// [flattening/modelica/mosfiles/FinalTests.mo:9:38-9:55:writable] Error: Trying to override final element p_finalPrefix5 with modifier ' = 10'.
 // Error: Error occurred while flattening model test1
 // "
 // ""
-// "[FinalTests.mo:27:3-27:23:writable] Error: Variable a1: Trying to override final variable in component a1 and scope test2 by using modifiers:  = (typed)"deg" DAE.PROP(String, C_CONST), value: "deg" and final  = (typed)"rad" DAE.PROP(String, C_CONST), value: "rad" that do not agree.
+// "[flattening/modelica/mosfiles/FinalTests.mo:25:51-25:62:writable] Notification: From here:
+// [flattening/modelica/mosfiles/FinalTests.mo:27:12-27:22:writable] Error: Trying to override final element unit with modifier ' = "deg"'.
 // Error: Error occurred while flattening model test2
 // "
 // ""
-// "Error: Trying to override final variable in component c2 and scope PI by using modifiers:  = (typed){33} DAE.PROP(Integer[1], C_CONST), value: {33} and final  = (typed){c2.T * c2.k, c2.k} DAE.PROP(Real[2], C_PARAM), value: {1.0,1.0} that do not agree.
+// "[flattening/modelica/mosfiles/FinalTests.mo:39:27-39:36:writable] Notification: From here:
+// [flattening/modelica/mosfiles/FinalTests.mo:44:7-44:16:writable] Error: Trying to override final element b with modifier ' = {33}'.
 // Error: Error occurred while flattening model test3
+// "
+// ""
+// "[flattening/modelica/mosfiles/FinalTests.mo:48:31-48:39:writable] Notification: From here:
+// [flattening/modelica/mosfiles/FinalTests.mo:49:26-49:35:writable] Error: Trying to override final element unit with modifier ' = "mm"'.
+// Error: Error occurred while flattening model test4
 // "
 // endResult
