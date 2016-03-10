@@ -1378,7 +1378,7 @@ public function subtype "Is the first type a subtype of the second type?
 algorithm
   outBoolean := matchcontinue (inType1, inType2)
     local
-      Boolean res;
+      Boolean res, b1, b2;
       String l1,l2;
       list<DAE.Var> els1,els2;
       Absyn.Path p1,p2;
@@ -1565,8 +1565,8 @@ algorithm
       then if Absyn.pathEqual(p1,p2) then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
 
     // If the record is the only one in the uniontype, of course their types match
-    case (DAE.T_METARECORD(knownSingleton=true,utPath = p1),DAE.T_METAUNIONTYPE(source={p2}))
-      then if Absyn.pathEqual(p1,p2) then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
+    case (DAE.T_METARECORD(knownSingleton=b1,utPath = p1),DAE.T_METAUNIONTYPE(knownSingleton=b2,source={p2}))
+      then if Absyn.pathEqual(p1,p2) and (b1 or b2) /*Values.mo loses knownSingleton information */ then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
 
     // <uniontype> = <uniontype>
     case (DAE.T_METAUNIONTYPE(source = {p1}), DAE.T_METAUNIONTYPE(source = {p2}))
@@ -6011,18 +6011,10 @@ protected function printFailure
   input DAE.Type e_type;
   input DAE.Type expected_type;
 algorithm
-  _ := matchcontinue (flag, source, e, e_type, expected_type)
-    case (_, _, _, _, _)
-      equation
-        true = Flags.isSet(flag);
-        Debug.traceln("- Types." + source + " failed on:" + ExpressionDump.printExpStr(e));
-        Debug.traceln("  type:" + unparseType(e_type) + " differs from expected\n  type:" + unparseType(expected_type));
-      then ();
-    else
-      equation
-        false = Flags.isSet(flag);
-      then ();
-  end matchcontinue;
+  if Flags.isSet(flag) then
+    Debug.traceln("- Types." + source + " failed on:" + ExpressionDump.printExpStr(e));
+    Debug.traceln("  type:" + unparseType(e_type) + " differs from expected\n  type:" + unparseType(expected_type));
+  end if;
 end printFailure;
 
 protected function polymorphicBindingStr
