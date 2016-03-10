@@ -274,8 +274,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpAutoSaveTimer = new QTimer(this);
   connect(mpAutoSaveTimer, SIGNAL(timeout()), SLOT(autoSave()));
   // read auto save settings
-  if (mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked())
-  {
+  if (mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
     mpAutoSaveTimer->start(mpOptionsDialog->getGeneralSettingsPage()->getAutoSaveIntervalSpinBox()->value() * 1000);
   }
 }
@@ -2319,10 +2318,14 @@ void MainWindow::readInterfaceData(LibraryTreeItem *pLibraryTreeItem)
   }
 }
 
+/*!
+ * \brief MainWindow::perspectiveTabChanged
+ * Handles the perspective tab changed case.
+ * \param tabIndex
+ */
 void MainWindow::perspectiveTabChanged(int tabIndex)
 {
-  switch (tabIndex)
-  {
+  switch (tabIndex) {
     case 0:
       switchToWelcomePerspective();
       break;
