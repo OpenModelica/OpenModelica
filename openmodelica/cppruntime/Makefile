@@ -8,6 +8,7 @@ clockedTest.mos \
 clockedEventTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
+externalArrayInputTest.mos \
 mathFunctionsTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
