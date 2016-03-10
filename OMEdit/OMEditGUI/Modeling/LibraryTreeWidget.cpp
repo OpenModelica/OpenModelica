@@ -3139,8 +3139,17 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
     return;
   }
-  DuplicateClassDialog *pDuplicateClassDialog = new DuplicateClassDialog(true, pLibraryTreeItem, mpMainWindow);
-  pDuplicateClassDialog->exec();
+  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+      DuplicateClassDialog *pDuplicateClassDialog = new DuplicateClassDialog(true, pLibraryTreeItem, mpMainWindow);
+      pDuplicateClassDialog->exec();
+    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
+      saveMetaModelLibraryTreeItem(pLibraryTreeItem);
+    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+      saveMetaModelLibraryTreeItem(pLibraryTreeItem);
+    } else {
+      QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+                               .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
+    }
 }
 
 /*!
