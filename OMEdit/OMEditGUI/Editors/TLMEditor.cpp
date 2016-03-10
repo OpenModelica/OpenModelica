@@ -301,16 +301,24 @@ void TLMEditor::updateTLMConnectiontAnnotation(QString fromSubModel, QString toS
   QDomNodeList connectionList = mXmlDocument.elementsByTagName("Connection");
   for (int i = 0 ; i < connectionList.size() ; i++) {
     QDomElement connection = connectionList.at(i).toElement();
-    if (StringHandler::getSubStringBeforeDots(connection.attribute("From")).compare(fromSubModel) == 0
-        && StringHandler::getSubStringBeforeDots(connection.attribute("To")).compare(toSubModel) == 0) {
+    if (connection.attribute("From").compare(fromSubModel) == 0 && connection.attribute("To").compare(toSubModel) == 0) {
       QDomNodeList connectionChildren = connection.childNodes();
+      bool annotationFound = false;
       for (int j = 0 ; j < connectionChildren.size() ; j++) {
         QDomElement annotationElement = connectionChildren.at(j).toElement();
         if (annotationElement.tagName().compare("Annotation") == 0) {
+          annotationFound = true;
           annotationElement.setAttribute("Points", points);
           setPlainText(mXmlDocument.toString());
           return;
         }
+      }
+      // if we found the connection and there is no annotation with it then add the annotation element.
+      if (!annotationFound) {
+        QDomElement annotationElement = mXmlDocument.createElement("Annotation");
+        annotationElement.setAttribute("Points", points);
+        connection.appendChild(annotationElement);
+        setPlainText(mXmlDocument.toString());
       }
       break;
     }
@@ -406,8 +414,8 @@ bool TLMEditor::deleteConnection(QString startSubModelName, QString endSubModelN
   QDomNodeList connectionList = mXmlDocument.elementsByTagName("Connection");
   for (int i = 0 ; i < connectionList.size() ; i++) {
     QDomElement connection = connectionList.at(i).toElement();
-    QString startName = StringHandler::getSubStringBeforeDots(connection.attribute("From"));
-    QString endName = StringHandler::getSubStringBeforeDots(connection.attribute("To"));
+    QString startName = connection.attribute("From");
+    QString endName = connection.attribute("To");
     if (startName.compare(startSubModelName) == 0 && endName.compare(endSubModelName) == 0 ) {
       QDomElement connections = getConnectionsElement();
       if (!connections.isNull()) {

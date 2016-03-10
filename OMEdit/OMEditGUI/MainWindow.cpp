@@ -1467,9 +1467,7 @@ void MainWindow::undo()
        (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
     pModelWidget->clearSelection();
     pModelWidget->getUndoStack()->undo();
-    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-      pModelWidget->updateClassAnnotationIfNeeded();
-    }
+    pModelWidget->updateClassAnnotationIfNeeded();
     pModelWidget->updateModelText();
   }
 }
@@ -1486,9 +1484,7 @@ void MainWindow::redo()
        (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
     pModelWidget->clearSelection();
     pModelWidget->getUndoStack()->redo();
-    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-      pModelWidget->updateClassAnnotationIfNeeded();
-    }
+    pModelWidget->updateClassAnnotationIfNeeded();
     pModelWidget->updateModelText();
   }
 }

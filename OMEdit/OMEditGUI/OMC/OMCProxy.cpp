@@ -1648,18 +1648,20 @@ QString OMCProxy::diffModelicaFileListings(QString before, QString after)
 }
 
 /*!
-  Adds annotation to the class.
-  \param className - the name of the class.
-  \param annotation - the annotaiton to set for the class.
-  \return true on success.
-  */
+ * \brief OMCProxy::addClassAnnotation
+ * Adds annotation to the class.
+ * \param className - the name of the class.
+ * \param annotation - the annotaiton to set for the class.
+ * \return true on success.
+ */
 bool OMCProxy::addClassAnnotation(QString className, QString annotation)
 {
   sendCommand("addClassAnnotation(" + className + ", " + annotation + ")");
-  if (StringHandler::unparseBool(getResult()))
+  if (StringHandler::unparseBool(getResult())) {
     return true;
-  else
+  } else {
     return false;
+  }
 }
 
 /*!

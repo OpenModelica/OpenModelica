@@ -113,7 +113,6 @@ public:
   static QString removeFirstLastCurlBrackets(QString value);
   static QString removeFirstLastBrackets(QString value);
   static QString removeFirstLastQuotes(QString value);
-  static QString getSubStringBeforeDots(QString value);
   static QStringList getStrings(QString value);
   static QStringList getStrings(QString value, char start, char end);
   /* Handles quoted identifiers A.B.'C.D' -> A.B, A.B.C.D -> A.B.C */

@@ -2953,13 +2953,15 @@ void ModelWidget::clearSelection()
  */
 void ModelWidget::updateClassAnnotationIfNeeded()
 {
-  if (mpIconGraphicsView && mpIconGraphicsView->isAddClassAnnotationNeeded()) {
-    mpIconGraphicsView->addClassAnnotation();
-    mpIconGraphicsView->setAddClassAnnotationNeeded(false);
-  }
-  if (mpDiagramGraphicsView && mpDiagramGraphicsView->isAddClassAnnotationNeeded()) {
-    mpDiagramGraphicsView->addClassAnnotation();
-    mpDiagramGraphicsView->setAddClassAnnotationNeeded(false);
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (mpIconGraphicsView && mpIconGraphicsView->isAddClassAnnotationNeeded()) {
+      mpIconGraphicsView->addClassAnnotation();
+      mpIconGraphicsView->setAddClassAnnotationNeeded(false);
+    }
+    if (mpDiagramGraphicsView && mpDiagramGraphicsView->isAddClassAnnotationNeeded()) {
+      mpDiagramGraphicsView->addClassAnnotation();
+      mpDiagramGraphicsView->setAddClassAnnotationNeeded(false);
+    }
   }
 }
 
@@ -3399,7 +3401,6 @@ void ModelWidget::getModelConnections()
     // get start and end components
     QStringList startComponentList = connectionList.at(0).split(".");
     QStringList endComponentList = connectionList.at(1).split(".");
-    QString errorMessage = tr("Unable to find component %1 while parsing connection %2.");
     // get start component
     Component *pStartComponent = 0;
     if (startComponentList.size() > 0) {
@@ -3432,7 +3433,8 @@ void ModelWidget::getModelConnections()
     // show error message if start component is not found.
     if (!pStartConnectorComponent) {
       pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                                  errorMessage.arg(connectionList.at(0)).arg(connectionString),
+                                                                  GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT)
+                                                                  .arg(connectionList.at(0)).arg(connectionString),
                                                                   Helper::scriptingKind, Helper::errorLevel));
       continue;
     }
@@ -3465,7 +3467,8 @@ void ModelWidget::getModelConnections()
     // show error message if end component is not found.
     if (!pEndConnectorComponent) {
       pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                                  errorMessage.arg(connectionList.at(1)).arg(connectionString),
+                                                                  GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT)
+                                                                  .arg(connectionList.at(1)).arg(connectionString),
                                                                   Helper::scriptingKind, Helper::errorLevel));
       continue;
     }
@@ -3535,53 +3538,72 @@ void ModelWidget::getTLMComponents()
   }
 }
 
+/*!
+ * \brief ModelWidget::getTLMConnections
+ * Reads the metamodel connections and draws them.
+ */
 void ModelWidget::getTLMConnections()
 {
+  MessagesWidget *pMessagesWidget = mpModelWidgetContainer->getMainWindow()->getMessagesWidget();
   TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
   QDomNodeList connections = pTLMEditor->getConnections();
   for (int i = 0; i < connections.size(); i++) {
     QDomElement connection = connections.at(i).toElement();
+    // get start component
+    QString startComponentName = StringHandler::getFirstWordBeforeDot(connection.attribute("From"));
+    Component *pStartComponent = mpDiagramGraphicsView->getComponentObject(startComponentName);
+    if (!pStartComponent) {
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT).arg(startComponentName)
+                                                 .arg(connection.attribute("From")), Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+    // get end component
+    QString endComponentName = StringHandler::getFirstWordBeforeDot(connection.attribute("To"));
+    Component *pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentName);
+    if (!pEndComponent) {
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT).arg(endComponentName)
+                                                 .arg(connection.attribute("To")), Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+    // defaul connection annotation
+    QString annotation = QString("{Line(true,{0.0,0.0},0,%1,{0,0,0},LinePattern.Solid,0.25,{Arrow.None,Arrow.None},3,Smooth.None)}");
+    QStringList shapesList;
+    bool annotationFound = false;
+    // check if connection has annotaitons defined
     QDomNodeList connectionChildren = connection.childNodes();
     for (int j = 0 ; j < connectionChildren.size() ; j++) {
       QDomElement annotationElement = connectionChildren.at(j).toElement();
       if (annotationElement.tagName().compare("Annotation") == 0) {
-        // get start component
-        Component *pStartComponent = 0;
-        pStartComponent = mpDiagramGraphicsView->getComponentObject(StringHandler::getSubStringBeforeDots(connection.attribute("From")));
-        // get end component
-        Component *pEndComponent = 0;
-        pEndComponent = mpDiagramGraphicsView->getComponentObject(StringHandler::getSubStringBeforeDots(connection.attribute("To")));
-        // get start and end connectors
-        Component *pStartConnectorComponent = 0;
-        Component *pEndConnectorComponent = 0;
-        if (pStartComponent)
-          pStartConnectorComponent = pStartComponent;
-         if (pEndComponent)
-           pEndConnectorComponent = pEndComponent;
-         // get the connector annotations
-         QString connectionAnnotationString;
-         connectionAnnotationString.append("{Line(true, {0.0, 0.0}, 0, ").append(annotationElement.attribute("Points"));
-         connectionAnnotationString.append(", {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}");
-         QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
-         // Now parse the shapes available in list
-         foreach (QString shape, shapesList) {
-           if (shape.startsWith("Line")) {
-             shape = shape.mid(QString("Line").length());
-             shape = StringHandler::removeFirstLastBrackets(shape);
-             LineAnnotation *pConnectionLineAnnotation;
-             pConnectionLineAnnotation = new LineAnnotation(shape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
-             if (pStartConnectorComponent)
-               pStartConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-             pConnectionLineAnnotation->setStartComponentName(StringHandler::getSubStringBeforeDots(connection.attribute("From")));
-             if (pEndConnectorComponent)
-               pEndConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-             pConnectionLineAnnotation->setEndComponentName(StringHandler::getSubStringBeforeDots(connection.attribute("To")));
-             pConnectionLineAnnotation->addPoint(QPointF(0, 0));
-             pConnectionLineAnnotation->drawCornerItems();
-             pConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-             mpDiagramGraphicsView->addConnectionToList(pConnectionLineAnnotation);
-          }
-        }
+        annotationFound = true;
+        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(annotationElement.attribute("Points"))), '(', ')');
+      }
+    }
+    if (!annotationFound) {
+      QString point = QString("{%1,%2}");
+      QStringList points;
+      QPointF startPoint = pStartComponent->mapToScene(pStartComponent->boundingRect().center());
+      points.append(point.arg(startPoint.x()).arg(startPoint.y()));
+      QPointF endPoint = pEndComponent->mapToScene(pEndComponent->boundingRect().center());
+      points.append(point.arg(endPoint.x()).arg(endPoint.y()));
+      QString pointsString = QString("{%1}").arg(points.join(","));
+      shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)), '(', ')');
+    }
+    // Now parse the shapes available in list
+    foreach (QString shape, shapesList) {
+      if (shape.startsWith("Line")) {
+        shape = shape.mid(QString("Line").length());
+        shape = StringHandler::removeFirstLastBrackets(shape);
+        LineAnnotation *pConnectionLineAnnotation;
+        pConnectionLineAnnotation = new LineAnnotation(shape, pStartComponent, pEndComponent, mpDiagramGraphicsView);
+        pStartComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+        pConnectionLineAnnotation->setStartComponentName(connection.attribute("From"));
+        pEndComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+        pConnectionLineAnnotation->setEndComponentName(connection.attribute("To"));
+        pConnectionLineAnnotation->drawCornerItems();
+        pConnectionLineAnnotation->setCornerItemsActiveOrPassive();
+        mpDiagramGraphicsView->addConnectionToList(pConnectionLineAnnotation);
       }
     }
   }

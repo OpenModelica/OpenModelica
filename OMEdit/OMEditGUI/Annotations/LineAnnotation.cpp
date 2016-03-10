@@ -713,8 +713,7 @@ void LineAnnotation::updateConnectionAnnotation()
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     pTLMEditor->updateTLMConnectiontAnnotation(getStartComponentName(), getEndComponentName(), getTLMShapeAnnotation());
-
-   } else {
+  } else {
     // get the connection line annotation.
     QString annotationString = QString("annotate=").append(getShapeAnnotation());
     // update the connection

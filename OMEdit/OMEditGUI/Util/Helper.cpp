@@ -607,6 +607,8 @@ QString GUIMessages::getMessage(int type)
       return tr("TLM co-simulation session is already running. Only one session is allowed.");
     case TERMINAL_COMMAND_NOT_SET:
       return tr("Terminal command is not set. You can define a new terminal command in <b>%1->General->Terminal Command</b>.");
+    case UNABLE_FIND_COMPONENT:
+      return tr("Unable to find component %1 while parsing connection %2.");
     default:
       return "";
   }

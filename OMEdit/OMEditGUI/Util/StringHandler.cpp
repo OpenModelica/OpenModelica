@@ -732,23 +732,6 @@ QString StringHandler::removeFirstLastQuotes(QString value)
   return value;
 }
 
-/*!
- * \brief StringHandler::getSubStringBeforeDots
- * Returns the first word from a string.
- * \param value -  is the string which is parsed.
- * \return
- */
-QString StringHandler::getSubStringBeforeDots(QString value)
-{
-  if (value.isEmpty())
-  {
-    return "";
-  }
-  value = value.trimmed();
-  QStringList list = value.split(".", QString::SkipEmptyParts);
-  return list.at(0);
-}
-
 QStringList StringHandler::getStrings(QString value)
 {
   return getStrings(value, '{', '}');
