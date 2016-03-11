@@ -380,6 +380,8 @@ private:
   bool saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem);
   bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveAsMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   bool saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
 public slots:
   void searchClasses();

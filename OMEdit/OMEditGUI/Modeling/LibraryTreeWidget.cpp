@@ -2407,6 +2407,9 @@ void LibraryTreeView::showContextMenu(QPoint point)
         menu.addAction(mpUnloadMetaModelFileAction);
         break;
       case LibraryTreeItem::MetaModel:
+//        menu.addAction(mpSaveAction);
+//        menu.addAction(mpSaveAsAction);
+        menu.addSeparator();
         menu.addAction(mpFetchInterfaceDataAction);
         menu.addAction(mpTLMCoSimulationAction);
         menu.addSeparator();
@@ -3143,9 +3146,7 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
       DuplicateClassDialog *pDuplicateClassDialog = new DuplicateClassDialog(true, pLibraryTreeItem, mpMainWindow);
       pDuplicateClassDialog->exec();
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
-      saveMetaModelLibraryTreeItem(pLibraryTreeItem);
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
-      saveMetaModelLibraryTreeItem(pLibraryTreeItem);
+      saveAsMetaModelLibraryTreeItem(pLibraryTreeItem);
     } else {
       QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
                                .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
@@ -3510,17 +3511,39 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  */
 bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
-  QString fileName;
   if (pLibraryTreeItem->getFileName().isEmpty()) {
-    QString name = pLibraryTreeItem->getName();
-    fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
-                                              Helper::xmlFileTypes, NULL, "xml", &name);
-    if (fileName.isEmpty())   // if user press ESC
-      return false;
+      return saveAsMetaModelLibraryTreeItem(pLibraryTreeItem);
   } else {
-    fileName = pLibraryTreeItem->getFileName();
+     return saveMetaModelLibraryTreeItem(pLibraryTreeItem, pLibraryTreeItem->getFileName());
   }
+}
 
+/*!
+ * \brief LibraryWidget::saveAsMetaModelLibraryTreeItem
+ * Save as a MetaModel LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \return
+ */
+bool LibraryWidget::saveAsMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+{
+  QString fileName;
+  QString name = pLibraryTreeItem->getName();
+  fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
+                                            Helper::xmlFileTypes, NULL, "xml", &name);
+  if (fileName.isEmpty())   // if user press ESC
+    return false;
+
+  return saveMetaModelLibraryTreeItem(pLibraryTreeItem, fileName);
+}
+
+/*!
+ * \brief LibraryWidget::saveMetaModelLibraryTreeItem
+ * Saves a MetaModel LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \return
+ */
+bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName)
+{
   QFile file(fileName);
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream textStream(&file);
@@ -3569,6 +3592,7 @@ bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeIt
   getMainWindow()->addRecentFile(pLibraryTreeItem->getFileName(), Helper::utf8);
   return true;
 }
+
 
 /*!
  * \brief LibraryWidget::saveTotalLibraryTreeItemHelper
