@@ -2407,9 +2407,6 @@ void LibraryTreeView::showContextMenu(QPoint point)
         menu.addAction(mpUnloadMetaModelFileAction);
         break;
       case LibraryTreeItem::MetaModel:
-        menu.addAction(mpSaveAction);
-        menu.addAction(mpSaveAsAction);
-        menu.addSeparator();
         menu.addAction(mpFetchInterfaceDataAction);
         menu.addAction(mpTLMCoSimulationAction);
         menu.addSeparator();
