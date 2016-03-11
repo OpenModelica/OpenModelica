@@ -588,9 +588,9 @@ algorithm
 end profileFunctions;
 
 public function dynamicTearing
-  output Boolean outBoolean;
+  output String outString;
 algorithm
-  outBoolean := Flags.getConfigBool(Flags.DYNAMIC_TEARING);
+  outString := Flags.getConfigString(Flags.DYNAMIC_TEARING);
 end dynamicTearing;
 
 annotation(__OpenModelica_Interface="util");

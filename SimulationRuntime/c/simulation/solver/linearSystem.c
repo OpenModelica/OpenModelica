@@ -219,8 +219,8 @@ void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
                                (int)linsys[sysNumber].equationIndex, (int)linsys[sysNumber].size, (int)linsys[sysNumber].nnz,
                                (((double) linsys[sysNumber].nnz) / ((double)(linsys[sysNumber].size*linsys[sysNumber].size)))*100 );
   infoStreamPrint(logLevel, 0, " number of calls                : %ld", linsys[sysNumber].numberOfCall);
-  infoStreamPrint(logLevel, 0, " average time per call          : %f", linsys[sysNumber].totalTime/linsys[sysNumber].numberOfCall);
-  infoStreamPrint(logLevel, 0, " total time                     : %f", linsys[sysNumber].totalTime);
+  infoStreamPrint(logLevel, 0, " average time per call          : %g", linsys[sysNumber].totalTime/linsys[sysNumber].numberOfCall);
+  infoStreamPrint(logLevel, 0, " total time                     : %g", linsys[sysNumber].totalTime);
   messageClose(logLevel);
 }
 
@@ -313,6 +313,10 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
   struct dataLapackAndTotalPivot *defaultSolverData;
 
   rt_ext_tp_tick(&(linsys->totalTimeClock));
+
+  /* enable to avoid division by zero */
+  data->simulationInfo->noThrowDivZero = 1;
+
   switch(data->simulationInfo->lsMethod)
   {
   case LS_LAPACK:
@@ -330,6 +334,11 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
     break;
   case LS_UMFPACK:
     success = solveUmfPack(data, threadData, sysNumber);
+    if (!success && linsys->strictTearingFunctionCall != NULL){
+      debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
+      success = linsys->strictTearingFunctionCall(data, threadData);
+      if (success) success=2;
+    }
     break;
 #else
   case LS_UMFPACK:
@@ -346,6 +355,21 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
     linsys->solverData = defaultSolverData->lapackData;
 
     success = solveLapack(data, threadData, sysNumber);
+
+    /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
+    if (!success && linsys->strictTearingFunctionCall != NULL){
+      debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
+      success = linsys->strictTearingFunctionCall(data, threadData);
+      if (success){
+        success=2;
+        linsys->failed = 0;
+      }
+      else{
+        linsys->failed = 1;
+      }
+    }
+    else{
+    /* if there is no alternative tearing set, use fallback solver */
     if (!success){
       if (linsys->failed){
         logLevel = LOG_LS;
@@ -358,6 +382,7 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
       linsys->failed = 1;
     }else{
       linsys->failed = 0;
+    }
     }
     linsys->solverData = defaultSolverData;
     break;
@@ -404,7 +429,7 @@ int check_linear_solutions(DATA *data, int printFailingSystems)
   return 0;
 }
 
-/*! \fn check_linear_solutions
+/*! \fn check_linear_solution
  *   This function check whether some of linear systems
  *   are failed to solve. If one is failed it returns 1 otherwise 0.
  *
@@ -455,6 +480,12 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
 
     TRACE_POP
     return 1;
+  }
+
+  if(linsys[i].solved == 2)
+  {
+    linsys[i].solved = 1;
+    return 2;
   }
 
   TRACE_POP

@@ -626,7 +626,9 @@ public
 uniontype Solvability
   record SOLVABILITY_SOLVED "Equation is already solved for the variable" end SOLVABILITY_SOLVED;
   record SOLVABILITY_CONSTONE "Coefficient is equal 1 or -1" end SOLVABILITY_CONSTONE;
-  record SOLVABILITY_CONST "Coefficient is constant" end SOLVABILITY_CONST;
+  record SOLVABILITY_CONST "Coefficient is constant"
+    Boolean b "false if the constant is almost zero (<1e-6)";
+  end SOLVABILITY_CONST;
   record SOLVABILITY_PARAMETER "Coefficient contains parameters"
     Boolean b "false if the partial derivative is zero";
   end SOLVABILITY_PARAMETER;

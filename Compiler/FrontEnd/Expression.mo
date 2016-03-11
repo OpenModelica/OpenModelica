@@ -7426,6 +7426,42 @@ algorithm
   end match;
 end isZero;
 
+
+public function isZeroOrAlmostZero
+"Returns true if an expression is constant
+  and zero or near to zero, otherwise false"
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inExp)
+    local
+      Integer ival;
+      Real rval;
+      Type t;
+      DAE.Exp e,e1;
+      list<DAE.Exp> ae;
+      list<list<DAE.Exp>> matrix;
+
+    case (DAE.ICONST(integer = ival)) then intEq(ival,0);
+    case (DAE.RCONST(real = rval)) then realLt(abs(rval),1e-15);
+    case (DAE.CAST(exp = e)) then isZeroOrAlmostZero(e);
+
+    case(DAE.UNARY(DAE.UMINUS(_),e)) then isZeroOrAlmostZero(e);
+    case(DAE.ARRAY(array = ae)) then List.mapAllValueBool(ae,isZeroOrAlmostZero,true);
+
+    case (DAE.MATRIX(matrix = matrix))
+      then List.mapListAllValueBool(matrix,isZeroOrAlmostZero,true);
+
+    case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then isZeroOrAlmostZero(e);
+
+    case(DAE.IFEXP(_,e,e1)) then (isZeroOrAlmostZero(e) or isZeroOrAlmostZero(e1));
+
+    else false;
+
+  end match;
+end isZeroOrAlmostZero;
+
+
 public function isPositiveOrZero
   "Returns true if an expression is known to be >= 0"
   input DAE.Exp inExp;

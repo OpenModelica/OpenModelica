@@ -4398,13 +4398,13 @@ algorithm
     local
       Integer r,rabs;
       list<Integer> rest;
-      DAE.Exp de,detmp, e;
+      DAE.Exp de,detmp, e, e_derAlias;
       DAE.ComponentRef cr,cr1,crarr;
       BackendDAE.Solvability solvab;
       list<DAE.ComponentRef> crlst;
       Absyn.Path path,path1;
       list<DAE.Exp> explst,crexplst, explst2;
-      Boolean b,solved;
+      Boolean b,solved,derived;
     case({},_,_,_,_,_,_,_) then inRow;
 /*    case(r::rest,_,_,_,_,_,_,_)
       equation
@@ -4414,11 +4414,11 @@ algorithm
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_UNSOLVABLE())::inRow,trytosolve);
 */    case(r::rest,DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr)}),_,_,_,_,_,_)
       equation
-        rabs = intAbs(r);
+        true = intGt(r,0);
         // if not negatet rowmark then
-        false = intEq(rowmark[rabs],-mark);
+        false = intEq(rowmark[r],-mark);
         // solved?
-        BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE()) = BackendVariable.getVarAt(vars, rabs);
+        BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE()) = BackendVariable.getVarAt(vars, r);
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
         false = Expression.expHasDerCref(e2,cr);
       then
@@ -4610,6 +4610,7 @@ algorithm
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow,trytosolve);
     case(r::rest,_,_,_,_,_,_,_)
+      // case: state derivative
       equation
         // if not negatet rowmark then linear or nonlinear
         true = intGt(r,0);
@@ -4619,13 +4620,21 @@ algorithm
         cr1 = ComponentReference.crefPrefixDer(cr);
         e = Expression.crefExp(cr);
         ((e,_)) = Expression.replaceExp(Expression.expSub(e1,e2), DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), Expression.crefExp(cr1));
-        (de,solved) = tryToSolveOrDerive(e, cr1, NONE(),trytosolve);
-        if solved then
-          solvab = BackendDAE.SOLVABILITY_SOLVABLE();
-        else
+        e_derAlias = Expression.traverseExpDummy(e, replaceDerCall);
+        (de,solved,derived) = tryToSolveOrDerive(e_derAlias, cr1, NONE(),trytosolve);
+        if not solved then
           (de,_) = ExpressionSimplify.simplify(de);
           (_,crlst) = Expression.traverseExpBottomUp(de, Expression.traversingComponentRefFinder, {});
           solvab = adjacencyRowEnhanced2(cr1,de,crlst,vars,kvars);
+        else
+          if derived then
+            (de,_) = ExpressionSimplify.simplify(de);
+            (_,crlst) = Expression.traverseExpBottomUp(de, Expression.traversingComponentRefFinder, {});
+            solvab = adjacencyRowEnhanced2(cr1,de,crlst,vars,kvars);
+            solvab = transformSolvabilityForCasualTearingSet(solvab);
+          else
+            solvab = BackendDAE.SOLVABILITY_SOLVABLE();
+          end if;
         end if;
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,solvab)::inRow,trytosolve);
@@ -4637,13 +4646,22 @@ algorithm
         // de/dvar
         BackendDAE.VAR(varName=cr) = BackendVariable.getVarAt(vars, rabs);
         e = Expression.expSub(e1,e2);
-        (de,solved) = tryToSolveOrDerive(e, cr, NONE(),trytosolve);
-        if solved then
-          solvab = BackendDAE.SOLVABILITY_SOLVABLE();
-        else
+        e_derAlias = Expression.traverseExpDummy(e, replaceDerCall);
+        (de,solved,derived) = tryToSolveOrDerive(e_derAlias, cr, NONE(),trytosolve);
+        if not solved then
           (de,_) = ExpressionSimplify.simplify(de);
           (_,crlst) = Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
           solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,kvars);
+        else
+          if derived then
+            (de,_) = ExpressionSimplify.simplify(de);
+            (_,crlst) = Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
+            solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,kvars);
+             // print("\nvorher:\n" + BackendDump.dumpSolvability(solvab) + "\n");
+            solvab = transformSolvabilityForCasualTearingSet(solvab);
+          else
+            solvab = BackendDAE.SOLVABILITY_SOLVABLE();
+          end if;
         end if;
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,solvab)::inRow,trytosolve);
@@ -4654,44 +4672,89 @@ algorithm
 end adjacencyRowEnhanced1;
 
 
+protected function replaceDerCall "
+  replaces der-calls in expression with alias-variable"
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+algorithm
+  (outExp) := matchcontinue (inExp)
+    local
+      DAE.ComponentRef cr;
+      DAE.Type ty;
+      String str;
+      BackendDAE.Var v;
+      list<DAE.Exp> expLst;
+
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=ty)}))
+      equation
+        v = BackendVariable.createAliasDerVar(cr);
+        cr = BackendVariable.varCref(v);
+        outExp = DAE.CREF(cr,ty);
+     then (outExp);
+
+    case (DAE.CALL(path=Absyn.IDENT(name="der")))
+      equation
+        str = "BackendDAEUtil.replaceDerCall failed for: " + ExpressionDump.printExpStr(inExp) + "\n";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+     then fail();
+
+    else (inExp);
+  end matchcontinue;
+end replaceDerCall;
+
+
 protected function tryToSolveOrDerive
   input DAE.Exp e;
   input DAE.ComponentRef cr "x";
   input Option<DAE.FunctionTree> functions;
   input Boolean trytosolve1 "if true, try to solve the expression for the variable, even if flag 'advanceTearing' is not set";
   output DAE.Exp f;
-  output Boolean solved "true if equation is solved for the variable with ExpressionSolve.solve2, false if equation is differentiated";
+  output Boolean solved=false "true if equation is solved for the variable with ExpressionSolve.solve2, false if equation is differentiated";
+  output Boolean derived=false;
 protected
   DAE.Type tp = Expression.typeof(e);
   Boolean trytosolve2 = Flags.isSet(Flags.ADVANCE_TEARING);
+  DAE.Exp one;
 algorithm
-  (f,solved) := matchcontinue(trytosolve1,trytosolve2)
-    case (_,_)
-      equation
-        true = trytosolve1 or trytosolve2;
-        // try to solve for x (1*x = f(y))
-        _ = ExpressionSolve.solve2(e, Expression.makeConstZero(tp),Expression.crefExp(cr), functions, SOME(-1));
-     then (Expression.makeConstOne(tp),true);
-    else
-    equation
-      f = Differentiate.differentiateExpSolve(e, cr, functions);
-      f = match(f)
-          local DAE.Exp one;
-          /* der(f(x)) = c/y => c*x = y*lhs */
-          case DAE.BINARY(one,DAE.DIV(), DAE.CREF()) /*Note: 1/x => ln(x) => Expression.solve will solve it */
-          guard Expression.isConst(one) and not Expression.isZero(one)
-          then one;
-          else f;
-          end match;
-   then (f,false);
-  end matchcontinue;
-  if Expression.isZero(f) then
-  // see. https://trac.openmodelica.org/OpenModelica/ticket/3742#comment:12
-  // ExpressionSolve will fail for f == 0 --> internal loops inside tearing
-    fail();
+  if trytosolve1 or trytosolve2 then
+    try // try to solve for x (1*x = f(y))
+      _ := ExpressionSolve.solve2(e, Expression.makeConstZero(tp),Expression.crefExp(cr), functions, SOME(-1));
+      solved := true;
+    else end try;
   end if;
-  //print("\ntryToSolveOrDerive=>" +ExpressionDump.printExpStr( Expression.crefExp(cr)) + "\nIN: " + ExpressionDump.printExpStr(e) + "\nOUT: " + ExpressionDump.printExpStr(f));
+  try
+  f := Differentiate.differentiateExpSolve(e, cr, functions);
+  f := match(f)
+        /* der(f(x)) = c/y => c*x = y*lhs */
+        case DAE.BINARY(one,DAE.DIV(), DAE.CREF()) /*Note: 1/x => ln(x) => Expression.solve will solve it */
+          guard Expression.isConst(one) and not Expression.isZero(one)
+        then one;
+        else f;
+      end match;
+   derived := true;
+   else
+      f := Expression.makeConstOne(tp);
+   end try;
+   if Expression.isZero(f) then
+    // see https://trac.openmodelica.org/OpenModelica/ticket/3742#comment:12
+    // ExpressionSolve will fail for f == 0 --> internal loops inside tearing
+    fail();
+   end if;
+   true := solved or derived;
 end tryToSolveOrDerive;
+
+
+protected function transformSolvabilityForCasualTearingSet
+  input BackendDAE.Solvability inSolvab;
+  output BackendDAE.Solvability outSolvab;
+algorithm
+  outSolvab := match(inSolvab)
+    case BackendDAE.SOLVABILITY_CONST(b=false) then BackendDAE.SOLVABILITY_CONST(false);
+    case BackendDAE.SOLVABILITY_PARAMETER(b=false) then BackendDAE.SOLVABILITY_PARAMETER(false);
+    case BackendDAE.SOLVABILITY_LINEAR(b=false) then BackendDAE.SOLVABILITY_LINEAR(false);
+    else then BackendDAE.SOLVABILITY_SOLVABLE();
+  end match;
+end transformSolvabilityForCasualTearingSet;
 
 
 protected function expCrefLstHasCref
@@ -4733,9 +4796,10 @@ algorithm
       Boolean b,b1,b2;
     case(_,_,{},_,_)
       equation
-        b = Expression.isConstOne(e) or Expression.isConstMinusOne(e);
+        b1 = Expression.isZeroOrAlmostZero(e);
+        b2 = Expression.isConstOne(e) or Expression.isConstMinusOne(e);
       then
-        if b then BackendDAE.SOLVABILITY_CONSTONE() else BackendDAE.SOLVABILITY_CONST();
+        if b2 then BackendDAE.SOLVABILITY_CONSTONE() else BackendDAE.SOLVABILITY_CONST(not b1);
     case(_,_,_,_,_)
       equation
         true = List.isMemberOnTrue(cr,crlst,ComponentReference.crefEqualNoStringCompare);
@@ -4771,25 +4835,25 @@ algorithm
       equation
         (e1,_) = Expression.traverseExpBottomUp(e, replaceVartraverser, kvars);
         (e1,_) = ExpressionSimplify.simplify(e1);
-        b = not Expression.isZero(e1);
+        b = not Expression.isZeroOrAlmostZero(e1);
       then
        BackendDAE.SOLVABILITY_LINEAR(b);
     case(false,_,_,_,_,_,_)
       equation
-        b = not Expression.isZero(e);
+        b = not Expression.isZeroOrAlmostZero(e);
       then
         BackendDAE.SOLVABILITY_LINEAR(b);
     case(true,_,_,_,_,_,_)
       equation
         (e1,_) = Expression.traverseExpBottomUp(e, replaceVartraverser, kvars);
         (e1,_) = ExpressionSimplify.simplify(e1);
-        b = not Expression.isZero(e1);
+        b = not Expression.isZeroOrAlmostZero(e1);
         b_1 = Expression.isConst(e1);
       then
        if b_1 then BackendDAE.SOLVABILITY_PARAMETER(b) else BackendDAE.SOLVABILITY_LINEAR(b);
     case(_,_,_,_,_,_,_)
       equation
-        b = not Expression.isZero(e);
+        b = not Expression.isZeroOrAlmostZero(e);
       then
         BackendDAE.SOLVABILITY_LINEAR(b);
 /*    case(_,_,_,_,_,_,_)

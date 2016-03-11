@@ -862,7 +862,6 @@ static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
   if(ACTIVE_STREAM(LOG_NLS_JAC_TEST))
   {
     int n = solverData->n;
-
     /* debugMatrixDouble(LOG_NLS_JAC_TEST,"analytical jacobian:",fJac, n, n+1); */
     getNumericalJacobianHomotopy(solverData, x, solverData->debug_fJac);
     /* debugMatrixDouble(LOG_NLS_JAC_TEST,"numerical jacobian:",solverData->debug_fJac, n, n+1); */
@@ -1047,12 +1046,17 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
   for (detJac=1.0,k=0; k<n; k++) detJac *= A[indRow[k] + indCol[k]*n];
 
   debugMatrixPermutedDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res] after decomposition",A, n, m, indRow, indCol);
-  debugDouble(LOG_NLS_JAC,"Determinante = ", detJac);
+  debugDouble(LOG_NLS_JAC,"Determinant = ", detJac);
+  if (isnan(detJac)){
+    warningStreamPrint(LOG_NLS, 0, "Jacobian determinant is NaN.");
+    return -1;
+  }
+
   /* Solve even singular matrices !!! */
   for (i=n-1;i>=0; i--) {
     if (i>=*rank) {
       /* this criteria should be evaluated and may be improved in future */
-      if (fabs(A[indRow[i] + indCol[n]*n])>1e-12) {
+      if (fabs(A[indRow[i] + indCol[n]*n])>1e-6) {
         warningStreamPrint(LOG_NLS, 0, "under-determined linear system not solvable!");
         return -1;
       } else {
@@ -1716,6 +1720,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   int runHomotopy = 0;
   int skipNewton = 0;
   int numberOfFunctionEvaluationsOld = solverData->numberOfFunctionEvaluations;
+  int casualTearingSet = systemData->strictTearingFunctionCall != NULL;
 
   modelica_boolean* relationsPreBackup;
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData->nRelations*sizeof(modelica_boolean));
@@ -1826,6 +1831,11 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
 #ifndef OMC_EMCC
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
  #endif
+    if (assert && casualTearingSet)
+    {
+      giveUp = 1;
+      break;
+    }
     if (assert)
     {
       tries += 1;
@@ -1833,7 +1843,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
     else
       break;
     /* break symmetry, when varying start values */
-    /* try to find regular initial point, iff necessary */
+    /* try to find regular initial point, if necessary */
     if (tries == 1)
     {
       debugString(LOG_NLS_V, "assert handling:\t vary initial guess by +1%.");
@@ -1860,12 +1870,21 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
     if (!skipNewton){
 
       /* set x vector */
-      if(data->simulationInfo->discreteCall)
+      if(data->simulationInfo->discreteCall){
         memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
-      else
+      }
+      else{
         memcpy(systemData->nlsxExtrapolation, solverData->x, solverData->n*(sizeof(double)));
+      }
 
       newtonAlgorithm(solverData, solverData->x);
+
+      // If this is the casual tearing set (only exists for dynamic tearing), break after first try
+      if (solverData->info == -1 && casualTearingSet){
+        infoStreamPrint(LOG_NLS, 0, "### No Solution for the casual tearing set at the first try! ###");
+        break;
+      }
+
       if (solverData->info == -1){
         solverDataHybrid = (DATA_HYBRD*)(solverData->dataHybrid);
         systemData->solverData = solverDataHybrid;

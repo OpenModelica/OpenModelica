@@ -86,12 +86,18 @@ void cleanValueList(VALUES_LIST *valueList, LIST_NODE *startNode)
   VALUE* elem;
 
   int i, j;
-  next = listNextNode(startNode);
-  /* clean list from next node */
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "cleanValueList length: %d", listLen(valueList->valueList));
-  updateNodeNext(valueList->valueList, startNode, NULL);
-
-  removeNodes(valueList->valueList, next);
+  if (startNode == NULL)
+  {
+    listClear(valueList->valueList);
+  }
+  else
+  {
+    next = listNextNode(startNode);
+    /* clean list from next node */
+    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "cleanValueList length: %d", listLen(valueList->valueList));
+    updateNodeNext(valueList->valueList, startNode, NULL);
+    removeNodes(valueList->valueList, next);
+  }
 }
 
 void cleanValueListbyTime(VALUES_LIST *valueList, double time)

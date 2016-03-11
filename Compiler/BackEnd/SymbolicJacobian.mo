@@ -2412,18 +2412,57 @@ algorithm
 
       then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl, jacobian), NONE(), false, mixedSystem), shared);
 
-      // dynamic tearing
-      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), SOME(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts2, residualequations=residualequations2, otherEqnVarTpl=otherEqnVarTpl2)), linear=b, mixedSystem=mixedSystem), _, _, _)
+      // dynamic linear tearing
+      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), SOME(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts2, residualequations=residualequations2, otherEqnVarTpl=otherEqnVarTpl2)), linear=true, mixedSystem=mixedSystem), _, _, _)
         equation
-          true = (not Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) and not b) or b;
+          // generate jacobian name
+          name = "LSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
 
-          // Get Jacobian for strict tearing set
+          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+            print("*** LS-JAC *** start creating Jacobian for a strict torn linear system " + name + " of size " + intString(listLength(iterationvarsInts)) + " time: " + realString(clock()) + "\n");
+          end if;
+
+          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts, residualequations, otherEqnVarTpl);
+
+          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+            print("*** LS-JAC *** prepare all data for differentiation at time: " + realString(clock()) + "\n");
+          end if;
+
+          // generate generic jacobian backend dae
+          (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
+
+          // Get Jacobian for casual tearing set
+          // generate jacobian name
+          name = "LSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+
+          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+            print("*** LS-JAC *** start creating Jacobian for a causual torn linear system " + name + " of size " + intString(listLength(iterationvarsInts2)) + " time: " + realString(clock()) + "\n");
+          end if;
+
+          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts2, residualequations2, otherEqnVarTpl2);
+
+          //check if we are able to calc symbolic jacobian
+          otherEqnsLst = BackendEquation.equationList(oeqns);
+          reqns = BackendEquation.equationList(eqns);
+          true = checkForSymbolicJacobian(reqns, otherEqnsLst, name);
+
+          // generate generic jacobian backend dae
+          (jacobian2, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, shared, inVars, name);
+
+
+      //then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl, jacobian), NONE(), false, mixedSystem), shared);
+      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl, jacobian), SOME(BackendDAE.TEARINGSET(iterationvarsInts2, residualequations2, otherEqnVarTpl2, jacobian2)), true, mixedSystem), shared);
+
+      // dynamic non-linear tearing
+      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), SOME(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts2, residualequations=residualequations2, otherEqnVarTpl=otherEqnVarTpl2)), linear=false, mixedSystem=mixedSystem), _, _, _)
+        equation
+          true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
 
           // generate jacobian name
           name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
 
           if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-            print("*** NLS-JAC *** start creating Jacobian for a torn non-linear system " + name + " of size " + intString(listLength(iterationvarsInts)) + " time: " + realString(clock()) + "\n");
+            print("*** NLS-JAC *** start creating Jacobian for a strict torn non-linear system " + name + " of size " + intString(listLength(iterationvarsInts)) + " time: " + realString(clock()) + "\n");
           end if;
 
           (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts, residualequations, otherEqnVarTpl);
@@ -2436,16 +2475,15 @@ algorithm
           // generate generic jacobian backend dae
           (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
 
-
           // Get Jacobian for casual tearing set
           // generate jacobian name
           name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
 
           if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-            print("*** NLS-JAC *** start creating Jacobian for a torn non-linear system " + name + " of size " + intString(listLength(iterationvarsInts)) + " time: " + realString(clock()) + "\n");
+            print("*** NLS-JAC *** start creating Jacobian for a causual torn linear system " + name + " of size " + intString(listLength(iterationvarsInts2)) + " time: " + realString(clock()) + "\n");
           end if;
 
-          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts, residualequations, otherEqnVarTpl);
+          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts2, residualequations2, otherEqnVarTpl2);
 
           //check if we are able to calc symbolic jacobian
           otherEqnsLst = BackendEquation.equationList(oeqns);
@@ -2455,7 +2493,8 @@ algorithm
           // generate generic jacobian backend dae
           (jacobian2, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, shared, inVars, name);
 
-      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl, jacobian), SOME(BackendDAE.TEARINGSET(iterationvarsInts2, residualequations2, otherEqnVarTpl2, jacobian2)), b, mixedSystem), shared);
+
+      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl, jacobian), SOME(BackendDAE.TEARINGSET(iterationvarsInts2, residualequations2, otherEqnVarTpl2, jacobian2)), false, mixedSystem), shared);
 
       // do not touch linear and constant systems for now
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_CONSTANT()), _, _, _) then (comp, inShared);

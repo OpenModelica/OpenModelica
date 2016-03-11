@@ -1827,13 +1827,17 @@ end functionSetupMixedSystemsTemp;
 template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> initialEquations_lambda0, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<JacobianMatrix> jacobianMatrixes, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
+  let &tempeqns = buffer ""
+  let &tempeqns += (allEquations |> eq => match eq case eq as SES_LINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
   let initbody = functionInitialLinearSystemsTemp(initialEquations, modelNamePrefix)
   let initbody_lambda0 = functionInitialLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix)
   let parambody = functionInitialLinearSystemsTemp(parameterEquations, modelNamePrefix)
   let body = functionInitialLinearSystemsTemp(allEquations, modelNamePrefix)
   let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionInitialLinearSystemsTemp(jacobianEquations, modelNamePrefix);separator="\n\n")
   <<
-  /* funtion initialize linear systems */
+  /* function initialize linear systems */
+  <%tempeqns%>
+
   void <%symbolName(modelNamePrefix,"initialLinearSystem")%>(int nLinearSystems, LINEAR_SYSTEM_DATA* linearSystemData)
   {
     /* initial linear systems */
@@ -1867,6 +1871,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
            linearSystemData[<%ls.indexLinearSystem%>].size = <%size%>;
            linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
            linearSystemData[<%ls.indexLinearSystem%>].method = 0;
+           linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
            linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].setb = setLinearVectorb<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
@@ -1884,6 +1889,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
            linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
            linearSystemData[<%ls.indexLinearSystem%>].method = 1;
            linearSystemData[<%ls.indexLinearSystem%>].residualFunc = residualFunc<%ls.index%>;
+           linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
            linearSystemData[<%ls.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
            linearSystemData[<%ls.indexLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
            linearSystemData[<%ls.indexLinearSystem%>].jacobianIndex = <%jacIndex%>;
@@ -1911,6 +1917,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
            linearSystemData[<%ls.indexLinearSystem%>].size = <%size%>;
            linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
            linearSystemData[<%ls.indexLinearSystem%>].method = 0;
+           linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
            linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].setb = setLinearVectorb<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
@@ -1920,6 +1927,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
            linearSystemData[<%at.indexLinearSystem%>].size = <%size2%>;
            linearSystemData[<%at.indexLinearSystem%>].nnz = <%nnz2%>;
            linearSystemData[<%at.indexLinearSystem%>].method = 0;
+           linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall = <%symbolName(modelNamePrefix,"eqFunction")%>_<%ls.index%>;
            linearSystemData[<%at.indexLinearSystem%>].setA = setLinearMatrixA<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].setb = setLinearVectorb<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%at.index%>;
@@ -1942,6 +1950,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
            linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
            linearSystemData[<%ls.indexLinearSystem%>].method = 1;
            linearSystemData[<%ls.indexLinearSystem%>].residualFunc = residualFunc<%ls.index%>;
+           linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
            linearSystemData[<%ls.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
            linearSystemData[<%ls.indexLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
            linearSystemData[<%ls.indexLinearSystem%>].jacobianIndex = <%jacIndex%>;
@@ -1955,6 +1964,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
            linearSystemData[<%at.indexLinearSystem%>].nnz = <%nnz2%>;
            linearSystemData[<%at.indexLinearSystem%>].method = 1;
            linearSystemData[<%at.indexLinearSystem%>].residualFunc = residualFunc<%at.index%>;
+           linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall = <%symbolName(modelNamePrefix,"eqFunction")%>_<%ls.index%>;
            linearSystemData[<%at.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac2%>;
            linearSystemData[<%at.indexLinearSystem%>].initialAnalyticalJacobian = <%initialJac2%>;
            linearSystemData[<%at.indexLinearSystem%>].jacobianIndex = <%jacIndex2%>;
@@ -4451,6 +4461,7 @@ template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &va
   (
   let ix = equationIndex(eq) /*System.tmpTickIndex(10)*/
   let ix2 = match eq
+  case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__)))
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
     equationIndexAlternativeTearing(eq)
   else
@@ -4476,12 +4487,7 @@ template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &va
     then equationAlgorithm(e, context, &varD, &tempeqns)
   case e as SES_LINEAR(__)
     then equationLinear(e, context, &varD)
-  // no dynamic tearing
-  case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
-    let &tempeqns += (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*,threadData_t*);' ; separator = "\n")
-    equationNonlinear(e, context, &varD, modelNamePrefix)
-  // dynamic tearing
-  case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
+  case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
     let &tempeqns += (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*,threadData_t*);' ; separator = "\n")
     equationNonlinear(e, context, &varD, modelNamePrefix)
   case e as SES_WHEN(__)
@@ -4495,6 +4501,8 @@ template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &va
   else
     "NOT IMPLEMENTED EQUATION equation_"
   let x2 = match eq
+  case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
+    equationLinearAlternativeTearing(e, context, &varD)
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
     let &tempeqns2 += (at.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*,threadData_t*);' ; separator = "\n")
     equationNonlinearAlternativeTearing(e, context, &varD, modelNamePrefix)
@@ -4505,6 +4513,8 @@ template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &va
   let clockIndex_ = if intLt(clockIndex, 0) then '' else 'const int clockIndex = <%clockIndex%>;'
 
   match eq
+  // dynamic tearing
+  case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__)))
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
   let &eqs +=
   <<
@@ -4543,6 +4553,8 @@ template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &va
   <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix2%>(data, threadData);
   <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix2%>);' %>
   >>
+
+  // no dynamic tearing
   else
   let &eqs +=
   <<
@@ -4580,6 +4592,7 @@ template equationForward_(SimEqSystem eq, Context context, String modelNamePrefi
   then ""
   else
   let ix = match eq
+  case e as SES_LINEAR(alternativeTearing = SOME(LINEARSYSTEM))
   case e as SES_NONLINEAR(alternativeTearing = SOME(NONLINEARSYSTEM)) then
     equationIndexAlternativeTearing(eq)
   else
@@ -4600,6 +4613,7 @@ template equationNames_(SimEqSystem eq, Context context, String modelNamePrefixS
   then ""
   else
   let ix = match eq
+  case e as SES_LINEAR(alternativeTearing = SOME(LINEARSYSTEM))
   case e as SES_NONLINEAR(alternativeTearing = SOME(NONLINEARSYSTEM)) then
     equationIndexAlternativeTearing(eq)
   else
@@ -4709,28 +4723,59 @@ template equationLinear(SimEqSystem eq, Context context, Text &varDecls)
  "Generates a linear equation system."
 ::=
 match eq
-// no dynamic tearing
-case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing=NONE()) then
+case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) then
+  let returnval = match at case at as SOME(__) then 'return 1;' case at as NONE() then ''
+  let returnval2 = match at case at as SOME(__) then 'return 0;' case at as NONE() then ''
   <<
   /* Linear equation system */
+  int retValue;
+  if(ACTIVE_STREAM(LOG_DT))
+      {
+        infoStreamPrint(LOG_DT, 1, "Solving linear system <%ls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
+        messageClose(LOG_DT);
+      }
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex);' %>
   <%ls.vars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].x[<%i0%>] = _<%cref(name)%>(1);' ;separator="\n"%>
-  solve_linear_system(data, threadData, <%ls.indexLinearSystem%>);
-  <%ls.vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].x[<%i0%>];' ;separator="\n"%>
-  <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex);' %>
-  >>
+  retValue = solve_linear_system(data, threadData, <%ls.indexLinearSystem%>);
 
-// dynamic tearing
-case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(LINEARSYSTEM(__))) then
-  <<
-  /* Linear equation system */
-  <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex);' %>
-  <%ls.vars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].x[<%i0%>] = _<%cref(name)%>(1);' ;separator="\n"%>
-  solve_linear_system(data, threadData, <%ls.indexLinearSystem%>);
+  /* check if solution process was successful */
+  if (retValue > 0){
+    const int indexes[2] = {1,<%ls.index%>};
+    throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving linear system <%ls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_LS.", time);
+    <%returnval2%>
+  }
+  /* write solution */
   <%ls.vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].x[<%i0%>];' ;separator="\n"%>
   <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex);' %>
+  <%returnval%>
   >>
 end equationLinear;
+
+
+template equationLinearAlternativeTearing(SimEqSystem eq, Context context, Text &varDecls)
+ "Generates a linear equation system for the alternative tearing set."
+::=
+match eq
+case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
+  <<
+  /* Linear equation system */
+  int retValue;
+  if(ACTIVE_STREAM(LOG_DT))
+      {
+        infoStreamPrint(LOG_DT, 1, "Solving linear system <%at.index%> (CASUAL TEARING SET, strict: <%ls.index%>) at time = %18.10e", data->localData[0]->timeValue);
+        messageClose(LOG_DT);
+      }
+  <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);' %>
+  <%at.vars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].x[<%i0%>] = _<%cref(name)%>(1);' ;separator="\n"%>
+  retValue = solve_linear_system(data, threadData, <%at.indexLinearSystem%>);
+  /* The casual tearing set found a solution */
+  if (retValue == 0){
+    /* write solution */
+    <%at.vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].x[<%i0%>];' ;separator="\n"%>
+    <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);' %>
+  }
+  >>
+end equationLinearAlternativeTearing;
 
 
 template equationMixed(SimEqSystem eq, Context context, Text &varDecls, Text &tmp, String modelNamePrefixStr)
@@ -4801,7 +4846,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
 end equationNonlinear;
 
 template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, Text &varDecls, String modelNamePrefix)
- "Generates a non linear equation system."
+ "Generates a non linear equation system for the alternative tearing set."
 ::=
   match eq
     case eq as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
@@ -4815,7 +4860,7 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, Te
       int retValue;
       if(ACTIVE_STREAM(LOG_DT))
       {
-        infoStreamPrint(LOG_DT, 1, "Solving nonlinear system <%at.index%> (CASUAL TEARING SET) at time = %18.10e", data->localData[0]->timeValue);
+        infoStreamPrint(LOG_DT, 1, "Solving nonlinear system <%at.index%> (CASUAL TEARING SET, strict: <%nls.index%>) at time = %18.10e", data->localData[0]->timeValue);
         messageClose(LOG_DT);
       }
       <% if profileSome() then
@@ -4834,7 +4879,6 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, Te
         >>
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, threadData, <%at.indexNonLinearSystem%>);
-
       /* The casual tearing set found a solution */
       if (retValue == 0){
       /* write solution */
@@ -5407,8 +5451,6 @@ template equationInfo1(SimEqSystem eq, Text &preBuf, Text &eqnsDefines, Text &re
       let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
       let &preBuf += 'const VAR_INFO** equationInfo_crefs<%ls.index%> = (const VAR_INFO**)malloc(<%listLength(ls.vars)%>*sizeof(VAR_INFO*));<%\n%>'
       let &preBuf += '<%ls.vars|>var hasindex i0 => 'equationInfo_crefs<%ls.index%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
-      // for casual tearing set
-      // let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
       let &preBuf += 'const VAR_INFO** equationInfo_crefs<%at.index%> = (const VAR_INFO**)malloc(<%listLength(at.vars)%>*sizeof(VAR_INFO*));<%\n%>'
       let &preBuf += '<%at.vars|>var hasindex i0 => 'equationInfo_crefs<%at.index%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
       <<

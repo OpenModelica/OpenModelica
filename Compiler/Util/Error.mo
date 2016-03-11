@@ -650,7 +650,7 @@ public constant Message BACKENDDAEINFO_STRONGCOMPONENT_STATISTICS = MESSAGE(261,
 public constant Message BACKENDDAEINFO_SYSTEMS = MESSAGE(262, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Equation system details:\n * Constant Jacobian: %s\n * Linear Jacobian (size,density): %s\n * Non-linear Jacobian: %s\n * Without analytic Jacobian: %s"));
 public constant Message BACKENDDAEINFO_TORN = MESSAGE(263, SYMBOLIC(), NOTIFICATION(),
-  Util.gettext("Torn system details:\n * Linear torn systems: %s\n * Non-linear torn systems: %s"));
+  Util.gettext("Torn system details for %s tearing set:\n * Linear torn systems: %s\n * Non-linear torn systems: %s"));
 public constant Message BACKEND_DAE_TO_MODELICA = MESSAGE(264, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("The following Modelica-like model represents the back-end DAE for the '%s' stage:\n%s"));
 public constant Message NEGATIVE_DIMENSION_INDEX = MESSAGE(265, TRANSLATION(), ERROR(),

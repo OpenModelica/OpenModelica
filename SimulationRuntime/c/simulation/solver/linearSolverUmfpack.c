@@ -193,6 +193,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
   DATA_UMFPACK* solverData = (DATA_UMFPACK*)systemData->solverData;
 
   int i, j, status = UMFPACK_OK, success = 0, ni=0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
+  int casualTearingSet = systemData->strictTearingFunctionCall != NULL;
 
   infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with UMFPACK Solver",
    eqSystemNumber, (int) systemData->size,
@@ -281,7 +282,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
   if (status == UMFPACK_OK){
     success = 1;
   }
-  else if (status == UMFPACK_WARNING_singular_matrix)
+  else if ((status == UMFPACK_WARNING_singular_matrix) && (casualTearingSet==0))
   {
     if (!solveSingularSystem(systemData))
     {
@@ -292,7 +293,6 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
 
   /* print solution */
   if (1 == success){
-
     if (1 == systemData->method){
       /* take the solution */
       for(i = 0; i < solverData->n_row; ++i)

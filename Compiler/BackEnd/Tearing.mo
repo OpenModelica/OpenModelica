@@ -1465,7 +1465,7 @@ algorithm
   b := match(s)
     case BackendDAE.SOLVABILITY_SOLVED() then true;
     case BackendDAE.SOLVABILITY_CONSTONE() then true;
-    case BackendDAE.SOLVABILITY_CONST() then true;
+    case BackendDAE.SOLVABILITY_CONST(b=b) then b;
     case BackendDAE.SOLVABILITY_PARAMETER(b=b) then b;
     case BackendDAE.SOLVABILITY_LINEAR() then false;
     case BackendDAE.SOLVABILITY_NONLINEAR() then false;
@@ -1698,14 +1698,23 @@ protected
   Option<BackendDAE.TearingSet> casualTearingSet;
   list<BackendDAE.Equation> eqn_lst;
   list<BackendDAE.Var> var_lst;
-  Boolean linear,simulation,b,noDynamicStateSelection;
+  Boolean linear,simulation,b,noDynamicStateSelection,dynamicTearing;
+  String s,modelName;
 algorithm
 
+  linear := getLinearfromJacType(jacType);
   BackendDAE.EQSYSTEM(stateSets = stateSets) := isyst;
   noDynamicStateSelection := listEmpty(stateSets);
-
-  BackendDAE.SHARED(backendDAEType=DAEtype) := ishared;
+  BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
   simulation := stringEq(BackendDump.printBackendDAEType2String(DAEtype), "simulation");
+
+  // check if dynamic tearing is enabled for linear/nonlinear system
+  dynamicTearing := match (Config.dynamicTearing(),linear,noDynamicStateSelection,simulation)
+    case ("true",_,true,true) then true;
+    case ("linear",true,true,true) then true;
+    case ("nonlinear",false,true,true) then true;
+    else then false;
+  end match;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of CellierTearing\n\n");
@@ -1741,19 +1750,20 @@ algorithm
   // Get advanced adjacency matrix (determine how the variables occur in the equations)
   (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,false);
 
-  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+  // Determine unsolvable vars to consider solvability
+  unsolvables := getUnsolvableVars(1,size,meT,{});
+
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nAdjacencyMatrixEnhanced:\n");
     BackendDump.dumpAdjacencyMatrixEnhanced(me);
     print("\nAdjacencyMatrixTransposedEnhanced:\n");
     BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
+  end if;
+
+  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n\nmapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
     BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
     print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
-  end if;
-
-  // Determine unsolvable vars to consider solvability
-  unsolvables := getUnsolvableVars(1,size,meT,{});
-  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
   end if;
 
@@ -1797,7 +1807,7 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\n* TEARING RESULTS (STRICT SET):\n*\n* No of equations in strong Component: "+intString(size)+"\n");
     print("* No of tVars: "+intString(listLength(OutTVars))+"\n");
-    print("*\n* tVars: "+ stringDelimitList(List.map(OutTVars,intString),",") + "\n");
+    print("*\n* tVars: "+ stringDelimitList(List.map(listReverse(OutTVars),intString),",") + "\n");
     print("*\n* resEq: "+ stringDelimitList(List.map(residual_coll,intString),",") + "\n*\n*");
   end if;
 
@@ -1819,7 +1829,7 @@ algorithm
   // Determine casual tearing set if dynamic tearing is enabled
   // *****************************************************************
 
-  if simulation and noDynamicStateSelection and Config.dynamicTearing() then
+  if dynamicTearing then
 
     if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\n\nDetermine CASUAL TEARING SET\n" + BORDER + BORDER + "\n\n");
@@ -1835,22 +1845,21 @@ algorithm
     // Get advanced adjacency matrix (determine if the equations are solvable for the variables)
     (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,true);
 
-    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    // Determine unsolvable vars to consider solvability
+    unsolvables := getUnsolvableVars(1,size,meT,{});
+
+    if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nAdjacencyMatrixEnhanced:\n");
       BackendDump.dumpAdjacencyMatrixEnhanced(me);
       print("\nAdjacencyMatrixTransposedEnhanced:\n");
       BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
+    end if;
+
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\n\nmapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
       BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
       print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
-    end if;
-
-    // Determine unsolvable vars to consider solvability
-    unsolvables := getUnsolvableVars(1,size,meT,{});
-    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
-    end if;
-    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
     end if;
 
@@ -1884,7 +1893,7 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\n* TEARING RESULTS (CASUAL SET):\n*\n* No of equations in strong Component: "+intString(size)+"\n");
         print("* No of tVars: "+intString(listLength(OutTVars))+"\n");
-        print("*\n* tVars: "+ stringDelimitList(List.map(OutTVars,intString),",") + "\n");
+        print("*\n* tVars: "+ stringDelimitList(List.map(listReverse(OutTVars),intString),",") + "\n");
         print("*\n* resEq: "+ stringDelimitList(List.map(residual_coll,intString),",") + "\n*\n*");
       end if;
 
@@ -1894,6 +1903,8 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
          print("\n* Related to entire Equationsystem:\n* =====\n* tVars: "+ stringDelimitList(List.map(OutTVars,intString),",") + "\n* =====\n");
          print("*\n* =====\n* resEq: "+ stringDelimitList(List.map(residual,intString),",") + "\n* =====\n" + BORDER + "\n");
+         if linear then s:="Linear"; else s:="Nonlinear"; end if;
+         print("\nNote:\n=====\n" + s + " dynamic tearing for this strong component in model:\n" + modelName + "\n\n");
       end if;
 
       // assign otherEqnVarTpl:
@@ -1905,7 +1916,7 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\n* TEARING RESULTS (CASUAL SET):\n*\n* No of equations in strong Component: "+intString(size)+"\n");
         print("* No of tVars: "+intString(listLength(OutTVars))+"\n");
-        print("*\n* tVars: "+ stringDelimitList(List.map(OutTVars,intString),",") + "\n");
+        print("*\n* tVars: "+ stringDelimitList(List.map(listReverse(OutTVars),intString),",") + "\n");
         print("*\n* The casual tearing set is not smaller\n* than the strict tearing set and there-\n* fore it is discarded.\n*" + BORDER + "\n");
       end if;
 
@@ -1920,7 +1931,7 @@ algorithm
 
   else
     if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-          print("Note:\n=====\nNo dynamic Tearing for this strong component. Check if\n- flag 'dynamicTearing' is set\n- strong component contains statesets\n- system belongs to simulation\n\n");
+          print("Note:\n=====\nNo dynamic Tearing for this strong component. Check if\n- flag 'dynamicTearing' is set proper\n- strong component does not contain statesets\n- system belongs to simulation\n\n");
     end if;
     if not b and not Flags.getConfigBool(Flags.FORCE_TEARING) then
         if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -1934,7 +1945,6 @@ algorithm
   // Determine the rest of the information needed for BackendDAE.TORNSYSTEM
   // ***************************************************************************
 
-  linear := getLinearfromJacType(jacType);
   ocomp := BackendDAE.TORNSYSTEM(strictTearingSet,casualTearingSet,linear,mixedSystem);
   outRunMatching := true;
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -2099,11 +2109,14 @@ algorithm
       (order,causal) = TarjanMatching(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of TarjanMatching\n" + BORDER + "\n\n");
-      end if;
-      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\n* TARJAN RESULTS:\n* ass1: " + stringDelimitList(List.map(arrayList(ass1In),intString),",")+"\n");
         print("* ass2: "+stringDelimitList(List.map(arrayList(ass2In),intString),",")+"\n");
-        print("* order: "+stringDelimitList(List.map(order,intString),",")+"\n" + BORDER + "\n");
+        print("* order: "+stringDelimitList(List.map(order,intString),",")+"\n" + BORDER + "\n\n");
+      end if;
+      if causal and (Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE)) then
+          print("\n");
+          BackendDump.dumpMatching(ass1In);
+          print("\norder: "+stringDelimitList(List.map(order,intString),",")+"\n" + UNDERLINE + "\n\n");
       end if;
 
       // ascertain if there are new unsolvables now
@@ -2151,11 +2164,14 @@ algorithm
       (order,causal) = TarjanMatching(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of TarjanMatching\n" + BORDER + "\n\n");
-      end if;
-      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\n* TARJAN RESULTS:\n* ass1: " + stringDelimitList(List.map(arrayList(ass1In),intString),",")+"\n");
         print("* ass2: "+stringDelimitList(List.map(arrayList(ass2In),intString),",")+"\n");
-        print("* order: "+stringDelimitList(List.map(order,intString),",")+"\n" + BORDER + "\n");
+        print("* order: "+stringDelimitList(List.map(order,intString),",")+"\n" + BORDER + "\n\n");
+      end if;
+      if causal and (Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE)) then
+          print("\n");
+          BackendDump.dumpMatching(ass1In);
+          print("\norder: "+stringDelimitList(List.map(order,intString),",")+"\n" + UNDERLINE + "\n\n");
       end if;
 
       // ascertain if there are new unsolvables now
@@ -2230,7 +2246,7 @@ algorithm
 
    else
      equation
-       print("\nThe selection of a new tearing variable failed.");
+       print("\nThe selection of a new tearing variable failed.\n");
        Error.addCompilerWarning("Function Tearing.selectTearingVar failed at least once. Use +d=tearingdump or +d=tearingdumpV for more information.");
     then fail();
 
@@ -3206,7 +3222,7 @@ algorithm
     orderOut := listReverse(order);
     causal := true;
   else
-    if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nnoncausal\n");
     end if;
     orderOut := order;

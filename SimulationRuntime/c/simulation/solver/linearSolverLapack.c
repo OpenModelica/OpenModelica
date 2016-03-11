@@ -256,18 +256,24 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber)
 
     if (1 == systemData->method){
       /* take the solution */
-      solverData->x = _omc_addVectorVector(solverData->x, solverData->work, solverData->b);
+      solverData->x = _omc_addVectorVector(solverData->x, solverData->work, solverData->b); // x = xold(work) + xnew(b)
 
       /* update inner equations */
       wrapper_fvec_lapack(solverData->x, solverData->work, &iflag, dataAndThreadData, sysNumber);
       residualNorm = _omc_euclideanVectorNorm(solverData->work);
+      if ((isnan(residualNorm)) || (residualNorm>1e-4)){
+        warningStreamPrint(LOG_LS, 0,
+            "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %g.",
+            (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);
+        success = 0;
+      }
     } else {
       /* take the solution */
       _omc_copyVector(solverData->x, solverData->b);
     }
 
     if (ACTIVE_STREAM(LOG_LS_V)){
-      infoStreamPrint(LOG_LS_V, 1, "Residual Norm %f of solution x:", residualNorm);
+      infoStreamPrint(LOG_LS_V, 1, "Residual Norm %g of solution x:", residualNorm);
       infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i) {

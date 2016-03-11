@@ -415,7 +415,7 @@ constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(124, "dumpCSE_verbose", false,
   Util.gettext("Additional output for CSE module."));
 constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(125, "addDerAliases", false,
   Util.gettext("Adds for every der-call an alias equation e.g. dx = der(x). It's a work-a-round flag,
-                which helps im some cases to simulate the models e.g.
+                which helps in some cases to simulate the models e.g.
                 Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation.
                 Deprecated flag: Use --preOptModules+=introduceDerAlias instead."));
 constant DebugFlag DISABLE_COMSUBEXP = DEBUG_FLAG(126, "disableComSubExp", false,
@@ -1100,7 +1100,13 @@ constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(66, "removeSimpleEquat
     Util.gettext("Specifies method that removes simple equations."));
 
 constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(67, "dynamicTearing",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  NONE(), EXTERNAL(), STRING_FLAG("false"),
+  SOME(STRING_DESC_OPTION({
+    ("false", Util.gettext("No dynamic tearing.")),
+    ("true", Util.gettext("Dynamic tearing for linear and nonlinear systems.")),
+    ("linear", Util.gettext("Dynamic tearing only for linear systems.")),
+    ("nonlinear", Util.gettext("Dynamic tearing only for nonlinear systems."))
+  })),
   Util.gettext("Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)"));
 
 constant ConfigFlag SYM_EULER = CONFIG_FLAG(68, "symEuler",
