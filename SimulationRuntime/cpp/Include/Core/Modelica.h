@@ -50,14 +50,24 @@ namespace ublas = boost::numeric::ublas;
 
 #if !defined(USE_CPP_03) && !defined(__vxworks)
   #include <array>
-  #include <thread>
-  #include <atomic>
-  #include <mutex>
-  #include <condition_variable>
   #include <tuple>
   #include <memory>
   #include <unordered_map>
   #include <unordered_set>
+
+  #if defined(USE_THREAD)
+    #include <thread>
+    #include <atomic>
+    #include <mutex>
+    #include <condition_variable>
+    using std::thread;
+    using std::atomic;
+    using std::mutex;
+    using std::memory_order_release;
+    using std::memory_order_relaxed;
+    using std::condition_variable;
+    using std::unique_lock;
+  #endif //USE_THREAD
 
   // builtin range based for loop
   #define FOREACH(element, range) for(element : range)
@@ -81,13 +91,6 @@ namespace ublas = boost::numeric::ublas;
   }
   using std::bind;
   using std::function;
-  using std::thread;
-  using std::atomic;
-  using std::mutex;
-  using std::memory_order_release;
-  using std::memory_order_relaxed;
-  using std::condition_variable;
-  using std::unique_lock;
   using std::make_tuple;
   using std::array;
   using std::minmax_element;
@@ -139,7 +142,6 @@ namespace ublas = boost::numeric::ublas;
     using boost::memory_order_relaxed;
     using boost::condition_variable;
     using boost::unique_lock;
-    using boost::dynamic_pointer_cast;
   #endif //USE_THREAD
 
   // boost range based for loop
