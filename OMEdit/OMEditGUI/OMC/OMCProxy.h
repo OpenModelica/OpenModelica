@@ -223,6 +223,7 @@ public:
   void getInitializationMethods(QStringList *methods, QStringList *descriptions);
   void getLinearSolvers(QStringList *methods, QStringList *descriptions);
   void getNonLinearSolvers(QStringList *methods, QStringList *descriptions);
+  void getLogStreams(QStringList *names, QStringList *descriptions);
   bool moveClass(QString className, int offset);
   bool moveClassToTop(QString className);
   bool moveClassToBottom(QString className);

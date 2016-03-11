@@ -60,6 +60,7 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 
 #include "OMCProxy.h"
 #include "simulation_options.h"
+#include "omc_error.h"
 
 static QVariant parseExpression(QString result)
 {
@@ -2464,6 +2465,20 @@ void OMCProxy::getNonLinearSolvers(QStringList *methods, QStringList *descriptio
   for (int i = NLS_NONE + 1 ; i < NLS_MAX ; i++) {
     *methods << NLS_NAME[i];
     *descriptions << NLS_DESC[i];
+  }
+}
+
+/*!
+ * \brief OMCProxy::getLogStreams
+ * Returns the list of simulation logging flags name and their description.
+ * \param names
+ * \param descriptions
+ */
+void OMCProxy::getLogStreams(QStringList *names, QStringList *descriptions)
+{
+  for (int i = firstOMCErrorStream ; i < SIM_LOG_MAX ; i++) {
+    *names << LOG_STREAM_NAME[i];
+    *descriptions << LOG_STREAM_DESC[i];
   }
 }
 

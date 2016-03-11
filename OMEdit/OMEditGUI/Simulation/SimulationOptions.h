@@ -83,24 +83,7 @@ public:
     setProfiling("none");
     setCPUTime(false);
     setEnableAllWarnings(true);
-    setLogDasslSolver(false);
-    setLogDebug(false);
-    setLogDynamicStateSelection(false);
-    setLogJacobianDynamicStateSelection(false);
-    setLogEvents(false);
-    setLogVerboseEvents(false);
-    setLogInitialization(false);
-    setLogJacobian(false);
-    setLogNonLinearSystems(false);
-    setLogVerboseNonLinearSystems(false);
-    setLogJacobianNonLinearSystems(false);
-    setLogResidualsInitialization(false);
-    setLogSimulation(false);
-    setLogSolver(false);
-    setLogFinalSolutionOfInitialization(false);
-    setLogStats(true);
-    setLogUtil(false);
-    setLogZeroCrossings(false);
+    setLogStreams(QStringList());
     setAdditionalSimulationFlags("");
     setIsValid(false);
     setReSimulate(false);
@@ -185,42 +168,8 @@ public:
   bool getCPUTime() {return mCPUTime;}
   void setEnableAllWarnings(bool enableAllWarnings) {mEnableAllWarnings = enableAllWarnings;}
   bool getEnableAllWarnings() {return mEnableAllWarnings;}
-  void setLogDasslSolver(bool logDasslSolver) {mLogDasslSolver = logDasslSolver;}
-  bool getLogDasslSolver() {return mLogDasslSolver;}
-  void setLogDebug(bool logDebug) {mLogDebug = logDebug;}
-  bool getLogDebug() {return mLogDebug;}
-  void setLogDynamicStateSelection(bool logDynamicStateSelection) {mLogDynamicStateSelection = logDynamicStateSelection;}
-  bool getLogDynamicStateSelection() {return mLogDynamicStateSelection;}
-  void setLogJacobianDynamicStateSelection(bool logJacobianDynamicStateSelection) {mLogJacobianDynamicStateSelection = logJacobianDynamicStateSelection;}
-  bool getLogJacobianDynamicStateSelection() {return mLogJacobianDynamicStateSelection;}
-  void setLogEvents(bool logEvents) {mLogEvents = logEvents;}
-  bool getLogEvents() {return mLogEvents;}
-  void setLogVerboseEvents(bool logVerboseEvents) {mLogVerboseEvents = logVerboseEvents;}
-  bool getLogVerboseEvents() {return mLogVerboseEvents;}
-  void setLogInitialization(bool logInitialization) {mLogInitialization = logInitialization;}
-  bool getLogInitialization() {return mLogInitialization;}
-  void setLogJacobian(bool logJacobian) {mLogJacobian = logJacobian;}
-  bool getLogJacobian() {return mLogJacobian;}
-  void setLogNonLinearSystems(bool logNonLinearSystems) {mLogNonLinearSystems = logNonLinearSystems;}
-  bool getLogNonLinearSystems() {return mLogNonLinearSystems;}
-  void setLogVerboseNonLinearSystems(bool logVerboseNonLinearSystems) {mLogVerboseNonLinearSystems = logVerboseNonLinearSystems;}
-  bool getLogVerboseNonLinearSystems() {return mLogVerboseNonLinearSystems;}
-  void setLogJacobianNonLinearSystems(bool logJacobianNonLinearSystems) {mLogJacobianNonLinearSystems = logJacobianNonLinearSystems;}
-  bool getLogJacobianNonLinearSystems() {return mLogJacobianNonLinearSystems;}
-  void setLogResidualsInitialization(bool logResidualsInitialization) {mLogResidualsInitialization = logResidualsInitialization;}
-  bool getLogResidualsInitialization() {return mLogResidualsInitialization;}
-  void setLogSimulation(bool logSimulation) {mLogSimulation = logSimulation;}
-  bool getLogSimulation() {return mLogSimulation;}
-  void setLogSolver(bool logSolver) {mLogSolver = logSolver;}
-  bool getLogSolver() {return mLogSolver;}
-  void setLogFinalSolutionOfInitialization(bool logFinalSolutionOfInitialization) {mLogFinalSolutionOfInitialization = logFinalSolutionOfInitialization;}
-  bool getLogFinalSolutionOfInitialization() {return mLogFinalSolutionOfInitialization;}
-  void setLogStats(bool logStats) {mLogStats = logStats;}
-  bool getLogStats() {return mLogStats;}
-  void setLogUtil(bool logUtil) {mLogUtil = logUtil;}
-  bool getLogUtil() {return mLogUtil;}
-  void setLogZeroCrossings(bool logZeroCrossings) {mLogZeroCrossings = logZeroCrossings;}
-  bool getLogZeroCrossings() {return mLogZeroCrossings;}
+  void setLogStreams(QStringList logStreams) {mLogStreams = logStreams;}
+  QStringList getLogStreams() {return mLogStreams;}
   void setAdditionalSimulationFlags(QString additionalSimulationFlags) {mAdditionalSimulationFlags = additionalSimulationFlags;}
   QString getAdditionalSimulationFlags() {return mAdditionalSimulationFlags;}
 
@@ -273,24 +222,7 @@ private:
   QString mProfiling;
   bool mCPUTime;
   bool mEnableAllWarnings;
-  bool mLogDasslSolver;
-  bool mLogDebug;
-  bool mLogDynamicStateSelection;
-  bool mLogJacobianDynamicStateSelection;
-  bool mLogEvents;
-  bool mLogVerboseEvents;
-  bool mLogInitialization;
-  bool mLogJacobian;
-  bool mLogNonLinearSystems;
-  bool mLogVerboseNonLinearSystems;
-  bool mLogJacobianNonLinearSystems;
-  bool mLogResidualsInitialization;
-  bool mLogSimulation;
-  bool mLogSolver;
-  bool mLogFinalSolutionOfInitialization;
-  bool mLogStats;
-  bool mLogUtil;
-  bool mLogZeroCrossings;
+  QStringList mLogStreams;
   QString mAdditionalSimulationFlags;
 
   QStringList mSimulationFlags;

@@ -165,24 +165,7 @@ private:
   QCheckBox *mpCPUTimeCheckBox;
   QCheckBox *mpEnableAllWarningsCheckBox;
   QGroupBox *mpLoggingGroupBox;
-  QCheckBox *mpLogDasslSolverCheckBox;
-  QCheckBox *mpLogDebugCheckBox;
-  QCheckBox *mpLogDynamicStateSelectionCheckBox;
-  QCheckBox *mpLogJacobianDynamicStateSelectionCheckBox;
-  QCheckBox *mpLogEventsCheckBox;
-  QCheckBox *mpLogVerboseEventsCheckBox;
-  QCheckBox *mpLogInitializationCheckBox;
-  QCheckBox *mpLogJacobianCheckBox;
-  QCheckBox *mpLogNonLinearSystemsCheckBox;
-  QCheckBox *mpLogVerboseNonLinearSystemsCheckBox;
-  QCheckBox *mpLogJacobianNonLinearSystemsCheckBox;
-  QCheckBox *mpLogResidualsInitializationCheckBox;
-  QCheckBox *mpLogSimulationCheckBox;
-  QCheckBox *mpLogSolverCheckBox;
-  QCheckBox *mpLogFinalSolutionOfInitializationCheckBox;
-  QCheckBox *mpLogStatsCheckBox;
-  QCheckBox *mpLogUtilCheckBox;
-  QCheckBox *mpLogZeroCrossingsCheckBox;
+  QGridLayout *mpLoggingGroupLayout;
   Label *mpAdditionalSimulationFlagsLabel;
   QLineEdit *mpAdditionalSimulationFlagsTextBox;
   // Archived Simulation Flags Tab
