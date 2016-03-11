@@ -938,7 +938,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
     QString loggingFlagName, loggingFlagValues;
     loggingFlagName.append("-lv=");
     if (mpLogDasslSolverCheckBox->isChecked())
-      loggingFlagValues.append("LOG_DDASRT");
+      loggingFlagValues.append("LOG_DASSL");
     if (mpLogDebugCheckBox->isChecked())
       loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_DEBUG") : loggingFlagValues.append(",LOG_DEBUG");
     if (mpLogDynamicStateSelectionCheckBox->isChecked())
