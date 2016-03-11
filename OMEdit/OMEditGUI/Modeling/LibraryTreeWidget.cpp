@@ -3512,9 +3512,9 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   if (pLibraryTreeItem->getFileName().isEmpty()) {
-      return saveAsMetaModelLibraryTreeItem(pLibraryTreeItem);
+    return saveAsMetaModelLibraryTreeItem(pLibraryTreeItem);
   } else {
-     return saveMetaModelLibraryTreeItem(pLibraryTreeItem, pLibraryTreeItem->getFileName());
+    return saveMetaModelLibraryTreeItem(pLibraryTreeItem, pLibraryTreeItem->getFileName());
   }
 }
 
@@ -3530,9 +3530,9 @@ bool LibraryWidget::saveAsMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTree
   QString name = pLibraryTreeItem->getName();
   fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
                                             Helper::xmlFileTypes, NULL, "xml", &name);
-  if (fileName.isEmpty())   // if user press ESC
+  if (fileName.isEmpty()) {   // if user press ESC
     return false;
-
+  }
   return saveMetaModelLibraryTreeItem(pLibraryTreeItem, fileName);
 }
 
@@ -3553,11 +3553,13 @@ bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeIt
     file.close();
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
+    QString oldMetaModelFile = pLibraryTreeItem->getFileName();
     pLibraryTreeItem->setFileName(fileName);
     if (pLibraryTreeItem->getModelWidget()) {
       pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure());
       pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
     }
+    mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
     // Create folders for the submodels and copy there source file in them.
     MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
     GraphicsView *pGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
@@ -3566,30 +3568,33 @@ bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeIt
       QDomElement subModel = subModels.at(i).toElement();
       QString directoryName = subModel.attribute("Name");
       Component *pComponent = pGraphicsView->getComponentObject(directoryName);
-      if (pComponent) {
-        // create directory for submodel
-        QFileInfo fileInfo(fileName);
-        QString directoryPath = fileInfo.absoluteDir().absolutePath() + "/" + directoryName;
-        if (!QDir().exists(directoryPath)) {
-          QDir().mkpath(directoryPath);
-        }
-        // copy the submodel file to the created directory
-        QString modelFile = pComponent->getLibraryTreeItem()->getFileName();
-        QFileInfo modelFileInfo(modelFile);
-        QString newFileName = directoryPath + "/" + modelFileInfo.fileName();
-        if (modelFileInfo.absoluteFilePath().compare(newFileName) != 0) {
-          // first try to remove the file because QFile::copy will not override the file.
-          QFile::remove(newFileName);
-        }
-        QFile::copy(modelFileInfo.absoluteFilePath(), newFileName);
+      QString modelFile;
+      if (pComponent && pComponent->getLibraryTreeItem()) {
+        modelFile = pComponent->getLibraryTreeItem()->getFileName();
+      } else {
+        QFileInfo fileInfo(oldMetaModelFile);
+        modelFile = QString("%1/%2/%3").arg(fileInfo.absolutePath()).arg(directoryName).arg(subModel.attribute("ModelFile"));
       }
+      // create directory for submodel
+      QFileInfo fileInfo(fileName);
+      QString directoryPath = fileInfo.absoluteDir().absolutePath() + "/" + directoryName;
+      if (!QDir().exists(directoryPath)) {
+        QDir().mkpath(directoryPath);
+      }
+      // copy the submodel file to the created directory
+      QFileInfo modelFileInfo(modelFile);
+      QString newFileName = directoryPath + "/" + modelFileInfo.fileName();
+      if (modelFileInfo.absoluteFilePath().compare(newFileName) != 0) {
+        // first try to remove the file because QFile::copy will not override the file.
+        QFile::remove(newFileName);
+      }
+      QFile::copy(modelFileInfo.absoluteFilePath(), newFileName);
     }
   } else {
     QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
                              .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE).arg(file.errorString())), Helper::ok);
     return false;
   }
-  getMainWindow()->addRecentFile(pLibraryTreeItem->getFileName(), Helper::utf8);
   return true;
 }
 

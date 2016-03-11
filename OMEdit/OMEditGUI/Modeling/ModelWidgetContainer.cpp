@@ -3498,6 +3498,7 @@ void ModelWidget::getModelConnections()
  */
 void ModelWidget::getTLMSubModels()
 {
+  QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
   QDomNodeList subModels = pMetaModelEditor->getSubModels();
   for (int i = 0; i < subModels.size(); i++) {
@@ -3521,6 +3522,7 @@ void ModelWidget::getTLMSubModels()
     QStringList dialogAnnotation;
     // get the attibutes of the submodel
     ComponentInfo *pComponentInfo = new ComponentInfo;
+    pComponentInfo->setName(subModel.attribute("Name"));
     pComponentInfo->setStartCommand(subModel.attribute("StartCommand"));
     bool exactStep;
     if (subModel.attribute("ExactStep").toLower().compare("1") == 0) {
@@ -3532,6 +3534,15 @@ void ModelWidget::getTLMSubModels()
     }
     pComponentInfo->setExactStep(exactStep);
     pComponentInfo->setModelFile(subModel.attribute("ModelFile"));
+    QString absoluteModelFilePath = QString("%1/%2/%3").arg(fileInfo.absolutePath()).arg(subModel.attribute("Name"))
+        .arg(subModel.attribute("ModelFile"));
+    // if ModelFile doesn't exist
+    if (!QFile::exists(absoluteModelFilePath)) {
+      QString msg = tr("Unable to find ModelFile <b>%1</b> for SubModel <b>%2</b>. The file location should be <b>%3</b>.")
+          .arg(subModel.attribute("ModelFile")).arg(subModel.attribute("Name")).arg(absoluteModelFilePath);
+      MessagesWidget *pMessagesWidget = mpModelWidgetContainer->getMainWindow()->getMessagesWidget();
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel));
+    }
     // add submodel as component to view.
     mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), pLibraryTreeItem, transformation, QPointF(0.0, 0.0), dialogAnnotation,
                                               pComponentInfo, false, true);
