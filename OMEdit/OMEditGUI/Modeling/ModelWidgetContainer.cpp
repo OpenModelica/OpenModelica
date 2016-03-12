@@ -2775,6 +2775,10 @@ void ModelWidget::reDrawModelWidget()
       mDiagramViewLoaded = true;
       mConnectionsLoaded = true;
     }
+    // if documentation view is visible then update it
+    if (mpModelWidgetContainer->getMainWindow()->getDocumentationDockWidget()->isVisible()) {
+      mpModelWidgetContainer->getMainWindow()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem());
+    }
     // clear the undo stack
     mpUndoStack->clear();
     // announce the change.
@@ -3638,7 +3642,8 @@ void ModelWidget::showIconView(bool checked)
   if (pSubWindow) {
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/model.svg"));
   }
-  mpIconGraphicsView->setFocus();
+  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
+  mpIconGraphicsView->setFocus(Qt::ActiveWindowFocusReason);
   if (!checked || (checked && mpIconGraphicsView->isVisible())) {
     return;
   }
@@ -3669,7 +3674,8 @@ void ModelWidget::showDiagramView(bool checked)
   if (pSubWindow) {
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
   }
-  mpDiagramGraphicsView->setFocus();
+  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
+  mpDiagramGraphicsView->setFocus(Qt::ActiveWindowFocusReason);
   if (!checked || (checked && mpDiagramGraphicsView->isVisible())) {
     return;
   }
@@ -3696,11 +3702,12 @@ void ModelWidget::showTextView(bool checked)
   if (!checked || (checked && mpEditor->isVisible())) {
     return;
   }
+  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
   mpIconGraphicsView->hide();
   mpDiagramGraphicsView->hide();
   mpEditor->show();
-  mpEditor->getPlainTextEdit()->setFocus();
+  mpEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
   mpModelWidgetContainer->setPreviousViewType(StringHandler::ModelicaText);
   updateUndoRedoActions();
 }
@@ -3863,7 +3870,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   }
   // get the preferred view to display
   QString preferredView = pModelWidget->getLibraryTreeItem()->mClassInformation.preferredView;
-  if (preferredView.isEmpty()) {
+  if (!preferredView.isEmpty()) {
     if (preferredView.compare("info") == 0) {
       pModelWidget->showDocumentationView();
       loadPreviousViewType(pModelWidget);
@@ -3946,6 +3953,17 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
   if (!object || isHidden() || qApp->activeWindow() != mpMainWindow) {
     return QMdiArea::eventFilter(object, event);
   }
+  if ((event->type() == QEvent::MouseButtonPress && qobject_cast<QMenuBar*>(object)) ||
+      (event->type() == QEvent::FocusIn && (qobject_cast<LibraryTreeView*>(object) || qobject_cast<DocumentationViewer*>(object)))) {
+    ModelWidget *pModelWidget = getCurrentModelWidget();
+    if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+      LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+      /* if Model text is changed manually by user then validate it. */
+      if (!pModelWidget->validateText(&pLibraryTreeItem)) {
+        return true;
+      }
+    }
+  }
   // Global key events with Ctrl modifier.
   if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
     if (subWindowList(QMdiArea::ActivationHistoryOrder).size() > 0) {
@@ -3979,7 +3997,9 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
             }
           } else {
             if (!mpRecentModelsList->selectedItems().isEmpty()) {
-              openRecentModelWidget(mpRecentModelsList->selectedItems().at(0));
+              if (!openRecentModelWidget(mpRecentModelsList->selectedItems().at(0))) {
+                return true;
+              }
             }
             mpModelSwitcherDialog->hide();
           }
@@ -4088,12 +4108,32 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
   }
 }
 
-void ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pItem)
+/*!
+ * \brief ModelWidgetContainer::openRecentModelWidget
+ * Slot activated when mpRecentModelsList itemClicked SIGNAL is raised.\n
+ * Before switching to new ModelWidget try to update the class contents if user has changed anything.
+ * \param pListWidgetItem
+ */
+bool ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pListWidgetItem)
 {
-  LibraryTreeItem *pLibraryTreeItem = mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pItem->data(Qt::UserRole).toString());
+  /* if Model text is changed manually by user then validate it before opening recent ModelWidget. */
+  ModelWidget *pModelWidget = getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+    if (!pModelWidget->validateText(&pLibraryTreeItem)) {
+      return false;
+    }
+  }
+  LibraryTreeItem *pLibraryTreeItem = mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pListWidgetItem->data(Qt::UserRole).toString());
   addModelWidget(pLibraryTreeItem->getModelWidget(), false);
+  return true;
 }
 
+/*!
+ * \brief ModelWidgetContainer::currentModelWidgetChanged
+ * Updates the toolbar and menus items depending on what kind of ModelWidget is activated.
+ * \param pSubWindow
+ */
 void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 {
   bool enabled, modelica, text, metaModel;
@@ -4129,17 +4169,17 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getSaveAsAction()->setEnabled(enabled);
   //  getMainWindow()->getSaveAllAction()->setEnabled(enabled);
   getMainWindow()->getSaveTotalAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getShowGridLinesAction()->setEnabled(enabled && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
-  getMainWindow()->getResetZoomAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getZoomInAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getZoomOutAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getLineShapeAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getPolygonShapeAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getRectangleShapeAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getEllipseShapeAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getTextShapeAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getBitmapShapeAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getConnectModeAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getShowGridLinesAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked() && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
+  getMainWindow()->getResetZoomAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getZoomInAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getZoomOutAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getLineShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getPolygonShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getRectangleShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getEllipseShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getTextShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getBitmapShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getConnectModeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   getMainWindow()->getSimulateModelAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   getMainWindow()->getSimulateWithTransformationalDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   getMainWindow()->getSimulateWithAlgorithmicDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());

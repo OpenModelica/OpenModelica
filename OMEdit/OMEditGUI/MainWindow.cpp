@@ -184,6 +184,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   addDockWidget(Qt::RightDockWidgetArea, mpDocumentationDockWidget);
   setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
   mpDocumentationDockWidget->hide();
+  connect(mpDocumentationDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(documentationDockWidgetVisibilityChanged(bool)));
   // Create VariablesWidget dock
   mpVariablesDockWidget = new QDockWidget(Helper::variablesBrowser, this);
   mpVariablesDockWidget->setObjectName("Variables");
@@ -915,8 +916,7 @@ void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if MetaModel text is changed manually by user then validate it before fetaching the interface data. */
   if (pLibraryTreeItem->getModelWidget()) {
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-    if (pMetaModelEditor && !pMetaModelEditor->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }
@@ -963,8 +963,7 @@ void MainWindow::TLMSimulate(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if MetaModel text is changed manually by user then validate it before starting the TLM co-simulation. */
   if (pLibraryTreeItem->getModelWidget()) {
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-    if (pMetaModelEditor && !pMetaModelEditor->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }
@@ -2175,8 +2174,21 @@ void MainWindow::toggleShapesButton()
   }
 }
 
+/*!
+ * \brief MainWindow::openRecentModelWidget
+ * Slot activated when mpModelSwitcherActions triggered SIGNAL is raised.\n
+ * Before switching to new ModelWidget try to update the class contents if user has changed anything.
+ */
 void MainWindow::openRecentModelWidget()
 {
+  /* if Model text is changed manually by user then validate it before opening recent ModelWidget. */
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+    if (!pModelWidget->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
   QAction *pAction = qobject_cast<QAction*>(sender());
   QToolButton *pToolButton = qobject_cast<QToolButton*>(sender());
   LibraryTreeItem *pLibraryTreeItem;
@@ -2338,6 +2350,24 @@ void MainWindow::perspectiveTabChanged(int tabIndex)
   }
 }
 
+/*!
+ * \brief MainWindow::documentationDockWidgetVisibilityChanged
+ * Handles the VisibilityChanged signal of Documentation Dock Widget.
+ * \param visible
+ */
+void MainWindow::documentationDockWidgetVisibilityChanged(bool visible)
+{
+  if (visible) {
+    ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+    if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+      LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+      if (pModelWidget->validateText(&pLibraryTreeItem)) {
+        mpDocumentationWidget->showDocumentation(pLibraryTreeItem);
+      }
+    }
+  }
+}
+
 void MainWindow::autoSave()
 {
 //  bool autoSaveForSingleClasses = mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveForSingleClassesCheckBox()->isChecked();
@@ -2378,16 +2408,31 @@ void MainWindow::autoSave()
 //  }
 }
 
+/*!
+ * \brief MainWindow::switchToWelcomePerspectiveSlot
+ * Slot activated when Ctrl+f1 is clicked.
+ * Switches to welcome perspective.
+ */
 void MainWindow::switchToWelcomePerspectiveSlot()
 {
   mpPerspectiveTabbar->setCurrentIndex(0);
 }
 
+/*!
+ * \brief MainWindow::switchToModelingPerspectiveSlot
+ * Slot activated when Ctrl+f2 is clicked.
+ * Switches to modeling perspective.
+ */
 void MainWindow::switchToModelingPerspectiveSlot()
 {
   mpPerspectiveTabbar->setCurrentIndex(1);
 }
 
+/*!
+ * \brief MainWindow::switchToPlottingPerspectiveSlot
+ * Slot activated when Ctrl+f3 is clicked.
+ * Switches to plotting perspective.
+ */
 void MainWindow::switchToPlottingPerspectiveSlot()
 {
   mpPerspectiveTabbar->setCurrentIndex(2);
@@ -2969,8 +3014,22 @@ void MainWindow::storePlotWindowsStateAndGeometry()
   }
 }
 
+/*!
+ * \brief MainWindow::switchToWelcomePerspective
+ * Switches to Welcome perspective.
+ */
 void MainWindow::switchToWelcomePerspective()
 {
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+    if (!pModelWidget->validateText(&pLibraryTreeItem)) {
+      bool signalsState = mpPerspectiveTabbar->blockSignals(true);
+      mpPerspectiveTabbar->setCurrentIndex(1);
+      mpPerspectiveTabbar->blockSignals(signalsState);
+      return;
+    }
+  }
   storePlotWindowsStateAndGeometry();
   mpPlotWindowContainer->tileSubWindows();
   mpCentralStackedWidget->setCurrentWidget(mpWelcomePageWidget);
@@ -2982,6 +3041,10 @@ void MainWindow::switchToWelcomePerspective()
   mpPlotToolBar->setEnabled(false);
 }
 
+/*!
+ * \brief MainWindow::switchToModelingPerspective
+ * Switches to Modeling perspective.
+ */
 void MainWindow::switchToModelingPerspective()
 {
   storePlotWindowsStateAndGeometry();
@@ -2997,8 +3060,22 @@ void MainWindow::switchToModelingPerspective()
   }
 }
 
+/*!
+ * \brief MainWindow::switchToPlottingPerspective
+ * Switches to plotting perspective.
+ */
 void MainWindow::switchToPlottingPerspective()
 {
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+    if (!pModelWidget->validateText(&pLibraryTreeItem)) {
+      bool signalsState = mpPerspectiveTabbar->blockSignals(true);
+      mpPerspectiveTabbar->setCurrentIndex(1);
+      mpPerspectiveTabbar->blockSignals(signalsState);
+      return;
+    }
+  }
   mpCentralStackedWidget->setCurrentWidget(mpPlotWindowContainer);
   int i = 0;
   foreach (QMdiSubWindow *pWindow, mpPlotWindowContainer->subWindowList()) {
@@ -3089,8 +3166,7 @@ void MainWindow::fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-    if (pMetaModelEditor && !pMetaModelEditor->validateText()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
     }
   }

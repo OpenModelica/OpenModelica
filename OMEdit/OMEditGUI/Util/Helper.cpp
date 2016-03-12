@@ -301,6 +301,8 @@ QString Helper::newVariable;
 QString Helper::library;
 QString Helper::moveUp;
 QString Helper::moveDown;
+QString Helper::fixErrorsManually;
+QString Helper::revertToLastCorrectVersion;
 
 void Helper::initHelperVariables()
 {
@@ -495,6 +497,8 @@ void Helper::initHelperVariables()
   Helper::library = tr("Library");
   Helper::moveUp = tr("Move Up");
   Helper::moveDown = tr("Move Down");
+  Helper::fixErrorsManually = tr("Fix error(s) manually");
+  Helper::revertToLastCorrectVersion = tr("Revert to last correct version");
 }
 
 QString GUIMessages::getMessage(int type)

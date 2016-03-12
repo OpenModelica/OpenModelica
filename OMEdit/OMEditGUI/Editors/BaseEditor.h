@@ -182,8 +182,8 @@ public:
   MainWindow* getMainWindow() {return mpMainWindow;}
   PlainTextEdit *getPlainTextEdit() {return mpPlainTextEdit;}
   FindReplaceWidget* getFindReplaceWidget() {return mpFindReplaceWidget;}
-  bool canHaveBreakpoints() {return mCanHaveBreakpoints;}
   void setCanHaveBreakpoints(bool canHaveBreakpoints);
+  bool canHaveBreakpoints() {return mCanHaveBreakpoints;}
   QAction *getToggleBreakpointAction() {return mpToggleBreakpointAction;}
   DocumentMarker* getDocumentMarker() {return mpDocumentMarker;}
   void goToLineNumber(int lineNumber);

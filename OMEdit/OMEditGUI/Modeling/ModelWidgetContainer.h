@@ -447,7 +447,7 @@ private:
   QListWidget *mpRecentModelsList;
   void loadPreviousViewType(ModelWidget *pModelWidget);
 public slots:
-  void openRecentModelWidget(QListWidgetItem *pItem);
+  bool openRecentModelWidget(QListWidgetItem *pListWidgetItem);
   void currentModelWidgetChanged(QMdiSubWindow *pSubWindow);
   void saveModelWidget();
   void saveAsModelWidget();

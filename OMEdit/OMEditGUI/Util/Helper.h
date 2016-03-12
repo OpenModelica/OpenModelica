@@ -308,6 +308,8 @@ public:
   static QString library;
   static QString moveUp;
   static QString moveDown;
+  static QString fixErrorsManually;
+  static QString revertToLastCorrectVersion;
 };
 
 class GUIMessages : public QObject
