@@ -31,7 +31,7 @@
 #endif
 #endif
 
-#include <Windows.h>
+#include <windows.h>
 namespace boost {
 namespace extensions {
 namespace impl {
