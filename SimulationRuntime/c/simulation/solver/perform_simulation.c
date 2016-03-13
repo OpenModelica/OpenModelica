@@ -347,7 +347,6 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         {
           if (solverInfo->currentTime >= solverInfo->lastdesiredStep)
           {
-            double tmpTime = solverInfo->currentTime;
             do
             {
               __currStepNo++;
