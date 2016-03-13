@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8.9)
 
 project(${NewtonName})
 
-include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 add_library(${NewtonName}_static STATIC Newton.cpp NewtonSettings.cpp FactoryExport )
 add_precompiled_header(${NewtonName}_static Include/Core/Modelica.h )
 set_target_properties(${NewtonName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
