@@ -122,7 +122,9 @@ ELSE(WIN32)
 	ELSE()
 		SET(Boost_LIBS_ ${Boost_LIBRARY_DIR})
 	ENDIF()
-	IF("${Boost_INCLUDE_DIR}" STREQUAL "")
+	IF("${Boost_INCLUDE_DIR}" STREQUAL "" OR
+	   "${Boost_INCLUDE_DIR}" STREQUAL "/usr/include")
+		# standard /usr/include collides with cross compilation
 		SET(Boost_INCLUDE_ ".")
 	ELSE()
 		SET(Boost_INCLUDE_ ${Boost_INCLUDE_DIR})
@@ -132,7 +134,9 @@ ELSE(WIN32)
 	ELSE()
 		SET(SUNDIALS_LIBS_ ${SUNDIALS_LIBS})
 	ENDIF()
-	IF("${SUNDIALS_INCLUDE_DIR}" STREQUAL "")
+	IF("${SUNDIALS_INCLUDE_DIR}" STREQUAL "" OR
+	   "${SUNDIALS_INCLUDE_DIR}" STREQUAL "/usr/include")
+		# standard /usr/include collides with cross compilation
 		SET(SUNDIALS_INCLUDE_DIR_ ".")
 	ELSE()
 		SET(SUNDIALS_INCLUDE_DIR_ ${SUNDIALS_INCLUDE_DIR})
