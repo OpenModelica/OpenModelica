@@ -59,7 +59,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max error is 1.29372e-07 for the approximation of the state cost(time = 1.2)
 // LOG_IPOPT_ERROR   | info    | max error is 2.65482e-08 for the approximation of the state cost(time = 1.45798)
 // LOG_IPOPT_ERROR   | info    | max error is 4.16174e-09 for the approximation of the state cost(time = 1.45798)
-// LOG_IPOPT_ERROR   | info    | max error is 1.87941e-10 for the approximation of the state cost(time = 1.45798)
+// LOG_IPOPT_ERROR   | info    | max error is 1.8794e-10 for the approximation of the state cost(time = 1.45798)
 // "
 // end SimulationResult;
 // ""

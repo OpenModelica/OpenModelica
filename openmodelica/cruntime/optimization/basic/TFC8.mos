@@ -65,14 +65,14 @@ getErrorString();
 //          For more information visit http://projects.coin-or.org/Ipopt
 // ******************************************************************************
 //
-// LOG_IPOPT_ERROR   | info    | max violation is 3.25 for the final constraint $OMC$finalConstarintTerm2(time = 5)
+// LOG_IPOPT_ERROR   | info    | max violation is 3.25 for the final constraint $finalCon$final_con2(time = 5)
 // LOG_IPOPT_ERROR   | info    | max error is 2.09989 for the approximation of the state x1(time = 5)
 // LOG_IPOPT_ERROR   | info    | max error is 0.309263 for the approximation of the state x1(time = 5)
 // LOG_IPOPT_ERROR   | info    | max error is 0.0557617 for the approximation of the state x1(time = 4.32669)
-// LOG_IPOPT_ERROR   | info    | max error is 0.009855 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00985499 for the approximation of the state x1(time = 5)
 // LOG_IPOPT_ERROR   | info    | max error is 0.000186212 for the approximation of the state x1(time = 4.32669)
-// LOG_IPOPT_ERROR   | info    | max error is 1.28519e-07 for the approximation of the state x1(time = 4.32669)
-// LOG_IPOPT_ERROR   | info    | max violation is 4.99295e-08 for the final constraint $OMC$finalConstarintTerm2(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 1.2852e-07 for the approximation of the state x1(time = 4.32669)
+// LOG_IPOPT_ERROR   | info    | max violation is 4.99295e-08 for the final constraint $finalCon$final_con2(time = 5)
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.

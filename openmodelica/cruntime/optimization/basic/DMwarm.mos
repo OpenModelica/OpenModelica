@@ -40,20 +40,20 @@ getErrorString();
 //          For more information visit http://projects.coin-or.org/Ipopt
 // ******************************************************************************
 //
-// LOG_IPOPT_ERROR   | info    | max error is 0.00155101 for the approximation of the state p_em(time = 0.486667)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00153088 for the approximation of the state p_em(time = 0.486667)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00149587 for the approximation of the state p_em(time = 0.486667)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00112746 for the approximation of the state p_em(time = 0.486667)
-// LOG_IPOPT_ERROR   | info    | max error is 0.000313173 for the approximation of the state p_em(time = 0.486667)
-// LOG_IPOPT_ERROR   | info    | max error is 0.000122479 for the approximation of the state p_em(time = 0.486667)
-// LOG_IPOPT_ERROR   | info    | max error is 8.56533e-05 for the approximation of the state p_em(time = 0.486667)
-// LOG_IPOPT_ERROR   | info    | max error is 2.37163e-06 for the approximation of the state p_em(time = 0.485556)
-// LOG_IPOPT_ERROR   | info    | max error is 4.55455e-07 for the approximation of the state p_em(time = 0.485556)
-// LOG_IPOPT_ERROR   | info    | max error is 1.16211e-07 for the approximation of the state p_em(time = 0.485556)
-// LOG_IPOPT_ERROR   | info    | max error is 2.528e-08 for the approximation of the state p_em(time = 0.485556)
-// LOG_IPOPT_ERROR   | info    | max error is 3.66949e-09 for the approximation of the state p_em(time = 0.485556)
-// LOG_IPOPT_ERROR   | info    | max error is 1.48172e-10 for the approximation of the state p_em(time = 0.485556)
-// LOG_IPOPT_ERROR   | info    | max error is 2.86101e-13 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0015511 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00153097 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00149595 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00112748 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000313137 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000122445 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 8.56457e-05 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 2.37178e-06 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 4.55501e-07 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 1.16221e-07 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 2.52825e-08 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 3.66997e-09 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 1.48205e-10 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 2.86256e-13 for the approximation of the state p_em(time = 0.485556)
 // "
 // end SimulationResult;
 // ""

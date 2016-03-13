@@ -123,7 +123,8 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max error is 1.02648e-09 for the approximation of the state y(time = 1)
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: Deprecated debug flag --d=reduceDynOpt detected. Use --postOptModules+=reduceDynamicOptimization instead.
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // {"Files Equal!"}
 // ""

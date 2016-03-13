@@ -23,7 +23,7 @@ getErrorString();
 optimize(testAlgLoop3, numberOfIntervals=50, tolerance = 1e-08, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 3");
 getErrorString();
 
-res := OpenModelica.Scripting.compareSimulationResults("testAlgLoop3_res.mat","ReferenceFiles/testAlgLoop3_ref.mat","testAlgLoop3_diff.csv",0.01,0.0001);
+res := OpenModelica.Scripting.compareSimulationResults("testAlgLoop3_res.mat","ReferenceFiles/testAlgLoop3_ref.mat","testAlgLoop3_diff.csv",0.01,0.0001,{"y1","y2","cost"});
 getErrorString();
 
 // Result:
@@ -37,8 +37,8 @@ getErrorString();
 //     messages = "
 // Optimizer Variables
 // ========================================================
-// Input[0]:OMC$Input2(start = 0, nominal = 1, min = -Inf, max = +Inf)
-// Input[1]:OMC$Input3(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[0]:$y1(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[1]:$y2(start = 0, nominal = 1, min = -Inf, max = +Inf)
 // --------------------------------------------------------
 // number of nonlinear constraints: 2
 // ========================================================
@@ -50,11 +50,11 @@ getErrorString();
 //          For more information visit http://projects.coin-or.org/Ipopt
 // ******************************************************************************
 //
-// LOG_IPOPT_ERROR   | info    | max violation is 1 for the constraint $OMC$con$Loop$2(time = 1)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.491941 for the constraint $OMC$con$Loop$2(time = 1)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.0251223 for the constraint $OMC$con$Loop$3(time = 1)
-// LOG_IPOPT_ERROR   | info    | max violation is 9.99863e-05 for the constraint $OMC$con$Loop$3(time = 1)
-// LOG_IPOPT_ERROR   | info    | max violation is 1.53473e-09 for the constraint $OMC$con$Loop$3(time = 1)
+// LOG_IPOPT_ERROR   | info    | max violation is 1 for the constraint $EqCon$y1(time = 1)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.491941 for the constraint $EqCon$y2(time = 1)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0251223 for the constraint $EqCon$y1(time = 1)
+// LOG_IPOPT_ERROR   | info    | max violation is 9.99863e-05 for the constraint $EqCon$y1(time = 1)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.53473e-09 for the constraint $EqCon$y1(time = 1)
 // "
 // end SimulationResult;
 // "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.

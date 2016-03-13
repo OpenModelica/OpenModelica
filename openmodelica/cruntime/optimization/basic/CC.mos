@@ -42,6 +42,6 @@ getErrorString();
 // "CheckConstraintViolation_res.mat"
 // EXIT: Problem has inconsistent variable bounds or constraint sides.
 //
-// "Warning: Alias variables $OMC$constarintTerm2 = x with invalid limits min 3.0 > max 0.0
+// "Warning: Alias variables $con$con2 = x with invalid limits min 3.0 > max 0.0
 // "
 // endResult

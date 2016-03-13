@@ -55,8 +55,8 @@ getErrorString();
 //     resultFile = "testFinalCon6_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR,LOG_LS -optimizerNP 3'",
 //     messages = "LOG_LS            | info    | Start solving Linear System 9 (size 1) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000008  time to set Matrix A and vector b.
-// LOG_LS            | info    | Solve System: 0.000027
+// LOG_LS            | info    | ###  0.000011  time to set Matrix A and vector b.
+// LOG_LS            | info    | Solve System: 0.000043
 //
 // Optimizer Variables
 // ========================================================
@@ -76,8 +76,8 @@ getErrorString();
 //          For more information visit http://projects.coin-or.org/Ipopt
 // ******************************************************************************
 //
-// LOG_IPOPT_ERROR   | info    | max violation is 61.8311 for the final constraint $OMC$finalConstarintTerm4(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 61.485 for the final constraint $OMC$finalConstarintTerm4(time = 5)
+// LOG_IPOPT_ERROR   | info    | max violation is 61.8311 for the final constraint $finalCon$final_con4(time = 5)
+// LOG_IPOPT_ERROR   | info    | max violation is 61.485 for the final constraint $finalCon$final_con4(time = 5)
 // LOG_IPOPT_ERROR   | info    | max error is 22.3269 for the approximation of the state x1(time = 5)
 // LOG_IPOPT_ERROR   | info    | max error is 1.20991e+08 for the approximation of the state y1(time = 0.264495)
 // LOG_IPOPT_ERROR   | info    | max error is 214.352 for the approximation of the state x1(time = 0.264495)
@@ -393,8 +393,8 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max error is 1.79739e-05 for the approximation of the state x1(time = 2.91551)
 // LOG_IPOPT_ERROR   | info    | max error is 2.91305e-05 for the approximation of the state x1(time = 3.4)
 // LOG_IPOPT_ERROR   | info    | max error is 2.63863e-07 for the approximation of the state x1(time = 3.4)
-// LOG_IPOPT_ERROR   | info    | max violation is 9.99964e-08 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 9.99964e-08 for the final constraint $OMC$finalConstarintTerm2(time = 5)
+// LOG_IPOPT_ERROR   | info    | max violation is 9.99964e-08 for the final constraint $finalCon$final_con2(time = 5)
+// LOG_IPOPT_ERROR   | info    | max violation is 9.99964e-08 for the final constraint $finalCon$final_con2(time = 5)
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
