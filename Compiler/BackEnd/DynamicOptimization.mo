@@ -91,7 +91,7 @@ algorithm
     Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
    end if;
 
-    Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
+    //Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
 
     (mayer,lagrange,startTimeE,finalTimeE) := match(inClassAttr)
                         local Option<DAE.Exp> mayer_, lagrange_, startTimeE_, finalTimeE_;
@@ -105,8 +105,8 @@ algorithm
     varlst := BackendVariable.varList(inVarsAndknvars);
     (v, e, mayer) := joinObjectFun(makeObject(BackendDAE.optimizationMayerTermName, findMayerTerm, varlst, mayer), inVars, inEqns);
     (v, e, lagrange) := joinObjectFun(makeObject(BackendDAE.optimizationLagrangeTermName, findLagrangeTerm, varlst, lagrange), v, e);
-    (v, e) := joinConstraints(inConstraint, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR(), knvars, varlst ,v, e, BackendVariable.hasConTermAnno);
-    (outVars, outEqns) := joinConstraints({}, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR(), knvars, varlst, v, e, BackendVariable.hasFinalConTermAnno);
+    (v, e) := joinConstraints(inConstraint, "$con$", BackendDAE.OPT_CONSTR(), knvars, varlst ,v, e, BackendVariable.hasConTermAnno);
+    (outVars, outEqns) := joinConstraints({}, "$finalCon$", BackendDAE.OPT_FCONSTR(), knvars, varlst, v, e, BackendVariable.hasFinalConTermAnno);
     Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
 
     outClassAttr := {DAE.OPTIMIZATION_ATTRS(mayer, lagrange, startTimeE, finalTimeE)};
@@ -227,11 +227,15 @@ protected
 algorithm
 
  for elem in constraintLst loop
-   conCrefName := prefConCrefName + intString(i);
+   try
+     conCrefName := prefConCrefName + ComponentReference.crefModelicaStr(Expression.expCref(elem));
+   else
+     conCrefName := prefConCrefName + intString(i);
+     i := i + 1;
+   end try;
    (conEqn, dummyVar) := BackendEquation.generateResidualFromRelation(conCrefName, elem, DAE.emptyElementSource, outVars, knvars, conKind);
    outVars := BackendVariable.addNewVar(dummyVar, outVars);
    outEqns := listAppend(conEqn, outEqns);
-   i := i + 1;
  end for;
 end addOptimizationVarsEqns1;
 
@@ -659,7 +663,7 @@ algorithm
     eqn :: eqn_lst := eqn_lst;
     ind_e :: ind_lst_e := ind_lst_e;
     ind_v :: ind_lst_v := ind_lst_v;
-    cr  := ComponentReference.makeCrefIdent("$OMC$con$Loop$"  + intString(ind_e), DAE.T_REAL_DEFAULT , {});
+    cr  := ComponentReference.makeCrefIdent("$EqCon$" +  ComponentReference.crefModelicaStr(cr_var) , DAE.T_REAL_DEFAULT , {});
     e := Expression.crefExp(cr);
 
     var := BackendVariable.makeVar(cr);
@@ -674,7 +678,7 @@ algorithm
     //oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
     oeqns := BackendEquation.setAtIndex(oeqns,ind_e, BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN));
     // new input(resvar)
-    (cr,var) := makeVar("OMC$Input" + intString(ind_v));
+    (cr,var) := makeVar("$" +  ComponentReference.crefModelicaStr(cr_var));
     var := BackendVariable.setVarDirection(var, DAE.INPUT());
     // resvar = new input(resvar)
     e := Expression.crefExp(cr_var);
