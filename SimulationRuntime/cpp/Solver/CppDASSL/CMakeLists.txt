@@ -1,8 +1,7 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${CppDASSLName})
 
-# add the solver default implementation library
 add_library(${CppDASSLName}_static STATIC ddaskr.cpp CppDASSL.cpp CppDASSLSettings.cpp FactoryExport.cpp)
 
 SET(CPPDASSL_COMPILE_DEFINITIONS "")
@@ -26,13 +25,8 @@ ENDIF(OPENMP_FOUND)
 set_target_properties(${CppDASSLName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;${CPPDASSL_COMPILE_DEFINITIONS}")
 set_target_properties(${CppDASSLName} PROPERTIES COMPILE_DEFINITIONS "${CPPDASSL_COMPILE_DEFINITIONS}")
 
-if (UNIX)
-	set_target_properties(${CppDASSLName}_static PROPERTIES COMPILE_FLAGS "-fPIC ${OpenMP_CXX_FLAGS}")
-	set_target_properties(${CppDASSLName} PROPERTIES COMPILE_FLAGS "-fPIC ${OpenMP_CXX_FLAGS}")
-else(UNIX)
-	set_target_properties(${CppDASSLName}_static PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
-	set_target_properties(${CppDASSLName} PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
-endif(UNIX)
+set_target_properties(${CppDASSLName}_static PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
+set_target_properties(${CppDASSLName} PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
 
 add_precompiled_header(${CppDASSLName} Include/Core/Modelica.h )
 

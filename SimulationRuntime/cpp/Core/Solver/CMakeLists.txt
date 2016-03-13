@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${SolverName})
 
@@ -12,11 +12,6 @@ add_library(${SolverName} SHARED SolverDefaultImplementation.cpp SolverSettings.
 target_link_libraries (${SolverName} ${MathName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName})
 add_precompiled_header(${SolverName} Include/Core/Modelica.h)
 install (TARGETS ${SolverName} DESTINATION ${LIBINSTALLEXT})
-
-if (UNIX)
-	set_target_properties(${SolverName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-	set_target_properties(${SolverName} PROPERTIES COMPILE_FLAGS -fPIC)
-endif(UNIX)
 
 install (FILES
          ${CMAKE_SOURCE_DIR}/Include/Core/Solver/IAlgLoopSolver.h 

@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${DataExchangeName})
 
@@ -17,10 +17,6 @@ set_target_properties(${DataExchangeName}_static PROPERTIES COMPILE_DEFINITIONS 
 IF(NOT BOOST_STATIC_LINKING)
 	target_link_libraries (${DataExchangeName}_static ${Boost_LIBRARIES})
 ENDIF(NOT BOOST_STATIC_LINKING)
-
-if (UNIX)
-	set_target_properties(${DataExchangeName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-endif(UNIX)
 
 install (TARGETS ${DataExchangeName} DESTINATION ${LIBINSTALLEXT})
 install (TARGETS ${DataExchangeName}_static DESTINATION ${LIBINSTALLEXT})

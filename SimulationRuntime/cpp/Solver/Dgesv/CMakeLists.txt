@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${DgesvName})
 
@@ -8,9 +8,6 @@ IF(DGESV_FOUND)
   add_library(${DgesvName}_static STATIC ${DGESV_SRCS})
   install(TARGETS ${DgesvName}_static DESTINATION ${LIBINSTALLEXT})
   install(FILES ${DGESV_HEADERS} DESTINATION include/omc/cpp/Solver/Dgesv)
-  IF(UNIX)
-    set_target_properties(${DgesvName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-  ENDIF(UNIX)
   GET_TARGET_PROPERTY(libDgesvLocation ${DgesvName}_static LOCATION)
   GET_FILENAME_COMPONENT(libDgesvExt ${libDgesvLocation} EXT CACHE)
 ELSE()

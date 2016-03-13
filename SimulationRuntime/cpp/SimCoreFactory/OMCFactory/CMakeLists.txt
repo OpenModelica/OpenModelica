@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${OMCFactoryName})
 
@@ -10,11 +10,6 @@ include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvect
 
 install (TARGETS ${OMCFactoryName}_static DESTINATION ${LIBINSTALLEXT})
 install (TARGETS ${OMCFactoryName} DESTINATION ${LIBINSTALLEXT})
-
-if (UNIX)
-  set_target_properties(${OMCFactoryName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-  set_target_properties(${OMCFactoryName} PROPERTIES COMPILE_FLAGS -fPIC)
-endif(UNIX)
 
 target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${ExtensionUtilitiesName})
 add_precompiled_header(${OMCFactoryName}_static Include/Core/Modelica.h)

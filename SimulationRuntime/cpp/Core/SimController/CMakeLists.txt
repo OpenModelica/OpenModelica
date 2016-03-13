@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${SimControllerName})
 
@@ -11,11 +11,6 @@ add_library(${SimControllerName} SHARED Configuration.cpp  FactoryExport.cpp Ini
 target_link_libraries( ${SimControllerName} ${OMCFactoryName}_static ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
 add_precompiled_header(${SimControllerName} Include/Core/Modelica.h)
 install (TARGETS ${SimControllerName} DESTINATION ${LIBINSTALLEXT})
-
-if (UNIX)
-  set_target_properties(${SimControllerName} PROPERTIES COMPILE_FLAGS -fPIC)
-  set_target_properties(${SimControllerName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-endif(UNIX)
 
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimData.h
                 ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimObjects.h

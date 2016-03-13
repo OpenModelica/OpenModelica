@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${SystemName})
 set(BASE_LIB "" CACHE INTERNAL "" )
@@ -22,11 +22,6 @@ add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverF
 target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName}_static ${SimulationSettings} ${ExtensionUtilitiesName})
 add_precompiled_header(${SystemName} Include/Core/Modelica.h)
 install (TARGETS ${SystemName} DESTINATION ${LIBINSTALLEXT})
-
-if (UNIX)
-  set_target_properties(${SystemName} PROPERTIES COMPILE_FLAGS -fPIC)
-  set_target_properties(${SystemName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-endif(UNIX)
 
 #IF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))
 #install (TARGETS ${BasiLibName} DESTINATION ${LIBINSTALLEXT})

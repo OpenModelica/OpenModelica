@@ -1,8 +1,7 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${KinsolName})
 include_directories(${SUNDIALS_INCLUDE_DIR}/kinsol ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
-# add the solver default implementation library
 
 add_library(${KinsolName}_static STATIC Kinsol.cpp  KinsolLapack.cpp  KinsolSettings.cpp FactoryExport.cpp)
 include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
@@ -11,11 +10,6 @@ set_target_properties(${KinsolName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTI
 
 add_library(${KinsolName} SHARED Kinsol.cpp KinsolLapack.cpp KinsolSettings.cpp FactoryExport.cpp)
 add_precompiled_header(${KinsolName} Include/Core/Modelica.h )
-
-if (UNIX)
-	set_target_properties(${KinsolName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-	set_target_properties(${KinsolName} PROPERTIES COMPILE_FLAGS -fPIC)
-endif(UNIX)
 
 target_link_libraries(${KinsolName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES} )    #C:/OpenModelica/OMCompiler/SimulationRuntime/cpp/Solver/KLU/OMCppklu_static.lib
 #target_link_libraries(${KinsolName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES} ${kluName})

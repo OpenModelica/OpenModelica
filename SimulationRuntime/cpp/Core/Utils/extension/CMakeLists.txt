@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${ExtensionUtilitiesName})
 
@@ -6,9 +6,6 @@ add_library(${ExtensionUtilitiesName}_static STATIC measure_time.cpp measure_tim
 IF(NOT BOOST_STATIC_LINKING)
 	target_link_libraries (${ExtensionUtilitiesName}_static ${Boost_LIBRARIES})
 ENDIF(NOT BOOST_STATIC_LINKING)
-IF(UNIX)
-	set_target_properties(${ExtensionUtilitiesName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-ENDIF(UNIX)
 set_target_properties(${ExtensionUtilitiesName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 install (TARGETS ${ExtensionUtilitiesName}_static DESTINATION ${LIBINSTALLEXT})
 
@@ -16,10 +13,6 @@ add_library(${ExtensionUtilitiesName} SHARED measure_time.cpp measure_time_stati
 IF(NOT BOOST_STATIC_LINKING)
 	target_link_libraries (${ExtensionUtilitiesName} ${Boost_LIBRARIES})
 ENDIF(NOT BOOST_STATIC_LINKING)
-IF(UNIX)
-	set_target_properties(${ExtensionUtilitiesName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-	set_target_properties(${ExtensionUtilitiesName} PROPERTIES COMPILE_FLAGS -fPIC)
-ENDIF(UNIX)
 
 install (TARGETS ${ExtensionUtilitiesName}_static DESTINATION ${LIBINSTALLEXT})
 install (TARGETS ${ExtensionUtilitiesName} DESTINATION ${LIBINSTALLEXT})

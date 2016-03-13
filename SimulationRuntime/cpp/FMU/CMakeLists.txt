@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${FMUName})
 
@@ -12,11 +12,6 @@ target_link_libraries (${FMUName}_static ${ExtensionUtilitiesName}_static )
 
 add_precompiled_header(${FMUName} Include/Core/Modelica.h)
 add_precompiled_header(${FMUName}_static Include/Core/Modelica.h)
-
-if (UNIX)
-	set_target_properties(${FMUName} PROPERTIES COMPILE_FLAGS -fPIC)
-	set_target_properties(${FMUName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-endif(UNIX)
 
 target_link_libraries (${FMUName} ${ExtensionUtilitiesName})
 target_link_libraries (${FMUName}_static ${ExtensionUtilitiesName}_static)

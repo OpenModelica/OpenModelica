@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${SimulationSettings})
 
@@ -13,11 +13,6 @@ add_library(${SimulationSettings} SHARED GlobalSettings.cpp Factory.cpp FactoryE
 target_link_libraries( ${SimulationSettings} ${OMCFactoryName}_static ${Boost_LIBRARIES})
 add_precompiled_header(${SimulationSettings} Include/Core/Modelica.h)
 install (TARGETS ${SimulationSettings} DESTINATION ${LIBINSTALLEXT})
-
-if (UNIX)
-	set_target_properties(${SimulationSettings} PROPERTIES COMPILE_FLAGS -fPIC)
-	set_target_properties(${SimulationSettings}_static PROPERTIES COMPILE_FLAGS -fPIC)
-endif(UNIX)
 
 install (FILES "config/GlobalSettings.xml" DESTINATION share/omc/runtime/cpp/config)
 install (FILES 	${CMAKE_SOURCE_DIR}/Include/Core/SimulationSettings/IGlobalSettings.h

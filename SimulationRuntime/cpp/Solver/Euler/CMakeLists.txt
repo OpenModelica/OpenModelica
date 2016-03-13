@@ -1,7 +1,6 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${EulerName})
-# add the solver default implementation library
 
 add_library(${EulerName}_static STATIC Euler.cpp EulerSettings.cpp FactoryExport.cpp )
 add_precompiled_header(${EulerName}_static Include/Core/Modelica.h )
@@ -10,11 +9,6 @@ include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvect
 
 add_library(${EulerName} SHARED Euler.cpp EulerSettings.cpp FactoryExport.cpp )
 add_precompiled_header(${EulerName} Include/Core/Modelica.h )
-
-if (UNIX)
-	set_target_properties(${EulerName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-	set_target_properties(${EulerName} PROPERTIES COMPILE_FLAGS -fPIC)
-endif(UNIX)
 
 target_link_libraries (${EulerName} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} )
 

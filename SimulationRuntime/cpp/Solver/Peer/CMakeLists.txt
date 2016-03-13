@@ -1,8 +1,7 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${PeerName})
 
-# add the solver default implementation library
 add_library(${PeerName}_static STATIC Peer.cpp PeerSettings.cpp FactoryExport.cpp)
 
 SET(PEER_COMPILE_DEFINITIONS "")
@@ -26,13 +25,8 @@ ENDIF(OPENMP_FOUND)
 set_target_properties(${PeerName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;${PEER_COMPILE_DEFINITIONS}")
 set_target_properties(${PeerName} PROPERTIES COMPILE_DEFINITIONS "${PEER_COMPILE_DEFINITIONS}")
 
-if (UNIX)
-	set_target_properties(${PeerName}_static PROPERTIES COMPILE_FLAGS "-fPIC ${OpenMP_CXX_FLAGS}")
-	set_target_properties(${PeerName} PROPERTIES COMPILE_FLAGS "-fPIC ${OpenMP_CXX_FLAGS}")
-else(UNIX)
-	set_target_properties(${PeerName}_static PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
-	set_target_properties(${PeerName} PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
-endif(UNIX)
+set_target_properties(${PeerName}_static PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
+set_target_properties(${PeerName} PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
 
 add_precompiled_header(${PeerName} Include/Core/Modelica.h )
 

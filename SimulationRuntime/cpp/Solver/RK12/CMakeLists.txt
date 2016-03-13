@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.9)
 
 project(${RK12Name})
 # add the solver default implementation library
@@ -10,11 +10,6 @@ include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvect
 
 add_library(${RK12Name} SHARED RK12.cpp RK12Settings.cpp FactoryExport.cpp )
 add_precompiled_header(${RK12Name} Include/Core/Modelica.h )
-
-if (UNIX)
-	set_target_properties(${RK12Name}_static PROPERTIES COMPILE_FLAGS -fPIC)
-	set_target_properties(${RK12Name} PROPERTIES COMPILE_FLAGS -fPIC)
-endif(UNIX)
 
 target_link_libraries (${RK12Name} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} )
 
