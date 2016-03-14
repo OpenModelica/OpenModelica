@@ -151,7 +151,7 @@ struct type_desc_s {
 
 /* Special Modelica builtin functions*/
 #define smooth(P,EXP)    (EXP)
-#define semiLinear(x,positiveSlope,negativeSlope) (x>=0?positiveSlope*x:negativeSlope*x)
+#define semiLinear(x,positiveSlope,negativeSlope) (x>=0?(positiveSlope)*(x):(negativeSlope)*(x))
 
 /* sign function */
 static inline int sign(double v)
