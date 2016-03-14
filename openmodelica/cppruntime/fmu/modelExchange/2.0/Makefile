@@ -3,7 +3,8 @@ TEST = ../../../../../rtest -v
 
 TESTFILES = \
 DIC_FMU2_CPP.mos \
-testModelDescription.mos
+testModelDescription.mos \
+testModelDescription2.mos
 
 FAILINGTESTFILES = \
 CoupledClutches_FMU2_CPP.mos
