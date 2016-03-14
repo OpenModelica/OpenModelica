@@ -545,14 +545,16 @@ void SimManager::runSingleProcess()
     std::vector<std::pair<double, int> > tStopsSub;
 
     _H = _tEnd;
-    _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECORDCALL);
+    //nw _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECORDCALL);
     _solver->setStartTime(_tStart);
     _solver->setEndTime(_tEnd);
 
-    _solver->solve(_solverTask);
+    //nw _solver->solve(_solverTask);
     //initialize();
-    _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::RECORDCALL);
-    /* Logs temporarily disabled
+    //nw _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::RECORDCALL);
+
+
+	/* Logs temporarily disabled
      BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<"Run single process." ; */
     LOGGER_WRITE("SimManager: Run single process",LC_SOLV,LL_DEBUG);
 
@@ -578,6 +580,13 @@ void SimManager::runSingleProcess()
     {
         _timeevent_system->handleTimeEvent(_timeEventCounter);
     }
+
+	 _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECORDCALL);
+    _solver->setStartTime(_tStart);
+    _solver->setEndTime(_tEnd);
+	_solver->solve(_solverTask);
+    _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::RECORDCALL);
+
 
     std::vector<std::pair<double, int> >::iterator iter;
     iter = _tStops[0].begin();
