@@ -629,13 +629,13 @@ template crefTypeMLPI(ComponentRef cr) "template crefType
 end crefTypeMLPI;
 
 
-template crefStartValueType(ComponentRef cr) "template crefType
-  Like cref but with cast if type is integer."
+template crefStartValueType(ComponentRef cr)
+ "Returns type string for get/set<type>StartValue methods."
 ::=
   match cr
   case CREF_IDENT(__) then '<%crefStartValueType2(identType)%>'
   case CREF_QUAL(__)  then '<%crefStartValueType(componentRef)%>'
-  else "crefType:ERROR"
+  else "crefStartValueType:ERROR"
   end match
 end crefStartValueType;
 
@@ -647,12 +647,9 @@ template crefStartValueType2(DAE.Type ty)
     case T_BOOL(__) then 'Bool'
     case T_STRING(__) then 'String'
     case T_ENUMERATION(__) then 'Int'
-    case T_ARRAY(ty=T_INTEGER(__)) then 'Int'
-    case T_ARRAY(ty=T_REAL(__)) then 'Real'
-    case T_ARRAY(ty=T_BOOL(__)) then 'Bool'
-    case T_ARRAY(ty=T_STRING(__)) then 'String'
-    case T_ARRAY(ty=T_ENUMERATION(__)) then 'Int'
-    else "error start value type"
+    case T_ARRAY(ty=elty) then crefStartValueType2(elty)
+    case T_SUBTYPE_BASIC(complexType=cty) then crefStartValueType2(cty)
+    else 'crefStartValueType2:ERROR <%unparseType(ty)%> '
   end match
 end crefStartValueType2;
 
