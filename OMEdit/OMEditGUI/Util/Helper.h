@@ -302,8 +302,8 @@ public:
   static QString tlmCoSimulationSetup;
   static QString tlmCoSimulationSetupTip;
   static QString tlmCoSimulation;
-  static QString tlmCoSimulationExperimentSetting;
-  static QString tlmCoSimulationExperimentSettingTip;
+  static QString simulationParams;
+  static QString simulationParamsTip;
   static QString running;
   static QString finished;
   static QString newVariable;

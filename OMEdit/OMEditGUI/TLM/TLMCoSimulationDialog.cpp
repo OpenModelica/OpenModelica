@@ -395,11 +395,18 @@ void TLMCoSimulationDialog::runTLMCoSimulation()
   }
 }
 
-TLMCoSimulationExperimentSettingDialog::TLMCoSimulationExperimentSettingDialog(MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint)
+/*!
+ * \brief MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog
+ * \param pGraphicsView
+ */
+MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *pGraphicsView)
+  : QDialog(pGraphicsView, Qt::WindowTitleHint)
 {
-  mpMainWindow = pMainWindow;
-  setMinimumWidth(300);
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::simulationParams)
+                 .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  setMinimumWidth(400);
+  mpGraphicsView = pGraphicsView;
   // CoSimulation Interval
   mpStartTimeLabel = new Label(tr("Start Time:"));
   mpStartTimeTextBox = new QLineEdit("0");
@@ -435,30 +442,21 @@ TLMCoSimulationExperimentSettingDialog::TLMCoSimulationExperimentSettingDialog(M
 }
 
 /*!
-  Reimplementation of QDialog::show method.
-  \param pLibraryTreeItem - pointer to LibraryTreeItem
-  */
-void TLMCoSimulationExperimentSettingDialog::show(LibraryTreeItem *pLibraryTreeItem)
-{
-  mpLibraryTreeItem = pLibraryTreeItem;
-  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::tlmCoSimulationExperimentSetting).arg(mpLibraryTreeItem->getNameStructure()));
-  setVisible(true);
-}
-
-/*!
- Saves the TLM Co-Simulation experiment setting.
- Slot activated when mpSave button clicked signal is raised.
-  */
-void TLMCoSimulationExperimentSettingDialog::saveExperimentSettings()
+ * \brief MetaModelSimulationParamsDialog::saveExperimentSettings
+ * Saves the Simulation Params setting.
+ * Slot activated when mpSave button clicked signal is raised.
+ */
+void MetaModelSimulationParamsDialog::saveExperimentSettings()
 {
 
 }
 
 /*!
-  Saves the TLM Co-Simulation experiment setting and start the co-simulation.
-  Slot activated when mpSaveAndCoSimulateButton clicked signal is raised.
-  */
-void TLMCoSimulationExperimentSettingDialog::saveExperimentSettingsAndCoSimulate()
+ * \brief MetaModelSimulationParamsDialog::saveExperimentSettingsAndCoSimulate
+ * Saves the Simulation Params experiment setting and starts the co-simulation.
+ * Slot activated when mpSaveAndCoSimulateButton clicked signal is raised.
+ */
+void MetaModelSimulationParamsDialog::saveExperimentSettingsAndCoSimulate()
 {
 
 }

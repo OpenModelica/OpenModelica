@@ -97,14 +97,13 @@ private slots:
   void runTLMCoSimulation();
 };
 
-class TLMCoSimulationExperimentSettingDialog : public QDialog
+class MetaModelSimulationParamsDialog : public QDialog
 {
   Q_OBJECT
 public:
-  TLMCoSimulationExperimentSettingDialog(MainWindow *pMainWindow);
-  void show(LibraryTreeItem *pLibraryTreeItem);
+  MetaModelSimulationParamsDialog(GraphicsView *pGraphicsView);
 private:
-  MainWindow *mpMainWindow;
+  GraphicsView *mpGraphicsView;
   LibraryTreeItem *mpLibraryTreeItem;
   Label *mpStartTimeLabel;
   QLineEdit *mpStartTimeTextBox;

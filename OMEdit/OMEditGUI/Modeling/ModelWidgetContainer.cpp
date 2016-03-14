@@ -894,6 +894,11 @@ bool GraphicsView::hasAnnotation()
   return false;
 }
 
+/*!
+ * \brief GraphicsView::addItem
+ * Adds the QGraphicsItem from GraphicsView
+ * \param pGraphicsItem
+ */
 void GraphicsView::addItem(QGraphicsItem *pGraphicsItem)
 {
   if (!scene()->items().contains(pGraphicsItem)) {
@@ -901,6 +906,11 @@ void GraphicsView::addItem(QGraphicsItem *pGraphicsItem)
   }
 }
 
+/*!
+ * \brief GraphicsView::removeItem
+ * Removes the QGraphicsItem from GraphicsView
+ * \param pGraphicsItem
+ */
 void GraphicsView::removeItem(QGraphicsItem *pGraphicsItem)
 {
   if (scene()->items().contains(pGraphicsItem)) {
@@ -908,12 +918,20 @@ void GraphicsView::removeItem(QGraphicsItem *pGraphicsItem)
   }
 }
 
+/*!
+ * \brief GraphicsView::createActions
+ * Creates the actions for the GraphicsView.
+ */
 void GraphicsView::createActions()
 {
   bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary();
   // Graphics View Properties Action
   mpPropertiesAction = new QAction(Helper::properties, this);
   connect(mpPropertiesAction, SIGNAL(triggered()), SLOT(showGraphicsViewProperties()));
+  // Simulation Params Action
+  mpSimulationParamsAction = new QAction(Helper::simulationParams, this);
+  mpSimulationParamsAction->setStatusTip(Helper::simulationParamsTip);
+  connect(mpSimulationParamsAction, SIGNAL(triggered()), SLOT(showSimulationParamsDialog()));
   // Actions for shapes and Components
   // Manhattanize Action
   mpManhattanizeAction = new QAction(tr("Manhattanize"), this);
@@ -1273,6 +1291,16 @@ void GraphicsView::showGraphicsViewProperties()
 {
   GraphicsViewProperties *pGraphicsViewProperties = new GraphicsViewProperties(this);
   pGraphicsViewProperties->exec();
+}
+
+/*!
+ * \brief GraphicsView::showSimulationParamsDialog
+ * Opens the MetaModelSimulationParamsDialog.
+ */
+void GraphicsView::showSimulationParamsDialog()
+{
+  MetaModelSimulationParamsDialog *pMetaModelSimulationParamsDialog = new MetaModelSimulationParamsDialog(this);
+  pMetaModelSimulationParamsDialog->exec();
 }
 
 /*!
@@ -1931,8 +1959,13 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     menu.addAction(mpModelWidget->getModelWidgetContainer()->getMainWindow()->getExportToOMNotebookAction());
     menu.addSeparator();
     menu.addAction(mpModelWidget->getModelWidgetContainer()->getMainWindow()->getPrintModelAction());
-    menu.addSeparator();
-    menu.addAction(mpPropertiesAction);
+    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+      menu.addSeparator();
+      menu.addAction(mpPropertiesAction);
+    } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+      menu.addSeparator();
+      menu.addAction(mpSimulationParamsAction);
+    }
     menu.exec(event->globalPos());
     return;         // return from it because at a time we only want one context menu.
   }
@@ -4191,8 +4224,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getExportXMLAction()->setEnabled(enabled && modelica);
   getMainWindow()->getExportFigaroAction()->setEnabled(enabled && modelica);
   getMainWindow()->getExportToOMNotebookAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getExportAsImageAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getExportToClipboardAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getExportAsImageAction()->setEnabled(enabled);
+  getMainWindow()->getExportToClipboardAction()->setEnabled(enabled);
   getMainWindow()->getPrintModelAction()->setEnabled(enabled);
   getMainWindow()->getFetchInterfaceDataAction()->setEnabled(enabled && metaModel);
   getMainWindow()->getTLMSimulationAction()->setEnabled(enabled && metaModel);

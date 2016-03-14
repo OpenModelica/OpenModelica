@@ -108,6 +108,7 @@ private:
   TextAnnotation *mpTextShapeAnnotation;
   BitmapAnnotation *mpBitmapShapeAnnotation;
   QAction *mpPropertiesAction;
+  QAction *mpSimulationParamsAction;
   QAction *mpManhattanizeAction;
   QAction *mpDeleteAction;
   QAction *mpBringToFrontAction;
@@ -254,6 +255,7 @@ public slots:
   void clearSelection();
   void addClassAnnotation(bool alwaysAdd = true);
   void showGraphicsViewProperties();
+  void showSimulationParamsDialog();
   void manhattanizeItems();
   void deleteItems();
   void duplicateItems();

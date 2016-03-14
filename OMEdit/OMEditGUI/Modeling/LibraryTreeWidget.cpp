@@ -2271,10 +2271,6 @@ void LibraryTreeView::createActions()
   mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulationSetup, this);
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
-  // Set TLM Co-Simulation experiment setting
-  mpTLMCoSimulationExperimentSettingAction = new QAction(Helper::tlmCoSimulationExperimentSetting, this);
-  mpTLMCoSimulationExperimentSettingAction->setStatusTip(Helper::tlmCoSimulationExperimentSettingTip);
-  connect(mpTLMCoSimulationExperimentSettingAction, SIGNAL(triggered()), SLOT(TLMCoSimulationExperimentSetting()));
 }
 
 /*!
@@ -2411,7 +2407,6 @@ void LibraryTreeView::showContextMenu(QPoint point)
         menu.addAction(mpUnloadMetaModelFileAction);
         break;
       case LibraryTreeItem::MetaModel:
-        menu.addAction(mpTLMCoSimulationExperimentSettingAction);
         menu.addAction(mpFetchInterfaceDataAction);
         menu.addAction(mpTLMCoSimulationAction);
         menu.addSeparator();
@@ -2711,18 +2706,6 @@ void LibraryTreeView::updateBindings()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->updateBindings(pLibraryTreeItem);
-  }
-}
-
-/*!
- * \brief LibraryTreeView::TLMCoSimulate experiment setting
- * Opens the TLM co-simulation experimet setting dialog for the selected LibraryTreeItem.
- */
-void LibraryTreeView::TLMCoSimulationExperimentSetting()
-{
-  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
-  if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->TLMCoSimulationExperimentSettings(pLibraryTreeItem);
   }
 }
 
