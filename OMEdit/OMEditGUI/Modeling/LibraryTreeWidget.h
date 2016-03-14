@@ -307,6 +307,7 @@ private:
   QAction *mpUpdateBindingsAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpTLMCoSimulationAction;
+  QAction *mpTLMCoSimulationExperimentSettingAction;
   void createActions();
   LibraryTreeItem* getSelectedLibraryTreeItem();
   void libraryTreeItemExpanded(LibraryTreeItem* pLibraryTreeItem);
@@ -339,6 +340,7 @@ public slots:
   void updateBindings();
   void fetchInterfaceData();
   void TLMSimulate();
+  void TLMCoSimulationExperimentSetting();
 protected:
   virtual void mouseDoubleClickEvent(QMouseEvent *event);
   virtual void startDrag(Qt::DropActions supportedActions);

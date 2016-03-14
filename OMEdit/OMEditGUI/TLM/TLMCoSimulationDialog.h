@@ -97,4 +97,26 @@ private slots:
   void runTLMCoSimulation();
 };
 
+class TLMCoSimulationExperimentSettingDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  TLMCoSimulationExperimentSettingDialog(MainWindow *pMainWindow);
+  void show(LibraryTreeItem *pLibraryTreeItem);
+private:
+  MainWindow *mpMainWindow;
+  LibraryTreeItem *mpLibraryTreeItem;
+  Label *mpStartTimeLabel;
+  QLineEdit *mpStartTimeTextBox;
+  Label *mpStopTimeLabel;
+  QLineEdit *mpStopTimeTextBox;
+  QPushButton *mpSaveButton;
+  QPushButton *mpSaveAndCoSimulateButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void saveExperimentSettings();
+  void saveExperimentSettingsAndCoSimulate();
+};
+
 #endif // TLMCOSIMULATIONDIALOG_H

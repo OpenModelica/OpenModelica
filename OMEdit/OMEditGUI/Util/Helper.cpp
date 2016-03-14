@@ -295,6 +295,8 @@ QString Helper::fetchInterfaceDataTip;
 QString Helper::tlmCoSimulationSetup;
 QString Helper::tlmCoSimulationSetupTip;
 QString Helper::tlmCoSimulation;
+QString Helper::tlmCoSimulationExperimentSetting;
+QString Helper::tlmCoSimulationExperimentSettingTip;
 QString Helper::running;
 QString Helper::finished;
 QString Helper::newVariable;
@@ -491,6 +493,8 @@ void Helper::initHelperVariables()
   Helper::tlmCoSimulationSetup = tr("TLM Co-Simulation Setup");
   Helper::tlmCoSimulationSetupTip = tr("Opens the TLM co-simulation setup");
   Helper::tlmCoSimulation = tr("TLM Co-Simulation");
+  Helper::tlmCoSimulationExperimentSetting = tr("Edit Experiment Setting");
+  Helper::tlmCoSimulationExperimentSettingTip = tr("Opens the TLM co-simulation experiment setting");
   Helper::running = tr("Running");
   Helper::finished = tr("Finished");
   Helper::newVariable = tr("<New Variable>");

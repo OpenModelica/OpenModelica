@@ -202,6 +202,8 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpSimulationDialog = new SimulationDialog(this);
   // Create TLM co-simulation dialog
   mpTLMCoSimulationDialog = new TLMCoSimulationDialog(this);
+  // Create TLM co-simulation experiment setting dialog
+  mpTLMCoSimulationExperimentSettingDialog = new TLMCoSimulationExperimentSettingDialog(this);
   // Create an object of PlotWindowContainer
   mpPlotWindowContainer = new PlotWindowContainer(this);
   // create an object of VariablesWidget
@@ -618,6 +620,7 @@ void MainWindow::beforeClosingMainWindow()
   delete mpDebuggerMainWindow;
   delete mpSimulationDialog;
   delete mpTLMCoSimulationDialog;
+  delete mpTLMCoSimulationExperimentSettingDialog;
   /* save the TransformationsWidget last window geometry and splitters state. */
   QSettings *pSettings = OpenModelica::getApplicationSettings();
   QHashIterator<QString, TransformationsWidget*> transformationsWidgets(mTransformationsWidgetHash);
@@ -952,6 +955,16 @@ void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem)
       }
     }
   }
+}
+
+/*!
+ * \brief MainWindow::TLMCoSimulationExperimentSettings
+ * \param pLibraryTreeItem
+ * Showsthe TLM co-simulation experiment setting dialog.
+ */
+void MainWindow::TLMCoSimulationExperimentSettings(LibraryTreeItem *pLibraryTreeItem)
+{
+  mpTLMCoSimulationExperimentSettingDialog->show(pLibraryTreeItem);
 }
 
 /*!
@@ -1975,6 +1988,19 @@ void MainWindow::exportToClipboard()
 }
 
 /*!
+ * \brief MainWindow::TLMCoSimulationExperimentSettings
+ * Slot activated when mpTLMCoSimulationExperimentSettingAction triggered signal is raised.
+ * Calls the function that opens the TLM Co-Simulation experiment setting dialog.
+ */
+void MainWindow::TLMCoSimulationExperimentSettings()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    TLMCoSimulationExperimentSettings(pModelWidget->getLibraryTreeItem());
+  }
+}
+
+/*!
  * \brief MainWindow::fetchInterfaceData
  * Slot activated when mpFetchInterfaceDataAction triggered signal is raised.
  * Calls the function that fetches the interface data.
@@ -2816,6 +2842,10 @@ void MainWindow::createActions()
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   mpTLMCoSimulationAction->setEnabled(false);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
+  // Set TLM Co-Simulation experiment setting
+  mpTLMCoSimulationExperimentSettingAction = new QAction(Helper::tlmCoSimulationExperimentSetting, this);
+  mpTLMCoSimulationExperimentSettingAction->setStatusTip(Helper::tlmCoSimulationExperimentSettingTip);
+  connect(mpTLMCoSimulationExperimentSettingAction, SIGNAL(triggered()), SLOT(TLMCoSimulationExperimentSettings()));
 }
 
 //! Creates the menus
