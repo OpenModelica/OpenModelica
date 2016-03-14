@@ -394,3 +394,71 @@ void TLMCoSimulationDialog::runTLMCoSimulation()
     }
   }
 }
+
+TLMCoSimulationExperimentSettingDialog::TLMCoSimulationExperimentSettingDialog(MainWindow *pMainWindow)
+  : QDialog(pMainWindow, Qt::WindowTitleHint)
+{
+  mpMainWindow = pMainWindow;
+  setMinimumWidth(300);
+  // CoSimulation Interval
+  mpStartTimeLabel = new Label(tr("Start Time:"));
+  mpStartTimeTextBox = new QLineEdit("0");
+  mpStopTimeLabel = new Label(tr("Stop Time:"));
+  mpStopTimeTextBox = new QLineEdit("1");
+  // Add the validators
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+  mpStartTimeTextBox->setValidator(pDoubleValidator);
+  mpStopTimeTextBox->setValidator(pDoubleValidator);
+  // buttons
+  mpSaveButton = new QPushButton(Helper::save);
+  mpSaveButton->setToolTip(tr("Saves the Co-Simulation experiment settings"));
+  connect(mpSaveButton, SIGNAL(clicked()), this, SLOT(saveExperimentSettings()));
+  mpSaveAndCoSimulateButton = new QPushButton(tr("Save && CoSimulate"));
+  mpSaveAndCoSimulateButton->setToolTip(tr("Saves the Co-Simulation experiment settings and starts the Co-Simulation"));
+  connect(mpSaveAndCoSimulateButton, SIGNAL(clicked()), this, SLOT(saveExperimentSettingsAndCoSimulate()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // adds Co-Simulation Experiment Setting buttons to the button box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpSaveButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpSaveAndCoSimulateButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // set the layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpStartTimeLabel, 0, 0);
+  pMainLayout->addWidget(mpStartTimeTextBox, 0, 1);
+  pMainLayout->addWidget(mpStopTimeLabel, 1, 0);
+  pMainLayout->addWidget(mpStopTimeTextBox, 1, 1);
+  pMainLayout->addWidget(mpButtonBox, 2, 1, 1, 1, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+  Reimplementation of QDialog::show method.
+  \param pLibraryTreeItem - pointer to LibraryTreeItem
+  */
+void TLMCoSimulationExperimentSettingDialog::show(LibraryTreeItem *pLibraryTreeItem)
+{
+  mpLibraryTreeItem = pLibraryTreeItem;
+  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::tlmCoSimulationExperimentSetting).arg(mpLibraryTreeItem->getNameStructure()));
+  setVisible(true);
+}
+
+/*!
+ Saves the TLM Co-Simulation experiment setting.
+ Slot activated when mpSave button clicked signal is raised.
+  */
+void TLMCoSimulationExperimentSettingDialog::saveExperimentSettings()
+{
+
+}
+
+/*!
+  Saves the TLM Co-Simulation experiment setting and start the co-simulation.
+  Slot activated when mpSaveAndCoSimulateButton clicked signal is raised.
+  */
+void TLMCoSimulationExperimentSettingDialog::saveExperimentSettingsAndCoSimulate()
+{
+
+}

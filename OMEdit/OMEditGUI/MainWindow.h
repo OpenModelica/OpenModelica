@@ -84,6 +84,7 @@ class DocumentationWidget;
 class VariablesWidget;
 class SimulationDialog;
 class TLMCoSimulationDialog;
+class TLMCoSimulationExperimentSettingDialog;
 class PlotWindowContainer;
 class ModelWidgetContainer;
 class DebuggerMainWindow;
@@ -155,6 +156,7 @@ public:
   QAction* getConnectModeAction();
   QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
+  QAction* getTLMCoSimulationExperimentSettingAction() {return mpTLMCoSimulationExperimentSettingAction;}
   void addRecentFile(const QString &fileName, const QString &encoding);
   void updateRecentFileActions();
   void closeEvent(QCloseEvent *event);
@@ -174,6 +176,7 @@ public:
   void exportModelFigaro(LibraryTreeItem *pLibraryTreeItem);
   void fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem);
   void TLMSimulate(LibraryTreeItem *pLibraryTreeItem);
+  void TLMCoSimulationExperimentSettings(LibraryTreeItem *pLibraryTreeItem);
   void exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem);
   void createOMNotebookTitleCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
   void createOMNotebookImageCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
@@ -203,6 +206,7 @@ private:
   QDockWidget *mpVariablesDockWidget;
   SimulationDialog *mpSimulationDialog;
   TLMCoSimulationDialog *mpTLMCoSimulationDialog;
+  TLMCoSimulationExperimentSettingDialog *mpTLMCoSimulationExperimentSettingDialog;
   PlotWindowContainer *mpPlotWindowContainer;
   QList<Qt::WindowStates> mPlotWindowsStatesList;
   QList<QByteArray> mPlotWindowsGeometriesList;
@@ -314,6 +318,7 @@ private:
   // TLM Simulation Action
   QAction *mpFetchInterfaceDataAction;
   QAction *mpTLMCoSimulationAction;
+  QAction *mpTLMCoSimulationExperimentSettingAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
@@ -376,6 +381,7 @@ public slots:
   void exportToClipboard();
   void fetchInterfaceData();
   void TLMSimulate();
+  void TLMCoSimulationExperimentSettings();
   void openWorkingDirectory();
   void openTerminal();
   void openConfigurationOptions();
