@@ -36,16 +36,19 @@
  */
 
 #include "Transformation.h"
+#include "Component.h"
 
 Transformation::Transformation()
 {
   mValid = false;
+  mpComponent = 0;
   initialize(StringHandler::Diagram);
 }
 
-Transformation::Transformation(StringHandler::ViewType viewType)
+Transformation::Transformation(StringHandler::ViewType viewType, Component *pComponent)
 {
   mValid = true;
+  mpComponent = pComponent;
   initialize(viewType);
 }
 
@@ -161,6 +164,7 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
 void Transformation::updateTransformation(const Transformation &transformation)
 {
   mValid = transformation.isValid();
+  mpComponent = transformation.getComponent();
   mViewType = transformation.getViewType();
   mWidth = transformation.getWidth();
   mHeight = transformation.getHeight();
@@ -341,6 +345,10 @@ QTransform Transformation::getTransformationMatrixDiagram()
   mPositionDiagram.setX(mOriginDiagram.x() + ((mExtent1Diagram.x() + mExtent2Diagram.x()) / 2));
   // calculate Y position
   mPositionDiagram.setY(mOriginDiagram.y() + ((mExtent1Diagram.y() + mExtent2Diagram.y()) / 2));
+  /* Ticket #3032. Adjust position based on the coordinate system of the component. */
+  if (mpComponent) {
+    mPositionDiagram = mPositionDiagram - (mpComponent->boundingRect().center() * mpComponent->getCoOrdinateSystem().getInitialScale());
+  }
   // get scale
   qreal tempwidth = fabs(mExtent1Diagram.x() - mExtent2Diagram.x());
   qreal sx = tempwidth / mWidth;
@@ -400,6 +408,10 @@ QTransform Transformation::getTransformationMatrixIcon()
   mPositionIcon.setX(mOriginIcon.x() + ((mExtent1Icon.x() + mExtent2Icon.x()) / 2));
   // calculate Y position
   mPositionIcon.setY(mOriginIcon.y() + ((mExtent1Icon.y() + mExtent2Icon.y()) / 2));
+  /* Ticket #3032. Adjust position based on the coordinate system of the component. */
+  if (mpComponent) {
+    mPositionIcon = mPositionIcon - (mpComponent->boundingRect().center() * mpComponent->getCoOrdinateSystem().getInitialScale());
+  }
   // get scale
   qreal tempwidth = fabs(mExtent1Icon.x() - mExtent2Icon.x());
   qreal sx = tempwidth / mWidth;

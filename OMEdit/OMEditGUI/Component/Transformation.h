@@ -48,12 +48,13 @@ class Transformation
 {
 public:
   Transformation();
-  Transformation(StringHandler::ViewType viewType);
+  Transformation(StringHandler::ViewType viewType, Component *pComponent = 0);
   Transformation(const Transformation &transformation);
   void initialize(StringHandler::ViewType viewType);
   void parseTransformationString(QString value, qreal width, qreal height);
   void updateTransformation(const Transformation &transformation);
   QTransform getTransformationMatrix();
+  Component* getComponent() const {return mpComponent;}
   bool isValid() const {return mValid;}
   bool getVisible() const {return mVisible;}
   void adjustPosition(qreal x, qreal y);
@@ -69,6 +70,7 @@ public:
   QPointF getPosition();
 private:
   bool mValid;
+  Component *mpComponent;
   StringHandler::ViewType mViewType;
   qreal mWidth;
   qreal mHeight;

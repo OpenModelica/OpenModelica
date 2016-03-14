@@ -363,7 +363,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
     drawComponent();
   }
   // transformation
-  mTransformation = Transformation(mpGraphicsView->getViewType());
+  mTransformation = Transformation(mpGraphicsView->getViewType(), this);
   mTransformation.parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
   if (transformation.isEmpty()) {
     // snap to grid while creating component
