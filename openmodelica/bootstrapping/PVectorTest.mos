@@ -3,6 +3,7 @@
 // status: correct
 // teardown_command: rm -f PVectorTest_*
 
+loadFile("../../../OMCompiler/Compiler/Util/List.mo");
 loadFile("../../../OMCompiler/Compiler/Util/BasePVector.mo");
 getErrorString();
 loadFile("PVectorTest.mo");
@@ -11,6 +12,7 @@ simulate(PVectorTest, numberOfIntervals=1);
 getErrorString();
 
 // Result:
+// true
 // true
 // ""
 // true
