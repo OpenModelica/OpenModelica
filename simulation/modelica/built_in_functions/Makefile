@@ -12,6 +12,7 @@ Identity.mos \
 LotkaVolterra.mos \
 MeasureTime.mos \
 SemiLinear.mos \
+SemiLinearTest2.mos \
 Sign.mos \
 Time.mos \
 TwoRateSampler.mos 
