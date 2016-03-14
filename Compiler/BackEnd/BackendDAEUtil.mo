@@ -2264,10 +2264,8 @@ algorithm
     outIncidenceArrayT := fillincidenceMatrixT(row, row_indices, outIncidenceArrayT);
   end for;
 
-  iarr := Dangerous.listReverseInPlace(iarr);
-  imap := Dangerous.listReverseInPlace(imap);
-  outIncidenceArray := listArray(iarr);
-  omapIncRowEqn := listArray(imap);
+  outIncidenceArray := List.listArrayReverse(iarr);
+  omapIncRowEqn := List.listArrayReverse(imap);
 end incidenceMatrixDispatchScalar;
 
 protected function fillincidenceMatrixT
@@ -3866,7 +3864,7 @@ algorithm
     // index = numberOfEqs (we reach the end)
     case (_, _, _, _, _, _,  false, _, _, _, _, _)
       then
-        (listArray(listReverse(inIncidenceArray)),inIncidenceArrayT,listArray(listReverse(imapEqnIncRow)),listArray(listReverse(imapIncRowEqn)));
+        (List.listArrayReverse(inIncidenceArray),inIncidenceArrayT,List.listArrayReverse(imapEqnIncRow),List.listArrayReverse(imapIncRowEqn));
 
     // index < numberOfEqs
     case (_, _, iArr, _, _, _, true, _, _, _, _ , _)

@@ -593,7 +593,7 @@ algorithm
   GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey) := iGraphInfo;
   graphsArr := listArray(graphs);
   nodesArr := listArray(nodes);
-  attributesArr := listArray(listReverse(attributes));
+  attributesArr := List.listArrayReverse(attributes);
   oGraphInfo := GRAPHINFOARR(graphsArr,nodesArr,edges,attributesArr,graphNodeKey,graphEdgeKey);
 end convertToGraphInfoArr;
 

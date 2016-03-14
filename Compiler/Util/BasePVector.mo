@@ -49,6 +49,7 @@ encapsulated partial package BasePVector
 replaceable type T = Integer; // Should be Any.
 
 protected
+import List;
 import MetaModelica.Dangerous;
 
 uniontype Vector
@@ -155,7 +156,7 @@ algorithm
         e :: rest := rest;
         node_lst := VALUE(e) :: node_lst;
       end for;
-      tail := arrayAppend(tail, listArray(listReverse(node_lst)));
+      tail := arrayAppend(tail, List.listArrayReverse(node_lst));
     end if;
 
     // Keep track of the size so we know where to push new nodes.

@@ -1403,8 +1403,7 @@ algorithm
     outMT := List.fold1(lst, Array.consToElement, i, outMT);
     m := lst::m;
   end for;
-  m := Dangerous.listReverseInPlace(m);
-  outM := listArray(m);
+  outM := List.listArrayReverse(m);
   outMT := mT;
 end getOrphansIncidenceMatrix;
 

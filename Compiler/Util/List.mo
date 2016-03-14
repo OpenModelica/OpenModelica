@@ -96,7 +96,8 @@ encapsulated package List
 "
 
 protected
-import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking};
+import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
+import MetaModelica.Dangerous;
 
 public function create<T>
   "Creates a list from an element."
@@ -1492,6 +1493,26 @@ algorithm
     outList := new_row :: outList;
   end for;
 end transposeList;
+
+public function listArrayReverse<T>
+  input list<T> inLst;
+  output array<T> outArr;
+protected
+  Integer len;
+  T defaultValue;
+algorithm
+  if listEmpty(inLst) then
+    outArr := listArray(inLst);
+    return;
+  end if;
+  len := listLength(inLst);
+  defaultValue::_ := inLst;
+  outArr := arrayCreateNoInit(len,defaultValue);
+  for e in inLst loop
+    arrayUpdateNoBoundsChecking(outArr, len, e);
+    len := len-1;
+  end for;
+end listArrayReverse;
 
 public function setEqualOnTrue<T>
   "Takes two lists and a comparison function over two elements of the lists.

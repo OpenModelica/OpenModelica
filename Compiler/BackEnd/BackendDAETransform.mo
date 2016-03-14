@@ -121,7 +121,7 @@ algorithm
     vlst := list(arrayGet(ass2, e) for e guard(arrayGet(ass2, e) > 0) in elst);
   end for;
 
-  outAcc := listArray(listReverse(acc));
+  outAcc := List.listArrayReverse(acc);
 end eqnAssignmentNonScalar;
 
 public function varAssignmentNonScalar

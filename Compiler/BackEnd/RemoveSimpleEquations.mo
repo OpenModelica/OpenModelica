@@ -465,7 +465,7 @@ protected
 algorithm
   if foundSimple then
     // transform simpleeqns to array
-    simpleeqns := listArray(listReverse(iSimpleeqnslst));
+    simpleeqns := List.listArrayReverse(iSimpleeqnslst);
     // collect and handle sets
     (vars, eqnslst, shared, repl) := handleSets(arrayLength(simpleeqns), 1, simpleeqns, iMT, iUnreplaceable, iVars, iEqnslst, ishared, iRepl);
     // perform replacements and try again
@@ -768,7 +768,7 @@ algorithm
     case (true, _, _, _, _, _, _, _, _, _, _)
       equation
         // transform simpleeqns to array
-        simpleeqns = listArray(listReverse(iSimpleeqnslst));
+        simpleeqns = List.listArrayReverse(iSimpleeqnslst);
         // collect and handle sets
         (vars, eqnslst, shared, repl) = handleSets(arrayLength(simpleeqns), 1, simpleeqns, iMT, iUnreplaceable, iVars, iEqnslst, ishared, iRepl);
         // perform replacements and try again
