@@ -1,0 +1,78 @@
+// name:     nonlinsys numeric linearization
+// keywords: nonlinsys, linearization
+// status:   correct
+// teardown_command: rm -rf p.nonlinsys.* p.nonlinsys_* output.log linear_p_nonlinsys.* linear_p.nonlinsys.mo linear_p_nonlinsys_* linear_p_nonlinsys p.nonlinsys
+// 
+//  Case for numeric linearization of nonlinsys model
+//
+loadFile("modelnonlinsys.mo");
+//linearize with numeric linearization and data recovery
+//linearize(p.nonlinsys, stopTime=0);
+simulate(p.nonlinsys, stopTime=0, simflags="-l=0 -l_datarec");
+getErrorString();
+loadFile("linear_p.nonlinsys.mo");
+list(linear_p_nonlinsys);
+simulate(linear_p_nonlinsys);
+getErrorString();
+readFile("linear_p_nonlinsys.log"); // Check that output log is emtpy
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "S:/Scratch/p.nonlinsys_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'p.nonlinsys', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=0 -l_datarec'",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 0.000000
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// true
+// "model linear_p_nonlinsys
+//   parameter Integer n = 3;
+//   // states
+//   parameter Integer k = 1;
+//   // top-level inputs
+//   parameter Integer l = 2;
+//   // top-level outputs
+//   parameter Integer nz = 6;
+//   // data recovery variables
+//   parameter Real x0[3] = {1, 1, 2};
+//   parameter Real u0[1] = {0};
+//   parameter Real z0[6] = {0, -6, -6, 0, 0, 0};
+//   parameter Real A[3, 3] = [0, 0, 0; 0, 5.999999994797209, -2.000000002708405; 0, 3.999999998752807, -6.000000017010549];
+//   parameter Real B[3, 1] = [0; 0; 0];
+//   parameter Real C[2, 3] = [0, 0, 0; 0, 0, 0];
+//   parameter Real D[2, 1] = [0; 0];
+//   parameter Real Cz[6, 3] = [0, 0, 0; 0, 9.999999993550016, -8.000000019718954; 0, 9.999999993550016, -8.000000019718954; 0, 0, 0; 0, 0, 0; 0, 0, 0];
+//   parameter Real Dz[6, 1] = [0; 0; 0; 1; 0; 0];
+//   Real x[3](start = x0);
+//   input Real u[1](start = u0);
+//   output Real y[2];
+//   output Real z[6];
+//   Real x_Pb1Px = x[1];
+//   Real x_Pc1Px1 = x[2];
+//   Real x_Pc1Px2 = x[3];
+//   Real u_Pu1 = u[1];
+//   Real y_Py1 = y[1];
+//   Real y_Py2 = y[2];
+//   Real z_Pa1Py = z[1];
+//   Real z_Pc1Py = z[2];
+//   Real z_Pc1Py1 = z[3];
+//   Real z_Pu1 = z[4];
+//   Real z_Py1 = z[5];
+//   Real z_Py2 = z[6];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+//   z = Cz * x + Dz * u;
+// end linear_p_nonlinsys;"
+// record SimulationResult
+//     resultFile = "S:/Scratch/linear_p_nonlinsys_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'linear_p_nonlinsys', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// ""
+// endResult
