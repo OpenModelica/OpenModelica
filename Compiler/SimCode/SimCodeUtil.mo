@@ -11585,7 +11585,7 @@ protected
    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> spTA, spTB;
    list<tuple<Integer, list<Integer>>> sparseInts;
    list<SimCode.FmiUnknown> derivatives, outputs, discreteStates;
-   list<SimCodeVar.SimVar> varsA, varsB, varsC, clockedStates;
+   list<SimCodeVar.SimVar> varsA, varsB, clockedStates;
    SimCode.HashTableCrefToSimVar crefSimVarHT;
    list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
    list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
@@ -11630,7 +11630,7 @@ algorithm
     //print("-- merged matrixes CD\n");
 
     delst := DoubleEndedList.fromList(getSimVars2Crefs(diffedCrefsB, crefSimVarHT));
-    DoubleEndedList.push_list_back(delst, getSimVars2Crefs(diffCrefsB, crefSimVarHT));
+    DoubleEndedList.push_list_front(delst, getSimVars2Crefs(diffCrefsB, crefSimVarHT));
     DoubleEndedList.push_list_back(delst, getSimVars2Crefs(diffedCrefsA, crefSimVarHT));
     DoubleEndedList.push_list_back(delst, getSimVars2Crefs(diffCrefsA, crefSimVarHT));
     varsA := DoubleEndedList.toListAndClear(delst);

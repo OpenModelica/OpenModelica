@@ -124,7 +124,7 @@ function push_list_front
   input list<T> lst;
 protected
   Integer length=arrayGet(delst.length,1), lstLength;
-  list<T> work, tail={}, tmp;
+  list<T> work, oldHead, tmp, head;
   T t;
 algorithm
   lstLength := listLength(lst);
@@ -133,21 +133,19 @@ algorithm
   end if;
   arrayUpdate(delst.length, 1, length+lstLength);
   t::tmp := lst;
-  work := {t};
-  tail := work;
+  head := {t};
+  oldHead := arrayGet(delst.front, 1);
+  arrayUpdate(delst.front, 1, head);
   for l in tmp loop
-    tmp := {l};
-    Dangerous.listSetRest(tail, tmp);
-    tail := tmp;
+    work := {l};
+    Dangerous.listSetRest(head, work);
+    head := work;
   end for;
   if length==0 then
-    arrayUpdate(delst.front, 1, work);
-    arrayUpdate(delst.back, 1, work);
-    return;
+    arrayUpdate(delst.back, 1, head);
+  else
+    Dangerous.listSetRest(head, oldHead);
   end if;
-  tmp := arrayGet(delst.front,1);
-  Dangerous.listSetRest(tail, tmp);
-  arrayUpdate(delst.front, 1, work);
 end push_list_front;
 
 function push_back<T>
@@ -174,7 +172,7 @@ function push_list_back
   input list<T> lst;
 protected
   Integer length=arrayGet(delst.length,1), lstLength;
-  list<T> work, tail={}, tmp;
+  list<T> tail={}, tmp;
   T t;
 algorithm
   lstLength := listLength(lst);
@@ -182,21 +180,19 @@ algorithm
     return;
   end if;
   arrayUpdate(delst.length, 1, length+lstLength);
-  t::tmp := lst;
-  work := {t};
-  tail := work;
-  for l in tmp loop
+  tail := arrayGet(delst.back, 1);
+  t := listGet(lst, 1);
+  tmp := {t};
+  Dangerous.listSetRest(tail, tmp);
+  if length==0 then
+    arrayUpdate(delst.front, 1, tmp);
+  end if;
+  tail := tmp;
+  for l in listRest(lst) loop
     tmp := {l};
     Dangerous.listSetRest(tail, tmp);
     tail := tmp;
   end for;
-  if length==0 then
-    arrayUpdate(delst.front, 1, work);
-    arrayUpdate(delst.back, 1, work);
-    return;
-  end if;
-  tmp := arrayGet(delst.back,1);
-  Dangerous.listSetRest(tmp, tail);
   arrayUpdate(delst.back, 1, tail);
 end push_list_back;
 
