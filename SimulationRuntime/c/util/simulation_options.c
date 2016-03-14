@@ -60,6 +60,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_IPOPT_MAX_ITER */        "ipopt_max_iter",
   /* FLAG_IPOPT_WARM_START */      "ipopt_warm_start",
   /* FLAG_L */                     "l",
+  /* FLAG_L_DATA_RECOVERY */       "l_datarec",
   /* FLAG_LOG_FORMAT */            "logFormat",
   /* FLAG_LS */                    "ls",
   /* FLAG_LS_IPOPT */              "ls_ipopt",
@@ -122,6 +123,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IPOPT_MAX_ITER */        "value specifies the max number of iteration for ipopt",
   /* FLAG_IPOPT_WARM_START */      "value specifies lvl for a warm start in ipopt: 1,2,3,...",
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
+  /* FLAG_L_DATA_RECOVERY */       "emit data recovery matrices with model linearization",
   /* FLAG_LOG_FORMAT */            "value specifies the log format of the executable. -logFormat=text (default) or -logFormat=xml",
   /* FLAG_LS */                    "value specifies the linear solver method",
   /* FLAG_LS_IPOPT */              "value specifies the linear solver method for ipopt",
@@ -224,6 +226,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies lvl for a warm start in ipopt: 1,2,3,...",
   /* FLAG_L */
   "  Value specifies a time where the linearization of the model should be performed.",
+  /* FLAG_L_DATA_RECOVERY */
+  "  Emit data recovery matrices with model linearization.",
   /* FLAG_LOG_FORMAT */
   "  Value specifies the log format of the executable:\n\n"
   "  * text (default)\n"
@@ -342,6 +346,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_IPOPT_MAX_ITER */        FLAG_TYPE_OPTION,
   /* FLAG_IPOPT_WARM_START */      FLAG_TYPE_OPTION,
   /* FLAG_L */                     FLAG_TYPE_OPTION,
+  /* FLAG_L_DATA_RECOVERY */       FLAG_TYPE_FLAG,
   /* FLAG_LOG_FORMAT */            FLAG_TYPE_OPTION,
   /* FLAG_LS */                    FLAG_TYPE_OPTION,
   /* FLAG_LS_IPOPT */              FLAG_TYPE_OPTION,

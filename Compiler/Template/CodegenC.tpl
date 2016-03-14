@@ -140,6 +140,7 @@ end translateInitFile;
     extern int <%symbolName(modelNamePrefixStr,"functionJacC_column")%>(void* data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(void* data, threadData_t *threadData);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
+    extern const char* <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
     extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short *, short *);
     extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
@@ -962,6 +963,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"functionJacC_column")%>,
        <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
        <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
+       <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>,
        <%symbolName(modelNamePrefixStr,"mayer")%>,
        <%symbolName(modelNamePrefixStr,"lagrange")%>,
        <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>,
@@ -4135,9 +4137,12 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
     let matrixB = genMatrix("B", varInfo.numStateVars, varInfo.numInVars)
     let matrixC = genMatrix("C", varInfo.numOutVars, varInfo.numStateVars)
     let matrixD = genMatrix("D", varInfo.numOutVars, varInfo.numInVars)
+    let matrixCz = genMatrix("Cz", varInfo.numAlgVars, varInfo.numStateVars)
+    let matrixDz = genMatrix("Dz", varInfo.numAlgVars, varInfo.numInVars)
     let vectorX = genVector("x", varInfo.numStateVars, 0)
     let vectorU = genVector("u", varInfo.numInVars, 1)
     let vectorY = genVector("y", varInfo.numOutVars, 2)
+    let vectorZ = genVector("z", varInfo.numAlgVars, 2)
     //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0); \n  output Real y[<%varInfo.numOutVars%>]; \n");
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
@@ -4152,8 +4157,27 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%vectorX%>
       <%vectorU%>
       <%vectorY%>
-      "\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%>  <% getVarName(vars.inputVars, "u", varInfo.numInVars) %>  <%getVarName(vars.outputVars, "y", varInfo.numOutVars) %>\n"
+      "\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%><% getVarName(vars.inputVars, "u", varInfo.numInVars) %><%getVarName(vars.outputVars, "y", varInfo.numOutVars) %>\n"
       "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%underscorePath(name)%>;\n";
+    }
+    const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
+    {
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n  parameter Integer nz = <%varInfo.numAlgVars%>; // data recovery variables \n"
+      "  parameter Real x0[<%varInfo.numStateVars%>] = {%s};\n"
+      "  parameter Real u0[<%varInfo.numInVars%>] = {%s};\n"
+      "  parameter Real z0[<%varInfo.numAlgVars%>] = {%s};\n"
+      <%matrixA%>
+      <%matrixB%>
+      <%matrixC%>
+      <%matrixD%>
+      <%matrixCz%>
+      <%matrixDz%>
+      <%vectorX%>
+      <%vectorU%>
+      <%vectorY%>
+      <%vectorZ%>
+      "\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%><% getVarName(vars.inputVars, "u", varInfo.numInVars) %><%getVarName(vars.outputVars, "y", varInfo.numOutVars) %><%getVarName(vars.algVars, "z", varInfo.numAlgVars) %>\n"
+      "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\n  z = Cz * x + Dz * u;\nend linear_<%underscorePath(name)%>;\n";
     }
     >>
   end match
