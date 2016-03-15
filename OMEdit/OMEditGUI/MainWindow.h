@@ -98,61 +98,65 @@ public:
   enum { MaxRecentFiles = 8 };
   MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent = 0);
   bool isDebug() {return mDebug;}
-  OMCProxy* getOMCProxy();
-  void setExitApplicationStatus(bool status);
-  bool getExitApplicationStatus();
-  OptionsDialog* getOptionsDialog();
-  MessagesWidget* getMessagesWidget();
-  LibraryWidget* getLibraryWidget();
-  DocumentationWidget* getDocumentationWidget();
-  QDockWidget* getDocumentationDockWidget();
-  VariablesWidget* getVariablesWidget();
-  QDockWidget* getVariablesDockWidget();
-  SimulationDialog* getSimulationDialog();
+  OMCProxy* getOMCProxy() {return mpOMCProxy;}
+  void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
+  bool getExitApplicationStatus() {return mExitApplicationStatus;}
+  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
+  MessagesWidget* getMessagesWidget() {return mpMessagesWidget;}
+  LibraryWidget* getLibraryWidget() {return mpLibraryWidget;}
+  DocumentationWidget* getDocumentationWidget() {return mpDocumentationWidget;}
+  QDockWidget* getDocumentationDockWidget() {return mpDocumentationDockWidget;}
+  VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
+  QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
+  SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
   TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
-  PlotWindowContainer* getPlotWindowContainer();
-  ModelWidgetContainer* getModelWidgetContainer();
+  PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
+  ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   DebuggerMainWindow* getDebuggerMainWindow() {return mpDebuggerMainWindow;}
-  WelcomePageWidget* getWelcomePageWidget();
-  InfoBar* getInfoBar();
-  QStatusBar* getStatusBar();
-  QProgressBar* getProgressBar();
-  Label* getPointerXPositionLabel();
-  Label* getPointerYPositionLabel();
-  QTabBar* getPerspectiveTabBar();
-  QAction* getSaveAction();
-  QAction* getSaveAsAction();
+  WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
+  InfoBar* getInfoBar() {return mpInfoBar;}
+  QStatusBar* getStatusBar() {return mpStatusBar;}
+  QProgressBar* getProgressBar() {return mpProgressBar;}
+  void showProgressBar() {mpProgressBar->setVisible(true);}
+  void hideProgressBar() {mpProgressBar->setVisible(false);}
+  Label* getPointerXPositionLabel() {return mpPointerXPositionLabel;}
+  Label* getPointerYPositionLabel() {return mpPointerYPositionLabel;}
+  QTabBar* getPerspectiveTabBar() {return mpPerspectiveTabbar;}
+  QAction* getSaveAction() {return mpSaveAction;}
+  QAction* getSaveAsAction() {return mpSaveAsAction;}
   QAction* getSaveTotalAction() {return mpSaveTotalAction;}
-  QAction* getPrintModelAction();
-  QAction* getSaveAllAction();
+  QAction* getPrintModelAction() {return mpPrintModelAction;}
+  QAction* getSaveAllAction() {return mpSaveAllAction;}
   QAction* getUndoAction() {return mpUndoAction;}
   QAction* getRedoAction() {return mpRedoAction;}
-  QAction* getShowGridLinesAction();
-  QAction* getResetZoomAction();
-  QAction* getZoomInAction();
-  QAction* getZoomOutAction();
-  QAction* getSimulateModelAction();
+  QAction* getShowGridLinesAction() {return mpShowGridLinesAction;}
+  QAction* getResetZoomAction() {return mpResetZoomAction;}
+  QAction* getZoomInAction() {return mpZoomInAction;}
+  QAction* getZoomOutAction() {return mpZoomOutAction;}
+  QAction* getSimulateModelAction() {return mpSimulateModelAction;}
   QAction* getSimulateWithTransformationalDebuggerAction() {return mpSimulateWithTransformationalDebuggerAction;}
   QAction* getSimulateWithAlgorithmicDebuggerAction() {return mpSimulateWithAlgorithmicDebuggerAction;}
-  QAction* getSimulationSetupAction();
-  QAction* getInstantiateModelAction();
-  QAction* getCheckModelAction();
+  QAction* getSimulationSetupAction() {return mpSimulationSetupAction;}
+  QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
+  QAction* getCheckModelAction() {return mpCheckModelAction;}
   QAction* getCheckAllModelsAction() {return mpCheckAllModelsAction;}
-  QAction* getExportFMUAction();
-  QAction* getExportXMLAction();
-  QAction* getExportFigaroAction();
-  QAction* getLineShapeAction();
-  QAction* getPolygonShapeAction();
-  QAction* getRectangleShapeAction();
-  QAction* getEllipseShapeAction();
-  QAction* getTextShapeAction();
-  QAction* getBitmapShapeAction();
-  QAction* getExportAsImageAction();
+  QAction* getExportFMUAction() {return mpExportFMUAction;}
+  QAction* getExportXMLAction() {return mpExportXMLAction;}
+  QAction* getExportFigaroAction() {return mpExportFigaroAction;}
+  QAction* getLineShapeAction() {return mpLineShapeAction;}
+  QAction* getPolygonShapeAction() {return mpPolygonShapeAction;}
+  QAction* getRectangleShapeAction() {return mpRectangleShapeAction;}
+  QAction* getEllipseShapeAction() {return mpEllipseShapeAction;}
+  QAction* getTextShapeAction() {return mpTextShapeAction;}
+  QAction* getBitmapShapeAction() {return mpBitmapShapeAction;}
+  QAction* getExportAsImageAction() {return mpExportAsImageAction;}
   QAction* getExportToClipboardAction() {return mpExportToClipboardAction;}
-  QAction* getExportToOMNotebookAction();
-  QAction* getImportFromOMNotebookAction();
-  QAction* getImportNgspiceNetlistAction();
-  QAction* getConnectModeAction();
+  QAction* getExportToOMNotebookAction() {return mpExportToOMNotebookAction;}
+  QAction* getImportFromOMNotebookAction() {return mpImportFromOMNotebookAction;}
+  QAction* getImportNgspiceNetlistAction() {return mpImportNgspiceNetlistAction;}
+  QAction* getConnectModeAction() {return mpConnectModeAction;}
+  QAction* getReSimulateModelAction() {return mpReSimulateModelAction;}
+  QAction* getReSimulateSetupAction() {return mpReSimulateSetupAction;}
   QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
   void addRecentFile(const QString &fileName, const QString &encoding);
@@ -308,6 +312,7 @@ private:
   QAction *mpNewPlotWindowAction;
   QAction *mpNewParametricPlotWindowAction;
   QAction *mpClearPlotWindowAction;
+  QAction *mpExportVariablesAction;
   // Other Actions
   QAction *mpExportAsImageAction;
   QAction *mpExportToClipboardAction;
@@ -390,13 +395,6 @@ public slots:
   void openAboutOMEdit();
   void toggleShapesButton();
   void openRecentModelWidget();
-  void reSimulateModel();
-  void showReSimulateSetup();
-  void addNewPlotWindow();
-  void addNewParametricPlotWindow();
-  void clearPlotWindow();
-  void showProgressBar();
-  void hideProgressBar();
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
   void toggleAutoSave();
   void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);

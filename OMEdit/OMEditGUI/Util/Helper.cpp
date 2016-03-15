@@ -190,6 +190,7 @@ QString Helper::reSimulate;
 QString Helper::reSimulateTip;
 QString Helper::reSimulateSetup;
 QString Helper::reSimulateSetupTip;
+QString Helper::exportVariables;
 QString Helper::simulateWithTransformationalDebugger;
 QString Helper::simulateWithTransformationalDebuggerTip;
 QString Helper::simulateWithAlgorithmicDebugger;
@@ -388,6 +389,7 @@ void Helper::initHelperVariables()
   Helper::reSimulateTip = tr("Re-simulates the Modelica class");
   Helper::reSimulateSetup = tr("Re-simulate Setup");
   Helper::reSimulateSetupTip = tr("Setup re-simulation settings");
+  Helper::exportVariables = tr("Export Variables");
   Helper::simulateWithTransformationalDebugger = tr("Simulate with Transformational Debugger");
   Helper::simulateWithTransformationalDebuggerTip = tr("Simulates the Modelica class with Transformational Debugger");
   Helper::simulateWithAlgorithmicDebugger = tr("Simulate with Algorithmic Debugger");

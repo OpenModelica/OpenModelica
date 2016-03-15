@@ -88,6 +88,7 @@
         <file>Resources/icons/plot-window.svg</file>
         <file>Resources/icons/re-simulate.svg</file>
         <file>Resources/icons/re-simulation-center.svg</file>
+        <file>Resources/icons/export-variables.svg</file>
         <file>Resources/icons/fmi.svg</file>
         <file>Resources/icons/export-fmu.svg</file>
         <file>Resources/icons/import-fmu.svg</file>

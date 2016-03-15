@@ -40,6 +40,14 @@
 
 using namespace OMPlot;
 
+/*!
+  \class PlotWindowContainer
+  \brief A MDI area for plot windows.
+  */
+/*!
+ * \brief PlotWindowContainer::PlotWindowContainer
+ * \param pParent
+ */
 PlotWindowContainer::PlotWindowContainer(MainWindow *pParent)
   : MdiArea(pParent)
 {
@@ -52,15 +60,20 @@ PlotWindowContainer::PlotWindowContainer(MainWindow *pParent)
   setVisible(false);
 }
 
+/*!
+ * \brief PlotWindowContainer::getUniqueName
+ * Returns a unique name for new plot window.
+ * \param name
+ * \param number
+ * \return
+ */
 QString PlotWindowContainer::getUniqueName(QString name, int number)
 {
   QString newName;
   newName = name + QString::number(number);
 
-  foreach (QMdiSubWindow *pWindow, subWindowList())
-  {
-    if (pWindow->widget()->windowTitle().compare(newName) == 0)
-    {
+  foreach (QMdiSubWindow *pWindow, subWindowList()) {
+    if (pWindow->widget()->windowTitle().compare(newName) == 0) {
       newName = getUniqueName(name, ++number);
       break;
     }
@@ -68,14 +81,26 @@ QString PlotWindowContainer::getUniqueName(QString name, int number)
   return newName;
 }
 
+/*!
+ * \brief PlotWindowContainer::getCurrentWindow
+ * Returns the current plot window.
+ * \return
+ */
 PlotWindow* PlotWindowContainer::getCurrentWindow()
 {
-  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0)
+  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
-  else
+  } else {
     return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
+  }
 }
 
+/*!
+ * \brief PlotWindowContainer::eventFilter
+ * \param pObject
+ * \param pEvent
+ * \return
+ */
 bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
 {
   PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pObject);
@@ -92,13 +117,13 @@ bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
 }
 
 /*!
-  Adds a new Plot Window.
-  \param maximized - sets the window state maximized
-  */
+ * \brief PlotWindowContainer::addPlotWindow
+ * Adds a new Plot Window.
+ * \param maximized - sets the window state maximized
+ */
 void PlotWindowContainer::addPlotWindow(bool maximized)
 {
-  try
-  {
+  try {
     PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this);
     pPlotWindow->setPlotType(PlotWindow::PLOT);
     pPlotWindow->setWindowTitle(getUniqueName("Plot : "));
@@ -119,13 +144,12 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
 }
 
 /*!
-  Adds a new Plot Parametric Window.
-  \param maximized - sets the window state maximized
-  */
+ * \brief PlotWindowContainer::addParametricPlotWindow
+ * Adds a new Plot Parametric Window.
+ */
 void PlotWindowContainer::addParametricPlotWindow()
 {
-  try
-  {
+  try {
     PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this);
     pPlotWindow->setPlotType(PlotWindow::PLOTPARAMETRIC);
     pPlotWindow->setWindowTitle(getUniqueName("Parametric Plot : "));
@@ -142,11 +166,14 @@ void PlotWindowContainer::addParametricPlotWindow()
   }
 }
 
+/*!
+ * \brief PlotWindowContainer::clearPlotWindow
+ * Clears the plot window
+ */
 void PlotWindowContainer::clearPlotWindow()
 {
   PlotWindow *pPlotWindow = getCurrentWindow();
-  if (!pPlotWindow)
-  {
+  if (!pPlotWindow) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                              tr("No plot window is active for clearing curves."), Helper::ok);
     return;
@@ -162,15 +189,74 @@ void PlotWindowContainer::clearPlotWindow()
   mpMainWindow->getVariablesWidget()->updateVariablesTreeHelper(subWindowList(QMdiArea::ActivationHistoryOrder).last());
 }
 
+/*!
+ * \brief PlotWindowContainer::exportVariables
+ * Exports the selected variables to CSV file.
+ */
+void PlotWindowContainer::exportVariables()
+{
+  PlotWindow *pPlotWindow = getCurrentWindow();
+  if (!pPlotWindow) {
+    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                             tr("No plot window is active for exporting variables."), Helper::ok);
+    return;
+  }
+  if (pPlotWindow->getPlot()->getPlotCurvesList().isEmpty()) {
+    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                             tr("No variables are selected for exporting."), Helper::ok);
+    return;
+  }
+  QString name = QString("exportedVariables");
+  QString fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::exportVariables), NULL,
+                                                    "CSV Files (*.csv)", NULL, "csv", &name);
+  if (fileName.isEmpty()) { // if user press ESC
+    return;
+  }
+  // create the file
+  QFile file(fileName);
+  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    QTextStream textStream(&file);
+    textStream.setCodec(Helper::utf8.toStdString().data());
+    textStream.setGenerateByteOrderMark(false);
+    QStringList headers;
+    int dataPoints = 0;
+    headers << "\"time\"";
+    foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+      headers << "\"" + pPlotCurve->getName() + "\"";
+      dataPoints = pPlotCurve->getXAxisData().size();
+    }
+    // write the csv header
+    textStream << headers.join(",") << "\n";
+    // write csv data
+    for (int i = 0 ; i < dataPoints ; ++i) {
+      QStringList data;
+      // write time data
+      data << QString::number(pPlotWindow->getPlot()->getPlotCurvesList().at(0)->getXAxisData().at(i));
+      for (int j = 0; j < headers.size() - 1; ++j) {
+        data << QString::number(pPlotWindow->getPlot()->getPlotCurvesList().at(j)->getYAxisData().at(i));
+      }
+      textStream << data.join(",") << "\n";
+    }
+    file.close();
+    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Exported variables in %1")
+                                                                 .arg(fileName), Helper::scriptingKind, Helper::notificationLevel));
+  } else {
+    QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+                             .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE).arg(file.errorString())), Helper::ok);
+  }
+}
+
+/*!
+ * \brief PlotWindowContainer::updatePlotWindows
+ * Updates the plot windows when the result file is updated.
+ * \param variable
+ */
 void PlotWindowContainer::updatePlotWindows(QString variable)
 {
-  foreach (QMdiSubWindow *pSubWindow, subWindowList())
-  {
+  foreach (QMdiSubWindow *pSubWindow, subWindowList()) {
     PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
-    foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList())
-    {
-      if (variable.compare(pPlotCurve->getFileName()) == 0)
-      {
+    foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+      if (variable.compare(pPlotCurve->getFileName()) == 0) {
         pPlotWindow->getPlot()->removeCurve(pPlotCurve);
         pPlotCurve->detach();
         if (pPlotWindow->getAutoScaleButton()->isChecked()) {

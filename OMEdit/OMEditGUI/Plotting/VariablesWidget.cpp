@@ -1288,19 +1288,12 @@ void VariablesWidget::showContextMenu(QPoint point)
     pDeleteResultAction->setData(pVariablesTreeItem->getVariableName());
     pDeleteResultAction->setStatusTip(tr("Delete the result"));
     connect(pDeleteResultAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(removeVariableTreeItem()));
-    /* re-simulate action */
-    QAction *pReSimulateAction = new QAction(QIcon(":/Resources/icons/re-simulate.svg"), Helper::reSimulate, this);
-    pReSimulateAction->setStatusTip(Helper::reSimulateTip);
-    connect(pReSimulateAction, SIGNAL(triggered()), this, SLOT(directReSimulate()));
-    /* re-simulate action */
-    QAction *pReSimulateSetupAction = new QAction(QIcon(":/Resources/icons/re-simulation-center.svg"), Helper::reSimulateSetup, this);
-    pReSimulateSetupAction->setStatusTip(Helper::reSimulateSetupTip);
-    connect(pReSimulateSetupAction, SIGNAL(triggered()), this, SLOT(showReSimulateSetup()));
 
     QMenu menu(this);
     menu.addAction(pDeleteResultAction);
-    menu.addAction(pReSimulateAction);
-    menu.addAction(pReSimulateSetupAction);
+    menu.addSeparator();
+    menu.addAction(mpMainWindow->getReSimulateModelAction());
+    menu.addAction(mpMainWindow->getReSimulateSetupAction());
     point.setY(point.y() + adjust);
     menu.exec(mpVariablesTreeView->mapToGlobal(point));
   }

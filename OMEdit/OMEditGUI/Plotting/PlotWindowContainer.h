@@ -55,6 +55,7 @@ public slots:
   void addPlotWindow(bool maximized = false);
   void addParametricPlotWindow();
   void clearPlotWindow();
+  void exportVariables();
   void updatePlotWindows(QString variable);
 };
 
