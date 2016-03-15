@@ -603,7 +603,8 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("language", language);
   // save working directory
   mpMainWindow->getOMCProxy()->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
-  mpSettings->setValue("workingDirectory", mpMainWindow->getOMCProxy()->changeDirectory());
+  mpGeneralSettingsPage->setWorkingDirectory(mpMainWindow->getOMCProxy()->changeDirectory());
+  mpSettings->setValue("workingDirectory", mpGeneralSettingsPage->getWorkingDirectory());
   // save toolbar icon size
   mpSettings->setValue("toolbarIconSize", mpGeneralSettingsPage->getToolbarIconSizeSpinBox()->value());
   // save user customizations

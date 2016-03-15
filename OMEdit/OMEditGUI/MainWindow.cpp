@@ -92,7 +92,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpMessagesDockWidget->hide();
   connect(mpMessagesWidget, SIGNAL(MessageAdded()), mpMessagesDockWidget, SLOT(show()));
   // Reopen the standard output stream.
-  QString outputFileName = mpOMCProxy->changeDirectory()+ "/omeditoutput.txt";
+  QString outputFileName = OpenModelica::tempDirectory() + "/omeditoutput.txt";
   freopen(outputFileName.toStdString().c_str(), "w", stdout);
   setbuf(stdout, NULL); // used non-buffered stdout
   mpOutputFileDataNotifier = 0;
@@ -107,7 +107,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
 
   }
   // Reopen the standard error stream.
-  QString errorFileName = mpOMCProxy->changeDirectory()+ "/omediterror.txt";
+  QString errorFileName = OpenModelica::tempDirectory() + "/omediterror.txt";
   freopen(errorFileName.toStdString().c_str(), "w", stderr);
   setbuf(stderr, NULL); // used non-buffered stderr
   mpErrorFileDataNotifier = 0;
@@ -472,14 +472,16 @@ void MainWindow::openDroppedFile(QDropEvent *event)
   hideProgressBar();
 }
 
+/*!
+ * \brief MainWindow::openResultFiles
+ * Opens the result file(s).
+ * \param fileNames
+ */
 void MainWindow::openResultFiles(QStringList fileNames)
 {
-  QString currentDirectory = mpOMCProxy->changeDirectory();
-  foreach (QString fileName, fileNames)
-  {
+  foreach (QString fileName, fileNames) {
     QFileInfo fileInfo(fileName);
-    mpOMCProxy->changeDirectory(fileInfo.absoluteDir().absolutePath());
-    QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.fileName());
+    QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.absoluteFilePath());
     // close the simulation result file.
     mpOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
@@ -488,7 +490,6 @@ void MainWindow::openResultFiles(QStringList fileNames)
       mpVariablesDockWidget->show();
     }
   }
-  mpOMCProxy->changeDirectory(currentDirectory);
 }
 
 void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
@@ -642,7 +643,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   if (mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName)) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
                                                 .arg(FMUName.isEmpty() ? pLibraryTreeItem->getNameStructure() : FMUName)
-                                                .arg(mpOMCProxy->changeDirectory()), Helper::scriptingKind,
+                                                .arg(mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory()), Helper::scriptingKind,
                                                 Helper::notificationLevel));
   }
   // hide progress bar
@@ -666,7 +667,7 @@ void MainWindow::exportModelXML(LibraryTreeItem *pLibraryTreeItem)
   showProgressBar();
   if (mpOMCProxy->translateModelXML(pLibraryTreeItem->getNameStructure())) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::XML_GENERATED)
-                                                .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeItem->getNameStructure()),
+                                                .arg(mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory()).arg(pLibraryTreeItem->getNameStructure()),
                                                 Helper::scriptingKind, Helper::notificationLevel));
   }
   // hide progress bar
