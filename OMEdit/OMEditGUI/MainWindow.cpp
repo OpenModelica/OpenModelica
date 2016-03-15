@@ -2016,14 +2016,15 @@ void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
   }
 }
 
+/*!
+ * \brief MainWindow::toggleAutoSave
+ * Start/Stop the auto save timer based on the settings.
+ */
 void MainWindow::toggleAutoSave()
 {
-  if (mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked())
-  {
-    mpAutoSaveTimer->start(mpOptionsDialog->getGeneralSettingsPage()->getAutoSaveIntervalSpinBox()->value() * 1000);
-  }
-  else
-  {
+  if (mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
+    mpAutoSaveTimer->start();
+  } else {
     mpAutoSaveTimer->stop();
   }
 }
