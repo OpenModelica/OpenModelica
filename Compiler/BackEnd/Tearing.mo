@@ -102,7 +102,7 @@ algorithm
       true = stringEqual(methodString, "noTearing");
     then inDAE;
 
-    // get method function and traveres systems
+    // get method function and traverse systems
     case(_) equation
       methodString = Config.getTearingMethod();
       BackendDAE.SHARED(backendDAEType=DAEtype) = inDAE.shared;
@@ -236,6 +236,7 @@ protected
 algorithm
   (oComp, outRunMatching) := matchcontinue (inComp, isyst, ishared, inMethod)
     local
+      Integer maxSize;
       list<Integer> eindex, vindx;
       Boolean b, b1;
       BackendDAE.StrongComponents comps, acc;
@@ -246,6 +247,11 @@ algorithm
 
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
       equality(jacType = BackendDAE.JAC_LINEAR());
+      maxSize = Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
+      if intGt(listLength(vindx),maxSize) then
+        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(listLength(vindx)),"Linear",intString(maxSize)});
+        fail();
+      end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       end if;
@@ -265,6 +271,11 @@ algorithm
     // tearing of non-linear systems
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
       failure(equality(jacType = BackendDAE.JAC_LINEAR()));
+      maxSize = Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
+      if intGt(listLength(vindx),maxSize) then
+        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(listLength(vindx)),"Nonlinear",intString(maxSize)});
+        fail();
+      end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nCase non-linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       end if;
