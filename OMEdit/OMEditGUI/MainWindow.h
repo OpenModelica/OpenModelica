@@ -122,6 +122,7 @@ public:
   Label* getPointerXPositionLabel() {return mpPointerXPositionLabel;}
   Label* getPointerYPositionLabel() {return mpPointerYPositionLabel;}
   QTabBar* getPerspectiveTabBar() {return mpPerspectiveTabbar;}
+  QTimer* getAutoSaveTimer() {return mpAutoSaveTimer;}
   QAction* getSaveAction() {return mpSaveAction;}
   QAction* getSaveAsAction() {return mpSaveAsAction;}
   QAction* getSaveTotalAction() {return mpSaveTotalAction;}
@@ -409,6 +410,7 @@ private:
   void createActions();
   void createToolbars();
   void createMenus();
+  void autoSaveHelper(LibraryTreeItem *pLibraryTreeItem);
   void storePlotWindowsStateAndGeometry();
   void switchToWelcomePerspective();
   void switchToModelingPerspective();

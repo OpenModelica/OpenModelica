@@ -3986,6 +3986,9 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
   if (!object || isHidden() || qApp->activeWindow() != mpMainWindow) {
     return QMdiArea::eventFilter(object, event);
   }
+  /* If focus is set to LibraryTreeView, DocumentationViewer, QMenuBar etc. then try to validate the text because user might have
+   * updated the text manually.
+   */
   if ((event->type() == QEvent::MouseButtonPress && qobject_cast<QMenuBar*>(object)) ||
       (event->type() == QEvent::FocusIn && (qobject_cast<LibraryTreeView*>(object) || qobject_cast<DocumentationViewer*>(object)))) {
     ModelWidget *pModelWidget = getCurrentModelWidget();
