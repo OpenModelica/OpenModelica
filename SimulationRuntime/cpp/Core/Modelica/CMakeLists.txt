@@ -1,15 +1,12 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required (VERSION 2.8.9)
 
 project(${ModelicaName})
 
-#FIX RUNTIME_STATIC_LINKING
-add_library(${ModelicaName}_static STATIC Modelica.cpp )
-#target_link_libraries (${ModelicaName}_static ${Boost_LIBRARIES})
-#set_target_properties(${ModelicaName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
-include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
+# this library is only for the precompiled header
+add_library(${ModelicaName} Modelica.cpp)
 
-add_library(${ModelicaName} SHARED Modelica.cpp)
-target_link_libraries (${ModelicaName} ${Boost_LIBRARIES})
+include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
+target_link_libraries(${ModelicaName} ${Boost_LIBRARIES})
 
 GET_TARGET_PROPERTY(libModelicaSystem ${ModelicaName} LOCATION)
 GET_FILENAME_COMPONENT(libModelicaSystemNameExt ${libModelicaSystem} EXT)
