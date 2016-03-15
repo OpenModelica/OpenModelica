@@ -9,7 +9,7 @@ if(NOT BUILD_SHARED_LIBS)
 else(NOT BUILD_SHARED_LIBS)
   # this is needed for link dependencies of some shared libs:
   # SimController, SimulationSettings, System
-  add_library(${OMCFactoryName}_static OMCFactory.cpp)
+  add_library(${OMCFactoryName}_static STATIC OMCFactory.cpp)
   set_target_properties(${OMCFactoryName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 endif(NOT BUILD_SHARED_LIBS)
 
