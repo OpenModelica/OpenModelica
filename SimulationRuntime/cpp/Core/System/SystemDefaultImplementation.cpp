@@ -55,6 +55,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , _clockInterval  (NULL)
   , _clockShift     (NULL)
   , _clockTime      (NULL)
+   , _clockCondition(NULL)
   , _outputStream(NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
@@ -90,6 +91,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementa
   , _clockInterval  (NULL)
   , _clockShift     (NULL)
   , _clockTime      (NULL)
+  , _clockCondition(NULL)
   , _outputStream(NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
@@ -132,6 +134,7 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
   if(_clockInterval) delete [] _clockInterval;
   if(_clockShift) delete [] _clockShift;
   if(_clockTime) delete [] _clockTime;
+   if(_clockCondition) delete [] _clockCondition;
 }
 
 void SystemDefaultImplementation::Assert(bool cond,const string& msg)
@@ -234,11 +237,14 @@ void SystemDefaultImplementation::initialize()
     _clockShift = new double [_dimClock];
     if (_clockTime) delete [] _clockTime;
     _clockTime = new double [_dimClock];
+	  if (_clockCondition) delete [] _clockCondition;
+    _clockCondition = new bool [_dimClock];
+	memset(_clockCondition,false,(_dimClock)*sizeof(bool));
   }
   _start_time = 0.0;
   _terminal = false;
   _terminate = false;
-
+  _clockStart = true;
 
 };
 
