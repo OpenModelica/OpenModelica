@@ -180,12 +180,12 @@ algorithm
     return;
   end if;
   arrayUpdate(delst.length, 1, length+lstLength);
-  tail := arrayGet(delst.back, 1);
   t := listGet(lst, 1);
   tmp := {t};
-  Dangerous.listSetRest(tail, tmp);
   if length==0 then
     arrayUpdate(delst.front, 1, tmp);
+  else
+    Dangerous.listSetRest(arrayGet(delst.back, 1), tmp);
   end if;
   tail := tmp;
   for l in listRest(lst) loop
