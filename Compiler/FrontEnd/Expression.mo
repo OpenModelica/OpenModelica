@@ -4437,18 +4437,17 @@ end makeDivVector;
 public function makeAsubAddIndex "creates an ASUB given an expression and an index"
   input DAE.Exp e;
   input Integer indx;
-  output DAE.Exp outExp;
+  output DAE.Exp outExp = e;
 algorithm
-  outExp := matchcontinue(e,indx)
-    local
-      list<DAE.Exp> subs;
-      DAE.Exp exp;
-    case (DAE.ASUB(exp,subs),_)
-      equation
-        subs = listAppend(subs,{DAE.ICONST(indx)});
-      then makeASUB(exp,subs);
-    else makeASUB(e,{DAE.ICONST(indx)});
-  end matchcontinue;
+  outExp := match outExp
+    case DAE.ASUB()
+      algorithm
+        outExp.sub := listAppend(outExp.sub, {DAE.ICONST(indx)});
+      then
+        outExp;
+
+    else makeASUB(e, {DAE.ICONST(indx)});
+  end match;
 end makeAsubAddIndex;
 
 public function makeIntegerExp
@@ -10961,7 +10960,7 @@ public function promoteExp
 algorithm
   (outExp, outType) := matchcontinue(inExp, inType, inDims)
     local
-      Integer  dims_to_add;
+      Integer dims_to_add;
       DAE.Type ty, res_ty;
       DAE.Exp exp;
       list<DAE.Type> tys;
@@ -10978,10 +10977,11 @@ algorithm
 
         // Construct all the types we will need here, to avoid having to
         // construct new types for all the subexpressions created.
-        dims = Types.getDimensions(inType);
+
         // Add as many dimensions of size 1 as needed.
         added_dims = List.fill(DAE.DIM_INTEGER(1), dims_to_add);
-        dims = listAppend(dims, added_dims);
+        // Append the dimensions from the type and the added dimensions.
+        dims = listAppend(Types.getDimensions(inType), added_dims);
         // Construct the result type.
         ty = Types.arrayElementType(inType);
         res_ty = Types.liftArrayListDims(ty, dims);

@@ -2204,7 +2204,7 @@ algorithm
   (outCache,outEnv,funcelts,elts) := matchcontinue(inCache,inEnv,cl,mods)
     local
       list<SCode.Element> cdefelts,classExtendsElts,extendsElts,compElts;
-      list<tuple<SCode.Element,DAE.Mod>> eltsMods;
+      list<tuple<SCode.Element,DAE.Mod>> eltsMods, extCompElts;
       String name;
       Absyn.Path fpath;
       SourceInfo info;
@@ -2218,8 +2218,8 @@ algorithm
         env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), SOME(FCore.CLASS_SCOPE()));
         fpath = FGraph.getGraphName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = InstUtil.splitElts(elts);
-        (cache,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, elts, ClassInf.RECORD(fpath), name, true, false);
-        eltsMods = listAppend(eltsMods,InstUtil.addNomod(compElts));
+        (cache,env,_,_,extCompElts,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, elts, ClassInf.RECORD(fpath), name, true, false);
+        eltsMods = listAppend(extCompElts,InstUtil.addNomod(compElts));
         // print("Record Elements: " +
         //   stringDelimitList(
         //     List.map(

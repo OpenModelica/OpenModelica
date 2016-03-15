@@ -1708,7 +1708,7 @@ algorithm
         files = List.map(List.map1(listAppend(files,dirs), System.strtok, ". "), listHead);
         (str, status) = System.popen("impact search '' | perl -pe 's/\\e\\[?.*?[\\@-~]//g' | grep '[^ :]*:' | cut -d: -f1 2>&1");
         if 0==status then
-          files = listAppend(files, System.strtok(str,"\n"));
+          files = listAppend(System.strtok(str,"\n"), files);
         end if;
         files = List.sort(files,Util.strcmpBool);
         files = List.sortedUnique(files, stringEqual);

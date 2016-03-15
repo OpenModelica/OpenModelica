@@ -402,7 +402,7 @@ protected
   Ref r;
 algorithm
   FCore.N(n, id, p, c, FCore.FS(it)) := fromRef(ref);
-  it := listAppend(it, inIterators);
+  it := listAppend(inIterators, it);
   // update the child
   r := updateRef(ref, FCore.N(n, id, p, c, FCore.FS(it)));
 end addIteratorsToRef;

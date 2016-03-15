@@ -462,7 +462,7 @@ algorithm
       Absyn.Path utPath1,utPath2,fqPath;
       Integer index,numPosArgs;
       list<Absyn.NamedArg> namedArgList,invalidArgs;
-      list<Absyn.Exp> funcArgsNamedFixed,funcArgs;
+      list<Absyn.Exp> funcArgsNamedFixed,funcArgs, funcArgs2;
       list<String> fieldNameList,fieldNamesNamed;
       list<DAE.Type> fieldTypeList, typeVars;
       list<DAE.Var> fieldVarList;
@@ -514,9 +514,9 @@ algorithm
         (_,fieldNamesNamed) := List.split(fieldNameList, numPosArgs);
         checkMissingArgs(fqPath,numPosArgs,fieldNamesNamed,listLength(namedArgList),info);
         (funcArgsNamedFixed,invalidArgs) := generatePositionalArgs(fieldNamesNamed,namedArgList,{});
-        funcArgs := listAppend(funcArgs,funcArgsNamedFixed);
+        funcArgs2 := listAppend(funcArgs,funcArgsNamedFixed);
         Util.SUCCESS() := checkInvalidPatternNamedArgs(invalidArgs,fieldNameList,Util.SUCCESS(),info);
-        (cache,patterns) := elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
+        (cache,patterns) := elabPatternTuple(cache,env,funcArgs2,fieldTypeList,info,lhs);
       then (cache,DAE.PAT_CALL(fqPath,index,patterns,fieldVarList,typeVars,knownSingleton));
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
@@ -535,9 +535,9 @@ algorithm
         checkMissingArgs(fqPath,numPosArgs,fieldNamesNamed,listLength(namedArgList),info);
 
         (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
-        funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
+        funcArgs2 = listAppend(funcArgs,funcArgsNamedFixed);
         Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,fieldNameList,Util.SUCCESS(),info);
-        (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
+        (cache,patterns) = elabPatternTuple(cache,env,funcArgs2,fieldTypeList,info,lhs);
         namedPatterns = List.thread3Tuple(patterns, fieldNameList, List.map(fieldTypeList,Types.simplifyType));
         namedPatterns = List.filterOnTrue(namedPatterns, filterEmptyPattern);
       then (cache,DAE.PAT_CALL_NAMED(fqPath,namedPatterns));

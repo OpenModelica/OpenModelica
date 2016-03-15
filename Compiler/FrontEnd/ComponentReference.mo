@@ -1656,6 +1656,7 @@ end crefRest;
 public function crefTypeFull2
   "Helper function to crefTypeFull."
   input DAE.ComponentRef inCref;
+  input list<DAE.Dimension> accumDims = {};
   output DAE.Type outType;
   output list<DAE.Dimension> outDims;
 algorithm
@@ -1663,22 +1664,25 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.Type ty, basety;
-      list<DAE.Dimension> dims, restdims;
+      list<DAE.Dimension> dims;
       list<DAE.Subscript> subs;
 
     case DAE.CREF_IDENT(identType = ty, subscriptLst = subs)
       equation
         (ty,dims) = Types.flattenArrayType(ty);
-        dims = List.stripN(dims,listLength(subs));
-      then (ty,dims);
+        dims = List.stripN(dims, listLength(subs));
+
+        if not listEmpty(accumDims) then
+          dims = listReverse(List.append_reverse(dims, accumDims));
+        end if;
+      then (ty, dims);
 
     case DAE.CREF_QUAL(identType = ty, subscriptLst = subs, componentRef = cr)
       equation
         (ty,dims) = Types.flattenArrayType(ty);
         dims = List.stripN(dims,listLength(subs));
 
-        (basety, restdims) = crefTypeFull2(cr);
-        dims = listAppend(dims, restdims);
+        (basety, dims) = crefTypeFull2(cr, List.append_reverse(dims, accumDims));
       then (basety, dims);
 
     else
@@ -2296,7 +2300,7 @@ algorithm
     case (DAE.CREF_IDENT(ident = id, subscriptLst = subs, identType = ty), _)
       equation
         new_sub = DAE.INDEX(DAE.ICONST(inSubscript));
-        subs = listAppend(subs, {new_sub});
+        subs = List.appendElt(new_sub, subs);
         ty = Expression.unliftArray(ty);
       then
         makeCrefIdent(id, ty, subs);
@@ -2444,9 +2448,8 @@ algorithm
     case(DAE.CREF_QUAL(name,identType,subs,child),_)
       equation
         true = (listLength(Expression.arrayTypeDimensions(identType)) >= (listLength(subs)+1));
-        subs = listAppend(subs,newSub);
       then
-        makeCrefQual(name,identType,subs,child);
+        makeCrefQual(name, identType, listAppend(subs, newSub), child);
 
     // DAE.CREF_QUAL without DAE.SLICE, search child
     case(DAE.CREF_QUAL(name,identType,subs,child),_)
@@ -3126,7 +3129,7 @@ algorithm
         crefs2 = listReverse(crefs2);
         // crefs2 = List.map1(crefs2,crefSetType,correctTy);
         // Create all combinations of the two lists.
-        crefs = expandCrefQual(crefs2, crefs, {});
+        crefs = expandCrefQual(crefs2, crefs);
       then
         crefs;
 
@@ -3167,31 +3170,20 @@ algorithm
   end match;
 end expandCrefLst;
 
-
 protected function expandCrefQual
   "Helper function to expandCref_impl. Constructs all combinations of the head
    and rest cref lists. E.g.:
     expandCrefQual({x, y}, {a, b}) => {x.a, x.b, y.a, y.b} "
   input list<DAE.ComponentRef> inHeadCrefs;
   input list<DAE.ComponentRef> inRestCrefs;
-  input list<DAE.ComponentRef> inAccumCrefs;
-  output list<DAE.ComponentRef> outCrefs;
+  output list<DAE.ComponentRef> outCrefs = {};
+protected
+  list<DAE.ComponentRef> crefs;
 algorithm
-  outCrefs := match(inHeadCrefs, inRestCrefs, inAccumCrefs)
-    local
-      list<DAE.ComponentRef> crefs, rest_crefs;
-      DAE.ComponentRef cref;
-
-    case (cref :: rest_crefs, _, _)
-      equation
-        crefs = List.map1r(inRestCrefs, joinCrefs, cref);
-        crefs = listAppend(crefs, inAccumCrefs);
-      then
-        expandCrefQual(rest_crefs, inRestCrefs, crefs);
-
-    else inAccumCrefs;
-
-  end match;
+  for cref in inHeadCrefs loop
+    crefs := list(joinCrefs(cref, rest_cref) for rest_cref in inRestCrefs);
+    outCrefs := listAppend(crefs, outCrefs);
+  end for;
 end expandCrefQual;
 
 protected function expandCref2

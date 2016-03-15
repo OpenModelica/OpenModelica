@@ -1688,10 +1688,10 @@ algorithm
       equation
         (l1, l2) = getExpsFromConstrainClass(rp);
         (l3, l4) = getExpsFromMod(m);
-        l1 = listAppend(l1, l3);
+        l3 = listAppend(l1, l3);
         l4 = listAppend(l2, l4);
       then
-        (l1, l4);
+        (l3, l4);
 
     // redeclare long class, investigate cc
     case SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp)))
@@ -1990,9 +1990,8 @@ algorithm
     case (exp as Absyn.IFEXP(ifExp = ifExp), (all_el, stack_el::rest_stack, _, false))
       equation
         (_, (_, _, deps, _)) = Absyn.traverseExpBidir(ifExp, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (all_el, {}, {}, false));
-        deps = listAppend(deps, stack_el);
       then
-        (exp, (all_el, rest_stack, deps, false));
+        (exp, (all_el, rest_stack, listAppend(deps, stack_el), false));
 
     else (inExp,inTuple);
   end matchcontinue;

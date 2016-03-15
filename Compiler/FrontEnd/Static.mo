@@ -6258,14 +6258,12 @@ algorithm
     val_slot := SLOT(DAE.FUNCARG("x", ty, DAE.C_VAR(), DAE.NON_PARALLEL(),
       NONE()), false, NONE(), {}, 1, SLOT_NOT_EVALUATED);
 
-    try
-      // Try the String(val, <option>) format.
-      slots := {val_slot, STRING_ARG_MINLENGTH, STRING_ARG_LEFTJUSTIFIED};
-
+    try // Try the String(val, <option>) format.
       // Only String(Real) has the significantDigits option.
-      if Types.isRealOrSubTypeReal(ty) then
-        slots := listAppend(slots, {STRING_ARG_SIGNIFICANT_DIGITS});
-      end if;
+      slots := if Types.isRealOrSubTypeReal(ty) then
+        {STRING_ARG_SIGNIFICANT_DIGITS} else {};
+
+      slots := val_slot :: STRING_ARG_MINLENGTH :: STRING_ARG_LEFTJUSTIFIED :: slots;
 
       (outCache, args, _, consts) := elabInputArgs(outCache, inEnv, inPosArgs, inNamedArgs,
           slots, false, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),

@@ -360,8 +360,8 @@ algorithm
       equation
         (DAE.DAE(elts11),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts1));
         (DAE.DAE(elts22),DAE.DAE(elts33)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts2));
-        elts3 = listAppend(elts3,elts33);
-      then (DAE.DAE(DAE.COMP(id,elts11,source,cmt)::elts22),DAE.DAE(elts3));
+        elts33 = listAppend(elts3,elts33);
+      then (DAE.DAE(DAE.COMP(id,elts11,source,cmt)::elts22),DAE.DAE(elts33));
 
     case(DAE.DAE((e as DAE.EQUATION())::elts2))
       equation
@@ -1358,56 +1358,63 @@ end getAllMatchingElements;
 
 public function findAllMatchingElements "author:  adrpo
   Similar to getMatchingElements but gets two conditions and returns two lists. The functions are copied to both."
-  input DAE.DAElist elist;
-  input FuncTypeElementTo cond1;
-  input FuncTypeElementTo cond2;
+  input DAE.DAElist dae;
+  input CondFunc cond1;
+  input CondFunc cond2;
   output DAE.DAElist firstList;
   output DAE.DAElist secondList;
-  partial function FuncTypeElementTo
-    input DAE.Element inElement;
-  end FuncTypeElementTo;
-algorithm
-  (firstList,secondList) := matchcontinue(elist,cond1,cond2)
-    local
-      list<DAE.Element> rest, lst, elist1, elist2, elist1a, elist2a;
-      DAE.Element e;
 
-    // handle the empty case
-    case(DAE.DAE({}),_,_) then (DAE.DAE({}),DAE.DAE({}));
-    // handle the dive-in case
-    case(DAE.DAE(DAE.COMP(dAElist=lst)::rest),_,_)
-      equation
-        (DAE.DAE(elist1),DAE.DAE(elist2)) = findAllMatchingElements(DAE.DAE(lst),cond1,cond2);
-        (DAE.DAE(elist1a),DAE.DAE(elist2a)) = findAllMatchingElements(DAE.DAE(rest),cond1,cond2);
-        elist1 = listAppend(elist1,elist1a);
-        elist2 = listAppend(elist2,elist2a);
-      then (DAE.DAE(elist1),DAE.DAE(elist2));
-    // handle both first and second condition true!
-    case(DAE.DAE(e::rest),_,_)
-      equation
-        cond1(e);
-        cond2(e);
-        (DAE.DAE(elist1),DAE.DAE(elist2)) = findAllMatchingElements(DAE.DAE(rest),cond1,cond2);
-      then (DAE.DAE(e::elist1),DAE.DAE(e::elist2));
-    // handle first condition true
-    case(DAE.DAE(e::rest),_,_)
-      equation
-        cond1(e);
-        (DAE.DAE(elist1),DAE.DAE(elist2)) = findAllMatchingElements(DAE.DAE(rest),cond1,cond2);
-      then (DAE.DAE(e::elist1),DAE.DAE(elist2));
-    // handle the second condition
-    case(DAE.DAE(e::rest),_,_)
-      equation
-        cond2(e);
-        (DAE.DAE(elist1),DAE.DAE(elist2)) = findAllMatchingElements(DAE.DAE(rest),cond1,cond2);
-      then (DAE.DAE(elist1),DAE.DAE(e::elist2));
-    // move to next element.
-    case(DAE.DAE(_::rest),_,_)
-      equation
-        (DAE.DAE(elist1),DAE.DAE(elist2)) = findAllMatchingElements(DAE.DAE(rest),cond1,cond2);
-      then (DAE.DAE(elist1),DAE.DAE(elist2));
-  end matchcontinue;
+  partial function CondFunc
+    input DAE.Element element;
+    output Boolean result;
+  end CondFunc;
+protected
+  list<DAE.Element> elements, el1, el2;
+algorithm
+  DAE.DAE(elementLst = elements) := dae;
+  (el1, el2) := findAllMatchingElements2(elements, cond1, cond2);
+  firstList := DAE.DAE(listReverse(el1));
+  secondList := DAE.DAE(listReverse(el2));
 end findAllMatchingElements;
+
+protected function findAllMatchingElements2
+  input list<DAE.Element> elements;
+  input CondFunc cond1;
+  input CondFunc cond2;
+  input list<DAE.Element> accumFirst = {};
+  input list<DAE.Element> accumSecond = {};
+  output list<DAE.Element> firstList = accumFirst;
+  output list<DAE.Element> secondList = accumSecond;
+
+  partial function CondFunc
+    input DAE.Element element;
+    output Boolean result;
+  end CondFunc;
+algorithm
+  for e in elements loop
+    _ := match e
+      case DAE.COMP()
+        algorithm
+          (firstList, secondList) :=
+            findAllMatchingElements2(e.dAElist, cond1, cond2, firstList, secondList);
+        then
+          ();
+
+      else
+        algorithm
+          if cond1(e) then
+            firstList := e :: firstList;
+          end if;
+
+          if cond2(e) then
+            secondList := e :: secondList;
+          end if;
+        then
+          ();
+
+    end match;
+  end for;
+end findAllMatchingElements2;
 
 public function isAfterIndexInlineFunc "
 Author BZ
@@ -1484,27 +1491,27 @@ algorithm
   end match;
 end isParamOrConstVarKind;
 
-public function isInnerVar "author: PA
-
-  Succeeds if element is a variable with prefix inner.
-"
-  input DAE.Element inElement;
+public function isInnerVar
+  "Returns true if the element is an inner variable."
+  input DAE.Element element;
+  output Boolean isInner;
 algorithm
-  _:=
-  match (inElement)
-    case DAE.VAR(innerOuter = Absyn.INNER()) then ();
-    case DAE.VAR(innerOuter = Absyn.INNER_OUTER())then ();
+  isInner := match element
+    case DAE.VAR() then Absyn.isInner(element.innerOuter);
+    else false;
   end match;
 end isInnerVar;
 
-public function isOuterVar "author: PA
-  Succeeds if element is a variable with prefix outer.
-"
-  input DAE.Element inElement;
-algorithm _:= match (inElement)
-    case DAE.VAR(innerOuter = Absyn.OUTER()) then ();
+public function isOuterVar
+  "Returns true if the element is an outer variable."
+  input DAE.Element element;
+  output Boolean isOuter;
+algorithm
+  isOuter := match element
+    case DAE.VAR(innerOuter = Absyn.OUTER()) then true;
     // FIXME? adrpo: do we need this?
-    // case DAE.VAR(innerOuter = Absyn.INNER_OUTER()) then ();
+    // case DAE.VAR(innerOuter = Absyn.INNER_OUTER()) then true;
+    else false;
   end match;
 end isOuterVar;
 
@@ -5338,22 +5345,6 @@ algorithm
   end matchcontinue;
 end joinDaeLst;
 
-public function appendToCompDae
-  input DAE.DAElist inCompDae;
-  input DAE.DAElist inDae;
-  output DAE.DAElist outCompDae;
-protected
-  DAE.Ident ident;
-  list<DAE.Element> el, el2;
-  DAE.ElementSource src;
-  Option<SCode.Comment> cmt;
-algorithm
-  DAE.DAE({DAE.COMP(ident, el, src, cmt)}) := inCompDae;
-  DAE.DAE(el2) := inDae;
-  el := listAppend(el, el2);
-  outCompDae := DAE.DAE({DAE.COMP(ident, el, src, cmt)});
-end appendToCompDae;
-
 /*AvlTree implementation for DAE functions.*/
 
 public function keyStr "prints a key to a string"
@@ -6413,25 +6404,16 @@ public function addFunctionDefinition
 "adds a functionDefinition to a function. can be used to add function_der_mapper to a function"
   input DAE.Function ifunc;
   input DAE.FunctionDefinition iFuncDef;
-  output DAE.Function ofunc;
+  output DAE.Function func = ifunc;
 algorithm
-  ofunc := match(ifunc, iFuncDef)
-    local
-      Absyn.Path path;
-      list<DAE.FunctionDefinition> functions;
-      DAE.Type type_;
-      Boolean partialPrefix;
-      Boolean isImpure;
-      DAE.InlineType inlineType;
-      DAE.ElementSource source;
-      Option<SCode.Comment> comment;
-      SCode.Visibility visibility;
+  _ := match func
+    case DAE.FUNCTION()
+      algorithm
+        func.functions := List.appendElt(iFuncDef, func.functions);
+      then
+        ();
 
-    case (DAE.FUNCTION(path, functions, type_, visibility, partialPrefix, isImpure, inlineType, source, comment), _)
-      equation
-        functions = listAppend(functions, {iFuncDef});
-      then DAE.FUNCTION(path, functions, type_, visibility, partialPrefix, isImpure, inlineType, source, comment);
-    else ifunc;
+    else ();
   end match;
 end addFunctionDefinition;
 

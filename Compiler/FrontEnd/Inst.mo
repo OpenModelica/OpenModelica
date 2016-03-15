@@ -1986,7 +1986,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,comment,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts,compelts_2_elem;
-      FCore.Graph env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2,parentEnv;
+      FCore.Graph env1,env2,env3,env,env5,cenv,cenv_2,env_2,parentEnv;
       list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,extcomps,compelts_1,compelts_2, comp_cond, derivedClassesWithConstantMods;
       Connect.Sets csets,csets1,csets2,csets3,csets4,csets5,csets_1;
       DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae6,dae7,dae;
@@ -2193,29 +2193,15 @@ algorithm
         checkMods = Mod.merge(mods,emods, className);
         mods = checkMods;
         (cache,env3,ih) = InstUtil.addComponentsToEnv(cache, env2, ih, mods, pre, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
-        //Update the modifiers of elements to typed ones, needed for modifiers
-        //on components that are inherited.
-        compelts_2 = compelts_1;
-        env4 = env3;
-
-        //compelts_1 = InstUtil.addNomod(compelts);
-        //cdefelts_1 = InstUtil.addNomod(cdefelts);
-        //compelts_2 = List.flatten({compelts_2, compelts_1, cdefelts_1});
 
         //Instantiate components
-        compelts_2_elem = List.map(compelts_2,Util.tuple21);
-
-        // fprintln(Flags.INNER_OUTER, "Number of components: " + intString(listLength(compelts_2_elem)));
-        // fprintln(Flags.INNER_OUTER, stringDelimitList(List.map(compelts_2_elem, SCodeDump.printElementStr), "\n"));
-
-        //print("To match modifiers,\n" + Mod.printModStr(checkMods) + "\n on components: ");
-        //print(" (" + stringDelimitList(List.map(compelts_2_elem,SCode.elementName),", ") + ") \n");
-        InstUtil.matchModificationToComponents(compelts_2_elem,checkMods,FGraph.printGraphPathStr(env4));
+        compelts_2_elem = List.map(compelts_1,Util.tuple21);
+        InstUtil.matchModificationToComponents(compelts_2_elem,checkMods,FGraph.printGraphPathStr(env3));
 
         // Move any conditional components to the end of the component list, to
         // make sure that any dependencies of the condition are instantiated first.
-        (comp_cond, compelts_2) = List.splitOnTrue(compelts_2, InstUtil.componentHasCondition);
-        compelts_2 = listAppend(compelts_2, comp_cond);
+        (comp_cond, compelts_1) = List.splitOnTrue(compelts_1, InstUtil.componentHasCondition);
+        compelts_2 = listAppend(compelts_1, comp_cond);
 
         // BTH: Search for state machine components and update ih correspondingly.
         (smCompCrefs, smInitialCrefs) = InstStateMachineUtil.getSMStatesInContext(eqs_1, pre);
@@ -2223,13 +2209,13 @@ algorithm
         ih = List.fold(smCompCrefs, InnerOuter.updateSMHierarchy, ih);
 
         (cache,env5,ih,store,dae1,csets,ci_state2,vars,graph,domainFieldsLst) =
-          instElementList(cache, env4, ih, store, mods, pre, ci_state1,
+          instElementList(cache, env3, ih, store, mods, pre, ci_state1,
             compelts_2, inst_dims, impl, callscope, graph, csets, true);
 
         // If we are currently instantiating a connector, add all flow variables
         // in it as inside connectors.
         zero_dims = InstUtil.instDimsHasZeroDims(inst_dims);
-        elementSource = DAEUtil.createElementSource(info, FGraph.getScopePath(env4), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        elementSource = DAEUtil.createElementSource(info, FGraph.getScopePath(env3), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         csets1 = ConnectUtil.addConnectorVariablesFromDAE(zero_dims, ci_state1, pre, vars, csets, info, elementSource);
 
         // Reorder the connect equations to have non-expandable connect first:
@@ -3541,7 +3527,7 @@ algorithm
 
         //Instantiate the component
         // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
-        inst_dims = listAppend(inst_dims,{{}});
+        inst_dims = List.appendElt({}, inst_dims);
 
         (cache,mod) = Mod.updateMod(cache, env2 /* cenv */, ih, pre, mod, impl, info);
         (cache,mod_1) = Mod.updateMod(cache, env2 /* cenv */, ih, pre, mod_1, impl, info);
@@ -4254,13 +4240,12 @@ algorithm
         //Debug.traceln("got class " + SCodeDump.printClassStr(cl));
         updatedComps = getUpdatedCompsHashTable(inUpdatedComps);
         (mods,cmod,m) = InstUtil.noModForUpdatedComponents(var1,updatedComps,cref,mods,cmod,m);
-        crefs = InstUtil.getCrefFromMod(m);
-        crefs2 = InstUtil.getCrefFromDim(ad);
-        crefs3 = InstUtil.getCrefFromCond(cond);
-        crefs_1 = listAppend(crefs,listAppend(crefs2,crefs3));
-        crefs = Mod.getUntypedCrefs(cmod);
-        crefs_1 = listAppend(crefs_1, crefs);
-        crefs_2 = InstUtil.removeCrefFromCrefs(crefs_1, cref);
+        crefs = List.flatten({
+          InstUtil.getCrefFromMod(m),
+          InstUtil.getCrefFromDim(ad),
+          InstUtil.getCrefFromCond(cond),
+          Mod.getUntypedCrefs(cmod)});
+        crefs_2 = InstUtil.removeCrefFromCrefs(crefs, cref);
         // Also remove the cref that caused this updateComponentInEnv call, to avoid
         // infinite loops.
         crefs_2 = InstUtil.removeOptCrefFromCrefs(crefs_2, currentCref);

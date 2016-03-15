@@ -1061,8 +1061,8 @@ algorithm
         print("vector ="+ExpressionDump.printExpStr(e)+"\n");
       (uts,terms,store) = buildTermExpList(env,expl,ht,store);
       ut::uts = buildArrayElementTerms(uts,expl);
-      terms = listAppend(terms,uts);
-    then (ut,terms,store);
+      uts = listAppend(terms,uts);
+    then (ut,uts,store);
 
     case(_,e as DAE.MATRIX(matrix=mexpl),_,ht,store)
       equation
@@ -1070,8 +1070,8 @@ algorithm
         expl = List.flatten(mexpl);
         (uts,terms,store) = buildTermExpList(env,expl,ht,store);
         ut::uts = buildArrayElementTerms(uts,expl);
-        terms = listAppend(terms,uts);
-      then (ut,terms,store);
+        uts = listAppend(terms,uts);
+      then (ut,uts,store);
 
     case(_,e as DAE.CALL(),_,_,_) equation
       print("buildTermDAE.CALL failed exp: "+ExpressionDump.printExpStr(e)+"\n");
@@ -1083,23 +1083,22 @@ protected function buildArrayElementTerms "help function to buildTermExpression.
 and EQN to make the constraint that they must have the same unit"
   input list<UnitAbsyn.UnitTerm> iuts;
   input list<DAE.Exp> iexpl;
-  output list<UnitAbsyn.UnitTerm> outUts;
+  output list<UnitAbsyn.UnitTerm> outUts = {};
+protected
+  list<UnitAbsyn.UnitTerm> rest_ut = iuts;
+  UnitAbsyn.UnitTerm ut1, ut2;
+  DAE.Type ty;
+  list<DAE.Exp> rest_expl = iexpl;
+  DAE.Exp e1, e2;
 algorithm
-  outUts := match(iuts,iexpl)
-    local
-      UnitAbsyn.UnitTerm ut1,ut2;
-      DAE.Type ty; DAE.Exp e1,e2;
-      list<UnitAbsyn.UnitTerm> uts;
-      list<DAE.Exp> expl;
+  while not listEmpty(rest_ut) loop
+    ut1 :: ut2 :: rest_ut := rest_ut;
+    e1 :: e2 :: rest_expl := rest_expl;
+    ty := Expression.typeof(e1);
+    outUts := UnitAbsyn.EQN(ut1, ut2, DAE.ARRAY(ty, true, {e1, e2})) :: outUts;
+  end while;
 
-    case({},_) then  {};
-    case(uts as {_},_) then uts;
-    case(ut1::ut2::uts,e1::e2::expl) equation
-      uts = buildArrayElementTerms(uts,expl);
-      ty = Expression.typeof(e1);
-      uts = listAppend(uts,{UnitAbsyn.EQN(ut1,ut2,DAE.ARRAY(ty,true,{e1,e2}))});
-    then uts;
-  end match;
+  outUts := listReverse(outUts);
 end  buildArrayElementTerms;
 
 protected function buildTermCall "builds a term and additional terms from a function call"
@@ -1129,7 +1128,7 @@ algorithm
        (actTermLst,extraTerms,store) = buildTermExpList(env,expl,ht,store);
         terms = buildFormal2ActualParamTerms(formalParamIndxs,actTermLst);
         ({ut},extraTerms2,store) = buildResultTerms(functp,funcInstId,funcCallExp,store);
-        extraTerms = listAppend(extraTerms,listAppend(extraTerms2,terms));
+       extraTerms = List.flatten({extraTerms, extraTerms2, terms});
     then (ut,extraTerms,store);
   end match;
 end buildTermCall;

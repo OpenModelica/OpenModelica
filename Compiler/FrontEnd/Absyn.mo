@@ -3153,11 +3153,10 @@ algorithm
       list<Subscript> subs;
       String id;
       ComponentRef cr;
+
     case (CREF_IDENT(id,subs),_)
-      equation
-        subs = listAppend(subs,i);
-      then
-        CREF_IDENT(id,subs);
+      then CREF_IDENT(id, listAppend(subs, i));
+
     case (CREF_QUAL(id,subs,cr),_)
       equation
         cr = addSubscriptsLast(cr,i);
@@ -3466,9 +3465,8 @@ algorithm
       equation
         crefs1 = getCrefsFromSubs(subs,includeSubs,includeFunctions);
         crefs = getCrefFromExp(exp,includeSubs,includeFunctions);
-        crefs = listAppend(crefs,crefs1);
       then
-        crefs;
+        listAppend(crefs,crefs1);
   end match;
 end getCrefsFromSubs;
 
@@ -3544,15 +3542,12 @@ algorithm
       then
         res;
 
+    // TODO: Handle else if-branches.
     case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),_,_)
-      equation
-        l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
-        l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
-        l1 = listAppend(l1, l2);
-        l2 = getCrefFromExp(e3,includeSubs,includeFunctions);
-        res = listAppend(l1, l2) "TODO elseif\'s e4";
-      then
-        res;
+      then List.flatten({
+        getCrefFromExp(e1, includeSubs, includeFunctions),
+        getCrefFromExp(e2, includeSubs, includeFunctions),
+        getCrefFromExp(e3, includeSubs, includeFunctions)});
 
     case (CALL(function_ = cr, functionArgs = farg),_,_)
       equation
@@ -6249,10 +6244,7 @@ algorithm
   end while;
 
   if changed then
-    outList := listReverse(outList);
-    if not outContinue then
-      outList := listAppend(outList, rest_e);
-    end if;
+    outList := List.append_reverse(outList, rest_e);
   else
     outList := inList;
   end if;

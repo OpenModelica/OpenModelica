@@ -769,10 +769,9 @@ algorithm
         // see both ways!
         b1 = listMember((sc1, sc2), inUserSelectedBreaking);
         b2 = listMember((sc2, sc1), inUserSelectedBreaking);
-        if (boolOr(b1, b2))
-        then
+        if b1 or b2 then
           // put them at the end to be tried last (more chance to be broken)
-          ordered = listAppend(ordered, {e});
+          ordered = List.appendElt(e, ordered);
         else
           // put them at the front to be tried first (less chance to be broken)
           ordered = e::ordered;

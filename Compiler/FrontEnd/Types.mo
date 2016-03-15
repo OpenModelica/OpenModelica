@@ -1899,6 +1899,17 @@ algorithm
   end for;
 end liftArrayListDims;
 
+public function liftArrayListDimsReverse
+  "Turns a type into an array of that type, with the dimensions in the reverse order."
+  input DAE.Type inType;
+  input DAE.Dimensions dims;
+  output DAE.Type ty = inType;
+algorithm
+  for dim in dims loop
+    ty := DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource);
+  end for;
+end liftArrayListDimsReverse;
+
 public function liftTypeWithDims "
   mahge: This function turns a type into an array of that type
   by appening the new dimension at the end. "
@@ -4294,34 +4305,27 @@ protected function vectorizableType2
   input DAE.Exp inExp;
   input DAE.Type inExpType;
   input DAE.Type inCurrentType;
-  input DAE.Dimensions inArrayDimLst;
+  input DAE.Dimensions inDims;
   input DAE.Type inExpectedType;
   input Option<Absyn.Path> fnPath;
   output DAE.Exp outExp;
   output DAE.Type outType;
-  output DAE.Dimensions outArrayDimLst;
+  output DAE.Dimensions outDims;
   output InstTypes.PolymorphicBindings outBindings;
+protected
+  Type vec_type, cur_type;
+  DAE.Dimension dim;
 algorithm
-  (outExp,outType,outArrayDimLst,outBindings) := matchcontinue (inExp,inExpType,inCurrentType,inArrayDimLst,inExpectedType,fnPath)
-    local
-      DAE.Exp e_1,e;
-      Type e_type_1,e_type,expected_type,expected_type_vectorized,current_type;
-      InstTypes.PolymorphicBindings polymorphicBindings;
-      DAE.Dimension dim;
-      DAE.Dimensions dims;
-    case (e,e_type,_,dims,expected_type,_)
-      equation
-        expected_type_vectorized = liftArrayListDims(expected_type, dims);
-        (e_1,e_type_1,polymorphicBindings) = matchTypePolymorphic(e, e_type, expected_type_vectorized, fnPath, {}, true);
-      then
-        (e_1,e_type_1,dims,polymorphicBindings);
-    case (e,e_type,DAE.T_ARRAY(ty = current_type, dims = {dim}),dims,expected_type,_)
-      equation
-        dims = listAppend(dims, {dim});
-        (e_1,e_type_1,dims,polymorphicBindings) = vectorizableType2(e, e_type, current_type, dims, expected_type, fnPath);
-      then
-        (e_1,e_type_1,dims,polymorphicBindings);
-  end matchcontinue;
+  try
+    vec_type := liftArrayListDimsReverse(inExpectedType, inDims);
+    (outExp, outType, outBindings) :=
+      matchTypePolymorphic(inExp, inExpType, vec_type, fnPath, {}, true);
+    outDims := listReverse(inDims);
+  else
+    DAE.T_ARRAY(ty = cur_type, dims = {dim}) := inCurrentType;
+    (outExp, outType, outDims, outBindings) :=
+      vectorizableType2(inExp, inExpType, cur_type, dim :: inDims, inExpectedType, fnPath);
+  end try;
 end vectorizableType2;
 
 public function unflattenArrayType
@@ -5459,7 +5463,7 @@ algorithm
       equation
         exps = getAllExpsVars(vars);
         tyexps = getAllExpsVars(attrs);
-        exps = listAppend(exps, tyexps);
+        exps = listAppend(tyexps, exps);
       then
         exps;
     case DAE.T_ARRAY(ty = ty) then getAllExps(ty);

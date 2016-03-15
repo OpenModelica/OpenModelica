@@ -14514,7 +14514,7 @@ algorithm
     function replaceClassInProgram2(inClassName = cls_name1));
 
   if not replaced then
-    clst := listAppend(clst, {inClass});
+    clst := List.appendElt(inClass, clst);
   end if;
 
   outProgram := Absyn.PROGRAM(clst, w);
