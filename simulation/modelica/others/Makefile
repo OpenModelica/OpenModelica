@@ -74,6 +74,7 @@ TestSolve14.mos \
 TestSolve15.mos \
 TestSolve16.mos \
 TestSolve17.mos \
+TestSolve18.mos \
 VariableFilter.mos \
 WhenStatement4.mos 
 
@@ -86,7 +87,6 @@ pendulum4.mos \
 SpaceProbe.mos \
 filterTest.mos \
 Bug1048.mos \
-TestSolve18.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
