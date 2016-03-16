@@ -248,6 +248,8 @@ Choose any of the following methods to open a Modelica file,
 
 -  Press Ctrl+O.
 
+(Note, for editing Modelica system files like MSL (not recommended), see :ref:`editingMSL`)
+
 Opening a Modelica File with Encoding
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -927,6 +929,8 @@ Debugger
 --------
 
 For debugging capability, see :ref:`debugging`.
+
+.. _editingMSL :
 
 Editing Modelica Standard Library
 ---------------------------------
