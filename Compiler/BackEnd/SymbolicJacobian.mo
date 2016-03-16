@@ -457,7 +457,7 @@ algorithm
 
   A := arrayCreate(n*n,0.0);
   b :=  arrayCreate(n*n,0.0);  // i.e. a matrix for the b-vars to get their coefficients independently [(b1,0,0);(0,b2,0),(0,0,b3)]
-  order := listArray(List.fill(0,n));
+  order := arrayCreate(n,0);
   for row in 1:n loop
     for col in 1:n loop
       entry := listGet(listGet(jacVals,row),col);
@@ -924,10 +924,8 @@ protected
   array<array<Real>> valarr;
   array<Real> tmp;
   list<array<Real>> tmp2;
-  list<Real> rs;
 algorithm
-  rs := List.fill(0.0,size);
-  tmp := listArray(rs);
+  tmp := arrayCreate(size,0.0);
   tmp2 := List.map(List.fill(tmp,size),arrayCopy);
   valarr := listArray(tmp2);
   List.map1_0(jac,evaluateConstantJacobian2,valarr);
@@ -1384,40 +1382,19 @@ protected function transposeSparsePattern
   input list<list<Integer>> inSparsePattern;
   input array<list<Integer>> inAccumList;
   input Integer inValue;
-  output array<list<Integer>> outSparsePattern;
+  output array<list<Integer>> outSparsePattern = inAccumList;
+protected
+  Integer value = inValue;
+  list<Integer> tmplist;
 algorithm
-  outSparsePattern := match(inSparsePattern, inAccumList, inValue)
-  local
-    list<Integer> oneElem;
-    list<list<Integer>> rest;
-    array<list<Integer>>  accumList;
-    case ({},_,_) then inAccumList;
-    case (oneElem::rest, _, _)
-      equation
-        accumList = transposeSparsePattern2(oneElem, inAccumList, inValue);
-       then transposeSparsePattern(rest, accumList, inValue+1);
-  end match;
+  for oneList in inSparsePattern loop
+    for oneElem in oneList loop
+      tmplist := arrayGet(outSparsePattern,oneElem);
+      MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(outSparsePattern, oneElem, value::tmplist);
+    end for;
+    value := value + 1;
+  end for;
 end transposeSparsePattern;
-
-protected function transposeSparsePattern2
-  input list<Integer> inSparsePatternElem;
-  input array<list<Integer>> inAccumList;
-  input Integer inValue;
-  output array<list<Integer>> outSparsePattern;
-algorithm
-  outSparsePattern := match(inSparsePatternElem, inAccumList, inValue)
-  local
-    Integer oneElem;
-    list<Integer> rest, tmplist;
-    array<list<Integer>>  accumList;
-    case ({},_,_) then inAccumList;
-    case (oneElem::rest,_, _)
-      equation
-        tmplist = arrayGet(inAccumList,oneElem);
-        accumList = arrayUpdate(inAccumList, oneElem, inValue::tmplist);
-       then transposeSparsePattern2(rest, accumList, inValue);
-  end match;
-end transposeSparsePattern2;
 
 protected function mapIndexColors
   input array<Integer> inColors;
@@ -2116,21 +2093,21 @@ public function getJacobianMatrixbyName
   input String inJacobianName;
   output Option<tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring>> outMatrix;
 algorithm
-  outMatrix := matchcontinue(injacobianMatrixes)
+  outMatrix := match(injacobianMatrixes)
     local
       tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring> matrix;
       BackendDAE.SymbolicJacobians rest;
       String name;
 
-    case (matrix as (SOME((_,name,_,_,_)), _, _))::_ equation
-      true = stringEq(name, inJacobianName);
+    case (matrix as (SOME((_,name,_,_,_)), _, _))::_ guard
+      stringEq(name, inJacobianName)
     then SOME(matrix);
 
     case _::rest
     then getJacobianMatrixbyName(rest, inJacobianName);
 
     else NONE();
-  end matchcontinue;
+  end match;
 end getJacobianMatrixbyName;
 
 // =============================================================================
@@ -2157,7 +2134,7 @@ algorithm
     case (syst as BackendDAE.EQSYSTEM( orderedVars=vars, orderedEqs=eqns,
                                        matching=BackendDAE.MATCHING(ass1,ass2,comps) ), shared)
       equation
-        (comps, shared) = calculateJacobiansComponents(comps, vars, eqns, shared, {});
+        (comps, shared) = calculateJacobiansComponents(comps, vars, eqns, shared);
         syst.matching = BackendDAE.MATCHING(ass1, ass2, comps);
       then (syst, shared);
   end match;
@@ -2167,23 +2144,17 @@ protected function calculateJacobiansComponents
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqns;
-  input  BackendDAE.Shared inShared;
-  input BackendDAE.StrongComponents inAccum;
+  input BackendDAE.Shared inShared;
   output BackendDAE.StrongComponents outComps;
-  output  BackendDAE.Shared outShared;
+  output BackendDAE.Shared outShared = inShared;
 algorithm
-  (outComps, outShared) := match (inComps, inVars, inEqns, inShared, inAccum)
+  outComps := list(match component
     local
-      BackendDAE.StrongComponents rest, result;
       BackendDAE.StrongComponent comp;
-      BackendDAE.Shared shared;
-      case ({}, _, _, _, _) then (listReverse(inAccum), inShared);
-      case (comp::rest, _, _, _, _)
-        equation
-          (comp, shared) = calculateJacobianComponent(comp, inVars, inEqns, inShared);
-          (result, shared) = calculateJacobiansComponents(rest, inVars, inEqns, shared, comp::inAccum);
-      then (result, shared);
-  end match;
+    case comp equation
+      (comp, outShared) = calculateJacobianComponent(comp, inVars, inEqns, outShared);
+      then comp;
+    end match for component in inComps);
 end calculateJacobiansComponents;
 
 
@@ -2194,52 +2165,50 @@ protected function convertResidualsIntoSolvedEquations "author: lochel
   output list<BackendDAE.Equation> outEquationList;
   output list<BackendDAE.Var> outVariableList;
 algorithm
-  (outEquationList, outVariableList) := convertResidualsIntoSolvedEquations2(inResidualList, 1, {}, {});
+  (outEquationList, outVariableList) := convertResidualsIntoSolvedEquations2(inResidualList, 1);
 end convertResidualsIntoSolvedEquations;
 
 protected function convertResidualsIntoSolvedEquations2 "author: lochel"
   input list<BackendDAE.Equation> inEquationList;
   input Integer inIndex;
-  input list<BackendDAE.Equation> iEquationList;
-  input list<BackendDAE.Var> iVariableList;
-  output list<BackendDAE.Equation> outEquationList;
-  output list<BackendDAE.Var> outVariableList;
+  output list<BackendDAE.Equation> outEquationList = {};
+  output list<BackendDAE.Var> outVariableList = {};
+protected
+  Integer index = inIndex;
 algorithm
-  (outEquationList, outVariableList) := match(inEquationList, inIndex)
-    local
-      Integer index;
-      list<BackendDAE.Equation> restEquationList;
-      list<BackendDAE.Equation> equationList;
-      list<BackendDAE.Var> variableList;
+  for eq in inEquationList loop
+    _ := match eq
+      local
+        DAE.Exp exp;
+        DAE.ElementSource source "origin of equation";
+        BackendDAE.EquationAttributes eqAttr;
+        String varName;
+        DAE.ComponentRef componentRef;
+        DAE.Exp expVarName;
+        BackendDAE.Equation currEquation;
+        BackendDAE.Var currVariable;
 
-      DAE.Exp expVarName;
-      DAE.Exp exp;
-      DAE.ElementSource source "origin of equation";
+      case BackendDAE.RESIDUAL_EQUATION(exp=exp,source=source,attr=eqAttr)
+        equation
+          varName = "$res" + intString(index);
+          componentRef = DAE.CREF_IDENT(varName, DAE.T_REAL_DEFAULT, {});
+          expVarName = DAE.CREF(componentRef, DAE.T_REAL_DEFAULT);
+          currEquation = BackendDAE.EQUATION(expVarName, exp, source, eqAttr);
 
-      String varName;
-      DAE.ComponentRef componentRef;
-      BackendDAE.Equation currEquation;
-      BackendDAE.Var currVariable;
-      BackendDAE.EquationAttributes eqAttr;
-
-    case ({}, _)
-    then (listReverse(iEquationList), listReverse(iVariableList));
-
-    case ((BackendDAE.RESIDUAL_EQUATION(exp=exp,source=source,attr=eqAttr))::restEquationList, index) equation
-      varName = "$res" + intString(index);
-      componentRef = DAE.CREF_IDENT(varName, DAE.T_REAL_DEFAULT, {});
-      expVarName = DAE.CREF(componentRef, DAE.T_REAL_DEFAULT);
-      currEquation = BackendDAE.EQUATION(expVarName, exp, source, eqAttr);
-
-      currVariable = BackendDAE.VAR(componentRef, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
-      (equationList, variableList) = convertResidualsIntoSolvedEquations2(restEquationList, index+1,currEquation::iEquationList,currVariable::iVariableList);
-    then (equationList, variableList);
-
-    else equation
-      true = Flags.isSet(Flags.FAILTRACE);
-      Error.addInternalError("function convertResidualsIntoSolvedEquations2 failed", sourceInfo());
-    then fail();
-  end match;
+          currVariable = BackendDAE.VAR(componentRef, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+          index = index + 1;
+          outEquationList = currEquation::outEquationList;
+          outVariableList = currVariable::outVariableList;
+        then ();
+      else
+        equation
+          true = Flags.isSet(Flags.FAILTRACE);
+          Error.addInternalError("function convertResidualsIntoSolvedEquations2 failed", sourceInfo());
+        then fail();
+    end match;
+  end for;
+  outEquationList := MetaModelica.Dangerous.listReverseInPlace(outEquationList);
+  outVariableList := MetaModelica.Dangerous.listReverseInPlace(outVariableList);
 end convertResidualsIntoSolvedEquations2;
 
 protected function prepareTornStrongComponentData
@@ -2761,7 +2730,7 @@ algorithm
     case (syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, stateSets=stateSets), shared)
       equation
         comps = BackendDAEUtil.getStrongComponents(syst);
-        (stateSets, shared) = calculateStateSetsJacobian(stateSets, vars, eqns, comps, shared, {});
+        (stateSets, shared) = calculateStateSetsJacobian(stateSets, vars, eqns, comps, shared);
         syst.stateSets = stateSets;
       then (syst, shared);
   end match;
@@ -2773,23 +2742,17 @@ protected function calculateStateSetsJacobian
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.StrongComponents inComps;
   input  BackendDAE.Shared inShared;
-  input BackendDAE.StateSets inAccum;
   output BackendDAE.StateSets outStateSets;
-  output  BackendDAE.Shared outShared;
+  output  BackendDAE.Shared outShared = inShared;
 algorithm
-  (outStateSets, outShared) := match (inStateSets, inVars, inEqns, inComps, inShared, inAccum)
-    local
-      BackendDAE.StateSets rest, result;
-      BackendDAE.StateSet stateSet;
-      BackendDAE.Shared shared;
-
-    case ({}, _, _, _, _, _) then (listReverse(inAccum), inShared);
-    case (stateSet::rest, _, _, _, _, _)
-      equation
-        (stateSet, shared) = calculateStateSetJacobian(stateSet, inVars, inEqns, inComps, inShared);
-        (result, shared) = calculateStateSetsJacobian(rest, inVars, inEqns, inComps, shared, stateSet::inAccum);
-      then (result, shared);
-  end match;
+  outStateSets := list(match s
+      local
+        BackendDAE.StateSet stateSet;
+      case stateSet
+        equation
+          (stateSet, outShared) = calculateStateSetJacobian(stateSet, inVars, inEqns, inComps, outShared);
+        then stateSet;
+    end match for s in inStateSets);
 end calculateStateSetsJacobian;
 
 protected function calculateStateSetJacobian
@@ -2832,7 +2795,7 @@ algorithm
         marked = arrayCreate(BackendVariable.varsSize(inVars), false);
         // get Equations for Jac from the strong component
         marked = List.fold1(crstates, markSetStates, inVars, marked);
-        (compeqns, compvars) = getStateSetCompVarEqns(inComps, marked, inEqns, inVars, {}, {});
+        (compeqns, compvars) = getStateSetCompVarEqns(inComps, marked, inEqns, inVars);
         // remove the state set equation
         compeqns = List.select(compeqns, removeStateSetEqn);
         // remove the state candidates to geht the other vars
@@ -2846,7 +2809,7 @@ algorithm
         ceqns = BackendEquation.replaceDerOpInEquationList(ceqns);
         oeqns = BackendEquation.replaceDerOpInEquationList(oeqns);
         // convert ceqns to res[..] = lhs-rhs
-        ceqns = createResidualSetEquations(ceqns, crJ, 1, intGt(listLength(ceqns), 1), {});
+        ceqns = createResidualSetEquations(ceqns, crJ, 1, intGt(listLength(ceqns), 1));
 
         //add states to allVars
         allvars = BackendVariable.copyVariables(inVars);
@@ -2928,35 +2891,22 @@ protected function getStateSetCompVarEqns "author: Frenkel TUD 2013-01
   input array<Boolean> marked;
   input BackendDAE.EquationArray inEquationArray;
   input BackendDAE.Variables inVariables;
-  input list<BackendDAE.Equation> inEquations;
-  input list<BackendDAE.Var> inVars;
-  output list<BackendDAE.Equation> outEquations;
-  output list<BackendDAE.Var> outVars;
+  output list<BackendDAE.Equation> outEquations = {};
+  output list<BackendDAE.Var> outVars = {};
+protected
+  list<Integer> elst, vlst;
+  list<BackendDAE.Equation> eqnlst;
+  list<BackendDAE.Var> varlst;
 algorithm
-  (outEquations, outVars):= matchcontinue (inComp)
-    local
-      list<Integer> elst, vlst;
-      list<BackendDAE.Equation> eqnlst;
-      list<BackendDAE.Var> varlst;
-      BackendDAE.StrongComponent comp;
-      BackendDAE.StrongComponents rest;
-
-    case {} then (inEquations, inVars);
-
-    case comp::rest equation
-      (elst, vlst) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-      true = foundMarked(vlst, marked);
-      eqnlst = BackendEquation.getEqns(elst, inEquationArray);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
-      eqnlst = listAppend(eqnlst, inEquations);
-      varlst = listAppend(varlst, inVars);
-      (eqnlst, varlst) = getStateSetCompVarEqns(rest, marked, inEquationArray, inVariables, eqnlst, varlst);
-    then (eqnlst, varlst);
-
-    case (_::rest) equation
-      (eqnlst, varlst) = getStateSetCompVarEqns(rest, marked, inEquationArray, inVariables, inEquations, inVars);
-    then (eqnlst, varlst);
-  end matchcontinue;
+  for comp in inComp loop
+    (elst, vlst) := BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
+    if foundMarked(vlst, marked) then
+      eqnlst := BackendEquation.getEqns(elst, inEquationArray);
+      varlst := List.map1r(vlst, BackendVariable.getVarAt, inVariables);
+      outEquations := listAppend(eqnlst, outEquations);
+      outVars := listAppend(varlst, outVars);
+    end if;
+  end for;
 end getStateSetCompVarEqns;
 
 protected function createResidualSetEquations
@@ -2964,39 +2914,39 @@ protected function createResidualSetEquations
   input DAE.ComponentRef crJ;
   input Integer index;
   input Boolean applySubs;
-  input list<BackendDAE.Equation> iAcc;
   output list<BackendDAE.Equation> oEqs;
+protected
+  Integer idx = index;
 algorithm
-  oEqs := match (iEqs, crJ, index, applySubs, iAcc)
-    local
-      DAE.ComponentRef crj;
-      DAE.Exp res, e1, e2, expJ;
-      list<BackendDAE.Equation> rest;
-      BackendDAE.Equation eqn;
-      DAE.ElementSource source;
-      BackendDAE.EquationAttributes eqAttr;
+  oEqs := list(match eq
+      local
+        DAE.ComponentRef crj;
+        DAE.Exp res, e1, e2, expJ;
+        BackendDAE.Equation eqn;
+        DAE.ElementSource source;
+        BackendDAE.EquationAttributes eqAttr;
+      case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr)
+        equation
+          crj = if applySubs then ComponentReference.subscriptCrefWithInt(crJ, idx) else crJ;
+          expJ = Expression.crefExp(crj);
+          res = Expression.expSub(e1, e2);
+          eqn = BackendDAE.EQUATION(expJ, res, source, eqAttr);
+          idx = idx + 1;
+        then eqn;
 
-    case ({}, _, _, _, _) then listReverse(iAcc);
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr)::rest, _, _, _, _)
-      equation
-        crj = if applySubs then ComponentReference.subscriptCrefWithInt(crJ, index) else crJ;
-        expJ = Expression.crefExp(crj);
-        res = Expression.expSub(e1, e2);
-        eqn = BackendDAE.EQUATION(expJ, res, source, eqAttr);
-      then
-        createResidualSetEquations(rest, crJ, index+1, applySubs, eqn::iAcc);
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, attr=eqAttr)::rest, _, _, _, _)
-      equation
-        expJ = Expression.crefExp(ComponentReference.subscriptCrefWithInt(crJ, index));
-        eqn = BackendDAE.EQUATION(expJ, e1, source, eqAttr);
-    then
-        createResidualSetEquations(rest, crJ, index+1, applySubs, eqn::iAcc);
-    case (eqn::_, _, _, _, _)
-      equation
-        Error.addInternalError("function createResidualSetEquations failed for equation: " + BackendDump.equationString(eqn), sourceInfo());
-    then
-       fail();
-  end match;
+      case BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, attr=eqAttr)
+        equation
+          expJ = Expression.crefExp(ComponentReference.subscriptCrefWithInt(crJ, idx));
+          eqn = BackendDAE.EQUATION(expJ, e1, source, eqAttr);
+          idx = idx + 1;
+        then eqn;
+
+      case eqn
+        equation
+          Error.addInternalError("function createResidualSetEquations failed for equation: " + BackendDump.equationString(eqn), sourceInfo());
+        then
+          fail();
+    end match for eq in iEqs);
 end createResidualSetEquations;
 
 public function calculateJacobian "This function takes an array of equations and the variables of the equation
@@ -3233,7 +3183,9 @@ algorithm
       end if;
       (e_1, oShared) := Differentiate.differentiateExpCrefFullJacobian(inExp, cr, vars, oShared);
       // e_1 already simplified in Differentiate.differentiateExpCrefFullJacobian!
-      outLst := calculateJacobianRow3(eqn_indx, vindx, e_1, source, outLst);
+      if not Expression.isZero(e_1) then
+        outLst := (eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(e_1,source,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN))::outLst;
+      end if;
     end for;
     outLst := listAppend(outLst, iAcc);
   else
@@ -3244,25 +3196,6 @@ algorithm
     fail();
   end try;
 end calculateJacobianRow2;
-
-protected function calculateJacobianRow3
-  input Integer eqn_indx;
-  input Integer vindx;
-  input DAE.Exp inExp;
-  input DAE.ElementSource source;
-  input list<tuple<Integer, Integer, BackendDAE.Equation>> iAcc;
-  output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst;
-algorithm
-  outLst := matchcontinue(eqn_indx,vindx,inExp,source,iAcc)
-    case (_,_,_,_,_)
-      equation
-        true = Expression.isZero(inExp);
-      then
-        iAcc;
-    else
-      (eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(inExp,source,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN))::iAcc;
-  end matchcontinue;
-end calculateJacobianRow3;
 
 protected function addBackendDAESharedJacobian
   input BackendDAE.SymbolicJacobian inSymJac;

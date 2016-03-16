@@ -58,6 +58,7 @@ protected import ExpressionSolve;
 protected import Flags;
 protected import List;
 protected import Matching;
+protected import MetaModelica.Dangerous;
 protected import Util;
 protected import Sorting;
 
@@ -727,20 +728,14 @@ protected function getGlobalLocal
   input list<Integer> iTVars;
   input Integer index;
   input array<Integer> iVarGlobalLocal;
-  output array<Integer> oVarGlobalLocal;
+  output array<Integer> oVarGlobalLocal = iVarGlobalLocal;
+protected
+  Integer idx = index;
 algorithm
-oVarGlobalLocal :=
-  match(iTVars,index,iVarGlobalLocal)
-    local
-      Integer i;
-      list<Integer> tvars;
-    case ({},_,_) then iVarGlobalLocal;
-    case (i::tvars,_,_)
-      equation
-        arrayUpdate(iVarGlobalLocal,i,index);
-      then
-        getGlobalLocal(tvars,index+1,iVarGlobalLocal);
-  end match;
+  for i in iTVars loop
+    arrayUpdate(oVarGlobalLocal,i,idx);
+    idx := idx + 1;
+  end for;
 end getGlobalLocal;
 
 
@@ -1148,19 +1143,20 @@ protected function solvabilityWeightsnoStates
   input Integer iW;
   output Integer oW;
 algorithm
-  oW := matchcontinue(inTpl,ass,iW)
+  oW := match(inTpl,ass,iW)
     local
       BackendDAE.Solvability s;
       Integer eq,w;
     case((eq,s),_,_)
+      guard
+        intGt(eq,0) and
+        not intGt(ass[eq], 0)
       equation
-        true = intGt(eq,0);
-        false = intGt(ass[eq], 0);
         w = solvabilityWeights(s);
       then
         intAdd(w,iW);
     else iW;
-  end matchcontinue;
+  end match;
 end solvabilityWeightsnoStates;
 
 
@@ -1182,6 +1178,7 @@ algorithm
     case BackendDAE.SOLVABILITY_LINEAR(b=true) then 100;
     case BackendDAE.SOLVABILITY_NONLINEAR() then 200;
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then 300;
+    else 0;
   end match;
 end solvabilityWeights;
 
@@ -1591,7 +1588,7 @@ algorithm
         ores = List.map1r(residual1,arrayGet,eindxarr);
         varindxarr = listArray(vindx);
         ovars = List.map1r(tvars,arrayGet,varindxarr);
-        eqnvartpllst = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,{});
+        eqnvartpllst = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark);
         linear = getLinearfromJacType(jacType);
       then
         (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, eqnvartpllst, BackendDAE.EMPTY_JACOBIAN()), NONE(), linear,mixedSystem),true);
@@ -1612,25 +1609,24 @@ protected function omcTearing4_1
   input array<Integer> varindxarr;
   input array<Integer> columark;
   input Integer mark;
-  input list<tuple<Integer,list<Integer>>> iAcc;
   output list<tuple<Integer,list<Integer>>> oEqnVarTplLst;
 algorithm
-  oEqnVarTplLst :=
-  match (othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,iAcc)
-    local
-      list<list<Integer>> rest;
-      Integer e,v,c;
-      list<Integer> vlst,clst,elst;
-    case ({},_,_,_,_,_,_,_) then listReverse(iAcc);
-    case ({c}::rest,_,_,_,_,_,_,_)
-      equation
-        e = mapIncRowEqn[c];
-        e = eindxarr[e];
-        v = ass2[c];
-        v = varindxarr[v];
+  oEqnVarTplLst := list(
+    match x
+      local
+        list<Integer> vlst,clst,elst;
+        Integer e,v,c;
+
+      case {c}
+        equation
+          e = mapIncRowEqn[c];
+          e = eindxarr[e];
+          v = ass2[c];
+          v = varindxarr[v];
       then
-        omcTearing4_1(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,(e,{v})::iAcc);
-    case (clst::rest,_,_,_,_,_,_,_)
+        (e,{v});
+
+    case clst
       equation
         elst = List.map1r(clst,arrayGet,mapIncRowEqn);
         elst = List.fold2(elst,uniqueIntLst,mark,columark,{});
@@ -1639,8 +1635,9 @@ algorithm
         vlst = List.map1r(clst,arrayGet,ass2);
         vlst = List.map1r(vlst,arrayGet,varindxarr);
       then
-        omcTearing4_1(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,(e,vlst)::iAcc);
-  end match;
+        (e,vlst);
+    end match
+  for x in othercomps);
 end omcTearing4_1;
 
 
