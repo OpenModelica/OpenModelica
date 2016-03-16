@@ -1070,3 +1070,35 @@ void UpdateSubModelAttributesCommand::undo()
   mpComponent->getComponentInfo()->setStartCommand(mOldComponentInfo.getStartCommand());
   mpComponent->getComponentInfo()->setExactStep(mOldComponentInfo.getExactStep());
 }
+
+UpdateSimulationParamsCommand::UpdateSimulationParamsCommand(LibraryTreeItem *pLibraryTreeItem, QString oldStartTime, QString newStartTime, QString oldStopTime,
+                                                             QString newStopTime, QUndoCommand *pParent )
+  : QUndoCommand(pParent)
+{
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mOldStartTime = oldStartTime;
+  mNewStartTime = newStartTime;
+  mOldStopTime = oldStopTime;
+  mNewStopTime = newStopTime;
+  setText(QString("Update %1 simulation parameter").arg(mpLibraryTreeItem->getNameStructure()));
+}
+
+/*!
+ * \brief UpdateSimulationParamsCommand::redo
+ * Redo the UpdateSimulationParamsCommand.
+ */
+void UpdateSimulationParamsCommand::redo()
+{
+  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
+  pMetaModelEditor->updateSimulationParams(mNewStartTime, mNewStopTime);
+}
+
+/*!
+ * \brief UpdateSimulationParamsCommand::undo
+ * Undo the UpdateSimulationParamsCommand.
+ */
+void UpdateSimulationParamsCommand::undo()
+{
+  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
+  pMetaModelEditor->updateSimulationParams(mOldStartTime, mOldStopTime);
+}

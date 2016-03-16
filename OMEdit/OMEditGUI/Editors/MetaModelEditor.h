@@ -75,6 +75,11 @@ public:
   void updateSubModelParameters(QString name, QString startCommand, QString exactStepFlag);
   bool createConnection(QString From, QString To, QString delay, QString alpha, QString zf, QString zfr, QString points);
   void updateConnection(QString fromSubModel, QString toSubModel, QString points);
+  bool addSimulationParams(QString startTime, QString stopTime);
+  void updateSimulationParams(QString startTime, QString stopTime);
+  bool isSimulationParams();
+  QString getSimulationStartTime();
+  QString getSimulationStopTime();
   void addInterfacesData(QDomElement interfaces);
   bool existInterfaceData(QString subModelName, QString interfaceName);
   bool deleteSubModel(QString name);

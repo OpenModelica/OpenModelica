@@ -227,4 +227,18 @@ private:
   ComponentInfo mNewComponentInfo;
 };
 
+class UpdateSimulationParamsCommand : public QUndoCommand
+{
+public:
+  UpdateSimulationParamsCommand(LibraryTreeItem *pLibraryTreeItem, QString oldStartTime, QString newStartTime, QString oldStopTime,
+                                QString newStopTime, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LibraryTreeItem *mpLibraryTreeItem;
+  QString mOldStartTime;
+  QString mNewStartTime;
+  QString mOldStopTime;
+  QString mNewStopTime;
+};
 #endif // COMMANDS_H

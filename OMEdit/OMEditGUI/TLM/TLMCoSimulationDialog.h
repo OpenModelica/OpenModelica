@@ -113,9 +113,12 @@ private:
   QPushButton *mpSaveAndCoSimulateButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+  QString mOldStartTime;
+  QString mOldStopTime;
+  bool validateSimulationParams();
 private slots:
-  void saveExperimentSettings();
-  void saveExperimentSettingsAndCoSimulate();
+  void saveSimulationParams();
+  void saveSimulationParamsAndSimulate();
 };
 
 #endif // TLMCOSIMULATIONDIALOG_H

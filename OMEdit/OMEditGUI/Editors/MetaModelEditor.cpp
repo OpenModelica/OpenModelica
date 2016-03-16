@@ -328,6 +328,54 @@ void MetaModelEditor::updateConnection(QString fromSubModel, QString toSubModel,
 }
 
 /*!
+ * \brief MetaModelEditor::updateSimulationParams
+ * Updates the simulation parameters.
+ * \param startTime
+ * \param stopTime
+ */
+void MetaModelEditor::updateSimulationParams(QString startTime, QString stopTime)
+{
+  QDomElement simulationParamsElement = mXmlDocument.documentElement().firstChildElement("SimulationParams");
+  if (!simulationParamsElement.isNull()) {
+    simulationParamsElement.setAttribute("StartTime", startTime);
+    simulationParamsElement.setAttribute("StopTime", stopTime);
+  }
+  setPlainText(mXmlDocument.toString());
+}
+
+/*!
+ * \brief MetaModelEditor::isSimulationParams
+ * Updates the simulation parameters.
+ */
+bool MetaModelEditor::isSimulationParams()
+{
+  QDomElement simulationParamsElement = mXmlDocument.documentElement().firstChildElement("SimulationParams");
+  if (!simulationParamsElement.isNull()) {
+      return true;
+  }
+  return false;
+}
+
+/*!
+ * \brief MetaModelEditor::getSimulationStartTime
+ * Gets the simulation start time.
+ */
+QString MetaModelEditor::getSimulationStartTime()
+{
+  QDomElement simulationParamsElement = mXmlDocument.documentElement().firstChildElement("SimulationParams");
+  return simulationParamsElement.attribute("StartTime");
+}
+
+/*!
+ * \brief MetaModelEditor::getSimulationStopTime
+ * Gets the simulation stop time.
+ */
+QString MetaModelEditor::getSimulationStopTime()
+{
+  QDomElement simulationParamsElement = mXmlDocument.documentElement().firstChildElement("SimulationParams");
+  return simulationParamsElement.attribute("StopTime");
+}
+/*!
  * \brief MetaModelEditor::addInterfacesData
  * Adds the InterfacePoint tag to SubModel.
  * \param interfaces

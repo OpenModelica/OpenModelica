@@ -46,6 +46,7 @@
 
 #include "TLMCoSimulationDialog.h"
 #include "VariablesWidget.h"
+#include "Commands.h"
 
 TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
@@ -407,22 +408,29 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
                  .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   setMinimumWidth(400);
   mpGraphicsView = pGraphicsView;
+  mpLibraryTreeItem = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem();
+  // Initialize simulation parameters
+  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
+  if(pMetaModelEditor->isSimulationParams()){
+    mOldStartTime = pMetaModelEditor->getSimulationStartTime();
+    mOldStopTime = pMetaModelEditor->getSimulationStopTime();
+  }
   // CoSimulation Interval
   mpStartTimeLabel = new Label(tr("Start Time:"));
-  mpStartTimeTextBox = new QLineEdit("0");
+  mpStartTimeTextBox = new QLineEdit(mOldStartTime);
   mpStopTimeLabel = new Label(tr("Stop Time:"));
-  mpStopTimeTextBox = new QLineEdit("1");
-  // Add the validators
+  mpStopTimeTextBox = new QLineEdit(mOldStopTime);
+    // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
   mpStopTimeTextBox->setValidator(pDoubleValidator);
   // buttons
   mpSaveButton = new QPushButton(Helper::save);
   mpSaveButton->setToolTip(tr("Saves the Co-Simulation experiment settings"));
-  connect(mpSaveButton, SIGNAL(clicked()), this, SLOT(saveExperimentSettings()));
+  connect(mpSaveButton, SIGNAL(clicked()), this, SLOT(saveSimulationParams()));
   mpSaveAndCoSimulateButton = new QPushButton(tr("Save && CoSimulate"));
-  mpSaveAndCoSimulateButton->setToolTip(tr("Saves the Co-Simulation experiment settings and starts the Co-Simulation"));
-  connect(mpSaveAndCoSimulateButton, SIGNAL(clicked()), this, SLOT(saveExperimentSettingsAndCoSimulate()));
+  mpSaveAndCoSimulateButton->setToolTip(tr("Saves the simulation  parameters and starts the Co-Simulation"));
+  connect(mpSaveAndCoSimulateButton, SIGNAL(clicked()), this, SLOT(saveSimulationParamsAndSimulate()));
   mpCancelButton = new QPushButton(Helper::cancel);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
   // adds Co-Simulation Experiment Setting buttons to the button box
@@ -442,21 +450,48 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
 }
 
 /*!
- * \brief MetaModelSimulationParamsDialog::saveExperimentSettings
- * Saves the Simulation Params setting.
+ * \brief MetaModelSimulationParamsDialog::saveSimulationParams
+ * Saves the Simulation Parameters.
  * Slot activated when mpSave button clicked signal is raised.
  */
-void MetaModelSimulationParamsDialog::saveExperimentSettings()
+void MetaModelSimulationParamsDialog::saveSimulationParams()
 {
-
+  if (validateSimulationParams()) {
+    UpdateSimulationParamsCommand *pUpdateSimulationParamsCommand;
+    pUpdateSimulationParamsCommand = new UpdateSimulationParamsCommand(mpLibraryTreeItem, mOldStartTime, mpStartTimeTextBox->text()
+                                                                      , mOldStopTime, mpStopTimeTextBox->text());
+    mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateSimulationParamsCommand);
+    mpLibraryTreeItem->getModelWidget()->updateModelText();
+    accept();
+  }
 }
 
 /*!
- * \brief MetaModelSimulationParamsDialog::saveExperimentSettingsAndCoSimulate
- * Saves the Simulation Params experiment setting and starts the co-simulation.
+ * \brief MetaModelSimulationParamsDialog::saveSimulationParamsAndSimulate
+ * Saves the Simulation Parameters and starts the co-simulation.
  * Slot activated when mpSaveAndCoSimulateButton clicked signal is raised.
  */
-void MetaModelSimulationParamsDialog::saveExperimentSettingsAndCoSimulate()
+void MetaModelSimulationParamsDialog::saveSimulationParamsAndSimulate()
 {
+  saveSimulationParams();
+  mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->TLMSimulate(mpLibraryTreeItem);
+}
 
+/*!
+  Validates the simulation params entered by the user.
+  */
+bool MetaModelSimulationParamsDialog::validateSimulationParams()
+{
+  if (mpStartTimeTextBox->text().isEmpty()) {
+    mpStartTimeTextBox->setText("0");
+  }
+  if (mpStopTimeTextBox->text().isEmpty()) {
+    mpStopTimeTextBox->setText("1");
+  }
+  if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble()) {
+    QMessageBox::critical(mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
+    return false;
+  }
+  return true;
 }
