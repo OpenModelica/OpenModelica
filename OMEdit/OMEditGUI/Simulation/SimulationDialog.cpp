@@ -879,7 +879,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setSimulationFlags(simulationFlags);
   simulationOptions.setIsValid(true);
   simulationOptions.setReSimulate(mIsReSimulate);
-  simulationOptions.setWorkingDirectory(mpMainWindow->getOMCProxy()->changeDirectory());
+  simulationOptions.setWorkingDirectory(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getWorkingDirectory());
   simulationOptions.setFileName(mFileName);
   return simulationOptions;
 }

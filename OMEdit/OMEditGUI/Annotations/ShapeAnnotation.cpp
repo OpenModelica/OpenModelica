@@ -1378,42 +1378,44 @@ void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
   if (dynamic_cast<LineAnnotation*>(this)) {
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
     if (pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
-      // if moving the 2nd last point then we need to add more points after it to keep the last point manhattanized with connector
-      int secondLastIndex = mPoints.size() - 2;
-      if (index == secondLastIndex) {
-        // just check if additional points are really needed or not.
-        if ((mGeometries[secondLastIndex] == ShapeAnnotation::HorizontalLine && mPoints[index].y() != point.y()) ||
-            (mGeometries[secondLastIndex] == ShapeAnnotation::VerticalLine && mPoints[index].x() != point.x())) {
-          insertPointsGeometriesAndCornerItems(mPoints.size() - 1);
+      if (mPoints.size() > index) {
+        // if moving the 2nd last point then we need to add more points after it to keep the last point manhattanized with connector
+        int secondLastIndex = mPoints.size() - 2;
+        if (index == secondLastIndex) {
+          // just check if additional points are really needed or not.
+          if ((mGeometries[secondLastIndex] == ShapeAnnotation::HorizontalLine && mPoints[index].y() != point.y()) ||
+              (mGeometries[secondLastIndex] == ShapeAnnotation::VerticalLine && mPoints[index].x() != point.x())) {
+            insertPointsGeometriesAndCornerItems(mPoints.size() - 1);
+          }
         }
-      }
-      // if moving the 2nd point then we need to add more points behind it to keep the first point manhattanized with connector
-      if (index == 1) {
-        // just check if additional points are really needed or not.
-        if ((mGeometries[0] == ShapeAnnotation::HorizontalLine && mPoints[index].y() != point.y()) ||
-            (mGeometries[0] == ShapeAnnotation::VerticalLine && mPoints[index].x() != point.x())) {
-          insertPointsGeometriesAndCornerItems(1);
-          index = index + 2;
+        // if moving the 2nd point then we need to add more points behind it to keep the first point manhattanized with connector
+        if (index == 1) {
+          // just check if additional points are really needed or not.
+          if ((mGeometries[0] == ShapeAnnotation::HorizontalLine && mPoints[index].y() != point.y()) ||
+              (mGeometries[0] == ShapeAnnotation::VerticalLine && mPoints[index].x() != point.x())) {
+            insertPointsGeometriesAndCornerItems(1);
+            index = index + 2;
+          }
         }
-      }
-      qreal dx = point.x() - mPoints[index].x();
-      qreal dy = point.y() - mPoints[index].y();
-      mPoints.replace(index, point);
-      // update previous point
-      if (mGeometries[index - 1] == ShapeAnnotation::HorizontalLine) {
-        mPoints[index - 1] = QPointF(mPoints[index - 1].x(), mPoints[index - 1].y() +  dy);
-        updateCornerItem(index - 1);
-      } else if (mGeometries[index - 1] == ShapeAnnotation::VerticalLine) {
-        mPoints[index - 1] = QPointF(mPoints[index - 1].x() + dx, mPoints[index - 1].y());
-        updateCornerItem(index - 1);
-      }
-      // update next point
-      if (mGeometries[index] == ShapeAnnotation::HorizontalLine) {
-        mPoints[index + 1] = QPointF(mPoints[index + 1].x(), mPoints[index + 1].y() +  dy);
-        updateCornerItem(index + 1);
-      } else if (mGeometries[index] == ShapeAnnotation::VerticalLine) {
-        mPoints[index + 1] = QPointF(mPoints[index + 1].x() + dx, mPoints[index + 1].y());
-        updateCornerItem(index + 1);
+        qreal dx = point.x() - mPoints[index].x();
+        qreal dy = point.y() - mPoints[index].y();
+        mPoints.replace(index, point);
+        // update previous point
+        if (mGeometries.size() > index - 1 && mGeometries[index - 1] == ShapeAnnotation::HorizontalLine && mPoints.size() > index - 1) {
+          mPoints[index - 1] = QPointF(mPoints[index - 1].x(), mPoints[index - 1].y() +  dy);
+          updateCornerItem(index - 1);
+        } else if (mGeometries.size() > index - 1 && mGeometries[index - 1] == ShapeAnnotation::VerticalLine && mPoints.size() > index - 1) {
+          mPoints[index - 1] = QPointF(mPoints[index - 1].x() + dx, mPoints[index - 1].y());
+          updateCornerItem(index - 1);
+        }
+        // update next point
+        if (mGeometries.size() > index && mGeometries[index] == ShapeAnnotation::HorizontalLine && mPoints.size() > index + 1) {
+          mPoints[index + 1] = QPointF(mPoints[index + 1].x(), mPoints[index + 1].y() +  dy);
+          updateCornerItem(index + 1);
+        } else if (mGeometries.size() > index && mGeometries[index] == ShapeAnnotation::VerticalLine && mPoints.size() > index + 1) {
+          mPoints[index + 1] = QPointF(mPoints[index + 1].x() + dx, mPoints[index + 1].y());
+          updateCornerItem(index + 1);
+        }
       }
     } else {
       mPoints.replace(index, point);

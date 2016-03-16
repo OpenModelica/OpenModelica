@@ -149,12 +149,6 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("autoSave/interval")) {
     mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->setValue(mpSettings->value("autoSave/interval").toInt());
   }
-  if (mpSettings->contains("autoSave/enableSingleClasses")) {
-    mpGeneralSettingsPage->getEnableAutoSaveForSingleClassesCheckBox()->setChecked(mpSettings->value("autoSave/enableSingleClasses").toBool());
-  }
-  if (mpSettings->contains("autoSave/enableOneFilePackages")) {
-    mpGeneralSettingsPage->getEnableAutoSaveForOneFilePackagesCheckBox()->setChecked(mpSettings->value("autoSave/enableOneFilePackages").toBool());
-  }
   // read welcome page
   if (mpSettings->contains("welcomePage/view")) {
     mpGeneralSettingsPage->setWelcomePageView(mpSettings->value("welcomePage/view").toInt());
@@ -609,7 +603,8 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("language", language);
   // save working directory
   mpMainWindow->getOMCProxy()->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
-  mpSettings->setValue("workingDirectory", mpMainWindow->getOMCProxy()->changeDirectory());
+  mpGeneralSettingsPage->setWorkingDirectory(mpMainWindow->getOMCProxy()->changeDirectory());
+  mpSettings->setValue("workingDirectory", mpGeneralSettingsPage->getWorkingDirectory());
   // save toolbar icon size
   mpSettings->setValue("toolbarIconSize", mpGeneralSettingsPage->getToolbarIconSizeSpinBox()->value());
   // save user customizations
@@ -641,8 +636,6 @@ void OptionsDialog::saveGeneralSettings()
   // save auto save
   mpSettings->setValue("autoSave/enable", mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked());
   mpSettings->setValue("autoSave/interval", mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value());
-  mpSettings->setValue("autoSave/enableSingleClasses", mpGeneralSettingsPage->getEnableAutoSaveForSingleClassesCheckBox()->isChecked());
-  mpSettings->setValue("autoSave/enableOneFilePackages", mpGeneralSettingsPage->getEnableAutoSaveForOneFilePackagesCheckBox()->isChecked());
   mpMainWindow->toggleAutoSave();
   // save welcome page
   switch (mpGeneralSettingsPage->getWelcomePageView()) {
@@ -1283,9 +1276,6 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpAutoSaveIntervalSpinBox->setValue(300);
   mpAutoSaveSecondsLabel = new Label;
   connect(mpAutoSaveIntervalSpinBox, SIGNAL(valueChanged(int)), SLOT(autoSaveIntervalValueChanged(int)));
-  mpEnableAutoSaveForSingleClassesCheckBox = new QCheckBox(tr("Enable Auto Save for single classes"));
-  mpEnableAutoSaveForSingleClassesCheckBox->setChecked(true);
-  mpEnableAutoSaveForOneFilePackagesCheckBox = new QCheckBox(tr("Enable Auto Save for one file packages (Experimental)"));
   // calculate the auto save interval seconds.
   autoSaveIntervalValueChanged(mpAutoSaveIntervalSpinBox->value());
   // Auto Save layout
@@ -1294,8 +1284,6 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pAutoSaveGridLayout->addWidget(mpAutoSaveIntervalLabel, 0, 0);
   pAutoSaveGridLayout->addWidget(mpAutoSaveIntervalSpinBox, 0, 1);
   pAutoSaveGridLayout->addWidget(mpAutoSaveSecondsLabel, 0, 2);
-  pAutoSaveGridLayout->addWidget(mpEnableAutoSaveForSingleClassesCheckBox, 1, 0, 1, 3);
-  pAutoSaveGridLayout->addWidget(mpEnableAutoSaveForOneFilePackagesCheckBox, 2, 0, 1, 3);
   mpEnableAutoSaveGroupBox->setLayout(pAutoSaveGridLayout);
   // Welcome Page
   mpWelcomePageGroupBox = new QGroupBox(tr("Welcome Page"));
@@ -1400,52 +1388,48 @@ void GeneralSettingsPage::setDefaultView(QString value)
     mpDiagramViewRadioButton->setChecked(true);
 }
 
+/*!
+ * \brief GeneralSettingsPage::getDefaultView
+ * Returns the default view as QString.
+ * \return
+ */
 QString GeneralSettingsPage::getDefaultView()
 {
-  if (mpIconViewRadioButton->isChecked())
+  if (mpIconViewRadioButton->isChecked()) {
     return Helper::iconView;
-  else if (mpTextViewRadioButton->isChecked())
+  } else if (mpTextViewRadioButton->isChecked()) {
     return Helper::textView;
-  else if (mpDocumentationViewRadioButton->isChecked())
+  } else if (mpDocumentationViewRadioButton->isChecked()) {
     return Helper::documentationView;
-  else
+  } else {
     return Helper::diagramView;
+  }
 }
 
-QGroupBox* GeneralSettingsPage::getEnableAutoSaveGroupBox()
-{
-  return mpEnableAutoSaveGroupBox;
-}
-
-QSpinBox* GeneralSettingsPage::getAutoSaveIntervalSpinBox()
-{
-  return mpAutoSaveIntervalSpinBox;
-}
-
-QCheckBox* GeneralSettingsPage::getEnableAutoSaveForSingleClassesCheckBox()
-{
-  return mpEnableAutoSaveForSingleClassesCheckBox;
-}
-
-QCheckBox* GeneralSettingsPage::getEnableAutoSaveForOneFilePackagesCheckBox()
-{
-  return mpEnableAutoSaveForOneFilePackagesCheckBox;
-}
-
+/*!
+ * \brief GeneralSettingsPage::getWelcomePageView
+ * Returns the WelcomePageWidget orientation.
+ * \return
+ */
 int GeneralSettingsPage::getWelcomePageView()
 {
-  if (mpHorizontalViewRadioButton->isChecked())
+  if (mpHorizontalViewRadioButton->isChecked()) {
     return 1;
-  else if (mpVerticalViewRadioButton->isChecked())
+  } else if (mpVerticalViewRadioButton->isChecked()) {
     return 2;
-  else
+  } else {
     return 0;
+  }
 }
 
+/*!
+ * \brief GeneralSettingsPage::setWelcomePageView
+ * Sets the WelcomePageWidget orientation.
+ * \param view
+ */
 void GeneralSettingsPage::setWelcomePageView(int view)
 {
-  switch (view)
-  {
+  switch (view) {
     case 2:
       mpVerticalViewRadioButton->setChecked(true);
       break;
@@ -1456,11 +1440,6 @@ void GeneralSettingsPage::setWelcomePageView(int view)
   }
 }
 
-QCheckBox* GeneralSettingsPage::getShowLatestNewsCheckBox()
-{
-  return mpShowLatestNewsCheckBox;
-}
-
 /*!
  * \brief GeneralSettingsPage::selectWorkingDirectory
  * Slot activated when mpWorkingDirectoryBrowseButton clicked signal is raised.
@@ -1468,7 +1447,8 @@ QCheckBox* GeneralSettingsPage::getShowLatestNewsCheckBox()
  */
 void GeneralSettingsPage::selectWorkingDirectory()
 {
-  mpWorkingDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL));
+  mpWorkingDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
+                                                                         .arg(Helper::chooseDirectory), NULL));
 }
 
 /*!
@@ -1478,7 +1458,8 @@ void GeneralSettingsPage::selectWorkingDirectory()
  */
 void GeneralSettingsPage::selectTerminalCommand()
 {
-  mpTerminalCommandTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile), NULL, NULL, NULL));
+  mpTerminalCommandTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName)
+                                                                   .arg(Helper::chooseFile), NULL, NULL, NULL));
 }
 
 /*!

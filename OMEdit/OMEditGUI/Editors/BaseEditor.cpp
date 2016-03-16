@@ -1039,6 +1039,35 @@ QMimeData* BaseEditor::PlainTextEdit::createMimeDataFromSelection() const
 }
 
 /*!
+ * \brief BaseEditor::PlainTextEdit::focusInEvent
+ * Reimplementation of QPlainTextEdit::focusInEvent(). Stops the auto save timer.
+ * \param event
+ */
+void BaseEditor::PlainTextEdit::focusInEvent(QFocusEvent *event)
+{
+  mpBaseEditor->getMainWindow()->getAutoSaveTimer()->stop();
+  QPlainTextEdit::focusInEvent(event);
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::focusOutEvent
+ * Reimplementation of QPlainTextEdit::focusOutEvent(). Restarts the auto save timer.
+ * \param event
+ */
+void BaseEditor::PlainTextEdit::focusOutEvent(QFocusEvent *event)
+{
+  /* The user might start editing the document and then minimize the OMEdit window.
+   * We should only start the autosavetimer when MainWindow is the active window and focusOutEvent is called.
+   */
+  if (mpBaseEditor->getMainWindow()->isActiveWindow()) {
+    if (mpBaseEditor->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
+      mpBaseEditor->getMainWindow()->getAutoSaveTimer()->start();
+    }
+  }
+  QPlainTextEdit::focusOutEvent(event);
+}
+
+/*!
  * \class BaseEditor
  * Base class for all editors.
  */

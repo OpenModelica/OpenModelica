@@ -175,13 +175,11 @@ public:
   QString getModelingViewMode();
   void setDefaultView(QString value);
   QString getDefaultView();
-  QGroupBox* getEnableAutoSaveGroupBox();
-  QSpinBox* getAutoSaveIntervalSpinBox();
-  QCheckBox* getEnableAutoSaveForSingleClassesCheckBox();
-  QCheckBox* getEnableAutoSaveForOneFilePackagesCheckBox();
+  QGroupBox* getEnableAutoSaveGroupBox() {return mpEnableAutoSaveGroupBox;}
+  QSpinBox* getAutoSaveIntervalSpinBox() {return mpAutoSaveIntervalSpinBox;}
   int getWelcomePageView();
   void setWelcomePageView(int view);
-  QCheckBox* getShowLatestNewsCheckBox();
+  QCheckBox* getShowLatestNewsCheckBox() {return mpShowLatestNewsCheckBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralSettingsGroupBox;
@@ -214,8 +212,6 @@ private:
   Label *mpAutoSaveIntervalLabel;
   QSpinBox *mpAutoSaveIntervalSpinBox;
   Label *mpAutoSaveSecondsLabel;
-  QCheckBox *mpEnableAutoSaveForSingleClassesCheckBox;
-  QCheckBox *mpEnableAutoSaveForOneFilePackagesCheckBox;
   QGroupBox *mpWelcomePageGroupBox;
   QRadioButton *mpHorizontalViewRadioButton;
   QRadioButton *mpVerticalViewRadioButton;

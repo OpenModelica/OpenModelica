@@ -174,6 +174,8 @@ private:
     virtual void resizeEvent(QResizeEvent *pEvent);
     virtual void keyPressEvent(QKeyEvent *pEvent);
     virtual QMimeData* createMimeDataFromSelection() const;
+    virtual void focusInEvent(QFocusEvent *event);
+    virtual void focusOutEvent(QFocusEvent *event);
   };
 public:
   BaseEditor(MainWindow *pMainWindow);

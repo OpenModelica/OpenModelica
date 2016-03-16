@@ -51,7 +51,7 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
   setObjectName("DocumentationWidget");
   setMinimumWidth(175);
   mpMainWindow = pParent;
-  mDocumentationFile.setFileName(mpMainWindow->getOMCProxy()->changeDirectory() + "/DocumentationWidget.html");
+  mDocumentationFile.setFileName(OpenModelica::tempDirectory() + "/DocumentationWidget.html");
   // create previous and next buttons for documentation navigation
   // create the previous button
   mpPreviousToolButton = new QToolButton;

@@ -92,7 +92,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpMessagesDockWidget->hide();
   connect(mpMessagesWidget, SIGNAL(MessageAdded()), mpMessagesDockWidget, SLOT(show()));
   // Reopen the standard output stream.
-  QString outputFileName = mpOMCProxy->changeDirectory()+ "/omeditoutput.txt";
+  QString outputFileName = OpenModelica::tempDirectory() + "/omeditoutput.txt";
   freopen(outputFileName.toStdString().c_str(), "w", stdout);
   setbuf(stdout, NULL); // used non-buffered stdout
   mpOutputFileDataNotifier = 0;
@@ -107,7 +107,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
 
   }
   // Reopen the standard error stream.
-  QString errorFileName = mpOMCProxy->changeDirectory()+ "/omediterror.txt";
+  QString errorFileName = OpenModelica::tempDirectory() + "/omediterror.txt";
   freopen(errorFileName.toStdString().c_str(), "w", stderr);
   setbuf(stderr, NULL); // used non-buffered stderr
   mpErrorFileDataNotifier = 0;
@@ -273,10 +273,11 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   }
   // create the auto save timer
   mpAutoSaveTimer = new QTimer(this);
+  mpAutoSaveTimer->setInterval(mpOptionsDialog->getGeneralSettingsPage()->getAutoSaveIntervalSpinBox()->value() * 1000);
   connect(mpAutoSaveTimer, SIGNAL(timeout()), SLOT(autoSave()));
   // read auto save settings
   if (mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
-    mpAutoSaveTimer->start(mpOptionsDialog->getGeneralSettingsPage()->getAutoSaveIntervalSpinBox()->value() * 1000);
+    mpAutoSaveTimer->start();
   }
 }
 
@@ -471,14 +472,16 @@ void MainWindow::openDroppedFile(QDropEvent *event)
   hideProgressBar();
 }
 
+/*!
+ * \brief MainWindow::openResultFiles
+ * Opens the result file(s).
+ * \param fileNames
+ */
 void MainWindow::openResultFiles(QStringList fileNames)
 {
-  QString currentDirectory = mpOMCProxy->changeDirectory();
-  foreach (QString fileName, fileNames)
-  {
+  foreach (QString fileName, fileNames) {
     QFileInfo fileInfo(fileName);
-    mpOMCProxy->changeDirectory(fileInfo.absoluteDir().absolutePath());
-    QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.fileName());
+    QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.absoluteFilePath());
     // close the simulation result file.
     mpOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
@@ -487,7 +490,6 @@ void MainWindow::openResultFiles(QStringList fileNames)
       mpVariablesDockWidget->show();
     }
   }
-  mpOMCProxy->changeDirectory(currentDirectory);
 }
 
 void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
@@ -641,7 +643,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   if (mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName)) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
                                                 .arg(FMUName.isEmpty() ? pLibraryTreeItem->getNameStructure() : FMUName)
-                                                .arg(mpOMCProxy->changeDirectory()), Helper::scriptingKind,
+                                                .arg(mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory()), Helper::scriptingKind,
                                                 Helper::notificationLevel));
   }
   // hide progress bar
@@ -665,7 +667,7 @@ void MainWindow::exportModelXML(LibraryTreeItem *pLibraryTreeItem)
   showProgressBar();
   if (mpOMCProxy->translateModelXML(pLibraryTreeItem->getNameStructure())) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::XML_GENERATED)
-                                                .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeItem->getNameStructure()),
+                                                .arg(mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory()).arg(pLibraryTreeItem->getNameStructure()),
                                                 Helper::scriptingKind, Helper::notificationLevel));
   }
   // hide progress bar
@@ -2015,14 +2017,15 @@ void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
   }
 }
 
+/*!
+ * \brief MainWindow::toggleAutoSave
+ * Start/Stop the auto save timer based on the settings.
+ */
 void MainWindow::toggleAutoSave()
 {
-  if (mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked())
-  {
-    mpAutoSaveTimer->start(mpOptionsDialog->getGeneralSettingsPage()->getAutoSaveIntervalSpinBox()->value() * 1000);
-  }
-  else
-  {
+  if (mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
+    mpAutoSaveTimer->start();
+  } else {
     mpAutoSaveTimer->stop();
   }
 }
@@ -2100,44 +2103,14 @@ void MainWindow::documentationDockWidgetVisibilityChanged(bool visible)
   }
 }
 
+/*!
+ * \brief MainWindow::autoSave
+ * Slot activated when mpAutoSaveTimer timeout SIGNAL is raised.\n
+ * Auto saves the classes which user has alreadys saved to a file. Classes not saved to a file are not saved.
+ */
 void MainWindow::autoSave()
 {
-//  bool autoSaveForSingleClasses = mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveForSingleClassesCheckBox()->isChecked();
-//  bool autoSaveForOneFilePackages = mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveForOneFilePackagesCheckBox()->isChecked();
-//  bool autoSaveForFolderPackages = false;
-//  // if auto save for any class type is enabled.
-//  if (autoSaveForSingleClasses || autoSaveForOneFilePackages || autoSaveForFolderPackages)
-//  {
-//    foreach (LibraryTreeNode* pLibraryTreeNode, mpLibraryTreeWidget->getLibraryTreeNodesList())
-//    {
-//      if (!pLibraryTreeNode->isSaved() && !pLibraryTreeNode->getFileName().isEmpty())
-//      {
-//        // if auto save for single file class is enabled.
-//        if (pLibraryTreeNode->getParentName().isEmpty() && pLibraryTreeNode->childCount() == 0 && autoSaveForSingleClasses)
-//        {
-//          mpLibraryTreeWidget->saveLibraryTreeNode(pLibraryTreeNode);
-//        }
-//        // if auto save for one file package is enabled.
-//        else if (pLibraryTreeNode->getParentName().isEmpty() && pLibraryTreeNode->childCount() > 0 && autoSaveForOneFilePackages)
-//        {
-//          mpLibraryTreeWidget->saveLibraryTreeNode(pLibraryTreeNode);
-//        }
-//        // if auto save for folder package is enabled.
-//        else if (autoSaveForFolderPackages)
-//        {
-//          LibraryTreeNode *pParentLibraryTreeNode = mpLibraryTreeWidget->getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()));
-//          if (pParentLibraryTreeNode)
-//          {
-//            QFileInfo fileInfo(pParentLibraryTreeNode->getFileName());
-//            if ((pParentLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure) || (fileInfo.fileName().compare("package.mo") == 0))
-//            {
-//              mpLibraryTreeWidget->saveLibraryTreeNode(pParentLibraryTreeNode);
-//            }
-//          }
-//        }
-//      }
-//    }
-//  }
+  autoSaveHelper(mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem());
 }
 
 /*!
@@ -2733,13 +2706,31 @@ void MainWindow::createMenus()
 }
 
 /*!
-  Stores the window states and geometry of all Plot Windows.
-  */
-/*
-  The application window title and window icon gets corrupted when we switch between modeling & plotting perspective.
-  To solve this we tile the plot windows when we switch to modeling and welcome perspective. But before calling tileSubWindows() we save all
-  the plot windows states & geometry and then restore it when switching back to plotting view.
-  */
+ * \brief MainWindow::autoSaveHelper
+ * Helper function for MainWindow::autoSave()
+ * \param pLibraryTreeItem
+ */
+void MainWindow::autoSaveHelper(LibraryTreeItem *pLibraryTreeItem)
+{
+  for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    if (!pChildLibraryTreeItem->isSystemLibrary()) {
+      if (pChildLibraryTreeItem->isFilePathValid() && !pChildLibraryTreeItem->isSaved()) {
+        mpLibraryWidget->saveLibraryTreeItem(pChildLibraryTreeItem);
+      } else {
+        autoSaveHelper(pChildLibraryTreeItem);
+      }
+    }
+  }
+}
+
+/*!
+ * \brief MainWindow::storePlotWindowsStateAndGeometry
+ * Stores the window states and geometry of all Plot Windows.\n
+ * The application window title and window icon gets corrupted when we switch between modeling & plotting perspective.
+ * To solve this we tile the plot windows when we switch to modeling and welcome perspective. But before calling tileSubWindows() we save all
+ * the plot windows states & geometry and then restore it when switching back to plotting view.
+ */
 void MainWindow::storePlotWindowsStateAndGeometry()
 {
   if (mPlotWindowsStatesList.isEmpty() && mPlotWindowsGeometriesList.isEmpty()) {

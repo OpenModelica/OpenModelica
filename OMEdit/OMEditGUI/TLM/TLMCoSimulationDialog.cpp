@@ -208,12 +208,9 @@ void TLMCoSimulationDialog::simulationProcessFinished(TLMCoSimulationOptions tlm
   if (resultFileInfo.exists() && resultFileLastModifiedDateTime <= resultFileInfo.lastModified()) {
     VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
     OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
-    QString currentDirectory = pOMCProxy->changeDirectory();
-    pOMCProxy->changeDirectory(fileInfo.absoluteDir().absolutePath());
-    QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.fileName());
+    QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
     // close the simulation result file.
     pOMCProxy->closeSimulationResultFile();
-    pOMCProxy->changeDirectory(currentDirectory);
     if (list.size() > 0) {
       mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
       pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
