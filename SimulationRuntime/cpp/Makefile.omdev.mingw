@@ -134,7 +134,6 @@ runtimeCPPmsvc: getMSVCversion
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DBUILD_SHARED_LIBS:BOOL=ON $(CMAKE_FLAGS) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DBUILD_SHARED_LIBS:BOOL=OFF $(CMAKE_FLAGS) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> Build_MSVC/build.bat
@@ -143,25 +142,40 @@ runtimeCPPmsvc: getMSVCversion
 	cd ./Build_MSVC; echo "change to Build_MSVC";\
 	cmd /c build.bat
 
+	echo 'Build cppRuntime (static) with MSVC'
+	#rm -rf Build_MSVC_static
+	mkdir -p Build_MSVC_static
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC_static/build.bat
+
+	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC_static/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DBUILD_SHARED_LIBS:BOOL=OFF $(CMAKE_FLAGS) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC_static/build.bat
+
+	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
+	echo set MAKEFLAGS="" >> Build_MSVC_static/build.bat
+	echo echo Running NMake JOM >> Build_MSVC_static/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> Build_MSVC_static/build.bat
+	cd ./Build_MSVC_static; echo "change to Build_MSVC_static";\
+	cmd /c build.bat
+
 	# move msvc libs into subfolder
 	mkdir -p Build_MSVC/tmp/lib/omc/cpp/msvc
 	mv Build_MSVC/tmp/lib/omc/cpp/*.dll Build_MSVC/tmp/lib/omc/cpp/msvc
-	mv Build_MSVC/tmp/lib/omc/cpp/*.lib Build_MSVC/tmp/lib/omc/cpp/msvc
+	mv Build_MSVC*/tmp/lib/omc/cpp/*.lib Build_MSVC/tmp/lib/omc/cpp/msvc
 
 
 	# copy pdb files
 ifneq ($(BUILDTYPE),Release)
-	cp -u Build_MSVC/Solver/Newton/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Solver/Euler/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Core/SimController/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Core/Modelica/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Solver/Newton/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Solver/Euler/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Core/SimController/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Core/Modelica/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
 	#cp -u Build_MSVC/Core/ModelicaExternalC/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Core/SimulationSettings/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Core/Solver/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Core/System/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	#cp -u Build_MSVC/SimCoreFactory/OMCFactory/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Core/DataExchange/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	#cp -u Build_MSVC/Core/Math/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Core/SimulationSettings/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Core/Solver/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Core/System/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	#cp -u Build_MSVC*/SimCoreFactory/OMCFactory/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Core/DataExchange/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	#cp -u Build_MSVC*/Core/Math/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
 endif
 
 
