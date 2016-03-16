@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
+# encoding=utf8
 
-import xmlrpc.client
+import sys
+
 from subprocess import call
 import natsort
 import re
 
-server = xmlrpc.client.ServerProxy("https://trac.openmodelica.org/OpenModelica/rpc")
+if sys.version_info >= (3,0):
+  from xmlrpc.client import ServerProxy
+else:
+  from xmlrpclib import ServerProxy
+server = ServerProxy("https://trac.openmodelica.org/OpenModelica/rpc")
 
 releases = [i for i in server.wiki.getAllPages() if i.startswith("ReleaseNotes/")]
 releases = natsort.natsorted(releases)
@@ -20,7 +26,7 @@ for rel in releases:
     (content,n) = re.subn(r'^([*]*) ( *[*])', r'*\1\2', content, flags=re.M)
   content = re.sub(r'^([*]*) [*]', r'\1*', content)
   content = re.sub(r'== Detailed Changes ==\s*\[\[TicketQuery[^]]*\]\]', '', content, re.MULTILINE)
-  open("tmp.wiki", "w").write(content)
+  open("tmp.wiki", "w").write(content.encode('utf-8'))
   call(["pandoc", "--base-header-level=2", "-o", "tmp.rst", "tmp.wiki"])
   contentrst = open("tmp.rst", "r").read()
   # Removes {{{#!div lines; easier on the rst since it's a 1-line pattern

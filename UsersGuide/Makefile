@@ -270,4 +270,4 @@ source/omchelptext.rst:
 	$(OPENMODELICA_ROOT)/build/bin/omc +help=omcall-sphinxoutput > "$@.tmp"
 	mv "$@.tmp" "$@"
 source/tracreleases.inc: source/tracreleases.py
-	cd source && ./tracreleases.py
+	cd source && python ./tracreleases.py
