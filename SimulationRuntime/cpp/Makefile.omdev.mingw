@@ -160,7 +160,8 @@ runtimeCPPmsvc: getMSVCversion
 	# move msvc libs into subfolder
 	mkdir -p Build_MSVC/tmp/lib/omc/cpp/msvc
 	mv Build_MSVC/tmp/lib/omc/cpp/*.dll Build_MSVC/tmp/lib/omc/cpp/msvc
-	mv Build_MSVC*/tmp/lib/omc/cpp/*.lib Build_MSVC/tmp/lib/omc/cpp/msvc
+	mv Build_MSVC/tmp/lib/omc/cpp/*.lib Build_MSVC/tmp/lib/omc/cpp/msvc
+	mv Build_MSVC_static/tmp/lib/omc/cpp/*.lib Build_MSVC/tmp/lib/omc/cpp/msvc
 
 
 	# copy pdb files
