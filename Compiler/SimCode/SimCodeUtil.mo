@@ -87,6 +87,7 @@ import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
+import FMI;
 import Graph;
 import HashSet;
 import HpcOmSimCode;
@@ -168,6 +169,7 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   input Boolean isFMU=false;
+  input String FMUVersion="";
   output SimCode.SimCode simCode;
   output tuple<Integer, list<tuple<Integer, Integer>>> outMapping "the highest simEqIndex in the mapping and the mapping simEq-Index -> scc-Index itself";
 protected
@@ -403,7 +405,11 @@ algorithm
     backendMapping := setBackendVarMapping(inBackendDAE, crefToSimVarHT, modelInfo, backendMapping);
     //dumpBackendMapping(backendMapping);
 
-    modelStruct := createFMIModelStructure(symJacs, modelInfo);
+    if if isFMU then FMI.isFMIVersion20(FMUVersion) else false then
+      modelStruct := createFMIModelStructure(symJacs, modelInfo);
+    else
+      modelStruct := NONE();
+    end if;
 
     (varToArrayIndexMapping, varToIndexMapping) := createVarToArrayIndexMapping(modelInfo);
     //print("HASHTABLE MAPPING\n\n");
@@ -11597,7 +11603,7 @@ algorithm
    noOut := noIn+1;
 end dumpVarMappingTuple;
 
-public function createFMIModelStructure
+protected function createFMIModelStructure
 " function detectes the model stucture for FMI 2.0
   by analyzing the symbolic jacobian matrixes and sparsity pattern"
   input BackendDAE.SymbolicJacobians inSymjacs;
@@ -11671,7 +11677,8 @@ algorithm
     //print("-- finished createFMIModelStructure\n");
     outFmiModelStructure := SOME(SimCode.FMIMODELSTRUCTURE(SimCode.FMIOUTPUTS(outputs), SimCode.FMIDERIVATIVES(derivatives), SimCode.FMIDISCRETESTATES(discreteStates), SimCode.FMIINITIALUNKNOWNS({})));
 else
-  outFmiModelStructure := NONE();
+  Error.addInternalError("SimCodeUtil.createFMIModelStructure failed", sourceInfo());
+  fail();
 end try;
 end createFMIModelStructure;
 
