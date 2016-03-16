@@ -39,6 +39,7 @@ encapsulated package DumpGraphML
 public import BackendDAE;
 public import DAE;
 
+protected import Array;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendDAETransform;
@@ -81,7 +82,7 @@ algorithm
         eqns = BackendEquation.getEqnsFromEqSystem(inSystem);
         funcs = BackendDAEUtil.getFunctions(inShared);
         (_,m,_) = BackendDAEUtil.getIncidenceMatrix(inSystem,BackendDAE.NORMAL(),SOME(funcs));
-        mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
+        mapIncRowEqn = Array.createIntRange(arrayLength(m));
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(numberMode,1,(graphInfo,graph)));
@@ -103,7 +104,7 @@ algorithm
         neqns = BackendDAEUtil.equationArraySize(eqns);
         //neqns = BackendDAEUtil.equationSize(eqns);
         eqnsids = List.intRange(neqns);
-        mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
+        mapIncRowEqn = Array.createIntRange(arrayLength(m));
         ((graphInfo,graph)) = List.fold3(eqnsids,addEqnGraph,eqns,mapIncRowEqn,numberMode,(graphInfo,graph));
         ((_,_,graphInfo)) = List.fold(eqnsids,addEdgesGraph,(1,m,graphInfo));
         GraphML.dumpGraph(graphInfo,filename);
@@ -115,7 +116,7 @@ algorithm
         eqns = BackendEquation.getEqnsFromEqSystem(inSystem);
         funcs = BackendDAEUtil.getFunctions(inShared);
         //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(), SOME(funcs));
-        //mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
+        //mapIncRowEqn = Array.createIntRange(arrayLength(m));
         //(_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(inSystem,BackendDAE.SOLVABLE(), SOME(funcs)));
         (_,m,_,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(inSystem,BackendDAE.NORMAL(), SOME(funcs));
         graphInfo = GraphML.createGraphInfo();

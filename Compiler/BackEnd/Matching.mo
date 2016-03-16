@@ -4715,7 +4715,7 @@ algorithm
   row_degrees := arrayCreate(ne,0);
   onerows := getOneRows(ne,mT,row_degrees,{});
   onecolums := getOneRows(nv,m,col_degrees,{});
-  randarr := listArray(List.intRange(ne));
+  randarr := Array.createIntRange(ne);
   setrandArray(ne,randarr);
   ks_rand_cheapmatching1(1,ne,onecolums,onerows,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
   outUnMatched := getUnassigned(ne,ass1,{});
@@ -6399,9 +6399,9 @@ algorithm
      equation
        ne = BackendDAEUtil.systemSize(isyst);
        nv = BackendVariable.daenumVariables(isyst);
-       randarr = listArray(List.intRange(ne));
+       randarr = Array.createIntRange(ne);
        setrandArray(ne, randarr);
-       randarr1 = listArray(List.intRange(nv));
+       randarr1 = Array.createIntRange(nv);
        setrandArray(nv, randarr1);
        syst.orderedEqs = randSortSystem1( ne, 0, randarr, eqns, BackendEquation.listEquation({}),
                                           BackendEquation.equationNth1, BackendEquation.addEquation );

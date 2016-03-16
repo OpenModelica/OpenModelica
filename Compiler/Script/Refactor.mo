@@ -1238,13 +1238,13 @@ algorithm
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "pattern"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: _),res,p)
       equation
-        val = arrayGet(listArray(patternMapList),x+1);
+        val = listGet(patternMapList,x+1);
         res = transformConnectAnnList(rest,context,res,p);
       then Absyn.MODIFICATION(fi,e,Absyn.IDENT("pattern"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.CREF(Absyn.CREF_QUAL("LinePattern", {},Absyn.CREF_IDENT(val, {}))),Absyn.dummyInfo))),com, mod_info):: res;
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: _),res,p)
       equation
-        thick = arrayGet(listArray(thicknessMapList),x);
+        thick = listGet(thicknessMapList,x);
         res = transformConnectAnnList(rest,context,res,p);
         s = realString(thick);
       then Absyn.MODIFICATION(fi,e,Absyn.IDENT("thickness"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),com,mod_info):: res;
@@ -1255,9 +1255,9 @@ algorithm
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "arrow"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: _),res,p)
       equation
-        arrows = arrayGet(listArray(arrowMapList),x+1);
-        val1 = arrayGet(listArray(arrows),1);
-        val2 = arrayGet(listArray(arrows),2);
+        arrows = listGet(arrowMapList,x+1);
+        val1 = listGet(arrows,1);
+        val2 = listGet(arrows,2);
         res = transformConnectAnnList(rest,context,res,p);
       then Absyn.MODIFICATION(fi,e,Absyn.IDENT("arrow"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.ARRAY({Absyn.CREF(Absyn.CREF_QUAL("Arrow", {},Absyn.CREF_IDENT(val1, {}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT(val2,{})))}),Absyn.dummyInfo))),com, mod_info):: res;
 
@@ -1588,33 +1588,33 @@ algorithm
 
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "pattern"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x))   ))) :: rest,context )
       equation
-        val = arrayGet(listArray(patternMapList),x+1);
+        val = listGet(patternMapList,x+1);
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("pattern",Absyn.CREF(Absyn.CREF_QUAL("LinePattern", {},Absyn.CREF_IDENT(val, {})))) :: restRes;
 
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "fillPattern"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x))   ))) :: rest,context )
       equation
-        val = arrayGet(listArray(fillPatternMapList),x+1);
+        val = listGet(fillPatternMapList,x+1);
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("fillPattern",Absyn.CREF(Absyn.CREF_QUAL("FillPattern", {},Absyn.CREF_IDENT(val, {})))) :: restRes;
 
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x))   ))) :: rest,context as ("Line" :: _))
       equation
-        thick = arrayGet(listArray(thicknessMapList),x);
+        thick = listGet(thicknessMapList,x);
         restRes = transAnnLstToNamedArgs(rest,context);
         s = realString(thick);
       then Absyn.NAMEDARG("thickness",Absyn.REAL(s)) :: restRes;
 
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x))   ))) :: rest,context )
       equation
-        thick = arrayGet(listArray(thicknessMapList),x);
+        thick = listGet(thicknessMapList,x);
         restRes = transAnnLstToNamedArgs(rest,context);
         s = realString(thick);
       then Absyn.NAMEDARG("lineThickness",Absyn.REAL(s)) :: restRes;
 
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "gradient"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)) ))) :: rest,context)
       equation
-        val = arrayGet(listArray(gradientMapList),x+1);
+        val = listGet(gradientMapList,x+1);
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("fillPattern",Absyn.CREF(Absyn.CREF_QUAL("FillPattern", {},Absyn.CREF_IDENT(val, {}))))  :: restRes  ;
 
@@ -1625,9 +1625,9 @@ algorithm
 
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "arrow"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x))   ))) :: rest,context)
       equation
-        arrows = arrayGet(listArray(arrowMapList),x+1);
-        val1 = arrayGet(listArray(arrows),1);
-        val2 = arrayGet(listArray(arrows),2);
+        arrows = listGet(arrowMapList,x+1);
+        val1 = listGet(arrows,1);
+        val2 = listGet(arrows,2);
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("arrow",Absyn.ARRAY({Absyn.CREF(Absyn.CREF_QUAL("Arrow", {},Absyn.CREF_IDENT(val1, {}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT(val2,{})))})):: restRes    ;
 
@@ -2155,10 +2155,10 @@ algorithm
       Integer  color;
     case(color)
       equation
-        rcol = arrayGet(listArray(colorMapList),color+1);
-        color1 = arrayGet(listArray(rcol),1);
-        color2 = arrayGet(listArray(rcol),2);
-        color3 = arrayGet(listArray(rcol),3);
+        rcol = listGet(colorMapList,color+1);
+        color1 = listGet(rcol,1);
+        color2 = listGet(rcol,2);
+        color3 = listGet(rcol,3);
       then
         (color1,color2,color3);
   end match;

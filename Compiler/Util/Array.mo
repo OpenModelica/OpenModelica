@@ -37,7 +37,7 @@ encapsulated package Array
 "
 
 protected
-import MetaModelica.Dangerous.{arrayGetNoBoundsChecking, arrayCreateNoInit};
+import MetaModelica.Dangerous.{arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
 
 public function mapNoCopy<T>
   "Takes an array and a function over the elements of the array, which is
@@ -163,10 +163,10 @@ algorithm
     // If the array isn't empty, use the first element to create the new array.
     res := inFunc(arrayGetNoBoundsChecking(inArray, 1));
     outArray := arrayCreateNoInit(len, res);
-    arrayUpdate(outArray, 1, res);
+    arrayUpdateNoBoundsChecking(outArray, 1, res);
 
     for i in 2:len loop
-      arrayUpdate(outArray, i, inFunc(arrayGetNoBoundsChecking(inArray, i)));
+      arrayUpdateNoBoundsChecking(outArray, i, inFunc(arrayGetNoBoundsChecking(inArray, i)));
     end for;
   end if;
 end map;
@@ -654,6 +654,18 @@ algorithm
     arrayUpdate(outArray, i, arrayGetNoBoundsChecking(inArraySrc, i));
   end for;
 end copyN;
+
+public function createIntRange
+  "Creates an array<Integer> of size inLen with the values set to the range of 1:inLen."
+  input Integer inLen;
+  output array<Integer> outArray;
+algorithm
+  outArray := arrayCreateNoInit(inLen, 0);
+
+  for i in 1:inLen loop
+    arrayUpdateNoBoundsChecking(outArray, i, i);
+  end for;
+end createIntRange;
 
 public function setRange<T>
   "Sets the elements in positions inStart to inEnd to inValue."

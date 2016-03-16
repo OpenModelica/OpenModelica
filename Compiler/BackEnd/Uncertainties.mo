@@ -794,8 +794,8 @@ algorithm
         Matching.matchingExternalsetIncidenceMatrix(size,size,mx);
 
         //BackendDump.dumpIncidenceMatrix(mx);
-        ass1=listArray(List.fill(0,size));
-        ass2=listArray(List.fill(0,size));
+        ass1=arrayCreate(size,0);
+        ass2=arrayCreate(size,0);
 
         true = BackendDAEEXT.setAssignment(size,size,ass2,ass1);
         BackendDAEEXT.matching(size,size,1,-1,1.0,0);

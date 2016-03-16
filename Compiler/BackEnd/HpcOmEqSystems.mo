@@ -1056,7 +1056,7 @@ algorithm
         sysTmp = BackendDAEUtil.setEqSystMatching(sysTmp, matching);
 
         // perform BLT to order the StrongComponents
-        mapIncRowEqn = listArray(List.intRange(nEqs));
+        mapIncRowEqn = Array.createIntRange(nEqs);
         mapEqnIncRow = Array.map(mapIncRowEqn,List.create);
         (sysTmp,compsTmp) = BackendDAETransform.strongComponentsScalar(sysTmp,shared,mapEqnIncRow,mapIncRowEqn);
         compsTmp = listAppend(compsIn,compsTmp);

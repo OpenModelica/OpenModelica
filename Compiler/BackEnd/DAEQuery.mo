@@ -187,7 +187,7 @@ protected function getIncidenceMatrix2 "author: adrpo
   output String strIMatrix;
 algorithm
   strIMatrix :=
-  matchcontinue (inStringLstLst,rowIndex)
+  match (inStringLstLst,rowIndex)
     local
       list<String> row;
       list<list<String>> rows;
@@ -206,7 +206,7 @@ algorithm
         str = stringAppendList({"{", str1, "},",  str2});
       then
         str;
-  end matchcontinue;
+  end match;
 end getIncidenceMatrix2;
 
 protected function getIncidenceRow "author: adrpo
@@ -216,7 +216,7 @@ protected function getIncidenceRow "author: adrpo
   output String strRow;
 algorithm
   strRow :=
-  matchcontinue (inStringLst)
+  match (inStringLst)
     local
       String s,  s2, x;
       list<String> xs;
@@ -228,7 +228,7 @@ algorithm
         s = stringAppendList({x, ",", s2});
       then
         s;
-  end matchcontinue;
+  end match;
 end getIncidenceRow;
 
 public function getVariables "This function returns the variables
