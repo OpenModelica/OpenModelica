@@ -927,3 +927,16 @@ Debugger
 --------
 
 For debugging capability, see :ref:`debugging`.
+
+Editing Modelica Standard Library
+---------------------------------
+
+By default OMEdit loads the Modelica Standard Library (MSL) as a system library. System libraries are read-only. 
+If you want to edit MSL you need to load it as user library instead of system library. We don't recommend editing 
+MSL but if you really need to and understand the consequences then follow these steps,
+
+-  Go to *Tools->Options->Libraries*.
+-  Remove Modelica & ModelicaReference from list of system libraries.
+-  Uncheck *force loading of Modelica Standard Library*.
+-  Add *$OPENMODELICAHOME/lib/omlibrary/Modelica X.X/package.mo* under user libraries.
+-  Restart OMEdit.
