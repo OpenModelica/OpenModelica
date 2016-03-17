@@ -781,7 +781,7 @@ algorithm
 
 
         knownsSystemComp=sortEquations(knownsSystem,knowns);
-        knownsSystemComp=removeVarsNotInSet(knownsSystemComp,knowns,{});
+        knownsSystemComp=removeVarsNotInSet(knownsSystemComp,knowns);
 
         //knownsSystemComp=reduceVariables(knownsSystemComp,knowns);
         //dumpExtIncidenceMatrix(knownsSystemComp);
@@ -936,7 +936,7 @@ algorithm
         temp = listHead(candidate);
         //print("Eliminating "+intString(temp)+"\n");
         variables=List.setDifference(getVariables(m),{temp});
-        newM = removeVarsNotInSet(m,variables,{});
+        newM = removeVarsNotInSet(m,variables);
         newM = reduceVariablesInMatrix(newM,candidatesTail,count-1);
       then newM;
   end matchcontinue;
@@ -1231,28 +1231,19 @@ end removeVarsNotInSet_helper;
 protected function removeVarsNotInSet
   input ExtIncidenceMatrix m;
   input list<Integer> set;
-  input ExtIncidenceMatrix acc;
-  output ExtIncidenceMatrix mOut;
+  output ExtIncidenceMatrix mOut = {};
+protected
+  list<Integer> vars,newVars;
+  Integer eq;
 algorithm
-mOut:=matchcontinue(m,set,acc)
-  local
-     list<Integer> vars,newVars;
-     ExtIncidenceMatrix t;
-     Integer eq;
-  case({},_,_)
-    equation
-    then listReverse(acc);
-  case((_,vars)::t,_,_)
-      equation
-        newVars = List.filter1OnTrue(vars,removeVarsNotInSet_helper,set);
-        true = listEmpty(newVars);
-      then removeVarsNotInSet(t,set,acc);
-  case((eq,vars)::t,_,_)
-      equation
-        newVars = List.filter1OnTrue(vars,removeVarsNotInSet_helper,set);
-        false = listEmpty(newVars);
-      then removeVarsNotInSet(t,set,(eq,newVars)::acc);
-end matchcontinue;
+  for el in m loop
+    (eq,vars) := el;
+    newVars := List.filter1OnTrue(vars,removeVarsNotInSet_helper,set);
+    if not listEmpty(newVars) then
+      mOut := (eq,newVars)::mOut;
+    end if;
+  end for;
+  mOut := MetaModelica.Dangerous.listReverseInPlace(mOut);
 end removeVarsNotInSet;
 
 protected function removeEquations
@@ -1364,7 +1355,7 @@ protected function getSystemForUnknowns
   protected ExtIncidenceMatrix mTemp;
 algorithm
   mTemp:=sortEquations(m,knowns);
-  mOut:=removeVarsNotInSet(mTemp,unknowns,{});
+  mOut:=removeVarsNotInSet(mTemp,unknowns);
 end getSystemForUnknowns;
 
 protected function getRelatedVariables

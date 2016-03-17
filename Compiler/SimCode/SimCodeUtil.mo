@@ -10575,12 +10575,19 @@ protected
 algorithm
   assVar := arrayGet(eqMatch,beq);
   depVars := arrayGet(m,beq);
-  depVars := List.filter1OnTrue(depVars,intGt,0);
-  depVars := List.filter1OnTrue(depVars,intNe,assVar);
+  depVars := List.filter1OnTrue(depVars,setUpEqTree_Help,assVar);
   preEqs := List.map1(depVars,Array.getIndexFirst,varMatch);
   Array.updateElementListAppend(beq,preEqs,treeIn);
   treeOut := treeIn;
 end setUpEqTree;
+
+protected function setUpEqTree_Help
+  input Integer iVal;
+  input Integer iRef;
+  output Boolean oBool;
+algorithm
+  oBool := intGt(iVal, 0) and intNe(iVal, iRef);
+end setUpEqTree_Help;
 
 protected function appendAdjacencyMatrices"appends the adjacencymatrices for the different equation systems.
 the indeces are raised according to the number of equations and vars in the previous systems

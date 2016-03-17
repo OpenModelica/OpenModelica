@@ -197,7 +197,7 @@ algorithm
         // search the partitions for loops
         (_,partition,_) = List.intersection1OnTrue(partition,nonLoopEqs,intEq);
         //print("\nanalyse the partition "+stringDelimitList(List.map(partition,intString),",")+"\n");
-        (loops,eqCrossLst,varCrossLst) = resolveLoops_findLoops({partition},mIn,mTIn,{},{},{});
+        (loops,eqCrossLst,varCrossLst) = resolveLoops_findLoops({partition},mIn,mTIn);
         loops = List.filterOnFalse(loops,listEmpty);
         //print("the loops in this partition: \n"+stringDelimitList(List.map(loops,HpcOmTaskGraph.intLstString),"\n")+"\n");
 
@@ -302,41 +302,31 @@ public function resolveLoops_findLoops "author:Waurich TUD 2014-02
   input list<list<Integer>> partitionsIn;
   input BackendDAE.IncidenceMatrix mIn;  // the whole system of simpleEquations
   input BackendDAE.IncidenceMatrixT mTIn;
-  input list<list<Integer>> loopsIn;
-  input list<Integer> crossEqsIn;
-  input list<Integer> crossVarsIn;
-  output list<list<Integer>> loopsOut;
-  output list<Integer> crossEqsOut;
-  output list<Integer> crossVarsOut;
+  output list<list<Integer>> loopsOut = {};
+  output list<Integer> crossEqsOut = {};
+  output list<Integer> crossVarsOut = {};
+protected
+  list<list<Integer>> loops, eqVars;
+  list<Integer> eqCrossLst, varCrossLst, partitionVars;
 algorithm
-  (loopsOut,crossEqsOut,crossVarsOut) := matchcontinue(partitionsIn,mIn,mTIn,loopsIn,crossEqsIn,crossVarsIn)
-    local
-      list<Integer> partition, eqCrossLst, varCrossLst, partitionVars;
-      list<list<Integer>> loops, rest, eqVars;
-    case({},_,_,_,_,_)
-      equation
-      then
-        (loopsIn,crossEqsIn,crossVarsIn);
-    case(partition::rest,_,_,_,_,_)
-      equation
-       // get the eqCrossNodes and varCrossNodes i.e. nodes with more than 2 edges
-       eqVars = List.map1(partition,Array.getIndexFirst,mIn);
-       partitionVars = List.flatten(eqVars);
-       partitionVars = List.unique(partitionVars);
-       eqCrossLst = List.fold2(partition,gatherCrossNodes,mIn,mTIn,{});
-       varCrossLst = List.fold2(partitionVars,gatherCrossNodes,mTIn,mIn,{});
+  for partition in partitionsIn loop
+    try
+      // get the eqCrossNodes and varCrossNodes i.e. nodes with more than 2 edges
+      eqVars := List.map1(partition,Array.getIndexFirst,mIn);
+      partitionVars := List.flatten(eqVars);
+      partitionVars := List.unique(partitionVars);
+      eqCrossLst := List.fold2(partition,gatherCrossNodes,mIn,mTIn,{});
+      varCrossLst := List.fold2(partitionVars,gatherCrossNodes,mTIn,mIn,{});
 
-       // search the partitions for loops
-       loops = resolveLoops_findLoops2(partition,partitionVars,eqCrossLst,varCrossLst,mIn,mTIn);
-       loops = listAppend(loops,loopsIn);
-       eqCrossLst = listAppend(eqCrossLst,crossEqsIn);
-       varCrossLst = listAppend(varCrossLst,crossVarsIn);
-       (loops,eqCrossLst,varCrossLst) = resolveLoops_findLoops(rest,mIn,mTIn,loops,eqCrossLst,varCrossLst);
-      then
-        (loops,eqCrossLst,varCrossLst);
-      else
-       then (loopsIn,crossEqsIn,crossVarsIn);
-  end matchcontinue;
+      // search the partitions for loops
+      loops := resolveLoops_findLoops2(partition,partitionVars,eqCrossLst,varCrossLst,mIn,mTIn);
+      loopsOut := listAppend(loops,loopsOut);
+      crossEqsOut := listAppend(eqCrossLst,crossEqsOut);
+      crossVarsOut := listAppend(varCrossLst,crossVarsOut);
+    else
+      return;
+    end try;
+  end for;
 end resolveLoops_findLoops;
 
 protected function resolveLoops_findLoops2 "author: Waurich TUD 2014-01
