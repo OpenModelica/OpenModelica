@@ -23,17 +23,11 @@ formal parameters to the functions by the following notation:
 
 -  options – optional parameters with named formal parameter passing.
 
-OpenModelica Modelica Scripting Commands
-########################################
-
+OpenModelica Scripting Commands
+###############################
 
 The following are brief descriptions of the scripting commands available
-in the OpenModelica environment.
-
-OpenModelica API Calls
-######################
-
-All OpenModelica API commands shown in alphabetic order:
+in the OpenModelica environment. All commands are shown in alphabetical order:
 
 .. include :: interface.inc
 
