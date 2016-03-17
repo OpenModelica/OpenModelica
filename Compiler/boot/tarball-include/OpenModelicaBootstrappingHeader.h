@@ -1766,8 +1766,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Equation_EQ__FAILURE_
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Equation_EQ__FAILURE__desc;
 #endif
-#define Absyn__EQ_5fFAILURE_3dBOX1 9
-#define Absyn__EQ_5fFAILURE(equ) (mmc_mk_box2(9,&Absyn_Equation_EQ__FAILURE__desc,equ))
+#define Absyn__EQ_5fFAILURE_3dBOX1 10
+#define Absyn__EQ_5fFAILURE(equ) (mmc_mk_box2(10,&Absyn_Equation_EQ__FAILURE__desc,equ))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Equation_EQ__NORETCALL__desc_added
 #define Absyn_Equation_EQ__NORETCALL__desc_added
@@ -1781,8 +1781,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Equation_EQ__NORETCAL
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Equation_EQ__NORETCALL__desc;
 #endif
-#define Absyn__EQ_5fNORETCALL_3dBOX2 8
-#define Absyn__EQ_5fNORETCALL(functionName,functionArgs) (mmc_mk_box3(8,&Absyn_Equation_EQ__NORETCALL__desc,functionName,functionArgs))
+#define Absyn__EQ_5fNORETCALL_3dBOX2 9
+#define Absyn__EQ_5fNORETCALL(functionName,functionArgs) (mmc_mk_box3(9,&Absyn_Equation_EQ__NORETCALL__desc,functionName,functionArgs))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Equation_EQ__WHEN__E__desc_added
 #define Absyn_Equation_EQ__WHEN__E__desc_added
@@ -1796,8 +1796,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Equation_EQ__WHEN__E_
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Equation_EQ__WHEN__E__desc;
 #endif
-#define Absyn__EQ_5fWHEN_5fE_3dBOX3 7
-#define Absyn__EQ_5fWHEN_5fE(whenExp,whenEquations,elseWhenEquations) (mmc_mk_box4(7,&Absyn_Equation_EQ__WHEN__E__desc,whenExp,whenEquations,elseWhenEquations))
+#define Absyn__EQ_5fWHEN_5fE_3dBOX3 8
+#define Absyn__EQ_5fWHEN_5fE(whenExp,whenEquations,elseWhenEquations) (mmc_mk_box4(8,&Absyn_Equation_EQ__WHEN__E__desc,whenExp,whenEquations,elseWhenEquations))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Equation_EQ__FOR__desc_added
 #define Absyn_Equation_EQ__FOR__desc_added
@@ -1811,8 +1811,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Equation_EQ__FOR__des
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Equation_EQ__FOR__desc;
 #endif
-#define Absyn__EQ_5fFOR_3dBOX2 6
-#define Absyn__EQ_5fFOR(iterators,forEquations) (mmc_mk_box3(6,&Absyn_Equation_EQ__FOR__desc,iterators,forEquations))
+#define Absyn__EQ_5fFOR_3dBOX2 7
+#define Absyn__EQ_5fFOR(iterators,forEquations) (mmc_mk_box3(7,&Absyn_Equation_EQ__FOR__desc,iterators,forEquations))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Equation_EQ__CONNECT__desc_added
 #define Absyn_Equation_EQ__CONNECT__desc_added
@@ -1826,8 +1826,23 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Equation_EQ__CONNECT_
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Equation_EQ__CONNECT__desc;
 #endif
-#define Absyn__EQ_5fCONNECT_3dBOX2 5
-#define Absyn__EQ_5fCONNECT(connector1,connector2) (mmc_mk_box3(5,&Absyn_Equation_EQ__CONNECT__desc,connector1,connector2))
+#define Absyn__EQ_5fCONNECT_3dBOX2 6
+#define Absyn__EQ_5fCONNECT(connector1,connector2) (mmc_mk_box3(6,&Absyn_Equation_EQ__CONNECT__desc,connector1,connector2))
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_Equation_EQ__PDE__desc_added
+#define Absyn_Equation_EQ__PDE__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_Equation_EQ__PDE__desc__fields[3] = {"leftSide","rightSide","domain"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_Equation_EQ__PDE__desc = {
+  "Absyn_Equation_EQ__PDE",
+  "Absyn.Equation.EQ_PDE",
+  Absyn_Equation_EQ__PDE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Equation_EQ__PDE__desc;
+#endif
+#define Absyn__EQ_5fPDE_3dBOX3 5
+#define Absyn__EQ_5fPDE(leftSide,rightSide,domain) (mmc_mk_box4(5,&Absyn_Equation_EQ__PDE__desc,leftSide,rightSide,domain))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Equation_EQ__EQUALS__desc_added
 #define Absyn_Equation_EQ__EQUALS__desc_added
@@ -2200,7 +2215,7 @@ static void *Absyn__EACH = MMC_REFSTRUCTLIT(Absyn__EACH__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_ElementAttributes_ATTR__desc_added
 #define Absyn_ElementAttributes_ATTR__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_ElementAttributes_ATTR__desc__fields[6] = {"flowPrefix","streamPrefix","parallelism","variability","direction","arrayDim"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_ElementAttributes_ATTR__desc__fields[7] = {"flowPrefix","streamPrefix","parallelism","variability","direction","isField","arrayDim"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_ElementAttributes_ATTR__desc = {
   "Absyn_ElementAttributes_ATTR",
   "Absyn.ElementAttributes.ATTR",
@@ -2210,8 +2225,40 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_ElementAttributes_ATT
 #else /* Only use the file as a header */
 extern struct record_description Absyn_ElementAttributes_ATTR__desc;
 #endif
-#define Absyn__ATTR_3dBOX6 3
-#define Absyn__ATTR(flowPrefix,streamPrefix,parallelism,variability,direction,arrayDim) (mmc_mk_box7(3,&Absyn_ElementAttributes_ATTR__desc,flowPrefix,streamPrefix,parallelism,variability,direction,arrayDim))
+#define Absyn__ATTR_3dBOX7 3
+#define Absyn__ATTR(flowPrefix,streamPrefix,parallelism,variability,direction,isField,arrayDim) (mmc_mk_box8(3,&Absyn_ElementAttributes_ATTR__desc,flowPrefix,streamPrefix,parallelism,variability,direction,isField,arrayDim))
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_IsField_FIELD__desc_added
+#define Absyn_IsField_FIELD__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_IsField_FIELD__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_IsField_FIELD__desc = {
+  "Absyn_IsField_FIELD",
+  "Absyn.IsField.FIELD",
+  Absyn_IsField_FIELD__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_IsField_FIELD__desc;
+#endif
+#define Absyn__FIELD_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(Absyn__FIELD__struct,1,4) {&Absyn_IsField_FIELD__desc}};
+static void *Absyn__FIELD = MMC_REFSTRUCTLIT(Absyn__FIELD__struct);
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_IsField_NONFIELD__desc_added
+#define Absyn_IsField_NONFIELD__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_IsField_NONFIELD__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_IsField_NONFIELD__desc = {
+  "Absyn_IsField_NONFIELD",
+  "Absyn.IsField.NONFIELD",
+  Absyn_IsField_NONFIELD__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_IsField_NONFIELD__desc;
+#endif
+#define Absyn__NONFIELD_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(Absyn__NONFIELD__struct,1,3) {&Absyn_IsField_NONFIELD__desc}};
+static void *Absyn__NONFIELD = MMC_REFSTRUCTLIT(Absyn__NONFIELD__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Parallelism_NON__PARALLEL__desc_added
 #define Absyn_Parallelism_NON__PARALLEL__desc_added
@@ -2372,6 +2419,22 @@ extern struct record_description Absyn_Variability_VAR__desc;
 #define Absyn__VAR_3dBOX0 3
 static const MMC_DEFSTRUCTLIT(Absyn__VAR__struct,1,3) {&Absyn_Variability_VAR__desc}};
 static void *Absyn__VAR = MMC_REFSTRUCTLIT(Absyn__VAR__struct);
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_Direction_INPUT__OUTPUT__desc_added
+#define Absyn_Direction_INPUT__OUTPUT__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_Direction_INPUT__OUTPUT__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_Direction_INPUT__OUTPUT__desc = {
+  "Absyn_Direction_INPUT__OUTPUT",
+  "Absyn.Direction.INPUT_OUTPUT",
+  Absyn_Direction_INPUT__OUTPUT__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Direction_INPUT__OUTPUT__desc;
+#endif
+#define Absyn__INPUT_5fOUTPUT_3dBOX0 6
+static const MMC_DEFSTRUCTLIT(Absyn__INPUT_5fOUTPUT__struct,1,6) {&Absyn_Direction_INPUT__OUTPUT__desc}};
+static void *Absyn__INPUT_5fOUTPUT = MMC_REFSTRUCTLIT(Absyn__INPUT_5fOUTPUT__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Direction_BIDIR__desc_added
 #define Absyn_Direction_BIDIR__desc_added
@@ -3580,7 +3643,7 @@ static void *Absyn__R_5fUNKNOWN = MMC_REFSTRUCTLIT(Absyn__R_5fUNKNOWN__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Restriction_R__METARECORD__desc_added
 #define Absyn_Restriction_R__METARECORD__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_Restriction_R__METARECORD__desc__fields[4] = {"name","index","singleton","moved"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_Restriction_R__METARECORD__desc__fields[5] = {"name","index","singleton","moved","typeVars"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_Restriction_R__METARECORD__desc = {
   "Absyn_Restriction_R__METARECORD",
   "Absyn.Restriction.R_METARECORD",
@@ -3590,8 +3653,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Restriction_R__METARE
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__METARECORD__desc;
 #endif
-#define Absyn__R_5fMETARECORD_3dBOX4 23
-#define Absyn__R_5fMETARECORD(name,index,singleton,moved) (mmc_mk_box5(23,&Absyn_Restriction_R__METARECORD__desc,name,index,singleton,moved))
+#define Absyn__R_5fMETARECORD_3dBOX5 23
+#define Absyn__R_5fMETARECORD(name,index,singleton,moved,typeVars) (mmc_mk_box6(23,&Absyn_Restriction_R__METARECORD__desc,name,index,singleton,moved,typeVars))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Restriction_R__UNIONTYPE__desc_added
 #define Absyn_Restriction_R__UNIONTYPE__desc_added
