@@ -633,25 +633,20 @@ template crefStartValueType(ComponentRef cr)
  "Returns type string for get/set<type>StartValue methods."
 ::=
   match cr
-  case CREF_IDENT(__) then '<%crefStartValueType2(identType)%>'
-  case CREF_QUAL(__)  then '<%crefStartValueType(componentRef)%>'
-  else "crefStartValueType:ERROR"
+  case CREF_IDENT(__) then
+    let typeShort = expTypeShort(identType)
+    let typeString = if stringEq(typeShort, "double") then "Real"
+      else if stringEq(typeShort, "int") then "Int"
+      else if stringEq(typeShort, "bool") then "Bool"
+      else if stringEq(typeShort, "string") then "String"
+      else 'ERROR:crefStartValueType <%typeShort%> '
+    '<%typeString%>'
+  case CREF_QUAL(__) then
+    '<%crefStartValueType(componentRef)%>'
+  else
+    'crefStartValueType:ERROR'
   end match
 end crefStartValueType;
-
-template crefStartValueType2(DAE.Type ty)
-::=
-  match ty
-    case T_INTEGER(__) then 'Int'
-    case T_REAL(__) then 'Real'
-    case T_BOOL(__) then 'Bool'
-    case T_STRING(__) then 'String'
-    case T_ENUMERATION(__) then 'Int'
-    case T_ARRAY(ty=elty) then crefStartValueType2(elty)
-    case T_SUBTYPE_BASIC(complexType=cty) then crefStartValueType2(cty)
-    else 'crefStartValueType2:ERROR <%unparseType(ty)%> '
-  end match
-end crefStartValueType2;
 
 /*******************************************************************************************************************************************************
 * end of cref to string template functions
@@ -694,24 +689,24 @@ end checkExpDimension;
 
 
 template expTypeShort(DAE.Type type)
-
+ "Returns the base type name for declarations"
 ::=
   match type
-  case T_INTEGER(__)         then "int"
+  case T_INTEGER(__)     then "int"
   case T_REAL(__)        then "double"
   case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
   case T_BOOL(__)        then "bool"
   case T_ENUMERATION(__) then "int"
-  /* assumming real for uknown type! */
-  case T_UNKNOWN(__)     then "double /*W1*/"
+  case T_UNKNOWN(__)     then "double /*W1*/" // assumming real for unknown type
   case T_ANYTYPE(__)     then "complex2"
+  case T_SUBTYPE_BASIC(__) then expTypeShort(complexType)
   case T_ARRAY(__)       then expTypeShort(ty)
-  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
-                      then "void*"
+  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "void*"
   case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
-  case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
+  case T_METATYPE(__)
+  case T_METABOXED(__)   then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
-  else "expTypeShort:ERROR"
+  else 'expTypeShort:ERROR <%unparseType(type)%> '
 end expTypeShort;
 
 template expTypeFlag(DAE.Type ty, Integer flag)
