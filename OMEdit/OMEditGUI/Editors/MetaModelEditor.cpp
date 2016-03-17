@@ -65,7 +65,7 @@ bool MetaModelEditor::validateText()
 {
   if (mTextChanged) {
     // if the user makes few mistakes in the text then dont let him change the perspective
-    if (!mpModelWidget->MetaModelEditorTextChanged()) {
+    if (!mpModelWidget->metaModelEditorTextChanged()) {
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
@@ -351,7 +351,7 @@ bool MetaModelEditor::isSimulationParams()
 {
   QDomElement simulationParamsElement = mXmlDocument.documentElement().firstChildElement("SimulationParams");
   if (!simulationParamsElement.isNull()) {
-      return true;
+    return true;
   }
   return false;
 }

@@ -64,6 +64,7 @@ public:
   MetaModelEditor(ModelWidget *pModelWidget);
   QString getLastValidText() {return mLastValidText;}
   bool validateText();
+  void setXmlDocument(QString content) {mXmlDocument.setContent(content);}
   QDomElement getSubModelsElement();
   QDomNodeList getSubModels();
   QDomElement getConnectionsElement();

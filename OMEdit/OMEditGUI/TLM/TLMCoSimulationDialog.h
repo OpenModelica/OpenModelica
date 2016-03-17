@@ -118,7 +118,6 @@ private:
   bool validateSimulationParams();
 private slots:
   void saveSimulationParams();
-  void saveSimulationParamsAndSimulate();
 };
 
 #endif // TLMCOSIMULATIONDIALOG_H

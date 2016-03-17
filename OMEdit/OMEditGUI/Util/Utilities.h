@@ -46,6 +46,7 @@
 #include <QCheckBox>
 #include <QVariant>
 #include <QAbstractMessageHandler>
+#include <QDebug>
 
 #ifndef UTILITIES_H
 #define UTILITIES_H

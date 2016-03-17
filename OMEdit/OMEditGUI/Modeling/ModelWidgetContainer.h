@@ -419,7 +419,7 @@ private slots:
 public slots:
   void makeFileWritAble();
   void showDocumentationView();
-  bool MetaModelEditorTextChanged();
+  bool metaModelEditorTextChanged();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
 protected:

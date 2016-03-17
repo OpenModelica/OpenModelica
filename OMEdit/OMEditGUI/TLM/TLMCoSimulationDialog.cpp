@@ -406,6 +406,8 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
   mpGraphicsView = pGraphicsView;
   mpLibraryTreeItem = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem();
   // Initialize simulation parameters
+  mOldStartTime = "";
+  mOldStopTime = "";
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
   if(pMetaModelEditor->isSimulationParams()){
     mOldStartTime = pMetaModelEditor->getSimulationStartTime();
@@ -424,15 +426,11 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
   mpSaveButton = new QPushButton(Helper::save);
   mpSaveButton->setToolTip(tr("Saves the Co-Simulation experiment settings"));
   connect(mpSaveButton, SIGNAL(clicked()), this, SLOT(saveSimulationParams()));
-  mpSaveAndCoSimulateButton = new QPushButton(tr("Save && CoSimulate"));
-  mpSaveAndCoSimulateButton->setToolTip(tr("Saves the simulation  parameters and starts the Co-Simulation"));
-  connect(mpSaveAndCoSimulateButton, SIGNAL(clicked()), this, SLOT(saveSimulationParamsAndSimulate()));
   mpCancelButton = new QPushButton(Helper::cancel);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
   // adds Co-Simulation Experiment Setting buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpSaveButton, QDialogButtonBox::ActionRole);
-  mpButtonBox->addButton(mpSaveAndCoSimulateButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // set the layout
   QGridLayout *pMainLayout = new QGridLayout;
@@ -463,17 +461,6 @@ void MetaModelSimulationParamsDialog::saveSimulationParams()
     }
     accept();
   }
-}
-
-/*!
- * \brief MetaModelSimulationParamsDialog::saveSimulationParamsAndSimulate
- * Saves the Simulation Parameters and starts the co-simulation.
- * Slot activated when mpSaveAndCoSimulateButton clicked signal is raised.
- */
-void MetaModelSimulationParamsDialog::saveSimulationParamsAndSimulate()
-{
-  saveSimulationParams();
-  mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->TLMSimulate(mpLibraryTreeItem);
 }
 
 /*!
