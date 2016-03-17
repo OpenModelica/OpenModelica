@@ -403,7 +403,6 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::simulationParams)
                  .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
-  setMinimumWidth(400);
   mpGraphicsView = pGraphicsView;
   mpLibraryTreeItem = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem();
   // Initialize simulation parameters
@@ -454,11 +453,14 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
 void MetaModelSimulationParamsDialog::saveSimulationParams()
 {
   if (validateSimulationParams()) {
-    UpdateSimulationParamsCommand *pUpdateSimulationParamsCommand;
-    pUpdateSimulationParamsCommand = new UpdateSimulationParamsCommand(mpLibraryTreeItem, mOldStartTime, mpStartTimeTextBox->text()
-                                                                      , mOldStopTime, mpStopTimeTextBox->text());
-    mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateSimulationParamsCommand);
-    mpLibraryTreeItem->getModelWidget()->updateModelText();
+    // If user has changed the simulation parameters then push the change on the stack.
+    if(!mOldStartTime.compare(mpStartTimeTextBox->text())== 0 || !mOldStopTime.compare(mpStopTimeTextBox->text())== 0) {
+      UpdateSimulationParamsCommand *pUpdateSimulationParamsCommand;
+      pUpdateSimulationParamsCommand = new UpdateSimulationParamsCommand(mpLibraryTreeItem, mOldStartTime, mpStartTimeTextBox->text(),
+                                                                         mOldStopTime, mpStopTimeTextBox->text());
+      mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateSimulationParamsCommand);
+      mpLibraryTreeItem->getModelWidget()->updateModelText();
+    }
     accept();
   }
 }
