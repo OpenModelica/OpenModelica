@@ -296,6 +296,7 @@ package Absyn
   uniontype Direction
     record INPUT end INPUT;
     record OUTPUT end OUTPUT;
+    record INPUT_OUTPUT end INPUT_OUTPUT;
     record BIDIR end BIDIR;
   end Direction;
 

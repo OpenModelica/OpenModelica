@@ -1610,12 +1610,10 @@ algorithm
 end setBindValue;
 
 public function setVarDirectionTpl
-  input BackendDAE.Var inVar;
-  input DAE.VarDirection inDir;
-  output BackendDAE.Var outVar;
-  output DAE.VarDirection outDir = inDir;
+  input output BackendDAE.Var var;
+  input output DAE.VarDirection dir;
 algorithm
-  outVar := setVarDirection(inVar, inDir);
+  var.varDirection := dir;
 end setVarDirectionTpl;
 
 public function setVarDirection "author: lochel

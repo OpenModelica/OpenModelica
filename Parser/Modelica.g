@@ -117,6 +117,7 @@ goto rule ## func ## Ex; }}
   /* These do not exist in the bootstrapped version, but are returned in a grammar rule. Just do NULL. */
   #define Absyn__FIELD NULL
   #define Absyn__NONFIELD NULL
+  #define Absyn__INPUT_5fOUTPUT NULL
   /* Treat PDE equations as normal equations */
   #define Absyn__EQ_5fPDE(A1,A2,A3) Absyn__EQ_5fEQUALS(A1,A2)
   #define ARRAY_REDUCTION_NAME "array"
@@ -537,13 +538,18 @@ component_clause returns [void* ast]
 
 type_prefix returns [void* flow, void* stream, void* parallelism, void* variability, void* direction, void* field]
 @init { fl = 0; st = 0; srd = 0; glb = 0; di = 0; pa = 0; co = 0; in = 0; out = 0; fi = 0; nofi = 0;} :
-  (fl=FLOW|st=STREAM)? (srd=T_LOCAL|glb=T_GLOBAL)? (di=DISCRETE|pa=PARAMETER|co=CONSTANT)? (in=T_INPUT|out=T_OUTPUT)? (fi=FIELD|nofi=NONFIELD)?
+  (fl=FLOW|st=STREAM)? (srd=T_LOCAL|glb=T_GLOBAL)? (di=DISCRETE|pa=PARAMETER|co=CONSTANT)? in=T_INPUT? out=T_OUTPUT? (fi=FIELD|nofi=NONFIELD)?
     {
       $flow = mmc_mk_bcon(fl);
       $stream = mmc_mk_bcon(st);
       $parallelism = srd ? Absyn__PARLOCAL : glb ? Absyn__PARGLOBAL : Absyn__NON_5fPARALLEL;
       $variability = di ? Absyn__DISCRETE : pa ? Absyn__PARAM : co ? Absyn__CONST : Absyn__VAR;
-      $direction = in ? Absyn__INPUT : out ? Absyn__OUTPUT : Absyn__BIDIR;
+      if (in && out) {
+        modelicaParserAssert(metamodelica_enabled(),"Type prefix \"input output\" is not available in Modelica (use either input or output)", type_prefix, $in->line, $in->charPosition+1, $out->line, $out->charPosition+1);
+        $direction = Absyn__INPUT_5fOUTPUT;
+      } else {
+        $direction = in ? Absyn__INPUT : out ? Absyn__OUTPUT : Absyn__BIDIR;
+      }
       $field = fi ? Absyn__FIELD : nofi ? Absyn__NONFIELD : Absyn__NONFIELD;
     }
   ;

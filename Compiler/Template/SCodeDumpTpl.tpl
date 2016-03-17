@@ -815,6 +815,7 @@ template dumpDirection(Absyn.Direction direction)
 match direction
   case INPUT(__) then 'input '
   case OUTPUT(__) then 'output '
+  case INPUT_OUTPUT(__) then 'input output '
 end dumpDirection;
 
 template dumpAttributeDim(SCode.Attributes attributes)

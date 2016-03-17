@@ -10199,11 +10199,13 @@ protected function findNamedArg
   output DAE.FuncArg outArg;
 protected
   String id;
+  Boolean haveMM = Config.acceptMetaModelicaGrammar();
+  String inIdent2 = if haveMM then "$in_"+inIdent else "";
 algorithm
   for arg in inArgs loop
     DAE.FUNCARG(name = id) := arg;
 
-    if id == inIdent then
+    if id == inIdent or (haveMM and id == inIdent2) then
       outArg := arg;
       return;
     end if;
@@ -10261,7 +10263,7 @@ algorithm
     SLOT(defaultArg = DAE.FUNCARG(name = fa2)) := slot;
 
     // Check if this slot has the same name as the one we're looking for.
-    if stringEq(fa1, fa2) then
+    if stringEq(fa1, fa2) or stringEq("$in_"+fa1, fa2) /* OM extension input output arguments */ then
       SLOT(defaultArg = DAE.FUNCARG(const = c2, par = prl, defaultBinding = binding),
         slotFilled = filled, idx = idx, evalStatus = ses) := slot;
 

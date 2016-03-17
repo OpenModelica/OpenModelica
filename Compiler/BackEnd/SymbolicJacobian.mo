@@ -3162,14 +3162,14 @@ protected function calculateJacobianRow2 "author: PA
   output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst = {};
   output BackendDAE.Shared oShared = iShared;
 protected
-	DAE.Exp e, e_1, e_2, dcrexp;
-	BackendDAE.Var v;
-	DAE.ComponentRef cr, dcr;
-	list<tuple<Integer, Integer, BackendDAE.Equation>> es, result;
-	Integer vindx;
-	list<Integer> vindxs;
-	String str;
-	BackendDAE.Shared shared;
+  DAE.Exp e, e_1, e_2, dcrexp;
+  BackendDAE.Var v;
+  DAE.ComponentRef cr, dcr;
+  list<tuple<Integer, Integer, BackendDAE.Equation>> es, result;
+  Integer vindx;
+  list<Integer> vindxs;
+  String str;
+  BackendDAE.Shared shared;
 algorithm
   try
     for vindx in inIntegerLst loop
@@ -3396,15 +3396,13 @@ algorithm
 end jacobianConstant;
 
 protected function varsNotInRelations
-  input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables,Boolean> inTpl;
-  output DAE.Exp outExp;
+  input output DAE.Exp exp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables,Boolean> outTpl;
+  input output tuple<BackendDAE.Variables,Boolean> tpl;
 algorithm
-  (outExp,cont,outTpl) := match (inExp,inTpl)
+  (exp,cont,tpl) := match (exp,tpl)
     local
-      DAE.Exp cond,t,f,e,e1;
+      DAE.Exp cond,t,f,e1;
       BackendDAE.Variables vars;
       Boolean b;
       Absyn.Path path;
@@ -3417,41 +3415,41 @@ algorithm
         (f,(_,b)) = Expression.traverseExpTopDown(f, varsNotInRelations, (vars,b));
       then (DAE.IFEXP(cond,t,f),false,(vars,b));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "der")),(vars,b))
-      then (e,true,(vars,b));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,b))
-      then (e,false,(vars,b));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "previous")),(vars,b))
-      then (e,false,(vars,b));
-    case (e as DAE.CALL(expLst=expLst),(vars,b))
+    case (DAE.CALL(path=Absyn.IDENT(name = "der")),_)
+      then (exp,true,tpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "pre")),_)
+      then (exp,false,tpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous")),_)
+      then (exp,false,tpl);
+    case (DAE.CALL(expLst=expLst),_)
       equation
         // check if vars occurs not in argument list
-        (_,(_,b)) = Expression.traverseExpListTopDown(expLst, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
-      then (e,false,(vars,b));
-    case (e as DAE.LBINARY(),(vars,b))
+        (_,tpl) = Expression.traverseExpListTopDown(expLst, BackendDAEUtil.getEqnsysRhsExp2, tpl);
+      then (exp,false,tpl);
+    case (DAE.LBINARY(),_)
       equation
         // check if vars not in condition
-        (_,(_,b)) = Expression.traverseExpTopDown(e, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
-      then (e,false,(vars,b));
-    case (e as DAE.LUNARY(),(vars,b))
+        (_,tpl) = Expression.traverseExpTopDown(exp, BackendDAEUtil.getEqnsysRhsExp2, tpl);
+      then (exp,false,tpl);
+    case (DAE.LUNARY(),tpl)
       equation
         // check if vars not in condition
-        (_,(_,b)) = Expression.traverseExpTopDown(e, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
-      then (e,false,(vars,b));
-    case (e as DAE.RELATION(),(vars,b))
+        (_,tpl) = Expression.traverseExpTopDown(exp, BackendDAEUtil.getEqnsysRhsExp2, tpl);
+      then (exp,false,tpl);
+    case (DAE.RELATION(),tpl)
       equation
         // check if vars not in condition
-        (_,(_,b)) = Expression.traverseExpTopDown(e, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
-      then (e,false,(vars,b));
-    case (e as DAE.ASUB(exp=e1,sub=expLst),(vars,b))
+        (_,tpl) = Expression.traverseExpTopDown(exp, BackendDAEUtil.getEqnsysRhsExp2, tpl);
+      then (exp,false,tpl);
+    case (DAE.ASUB(exp=e1,sub=expLst),_)
       equation
         // check if vars not in condition
-        (_,(_,b)) = Expression.traverseExpTopDown(e1, varsNotInRelations, (vars,b));
+        (_,tpl as (_,b)) = Expression.traverseExpTopDown(e1, varsNotInRelations, tpl);
         if b then
-          (_,(_,b)) = Expression.traverseExpListTopDown(expLst, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
+          (_,tpl) = Expression.traverseExpListTopDown(expLst, BackendDAEUtil.getEqnsysRhsExp2, tpl);
         end if;
-      then (e,false,(vars,b));
-    case (e,(_,b)) then (e,b,inTpl);
+      then (exp,false,tpl);
+    case (_,(_,b)) then (exp,b,tpl);
   end match;
 end varsNotInRelations;
 

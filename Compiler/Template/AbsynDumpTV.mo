@@ -489,6 +489,7 @@ package Absyn
     record INPUT end INPUT;
     record OUTPUT end OUTPUT;
     record BIDIR end BIDIR;
+    record INPUT_OUTPUT end INPUT_OUTPUT;
   end Direction;
 
   uniontype ForIterator

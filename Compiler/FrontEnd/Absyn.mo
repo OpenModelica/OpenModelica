@@ -671,9 +671,14 @@ end Variability;
 
 public
 uniontype Direction "Direction"
-  record INPUT  "direction is input"                                   end INPUT;
-  record OUTPUT "direction is output"                                  end OUTPUT;
-  record BIDIR  "direction is not specified, neither input nor output" end BIDIR;
+  record INPUT "direction is input"
+  end INPUT;
+  record OUTPUT "direction is output"
+  end OUTPUT;
+  record BIDIR  "direction is not specified, neither input nor output"
+  end BIDIR;
+  record INPUT_OUTPUT "direction is both input and output (OM extension; syntactic sugar for functions)"
+  end INPUT_OUTPUT;
 end Direction;
 
 public
@@ -5359,6 +5364,7 @@ algorithm
   isIorO := match(direction)
     case (INPUT()) then true;
     case (OUTPUT()) then true;
+    case (INPUT_OUTPUT()) then true;
     case (BIDIR()) then false;
   end match;
 end isInputOrOutput;
@@ -5369,6 +5375,7 @@ public function isInput
 algorithm
   outIsInput := match(inDirection)
     case INPUT() then true;
+    case INPUT_OUTPUT() then true;
     else false;
   end match;
 end isInput;
@@ -5382,6 +5389,7 @@ algorithm
     case (BIDIR(), BIDIR()) then true;
     case (INPUT(), INPUT()) then true;
     case (OUTPUT(), OUTPUT()) then true;
+    case (INPUT_OUTPUT(), INPUT_OUTPUT()) then true;
     else false;
   end match;
 end directionEqual;
