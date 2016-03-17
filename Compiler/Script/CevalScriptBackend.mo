@@ -2595,7 +2595,7 @@ algorithm
         //print("\nInst.instantiateClass");
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className);
 
-        FGraphDump.dumpGraph(env, "F:\\dev\\" + Absyn.pathString(className) + ".graph.graphml");
+        //FGraphDump.dumpGraph(env, "F:\\dev\\" + Absyn.pathString(className) + ".graph.graphml");
 
         //System.stopTimer();
         //print("\nInst.instantiateClass: " + realString(System.getTimerIntervalTime()));
