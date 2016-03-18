@@ -2,10 +2,14 @@
 
 convertUnits("MW/s","kg");getErrorString();
 convertUnits("degC","K");getErrorString();
+convertUnits("K","degF");getErrorString();
 
 // Result:
-// (false,0.000001,0.0)
+// (false,1e-06,0.0)
 // ""
 // (true,1.0,-273.15)
 // ""
+// (false,1.0,0.0)
+// "Error: error parsing unit degF
+// "
 // endResult
