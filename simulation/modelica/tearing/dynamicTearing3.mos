@@ -310,19 +310,19 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // Adjacency Matrix Enhanced (row == equation)
 // ====================================
 // number of rows: 4
-// 1:(3,variable(false)) (4,variable(false)) (1,solvable) 
+// 1:(3,variable(false),g * x <> 0.0 (local)) (4,variable(false),g * a <> 0.0 (local)) (1,solvable) 
 // 2:(4,unsolvable) (3,solved) 
-// 3:(3,param(false)) (4,solvable) (2,solvable) (1,solvable) 
-// 4:(3,solvable) (1,solvable) (2,solvable) 
+// 3:(3,param(false),g <> 0.0 (global)) (4,solvable,z <> 0.0 (local)) (2,solvable,x <> 0.0 (local)) (1,solvable) 
+// 4:(3,solvable) (1,solvable) (2,solvable,k <> 0.0 (global)) 
 //
 // AdjacencyMatrixTransposedEnhanced:
 // Transpose Adjacency Matrix Enhanced (row == var)
 // =====================================
 // number of rows: 4
 // 1:(4,solvable) (3,solvable) (1,solvable) 
-// 2:(4,solvable) (3,solvable) 
-// 3:(4,solvable) (3,param(false)) (2,solved) (1,variable(false)) 
-// 4:(3,solvable) (2,unsolvable) (1,variable(false)) 
+// 2:(4,solvable,k <> 0.0 (global)) (3,solvable,x <> 0.0 (local)) 
+// 3:(4,solvable) (3,param(false),g <> 0.0 (global)) (2,solved) (1,variable(false),g * x <> 0.0 (local)) 
+// 4:(3,solvable,z <> 0.0 (local)) (2,unsolvable) (1,variable(false),g * a <> 0.0 (local)) 
 //
 // Matching
 // ========================================
