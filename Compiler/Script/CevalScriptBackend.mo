@@ -2754,12 +2754,21 @@ algorithm
   // compile
   quote := if isWindows then "" else "'";
   dquote := if isWindows then "\"" else "'";
-  CevalScript.compileModel(filenameprefix+"_FMU" , libs);
+
   if Config.simCodeTarget() == "Cpp" then
-    // Cpp FMUs are not source-code FMUs
+    System.removeDirectory("binaries");
+    for platform in platforms loop
+      if platform == "dynamic" or platform == "static" then
+        CevalScript.compileModel(filenameprefix + "_FMU", libs);
+      else
+        CevalScript.compileModel(filenameprefix + "_FMU", libs,
+                                 makeVars={"TARGET_TRIPLET=" + platform});
+      end if;
+    end for;
     return;
   end if;
 
+  CevalScript.compileModel(filenameprefix+"_FMU" , libs);
   fmutmp := filenameprefix + ".fmutmp";
   logfile := filenameprefix + ".log";
 
