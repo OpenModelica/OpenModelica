@@ -7,6 +7,8 @@ extern "C"
 
 #include "meta_modelica.h"
 #include "ModelicaUtilities.h"
+#include "systemimpl.h"
+#include "errorext.h"
 
 const char* UnitParserExt_unit2str(void *nums, void *denoms, void *tpnoms, void *tpdenoms, void *tpstrs)
 {
@@ -44,7 +46,8 @@ void UnitParserExt_str2unit(const char *inStr, void **nums, void **denoms, void 
   Unit unit;
   UnitRes res = unitParser->str2unit(str,unit);
   if (!res.Ok()) {
-    std::cerr << "error parsing unit " << str << std::endl;
+    const char* tokens[1] = {str.c_str()};
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("error parsing unit %s"), tokens, 1);
     MMC_THROW();
   }
 

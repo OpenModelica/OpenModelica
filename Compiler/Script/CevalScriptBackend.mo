@@ -807,6 +807,7 @@ algorithm
 
     case (cache,_,"convertUnits",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
+        Error.clearMessages() "Clear messages";
         UnitParserExt.initSIUnits();
         (u1,scaleFactor1,offset1) = UnitAbsynBuilder.str2unitWithScaleFactor(str1,NONE());
         (u2,scaleFactor2,offset2) = UnitAbsynBuilder.str2unitWithScaleFactor(str2,NONE());
