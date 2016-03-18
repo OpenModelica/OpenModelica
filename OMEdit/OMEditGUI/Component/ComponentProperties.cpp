@@ -71,8 +71,6 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
     mValueType = Parameter::Normal;
   }
   createValueWidget();
-  mpUnitLabel = new Label;
-  mpCommentLabel = new Label;
   /* Get unit value
    * First check if unit is defined with in the component modifier.
    * If no unit is found then check it in the derived class modifier value.
@@ -82,10 +80,42 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   QString unit = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className).value("unit");
   if (unit.isEmpty()) {
     if (!pOMCProxy->isBuiltinType(mpComponent->getComponentInfo()->getClassName())) {
-      unit = getUnitFromDerivedClass(mpComponent);
+      unit = pOMCProxy->getDerivedClassModifierValue(mpComponent->getComponentInfo()->getClassName(), "unit");
+      if (unit.isEmpty()) {
+        unit = getModifierValueFromDerivedClass(mpComponent, "unit");
+      }
     }
   }
-  mpUnitLabel = new Label(StringHandler::removeFirstLastQuotes(unit));
+  mUnit = StringHandler::removeFirstLastQuotes(unit);
+  /* Get displayUnit value
+   * First check if displayUnit is defined with in the component modifier.
+   * If no displayUnit is found then check it in the derived class modifier value.
+   * A derived class can be inherited, so look recursively.
+   */
+  QString displayUnit = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className).value("displayUnit");
+  if (displayUnit.isEmpty()) {
+    if (!pOMCProxy->isBuiltinType(mpComponent->getComponentInfo()->getClassName())) {
+      displayUnit = pOMCProxy->getDerivedClassModifierValue(mpComponent->getComponentInfo()->getClassName(), "displayUnit");
+      if (displayUnit.isEmpty()) {
+        displayUnit = getModifierValueFromDerivedClass(mpComponent, "displayUnit");
+      }
+    }
+  }
+  if (displayUnit.isEmpty()) {
+    displayUnit = unit;
+  }
+  mDisplayUnit = StringHandler::removeFirstLastQuotes(displayUnit);
+  mPreviousUnit = mDisplayUnit;
+  mpUnitComboBox = new QComboBox;
+  mpUnitComboBox->setDisabled(true);
+  if (!mUnit.isEmpty()) {
+    mpUnitComboBox->addItem(mUnit);
+  }
+//  if (mUnit.compare(mDisplayUnit) != 0) {
+//    mpUnitComboBox->addItem(mDisplayUnit);
+//    mpUnitComboBox->setCurrentIndex(1);
+//  }
+  connect(mpUnitComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(unitComboBoxChanged(QString)));
   mpCommentLabel = new Label(mpComponent->getComponentInfo()->getComment());
 }
 
@@ -98,8 +128,28 @@ void Parameter::updateNameLabel()
   mpNameLabel->setText(mpComponent->getName() + (mShowStartAttribute ? ".start" : ""));
 }
 
-void Parameter::setValueWidget(QString value, bool defaultValue)
+/*!
+ * \brief Parameter::setValueWidget
+ * Sets the value and defaultValue for the parameter.
+ * \param value
+ * \param defaultValue
+ * \param fromUnit
+ */
+void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUnit)
 {
+  // convert the value to display unit
+  if (!fromUnit.isEmpty()) {
+    bool ok = true;
+    qreal realValue = value.toDouble(&ok);
+    if (ok) {
+      OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+      OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(fromUnit, mpUnitComboBox->currentText());
+      if (convertUnit.unitsCompatible) {
+        realValue = (realValue - convertUnit.offset) * convertUnit.scaleFactor;
+        value = QString::number(realValue);
+      }
+    }
+  }
   QFontMetrics fm = QFontMetrics(QFont());
   switch (mValueType) {
     case Parameter::Boolean:
@@ -152,6 +202,11 @@ bool Parameter::isValueModified()
   }
 }
 
+/*!
+ * \brief Parameter::getValue
+ * Returns the value.
+ * \return
+ */
 QString Parameter::getValue()
 {
   switch (mValueType) {
@@ -161,6 +216,23 @@ QString Parameter::getValue()
     case Parameter::Normal:
     default:
       return mpValueTextBox->text().trimmed();
+  }
+}
+
+/*!
+ * \brief Parameter::getDefaultValue
+ * Returns the default value.
+ * \return
+ */
+QString Parameter::getDefaultValue()
+{
+  switch (mValueType) {
+    case Parameter::Boolean:
+    case Parameter::Enumeration:
+      return mpValueComboBox->lineEdit()->placeholderText().trimmed();
+    case Parameter::Normal:
+    default:
+      return mpValueTextBox->placeholderText().trimmed();
   }
 }
 
@@ -183,23 +255,21 @@ QString Parameter::getFixedState()
  * \brief Parameter::getUnitFromDerivedClass
  * Returns the unit value by reading the derived classes.
  * \param pComponent
- * \return the unit value.
+ * \param modifierName
+ * \return the modifier value.
  */
-QString Parameter::getUnitFromDerivedClass(Component *pComponent)
+QString Parameter::getModifierValueFromDerivedClass(Component *pComponent, QString modifierName)
 {
   MainWindow *pMainWindow = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   OMCProxy *pOMCProxy = pMainWindow->getOMCProxy();
   if (!pComponent->getLibraryTreeItem()->getModelWidget()) {
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pComponent->getLibraryTreeItem(), "", false);
   }
-  if (pComponent->getLibraryTreeItem()->getModelWidget()->getInheritedClassesList().size() == 0) {
-    return pOMCProxy->getDerivedClassModifierValue(pComponent->getComponentInfo()->getClassName(), "unit");
-  }
   foreach (Component *pInheritedComponent, pComponent->getInheritedComponentsList()) {
-    if (pOMCProxy->isBuiltinType(pInheritedComponent->getComponentInfo()->getClassName())) {
-      return pOMCProxy->getDerivedClassModifierValue(pInheritedComponent->getComponentInfo()->getClassName(), "unit");
+    if (!pOMCProxy->isBuiltinType(pInheritedComponent->getComponentInfo()->getClassName())) {
+      return pOMCProxy->getDerivedClassModifierValue(pInheritedComponent->getComponentInfo()->getClassName(), modifierName);
     }
-    return getUnitFromDerivedClass(pInheritedComponent);
+    return getModifierValueFromDerivedClass(pInheritedComponent, modifierName);
   }
   return "";
 }
@@ -254,6 +324,30 @@ void Parameter::createValueWidget()
   }
 }
 
+/*!
+ * \brief Parameter::unitComboBoxChanged
+ * SLOT activated when mpUnitComboBox currentIndexChanged(QString) SIGNAL is raised.\n
+ * Updates the value according to the unit selected.
+ * \param text
+ */
+void Parameter::unitComboBoxChanged(QString text)
+{
+  QString value = getValue();
+  QString defaultValue = getDefaultValue();
+  if (!defaultValue.isEmpty()) {
+    setValueWidget(defaultValue, true, mPreviousUnit);
+  } else {
+    setValueWidget(value, false, mPreviousUnit);
+  }
+  mPreviousUnit = text;
+}
+
+/*!
+ * \brief Parameter::valueComboBoxChanged
+ * SLOT activated when mpValueComboBox currentIndexChanged(int) SIGNAL is raised.\n
+ * Updates the value according to the value selected.
+ * \param index
+ */
 void Parameter::valueComboBoxChanged(int index)
 {
   mpValueComboBox->lineEdit()->setText(mpValueComboBox->itemData(index).toString());
@@ -535,7 +629,9 @@ void ComponentParameters::setUpDialog()
             pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
           }
           pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), layoutIndex, columnIndex++);
-          pGroupBoxGridLayout->addWidget(pParameter->getUnitLabel(), layoutIndex, columnIndex++);
+          if (pParameter->getUnitComboBox()->count() > 0) { // only add the unit combobox if we really have a unit
+            pGroupBoxGridLayout->addWidget(pParameter->getUnitComboBox(), layoutIndex, columnIndex++);
+          }
           pGroupBoxGridLayout->addWidget(pParameter->getCommentLabel(), layoutIndex, columnIndex++);
         }
       }
@@ -623,7 +719,7 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
                 pParameter->setGroupBox("Initialization");
               }
               pParameter->setShowStartAttribute(true);
-              pParameter->setValueWidget(start, true);
+              pParameter->setValueWidget(start, true, pParameter->getUnit());
             }
           }
           else if (extendsModifiersIterator.key().compare(parameterName + ".fixed") == 0) {
@@ -636,7 +732,7 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
               pParameter->setFixedState(fixed, true);
             }
           } else {
-            pParameter->setValueWidget(extendsModifiersIterator.value(), true);
+            pParameter->setValueWidget(extendsModifiersIterator.value(), true, pParameter->getUnit());
           }
         }
       }
@@ -727,9 +823,9 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     pParameter->setEnabled(enable);
     QString componentDefinedInClass = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     QString value = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, componentDefinedInClass);
-    pParameter->setValueWidget(value, true);
+    pParameter->setValueWidget(value, true, pParameter->getUnit());
     if (showStartAttribute) {
-      pParameter->setValueWidget(start, true);
+      pParameter->setValueWidget(start, true, pParameter->getUnit());
       pParameter->setFixedState(fixed, true);
     }
     if (useInsert) {
@@ -766,7 +862,7 @@ void ComponentParameters::fetchComponentModifiers()
             pParameter->setGroupBox("Initialization");
           }
           pParameter->setShowStartAttribute(true);
-          pParameter->setValueWidget(start, mpComponent->getReferenceComponent() ? true : false);
+          pParameter->setValueWidget(start, mpComponent->getReferenceComponent() ? true : false, pParameter->getUnit());
         }
       }
       else if (modifiersIterator.key().compare(parameterName + ".fixed") == 0) {
@@ -779,7 +875,7 @@ void ComponentParameters::fetchComponentModifiers()
           pParameter->setFixedState(fixed, mpComponent->getReferenceComponent() ? true : false);
         }
       } else {
-        pParameter->setValueWidget(modifiersIterator.value(), mpComponent->getReferenceComponent() ? true : false);
+        pParameter->setValueWidget(modifiersIterator.value(), mpComponent->getReferenceComponent() ? true : false, pParameter->getUnit());
       }
     }
   }
@@ -807,7 +903,7 @@ void ComponentParameters::fetchExtendsModifiers()
                 pParameter->setGroupBox("Initialization");
               }
               pParameter->setShowStartAttribute(true);
-              pParameter->setValueWidget(start, false);
+              pParameter->setValueWidget(start, false, pParameter->getUnit());
             }
           }
           else if (extendsModifiersIterator.key().compare(parameterName + ".fixed") == 0) {
@@ -820,7 +916,7 @@ void ComponentParameters::fetchExtendsModifiers()
               pParameter->setFixedState(fixed, false);
             }
           } else {
-            pParameter->setValueWidget(extendsModifiersIterator.value(), false);
+            pParameter->setValueWidget(extendsModifiersIterator.value(), false, pParameter->getUnit());
           }
         }
       }

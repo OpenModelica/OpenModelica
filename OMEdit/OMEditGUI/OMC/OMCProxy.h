@@ -211,6 +211,7 @@ public:
   QString getModelicaPath();
   QStringList getAvailableLibraries();
   QString getDerivedClassModifierValue(QString className, QString modifierName);
+  OMCInterface::convertUnits_res convertUnits(QString from, QString to);
   bool getDocumentationClassAnnotation(QString className);
   int numProcessors();
   QString help(QString topic);

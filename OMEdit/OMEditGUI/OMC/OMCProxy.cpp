@@ -2307,8 +2307,21 @@ QStringList OMCProxy::getAvailableLibraries()
  */
 QString OMCProxy::getDerivedClassModifierValue(QString className, QString modifierName)
 {
-  sendCommand("getDerivedClassModifierValue(" + className + "," + modifierName + ")");
-  return StringHandler::getModifierValue(StringHandler::unparse(getResult()));
+  QString result = mpOMCInterface->getDerivedClassModifierValue(className, modifierName);
+  return StringHandler::getModifierValue(result);
+}
+
+/*!
+ * \brief OMCProxy::convertUnits
+ * Returns the scale factor and offset used when converting two units.\n
+ * Returns false if the types are not compatible and should not be converted.
+ * \param from
+ * \param to
+ * \return
+ */
+OMCInterface::convertUnits_res OMCProxy::convertUnits(QString from, QString to)
+{
+  return mpOMCInterface->convertUnits(from, to);
 }
 
 /*!

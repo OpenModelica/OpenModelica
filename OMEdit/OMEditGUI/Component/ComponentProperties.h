@@ -62,16 +62,18 @@ public:
   FixedCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
   QString getOriginalFixedValue() {return mOriginalFixedValue;}
   void setValueType(ValueType valueType) {mValueType = valueType;}
-  void setValueWidget(QString value, bool defaultValue);
+  void setValueWidget(QString value, bool defaultValue, QString fromUnit);
   ValueType getValueType() {return mValueType;}
   QWidget* getValueWidget();
   bool isValueModified();
   QString getValue();
-  Label* getUnitLabel() {return mpUnitLabel;}
+  QString getDefaultValue();
+  QString getUnit() {return mUnit;}
+  QComboBox* getUnitComboBox() {return mpUnitComboBox;}
   Label* getCommentLabel() {return mpCommentLabel;}
   void setFixedState(QString fixed, bool defaultValue);
   QString getFixedState();
-  QString getUnitFromDerivedClass(Component *pComponent);
+  QString getModifierValueFromDerivedClass(Component *pComponent, QString modifierName);
   void setEnabled(bool enable);
 private:
   Component *mpComponent;
@@ -84,11 +86,15 @@ private:
   ValueType mValueType;
   QComboBox *mpValueComboBox;
   QLineEdit *mpValueTextBox;
-  Label *mpUnitLabel;
+  QString mUnit;
+  QString mDisplayUnit;
+  QString mPreviousUnit;
+  QComboBox *mpUnitComboBox;
   Label *mpCommentLabel;
 
   void createValueWidget();
 public slots:
+  void unitComboBoxChanged(QString text);
   void valueComboBoxChanged(int index);
   void showFixedMenu();
   void trueFixedClicked();

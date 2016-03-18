@@ -396,7 +396,9 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   : QGraphicsItem(pParentComponent), mpReferenceComponent(0), mpParentComponent(pParentComponent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
-  mpComponentInfo = mpParentComponent->getComponentInfo();
+  mpComponentInfo = new ComponentInfo;
+  mpComponentInfo->setName(mpLibraryTreeItem->getName());
+  mpComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
   mpGraphicsView = mpParentComponent->getGraphicsView();
   mIsInheritedComponent = mpParentComponent->isInheritedComponent();
   mComponentType = Component::Extend;
