@@ -1200,15 +1200,15 @@ void ComponentAttributes::updateComponentAttributes()
 }
 
 /*!
- * \class SubModelAttributes
+ * \class MetaModelSubModelAttributes
  * \brief A dialog for displaying SubModel attributes.
  */
 /*!
- * \brief SubModelAttributes::SubModelAttributes
+ * \brief MetaModelSubModelAttributes::MetaModelSubModelAttributes
  * \param pComponent - pointer to Component
  * \param pMainWindow - pointer to MainWindow
  */
-SubModelAttributes::SubModelAttributes(Component *pComponent, MainWindow *pMainWindow)
+MetaModelSubModelAttributes::MetaModelSubModelAttributes(Component *pComponent, MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("SubModel Attributes")));
@@ -1221,15 +1221,15 @@ SubModelAttributes::SubModelAttributes(Component *pComponent, MainWindow *pMainW
 }
 
 /*!
- * \brief SubModelAttributes::setUpDialog
- * Creates the Dialog and set up attributes.
+ * \brief MetaModelSubModelAttributes::setUpDialog
+ * Creates the dialog and set up submodel attributes of the metamodel.
  */
-void SubModelAttributes::setUpDialog()
+void MetaModelSubModelAttributes::setUpDialog()
 {
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit;
-  mpNameTextBox->setReadOnly(true);
+  mpNameTextBox->setDisabled(true);
   // Create the simulation tool label and combo box
   mpSimulationToolLabel = new Label(tr("Simulation Tool"));
   mpSimulationToolComboBox = new QComboBox;
@@ -1248,7 +1248,7 @@ void SubModelAttributes::setUpDialog()
   // Create the model file label and text box
   mpModelFileLabel = new Label(tr("Model File:"));
   mpModelFileTextBox = new QLineEdit;
-  mpModelFileTextBox->setReadOnly(true);
+  mpModelFileTextBox->setDisabled(true);
   // Create the exact step flag check box
   mpExactStepFlagCheckBox = new QCheckBox(tr("Exact Step Flag"));
   // Create the buttons
@@ -1281,7 +1281,7 @@ void SubModelAttributes::setUpDialog()
 /*!
   Initialize the fields with values.
   */
-void SubModelAttributes::initializeDialog()
+void MetaModelSubModelAttributes::initializeDialog()
 {
   // set Name
   mpNameTextBox->setText(mpComponent->getName());
@@ -1294,22 +1294,22 @@ void SubModelAttributes::initializeDialog()
   mpModelFileTextBox->setText(mpComponent->getComponentInfo()->getModelFile());
 }
 
-void SubModelAttributes::changeSimulationToolStartCommand(QString tool)
+void MetaModelSubModelAttributes::changeSimulationToolStartCommand(QString tool)
 {
   mpStartCommandTextBox->setText(StringHandler::getSimulationToolStartCommand(tool, mpStartCommandTextBox->text()));
 }
 
-void SubModelAttributes::changeSimulationTool(QString simulationToolStartCommand)
+void MetaModelSubModelAttributes::changeSimulationTool(QString simulationToolStartCommand)
 {
   mpSimulationToolComboBox->setCurrentIndex(StringHandler::getSimulationTool(simulationToolStartCommand));
 }
 
 /*!
- * \brief SubModelAttributes::updateSubModelParameters
+ * \brief MetaModelSubModelAttributes::updateSubModelParameters
  * Updates subModel parameters.\n
  * Slot activated when mpOkButton clicked signal is raised.
  */
-void SubModelAttributes::updateSubModelParameters()
+void MetaModelSubModelAttributes::updateSubModelParameters()
 {
   // save the old ComponentInfo
   ComponentInfo oldComponentInfo(mpComponent->getComponentInfo());
@@ -1356,14 +1356,14 @@ void TLMInterfacePointInfo::setInterfaceName(QString interfacePoint)
 }
 
 /*!
-  \class TLMConnectiontAttributes
-  \brief A dialog for displaying TLM connection attributes
+  \class MetaModelConnectionAttributes
+  \brief A dialog for displaying MetaModel Connection Attributes
   */
 /*!
   \param pConnectionLineAnnotation - pointer to LineAnnotation
   \param pMainWindow - pointer to MainWindow
   */
-TLMConnectionAttributes::TLMConnectionAttributes(LineAnnotation *pConnectionLineAnnotation, MainWindow *pMainWindow)
+MetaModelConnectionAttributes::MetaModelConnectionAttributes(LineAnnotation *pConnectionLineAnnotation, MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("TLM Connection Attributes")));
@@ -1378,7 +1378,7 @@ TLMConnectionAttributes::TLMConnectionAttributes(LineAnnotation *pConnectionLine
 /*!
   Creates the Dialog and set up attributes .
   */
-void TLMConnectionAttributes::setUpDialog()
+void MetaModelConnectionAttributes::setUpDialog()
 {
   // Create the start component class name label and text box
   mpStartSubModelNameLabel = new Label(tr("From:"));
@@ -1434,7 +1434,7 @@ void TLMConnectionAttributes::setUpDialog()
 /*!
   Initialize the fields with default values.
   */
-void TLMConnectionAttributes::initializeDialog()
+void MetaModelConnectionAttributes::initializeDialog()
 {
   mpStartSubModelNameTextBox->setText(mpConnectionLineAnnotation->getStartComponent()->getName());
   mpEndSubModelNameTextBox->setText(mpConnectionLineAnnotation->getEndComponent()->getName());
@@ -1455,7 +1455,7 @@ void TLMConnectionAttributes::initializeDialog()
   Slot activated when mpOkButton clicked signal is raised.\n
   Updates the TLM component attributes.
   */
-void TLMConnectionAttributes::createTLMConnection()
+void MetaModelConnectionAttributes::createMetaModelConnection()
 {
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor());
   QString startFrom = mpStartSubModelNameTextBox->text().append(".").append(mpStartSubModelInterfacePointComboBox->currentText());

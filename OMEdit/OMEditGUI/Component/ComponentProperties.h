@@ -213,11 +213,11 @@ public slots:
   void updateComponentAttributes();
 };
 
-class SubModelAttributes : public QDialog
+class MetaModelSubModelAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  SubModelAttributes(Component *pComponent, MainWindow *pMainWindow);
+  MetaModelSubModelAttributes(Component *pComponent, MainWindow *pMainWindow);
   void setUpDialog();
   void initializeDialog();
 private:
@@ -258,11 +258,11 @@ private:
 };
 
 class LineAnnotation;
-class TLMConnectionAttributes : public QDialog
+class MetaModelConnectionAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  TLMConnectionAttributes(LineAnnotation *pConnectionLineAnnotation, MainWindow *pMainWindow);
+  MetaModelConnectionAttributes(LineAnnotation *pConnectionLineAnnotation, MainWindow *pMainWindow);
   void setUpDialog();
   void initializeDialog();
 private:
@@ -286,7 +286,7 @@ private:
   QPushButton *mpOkButton;
   QDialogButtonBox *mpButtonBox;
 public slots:
-  void createTLMConnection();
+  void createMetaModelConnection();
 };
 
 #endif // COMPONENTPROPERTIES_H

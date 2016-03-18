@@ -508,8 +508,8 @@ void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
     // show TLM connection attributes dialog
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-    TLMConnectionAttributes *pTLMConnectionAttributes = new TLMConnectionAttributes(pConnectionLineAnnotation, pMainWindow);
-    pTLMConnectionAttributes->show();
+    MetaModelConnectionAttributes *pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(pConnectionLineAnnotation, pMainWindow);
+    pMetaModelConnectionAttributes->show();
   } else {
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     if (pMainWindow->getOMCProxy()->addConnection(pConnectionLineAnnotation->getStartComponentName(),
