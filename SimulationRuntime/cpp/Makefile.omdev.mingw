@@ -188,7 +188,7 @@ endif
 
 install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \
-	  (cd Build_$(PLATFORM); $(MAKE) install);)
+	  (cd Build_$(PLATFORM); make install);)
 	cp -p $(OMDEV)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.
 
 
