@@ -1,6 +1,9 @@
-# Adrian Pop, adrpo@ida.liu.se, 2006-02-01
-# Makefile for compilation of OMC using OMDev-mingw
-# OMDev-mingw: http://www.ida.liu.se/~adrpo/omc/omdev/
+# Makefile for compilation of OpenModelica Cpp runtime
+
+# specify a list of target platforms, including dynamic, static
+# and platform triples for cross compilation
+#PLATFORMS=x86_64-linux-gnu i686-w64-mingw32 dynamic
+PLATFORMS=static dynamic
 
 OMBUILDDIR=
 LIBINSTALLEXT=
@@ -31,20 +34,18 @@ CMAKE_ARGS=$(patsubst CMAKE_%, -D%, $(filter CMAKE_%, $(MAKEFLAGS)))
 CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE) $(BOOST_ROOT_COMMAND) $(BOOST_STATIC_LINKING_COMMAND) $(CPP_03_COMMAND) $(BOOST_REALPATHS_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(SCOREP_COMMAND) $(FMU_SUNDIALS_COMMAND) $(LOGGER_COMMAND) -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DLIBINSTALLEXT=$(LIBINSTALLEXT) -DSCOREP_HOME:STRING="$(SCOREP_HOME)" $(BUILD_DOC_COMMAND) $(CMAKE_ARGS)
 
 runtimeCpp:
-	mkdir -p Build
-	cd ./Build && echo "change to Build" && $(CMAKE_COMMANDS) cmake -DBUILD_SHARED_LIBS:BOOL=ON $(CMAKE_FLAGS) ../
-	$(MAKE) -C Build VERBOSE=1
-	mkdir -p Build_static
-	cd ./Build_static && echo "change to Build_static" && $(CMAKE_COMMANDS) cmake -DBUILD_SHARED_LIBS:BOOL=OFF $(CMAKE_FLAGS) ../
-	$(MAKE) -C Build_static VERBOSE=1
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  mkdir -p Build_$(PLATFORM); \
+	  (cd ./Build_$(PLATFORM) && echo "change to Build_$(PLATFORM)" && $(CMAKE_COMMANDS) cmake -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) ../); \
+	  $(MAKE) -C Build_$(PLATFORM) VERBOSE=1;)
 
 install: runtimeCpp
-	(cd Build_static; $(MAKE) install)
-	(cd Build; $(MAKE) install)
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  (cd Build_$(PLATFORM); $(MAKE) install);)
 
 clean:
-	rm -R -f Build_static
-	rm -R -f Build
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  rm -R -f Build_$(PLATFORM);)
 
 Makefile: Makefile.in
 	cd @top_builddir@ && ./config.status

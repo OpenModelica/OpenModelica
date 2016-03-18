@@ -27,12 +27,37 @@
 #     if profiling of the simulation runtime should be enabled                     -DRUNTIME_PROFILING=ON [default: OFF]
 #     if the equation systems of a FMU should be solved with sundials solvers      -DFMU_SUNDIALS=ON [default: OFF]
 #     if the logger should be completely disabled or used                          -DUSE_LOGGER=OFF [default: ON]
+#     specify target platform for compilation                                      -DPLATFORM=<dynamic, static or platform triple> [default: "dynamic"]
 #
 #     Example: "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
+
+if(NOT PLATFORM OR PLATFORM STREQUAL "dynamic")
+  set(BUILD_SHARED_LIBS ON)
+elseif(PLATFORM STREQUAL "static")
+  set(BUILD_SHARED_LIBS OFF)
+else()
+  # cross compilation of a subset of the runtime for FMI export
+  set(FMU_TARGET PLATFORM)
+  set(BUILD_SHARED_LIBS OFF)
+
+  # set cross compiler and force its use
+  include(CMakeForceCompiler)
+  set(CMAKE_C_COMPILER ${PLATFORM}-gcc)
+  cmake_force_c_compiler(${PLATFORM}-gcc GNU)
+  set(CMAKE_CXX_COMPILER ${PLATFORM}-g++)
+  cmake_force_cxx_compiler(${PLATFORM}-g++ GNU)
+
+  # adapt lib installation dir, like lib/${PLATFORM}/omc/cpp
+  execute_process(COMMAND gcc -dumpmachine OUTPUT_VARIABLE MACHINE)
+  string(STRIP ${MACHINE} MACHINE)
+  string(REPLACE ${MACHINE} ${PLATFORM} LIBINSTALLEXT ${LIBINSTALLEXT})
+  message(STATUS "Libs will be installed in ${LIBINSTALLEXT}")
+endif()
+
 PROJECT(CppSolverInterface)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake")
@@ -101,7 +126,9 @@ SET(DgesvName ${LIBPREFIX}Dgesv) # only static version
 
 SET(USE_MICO OFF)
 SET(REDUCE_DAE OFF)
-SET(USE_SUNDIALS ON)
+IF(NOT FMU_TARGET OR FMU_SUNDIALS)
+  SET(USE_SUNDIALS ON)
+ENDIF(NOT FMU_TARGET OR FMU_SUNDIALS)
 SET(OMC_BUILD ON)
 SET(SIMSTER_BUILD OFF)
 
@@ -133,7 +160,11 @@ IF(NOT(USE_CPP_03))
     IF(APPLE)
       CHECK_CXX_COMPILER_FLAG("-std=c++11 -stdlib=libc++" COMPILER_SUPPORTS_CXX11)
     ELSE(APPLE)
-      CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+      IF(FMU_TARGET)
+        SET(COMPILER_SUPPORTS_CXX11 True)
+      ELSE(FMU_TARGET)
+        CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+      ENDIF(FMU_TARGET)
     ENDIF(APPLE)
     IF(COMPILER_SUPPORTS_CXX11)
       IF(APPLE)
@@ -384,17 +415,20 @@ IF(NOT(COMPILER_SUPPORTS_CXX11))
   ELSE(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
     MESSAGE(STATUS "Boost thread disabled")
   ENDIF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
-ELSE()
+ELSEIF(NOT FMU_TARGET)
   ADD_DEFINITIONS(-DUSE_THREAD)
   MESSAGE(STATUS "Boost thread disabled because of available C++11 support")
 ENDIF(NOT(COMPILER_SUPPORTS_CXX11))
 
-FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem system serialization program_options)
+IF(NOT FMU_TARGET)
+  FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem system serialization program_options)
+ELSE(NOT FMU_TARGET)
+  FIND_PACKAGE(Boost COMPONENTS filesystem system serialization program_options)
+ENDIF(NOT FMU_TARGET)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 SET(Boost_LIBRARIES ${Boost_LIBRARIES_TMP})
 MESSAGE(STATUS "Boost Libraries")
 MESSAGE(STATUS ${Boost_LIBRARIES})
-
 
 # Find Lapack and Blas
 FIND_PACKAGE(BLAS)
@@ -555,48 +589,54 @@ IF(USE_DGESV)
   GET_FILENAME_COMPONENT(libDgesvName ${libDgesv} NAME)
 ENDIF(USE_DGESV)
 
-add_subdirectory (Core/Modelica)
-add_subdirectory (Core/Math)
-add_subdirectory (SimCoreFactory/OMCFactory)
-#add_subdirectory (ModelicaCompiler)
+# add system default implemention project
+add_subdirectory(Core/System)
+# add solver default implemention project
+add_subdirectory(Core/Solver)
 
-add_subdirectory (Core/Utils/Modelica)
-add_subdirectory (Core/Utils/extension)
-add_subdirectory (Core/DataExchange)
+add_subdirectory(Core/Math)
+add_subdirectory(Core/Utils/Modelica)
+add_subdirectory(Core/Utils/extension)
+add_subdirectory(Core/ModelicaExternalC)
 
+if(NOT FMU_TARGET)
+  # add projects for generating a simulator
+  add_subdirectory(Core/Modelica)
+  add_subdirectory(SimCoreFactory/OMCFactory)
+  add_subdirectory(Core/DataExchange)
+  add_subdirectory(Core/SimulationSettings)
+  add_subdirectory(Core/SimController)
+  #add_subdirectory(ModelicaCompiler)
+endif(NOT FMU_TARGET)
 
-#add system default implemention project
-add_subdirectory (Core/System)
-#add solver default implemention project
-add_subdirectory (Core/Solver)
-add_subdirectory (Core/SimulationSettings)
-add_subdirectory (Core/ModelicaExternalC)
-add_subdirectory (Core/SimController)
+# add Newton solver
+add_subdirectory(Solver/Newton)
 
-#add  Euler solver project
-add_subdirectory (Solver/Euler)
-add_subdirectory (Solver/RK12)
+if(NOT FMU_TARGET)
+  # add more algebraic loop solvers
+  add_subdirectory(Solver/Broyden)
+  add_subdirectory(Solver/Hybrj)
+  add_subdirectory(Solver/UmfPack)
+  add_subdirectory(Solver/Peer)
 
+  # add simulation solvers
+  add_subdirectory(Solver/Euler)
+  add_subdirectory(Solver/RK12)
+  add_subdirectory(Solver/RTEuler)
+  if(OPENMP_FOUND)
+    if(SUITESPARSE_UMFPACK_FOUND)
+      message(STATUS "CppDassl enabled")
+      add_subdirectory (Solver/CppDASSL)
+    else(SUITESPARSE_UMFPACK_FOUND)
+      message(STATUS "CppDassl disabled, because of missing UMFPACK support")
+    endif(SUITESPARSE_UMFPACK_FOUND)
+  else(OPENMP_FOUND)
+    message(STATUS "CppDassl disabled, because of missing OpenMP support")
+  endif(OPENMP_FOUND)
+  ##add_subdirectory(Solver/RTRK)
+endif(NOT FMU_TARGET)
 
-add_subdirectory (Solver/RTEuler)
-add_subdirectory (Solver/Newton)
-add_subdirectory (Solver/Broyden)
-add_subdirectory (Solver/Hybrj)
-add_subdirectory (Solver/UmfPack)
-add_subdirectory (Solver/Peer)
-IF(OPENMP_FOUND)
-  IF(SUITESPARSE_UMFPACK_FOUND)
-    MESSAGE(STATUS "CppDassl enabled")
-    add_subdirectory (Solver/CppDASSL)
-  ELSE(SUITESPARSE_UMFPACK_FOUND)
-    MESSAGE(STATUS "CppDassl disabled, because of missing UMFPACK support")
- ENDIF(SUITESPARSE_UMFPACK_FOUND)
-ELSE(OPENMP_FOUND)
-  MESSAGE(STATUS "CppDassl disabled, because of missing OpenMP support")
-ENDIF(OPENMP_FOUND)
-##add_subdirectory (Solver/RTRK)
-
-add_subdirectory (FMU)
+add_subdirectory(FMU)
 
 if(REDUCE_DAE)
   #add_subdirectory(ReduceDAE/Implementation)
