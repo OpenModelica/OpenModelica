@@ -1383,13 +1383,13 @@ void TLMConnectionAttributes::setUpDialog()
   // Create the start component class name label and text box
   mpStartSubModelNameLabel = new Label(tr("From:"));
   mpStartSubModelNameTextBox = new QLineEdit;
-  mpStartSubModelNameTextBox->setReadOnly(true);
+  mpStartSubModelNameTextBox->setDisabled(true);
   // Create the start component interface points  combo box
   mpStartSubModelInterfacePointComboBox = new QComboBox;
   // Create the end component class name label and text box
   mpEndSubModelNameLabel = new Label(tr("To:"));
   mpEndSubModelNameTextBox = new QLineEdit;
-  mpEndSubModelNameTextBox->setReadOnly(true);
+  mpEndSubModelNameTextBox->setDisabled(true);
   // Create the end component interface points  combo box
   mpEndSubModelInterfacePointComboBox = new QComboBox;
   // Create the delay label and text box
