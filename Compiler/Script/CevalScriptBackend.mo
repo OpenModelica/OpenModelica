@@ -822,6 +822,10 @@ algorithm
       then
         (cache,Values.TUPLE({Values.BOOL(b),Values.REAL(scaleFactor),Values.REAL(offset)}),st);
 
+    case (cache,_,"convertUnits",{Values.STRING(str1),Values.STRING(str2)},st,_)
+      then
+        (cache,Values.TUPLE({Values.BOOL(false),Values.REAL(1.0),Values.REAL(0.0)}),st);
+
     case (cache,_,"getClassInformation",{Values.CODE(Absyn.C_TYPENAME(className))},st as GlobalScript.SYMBOLTABLE(),_)
       equation
         v = getClassInformation(className, st.ast);

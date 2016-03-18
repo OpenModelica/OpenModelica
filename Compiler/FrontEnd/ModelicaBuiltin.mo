@@ -2028,10 +2028,8 @@ function convertUnits
   input String s1;
   input String s2;
   output Boolean unitsCompatible;
-  output Real scaleFactor1;
-  output Real offset1;
-  output Real scaleFactor2;
-  output Real offset2;
+  output Real scaleFactor;
+  output Real offset;
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
 <p>Returns the scale factor and offsets used when converting two units.</p>
