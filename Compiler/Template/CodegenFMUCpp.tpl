@@ -731,7 +731,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   $(eval CFLAGS=$(CFLAGS) -DUSE_LOGGER)
   endif
 
-  LDFLAGS=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(BOOST_LIBS)" <%additionalLinkerFlags_GCC%> -Wl,--no-undefined
+  LDFLAGS=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%additionalLinkerFlags_GCC%> -Wl,--no-undefined
   PLATFORM=<%platformstr%>
 
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
@@ -745,7 +745,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   CPPFLAGS=$(CFLAGS)
 
-  BINARIES=<%fileNamePrefix%>$(DLLEXT) <%platformbins%>
+  BINARIES=<%fileNamePrefix%>$(DLLEXT)
 
   OMCPP_LIBS=-lOMCppSystem_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppFMU_static $(OMCPP_SOLVER_LIBS) -lOMCppExtensionUtilities_static
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables
@@ -761,8 +761,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   # need boost system lib prior to C++11
   ifeq ($(findstring USE_CPP_03,$(CFLAGS)),USE_CPP_03)
-    $(eval LIBS=$(LIBS) -l$(BOOST_SYSTEM_LIB))
-    $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT))
+    $(eval LIBS=$(LIBS) -L"$(BOOST_LIBS)" -l$(BOOST_SYSTEM_LIB))
+    $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT) <%platformbins%>)
+  endif
+
+  # link static gcc libs under Windows to avoid dependencies
+  ifeq ($(findstring win,$(PLATFORM)),win)
+    $(eval LIBS=$(LIBS) -static-libstdc++ -static-libgcc)
   endif
 
   CPPFILES=$(CALCHELPERMAINFILE)
