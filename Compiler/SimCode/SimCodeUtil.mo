@@ -10190,16 +10190,17 @@ protected
   array<Integer> varIndices;
   list<String> tmpVarIndexListNew = {};
   list<DAE.Subscript> arraySubscripts;
-  list<Integer> arrayDimensions;
+  list<Integer> arrayDimensions, arrayDimensions0;
 algorithm
   arraySubscripts := ComponentReference.crefLastSubs(varName);
   varName := ComponentReference.crefStripLastSubs(varName);//removeSubscripts(varName);
   if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
-    ((arrayDimensions,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping);
+    ((arrayDimensions0,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping); //varIndices are rowMajorOrder!
+    arrayDimensions := arrayDimensions0;
     arraySize := arrayLength(varIndices);
     if(iColumnMajor) then
       arraySubscripts := listReverse(arraySubscripts);
-      arrayDimensions := listReverse(arrayDimensions);
+      arrayDimensions := listReverse(arrayDimensions0);
     end if;
     concreteVarIndex := getUnrolledArrayIndex(arraySubscripts,arrayDimensions);
     //print("SimCodeUtil.getVarIndexInfosByMapping: Found variable index for '" + ComponentReference.printComponentRefStr(iVarName) + "'. The value is " + intString(concreteVarIndex) + "\n");
@@ -10216,7 +10217,12 @@ algorithm
         end if;
       end if;
     end for;
-    oConcreteVarIndex := listGet(tmpVarIndexListNew, concreteVarIndex + 1);
+    if iColumnMajor then
+      oConcreteVarIndex := listGet(tmpVarIndexListNew,convertFlattenedIndexToRowMajor(concreteVarIndex + 1, arrayDimensions0));
+      //oConcreteVarIndex := listGet(tmpVarIndexListNew, concreteVarIndex + 1);
+    else
+      oConcreteVarIndex := listGet(tmpVarIndexListNew, concreteVarIndex + 1);
+    end if;
   end if;
   if(listEmpty(tmpVarIndexListNew)) then
     Error.addMessage(Error.INTERNAL_ERROR, {"GetVarIndexListByMapping: No Element for " + ComponentReference.printComponentRefStr(varName) + " found!"});
@@ -10226,6 +10232,24 @@ algorithm
   //print("SimCodeUtil.getVarIndexInfosByMapping: Variable " + ComponentReference.printComponentRefStr(iVarName) + " has variable indices {" + stringDelimitList(tmpVarIndexListNew, ",") + "} and concrete index " + oConcreteVarIndex + "\n");
   oVarIndexList := tmpVarIndexListNew;
 end getVarIndexInfosByMapping;
+
+protected function convertFlattenedIndexToRowMajor
+"author: waurich TUD 03/2015"
+  input Integer idx; //1-based, column major ordered
+  input list<Integer> rowMajorDimensions;
+  output Integer idxOut;//1-based, row major ordered
+protected
+  Integer dimRow,dimCol,col,row;
+algorithm
+  if intEq(listLength(rowMajorDimensions),2) then
+    {dimRow,dimCol} := rowMajorDimensions;
+    col := intDiv(idx-1,dimRow);//in which col?(0-based)
+    row := idx - col*dimRow; // in which row (1-based)
+    idxOut := (row-1)*dimCol + (col+1);
+  else
+    idxOut := idx;
+  end if;
+end convertFlattenedIndexToRowMajor;
 
 public function isVarIndexListConsecutive "author: marcusw
   Check if all variable indices of the given variables, stored in the hash table, are consecutive."
