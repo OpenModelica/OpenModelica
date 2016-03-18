@@ -217,7 +217,10 @@ MESSAGE(STATUS "--UMFPACK_INCLUDE = ${UMFPACK_INCLUDE_}")
 MESSAGE(STATUS "--UMFPACK_LIBRARIES = ${UMFPACK_LIBRARIES_}")
 MESSAGE(STATUS " ")
 
-create_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
+if(BUILD_SHARED_LIBS)
+  create_precompiled_header(${ModelicaName} Include/Core/Modelica.h)
+endif(BUILD_SHARED_LIBS)
+
 IF(MSVC)
  configure_file (
   "ModelicaConfig_msvc.inc.in"
