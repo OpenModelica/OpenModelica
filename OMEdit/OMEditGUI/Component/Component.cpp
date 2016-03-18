@@ -397,7 +397,7 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
 {
   mpLibraryTreeItem = pLibraryTreeItem;
   mpComponentInfo = new ComponentInfo;
-  mpComponentInfo->setName(mpLibraryTreeItem->getName());
+  mpComponentInfo->setName(mpParentComponent->getComponentInfo()->getName());
   mpComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
   mpGraphicsView = mpParentComponent->getGraphicsView();
   mIsInheritedComponent = mpParentComponent->isInheritedComponent();
