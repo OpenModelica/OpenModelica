@@ -580,6 +580,12 @@ include_directories ("Include")
 include_directories ("Solver")
 #include_directories ("Include/Solver/KLU")
 
+# adrpo: make sure this is first for the precompiled headers!
+if(NOT FMU_TARGET)
+  # add projects for generating a simulator
+  add_subdirectory(Core/Modelica)
+endif(NOT FMU_TARGET)
+
 #add_subdirectory (Solver/KLU)
 # Needs to be included before Core/Modelica othwise environment variables are not set.
 IF(USE_DGESV)
@@ -601,7 +607,6 @@ add_subdirectory(Core/ModelicaExternalC)
 
 if(NOT FMU_TARGET)
   # add projects for generating a simulator
-  add_subdirectory(Core/Modelica)
   add_subdirectory(SimCoreFactory/OMCFactory)
   add_subdirectory(Core/DataExchange)
   add_subdirectory(Core/SimulationSettings)
