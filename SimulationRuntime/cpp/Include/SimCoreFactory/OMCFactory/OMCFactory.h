@@ -21,10 +21,18 @@ typedef int LOADERRESULT;
 class ISimController;
 struct SimSettings;
 
+#if !defined(BOOST_EXTENSION_OMCFACTORY_DECL)
+  #if defined(RUNTIME_STATIC_LINKING)
+    #define BOOST_EXTENSION_OMCFACTORY_DECL
+  #else
+    #define BOOST_EXTENSION_OMCFACTORY_DECL BOOST_EXTENSION_IMPORT_DECL
+  #endif
+#endif
+
 /**
  * Create a dynamically linked simulator and serve for solver factories
  */
-class OMCFactory
+class BOOST_EXTENSION_OMCFACTORY_DECL OMCFactory
 {
 public:
   OMCFactory();
