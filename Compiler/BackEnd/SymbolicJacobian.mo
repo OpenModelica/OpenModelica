@@ -1153,13 +1153,14 @@ algorithm
         colored = arrayCreate(sizeN,0);
         arraysparseGraph = listArray(sparseGraph);
         if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> coloring start "); end if;
-        colored1 = Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
+        Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
         if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> coloring end "); end if;
         // get max color used
-        maxColor = Array.fold(colored1, intMax, 0);
+        maxColor = Array.fold(colored, intMax, 0);
 
         // map index of that array into colors
-        coloredArray = mapIndexColors(colored1, arrayLength(diffCompRefs), arrayCreate(maxColor, {}));
+        coloredArray = arrayCreate(maxColor, {});
+        mapIndexColors(colored, arrayLength(diffCompRefs), coloredArray);
 
         if Flags.isSet(Flags.DUMP_SPARSE) then
           print("Print Coloring Cols: \n");
@@ -1410,27 +1411,17 @@ protected function mapIndexColors
   input array<Integer> inColors;
   input Integer inMaxIndex;
   input array<list<Integer>> inArray;
-  output array<list<Integer>> outColors;
+protected
+  Integer index;
 algorithm
-  outColors := matchcontinue(inColors, inMaxIndex, inArray)
-    local
-      Integer i, index;
-      list<Integer> lst;
-    case (_, 0, _) then inArray;
-    case (_, i, _)
-      equation
-        index = arrayGet(inColors, i);
-        lst = arrayGet(inArray, index);
-        lst = i::lst;
-        arrayUpdate(inArray, index, lst);
-      then
-        mapIndexColors(inColors, i-1, inArray);
-   else
-      equation
-        Error.addInternalError("function mapIndexColors failed", sourceInfo());
-      then
-         fail();
- end matchcontinue;
+  try
+    for i in 1:inMaxIndex loop
+      index := arrayGet(inColors, i);
+      arrayUpdate(inArray, index, i::arrayGet(inArray, index));
+    end for;
+  else
+    Error.addInternalError("function mapIndexColors failed", sourceInfo());
+  end try;
 end mapIndexColors;
 
 protected function createBipartiteGraph
