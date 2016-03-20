@@ -3,8 +3,6 @@
  *  @{
  */
 
-#include <SimCoreFactory/OMCFactory/FactoryExport.h>
-
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 
