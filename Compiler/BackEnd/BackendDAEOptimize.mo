@@ -1913,18 +1913,24 @@ protected function getNumJacEntries
   input BackendDAE.Jacobian inJac;
   output Integer numEntries;
 algorithm
-  numEntries := match(inJac)
+  numEntries := match inJac
     local
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-      case (BackendDAE.FULL_JACOBIAN(NONE()))
-        equation
-           then -1;
-      case (BackendDAE.FULL_JACOBIAN(SOME(jac)))
-        equation
+      list<BackendDAE.Var> vars1, vars2;
+      case BackendDAE.FULL_JACOBIAN(NONE())
+        then -1;
+      case BackendDAE.FULL_JACOBIAN(SOME(jac))
         then listLength(jac);
-      /* TODO: implement for GENERIC_JACOBIAN */
-      case (_)
+      case BackendDAE.EMPTY_JACOBIAN()
+        then -1;
+      /* TODO: implement/check for GENERIC_JACOBIAN */
+      case BackendDAE.GENERIC_JACOBIAN(jacobian=(_,_,vars1,vars2,_))
+        guard
+          listLength(vars1) == listLength(vars2)
+        then listLength(vars1);
+      else
         equation
+          //print(BackendDump.jacobianString(inJac));
           print("another JAC\n");
         then -1;
   end match;
