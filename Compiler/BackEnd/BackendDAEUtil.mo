@@ -8072,7 +8072,7 @@ end expInt;
 
 public function createEqSystem
   input BackendDAE.Variables inVars;
-  input BackendDAE.EquationArray inEqs;
+  input BackendDAE.EquationArray inEqs = BackendEquation.emptyEqns();
   input BackendDAE.StateSets inStateSets = {};
   input BackendDAE.BaseClockPartitionKind inPartitionKind = BackendDAE.UNKNOWN_PARTITION();
   input BackendDAE.EquationArray removedEqs = BackendEquation.emptyEqns();

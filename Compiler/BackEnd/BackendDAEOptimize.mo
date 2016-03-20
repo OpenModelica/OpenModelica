@@ -1582,10 +1582,13 @@ protected
   BackendDAE.EqSystem syst;
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
+  Integer sz;
+  BackendDAE.Variables vars;
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
+  vars := BackendVariable.emptyVarsSized(integer(sum(BackendVariable.varsSize(s.orderedVars) for s in systs)*1.4));
   // We can use listReduce as if there is no eq-system something went terribly wrong
-  syst := List.reduce(systs, mergeIndependentBlocks);
+  syst := List.fold(listReverse(systs), mergeIndependentBlocks, BackendDAEUtil.createEqSystem(vars));
   outDAE := BackendDAE.DAE({syst}, shared);
 end collapseIndependentBlocks;
 
@@ -1598,10 +1601,10 @@ protected
   BackendDAE.EquationArray eqs, removedEqs;
   BackendDAE.StateSets stateSets;
 algorithm
-  vars := BackendVariable.mergeVariables(syst2.orderedVars, syst1.orderedVars);
-  eqs := BackendEquation.addEquations(BackendEquation.equationList(syst2.orderedEqs), syst1.orderedEqs);
-  removedEqs := BackendEquation.addEquations(BackendEquation.equationList(syst2.removedEqs), syst1.removedEqs);
-  stateSets := listAppend(syst2.stateSets, syst1.stateSets);
+  vars := BackendVariable.addVariables(syst1.orderedVars, syst2.orderedVars);
+  eqs := BackendEquation.addEquations(BackendEquation.equationList(syst1.orderedEqs), syst2.orderedEqs);
+  removedEqs := BackendEquation.addEquations(BackendEquation.equationList(syst1.removedEqs), syst2.removedEqs);
+  stateSets := listAppend(syst1.stateSets, syst2.stateSets);
   syst := BackendDAEUtil.createEqSystem(vars, eqs, stateSets, BackendDAE.UNKNOWN_PARTITION(), removedEqs);
 end mergeIndependentBlocks;
 

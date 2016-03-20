@@ -137,23 +137,31 @@ protected
   list<BackendDAE.Var> states;
   BackendDAE.Var dummyVar;
   BackendDAE.Variables v;
+  constant Boolean debug = false;
 algorithm
   // lochel: This module fails for some models (e.g. #3543)
   try
+    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> start "); end if;
     BackendDAE.DAE(eqs = eqs) := inBackendDAE;
 
     // prepare a DAE
     DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
+    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> copy dae "); end if;
     DAE := BackendDAEOptimize.collapseIndependentBlocks(DAE);
+    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> collapse blocks "); end if;
     DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
+    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> transform backend dae "); end if;
 
     // get states for DAE
     BackendDAE.DAE(eqs = {BackendDAE.EQSYSTEM(orderedVars = v)}, shared=shared) := DAE;
     states := BackendVariable.getAllStateVarFromVariables(v);
+    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> get all vars "); end if;
 
     // generate sparse pattern
     (sparsePattern, coloredCols) := generateSparsePattern(DAE, states, states);
+    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> generateSparsePattern "); end if;
     shared := addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
+    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> addBackendDAESharedJacobianSparsePattern "); end if;
 
     outBackendDAE := BackendDAE.DAE(eqs, shared);
   else
@@ -214,9 +222,7 @@ algorithm
 
   // Prepare all needed variables
   varlst := BackendVariable.varList(v);
-  _ := List.map(varlst,BackendVariable.varCref);
   knvarlst := BackendVariable.varList(kv);
-  _ := List.map(knvarlst,BackendVariable.varCref);
   states := BackendVariable.getAllStateVarFromVariables(v);
   inputvars := List.select(knvarlst,BackendVariable.isInput);
   paramvars := List.select(knvarlst, BackendVariable.isParam);
@@ -1001,6 +1007,8 @@ protected function generateSparsePattern "author: wbraun
   input list<BackendDAE.Var> inDiffedVars "eqns";
   output BackendDAE.SparsePattern outSparsePattern;
   output BackendDAE.SparseColoring outColoredCols;
+protected
+  constant Boolean debug = false;
 algorithm
   (outSparsePattern,outColoredCols) := matchcontinue(inBackendDAE,inDiffVars,inDiffedVars)
     local
@@ -1041,6 +1049,7 @@ algorithm
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           print(" start getting sparsity pattern diff Vars : " + intString(listLength(indiffedVars))  + " diffed vars: " + intString(listLength(indiffVars)) +"\n");
         end if;
+        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> do start "); end if;
         // prepare crefs
         diffCompRefsLst = List.map(indiffVars, BackendVariable.varCref);
         diffedCompRefsLst = List.map(indiffedVars, BackendVariable.varCref);
@@ -1084,9 +1093,9 @@ algorithm
         usedvar = arrayCreate(adjSizeT, 0);
         usedvar = Array.setRange(adjSizeT-(sizeN-1), adjSizeT, usedvar, 1);
 
-        //execStat("generateSparsePattern -> start ",ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> start "); end if;
         eqnSparse = getSparsePattern(comps, eqnSparse, varSparse, mark, usedvar, 1, adjMatrix, adjMatrixT);
-        //execStat("generateSparsePattern -> end ",ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> end "); end if;
         // debug dump
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           BackendDump.dumpSparsePatternArray(eqnSparse);
@@ -1098,13 +1107,13 @@ algorithm
         sparsepattern = arrayList(sparseArray);
         sparsepattern = List.map1List(sparsepattern, intSub, adjSizeT-sizeN);
 
-        //execStat("generateSparsePattern -> postProcess ",ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> postProcess "); end if;
 
         // transpose the column-based pattern to row-based pattern
         sparseArrayT = arrayCreate(sizeN,{});
         sparseArrayT = transposeSparsePattern(sparsepattern, sparseArrayT, 1);
         sparsepatternT = arrayList(sparseArrayT);
-        //execStat("generateSparsePattern -> postProcess2 " ,ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> postProcess2 "); end if;
 
         nonZeroElements = List.lengthListElements(sparsepattern);
         if Flags.isSet(Flags.DUMP_SPARSE) then
@@ -1143,9 +1152,9 @@ algorithm
         forbiddenColor = arrayCreate(sizeN,NONE());
         colored = arrayCreate(sizeN,0);
         arraysparseGraph = listArray(sparseGraph);
-        //execStat("generateSparsePattern -> coloring start " ,ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> coloring start "); end if;
         colored1 = Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
-        //execStat("generateSparsePattern -> coloring end " ,ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> coloring end "); end if;
         // get max color used
         maxColor = Array.fold(colored1, intMax, 0);
 
@@ -1164,6 +1173,7 @@ algorithm
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           print("analytical Jacobians[SPARSE] -> ready! " + realString(clock()) + "\n");
         end if;
+        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> final end "); end if;
       then ((sparsetupleT, sparsetuple, (diffCompRefsLst, diffedCompRefsLst), nonZeroElements), coloring);
     else
       algorithm
