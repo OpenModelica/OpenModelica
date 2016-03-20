@@ -65,7 +65,7 @@
     
     <!-- Graph Idx: 1 -->
     <graph edgedefault="directed" id="TaskGraph">
-        <data key="cust16"><![CDATA[ ;; critical path with costs of 858.0 cycles -- 1,2,3,4critical path' with costs of 636.0 cycles -- 1,2,3,4 sum: (636.0 ; 15)]]></data>
+        <data key="cust16"><![CDATA[ ;; critical path with costs of 868.0 cycles -- 1,2,3,4critical path' with costs of 646.0 cycles -- 1,2,3,4 sum: (646.0 ; 13)]]></data>
         <node id="Node4">
             <data key="cust1"><![CDATA[{5:2}]]></data>
             <data key="cust3">67</data>

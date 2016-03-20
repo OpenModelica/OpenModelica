@@ -22,7 +22,7 @@ getErrorString();
 // ========================================
 // SingleEquation: 4
 // 1: a:VARIABLE() .PartEvalFunc.functionTest5, .Real type: Real
-// 1/1 (1): a = time    [dynamic]
+// 1/1 (1): a = time   [dynamic]
 //
 // ComplexEquation:
 // 1: r2.z:VARIABLE() .PartEvalFunc.functionTest5, .PartEvalFunc.record2, .Real type: Real
@@ -31,11 +31,11 @@ getErrorString();
 //
 // SingleEquation: 2
 // 1: c:VARIABLE() .PartEvalFunc.functionTest5, .Real type: Real
-// 1/1 (1): c = r2.y + a    [dynamic]
+// 1/1 (1): c = r2.y + a   [dynamic]
 //
 // SingleEquation: 1
 // 1: d:STATE(1,c)(start = 0.0 fixed = true ) .PartEvalFunc.functionTest5, .Real type: Real
-// 1/1 (1): c = der(d)    [dynamic]
+// 1/1 (1): der(d) = c   [dynamic]
 //
 //
 // record SimulationResult

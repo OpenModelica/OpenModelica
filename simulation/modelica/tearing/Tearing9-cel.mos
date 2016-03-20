@@ -67,15 +67,20 @@ val(x5,0.0); getErrorString();
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for simulation (3):
-//  * Single equations (assignments): 2
+//  * Single equations (assignments): 1
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (linear and non-linear blocks): 1
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Equation system details:
+//  * Constant Jacobian: 0
+//  * Linear Jacobian (size,density): 0
+//  * Non-linear Jacobian: 1 {1}
+//  * Without analytic Jacobian: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 0
 //  * Non-linear torn systems: 1 {1 1}

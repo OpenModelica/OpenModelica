@@ -34,7 +34,7 @@ getErrorString();
 //
 // SingleEquation: 4
 // 1: d:STATE(1,c)(start = 0.0 fixed = true ) .PartEvalFunc.functionTest7, .Real type: Real
-// 1/1 (1): c = der(d)   [dynamic]
+// 1/1 (1): der(d) = c   [dynamic]
 //
 //
 // record SimulationResult
