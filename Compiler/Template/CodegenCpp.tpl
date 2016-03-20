@@ -5188,13 +5188,6 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
 
 end extFunCallVarcopyTuple;
 
-template expTypeModelica(DAE.Type ty)
- "Generate type helper."
-::=
-  expTypeFlag(ty, 2)
-end expTypeModelica;
-
-
 template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssign, Text &outputAssign, SimCode simCode, Text& extraFuncs,
                 Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Helper to extFunCall."
@@ -5755,7 +5748,7 @@ template varType(Variable var)
 match var
 case var as VARIABLE(__) then
   if instDims then
-    expTypeArray(var.ty)
+    expTypeShort(var.ty)
   else
     expTypeArrayIf(var.ty)
 end varType;
@@ -5766,7 +5759,7 @@ template varType1(Variable var,SimCode simCode ,Text& extraFuncs,Text& extraFunc
 match var
 case var as VARIABLE(__) then
      /* previous multi_array
-   if instDims then 'multi_array<<%expTypeShort(var.ty)%>,<%listLength(instDims)%>> ' else expTypeFlag(var.ty, 6)
+   if instDims then 'multi_array<<%expTypeShort(var.ty)%>,<%listLength(instDims)%>> ' else expTypeArrayIf(var.ty)
       */
 
      /*Always use BaseArray as function array argument types */
@@ -5812,7 +5805,7 @@ template varType3(Variable var,SimCode simCode ,Text& extraFuncs,Text& extraFunc
 match var
 case var as VARIABLE(__) then
      /* previous multi_array
-   if instDims then 'multi_array<<%expTypeShort(var.ty)%>,<%listLength(instDims)%>> ' else expTypeFlag(var.ty, 6)
+   if instDims then 'multi_array<<%expTypeShort(var.ty)%>,<%listLength(instDims)%>> ' else expTypeArrayIf(var.ty)
       */
      let &varDecls = buffer "" /*should be empty herer*/
      let &varInits = buffer "" /*should be empty herer*/
@@ -5821,9 +5814,9 @@ case var as VARIABLE(__) then
      match testinstDimsInit
      case "" then
       let instDimsInit = (instDims |> exp => daeDimensionExp(exp);separator=",")
-     if instDims then 'StatArrayDim<%listLength(instDims)%>< <%expTypeShort(var.ty)%>, <%instDimsInit%>> /*testarray2*/' else expTypeFlag(var.ty, 6)
+     if instDims then 'StatArrayDim<%listLength(instDims)%>< <%expTypeShort(var.ty)%>, <%instDimsInit%>> /*testarray2*/' else expTypeArrayIf(var.ty)
      else
-     if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>> ' else expTypeFlag(var.ty, 6)
+     if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>> ' else expTypeArrayIf(var.ty)
 
      end match
 end varType3;
@@ -11835,7 +11828,7 @@ template daeExpRange(Exp exp, Context context, Text &preExp, Text &varDecls, Sim
 ::=
   match exp
   case RANGE(__) then
-    let ty_str = expTypeArray(ty)
+    let ty_str = expTypeShort(ty)
     let start_exp = daeExp(start, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let stop_exp = daeExp(stop, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     //previous multi_array     let tmp = tempDecl('multi_array<<%ty_str%>,1>', &varDecls /*BUFD*/)
@@ -13668,7 +13661,7 @@ template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr,
   Context context)
 
 ::=
-  let type = expTypeArray(ty)
+  let type = expTypeShort(ty)
   let cref = contextArrayCref(cr, context)
   '<%cref%>.assign(<%exp%>);'
 end copyArrayData;
@@ -13799,7 +13792,7 @@ template algStmtForGeneric(DAE.Statement stmt, Context context, Text &varDecls /
 match stmt
 case STMT_FOR(__) then
   let iterType = expType(type_, iterIsArray)
-  let arrayType = expTypeArray(type_)
+  let arrayType = expTypeShort(type_)
 
 
   let stmtStr = (statementLst |> stmt =>
@@ -13867,7 +13860,7 @@ template algStmtForRange_impl(Exp range, Ident iterator, String type, String sho
 ::=
 match range
 case RANGE(__) then
-  let type = expTypeArray(ty)
+  let type = expTypeShort(ty)
   let iterVar = tempDecl('int', &varDecls)
   let iterName = contextIteratorName(iterator, context)
   let startVar = tempDecl(type, &varDecls)
@@ -13927,7 +13920,7 @@ template algStmtAssignArrCref(DAE.Exp exp, Context context,
 ::=
 match exp
   case CREF(componentRef=cr, ty = T_ARRAY(ty=basety, dims=dims)) then
-    let typeStr = expTypeArray(ty)
+    let typeStr = expTypeShort(ty)
     let slice = if crefSubs(cr) then daeExpCrefIndexSpec(crefSubs(cr), context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     if slice then
       'ArraySlice<<%typeStr%>>(<%contextArrayCref(cr, context)%>, <%slice%>)'
