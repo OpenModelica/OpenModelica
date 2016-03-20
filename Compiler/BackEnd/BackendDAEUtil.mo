@@ -7165,6 +7165,7 @@ protected function allPostOptimizationModules
     (BackendDAEOptimize.addedScaledVars_inputs, "addScaledVars_inputs"),
     (RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations"),
     (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction"),
+    (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations"),
     (BackendDAEOptimize.symEuler, "symEuler"),
     (ResolveLoops.reshuffling_post, "reshufflePost"),
     (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization"), // before tearing
@@ -7182,7 +7183,6 @@ protected function allPostOptimizationModules
     (SymbolicJacobian.generateSymbolicJacobianPast, "generateSymbolicJacobian"),
     (SymbolicJacobian.generateSymbolicLinearizationPast, "generateSymbolicLinearization"),
     (BackendDAEOptimize.removeConstants, "removeConstants"),
-    (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations"),
     (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls"),
     (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions"),
     (BackendDAEOptimize.hets, "hets"),

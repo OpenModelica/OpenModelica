@@ -1065,7 +1065,6 @@ end preprocessingSolve5;
 protected function unifyFunCalls
 "
 e.g.
- smooth() -> if
  semiLinear() -> if
  author: Vitalij Ruge
 "
@@ -1089,7 +1088,7 @@ protected function unifyFunCallsWork
    local
      DAE.Exp e, e1,e2,e3, X;
      DAE.Type tp;
-
+/*
    case(DAE.CALL(path = Absyn.IDENT(name = "smooth"), expLst = {_, e}),X)
      guard expHasCref(e, X)
      then (e, true, iT);
@@ -1097,7 +1096,7 @@ protected function unifyFunCallsWork
    case(DAE.CALL(path = Absyn.IDENT(name = "noEvent"), expLst = {e}),X)
      guard expHasCref(e, X)
      then (e, true, iT);
-
+*/
    case(DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {e1, e2, e3}),_)
      guard not Expression.isZero(e1)
        equation
@@ -1247,11 +1246,11 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {DAE.RCONST(real = 0.0), e1, e2}),DAE.RCONST(real = 0.0),_)
        then (e1,e2,true);
     // smooth(i,f(a)) = rhs -> f(a) = rhs
-    case (DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {_, e2}),_,_)
-       then (e2, inExp2, true);
+    //case (DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {_, e2}),_,_)
+    //   then (e2, inExp2, true);
     // noEvent(f(a)) = rhs -> f(a) = rhs
-    case (DAE.CALL(path = Absyn.IDENT(name = "noEvent"),expLst = {e2}),_,_)
-       then (e2, inExp2, true);
+    //case (DAE.CALL(path = Absyn.IDENT(name = "noEvent"),expLst = {e2}),_,_)
+    //   then (e2, inExp2, true);
 
     else (inExp1, inExp2, false);
   end matchcontinue;
