@@ -4149,18 +4149,12 @@ end functionlinearmodel;
 template getVarName(list<SimVar> simVars, String arrayName, Integer arraySize) "template getVarName
   Generates name for a varables."
 ::=
-  match simVars
-  case {} then
-    <<
-    >>
-  case (var :: restVars) then
-    let rest = getVarName(restVars, arrayName, arraySize)
-    let arrindex = decrementInt(arraySize,listLength(restVars))
-    match var
+  simVars |> var hasindex arrindex fromindex 1 =>
+    (match var
     case SIMVAR(__) then
-      <<Real <%arrayName%>_<%crefM(name)%> = <%arrayName%>[<%arrindex%>];\n  <%rest%>>>
-    end match
-  end match
+      '  Real <%arrayName%>_<%crefM(name)%> = <%arrayName%>[<%arrindex%>];\n'
+    end match)
+  ; empty
 end getVarName;
 
 template genMatrix(String name, Integer row, Integer col) "template genMatrix
