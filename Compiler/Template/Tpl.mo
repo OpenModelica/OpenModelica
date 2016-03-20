@@ -757,39 +757,13 @@ end textStringBuf;
 
 public function tokensString
   input Tokens inTokens;
-  input Integer inActualPositionOnLine;
-  input Boolean inAtStartOfLine;
-  input Integer inAfterNewLineIndent;
-
-  output Integer outActualPositionOnLine;
-  output Boolean outAtStartOfLine;
+  input output Integer actualPositionOnLine;
+  input output Boolean atStartOfLine;
+  input output Integer afterNewLineIndent;
 algorithm
-  (outActualPositionOnLine, outAtStartOfLine)
-   := match (inTokens, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
-    local
-      Tokens toks;
-      StringToken tok;
-      Integer pos, aind;
-      Boolean isstart;
-
-    case ({}, pos, isstart, _)
-      then
-        (pos, isstart);
-
-    case (tok :: toks, pos, isstart, aind)
-      equation
-        (pos, isstart, aind) = tokString(tok, pos, isstart, aind);
-        (pos, isstart) = tokensString(toks, pos, isstart, aind);
-      then
-        (pos, isstart);
-
-    //should not ever happen
-    case (_,_,_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tokensString failed.\n");
-      then
-        fail();
-  end match;
+  for tok in inTokens loop
+    (actualPositionOnLine, atStartOfLine, afterNewLineIndent) := tokString(tok, actualPositionOnLine, atStartOfLine, afterNewLineIndent);
+  end for;
 end tokensString;
 
 
@@ -989,7 +963,7 @@ public function blockString
   output Integer outAfterNewLineIndent;
 algorithm
   (outActualPositionOnLine, outAtStartOfLine, outAfterNewLineIndent)
-   := matchcontinue (inBlockType, inTokens, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
+   := match (inBlockType, inTokens, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
       Tokens toks;
       StringToken septok, tok, asep, wsep;
@@ -998,7 +972,7 @@ algorithm
 
     case (BT_TEXT(), toks, nchars, isstart, aind)
       equation
-        (nchars, isstart)
+        (nchars, isstart, aind)
           = tokensString(toks, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
@@ -1086,7 +1060,7 @@ algorithm
                               alignNum = 0,
                               wrapWidth = 0)), toks, nchars, isstart, aind)
       equation
-        (nchars, isstart)
+        (nchars, isstart, aind)
           = tokensString(toks, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
@@ -1142,7 +1116,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tokString failed.\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end blockString;
 
 
