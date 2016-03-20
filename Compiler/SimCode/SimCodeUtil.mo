@@ -226,6 +226,7 @@ protected
   list<list<SimCode.SimEqSystem>> odeEquations;         // --> functionODE
   list<tuple<Integer, Integer>> equationSccMapping, eqBackendSimCodeMapping;
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+  constant Boolean debug = false;
 algorithm
   try
     execStat("Backend phase and start with SimCode phase");
@@ -275,28 +276,39 @@ algorithm
     (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars,
       equationSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) :=
           createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping);
+    if debug then execStat("simCode: createEquationsForSystems"); end if;
     (clockedPartitions, uniqueEqIndex, backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars) :=
           translateClockedEquations(clockedSysts, dlow.shared, sccOffset, uniqueEqIndex,
                                     backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars);
+    if debug then execStat("simCode: translateClockedEquations"); end if;
     outMapping := (uniqueEqIndex /* highestSimEqIndex */, equationSccMapping);
     execStat("simCode: created simulation system equations");
 
     //(remEqLst, paramAsserts) := List.fold1(BackendEquation.equationList(removedEqs), getParamAsserts, knownVars,({},{}));
     //((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(remEqLst), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     ((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
+    if debug then execStat("simCode: traversedlowEqToSimEqSystem"); end if;
     // Assertions and crap
     // create parameter equations
     ((uniqueEqIndex, startValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}));
+    if debug then execStat("simCode: createStartValueEquations"); end if;
     ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createNominalValueEquations, (uniqueEqIndex, {}));
+    if debug then execStat("simCode: createNominalValueEquations"); end if;
     ((uniqueEqIndex, minValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, {}));
+    if debug then execStat("simCode: createMinValueEquations"); end if;
     ((uniqueEqIndex, maxValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, {}));
+    if debug then execStat("simCode: createMaxValueEquations"); end if;
     ((uniqueEqIndex, parameterEquations)) := BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
+    if debug then execStat("simCode: createVarNominalAssertFromVars"); end if;
     (uniqueEqIndex, parameterEquations) := createParameterEquations(uniqueEqIndex, parameterEquations, inPrimaryParameters, inAllPrimaryParameters);
+    if debug then execStat("simCode: createParameterEquations"); end if;
     //((uniqueEqIndex, paramAssertSimEqs)) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(paramAsserts), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     //parameterEquations := listAppend(parameterEquations, paramAssertSimEqs);
 
     ((uniqueEqIndex, algorithmAndEquationAsserts)) := BackendDAEUtil.foldEqSystem(dlow, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
+    if debug then execStat("simCode: createAlgorithmAndEquationAsserts"); end if;
     discreteModelVars := BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});
+    if debug then execStat("simCode: extractDiscreteModelVars"); end if;
     makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, isFMU);
     (delayedExps, maxDelayedExpIndex) := extractDelayedExpressions(dlow);
     execStat("simCode: created of all other equations (e.g. parameter, nominal, assert, etc)");
@@ -309,9 +321,11 @@ algorithm
 
     // state set stuff
     (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) := createStateSets(dlow, {}, uniqueEqIndex, tempvars);
+    if debug then execStat("simCode: createStateSets"); end if;
 
     // create model info
     modelInfo := createModelInfo(inClassName, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts));
+    if debug then execStat("simCode: createModelInfo"); end if;
     modelInfo := addTempVars(tempvars, modelInfo);
     execStat("simCode: created modelInfo and variables");
 
@@ -5749,11 +5763,13 @@ protected
   list<SimCodeVar.SimVar> states1, states_lst, states_lst2, der_states_lst;
   list<SimCodeVar.SimVar> states_2, derivatives_2;
   Boolean hasLargeEqSystems;
+  constant Boolean debug = false;
 algorithm
   try
     // name = Absyn.pathStringNoQual(class_);
     directory := System.trim(fileDir, "\"");
     vars := createVars(dlow, inInitDAE);
+    if debug then execStat("simCode: createVars"); end if;
     BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) := dlow;
     nx := listLength(vars.stateVars);
     ny := listLength(vars.algVars);
@@ -5774,11 +5790,15 @@ algorithm
     next := listLength(vars.extObjVars);
     numOptimizeConstraints := listLength(vars.realOptimizeConstraintsVars);
     numOptimizeFinalConstraints := listLength(vars.realOptimizeFinalConstraintsVars);
+    if debug then execStat("simCode: get lengths"); end if;
     varInfo := createVarInfo(dlow, nx, ny, ndy, np, na, next, numOutVars, numInVars,
                              ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,
                              numStateSets, numOptimizeConstraints, numOptimizeFinalConstraints);
+    if debug then execStat("simCode: createVarInfo"); end if;
     maxDer := getHighestDerivation(dlow);
+    if debug then execStat("simCode: getHighestDerivation"); end if;
     hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
+    if debug then execStat("simCode: hasLargeEquationSystems"); end if;
     modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, directory, varInfo, vars, functions,
                                    labels, maxDer, arrayLength(dlow.shared.partitionsInfo.basePartitions),
                                    arrayLength(dlow.shared.partitionsInfo.subPartitions), hasLargeEqSystems);
@@ -11898,50 +11918,66 @@ author: waurich TUD 2015-05"
 protected
   list<BackendDAE.Var> vars, states;
   list<Integer> idcs;
-  array<Boolean> markVars;
+  array<Integer> ders, depth;
+  BackendDAE.Variables allStates;
+  BackendDAE.Var var;
+  Integer index, pos, length, curIndex;
+  DAE.ComponentRef derCref;
 algorithm
   vars := BackendDAEUtil.getAllVarLst(inDAE);
   states := List.filterOnTrue(vars, BackendVariable.isStateVar);
-  if listEmpty(states) then
+  length := listLength(states);
+  if length==0 then
     highestDerivation := 0;
-  else
-    markVars := arrayCreate(listLength(states),false);
-    idcs := List.map3(states,getHighestDerivation1,BackendVariable.listVar1(states),markVars,0);
-    highestDerivation := List.fold(idcs,intMax,0);
+    return;
   end if;
+  ders := arrayCreate(length,-1 /* Has no derivative */);
+  depth := arrayCreate(length,-1 /* Not visited */);
+  allStates := BackendVariable.listVar1(states);
+  // Setup data structures for a dynamic programming algorithm
+  curIndex := 1;
+  for state in states loop
+    // (_, {curIndex}) := BackendVariable.getVar(state.varName, allStates); // They are all already in order
+    _ := matchcontinue state
+      case BackendDAE.VAR(varKind=BackendDAE.STATE(index=index /* TODO: Do we need the number of times it was differentiated? */, derName = SOME(derCref)))
+        algorithm
+          ({var},{pos}) := BackendVariable.getVar(derCref, allStates);
+          if not BackendVariable.varEqual(state, var) then
+            arrayUpdate(ders, curIndex, pos);
+          else
+            arrayUpdate(depth, curIndex, 0);
+          end if;
+        then ();
+      case BackendDAE.VAR()
+        algorithm
+          arrayUpdate(depth, curIndex, 0);
+        then ();
+    end matchcontinue;
+    curIndex := curIndex+1;
+  end for;
+  // Visit all states, calculating the depth of each one, remembering the result
+  for i in 1:length loop
+    getHighestDerivationVisit(i, ders, depth);
+  end for;
+  highestDerivation := max(i for i in depth);
 end getHighestDerivation;
 
-protected function getHighestDerivation1"checks if a state is the derivative of another state and so on.
-author: waurich TUD 2015-05"
-  input BackendDAE.Var stateIn;
-  input BackendDAE.Variables allStates;
-  input array<Boolean> markVarsIn;
-  input Integer derivationIn;
-  output Integer derivationOut;
+protected function getHighestDerivationVisit "Uses stack depth of at most max depth"
+  input Integer i;
+  input array<Integer> ders;
+  input array<Integer> depth;
+  output Integer d=arrayGet(depth, i);
 algorithm
-  derivationOut := matchcontinue(stateIn,allStates,markVarsIn,derivationIn)
-    local
-      Integer index, pos;
-      array<Boolean> markVars;
-      BackendDAE.Var var;
-      DAE.ComponentRef derCref;
-  case(BackendDAE.VAR(varKind=BackendDAE.STATE(index=index,derName = SOME(derCref))),_,_,_)
-    algorithm
-      // try to find the derivative in the states
-      ({var},{pos}) := BackendVariable.getVar(derCref, allStates);
-      // has this var already been checked or is the derivative the var itself?
-      false := arrayGet(markVarsIn,pos);
-      false := BackendVariable.varEqual(stateIn,var);
-      markVars := arrayUpdate(markVarsIn,pos,true);
-    then getHighestDerivation1(var,allStates,markVars,derivationIn+1);
-  else
-    algorithm
-      for i in List.intRange(arrayLength(markVarsIn)) loop
-        _ := arrayUpdate(markVarsIn,i,false);
-      end for;
-    then derivationIn+1;
-  end matchcontinue;
-end getHighestDerivation1;
+  if d >= 0 then
+    return;
+  elseif d == -2 then
+    d := 0;
+    return;
+  end if;
+  arrayUpdate(depth, i, -2);
+  d := getHighestDerivationVisit(arrayGet(ders,i), ders, depth);
+  arrayUpdate(depth, i, d);
+end getHighestDerivationVisit;
 
 protected function hasLargeEquationSystems "Returns true if the model contains large linear or nonlinear equation
 systems that are crucial for performance. If the model has a large linear or nonlinear system, the use of Lapack is prefered.
