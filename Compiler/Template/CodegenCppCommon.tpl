@@ -679,7 +679,6 @@ end dimension;
 template checkDimension(Dimensions dims)
 ::=
   dimensionsList(dims) |> dim as Integer   =>  '<%dim%>';separator=","
-
 end checkDimension;
 
 template checkExpDimension(list<DAE.Exp> dims)
@@ -687,6 +686,36 @@ template checkExpDimension(list<DAE.Exp> dims)
   expDimensionsList(dims) |> dim as Integer   =>  '<%dim%>';separator=","
 end checkExpDimension;
 
+template listDimsFlat(Dimensions dims, Type elty)
+ "return list of dimensions of form 'd1, d2, ..., dn', flattening subarrays"
+::=
+  let dimstr = checkDimension(dims)
+  match dimstr
+  case "" then
+    ''
+  else
+    match elty
+    case T_ARRAY(dims=subdims, ty=subty) then
+      let subdimstr = listDimsFlat(subdims, subty)
+      match subdimstr
+      case "" then
+        ''
+      else
+        '<%dimstr%>, <%subdimstr%>'
+      end match
+    else
+      dimstr
+end listDimsFlat;
+
+template nDimsFlat(Dimensions dims, Type elty, Integer offset)
+ "return number of dimensions, flattening subarrays"
+::=
+  match elty
+  case T_ARRAY(dims=subdims, ty=subty) then
+    nDimsFlat(subdims, subty, intAdd(listLength(dims), offset))
+  else
+    intAdd(listLength(dims), offset)
+end nDimsFlat;
 
 template expTypeShort(DAE.Type type)
  "Returns the base type name for declarations"
@@ -748,25 +777,19 @@ template expTypeFlag(DAE.Type ty, Integer flag)
   else expTypeFlag(ty, 2)
     end match
 
-
-
-
   case 6 then
+    // we want the "array type", static if dims are known, dynamic otherwise
     match ty
-
-    //case T_ARRAY(dims=dims) then 'StatArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>,<%(dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")%>>' //'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
-    //let dimstr = dims |> dim => match dim   case DIM_INTEGER(__) then '<%integer%>'  else 'error index';separator=','
-
-  case T_ARRAY(dims=dims,ty=type) then
-   //let testbasearray = dims |> dim =>  '<%testdimension(dim)%>' ;separator=''
-   //let dimstr = dims |> dim =>  '<%dimension(dim)%>' ;separator=','
-   let dimstr = checkDimension(dims)
-   match dimstr
-   case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(type)%>>'
-   //case
-   else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>>/*testarray4*/'
-    end match
-   else expTypeFlag(ty, 2)
+    case T_ARRAY(dims=dims, ty=elty) then
+      let dimstr = listDimsFlat(dims, elty)
+      match dimstr
+      case "" then
+        'DynArrayDim<%nDimsFlat(dims, elty, 0)%><<%expTypeShort(elty)%>>/*expTypeFlag6*/'
+      else
+        'StatArrayDim<%nDimsFlat(dims, elty, 0)%><<%expTypeShort(elty)%>, <%dimstr%>>/*expTypeFlag6*/'
+      end match
+    else
+      expTypeFlag(ty, 2)
     end match
 
   case 7 then
