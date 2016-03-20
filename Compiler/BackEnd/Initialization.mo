@@ -63,6 +63,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import Matching;
+protected import MetaModelica.Dangerous;
 protected import Sorting;
 protected import SimCodeFunctionUtil;
 
@@ -1120,11 +1121,12 @@ algorithm
     if BackendDAEUtil.nonEmptySystem(syst) then
       eqs := syst::eqs;
     else
-      outRemovedEqns := listAppend(outRemovedEqns, BackendEquation.equationList(syst.orderedEqs));
-      outRemovedEqns := listAppend(outRemovedEqns, BackendEquation.equationList(syst.removedEqs));
+      outRemovedEqns := List.append_reverse(BackendEquation.equationList(syst.orderedEqs), outRemovedEqns);
+      outRemovedEqns := List.append_reverse(BackendEquation.equationList(syst.removedEqs), outRemovedEqns);
     end if;
   end for;
   dae := BackendDAE.DAE(eqs, inInitDAE.shared);
+  outRemovedEqns := Dangerous.listReverseInPlace(outRemovedEqns);
 
   //SimCodeFunctionUtil.execStat("reset analyzeInitialSystem (initialization)");
   (outDAE, (_, outDumpVars, outRemovedEqns)) := BackendDAEUtil.mapEqSystemAndFold(dae, fixInitialSystem, (inInitVars, {}, outRemovedEqns));
