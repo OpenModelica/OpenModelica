@@ -16,7 +16,14 @@ server = ServerProxy("https://trac.openmodelica.org/OpenModelica/rpc")
 releases = [i for i in server.wiki.getAllPages() if i.startswith("ReleaseNotes/")]
 releases = natsort.natsorted(releases)
 releases.reverse()
-result = ""
+result = """
+Major OpenModelica Releases
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This Appendix lists the most important OpenModelica releases and a brief
+description of their contents. Right now versions from %s to %s are described.
+
+""" % (releases[-1].split("/")[-1],releases[0].split("/")[-1])
 for rel in releases:
   content = server.wiki.getPage(rel)
   content = re.sub(r'\[milestone:([0-9.]*)\]', r'\1', content)
@@ -31,5 +38,5 @@ for rel in releases:
   contentrst = open("tmp.rst", "r").read()
   # Removes {{{#!div lines; easier on the rst since it's a 1-line pattern
   contentrst = re.sub(r'`PageOutline\(2-3\) <PageOutline\(2-3\)>`__\n', '', contentrst)
-  result += contentrst
+  result += contentrst + "\n"
 open("tracreleases.inc", "w").write(result)

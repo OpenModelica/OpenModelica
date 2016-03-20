@@ -243,7 +243,7 @@ OMEDIT_ICONS=$(OMEDIT_ICONS_SVG) $(OMEDIT_ICONS_PNG) $(OMEDIT_ICONS_PDF)
 OMOPTIM_ICONS_BASE=Add.png
 OMOPTIM_ICONS=$(OMOPTIM_ICONS_BASE:%=source/media/omoptim-icons/%)
 
-all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.pdf source/media/mdt-build-prompt.pdf source/simoptions.inc source/omchelptext.rst source/tracreleases.inc
+all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.pdf source/media/mdt-build-prompt.pdf source/simoptions.inc source/omchelptext.rst source/tracreleases.rst
 
 source/media/omedit-icons/%.svg: $(OPENMODELICA_ROOT)/OMEdit/OMEdit/OMEditGUI/Resources/icons/%.svg
 	@mkdir -p source/media/omedit-icons
@@ -269,5 +269,5 @@ source/simoptions.inc:
 source/omchelptext.rst:
 	$(OPENMODELICA_ROOT)/build/bin/omc +help=omcall-sphinxoutput > "$@.tmp"
 	mv "$@.tmp" "$@"
-source/tracreleases.inc: source/tracreleases.py
+source/tracreleases.rst: source/tracreleases.py
 	cd source && python ./tracreleases.py
