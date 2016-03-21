@@ -723,8 +723,7 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
               pParameter->setShowStartAttribute(true);
               pParameter->setValueWidget(start, true, pParameter->getUnit());
             }
-          }
-          else if (extendsModifiersIterator.key().compare(parameterName + ".fixed") == 0) {
+          } else if (extendsModifiersIterator.key().compare(parameterName + ".fixed") == 0) {
             QString fixed = extendsModifiersIterator.value();
             if (!fixed.isEmpty()) {
               if (pParameter->getGroupBox().isEmpty()) {
@@ -857,24 +856,25 @@ void ComponentParameters::fetchComponentModifiers()
     QString parameterName = StringHandler::getFirstWordBeforeDot(modifiersIterator.key());
     Parameter *pParameter = findParameter(parameterName);
     if (pParameter) {
-      if (modifiersIterator.key().compare(parameterName + ".start") == 0) {
-        QString start = modifiersIterator.value();
-        if (!start.isEmpty()) {
-          if (pParameter->getGroupBox().isEmpty()) {
-            pParameter->setGroupBox("Initialization");
+      if (pParameter->isShowStartAttribute()) {
+        if (modifiersIterator.key().compare(parameterName + ".start") == 0) {
+          QString start = modifiersIterator.value();
+          if (!start.isEmpty()) {
+            if (pParameter->getGroupBox().isEmpty()) {
+              pParameter->setGroupBox("Initialization");
+            }
+            pParameter->setShowStartAttribute(true);
+            pParameter->setValueWidget(start, mpComponent->getReferenceComponent() ? true : false, pParameter->getUnit());
           }
-          pParameter->setShowStartAttribute(true);
-          pParameter->setValueWidget(start, mpComponent->getReferenceComponent() ? true : false, pParameter->getUnit());
-        }
-      }
-      else if (modifiersIterator.key().compare(parameterName + ".fixed") == 0) {
-        QString fixed = modifiersIterator.value();
-        if (!fixed.isEmpty()) {
-          if (pParameter->getGroupBox().isEmpty()) {
-            pParameter->setGroupBox("Initialization");
+        } else if (modifiersIterator.key().compare(parameterName + ".fixed") == 0) {
+          QString fixed = modifiersIterator.value();
+          if (!fixed.isEmpty()) {
+            if (pParameter->getGroupBox().isEmpty()) {
+              pParameter->setGroupBox("Initialization");
+            }
+            pParameter->setShowStartAttribute(true);
+            pParameter->setFixedState(fixed, mpComponent->getReferenceComponent() ? true : false);
           }
-          pParameter->setShowStartAttribute(true);
-          pParameter->setFixedState(fixed, mpComponent->getReferenceComponent() ? true : false);
         }
       } else {
         pParameter->setValueWidget(modifiersIterator.value(), mpComponent->getReferenceComponent() ? true : false, pParameter->getUnit());
@@ -898,24 +898,25 @@ void ComponentParameters::fetchExtendsModifiers()
         parameterName = StringHandler::getFirstWordBeforeDot(parameterName);
         Parameter *pParameter = findParameter(parameterName);
         if (pParameter) {
-          if (extendsModifiersIterator.key().compare(parameterName + ".start") == 0) {
-            QString start = extendsModifiersIterator.value();
-            if (!start.isEmpty()) {
-              if (pParameter->getGroupBox().isEmpty()) {
-                pParameter->setGroupBox("Initialization");
+          if (pParameter->isShowStartAttribute()) {
+            if (extendsModifiersIterator.key().compare(parameterName + ".start") == 0) {
+              QString start = extendsModifiersIterator.value();
+              if (!start.isEmpty()) {
+                if (pParameter->getGroupBox().isEmpty()) {
+                  pParameter->setGroupBox("Initialization");
+                }
+                pParameter->setShowStartAttribute(true);
+                pParameter->setValueWidget(start, false, pParameter->getUnit());
               }
-              pParameter->setShowStartAttribute(true);
-              pParameter->setValueWidget(start, false, pParameter->getUnit());
-            }
-          }
-          else if (extendsModifiersIterator.key().compare(parameterName + ".fixed") == 0) {
-            QString fixed = extendsModifiersIterator.value();
-            if (!fixed.isEmpty()) {
-              if (pParameter->getGroupBox().isEmpty()) {
-                pParameter->setGroupBox("Initialization");
+            } else if (extendsModifiersIterator.key().compare(parameterName + ".fixed") == 0) {
+              QString fixed = extendsModifiersIterator.value();
+              if (!fixed.isEmpty()) {
+                if (pParameter->getGroupBox().isEmpty()) {
+                  pParameter->setGroupBox("Initialization");
+                }
+                pParameter->setShowStartAttribute(true);
+                pParameter->setFixedState(fixed, false);
               }
-              pParameter->setShowStartAttribute(true);
-              pParameter->setFixedState(fixed, false);
             }
           } else {
             pParameter->setValueWidget(extendsModifiersIterator.value(), false, pParameter->getUnit());

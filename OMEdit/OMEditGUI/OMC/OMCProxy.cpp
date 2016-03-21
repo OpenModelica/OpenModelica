@@ -992,7 +992,7 @@ QStringList OMCProxy::getComponentModifierNames(QString className, QString name)
 QString OMCProxy::getComponentModifierValue(QString className, QString name)
 {
   sendCommand("getComponentModifierValue(" + className + "," + name + ")");
-  return StringHandler::getModifierValue(getResult()).trimmed();
+  return getResult().trimmed();
 }
 
 /*!
