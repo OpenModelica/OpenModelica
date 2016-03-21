@@ -5355,39 +5355,29 @@ protected function getExtendsModifierValue
                Absyn.ComponentRef, /* subident */
                Absyn.Program)
    outputs:  string"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input Absyn.Program inProgram4;
-  output String outString;
+  input Absyn.ComponentRef classRef;
+  input Absyn.ComponentRef extendsRef;
+  input Absyn.ComponentRef varRef;
+  input Absyn.Program program;
+  output String valueStr;
+protected
+  Absyn.Path cls_path, name;
+  Absyn.Class cls;
+  list<Absyn.ElementArg> args;
+  FCore.Graph env;
+  list<Absyn.ElementSpec> exts;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef1,inComponentRef2,inComponentRef3,inProgram4)
-    local
-      Absyn.Path p_class,name,extpath;
-      Absyn.Class cdef;
-      FCore.Graph env;
-      list<Absyn.ElementSpec> exts,exts_1;
-      list<Absyn.ElementArg> extmod;
-      Absyn.Modification mod;
-      String res;
-      Absyn.ComponentRef class_,inherit_name,subident;
-      Absyn.Program p;
-    case (class_,inherit_name,subident,p)
-      equation
-        p_class = Absyn.crefToPath(class_);
-        name = Absyn.crefToPath(inherit_name);
-        cdef = getPathedClassInProgram(p_class, p);
-        env = getClassEnv(p, p_class);
-        exts = getExtendsElementspecInClass(cdef);
-        exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
-        {Absyn.EXTENDS(_,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
-        mod = getModificationValue(extmod, Absyn.crefToPath(subident));
-        res = Dump.unparseModificationStr(mod);
-      then
-        res;
-    else "Error";
-  end matchcontinue;
+  try
+    cls_path := Absyn.crefToPath(classRef);
+    name := Absyn.crefToPath(extendsRef);
+    cls := getPathedClassInProgram(cls_path, program);
+    env := getClassEnv(program, cls_path);
+    exts := list(makeExtendsFullyQualified(e, env) for e in getExtendsElementspecInClass(cls));
+    {Absyn.EXTENDS(elementArg = args)} := List.select1(exts, extendsElementspecNamed, name);
+    valueStr := Dump.printExpStr(getModificationValue(args, Absyn.crefToPath(varRef)));
+  else
+    valueStr := "";
+  end try;
 end getExtendsModifierValue;
 
 protected function isExtendsModifierFinal
@@ -6154,7 +6144,6 @@ protected
   String name;
   Absyn.Class cls;
   list<Absyn.ElementArg> args;
-  Absyn.Exp exp;
 algorithm
   try
     cls_path := Absyn.crefToPath(classRef);
@@ -6162,46 +6151,45 @@ algorithm
     cls := getPathedClassInProgram(cls_path, program);
     Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification =
       SOME(Absyn.CLASSMOD(elementArgLst = args)))) := getComponentInClass(cls, name);
-    Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = exp)) :=
-      getModificationValue(args, Absyn.crefToPath(subModRef));
-    valueStr := Dump.printExpStr(exp);
+    valueStr := Dump.printExpStr(getModificationValue(args, Absyn.crefToPath(subModRef)));
   else
     valueStr := "";
   end try;
 end getComponentModifierValue;
 
 public function getModificationValue
-" Helper function to getComponentModifierValue
-   Investigates modifications to find submodifier."
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
-  input Absyn.Path inPath;
-  output Absyn.Modification outModification;
+  "Looks up a modifier in a list of element args and returns its binding
+   expression, or fails if no modifier is found."
+  input list<Absyn.ElementArg> args;
+  input Absyn.Path path;
+  output Absyn.Exp value;
+protected
+  String name;
+  list<Absyn.ElementArg> rest_args = args;
+  Absyn.ElementArg arg;
+  Boolean found = false;
 algorithm
-  outModification:=
-  match (inAbsynElementArgLst,inPath)
-    local
-      Boolean f;
-      Absyn.Each each_;
-      Absyn.Path p1,p2;
-      Absyn.Modification mod,res;
-      Option<String> cmt;
-      list<Absyn.ElementArg> rest,args;
-      String name1,name2;
-    case ((Absyn.MODIFICATION(path = p1,modification = SOME(mod)) :: _),p2) guard Absyn.pathEqual(p1, p2)
-      then
-        mod;
-    case ((Absyn.MODIFICATION(path = Absyn.IDENT(name = name1),modification = SOME(Absyn.CLASSMOD(elementArgLst=args))) :: _),Absyn.QUALIFIED(name = name2,path = p2))
-      guard stringEq(name1, name2)
-      equation
-        res = getModificationValue(args, p2);
-      then
-        res;
-    case ((_ :: rest),_)
-      equation
-        mod = getModificationValue(rest, inPath);
-      then
-        mod;
-  end match;
+  while not found loop
+    arg :: rest_args := rest_args;
+
+    found := match arg
+      case Absyn.MODIFICATION() guard Absyn.pathEqual(arg.path, path)
+        algorithm
+          SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = value))) := arg.modification;
+        then
+          true;
+
+      case Absyn.MODIFICATION(path = Absyn.IDENT(name = name))
+          guard name == Absyn.pathFirstIdent(path)
+        algorithm
+          SOME(Absyn.CLASSMOD(elementArgLst = rest_args)) := arg.modification;
+          value := getModificationValue(rest_args, Absyn.pathRest(path));
+        then
+          true;
+
+      else false;
+    end match;
+  end while;
 end getModificationValue;
 
 public function getComponentModifierNames
@@ -8062,24 +8050,19 @@ algorithm
 end getDerivedClassModifierNames;
 
 public function getDerivedClassModifierValue
-"Returns the derived class modifier value."
-  input Absyn.Class inClass;
-  input Absyn.Path inPath;
-  output String outString;
+  "Returns the derived class modifier value."
+  input Absyn.Class cls;
+  input Absyn.Path path;
+  output String value;
+protected
+  list<Absyn.ElementArg> args;
 algorithm
-  outString:= match (inClass, inPath)
-    local
-      list<Absyn.ElementArg> args;
-      String res;
-      Absyn.Modification mod;
-    case (Absyn.CLASS(restriction = Absyn.R_TYPE(), body = Absyn.DERIVED(arguments = args)), _)
-      equation
-        mod = getModificationValue(args, inPath);
-        res = Dump.unparseModificationStr(mod);
-      then
-        res;
-    case (_,_) then "";
-  end match;
+  try
+    Absyn.CLASS(body = Absyn.DERIVED(arguments = args)) := cls;
+    value := Dump.printExpStr(getModificationValue(args, path));
+  else
+    value := "";
+  end try;
 end getDerivedClassModifierValue;
 
 protected function getElementitemContainsName
