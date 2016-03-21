@@ -139,20 +139,21 @@ int checkForStateEvent(DATA* data, LIST *eventList)
  *  then it de-activate the time events.
  *
  *  \param [ref] [data]
- *  \param [ref] [eventList]
- *  \param [in]  [eventTime]
- *  \param [ref] [solverInfo]
+ *  \param [ref] [threadData]
+ *  \param [ref] [eventLst]
+ *  \param [in]  [useRootFinding]
+ *  \param [out] [eventTime]
  *  \return 0: no event; 1: time event; 2: state event
  */
-int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
+int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_boolean useRootFinding, double *eventTime)
 {
   TRACE_PUSH
 
-  if (checkForStateEvent(data, solverInfo->eventLst))
+  if (checkForStateEvent(data, eventLst))
   {
-    if (!solverInfo->solverRootFinding)
+    if (useRootFinding)
     {
-      findRoot(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime));
+      *eventTime = findRoot(data, threadData, eventLst);
     }
   }
 
@@ -284,15 +285,17 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
 /*! \fn findRoot
  *
  *  \param [ref] [data]
- *  \param [ref] [eventLst]
- *  \param [in]  [eventTime]
+ *  \param [ref] [threadData]
+ *  \param [ref] [eventList]
+ *  \return: first event of interval [oldTime, timeValue]
  *
- *  This function perform a root finding for Intervall = [oldTime, timeValue]
+ *  This function perform a root finding for interval = [oldTime, timeValue]
  */
-void findRoot(DATA* data, threadData_t *threadData, LIST *eventList, double *eventTime)
+double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
 {
   TRACE_PUSH
 
+  double eventTime;
   long event_id;
   LIST_NODE* it;
   fortran_integer i=0;
@@ -319,7 +322,7 @@ void findRoot(DATA* data, threadData_t *threadData, LIST *eventList, double *eve
   memcpy(states_right, data->localData[0]->realVars    , data->modelData->nStates * sizeof(double));
 
   /* Search for event time and event_id with bisection method */
-  *eventTime = bisection(data, threadData, &time_left, &time_right, states_left, states_right, tmpEventList, eventList);
+  eventTime = bisection(data, threadData, &time_left, &time_right, states_left, states_right, tmpEventList, eventList);
 
   if(listLen(tmpEventList) == 0)
   {
@@ -366,8 +369,8 @@ void findRoot(DATA* data, threadData_t *threadData, LIST *eventList, double *eve
     listPushFront(eventList, &event_id);
   }
 
-  *eventTime = time_right;
-  debugStreamPrint(LOG_EVENTS, 0, "time: %.10e", *eventTime);
+  eventTime = time_right;
+  debugStreamPrint(LOG_EVENTS, 0, "time: %.10e", eventTime);
 
   data->localData[0]->timeValue = time_left;
   for(i=0; i < data->modelData->nStates; i++) {
@@ -379,7 +382,7 @@ void findRoot(DATA* data, threadData_t *threadData, LIST *eventList, double *eve
   updateRelationsPre(data);
   /*sim_result_emit(data);*/
 
-  data->localData[0]->timeValue = *eventTime;
+  data->localData[0]->timeValue = eventTime;
   for(i=0; i < data->modelData->nStates; i++)
   {
     data->localData[0]->realVars[i] = states_right[i];
@@ -389,6 +392,7 @@ void findRoot(DATA* data, threadData_t *threadData, LIST *eventList, double *eve
   free(states_right);
 
   TRACE_POP
+  return eventTime;
 }
 
 /*! \fn bisection
@@ -402,7 +406,7 @@ void findRoot(DATA* data, threadData_t *threadData, LIST *eventList, double *eve
  *  \param [in]  [eventList]
  *  \return Founded event time
  *
- *  Method to find root in Intervall [oldTime, timeValue]
+ *  Method to find root in interval [oldTime, timeValue]
  */
 double bisection(DATA* data, threadData_t *threadData, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
 {

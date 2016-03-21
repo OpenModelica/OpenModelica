@@ -43,11 +43,11 @@ extern "C" {
 #endif
 
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
+int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_boolean useRootFinding, double *eventTime);
 
 void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
 
-void findRoot(DATA *data, threadData_t *threadData, LIST *eventList, double*);
+double findRoot(DATA *data, threadData_t *threadData, LIST *eventList);
 
 #ifdef __cplusplus
 }
