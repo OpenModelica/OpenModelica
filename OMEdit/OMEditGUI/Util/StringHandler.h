@@ -120,7 +120,6 @@ public:
   static QString removeLastWordAfterDot(QString value);
   static QString getFirstWordBeforeDot(QString value);
   static QString removeFirstWordAfterDot(QString value);
-  static QString getModifierValue(QString value);
   static QString escapeString(QString value);
   // Returns "" if the string is not a standard Modelica string. Else it unparses it into normal form.
   static QString unparse(QString value);

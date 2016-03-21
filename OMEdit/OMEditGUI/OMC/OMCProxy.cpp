@@ -1051,7 +1051,7 @@ QStringList OMCProxy::getExtendsModifierNames(QString className, QString extends
 QString OMCProxy::getExtendsModifierValue(QString className, QString extendsClassName, QString modifierName)
 {
   sendCommand("getExtendsModifierValue(" + className + "," + extendsClassName + "," + modifierName + ")");
-  return StringHandler::getModifierValue(getResult()).trimmed();
+  return getResult().trimmed();
 }
 
 bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
@@ -2308,8 +2308,7 @@ QStringList OMCProxy::getAvailableLibraries()
  */
 QString OMCProxy::getDerivedClassModifierValue(QString className, QString modifierName)
 {
-  QString result = mpOMCInterface->getDerivedClassModifierValue(className, modifierName);
-  return StringHandler::getModifierValue(result);
+  return mpOMCInterface->getDerivedClassModifierValue(className, modifierName);
 }
 
 /*!
