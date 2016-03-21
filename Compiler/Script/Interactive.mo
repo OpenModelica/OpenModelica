@@ -6144,40 +6144,30 @@ protected function getComponentModifierValue
                Absyn.ComponentRef, /* submodifier name */
                Absyn.Program)
    outputs: string"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input Absyn.Program inProgram4;
-  output String outString;
+  input Absyn.ComponentRef classRef;
+  input Absyn.ComponentRef varRef;
+  input Absyn.ComponentRef subModRef;
+  input Absyn.Program program;
+  output String valueStr;
+protected
+  Absyn.Path cls_path;
+  String name;
+  Absyn.Class cls;
+  list<Absyn.ElementArg> args;
+  Absyn.Exp exp;
 algorithm
-  outString := matchcontinue (inComponentRef1,inComponentRef2,inComponentRef3,inProgram4)
-    local
-      Absyn.Path p_class;
-      String name,res;
-      Absyn.Class cdef;
-      list<Absyn.Element> comps;
-      list<list<Absyn.ComponentItem>> compelts;
-      list<Absyn.ComponentItem> compelts_1;
-      Absyn.Modification mod;
-      Absyn.ComponentRef class_,ident,subident;
-      Absyn.Program p;
-      list<Absyn.ElementArg> elementArgLst;
-
-    case (class_,ident,subident,p)
-      equation
-        p_class = Absyn.crefToPath(class_);
-        Absyn.IDENT(name) = Absyn.crefToPath(ident);
-        cdef = getPathedClassInProgram(p_class, p);
-        comps = getComponentsInClass(cdef);
-        compelts = List.map(comps, getComponentitemsInElement);
-        compelts_1 = List.flatten(compelts);
-        {Absyn.COMPONENTITEM(component=Absyn.COMPONENT(modification=SOME(Absyn.CLASSMOD(elementArgLst=elementArgLst))))} = List.select1(compelts_1, componentitemNamed, name);
-        mod = getModificationValue(elementArgLst, Absyn.crefToPath(subident));
-        res = Dump.unparseModificationStr(mod);
-      then
-        res;
-    else "Error";
-  end matchcontinue;
+  try
+    cls_path := Absyn.crefToPath(classRef);
+    name := Absyn.crefIdent(varRef);
+    cls := getPathedClassInProgram(cls_path, program);
+    Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification =
+      SOME(Absyn.CLASSMOD(elementArgLst = args)))) := getComponentInClass(cls, name);
+    Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = exp)) :=
+      getModificationValue(args, Absyn.crefToPath(subModRef));
+    valueStr := Dump.printExpStr(exp);
+  else
+    valueStr := "";
+  end try;
 end getComponentModifierValue;
 
 public function getModificationValue
@@ -6310,46 +6300,67 @@ public function getComponentBinding
    This can be used for both parameters, constants and variables."
   input Absyn.Path path;
   input String parameterName;
-  input Absyn.Program inProgram3;
-  output String outString;
+  input Absyn.Program program;
+  output String bindingStr;
+protected
+  Absyn.Class cls;
+  Absyn.ComponentItem component;
 algorithm
-  outString := matchcontinue (path,parameterName,inProgram3)
-    local
-      String res;
-      Absyn.Class cdef;
-      list<Absyn.Element> comps;
-      list<list<Absyn.ComponentItem>> compelts;
-      list<Absyn.ComponentItem> compelts_1;
-      Absyn.ComponentItem compitem;
-      Absyn.Exp exp;
-      Absyn.Program p;
-
-    case (_,_,p)
-      equation
-        cdef = getPathedClassInProgram(path, p);
-        comps = getComponentsInClass(cdef);
-        compelts = List.map(comps, getComponentitemsInElement);
-        compelts_1 = List.flatten(compelts);
-        {compitem} = List.select1(compelts_1, componentitemNamed, parameterName);
-        exp = getVariableBindingInComponentitem(compitem);
-        res = Dump.printExpStr(exp);
-      then
-        res;
-
-    case (_,_,p)
-      equation
-        cdef = getPathedClassInProgram(path, p);
-        comps = getComponentsInClass(cdef);
-        compelts = List.map(comps, getComponentitemsInElement);
-        compelts_1 = List.flatten(compelts);
-        {compitem} = List.select1(compelts_1, componentitemNamed, parameterName);
-        failure(_ = getVariableBindingInComponentitem(compitem));
-      then
-        "";
-
-    else "";
-  end matchcontinue;
+  try
+    cls := getPathedClassInProgram(path, program);
+    component := getComponentInClass(cls, parameterName);
+    bindingStr := Dump.printExpStr(getVariableBindingInComponentitem(component));
+  else
+    bindingStr := "";
+  end try;
 end getComponentBinding;
+
+public function getComponentInClass
+  "Returns the component with the given name in the given class, or fails if no
+   such component exists."
+  input Absyn.Class cls;
+  input Absyn.Ident componentName;
+  output Absyn.ComponentItem component;
+protected
+  Absyn.ClassDef body;
+  list<Absyn.ClassPart> parts;
+  list<Absyn.ElementItem> elements;
+  list<Absyn.ComponentItem> components;
+  Boolean found = false;
+algorithm
+  Absyn.CLASS(body = body) := cls;
+
+  parts := match body
+    case Absyn.PARTS() then body.classParts;
+    case Absyn.CLASS_EXTENDS() then body.parts;
+  end match;
+
+  for part in parts loop
+    elements := match part
+      case Absyn.PUBLIC() then part.contents;
+      case Absyn.PROTECTED() then part.contents;
+      else {};
+    end match;
+
+    for e in elements loop
+      components := match e
+        case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
+          Absyn.COMPONENTS(components = components))) then components;
+        else {};
+      end match;
+
+      for c in components loop
+        if Absyn.componentName(c) == componentName then
+          component := c;
+          return;
+        end if;
+      end for;
+    end for;
+
+  end for;
+
+  fail();
+end getComponentInClass;
 
 protected function getVariableBindingInComponentitem
 " Retrieve the variable binding from an ComponentItem"
@@ -17829,12 +17840,12 @@ algorithm
   local Absyn.Class cl;
     case(_,_) equation
       cl = getPathedClassInProgram(Absyn.stripLast(path),prg);
-      comp = getComponentInClass(cl,Absyn.pathLastIdent(path));
+      comp = getComponentElementInClass(cl,Absyn.pathLastIdent(path));
     then comp;
   end match;
 end getPathedComponentElementInProgram;
 
-protected function getComponentInClass
+protected function getComponentElementInClass
   input Absyn.Class cl;
   input Absyn.Ident compName;
   output Absyn.ElementSpec comp;
@@ -17854,7 +17865,7 @@ algorithm
      comp = getComponentsContainsName(Absyn.CREF_IDENT(compName,{}), publst);
    then comp;
  end match;
-end getComponentInClass;
+end getComponentElementInClass;
 
 public function getFunctionsInProgram
   input Absyn.Program prog;
