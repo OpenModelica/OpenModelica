@@ -790,10 +790,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   ifeq ($(findstring USE_CPP_03,$(CFLAGS)),USE_CPP_03)
     $(eval LIBS=$(LIBS) -L"$(BOOST_LIBS)" -l$(BOOST_SYSTEM_LIB))
     $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT) <%platformbins%>)
-  endif
-
   # link static gcc libs under Windows to avoid dependencies
-  ifeq ($(findstring win,$(PLATFORM)),win)
+  else ($(findstring win,$(PLATFORM)),win)
     $(eval LIBS=$(LIBS) -static-libstdc++ -static-libgcc)
   endif
 
