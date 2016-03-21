@@ -1227,10 +1227,14 @@ constant ConfigFlag HETS = CONFIG_FLAG(88, "hets",
     ("none", Util.gettext("do nothing")),
     ("derCalls", Util.gettext("sort terms based on der-calls"))
     })),
-  Util.gettext("heuristic euqtion terms sort"));
+  Util.gettext("Heuristic equation terms sort"));
 constant ConfigFlag DEFAULT_CLOCK_PERIOD = CONFIG_FLAG(89, "defaultClockPeriod",
   NONE(), INTERNAL(), REAL_FLAG(1.0), NONE(),
   Util.gettext("Sets the default clock period (in seconds) for state machines (default: 1.0)."));
+constant ConfigFlag INST_CACHE_SIZE = CONFIG_FLAG(90, "instCacheSize",
+  NONE(), EXTERNAL(), INT_FLAG(250007), NONE(),
+  Util.gettext("Sets the size of the internal hash table used for instantiation caching."));
+
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1325,7 +1329,8 @@ constant list<ConfigFlag> allConfigFlags = {
   INIT_OPT_MODULES_SUB,
   PERMISSIVE,
   HETS,
-  DEFAULT_CLOCK_PERIOD
+  DEFAULT_CLOCK_PERIOD,
+  INST_CACHE_SIZE
 };
 
 public function new

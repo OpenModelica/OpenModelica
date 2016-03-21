@@ -397,11 +397,20 @@ public function dumpHashTable
 protected
   FuncKeyString printKey;
   FuncValString printValue;
+  Key k;
+  Value v;
 algorithm
   (_, _, _, _, (_, _, printKey, printValue)) := t;
   print("HashTable:\n");
-  print(stringDelimitList(List.map2(hashTableList(t), dumpTuple, printKey, printValue), "\n"));
-  print("\n");
+
+  for entry in hashTableList(t) loop
+    (k, v) := entry;
+    print("{");
+    print(printKey(k));
+    print(",{");
+    print(printValue(v));
+    print("}}\n");
+  end for;
 end dumpHashTable;
 
 protected function dumpTuple
