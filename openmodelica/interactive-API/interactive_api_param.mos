@@ -111,15 +111,15 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getComponentModifierNames(C, "b1")
 // {"a1.p1","a1.p2","a2.p2"}
 // Evaluating: getComponentModifierValue(C, b1.a1)
-// (p1 = 0, p2 = 0)
+//
 // Evaluating: setComponentModifierValue(C, b1.a1, $Code((p1 = 45)))
 // Ok
 // Evaluating: getComponentModifierValue(C, b1.a1)
-// (p1 = 45, p2 = 0)
+//
 // Evaluating: setComponentModifierValue(C, b1.a2, $Code( = 33))
 // Ok
 // Evaluating: getComponentModifierValue(C, b1.a2)
-//  = 33
+// 33
 // Evaluating: getExtendsModifierNames(D2, B2)
 // {a.x, f}
 // Evaluating: getExtendsModifierValue(D2, B2, a.x)
@@ -147,7 +147,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: setComponentModifierValue(Q, x.start, $Code( = 4))
 // Ok
 // Evaluating: getComponentModifierValue(Q, x.start)
-//  = 4
+// 4
 // Evaluating: getComponentModifierValue(Q, x)
 // 1
 // Evaluating: getExtendsModifierNames(Modelica.Blocks.Interfaces.BooleanInput, Modelica.Blocks.Interfaces.BooleanSignal)
@@ -167,7 +167,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getComponentModifierNames(M, "x")
 // {}
 // Evaluating: getComponentModifierValue(M3, x)
-// 
+//
 // Evaluating: setComponentModifierValue(M4, x, $Code())
 // Ok
 // Evaluating: setComponentModifierValue(M5, x.start, $Code())
@@ -177,11 +177,11 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: setComponentModifierValue(M7, a1.x.fixed, $Code( = false))
 // Ok
 // Evaluating: getComponentModifierValue(M7, a1.x.fixed)
-//  = false
+// false
 // Evaluating: setComponentModifierValue(M7, a1.x.fixed, $Code( = true))
 // Ok
 // Evaluating: getComponentModifierValue(M7, a1.x.fixed)
-//  = true
+// true
 // Evaluating: getComponentModifierNames(M5, "x")
 // {}
 // Evaluating: getComponentModifierNames(M7, "x")

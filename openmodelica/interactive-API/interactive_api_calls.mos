@@ -377,15 +377,15 @@ getMessagesStringInternal(unique = false); // not unique
 // ""
 // Evaluating: getNthInitialEquation(Modelica.Mechanics.MultiBody.Parts.Body, 1)
 // "if angles_fixed then
-//   // Initialize positional variables
+// // Initialize positional variables
 //   if not Connections.isRoot(frame_a.R) then
-//     // frame_a.R is computed somewhere else
+// // frame_a.R is computed somewhere else
 //     zeros(3) = Frames.Orientation.equalityConstraint(frame_a.R, R_start);
 //   elseif useQuaternions then
-//     // frame_a.R is computed from quaternions Q
+// // frame_a.R is computed from quaternions Q
 //     zeros(3) = Frames.Quaternions.Orientation.equalityConstraint(Q, Q_start);
 //   else
-//     // frame_a.R is computed from the 3 angles 'phi'
+// // frame_a.R is computed from the 3 angles 'phi'
 //     phi = phi_start;
 //   end if;
 // end if;"
@@ -403,26 +403,26 @@ getMessagesStringInternal(unique = false); // not unique
 // end if;
 // r_0 = frame_a.r_0;
 // if not Connections.isRoot(frame_a.R) then
-//   // Body does not have states
-//   // Dummies
+// // Body does not have states
+// // Dummies
 //   Q = {0, 0, 0, 1};
 //   phi = zeros(3);
 //   phi_d = zeros(3);
 //   phi_dd = zeros(3);
 // elseif useQuaternions then
-//   // Use Quaternions as states (with dynamic state selection)
+// // Use Quaternions as states (with dynamic state selection)
 //   frame_a.R = Frames.from_Q(Q, Frames.Quaternions.angularVelocity2(Q, der(Q)));
 //   {0} = Frames.Quaternions.orientationConstraint(Q);
-//   // Dummies
+// // Dummies
 //   phi = zeros(3);
 //   phi_d = zeros(3);
 //   phi_dd = zeros(3);
 // else
-//   // Use Cardan angles as states
+// // Use Cardan angles as states
 //   phi_d = der(phi);
 //   phi_dd = der(phi_d);
 //   frame_a.R = Frames.axesRotations(sequence_angleStates, phi, phi_d);
-//   // Dummies
+// // Dummies
 //   Q = {0, 0, 0, 1};
 // end if;
 // // gravity acceleration at center of mass resolved in world frame
@@ -541,11 +541,11 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentModifierValue(TestPack.MyModel, r1.start)
-//  = 2
+// 2
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentModifierValue(TestPack.MyModel, r1.min)
-//  = 10
+// 10
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(TestPack.MyModel)
@@ -615,7 +615,7 @@ getMessagesStringInternal(unique = false); // not unique
 // parameters and variables are specified separately. In this section it is summarized how to refer to
 // Modelica code in the HTML documentation.
 // </p>
-// 
+//
 // <ol>
 // <li> For constants, parameters and variables in code segments <code>&lt;code&gt;</code> and <code>&lt;/code&gt;</code>
 //      should to be used, e.g., <br>
@@ -625,9 +625,9 @@ getMessagesStringInternal(unique = false); // not unique
 // <li> Inline code segments may be typeset with <code>&lt;code&gt;</code> and <code>&lt;/code&gt;</code>.</li>
 // <li> In code segments use bold to emphasize Modelica keywords.</li>
 // </ol>
-// 
+//
 // <h5>Example 1</h5>
-// 
+//
 // <pre>
 // &lt;pre&gt;
 // &lt;b&gt;connector&lt;/b&gt; Frame
@@ -635,26 +635,26 @@ getMessagesStringInternal(unique = false); // not unique
 //    &lt;b&gt;flow&lt;/b&gt; SI.Force f[Woehrnschimmel1998] &lt;b&gt;annotation&lt;/b&gt;(unassignedMessage=\\\"...\\\");
 // &lt;b&gt;end&lt;/b&gt; Frame;
 // &lt;/pre&gt;</pre>
-// 
+//
 // <p>appears as</p>
-// 
+//
 // <pre>
 // <b>connector</b> Frame
 //    ...
 //    <b>flow</b> SI.Force f[Woehrnschimmel1998] <b>annotation</b>(unassignedMessage=\\\"...\\\");
 // <b>end</b> Frame;
 // </pre>
-// 
+//
 // <h5>Example 2</h5>
-// 
+//
 // <pre>
 // &lt;pre&gt;
 // &lt;b&gt;parameter&lt;/b&gt; Modelica.SIunits.Conductance G=1 &quot;Conductance&quot;;
 // &lt;/pre&gt;
 // </pre>
-// 
+//
 // <p>appears as</p>
-// 
+//
 // <pre>
 // <b>parameter</b> Modelica.SIunits.Conductance G=1 &quot;Conductance&quot;;
 // </pre>
