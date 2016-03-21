@@ -809,14 +809,18 @@ bool OMCProxy::isPackage(QString className)
 }
 
 /*!
-  Returns true if the given type is one of the predefined types in Modelica.
-  */
+ * \brief OMCProxy::isBuiltinType
+ * Returns true if the given type is one of the predefined types in Modelica.
+ * \param typeName
+ * \return
+ */
 bool OMCProxy::isBuiltinType(QString typeName)
 {
   return (typeName == "Real" ||
           typeName == "Integer" ||
           typeName == "String" ||
-          typeName == "Boolean");
+          typeName == "Boolean" ||
+          typeName == "ExternalObject");
 }
 
 /*!
