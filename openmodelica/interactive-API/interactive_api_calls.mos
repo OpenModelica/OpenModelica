@@ -258,9 +258,9 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getDerivedClassModifierNames(Resistance)
 // {"quantity","unit"}
 // Evaluating: getDerivedClassModifierValue(Resistance, unit)
-// " = \"Ohm\""
+// "\"Ohm\""
 // Evaluating: getDerivedClassModifierValue(Resistance, quantity)
-// " = \"Resistance\""
+// "\"Resistance\""
 // Evaluating: getClassInformation(vector3D)
 // ("type","",false,false,false,"openmodelica/interactive-API/interactive_api_calls.mo",false,4,1,4,67,{"3"},false,false,"","")
 // Evaluating: getErrorString()
@@ -292,11 +292,11 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getExtendsModifierValue(vector3D, Real, start)
-//  = 5
+// 5
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getExtendsModifierValue(vector3D, Real, nominal)
-//  = {1, 2, 3, 4, 5}
+// {1, 2, 3, 4, 5}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getClassComment(M)
