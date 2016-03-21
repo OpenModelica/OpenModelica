@@ -10236,17 +10236,18 @@ protected
   Integer arrayIdx, idx, arraySize, concreteVarIndex;
   array<Integer> varIndices;
   list<String> tmpVarIndexListNew = {};
-  list<DAE.Subscript> arraySubscripts;
+  list<DAE.Subscript> arraySubscripts, arraySubscripts0;
   list<Integer> arrayDimensions, arrayDimensions0;
 algorithm
-  arraySubscripts := ComponentReference.crefLastSubs(varName);
+  arraySubscripts0 := ComponentReference.crefLastSubs(varName);
   varName := ComponentReference.crefStripLastSubs(varName);//removeSubscripts(varName);
   if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
     ((arrayDimensions0,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping); //varIndices are rowMajorOrder!
     arrayDimensions := arrayDimensions0;
+    arraySubscripts := arraySubscripts0;
     arraySize := arrayLength(varIndices);
     if(iColumnMajor) then
-      arraySubscripts := listReverse(arraySubscripts);
+      arraySubscripts := listReverse(arraySubscripts0);
       arrayDimensions := listReverse(arrayDimensions0);
     end if;
     concreteVarIndex := getUnrolledArrayIndex(arraySubscripts,arrayDimensions);
@@ -10264,12 +10265,11 @@ algorithm
         end if;
       end if;
     end for;
-    if iColumnMajor then
-      oConcreteVarIndex := listGet(tmpVarIndexListNew,convertFlattenedIndexToRowMajor(concreteVarIndex + 1, arrayDimensions0));
-      //oConcreteVarIndex := listGet(tmpVarIndexListNew, concreteVarIndex + 1);
-    else
-      oConcreteVarIndex := listGet(tmpVarIndexListNew, concreteVarIndex + 1);
+    if (not isVarIndexListConsecutive(iVarToArrayIndexMapping,iVarName) and iColumnMajor) then
+      //if the array is not completely stuffed (e.g. some array variables have been derived and became dummy-derivatives), the array will not be initialized as a consecutive array, therefore we cannot take the colMajor-indexes
+      concreteVarIndex := getUnrolledArrayIndex(arraySubscripts0,arrayDimensions0);
     end if;
+      oConcreteVarIndex := listGet(tmpVarIndexListNew, concreteVarIndex + 1);
   end if;
   if(listEmpty(tmpVarIndexListNew)) then
     Error.addMessage(Error.INTERNAL_ERROR, {"GetVarIndexListByMapping: No Element for " + ComponentReference.printComponentRefStr(varName) + " found!"});
