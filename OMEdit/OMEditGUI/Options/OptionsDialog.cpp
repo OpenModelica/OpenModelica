@@ -3533,7 +3533,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpLinkingComboBox->addItem(tr("None"), "none");
   mpLinkingComboBox->addItem(tr("Dynamic"), "dynamic");
   mpLinkingComboBox->addItem(tr("Static"), "static");
-  mpLinkingComboBox->setCurrentIndex(1);
+  mpLinkingComboBox->setCurrentIndex(2);
   // set the type groupbox layout
   QVBoxLayout *pPlatformsLayout = new QVBoxLayout;
   pPlatformsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
