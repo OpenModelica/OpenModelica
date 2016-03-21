@@ -533,10 +533,9 @@ void OptionsDialog::readFMISettings()
   // read platforms
   QStringList platforms = mpSettings->value("FMIExport/Platforms").toStringList();
   foreach (QString platform, platforms) {
-    if (platform.compare("dynamic") == 0) {
-      mpFMIPage->getDynamicRadioButton()->setChecked(true);
-    } else if (platform.compare("static") == 0) {
-      mpFMIPage->getStaticRadioButton()->setChecked(true);
+    int currentIndex = mpFMIPage->getLinkingComboBox()->findData(platform);
+    if (currentIndex > -1) {
+      mpFMIPage->getLinkingComboBox()->setCurrentIndex(currentIndex);
     } else {
       int i = 0;
       while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
@@ -897,10 +896,9 @@ void OptionsDialog::saveFMISettings()
   mpSettings->setValue("FMIExport/FMUName", mpFMIPage->getFMUNameTextBox()->text());
   // save platforms
   QStringList platforms;
-  if (mpFMIPage->getDynamicRadioButton()->isChecked()) {
-    platforms.append("dynamic");
-  } else if (mpFMIPage->getStaticRadioButton()->isChecked()) {
-    platforms.append("static");
+  QString linking = mpFMIPage->getLinkingComboBox()->itemData(mpFMIPage->getLinkingComboBox()->currentIndex()).toString();
+  if (linking.compare("none") != 0) {
+    platforms.append(linking);
   }
   int i = 0;
   while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
@@ -3531,15 +3529,16 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpPlatformsGroupBox = new QGroupBox(tr("Platforms"));
   Label *pPlatformNoteLabel = new Label(tr("Note: The list of platforms is created by searching for programs in the PATH\n"
                                            "matching regular expression \"[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-[g]cc\"."));
-  mpDynamicRadioButton = new QRadioButton(tr("Dynamic"));
-  mpStaticRadioButton = new QRadioButton(tr("Static"));
-  mpDynamicRadioButton->setChecked(true);
+  mpLinkingComboBox = new QComboBox;
+  mpLinkingComboBox->addItem(tr("None"), "none");
+  mpLinkingComboBox->addItem(tr("Dynamic"), "dynamic");
+  mpLinkingComboBox->addItem(tr("Static"), "static");
+  mpLinkingComboBox->setCurrentIndex(1);
   // set the type groupbox layout
   QVBoxLayout *pPlatformsLayout = new QVBoxLayout;
   pPlatformsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pPlatformsLayout->addWidget(pPlatformNoteLabel);
-  pPlatformsLayout->addWidget(mpDynamicRadioButton);
-  pPlatformsLayout->addWidget(mpStaticRadioButton);
+  pPlatformsLayout->addWidget(mpLinkingComboBox);
   foreach (QString platform, platforms) {
     pPlatformsLayout->addWidget(new QCheckBox(platform));
   }

@@ -711,8 +711,7 @@ public:
   QString getFMIExportType();
   QLineEdit* getFMUNameTextBox() {return mpFMUNameTextBox;}
   QGroupBox* getPlatformsGroupBox() {return mpPlatformsGroupBox;}
-  QRadioButton* getDynamicRadioButton() {return mpDynamicRadioButton;}
-  QRadioButton* getStaticRadioButton() {return mpStaticRadioButton;}
+  QComboBox* getLinkingComboBox() {return mpLinkingComboBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpExportGroupBox;
@@ -726,8 +725,7 @@ private:
   Label *mpFMUNameLabel;
   QLineEdit *mpFMUNameTextBox;
   QGroupBox *mpPlatformsGroupBox;
-  QRadioButton *mpDynamicRadioButton;
-  QRadioButton *mpStaticRadioButton;
+  QComboBox *mpLinkingComboBox;
 };
 
 class TLMPage : public QWidget
