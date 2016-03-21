@@ -82,17 +82,47 @@ function new
   annotation(__OpenModelica_EarlyInline = true);
 end new;
 
+function addConflictFail
+  "Conflict resolving function for add which fails on conflict."
+  input Value newValue;
+  input Value oldValue;
+  output Value value;
+algorithm
+  fail();
+end addConflictFail;
+
+function addConflictReplace
+  "Conflict resolving function for add which replaces the old value with the new."
+  input Value newValue;
+  input Value oldValue;
+  output Value value = newValue;
+end addConflictReplace;
+
+function addConflictKeep
+  "Conflict resolving function for add which keeps the old value."
+  input Value newValue;
+  input Value oldValue;
+  output Value value = oldValue;
+end addConflictKeep;
+
 function add
   "Inserts a new node in the tree."
   input Key inKey;
   input Value inValue;
   input Tree inTree;
-  input Boolean inReplaceExisting = true;
+  input ConflictFunc conflictFunc = addConflictFail "Used to resolve conflicts.";
   output Tree outTree = inTree;
+
+  partial function ConflictFunc
+    input Value newValue "The value given by the caller.";
+    input Value oldValue "The value already in the tree.";
+    output Value value "The value that will replace the existing value.";
+  end ConflictFunc;
 algorithm
   outTree := match outTree
     local
       Key key;
+      Value value;
       Integer key_comp;
 
     // Empty tree.
@@ -105,16 +135,14 @@ algorithm
 
         if key_comp == -1 then
           // Replace left branch.
-          outTree.left := add(inKey, inValue, outTree.left, inReplaceExisting);
+          outTree.left := add(inKey, inValue, outTree.left, conflictFunc);
         elseif key_comp == 1 then
           // Replace right branch.
-          outTree.right := add(inKey, inValue, outTree.right, inReplaceExisting);
-        elseif inReplaceExisting then
-          // Replace node if allowed.
-          outTree.value := VALUE(inKey, inValue);
+          outTree.right := add(inKey, inValue, outTree.right, conflictFunc);
         else
-          // Fail if not allowed to replace existing node.
-          fail();
+          // Use the given function to resolve the conflict.
+          VALUE(value = value) := outTree.value;
+          outTree.value := VALUE(inKey, conflictFunc(inValue, value));
         end if;
       then
         if key_comp == 0 then outTree else balance(outTree);
@@ -126,15 +154,21 @@ function addList
   "Adds a list of key-value pairs to the tree."
   input list<tuple<Key,Value>> inValues;
   input Tree inTree;
-  input Boolean inReplaceExisting = true;
+  input ConflictFunc conflictFunc = addConflictFail "Used to resolve conflicts.";
   output Tree outTree = inTree;
+
+  partial function ConflictFunc
+    input Value newValue "The value given by the caller.";
+    input Value oldValue "The value already in the tree.";
+    output Value value "The value that will replace the existing value.";
+  end ConflictFunc;
 protected
   Key key;
   Value value;
 algorithm
   for t in inValues loop
     (key, value) := t;
-    outTree := add(key, value, outTree, inReplaceExisting);
+    outTree := add(key, value, outTree, conflictFunc);
   end for;
 end addList;
 
@@ -157,6 +191,16 @@ algorithm
     case (-1, NODE(left = tree)) then get(tree, inKey);
   end match;
 end get;
+
+function isEmpty
+  input Tree tree;
+  output Boolean isEmpty;
+algorithm
+  isEmpty := match tree
+    case EMPTY() then true;
+    else false;
+  end match;
+end isEmpty;
 
 function toList
   "Converts the tree to a flat list of key-value tuples."
@@ -182,6 +226,29 @@ algorithm
   end match;
 end toList;
 
+function listValues
+  "Constructs a list of all the values in the tree."
+  input Tree tree;
+  input list<Value> accum = {};
+  output list<Value> values;
+algorithm
+  values := match tree
+    local
+      Value value;
+
+    case NODE(value = VALUE(value = value))
+      algorithm
+        values := value :: accum;
+        values := listValues(tree.left, values);
+        values := listValues(tree.right, values);
+      then
+        values;
+
+    else accum;
+
+  end match;
+end listValues;
+
 function join
   "Joins two trees by adding the second one to the first."
   input Tree inTree1;
@@ -193,7 +260,7 @@ end join;
 
 function map
   "Traverses the tree in depth-first pre-order and applies the given function to
-   each node, changing their values to the result of the call."
+   each node, constructing a new tree with the resulting nodes."
   input Tree inTree;
   input MapFunc inFunc;
   output Tree outTree = inTree;
@@ -265,6 +332,53 @@ algorithm
     else outResult;
   end match;
 end fold;
+
+function mapFold<FT>
+  "Traverses the tree in depth-first pre-order and applies the given function to
+   each node, constructing a new tree with the resulting nodes. mapFold also
+   takes an extra argument which is updated on each call to the given function."
+  input Tree inTree;
+  input MapFunc inFunc;
+  input FT inStartValue;
+  output Tree outTree = inTree;
+  output FT outResult = inStartValue;
+
+  partial function MapFunc
+    input Key inKey;
+    input Value inValue;
+    input FT inFoldArg;
+    output Value outValue;
+    output FT outFoldArg;
+  end MapFunc;
+algorithm
+  outTree := match outTree
+    local
+      Key key;
+      Value value, new_value;
+      Tree branch, new_branch;
+
+    case NODE(value = VALUE(key, value))
+      algorithm
+        (new_value, outResult) := inFunc(key, value, outResult);
+        if not referenceEq(value, new_value) then
+          outTree.value := VALUE(key, new_value);
+        end if;
+
+        (new_branch, outResult) := mapFold(outTree.left, inFunc, outResult);
+        if not referenceEq(new_branch, outTree.left) then
+          outTree.left := new_branch;
+        end if;
+
+        (new_branch, outResult) := mapFold(outTree.right, inFunc, outResult);
+        if not referenceEq(new_branch, outTree.right) then
+          outTree.right := new_branch;
+        end if;
+      then
+        outTree;
+
+    else inTree;
+  end match;
+end mapFold;
 
 function printTreeStr
   "Prints the tree to a string using UTF-8 box-drawing characters to construct a

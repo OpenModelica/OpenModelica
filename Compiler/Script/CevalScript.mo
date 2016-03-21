@@ -2150,12 +2150,8 @@ algorithm
   try
     ErrorExt.setCheckpoint("getNonPartialElementsForInstantiatedClass");
     (, env) := Inst.instantiateClass(FCore.emptyCache(), InnerOuter.emptyInstHierarchy, sp, Absyn.makeNotFullyQualified(p), doSCodeDep=false);
-    for v in FNode.getAvlValues(FNode.children(arrayGet(FGraph.lastScopeRef(env),1))) loop
-      elts := match v[1]
-        case FCore.N(data=FCore.CL(e=elt as SCode.CLASS(partialPrefix=SCode.NOT_PARTIAL()))) then elt::elts;
-        else elts;
-      end match;
-    end for;
+    elts := FCore.RefTree.fold(FNode.children(FNode.fromRef(FGraph.lastScopeRef(env))),
+      addNonPartialClassRef, {});
     ErrorExt.rollBack("getNonPartialElementsForInstantiatedClass");
     return;
   else
@@ -2169,6 +2165,22 @@ algorithm
     else {};
   end match;
 end getNonPartialElementsForInstantiatedClass;
+
+protected function addNonPartialClassRef
+  input FCore.Name name;
+  input FCore.Ref ref;
+  input list<SCode.Element> accum;
+  output list<SCode.Element> classes;
+protected
+  SCode.Element e;
+algorithm
+  classes := match FNode.fromRef(ref)
+    case FCore.N(data = FCore.CL(e = e as SCode.CLASS(partialPrefix = SCode.NOT_PARTIAL())))
+      then e :: accum;
+
+    else accum;
+  end match;
+end addNonPartialClassRef;
 
 public function cevalCallFunction "This function evaluates CALL expressions, i.e. function calls.
   They are currently evaluated by generating code for the function and

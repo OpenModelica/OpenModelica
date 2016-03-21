@@ -65,6 +65,7 @@ type Data = FCore.Data;
 type Kind = FCore.Kind;
 type Ref = FCore.Ref;
 type Refs = FCore.Refs;
+import FCore.RefTree;
 type Children = FCore.Children;
 type Parents = FCore.Parents;
 type Scope = FCore.Scope;
@@ -73,10 +74,6 @@ type Graph = FCore.Graph;
 type Extra = FCore.Extra;
 type Visited = FCore.Visited;
 type Import = FCore.Import;
-type AvlTree = FCore.CAvlTree;
-type AvlKey = FCore.CAvlKey;
-type AvlValue = FCore.CAvlValue;
-type AvlTreeValue = FCore.CAvlTreeValue;
 
 constant Name extendsPrefix  = "$ext_" "prefix of the extends node";
 
@@ -224,7 +221,7 @@ public function new
   input Data inData;
   output Node node;
 algorithm
-  node := FCore.N(inName, inId, inParents, FCore.emptyCAvlTree, inData);
+  node := FCore.N(inName, inId, inParents, RefTree.new(), inData);
 end new;
 
 public function addImport
@@ -342,10 +339,24 @@ protected
   Ref parent;
 algorithm
   FCore.N(n, i, p, c, d) := fromRef(inParentRef);
-  c := avlTreeAdd(c, inName, inChildRef);
+  c := RefTree.add(inName, inChildRef, c, RefTree.addConflictReplace);
   parent := updateRef(inParentRef, FCore.N(n, i, p, c, d));
   FGraphStream.edge(inName, fromRef(parent), fromRef(inChildRef));
 end addChildRef;
+
+protected function printElementConflictError
+  input Ref newRef;
+  input Ref oldRef;
+  output Ref dummy;
+protected
+  SourceInfo info1, info2;
+  String name;
+algorithm
+  (name, info1) := SCode.elementNameInfo(FNode.getElementFromRef(newRef));
+  info2 := SCode.elementInfo(FNode.getElementFromRef(oldRef));
+  Error.addMultiSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS, {name}, {info2, info1});
+  fail();
+end printElementConflictError;
 
 public function addImportToRef
   input Ref ref;
@@ -402,7 +413,7 @@ protected
   Ref r;
 algorithm
   FCore.N(n, id, p, c, FCore.FS(it)) := fromRef(ref);
-  it := listAppend(inIterators, it);
+  it := listAppend(it, inIterators);
   // update the child
   r := updateRef(ref, FCore.N(n, id, p, c, FCore.FS(it)));
 end addIteratorsToRef;
@@ -550,7 +561,7 @@ protected
   Children c;
 algorithm
   c := children(inNode);
-  outChildRef := avlTreeGet(c, inName);
+  outChildRef := RefTree.get(c, inName);
 end childFromNode;
 
 public function element2Data
@@ -1304,22 +1315,30 @@ public function filter
     input Ref inRef;
     output Boolean select;
   end Filter;
+protected
+  Children c;
 algorithm
-  filtered := match(inRef, inFilter)
-    local
-      Refs rfs;
-      Children c;
-
-    case (_, _)
-      equation
-        c = children(fromRef(inRef));
-        rfs = getAvlValues(c);
-        rfs = List.filterOnTrue(rfs, inFilter);
-      then
-        rfs;
-
-  end match;
+  c := children(fromRef(inRef));
+  filtered := RefTree.fold(c, function filter_work(filter = inFilter), {});
+  filtered := listReverse(filtered);
 end filter;
+
+protected function filter_work
+  input Name name;
+  input Ref ref;
+  input Filter filter;
+  input Refs accum;
+  output Refs refs = accum;
+
+  partial function Filter
+    input Ref inRef;
+    output Boolean select;
+  end Filter;
+algorithm
+  if filter(ref) then
+    refs := ref :: refs;
+  end if;
+end filter_work;
 
 public function isRefExtends
   input Ref inRef;
@@ -1502,7 +1521,7 @@ algorithm
     case _
       equation
         c = children(fromRef(inRef));
-        refs = getAvlValues(c);
+        refs = RefTree.listValues(c);
         refs = List.flatten(List.map(refs, dfs));
         refs = inRef::refs;
       then
@@ -1510,184 +1529,6 @@ algorithm
 
   end match;
 end dfs;
-
-public function dfs_filter
-"@author: adrpo
- return all refs as given by
- reversed depth first search
- filtered by the given filter
- function"
-  input Ref inRef;
-  input Filter inFilter;
-  output Refs outRefs;
-  partial function Filter
-    input Ref inRef;
-    output Boolean select;
-  end Filter;
-algorithm
-  outRefs := match(inRef, inFilter)
-    local
-      Refs refs;
-      Boolean b;
-
-    case (_, _)
-      equation
-        b = inFilter(inRef);
-        refs = List.consOnTrue(b, inRef, {});
-        refs = dfs_filter_helper(children(fromRef(inRef)), inFilter, refs);
-      then
-        refs;
-
-  end match;
-end dfs_filter;
-
-public function dfs_filter_helper
-  input AvlTree inTree;
-  input Filter inFilter;
-  input list<AvlValue> inAcc;
-  output list<AvlValue> outAvlValues;
-  partial function Filter
-    input AvlValue inValue;
-    output Boolean select;
-  end Filter;
-algorithm
-  outAvlValues := match(inTree, inFilter, inAcc)
-    local
-      list<AvlValue> acc;
-      AvlValue v;
-      AvlTree t, tl, tr;
-      Boolean b;
-
-    // empty tree
-    case (FCore.CAVLTREENODE(NONE(), _, NONE(), NONE()), _, _)
-      then
-        inAcc;
-
-    // leaf
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, NONE(), NONE()), _, acc)
-      equation
-        b = inFilter(v);
-        acc = List.consOnTrue(b, v, acc);
-        acc = dfs_filter_helper(children(fromRef(v)), inFilter, acc);
-      then
-        acc;
-
-    // non-leaf on left
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, SOME(t), NONE()), _, acc)
-      equation
-        b = inFilter(v);
-        acc = List.consOnTrue(b, v, acc);
-        acc = dfs_filter_helper(children(fromRef(v)), inFilter, acc);
-        acc = dfs_filter_helper(t, inFilter, acc);
-      then
-        acc;
-
-    // non-leaf on right
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, NONE(), SOME(t)), _, acc)
-      equation
-        b = inFilter(v);
-        acc = List.consOnTrue(b, v, acc);
-        acc = dfs_filter_helper(children(fromRef(v)), inFilter, acc);
-        acc = dfs_filter_helper(t, inFilter, acc);
-      then
-        acc;
-
-    // non-leaf on both left and right
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, SOME(tl), SOME(tr)), _, acc)
-      equation
-        b = inFilter(v);
-        acc = List.consOnTrue(b, v, acc);
-        acc = dfs_filter_helper(children(fromRef(v)), inFilter, acc);
-        acc = dfs_filter_helper(tl, inFilter, acc);
-        acc = dfs_filter_helper(tr, inFilter, acc);
-      then
-        acc;
-
-  end match;
-end dfs_filter_helper;
-
-public function apply
-"@author: adrpo
- apply a function on all the subtree pointed by given ref.
- the order of application is dfs."
-  input Ref inRef;
-  input Apply inApply;
-  partial function Apply
-    input Ref inRef;
-  end Apply;
-algorithm
-  _ := match(inRef, inApply)
-    local
-      Refs refs;
-      Boolean b;
-
-    case (_, _)
-      equation
-        inApply(inRef);
-        apply_helper(children(fromRef(inRef)), inApply);
-      then
-        ();
-
-  end match;
-end apply;
-
-public function apply_helper
-  input AvlTree inTree;
-  input Apply inApply;
-  partial function Apply
-    input AvlValue inValue;
-  end Apply;
-algorithm
-  _ := match(inTree, inApply)
-    local
-      list<AvlValue> acc;
-      AvlValue v;
-      AvlTree t, tl, tr;
-      Boolean b;
-
-    // empty tree
-    case (FCore.CAVLTREENODE(NONE(), _, NONE(), NONE()), _)
-      then
-        ();
-
-    // leaf
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, NONE(), NONE()), _)
-      equation
-        inApply(v);
-        apply_helper(children(fromRef(v)), inApply);
-      then
-        ();
-
-    // non-leaf on left
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, SOME(t), NONE()), _)
-      equation
-        inApply(v);
-        apply_helper(children(fromRef(v)), inApply);
-        apply_helper(t, inApply);
-      then
-        ();
-
-    // non-leaf on right
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, NONE(), SOME(t)), _)
-      equation
-        inApply(v);
-        apply_helper(children(fromRef(v)), inApply);
-        apply_helper(t, inApply);
-      then
-        ();
-
-    // non-leaf on both left and right
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, SOME(tl), SOME(tr)), _)
-      equation
-        inApply(v);
-        apply_helper(children(fromRef(v)), inApply);
-        apply_helper(tl, inApply);
-        apply_helper(tr, inApply);
-      then
-        ();
-
-  end match;
-end apply_helper;
 
 public function apply1
 "@author: adrpo
@@ -1698,91 +1539,16 @@ public function apply1
   input ExtraArg inExtraArg;
   output ExtraArg outExtraArg;
   partial function Apply
+    input Name name;
     input Ref inRef;
     input ExtraArg inExtraArg;
     output ExtraArg outExtraArg;
   end Apply;
   replaceable type ExtraArg subtypeof Any;
 algorithm
-  outExtraArg := match(inRef, inApply, inExtraArg)
-    local
-      Refs refs;
-      Boolean b;
-      ExtraArg a;
-
-    case (_, _, a)
-      equation
-        a = apply_helper1(children(fromRef(inRef)), inApply, a);
-        a = inApply(inRef, a);
-      then
-        a;
-
-  end match;
+  outExtraArg := RefTree.fold(children(fromRef(inRef)), inApply, inExtraArg);
+  outExtraArg := inApply(refName(inRef), inRef, outExtraArg);
 end apply1;
-
-public function apply_helper1
-  input AvlTree inTree;
-  input Apply inApply;
-  input ExtraArg inExtraArg;
-  output ExtraArg outExtraArg;
-  partial function Apply
-    input AvlValue inRef;
-    input ExtraArg inExtraArg;
-    output ExtraArg outExtraArg;
-  end Apply;
-  replaceable type ExtraArg subtypeof Any;
-algorithm
-  outExtraArg := match(inTree, inApply, inExtraArg)
-    local
-      list<AvlValue> acc;
-      AvlValue v;
-      AvlTree t, tl, tr;
-      Boolean b;
-      ExtraArg a;
-
-    // empty tree
-    case (FCore.CAVLTREENODE(NONE(), _, NONE(), NONE()), _, a)
-      then
-        a;
-
-    // leaf
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, NONE(), NONE()), _, a)
-      equation
-        a = apply_helper1(children(fromRef(v)), inApply, a);
-        a = inApply(v, a);
-      then
-        a;
-
-    // non-leaf on left
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, SOME(t), NONE()), _, a)
-      equation
-        a = apply_helper1(children(fromRef(v)), inApply, a);
-        a = apply_helper1(t, inApply, a);
-        a = inApply(v, a);
-      then
-        a;
-
-    // non-leaf on right
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, NONE(), SOME(t)), _, a)
-      equation
-        a = apply_helper1(children(fromRef(v)), inApply, a);
-        a = apply_helper1(t, inApply, a);
-        a = inApply(v, a);
-      then
-        a;
-
-    // non-leaf on both left and right
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, SOME(tl), SOME(tr)), _, a)
-      equation
-        a = apply_helper1(children(fromRef(v)), inApply, a);
-        a = apply_helper1(tl, inApply, a);
-        a = apply_helper1(tr, inApply, a);
-        a = inApply(v, a);
-      then
-        a;
-
-  end match;
-end apply_helper1;
 
 public function hasImports
   input Node inNode;
@@ -1937,91 +1703,20 @@ public function cloneTree
   output Graph outGraph;
   output Children outChildren;
 algorithm
-  (outGraph, outChildren) := match(inChildren, inParentRef, inGraph)
-    local
-      Integer h;
-      Option<AvlTree> l, r;
-      Option<AvlTreeValue> v;
-      Graph g;
-      Ref ref;
-
-    /*/ ignore clones!
-    case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(value = ref)), h, l, r), _, g)
-      equation
-        true = isRefClone(ref);
-      then
-        (g, FCore.emptyCAvlTree);*/
-
-    // tree
-    case (FCore.CAVLTREENODE(v, h, l, r), _, g)
-      equation
-        (g, v) = cloneTreeValueOpt(v, inParentRef, g);
-        (g, l) = cloneTreeOpt(l, inParentRef, g);
-        (g, r) = cloneTreeOpt(r, inParentRef, g);
-      then
-        (g, FCore.CAVLTREENODE(v, h, l, r));
-
-  end match;
+  (outChildren, outGraph) :=
+    RefTree.mapFold(inChildren, function cloneChild(parentRef = inParentRef), inGraph);
 end cloneTree;
 
-public function cloneTreeOpt
-"@author: adrpo
- clone a node entire subtree
- the clone will have 2 parents
- {inParentRef, originalParentRef}"
-  input Option<AvlTree> inTreeOpt;
-  input Ref inParentRef;
+protected function cloneChild
+  input Name name;
+  input Ref parentRef;
+  input Ref inRef;
   input Graph inGraph;
-  output Graph outGraph;
-  output Option<AvlTree> outTreeOpt;
+  output Ref ref;
+  output Graph graph;
 algorithm
-  (outGraph, outTreeOpt) := match(inTreeOpt, inParentRef, inGraph)
-    local
-      Ref ref;
-      Name name;
-      Integer h;
-      AvlTree t;
-      Graph g;
-
-    // empty tree
-    case (NONE(), _, _) then (inGraph, NONE());
-    // some tree
-    case (SOME(t), _, _)
-      equation
-        (g, t) = cloneTree(t, inParentRef, inGraph);
-      then
-        (g, SOME(t));
-
-  end match;
-end cloneTreeOpt;
-
-public function cloneTreeValueOpt
-"@author: adrpo
- clone a tree value"
-  input Option<AvlTreeValue> inTreeValueOpt;
-  input Ref inParentRef;
-  input Graph inGraph;
-  output Graph outGraph;
-  output Option<AvlTreeValue> outTreeValueOpt;
-algorithm
-  (outGraph, outTreeValueOpt) := match(inTreeValueOpt, inParentRef, inGraph)
-    local
-      Ref ref;
-      Name name;
-      AvlTreeValue v;
-      Graph g;
-
-    // empty value
-    case (NONE(), _, _) then (inGraph, NONE());
-    // some value
-    case (SOME(FCore.CAVLTREEVALUE(name, ref)), _, _)
-      equation
-        (g, ref) = cloneRef(name, ref, inParentRef, inGraph);
-      then
-        (g, SOME(FCore.CAVLTREEVALUE(name, ref)));
-
-  end match;
-end cloneTreeValueOpt;
+  (graph, ref) := cloneRef(name, inRef, parentRef, inGraph);
+end cloneChild;
 
 public function copyRef
 "@author: adrpo
@@ -2078,6 +1773,7 @@ algorithm
 end updateRefs;
 
 protected function updateRefInGraph
+  input Name name;
   input Ref inRef;
   input tuple<Ref, Graph> inTopRefAndGraph;
   output tuple<Ref, Graph> outTopRefAndGraph;
@@ -2159,21 +1855,7 @@ public function copyRefNoUpdate
 "@author: adrpo
  copy a node ref entire subtree"
   input Ref inRef;
-  output Ref outRef;
-algorithm
-  outRef := match(inRef)
-    local
-      Node n;
-      Graph g;
-      Ref r;
-
-    case (_)
-      equation
-        r = copy(fromRef(inRef));
-      then
-        r;
-
-  end match;
+  output Ref outRef = copy(fromRef(inRef));
 end copyRefNoUpdate;
 
 protected function copy
@@ -2182,107 +1864,24 @@ protected function copy
  this is like clone but the parents are kept as they are"
   input Node inNode;
   output Ref outRef;
+protected
+  Node node = inNode;
 algorithm
-  outRef := match(inNode)
-    local
-      Node n;
-      Graph g;
-      Ref r;
-      Name name;
-      Id id;
-      Parents p;
-      Children c;
-      Data data;
-
-    case (FCore.N(name, id, p, c, data))
-      equation
+  outRef := match node
+    case FCore.N()
+      algorithm
         // copy children
-        c = copyTree(c);
-        // create node copy
-        n = FCore.N(name, id, p, c, data);
-        r = toRef(n);
+        node.children := RefTree.map(node.children, copyChild);
       then
-        r;
-
+        toRef(node);
   end match;
 end copy;
 
-protected function copyTree
-"@author: adrpo
- copy a node entire subtree"
-  input Children inChildren;
-  output Children outChildren;
-algorithm
-  outChildren := match(inChildren)
-    local
-      Integer h;
-      Option<AvlTree> l, r;
-      Option<AvlTreeValue> v;
-      Graph g;
-      Ref ref;
-
-    // tree
-    case (FCore.CAVLTREENODE(v, h, l, r))
-      equation
-        v = copyTreeValueOpt(v);
-        l = copyTreeOpt(l);
-        r = copyTreeOpt(r);
-      then
-        FCore.CAVLTREENODE(v, h, l, r);
-
-  end match;
-end copyTree;
-
-protected function copyTreeOpt
-"@author: adrpo
- copy a node entire subtree"
-  input Option<AvlTree> inTreeOpt;
-  output Option<AvlTree> outTreeOpt;
-algorithm
-  outTreeOpt := match(inTreeOpt)
-    local
-      Ref ref;
-      Name name;
-      Integer h;
-      AvlTree t;
-      Graph g;
-
-    // empty tree
-    case (NONE()) then NONE();
-    // some tree
-    case (SOME(t))
-      equation
-        t = copyTree(t);
-      then
-        SOME(t);
-
-  end match;
-end copyTreeOpt;
-
-protected function copyTreeValueOpt
-"@author: adrpo
- copy a tree value"
-  input Option<AvlTreeValue> inTreeValueOpt;
-  output Option<AvlTreeValue> outTreeValueOpt;
-algorithm
-  outTreeValueOpt := match(inTreeValueOpt)
-    local
-      Ref ref;
-      Name name;
-      AvlTreeValue v;
-      Graph g;
-
-    // empty value
-    case (NONE()) then NONE();
-    // some value
-    case (SOME(FCore.CAVLTREEVALUE(name, ref)))
-      equation
-        ref = copyRefNoUpdate(ref);
-      then
-        SOME(FCore.CAVLTREEVALUE(name, ref));
-
-  end match;
-end copyTreeValueOpt;
+protected function copyChild
+  input Name name;
+  input Ref inRef;
+  output Ref ref = copyRefNoUpdate(inRef);
+end copyChild;
 
 public function getElement
 "@author: adrpo
@@ -2408,598 +2007,6 @@ public function mkExtendsName
 algorithm
   outName := extendsPrefix + Absyn.pathString(inPath);
 end mkExtendsName;
-
-// ************************ AVL Tree implementation ***************************
-// ************************ AVL Tree implementation ***************************
-// ************************ AVL Tree implementation ***************************
-// ************************ AVL Tree implementation ***************************
-
-public function keyStr "prints a key to a string"
-input AvlKey k;
-output String str;
-algorithm
-  str := k;
-end keyStr;
-
-public function valueStr "prints a Value to a string"
-  input AvlValue v;
-  output String str;
-algorithm
-  str := match(v)
-    local
-      String name;
-
-    case(_) then "";
-
-  end match;
-end valueStr;
-
-/* Generic Code below */
-public function avlTreeNew "Return an empty tree"
-  output AvlTree tree;
-  annotation(__OpenModelica_EarlyInline = true);
-algorithm
-  tree := FCore.emptyCAvlTree;
-end avlTreeNew;
-
-public function avlTreeAdd
-  "Help function to avlTreeAdd."
-  input AvlTree inAvlTree;
-  input AvlKey inKey;
-  input AvlValue inValue;
-  output AvlTree outAvlTree;
-algorithm
-  outAvlTree := match (inAvlTree,inKey,inValue)
-    local
-      AvlKey key,rkey;
-      AvlValue value;
-
-    // empty tree
-    case (FCore.CAVLTREENODE(value = NONE(),left = NONE(),right = NONE()),key,value)
-      then FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(key,value)),1,NONE(),NONE());
-
-    case (FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(key=rkey))),key,value)
-      then balance(avlTreeAdd2(inAvlTree,stringCompare(key,rkey),key,value));
-
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAdd failed"});
-      then fail();
-  end match;
-end avlTreeAdd;
-
-public function avlTreeAdd2
-  "Help function to avlTreeAdd."
-  input AvlTree inAvlTree;
-  input Integer keyComp "0=get value from current node, 1=search right subtree, -1=search left subtree";
-  input AvlKey inKey;
-  input AvlValue inValue;
-  output AvlTree outAvlTree;
-algorithm
-  outAvlTree := match (inAvlTree,keyComp,inKey,inValue)
-    local
-      AvlKey key,rkey;
-      AvlValue value;
-      Option<AvlTree> left,right;
-      Integer h;
-      AvlTree t_1,t;
-      Option<AvlTreeValue> oval;
-
-    /*/ Don't allow replacing of nodes.
-    case (_, 0, key, _)
-      equation
-        info = getItemInfo(inValue);
-        Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
-          {inKey}, info);
-      then
-        fail();*/
-
-    // replace this node
-    case (FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(key=rkey)),height=h,left = left,right = right),0,_,value)
-      equation
-        // inactive for now, but we should check if we don't replace a class with a var or vice-versa!
-        // checkValueReplacementCompatible(rval, value);
-      then
-        FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(rkey,value)),h,left,right);
-
-    // insert to right
-    case (FCore.CAVLTREENODE(value = oval,height=h,left = left,right = right),1,key,value)
-      equation
-        t = createEmptyAvlIfNone(right);
-        t_1 = avlTreeAdd(t, key, value);
-      then
-        FCore.CAVLTREENODE(oval,h,left,SOME(t_1));
-
-    // insert to left subtree
-    case (FCore.CAVLTREENODE(value = oval,height=h,left = left ,right = right),-1,key,value)
-      equation
-        t = createEmptyAvlIfNone(left);
-        t_1 = avlTreeAdd(t, key, value);
-      then
-        FCore.CAVLTREENODE(oval,h,SOME(t_1),right);
-
-  end match;
-end avlTreeAdd2;
-
-protected function createEmptyAvlIfNone "Help function to AvlTreeAdd2"
-  input Option<AvlTree> t;
-  output AvlTree outT;
-algorithm
-  outT := match (t)
-    case(NONE()) then FCore.CAVLTREENODE(NONE(),0,NONE(),NONE());
-    case(SOME(outT)) then outT;
-  end match;
-end createEmptyAvlIfNone;
-
-protected function nodeValue "return the node value"
-  input AvlTree bt;
-  output AvlValue v;
-algorithm
-  v := match (bt)
-    case(FCore.CAVLTREENODE(value=SOME(FCore.CAVLTREEVALUE(_,v)))) then v;
-  end match;
-end nodeValue;
-
-protected function balance "Balances a AvlTree"
-  input AvlTree inBt;
-  output AvlTree outBt;
-algorithm
-  outBt := match (inBt)
-    local Integer d; AvlTree bt;
-    case (bt)
-      equation
-        d = differenceInHeight(bt);
-        bt = doBalance(d,bt);
-      then bt;
-  end match;
-end balance;
-
-protected function doBalance "perform balance if difference is > 1 or < -1"
-  input Integer difference;
-  input AvlTree inBt;
-  output AvlTree outBt;
-algorithm
-  outBt := match (difference,inBt)
-    local AvlTree bt;
-    case(-1,bt) then computeHeight(bt);
-    case(0,bt) then computeHeight(bt);
-    case(1,bt) then computeHeight(bt);
-      /* d < -1 or d > 1 */
-    case(_,bt)
-      equation
-        bt = doBalance2(difference < 0,bt);
-      then bt;
-  end match;
-end doBalance;
-
-protected function doBalance2 "help function to doBalance"
-  input Boolean differenceIsNegative;
-  input AvlTree inBt;
-  output AvlTree outBt;
-algorithm
-  outBt := match (differenceIsNegative,inBt)
-    local AvlTree bt;
-    case (true,bt)
-      equation
-        bt = doBalance3(bt);
-        bt = rotateLeft(bt);
-      then bt;
-    case (false,bt)
-      equation
-        bt = doBalance4(bt);
-        bt = rotateRight(bt);
-      then bt;
-  end match;
-end doBalance2;
-
-protected function doBalance3 "help function to doBalance2"
-  input AvlTree inBt;
-  output AvlTree outBt;
-algorithm
-  outBt := matchcontinue(inBt)
-    local
-      AvlTree rr,bt;
-    case(bt)
-      equation
-        true = differenceInHeight(getOption(rightNode(bt))) > 0;
-        rr = rotateRight(getOption(rightNode(bt)));
-        bt = setRight(bt,SOME(rr));
-      then bt;
-    else inBt;
-  end matchcontinue;
-end doBalance3;
-
-protected function doBalance4 "help function to doBalance2"
-  input AvlTree inBt;
-  output AvlTree outBt;
-algorithm
-  outBt := matchcontinue(inBt)
-    local
-      AvlTree rl,bt;
-    case (bt)
-      equation
-        true = differenceInHeight(getOption(leftNode(bt))) < 0;
-        rl = rotateLeft(getOption(leftNode(bt)));
-        bt = setLeft(bt,SOME(rl));
-      then bt;
-    else inBt;
-  end matchcontinue;
-end doBalance4;
-
-protected function setRight "set right treenode"
-  input AvlTree node;
-  input Option<AvlTree> right;
-  output AvlTree outNode;
-algorithm
-  outNode := match (node,right)
-   local Option<AvlTreeValue> value;
-    Option<AvlTree> l,r;
-    Integer height;
-    case(FCore.CAVLTREENODE(value,height,l,_),_) then FCore.CAVLTREENODE(value,height,l,right);
-  end match;
-end setRight;
-
-protected function setLeft "set left treenode"
-  input AvlTree node;
-  input Option<AvlTree> left;
-  output AvlTree outNode;
-algorithm
-  outNode := match (node,left)
-  local Option<AvlTreeValue> value;
-    Option<AvlTree> l,r;
-    Integer height;
-    case(FCore.CAVLTREENODE(value,height,_,r),_) then FCore.CAVLTREENODE(value,height,left,r);
-  end match;
-end setLeft;
-
-protected function leftNode "Retrieve the left subnode"
-  input AvlTree node;
-  output Option<AvlTree> subNode;
-algorithm
-  subNode := match(node)
-    case(FCore.CAVLTREENODE(left = subNode)) then subNode;
-  end match;
-end leftNode;
-
-protected function rightNode "Retrieve the right subnode"
-  input AvlTree node;
-  output Option<AvlTree> subNode;
-algorithm
-  subNode := match(node)
-    case(FCore.CAVLTREENODE(right = subNode)) then subNode;
-  end match;
-end rightNode;
-
-protected function exchangeLeft "help function to balance"
-  input AvlTree inNode;
-  input AvlTree inParent;
-  output AvlTree outParent "updated parent";
-algorithm
-  outParent := match(inNode,inParent)
-    local
-      AvlTree bt,node,parent;
-
-    case(node,parent) equation
-      parent = setRight(parent,leftNode(node));
-      parent = balance(parent);
-      node = setLeft(node,SOME(parent));
-      bt = balance(node);
-    then bt;
-  end match;
-end exchangeLeft;
-
-protected function exchangeRight "help function to balance"
-  input AvlTree inNode;
-  input AvlTree inParent;
-  output AvlTree outParent "updated parent";
-algorithm
-  outParent := match(inNode,inParent)
-  local AvlTree bt,node,parent;
-    case(node,parent) equation
-      parent = setLeft(parent,rightNode(node));
-      parent = balance(parent);
-      node = setRight(node,SOME(parent));
-      bt = balance(node);
-    then bt;
-  end match;
-end exchangeRight;
-
-protected function rotateLeft "help function to balance"
-input AvlTree node;
-output AvlTree outNode "updated node";
-algorithm
-  outNode := exchangeLeft(getOption(rightNode(node)),node);
-end rotateLeft;
-
-protected function getOption "Retrieve the value of an option"
-  replaceable type T subtypeof Any;
-  input Option<T> opt;
-  output T val;
-algorithm
-  val := match(opt)
-    case(SOME(val)) then val;
-  end match;
-end getOption;
-
-protected function rotateRight "help function to balance"
-input AvlTree node;
-output AvlTree outNode "updated node";
-algorithm
-  outNode := exchangeRight(getOption(leftNode(node)),node);
-end rotateRight;
-
-protected function differenceInHeight "help function to balance, calculates the difference in height
-between left and right child"
-  input AvlTree node;
-  output Integer diff;
-algorithm
-  diff := match (node)
-    local
-      Integer lh,rh;
-      Option<AvlTree> l,r;
-    case(FCore.CAVLTREENODE(left=l,right=r))
-      equation
-        lh = getHeight(l);
-        rh = getHeight(r);
-      then lh - rh;
-  end match;
-end differenceInHeight;
-
-public function avlTreeGet
-  "Get a value from the binary tree given a key."
-  input AvlTree inAvlTree;
-  input AvlKey inKey;
-  output AvlValue outValue;
-protected
-  AvlKey key;
-  AvlTree branch;
-  Integer res;
-algorithm
-  FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(key = key))) := inAvlTree;
-  res := stringCompare(inKey, key);
-
-  if res == 0 then
-    FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(value = outValue))) := inAvlTree;
-    return;
-  elseif res == 1 then
-    FCore.CAVLTREENODE(right = SOME(branch)) := inAvlTree;
-  else
-    FCore.CAVLTREENODE(left = SOME(branch)) := inAvlTree;
-  end if;
-
-  outValue := avlTreeGet(branch, inKey);
-end avlTreeGet;
-
-protected function getOptionStr "Retrieve the string from a string option.
-  If NONE() return empty string."
-  input Option<Type_a> inTypeAOption;
-  input FuncTypeType_aToString inFuncTypeTypeAToString;
-  output String outString;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncTypeType_aToString
-    input Type_a inTypeA;
-    output String outString;
-  end FuncTypeType_aToString;
-algorithm
-  outString:=
-  match (inTypeAOption,inFuncTypeTypeAToString)
-    local
-      String str;
-      Type_a a;
-      FuncTypeType_aToString r;
-    case (SOME(a),r)
-      equation
-        str = r(a);
-      then
-        str;
-    else "";
-  end match;
-end getOptionStr;
-
-protected function printAvlTreeStr "
-  Prints the avl tree to a string"
-  input AvlTree inAvlTree;
-  output String outString;
-algorithm
-  outString:=
-  match (inAvlTree)
-    local
-      AvlKey rkey;
-      String s2,s3,res;
-      AvlValue rval;
-      Option<AvlTree> l,r;
-      Integer h;
-
-    case (FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(_,rval)),left = l,right = r))
-      equation
-        s2 = getOptionStr(l, printAvlTreeStr);
-        s3 = getOptionStr(r, printAvlTreeStr);
-        res = "\n" + valueStr(rval) + ",  " + (if stringEq(s2, "") then "" else (s2 + ", ")) + s3;
-      then
-        res;
-    case (FCore.CAVLTREENODE(value = NONE(),left = l,right = r))
-      equation
-        s2 = getOptionStr(l, printAvlTreeStr);
-        s3 = getOptionStr(r, printAvlTreeStr);
-        res = (if stringEq(s2, "") then "" else (s2 + ", ")) + s3;
-      then
-        res;
-  end match;
-end printAvlTreeStr;
-
-protected function computeHeight "compute the heigth of the AvlTree and store in the node info"
-  input AvlTree bt;
-  output AvlTree outBt;
-algorithm
-  outBt := match(bt)
-    local
-      Option<AvlTree> l,r;
-      Option<AvlTreeValue> v;
-      Integer hl,hr,height;
-    case(FCore.CAVLTREENODE(value=v as SOME(_),left=l,right=r))
-      equation
-        hl = getHeight(l);
-        hr = getHeight(r);
-        height = intMax(hl,hr) + 1;
-      then FCore.CAVLTREENODE(v,height,l,r);
-  end match;
-end computeHeight;
-
-protected function getHeight "Retrieve the height of a node"
-  input Option<AvlTree> bt;
-  output Integer height;
-algorithm
-  height := match (bt)
-    case(SOME(FCore.CAVLTREENODE(height = height))) then height;
-    else 0;
-  end match;
-end getHeight;
-
-public function printAvlTreeStrPP
-  input AvlTree inTree;
-  output String outString;
-algorithm
-  outString := printAvlTreeStrPP2(SOME(inTree), "");
-end printAvlTreeStrPP;
-
-protected function printAvlTreeStrPP2
-  input Option<AvlTree> inTree;
-  input String inIndent;
-  output String outString;
-algorithm
-  outString := match(inTree, inIndent)
-    local
-      AvlKey rkey;
-      Option<AvlTree> l, r;
-      String s1, s2, res, indent;
-
-    case (NONE(), _) then "";
-
-    case (SOME(FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(key = rkey)), left = l, right = r)), _)
-      equation
-        indent = inIndent + "  ";
-        s1 = printAvlTreeStrPP2(l, indent);
-        s2 = printAvlTreeStrPP2(r, indent);
-        res = "\n" + inIndent + rkey + s1 + s2;
-      then
-        res;
-
-    case (SOME(FCore.CAVLTREENODE(value = NONE(), left = l, right = r)), _)
-      equation
-        indent = inIndent + "  ";
-        s1 = printAvlTreeStrPP2(l, indent);
-        s2 = printAvlTreeStrPP2(r, indent);
-        res = "\n" + s1 + s2;
-      then
-        res;
-  end match;
-end printAvlTreeStrPP2;
-
-public function avlTreeReplace
-  "Replaces the value of an already existing node in the tree with a new value."
-  input AvlTree inAvlTree;
-  input AvlKey inKey;
-  input AvlValue inValue;
-  output AvlTree outAvlTree;
-algorithm
-  outAvlTree := match(inAvlTree, inKey, inValue)
-    local
-      AvlKey key, rkey;
-      AvlValue value;
-
-    case (FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(key = rkey))), key, value)
-      then avlTreeReplace2(inAvlTree, stringCompare(key, rkey), key, value);
-
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
-      then fail();
-
-  end match;
-end avlTreeReplace;
-
-protected function avlTreeReplace2
-  "Helper function to avlTreeReplace."
-  input AvlTree inAvlTree;
-  input Integer inKeyComp;
-  input AvlKey inKey;
-  input AvlValue inValue;
-  output AvlTree outAvlTree;
-algorithm
-  outAvlTree := match(inAvlTree, inKeyComp, inKey, inValue)
-    local
-      AvlKey key;
-      AvlValue value;
-      Option<AvlTree> left, right;
-      Integer h;
-      AvlTree t;
-      Option<AvlTreeValue> oval;
-
-    // Replace this node.
-    case (FCore.CAVLTREENODE(value = SOME(_), height = h, left = left, right = right),
-        0, key, value)
-      then FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(key, value)), h, left, right);
-
-    // Insert into right subtree.
-    case (FCore.CAVLTREENODE(value = oval, height = h, left = left, right = right),
-        1, key, value)
-      equation
-        t = createEmptyAvlIfNone(right);
-        t = avlTreeReplace(t, key, value);
-      then
-        FCore.CAVLTREENODE(oval, h, left, SOME(t));
-
-    // Insert into left subtree.
-    case (FCore.CAVLTREENODE(value = oval, height = h, left = left, right = right),
-        -1, key, value)
-      equation
-        t = createEmptyAvlIfNone(left);
-        t = avlTreeReplace(t, key, value);
-      then
-        FCore.CAVLTREENODE(oval, h, SOME(t), right);
-  end match;
-end avlTreeReplace2;
-
-public function getAvlTreeValues
-  input list<Option<AvlTree>> tree;
-  input list<AvlTreeValue> acc;
-  output list<AvlTreeValue> res;
-algorithm
-  res := match (tree,acc)
-    local
-      Option<AvlTreeValue> value;
-      Option<AvlTree> left,right;
-      list<Option<AvlTree>> rest;
-    case ({},_) then listReverse(acc);
-    case (SOME(FCore.CAVLTREENODE(value=value,left=left,right=right))::rest,_)
-      then getAvlTreeValues(left::right::rest,List.consOption(value,acc));
-    case (NONE()::rest,_) then getAvlTreeValues(rest,acc);
-  end match;
-end getAvlTreeValues;
-
-public function getAvlValue
-  input AvlTreeValue inValue;
-  output AvlValue res;
-algorithm
-  res := match (inValue)
-    case FCore.CAVLTREEVALUE(value = res) then res;
-  end match;
-end getAvlValue;
-
-public function getAvlValues
-  input AvlTree inAvlTree;
-  output list<AvlValue> outAvlValues;
-protected
-  list<AvlTreeValue> avlTreeValues;
-algorithm
-  avlTreeValues := getAvlTreeValues({SOME(inAvlTree)}, {});
-  outAvlValues := List.map(avlTreeValues, getAvlValue);
-end getAvlValues;
-
-// ************************ END AVL Tree implementation ***************************
-// ************************ END AVL Tree implementation ***************************
-// ************************ END AVL Tree implementation ***************************
-// ************************ END AVL Tree implementation ***************************
 
 annotation(__OpenModelica_Interface="frontend");
 end FNode;

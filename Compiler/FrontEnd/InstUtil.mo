@@ -2378,281 +2378,78 @@ public function addComponentsToEnv
   sizes of components and by investigating if-equations. If an if-equation
   has a boolean expression controlled by parameter(s), these are structural
   parameters."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
-  input ClassInf.State inState;
-  input list<tuple<SCode.Element, DAE.Mod>> inComponents;
-  input list<tuple<SCode.Element, DAE.Mod>> inAllComponents;
-  input list<SCode.Equation> inEquations;
-  input list<list<DAE.Dimension>> inInstDims;
-  input Boolean inImpl;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
+  input output FCore.Cache cache;
+  input output FCore.Graph env;
+  input output InnerOuter.InstHierarchy ih;
+  input DAE.Mod mod;
+  input Prefix.Prefix prefix;
+  input ClassInf.State state;
+  input list<tuple<SCode.Element, DAE.Mod>> components;
+  input Boolean impl;
+protected
+  SCode.Element comp, comp2;
+  DAE.Mod cmod, local_mod, comp_mod, mod2;
+  Absyn.Path ty_path;
+  SCode.Prefixes prefs;
+  SCode.Attributes attr;
+  DAE.Attributes dattr;
+  Boolean error = false;
+  String err_msg;
 algorithm
-  (outCache,outEnv,outIH) := match(inCache,inEnv,inIH,inMod,inPrefix,inState,
-      inComponents,inAllComponents,inEquations,inInstDims,inImpl)
-    local
-      FCore.Graph env;
-      tuple<SCode.Element, DAE.Mod> el;
-      list<tuple<SCode.Element, DAE.Mod>> xs;
-      InstanceHierarchy ih;
-      FCore.Cache cache;
+  for compmod in components loop
+    (comp, cmod) := compmod;
 
-    /* no more components. */
-    case (cache,env,ih,_,_,_,{},_,_,_,_) then (cache,env,ih);
-    case (cache,env,ih,_,_,_,el::xs,_,_,_,_)
-      equation
-        (cache,env,ih) = addComponentToEnv(cache,env,ih,inMod,inPrefix,inState,el,inAllComponents,inEquations,inInstDims,inImpl);
-        (cache,env,ih) = addComponentsToEnv(cache,env,ih,inMod,inPrefix,inState,xs,inAllComponents,inEquations,inInstDims,inImpl);
-      then (cache,env,ih);
-  end match;
+    error := matchcontinue comp
+      case SCode.COMPONENT(typeSpec = Absyn.TPATH(path = ty_path))
+      guard(comp.name == Absyn.pathLastIdent(ty_path))
+        algorithm
+          // name is equal with the last ident from type path.
+          // this is only a problem if the environment in which the component
+          // resides has as prefix the type path (without the last ident)
+          // as this would mean that we might find the type instead of the
+          // component when we do lookup
+          checkCompEnvPathVsCompTypePath(FGraph.getScopePath(env), ty_path);
+          err_msg := comp.name + " in env: " + FGraph.printGraphPathStr(env);
+          Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME,
+            {err_msg, Absyn.pathString(ty_path)}, comp.info);
+        then
+          true;
+
+      case SCode.COMPONENT(prefixes = prefs as SCode.PREFIXES(),
+                           attributes = attr as SCode.ATTR())
+        algorithm
+          ty_path := Absyn.typeSpecPath(comp.typeSpec);
+          local_mod := Mod.lookupModificationP(mod, ty_path);
+
+          if SCode.finalBool(SCode.prefixesFinal(prefs)) then
+            comp.modifications := traverseModAddFinal(comp.modifications);
+          end if;
+
+          (cache, env, ih, comp2, mod2) := Inst.redeclareType(cache, env, ih,
+            local_mod, comp, prefix, state, impl, cmod);
+
+          comp_mod := Mod.lookupCompModification(mod, comp.name);
+          cmod := Mod.merge(comp_mod, cmod);
+
+          dattr := DAEUtil.translateSCodeAttrToDAEAttr(attr, prefs);
+          env := FGraph.mkComponentNode(env,
+            DAE.TYPES_VAR(comp.name, dattr, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), NONE()),
+            comp, cmod, FCore.VAR_UNTYPED(), FGraph.empty());
+        then
+          false;
+
+      // Something went wrong.
+      case SCode.COMPONENT() then true;
+
+      // Skip non-components.
+      else false;
+    end matchcontinue;
+
+    if error then
+      fail();
+    end if;
+  end for;
 end addComponentsToEnv;
-
-protected function addComponentToEnv
-"author: PA
-  Since Modelica has removed the declare before use limitation, all
-  components are intially added untyped to the environment, i.e. the
-  SCode.Element is added. This is performed by this function. Later,
-  during the second pass of the instantiation of components, the components
-  are updated  in the environment. This is done by the function
-  update_components_in_env. This function is also responsible for
-  changing parameters into structural  parameters if they are affecting
-  the number of variables or equations. This is needed because Modelica has
-  no language construct for structural parameters, i.e. they must be
-  detected by the compiler.
-
-  Structural parameters are identified by investigating array dimension
-  sizes of components and by investigating if-equations. If an if-equation
-  has a boolean expression controlled by parameter(s), these are structural
-  parameters."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
-  input ClassInf.State inState;
-  input tuple<SCode.Element, DAE.Mod> inComponent;
-  input list<tuple<SCode.Element, DAE.Mod>> inAllComponents;
-  input list<SCode.Equation> inEquations;
-  input list<list<DAE.Dimension>> inInstDims;
-  input Boolean inImpl;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-algorithm
-  (outCache,outEnv,outIH) := matchcontinue(inCache,inEnv,inIH,inMod,inPrefix,
-      inState,inComponent,inAllComponents,inEquations,inInstDims,inImpl)
-    local
-      FCore.Graph env,env_1;
-      DAE.Mod mod,cmod;
-      Prefix.Prefix pre;
-      ClassInf.State cistate;
-      SCode.Element comp, cl;
-      String n, ns;
-      SCode.Final finalPrefix;
-      Boolean impl;
-      SCode.Attributes attr;
-      SCode.Mod m;
-      SCode.Comment comment;
-      list<tuple<SCode.Element, DAE.Mod>> allcomps;
-      list<SCode.Equation> eqns;
-      InstDims instdims;
-      Option<Absyn.Exp> aExp;
-      SourceInfo aInfo;
-      InstanceHierarchy ih;
-      FCore.Cache cache;
-      Absyn.TypeSpec tss;
-      Absyn.Path tpp;
-      SCode.Element selem;
-      DAE.Mod smod,compModLocal;
-      SCode.Prefixes pf;
-
-    // adrpo: moved this check from instElement here as we should check this as early as possible!
-    // Check if component's name is the same as its type's name
-    case (_,env,_,_,_,_,
-          ((SCode.COMPONENT(name = n,typeSpec = (Absyn.TPATH(tpp, _)), info = aInfo)),_), _, _, _,_)
-      equation
-        // name is equal with the last ident from type path.
-        // this is only a problem if the environment in which the component
-        // resides has as prefix the type path (without the last ident)
-        // as this would mean that we might find the type instead of the
-        // component when we do lookup
-        true = stringEq(n, Absyn.pathLastIdent(tpp));
-
-        // this will fail if the type path is a prefix of the env path
-        checkCompEnvPathVsCompTypePath(FGraph.getScopePath(env), tpp);
-
-        ns = Absyn.pathString(tpp);
-        n = n + " in env: " +  FGraph.printGraphPathStr(env);
-        Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n,ns}, aInfo);
-      then
-        fail();
-
-    /* A TPATH component */
-    case (cache,env,ih,mod,pre,cistate,
-        (((comp as SCode.COMPONENT(name = n,
-                                   prefixes = pf as SCode.PREFIXES(
-                                     finalPrefix = finalPrefix
-                                   ),
-                                   attributes = attr,
-                                   typeSpec = (tss as Absyn.TPATH(tpp, _)),
-                                   modifications = m,
-                                   comment = comment,
-                                   condition = aExp,
-                                   info = aInfo)),cmod)),
-        _,_,instdims,impl)
-      equation
-        compModLocal = Mod.lookupModificationP(mod, tpp);
-        if SCode.finalBool(finalPrefix) then
-          m = traverseModAddFinal(m);
-          comp = SCode.COMPONENT(n,pf,attr,tss,m,comment,aExp,aInfo);
-        end if;
-        (cache,env,ih,selem,smod) = Inst.redeclareType(cache, env, ih, compModLocal, comp, pre, cistate, impl,cmod);
-        // Debug.traceln(" adding comp: " + n + " " + Mod.printModStr(mod) + " cmod: " + Mod.printModStr(cmod) + " cmL: " + Mod.printModStr(compModLocal) + " smod: " + Mod.printModStr(smod));
-        // print(" \t comp: " + n + " " + "selem: " + SCodeDump.printElementStr(selem) + " smod: " + Mod.printModStr(smod) + "\n");
-        (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, cistate, {(selem,smod)}, instdims, impl);
-      then
-        (cache,env_1,ih);
-
-    /* A TCOMPLEX component */
-    case (cache,env,ih,mod,pre,cistate,
-        (((comp as SCode.COMPONENT(name = n,
-                                   prefixes = pf as SCode.PREFIXES(
-                                     finalPrefix = finalPrefix
-                                   ),
-                                   attributes = attr,
-                                   typeSpec = (tss as Absyn.TCOMPLEX(tpp,_,_)),
-                                   modifications = m,
-                                   comment = comment,
-                                   condition = aExp,
-                                   info = aInfo)),cmod)),
-        _,_,instdims,impl)
-      equation
-        // TODO: cmod was enforced to be NOMOD earlier. A problem to change it?
-        compModLocal = Mod.lookupModificationP(mod, tpp);
-        if SCode.finalBool(finalPrefix) then
-          m = traverseModAddFinal(m);
-          comp = SCode.COMPONENT(n,pf,attr,tss,m,comment,aExp,aInfo);
-        end if;
-        (cache,env,ih,selem,smod) = Inst.redeclareType(cache, env, ih, compModLocal, comp, pre, cistate, impl,cmod);
-        (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, cistate, {(selem,cmod)}, instdims, impl);
-      then
-        (cache,env_1,ih);
-
-    // Import statement
-    case (cache,env,ih,_,_,_,(SCode.IMPORT(),_),_,_,_,_)
-      then (cache,env,ih);
-
-    // Extends elements
-    case (cache,env,ih,_,_,_,(SCode.EXTENDS(),_),_,_,_,_)
-      then (cache,env,ih);
-
-    // classes
-    case (cache,env,ih,_,_,_,(SCode.CLASS(),_),_,_,_,_)
-      equation
-      then
-        (cache,env,ih);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- " + getInstanceName() + " failed\n");
-      then
-        fail();
-  end matchcontinue;
-end addComponentToEnv;
-
-protected function addComponentsToEnv2
-"Helper function to addComponentsToEnv.
-  Extends the environment with an untyped variable for the component."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
-  input ClassInf.State inState;
-  input list<tuple<SCode.Element, DAE.Mod>> inElement;
-  input list<list<DAE.Dimension>> inInstDims;
-  input Boolean inBoolean;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-algorithm
-  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inElement,inInstDims,inBoolean)
-    local
-      DAE.Mod compmod,cmod_1,mods,cmod;
-      FCore.Graph env_1,env_2,env;
-      Prefix.Prefix pre;
-      ClassInf.State ci_state;
-      SCode.Element comp;
-      String n;
-      SCode.Final finalPrefix;
-      SCode.Replaceable repl;
-      SCode.Visibility vis;
-      SCode.ConnectorType ct;
-      Boolean impl;
-      SCode.Redeclare redecl;
-      Absyn.InnerOuter io;
-      SCode.Attributes attr;
-      list<Absyn.Subscript> ad;
-      SCode.Parallelism prl;
-      SCode.Variability var;
-      Absyn.Direction dir;
-      Absyn.TypeSpec t;
-      SCode.Mod m;
-      list<tuple<SCode.Element, DAE.Mod>> xs,comps;
-      InstDims inst_dims;
-      SourceInfo info;
-      Option<Absyn.Exp> condition;
-      InstanceHierarchy ih;
-      FCore.Cache cache;
-
-    // a component
-    case (cache,env,ih,mods,pre,ci_state,
-          ((comp as SCode.COMPONENT(name=n,prefixes=SCode.PREFIXES(vis,_,_,io,_),
-                                    attributes=SCode.ATTR(_,ct,prl,var,dir)),cmod) :: xs),
-          inst_dims,impl)
-      equation
-        // compmod = Mod.getModifs(mods, n, m);
-        compmod = Mod.lookupCompModification(mods, n);
-        cmod_1 = Mod.merge(compmod, cmod);
-
-        /*
-        print("InstUtil.addCompToEnv: " +
-          n + " in env " +
-          FGraph.printGraphPathStr(env) + " with mod: " + Mod.printModStr(cmod_1) + " in element: " +
-          SCodeDump.printElementStr(comp) + "\n");
-        */
-
-        // Debug.traceln("  extendFrameV comp " + n + " m:" + Mod.printModStr(cmod_1) + " compm: " + Mod.printModStr(compmod) + " cm: " + Mod.printModStr(cmod));
-        env_1 = FGraph.mkComponentNode(env,
-          DAE.TYPES_VAR(
-            n,DAE.ATTR(ct,prl,var,dir,io,vis),
-            DAE.T_UNKNOWN_DEFAULT,DAE.UNBOUND(),NONE()),
-          comp,
-          cmod_1,
-          FCore.VAR_UNTYPED(),
-          FGraph.empty());
-        (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, ci_state, xs, inst_dims, impl);
-      then
-        (cache,env_2,ih);
-
-    // no components in list
-    case (cache,env,ih,_,_,_,{},_,_) then (cache,env,ih);
-
-    // failtrace
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- InstUtil.addComponentsToEnv2 failed\n");
-      then
-        fail();
-  end matchcontinue;
-end addComponentsToEnv2;
 
 protected function getCrefsFromCompdims
 "author: PA

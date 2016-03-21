@@ -6746,7 +6746,6 @@ end getSymbolicTransformations;
 public function translateSCodeAttrToDAEAttr
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
-  input SCode.Comment comment;
   output DAE.Attributes outAttributes;
 protected
   SCode.ConnectorType ct;

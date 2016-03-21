@@ -1546,7 +1546,7 @@ algorithm
     case (env as FCore.G(scope = r::_),id)
       equation
         ht = FNode.children(FNode.fromRef(r));
-        r = FNode.avlTreeGet(ht, id);
+        r = FCore.RefTree.get(ht, id);
         FCore.N(data = FCore.CL(e = cl)) = FNode.fromRef(r);
       then
         (cl,env);
@@ -1936,7 +1936,7 @@ algorithm
         ht;
 
     // no ty node
-    else FCore.emptyCAvlTree;
+    else FCore.RefTree.new();
   end matchcontinue;
 end getHtTypes;
 
@@ -1964,7 +1964,7 @@ algorithm
 
     case (cache,_,httypes,env,id)
       equation
-        item = FNode.fromRef(FNode.avlTreeGet(httypes, id));
+        item = FNode.fromRef(FCore.RefTree.get(httypes, id));
         (cache,t,env) = lookupTypeInFrame2(cache,item,env,id);
       then
         (cache,t,env);
@@ -2049,11 +2049,11 @@ protected
   DAE.Type ty;
 algorithm
   try // Try to look up the function among the function types first.
-    r := FNode.avlTreeGet(inFuncTypes, inFuncName);
+    r := FCore.RefTree.get(inFuncTypes, inFuncName);
     FCore.N(data = FCore.FT(outFuncTypes)) := FNode.fromRef(r);
     outCache := inCache;
   else // If not found, try to look the function up in the environment instead.
-    r := FNode.avlTreeGet(inClasses, inFuncName);
+    r := FCore.RefTree.get(inClasses, inFuncName);
     FCore.N(data = data) := FNode.fromRef(r);
 
     (outCache, outFuncTypes) := matchcontinue(data)
@@ -2204,7 +2204,7 @@ algorithm
   (outCache,outEnv,funcelts,elts) := matchcontinue(inCache,inEnv,cl,mods)
     local
       list<SCode.Element> cdefelts,classExtendsElts,extendsElts,compElts;
-      list<tuple<SCode.Element,DAE.Mod>> eltsMods, extCompElts;
+      list<tuple<SCode.Element,DAE.Mod>> eltsMods;
       String name;
       Absyn.Path fpath;
       SourceInfo info;
@@ -2218,8 +2218,8 @@ algorithm
         env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), SOME(FCore.CLASS_SCOPE()));
         fpath = FGraph.getGraphName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = InstUtil.splitElts(elts);
-        (cache,env,_,_,extCompElts,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, elts, ClassInf.RECORD(fpath), name, true, false);
-        eltsMods = listAppend(extCompElts,InstUtil.addNomod(compElts));
+        (cache,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, elts, ClassInf.RECORD(fpath), name, true, false);
+        eltsMods = listAppend(eltsMods,InstUtil.addNomod(compElts));
         // print("Record Elements: " +
         //   stringDelimitList(
         //     List.map(
@@ -2228,7 +2228,7 @@ algorithm
         //         Util.tuple21),
         //       SCodeDump.printElementStr), "\n"));
         (cache, env1, _) = InstUtil.addClassdefsToEnv(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), cdefelts, false, NONE());
-        (cache, env1, _) = InstUtil.addComponentsToEnv(cache, env1, InnerOuter.emptyInstHierarchy, mods, Prefix.NOPRE(), ClassInf.RECORD(fpath), eltsMods, eltsMods, {}, {}, true);
+        (cache, env1, _) = InstUtil.addComponentsToEnv(cache, env1, InnerOuter.emptyInstHierarchy, mods, Prefix.NOPRE(), ClassInf.RECORD(fpath), eltsMods, true);
         (cache, env1, funcelts) = buildRecordConstructorElts(cache,env1,eltsMods,mods);
       then (cache,env1,funcelts,elts);
 
@@ -2552,7 +2552,7 @@ algorithm
     // Check this scope for class
     case (cache,FCore.N(children = ht),totenv,name,prevFrames,_)
       equation
-        r = FNode.avlTreeGet(ht, name);
+        r = FCore.RefTree.get(ht, name);
         FCore.N(data = FCore.CL(e = c)) = FNode.fromRef(r);
       then
         (cache,c,totenv,prevFrames);
@@ -2615,7 +2615,7 @@ protected
   FCore.Node n;
   String name;
 algorithm
-  r := FNode.avlTreeGet(inBinTree, inIdent);
+  r := FCore.RefTree.get(inBinTree, inIdent);
   outVar := FNode.refInstVar(r);
   s := FNode.refRefTargetScope(r);
   n := FNode.fromRef(r);
