@@ -3520,15 +3520,15 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   QStringList paths = QString(getenv("PATH")).split(":");
 #endif
   QStringList nameFilters;
-  nameFilters << "[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-[g]cc";
-  QStringList platforms;
+  nameFilters << "[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-g*cc";
+  QStringList compilers;
   foreach (QString path, paths) {
     QDir dir(path);
-    platforms << dir.entryList(nameFilters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
+    compilers << dir.entryList(nameFilters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
   }
   mpPlatformsGroupBox = new QGroupBox(tr("Platforms"));
   Label *pPlatformNoteLabel = new Label(tr("Note: The list of platforms is created by searching for programs in the PATH\n"
-                                           "matching regular expression \"[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-[g]cc\"."));
+                                           "matching regular expression \"[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-g*cc\"."));
   mpLinkingComboBox = new QComboBox;
   mpLinkingComboBox->addItem(tr("None"), "none");
   mpLinkingComboBox->addItem(tr("Dynamic"), "dynamic");
@@ -3539,8 +3539,8 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pPlatformsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pPlatformsLayout->addWidget(pPlatformNoteLabel);
   pPlatformsLayout->addWidget(mpLinkingComboBox);
-  foreach (QString platform, platforms) {
-    pPlatformsLayout->addWidget(new QCheckBox(platform));
+  foreach (QString compiler, compilers) {
+    pPlatformsLayout->addWidget(new QCheckBox(compiler.left(compiler.lastIndexOf('-'))));
   }
   mpPlatformsGroupBox->setLayout(pPlatformsLayout);
   // set the export group box layout
