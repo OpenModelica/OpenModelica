@@ -64,48 +64,49 @@ protected import BackendDAEUtil;
 // =============================================================================
 
 public function solveSimpleEquations
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE = inDAE;
-protected
-  BackendDAE.Equation eqn;
-  BackendDAE.Var var;
-  Integer iComp;
-  Integer eindex,vindx;
-  BackendDAE.StrongComponents comps;
-  array<Integer> ass1 "eqn := ass1[var]";
-  array<Integer> ass2 "var := ass2[eqn]";
-  Boolean solved;
-
-  list<BackendDAE.EqSystem> systlst = {};
+  input output BackendDAE.BackendDAE DAE;
 algorithm
 
- for syst in inDAE.eqs loop
-   BackendDAE.MATCHING(comps=comps,ass1=ass1, ass2=ass2) := syst.matching;
-   iComp := 1;
-   for comp in comps loop
-     if BackendDAEUtil.isSingleEquationComp(comp) then
+DAE.eqs := list( (match syst
+              local
+                BackendDAE.StrongComponents comps;
+                array<Integer> ass1 "eqn := ass1[var]";
+               array<Integer> ass2 "var := ass2[eqn]";
+
+   case BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps=comps,ass1=ass1, ass2=ass2))
+   algorithm
+   comps := list( (match comp
+     local
+       BackendDAE.Equation eqn;
+       BackendDAE.Var var;
+       Integer eindex,vindx;
+       Boolean solved;
+       BackendDAE.StrongComponent tmpComp;
+
+    case BackendDAE.SINGLEEQUATION()
+      algorithm
        BackendDAE.SINGLEEQUATION(eqn=eindex,var=vindx) := comp;
        eqn := BackendEquation.equationNth1(syst.orderedEqs, eindex);
        var := BackendVariable.getVarAt(syst.orderedVars, vindx);
-
+       tmpComp := comp;
        if BackendEquation.isEquation(eqn) then
-         (eqn,solved) := solveSimpleEquationsWork(eqn, var, outDAE.shared);
+         (eqn,solved) := solveSimpleEquationsWork(eqn, var, DAE.shared);
          syst.orderedEqs := BackendEquation.setAtIndex(syst.orderedEqs, eindex, eqn);
 
          if not solved then
-           comp := BackendDAE.EQUATIONSYSTEM({eindex}, {vindx}, BackendDAE.EMPTY_JACOBIAN() ,BackendDAE.JAC_NONLINEAR(), false);
-           comps := List.replaceAt(comp, iComp, comps);
+           tmpComp := BackendDAE.EQUATIONSYSTEM({eindex}, {vindx}, BackendDAE.EMPTY_JACOBIAN() ,BackendDAE.JAC_NONLINEAR(), false);
          end if;
-
        end if; // isEquation
-     end if; // isSingleEquationComp
-     iComp := iComp + 1;
-   end for; //comp
-  syst.matching := BackendDAE.MATCHING(ass1, ass2, comps);
-	systlst := syst :: systlst;
- end for; // syst
+       then tmpComp;
+     else
+       comp;
+     end match) for comp in comps);
+     syst.matching := BackendDAE.MATCHING(ass1, ass2, comps);
+     then syst;
+    else syst;
+ end match)
+for syst in DAE.eqs);
 
- outDAE.eqs := listReverse(systlst); // listReverse needed?
 end solveSimpleEquations;
 
 protected function solveSimpleEquationsWork
