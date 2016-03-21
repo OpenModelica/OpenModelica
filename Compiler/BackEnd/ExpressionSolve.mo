@@ -110,21 +110,21 @@ for syst in DAE.eqs);
 end solveSimpleEquations;
 
 protected function solveSimpleEquationsWork
-  input BackendDAE.Equation inEqn;
+  input output BackendDAE.Equation eqn;
   input BackendDAE.Var var "solve eq with respect to var";
   input BackendDAE.Shared shared;
-  output BackendDAE.Equation outEqn;
   output Boolean solved;
 
 protected
   DAE.ComponentRef cr;
   DAE.Exp e1,e2,varexp,e;
-
   BackendDAE.EquationAttributes attr;
   DAE.ElementSource source;
-  list<DAE.Statement> asserts = {};
 algorithm
-  BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr) := inEqn;
+  BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr) := eqn;
+  if not (Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e1)) and Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e2))) then
+	  return ;
+	end if;
   BackendDAE.VAR(varName = cr) := var;
   varexp := Expression.crefExp(cr);
   if BackendVariable.isStateVar(var) then
@@ -132,21 +132,17 @@ algorithm
     cr := ComponentReference.crefPrefixDer(cr);
 	end if;
 
-	try
-	  (e1, e2) := preprocessingSolve(e1, e2, varexp, SOME(shared.functionTree), NONE(), 0);
-	else
-	  // no number
-	end try;
+  (e1, e2) := preprocessingSolve(e1, e2, varexp, SOME(shared.functionTree), NONE(), 0);
 
 	try
-    (e, asserts) := solve2(e1, e2, varexp, SOME(shared.functionTree), NONE());
-    source := DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, e, asserts);
-    outEqn := BackendEquation.generateEquation(varexp, e, source, attr);
+    e := solve2(e1, e2, varexp, SOME(shared.functionTree), NONE());
+    source := DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, e, {});
+    eqn := BackendEquation.generateEquation(varexp, e, source, attr);
     solved := true;
   else
     //eqn is change by possible simplification inside preprocessingSolve for solve the eqn with respect to varexp
     //source := DAEUtil.addSymbolicTransformationSimplify(true, source, DAE.PARTIAL_EQUATION(e1), DAE.PARTIAL_EQUATION(e2));
-    outEqn := BackendEquation.generateEquation(e1, e2, source, attr);
+    eqn := BackendEquation.generateEquation(e1, e2, source, attr);
     solved := false;
   end try;
 
@@ -302,8 +298,10 @@ algorithm
                           else fail();
                          end matchcontinue;
 
- eqnForNewVars := List.appendNoCopy(eqnForNewVars, eqnForNewVars1);
- newVarsCrefs := List.appendNoCopy(newVarsCrefs, newVarsCrefs1);
+ if isPresent(eqnForNewVars) then
+   eqnForNewVars := List.appendNoCopy(eqnForNewVars, eqnForNewVars1);
+   newVarsCrefs := List.appendNoCopy(newVarsCrefs, newVarsCrefs1);
+ end if;
 
 end solveWork;
 
