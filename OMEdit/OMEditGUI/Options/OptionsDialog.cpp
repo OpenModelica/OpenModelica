@@ -516,8 +516,9 @@ void OptionsDialog::readDebuggerSettings()
 }
 
 /*!
-  Reads the FMI section settings from omedit.ini
-  */
+ * \brief OptionsDialog::readFMISettings
+ * Reads the FMI section settings from omedit.ini
+ */
 void OptionsDialog::readFMISettings()
 {
   if (mpSettings->contains("FMIExport/Version")) {
@@ -526,8 +527,29 @@ void OptionsDialog::readFMISettings()
   if (mpSettings->contains("FMIExport/Type")) {
     mpFMIPage->setFMIExportType(mpSettings->value("FMIExport/Type").toString());
   }
-  if (mpSettings->contains("FMI/FMUName")) {
+  if (mpSettings->contains("FMIExport/FMUName")) {
     mpFMIPage->getFMUNameTextBox()->setText(mpSettings->value("FMI/FMUName").toString());
+  }
+  // read platforms
+  QStringList platforms = mpSettings->value("FMIExport/Platforms").toStringList();
+  foreach (QString platform, platforms) {
+    if (platform.compare("dynamic") == 0) {
+      mpFMIPage->getDynamicRadioButton()->setChecked(true);
+    } else if (platform.compare("static") == 0) {
+      mpFMIPage->getStaticRadioButton()->setChecked(true);
+    } else {
+      int i = 0;
+      while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
+        if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
+          QCheckBox *pPlatformCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
+          if (pPlatformCheckBox->text().compare(platform) == 0) {
+            pPlatformCheckBox->setChecked(true);
+            break;
+          }
+        }
+        i++;
+      }
+    }
   }
 }
 
@@ -865,13 +887,32 @@ void OptionsDialog::saveDebuggerSettings()
 }
 
 /*!
-  Saves the FMI section settings to omedit.ini
-  */
+ * \brief OptionsDialog::saveFMISettings
+ * Saves the FMI section settings to omedit.ini
+ */
 void OptionsDialog::saveFMISettings()
 {
   mpSettings->setValue("FMIExport/Version", mpFMIPage->getFMIExportVersion());
   mpSettings->setValue("FMIExport/Type", mpFMIPage->getFMIExportType());
-  mpSettings->setValue("FMI/FMUName", mpFMIPage->getFMUNameTextBox()->text());
+  mpSettings->setValue("FMIExport/FMUName", mpFMIPage->getFMUNameTextBox()->text());
+  // save platforms
+  QStringList platforms;
+  if (mpFMIPage->getDynamicRadioButton()->isChecked()) {
+    platforms.append("dynamic");
+  } else if (mpFMIPage->getStaticRadioButton()->isChecked()) {
+    platforms.append("static");
+  }
+  int i = 0;
+  while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
+    if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
+      QCheckBox *pPlatformCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
+      if (pPlatformCheckBox->isChecked()) {
+        platforms.append(pPlatformCheckBox->text());
+      }
+    }
+    i++;
+  }
+  mpSettings->setValue("FMIExport/Platforms", platforms);
 }
 
 /*!
@@ -3475,6 +3516,34 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpFMUNameLabel = new Label(tr("FMU Name:"));
   mpFMUNameTextBox = new QLineEdit;
   mpFMUNameTextBox->setPlaceholderText("<default>");
+#ifdef WIN32
+  QStringList paths = QString(getenv("PATH")).split(";");
+#else
+  QStringList paths = QString(getenv("PATH")).split(":");
+#endif
+  QStringList nameFilters;
+  nameFilters << "[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-[g]cc";
+  QStringList platforms;
+  foreach (QString path, paths) {
+    QDir dir(path);
+    platforms << dir.entryList(nameFilters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
+  }
+  mpPlatformsGroupBox = new QGroupBox(tr("Platforms"));
+  Label *pPlatformNoteLabel = new Label(tr("Note: The list of platforms is created by searching for programs in the PATH\n"
+                                           "matching regular expression \"[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-[a-zA-Z0-9_-]*-[g]cc\"."));
+  mpDynamicRadioButton = new QRadioButton(tr("Dynamic"));
+  mpStaticRadioButton = new QRadioButton(tr("Static"));
+  mpDynamicRadioButton->setChecked(true);
+  // set the type groupbox layout
+  QVBoxLayout *pPlatformsLayout = new QVBoxLayout;
+  pPlatformsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pPlatformsLayout->addWidget(pPlatformNoteLabel);
+  pPlatformsLayout->addWidget(mpDynamicRadioButton);
+  pPlatformsLayout->addWidget(mpStaticRadioButton);
+  foreach (QString platform, platforms) {
+    pPlatformsLayout->addWidget(new QCheckBox(platform));
+  }
+  mpPlatformsGroupBox->setLayout(pPlatformsLayout);
   // set the export group box layout
   QGridLayout *pExportLayout = new QGridLayout;
   pExportLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -3482,6 +3551,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pExportLayout->addWidget(mpTypeGroupBox, 1, 0, 1, 2);
   pExportLayout->addWidget(mpFMUNameLabel, 2, 0);
   pExportLayout->addWidget(mpFMUNameTextBox, 2, 1);
+  pExportLayout->addWidget(mpPlatformsGroupBox, 3, 0, 1, 2);
   mpExportGroupBox->setLayout(pExportLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;

@@ -2052,19 +2052,20 @@ OMCInterface::getSimulationOptions_res OMCProxy::getSimulationOptions(QString cl
 }
 
 /*!
- * \brief OMCProxy::translateModelFMU
+ * \brief OMCProxy::buildModelFMU
  * Creates the FMU of the model.
  * \param className - the name of the class.
  * \param version - the fmu version
  * \param type - the fmu type
  * \param fileNamePrefix
+ * \param platforms
  * \return
  */
-bool OMCProxy::translateModelFMU(QString className, double version, QString type, QString fileNamePrefix)
+bool OMCProxy::buildModelFMU(QString className, double version, QString type, QString fileNamePrefix, QList<QString> platforms)
 {
   bool result = false;
   fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
-  QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), type, fileNamePrefix);
+  QString res = mpOMCInterface->buildModelFMU(className, QString::number(version), type, fileNamePrefix, platforms);
   if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
     result = true;
     mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
