@@ -1798,9 +1798,9 @@ algorithm
                                                                     "wrapFunctionCalls",
                                                                     "inlineArrayEqn",
                                                                     "constantLinearSystem",
-                                                                    "solveSimpleEquations",
                                                                     "tearingSystem",
                                                                     "calculateStrongComponentJacobians",
+                                                                    "solveSimpleEquations",
                                                                     "removeConstants",
                                                                     "simplifyTimeIndepFuncCalls"});
           _ = Flags.set(Flags.EXEC_STAT, b);
