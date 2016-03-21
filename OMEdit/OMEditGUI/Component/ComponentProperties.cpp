@@ -1019,7 +1019,7 @@ void ComponentParameters::updateComponentParameters()
   }
   // any new modifier is added
   if (!mpModifiersTextBox->text().isEmpty()) {
-    QString regexp ("\\s*([A-Za-z0-9]+\\s*)\\(\\s*([A-Za-z0-9]+)\\s*=\\s*([A-Za-z0-9]+)\\s*\\)$");
+    QString regexp ("\\s*([A-Za-z0-9._]+\\s*)\\(\\s*([A-Za-z0-9._]+)\\s*=\\s*([A-Za-z0-9._]+)\\s*\\)$");
     QRegExp modifierRegExp (regexp);
     QStringList modifiers = mpModifiersTextBox->text().split(",", QString::SkipEmptyParts);
     foreach (QString modifier, modifiers) {
