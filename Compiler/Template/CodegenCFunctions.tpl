@@ -5554,6 +5554,12 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
 
   /* Begin code generation of event triggering math functions */
 
+  case CALL(path=IDENT(name="mod"), expLst={e1,e2, index}, attr=CALL_ATTR(ty = ty)) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+    let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
+    let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
+    '_event_mod_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data, threadData)'
+
   case CALL(path=IDENT(name="div"), expLst={e1,e2, index}, attr=CALL_ATTR(ty = ty)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
@@ -5580,6 +5586,28 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name="integer"), expLst={inExp}) then
     let exp = daeExp(inExp, context, &preExp, &varDecls, &auxFunction)
     '((modelica_integer)floor(<%exp%>))'
+
+    case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=CALL_ATTR(ty=T_INTEGER(__))) then
+      let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+      let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
+      let tvar = tempDecl("modelica_integer", &varDecls)
+      let &preExp += '<%tvar%> = <%var2%>;<%\n%>'
+      let &preExp +=
+        if acceptMetaModelicaGrammar()
+          then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
+          else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
+      '((<%var1%>) - ((<%var1%>) / <%tvar%>) * <%tvar%>)'
+
+    case CALL(path=IDENT(name="mod"), expLst={e1,e2}) then
+      let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+      let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
+      let tvar = tempDecl("modelica_real", &varDecls)
+      let &preExp += '<%tvar%> = <%var2%>;<%\n%>'
+      let &preExp +=
+        if acceptMetaModelicaGrammar()
+          then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
+          else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
+      '((<%var1%>) - floor((<%var1%>) / (<%tvar%>)) * (<%tvar%>))'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)

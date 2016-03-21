@@ -3944,6 +3944,19 @@ template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls, Text &aux
     <%preExp%>
     gout[<%index1%>] = (ceil(<%e1%>) != ceil(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
     >>
+  case CALL(path=IDENT(name="mod"), expLst={exp1, exp2, idx}) then
+    let &preExp = buffer ""
+    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let e2 = daeExp(exp2, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let tvar1 = tempDecl("modelica_real", &varDecls)
+    let tvar2 = tempDecl("modelica_real", &varDecls)
+    let &preExp += '<%tvar1%> = floor((<%e1%>) / (<%e2%>));<%\n%>'
+    let &preExp += '<%tvar2%> = floor((data->simulationInfo->mathEventsValuePre[<%indx%>]) / (data->simulationInfo->mathEventsValuePre[<%indx%>+1]));<%\n%>'
+    <<
+    <%preExp%>
+    gout[<%index1%>] = <%tvar1%> != <%tvar2%> ? 1 : -1;
+    >>
   case CALL(path=IDENT(name="div"), expLst={exp1, exp2, idx}) then
     let &preExp = buffer ""
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)

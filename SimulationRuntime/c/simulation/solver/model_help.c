@@ -1259,6 +1259,46 @@ modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data)
   return (modelica_real)ceil(value);
 }
 
+/*! \fn _event_mod_integer
+ *
+ *  \param [in]  [x1]
+ *  \param [in]  [x2]
+ *  \param [in]  [index]
+ *  \param [ref] [data]
+ */
+modelica_integer _event_mod_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data, threadData_t *threadData)
+{
+  if(data->simulationInfo->discreteCall == 0 || data->simulationInfo->solveContinuous)
+  {
+  }
+  else
+  {
+    data->simulationInfo->mathEventsValuePre[index] = (modelica_real)x1;
+    data->simulationInfo->mathEventsValuePre[index+1] = (modelica_real)x2;
+  }
+  return x1 - (x1 / x2) * x2;
+}
+
+/*! \fn _event_mod_real
+ *
+ *  \param [in]  [x1]
+ *  \param [in]  [x2]
+ *  \param [in]  [index]
+ *  \param [ref] [data]
+ */
+modelica_real _event_mod_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data, threadData_t *threadData)
+{
+  if(data->simulationInfo->discreteCall == 0 || data->simulationInfo->solveContinuous)
+  {
+  }
+  else
+  {
+    data->simulationInfo->mathEventsValuePre[index] = x1;
+    data->simulationInfo->mathEventsValuePre[index+1] = x2;
+  }
+  return x1 - floor(x1 / x2) * x2;
+}
+
 /*! \fn _event_div_integer
  *
  *  \param [in]  [x1]

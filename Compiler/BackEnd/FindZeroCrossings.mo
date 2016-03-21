@@ -1018,23 +1018,21 @@ algorithm
       end if;
     then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
-    // mod is rewritten to x-floor(x/y)*y
     case (DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty=ty)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       true = Flags.isSet(Flags.EVENTS);
       if Flags.isSet(Flags.RELIDX) then
         print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
-      e_1 = DAE.CALL(Absyn.IDENT("floor"), {DAE.BINARY(e1, DAE.DIV(ty), e2), DAE.ICONST(numMathFunctions)}, attr);
+      e_1 = DAE.CALL(Absyn.IDENT("mod"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
 
       zc = createZeroCrossing(e_1, {eq_count});
       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
-      e_2 = DAE.BINARY(e1, DAE.SUB(ty), DAE.BINARY(eres, DAE.MUL(ty), e2));
 
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (e_2, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
+    then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
     // rem is rewritten to div(x/y)*y - x
     case (DAE.CALL(path=Absyn.IDENT("rem"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty=ty)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
@@ -1321,23 +1319,21 @@ algorithm
       end if;
     then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
-    // mod is rewritten to x-floor(x/y)*y
     case (DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty = ty)), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       true = Flags.isSet(Flags.EVENTS);
       if Flags.isSet(Flags.RELIDX) then
         print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
-      e_1 = DAE.CALL(Absyn.IDENT("floor"), {DAE.BINARY(e1, DAE.DIV(ty), e2), DAE.ICONST(numMathFunctions)}, attr);
+      e_1 = DAE.CALL(Absyn.IDENT("mod"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
 
       zc = createZeroCrossing(e_1, {alg_indx});
       ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
-      e_2 = DAE.BINARY(e1, DAE.SUB(ty), DAE.BINARY(eres, DAE.MUL(ty), e2));
 
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (e_2, true, (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
+    then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
     // rem is rewritten to div(x/y)*y - x
     case (DAE.CALL(path=Absyn.IDENT("rem"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty = ty)), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
@@ -1554,6 +1550,11 @@ algorithm
     case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e2, _}))) equation
       res = Expression.expEqual(e1, e2);
     then res;
+
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("mod"), expLst={e3, e4, _}))) equation
+      res = Expression.expEqual(e1, e3);
+      res2 = Expression.expEqual(e2, e4);
+    then (res and res2);
 
     case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("div"), expLst={e3, e4, _}))) equation
       res = Expression.expEqual(e1, e3);
