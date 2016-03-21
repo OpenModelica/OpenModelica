@@ -3005,7 +3005,7 @@ algorithm
        list<Integer> otherEqnsInts, otherVarsInts, tearingVars, residualEqns;
        list<list<Integer>> otherVarsIntsLst;
        Boolean homotopySupport;
-       list<tuple<Integer, list<Integer>>> otherEqns;
+       BackendDAE.InnerEquations innerEquations;
        BackendDAE.Jacobian inJacobian;
        SimCode.LinearSystem lSystem;
        SimCode.NonlinearSystem nlSystem;
@@ -3038,7 +3038,7 @@ algorithm
          reqns = BackendEquation.getEqns(residualEqns, eqns);
          // solve other equations
          repl = BackendVarTransform.emptyReplacements();
-         repl = solveOtherEquations(otherEqns, eqns, vars, ishared, repl);
+         repl = solveInnerEquations(otherEqns, eqns, vars, ishared, repl);
          // replace other equations in residual equations
          (reqns, _) = BackendVarTransform.replaceEquations(reqns, repl, SOME(BackendVarTransform.skipPreOperator));
          // States are solved for der(x) not x.
@@ -3060,13 +3060,13 @@ algorithm
          beqs = listReverse(beqs);
          simJac = List.map1(jac, jacToSimjac, v);
          // generate other equations
-         (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex+1, itempvars, {SimCode.SES_LINEAR(iuniqueEqIndex, false, simVars, beqs, sources, simJac, 0)});
+         (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex+1, itempvars, {SimCode.SES_LINEAR(iuniqueEqIndex, false, simVars, beqs, sources, simJac, 0)});
        then
          (simequations, uniqueEqIndex, tempvars);
 */
      // CASE: linear
      case(true, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(knownVars=kv)) equation
-       BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, otherEqnVarTpl=otherEqns, jac=inJacobian) = strictTearingSet;
+       BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, innerEquations=innerEquations, jac=inJacobian) = strictTearingSet;
        // get tearing vars
        tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
        tvars = List.map(tvars, BackendVariable.transformXToXd);
@@ -3077,7 +3077,7 @@ algorithm
        reqns = BackendEquation.getEqns(residualEqns, eqns);
        reqns = BackendEquation.replaceDerOpInEquationList(reqns);
        // generate other equations
-       (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, {});
+       (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, {});
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
        simequations = listAppend(simequations, resEqs);
 
@@ -3086,7 +3086,7 @@ algorithm
 
        // Do if dynamic tearing is activated
        if Util.isSome(casualTearingSet) then
-         SOME(BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, otherEqnVarTpl=otherEqns, jac=inJacobian)) = casualTearingSet;
+         SOME(BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, innerEquations=innerEquations, jac=inJacobian)) = casualTearingSet;
          // get tearing vars
          tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
          tvars = List.map(tvars, BackendVariable.transformXToXd);
@@ -3097,7 +3097,7 @@ algorithm
          reqns = BackendEquation.getEqns(residualEqns, eqns);
          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
          // generate other equations
-         (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, uniqueEqIndex+1, tempvars, {});
+         (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, isyst, ishared, uniqueEqIndex+1, tempvars, {});
          (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
          simequations = listAppend(simequations, resEqs);
 
@@ -3111,7 +3111,7 @@ algorithm
 
      // CASE: nonlinear
      case(false, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _) equation
-       BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, otherEqnVarTpl=otherEqns, jac=inJacobian) = strictTearingSet;
+       BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, innerEquations=innerEquations, jac=inJacobian) = strictTearingSet;
        // get tearing vars
        tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
        tvars = List.map(tvars, BackendVariable.transformXToXd);
@@ -3122,7 +3122,7 @@ algorithm
        // generate residual replacements
        tcrs = List.map(tvars, BackendVariable.varCref);
        // generate other equations
-       (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, {});
+       (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, {});
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
        simequations = listAppend(simequations, resEqs);
 
@@ -3133,7 +3133,7 @@ algorithm
 
        // Do if dynamic tearing is activated
        if Util.isSome(casualTearingSet) then
-         SOME(BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, otherEqnVarTpl=otherEqns, jac=inJacobian)) = casualTearingSet;
+         SOME(BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, innerEquations=innerEquations, jac=inJacobian)) = casualTearingSet;
          // get tearing vars
          tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
          tvars = List.map(tvars, BackendVariable.transformXToXd);
@@ -3144,7 +3144,7 @@ algorithm
          // generate residual replacements
          tcrs = List.map(tvars, BackendVariable.varCref);
          // generate other equations
-         (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, uniqueEqIndex+1, tempvars, {});
+         (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, isyst, ishared, uniqueEqIndex+1, tempvars, {});
          (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
          simequations = listAppend(simequations, resEqs);
 
@@ -3159,18 +3159,18 @@ algorithm
    end match;
 end createTornSystem;
 
-protected function solveOtherEquations "author: Frenkel TUD 2011-05
+protected function solveInnerEquations "author: Frenkel TUD 2011-05
   try to solve the equations"
-  input list<tuple<Integer, list<Integer>>> otherEqns;
+  input BackendDAE.InnerEquations innerEquations;
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.Variables inVars;
   input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements inRepl;
   output BackendVarTransform.VariableReplacements outRepl;
 algorithm
-  outRepl := match (otherEqns, inEqns, inVars, ishared, inRepl)
+  outRepl := match (innerEquations, inEqns, inVars, ishared, inRepl)
     local
-      list<tuple<Integer, list<Integer>>> rest;
+      BackendDAE.InnerEquations rest;
       Integer v, e;
       DAE.Exp e1, e2, varexp, expr;
       DAE.ComponentRef cr, dcr;
@@ -3185,7 +3185,7 @@ algorithm
       DAE.FunctionTree funcs;
 
     case ({}, _, _, _, _) then inRepl;
-    case ((e, {v})::rest, _, _, _, _)
+    case (BackendDAE.INNEREQUATION(eqn=e, vars={v})::rest, _, _, _, _)
       equation
         (BackendDAE.EQUATION(exp=e1, scalar=e2)) = BackendEquation.equationNth1(inEqns, e);
         (var as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(inVars, v);
@@ -3198,8 +3198,8 @@ algorithm
         repl = if BackendVariable.isStateVar(var) then BackendVarTransform.addDerConstRepl(cr, expr, repl) else repl;
         // BackendDump.debugStrCrefStrExpStr(("", cr, " := ", expr, "\n"));
       then
-        solveOtherEquations(rest, inEqns, inVars, ishared, repl);
-    case ((e, vlst)::rest, _, _, _, _)
+        solveInnerEquations(rest, inEqns, inVars, ishared, repl);
+    case (BackendDAE.INNEREQUATION(eqn=e, vars=vlst)::rest, _, _, _, _)
       equation
         (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2)) = BackendEquation.equationNth1(inEqns, e);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
@@ -3209,13 +3209,40 @@ algorithm
         explst1 = ExpressionSimplify.simplifyList(explst1, {});
         explst2 = List.map1r(subslst, Expression.applyExpSubscripts, e2);
         explst2 = ExpressionSimplify.simplifyList(explst2, {});
-        repl = solveOtherEquations1(explst1, explst2, varlst, inVars, ishared, inRepl);
+        repl = solveInnerEquations1(explst1, explst2, varlst, inVars, ishared, inRepl);
       then
-        solveOtherEquations(rest, inEqns, inVars, ishared, repl);
+        solveInnerEquations(rest, inEqns, inVars, ishared, repl);
+     case (BackendDAE.INNEREQUATIONCONSTRAINTS(eqn=e, vars={v})::rest, _, _, _, _)
+      equation
+        (BackendDAE.EQUATION(exp=e1, scalar=e2)) = BackendEquation.equationNth1(inEqns, e);
+        (var as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(inVars, v);
+        varexp = Expression.crefExp(cr);
+        varexp = if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
+        BackendDAE.SHARED(functionTree = funcs) = ishared;
+        (expr, {}, {}, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE());
+        dcr = if BackendVariable.isStateVar(var) then ComponentReference.crefPrefixDer(cr) else cr;
+        repl = BackendVarTransform.addReplacement(inRepl, dcr, expr, SOME(BackendVarTransform.skipPreOperator));
+        repl = if BackendVariable.isStateVar(var) then BackendVarTransform.addDerConstRepl(cr, expr, repl) else repl;
+        // BackendDump.debugStrCrefStrExpStr(("", cr, " := ", expr, "\n"));
+      then
+        solveInnerEquations(rest, inEqns, inVars, ishared, repl);
+     case (BackendDAE.INNEREQUATIONCONSTRAINTS(eqn=e, vars=vlst)::rest, _, _, _, _)
+      equation
+        (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2)) = BackendEquation.equationNth1(inEqns, e);
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
+        subslst = Expression.dimensionSizesSubscripts(ds);
+        subslst = Expression.rangesToSubscripts(subslst);
+        explst1 = List.map1r(subslst, Expression.applyExpSubscripts, e1);
+        explst1 = ExpressionSimplify.simplifyList(explst1, {});
+        explst2 = List.map1r(subslst, Expression.applyExpSubscripts, e2);
+        explst2 = ExpressionSimplify.simplifyList(explst2, {});
+        repl = solveInnerEquations1(explst1, explst2, varlst, inVars, ishared, inRepl);
+      then
+        solveInnerEquations(rest, inEqns, inVars, ishared, repl);
   end match;
-end solveOtherEquations;
+end solveInnerEquations;
 
-protected function solveOtherEquations1 "author: Frenkel TUD 2011-05
+protected function solveInnerEquations1 "author: Frenkel TUD 2011-05
   try to solve the equations"
   input list<DAE.Exp> iExps1;
   input list<DAE.Exp> iExps2;
@@ -3247,9 +3274,9 @@ algorithm
         repl = if BackendVariable.isStateVar(var) then BackendVarTransform.addDerConstRepl(cr, expr, repl) else repl;
         // BackendDump.debugStrCrefStrExpStr(("", cr, " := ", expr, "\n"));
       then
-        solveOtherEquations1(explst1, explst2, rest, inVars, ishared, repl);
+        solveInnerEquations1(explst1, explst2, rest, inVars, ishared, repl);
   end match;
-end solveOtherEquations1;
+end solveInnerEquations1;
 
 //protected function createTornSystemOtherEqns
 //  input list<tuple<Integer, list<Integer>>> otherEqns;
@@ -3309,8 +3336,9 @@ end solveOtherEquations1;
 //   end match;
 //end createTornSystemOtherEqns_2;
 
-protected function createTornSystemOtherEqns
-  input list<tuple<Integer, list<Integer>>> otherEqns;
+
+protected function createTornSystemInnerEqns
+  input BackendDAE.InnerEquations innerEquations;
   input Boolean skipDiscInAlgorithm "if true skip discrete algorithm vars";
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -3329,7 +3357,7 @@ protected
   list<SimCode.SimEqSystem> simequations;
   DoubleEndedList<SimCode.SimEqSystem> equations;
 algorithm
-  if listEmpty(otherEqns) then
+  if listEmpty(innerEquations) then
     equations_ := isimequations;
     return;
   end if;
@@ -3337,12 +3365,12 @@ algorithm
   BackendDAE.EQSYSTEM(orderedEqs = eqns) := isyst;
   equations := DoubleEndedList.fromList(isimequations);
 
-  for eq in otherEqns loop
+  for eq in innerEquations loop
     // get Eqn
-    (eqnindx, vars) := eq;
+    (eqnindx,vars,_) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(eq);
     eqn := BackendEquation.equationNth1(eqns, eqnindx);
     // generate comp
-    comp := createTornSystemOtherEqns1(eqn, eqnindx, vars);
+    comp := createTornSystemInnerEqns1(eqn, eqnindx, vars);
     (simequations, _, ouniqueEqIndex, otempvars) :=
       createEquations(true, false, true, skipDiscInAlgorithm, isyst, ishared,
         {comp}, ouniqueEqIndex, otempvars);
@@ -3350,9 +3378,10 @@ algorithm
   end for;
 
   equations_ := DoubleEndedList.toListAndClear(equations);
-end createTornSystemOtherEqns;
+end createTornSystemInnerEqns;
 
-protected function createTornSystemOtherEqns1
+
+protected function createTornSystemInnerEqns1
   input BackendDAE.Equation eqn;
   input Integer eqnindx;
   input list<Integer> varindx;
@@ -3388,13 +3417,13 @@ algorithm
 
     else
       equation
-        print("SimCodeUtil.createTornSystemOtherEqns1 failed for\n");
+        print("SimCodeUtil.createTornSystemInnerEqns1 failed for\n");
         BackendDump.printEquationList({eqn});
         print("Eqn: " + intString(eqnindx) + " Vars: " + stringDelimitList(List.map(varindx, intString), ", ") + "\n");
       then
         fail();
   end match;
-end createTornSystemOtherEqns1;
+end createTornSystemInnerEqns1;
 
 // =============================================================================
 // section to create state set equations

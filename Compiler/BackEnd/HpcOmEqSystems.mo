@@ -165,7 +165,7 @@ algorithm
       Boolean linear;
       array<Integer> ass1New, ass2New, ass1All, ass2All, ass1Other, ass2Other;
       list<Integer> tvarIdcs, resEqIdcs, eqIdcs, varIdcs;
-      list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+      BackendDAE.InnerEquations innerEquations;
       BackendDAE.BaseClockPartitionKind partitionKind;
       BackendDAE.EqSystem syst;
       EqSys hpcSyst;
@@ -192,13 +192,13 @@ algorithm
         // strongComponent is a linear tornSystem
         true = listLength(compsIn) >= compIdx;
         comp = listGet(compsIn,compIdx);
-        BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl), linear = linear) = comp;
+        BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = tvarIdcs, residualequations = resEqIdcs, innerEquations = innerEquations), linear = linear) = comp;
         true = linear;
         true = intLe(listLength(tvarIdcs),Flags.getConfigInt(Flags.PARTLINTORN));
         //print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
         //false = compHasDummyState(comp,systIn);
         // build the new components, the new variables and the new equations
-        (varsNew,eqsNew,_,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdxIn);
+        (varsNew,eqsNew,_,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,innerEquations,tornSysIdxIn);
 
         // add the new vars and equations to the original EqSystem
         BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) = matchingNew;
@@ -219,7 +219,7 @@ algorithm
         ((ass1All, ass2All)) = List.fold2(List.intRange(listLength(tvarIdcs)),updateResidualMatching,tvarIdcs,resEqIdcs,(ass1All,ass2All));  // sets matching info for the tearingVars and residuals
 
         // get the otherComps and and update the matching for the othercomps
-        matchingOther = getOtherComps(otherEqnVarTpl,ass1All,ass2All);
+        matchingOther = getOtherComps(innerEquations,ass1All,ass2All);
         BackendDAE.MATCHING(comps=otherComps) = matchingOther;
 
         // insert the new components into the BLT instead of the TornSystem, append the updated blocks for the other equations, update matching for the new equations
@@ -324,10 +324,10 @@ algorithm
       BackendDAE.Variables vars;
       list<Integer> varIdcs, otherVars;
       list<BackendDAE.Var> varLst;
-      list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
-  case(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=varIdcs,otherEqnVarTpl=otherEqnVarTpl)),BackendDAE.EQSYSTEM(orderedVars=vars))
+      // list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+  case(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=varIdcs)),BackendDAE.EQSYSTEM(orderedVars=vars))
     equation
-      _ = List.flatten(List.map(otherEqnVarTpl,Util.tuple22));
+      // _ = List.flatten(List.map(otherEqnVarTpl,Util.tuple22));
       //varIdcs = listAppend(varIdcs,otherVars);
       varLst = List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,vars);
       b = List.fold(List.map(varLst,BackendVariable.isDummyStateVar),boolOr,false);
@@ -401,7 +401,7 @@ protected function reduceLinearTornSystem2 "author: Waurich TUD 2013-07
   input BackendDAE.Shared ishared;
   input list<Integer> tVarIdcs0;
   input list<Integer> resEqIdcs0;
-  input list<tuple<Integer, list<Integer>>> otherEqsVarTpl;
+  input BackendDAE.InnerEquations innerEquations;
   input Integer tornSysIdx;
   output list<BackendDAE.Var> varsNewOut;
   output list<BackendDAE.Equation> eqsNewOut;
@@ -450,12 +450,13 @@ algorithm
    reqns := BackendEquation.replaceDerOpInEquationList(reqns);
 
    // get the other equations and the other variables
-   otherEqnsInts := List.map(otherEqsVarTpl, Util.tuple21);
+   // otherEqnsInts := List.map(otherEqsVarTpl, Util.tuple21);
+   (otherEqnsInts,otherVarsIntsLst,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
    otherEqnsLst := BackendEquation.getEqns(otherEqnsInts, eqns);
    oeqns := BackendEquation.listEquation(otherEqnsLst);
    otherEqnsLstReplaced := BackendEquation.replaceDerOpInEquationList(otherEqnsLst);   // for computing the new equations
 
-   otherVarsIntsLst := List.map(otherEqsVarTpl, Util.tuple22);
+   // otherVarsIntsLst := List.map(otherEqsVarTpl, Util.tuple22);
    otherVarsInts := List.unionList(otherVarsIntsLst);
    ovarsLst := List.map1r(otherVarsInts, BackendVariable.getVarAt, vars);
    ovarsLst := List.map(ovarsLst, BackendVariable.transformXToXd);  //try this
@@ -804,7 +805,7 @@ end updateResidualMatching;
 
 protected function getOtherComps "author: Waurich TUD 2013-09
   builds ordered StrongComponents and matching for the other equations."
-  input list<tuple<Integer, list<Integer>>> otherEqsVarTpl;
+  input BackendDAE.InnerEquations innerEquations;
   input array<Integer> ass1;
   input array<Integer> ass2;
   output BackendDAE.Matching matchingOut;
@@ -812,7 +813,7 @@ protected
   array<Integer> ass1Tmp, ass2Tmp;
   BackendDAE.StrongComponents compsTmp;
 algorithm
-  ((ass1Tmp,ass2Tmp,compsTmp)) := List.fold(otherEqsVarTpl,getOtherComps1,(ass1,ass2,{}));
+  ((ass1Tmp,ass2Tmp,compsTmp)) := List.fold(innerEquations,getOtherComps1,(ass1,ass2,{}));
   compsTmp := listReverse(compsTmp);
   matchingOut := BackendDAE.MATCHING(ass1Tmp,ass2Tmp,compsTmp);
 end getOtherComps;
@@ -820,19 +821,20 @@ end getOtherComps;
 
 protected function getOtherComps1 "author:waurich TUD 2013-09
   implementation of getOtherComps"
-  input tuple<Integer,list<Integer>> otherEqsVarTpl;
+  input BackendDAE.InnerEquation innerEquation;
   input tuple<array<Integer>, array<Integer>, BackendDAE.StrongComponents> tplIn;
   output tuple<array<Integer>, array<Integer>, BackendDAE.StrongComponents> tplOut;
 algorithm
-  tplOut := matchcontinue(otherEqsVarTpl, tplIn)
+  tplOut := matchcontinue(innerEquation, tplIn)
     local
       Integer eqIdx, varIdx;
       array<Integer> ass1, ass2;
       list<Integer> varIdcs;
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents compsIn, compsTmp;
-    case((eqIdx, varIdcs),(ass1,ass2,compsIn))
+    case(_,(ass1,ass2,compsIn))
       equation
+        (eqIdx, varIdcs, _) = BackendDAEUtil.getEqnAndVarsFromInnerEquation(innerEquation);
         true = listLength(varIdcs) == 1;
         varIdx = listGet(varIdcs,1);
         comp = BackendDAE.SINGLEEQUATION(eqIdx,varIdx);
@@ -2277,7 +2279,7 @@ algorithm
       Integer numEqs, numVars, compIdx, numResEqs;
       list<Integer> eqIdcs, varIdcs, tVars, resEqs, eqIdcsSys, simEqSysIdcs,resSimEqSysIdcs,otherSimEqSysIdcs;
       list<list<Integer>> varIdcLstSys, varIdcsLsts;
-      list<tuple<Integer,list<Integer>>> otherEqnVarTplIdcs;
+      BackendDAE.InnerEquations innerEquations;
       array<list<Integer>> otherSimEqMapping;
       BackendDAE.EquationArray otherEqs;
       BackendDAE.IncidenceMatrix m,mT;
@@ -2294,10 +2296,9 @@ algorithm
   case({},_,_,_,_,_,_)
     equation
     then (compIdxIn,taskLstIn);
-     case((comp as BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=resEqs,otherEqnVarTpl=otherEqnVarTplIdcs)))::rest,_,_,_,_,_,_)
+     case((comp as BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=resEqs,innerEquations=innerEquations)))::rest,_,_,_,_,_,_)
     equation
-      eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
-      varIdcsLsts = List.map(otherEqnVarTplIdcs,Util.tuple22);
+      (eqIdcs,varIdcsLsts,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
       varIdcs = List.flatten(varIdcsLsts);
       numEqs = listLength(eqIdcs);
       numVars = listLength(varIdcs);

@@ -1488,13 +1488,13 @@ algorithm
     //case (id, BackendDAE.SOLVABILITY_SOLVED())::elem guard intEq(id, inVarID)
     //then false;
 
-    case (id, BackendDAE.SOLVABILITY_UNSOLVABLE())::_ guard intEq(id, inVarID)
+    case (id, BackendDAE.SOLVABILITY_UNSOLVABLE(),_)::_ guard intEq(id, inVarID)
     then false;
 
-    case (id, BackendDAE.SOLVABILITY_NONLINEAR())::_ guard intEq(id, inVarID)
+    case (id, BackendDAE.SOLVABILITY_NONLINEAR(),_)::_ guard intEq(id, inVarID)
     then false;
 
-    case (_, _)::elem equation
+    case (_, _, _)::elem equation
       b = isVarExplicitSolvable(elem, inVarID);
     then b;
   end match;

@@ -1893,9 +1893,9 @@ protected function getEqPairs
 protected
   list<Integer> vars,eqs;
 algorithm
-  vars := List.map(arrayGet(me,eq),Util.tuple21);
+  vars := List.map(arrayGet(me,eq),Util.tuple31);
           //print("vars: \n"+stringDelimitList(List.map(vars,intString)," / ")+"\n");
-  eqs := List.map(List.flatten(List.map1(vars,Array.getIndexFirst,meT)),Util.tuple21);
+  eqs := List.map(List.flatten(List.map1(vars,Array.getIndexFirst,meT)),Util.tuple31);
           //print("eqs: \n"+stringDelimitList(List.map(eqs,intString)," / ")+"\n");
   eqs := getDoublicates(eqs);
           //print("eqs: \n"+stringDelimitList(List.map(eqs,intString)," / ")+"\n");
@@ -1911,9 +1911,9 @@ protected
   list<Integer> vars,eqs,numEqs;
   list<list<Integer>> eqLst;
 algorithm
-  vars := List.map(row,Util.tuple21);
+  vars := List.map(row,Util.tuple31);
   b1 := intEq(listLength(row),2);  // only two variables
-  eqLst := List.mapList((List.map1(vars,Array.getIndexFirst,meT)),Util.tuple21);
+  eqLst := List.mapList((List.map1(vars,Array.getIndexFirst,meT)),Util.tuple31);
   numEqs := List.map(eqLst,listLength);
   b3 := List.fold(List.map1(numEqs,intEq,2),boolOr,false);  // at least one adjacent variable hast only 2 adj equations
   eqs := List.flatten(eqLst);
@@ -1980,8 +1980,8 @@ algorithm
         // start resolving the first 2 equations
         nextEq::rest = rest;
         //BackendDump.dumpIncidenceMatrix(m);
-        vars1 = List.map(arrayGet(me,startEq),Util.tuple21);
-        vars2 = List.map(arrayGet(me,nextEq),Util.tuple21);
+        vars1 = List.map(arrayGet(me,startEq),Util.tuple31);
+        vars2 = List.map(arrayGet(me,nextEq),Util.tuple31);
         vars1 = List.intersectionOnTrue(vars1,vars2,intEq);
         numEqs = List.map(List.map1(vars1,Array.getIndexFirst,meT),listLength);
         (_,vars1) = List.filter1OnTrueSync(numEqs,intEq,2,vars1);

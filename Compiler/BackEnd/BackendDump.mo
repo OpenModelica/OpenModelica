@@ -965,6 +965,7 @@ algorithm
     local
       Integer e,v;
       list<Integer> elst,vlst,vlst1,elst1,vlst2,elst2;
+      list<list<Integer>> vlst1Lst;
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents rest;
       BackendDAE.Var var;
@@ -972,7 +973,7 @@ algorithm
       list<BackendDAE.Var> varlst;
       list<BackendDAE.Equation> eqnlst;
       BackendDAE.JacobianType jacType;
-      list<tuple<Integer,list<Integer>>> eqnsvartpllst,eqnsvartpllst2;
+      BackendDAE.InnerEquations innerEquations,innerEquations2;
       Boolean b;
       String s;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
@@ -1057,12 +1058,12 @@ algorithm
       then
         ();
     // no dynamic tearing
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst),NONE(),linear=b)::rest,_,_)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,innerEquations=innerEquations),NONE(),linear=b)::rest,_,_)
       equation
         s = if b then "linear" else "nonlinear";
         print("torn " + s + " Equationsystem:\n");
-        vlst1 = List.flatten(List.map(eqnsvartpllst,Util.tuple22));
-        elst1 = List.map(eqnsvartpllst,Util.tuple21);
+        (elst1,vlst1Lst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+        vlst1 = List.flatten(vlst1Lst);
         varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
         print("\ninternal vars\n");
         printVarList(varlst);
@@ -1080,12 +1081,12 @@ algorithm
       then
         ();
     // dynamic tearing
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst),SOME(BackendDAE.TEARINGSET(tearingvars=vlst2,residualequations=elst2,otherEqnVarTpl=eqnsvartpllst2)),linear=b)::rest,_,_)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,innerEquations=innerEquations),SOME(BackendDAE.TEARINGSET(tearingvars=vlst2,residualequations=elst2,innerEquations=innerEquations2)),linear=b)::rest,_,_)
       equation
         s = if b then "linear" else "nonlinear";
         print("Strict torn " + s + " Equationsystem:\n");
-        vlst1 = List.flatten(List.map(eqnsvartpllst,Util.tuple22));
-        elst1 = List.map(eqnsvartpllst,Util.tuple21);
+        (elst1,vlst1Lst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+        vlst1 = List.flatten(vlst1Lst);
         varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
@@ -1099,8 +1100,8 @@ algorithm
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
         print("Casual torn " + s + " Equationsystem:\n");
-        vlst1 = List.flatten(List.map(eqnsvartpllst2,Util.tuple22));
-        elst1 = List.map(eqnsvartpllst2,Util.tuple21);
+        (elst1,vlst1Lst,_) = List.map_3(innerEquations2, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+        vlst1 = List.flatten(vlst1Lst);
         varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         varlst = List.map1r(vlst2, BackendVariable.getVarAt, vars);
@@ -1281,7 +1282,7 @@ algorithm
       String s,s2,s3,s4;
       BackendDAE.JacobianType jacType;
       BackendDAE.StrongComponent comp;
-      list<tuple<Integer,list<Integer>>> eqnvartpllst,eqnvartpllst2;
+      BackendDAE.InnerEquations innerEquations,innerEquations2;
       Boolean b;
     case BackendDAE.SINGLEEQUATION(eqn=i,var=v)
       equation
@@ -1326,9 +1327,9 @@ algorithm
         s = stringDelimitList(ls, ", ");
         tmpStr = "WhenEquation " + " {" + intString(i) + ":" + s + "}\n";
       then tmpStr;
-    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst),NONE(),linear=b)
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,innerEquations=innerEquations),NONE(),linear=b)
       equation
-        ls = List.map(eqnvartpllst, tupleString);
+        ls = List.map(innerEquations, innerEquationString);
         s = stringDelimitList(ls, ", ");
         ls = List.map(ilst, intString);
         s2 = stringDelimitList(ls, ", ");
@@ -1337,9 +1338,9 @@ algorithm
         s4 = if b then "linear" else "nonlinear";
         tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + "\n";
       then tmpStr;
-    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst),SOME(BackendDAE.TEARINGSET(residualequations=ilst2,tearingvars=vlst2,otherEqnVarTpl=eqnvartpllst2)),linear=b)
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,innerEquations=innerEquations),SOME(BackendDAE.TEARINGSET(residualequations=ilst2,tearingvars=vlst2,innerEquations=innerEquations2)),linear=b)
       equation
-        ls = List.map(eqnvartpllst, tupleString);
+        ls = List.map(innerEquations, innerEquationString);
         s = stringDelimitList(ls, ", ");
         ls = List.map(ilst, intString);
         s2 = stringDelimitList(ls, ", ");
@@ -1347,7 +1348,7 @@ algorithm
         s3 = stringDelimitList(ls, ", ");
         s4 = if b then "linear" else "nonlinear";
         tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + " (strict tearing set)\n";
-        ls = List.map(eqnvartpllst2, tupleString);
+        ls = List.map(innerEquations2, innerEquationString);
         s = stringDelimitList(ls, ", ");
         ls = List.map(ilst2, intString);
         s2 = stringDelimitList(ls, ", ");
@@ -1380,7 +1381,7 @@ algorithm
       String s,s1,s2,sl,sj;
       BackendDAE.JacobianType jacType;
       BackendDAE.StrongComponent comp;
-      list<tuple<Integer,list<Integer>>> eqnvartpllst;
+      BackendDAE.InnerEquations innerEquations;
       Boolean b;
     case BackendDAE.SINGLEEQUATION(eqn=i,var=v)
       equation
@@ -1439,9 +1440,9 @@ algorithm
         s2 = stringAppendList({"WhenEquation ",sl," {",s,"}"});
       then
         s2;
-   case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst),linear=b)
+   case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,innerEquations=innerEquations),linear=b)
       equation
-        ls = List.map(eqnvartpllst, tupleString);
+        ls = List.map(innerEquations, innerEquationString);
         s = stringDelimitList(ls, ", ");
         ls = List.map(ilst, intString);
         s1 = stringDelimitList(ls, ", ");
@@ -2857,20 +2858,31 @@ public function dumpAdjacencyRowEnhanced
 algorithm
   _ := match (inRow)
     local
-      String s,s1;
+      String s,s1,s2;
       Integer x;
       BackendDAE.Solvability solva;
       BackendDAE.AdjacencyMatrixElementEnhanced xs;
+      BackendDAE.Constraints cons;
     case ({})
       equation
         print("\n");
       then
         ();
-    case (((x,solva) :: xs))
+    case (((x,solva,{}) :: xs))
       equation
         s = intString(x);
         s1 = dumpSolvability(solva);
         print("(" + s + "," + s1 + ")");
+        print(" ");
+        dumpAdjacencyRowEnhanced(xs);
+      then
+        ();
+    case (((x,solva,cons) :: xs))
+      equation
+        s = intString(x);
+        s1 = dumpSolvability(solva);
+        s2 = ExpressionDump.constraintDTlistToString(cons,",");
+        print("(" + s + "," + s1 + s2 +")");
         print(" ");
         dumpAdjacencyRowEnhanced(xs);
       then
@@ -3245,17 +3257,17 @@ algorithm
   end matchcontinue;
 end bltdump;
 
-protected function tupleString
-  input tuple<Integer, list<Integer>> iTpl;
+protected function innerEquationString
+  input BackendDAE.InnerEquation innerEquation;
   output String s;
 protected
   Integer e;
   list<Integer> v;
 algorithm
-  (e,v) := iTpl;
+  (e,v) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(innerEquation);
   s := stringDelimitList(List.map(v,intString), ", ");
   s := "{"+intString(e)+":"+s+"}";
-end tupleString;
+end innerEquationString;
 
 protected type DumpCompShortSystemsTpl = tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>>;
 protected type DumpCompShortMixedTpl = tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>;
@@ -3542,7 +3554,7 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> meqsys;
       tuple<list<tuple<Integer,Integer,Integer>>,list<tuple<Integer,Integer>>> teqsys,teqsys2;
-      list<tuple<Integer,list<Integer>>> eqnvartpllst,eqnvartpllst2;
+      BackendDAE.InnerEquations innerEquations,innerEquations2;
       list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> patternLst;
 
     case (BackendDAE.SINGLEEQUATION(),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys,teqsys2))
@@ -3586,29 +3598,29 @@ algorithm
     then ((seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e::e_nj),meqsys,teqsys,teqsys2));
 
     // no dynamic tearing
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=ilst,otherEqnVarTpl=eqnvartpllst,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz),_)),NONE(),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz),_)),NONE(),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
       d = listLength(ilst);
-      e = listLength(eqnvartpllst);
+      e = listLength(innerEquations);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,((d,e,nnz)::te_l,te_nl),((0,0,0)::te_l2,te_nl2)));
 
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=ilst,otherEqnVarTpl=eqnvartpllst),NONE(),linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations),NONE(),linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
       d = listLength(ilst);
-      e = listLength(eqnvartpllst);
+      e = listLength(innerEquations);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,(d,e)::te_nl),(te_l2,(0,0)::te_nl2)));
 
     // dynamic tearing
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=ilst,otherEqnVarTpl=eqnvartpllst,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz),_)),SOME(BackendDAE.TEARINGSET(tearingvars=ilst2,otherEqnVarTpl=eqnvartpllst2,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz2),_))),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz),_)),SOME(BackendDAE.TEARINGSET(tearingvars=ilst2,innerEquations=innerEquations2,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz2),_))),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
       d = listLength(ilst);
-      e = listLength(eqnvartpllst);
+      e = listLength(innerEquations);
       d2 = listLength(ilst2);
-      e2 = listLength(eqnvartpllst2);
+      e2 = listLength(innerEquations2);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,((d,e,nnz)::te_l,te_nl),((d2,e2,nnz2)::te_l2,te_nl2)));
 
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=ilst,otherEqnVarTpl=eqnvartpllst),SOME(BackendDAE.TEARINGSET(tearingvars=ilst2,otherEqnVarTpl=eqnvartpllst2)),linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations),SOME(BackendDAE.TEARINGSET(tearingvars=ilst2,innerEquations=innerEquations2)),linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
       d = listLength(ilst);
-      e = listLength(eqnvartpllst);
+      e = listLength(innerEquations);
       d2 = listLength(ilst2);
-      e2 = listLength(eqnvartpllst2);
+      e2 = listLength(innerEquations2);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,(d,e)::te_nl),(te_l2,(d2,e2)::te_nl2)));
 
     else equation
@@ -3790,7 +3802,8 @@ algorithm
       list<Boolean> tornInfo;
       list<String> addInfo;
       list<Integer> eqIdcs,varIdcs,tVarIdcs,rEqIdcs, tVarIdcsNew, rEqIdcsNew;
-      list<tuple<Integer,list<Integer>>> otherEqnVarTplIdcs;
+      list<list<Integer>> varIdcsLst;
+      BackendDAE.InnerEquations innerEquations;
       list<tuple<Boolean,String>> varAtts,eqAtts;
       BackendDAE.EquationArray compEqs;
       BackendDAE.Variables compVars;
@@ -3813,12 +3826,12 @@ algorithm
       eqAtts = List.threadMap(List.fill(false,numEqs),List.fill("",numEqs),Util.makeTuple);
       dumpBipartiteGraphStrongComponent2(compVars,compEqs,m,varAtts,eqAtts,"rL_eqSys_"+graphName);
     then ();
-  case((BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=rEqIdcs,tearingvars=tVarIdcs,otherEqnVarTpl=otherEqnVarTplIdcs))),_,_,_,_)
+  case((BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=rEqIdcs,tearingvars=tVarIdcs,innerEquations=innerEquations))),_,_,_,_)
     equation
       //gather equations ans variables
-      eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
+      (eqIdcs,varIdcsLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+      varIdcs = List.flatten(varIdcsLst);
       eqIdcs = listAppend(eqIdcs, rEqIdcs);
-      varIdcs = List.flatten(List.map(otherEqnVarTplIdcs,Util.tuple22));
       varIdcs = listAppend(varIdcs, tVarIdcs);
       compEqLst = List.map1(eqIdcs,List.getIndexFirst,eqsIn);
       compVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);

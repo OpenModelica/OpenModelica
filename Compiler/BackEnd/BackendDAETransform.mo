@@ -438,12 +438,13 @@ algorithm
   (outEquation, outVar, outIndex) := match inComp
     local
       Integer v, e;
-      list<Integer> elst, vlst;
+      list<Integer> elst, vlst, otherEqns, otherVars;
+      list<list<Integer>> otherVarsLst;
       BackendDAE.Equation eqn;
       BackendDAE.Var var;
       list<BackendDAE.Equation> eqnlst, eqnlst1;
       list<BackendDAE.Var> varlst, varlst1;
-      list<tuple<Integer, list<Integer>>> eqnvartpllst;
+      BackendDAE.InnerEquations innerEquations;
 
     case BackendDAE.SINGLEEQUATION(eqn=e, var=v) equation
       eqn = BackendEquation.equationNth1(inEquationArray, e);
@@ -481,11 +482,13 @@ algorithm
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
-    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst)) equation
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, innerEquations=innerEquations)) equation
       eqnlst = BackendEquation.getEqns(elst, inEquationArray);
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
-      eqnlst1 = BackendEquation.getEqns(List.map(eqnvartpllst, Util.tuple21), inEquationArray);
-      varlst1 = List.map1r(List.flatten(List.map(eqnvartpllst, Util.tuple22)), BackendVariable.getVarAt, inVariables);
+      (otherEqns,otherVarsLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+      otherVars = List.flatten(otherVarsLst);
+      eqnlst1 = BackendEquation.getEqns(otherEqns, inEquationArray);
+      varlst1 = List.map1r(otherVars, BackendVariable.getVarAt, inVariables);
       e = listHead(elst);
     then (listAppend(eqnlst, eqnlst1), listAppend(varlst, varlst1), e);
 
@@ -507,8 +510,9 @@ algorithm
     local
       Integer v, e;
       list<Integer> elst, vlst, elst1, vlst1;
+      list<list<Integer>> vLstLst;
       BackendDAE.StrongComponent comp;
-      list<tuple<Integer, list<Integer>>> eqnvartpllst;
+      BackendDAE.InnerEquations innerEquations;
 
     case (BackendDAE.SINGLEEQUATION(eqn=e, var=v))
     then ({e}, {v});
@@ -531,9 +535,9 @@ algorithm
     case BackendDAE.SINGLEWHENEQUATION(eqn=e, vars=vlst)
     then ({e}, vlst);
 
-    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst)) equation
-      elst1 = List.map(eqnvartpllst, Util.tuple21);
-      vlst1 = List.flatten(List.map(eqnvartpllst, Util.tuple22));
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, innerEquations=innerEquations)) equation
+      (elst1,vLstLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+      vlst1 = List.flatten(vLstLst);
       elst = listAppend(elst1, elst);
       vlst = listAppend(vlst1, vlst);
     then (elst, vlst);

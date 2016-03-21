@@ -3258,17 +3258,17 @@ end incidenceMatrixElementfromEnhanced2;
 protected function incidenceMatrixElementElementfromEnhanced2
 "author: Frenkel TUD 2012-11
   converts an AdjacencyMatrix entry into a IncidenceMatrix entry"
-  input tuple<Integer, BackendDAE.Solvability> inTpl;
+  input tuple<Integer, BackendDAE.Solvability, BackendDAE.Constraints> inTpl;
   input BackendDAE.Variables vars;
   input list<Integer> iRow;
   output list<Integer> oRow;
 algorithm
   oRow := match(inTpl,vars,iRow)
     local Integer i;
-    case ((i,BackendDAE.SOLVABILITY_SOLVED()),_,_) then i::iRow;
-    case ((i,BackendDAE.SOLVABILITY_CONSTONE()),_,_) then i::iRow;
-    case ((i,BackendDAE.SOLVABILITY_CONST()),_,_) then i::iRow;
-    case ((i,BackendDAE.SOLVABILITY_PARAMETER(b=true)),_,_) then i::iRow;
+    case ((i,BackendDAE.SOLVABILITY_SOLVED(),_),_,_) then i::iRow;
+    case ((i,BackendDAE.SOLVABILITY_CONSTONE(),_),_,_) then i::iRow;
+    case ((i,BackendDAE.SOLVABILITY_CONST(),_),_,_) then i::iRow;
+    case ((i,BackendDAE.SOLVABILITY_PARAMETER(b=true),_),_,_) then i::iRow;
 //    case ((i,BackendDAE.SOLVABILITY_PARAMETER(b=false)),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);
 //    case ((i,BackendDAE.SOLVABILITY_LINEAR(b=_)),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);
 //    case ((i,BackendDAE.SOLVABILITY_NONLINEAR()),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);

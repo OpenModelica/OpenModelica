@@ -532,10 +532,27 @@ uniontype TearingSet
   record TEARINGSET
     list<Integer> tearingvars;
     list<Integer> residualequations;
-    list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
+    InnerEquations innerEquations "list of matched equations and variables; these will be solved explicitly in the given order";
     Jacobian jac;
   end TEARINGSET;
 end TearingSet;
+
+type InnerEquations = list<InnerEquation>;
+
+public
+uniontype InnerEquation
+  record INNEREQUATION
+    Integer eqn;
+    list<Integer> vars;
+  end INNEREQUATION;
+
+  record INNEREQUATIONCONSTRAINTS
+    Integer eqn;
+    list<Integer> vars;
+    Constraints cons;
+  end INNEREQUATIONCONSTRAINTS;
+end InnerEquation;
+
 
 public
 type StateSets = list<StateSet> "List of StateSets";
@@ -611,7 +628,7 @@ type IncidenceMatrixT = IncidenceMatrix
  contain the state variable and not the derivative have a negative index.";
 
 public
-type AdjacencyMatrixElementEnhancedEntry = tuple<Integer,Solvability>;
+type AdjacencyMatrixElementEnhancedEntry = tuple<Integer,Solvability,Constraints>;
 
 public
 type AdjacencyMatrixElementEnhanced = list<AdjacencyMatrixElementEnhancedEntry>;
@@ -641,6 +658,9 @@ uniontype Solvability
   record SOLVABILITY_SOLVABLE "It is possible to solve the equation for the variable, it is not considered
                      how the variable occurs in the equation." end SOLVABILITY_SOLVABLE;
 end Solvability;
+
+public
+type Constraints = list<.DAE.Constraint> "Constraints needed for proper Dynamic Tearing";
 
 public
 uniontype IndexType

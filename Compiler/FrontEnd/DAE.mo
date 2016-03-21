@@ -598,6 +598,10 @@ uniontype Constraint "Optimica extension: The `Constraints\' type corresponds to
     list<Exp> constraintLst;
   end CONSTRAINT_EXPS;
 
+  record CONSTRAINT_DT "Constraints needed for proper Dynamic Tearing"
+    Exp constraint;
+    Boolean localCon "local or global constraint; local constraints depend on variables that are computed within the algebraic loop itself";
+  end CONSTRAINT_DT;
 end Constraint;
 
 public

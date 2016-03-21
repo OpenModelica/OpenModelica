@@ -452,46 +452,46 @@ algorithm
       BackendDAE.AdjacencyMatrixElementEnhanced rest;
       Boolean b1;
     case ({}) then true;
-    case ((e,BackendDAE.SOLVABILITY_SOLVED())::rest)
+    case ((e,BackendDAE.SOLVABILITY_SOLVED(),_)::rest)
       equation
         b1 = intLe(e,0);
         b1 = if b1 then unsolvable(rest) else false;
       then
         b1;
-    case ((e,BackendDAE.SOLVABILITY_CONSTONE())::rest)
+    case ((e,BackendDAE.SOLVABILITY_CONSTONE(),_)::rest)
       equation
         b1 = intLe(e,0);
         b1 = if b1 then unsolvable(rest) else false;
       then
         b1;
-    case ((e,BackendDAE.SOLVABILITY_CONST())::rest)
+    case ((e,BackendDAE.SOLVABILITY_CONST(),_)::rest)
       equation
         b1 = intLe(e,0);
         b1 = if b1 then unsolvable(rest) else false;
       then
         b1;
-    case ((_,BackendDAE.SOLVABILITY_PARAMETER(b=false))::rest)
+    case ((_,BackendDAE.SOLVABILITY_PARAMETER(b=false),_)::rest)
       then
         unsolvable(rest);
-    case ((e,BackendDAE.SOLVABILITY_PARAMETER(b=true))::rest)
+    case ((e,BackendDAE.SOLVABILITY_PARAMETER(b=true),_)::rest)
       equation
         b1 = intLe(e,0);
         b1 = if b1 then unsolvable(rest) else false;
       then
         b1;
-    case ((_,BackendDAE.SOLVABILITY_LINEAR(b=false))::rest)
+    case ((_,BackendDAE.SOLVABILITY_LINEAR(b=false),_)::rest)
       then
         unsolvable(rest);
-    case ((_,BackendDAE.SOLVABILITY_LINEAR(b=true))::rest)
+    case ((_,BackendDAE.SOLVABILITY_LINEAR(b=true),_)::rest)
       then
         unsolvable(rest);
-    case ((_,BackendDAE.SOLVABILITY_NONLINEAR())::rest)
+    case ((_,BackendDAE.SOLVABILITY_NONLINEAR(),_)::rest)
       then
         unsolvable(rest);
-    case ((_,BackendDAE.SOLVABILITY_UNSOLVABLE())::rest)
+    case ((_,BackendDAE.SOLVABILITY_UNSOLVABLE(),_)::rest)
       then
         unsolvable(rest);
-    case ((e,BackendDAE.SOLVABILITY_SOLVABLE())::rest)
+    case ((e,BackendDAE.SOLVABILITY_SOLVABLE(),_)::rest)
       equation
         b1 = intLe(e,0);
         b1 = if b1 then unsolvable(rest) else false;
@@ -872,10 +872,10 @@ protected function findVareqns
   input CompFunc inCompFunc;
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
   input list<Integer> tSel_alwaysIn;
-  output list<tuple<Integer,BackendDAE.Solvability>> vareqnsOut = {};
+  output list<tuple<Integer,BackendDAE.Solvability,BackendDAE.Constraints>> vareqnsOut = {};
   partial function CompFunc
     input array<Integer> inValue;
-    input tuple<Integer,BackendDAE.Solvability> inElement;
+    input tuple<Integer,BackendDAE.Solvability,BackendDAE.Constraints> inElement;
     output Boolean outIsEqual;
   end CompFunc;
 algorithm
@@ -1057,10 +1057,9 @@ protected function removeMatched
   output BackendDAE.AdjacencyMatrixElementEnhanced oAcc = {};
 protected
   Integer e;
-  BackendDAE.Solvability s;
 algorithm
   for el in elem loop
-    (e,s) := el;
+    (e,_,_) := el;
     if intLt(ass2[e],0) then
       oAcc := el::oAcc;
     end if;
@@ -1095,7 +1094,7 @@ end calcSolvabilityWeight;
 protected function solvabilityWeightsnoStates
 "helper function for calcSolvabilityWeight, giving points for solvability
   author: Frenkel TUD 2012-05"
-  input tuple<Integer,BackendDAE.Solvability> inTpl;
+  input tuple<Integer,BackendDAE.Solvability,BackendDAE.Constraints> inTpl;
   input array<Integer> ass;
   input Integer iW;
   output Integer oW;
@@ -1104,7 +1103,7 @@ algorithm
     local
       BackendDAE.Solvability s;
       Integer eq,w;
-    case((eq,s),_,_)
+    case((eq,s,_),_,_)
       guard
         intGt(eq,0) and
         not intGt(ass[eq], 0)
@@ -1155,7 +1154,7 @@ algorithm
      case (_,_,_,_)
        equation
          // finds equations with exact two variables (v1,v2)
-         ((v1,_)::(v2,_)::{}) = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[e]);
+         ((v1,_,_)::(v2,_,_)::{}) = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[e]);
          points = arrayUpdate(iPoints,v1,iPoints[v1]+5);
          points = arrayUpdate(iPoints,v2,points[v2]+5);
        then
@@ -1169,13 +1168,13 @@ end addEqnWeights;
 protected function isAssignedSaveEnhanced " returns true if var/eqn is already assigned
   author: Frenkel TUD 2012-05"
   input array<Integer> ass;
-  input tuple<Integer,BackendDAE.Solvability> inTpl;
+  input tuple<Integer,BackendDAE.Solvability,BackendDAE.Constraints> inTpl;
   output Boolean outB;
 algorithm
   outB := match(ass,inTpl)
     local
       Integer i;
-    case (_,(i,_)) guard intGt(i,0)
+    case (_,(i,_,_)) guard intGt(i,0)
       then
         intGt(ass[i],0);
     else
@@ -1256,7 +1255,7 @@ algorithm
         tearingBFS(newqueue,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
       then
         ();
-    case((c,_)::rest,_,_,_,_,_,_,_,_)
+    case((c,_,_)::rest,_,_,_,_,_,_,_,_)
       equation
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Queue:\n");
@@ -1312,7 +1311,7 @@ protected
   Integer r;
   BackendDAE.AdjacencyMatrixElementEnhanced row;
 algorithm
-  (r,_) := entry;
+  (r,_,_) := entry;
   row := m[r];
   hasnonlinear := hasnonlinearVars1(row);
 end hasnonlinearVars;
@@ -1326,7 +1325,7 @@ algorithm
     local
       BackendDAE.AdjacencyMatrixElementEnhanced rest;
     case ( {}) then false;
-    case ((_,BackendDAE.SOLVABILITY_NONLINEAR())::_)
+    case ((_,BackendDAE.SOLVABILITY_NONLINEAR(),_)::_)
       then
         true;
     case (_::rest)
@@ -1385,7 +1384,7 @@ protected
   BackendDAE.Solvability s;
 algorithm
   for r in rows loop
-    (_,s) := r;
+    (_,s,_) := r;
     if not solvable(s) then
       solvable := false;
       return;
@@ -1430,7 +1429,7 @@ algorithm
       BackendDAE.Solvability s;
       BackendDAE.AdjacencyMatrixElementEnhanced rest,vareqns,newqueue;
     case ({},_,_,_,_,_) then inNextQueue;
-    case ((r,_)::rest,c::ilst,_,_,_,_)
+    case ((r,_,_)::rest,c::ilst,_,_,_,_)
       equation
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
            print("Assignment: Eq " + intString(c) + " - Var " + intString(r) + "\n");
@@ -1512,7 +1511,7 @@ algorithm
     matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark,mixedSystem)
     local
       list<Integer> ores,residual1,ovars;
-      list<tuple<Integer,list<Integer>>> eqnvartpllst;
+      BackendDAE.InnerEquations innerEquations;
       array<Integer> eindxarr,varindxarr;
       Boolean linear;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -1527,10 +1526,10 @@ algorithm
         ores = List.map1r(residual1,arrayGet,eindxarr);
         varindxarr = listArray(vindx);
         ovars = List.map1r(tvars,arrayGet,varindxarr);
-        eqnvartpllst = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark);
+        innerEquations = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark);
         linear = getLinearfromJacType(jacType);
       then
-        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, eqnvartpllst, BackendDAE.EMPTY_JACOBIAN()), NONE(), linear,mixedSystem),true);
+        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, innerEquations, BackendDAE.EMPTY_JACOBIAN()), NONE(), linear,mixedSystem),true);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
         (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET({}, {}, {}, BackendDAE.EMPTY_JACOBIAN()), NONE(), false,mixedSystem),false);
@@ -1539,7 +1538,7 @@ end omcTearing4;
 
 
 protected function omcTearing4_1
-" creates otherEqnVarTpl for TORNSYSTEM
+" creates innerEquations for TearingSet
   author: Frenkel TUD 2012-09"
   input list<list<Integer>> othercomps;
   input array<Integer> ass2;
@@ -1548,9 +1547,9 @@ protected function omcTearing4_1
   input array<Integer> varindxarr;
   input array<Integer> columark;
   input Integer mark;
-  output list<tuple<Integer,list<Integer>>> oEqnVarTplLst;
+  output BackendDAE.InnerEquations outInnerEquations;
 algorithm
-  oEqnVarTplLst := list(
+  outInnerEquations := list(
     match x
       local
         list<Integer> vlst,clst,elst;
@@ -1562,19 +1561,19 @@ algorithm
           e = eindxarr[e];
           v = ass2[c];
           v = varindxarr[v];
-      then
-        (e,{v});
+       then
+        BackendDAE.INNEREQUATION(eqn=e,vars={v});
 
-    case clst
-      equation
-        elst = List.map1r(clst,arrayGet,mapIncRowEqn);
-        elst = List.fold2(elst,uniqueIntLst,mark,columark,{});
-        {e} = elst;
-        e = eindxarr[e];
-        vlst = List.map1r(clst,arrayGet,ass2);
-        vlst = List.map1r(vlst,arrayGet,varindxarr);
-      then
-        (e,vlst);
+      case clst
+        equation
+          elst = List.map1r(clst,arrayGet,mapIncRowEqn);
+          elst = List.fold2(elst,uniqueIntLst,mark,columark,{});
+          {e} = elst;
+          e = eindxarr[e];
+          vlst = List.map1r(clst,arrayGet,ass2);
+          vlst = List.map1r(vlst,arrayGet,varindxarr);
+       then
+        BackendDAE.INNEREQUATION(eqn=e,vars=vlst);
     end match
   for x in othercomps);
 end omcTearing4_1;
@@ -1605,7 +1604,7 @@ end getLinearfromJacType;
 // =============================================================================
 
 protected function CellierTearing " tearing method based on the method from book of Cellier
-author: ptaeuber FHB 2013-2015"
+author: ptaeuber FHB 2013-2016"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input list<Integer> eindex;
@@ -1620,7 +1619,7 @@ protected
   array<Integer> ass1,ass2,mapIncRowEqn;
   array<list<Integer>> mapEqnIncRow;
   list<Integer> OutTVars,residual,residual_coll,order,unsolvables,discreteVars,unsolvableDiscretes,tSel_always,tSel_prefer,tSel_avoid,tSel_never;
-  list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+  BackendDAE.InnerEquations innerEquations;
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
@@ -1755,11 +1754,11 @@ algorithm
      print("*\n* =====\n* resEq: "+ stringDelimitList(List.map(residual,intString),",") + "\n* =====\n" + BORDER + "\n\n");
   end if;
 
-  // assign otherEqnVarTpl:
-  otherEqnVarTpl := assignOtherEqnVarTpl(order,eindex,vindx,ass2,mapEqnIncRow);
+  // assign innerEquations:
+  innerEquations := assignInnerEquations(order,eindex,vindx,ass2,mapEqnIncRow,NONE());
 
   // Create BackendDAE.TearingSet for strict set
-  strictTearingSet := BackendDAE.TEARINGSET(OutTVars,residual,otherEqnVarTpl,BackendDAE.EMPTY_JACOBIAN());
+  strictTearingSet := BackendDAE.TEARINGSET(OutTVars,residual,innerEquations,BackendDAE.EMPTY_JACOBIAN());
 
 
   // Determine casual tearing set if dynamic tearing is enabled
@@ -1843,11 +1842,11 @@ algorithm
          print("\nNote:\n=====\n" + s + " dynamic tearing for this strong component in model:\n" + modelName + "\n\n");
       end if;
 
-      // assign otherEqnVarTpl:
-      otherEqnVarTpl := assignOtherEqnVarTpl(order,eindex,vindx,ass2,mapEqnIncRow);
+      // assign innerEquations:
+      innerEquations := assignInnerEquations(order,eindex,vindx,ass2,mapEqnIncRow,SOME(me));
 
       // Create BackendDAE.TearingSet for casual set
-      casualTearingSet := SOME(BackendDAE.TEARINGSET(OutTVars,residual,otherEqnVarTpl,BackendDAE.EMPTY_JACOBIAN()));
+      casualTearingSet := SOME(BackendDAE.TEARINGSET(OutTVars,residual,innerEquations,BackendDAE.EMPTY_JACOBIAN()));
     else
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\n* TEARING RESULTS (CASUAL SET):\n*\n* No of equations in strong Component: "+intString(size)+"\n");
@@ -3030,7 +3029,7 @@ algorithm
    local
      Integer v,count,maxi;
      list<Integer> rest,newPotentials1,counts;
-   BackendDAE.AdjacencyMatrixElementEnhanced elem;
+     BackendDAE.AdjacencyMatrixElementEnhanced elem;
    case({},_,_,_,_,_)
      then (newPotentials,inCounts,max);
    case(v::rest,_,_,_,_,_)
@@ -3057,7 +3056,7 @@ protected
   BackendDAE.Solvability s;
 algorithm
   for e in elem loop
-    (_,s) := e;
+    (_,s,_) := e;
     if not solvable(s) then
       outCount := outCount + 1;
     end if;
@@ -3297,26 +3296,64 @@ algorithm
 end makeAssignment;
 
 
-protected function assignOtherEqnVarTpl " assigns otherEqnVarTpl for TORNSYSTEM
+protected function assignInnerEquations " assigns innerEquations for TearingSet
   author: ptaeuber FHB 2013-08"
-  input list<Integer> inEqns,eindex,vindx;
+  input list<Integer> inEqns "order of equations with local numbering";
+  input list<Integer> eindex "equation indexes with global numbering";
+  input list<Integer> vindex "variable indexes with global numbering";
   input array<Integer> ass2;
   input array<list<Integer>> mapEqnIncRow;
-  output list<tuple<Integer,list<Integer>>> outOtherEqnVarTpl;
+  input Option<BackendDAE.AdjacencyMatrixEnhanced> meOpt;
+  output BackendDAE.InnerEquations outInnerEquations;
 algorithm
-  outOtherEqnVarTpl := list(
-    match eqn
+  outInnerEquations := list(
+    match (eqn,meOpt)
       local
         Integer eq,otherEqn;
-        list<Integer> vars,otherVars,rest;
-      case eq
+        list<Integer> eqns,vars,otherVars,rest;
+        BackendDAE.InnerEquation innerEquation;
+        BackendDAE.Constraints constraints;
+        BackendDAE.AdjacencyMatrixEnhanced me;
+      case (eq,NONE())
         equation
           vars = List.map1r(mapEqnIncRow[eq],arrayGet,ass2);
           otherEqn = listGet(eindex,eq);
-          otherVars = selectFromList_rev(vindx,vars);
-      then (otherEqn,otherVars);
+          otherVars = selectFromList_rev(vindex,vars);
+      then BackendDAE.INNEREQUATION(eqn=otherEqn, vars=otherVars);
+      case (eq,SOME(me))
+        equation
+          eqns = mapEqnIncRow[eq];
+          vars = List.map1r(eqns,arrayGet,ass2);
+          otherEqn = listGet(eindex,eq);
+          otherVars = selectFromList_rev(vindex,vars);
+          constraints = findConstraintForInnerEquation(me[listHead(eqns)],listHead(vars));
+          if listEmpty(constraints) then
+            innerEquation = BackendDAE.INNEREQUATION(eqn=otherEqn, vars=otherVars);
+          else
+            innerEquation = BackendDAE.INNEREQUATIONCONSTRAINTS(eqn=otherEqn, vars=otherVars, cons=constraints);
+          end if;
+      then (innerEquation);
   end match for eqn in inEqns);
-end assignOtherEqnVarTpl;
+end assignInnerEquations;
+
+
+protected function findConstraintForInnerEquation
+  input BackendDAE.AdjacencyMatrixElementEnhanced meRow;
+  input Integer searchIndex;
+  output BackendDAE.Constraints constraints={};
+protected
+  Integer index;
+  BackendDAE.AdjacencyMatrixElementEnhancedEntry meElem;
+  BackendDAE.Constraints cons;
+algorithm
+  for meElem in meRow loop
+    (index,_,cons) := meElem;
+    if intEq(index,searchIndex) then
+      constraints := cons;
+      break;
+    end if;
+  end for;
+end findConstraintForInnerEquation;
 
 
 protected function getpossibleEqn " finds equation that can be matched
@@ -3643,11 +3680,11 @@ protected
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
 
-  list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
-  tuple<Integer,list<Integer>> tpl;
+  BackendDAE.InnerEquations innerEquations;
+  BackendDAE.InnerEquation innerEquation;
   Integer eqindex, vindex;
   list<Integer> residualequations;
-  list<Integer> tearingvars;
+  list<Integer> tearingvars, othervars;
   list<BackendDAE.Var> var_lst;
   BackendDAE.Var var;
   array<DAE.ComponentRef> tear_cr;
@@ -3674,8 +3711,8 @@ algorithm
     for comp in comps loop
       if isTornsystem(comp, true, false) then
         // -----
-        BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(otherEqnVarTpl = otherEqnVarTpl, residualequations= residualequations, tearingvars=tearingvars)) := comp;
-        n := listLength(otherEqnVarTpl);
+        BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(innerEquations = innerEquations, residualequations= residualequations, tearingvars=tearingvars)) := comp;
+        n := listLength(innerEquations);
         m := listLength(residualequations);
         if maxSizeOne and m > 1 then
           continue;
@@ -3688,8 +3725,8 @@ algorithm
         update := true;
         tmp_update := true;
         // -----
-        for tpl in otherEqnVarTpl loop
-          (eqindex, {vindex}) := tpl;
+        for innerEquation in innerEquations loop
+          (eqindex, {vindex}, _) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(innerEquation);
           (var as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindex);
           all_vars := cr :: all_vars;
           arrayUpdate(indx_var,i,vindex);
@@ -3706,7 +3743,7 @@ algorithm
           if Flags.isSet(Flags.DUMP_RTEARING) then
             print("INeqn => " + BackendDump.equationString(eqn) +  "[" + intString(i-1) + "]\n");
           end if;
-        end for; //otherEqnVarTpl
+        end for; //innerEquations
 
         // -----
         var_lst := list(BackendVariable.getVarAt(vars, i) for i in tearingvars);
