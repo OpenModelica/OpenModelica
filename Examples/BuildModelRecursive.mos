@@ -185,7 +185,7 @@ elseif referenceExists then
   variableFilter := sum(stringReplace(stringReplace(stringReplace(stringReplace(s,\"[\",\".\"),\"]\",\".\"),\"(\",\".\"),\")\",\".\") + \"|\" for s in vars);
   numCompared := size(vars,1);
   emit_protected := \" -emit_protected\";
-  print(variableFilter + \"\n\");
+  // print(variableFilter + \"\n\");
 else
   variableFilter := \"\";
   outputFormat := \"empty\";
