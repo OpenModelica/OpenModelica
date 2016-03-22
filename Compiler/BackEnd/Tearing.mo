@@ -76,6 +76,7 @@ protected constant String UNDERLINE = "========================================"
 uniontype TearingMethod
   record OMC_TEARING end OMC_TEARING;
   record CELLIER_TEARING end CELLIER_TEARING;
+  record TOTAL_TEARING end TOTAL_TEARING;
 end TearingMethod;
 
 // =============================================================================
@@ -135,6 +136,8 @@ algorithm
 
     case ("cellier") then CELLIER_TEARING();
 
+    case ("totalTearing") then TOTAL_TEARING();
+
     else equation
       Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function getTearingMethod failed", sourceInfo());
     then fail();
@@ -167,6 +170,13 @@ algorithm
         (ocomp,outRunMatching) := CellierTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
         if debug then execStat("Tearing.CellierTearing"); end if;
       then (ocomp,outRunMatching);
+
+    case TOTAL_TEARING()
+      algorithm
+        (ocomp,outRunMatching) := totalTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
+        if debug then execStat("Tearing.totalTearing"); end if;
+      then (ocomp,outRunMatching);
+
   end match;
 end callTearingMethod;
 
@@ -405,7 +415,7 @@ algorithm
 
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print(if outRunMatching then "\nStatus:\nOk system torn\n\n" else "\nStatus:\nSystem not torn\n\n");
-     print("\n" + BORDER + "\n* TEARING RESULTS:\n*\n* No of equations in strong Component: "+intString(size)+"\n");
+     print("\n" + BORDER + "\n* TEARING RESULTS:\n*\n* No of equations in strong component: "+intString(size)+"\n");
      print("* No of tVars: "+intString(tornsize)+"\n");
      print("*\n* tVars: "+ stringDelimitList(List.map(tvars,intString),",") + "\n");
      print("*\n* resEq: "+ stringDelimitList(List.map(residual,intString),",") + "\n*\n*");
@@ -1460,7 +1470,7 @@ end tearingBFS2;
 
 protected function omcTearing3 " function to rerun omcTearing2 if there are still unassigned vars
   author: Frenkel TUD 2012-05"
-  input list<Integer> unassigend;
+  input list<Integer> unassigned;
   input list<Integer> unsolvables;
   input list<Integer> tSel_always;
   input list<Integer> tSel_prefer;
@@ -1481,7 +1491,7 @@ protected function omcTearing3 " function to rerun omcTearing2 if there are stil
   output list<Integer> outTVars;
   output Integer oMark;
 algorithm
-  (outTVars,oMark) := match(unassigend,unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
+  (outTVars,oMark) := match(unassigned,unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
     local
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then (inTVars,mark);
     else
@@ -1757,21 +1767,17 @@ algorithm
   if debug then execStat("Tearing.CellierTearing -> 3.4"); end if;
   residual_coll := List.unique(residual_coll);
   if debug then execStat("Tearing.CellierTearing -> 3.5"); end if;
+
+  // dump results with local indexes
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("\n" + BORDER + "\n* TEARING RESULTS (STRICT SET):\n*\n* No of equations in strong Component: "+intString(size)+"\n");
-    print("* No of tVars: "+intString(listLength(OutTVars))+"\n");
-    print("*\n* tVars: "+ stringDelimitList(List.map(listReverse(OutTVars),intString),",") + "\n");
-    print("*\n* resEq: "+ stringDelimitList(List.map(residual_coll,intString),",") + "\n*\n*");
+    dumpTearingSetLocalIndexes(OutTVars,residual_coll,order,ass2,size,mapEqnIncRow," - STRICT SET");
   end if;
+
   if debug then execStat("Tearing.CellierTearing -> 4"); end if;
 
   // Convert indexes
   OutTVars := selectFromList_rev(vindx, OutTVars);
   residual := selectFromList_rev(eindex, residual_coll);
-  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-     print("\n* Related to entire Equationsystem:\n* =====\n* tVars: "+ stringDelimitList(List.map(OutTVars,intString),",") + "\n* =====\n");
-     print("*\n* =====\n* resEq: "+ stringDelimitList(List.map(residual,intString),",") + "\n* =====\n" + BORDER + "\n\n");
-  end if;
 
   // assign innerEquations:
   innerEquations := assignInnerEquations(order,eindex,vindx,ass2,mapEqnIncRow,NONE());
@@ -1780,6 +1786,10 @@ algorithm
   // Create BackendDAE.TearingSet for strict set
   strictTearingSet := BackendDAE.TEARINGSET(OutTVars,residual,innerEquations,BackendDAE.EMPTY_JACOBIAN());
 
+  // dump results with global indexes
+  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    dumpTearingSetGlobalIndexes(strictTearingSet,size," - STRICT SET");
+  end if;
 
   // Determine casual tearing set if dynamic tearing is enabled
   // *****************************************************************
@@ -1845,31 +1855,35 @@ algorithm
       residual := getUnassigned(ass2);
       residual_coll := List.map1r(residual,arrayGet,mapIncRowEqn);
       residual_coll := List.unique(residual_coll);
+
+      // dump results with local indexes
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\n" + BORDER + "\n* TEARING RESULTS (CASUAL SET):\n*\n* No of equations in strong Component: "+intString(size)+"\n");
-        print("* No of tVars: "+intString(listLength(OutTVars))+"\n");
-        print("*\n* tVars: "+ stringDelimitList(List.map(listReverse(OutTVars),intString),",") + "\n");
-        print("*\n* resEq: "+ stringDelimitList(List.map(residual_coll,intString),",") + "\n*\n*");
+        dumpTearingSetLocalIndexes(OutTVars,residual_coll,order,ass2,size,mapEqnIncRow," - CASUAL SET");
       end if;
 
       // Convert indexes
       OutTVars := selectFromList_rev(vindx, OutTVars);
       residual := selectFromList_rev(eindex, residual_coll);
-      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-         print("\n* Related to entire Equationsystem:\n* =====\n* tVars: "+ stringDelimitList(List.map(OutTVars,intString),",") + "\n* =====\n");
-         print("*\n* =====\n* resEq: "+ stringDelimitList(List.map(residual,intString),",") + "\n* =====\n" + BORDER + "\n");
-         if linear then s:="Linear"; else s:="Nonlinear"; end if;
-         print("\nNote:\n=====\n" + s + " dynamic tearing for this strong component in model:\n" + modelName + "\n\n");
-      end if;
 
       // assign innerEquations:
       innerEquations := assignInnerEquations(order,eindex,vindx,ass2,mapEqnIncRow,SOME(me));
 
       // Create BackendDAE.TearingSet for casual set
       casualTearingSet := SOME(BackendDAE.TEARINGSET(OutTVars,residual,innerEquations,BackendDAE.EMPTY_JACOBIAN()));
+
+      // dump results with global indexes
+      if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+        dumpTearingSetGlobalIndexes(BackendDAE.TEARINGSET(OutTVars,residual,innerEquations,BackendDAE.EMPTY_JACOBIAN()),size," - CASUAL SET");
+      end if;
+
+      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+        if linear then s:="Linear"; else s:="Nonlinear"; end if;
+        print("\nNote:\n=====\n" + s + " dynamic tearing for this strong component in model:\n" + modelName + "\n\n");
+      end if;
+
     else
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\n" + BORDER + "\n* TEARING RESULTS (CASUAL SET):\n*\n* No of equations in strong Component: "+intString(size)+"\n");
+        print("\n" + BORDER + "\n* TEARING RESULTS (CASUAL SET):\n*\n* No of equations in strong component: "+intString(size)+"\n");
         print("* No of tVars: "+intString(listLength(OutTVars))+"\n");
         print("*\n* tVars: "+ stringDelimitList(List.map(listReverse(OutTVars),intString),",") + "\n");
         print("*\n* The casual tearing set is not smaller\n* than the strict tearing set and there-\n* fore it is discarded.\n*" + BORDER + "\n");
@@ -3992,6 +4006,7 @@ algorithm
 
 end recursiveTearingReplace;
 
+
 protected function getUnassigned
   input array<Integer> ass;
   output list<Integer> unassigned={};
@@ -4003,5 +4018,445 @@ algorithm
   end for;
 end getUnassigned;
 
+
+protected function dumpTearingSetLocalIndexes
+  input list<Integer> tVars,residuals,order;
+  input array<Integer> ass2;
+  input Integer size;
+  input array<list<Integer>> mapEqnIncRow;
+  input String setString;
+protected
+  list<Integer> vars;
+  list<String> s;
+algorithm
+  print("\n" + BORDER + "\n* TEARING RESULTS" + setString + ":\n* (Local Indexes)\n*\n* No of equations in strong component: "+intString(size)+"\n");
+  print("* No of tVars: "+intString(listLength(tVars))+"\n");
+  print("*\n* tVars: "+ stringDelimitList(List.map(listReverse(tVars),intString),",") + "\n");
+  print("*\n* resEq: "+ stringDelimitList(List.map(residuals,intString),",") + "\n");
+  s := list("{" + intString(e) + ":" + stringDelimitList(List.map(List.map1r(mapEqnIncRow[e],arrayGet,ass2),intString),",") + "}" for e in order);
+  print("*\n* innerEquations ({eqn,vars}):\n* " + stringDelimitList(s,", ") + "\n*\n*" + BORDER + "\n\n");
+end dumpTearingSetLocalIndexes;
+
+
+protected function dumpTearingSetGlobalIndexes
+  input BackendDAE.TearingSet tearingSet;
+  input Integer size;
+  input String setString;
+protected
+  list<Integer> tVars,residuals;
+  BackendDAE.InnerEquations innerEquations;
+algorithm
+  BackendDAE.TEARINGSET(tearingvars=tVars,residualequations=residuals,innerEquations=innerEquations) := tearingSet;
+  print("\n" + BORDER + "\n* TEARING RESULTS" + setString + ":\n* (Global Indexes)\n*\n* No of equations in strong component: "+intString(size)+"\n");
+  print("* No of tVars: "+intString(listLength(tVars))+"\n");
+  print("*\n* tVars: "+ stringDelimitList(List.map(listReverse(tVars),intString),",") + "\n");
+  print("*\n* resEq: "+ stringDelimitList(List.map(residuals,intString),",") + "\n");
+  print("*\n* innerEquations ({eqn,vars}):\n* " + stringDelimitList(List.map(innerEquations, BackendDump.innerEquationString),", ") + "\n*\n*" + BORDER + "\n\n");
+end dumpTearingSetGlobalIndexes;
+
+
+protected function dumpTearingSetsGlobalIndexes
+  input list<BackendDAE.TearingSet> tearingSets;
+  input Integer size;
+protected
+  list<Integer> tVars,residuals;
+  BackendDAE.InnerEquations innerEquations;
+algorithm
+  for tearingSet in tearingSets loop
+    dumpTearingSetGlobalIndexes(tearingSet,size,"");
+  end for;
+end dumpTearingSetsGlobalIndexes;
+
+
+// =============================================================================
+//
+// Total Tearing - Determination of All Possible Tearing Sets
+// author: ptaeuber FHB 2016
+//
+// =============================================================================
+
+protected function totalTearing " determination of all possible tearing sets
+author: ptaeuber FHB 2016"
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input list<Integer> eindex;
+  input list<Integer> vindx;
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
+  input BackendDAE.JacobianType jacType;
+  input Boolean mixedSystem;
+  output BackendDAE.StrongComponent ocomp;
+  output Boolean outRunMatching;
+protected
+  Integer size;
+  array<Integer> ass1,ass2,mapIncRowEqn;
+  array<list<Integer>> mapEqnIncRow;
+  list<Integer> tVars,order,causEq,unsolvables,discreteVars,unsolvableDiscretes,tSel_always,tSel_prefer,tSel_avoid,tSel_never;
+  BackendDAE.EqSystem subsyst;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.IncidenceMatrix m,mLoop;
+  BackendDAE.IncidenceMatrix mt,mtLoop;
+  BackendDAE.AdjacencyMatrixEnhanced me;
+  BackendDAE.AdjacencyMatrixTEnhanced meT;
+  BackendDAE.BackendDAEType DAEtype;
+  list<BackendDAE.TearingSet> tearingSets;
+  list<BackendDAE.Equation> eqn_lst;
+  list<BackendDAE.Var> var_lst;
+  Boolean linear,simulation;
+  String modelName;
+  list<list<Integer>> powerSet;
+  list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingList;
+algorithm
+  linear := getLinearfromJacType(jacType);
+  BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
+  BackendDAE.SIMULATION() := DAEtype;
+
+  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    print("\n" + BORDER + "\nBEGINNING of totalTearing\n\n");
+  end if;
+
+  // Generate Subsystem to get the incidence matrix
+  size := listLength(vindx);
+  eqn_lst := BackendEquation.getEqns(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
+  eqns := BackendEquation.listEquation(eqn_lst);
+  var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
+  vars := BackendVariable.listVar1(var_lst);
+  subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
+  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE());
+
+
+
+  // Delete negative entries from incidence matrix
+  m := Array.map(m,deleteNegativeEntries);
+  mt := Array.map(mt,deleteNegativeEntries);
+
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    print("\n\n###BEGIN print Strong Component#####################\n(Function:totalTearing)\n");
+    BackendDump.printEqSystem(subsyst);
+    print("\n###END print Strong Component#######################\n(Function:totalTearing)\n\n\n");
+  end if;
+
+
+  // Get advanced adjacency matrix (determine how the variables occur in the equations)
+  (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,false);
+
+  deleteImpossibleAssignments(m,me);
+  deleteImpossibleAssignments(mt,meT);
+
+  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    print("\nIncidence Matrix without Impossible Assignments:\n");
+    BackendDump.dumpIncidenceMatrix(m);
+    BackendDump.dumpIncidenceMatrix(mt);
+  end if;
+
+  // Determine unsolvable vars to consider solvability
+  unsolvables := getUnsolvableVars(1,size,meT,{});
+
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    print("\nAdjacencyMatrixEnhanced:\n");
+    BackendDump.dumpAdjacencyMatrixEnhanced(me);
+    print("\nAdjacencyMatrixTransposedEnhanced:\n");
+    BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
+  end if;
+
+  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    print("\n\nmapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
+    BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
+    print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
+    print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
+  end if;
+
+  // Determine discrete vars
+  discreteVars := findDiscrete(var_lst);
+  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
+  end if;
+
+  // Look for unsolvable discrete variables because this leads to causalization error
+  unsolvableDiscretes := List.intersectionOnTrue(unsolvables,discreteVars,intEq);
+  if not listEmpty(unsolvableDiscretes) then
+    Error.addCompilerError("None of the equations can be solved for the following discrete variables:\n" + BackendDump.varListString(List.map1r(unsolvableDiscretes, BackendVariable.getVarAt, BackendVariable.daeVars(subsyst)),""));
+  fail();
+  end if;
+
+  // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
+  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst);
+
+
+
+  // Determine all possible sets of tearing variables and save them in powerSet
+  // ******************************************
+
+  powerSet := list(getPowerSetElement(i) for i in 1:(2^size-1));
+  if Flags.isSet(Flags.TOTAL_TEARING_DUMP) or Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
+    BackendDump.dumpListList(powerSet,"Power Set");
+  end if;
+
+
+
+  // BEGIN TO LOOP
+  // ******************************************
+  tearingSets := {};
+
+  if Flags.isSet(Flags.TOTAL_TEARING_DUMP) or Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
+    print("\n\n###BEGIN TO LOOP#####################\n" + BORDER + "\n\n\n");
+  end if;
+
+  for tVars in powerSet loop
+      if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
+        print("\ntVars:\n" + stringDelimitList(List.map(tVars,intString),",") + "\n\n");
+      end if;
+
+
+      // Initialize matching
+      ass1 := arrayCreate(size,-1);
+      ass2 := arrayCreate(size,-1);
+      order := {};
+
+      mLoop := arrayCopy(m);
+      mtLoop := arrayCopy(mt);
+
+      // mark tVars in ass1
+      markTVars(tVars, ass1);
+
+      // remove tearing var from incidence matrix and transposed incidence matrix
+      deleteEntriesFromIncidenceMatrix(mLoop,mtLoop,tVars);
+      deleteRowsFromIncidenceMatrix(mtLoop,tVars);
+
+      // initially find equations which can be causalized in the next step and save in causEq
+      causEq := traverseEqnsforAssignable(ass2,mLoop,mapEqnIncRow,mapIncRowEqn,0);
+      // if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
+        // print("\nInitial ass1: " + stringDelimitList(List.map(arrayList(ass1),intString),",")+"\n");
+        // print("Initial ass2: " + stringDelimitList(List.map(arrayList(ass2),intString),",") + "\n");
+        // print("\nInitial m:");BackendDump.dumpIncidenceMatrix(mLoop);
+        // print("\nInitial mt:");BackendDump.dumpIncidenceMatrix(mtLoop);
+        // print("\nInitial causEq: " + stringDelimitList(List.map(causEq,intString),",") + "\n");
+        // print("Initial order: " + stringDelimitList(List.map(order,intString),",") + "\n\n\n\n");
+      // end if;
+
+
+      // Find all possible matchings for this set of tearing variables
+      matchingList := totalMatching(ass1,ass2,order,causEq,mLoop,mtLoop,mapEqnIncRow,mapIncRowEqn,{});
+      if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
+        dumpMatchingList(matchingList);
+      end if;
+
+      // save tearing sets in list
+      tearingSets := createTearingSets(tVars,matchingList,vindx,eindex,mapEqnIncRow,mapIncRowEqn,tearingSets);
+
+  end for;
+
+  // dump all different tearing sets
+  if Flags.isSet(Flags.TOTAL_TEARING_DUMP) or Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
+    dumpTearingSetsGlobalIndexes(tearingSets,size);
+  end if;
+
+  // Determine the rest of the information needed for BackendDAE.TORNSYSTEM
+  // ***************************************************************************
+  ocomp := BackendDAE.TORNSYSTEM(listHead(tearingSets),NONE(),linear,mixedSystem);
+  outRunMatching := true;
+
+  if Flags.isSet(Flags.TOTAL_TEARING_DUMP) or Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
+    print("\n\nTotal number of different tearing sets: " + intString(listLength(tearingSets)) + "\n\n");
+  end if;
+
+  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    print("\nEND of totalTearing\n" + BORDER + "\n\n");
+  end if;
+end totalTearing;
+
+
+protected function deleteImpossibleAssignments
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+protected
+  BackendDAE.AdjacencyMatrixElementEnhanced AdjacencyRow;
+  BackendDAE.AdjacencyMatrixElementEnhancedEntry AdjacencyEntry;
+  BackendDAE.Solvability solva;
+  Integer i;
+  list<Integer> IncidenceRow;
+algorithm
+  for idx in 1:arrayLength(me) loop
+    AdjacencyRow := me[idx];
+    IncidenceRow := m[idx];
+    for AdjacencyEntry in AdjacencyRow loop
+      (i,solva,_) := AdjacencyEntry;
+      if not solvable(solva) then
+        IncidenceRow := List.deleteMember(IncidenceRow,i);
+      end if;
+    end for;
+    arrayUpdate(m,idx,IncidenceRow);
+  end for;
+end deleteImpossibleAssignments;
+
+
+protected function getPowerSetElement
+  input Integer i;
+  output list<Integer> powerSetElement={};
+protected
+  Integer c=0,e=i,r;
+algorithm
+  while not intEq(e,0) loop
+    c := c+1;
+    r := intMod(e,2);
+    e := intDiv(e,2);
+    if intEq(r,1) then
+      powerSetElement := c :: powerSetElement;
+    end if;
+  end while;
+end getPowerSetElement;
+
+
+
+protected function totalMatching "function to find all possible matchings for one given set of tearing variables (DFS)
+author: ptaeuber FHB 2016"
+  input array<Integer> ass1,ass2;
+  input list<Integer> orderIn;
+  input list<Integer> causEqIn;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
+  input array<list<Integer>> mapEqnIncRow;
+  input array<Integer> mapIncRowEqn;
+  input list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingListIn;
+  output list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingListOut=matchingListIn;
+protected
+  list<Integer> order, causEq, unassigned;
+  array<Integer> ass1Copy,ass2Copy;
+  BackendDAE.IncidenceMatrix mCopy;
+  BackendDAE.IncidenceMatrixT mtCopy;
+algorithm
+  for e in causEqIn loop
+    // 1. Deep copies to avoid side effects
+    ass1Copy := arrayCopy(ass1);
+    ass2Copy := arrayCopy(ass2);
+    mCopy := arrayCopy(m);
+    mtCopy := arrayCopy(mt);
+
+    // 2. Match e with corresponding variable, i.e.: update ass1, ass2, m, order
+    makeAssignment({e},mCopy[e],ass1Copy,ass2Copy,mCopy,mtCopy);
+    order := e::orderIn;
+
+    // 3. Determine new possible causEq
+    causEq := traverseEqnsforAssignable(ass2Copy,mCopy,mapEqnIncRow,mapIncRowEqn,0);
+
+    // 4. Dump
+    // if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
+      // print("\nNew ass1: " + stringDelimitList(List.map(arrayList(ass1Copy),intString),",")+"\n");
+        // print("New ass2: " + stringDelimitList(List.map(arrayList(ass2Copy),intString),",") + "\n");
+      // print("\nNew m:");BackendDump.dumpIncidenceMatrix(mCopy);
+      // print("\nNew mt:");BackendDump.dumpIncidenceMatrix(mtCopy);
+      // print("\nNew causEq: " + stringDelimitList(List.map(causEq,intString),",") + "\n");
+        // print("New order: " + stringDelimitList(List.map(order,intString),",") + "\n\n\n\n");
+    // end if;
+
+    // 5. Decide what to do
+    if listEmpty(causEq) then
+      // full matching found?
+      unassigned := getUnassigned(ass1Copy);
+      if listEmpty(unassigned) then
+        // save current full matching
+        if isNewMatching(matchingListOut,ass1Copy) then
+          matchingListOut := (ass1Copy,ass2Copy,order) :: matchingListOut;
+        end if;
+      end if;
+    else
+      // Continue with matching
+      matchingListOut := totalMatching(ass1Copy,ass2Copy,order,causEq,mCopy,mtCopy,mapEqnIncRow,mapIncRowEqn,matchingListOut);
+    end if;
+  end for;
+end totalMatching;
+
+
+protected function isNewMatching
+  input list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingList;
+  input array<Integer> ass1In;
+  output Boolean b=true;
+protected
+  array<Integer> ass1;
+algorithm
+  for matching in matchingList loop
+    (ass1,_,_) := matching;
+    if Array.isEqual(ass1In,ass1) then
+      b:=false;
+      break;
+    end if;
+  end for;
+end isNewMatching;
+
+
+protected function createTearingSets
+  input list<Integer> tVarsIn;
+  input list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingList;
+  input list<Integer> vindx;
+  input list<Integer> eindex;
+  input array<list<Integer>> mapEqnIncRow;
+  input array<Integer> mapIncRowEqn;
+  input list<BackendDAE.TearingSet> tearingSetsIn;
+  output list<BackendDAE.TearingSet> tearingSetsOut=tearingSetsIn;
+protected
+  array<Integer> ass1,ass2;
+  list<Integer> tVars,residual,residual_coll,order;
+  BackendDAE.InnerEquations innerEquations;
+algorithm
+  for matching in matchingList loop
+    (ass1,ass2,order) := matching;
+
+    // Unassigned equations are residual equations
+    residual := getUnassigned(ass2);
+    residual_coll := List.map1r(residual,arrayGet,mapIncRowEqn);
+    residual_coll := List.unique(residual_coll);
+
+    // Convert indexes
+    tVars := selectFromList_rev(vindx, tVarsIn);
+    residual := selectFromList_rev(eindex, residual_coll);
+
+    // assign innerEquations:
+    innerEquations := assignInnerEquations(order,eindex,vindx,ass2,mapEqnIncRow,NONE());
+
+    // Create BackendDAE.TearingSet for strict set
+    tearingSetsOut := BackendDAE.TEARINGSET(tVars,residual,innerEquations,BackendDAE.EMPTY_JACOBIAN()) :: tearingSetsOut;
+  end for;
+end createTearingSets;
+
+
+protected function dumpMatchingList
+  input list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingList;
+protected
+  Integer c=0;
+  list<Integer> order;
+  array<Integer> ass1, ass2;
+algorithm
+  print("\n");
+  for matching in matchingList loop
+    c := c+1;
+    (ass1,ass2,order) := matching;
+    print("Matching " + intString(c) + ":\n");
+    print("ass1: " + stringDelimitList(List.map(arrayList(ass1),intString),",") + "\n");
+    print("ass2: " + stringDelimitList(List.map(arrayList(ass2),intString),",") + "\n");
+    print("order: " + stringDelimitList(List.map(order,intString),",") + "\n\n");
+  end for;
+end dumpMatchingList;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 annotation(__OpenModelica_Interface="backend");
 end Tearing;
+

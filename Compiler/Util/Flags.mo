@@ -486,6 +486,10 @@ constant DebugFlag SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR = DEBUG_FLAG(158, "skipInpu
   Util.gettext("Used when bootstrapping to preserve the input output parsing of the code output by the list command."));
 constant DebugFlag OMC_RECORD_ALLOC_WORDS = DEBUG_FLAG(159, "metaModelicaRecordAllocWords", false,
   Util.gettext("Instrument the source code to record memory allocations (requires run-time and generated files compiled with -DOMC_RECORD_ALLOC_WORDS)."));
+constant DebugFlag TOTAL_TEARING_DUMP = DEBUG_FLAG(160, "totaltearingdump", false,
+  Util.gettext("Dumps total tearing information."));
+  constant DebugFlag TOTAL_TEARING_DUMPVERBOSE = DEBUG_FLAG(161, "totaltearingdumpV", false,
+  Util.gettext("Dumps verbose total tearing information."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -651,7 +655,9 @@ constant list<DebugFlag> allDebugFlags = {
   FORCE_NLS_ANALYTIC_JACOBIAN,
   DUMP_LOOPS,
   SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR,
-  OMC_RECORD_ALLOC_WORDS
+  OMC_RECORD_ALLOC_WORDS,
+  TOTAL_TEARING_DUMP,
+  TOTAL_TEARING_DUMPVERBOSE
 };
 
 public
@@ -982,7 +988,8 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(44, "tearingMethod",
   SOME(STRING_DESC_OPTION({
     ("noTearing", Util.gettext("Skip tearing.")),
     ("omcTearing", Util.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
-    ("cellier", Util.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"))})),
+    ("cellier", Util.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick")),
+    ("totalTearing", Util.gettext("Total Tearing (Determination of all possible tearing sets): Täuber, Patrick"))})),
     Util.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
 
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(45, "tearingHeuristic",

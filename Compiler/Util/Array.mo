@@ -38,6 +38,7 @@ encapsulated package Array
 
 protected
 import MetaModelica.Dangerous.{arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
+import Error;
 
 public function mapNoCopy<T>
   "Takes an array and a function over the elements of the array, which is
@@ -776,6 +777,27 @@ public function arrayListsEmpty1<T>
 algorithm
   isEmptyOut := listEmpty(lst) and isEmptyIn;
 end arrayListsEmpty1;
+
+public function isEqual<T>
+  "Checks if two arrays are equal."
+  input array<T> inArr1;
+  input array<T> inArr2;
+  output Boolean outIsEqual=true;
+protected
+  Integer arrLength;
+algorithm
+  arrLength := arrayLength(inArr1);
+  if not intEq(arrLength,arrayLength(inArr2)) then
+    Error.addMessage(Error.DIFFERENT_DIM_SIZE_IN_ARGUMENTS, {"array","Array.isEqual"});
+    fail();
+  end if;
+  for i in 1:arrLength loop
+    if not valueEq(inArr1[i],inArr2[i]) then
+      outIsEqual := false;
+      break;
+    end if;
+  end for;
+end isEqual;
 
 annotation(__OpenModelica_Interface="util");
 end Array;

@@ -1360,6 +1360,15 @@ algorithm
   end match;
 end printComponent;
 
+
+public function dumpListList
+  input list<list<Integer>> lstLst;
+  input String heading;
+algorithm
+  print("\n" + heading + ":\n" + UNDERLINE + "\n" + stringDelimitList(List.map(lstLst,intListStr),"\n") + "\n\n");
+end dumpListList;
+
+
 // =============================================================================
 // section for all *String functions
 //
@@ -3229,7 +3238,7 @@ algorithm
   end matchcontinue;
 end bltdump;
 
-protected function innerEquationString
+public function innerEquationString
   input BackendDAE.InnerEquation innerEquation;
   output String s;
 protected
@@ -3237,7 +3246,7 @@ protected
   list<Integer> v;
 algorithm
   (e,v) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(innerEquation);
-  s := stringDelimitList(List.map(v,intString), ", ");
+  s := stringDelimitList(List.map(v,intString), ",");
   s := "{"+intString(e)+":"+s+"}";
 end innerEquationString;
 
