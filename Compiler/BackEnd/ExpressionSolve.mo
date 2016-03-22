@@ -1773,6 +1773,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp rhs;
       DAE.Type tp;
+      Integer i;
 
     // cr = (e1-e2)/(der(e1-e2,cr))
     case (_,_,DAE.CREF(componentRef = cr))
@@ -1788,7 +1789,11 @@ algorithm
         false = Expression.expHasCrefNoPreOrStart(dere, cr);
         tp = Expression.typeof(inExp3);
         (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        ((e,_)) = Expression.replaceExp(e, inExp3, z);
+        ((e,i)) = Expression.replaceExp(e, inExp3, z);
+        // replace at least once, otherwise it's wrong
+        if i < 1 then
+          fail();
+        end if;
         (e,_) = ExpressionSimplify.simplify(e);
         rhs = Expression.negate(Expression.makeDiv(e,dere));
       then
