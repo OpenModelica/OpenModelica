@@ -95,6 +95,7 @@ end ext;
 public function ext_one
 "@author: adrpo
  helper"
+  input Name name;
   input Ref inRef;
   input Graph ig;
   output Graph og;
@@ -177,6 +178,7 @@ end derived;
 public function derived_one
 "@author: adrpo
  helper"
+  input Name name;
   input Ref inRef;
   input Graph ig;
   output Graph og;
@@ -252,6 +254,7 @@ end ty;
 public function ty_one
 "@author: adrpo
  helper"
+  input Name name;
   input Ref inRef;
   input Graph ig;
   output Graph og;
@@ -330,6 +333,7 @@ end cc;
 public function cc_one
 "@author: adrpo
  helper"
+  input Name name;
   input Ref inRef;
   input Graph ig;
   output Graph og;
@@ -405,6 +409,7 @@ end clsext;
 public function clsext_one
 "@author: adrpo
  helper"
+  input Name name;
   input Ref inRef;
   input Graph ig;
   output Graph og;
@@ -487,6 +492,7 @@ end cr;
 public function cr_one
 "@author: adrpo
  helper"
+  input Name name;
   input Ref inRef;
   input Graph ig;
   output Graph og;
@@ -562,6 +568,7 @@ end mod;
 public function mod_one
 "@author: adrpo
  helper"
+  input Name name;
   input Ref inRef;
   input Graph ig;
   output Graph og;
@@ -642,6 +649,7 @@ end elred;
 public function elred_one
 "@author: adrpo
  helper"
+  input Name name;
   input Ref inRef;
   input Graph ig;
   output Graph og;

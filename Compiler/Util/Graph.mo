@@ -953,29 +953,23 @@ color[ui ] <- min{c > 0 : forbiddenColors[c] = ui }
   input list<Integer> inColors;
   input array<tuple<Integer, list<Integer>>> inGraph;
   input array<Integer> inColored;
-  output array<Integer> outColored;
+protected
+  Integer node, color;
+  list<Integer>  nodes;
+  array<Option<list<Integer>>> forbiddenColor;
+  Integer color;
+  list<tuple<Integer, list<Integer>>> restGraph;
 algorithm
-  outColored := matchcontinue(inGraphT, inforbiddenColor, inColors, inGraph, inColored)
-  local
-    Integer node;
-    list<Integer>  nodes;
-    array<Option<list<Integer>>> forbiddenColor;
-    array<Integer> colored;
-    Integer color;
-    list<tuple<Integer, list<Integer>>> restGraph;
-    case ({},_,_,_,_) then inColored;
-    case (((node,nodes))::restGraph, _, _, _, _)
-      equation
-        addForbiddenColorsInt(node, nodes, inColored, inforbiddenColor, inGraph);
-        color = arrayFindMinColorIndexInt(inforbiddenColor, node, 1);
-        colored = arrayUpdate(inColored, node, color);
-    then
-      partialDistance2colorInt(restGraph, inforbiddenColor, inColors, inGraph, colored);
-    else
-      equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2colorInt failed."}, sourceInfo());
-      then fail();
-  end matchcontinue;
+  try
+    for tpl in inGraphT loop
+      (node,nodes) := tpl;
+      addForbiddenColorsInt(node, nodes, inColored, inforbiddenColor, inGraph);
+      color := arrayFindMinColorIndexInt(inforbiddenColor, node, 1);
+      arrayUpdate(inColored, node, color);
+    end for;
+  else
+    Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2colorInt failed."}, sourceInfo());
+  end try;
 end partialDistance2colorInt;
 
 protected function addForbiddenColorsInt

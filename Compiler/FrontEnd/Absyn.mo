@@ -671,9 +671,14 @@ end Variability;
 
 public
 uniontype Direction "Direction"
-  record INPUT  "direction is input"                                   end INPUT;
-  record OUTPUT "direction is output"                                  end OUTPUT;
-  record BIDIR  "direction is not specified, neither input nor output" end BIDIR;
+  record INPUT "direction is input"
+  end INPUT;
+  record OUTPUT "direction is output"
+  end OUTPUT;
+  record BIDIR  "direction is not specified, neither input nor output"
+  end BIDIR;
+  record INPUT_OUTPUT "direction is both input and output (OM extension; syntactic sugar for functions)"
+  end INPUT_OUTPUT;
 end Direction;
 
 public
@@ -3153,11 +3158,10 @@ algorithm
       list<Subscript> subs;
       String id;
       ComponentRef cr;
+
     case (CREF_IDENT(id,subs),_)
-      equation
-        subs = listAppend(subs,i);
-      then
-        CREF_IDENT(id,subs);
+      then CREF_IDENT(id, listAppend(subs, i));
+
     case (CREF_QUAL(id,subs,cr),_)
       equation
         cr = addSubscriptsLast(cr,i);
@@ -3466,9 +3470,8 @@ algorithm
       equation
         crefs1 = getCrefsFromSubs(subs,includeSubs,includeFunctions);
         crefs = getCrefFromExp(exp,includeSubs,includeFunctions);
-        crefs = listAppend(crefs,crefs1);
       then
-        crefs;
+        listAppend(crefs,crefs1);
   end match;
 end getCrefsFromSubs;
 
@@ -3544,15 +3547,12 @@ algorithm
       then
         res;
 
+    // TODO: Handle else if-branches.
     case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),_,_)
-      equation
-        l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
-        l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
-        l1 = listAppend(l1, l2);
-        l2 = getCrefFromExp(e3,includeSubs,includeFunctions);
-        res = listAppend(l1, l2) "TODO elseif\'s e4";
-      then
-        res;
+      then List.flatten({
+        getCrefFromExp(e1, includeSubs, includeFunctions),
+        getCrefFromExp(e2, includeSubs, includeFunctions),
+        getCrefFromExp(e3, includeSubs, includeFunctions)});
 
     case (CALL(function_ = cr, functionArgs = farg),_,_)
       equation
@@ -5364,6 +5364,7 @@ algorithm
   isIorO := match(direction)
     case (INPUT()) then true;
     case (OUTPUT()) then true;
+    case (INPUT_OUTPUT()) then true;
     case (BIDIR()) then false;
   end match;
 end isInputOrOutput;
@@ -5374,6 +5375,7 @@ public function isInput
 algorithm
   outIsInput := match(inDirection)
     case INPUT() then true;
+    case INPUT_OUTPUT() then true;
     else false;
   end match;
 end isInput;
@@ -5387,6 +5389,7 @@ algorithm
     case (BIDIR(), BIDIR()) then true;
     case (INPUT(), INPUT()) then true;
     case (OUTPUT(), OUTPUT()) then true;
+    case (INPUT_OUTPUT(), INPUT_OUTPUT()) then true;
     else false;
   end match;
 end directionEqual;
@@ -6249,10 +6252,7 @@ algorithm
   end while;
 
   if changed then
-    outList := listReverse(outList);
-    if not outContinue then
-      outList := listAppend(outList, rest_e);
-    end if;
+    outList := List.append_reverse(outList, rest_e);
   else
     outList := inList;
   end if;

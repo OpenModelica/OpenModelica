@@ -41,7 +41,7 @@
 #define DIVISION(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error_time(threadData, b, c, data->localData[0]->timeValue, __FILE__, __LINE__,data->simulationInfo->noThrowDivZero?1:0)))
 #endif
 
-#define DIVISION_SIM(a,b,msg,equation) (((b) != 0) ? ((a) / (b)) : ( (a) == 0 && initial()  ? 0 : ((a) / division_error_equation_time(threadData, a, b, msg, equation, data->localData[0]->timeValue, data->simulationInfo->noThrowDivZero?1:0))))
+#define DIVISION_SIM(a,b,msg,equation) (__OMC_DIV_SIM(threadData, a, b, msg, equationIndexes, data->simulationInfo->noThrowDivZero, data->localData[0]->timeValue, initial() ))
 
 #define DIVISIONNOTIME(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error(threadData, b, c, __FILE__, __LINE__)))
 
@@ -49,5 +49,15 @@ modelica_real division_error_equation_time(threadData_t*, modelica_real a, model
 modelica_real division_error_time(threadData_t*,modelica_real b, const char* division_str, modelica_real time, const char* file, long line, modelica_boolean noThrow);
 modelica_real division_error(threadData_t*,modelica_real b, const char* division_str, const char* file, long line);
 modelica_real isnan_error(threadData_t*,modelica_real b, const char* division_str, const char* file, long line);
+
+static inline modelica_real __OMC_DIV_SIM(threadData_t *threadData, const modelica_real a, const modelica_real b, const char *msg, const int * equationIndexes, modelica_boolean noThrowDivZero, const modelica_real time_, const modelica_boolean initial_){
+  if(b != 0.0){
+    return a/b;
+  }else if(initial_ &&  a == 0.0){
+    return 0.0;
+  }else{
+    return a/ division_error_equation_time(threadData, a, b, msg, equationIndexes, time_, noThrowDivZero);
+  }
+}
 
 #endif

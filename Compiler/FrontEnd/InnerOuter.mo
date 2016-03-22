@@ -1248,69 +1248,36 @@ function switchInnerToOuterInFrame
   switches the inner to outer attributes of a component in the Frame."
   input FCore.Node inNode;
   input DAE.ComponentRef inCr;
-  output FCore.Node outNode;
+  output FCore.Node outNode = inNode;
 algorithm
-  outNode := matchcontinue(inNode,inCr)
-    local
-      DAE.ComponentRef cr;
-      FCore.Name n;
-      FCore.Id i;
-      FCore.Parents p;
-      FCore.Children c;
-      FCore.Data d;
-
-    case (FCore.N(n, i, p, c, d), cr)
-      equation
-        SOME(c) = switchInnerToOuterInChildren(SOME(c), cr);
+  _ := match outNode
+    case FCore.N()
+      algorithm
+        outNode.children := FNode.RefTree.map(outNode.children,
+          function switchInnerToOuterInChild(cr = inCr));
       then
-        FCore.N(n, i, p, c, d);
+        ();
 
-    else inNode;
-
-  end matchcontinue;
+    else ();
+  end match;
 end switchInnerToOuterInNode;
 
-protected function switchInnerToOuterInChildren "
-function switchInnerToOuterInChildren
-  switches the inner to outer attributes of a component in the AvlTree."
-  input Option<FCore.Children> inTreeOpt;
-  input DAE.ComponentRef inCr;
-  output Option<FCore.Children> outTreeOpt;
+protected function switchInnerToOuterInChild
+  input FCore.Name name;
+  input DAE.ComponentRef cr;
+  input FCore.Ref inRef;
+  output FCore.Ref ref;
+protected
+  FCore.Node n;
 algorithm
-  outTreeOpt := match(inTreeOpt,inCr)
-    local
-      DAE.ComponentRef cr;
-      FCore.CAvlKey rkey;
-      FCore.CAvlValue rval;
-      FCore.Node n;
-      Option<FCore.Children> l,r;
-      Integer h;
-
-    case (NONE(),_) then NONE();
-
-    case (SOME(FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(rkey,rval)),height = h,left = l,right = r)), cr)
-      equation
-        n = FNode.fromRef(rval);
-        n = switchInnerToOuterInChildrenValue(n, cr);
-        rval = FNode.updateRef(rval, n);
-        l = switchInnerToOuterInChildren(l, cr);
-        r = switchInnerToOuterInChildren(r, cr);
-      then
-        SOME(FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(rkey,rval)),h,l,r));
-
-    case (SOME(FCore.CAVLTREENODE(value = NONE(),height = h,left = l,right = r)),cr)
-      equation
-        l = switchInnerToOuterInChildren(l, cr);
-        r = switchInnerToOuterInChildren(r, cr);
-      then
-        SOME(FCore.CAVLTREENODE(NONE(),h,l,r));
-
-  end match;
-end switchInnerToOuterInChildren;
+  n := FNode.fromRef(inRef);
+  n := switchInnerToOuterInChildrenValue(n, cr);
+  ref := FNode.updateRef(inRef, n);
+end switchInnerToOuterInChild;
 
 protected function switchInnerToOuterInChildrenValue "
 function switchInnerToOuterInChildrenValue
-  switches the inner to outer attributes of a component in the AvlTree."
+  switches the inner to outer attributes of a component in the RefTree."
   input FCore.Node inNode;
   input DAE.ComponentRef inCr;
   output FCore.Node outNode;

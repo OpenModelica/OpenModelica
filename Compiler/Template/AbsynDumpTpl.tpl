@@ -441,6 +441,7 @@ match dir
   case BIDIR() then ""
   case INPUT() then "input "
   case OUTPUT() then "output "
+  case INPUT_OUTPUT() then "input output "
 end dumpDirection;
 
 template dumpElementAttrDim(Absyn.ElementAttributes attr)

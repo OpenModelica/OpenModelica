@@ -660,7 +660,8 @@ algorithm
       BackendDAE.StrongComponents rest;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqnlst, eqnlst1;
-      list<tuple<Integer, list<Integer>>> eqnvartpllst;
+      BackendDAE.InnerEquations innerEquations;
+      BackendDAE.InnerEquation innerEquation;
       Type_a arg;
     case ({}, _, _, _) then inTypeA;
     case (BackendDAE.SINGLEEQUATION(eqn=e)::rest, _, _, _)
@@ -705,11 +706,11 @@ algorithm
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=elst, otherEqnVarTpl=eqnvartpllst))::rest, _, _, _)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=elst, innerEquations=innerEquations))::rest, _, _, _)
       equation
-        // collect alle equations
+        // collect all equations
         eqnlst = BackendEquation.getEqns(elst, iEqns);
-        elst = List.map(eqnvartpllst, Util.tuple21);
+        (elst,_,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
         eqnlst1 = BackendEquation.getEqns(elst, iEqns);
         eqnlst = listAppend(eqnlst, eqnlst1);
         arg = inFunc(eqnlst, inTypeA);

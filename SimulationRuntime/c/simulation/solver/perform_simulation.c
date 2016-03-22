@@ -87,7 +87,7 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
   int syncRet1;
   do
   {
-    int eventType = checkEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+    int eventType = checkEvents(data, threadData, solverInfo->eventLst, !solverInfo->solverRootFinding, /*out*/ &solverInfo->currentTime);
     if(eventType > 0 || syncRet == 2) /* event */
     {
       threadData->currentErrorStage = ERROR_EVENTHANDLING;

@@ -58,6 +58,7 @@ protected import ExpressionSolve;
 protected import Flags;
 protected import List;
 protected import Matching;
+protected import MetaModelica.Dangerous;
 protected import Util;
 protected import Sorting;
 
@@ -128,19 +129,15 @@ protected function getTearingMethod
   input String inTearingMethod;
   output TearingMethod outTearingMethod;
 algorithm
-  outTearingMethod := matchcontinue(inTearingMethod)
-    case (_) equation
-      true = stringEqual(inTearingMethod, "omcTearing");
-    then OMC_TEARING();
+  outTearingMethod := match(inTearingMethod)
+    case ("omcTearing") then OMC_TEARING();
 
-    case (_) equation
-      true = stringEqual(inTearingMethod, "cellier");
-    then CELLIER_TEARING();
+    case ("cellier") then CELLIER_TEARING();
 
     else equation
       Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function getTearingMethod failed", sourceInfo());
     then fail();
-  end matchcontinue;
+  end match;
 end getTearingMethod;
 
 protected function callTearingMethod
@@ -185,7 +182,7 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of traverseComponents\n\n");
   end if;
-  (comps, b) := traverseComponents(comps, isyst, inShared, inTearingMethod, {}, false);
+  (comps, b) := traverseComponents(comps, isyst, inShared, inTearingMethod);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of traverseComponents\n" + BORDER + "\n\n");
   end if;
@@ -197,29 +194,19 @@ protected function traverseComponents "author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input TearingMethod inMethod;
-  input BackendDAE.StrongComponents iAcc;
-  input Boolean iRunMatching;
   output BackendDAE.StrongComponents oComps;
-  output Boolean outRunMatching;
+  output Boolean outRunMatching = false;
 algorithm
-  (oComps, outRunMatching) := match (inComps, isyst, ishared, inMethod, iAcc, iRunMatching)
-    local
-      list<Integer> eindex, vindx;
-      Boolean b, b1;
-      BackendDAE.StrongComponents comps, acc;
-      BackendDAE.StrongComponent comp, comp1;
-      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
-      BackendDAE.JacobianType jacType;
-
-    case ({}, _, _, _, _, _)
-    then (listReverse(iAcc), iRunMatching);
-
-    case (comp::comps, _, _, _, _, _)
-      equation
-        (comp, b1) = traverseComponents1(comp, isyst, ishared, inMethod);
-        (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, comp::iAcc, b1 or iRunMatching);
-      then (acc, b1);
-  end match;
+  oComps := list(match co
+        local
+          BackendDAE.StrongComponent comp;
+          Boolean b;
+        case comp
+          equation
+            (comp, b) = traverseComponents1(comp, isyst, ishared, inMethod);
+            outRunMatching = outRunMatching or b;
+          then comp;
+        end match for co in inComps);
 end traverseComponents;
 
 protected function traverseComponents1 "author: Frenkel TUD 2012-05"
@@ -465,46 +452,46 @@ algorithm
       BackendDAE.AdjacencyMatrixElementEnhanced rest;
       Boolean b1;
     case ({}) then true;
-    case ((e,BackendDAE.SOLVABILITY_SOLVED())::rest)
+    case ((e,BackendDAE.SOLVABILITY_SOLVED(),_)::rest)
       equation
         b1 = intLe(e,0);
         b1 = if b1 then unsolvable(rest) else false;
       then
         b1;
-    case ((e,BackendDAE.SOLVABILITY_CONSTONE())::rest)
+    case ((e,BackendDAE.SOLVABILITY_CONSTONE(),_)::rest)
       equation
         b1 = intLe(e,0);
         b1 = if b1 then unsolvable(rest) else false;
       then
         b1;
-    case ((e,BackendDAE.SOLVABILITY_CONST())::rest)
+    case ((e,BackendDAE.SOLVABILITY_CONST(),_)::rest)
       equation
         b1 = intLe(e,0);
         b1 = if b1 then unsolvable(rest) else false;
       then
         b1;
-    case ((_,BackendDAE.SOLVABILITY_PARAMETER(b=false))::rest)
+    case ((_,BackendDAE.SOLVABILITY_PARAMETER(b=false),_)::rest)
       then
         unsolvable(rest);
-    case ((e,BackendDAE.SOLVABILITY_PARAMETER(b=true))::rest)
+    case ((e,BackendDAE.SOLVABILITY_PARAMETER(b=true),_)::rest)
       equation
         b1 = intLe(e,0);
         b1 = if b1 then unsolvable(rest) else false;
       then
         b1;
-    case ((_,BackendDAE.SOLVABILITY_LINEAR(b=false))::rest)
+    case ((_,BackendDAE.SOLVABILITY_LINEAR(b=false),_)::rest)
       then
         unsolvable(rest);
-    case ((_,BackendDAE.SOLVABILITY_LINEAR(b=true))::rest)
+    case ((_,BackendDAE.SOLVABILITY_LINEAR(b=true),_)::rest)
       then
         unsolvable(rest);
-    case ((_,BackendDAE.SOLVABILITY_NONLINEAR())::rest)
+    case ((_,BackendDAE.SOLVABILITY_NONLINEAR(),_)::rest)
       then
         unsolvable(rest);
-    case ((_,BackendDAE.SOLVABILITY_UNSOLVABLE())::rest)
+    case ((_,BackendDAE.SOLVABILITY_UNSOLVABLE(),_)::rest)
       then
         unsolvable(rest);
-    case ((e,BackendDAE.SOLVABILITY_SOLVABLE())::rest)
+    case ((e,BackendDAE.SOLVABILITY_SOLVABLE(),_)::rest)
       equation
         b1 = intLe(e,0);
         b1 = if b1 then unsolvable(rest) else false;
@@ -599,7 +586,7 @@ algorithm
       // get var of eqns
       vars = List.map1r(comp,arrayGet,ass2);
       // get TVars of Eqns
-      tvars = tVarsofEqns(comp, m, ass1, mT, visited, iMark, {});
+      tvars = tVarsofEqns(comp, m, ass1, mT, visited, iMark);
       // update map
       _ = List.fold1r(vars, arrayUpdate, tvars, mT);
     then getDependenciesOfVars(comps, ass1, ass2, m, mT, visited, iMark+1);
@@ -614,22 +601,14 @@ protected function tVarsofEqns "determines tvars that influence this equations"
   input array<list<Integer>> mT;
   input array<Integer> visited;
   input Integer iMark;
-  input list<Integer> iAcc;
-  output list<Integer> oAcc;
+  output list<Integer> oAcc = {};
+protected
+  list<Integer> vars;
 algorithm
-  oAcc := match(iEqns, m, ass1, mT, visited, iMark, iAcc)
-    local
-      Integer e;
-      list<Integer> eqns, vars, tvars;
-
-    case ({}, _, _, _, _, _, _)
-    then iAcc;
-
-    case (e::eqns, _, _, _, _, _, _) equation
-      vars = List.select(m[e], Util.intPositive);
-      tvars = tVarsofEqn(vars, ass1, mT, visited, iMark, iAcc);
-    then tVarsofEqns(eqns, m, ass1, mT, visited, iMark, tvars);
-  end match;
+  for e in iEqns loop
+    vars := List.select(m[e], Util.intPositive);
+    oAcc := tVarsofEqn(vars, ass1, mT, visited, iMark, oAcc);
+  end for;
 end tVarsofEqns;
 
 
@@ -640,23 +619,15 @@ protected function tVarsofEqn "determines tvars that influence this equation"
   input array<Integer> visited;
   input Integer iMark;
   input list<Integer> iAcc;
-  output list<Integer> oAcc;
+  output list<Integer> oAcc = iAcc;
 algorithm
-  oAcc := matchcontinue(iVars,ass1,mT,visited,iMark,iAcc)
-    local
-      Integer v;
-      list<Integer> vars,tvars;
-    case ({},_,_,_,_,_) then iAcc;
-    case (v::vars,_,_,_,_,_)
-      equation
-        true = intLt(ass1[v],0);
-        tvars = uniqueIntLst(v,iMark,visited,iAcc);
-      then
-        tVarsofEqn(vars,ass1,mT,visited,iMark,tvars);
-    case (v::vars,_,_,_,_,_) equation
-      tvars = List.fold2(mT[v],uniqueIntLst,iMark,visited,iAcc);
-    then tVarsofEqn(vars, ass1, mT, visited, iMark, tvars);
-  end matchcontinue;
+  for v in iVars loop
+    if intLt(ass1[v],0) then
+      oAcc := uniqueIntLst(v,iMark,visited,oAcc);
+    else
+      oAcc := List.fold2(mT[v],uniqueIntLst,iMark,visited,oAcc);
+    end if;
+  end for;
 end tVarsofEqn;
 
 
@@ -665,19 +636,12 @@ protected function uniqueIntLst
   input Integer mark;
   input array<Integer> markarray;
   input list<Integer> iAcc;
-  output list<Integer> oAcc;
+  output list<Integer> oAcc = iAcc;
 algorithm
-  oAcc := matchcontinue(c,mark,markarray,iAcc)
-    case(_,_,_,_)
-      equation
-        false = intEq(mark,markarray[c]);
-        arrayUpdate(markarray,c,mark);
-      then
-        c::iAcc;
-    else
-      then
-        iAcc;
-  end matchcontinue;
+  if not intEq(mark,markarray[c]) then
+    arrayUpdate(markarray,c,mark);
+    oAcc := c::oAcc;
+  end if;
 end uniqueIntLst;
 
 
@@ -704,7 +668,7 @@ algorithm
   varGlobalLocal := getGlobalLocal(iTVars,1,varGlobalLocal);
   // generate list of map[residual]=tvars
   // change indices in map to local
-  (oMark,maplst) := tVarsofResidualEqns(iResiduals,m,ass1,mT,varGlobalLocal,visited,iMark,{});
+  (oMark,maplst) := tVarsofResidualEqns(iResiduals,m,ass1,mT,varGlobalLocal,visited,iMark);
   map := listArray(maplst);
   // get for each residual a tvar
   size := arrayLength(map);
@@ -727,20 +691,14 @@ protected function getGlobalLocal
   input list<Integer> iTVars;
   input Integer index;
   input array<Integer> iVarGlobalLocal;
-  output array<Integer> oVarGlobalLocal;
+  output array<Integer> oVarGlobalLocal = iVarGlobalLocal;
+protected
+  Integer idx = index;
 algorithm
-oVarGlobalLocal :=
-  match(iTVars,index,iVarGlobalLocal)
-    local
-      Integer i;
-      list<Integer> tvars;
-    case ({},_,_) then iVarGlobalLocal;
-    case (i::tvars,_,_)
-      equation
-        arrayUpdate(iVarGlobalLocal,i,index);
-      then
-        getGlobalLocal(tvars,index+1,iVarGlobalLocal);
-  end match;
+  for i in iTVars loop
+    arrayUpdate(oVarGlobalLocal,i,idx);
+    idx := idx + 1;
+  end for;
 end getGlobalLocal;
 
 
@@ -752,25 +710,23 @@ protected function tVarsofResidualEqns
   input array<Integer> varGlobalLocal;
   input array<Integer> visited;
   input Integer iMark;
-  input list<list<Integer>> iAcc;
-  output Integer oMark;
+  output Integer oMark = iMark;
   output list<list<Integer>> oAcc;
 algorithm
-  (oMark,oAcc) := match(iEqns,m,ass1,mT,varGlobalLocal,visited,iMark,iAcc)
-    local
-      Integer e;
-      list<Integer> eqns,vars,tvars;
-    case ({},_,_,_,_,_,_,_) then (iMark,listReverse(iAcc));
-    case (e::eqns,_,_,_,_,_,_,_)
-      equation
-        vars = List.select(m[e], Util.intPositive);
-        tvars = tVarsofEqn(vars,ass1,mT,visited,iMark,{});
-        // change indices to local
-        tvars = List.map1r(tvars,arrayGet,varGlobalLocal);
-        (oMark,oAcc) = tVarsofResidualEqns(eqns,m,ass1,mT,varGlobalLocal,visited,iMark+1,tvars::iAcc);
-      then
-        (oMark,oAcc);
-  end match;
+  oAcc := list(
+    match eq
+        local
+          Integer e;
+          list<Integer> eqns,vars,tvars;
+        case e
+          equation
+            vars = List.select(m[e], Util.intPositive);
+            tvars = tVarsofEqn(vars,ass1,mT,visited,oMark,{});
+            // change indices to local
+            tvars = List.map1r(tvars,arrayGet,varGlobalLocal);
+            oMark = oMark + 1;
+          then tvars;
+    end match for eq in iEqns);
 end tVarsofResidualEqns;
 
 
@@ -916,10 +872,10 @@ protected function findVareqns
   input CompFunc inCompFunc;
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
   input list<Integer> tSel_alwaysIn;
-  output list<tuple<Integer,BackendDAE.Solvability>> vareqnsOut = {};
+  output list<tuple<Integer,BackendDAE.Solvability,BackendDAE.Constraints>> vareqnsOut = {};
   partial function CompFunc
     input array<Integer> inValue;
-    input tuple<Integer,BackendDAE.Solvability> inElement;
+    input tuple<Integer,BackendDAE.Solvability,BackendDAE.Constraints> inElement;
     output Boolean outIsEqual;
   end CompFunc;
 algorithm
@@ -1026,7 +982,7 @@ algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after discrimination against variables with attribute 'avoid':\n" + stringDelimitList(List.map(pointsLst,intString),",") + "\n\n");
         end if;
-        tvar = selectVarWithMostPoints(freeVars,pointsLst,-1,-1);
+        tvar = selectVarWithMostPoints(freeVars,pointsLst);
           // fcall(Flags.TEARING_DUMPVERBOSE,print,"VarsWithMostEqns:\n");
           // fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.debuglst,(freeVars,intString,", ","\n"));
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -1066,7 +1022,7 @@ algorithm
         true = intLt(ass1[index],0);
         elem = meT[index];
         /* consider only unmatched eqns */
-        elem = removeMatched(elem,ass2,{});
+        elem = removeMatched(elem,ass2);
         true = unsolvable(elem);
       then
        index::inUnsolvables;
@@ -1077,7 +1033,7 @@ algorithm
         true = intLt(ass1[index],0);
         elem = meT[index];
         /* consider only unmatched eqns */
-        elem = removeMatched(elem,ass2,{});
+        elem = removeMatched(elem,ass2);
         true = unsolvable(elem);
       then
        getUnsolvableVarsConsiderMatching(index+1,size,meT,ass1,ass2,index::inUnsolvables);
@@ -1098,21 +1054,16 @@ protected function removeMatched
   author: Frenkel TUD 2012-08"
   input BackendDAE.AdjacencyMatrixElementEnhanced elem;
   input array<Integer> ass2;
-  input BackendDAE.AdjacencyMatrixElementEnhanced iAcc;
-  output BackendDAE.AdjacencyMatrixElementEnhanced oAcc;
+  output BackendDAE.AdjacencyMatrixElementEnhanced oAcc = {};
+protected
+  Integer e;
 algorithm
-  oAcc := match(elem,ass2,iAcc)
-    local
-      Integer e;
-      BackendDAE.AdjacencyMatrixElementEnhanced rest;
-      BackendDAE.Solvability s;
-    case ({},_,_) then iAcc;
-    case ((e,s)::rest,_,_) then
-      if intLt(ass2[e],0) then
-        removeMatched(rest,ass2,(e,s)::iAcc)
-      else
-        removeMatched(rest,ass2,iAcc);
-  end match;
+  for el in elem loop
+    (e,_,_) := el;
+    if intLt(ass2[e],0) then
+      oAcc := el::oAcc;
+    end if;
+  end for;
 end removeMatched;
 
 
@@ -1143,24 +1094,25 @@ end calcSolvabilityWeight;
 protected function solvabilityWeightsnoStates
 "helper function for calcSolvabilityWeight, giving points for solvability
   author: Frenkel TUD 2012-05"
-  input tuple<Integer,BackendDAE.Solvability> inTpl;
+  input tuple<Integer,BackendDAE.Solvability,BackendDAE.Constraints> inTpl;
   input array<Integer> ass;
   input Integer iW;
   output Integer oW;
 algorithm
-  oW := matchcontinue(inTpl,ass,iW)
+  oW := match(inTpl,ass,iW)
     local
       BackendDAE.Solvability s;
       Integer eq,w;
-    case((eq,s),_,_)
+    case((eq,s,_),_,_)
+      guard
+        intGt(eq,0) and
+        not intGt(ass[eq], 0)
       equation
-        true = intGt(eq,0);
-        false = intGt(ass[eq], 0);
         w = solvabilityWeights(s);
       then
         intAdd(w,iW);
     else iW;
-  end matchcontinue;
+  end match;
 end solvabilityWeightsnoStates;
 
 
@@ -1182,6 +1134,7 @@ algorithm
     case BackendDAE.SOLVABILITY_LINEAR(b=true) then 100;
     case BackendDAE.SOLVABILITY_NONLINEAR() then 200;
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then 300;
+    else 0;
   end match;
 end solvabilityWeights;
 
@@ -1201,7 +1154,7 @@ algorithm
      case (_,_,_,_)
        equation
          // finds equations with exact two variables (v1,v2)
-         ((v1,_)::(v2,_)::{}) = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[e]);
+         ((v1,_,_)::(v2,_,_)::{}) = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[e]);
          points = arrayUpdate(iPoints,v1,iPoints[v1]+5);
          points = arrayUpdate(iPoints,v2,points[v2]+5);
        then
@@ -1215,13 +1168,13 @@ end addEqnWeights;
 protected function isAssignedSaveEnhanced " returns true if var/eqn is already assigned
   author: Frenkel TUD 2012-05"
   input array<Integer> ass;
-  input tuple<Integer,BackendDAE.Solvability> inTpl;
+  input tuple<Integer,BackendDAE.Solvability,BackendDAE.Constraints> inTpl;
   output Boolean outB;
 algorithm
   outB := match(ass,inTpl)
     local
       Integer i;
-    case (_,(i,_)) guard intGt(i,0)
+    case (_,(i,_,_)) guard intGt(i,0)
       then
         intGt(ass[i],0);
     else
@@ -1253,28 +1206,18 @@ protected function selectVarWithMostPoints " returns one var with most points
   author: Frenkel TUD 2012-05"
   input list<Integer> vars;
   input list<Integer> points;
-  input Integer iVar;
-  input Integer defp;
-  output Integer oVar;
+  output Integer oVar = -1;
+protected
+  Integer defp = -1;
+  Integer p;
 algorithm
-  oVar := matchcontinue(vars,points,iVar,defp)
-    local
-      list<Integer> rest;
-      Integer p,v;
-    case ({},_,_,_) then iVar;
-    case (v::rest,_,_,_)
-      equation
-          // fcall(Flags.TEARING_DUMPVERBOSE, print,"Var " + intString(v));
-        p = listGet(points,v);
-          // fcall(Flags.TEARING_DUMPVERBOSE, print," has " + intString(p) + " Points\n");
-        true = intGt(p,defp);
-          // fcall(Flags.TEARING_DUMPVERBOSE, print,"max is  " + intString(p) + "\n");
-      then
-        selectVarWithMostPoints(rest,points,v,p);
-    case (_::rest,_,_,_)
-      then
-        selectVarWithMostPoints(rest,points,iVar,defp);
-  end matchcontinue;
+  for v in vars loop
+    p := listGet(points,v);
+    if p > defp then
+      defp := p;
+      oVar := v;
+    end if;
+  end for;
 end selectVarWithMostPoints;
 
 
@@ -1312,7 +1255,7 @@ algorithm
         tearingBFS(newqueue,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
       then
         ();
-    case((c,_)::rest,_,_,_,_,_,_,_,_)
+    case((c,_,_)::rest,_,_,_,_,_,_,_,_)
       equation
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Queue:\n");
@@ -1368,7 +1311,7 @@ protected
   Integer r;
   BackendDAE.AdjacencyMatrixElementEnhanced row;
 algorithm
-  (r,_) := entry;
+  (r,_,_) := entry;
   row := m[r];
   hasnonlinear := hasnonlinearVars1(row);
 end hasnonlinearVars;
@@ -1382,7 +1325,7 @@ algorithm
     local
       BackendDAE.AdjacencyMatrixElementEnhanced rest;
     case ( {}) then false;
-    case ((_,BackendDAE.SOLVABILITY_NONLINEAR())::_)
+    case ((_,BackendDAE.SOLVABILITY_NONLINEAR(),_)::_)
       then
         true;
     case (_::rest)
@@ -1436,25 +1379,17 @@ end tearingBFS1;
 protected function solvableLst
 " returns true if all variables are solvable"
   input BackendDAE.AdjacencyMatrixElementEnhanced rows;
-  output Boolean solvable;
+  output Boolean solvable = true;
+protected
+  BackendDAE.Solvability s;
 algorithm
-  solvable := matchcontinue(rows)
-    local
-      Integer r;
-      BackendDAE.Solvability s;
-      BackendDAE.AdjacencyMatrixElementEnhanced rest;
-    case ((_,s)::{}) then solvable(s);
-    case ((_,s)::rest)
-      equation
-        true = solvable(s);
-      then
-        solvableLst(rest);
-  case ((_,s)::_)
-      equation
-        false = solvable(s);
-      then
-        false;
-  end matchcontinue;
+  for r in rows loop
+    (_,s,_) := r;
+    if not solvable(s) then
+      solvable := false;
+      return;
+    end if;
+  end for;
 end solvableLst;
 
 
@@ -1494,7 +1429,7 @@ algorithm
       BackendDAE.Solvability s;
       BackendDAE.AdjacencyMatrixElementEnhanced rest,vareqns,newqueue;
     case ({},_,_,_,_,_) then inNextQueue;
-    case ((r,_)::rest,c::ilst,_,_,_,_)
+    case ((r,_,_)::rest,c::ilst,_,_,_,_)
       equation
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
            print("Assignment: Eq " + intString(c) + " - Var " + intString(r) + "\n");
@@ -1576,7 +1511,7 @@ algorithm
     matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark,mixedSystem)
     local
       list<Integer> ores,residual1,ovars;
-      list<tuple<Integer,list<Integer>>> eqnvartpllst;
+      BackendDAE.InnerEquations innerEquations;
       array<Integer> eindxarr,varindxarr;
       Boolean linear;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -1591,10 +1526,10 @@ algorithm
         ores = List.map1r(residual1,arrayGet,eindxarr);
         varindxarr = listArray(vindx);
         ovars = List.map1r(tvars,arrayGet,varindxarr);
-        eqnvartpllst = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,{});
+        innerEquations = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark);
         linear = getLinearfromJacType(jacType);
       then
-        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, eqnvartpllst, BackendDAE.EMPTY_JACOBIAN()), NONE(), linear,mixedSystem),true);
+        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, innerEquations, BackendDAE.EMPTY_JACOBIAN()), NONE(), linear,mixedSystem),true);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
         (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET({}, {}, {}, BackendDAE.EMPTY_JACOBIAN()), NONE(), false,mixedSystem),false);
@@ -1603,7 +1538,7 @@ end omcTearing4;
 
 
 protected function omcTearing4_1
-" creates otherEqnVarTpl for TORNSYSTEM
+" creates innerEquations for TearingSet
   author: Frenkel TUD 2012-09"
   input list<list<Integer>> othercomps;
   input array<Integer> ass2;
@@ -1612,35 +1547,35 @@ protected function omcTearing4_1
   input array<Integer> varindxarr;
   input array<Integer> columark;
   input Integer mark;
-  input list<tuple<Integer,list<Integer>>> iAcc;
-  output list<tuple<Integer,list<Integer>>> oEqnVarTplLst;
+  output BackendDAE.InnerEquations outInnerEquations;
 algorithm
-  oEqnVarTplLst :=
-  match (othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,iAcc)
-    local
-      list<list<Integer>> rest;
-      Integer e,v,c;
-      list<Integer> vlst,clst,elst;
-    case ({},_,_,_,_,_,_,_) then listReverse(iAcc);
-    case ({c}::rest,_,_,_,_,_,_,_)
-      equation
-        e = mapIncRowEqn[c];
-        e = eindxarr[e];
-        v = ass2[c];
-        v = varindxarr[v];
-      then
-        omcTearing4_1(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,(e,{v})::iAcc);
-    case (clst::rest,_,_,_,_,_,_,_)
-      equation
-        elst = List.map1r(clst,arrayGet,mapIncRowEqn);
-        elst = List.fold2(elst,uniqueIntLst,mark,columark,{});
-        {e} = elst;
-        e = eindxarr[e];
-        vlst = List.map1r(clst,arrayGet,ass2);
-        vlst = List.map1r(vlst,arrayGet,varindxarr);
-      then
-        omcTearing4_1(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,(e,vlst)::iAcc);
-  end match;
+  outInnerEquations := list(
+    match x
+      local
+        list<Integer> vlst,clst,elst;
+        Integer e,v,c;
+
+      case {c}
+        equation
+          e = mapIncRowEqn[c];
+          e = eindxarr[e];
+          v = ass2[c];
+          v = varindxarr[v];
+       then
+        BackendDAE.INNEREQUATION(eqn=e,vars={v});
+
+      case clst
+        equation
+          elst = List.map1r(clst,arrayGet,mapIncRowEqn);
+          elst = List.fold2(elst,uniqueIntLst,mark,columark,{});
+          {e} = elst;
+          e = eindxarr[e];
+          vlst = List.map1r(clst,arrayGet,ass2);
+          vlst = List.map1r(vlst,arrayGet,varindxarr);
+       then
+        BackendDAE.INNEREQUATION(eqn=e,vars=vlst);
+    end match
+  for x in othercomps);
 end omcTearing4_1;
 
 
@@ -1669,7 +1604,7 @@ end getLinearfromJacType;
 // =============================================================================
 
 protected function CellierTearing " tearing method based on the method from book of Cellier
-author: ptaeuber FHB 2013-2015"
+author: ptaeuber FHB 2013-2016"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input list<Integer> eindex;
@@ -1684,7 +1619,7 @@ protected
   array<Integer> ass1,ass2,mapIncRowEqn;
   array<list<Integer>> mapEqnIncRow;
   list<Integer> OutTVars,residual,residual_coll,order,unsolvables,discreteVars,unsolvableDiscretes,tSel_always,tSel_prefer,tSel_avoid,tSel_never;
-  list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+  BackendDAE.InnerEquations innerEquations;
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
@@ -1730,8 +1665,8 @@ algorithm
   (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE());
 
   // Delete negative entries from incidence matrix
-  m := Array.map1(m,deleteNegativeEntries,1);
-  mt := Array.map1(mt,deleteNegativeEntries,1);
+  m := Array.map(m,deleteNegativeEntries);
+  mt := Array.map(mt,deleteNegativeEntries);
 
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n\n###BEGIN print Strong Component#####################\n(Function:CellierTearing)\n");
@@ -1768,7 +1703,7 @@ algorithm
   end if;
 
   // Determine discrete vars
-  discreteVars := findDiscrete(var_lst,{},1);
+  discreteVars := findDiscrete(var_lst);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
   end if;
@@ -1812,18 +1747,18 @@ algorithm
   end if;
 
   // Convert indexes
-  OutTVars := listReverse(selectFromList(vindx, OutTVars));
-  residual := listReverse(selectFromList(eindex, residual_coll));
+  OutTVars := selectFromList_rev(vindx, OutTVars);
+  residual := selectFromList_rev(eindex, residual_coll);
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\n* Related to entire Equationsystem:\n* =====\n* tVars: "+ stringDelimitList(List.map(OutTVars,intString),",") + "\n* =====\n");
      print("*\n* =====\n* resEq: "+ stringDelimitList(List.map(residual,intString),",") + "\n* =====\n" + BORDER + "\n\n");
   end if;
 
-  // assign otherEqnVarTpl:
-  otherEqnVarTpl := assignOtherEqnVarTpl(order,eindex,vindx,ass2,mapEqnIncRow,{});
+  // assign innerEquations:
+  innerEquations := assignInnerEquations(order,eindex,vindx,ass2,mapEqnIncRow,NONE());
 
   // Create BackendDAE.TearingSet for strict set
-  strictTearingSet := BackendDAE.TEARINGSET(OutTVars,residual,otherEqnVarTpl,BackendDAE.EMPTY_JACOBIAN());
+  strictTearingSet := BackendDAE.TEARINGSET(OutTVars,residual,innerEquations,BackendDAE.EMPTY_JACOBIAN());
 
 
   // Determine casual tearing set if dynamic tearing is enabled
@@ -1839,8 +1774,8 @@ algorithm
     (_,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE());
 
     // Delete negative entries from incidence matrix
-    m := Array.map1(m,deleteNegativeEntries,1);
-    mt := Array.map1(mt,deleteNegativeEntries,1);
+    m := Array.map(m,deleteNegativeEntries);
+    mt := Array.map(mt,deleteNegativeEntries);
 
     // Get advanced adjacency matrix (determine if the equations are solvable for the variables)
     (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,true);
@@ -1898,8 +1833,8 @@ algorithm
       end if;
 
       // Convert indexes
-      OutTVars := listReverse(selectFromList(vindx, OutTVars));
-      residual := listReverse(selectFromList(eindex, residual_coll));
+      OutTVars := selectFromList_rev(vindx, OutTVars);
+      residual := selectFromList_rev(eindex, residual_coll);
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
          print("\n* Related to entire Equationsystem:\n* =====\n* tVars: "+ stringDelimitList(List.map(OutTVars,intString),",") + "\n* =====\n");
          print("*\n* =====\n* resEq: "+ stringDelimitList(List.map(residual,intString),",") + "\n* =====\n" + BORDER + "\n");
@@ -1907,11 +1842,11 @@ algorithm
          print("\nNote:\n=====\n" + s + " dynamic tearing for this strong component in model:\n" + modelName + "\n\n");
       end if;
 
-      // assign otherEqnVarTpl:
-      otherEqnVarTpl := assignOtherEqnVarTpl(order,eindex,vindx,ass2,mapEqnIncRow,{});
+      // assign innerEquations:
+      innerEquations := assignInnerEquations(order,eindex,vindx,ass2,mapEqnIncRow,SOME(me));
 
       // Create BackendDAE.TearingSet for casual set
-      casualTearingSet := SOME(BackendDAE.TEARINGSET(OutTVars,residual,otherEqnVarTpl,BackendDAE.EMPTY_JACOBIAN()));
+      casualTearingSet := SOME(BackendDAE.TEARINGSET(OutTVars,residual,innerEquations,BackendDAE.EMPTY_JACOBIAN()));
     else
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\n* TEARING RESULTS (CASUAL SET):\n*\n* No of equations in strong Component: "+intString(size)+"\n");
@@ -1996,53 +1931,25 @@ protected function deleteNegativeEntries
  "deletes all negative entries from incidence matrix, works with Array.map1, needed for proper Cellier-Tearing
   author: ptaeuber FHB 2014-01"
   input list<Integer> rowIn;
-  input Integer index;
   output list<Integer> rowOut;
 algorithm
- rowOut := matchcontinue(rowIn,index)
-  local
-    Integer indx;
-    list<Integer> newLst;
-    Boolean b;
-  case(_,indx)
-    equation
-      true = intLe(indx, listLength(rowIn));
-      b = intLe(listGet(rowIn,indx),0);
-      indx = if b then indx else (indx+1);
-      newLst = if b then listDelete(rowIn,indx) else rowIn;
-   then deleteNegativeEntries(newLst,indx);
-  case(_,_)
-    equation
-      true = intGt(index,listLength(rowIn));
-   then rowIn;
- end matchcontinue;
+  rowOut := list(r for r guard r > 0 in rowIn);
 end deleteNegativeEntries;
 
 
 protected function findDiscrete "takes a list of BackendDAE.Var and returns the indexes of the discrete Variables
   author: ptaeuber FHB 2014-01"
   input list<BackendDAE.Var> inVars;
-  input list<Integer> discreteVarsIn;
-  input Integer index;
-  output list<Integer> discreteVarsOut;
+  output list<Integer> discreteVarsOut = {};
+protected
+  Integer index = 1;
 algorithm
- discreteVarsOut := matchcontinue(inVars,discreteVarsIn,index)
-  local
-    BackendDAE.Var head;
-    list<BackendDAE.Var> rest;
-  case({},_,_)
-   then discreteVarsIn;
-  case(head::rest,_,_)
-    equation
-      true = BackendVariable.isVarDiscrete(head);
-      then findDiscrete(rest,index::discreteVarsIn,index+1);
-  case(_::rest,_,_)
-   then findDiscrete(rest,discreteVarsIn,index+1);
-  else
-    equation
-      print("findDiscrete in Tearing.mo failed");
-   then {};
-  end matchcontinue;
+  for head in inVars loop
+    if BackendVariable.isVarDiscrete(head) then
+      discreteVarsOut := index::discreteVarsOut;
+    end if;
+    index := index + 1;
+  end for;
 end findDiscrete;
 
 
@@ -3122,13 +3029,13 @@ algorithm
    local
      Integer v,count,maxi;
      list<Integer> rest,newPotentials1,counts;
-   BackendDAE.AdjacencyMatrixElementEnhanced elem;
+     BackendDAE.AdjacencyMatrixElementEnhanced elem;
    case({},_,_,_,_,_)
      then (newPotentials,inCounts,max);
    case(v::rest,_,_,_,_,_)
     equation
       elem = List.removeOnTrue(ass2,isAssignedSaveEnhanced,meT[v]);
-      count = countImpossibleAss2(elem,0);
+      count = countImpossibleAss2(elem);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Var " + intString(v) + " has " + intString(count) + " incident impossible assignments\n");
       end if;
@@ -3144,22 +3051,16 @@ protected function countImpossibleAss2
   traverses AdjacencyMatrixElementEnhanced and counts the number of impossible assignments of one var
   author: ptaeuber FHB 2013-10"
   input BackendDAE.AdjacencyMatrixElementEnhanced elem;
-  input Integer inCount;
-  output Integer outCount;
+  output Integer outCount = 0;
+protected
+  BackendDAE.Solvability s;
 algorithm
-  outCount := matchcontinue(elem,inCount)
-    local
-    BackendDAE.AdjacencyMatrixElementEnhanced rest;
-    BackendDAE.Solvability s;
-  case({},_)
-    then inCount;
-  case((_,s)::rest,_)
-   equation
-     false = solvable(s);
-    then countImpossibleAss2(rest,inCount+1);
-  case((_,_)::rest,_)
-    then countImpossibleAss2(rest,inCount);
- end matchcontinue;
+  for e in elem loop
+    (_,s,_) := e;
+    if not solvable(s) then
+      outCount := outCount + 1;
+    end if;
+  end for;
 end countImpossibleAss2;
 
 
@@ -3174,18 +3075,18 @@ protected function countImpossibleAss3
   output list<Integer> outPotentials;
   output Integer outCount;
 algorithm
-  (outPotentials,outCount) := matchcontinue(inCount,max,v,inPotentials)
+  (outPotentials,outCount) := match(inCount,max,v,inPotentials)
   case(_,_,_,_)
-   equation
-   true = inCount == max;
+   guard
+    inCount == max
     then (v::inPotentials,inCount);
   case(_,_,_,_)
-   equation
-     true = inCount > max;
+   guard
+     inCount > max
   then ({v},inCount);
   else
     then (inPotentials,max);
-  end matchcontinue;
+  end match;
 end countImpossibleAss3;
 
 
@@ -3395,29 +3296,64 @@ algorithm
 end makeAssignment;
 
 
-protected function assignOtherEqnVarTpl " assigns otherEqnVarTpl for TORNSYSTEM
+protected function assignInnerEquations " assigns innerEquations for TearingSet
   author: ptaeuber FHB 2013-08"
-  input list<Integer> inEqns,eindex,vindx;
+  input list<Integer> inEqns "order of equations with local numbering";
+  input list<Integer> eindex "equation indexes with global numbering";
+  input list<Integer> vindex "variable indexes with global numbering";
   input array<Integer> ass2;
   input array<list<Integer>> mapEqnIncRow;
-  input list<tuple<Integer,list<Integer>>> inOtherEqnVarTpl;
-  output list<tuple<Integer,list<Integer>>> outOtherEqnVarTpl;
+  input Option<BackendDAE.AdjacencyMatrixEnhanced> meOpt;
+  output BackendDAE.InnerEquations outInnerEquations;
 algorithm
- outOtherEqnVarTpl := match(inEqns,eindex,vindx,ass2,mapEqnIncRow,inOtherEqnVarTpl)
-   local
-     Integer eq,otherEqn;
-     list<Integer> eqns,vars,otherVars,rest;
-   case({},_,_,_,_,_)
-     then listReverse(inOtherEqnVarTpl);
-   case(eq::rest,_,_,_,_,_)
-    equation
-    eqns = mapEqnIncRow[eq];
-    vars = List.map1r(eqns,arrayGet,ass2);
-    otherEqn = listGet(eindex,eq);
-    otherVars = listReverse(selectFromList(vindx,vars));
-     then assignOtherEqnVarTpl(rest,eindex,vindx,ass2,mapEqnIncRow,(otherEqn,otherVars)::inOtherEqnVarTpl);
- end match;
-end assignOtherEqnVarTpl;
+  outInnerEquations := list(
+    match (eqn,meOpt)
+      local
+        Integer eq,otherEqn;
+        list<Integer> eqns,vars,otherVars,rest;
+        BackendDAE.InnerEquation innerEquation;
+        BackendDAE.Constraints constraints;
+        BackendDAE.AdjacencyMatrixEnhanced me;
+      case (eq,NONE())
+        equation
+          vars = List.map1r(mapEqnIncRow[eq],arrayGet,ass2);
+          otherEqn = listGet(eindex,eq);
+          otherVars = selectFromList_rev(vindex,vars);
+      then BackendDAE.INNEREQUATION(eqn=otherEqn, vars=otherVars);
+      case (eq,SOME(me))
+        equation
+          eqns = mapEqnIncRow[eq];
+          vars = List.map1r(eqns,arrayGet,ass2);
+          otherEqn = listGet(eindex,eq);
+          otherVars = selectFromList_rev(vindex,vars);
+          constraints = findConstraintForInnerEquation(me[listHead(eqns)],listHead(vars));
+          if listEmpty(constraints) then
+            innerEquation = BackendDAE.INNEREQUATION(eqn=otherEqn, vars=otherVars);
+          else
+            innerEquation = BackendDAE.INNEREQUATIONCONSTRAINTS(eqn=otherEqn, vars=otherVars, cons=constraints);
+          end if;
+      then (innerEquation);
+  end match for eqn in inEqns);
+end assignInnerEquations;
+
+
+protected function findConstraintForInnerEquation
+  input BackendDAE.AdjacencyMatrixElementEnhanced meRow;
+  input Integer searchIndex;
+  output BackendDAE.Constraints constraints={};
+protected
+  Integer index;
+  BackendDAE.AdjacencyMatrixElementEnhancedEntry meElem;
+  BackendDAE.Constraints cons;
+algorithm
+  for meElem in meRow loop
+    (index,_,cons) := meElem;
+    if intEq(index,searchIndex) then
+      constraints := cons;
+      break;
+    end if;
+  end for;
+end findConstraintForInnerEquation;
 
 
 protected function getpossibleEqn " finds equation that can be matched
@@ -3489,7 +3425,12 @@ algorithm
   (counter,_,values,indx) := valIn;
   row := List.removeOnTrue(0,intEq,rowIn);
   set := List.unique(row);
-  (val,num) := countMultiples3(row,set,1,{},{});
+  if listEmpty(set) then
+    val := {0};
+    num := {0};
+  else
+    (val,num) := countMultiples3(row,set,{},{});
+  end if;
   positions := maxListInt(num);
   position := listHead(positions);
   number := listGet(num,position);
@@ -3505,31 +3446,23 @@ protected function countMultiples3 " helper function for countMultiples2.
 author:Waurich TUD 2013-01"
   input list<Integer> lstIn;
   input list<Integer> set;
-  input Integer indx;
   input list<Integer> valIn;
   input list<Integer> numIn;
   output list<Integer> valOut;
   output list<Integer> numOut;
 algorithm
-  (valOut,numOut) := matchcontinue(lstIn,set,indx,valIn,numIn)
+  (valOut,numOut) := match(lstIn,set,valIn,numIn)
     local
       Integer value,number;
-      list<Integer> val,num;
-    case(_,{},_,_,_) then ({0},{0});
-    case(_,_,_,_,_)
+      list<Integer> val,num,rest;
+    case(_,value::rest,_,_)
       equation
-        true = indx <= listLength(set);
-        value = listGet(set,indx);
         number = listLength(lstIn)-listLength(List.removeOnTrue(value,intEq,lstIn));
-        (val,num) = countMultiples3(lstIn,set,indx+1,value::valIn,number::numIn);
+        (val,num) = countMultiples3(lstIn,rest,value::valIn,number::numIn);
       then
         (val,num);
-    case(_,_,_,_,_)
-      equation
-        true = indx > listLength(set);
-      then
-        (valIn,numIn);
-  end matchcontinue;
+    else (valIn,numIn);
+  end match;
 end countMultiples3;
 
 
@@ -3567,36 +3500,36 @@ algorithm
   end maxListInthelp;
 
 
-protected function selectFromList" selects Ints from inList by indexes given in selList
+protected function selectFromList_rev" selects Ints from inList by indexes given in selList
 author: Waurich TUD 2012-11"
   input List<Integer> inList,selList;
   output List<Integer> outList;
+protected
+  Integer actual;
+  Integer len;
+  List<Integer> lst = selList;
 algorithm
-  outList := selectFromList_help(1,inList,selList,{});
-end selectFromList;
+  len := listLength(inList);
+  outList := list(listGet(inList,num) for num guard num > 0 and num <= len in selList);
+end selectFromList_rev;
 
 
-protected function selectFromList_help " implementation for selectFromList.
+protected function selectFromList " selects Ints from inList by indexes given in selList in reverse order.
 auhtor: Waurich TUD 2012-11"
-  input Integer indx;
-  input List<Integer> inList,selList,lst;
-  output List<Integer> outList;
+  input List<Integer> inList,selList;
+  output List<Integer> outList = {};
+protected
+  Integer num,actual,len;
+  List<Integer> lst = selList;
 algorithm
-  outList :=
-  matchcontinue(indx,inList,selList,lst)
-    local
-      Integer actual,length,num;
-    case(_,_,_,_)
-      equation
-        length = listLength(selList);
-        num = listGet(selList,indx);
-        actual = listGet(inList,num);
-        true = indx <= length;
-      then
-        selectFromList_help(indx+1,inList,selList,actual::lst);
-    else lst;
-  end matchcontinue;
-end selectFromList_help;
+  len := listLength(inList);
+  for num in selList loop
+    if num > 0 and num <= len then
+      actual := listGet(inList,num);
+      outList := actual::outList;
+    end if;
+  end for;
+end selectFromList;
 
 
 protected function deleteEntriesFromIncidenceMatrix "Deletes given entries from matrix. Applicable on Incidence and on transposed Incidence.
@@ -3610,12 +3543,12 @@ protected
   Integer entry;
 algorithm
   for entry in entries loop
-     rowsIndx := arrayGet(mHelp,entry);
-   for rowIndx in rowsIndx loop
-        row := arrayGet(mUpdate,rowIndx);
-        row := List.deleteMember(row,entry);
-        Array.replaceAtWithFill(rowIndx,row,row,mUpdate);
-     end for;
+    rowsIndx := arrayGet(mHelp,entry);
+    for rowIndx in rowsIndx loop
+      row := arrayGet(mUpdate,rowIndx);
+      row := List.deleteMember(row,entry);
+      Array.replaceAtWithFill(rowIndx,row,row,mUpdate);
+    end for;
   end for;
 end deleteEntriesFromIncidenceMatrix;
 
@@ -3704,7 +3637,7 @@ algorithm
       list<Integer> ilst;
     case(_,(num,indx,ilst)) guard intEq(num,length)
       then ((num,indx+1,indx::ilst));
-    case(_,(num,indx,ilst)) guard num <> length
+    case(_,(num,indx,ilst)) //guard num <> length
       then ((num,indx+1,ilst));
   end match;
 end findNEntries;
@@ -3747,11 +3680,11 @@ protected
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
 
-  list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
-  tuple<Integer,list<Integer>> tpl;
+  BackendDAE.InnerEquations innerEquations;
+  BackendDAE.InnerEquation innerEquation;
   Integer eqindex, vindex;
   list<Integer> residualequations;
-  list<Integer> tearingvars;
+  list<Integer> tearingvars, othervars;
   list<BackendDAE.Var> var_lst;
   BackendDAE.Var var;
   array<DAE.ComponentRef> tear_cr;
@@ -3778,8 +3711,8 @@ algorithm
     for comp in comps loop
       if isTornsystem(comp, true, false) then
         // -----
-        BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(otherEqnVarTpl = otherEqnVarTpl, residualequations= residualequations, tearingvars=tearingvars)) := comp;
-        n := listLength(otherEqnVarTpl);
+        BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(innerEquations = innerEquations, residualequations= residualequations, tearingvars=tearingvars)) := comp;
+        n := listLength(innerEquations);
         m := listLength(residualequations);
         if maxSizeOne and m > 1 then
           continue;
@@ -3792,8 +3725,8 @@ algorithm
         update := true;
         tmp_update := true;
         // -----
-        for tpl in otherEqnVarTpl loop
-          (eqindex, {vindex}) := tpl;
+        for innerEquation in innerEquations loop
+          (eqindex, {vindex}, _) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(innerEquation);
           (var as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindex);
           all_vars := cr :: all_vars;
           arrayUpdate(indx_var,i,vindex);
@@ -3810,7 +3743,7 @@ algorithm
           if Flags.isSet(Flags.DUMP_RTEARING) then
             print("INeqn => " + BackendDump.equationString(eqn) +  "[" + intString(i-1) + "]\n");
           end if;
-        end for; //otherEqnVarTpl
+        end for; //innerEquations
 
         // -----
         var_lst := list(BackendVariable.getVarAt(vars, i) for i in tearingvars);

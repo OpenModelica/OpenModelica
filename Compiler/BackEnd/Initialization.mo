@@ -63,6 +63,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import Matching;
+protected import MetaModelica.Dangerous;
 protected import Sorting;
 protected import SimCodeFunctionUtil;
 
@@ -1120,11 +1121,12 @@ algorithm
     if BackendDAEUtil.nonEmptySystem(syst) then
       eqs := syst::eqs;
     else
-      outRemovedEqns := listAppend(outRemovedEqns, BackendEquation.equationList(syst.orderedEqs));
-      outRemovedEqns := listAppend(outRemovedEqns, BackendEquation.equationList(syst.removedEqs));
+      outRemovedEqns := List.append_reverse(BackendEquation.equationList(syst.orderedEqs), outRemovedEqns);
+      outRemovedEqns := List.append_reverse(BackendEquation.equationList(syst.removedEqs), outRemovedEqns);
     end if;
   end for;
   dae := BackendDAE.DAE(eqs, inInitDAE.shared);
+  outRemovedEqns := Dangerous.listReverseInPlace(outRemovedEqns);
 
   //SimCodeFunctionUtil.execStat("reset analyzeInitialSystem (initialization)");
   (outDAE, (_, outDumpVars, outRemovedEqns)) := BackendDAEUtil.mapEqSystemAndFold(dae, fixInitialSystem, (inInitVars, {}, outRemovedEqns));
@@ -1486,13 +1488,13 @@ algorithm
     //case (id, BackendDAE.SOLVABILITY_SOLVED())::elem guard intEq(id, inVarID)
     //then false;
 
-    case (id, BackendDAE.SOLVABILITY_UNSOLVABLE())::_ guard intEq(id, inVarID)
+    case (id, BackendDAE.SOLVABILITY_UNSOLVABLE(),_)::_ guard intEq(id, inVarID)
     then false;
 
-    case (id, BackendDAE.SOLVABILITY_NONLINEAR())::_ guard intEq(id, inVarID)
+    case (id, BackendDAE.SOLVABILITY_NONLINEAR(),_)::_ guard intEq(id, inVarID)
     then false;
 
-    case (_, _)::elem equation
+    case (_, _, _)::elem equation
       b = isVarExplicitSolvable(elem, inVarID);
     then b;
   end match;

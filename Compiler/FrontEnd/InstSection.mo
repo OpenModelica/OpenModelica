@@ -1145,22 +1145,22 @@ algorithm
     DAE.Const tconst;
     Option<list<String>> names;
 
-  case(Absyn.TUPLE(aexpl),
-    DAE.PROP_TUPLE( DAE.T_TUPLE(types=typeList,names=names), _),
-    (DAE.PROP_TUPLE(DAE.T_TUPLE(types=lst,source=ts), DAE.TUPLE_CONST(tupleConst)
-    )))
+  case (Absyn.TUPLE(aexpl),
+        DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(types=typeList,names=names)),
+        DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(types=lst,source=ts),
+                       tupleConst = DAE.TUPLE_CONST(tupleConst)))
     equation
       fillValue = (listLength(typeList)-listLength(aexpl));
       lst2 = List.fill(DAE.T_ANYTYPE_DEFAULT,fillValue) "types";
       aexpl2 = List.fill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions";
       tupleConst2 = List.fill(DAE.SINGLE_CONST(DAE.C_VAR()),fillValue) "TupleConst's";
-      aexpl = listAppend(aexpl,aexpl2);
-      lst = listAppend(lst,lst2);
-      tupleConst = listAppend(tupleConst,tupleConst2);
+      aexpl2 = listAppend(aexpl,aexpl2);
+      lst2 = listAppend(lst,lst2);
+      tupleConst2 = listAppend(tupleConst,tupleConst2);
     then
-      (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE(DAE.T_TUPLE(lst,names,ts),DAE.TUPLE_CONST(tupleConst)));
+      (Absyn.TUPLE(aexpl2),DAE.PROP_TUPLE(DAE.T_TUPLE(lst2,names,ts),DAE.TUPLE_CONST(tupleConst2)));
 
-  case(_, DAE.PROP_TUPLE(DAE.T_TUPLE(typeList,names,_), _), DAE.PROP(propType,tconst))
+  case(_, DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(typeList,names,_)), DAE.PROP(propType,tconst))
     equation
       fillValue = (listLength(typeList)-1);
       aexpl2 = List.fill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions";
@@ -1172,11 +1172,16 @@ algorithm
     then
       (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE(DAE.T_TUPLE(lst,names,DAE.emptyTypeSource),DAE.TUPLE_CONST(tupleConst)));
 
-  case(_,_,_)
-    equation
-      false = Types.isPropTuple(propCall);
-      then (inExp,propTuple);
-      else equation print("expand_Tuple_Equation_With_Wild failed \n");then fail();
+  case (_, _, _) guard(not Types.isPropTuple(propCall))
+    then (inExp,propTuple);
+
+  else
+    algorithm
+      true := Flags.isSet(Flags.FAILTRACE);
+      Debug.traceln("- expandTupleEquationWithWild failed");
+    then
+      fail();
+
   end matchcontinue;
 end expandTupleEquationWithWild;
 

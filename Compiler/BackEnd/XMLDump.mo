@@ -1186,13 +1186,14 @@ algorithm
     local
       Integer e,v;
       list<Integer> elst,vlst,vlst1,elst1;
+      list<list<Integer>> vlst1Lst;
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents rest;
       BackendDAE.Var var;
       BackendDAE.Equation eqn;
       list<BackendDAE.Var> inAccumVars, varlst, varlst1;
       list<BackendDAE.Equation> inAccumEqns, eqnlst, eqnlst1;
-      list<tuple<Integer,list<Integer>>> eqnsvartpllst;
+      BackendDAE.InnerEquations innerEquations;
       tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>> eqnsVars;
       list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> result;
     case ({},_,_,_)  then inAccum;
@@ -1252,13 +1253,13 @@ algorithm
         result = getOrderedEqs2(rest,eqns,vars,result);
       then
         result;
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst))::rest,_,_,_)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,innerEquations=innerEquations))::rest,_,_,_)
       equation
-        vlst1 = List.flatten(List.map(eqnsvartpllst,Util.tuple22));
+        (elst1,vlst1Lst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+        vlst1 = List.flatten(vlst1Lst);
         varlst1 = List.map1r(vlst1, BackendVariable.getVarAt, vars);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         varlst = listAppend(varlst1,varlst);
-        elst1 = List.map(eqnsvartpllst,Util.tuple21);
         eqnlst1 = BackendEquation.getEqns(elst1,eqns);
         eqnlst = BackendEquation.getEqns(elst,eqns);
         eqnlst = listAppend(eqnlst1,eqnlst);

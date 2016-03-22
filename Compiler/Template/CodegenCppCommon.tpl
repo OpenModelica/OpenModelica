@@ -410,7 +410,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp, Text &varDecls, 
      if crefSubIsScalar(cr) then
       // The array subscript results in a scalar
       let arrName = contextCref(crefStripLastSubs(cr), context,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      let arrayType = expTypeArray(ty)
+      let arrayType = expTypeShort(ty)
       //let dimsLenStr = listLength(crefSubs(cr))
     // previous multi_array ;separator="][")
       let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
@@ -431,14 +431,14 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp, Text &varDecls, 
     else
       // The array subscript denotes a slice
       let arrName = contextArrayCref(cr, context)
-      let typeStr = expTypeArray(ty)
+      let typeStr = expTypeShort(ty)
       let slice = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp,
         &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
         stateDerVectorName, useFlatArrayNotation)
       let &preExp += 'ArraySlice<<%typeStr%>> <%slice%>_as(<%arrName%>, <%slice%>);<%\n%>'
       '<%slice%>_as'
       // old code making a copy of the slice using create_array_from_shape
-      //let arrayType = expTypeFlag(ty, 6)
+      //let arrayType = expTypeArrayIf(ty)
       /* let dimstr = listLength(crefSubs(cr))
       let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
           daeExp(exp, context, &preExp , &varDecls ,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -633,25 +633,20 @@ template crefStartValueType(ComponentRef cr)
  "Returns type string for get/set<type>StartValue methods."
 ::=
   match cr
-  case CREF_IDENT(__) then '<%crefStartValueType2(identType)%>'
-  case CREF_QUAL(__)  then '<%crefStartValueType(componentRef)%>'
-  else "crefStartValueType:ERROR"
+  case CREF_IDENT(__) then
+    let typeShort = expTypeShort(identType)
+    let typeString = if stringEq(typeShort, "double") then "Real"
+      else if stringEq(typeShort, "int") then "Int"
+      else if stringEq(typeShort, "bool") then "Bool"
+      else if stringEq(typeShort, "string") then "String"
+      else 'ERROR:crefStartValueType <%typeShort%> '
+    '<%typeString%>'
+  case CREF_QUAL(__) then
+    '<%crefStartValueType(componentRef)%>'
+  else
+    'crefStartValueType:ERROR'
   end match
 end crefStartValueType;
-
-template crefStartValueType2(DAE.Type ty)
-::=
-  match ty
-    case T_INTEGER(__) then 'Int'
-    case T_REAL(__) then 'Real'
-    case T_BOOL(__) then 'Bool'
-    case T_STRING(__) then 'String'
-    case T_ENUMERATION(__) then 'Int'
-    case T_ARRAY(ty=elty) then crefStartValueType2(elty)
-    case T_SUBTYPE_BASIC(complexType=cty) then crefStartValueType2(cty)
-    else 'crefStartValueType2:ERROR <%unparseType(ty)%> '
-  end match
-end crefStartValueType2;
 
 /*******************************************************************************************************************************************************
 * end of cref to string template functions
@@ -661,14 +656,6 @@ end crefStartValueType2;
 /*******************************************************************************************************************************************************
 * type to string template functions
 *******************************************************************************************************************************************************/
-
-template expTypeArray(DAE.Type ty)
-
-::=
-  expTypeFlag(ty, 3)
-end expTypeArray;
-
-
 
 template dimension(Dimension d,Context context)
 ::=
@@ -684,7 +671,6 @@ end dimension;
 template checkDimension(Dimensions dims)
 ::=
   dimensionsList(dims) |> dim as Integer   =>  '<%dim%>';separator=","
-
 end checkDimension;
 
 template checkExpDimension(list<DAE.Exp> dims)
@@ -692,34 +678,64 @@ template checkExpDimension(list<DAE.Exp> dims)
   expDimensionsList(dims) |> dim as Integer   =>  '<%dim%>';separator=","
 end checkExpDimension;
 
+template listDimsFlat(Dimensions dims, Type elty)
+ "return list of dimensions of form 'd1, d2, ..., dn', flattening subarrays"
+::=
+  let dimstr = checkDimension(dims)
+  match dimstr
+  case "" then
+    ''
+  else
+    match elty
+    case T_ARRAY(dims=subdims, ty=subty) then
+      let subdimstr = listDimsFlat(subdims, subty)
+      match subdimstr
+      case "" then
+        ''
+      else
+        '<%dimstr%>, <%subdimstr%>'
+      end match
+    else
+      dimstr
+end listDimsFlat;
+
+template nDimsFlat(Dimensions dims, Type elty, Integer offset)
+ "return number of dimensions, flattening subarrays"
+::=
+  match elty
+  case T_ARRAY(dims=subdims, ty=subty) then
+    nDimsFlat(subdims, subty, intAdd(listLength(dims), offset))
+  else
+    intAdd(listLength(dims), offset)
+end nDimsFlat;
 
 template expTypeShort(DAE.Type type)
-
+ "Returns the base type name for declarations"
 ::=
   match type
-  case T_INTEGER(__)         then "int"
+  case T_INTEGER(__)     then "int"
   case T_REAL(__)        then "double"
   case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
   case T_BOOL(__)        then "bool"
   case T_ENUMERATION(__) then "int"
-  /* assumming real for uknown type! */
-  case T_UNKNOWN(__)     then "double /*W1*/"
+  case T_UNKNOWN(__)     then "double /*W1*/" // assumming real for unknown type
   case T_ANYTYPE(__)     then "complex2"
+  case T_SUBTYPE_BASIC(__) then expTypeShort(complexType)
   case T_ARRAY(__)       then expTypeShort(ty)
-  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
-                      then "void*"
+  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "void*"
   case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
-  case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
+  case T_METATYPE(__)
+  case T_METABOXED(__)   then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
-  else "expTypeShort:ERROR"
+  else 'expTypeShort:ERROR <%unparseType(type)%> '
 end expTypeShort;
 
 template expTypeFlag(DAE.Type ty, Integer flag)
-
+ "Returns code for a type, depending on flag"
 ::=
   match flag
   case 1 then
-    // we want the short typesmuwww.
+    // we want the short type
     expTypeShort(ty)
   case 2 then
     // we want the "modelica type"
@@ -732,12 +748,20 @@ template expTypeFlag(DAE.Type ty, Integer flag)
      else
       '<%expTypeShort(ty)%>'
   case 3 then
-    // we want the "array type"
-    '<%expTypeShort(ty)%>'
-  case 4 then
+    // we want the "array type", static if dims are known, dynamic otherwise
     match ty
-    case T_ARRAY(__) then '<%expTypeShort(ty)%>'
-    else expTypeFlag(ty, 2)
+    case T_ARRAY(ty=elty, dims=dims) then
+      expTypeArrayDims(elty, dims)
+    else
+      'ERROR:expTypeFlag3 no array'
+    end match
+  case 4 then
+    // we want the "array type" only if type is array, otherwise "modelica type"
+    match ty
+    case T_ARRAY(ty=elty, dims=dims) then
+      expTypeArrayDims(elty, dims)
+    else
+      expTypeFlag(ty, 2)
     end match
   case 5 then
     match ty
@@ -753,26 +777,8 @@ template expTypeFlag(DAE.Type ty, Integer flag)
   else expTypeFlag(ty, 2)
     end match
 
-
-
-
   case 6 then
-    match ty
-
-    //case T_ARRAY(dims=dims) then 'StatArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>,<%(dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")%>>' //'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
-    //let dimstr = dims |> dim => match dim   case DIM_INTEGER(__) then '<%integer%>'  else 'error index';separator=','
-
-  case T_ARRAY(dims=dims,ty=type) then
-   //let testbasearray = dims |> dim =>  '<%testdimension(dim)%>' ;separator=''
-   //let dimstr = dims |> dim =>  '<%dimension(dim)%>' ;separator=','
-   let dimstr = checkDimension(dims)
-   match dimstr
-   case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(type)%>>'
-   //case
-   else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>>/*testarray4*/'
-    end match
-   else expTypeFlag(ty, 2)
-    end match
+    expTypeFlag(ty, 4)
 
   case 7 then
      match ty
@@ -800,13 +806,12 @@ template expTypeFlag(DAE.Type ty, Integer flag)
 
 end expTypeFlag;
 
-
 template crefType(ComponentRef cr) "template crefType
   Like cref but with cast if type is integer."
 ::=
   match cr
-    case CREF_IDENT(__) then '<%expTypeFlag(identType,6)%>'
-    case CREF_QUAL(__)  then '<%crefType(componentRef)%>'
+    case CREF_IDENT(__) then expTypeArrayIf(identType)
+    case CREF_QUAL(__)  then crefType(componentRef)
     else "crefType:ERROR"
   end match
 end crefType;
@@ -826,17 +831,8 @@ end expTypeFromExpModelica;
 template expTypeFromExpArray(Exp exp)
 
 ::=
-  expTypeFromExpFlag(exp, 6)
+  expTypeFromExpFlag(exp, 4)
 end expTypeFromExpArray;
-
-
-template expTypeArrayforDim(DAE.Type ty)
-
-::=
-  expTypeFlag(ty, 6)
-end expTypeArrayforDim;
-
-
 
 template expTypeShortSPS(DAE.Type type)
 ::=
@@ -878,7 +874,6 @@ template expTypeShortMLPI(DAE.Type type)
   else "expTypeShort:ERROR"
 end expTypeShortMLPI;
 
-
 template expType(DAE.Type ty, Boolean isArray)
  "Generate type helper."
 ::=
@@ -887,11 +882,22 @@ template expType(DAE.Type ty, Boolean isArray)
   else expTypeShort(ty)
 end expType;
 
+template expTypeModelica(DAE.Type ty)
+ "Generate type helper."
+::=
+  expTypeFlag(ty, 2)
+end expTypeModelica;
+
+template expTypeArray(DAE.Type ty)
+  "Returns the array type"
+::=
+  expTypeFlag(ty, 3)
+end expTypeArray;
 
 template expTypeArrayIf(DAE.Type ty)
  "Generate type helper."
 ::=
-  expTypeFlag(ty, 6)
+  expTypeFlag(ty, 4)
 end expTypeArrayIf;
 
 template expTypeArray1(DAE.Type ty, Integer dims) ::=
@@ -900,14 +906,17 @@ SimArray<%dims%><<%expTypeShort(ty)%>>
 >>
 end expTypeArray1;
 
-template expTypeArrayDims(DAE.Type ty, DAE.Dimensions dims)
+template expTypeArrayDims(DAE.Type elty, DAE.Dimensions dims)
  "Generate type string for static or dynamic array, depending on dims"
 ::=
-  let typeShort = expTypeShort(ty)
-  let dimstr = checkDimension(dims)
+  let typeShort = expTypeShort(elty)
+  let dimstr = listDimsFlat(dims, elty)
   match dimstr
-    case "" then 'DynArrayDim<%listLength(dims)%><<%typeShort%>>'
-    else 'StatArrayDim<%listLength(dims)%><<%typeShort%>, <%dimstr%>>'
+  case "" then
+    'DynArrayDim<%nDimsFlat(dims, elty, 0)%><<%typeShort%>>/*expTypeArrayDims*/'
+  else
+    'StatArrayDim<%nDimsFlat(dims, elty, 0)%><<%typeShort%>, <%dimstr%>>/*expTypeArrayDims*/'
+  end match
 end expTypeArrayDims;
 
 template allocateDimensions(DAE.Type ty,Context context)
@@ -1030,7 +1039,7 @@ template daeExpRange(Exp exp, Context context, Text &preExp, Text &varDecls, Sim
 ::=
   match exp
   case RANGE(__) then
-    let ty_str = expTypeArray(ty)
+    let ty_str = expTypeShort(ty)
     let start_exp = daeExp(start, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let stop_exp = daeExp(stop, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     //previous multi_array     let tmp = tempDecl('multi_array<<%ty_str%>,1>', &varDecls /*BUFD*/)
@@ -1146,7 +1155,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   let endLoop = tempDecl("int",&tmpVarDecls)
   let loopHeadIter = (iterators |> iter as REDUCTIONITER(__) =>
     let identType = expTypeFromExpModelica(iter.exp)
-    let ty_str = expTypeArray(ty)
+    let ty_str = expTypeShort(ty)
     let arrayType = 'DynArrayDim1<<%identType%>>'//expTypeFromExpArray(iter.exp)
     let loopVar = '<%iter.id%>_loopVar'
     let &guardExpPre = buffer ""
@@ -1286,18 +1295,18 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp, Text &varDecls, Si
   case MATRIX(matrix={{}})  // special case for empty matrix: create dimensional array Real[0,1]
   case MATRIX(matrix={})    // special case for empty array: create dimensional array Real[0,1]
     then
-    let typestr = expTypeArray(ty)
+    let typestr = expTypeShort(ty)
     let arrayTypeStr = 'DynArrayDim2<<%typestr%>>'
     let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
    // let &preExp += 'alloc_<%arrayTypeStr%>(&<%tmp%>, test2, 0, 1);<%\n%>'
     tmp
    case m as MATRIX(matrix=(row1::_)) then
-     let arrayTypeStr = expTypeArray(ty)
-       let StatArrayDim = expTypeArrayforDim(ty)
-       let &tmp = buffer "" /*BUFD*/
+     let arrayTypeStr = expTypeShort(ty)
+     let StatArrayDim = expTypeArrayIf(ty)
+     let &tmp = buffer "" /*BUFD*/
      let arrayVar = tempDecl(arrayTypeStr, &tmp /*BUFD*/)
      let &vals = buffer "" /*BUFD*/
-       let dim_cols = listLength(row1)
+     let dim_cols = listLength(row1)
 
 /*
 /////////////////////////////////////////////////NonCED
@@ -1435,8 +1444,8 @@ template daeExpArray(Exp exp, Context context, Text &preExp, Text &varDecls, Sim
 ::=
 match exp
 case ARRAY(array=_::_, ty = arraytype) then
-  let arrayTypeStr = expTypeArray(ty)
-  let ArrayType = expTypeArrayforDim(ty)
+  let arrayTypeStr = expTypeShort(ty)
+  let ArrayType = expTypeArrayIf(ty)
   let &tmpVar = buffer ""
   let arrayVar = tempDecl(arrayTypeStr, &tmpVar /*BUFD*/)
   let arrayassign =  if scalar then
@@ -1447,8 +1456,8 @@ case ARRAY(array=_::_, ty = arraytype) then
                        daeExpArray3(array, arrayVar, ArrayType, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   arrayVar
 case ARRAY(__) then
-  let arrayTypeStr = expTypeArray(ty)
-  let arrayDef = expTypeArrayforDim(ty)
+  let arrayTypeStr = expTypeShort(ty)
+  let arrayDef = expTypeArrayIf(ty)
   let &tmpdecl = buffer ""
   let arrayVar = tempDecl(arrayTypeStr, &tmpdecl )
   let &tmpVar = buffer ""
@@ -1491,8 +1500,8 @@ Array creation template functions, which splits the array creation code in separ
 //::=
 //match exp
 //case ARRAY(array=_::_, ty = arraytype) then
-//  let arrayTypeStr = expTypeArray(ty)
-//  let ArrayType = expTypeArrayforDim(ty)
+//  let arrayTypeStr = expTypeShort(ty)
+//  let ArrayType = expTypeArrayIf(ty)
 //  let &tmpVar = buffer ""
 //  let arrayVar = tempDecl(arrayTypeStr, &tmpVar /*BUFD*/)
 //  let arrayassign =  if scalar then
@@ -1517,8 +1526,8 @@ Array creation template functions, which splits the array creation code in separ
 //  let &preExp += '<%arrayassign%>'
 //  arrayVar
 //case ARRAY(__) then
-//  let arrayTypeStr = expTypeArray(ty)
-//  let arrayDef = expTypeArrayforDim(ty)
+//  let arrayTypeStr = expTypeShort(ty)
+//  let arrayDef = expTypeArrayIf(ty)
 //  let &tmpdecl = buffer ""
 //  let arrayVar = tempDecl(arrayTypeStr, &tmpdecl )
 //  let &tmpVar = buffer ""
@@ -1658,7 +1667,7 @@ template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context
 ::=
   /* match exp
    case ASUB(exp=ecr as CREF(__)) then*/
-  let arrayType = expTypeArray(ty)
+  let arrayType = expTypeShort(ty)
   let dimsLenStr = listLength(subs)
   let dimsValuesStr = (subs |> exp =>
       daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=",")
@@ -2009,7 +2018,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
         else
         let &dimstr += 'error array dims'
         'array error'
-    let ty_str = '<%expTypeArray(attr.ty)%>'
+    let ty_str = '<%expTypeShort(attr.ty)%>'
     let tvar = tempDecl(tmp_type_str, &varDecls /*BUFD*/)
     let a0str = daeExp(a0, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let arrays_exp = (arrays |> array =>
@@ -2029,7 +2038,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var2 = daeExp(n, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     //let temp = tempDeclAssign('const size_t*', &varDecls /*BUFD*/,'<%var1%>.shape()')
     //let temp_ex = tempDecl('std::vector<size_t>', &varDecls /*BUFD*/)
-    let arrayType = /*expTypeArray(ty)*/expTypeFlag(ty,6)
+    let arrayType = expTypeArrayIf(ty)
     //let dimstr = listLength(crefSubs(cr))
     let tmp = tempDecl('<%arrayType%>', &varDecls /*BUFD*/)
 
@@ -2596,8 +2605,8 @@ template expTypeFromExpArrayIf(Exp exp, Context context, Text &preExp, Text &var
 ::=
 match exp
 case ARRAY(__) then
-  let arrayTypeStr = expTypeArray(ty)
-  let StatArrayDim = expTypeArrayforDim(ty)
+  let arrayTypeStr = expTypeShort(ty)
+  let StatArrayDim = expTypeArrayIf(ty)
   let &tmpdecl = buffer "" /*BUFD*/
   let arrayVar = tempDecl(arrayTypeStr, &tmpdecl /*BUFD*/)
   // let scalarPrefix = if scalar then "scalar_" else ""

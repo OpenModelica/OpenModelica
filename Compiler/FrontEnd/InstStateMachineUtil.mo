@@ -188,7 +188,7 @@ Create fresh equations for merging outer output variable definitions
   input DAE.Element inFlatSM;
   input InnerOuter.InstHierarchy inIH;
   input list<DAE.Element> inStartElementLst;
-  output list<DAE.Element> outElementLst = inStartElementLst;
+  output list<DAE.Element> outElementLst;
 protected
   HashTableCG.HashTable outerOutputCrefToSMCompCref "Table to map outer outputs to corresponding state";
   HashTableCG.HashTable outerOutputCrefToInnerCref "Table to map outer output to corresponding inners";
@@ -227,7 +227,7 @@ algorithm
 
   // add processed flat state machine and corresponding merging equations to the dae element list
   //outElementLst := listAppend(outElementLst, {DAE.FLAT_SM(ident=ident, dAElist=listAppend(dAElist, mergeEqns))}); // put merge equations in FLAT_SM element
-  outElementLst := listAppend(outElementLst, DAE.FLAT_SM(ident=ident, dAElist=dAElist) :: mergeEqns); // put equations after FLAT_SM element
+  outElementLst := listAppend(inStartElementLst, DAE.FLAT_SM(ident=ident, dAElist=dAElist) :: mergeEqns); // put equations after FLAT_SM element
 end mergeVariableDefinitions;
 
 protected function freshMergingEqn "

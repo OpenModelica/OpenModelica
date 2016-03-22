@@ -1191,7 +1191,7 @@ algorithm
       list<tuple<Integer,Integer>> eqnVars;
       list<Integer> paramVars;
       list<tuple<Integer,Integer>> eqnVarsCond;
-      list<tuple<Integer,list<Integer>>> otherEqVars;
+      BackendDAE.InnerEquations innerEquations;
       String dumpStr;
       BackendDAE.StrongComponent condSys;
     case (BackendDAE.SINGLEEQUATION(eqn=eqnIdx),_,_,_,_,_)
@@ -1235,9 +1235,9 @@ algorithm
         _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=resEqns,otherEqnVarTpl = otherEqVars)),_,_,_,_,_)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=resEqns,innerEquations = innerEquations)),_,_,_,_,_)
       equation
-        eqns = List.map(otherEqVars,Util.tuple21);
+        (eqns,_,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
         (eqnVars, paramVars) = getVarsByEqns(listAppend(resEqns,eqns), iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
       then
         (eqnVars, paramVars);
@@ -1370,8 +1370,9 @@ algorithm
     local
       Integer compVarIdx, iVarOffset, iEqOffset, eq;
       list<Integer> compVarIdc,eqns,residuals,othereqs,othervars;
+      list<list<Integer>> othervarsLst;
       array<tuple<Integer,Integer,Integer>> tmpvarCompMapping,tmpeqCompMapping;
-      list<tuple<Integer,list<Integer>>> tearEqVarTpl;
+      BackendDAE.InnerEquations innerEquations;
       BackendDAE.StrongComponent condSys;
       String helperStr;
     case(BackendDAE.SINGLEEQUATION(var = compVarIdx, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
@@ -1411,9 +1412,10 @@ algorithm
         arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then
           iSccIdx+1;
-    case(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = compVarIdc,residualequations = residuals, otherEqnVarTpl = tearEqVarTpl)),_,_,_,(iVarOffset,iEqOffset),_)
+    case(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = compVarIdc,residualequations = residuals, innerEquations = innerEquations)),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-      ((othereqs,othervars)) = List.fold(tearEqVarTpl,othersInTearComp,(({},{})));
+      (othereqs,othervarsLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+      othervars = List.flatten(othervarsLst);
       compVarIdc = listAppend(othervars,compVarIdc);
       eqns = listAppend(othereqs,residuals);
       _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);

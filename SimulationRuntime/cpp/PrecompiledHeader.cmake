@@ -238,7 +238,7 @@ IF(MSVC)
 	MESSAGE(STATUS "add precompiled header to ${_targetName} for ${sources} " )
 
 	#only use precompiled header in relase mode in debug mode precompiled header can not generated because of different pdb files
-	IF(CMAKE_BUILD_TYPE MATCHES "Release")
+	IF(CMAKE_BUILD_TYPE MATCHES "Release" AND PLATFORM MATCHES "dynamic")
 		MESSAGE(STATUS "use precompiled header for build tpye ${CMAKE_BUILD_TYPE}" )
         SET(PrecompiledBinary "${CMAKE_BINARY_DIR}/Core/Modelica.pch")
 		FOREACH(_source ${sources})

@@ -1016,29 +1016,20 @@ protected function foldCallArg "help-function for CALL case in function insertUn
   input HashTableCrToUnit.HashTable inHtCr2U;
   input HashTableStringToUnit.HashTable inHtS2U;
   input HashTableUnitToString.HashTable inHtU2S;
-  output HashTableCrToUnit.HashTable outHtCr2U;
-  output HashTableStringToUnit.HashTable outHtS2U;
-  output HashTableUnitToString.HashTable outHtU2S;
-  output list<list<tuple<DAE.Exp, Unit.Unit>>> outExpListList;
+  output HashTableCrToUnit.HashTable outHtCr2U = inHtCr2U;
+  output HashTableStringToUnit.HashTable outHtS2U = inHtS2U;
+  output HashTableUnitToString.HashTable outHtU2S = inHtU2S;
+  output list<list<tuple<DAE.Exp, Unit.Unit>>> outExpListList = {};
+protected
+  list<list<tuple<DAE.Exp, Unit.Unit>>> expListList;
 algorithm
-  (outHtCr2U, outHtS2U, outHtU2S, outExpListList) := match(inExpList, inHtCr2U, inHtS2U, inHtU2S)
-    local
-      DAE.Exp exp1;
-      list<DAE.Exp> rest;
-      list<list<tuple<DAE.Exp, Unit.Unit>>> expListList, expListList2;
-      HashTableCrToUnit.HashTable HtCr2U;
-      HashTableStringToUnit.HashTable HtS2U;
-      HashTableUnitToString.HashTable HtU2S;
+  for exp in inExpList loop
+    (_, (outHtCr2U, outHtS2U, outHtU2S), expListList) :=
+      insertUnitInEquation(exp, (outHtCr2U, outHtS2U, outHtU2S), Unit.MASTER({}));
+    outExpListList := List.append_reverse(expListList, outExpListList);
+  end for;
 
-    case ({}, _, _, _)
-    then (inHtCr2U, inHtS2U, inHtU2S, {});
-
-    case (exp1::rest, _, _, _) equation
-      (_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (inHtCr2U, inHtS2U, inHtU2S), Unit.MASTER({}));
-      (HtCr2U, HtS2U, HtU2S, expListList2) = foldCallArg(rest, HtCr2U, HtS2U, HtU2S);
-      expListList = listAppend(expListList, expListList2);
-    then (HtCr2U, HtS2U, HtU2S, expListList);
-  end match;
+  outExpListList := listReverse(outExpListList);
 end foldCallArg;
 
 //
@@ -1093,8 +1084,8 @@ algorithm
     then (true, ut, HtCr2U);
 
     case (Unit.MASTER(lcr), Unit.MASTER(lcr2), _) equation
-      lcr = listAppend(lcr, lcr2);
-    then (true, Unit.MASTER(lcr), inHtCr2U);
+      lcr2 = listAppend(lcr, lcr2);
+    then (true, Unit.MASTER(lcr2), inHtCr2U);
 
     case (Unit.UNKNOWN(s), Unit.UNKNOWN(s2), _) equation
       true = stringEqual(s, s2);

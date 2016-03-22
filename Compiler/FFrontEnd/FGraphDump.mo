@@ -56,6 +56,7 @@ type Data = FCore.Data;
 type Kind = FCore.Kind;
 type Ref = FCore.Ref;
 type Refs = FCore.Refs;
+type RefTree = FCore.RefTree;
 type Children = FCore.Children;
 type Parents = FCore.Parents;
 type ImportTable = FCore.ImportTable;
@@ -163,7 +164,7 @@ algorithm
               "n" + intString(FNode.id(node)),
               color, {label}, shape, NONE(), {}, i, gi);
 
-        nrefs = List.map(FNode.getAvlTreeValues({SOME(kids)}, {}), FNode.getAvlValue);
+        nrefs = RefTree.listValues(kids);
         ((gi,i)) = addNodes((gi,i), nrefs);
       then
         ((gi,i));
@@ -208,7 +209,7 @@ algorithm
                    {},
                    gi);*/
 
-        nrefs = List.map(FNode.getAvlTreeValues({SOME(kids)}, {}), FNode.getAvlValue);
+        nrefs = RefTree.listValues(kids);
         ((gi,i)) = addNodes((gi,i), nrefs);
       then
         ((gi,i));
@@ -253,7 +254,7 @@ algorithm
                    {},
                    gi);*/
 
-        nrefs = List.map(FNode.getAvlTreeValues({SOME(kids)}, {}), FNode.getAvlValue);
+        nrefs = RefTree.listValues(kids);
         ((gi,i)) = addNodes((gi,i), nrefs);
       then
         ((gi,i));
@@ -288,7 +289,7 @@ algorithm
                    {},
                    gi);
 
-        nrefs = List.map(FNode.getAvlTreeValues({SOME(kids)}, {}), FNode.getAvlValue);
+        nrefs = RefTree.listValues(kids);
         ((gi,i)) = addNodes((gi,i), nrefs);
       then
         ((gi,i));

@@ -1582,10 +1582,13 @@ protected
   BackendDAE.EqSystem syst;
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
+  Integer sz;
+  BackendDAE.Variables vars;
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
+  vars := BackendVariable.emptyVarsSized(integer(sum(BackendVariable.varsSize(s.orderedVars) for s in systs)*1.4));
   // We can use listReduce as if there is no eq-system something went terribly wrong
-  syst := List.reduce(systs, mergeIndependentBlocks);
+  syst := List.fold(listReverse(systs), mergeIndependentBlocks, BackendDAEUtil.createEqSystem(vars));
   outDAE := BackendDAE.DAE({syst}, shared);
 end collapseIndependentBlocks;
 
@@ -1598,10 +1601,10 @@ protected
   BackendDAE.EquationArray eqs, removedEqs;
   BackendDAE.StateSets stateSets;
 algorithm
-  vars := BackendVariable.mergeVariables(syst2.orderedVars, syst1.orderedVars);
-  eqs := BackendEquation.addEquations(BackendEquation.equationList(syst2.orderedEqs), syst1.orderedEqs);
-  removedEqs := BackendEquation.addEquations(BackendEquation.equationList(syst2.removedEqs), syst1.removedEqs);
-  stateSets := listAppend(syst2.stateSets, syst1.stateSets);
+  vars := BackendVariable.addVariables(syst1.orderedVars, syst2.orderedVars);
+  eqs := BackendEquation.addEquations(BackendEquation.equationList(syst1.orderedEqs), syst2.orderedEqs);
+  removedEqs := BackendEquation.addEquations(BackendEquation.equationList(syst1.removedEqs), syst2.removedEqs);
+  stateSets := listAppend(syst1.stateSets, syst2.stateSets);
   syst := BackendDAEUtil.createEqSystem(vars, eqs, stateSets, BackendDAE.UNKNOWN_PARTITION(), removedEqs);
 end mergeIndependentBlocks;
 
@@ -1779,8 +1782,9 @@ algorithm
       DAE.FunctionTree funcs;
       list<BackendDAE.Var> varlst;
       list<DAE.Exp> explst;
-      list<tuple<Integer,list<Integer>>> eqnvartpllst;
+      BackendDAE.InnerEquations innerEquations;
       list<Integer> vlst;
+      list<list<Integer>> vLstLst;
     case ({},_,_,_) then compInfosIn;
     case (BackendDAE.SINGLEEQUATION(eqn=eqIdx)::rest,_,_,_)
       equation
@@ -1857,7 +1861,7 @@ algorithm
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst), linear = true)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=tornEqs, innerEquations= innerEquations), linear = true)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
       equation
         comp = listHead(inComps);
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
@@ -1869,8 +1873,8 @@ algorithm
         (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = Expression.traverseExpList(explst,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
         torn = BackendDAE.COUNTER(comp,numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs);
         // the other eqs
-        otherEqs = List.map(eqnvartpllst,Util.tuple21);
-        vlst = List.flatten(List.map(eqnvartpllst,Util.tuple22));
+        (otherEqs,vLstLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+        vlst = List.flatten(vLstLst);
         eqnlst = BackendEquation.getEqns(otherEqs,eqns);
         varlst = List.map1(vlst,BackendVariable.getVarAtIndexFirst, vars);
         (explst,_) = BackendDAEUtil.getEqnSysRhs(BackendEquation.listEquation(eqnlst),BackendVariable.listVar1(varlst),SOME(funcs));
@@ -1879,7 +1883,7 @@ algorithm
         compInfo = BackendDAE.TORN_ANALYSE(comp,torn,other,listLength(tornEqs));
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst), linear = false)::rest,_,BackendDAE.SHARED(),_)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=tornEqs, innerEquations = innerEquations), linear = false)::rest,_,BackendDAE.SHARED(),_)
       equation
         comp = listHead(inComps);
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
@@ -1890,7 +1894,7 @@ algorithm
         (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = Expression.traverseExpList(explst,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
         torn = BackendDAE.COUNTER(comp,numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs);
         // the other eqs
-        otherEqs = List.map(eqnvartpllst,Util.tuple21);
+        (otherEqs,_,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
         eqnlst = BackendEquation.getEqns(otherEqs,eqns);
         explst = List.map(eqnlst,BackendEquation.getEquationRHS);
         (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = Expression.traverseExpList(explst,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
@@ -1910,18 +1914,24 @@ protected function getNumJacEntries
   input BackendDAE.Jacobian inJac;
   output Integer numEntries;
 algorithm
-  numEntries := match(inJac)
+  numEntries := match inJac
     local
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-      case (BackendDAE.FULL_JACOBIAN(NONE()))
-        equation
-           then -1;
-      case (BackendDAE.FULL_JACOBIAN(SOME(jac)))
-        equation
+      list<BackendDAE.Var> vars1, vars2;
+      case BackendDAE.FULL_JACOBIAN(NONE())
+        then -1;
+      case BackendDAE.FULL_JACOBIAN(SOME(jac))
         then listLength(jac);
-      /* TODO: implement for GENERIC_JACOBIAN */
-      case (_)
+      case BackendDAE.EMPTY_JACOBIAN()
+        then -1;
+      /* TODO: implement/check for GENERIC_JACOBIAN */
+      case BackendDAE.GENERIC_JACOBIAN(jacobian=(_,_,vars1,vars2,_))
+        guard
+          listLength(vars1) == listLength(vars2)
+        then listLength(vars1);
+      else
         equation
+          //print(BackendDump.jacobianString(inJac));
           print("another JAC\n");
         then -1;
   end match;
@@ -4369,8 +4379,8 @@ protected
   BackendDAE.Matching matching;
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
-  list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
-  tuple<Integer,list<Integer>> tpl;
+  BackendDAE.InnerEquations innerEquations;
+  BackendDAE.InnerEquation innerEquation;
   Integer i,j;
   BackendDAE.Equation eqn;
   list<Integer> tvars "be careful with states, this are solved for der(x)";
@@ -4386,10 +4396,10 @@ algorithm
     for comp in comps loop
       if BackendEquation.isTornSystem(comp) then
 
-        BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(tearingvars=tvars, residualequations=teqns, otherEqnVarTpl= otherEqnVarTpl)) := comp;
-        for tpl in otherEqnVarTpl loop
+        BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(tearingvars=tvars, residualequations=teqns, innerEquations = innerEquations)) := comp;
+        for innerEquation in innerEquations loop
            try
-            (i,{j}) := tpl;
+            (i,{j},_) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(innerEquation);
             eqn := BackendEquation.equationNth1(eqns, i);
             BackendDAE.VAR(varName = cr) := BackendVariable.getVarAt(vars, j);
             eqn := BackendEquation.solveEquation(eqn, Expression.crefExp(cr), SOME(shared.functionTree));
@@ -4681,8 +4691,8 @@ protected
   BackendDAE.Equation eqn;
   Boolean update, linear;
   Integer i, k;
-  list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
-  tuple<Integer,list<Integer>> tpl;
+  BackendDAE.InnerEquations innerEquations;
+  BackendDAE.InnerEquation innerEquation;
 algorithm
 
   if BackendEquation.isEquationsSystem(inComp) then
@@ -4697,7 +4707,7 @@ algorithm
     end if;
 
   else
-    BackendDAE.TORNSYSTEM(linear=linear, strictTearingSet = BackendDAE.TEARINGSET(tearingvars=vars, residualequations=eqns, otherEqnVarTpl= otherEqnVarTpl)) := inComp;
+    BackendDAE.TORNSYSTEM(linear=linear, strictTearingSet = BackendDAE.TEARINGSET(tearingvars=vars, residualequations=eqns, innerEquations = innerEquations)) := inComp;
     if linear then
       return;
     end if;
@@ -4705,8 +4715,8 @@ algorithm
         print("------ Tearing ------\n");
     end if;
 
-    for tpl in otherEqnVarTpl loop
-      (k,vv) := tpl;
+    for innerEquation in innerEquations loop
+      (k,vv) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(innerEquation);
       eqns := k :: eqns;
       vars := listAppend(vv,vars);
     end for;

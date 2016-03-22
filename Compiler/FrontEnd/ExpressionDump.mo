@@ -1805,5 +1805,37 @@ algorithm
   end match;
 end clockKindString;
 
+
+public function constraintDTtoString "
+author: ptaeuber
+Converts DAE.CONSTRAINT_DT to string."
+  input DAE.Constraint con;
+  output String str;
+protected
+  DAE.Exp c;
+  Boolean localCon;
+algorithm
+  DAE.CONSTRAINT_DT(constraint = c, localCon = localCon) := con;
+  str := printExpStr(c);
+  str := if localCon then str + " (local)" else str + " (global)";
+end constraintDTtoString;
+
+
+public function constraintDTlistToString "
+author: ptaeuber
+Converts list of DAE.CONSTRAINT_DT to string."
+  input list<DAE.Constraint> cons;
+  input String delim;
+  output String str="";
+protected
+  DAE.Exp c;
+  Boolean localCon;
+  DAE.Constraint con;
+algorithm
+  for con in cons loop
+    str := str + delim + constraintDTtoString(con);
+  end for;
+end constraintDTlistToString;
+
 annotation(__OpenModelica_Interface="frontend");
 end ExpressionDump;

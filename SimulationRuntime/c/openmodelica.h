@@ -151,8 +151,7 @@ struct type_desc_s {
 
 /* Special Modelica builtin functions*/
 #define smooth(P,EXP)    (EXP)
-#define semiLinear(x,positiveSlope,negativeSlope) (x>=0?(positiveSlope)*(x):(negativeSlope)*(x))
-
+static inline modelica_real semiLinear(const modelica_real x,const modelica_real positiveSlope, const modelica_real negativeSlope){return x*((x>=0)? positiveSlope : negativeSlope);}
 /* sign function */
 static inline int sign(double v)
 {

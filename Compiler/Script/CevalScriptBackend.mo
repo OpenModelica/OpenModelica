@@ -807,6 +807,7 @@ algorithm
 
     case (cache,_,"convertUnits",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
+        Error.clearMessages() "Clear messages";
         UnitParserExt.initSIUnits();
         (u1,scaleFactor1,offset1) = UnitAbsynBuilder.str2unitWithScaleFactor(str1,NONE());
         (u2,scaleFactor2,offset2) = UnitAbsynBuilder.str2unitWithScaleFactor(str2,NONE());
@@ -821,6 +822,10 @@ algorithm
         offset = realSub(offset2,offset1);
       then
         (cache,Values.TUPLE({Values.BOOL(b),Values.REAL(scaleFactor),Values.REAL(offset)}),st);
+
+    case (cache,_,"convertUnits",{Values.STRING(str1),Values.STRING(str2)},st,_)
+      then
+        (cache,Values.TUPLE({Values.BOOL(false),Values.REAL(1.0),Values.REAL(0.0)}),st);
 
     case (cache,_,"getClassInformation",{Values.CODE(Absyn.C_TYPENAME(className))},st as GlobalScript.SYMBOLTABLE(),_)
       equation
@@ -1708,7 +1713,7 @@ algorithm
         files = List.map(List.map1(listAppend(files,dirs), System.strtok, ". "), listHead);
         (str, status) = System.popen("impact search '' | perl -pe 's/\\e\\[?.*?[\\@-~]//g' | grep '[^ :]*:' | cut -d: -f1 2>&1");
         if 0==status then
-          files = listAppend(files, System.strtok(str,"\n"));
+          files = listAppend(System.strtok(str,"\n"), files);
         end if;
         files = List.sort(files,Util.strcmpBool);
         files = List.sortedUnique(files, stringEqual);
@@ -2595,7 +2600,7 @@ algorithm
         //print("\nInst.instantiateClass");
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className);
 
-        FGraphDump.dumpGraph(env, "F:\\dev\\" + Absyn.pathString(className) + ".graph.graphml");
+        //FGraphDump.dumpGraph(env, "F:\\dev\\" + Absyn.pathString(className) + ".graph.graphml");
 
         //System.stopTimer();
         //print("\nInst.instantiateClass: " + realString(System.getTimerIntervalTime()));
@@ -2749,12 +2754,21 @@ algorithm
   // compile
   quote := if isWindows then "" else "'";
   dquote := if isWindows then "\"" else "'";
-  CevalScript.compileModel(filenameprefix+"_FMU" , libs);
+
   if Config.simCodeTarget() == "Cpp" then
-    // Cpp FMUs are not source-code FMUs
+    System.removeDirectory("binaries");
+    for platform in platforms loop
+      if platform == "dynamic" or platform == "static" then
+        CevalScript.compileModel(filenameprefix + "_FMU", libs);
+      else
+        CevalScript.compileModel(filenameprefix + "_FMU", libs,
+                                 makeVars={"TARGET_TRIPLET=" + platform});
+      end if;
+    end for;
     return;
   end if;
 
+  CevalScript.compileModel(filenameprefix+"_FMU" , libs);
   fmutmp := filenameprefix + ".fmutmp";
   logfile := filenameprefix + ".log";
 

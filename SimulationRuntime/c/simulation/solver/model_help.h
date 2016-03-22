@@ -132,8 +132,6 @@ modelica_real _event_floor(modelica_real x, modelica_integer index, DATA *data);
 modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data);
 modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data, threadData_t *threadData);
 modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data, threadData_t *threadData);
-modelica_integer _event_mod_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data);
-modelica_integer _event_rem_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data);
 
 /* functions used for relation which
  * are not used as zero-crossings

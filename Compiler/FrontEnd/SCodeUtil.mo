@@ -58,7 +58,7 @@ import MetaUtil;
 import SCodeDump;
 import System;
 import Util;
-import MetaModelica.Dangerous.listReverseInPlace;
+import MetaModelica.Dangerous;
 
 // Constant expression for AssertionLevel.error.
 protected constant Absyn.Exp ASSERTION_LEVEL_ERROR = Absyn.CREF(Absyn.CREF_FULLYQUALIFIED(
@@ -1003,7 +1003,7 @@ algorithm
       else ();
     end match;
   end for;
-  outElementLst := listReverseInPlace(l);
+  outElementLst := Dangerous.listReverseInPlace(l);
 end translateEitemlist;
 
 // stefan
@@ -1155,6 +1155,7 @@ algorithm
       SCode.Partial sPar;
       SCode.Visibility vis;
       SCode.ConnectorType ct;
+      SCode.Prefixes prefixes;
       Option<SCode.ConstrainClass> scc;
 
 
@@ -1213,34 +1214,46 @@ algorithm
     case (_,_,_,_,_,Absyn.COMPONENTS(components = {}),_) then {};
 
     case (_,_,_,repl,vis,Absyn.COMPONENTS(attributes =
-      (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,isField = isf,arrayDim = ad)),typeSpec = t,
-      components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
-      equation
-        // TODO: Improve performance by iterating over all elements at once instead of creating a new Absyn.COMPONENTS in each step...
-        checkTypeSpec(t,info);
-        // fprintln(Flags.TRANSLATE, "translating component: " + n + " final: " + SCode.finalStr(SCode.boolFinal(finalPrefix)));
-        setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
-        setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
-        xs_1 = translateElementspec(cc, finalPrefix, io, repl, vis,
-          Absyn.COMPONENTS(attr,t,xs), info);
-        mod = translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-        prl1 = translateParallelism(parallelism);
-        var1 = translateVariability(variability);
-        // PR. This adds the arraydimension that may be specified together with the type of the component.
-        tot_dim = listAppend(d, ad);
-        (repl_1, redecl) = translateRedeclarekeywords(repl);
-        (cmt,info) = translateCommentWithLineInfoChanges(comment,info);
-        sFin = SCode.boolFinal(finalPrefix);
-        sRed = SCode.boolRedeclare(redecl);
-        scc = translateConstrainClass(cc);
-        sRep = if repl_1 then SCode.REPLACEABLE(scc) else SCode.NOT_REPLACEABLE();
-        ct = translateConnectorType(fl, st);
-      then
-        (SCode.COMPONENT(n,
-          SCode.PREFIXES(vis,sRed,sFin,io,sRep),
-          SCode.ATTR(tot_dim,ct,prl1,var1,di,isf),
-          t,mod,cmt,cond,info) :: xs_1);
-
+      (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,isField = isf,arrayDim = ad)), typeSpec = t),info)
+      algorithm
+        xs_1 := {};
+        for comp in inElementSpec4.components loop
+          Absyn.COMPONENTITEM(Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment, condition=cond) := comp;
+          // TODO: Improve performance by iterating over all elements at once instead of creating a new Absyn.COMPONENTS in each step...
+          checkTypeSpec(t,info);
+          // fprintln(Flags.TRANSLATE, "translating component: " + n + " final: " + SCode.finalStr(SCode.boolFinal(finalPrefix)));
+          setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
+          setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
+          mod := translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
+          prl1 := translateParallelism(parallelism);
+          var1 := translateVariability(variability);
+          // PR. This adds the arraydimension that may be specified together with the type of the component.
+          tot_dim := listAppend(d, ad);
+          (repl_1, redecl) := translateRedeclarekeywords(repl);
+          (cmt,info) := translateCommentWithLineInfoChanges(comment,info);
+          sFin := SCode.boolFinal(finalPrefix);
+          sRed := SCode.boolRedeclare(redecl);
+          scc := translateConstrainClass(cc);
+          sRep := if repl_1 then SCode.REPLACEABLE(scc) else SCode.NOT_REPLACEABLE();
+          ct := translateConnectorType(fl, st);
+          prefixes := SCode.PREFIXES(vis,sRed,sFin,io,sRep);
+          xs_1 := match di
+            local
+              SCode.Attributes attr1,attr2;
+              SCode.Mod mod2;
+              String inName;
+            case Absyn.INPUT_OUTPUT() guard not Flags.isSet(Flags.SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR)
+              algorithm
+                inName := "$in_"+n;
+                attr1 := SCode.ATTR(tot_dim,ct,prl1,var1,Absyn.INPUT(),isf);
+                attr2 := SCode.ATTR(tot_dim,ct,prl1,var1,Absyn.OUTPUT(),isf);
+                mod2 := SCode.MOD(SCode.FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.CREF(Absyn.CREF_IDENT(inName,{}))), info);
+              then SCode.COMPONENT(n,prefixes,attr2,t,mod2,cmt,cond,info) :: SCode.COMPONENT(inName,prefixes,attr1,t,mod,cmt,cond,info) :: xs_1;
+            else SCode.COMPONENT(n,prefixes,SCode.ATTR(tot_dim,ct,prl1,var1,di,isf),t,mod,cmt,cond,info) :: xs_1;
+          end match;
+        end for;
+        xs_1 := Dangerous.listReverseInPlace(xs_1);
+      then xs_1;
     case (_,_,_,_,vis,Absyn.IMPORT(import_ = imp, info = info),_)
       equation
         // fprintln(Flags.TRANSLATE, "translating import: " + Dump.unparseImportStr(imp));

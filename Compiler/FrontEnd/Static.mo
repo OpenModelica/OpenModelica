@@ -6258,14 +6258,12 @@ algorithm
     val_slot := SLOT(DAE.FUNCARG("x", ty, DAE.C_VAR(), DAE.NON_PARALLEL(),
       NONE()), false, NONE(), {}, 1, SLOT_NOT_EVALUATED);
 
-    try
-      // Try the String(val, <option>) format.
-      slots := {val_slot, STRING_ARG_MINLENGTH, STRING_ARG_LEFTJUSTIFIED};
-
+    try // Try the String(val, <option>) format.
       // Only String(Real) has the significantDigits option.
-      if Types.isRealOrSubTypeReal(ty) then
-        slots := listAppend(slots, {STRING_ARG_SIGNIFICANT_DIGITS});
-      end if;
+      slots := if Types.isRealOrSubTypeReal(ty) then
+        {STRING_ARG_SIGNIFICANT_DIGITS} else {};
+
+      slots := val_slot :: STRING_ARG_MINLENGTH :: STRING_ARG_LEFTJUSTIFIED :: slots;
 
       (outCache, args, _, consts) := elabInputArgs(outCache, inEnv, inPosArgs, inNamedArgs,
           slots, false, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),
@@ -10201,11 +10199,13 @@ protected function findNamedArg
   output DAE.FuncArg outArg;
 protected
   String id;
+  Boolean haveMM = Config.acceptMetaModelicaGrammar();
+  String inIdent2 = if haveMM then "$in_"+inIdent else "";
 algorithm
   for arg in inArgs loop
     DAE.FUNCARG(name = id) := arg;
 
-    if id == inIdent then
+    if id == inIdent or (haveMM and id == inIdent2) then
       outArg := arg;
       return;
     end if;
@@ -10263,7 +10263,7 @@ algorithm
     SLOT(defaultArg = DAE.FUNCARG(name = fa2)) := slot;
 
     // Check if this slot has the same name as the one we're looking for.
-    if stringEq(fa1, fa2) then
+    if stringEq(fa1, fa2) or stringEq("$in_"+fa1, fa2) /* OM extension input output arguments */ then
       SLOT(defaultArg = DAE.FUNCARG(const = c2, par = prl, defaultBinding = binding),
         slotFilled = filled, idx = idx, evalStatus = ses) := slot;
 

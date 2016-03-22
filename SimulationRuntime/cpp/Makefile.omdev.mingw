@@ -2,6 +2,11 @@
 # Makefile for compilation of OMC using OMDev-mingw
 # OMDev-mingw: http://www.ida.liu.se/~adrpo/omc/omdev/
 
+# specify a list of target platforms, including dynamic, static
+# and platform triples for cross compilation
+#PLATFORMS=x86_64-linux-gnu i686-w64-mingw32 dynamic
+PLATFORMS=static dynamic
+
 top_builddir = $(OMBUILDDIR)/../
 builddir_build=$(OMBUILDDIR)
 builddir_bin=$(OMBUILDDIR)/bin
@@ -113,12 +118,14 @@ endif
 endif
 endif
 
+CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE) $(BOOST_STATIC_LINKING_COMMAND) $(BOOST_REALPATHS_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(USE_SCOREP_COMMAND) $(SCOREP_HOME_COMMAND) $(FMU_SUNDIALS_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(USE_LOGGER_COMMAND)
 
 runtimeCpp:
-	mkdir -p Build
-	cd ./Build; echo "change to Build";	\
-	$(CMAKE) -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" $(BOOST_STATIC_LINKING_COMMAND) $(BOOST_REALPATHS_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(USE_SCOREP_COMMAND) $(SCOREP_HOME_COMMAND) $(FMU_SUNDIALS_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(USE_LOGGER_COMMAND) MAKE_CXX_COMPILER=g++ ../; \
-	make;
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  mkdir -p Build_$(PLATFORM); \
+	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
+	   $(CMAKE) -G "MSYS Makefiles" -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
+	   make);)
 
 runtimeCPPmsvc: getMSVCversion
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
@@ -128,7 +135,7 @@ runtimeCPPmsvc: getMSVCversion
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC/build.bat
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=$(BUILDTYPE) $(BOOST_STATIC_LINKING_COMMAND) $(BOOST_REALPATHS_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(USE_SCOREP_COMMAND) $(SCOREP_HOME_COMMAND) $(FMU_SUNDIALS_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(USE_LOGGER_COMMAND) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="dynamic" $(CMAKE_FLAGS) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> Build_MSVC/build.bat
@@ -137,25 +144,41 @@ runtimeCPPmsvc: getMSVCversion
 	cd ./Build_MSVC; echo "change to Build_MSVC";\
 	cmd /c build.bat
 
+	echo 'Build cppRuntime (static) with MSVC'
+	#rm -rf Build_MSVC_static
+	mkdir -p Build_MSVC_static
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC_static/build.bat
+
+	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC_static/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC_static/build.bat
+
+	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
+	echo set MAKEFLAGS="" >> Build_MSVC_static/build.bat
+	echo echo Running NMake JOM >> Build_MSVC_static/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> Build_MSVC_static/build.bat
+	cd ./Build_MSVC_static; echo "change to Build_MSVC_static";\
+	cmd /c build.bat
+
 	# move msvc libs into subfolder
 	mkdir -p Build_MSVC/tmp/lib/omc/cpp/msvc
 	mv Build_MSVC/tmp/lib/omc/cpp/*.dll Build_MSVC/tmp/lib/omc/cpp/msvc
 	mv Build_MSVC/tmp/lib/omc/cpp/*.lib Build_MSVC/tmp/lib/omc/cpp/msvc
+	mv Build_MSVC_static/tmp/lib/omc/cpp/*.lib Build_MSVC/tmp/lib/omc/cpp/msvc
 
 
 	# copy pdb files
 ifneq ($(BUILDTYPE),Release)
-	cp -u Build_MSVC/Solver/Newton/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Solver/Euler/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Core/SimController/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Core/Modelica/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Solver/Newton/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Solver/Euler/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Core/SimController/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Core/Modelica/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
 	#cp -u Build_MSVC/Core/ModelicaExternalC/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Core/SimulationSettings/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Core/Solver/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Core/System/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	#cp -u Build_MSVC/SimCoreFactory/OMCFactory/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC/Core/DataExchange/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	#cp -u Build_MSVC/Core/Math/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Core/SimulationSettings/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Core/Solver/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Core/System/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	#cp -u Build_MSVC*/SimCoreFactory/OMCFactory/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	cp -u Build_MSVC*/Core/DataExchange/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	#cp -u Build_MSVC*/Core/Math/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
 endif
 
 
@@ -164,9 +187,11 @@ endif
 
 
 install: runtimeCpp
-	(cd Build; make install)
-	(cd Build; cp -p $(OMDEV)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.)
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  (cd Build_$(PLATFORM); make install);)
+	cp -p $(OMDEV)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.
 
 
 clean:
-	rm -R -f Build
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  rm -R -f Build_$(PLATFORM);)

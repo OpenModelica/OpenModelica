@@ -570,7 +570,6 @@ package SimCode
       SimCodeVar.SimVars vars;
       list<Function> functions;
       list<String> labels;
-      Integer maxDer;
       Integer nClocks;
       Integer nSubClocks;
     end MODELINFO;

@@ -6156,10 +6156,7 @@ algorithm
     outList := e :: outList;
   end while;
 
-  outList := listReverseInPlace(outList);
-  if outFound then
-    outList := listAppend(outList, rest);
-  end if;
+  outList := append_reverse(outList, rest);
 end findMap;
 
 public function findMap1<T, ArgT1>
@@ -6188,10 +6185,7 @@ algorithm
     outList := e :: outList;
   end while;
 
-  outList := listReverseInPlace(outList);
-  if outFound then
-    outList := listAppend(outList, rest);
-  end if;
+  outList := append_reverse(outList, rest);
 end findMap1;
 
 public function findMap2<T, ArgT1, ArgT2>
@@ -6222,10 +6216,7 @@ algorithm
     outList := e :: outList;
   end while;
 
-  outList := listReverseInPlace(outList);
-  if outFound then
-    outList := listAppend(outList, rest);
-  end if;
+  outList := append_reverse(outList, rest);
 end findMap2;
 
 public function findMap3<T, ArgT1, ArgT2, ArgT3>
@@ -6258,10 +6249,7 @@ algorithm
     outList := e :: outList;
   end while;
 
-  outList := listReverseInPlace(outList);
-  if outFound then
-    outList := listAppend(outList, rest);
-  end if;
+  outList := append_reverse(outList, rest);
 end findMap3;
 
 public function findSome<T1,T2>

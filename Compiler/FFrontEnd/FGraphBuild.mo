@@ -793,7 +793,7 @@ algorithm
       Ref nr, pr;
       Option<Name> name;
       FNode.Parents parents;
-      FNode.AvlTree children;
+      Children children;
       Node n;
       Graph g;
 

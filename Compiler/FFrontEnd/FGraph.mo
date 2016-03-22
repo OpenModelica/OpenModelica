@@ -76,6 +76,7 @@ type Data = FCore.Data;
 type Kind = FCore.Kind;
 type Ref = FCore.Ref;
 type Refs = FCore.Refs;
+type RefTree = FCore.RefTree;
 type Children = FCore.Children;
 type Parents = FCore.Parents;
 type Scope = FCore.Scope;
@@ -1272,6 +1273,17 @@ algorithm
   b := not isEmpty(inGraph);
 end isNotEmpty;
 
+public function isEmptyScope
+  input Graph graph;
+  output Boolean isEmpty;
+algorithm
+  try
+    isEmpty := RefTree.isEmpty(FNode.children(FNode.fromRef(lastScopeRef(graph))));
+  else
+    isEmpty := true;
+  end try;
+end isEmptyScope;
+
 public function printGraphStr
 "prints the graph"
   input Graph inGraph;
@@ -1556,7 +1568,7 @@ algorithm
   r := lastScopeRef(inGraph);
   r := FNode.copyRefNoUpdate(r);
   n := FNode.fromRef(r);
-  n := FNode.setChildren(n, FCore.emptyCAvlTree);
+  n := FNode.setChildren(n, RefTree.new());
   r := FNode.updateRef(r, n);
   (outGraph, _) := stripLastScopeRef(inGraph);
   outGraph := pushScopeRef(outGraph, r);

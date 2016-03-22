@@ -41,6 +41,7 @@ encapsulated package FCore
 
 public
 import Absyn;
+import BaseAvlTree;
 import DAE;
 import SCode;
 import Prefix;
@@ -241,30 +242,35 @@ end Data;
 type Refs = list<Ref>;
 type Parents = Refs;
 type Scope = Refs;
-type Children = CAvlTree;
-
-public type CAvlKey = Name;
-public type CAvlValue = Ref;
+type Children = RefTree.Tree;
 
 public constant Scope emptyScope = {} "empty scope";
 
-uniontype CAvlTree "The binary tree data structure for children"
-  record CAVLTREENODE
-    Option<CAvlTreeValue> value "Value" ;
-    Integer height "heigth of tree, used for balancing";
-    Option<CAvlTree> left "left subtree" ;
-    Option<CAvlTree> right "right subtree" ;
-  end CAVLTREENODE;
-end CAvlTree;
+encapsulated package RefTree
+  import BaseAvlTree;
+  import FCore.Name;
+  import FCore.Ref;
+  import FCore.Node;
+  extends BaseAvlTree;
 
-uniontype CAvlTreeValue "Each node in the binary tree can have a value associated with it."
-  record CAVLTREEVALUE
-    CAvlKey key "Key" ;
-    CAvlValue value "Value" ;
-  end CAVLTREEVALUE;
-end CAvlTreeValue;
+  redeclare type Key = Name;
+  redeclare type Value = Ref;
 
-constant CAvlTree emptyCAvlTree = CAVLTREENODE(NONE(),0,NONE(),NONE());
+  redeclare function extends keyStr
+  algorithm
+    outString := inKey;
+  end keyStr;
+
+  redeclare function extends valueStr
+  algorithm
+    Node.N(name = outString) := arrayGet(inValue, 1);
+  end valueStr;
+
+  redeclare function extends keyCompare
+  algorithm
+    outResult := stringCompare(inKey1, inKey2);
+  end keyCompare;
+end RefTree;
 
 uniontype Kind
   record USERDEFINED end USERDEFINED;

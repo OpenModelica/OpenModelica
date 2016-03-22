@@ -64,66 +64,67 @@ protected import BackendDAEUtil;
 // =============================================================================
 
 public function solveSimpleEquations
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE = inDAE;
-protected
-  BackendDAE.Equation eqn;
-  BackendDAE.Var var;
-  Integer iComp;
-  Integer eindex,vindx;
-  BackendDAE.StrongComponents comps;
-  array<Integer> ass1 "eqn := ass1[var]";
-  array<Integer> ass2 "var := ass2[eqn]";
-  Boolean solved;
-
-  list<BackendDAE.EqSystem> systlst = {};
+  input output BackendDAE.BackendDAE DAE;
 algorithm
 
- for syst in inDAE.eqs loop
-   BackendDAE.MATCHING(comps=comps,ass1=ass1, ass2=ass2) := syst.matching;
-   iComp := 1;
-   for comp in comps loop
-     if BackendDAEUtil.isSingleEquationComp(comp) then
+DAE.eqs := list( (match syst
+              local
+                BackendDAE.StrongComponents comps;
+                array<Integer> ass1 "eqn := ass1[var]";
+               array<Integer> ass2 "var := ass2[eqn]";
+
+   case BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps=comps,ass1=ass1, ass2=ass2))
+   algorithm
+   comps := list( (match comp
+     local
+       BackendDAE.Equation eqn;
+       BackendDAE.Var var;
+       Integer eindex,vindx;
+       Boolean solved;
+       BackendDAE.StrongComponent tmpComp;
+
+    case BackendDAE.SINGLEEQUATION()
+      algorithm
        BackendDAE.SINGLEEQUATION(eqn=eindex,var=vindx) := comp;
        eqn := BackendEquation.equationNth1(syst.orderedEqs, eindex);
        var := BackendVariable.getVarAt(syst.orderedVars, vindx);
-
+       tmpComp := comp;
        if BackendEquation.isEquation(eqn) then
-         (eqn,solved) := solveSimpleEquationsWork(eqn, var, outDAE.shared);
+         (eqn,solved) := solveSimpleEquationsWork(eqn, var, DAE.shared);
          syst.orderedEqs := BackendEquation.setAtIndex(syst.orderedEqs, eindex, eqn);
 
          if not solved then
-           comp := BackendDAE.EQUATIONSYSTEM({eindex}, {vindx}, BackendDAE.EMPTY_JACOBIAN() ,BackendDAE.JAC_NONLINEAR(), false);
-           comps := List.replaceAt(comp, iComp, comps);
+           tmpComp := BackendDAE.EQUATIONSYSTEM({eindex}, {vindx}, BackendDAE.EMPTY_JACOBIAN() ,BackendDAE.JAC_NONLINEAR(), false);
          end if;
-
        end if; // isEquation
-     end if; // isSingleEquationComp
-     iComp := iComp + 1;
-   end for; //comp
-  syst.matching := BackendDAE.MATCHING(ass1, ass2, comps);
-	systlst := syst :: systlst;
- end for; // syst
+       then tmpComp;
+     else
+       comp;
+     end match) for comp in comps);
+     syst.matching := BackendDAE.MATCHING(ass1, ass2, comps);
+     then syst;
+    else syst;
+ end match)
+for syst in DAE.eqs);
 
- outDAE.eqs := listReverse(systlst); // listReverse needed?
 end solveSimpleEquations;
 
 protected function solveSimpleEquationsWork
-  input BackendDAE.Equation inEqn;
+  input output BackendDAE.Equation eqn;
   input BackendDAE.Var var "solve eq with respect to var";
   input BackendDAE.Shared shared;
-  output BackendDAE.Equation outEqn;
   output Boolean solved;
 
 protected
   DAE.ComponentRef cr;
   DAE.Exp e1,e2,varexp,e;
-
   BackendDAE.EquationAttributes attr;
   DAE.ElementSource source;
-  list<DAE.Statement> asserts = {};
 algorithm
-  BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr) := inEqn;
+  BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr) := eqn;
+  if not (Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e1)) and Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e2))) then
+	  return ;
+	end if;
   BackendDAE.VAR(varName = cr) := var;
   varexp := Expression.crefExp(cr);
   if BackendVariable.isStateVar(var) then
@@ -131,21 +132,17 @@ algorithm
     cr := ComponentReference.crefPrefixDer(cr);
 	end if;
 
-	try
-	  (e1, e2) := preprocessingSolve(e1, e2, varexp, SOME(shared.functionTree), NONE(), 0);
-	else
-	  // no number
-	end try;
+  (e1, e2) := preprocessingSolve(e1, e2, varexp, SOME(shared.functionTree), NONE(), 0);
 
 	try
-    (e, asserts) := solve2(e1, e2, varexp, SOME(shared.functionTree), NONE());
-    source := DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, e, asserts);
-    outEqn := BackendEquation.generateEquation(varexp, e, source, attr);
+    e := solve2(e1, e2, varexp, SOME(shared.functionTree), NONE());
+    source := DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, e, {});
+    eqn := BackendEquation.generateEquation(varexp, e, source, attr);
     solved := true;
   else
     //eqn is change by possible simplification inside preprocessingSolve for solve the eqn with respect to varexp
     //source := DAEUtil.addSymbolicTransformationSimplify(true, source, DAE.PARTIAL_EQUATION(e1), DAE.PARTIAL_EQUATION(e2));
-    outEqn := BackendEquation.generateEquation(e1, e2, source, attr);
+    eqn := BackendEquation.generateEquation(e1, e2, source, attr);
     solved := false;
   end try;
 
@@ -301,8 +298,10 @@ algorithm
                           else fail();
                          end matchcontinue;
 
- eqnForNewVars := List.appendNoCopy(eqnForNewVars, eqnForNewVars1);
- newVarsCrefs := List.appendNoCopy(newVarsCrefs, newVarsCrefs1);
+ if isPresent(eqnForNewVars) then
+   eqnForNewVars := List.appendNoCopy(eqnForNewVars, eqnForNewVars1);
+   newVarsCrefs := List.appendNoCopy(newVarsCrefs, newVarsCrefs1);
+ end if;
 
 end solveWork;
 
@@ -1065,7 +1064,6 @@ end preprocessingSolve5;
 protected function unifyFunCalls
 "
 e.g.
- smooth() -> if
  semiLinear() -> if
  author: Vitalij Ruge
 "
@@ -1089,7 +1087,7 @@ protected function unifyFunCallsWork
    local
      DAE.Exp e, e1,e2,e3, X;
      DAE.Type tp;
-
+/*
    case(DAE.CALL(path = Absyn.IDENT(name = "smooth"), expLst = {_, e}),X)
      guard expHasCref(e, X)
      then (e, true, iT);
@@ -1097,7 +1095,7 @@ protected function unifyFunCallsWork
    case(DAE.CALL(path = Absyn.IDENT(name = "noEvent"), expLst = {e}),X)
      guard expHasCref(e, X)
      then (e, true, iT);
-
+*/
    case(DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {e1, e2, e3}),_)
      guard not Expression.isZero(e1)
        equation
@@ -1247,11 +1245,11 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {DAE.RCONST(real = 0.0), e1, e2}),DAE.RCONST(real = 0.0),_)
        then (e1,e2,true);
     // smooth(i,f(a)) = rhs -> f(a) = rhs
-    case (DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {_, e2}),_,_)
-       then (e2, inExp2, true);
+    //case (DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {_, e2}),_,_)
+    //   then (e2, inExp2, true);
     // noEvent(f(a)) = rhs -> f(a) = rhs
-    case (DAE.CALL(path = Absyn.IDENT(name = "noEvent"),expLst = {e2}),_,_)
-       then (e2, inExp2, true);
+    //case (DAE.CALL(path = Absyn.IDENT(name = "noEvent"),expLst = {e2}),_,_)
+    //   then (e2, inExp2, true);
 
     else (inExp1, inExp2, false);
   end matchcontinue;
