@@ -1,5 +1,5 @@
 CC=@CC@
-CFLAGS=-O0 -g -fPIC -fvisibility=hidden
+CFLAGS=-O0 -g -fPIC -fvisibility=hidden -std=c99
 CPPFLAGS=-I../../c
 DLLEXT=@DLLEXT@
 LDFLAGS=-lpthread

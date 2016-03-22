@@ -29,6 +29,7 @@
 *
 */
 
+#define _XOPEN_SOURCE 600
 #include "omc_opc_ua.h"
 #include "open62541.h"
 #include <pthread.h>
