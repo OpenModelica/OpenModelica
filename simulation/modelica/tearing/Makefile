@@ -75,6 +75,9 @@ Algorithm2-omc.mos \
 MixedTearing1-omc.mos \
 AnnotationTest-omc.mos \
 AnnotationTest2-omc.mos \
+totalTearing1.mos \
+totalTearing2.mos \
+totalTearing3.mos \
 
 
 

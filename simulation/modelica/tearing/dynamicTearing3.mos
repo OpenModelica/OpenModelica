@@ -53,10 +53,10 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 //
 // Variables (4)
 // ========================================
-// 1: y:VARIABLE() .dynamicTearing3, .Real type: Real
-// 2: z:VARIABLE() .dynamicTearing3, .Real type: Real
-// 3: a:VARIABLE() .dynamicTearing3, .Real type: Real
-// 4: x:VARIABLE() .dynamicTearing3, .Real type: Real
+// 1: y:VARIABLE() .dynamicTearing3, .Real type: Real 
+// 2: z:VARIABLE() .dynamicTearing3, .Real type: Real 
+// 3: a:VARIABLE() .dynamicTearing3, .Real type: Real 
+// 4: x:VARIABLE() .dynamicTearing3, .Real type: Real 
 //
 //
 // Equations (4, 4)
@@ -142,25 +142,20 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 //
 //
 // ****************************************
-// * TEARING RESULTS (STRICT SET):
+// * TEARING RESULTS - STRICT SET:
+// * (Local Indexes)
 // *
-// * No of equations in strong Component: 4
+// * No of equations in strong component: 4
 // * No of tVars: 2
 // *
 // * tVars: 2,4
 // *
 // * resEq: 4,2
 // *
+// * innerEquations ({eqn,vars}):
+// * {1:3}, {3:1}
 // *
-// * Related to entire Equationsystem:
-// * =====
-// * tVars: 3,1
-// * =====
-// *
-// * =====
-// * resEq: 2,4
-// * =====
-// ****************************************
+// *****************************************
 //
 // Note:
 // =====
@@ -190,10 +185,10 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 //
 // Variables (4)
 // ========================================
-// 1: y:VARIABLE() .dynamicTearing3, .Real type: Real
-// 2: z:VARIABLE() .dynamicTearing3, .Real type: Real
-// 3: a:VARIABLE() .dynamicTearing3, .Real type: Real
-// 4: x:VARIABLE() .dynamicTearing3, .Real type: Real
+// 1: y:VARIABLE() .dynamicTearing3, .Real type: Real 
+// 2: z:VARIABLE() .dynamicTearing3, .Real type: Real 
+// 3: a:VARIABLE() .dynamicTearing3, .Real type: Real 
+// 4: x:VARIABLE() .dynamicTearing3, .Real type: Real 
 //
 //
 // Equations (4, 4)
@@ -280,25 +275,20 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 //
 //
 // ****************************************
-// * TEARING RESULTS (STRICT SET):
+// * TEARING RESULTS - STRICT SET:
+// * (Local Indexes)
 // *
-// * No of equations in strong Component: 4
+// * No of equations in strong component: 4
 // * No of tVars: 2
 // *
 // * tVars: 4,2
 // *
 // * resEq: 4,1
 // *
+// * innerEquations ({eqn,vars}):
+// * {2:3}, {3:1}
 // *
-// * Related to entire Equationsystem:
-// * =====
-// * tVars: 1,3
-// * =====
-// *
-// * =====
-// * resEq: 2,1
-// * =====
-// ****************************************
+// *****************************************
 //
 //
 //
@@ -337,25 +327,21 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 //
 //
 // ****************************************
-// * TEARING RESULTS (CASUAL SET):
+// * TEARING RESULTS - CASUAL SET:
+// * (Local Indexes)
 // *
-// * No of equations in strong Component: 4
+// * No of equations in strong component: 4
 // * No of tVars: 1
 // *
 // * tVars: 4
 // *
 // * resEq: 4
 // *
+// * innerEquations ({eqn,vars}):
+// * {2:3}, {1:1}, {3:2}
 // *
-// * Related to entire Equationsystem:
-// * =====
-// * tVars: 3
-// * =====
-// *
-// * =====
-// * resEq: 2
-// * =====
-// ****************************************
+// *****************************************
+//
 //
 // Note:
 // =====
