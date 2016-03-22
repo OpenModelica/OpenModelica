@@ -3359,7 +3359,7 @@ algorithm
   if intGt(teqsys,0) then
     dumpCompTorn(tornTpl,"strict");
   end if;
-  if intGt(teqsys2,0) then
+  if intGt(teqsys2,0) and not stringEqual(Config.dynamicTearing(),"false") then
     dumpCompTorn(tornTpl2,"casual");
   end if;
 end dumpCompShort;
