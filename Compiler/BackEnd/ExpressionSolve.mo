@@ -298,10 +298,8 @@ algorithm
                           else fail();
                          end matchcontinue;
 
- if isPresent(eqnForNewVars) then
-   eqnForNewVars := List.appendNoCopy(eqnForNewVars, eqnForNewVars1);
-   newVarsCrefs := List.appendNoCopy(newVarsCrefs, newVarsCrefs1);
- end if;
+ eqnForNewVars := List.appendNoCopy(eqnForNewVars, eqnForNewVars1);
+ newVarsCrefs := List.appendNoCopy(newVarsCrefs, newVarsCrefs1);
 
 end solveWork;
 
