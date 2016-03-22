@@ -1,0 +1,9 @@
+CC=gcc
+CFLAGS=-O0 -g -std=c99
+CPPFLAGS=-I../../c
+LDFLAGS=-lpthread -lwsock32
+DLLEXT=.dll
+builddir_lib=$(OMBUILDDIR)/lib/omc
+top_builddir=../../../
+
+include Makefile.common

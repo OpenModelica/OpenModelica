@@ -30,60 +30,86 @@
 
 #include "embedded_server.h"
 
-#if  defined(__MINGW32__) || defined(_MSC_VER)
-#include <windows.h>
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include "util/omc_msvc.h"
 #define UPC_DA
+#define DLL_EXT ".dll"
+#elif defined(__APPLE__)
+#include <dlfcn.h>
+#define DLL_EXT ".dylib"
+#else
+#include <dlfcn.h>
+#define DLL_EXT ".so"
 #endif
 
-void no_embedded_server_init(DATA *data, double tout, double step, const char *argv_0)
+void* no_embedded_server_init(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling))
+{
+  return NULL;
+}
+
+void no_embedded_server_deinit(void *handle)
 {
 }
 
-void no_embedded_server_deinit()
+void no_embedded_server_update(void *handle, double tout)
 {
 }
 
-void no_embedded_server_update(double tout)
-{
-}
-
-void (*embedded_server_init)(DATA *data, double tout, double step, const char *argv_0) = no_embedded_server_init;
-void (*embedded_server_deinit)() = no_embedded_server_deinit;
+void* (*embedded_server_init)(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling)) = no_embedded_server_init;
+void (*embedded_server_deinit)(void*) = no_embedded_server_deinit;
 // Tells the embedded server that a simulation step has passed; the server
 // can read/write values from/to the simulator
-void (*embedded_server_update)(double tout) = no_embedded_server_update;
+void (*embedded_server_update)(void*, double tout) = no_embedded_server_update;
 
-void embedded_server_load_functions()
+void* embedded_server_load_functions(const char *server_name)
 {
-  fprintf(stderr, "embedded_server_load_functions\n");
+  void *dll, *funcInit, *funcDeinit, *funcUpdate;
+  if (NULL==server_name || 0==strcmp("none", server_name)) {
+    return NULL;
+  }
+  if (0==strcmp("opc-ua", server_name)) {
+    server_name = "libomopcua" DLL_EXT;
+  } else if (0==strcmp("opc-da", server_name)) {
 #if defined(UPC_DA)
-  const char *dllFile = "C:\\OpenModelica\\OMCompiler\\SimulationRuntime\\opc\\da\\libomopcda.dll";
-  HINSTANCE dll = LoadLibrary(dllFile);
-  void *funcInit, *funcDeinit, *funcUpdate;
+    server_name = "libomopcda" DLL_EXT;
+#else
+    errorStreamPrint(LOG_DEBUG, 0, "OPC DA interface is not available on this platform (requires WIN32)");
+    MMC_THROW();
+#endif
+  }
+  infoStreamPrint(LOG_DEBUG, 0, "Try to load embedded server %s", server_name);
+  dll = dlopen(server_name, RTLD_LAZY);
 
   if (dll == NULL) {
-    infoStreamPrint(LOG_DEBUG, 0, "Failed to load dll: %s\n", dllFile);
-    return;
+    errorStreamPrint(LOG_DEBUG, 0, "Failed to load shared object %s: %s\n", server_name, dlerror());
+    MMC_THROW();
   }
 
-  funcInit = GetProcAddress(dll, "opc_da_init");
+  funcInit = dlsym(dll, "omc_embedded_server_init");
   if (!funcInit) {
-    infoStreamPrint(LOG_DEBUG, 0, "Failed to load function opc_da_init\n");
-    return;
+    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function opc_da_init: %s\n", dlerror());
+    MMC_THROW();
   }
-  funcDeinit = GetProcAddress(dll, "opc_da_deinit");
+  funcDeinit = dlsym(dll, "omc_embedded_server_deinit");
   if (!funcDeinit) {
-    infoStreamPrint(LOG_DEBUG, 0, "Failed to load function opc_da_deinit\n");
-    return;
+    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function opc_da_deinit: %s\n", dlerror());
+    MMC_THROW();
   }
-  funcUpdate = GetProcAddress(dll, "opc_da_new_iteration");
+  funcUpdate = dlsym(dll, "omc_embedded_server_update");
   if (!funcUpdate) {
-    infoStreamPrint(LOG_DEBUG, 0, "Failed to load function opc_da_new_iteration\n");
-    return;
+    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function opc_da_new_iteration: %s\n", dlerror());
+    MMC_THROW();
   }
   embedded_server_init = funcInit;
   embedded_server_deinit = funcDeinit;
   embedded_server_update = funcUpdate;
-  infoStreamPrint(LOG_DEBUG, 0, "Using embedded server=opc_da\n");
-#endif
+  infoStreamPrint(LOG_DEBUG, 0, "Loaded embedded server");
+  return dll;
+}
+
+void embedded_server_unload_functions(void *dllHandle)
+{
+  if (dllHandle) {
+    dlclose(dllHandle);
+  }
 }

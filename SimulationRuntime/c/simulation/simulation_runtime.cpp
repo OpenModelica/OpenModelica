@@ -212,7 +212,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
   delete flags;
 }
 
-int getNonlinearSolverMethod(int argc, char**argv)
+static int getNonlinearSolverMethod()
 {
   int i;
   const char *cflags = omc_flagValue[FLAG_NLS];
@@ -234,7 +234,7 @@ int getNonlinearSolverMethod(int argc, char**argv)
   return NLS_NONE;
 }
 
-int getlinearSolverMethod(int argc, char**argv)
+static int getlinearSolverMethod()
 {
   int i;
   const char *cflags = omc_flagValue[FLAG_LS];
@@ -256,7 +256,7 @@ int getlinearSolverMethod(int argc, char**argv)
   return LS_NONE;
 }
 
-int getNewtonStrategy(int argc, char**argv)
+static int getNewtonStrategy()
 {
   int i;
   const char *cflags = omc_flagValue[FLAG_NEWTON_STRATEGY];
@@ -276,6 +276,20 @@ int getNewtonStrategy(int argc, char**argv)
   throwStreamPrint(NULL,"see last warning");
 
   return NEWTON_NONE;
+}
+
+static double getFlagReal(enum _FLAG flag, double res)
+{
+  const char *flagStr = omc_flagValue[flag];
+  char *endptr;
+  if (flagStr==NULL || *flagStr=='\0') {
+    return res;
+  }
+  res = strtod(flagStr, &endptr);
+  if (*endptr) {
+    throwStreamPrint(NULL, "Simulation flag %s expects a real number, got: %s", FLAG_NAME[flag], flagStr);
+  }
+  return res;
 }
 
 /**
@@ -608,6 +622,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
     TRACE_POP
     return -1;
   }
+  simData->real_time_sync.scaling = getFlagReal(FLAG_RT, 0.0);
 
   if(std::string("") == simData->simulationInfo->solverMethod) {
 #if defined(WITH_DASSL)
@@ -741,9 +756,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     EXIT(1);
   }
 
-  data->simulationInfo->nlsMethod = getNonlinearSolverMethod(argc, argv);
-  data->simulationInfo->lsMethod = getlinearSolverMethod(argc, argv);
-  data->simulationInfo->newtonStrategy = getNewtonStrategy(argc, argv);
+  data->simulationInfo->nlsMethod = getNonlinearSolverMethod();
+  data->simulationInfo->lsMethod = getlinearSolverMethod();
+  data->simulationInfo->newtonStrategy = getNewtonStrategy();
   data->simulationInfo->nlsCsvInfomation = omc_flag[FLAG_NLS_INFO];
 
   rt_tick(SIM_TIMER_INIT_XML);
@@ -866,8 +881,24 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *thre
   }
 #endif
 
-  fprintf(stderr, "_main_SimulationRuntime done\n");
   return retVal;
+}
+
+const char* prettyPrintNanoSec(int64_t ns, int *v)
+{
+  if (ns > 100000000000L || ns < -100000000000L) {
+    *v = ns / 1000000000L;
+    return "s";
+  } if (ns > 100000000L || ns < -100000000L) {
+    *v = ns / 1000000L;
+    return "ms";
+  } else if (ns > 100000L || ns < -100000L) {
+    *v = ns / 1000L;
+    return "µs";
+  } else {
+    *v = ns;
+    return "ns";
+  }
 }
 
 } // extern "C"

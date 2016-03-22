@@ -52,6 +52,7 @@
 #include "linearSystem.h"
 #include "sym_imp_euler.h"
 #include "simulation/solver/embedded_server.h"
+#include "simulation/solver/real_time_sync.h"
 
 #include "optimization/OptimizerInterface.h"
 
@@ -161,6 +162,8 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   int i;
 
   SIMULATION_INFO *simInfo = data->simulationInfo;
+
+  simInfo->useStopTime = 1;
 
   /* if the given step size is too small redefine it */
   if ((simInfo->stepSize < MINIMAL_STEP_SIZE) && (simInfo->stopTime > 0)){
@@ -617,6 +620,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   unsigned int ui;
   SOLVER_INFO solverInfo;
   SIMULATION_INFO *simInfo = data->simulationInfo;
+  void *dllHandle=NULL;
 
   solverInfo.solverMethod = solverID;
 
@@ -654,8 +658,9 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   }
   omc_alloc_interface.collect_a_little();
 
-  embedded_server_load_functions();
-  embedded_server_init(data, data->localData[0]->timeValue, solverInfo.currentStepSize, argv_0);
+  dllHandle = embedded_server_load_functions(omc_flagValue[FLAG_EMBEDDED_SERVER]);
+  omc_real_time_sync_init(threadData, data);
+  data->embeddedServerState = embedded_server_init(data, data->localData[0]->timeValue, solverInfo.currentStepSize, argv_0, omc_real_time_sync_update);
 
   if(0 == retVal) {
     /* if the model has no time changing variables skip the main loop*/
@@ -709,9 +714,13 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     }
   }
 
-  fprintf(stderr, "call embedded_server_deinit\n");
-  embedded_server_deinit();
-  fprintf(stderr, "call embedded_server_deinit done\n");
+  if (data->real_time_sync.enabled) {
+    int tMaxLate=0;
+    const char *unit = prettyPrintNanoSec(data->real_time_sync.maxLate, &tMaxLate);
+    infoStreamPrint(LOG_RT, 0, "Maximum real-time latency was (positive=missed dealine, negative is slack): %d %s", tMaxLate, unit);
+  }
+  embedded_server_deinit(data->embeddedServerState);
+  embedded_server_unload_functions(dllHandle);
 
   /* free SolverInfo memory */
   freeSolverData(data, &solverInfo);

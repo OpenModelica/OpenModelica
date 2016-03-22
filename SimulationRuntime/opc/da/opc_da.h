@@ -17,14 +17,14 @@ struct Group {
 };
 
 // Initializes OPC DA server
-int opc_da_init(DATA *data, double tout, double step, const char *argv_0);
+int omc_embedded_server_init(DATA *data, double tout, double step, const char *argv_0);
 
 // Deinitializes OPC DA server
-void opc_da_deinit();
+void omc_embedded_server_deinit();
 
 // Tells the OPC UA server that a simulation step has passed; the server
 // can read/write values from/to the simulator
-void opc_da_new_iteration(double tout);
+void omc_embedded_server_update(double tout);
 
 #ifdef __cplusplus
 }

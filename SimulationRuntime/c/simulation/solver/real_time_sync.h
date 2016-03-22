@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,23 +28,18 @@
  *
  */
 
-#ifndef __OMC_EMBEDDED_SERVER_H
-#define __OMC_EMBEDDED_SERVER_H
-
-#include "simulation_data.h"
+#ifndef __OMC_REAL_TIME_SYNC__H
+#define __OMC_REAL_TIME_SYNC__H
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-extern void* (*embedded_server_init)(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling));
-extern void (*embedded_server_deinit)(void *handle);
-// Tells the embedded server that a simulation step has passed; the server
-// can read/write values from/to the simulator
-extern void (*embedded_server_update)(void *handle, double tout);
-/* Give the filename or generic name to use for loading an embedded server */
-extern void* embedded_server_load_functions(const char *name);
-extern void embedded_server_unload_functions(void *dllHandle);
+#include "simulation_data.h"
+#include "util/rtclock.h"
+
+void omc_real_time_sync_init(threadData_t *threadData, DATA *data);
+void omc_real_time_sync_update(DATA *data, double scaling);
 
 #if defined(__cplusplus)
 }

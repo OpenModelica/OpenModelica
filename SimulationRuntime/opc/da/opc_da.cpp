@@ -496,7 +496,7 @@ static int adopcsFree(void *aPointer)
 
 // Functions used by the simulator
 
-extern "C" int opc_da_init(DATA *data, double tout, double step, const char *argv_0)
+extern "C" int omc_embedded_server_init(DATA *data, double tout, double step, const char *argv_0)
 {
   globalData = data;
 
@@ -585,7 +585,7 @@ extern "C" int opc_da_init(DATA *data, double tout, double step, const char *arg
   return res;
 }
 
-extern "C" void opc_da_deinit()
+extern "C" void omc_embedded_server_deinit()
 {
   pthread_mutex_unlock(&mutex_write);
   // Do not cut the DA connection when the simulation is finished.
@@ -600,7 +600,7 @@ extern "C" void opc_da_deinit()
   uninitCOM();
 }
 
-extern "C" void opc_da_new_iteration(double tout)
+extern "C" void omc_embedded_server_update(double tout)
 {
   // The state of the simulation can be altered only during opc_da_new_iteration(tout) call.
   fprintf(stderr, "opc_da_new_iteration %.8g\n", tout);
@@ -641,7 +641,7 @@ extern "C" void opc_da_new_iteration(double tout)
   pthread_mutex_unlock(&mutex_groups);
 
   if (opc_da_write_performed()) {
-	// If a write operation is performed, restart the simulation
-	std::cout << "TODO: Restart simulation" << std::endl;
+  // If a write operation is performed, restart the simulation
+  std::cout << "TODO: Restart simulation" << std::endl;
   }
 }

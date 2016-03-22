@@ -82,6 +82,9 @@ extern void communicateMsg(char id, unsigned int size, const char *data);
  */
 extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
 
+
+const char* prettyPrintNanoSec(int64_t ns, int *v);
+
 #ifdef __cplusplus
 }
 #endif

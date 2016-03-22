@@ -170,41 +170,19 @@ typedef struct EXTERNAL_INPUT
 }EXTERNAL_INPUT;
 
 /* Alias data with various types*/
-typedef struct DATA_REAL_ALIAS
+typedef struct DATA_ALIAS
 {
   int negate;
   int nameID;                          /* pointer to Alias */
   char aliasType;                      /* 0 variable, 1 parameter, 2 time */
   VAR_INFO info;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
-}DATA_REAL_ALIAS;
+} DATA_ALIAS;
 
-typedef struct DATA_INTEGER_ALIAS
-{
-  int negate;
-  int nameID;
-  char aliasType;                      /* 0 variable, 1 parameter */
-  VAR_INFO info;
-  modelica_boolean filterOutput;       /* true if this variable should be filtered */
-}DATA_INTEGER_ALIAS;
-
-typedef struct DATA_BOOLEAN_ALIAS
-{
-  int negate;
-  int nameID;
-  char aliasType;                      /* 0 variable, 1 parameter */
-  VAR_INFO info;
-  modelica_boolean filterOutput;       /* true if this variable should be filtered */
-}DATA_BOOLEAN_ALIAS;
-
-typedef struct DATA_STRING_ALIAS
-{
-  int negate;
-  int nameID;
-  char aliasType;                      /* 0 variable, 1 parameter */
-  VAR_INFO info;
-  modelica_boolean filterOutput;       /* true if this variable should be filtered */
-}DATA_STRING_ALIAS;
+typedef DATA_ALIAS DATA_REAL_ALIAS;
+typedef DATA_ALIAS DATA_INTEGER_ALIAS;
+typedef DATA_ALIAS DATA_BOOLEAN_ALIAS;
+typedef DATA_ALIAS DATA_STRING_ALIAS;
 
 /* collect all attributes from one variable in one struct */
 typedef struct REAL_ATTRIBUTE
@@ -519,6 +497,7 @@ typedef struct SIMULATION_INFO
 {
   modelica_real startTime;
   modelica_real stopTime;
+  int useStopTime;
   modelica_integer numSteps;
   modelica_real stepSize;
   modelica_real tolerance;
@@ -624,6 +603,14 @@ typedef struct SIMULATION_DATA
 
 }SIMULATION_DATA;
 
+typedef struct {
+  int enabled;
+  double scaling;
+  double time;
+  rtclock_t clock;
+  int64_t maxLate;
+} real_time_sync_t;
+
 /* top-level struct to collect dynamic and static model data */
 typedef struct DATA
 {
@@ -632,6 +619,8 @@ typedef struct DATA
   MODEL_DATA *modelData;                /* static stuff */
   SIMULATION_INFO *simulationInfo;
   struct OpenModelicaGeneratedFunctionCallbacks *callback;
+  void *embeddedServerState; /* Variable sent around controlling the state of the embedded server */
+  real_time_sync_t real_time_sync;
 } DATA;
 
 #include "openmodelica_func.h"

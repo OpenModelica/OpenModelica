@@ -66,6 +66,7 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_NLS_RES",
   "LOG_NLS_EXTRAPOLATE",
   "LOG_RES_INIT",
+  "LOG_RT",
   "LOG_SIMULATION",
   "LOG_SOLVER",
   "LOG_SOLVER_CONTEXT",
@@ -109,6 +110,7 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "outputs every evaluation of the residual function",  /* LOG_NLS_RES */
   "outputs debug information about extrapolate process",/* LOG_NLS_EXTRAPOLATE */
   "outputs residuals of the initialization",            /* LOG_RES_INIT */
+  "additional information regarding real-time processes"/* LOG_RT */
   "additional information about simulation process",    /* LOG_SIMULATION */
   "additional information about solver process",        /* LOG_SOLVER */
   "context information during the solver process",      /* LOG_SOLVER_CONTEXT" */

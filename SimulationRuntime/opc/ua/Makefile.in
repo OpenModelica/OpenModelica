@@ -1,0 +1,13 @@
+CC=@CC@
+CFLAGS=-O0 -g -fPIC -fvisibility=hidden
+CPPFLAGS=-I../../c
+DLLEXT=@DLLEXT@
+LDFLAGS=-lpthread
+OMBUILDDIR=@OMBUILDDIR@
+builddir_lib=$(OMBUILDDIR)/lib/@host_short@/omc
+top_builddir=@top_builddir@
+
+include Makefile.common
+
+Makefile: Makefile.in
+	cd "@top_builddir@" ; ./config.status

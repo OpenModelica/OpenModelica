@@ -50,6 +50,7 @@
 
 #include "simulation/solver/synchronous.h"
 #include "simulation/solver/embedded_server.h"
+#include "simulation/solver/real_time_sync.h"
 
 /*! \fn updateContinuousSystem
  *
@@ -100,7 +101,6 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
       cleanUpOldValueListAfterEvent(data, solverInfo->currentTime);
       messageClose(LOG_EVENTS);
       threadData->currentErrorStage = ERROR_SIMULATION;
-
       solverInfo->didEventStep = 1;
       overwriteOldSimulationData(data);
     }
@@ -216,8 +216,21 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
   if ((omc_flag[FLAG_NOEVENTEMIT] && didEventStep == 0) || !omc_flag[FLAG_NOEVENTEMIT]) {
     sim_result.emit(&sim_result, data, threadData);
   }
-  fprintf(stderr, "call embedded_server_update\n");
-  embedded_server_update(data->localData[0]->timeValue);
+  embedded_server_update(data->embeddedServerState, data->localData[0]->timeValue);
+  if (data->real_time_sync.enabled) {
+    double time = data->localData[0]->timeValue;
+    int64_t res = rt_ext_tp_sync_nanosec(&data->real_time_sync.clock, (uint64_t) (data->real_time_sync.scaling*(time-data->real_time_sync.time)*1e9));
+    int64_t maxLateNano = data->simulationInfo->stepSize*1e9*0.1*data->real_time_sync.scaling /* Maximum late time: 10% of step size */;
+    if (res > maxLateNano) {
+      int t=0,tMaxLate=0;
+      const char *unit = prettyPrintNanoSec(res, &t);
+      const char *unit2 = prettyPrintNanoSec(maxLateNano, &tMaxLate);
+      errorStreamPrint(LOG_RT, 0, "Missed deadline at time %g; delta was %d %s (maxLate=%d %s)", time, t, unit, tMaxLate, unit2);
+    }
+    if (res > data->real_time_sync.maxLate) {
+      data->real_time_sync.maxLate = res;
+    }
+  }
 
   printAllVarsDebug(data, 0, LOG_DEBUG);  /* ??? */
 }
@@ -316,7 +329,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
   modelica_boolean syncStep = 0;
 
   /***** Start main simulation loop *****/
-  while(solverInfo->currentTime < simInfo->stopTime)
+  while(solverInfo->currentTime < simInfo->stopTime || !simInfo->useStopTime)
   {
     int success = 0;
     threadData->currentErrorStage = ERROR_SIMULATION;

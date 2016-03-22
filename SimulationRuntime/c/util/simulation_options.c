@@ -41,6 +41,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_DASSL_JACOBIAN */        "dasslJacobian",
   /* FLAG_DASSL_NO_RESTART */      "dasslnoRestart",
   /* FLAG_DASSL_NO_ROOTFINDING */  "dasslnoRootFinding",
+  /* FLAG_EMBEDDED_SERVER */       "embeddedServer",
   /* FLAG_EMIT_PROTECTED */        "emit_protected",
   /* FLAG_F */                     "f",
   /* FLAG_HELP */                  "help",
@@ -82,6 +83,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_OVERRIDE_FILE */         "overrideFile",
   /* FLAG_PORT */                  "port",
   /* FLAG_R */                     "r",
+  /* FLAG_RT */                    "rt",
   /* FLAG_S */                     "s",
   /* FLAG_UP_HESSIAN */            "keepHessian",
   /* FLAG_W */                     "w",
@@ -100,6 +102,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DASSL_JACOBIAN */        "selects the type of the jacobians that is used for the dassl solver.\n  dasslJacobian=[coloredNumerical (default) |numerical|internalNumerical|coloredSymbolical|symbolical].",
   /* FLAG_DASSL_NO_RESTART */      "flag deactivates the restart of dassl after an event is performed.",
   /* FLAG_DASSL_NO_ROOTFINDING */  "flag deactivates the internal root finding procedure of dassl.",
+  /* FLAG_EMBEDDED_SERVER */       "enables an embedded server. Valid values: none, opc-da [broken], opc-ua [experimental], or the path to a shared object.",
   /* FLAG_EMIT_PROTECTED */        "emits protected variables to the result-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get detailed information that specifies the command-line flag",
@@ -141,6 +144,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_OVERRIDE_FILE */         "will override the variables or the simulation settings in the XML setup file with the values from the file",
   /* FLAG_PORT */                  "value specifies the port for simulation status (default disabled)",
   /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
+  /* FLAG_RT */                    "value specifies the scaling factor for real-time synchronization (0 disables)",
   /* FLAG_S */                     "value specifies the solver",
   /* FLAG_UP_HESSIAN */            "value specifies the number of steps, which keep hessian matrix constant",
   /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
@@ -174,6 +178,12 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Deactivates the restart of dassl after an event is performed.",
   /* FLAG_DASSL_NO_ROOTFINDING */
   "  Deactivates the internal root finding procedure of dassl.",
+  /* FLAG_EMBEDDED_SERVER */
+  "  Enables an embedded server. Valid values:\n"
+  "  * none - default, run without embedded server\n"
+  "  * opc-da - [broken] run with embedded OPC DA server (WIN32 only, uses proprietary OPC SC interface)\n"
+  "  * opc-ua - [experimental] run with embedded OPC UA server (TCP port 4841 for now; will have its own configuration option later)\n"
+  "  * filename - path to a shared object implementing the embedded server interface (requires access to internal OMC data-structures if you want to read or write data)\n",
   /* FLAG_EMIT_PROTECTED */
   "  Emits protected variables to the result-file.",
   /* FLAG_F */
@@ -284,6 +294,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the name of the output result file.\n"
   "  The default file-name is based on the model name and output format.\n"
   "  For example: Model_res.mat.",
+  /* FLAG_RT */
+  "  Value specifies the scaling factor for real-time synchronization (0 disables).\n"
+  "  A value > 1 means the simulation takes a longer time to simulate.\n",
   /* FLAG_S */
   "  Value specifies the solver (integration method).",
   /* FLAG_UP_HESSIAN */
@@ -305,6 +318,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_DASSL_JACOBIAN */        FLAG_TYPE_OPTION,
   /* FLAG_DASSL_NO_RESTART */      FLAG_TYPE_FLAG,
   /* FLAG_DASSL_NO_ROOTFINDING */  FLAG_TYPE_FLAG,
+  /* FLAG_EMBEDDED_SERVER */       FLAG_TYPE_OPTION,
   /* FLAG_EMIT_PROTECTED */        FLAG_TYPE_FLAG,
   /* FLAG_F */                     FLAG_TYPE_OPTION,
   /* FLAG_HELP */                  FLAG_TYPE_OPTION,
@@ -346,6 +360,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_OVERRIDE_FILE */         FLAG_TYPE_OPTION,
   /* FLAG_PORT */                  FLAG_TYPE_OPTION,
   /* FLAG_R */                     FLAG_TYPE_OPTION,
+  /* FLAG_RT */                    FLAG_TYPE_OPTION,
   /* FLAG_S */                     FLAG_TYPE_OPTION,
   /* FLAG_UP_HESSIAN */            FLAG_TYPE_OPTION,
   /* FLAG_W */                     FLAG_TYPE_FLAG

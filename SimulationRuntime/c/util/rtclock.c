@@ -35,6 +35,9 @@
 #include <string.h>
 #include "omc_msvc.h"
 #include "memory_pool.h"
+#include <errno.h>
+#include "util/omc_error.h"
+#define NSEC_PER_SEC 1000000000L
 
 /* If min_time is set, subtract this amount from measured times to avoid
  * including the time of measuring in reported statistics */
@@ -172,6 +175,10 @@ int rt_set_clock(enum omc_rt_clock_t newClock) {
   return 0;
 }
 
+enum omc_rt_clock_t rt_get_clock() {
+  return selectedClock;
+}
+
 static LARGE_INTEGER performance_frequency;
 
 void rt_tick(int ix) {
@@ -255,13 +262,7 @@ double rtclock_value(LARGE_INTEGER tp) {
 
 void rt_ext_tp_tick(rtclock_t* tick_tp) {
   if(selectedClock == OMC_CLOCK_REALTIME) {
-    static int init = 0;
-    if (!init) {
-
-      init = 1;
-      QueryPerformanceFrequency(&performance_frequency);
-    }
-    QueryPerformanceCounter(tick_tp);
+    rt_ext_tp_tick_realtime(tick_tp);
   } else {
     LARGE_INTEGER time;
     time.QuadPart = RDTSC();
@@ -269,15 +270,29 @@ void rt_ext_tp_tick(rtclock_t* tick_tp) {
   }
 }
 
+void rt_ext_tp_tick_realtime(rtclock_t* tick_tp) {
+  static int init = 0;
+  if (!init) {
+
+    init = 1;
+    QueryPerformanceFrequency(&performance_frequency);
+  }
+  QueryPerformanceCounter(tick_tp);
+}
+
+double rt_ext_tp_tock_realtime(rtclock_t* tick_tp) {
+  LARGE_INTEGER tock_tp;
+  double d1, d2;
+  QueryPerformanceCounter(&tock_tp);
+  d1 = (double) (tock_tp.QuadPart - tick_tp->QuadPart);
+  d2 = (double) performance_frequency.QuadPart;
+  return d1 / d2;
+}
+
 double rt_ext_tp_tock(rtclock_t* tick_tp) {
   double d;
   if(selectedClock == OMC_CLOCK_REALTIME) {
-    LARGE_INTEGER tock_tp;
-    double d1, d2;
-    QueryPerformanceCounter(&tock_tp);
-    d1 = (double) (tock_tp.QuadPart - tick_tp->QuadPart);
-    d2 = (double) performance_frequency.QuadPart;
-    d = d1 / d2;
+    d = rt_ext_tp_tock_realtime(tick_tp);
   } else {
     LARGE_INTEGER tock_tp;
     tock_tp.QuadPart = RDTSC();
@@ -287,6 +302,26 @@ double rt_ext_tp_tock(rtclock_t* tick_tp) {
     min_time = d;
   }
   return d - min_time;
+}
+
+int64_t rt_ext_tp_sync_nanosec(rtclock_t* tick_tp, uint64_t nsec)
+{
+  int64_t res = rt_ext_tp_tock_realtime(tick_tp)*1e9 - nsec;
+  double d=0;
+  if (res > 0) {
+    return res;
+  }
+  do {
+    d = nsec*1e-9 - rt_ext_tp_tock_realtime(tick_tp);
+    if (d < 0) {
+      break;
+    } if (d >= 2e-3) {
+      Sleep((int)d*1e3);
+    } else {
+      Sleep(0);
+    }
+  } while (1);
+  return res;
 }
 
 #elif defined(__APPLE_CC__)
@@ -386,6 +421,10 @@ int rt_set_clock(enum omc_rt_clock_t newClock) {
   return 0;
 }
 
+enum omc_rt_clock_t rt_get_clock() {
+  return omc_clock==OMC_CLOCK_MONOTONIC ? OMC_CLOCK_REALTIME : OMC_CLOCK_CPUTIME;
+}
+
 #if defined(__i386__)
 static inline unsigned long long RDTSC(void)
 {
@@ -478,6 +517,45 @@ void rt_clear_total(int ix)
   }
 }
 
+static inline struct timespec timeSpecAdd(struct timespec  t1, struct timespec t2)
+{
+  struct timespec res;
+  res.tv_sec = t1.tv_sec + t2.tv_sec;
+  res.tv_nsec = t1.tv_nsec + t2.tv_nsec;
+  if (res.tv_nsec >= 1000000000L) {
+    res.tv_sec++;
+    res.tv_nsec -= 1000000000L;
+  }
+  return res;
+}
+
+static inline struct timespec timeSpecSub(struct timespec  t1, struct timespec t2)
+{
+  struct timespec res;
+  res.tv_sec = t2.tv_sec - t1.tv_sec;
+  res.tv_nsec = t2.tv_nsec - t1.tv_nsec;
+  if (res.tv_nsec < 0) {
+    res.tv_sec--;
+    res.tv_nsec += 1000000000L;
+  }
+  return res;
+}
+
+static inline int timeSpecCmp(struct timespec  t1, struct timespec t2)
+{
+  if (t2.tv_sec > t1.tv_sec) {
+    return 1;
+  } else if (t2.tv_sec < t1.tv_sec) {
+    return -1;
+  }
+  if (t2.tv_nsec > t1.tv_nsec) {
+    return 1;
+  } else if (t2.tv_nsec < t1.tv_nsec) {
+    return -1;
+  }
+  return 0;
+}
+
 void rt_accumulate(int ix) {
   if(omc_clock == OMC_CPU_CYCLES) {
     long long cycles = RDTSC();
@@ -524,20 +602,56 @@ void rt_ext_tp_tick(rtclock_t* tick_tp) {
   }
 }
 
-double rt_ext_tp_tock(rtclock_t* tick_tp) {
+void rt_ext_tp_tick_realtime(rtclock_t* tick_tp) {
+  clock_gettime(CLOCK_MONOTONIC, &tick_tp->time);
+}
+
+static inline double rt_ext_tp_tock_common(clockid_t clk_id, rtclock_t* tick_tp) {
   double d;
-  if(omc_clock == OMC_CPU_CYCLES) {
-    unsigned long long timer = RDTSC();
-    d = (double) (timer - tick_tp->cycles);
-  } else {
-    struct timespec tock_tp = {0,0};
-    clock_gettime(omc_clock, &tock_tp);
-    d = (tock_tp.tv_sec - tick_tp->time.tv_sec) + (tock_tp.tv_nsec - tick_tp->time.tv_nsec)*1e-9;
-    if (d < min_time) {
-      min_time = d;
-    }
+  struct timespec tock_tp = {0,0};
+  clock_gettime(clk_id, &tock_tp);
+  d = (tock_tp.tv_sec - tick_tp->time.tv_sec) + (tock_tp.tv_nsec - tick_tp->time.tv_nsec)*1e-9;
+  if (d < min_time) {
+    min_time = d;
   }
   return d - min_time;
+}
+
+double rt_ext_tp_tock_realtime(rtclock_t* tick_tp) {
+  return rt_ext_tp_tock_common(CLOCK_MONOTONIC, tick_tp);
+}
+
+double rt_ext_tp_tock(rtclock_t* tick_tp) {
+  if(omc_clock == OMC_CPU_CYCLES) {
+    unsigned long long timer = RDTSC();
+    double d = (double) (timer - tick_tp->cycles);
+    return d - min_time;
+  } else {
+    return rt_ext_tp_tock_common(omc_clock, tick_tp);
+  }
+}
+
+int64_t rt_ext_tp_sync_nanosec(rtclock_t* tick_tp, uint64_t nsec)
+{
+  int64_t res=0;
+  int res_sleep=0;
+  struct timespec remain = {.tv_sec=nsec/NSEC_PER_SEC, .tv_nsec= nsec%NSEC_PER_SEC};
+  struct timespec sleepTime = timeSpecAdd(tick_tp->time, remain);
+  struct timespec curTime;
+  struct timespec late;
+  clock_gettime(CLOCK_MONOTONIC, &curTime);
+  late = timeSpecSub(sleepTime, curTime);
+  res = late.tv_sec*NSEC_PER_SEC + late.tv_nsec;
+  if (res > 0) {
+    return res;
+  }
+  do {
+    res_sleep = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &sleepTime, NULL);
+    if (res_sleep != 0 && res != EINTR) {
+      throwStreamPrint(NULL, "rt_ext_tp_sync_nanosec: %s\n", strerror(res));
+    }
+  } while (res_sleep==EINTR);
+  return res;
 }
 
 #endif

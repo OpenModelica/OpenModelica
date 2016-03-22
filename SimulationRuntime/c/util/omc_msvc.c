@@ -216,6 +216,55 @@ char *mkdtemp(char *tpl)
 
   return NULL;
 }
+
+void* omc_dlopen(const char *filename, int flag)
+{
+  return (void*) LoadLibrary(filename);
+}
+
+#include <windows.h>
+
+static const char* GetLastErrorAsString()
+{
+  static char *str = NULL;
+  //Get the error message, if any.
+  DWORD errorMessageID = GetLastError();
+  if (errorMessageID == 0) {
+    return ""; //No error message has been recorded
+  }
+
+  LPSTR messageBuffer = NULL;
+  size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                               NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+
+  if (str != NULL) {
+    free(str);
+    str = NULL;
+  }
+  str = malloc(size+1);
+  memcpy(str, messageBuffer, size);
+  str[size] = '\0';
+
+  //Free the buffer.
+  LocalFree(messageBuffer);
+
+  return str;
+}
+
+char* omc_dlerror()
+{
+  return GetLastErrorAsString();
+}
+
+void *omc_dlsym(void *handle, const char *symbol)
+{
+  return (void*) GetProcAddress(handle, symbol);
+}
+
+int omc_dlclose(void *handle)
+{
+  return FreeLibrary(handle);
+}
 #endif
 
 #ifdef __cplusplus
