@@ -17,7 +17,7 @@ settingsStr :=
   ;
 setCommandLineOptions("-d=nogen");
 if not regularFileExists("CustomCommands.mos") then
-  customCommands := "setCommandLineOptions(\"-d=nogen,initialization,backenddaeinfo,discreteinfo,stateselection\");
+  customCommands := "setCommandLineOptions(\"-d=nogen,initialization,backenddaeinfo,discreteinfo,stateselection,execstat\");
 setMatchingAlgorithm(\"PFPlusExt\");
 setIndexReductionMethod(\"dynamicStateSelection\");";
   writeFile("CustomCommands.mos",customCommands);
