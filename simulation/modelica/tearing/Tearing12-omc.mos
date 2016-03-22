@@ -48,9 +48,6 @@ simulate(Tearing12); getErrorString();
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 1 {(31,100.0%) 294}
 //  * Non-linear torn systems: 0
-// Notification: Torn system details for casual tearing set:
-//  * Linear torn systems: 1 {(0,0.0%) 0}
-//  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 643
 //  * Number of states: 62 ('+d=stateselection' for list of states)
@@ -69,9 +66,6 @@ simulate(Tearing12); getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 1 {(31,100.0%) 269}
-//  * Non-linear torn systems: 0
-// Notification: Torn system details for casual tearing set:
-//  * Linear torn systems: 1 {(0,0.0%) 0}
 //  * Non-linear torn systems: 0
 // "
 // endResult

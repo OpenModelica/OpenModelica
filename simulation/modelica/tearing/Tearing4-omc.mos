@@ -78,9 +78,6 @@ val(k,0.0); getErrorString();
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 1 {(1,100.0%) 2}
 //  * Non-linear torn systems: 0
-// Notification: Torn system details for casual tearing set:
-//  * Linear torn systems: 1 {(0,0.0%) 0}
-//  * Non-linear torn systems: 0
 // "
 // 1.0
 // ""

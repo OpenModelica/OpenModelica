@@ -62,9 +62,6 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit3_res.m
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 2 {(1,100.0%) 2,(1,100.0%) 2}
 //  * Non-linear torn systems: 0
-// Notification: Torn system details for casual tearing set:
-//  * Linear torn systems: 2 {(0,0.0%) 0,(0,0.0%) 0}
-//  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 5
 //  * Number of states: 2 (capacitor.v,capacitor1.v)
@@ -83,9 +80,6 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit3_res.m
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 2 {(1,100.0%) 2,(1,100.0%) 2}
-//  * Non-linear torn systems: 0
-// Notification: Torn system details for casual tearing set:
-//  * Linear torn systems: 2 {(0,0.0%) 0,(0,0.0%) 0}
 //  * Non-linear torn systems: 0
 // "
 // {"Files Equal!"}

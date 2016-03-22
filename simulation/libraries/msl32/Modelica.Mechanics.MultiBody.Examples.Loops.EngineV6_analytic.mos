@@ -55,9 +55,6 @@ runScript(modelTesting);getErrorString();
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 1 {(1,100.0%) 392}
 //  * Non-linear torn systems: 0
-// Notification: Torn system details for casual tearing set:
-//  * Linear torn systems: 1 {(0,0.0%) 0}
-//  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 310
 //  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
@@ -76,9 +73,6 @@ runScript(modelTesting);getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 1 {(1,100.0%) 331}
-//  * Non-linear torn systems: 0
-// Notification: Torn system details for casual tearing set:
-//  * Linear torn systems: 1 {(0,0.0%) 0}
 //  * Non-linear torn systems: 0
 //
 // "true

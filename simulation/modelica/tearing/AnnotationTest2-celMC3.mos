@@ -47,9 +47,6 @@ simulate(AnnotationTest2); getErrorString();
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 0
 //  * Non-linear torn systems: 1 {1 5}
-// Notification: Torn system details for casual tearing set:
-//  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {0 0}
 // Warning: The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use +d=tearingdump and +d=tearingdumpV for more information.
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
@@ -70,8 +67,5 @@ simulate(AnnotationTest2); getErrorString();
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 0
 //  * Non-linear torn systems: 1 {1 5}
-// Notification: Torn system details for casual tearing set:
-//  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {0 0}
 // "
 // endResult

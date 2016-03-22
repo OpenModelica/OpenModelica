@@ -62,9 +62,6 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit4_res.m
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 6 {(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2}
 //  * Non-linear torn systems: 0
-// Notification: Torn system details for casual tearing set:
-//  * Linear torn systems: 6 {(0,0.0%) 0,(0,0.0%) 0,(0,0.0%) 0,(0,0.0%) 0,(0,0.0%) 0,(0,0.0%) 0}
-//  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 6 (C1.v,C2.v,C3.v,C4.v,C5.v,C6.v)
@@ -83,9 +80,6 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit4_res.m
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 6 {(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2}
-//  * Non-linear torn systems: 0
-// Notification: Torn system details for casual tearing set:
-//  * Linear torn systems: 6 {(0,0.0%) 0,(0,0.0%) 0,(0,0.0%) 0,(0,0.0%) 0,(0,0.0%) 0,(0,0.0%) 0}
 //  * Non-linear torn systems: 0
 // "
 // {"Files Equal!"}
