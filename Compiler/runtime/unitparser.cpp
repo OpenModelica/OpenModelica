@@ -34,6 +34,7 @@
 #include <sstream>
 #include <stack>
 #include "omc_msvc.h" /* For round() */
+#include "meta_modelica.h"
 
 #ifndef NO_LPLIB
 
@@ -286,6 +287,15 @@ UnitParser::~UnitParser() {
 
 void UnitParser::addPrefix(const string symbol, Rational exponent) {
   _prefix[symbol] = exponent;
+}
+
+void* UnitParser::allUnitSymbols()
+{
+  void* res = mmc_mk_nil();
+  for (map<string, Unit>::iterator p = _units.begin(); p != _units.end(); p++) {
+    res = mmc_mk_cons(mmc_mk_scon((*p).second.unitSymbol.c_str()), res);
+  }
+  return res;
 }
 
 void UnitParser::addBase(const string quantityName, const string unitName,

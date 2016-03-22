@@ -55,6 +55,11 @@ void UnitParserExtImpl__registerWeight(const char *name, double weight)
  unitParser->accumulateWeight(name,weight);
 }
 
+void* UnitParserExtImpl__allUnitSymbols()
+{
+  return unitParser->allUnitSymbols();
+}
+
 void UnitParserExtImpl__addBase(const char *name)
 {
    //cout << "addBase(" << name << ")"<<endl;

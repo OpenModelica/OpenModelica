@@ -827,6 +827,20 @@ algorithm
       then
         (cache,Values.TUPLE({Values.BOOL(false),Values.REAL(1.0),Values.REAL(0.0)}),st);
 
+    case (cache,_,"getDerivedUnits",{Values.STRING(str1)},st,_)
+      equation
+        Error.clearMessages() "Clear messages";
+        UnitParserExt.initSIUnits();
+        u1 = UnitAbsynBuilder.str2unit(str1, NONE());
+        strs = UnitAbsynBuilder.getDerivedUnits(u1, str1);
+        v = ValuesUtil.makeArray(List.map(strs, ValuesUtil.makeString));
+      then
+        (cache,v,st);
+
+    case (cache,_,"getDerivedUnits",{Values.STRING(str1)},st,_)
+      then
+        (cache,ValuesUtil.makeArray({}),st);
+
     case (cache,_,"getClassInformation",{Values.CODE(Absyn.C_TYPENAME(className))},st as GlobalScript.SYMBOLTABLE(),_)
       equation
         v = getClassInformation(className, st.ast);

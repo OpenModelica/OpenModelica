@@ -227,6 +227,8 @@ public:
   /** Add prefix symbols. E.g. "m" has exponent -3, (m=10^-3) */
   void addPrefix(const string symbol, Rational exponent);
 
+  void* allUnitSymbols();
+
   /**
     Add a base quantity/unit
       @param prefixAllowed Normally set to true. Should be false for [kg], since we are not allowed to prefix this base unit.
