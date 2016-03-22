@@ -719,10 +719,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   #      https://trac.modelica.org/Modelica/ticket/1962
   #  - add the target triplet, e.g. i686-w64-mingw32, to
   #      OMCompiler/SimulationRuntime/cpp/Makefile
-  #  - provide a link to boost includes outside /usr/include, e.g.
-  #      ln -s /usr/include/boost OMCompiler/SimulationRuntime/cpp/boost
   #  - rebuild omc to add the new platform
-  #  - link boost includes in the work directory and invoke the omc commands
+  #  - invoke the omc commands
   #      setCommandLineOptions("+simCodeTarget=Cpp");
   #      buildModelFMU(MyModel, platforms={"i686-w64-mingw32"});
   #  - alternatively call this Makefile with
