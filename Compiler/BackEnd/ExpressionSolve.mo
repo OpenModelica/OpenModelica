@@ -1276,7 +1276,7 @@ author: vitalij
      guard expHasCref(inExp, X)
      equation
        //print("\nfIn: ");print(ExpressionDump.printExpStr(inExp));
-       (e,_,b) = Inline.forceInlineExp(inExp,(functions,{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
+       (e,_,b) = Inline.forceInlineExp(inExp,(functions,{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
        //print("\nfOut: ");print(ExpressionDump.printExpStr(e));
      then (e, not b, iT);
    else (inExp, true, iT);

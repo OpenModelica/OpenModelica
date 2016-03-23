@@ -2750,7 +2750,7 @@ algorithm
 
     // use the inlined function to analyze the ocuring variables
     case (DAE.CALL(), tpl as (_, _, SOME(functionTree))) equation
-      (e1,(_, true, _)) = Inline.forceInlineCall(inExp, ((SOME(functionTree), {DAE.NORM_INLINE(),DAE.NO_INLINE()}),false,{}));
+      (e1,(_, true, _)) = Inline.forceInlineCall(inExp, ((SOME(functionTree), {DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),false,{}));
       (_, tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
     then (inExp, false, tpl);
 
@@ -5664,7 +5664,7 @@ algorithm
   case (false,_,(_,_,funcs,_))
     equation
       // try to inline
-      (e,_,true) = Inline.forceInlineExp(inExp,(funcs,{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
+      (e,_,true) = Inline.forceInlineExp(inExp,(funcs,{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
       e = Expression.addNoEventToRelations(e);
       (e,(_,_,_,notfound)) = Expression.traverseExpTopDown(e, getEqnsysRhsExp1, iTpl);
     then

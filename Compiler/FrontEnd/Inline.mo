@@ -803,7 +803,7 @@ algorithm
 
     case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)),(fns,_,assrtLstIn))
       equation
-        true = DAEUtil.convertInlineTypeToBool(inlineType);
+        //true = DAEUtil.convertInlineTypeToBool(inlineType);
         true = checkInlineType(inlineType,fns);
         (fn,comment) = getFunctionBody(p,fns);
         if (Config.acceptMetaModelicaGrammar())
@@ -945,6 +945,7 @@ algorithm
 
     case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_,assrtLstIn))
       equation
+        //print(printInlineTypeStr(inlineType));
         false = Config.acceptMetaModelicaGrammar();
         true = checkInlineType(inlineType,fns);
         (fn,comment) = getFunctionBody(p,fns);
@@ -964,7 +965,7 @@ algorithm
         newExp = if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
         (newExp,(_,_,true)) = Expression.Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
-        (newExp1,(_,b,assrtLst)) = Expression.Expression.traverseExpBottomUp(newExp,forceInlineCall,(fns,true,assrtLstIn));
+        (newExp1,(_,b,assrtLst)) = Expression.traverseExpBottomUp(newExp,forceInlineCall,(fns,true,assrtLstIn));
       then (newExp1,(fns,b,assrtLst));
 
     else (inExp,inTuple);
@@ -1538,6 +1539,7 @@ algorithm
     case(DAE.EARLY_INLINE()) then "Inline as soon as possible";
     case(DAE.BUILTIN_EARLY_INLINE()) then "Inline as soon as possible, even if inlining is globally disabled";
     case(DAE.NORM_INLINE()) then "Inline before index reduction";
+    case(DAE.DEFAULT_INLINE()) then "Inline if necessary";
   end match;
 end printInlineTypeStr;
 

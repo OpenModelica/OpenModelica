@@ -2573,7 +2573,7 @@ protected function forceInlinEqn
   output DAE.FunctionTree funcs;
 algorithm
   funcs := inFuncs;
-  (e,_,_) := Inline.forceInlineExp(inExp,(SOME(funcs),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
+  (e,_,_) := Inline.forceInlineExp(inExp,(SOME(funcs),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
 end forceInlinEqn;
 
 protected function getSetSystem

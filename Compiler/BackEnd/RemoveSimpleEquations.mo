@@ -1662,8 +1662,8 @@ algorithm
         size = Expression.sizeOf(Expression.typeof(lhs));
         true = intEq(size, listLength(vlst));
         // force inline
-        (lhs1, source, _) = Inline.forceInlineExp(lhs, (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
-        (rhs1, source, _) = Inline.forceInlineExp(rhs, (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
+        (lhs1, source, _) = Inline.forceInlineExp(lhs, (SOME(functionTree), {DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}), source);
+        (rhs1, source, _) = Inline.forceInlineExp(rhs, (SOME(functionTree), {DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}), source);
       then
         solveTimeIndependentAcausal1(vlst, ilst, lhs1, rhs1, (source, eqAttr), inTpl);
   end match;

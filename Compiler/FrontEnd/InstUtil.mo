@@ -4737,41 +4737,67 @@ algorithm
     case SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst = smlst)))))
       then isInlineFunc2(smlst);
 
-    else DAE.NO_INLINE();
+    else DAE.DEFAULT_INLINE();
   end matchcontinue;
 end isInlineFunc;
 
 protected function isInlineFunc2
   input list<SCode.SubMod> inSubModList;
   output DAE.InlineType res;
+protected
+  Boolean stop = false;
 algorithm
-  res := match (inSubModList)
-    local
-      list<SCode.SubMod> cdr;
-    case ({}) then DAE.NO_INLINE();
 
-    case (SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: cdr)
-      equation
-        failure(DAE.AFTER_INDEX_RED_INLINE() = isInlineFunc2(cdr));
-      then DAE.NORM_INLINE();
+  res := DAE.DEFAULT_INLINE();
 
-    case(SCode.NAMEMOD("LateInline",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
-      then DAE.AFTER_INDEX_RED_INLINE();
+  for tp in inSubModList loop
+    stop := match tp
 
-    case(SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
-      then DAE.AFTER_INDEX_RED_INLINE();
+       case SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         equation
+           res = DAE.NORM_INLINE();
+         then true;
 
-    case (SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
-      then DAE.AFTER_INDEX_RED_INLINE();
+       case SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(false))))
+         guard
+           (match res case  DAE.AFTER_INDEX_RED_INLINE() then false; else true; end match)
+         equation
+           res = DAE.NO_INLINE();
+         then false;
 
-    case (SCode.NAMEMOD("InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
-      then DAE.AFTER_INDEX_RED_INLINE();
+       case SCode.NAMEMOD("LateInline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         equation
+          res = DAE.AFTER_INDEX_RED_INLINE();
+         then false;
 
-    case (SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
-      then DAE.EARLY_INLINE();
+       case SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         equation
+          res = DAE.AFTER_INDEX_RED_INLINE();
+         then false;
 
-    case(_ :: cdr) then isInlineFunc2(cdr);
-  end match;
+       case SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         equation
+          res = DAE.AFTER_INDEX_RED_INLINE();
+         then false;
+
+       case SCode.NAMEMOD("InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         equation
+          res = DAE.AFTER_INDEX_RED_INLINE();
+         then false;
+
+       case SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         equation
+          res = DAE.EARLY_INLINE();
+         then true;
+       else false;
+       end match;
+
+     if stop then
+       break;
+     end if;
+
+  end for;
+
 end isInlineFunc2;
 
 public function stripFuncOutputsMod "strips the assignment modification of the component declared as output"

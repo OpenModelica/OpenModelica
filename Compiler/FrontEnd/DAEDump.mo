@@ -1236,9 +1236,11 @@ public function dumpInlineTypeStr
   output String str;
 algorithm
   str := match(inlineType)
-    case(DAE.NO_INLINE()) then "";
+    case(DAE.NO_INLINE()) then "\"Inline never\"";
     case(DAE.AFTER_INDEX_RED_INLINE()) then " \"Inline after index reduction\"";
     case(DAE.NORM_INLINE()) then " \"Inline before index reduction\"";
+    case(DAE.DEFAULT_INLINE()) then "\"Inline if necessary\"";
+    else "\"unknown\"";
   end match;
 end dumpInlineTypeStr;
 
