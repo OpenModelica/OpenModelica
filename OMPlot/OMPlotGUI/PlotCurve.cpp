@@ -41,7 +41,7 @@
 
 using namespace OMPlot;
 
-PlotCurve::PlotCurve(QString fileName, QString variableName, QString unit, Plot *pParent)
+PlotCurve::PlotCurve(QString fileName, QString variableName, QString unit, QString displayUnit, Plot *pParent)
   : mCustomColor(false)
 {
   mName = variableName;
@@ -49,6 +49,7 @@ PlotCurve::PlotCurve(QString fileName, QString variableName, QString unit, Plot 
   mFileName = fileName;
   mCustomColor = false;
   setUnit(unit);
+  setDisplayUnit(displayUnit);
   setTitleLocal();
   mpParentPlot = pParent;
   /* set curve width and style */
@@ -67,10 +68,10 @@ PlotCurve::~PlotCurve()
 
 void PlotCurve::setTitleLocal()
 {
-  if (getUnit().isEmpty()) {
+  if (getDisplayUnit().isEmpty()) {
     QwtPlotItem::setTitle(getName());
   } else {
-    QwtPlotItem::setTitle(getName() + " [" + getUnit() + "]");
+    QwtPlotItem::setTitle(getName() + " [" + getDisplayUnit() + "]");
   }
 }
 
@@ -156,6 +157,11 @@ QVector<double> PlotCurve::getYAxisData()
 void PlotCurve::addYAxisValue(double value)
 {
   mYAxisVector.push_back(value);
+}
+
+void PlotCurve::updateYAxisValue(int index, double value)
+{
+  mYAxisVector.replace(index, value);
 }
 
 const double* PlotCurve::getYAxisVector() const

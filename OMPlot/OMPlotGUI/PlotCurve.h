@@ -50,12 +50,13 @@ private:
   QString mYVariable;
   bool mCustomColor;
   QString mUnit;
+  QString mDisplayUnit;
   qreal mWidth;
   int mStyle;
 
   Plot *mpParentPlot;
 public:
-  PlotCurve(QString fileName, QString variableName, QString unit, Plot *pParent);
+  PlotCurve(QString fileName, QString variableName, QString unit, QString displayUnit, Plot *pParent);
   ~PlotCurve();
 
   void setTitleLocal();
@@ -63,6 +64,8 @@ public:
   QwtPlotCurve::CurveStyle getCurveStyle(int style);
   void setUnit(QString unit) {mUnit = unit;}
   QString getUnit() {return mUnit;}
+  void setDisplayUnit(QString displayUnit) {mDisplayUnit = displayUnit;}
+  QString getDisplayUnit() {return mDisplayUnit;}
   void setCurveWidth(qreal width);
   qreal getCurveWidth() {return mWidth;}
   void setCurveStyle(int style);
@@ -75,6 +78,7 @@ public:
   void setYAxisVector(QVector<double> vector);
   QVector<double> getYAxisData();
   void addYAxisValue(double value);
+  void updateYAxisValue(int index, double value);
   const double* getYAxisVector() const;
   void clearYAxisVector() {mYAxisVector.clear();}
   int getSize();

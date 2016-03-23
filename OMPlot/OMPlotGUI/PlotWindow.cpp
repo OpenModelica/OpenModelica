@@ -104,6 +104,7 @@ void PlotWindow::initializePlot(QStringList arguments)
   setXLabel(QString(arguments[7]));
   setYLabel(QString(arguments[8]));
   setUnit("");
+  setDisplayUnit("");
   setXRange(QString(arguments[9]).toDouble(), QString(arguments[10]).toDouble());
   setYRange(QString(arguments[11]).toDouble(), QString(arguments[12]).toDouble());
   setCurveWidth(QString(arguments[13]).toDouble());
@@ -295,7 +296,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         {
           variablesPlotted.append(currentVariable);
           if (!editCase) {
-            pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), currentVariable, getUnit(), mpPlot);
+            pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), currentVariable, getUnit(), getDisplayUnit(), mpPlot);
             mpPlot->addPlotCurve(pPlotCurve);
           }
           // clear previous curve data
@@ -310,8 +311,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
             pPlotCurve->addYAxisValue(QString(values[1]).toDouble());
             currentLine = mpTextStream->readLine();
           }
-          pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(),
-                              pPlotCurve->getSize());
+          pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
           pPlotCurve->attach(mpPlot);
           mpPlot->replot();
         }
@@ -357,7 +357,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         }
 
         if (!editCase) {
-          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), csvReader->variables[i], getUnit(), mpPlot);
+          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), csvReader->variables[i], getUnit(), getDisplayUnit(), mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
         }
         // clear previous curve data
@@ -406,7 +406,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         variablesPlotted.append(reader.allInfo[i].name);
         // create the plot curve for variable
         if (!editCase) {
-          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), reader.allInfo[i].name, getUnit(), mpPlot);
+          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), reader.allInfo[i].name, getUnit(), getDisplayUnit(), mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
         }
         // read the variable values
@@ -520,7 +520,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
             if (variablesPlotted.size() == 1)
             {
               if (!editCase) {
-                pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, getUnit(), mpPlot);
+                pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, getUnit(), getDisplayUnit(), mpPlot);
                 pPlotCurve->setXVariable(xVariable);
                 pPlotCurve->setYVariable(yVariable);
                 mpPlot->addPlotCurve(pPlotCurve);
@@ -590,7 +590,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       }
 
       if (!editCase) {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, getUnit(), mpPlot);
+        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, getUnit(), getDisplayUnit(), mpPlot);
         pPlotCurve->setXVariable(xVariable);
         pPlotCurve->setYVariable(yVariable);
         mpPlot->addPlotCurve(pPlotCurve);
@@ -624,7 +624,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
         throw PlotException(msg);
 
       if (!editCase) {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, getUnit(), mpPlot);
+        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, getUnit(), getDisplayUnit(), mpPlot);
         pPlotCurve->setXVariable(xVariable);
         pPlotCurve->setYVariable(yVariable);
         mpPlot->addPlotCurve(pPlotCurve);
@@ -1185,10 +1185,10 @@ void VariablePageWidget::setCurvePickColorButtonIcon()
 
 void VariablePageWidget::resetLabel()
 {
-  if (mpPlotCurve->getUnit().isEmpty()) {
+  if (mpPlotCurve->getDisplayUnit().isEmpty()) {
     mpLegendTextBox->setText(mpPlotCurve->getName());
   } else {
-    mpLegendTextBox->setText(mpPlotCurve->getName() + " [" + mpPlotCurve->getUnit() + "]");
+    mpLegendTextBox->setText(mpPlotCurve->getName() + " [" + mpPlotCurve->getDisplayUnit() + "]");
   }
 
 }

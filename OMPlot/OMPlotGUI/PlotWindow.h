@@ -78,6 +78,7 @@ private:
   PlotType mPlotType;
   QString mGridType;
   QString mUnit;
+  QString mDisplayUnit;
   QString mXRangeMin;
   QString mXRangeMax;
   QString mYRangeMin;
@@ -107,6 +108,8 @@ public:
   void setYLabel(QString label);
   void setUnit(QString unit) {mUnit = unit;}
   QString getUnit() {return mUnit;}
+  void setDisplayUnit(QString displayUnit) {mDisplayUnit = displayUnit;}
+  QString getDisplayUnit() {return mDisplayUnit;}
   void setXRange(double min, double max);
   QString getXRangeMin();
   QString getXRangeMax();
