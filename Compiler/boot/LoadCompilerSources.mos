@@ -164,6 +164,7 @@ if true then /* Suppress output */
     "../Util/DynLoad.mo",
     "../Util/ErrorExt.mo",
     "../Util/Error.mo",
+    "../Util/ExecStat.mo",
     "../Util/Flags.mo",
     "../Util/GC.mo",
     "../Util/Graph.mo",

@@ -73,7 +73,7 @@ import Print;
 import Settings;
 import SimCode;
 import SimCodeMain;
-import SimCodeFunctionUtil;
+import ExecStat.{execStat,execStatReset};
 import Socket;
 import StackOverflow;
 import System;
@@ -465,7 +465,7 @@ algorithm
       equation
         //print("Class to instantiate: " + Config.classToInstantiate() + "\n");
         isEmptyOrFirstIsModelicaFile(libs);
-        SimCodeFunctionUtil.execStatReset();
+        execStatReset();
         // Parse libraries and extra mo-files that might have been given at the command line.
         GlobalScript.SYMBOLTABLE(ast = p) = List.fold(libs, loadLib, GlobalScript.emptySymboltable);
         // Show any errors that occured during parsing.
@@ -480,7 +480,7 @@ algorithm
           DumpGraphviz.dump(p);
         end if;
 
-        SimCodeFunctionUtil.execStat("Parsed file");
+        execStat("Parsed file");
 
         // Instantiate the program.
         (cache, env, d, cname) = instantiate(p);
@@ -490,14 +490,14 @@ algorithm
         funcs = FCore.getFunctionTree(cache);
 
         Print.clearBuf();
-        SimCodeFunctionUtil.execStat("Transformations before Dump");
+        execStat("Transformations before Dump");
         s = DAEDump.dumpStr(d, funcs);
-        SimCodeFunctionUtil.execStat("DAEDump done");
+        execStat("DAEDump done");
         Print.printBuf(s);
         if Flags.isSet(Flags.DAE_DUMP_GRAPHV) then
           DAEDump.dumpGraphviz(d);
         end if;
-        SimCodeFunctionUtil.execStat("Misc Dump");
+        execStat("Misc Dump");
 
         // Do any transformations required before going into code generation, e.g. if-equations to expressions.
         d = if boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)) then DAEUtil.transformationsBeforeBackend(cache,env,d) else  d;
@@ -505,7 +505,7 @@ algorithm
         if not Config.silent() then
           print(Print.getString());
         end if;
-        SimCodeFunctionUtil.execStat("Transformations before backend");
+        execStat("Transformations before backend");
 
         // Run the backend.
         optimizeDae(cache, env, d, p, cname);
@@ -636,7 +636,7 @@ algorithm
     System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
     SimCodeMain.generateModelCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inProgram, inClassName, cname, SOME(sim_settings), Absyn.FUNCTIONARGS({}, {}));
 
-    SimCodeFunctionUtil.execStat("Codegen Done");
+    execStat("Codegen Done");
   end if;
 end simcodegen;
 

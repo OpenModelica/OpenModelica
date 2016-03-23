@@ -68,6 +68,7 @@ import DAEUtil;
 import DAEDump;
 import Debug;
 import Dump;
+import ExecStat;
 import Expression;
 import Figaro;
 import FindZeroCrossings;
@@ -853,7 +854,7 @@ algorithm
 
     case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       algorithm
-        SimCodeFunctionUtil.execStatReset();
+        ExecStat.execStatReset();
 
         (tokens1, errorTokens) := scanString(s1);
         reportErrors(errorTokens);
@@ -866,9 +867,9 @@ algorithm
           fail();
         end if;
 
-        SimCodeFunctionUtil.execStat("diffModelicaFileListings scan string 1");
+        ExecStat.execStat("diffModelicaFileListings scan string 1");
         (_,parseTree1) := SimpleModelicaParser.stored_definition(tokens1, {});
-        SimCodeFunctionUtil.execStat("diffModelicaFileListings parse string 1");
+        ExecStat.execStat("diffModelicaFileListings parse string 1");
 
         if false and s1<>SimpleModelicaParser.parseTreeStr(parseTree1) then
           // Debugging code. Make sure the parser works before debugging the diff.
@@ -880,9 +881,9 @@ algorithm
 
         tokens2 := scanString(s2);
         reportErrors(errorTokens);
-        SimCodeFunctionUtil.execStat("diffModelicaFileListings scan string 2");
+        ExecStat.execStat("diffModelicaFileListings scan string 2");
         (_,parseTree2) := SimpleModelicaParser.stored_definition(tokens2, {});
-        SimCodeFunctionUtil.execStat("diffModelicaFileListings parse string 2");
+        ExecStat.execStat("diffModelicaFileListings parse string 2");
 
         if false and s2<>SimpleModelicaParser.parseTreeStr(parseTree2) then
           // Debugging code. Make sure the parser works before debugging the diff.
@@ -894,18 +895,18 @@ algorithm
 
         treeDiffs := SimpleModelicaParser.treeDiff(parseTree1, parseTree2, max(listLength(tokens1),listLength(tokens2)));
 
-        SimCodeFunctionUtil.execStat("treeDiff");
+        ExecStat.execStat("treeDiff");
 
         sanityCheckFailed := false;
 
         if true then
           // Do a sanity check
           s3 := Dump.unparseStr(Parser.parsestring(s2));
-          SimCodeFunctionUtil.execStat("sanity parsestring(s2)");
+          ExecStat.execStat("sanity parsestring(s2)");
           s5 := printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
           try
             s4 := Dump.unparseStr(Parser.parsestring(s5));
-            SimCodeFunctionUtil.execStat("sanity parsestring(s5)");
+            ExecStat.execStat("sanity parsestring(s5)");
           else
             System.writeFile("SanityCheckFail.mo", s5);
             Error.addInternalError("Failed to parse merged string (see generated file SanityCheckFail.mo)\n", sourceInfo());
@@ -919,20 +920,20 @@ algorithm
 
         /*
         diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
-        SimCodeFunctionUtil.execStat("diffModelicaFileListings diff 1");
+        ExecStat.execStat("diffModelicaFileListings diff 1");
         // print("Before filtering:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
         diffs := filterModelicaDiff(diffs,removeWhitespace=false);
-        SimCodeFunctionUtil.execStat("diffModelicaFileListings filter diff 1");
+        ExecStat.execStat("diffModelicaFileListings filter diff 1");
         // Scan a second time, with comments filtered into place
         str := printActual(diffs, tokenContent);
         // print("Intermediate string:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
         tokens2 := scanString(str);
-        SimCodeFunctionUtil.execStat("diffModelicaFileListings prepare pass 2");
+        ExecStat.execStat("diffModelicaFileListings prepare pass 2");
         diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
-        SimCodeFunctionUtil.execStat("diffModelicaFileListings diff 2");
+        ExecStat.execStat("diffModelicaFileListings diff 2");
         // print("Before filtering (2):\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
         diffs := filterModelicaDiff(diffs);
-        SimCodeFunctionUtil.execStat("diffModelicaFileListings filter diff 2");
+        ExecStat.execStat("diffModelicaFileListings filter diff 2");
         */
         str := if sanityCheckFailed then s2 else matchcontinue Absyn.pathLastIdent(path)
           case "plain" then printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
@@ -2469,6 +2470,7 @@ algorithm
   if Flags.isSet(Flags.GC_PROF) then
     print(GC.profStatsStr(GC.getProfStats(), head="GC stats before front-end:") + "\n");
   end if;
+  ExecStat.execStat("FrontEnd - loaded program");
   (cache,env,dae,st) := runFrontEndWork(cache,inEnv,className,st,relaxedFrontEnd,Error.getNumErrorMessages());
   if Flags.isSet(Flags.GC_PROF) then
     print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
@@ -2604,6 +2606,7 @@ algorithm
         //print("\nAbsyn->SCode");
 
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
+        ExecStat.execStat("FrontEnd - Absyn->SCode");
 
         // TODO: Why not simply get the whole thing from the cached SCode? It's faster, just need to stop doing the silly Dependency stuff.
 

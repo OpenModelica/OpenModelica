@@ -96,6 +96,7 @@ import Parser;
 import Print;
 import SCodeDump;
 import SimCodeFunction;
+import ExecStat.{execStat,execStatReset};
 import StackOverflow;
 import System;
 import Static;
@@ -1327,7 +1328,7 @@ algorithm
             GlobalScript.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
             but where to get t? */
       equation
-        SimCodeFunctionUtil.execStatReset();
+        execStatReset();
         mp = Settings.getModelicaPath(Config.getRunningTestsuite());
         strings = List.map(cvars, ValuesUtil.extractValueString);
         /* If the user requests a custom version to parse as, set it up */
@@ -1342,7 +1343,7 @@ algorithm
         end if;
         Print.clearBuf();
         newst = GlobalScript.SYMBOLTABLE(p,NONE(),{},iv,cf,lf);
-        SimCodeFunctionUtil.execStat("loadModel("+Absyn.pathString(path)+")");
+        execStat("loadModel("+Absyn.pathString(path)+")");
       then
         (FCore.emptyCache(),Values.BOOL(b),newst);
 
@@ -1359,10 +1360,10 @@ algorithm
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
-        SimCodeFunctionUtil.execStatReset();
+        execStatReset();
         name = Util.testsuiteFriendlyPath(name);
         newp = loadFile(name, encoding, p, b);
-        SimCodeFunctionUtil.execStat("loadFile("+name+")");
+        execStat("loadFile("+name+")");
       then
         (FCore.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
 

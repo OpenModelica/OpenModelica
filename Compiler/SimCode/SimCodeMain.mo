@@ -84,6 +84,7 @@ import SimCodeUtil;
 import System;
 import Util;
 import BackendDump;
+import ExecStat;
 
 public function createSimulationSettings
   input Real startTime;
@@ -147,7 +148,7 @@ algorithm
   simCode := createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, SOME(simSettings), recordDecls, literals, Absyn.FUNCTIONARGS({},{}), isFMU=true, FMUVersion=FMUVersion);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
-  SimCodeFunctionUtil.execStat("SimCode");
+  ExecStat.execStat("SimCode");
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType);
@@ -192,7 +193,7 @@ algorithm
   (simCode,_) := SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
-  SimCodeFunctionUtil.execStat("SimCode");
+  ExecStat.execStat("SimCode");
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   callTargetTemplatesXML(simCode, Config.simCodeTarget());
@@ -417,12 +418,12 @@ algorithm
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE);
   simCode := createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
-  SimCodeFunctionUtil.execStat("SimCode");
+  ExecStat.execStat("SimCode");
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   callTargetTemplates(simCode, Config.simCodeTarget());
   timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
-  SimCodeFunctionUtil.execStat("Templates");
+  ExecStat.execStat("Templates");
 end generateModelCode;
 
 protected function createSimCode "
@@ -678,14 +679,14 @@ algorithm
     case (cache, graph, _, (st as GlobalScript.SYMBOLTABLE(ast=p)), filenameprefix, _, _, _) equation
       // calculate stuff that we need to create SimCode data structure
       System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
-      SimCodeFunctionUtil.execStatReset();
+      ExecStat.execStatReset();
       (cache, graph, dae, st) = CevalScriptBackend.runFrontEnd(cache, graph, className, st, false);
-      SimCodeFunctionUtil.execStat("FrontEnd");
+      ExecStat.execStat("FrontEnd");
       timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
 
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
       dae = DAEUtil.transformationsBeforeBackend(cache, graph, dae);
-      SimCodeFunctionUtil.execStat("Transformations before backend");
+      ExecStat.execStat("Transformations before backend");
       description = DAEUtil.daeDescription(dae);
       dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
       //BackendDump.printBackendDAE(dlow);

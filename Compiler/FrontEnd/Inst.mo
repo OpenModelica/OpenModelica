@@ -125,6 +125,7 @@ import Debug;
 import Dump;
 import Error;
 import ErrorExt;
+import ExecStat;
 import Expression;
 import ExpressionDump;
 import Flags;
@@ -195,6 +196,7 @@ algorithm
         cache = FCore.setCacheClassName(cache,path);
         if doSCodeDep then
           cdecls = InstUtil.scodeFlatten(cdecls, inPath);
+          ExecStat.execStat("FrontEnd - scodeFlatten");
         end if;
         (cache,env) = Builtin.initialGraph(cache);
         env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
@@ -205,6 +207,7 @@ algorithm
         if Flags.isSet(Flags.GC_PROF) then
           print(GC.profStatsStr(GC.getProfStats(), head="GC stats after pre-frontend work (building graphs):") + "\n");
         end if;
+        ExecStat.execStat("FrontEnd - mkProgramGraph");
 
         (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path, source);
         // check the models for balancing
@@ -222,6 +225,7 @@ algorithm
         cache = FCore.setCacheClassName(cache,path);
         if doSCodeDep then
           cdecls = InstUtil.scodeFlatten(cdecls, inPath);
+          ExecStat.execStat("FrontEnd - scodeFlatten");
         end if;
         pathstr = Absyn.pathString(path);
 
@@ -249,6 +253,7 @@ algorithm
         if Flags.isSet(Flags.GC_PROF) then
           print(GC.profStatsStr(GC.getProfStats(), head="GC stats after pre-frontend work (building graphs):") + "\n");
         end if;
+        ExecStat.execStat("FrontEnd - mkProgramGraph");
 
         (cache,env_2,ih,_,dae,_,_,_,_,_) = instClass(cache,env_2,ih,
           UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), makeTopComponentPrefix(env_2, n), cdef,

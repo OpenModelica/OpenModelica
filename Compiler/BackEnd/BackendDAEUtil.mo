@@ -52,64 +52,65 @@ public import DAE;
 public import FCore;
 public import Util;
 
-protected import Algorithm;
-protected import Array;
-protected import BackendDAEOptimize;
-protected import BackendDAETransform;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendDAEEXT;
-protected import BackendInline;
-protected import BackendVarTransform;
-protected import BackendVariable;
-protected import BinaryTree;
-protected import Causalize;
-protected import Ceval;
-protected import CheckModel;
-protected import ClassInf;
-protected import ClockIndexes;
-protected import CommonSubExpression;
-protected import ComponentReference;
-protected import Config;
-protected import DAEDump;
-protected import DAEUtil;
-protected import Debug;
-protected import Differentiate;
-protected import DumpGraphML;
-protected import DynamicOptimization;
-protected import Error;
-protected import EvaluateFunctions;
-protected import EvaluateParameter;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import ExpressionSolve;
-protected import FindZeroCrossings;
-protected import Flags;
-protected import Global;
-protected import HpcOmEqSystems;
-protected import IndexReduction;
-protected import Initialization;
-protected import Inline;
-protected import InlineArrayEquations;
-protected import List;
-protected import Matching;
-protected import MetaModelica.Dangerous;
-protected import OnRelaxation;
-protected import RemoveSimpleEquations;
-protected import ResolveLoops;
-protected import SCode;
-protected import SimCodeFunctionUtil;
-protected import Sorting;
-protected import StateMachineFeatures;
-protected import SymbolicJacobian;
-protected import SynchronousFeatures;
-protected import System;
-protected import Tearing;
-protected import Types;
-protected import UnitCheck;
-protected import Values;
-protected import XMLDump;
+protected
+import Algorithm;
+import Array;
+import BackendDAEOptimize;
+import BackendDAETransform;
+import BackendDump;
+import BackendEquation;
+import BackendDAEEXT;
+import BackendInline;
+import BackendVarTransform;
+import BackendVariable;
+import BinaryTree;
+import Causalize;
+import Ceval;
+import CheckModel;
+import ClassInf;
+import ClockIndexes;
+import CommonSubExpression;
+import ComponentReference;
+import Config;
+import DAEDump;
+import DAEUtil;
+import Debug;
+import Differentiate;
+import DumpGraphML;
+import DynamicOptimization;
+import Error;
+import EvaluateFunctions;
+import EvaluateParameter;
+import ExecStat.execStat;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import ExpressionSolve;
+import FindZeroCrossings;
+import Flags;
+import Global;
+import HpcOmEqSystems;
+import IndexReduction;
+import Initialization;
+import Inline;
+import InlineArrayEquations;
+import List;
+import Matching;
+import MetaModelica.Dangerous;
+import OnRelaxation;
+import RemoveSimpleEquations;
+import ResolveLoops;
+import SCode;
+import Sorting;
+import StateMachineFeatures;
+import SymbolicJacobian;
+import SynchronousFeatures;
+import System;
+import Tearing;
+import Types;
+import UnitCheck;
+import Values;
+import XMLDump;
 
 public function isInitializationDAE
   input BackendDAE.Shared inShared;
@@ -6608,13 +6609,13 @@ algorithm
   // pre-optimization phase
   dae := preOptimizeDAE(inDAE, preOptModules);
 
-  SimCodeFunctionUtil.execStat("pre-optimization done (n="+String(daeSize(dae))+")");
+  execStat("pre-optimization done (n="+String(daeSize(dae))+")");
   // transformation phase (matching and sorting using index reduction method)
   dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
-  SimCodeFunctionUtil.execStat("matching and sorting (n="+String(daeSize(dae))+")");
+  execStat("matching and sorting (n="+String(daeSize(dae))+")");
 
   dae := BackendDAEOptimize.removeUnusedFunctions(dae);
-  SimCodeFunctionUtil.execStat("remove unused functions");
+  execStat("remove unused functions");
 
   if Flags.isSet(Flags.GRAPHML) then
     BackendDump.dumpBipartiteGraphDAE(dae, fileNamePrefix);
@@ -6642,10 +6643,10 @@ algorithm
   simDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
 
   simDAE := FindZeroCrossings.findZeroCrossings(simDAE);
-  SimCodeFunctionUtil.execStat("findZeroCrossings");
+  execStat("findZeroCrossings");
 
   outSimDAE := calculateValues(simDAE);
-  SimCodeFunctionUtil.execStat("calculateValue");
+  execStat("calculateValue");
 
   if Flags.isSet(Flags.DUMP_INDX_DAE) then
     BackendDump.dumpBackendDAE(outSimDAE, "dumpindxdae");
@@ -6691,7 +6692,7 @@ protected
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
 algorithm
-  SimCodeFunctionUtil.execStat("prepare preOptimizeDAE");
+  execStat("prepare preOptimizeDAE");
   for preOptModule in inPreOptModules loop
     (optModule, moduleStr) := preOptModule;
     moduleStr := moduleStr + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
@@ -6699,13 +6700,13 @@ algorithm
       BackendDAE.DAE(systs, shared) := optModule(outDAE);
       (systs, shared) := filterEmptySystems(systs, shared);
       outDAE := BackendDAE.DAE(systs, shared);
-      SimCodeFunctionUtil.execStat("preOpt " + moduleStr);
+      execStat("preOpt " + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
         print(stringAppendList({"\npre-optimization module ", moduleStr, ":\n\n"}));
         BackendDump.printBackendDAE(outDAE);
       end if;
     else
-      SimCodeFunctionUtil.execStat("preOpt " + moduleStr + " <failed>");
+      execStat("preOpt " + moduleStr + " <failed>");
       Error.addCompilerError("pre-optimization module " + moduleStr + " failed.");
       fail();
     end try;
@@ -6750,7 +6751,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
   // reduce index
   (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{},false);
-  //SimCodeFunctionUtil.execStat("matching");
+  //execStat("matching");
   // do late inline
   outDAE := if dolateinline then BackendInline.lateInlineFunction(BackendDAE.DAE(systs,shared)) else BackendDAE.DAE(systs,shared);
   // do state selection
@@ -6758,7 +6759,7 @@ algorithm
   // sort assigned equations to blt form
   systs := mapSortEqnsDAE(systs,shared,{});
   outDAE := BackendDAE.DAE(systs,shared);
-  //SimCodeFunctionUtil.execStat("sorting");
+  //execStat("sorting");
 end causalizeDAE;
 
 protected function mapCausalizeDAE "
@@ -6840,10 +6841,10 @@ algorithm
         nvars = BackendVariable.daenumVariables(syst);
         neqns = systemSize(syst);
         syst = Causalize.singularSystemCheck(nvars,neqns,syst,match_opts,matchingAlgorithm,arg,ishared);
-        // SimCodeFunctionUtil.execStat("transformDAE -> singularSystemCheck " + mAmethodstr);
+        // execStat("transformDAE -> singularSystemCheck " + mAmethodstr);
         // match the system and reduce index if neccessary
         (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, false, match_opts, sssHandler, arg);
-        // SimCodeFunctionUtil.execStat("transformDAE -> matchingAlgorithm " + mAmethodstr + " index Reduction Method " + str1);
+        // execStat("transformDAE -> matchingAlgorithm " + mAmethodstr + " index Reduction Method " + str1);
       then (syst,shared,SOME(arg),true);
 
     case (_,_,_,(_,mAmethodstr),(_,str1,_,_),_)
@@ -6874,7 +6875,7 @@ algorithm
     // do state selection
     (_, _, sDfunc, methodstr) := stateDeselection;
     outDAE := sDfunc(inDAE, args);
-    //SimCodeFunctionUtil.execStat("transformDAE -> state selection " + methodstr);
+    //execStat("transformDAE -> state selection " + methodstr);
   else
     outDAE := inDAE;
   end if;
@@ -6965,7 +6966,7 @@ protected
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
 algorithm
-  SimCodeFunctionUtil.execStat("prepare postOptimizeDAE");
+  execStat("prepare postOptimizeDAE");
   for postOptModule in inPostOptModules loop
     (optModule, moduleStr) := postOptModule;
     moduleStr := moduleStr + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
@@ -6974,13 +6975,13 @@ algorithm
       (systs, shared) := filterEmptySystems(systs, shared);
       outDAE := BackendDAE.DAE(systs, shared);
       outDAE := causalizeDAE(outDAE, NONE(), inMatchingAlgorithm, inDAEHandler, false);
-      SimCodeFunctionUtil.execStat("postOpt " + moduleStr);
+      execStat("postOpt " + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
         print("\npost-optimization module " + moduleStr + ":\n\n");
         BackendDump.printBackendDAE(outDAE);
       end if;
     else
-      SimCodeFunctionUtil.execStat("<failed> postOpt " + moduleStr);
+      execStat("<failed> postOpt " + moduleStr);
       Error.addCompilerError("post-optimization module " + moduleStr + " failed.");
       fail();
     end try;

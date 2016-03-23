@@ -44,28 +44,29 @@ public import FCore;
 public import HashSet;
 public import Util;
 
-protected import Array;
-protected import BackendDAEEXT;
-protected import BackendDAEOptimize;
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVarTransform;
-protected import BackendVariable;
-protected import BaseHashSet;
-protected import CheckModel;
-protected import ComponentReference;
-protected import DAEUtil;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import Flags;
-protected import List;
-protected import Matching;
-protected import MetaModelica.Dangerous;
-protected import Sorting;
-protected import SimCodeFunctionUtil;
+protected
+import Array;
+import BackendDAEEXT;
+import BackendDAEOptimize;
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVarTransform;
+import BackendVariable;
+import BaseHashSet;
+import CheckModel;
+import ComponentReference;
+import DAEUtil;
+import Error;
+import ExecStat.execStat;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import Flags;
+import List;
+import Matching;
+import MetaModelica.Dangerous;
+import Sorting;
 
 // =============================================================================
 // section for all public functions
@@ -110,16 +111,16 @@ algorithm
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpBackendDAE(dae, "inlineWhenForInitialization");
     //end if;
-    SimCodeFunctionUtil.execStat("inlineWhenForInitialization (initialization)");
+    execStat("inlineWhenForInitialization (initialization)");
 
     (initVars, outPrimaryParameters, outAllPrimaryParameters) := selectInitializationVariablesDAE(dae);
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpVariables(initVars, "selected initialization variables");
     //end if;
-    SimCodeFunctionUtil.execStat("selectInitializationVariablesDAE (initialization)");
+    execStat("selectInitializationVariablesDAE (initialization)");
 
     hs := collectPreVariables(dae);
-    SimCodeFunctionUtil.execStat("collectPreVariables (initialization)");
+    execStat("collectPreVariables (initialization)");
 
     // collect vars and eqns for initial system
     vars := BackendVariable.emptyVars();
@@ -133,15 +134,15 @@ algorithm
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpEquationArray(eqns, "initial equations");
     //end if;
-    SimCodeFunctionUtil.execStat("collectInitialEqns (initialization)");
+    execStat("collectInitialEqns (initialization)");
 
     ((vars, fixvars, eqns, reeqns, _, _)) := List.fold(dae.eqs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs, outAllPrimaryParameters)));
     ((eqns, reeqns)) := BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
-    SimCodeFunctionUtil.execStat("collectInitialBindings (initialization)");
+    execStat("collectInitialBindings (initialization)");
 
     // replace initial(), sample(...), delay(...) and homotopy(...)
     useHomotopy := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, simplifyInitialFunctions, false);
-    SimCodeFunctionUtil.execStat("simplifyInitialFunctions (initialization)");
+    execStat("simplifyInitialFunctions (initialization)");
 
     vars := BackendVariable.rehashVariables(vars);
     fixvars := BackendVariable.rehashVariables(fixvars);
@@ -150,13 +151,13 @@ algorithm
     shared := BackendDAEUtil.setSharedKnVars(shared, fixvars);
     shared := BackendDAEUtil.setSharedOptimica(shared, dae.shared.constraints, dae.shared.classAttrs);
     shared := BackendDAEUtil.setSharedFunctionTree(shared, dae.shared.functionTree);
-    SimCodeFunctionUtil.execStat("setup shared object (initialization)");
+    execStat("setup shared object (initialization)");
 
     // generate initial system and pre-balance it
     initsyst := BackendDAEUtil.createEqSystem(vars, eqns);
     initsyst := BackendDAEUtil.setEqSystRemovedEqns(initsyst, reeqns);
     (initsyst, dumpVars) := preBalanceInitialSystem(initsyst);
-    SimCodeFunctionUtil.execStat("preBalanceInitialSystem (initialization)");
+    execStat("preBalanceInitialSystem (initialization)");
 
     // split the initial system into independend subsystems
     initdae := BackendDAE.DAE({initsyst}, shared);
@@ -167,7 +168,7 @@ algorithm
 
     (systs, shared) := BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
     initdae := BackendDAE.DAE(systs, shared);
-    SimCodeFunctionUtil.execStat("partitionIndependentBlocks (initialization)");
+    execStat("partitionIndependentBlocks (initialization)");
 
     if Flags.isSet(Flags.OPT_DAE_DUMP) then
       print(stringAppendList({"\npartitioned initial system:\n\n"}));
@@ -178,7 +179,7 @@ algorithm
     // fix over- and under-constrained subsystems
     (initdae, dumpVars2, removedEqns) := analyzeInitialSystem(initdae, initVars);
     dumpVars := listAppend(dumpVars, dumpVars2);
-    SimCodeFunctionUtil.execStat("analyzeInitialSystem (initialization)");
+    execStat("analyzeInitialSystem (initialization)");
 
     // some debug prints
     if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
@@ -187,7 +188,7 @@ algorithm
 
     // now let's solve the system!
     initdae := BackendDAEUtil.mapEqSystem(initdae, solveInitialSystemEqSystem);
-    SimCodeFunctionUtil.execStat("solveInitialSystemEqSystem (initialization)");
+    execStat("solveInitialSystemEqSystem (initialization)");
 
     // solve system
     initdae := BackendDAEUtil.transformBackendDAE(initdae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
@@ -1128,7 +1129,7 @@ algorithm
   dae := BackendDAE.DAE(eqs, inInitDAE.shared);
   outRemovedEqns := Dangerous.listReverseInPlace(outRemovedEqns);
 
-  //SimCodeFunctionUtil.execStat("reset analyzeInitialSystem (initialization)");
+  //execStat("reset analyzeInitialSystem (initialization)");
   (outDAE, (_, outDumpVars, outRemovedEqns)) := BackendDAEUtil.mapEqSystemAndFold(dae, fixInitialSystem, (inInitVars, {}, outRemovedEqns));
 end analyzeInitialSystem;
 
@@ -1260,7 +1261,7 @@ algorithm
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
       //print("index-" + intString(index) + " ende\n");
       outTpl := ((initVars, dumpVars, removedEqns));
-      //SimCodeFunctionUtil.execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
+      //execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
       return;
     end if;
     //print("index-" + intString(index) + " ende\n");
