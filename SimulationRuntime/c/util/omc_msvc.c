@@ -227,14 +227,15 @@ void* omc_dlopen(const char *filename, int flag)
 static const char* GetLastErrorAsString()
 {
   static char *str = NULL;
+  LPSTR messageBuffer = NULL;
+  size_t size = 0;
   //Get the error message, if any.
   DWORD errorMessageID = GetLastError();
   if (errorMessageID == 0) {
     return ""; //No error message has been recorded
   }
 
-  LPSTR messageBuffer = NULL;
-  size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+  size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                                NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
 
   if (str != NULL) {

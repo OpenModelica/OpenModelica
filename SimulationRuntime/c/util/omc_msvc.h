@@ -125,16 +125,16 @@ void* omc_dlopen(const char *filename, int flag);
 char* omc_dlerror();
 void* omc_dlsym(void *handle, const char *symbol);
 int omc_dlclose(void *handle);
-static inline void* dlopen(const char *filename, int flag) {
+static OMC_INLINE void* dlopen(const char *filename, int flag) {
   return omc_dlopen(filename, flag);
 }
-static inline char* dlerror() {
+static OMC_INLINE char* dlerror() {
   return omc_dlerror();
 }
-static inline void* dlsym(void *handle, const char *symbol) {
+static OMC_INLINE void* dlsym(void *handle, const char *symbol) {
   return omc_dlsym(handle, symbol);
 }
-static inline int dlclose(void *handle) {
+static OMC_INLINE int dlclose(void *handle) {
   return omc_dlclose(handle);
 }
 #endif
