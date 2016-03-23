@@ -6425,9 +6425,12 @@ algorithm
       (_,outTypeA) = traverseArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEExpsOptEqnWithUpdate,inTypeA);
     then outTypeA;
 
-    else equation
-      (_, _, name) = System.dladdr(func);
-      Error.addInternalError("traverseBackendDAEExpsEqnsWithUpdate failed for " + name, sourceInfo());
+    else
+    equation
+      if Flags.isSet(Flags.FAILTRACE) then
+        (_, _, name) = System.dladdr(func);
+        Error.addInternalError("traverseBackendDAEExpsEqnsWithUpdate failed for " + name, sourceInfo());
+      end if;
     then fail();
   end matchcontinue;
 end traverseBackendDAEExpsEqnsWithUpdate;
