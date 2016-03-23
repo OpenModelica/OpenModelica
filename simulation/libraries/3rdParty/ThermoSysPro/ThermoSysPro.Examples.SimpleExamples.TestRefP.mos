@@ -93,6 +93,7 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 //  * candidate: lumpedStraightPipe.pro.T(nominal = 320.0)
 //  * candidate: lumpedStraightPipe.T(nominal = 300.0)
 // => select value from lumpedStraightPipe.T(nominal = 300.0) for variable: lumpedStraightPipe.T
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
 // {"Files Equal!"}
 // endResult
