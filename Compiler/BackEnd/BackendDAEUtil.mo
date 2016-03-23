@@ -7177,6 +7177,7 @@ protected function allPreOptimizationModules
     (UnitCheck.unitChecking, "unitChecking"),
     (EvaluateParameter.evaluateAllParameters, "evaluateAllParameters"),
     (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters"),
+    (RemoveSimpleEquations.removeVerySimpleEquations, "removeVerySimpleEquations"),
     (StateMachineFeatures.stateMachineElab, "stateMachineElab"),
     (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations"),
     (BackendDAEOptimize.expandDerOperator, "expandDerOperator"),

@@ -157,7 +157,7 @@ algorithm
     outDAE := match(Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS))
       case "default" then causal(inDAE);
       case "causal" then causal(inDAE);
-      case "new" then performAliasEliminationBB(inDAE);
+      case "new" then performAliasEliminationBB(inDAE, findAliases=true);
       else inDAE;
     end match;
 
@@ -169,13 +169,25 @@ algorithm
       case "default" then fastAcausal(inDAE);
       case "fastAcausal" then fastAcausal(inDAE);
       case "allAcausal" then allAcausal(inDAE);
-      case "new" then performAliasEliminationBB(inDAE);
+      case "new" then performAliasEliminationBB(inDAE, true);
       else inDAE;
     end match;
 
     outDAE := fixAliasVars(outDAE) "workaround for #3323";
   end if;
 end removeSimpleEquations;
+
+public function removeVerySimpleEquations "This is a very simple removeSimpleEquations, finding a few variables and removing them to speed up the rest of the backend"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  if BackendDAEUtil.hasDAEMatching(inDAE) then
+    Error.addInternalError("Cannot run removeVerySimpleEquations on a matched system (continuing anyway)", sourceInfo());
+    outDAE := inDAE;
+  else
+    outDAE := performAliasEliminationBB(inDAE, findAliases=true);
+  end if;
+end removeVerySimpleEquations;
 
 protected function fixAliasVars "author: lochel
   This is a workaround for #3323
@@ -4284,9 +4296,10 @@ protected function performAliasEliminationBB "BB,
   This module changes the DAE by finding simple equations, doing appropriate substitutions, e.g. known and alias vars!
   NOTE: This is currently an experimental prototype."
   input BackendDAE.BackendDAE inDAE;
+  input Boolean findAliases;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  outDAE := BackendDAEUtil.mapEqSystem(inDAE, eliminateTrivialEquations);
+  outDAE := BackendDAEUtil.mapEqSystem(inDAE, function eliminateTrivialEquations(findAliases=findAliases));
   outDAE := BackendDAEUtil.mapEqSystem(outDAE, getAliasAttributes);
 end performAliasEliminationBB;
 
@@ -4295,6 +4308,7 @@ main module for eliminating trivial equations
 "
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
+  input Boolean findAliases;
   output BackendDAE.EqSystem outSystem = inSystem;
   output BackendDAE.Shared outShared = inShared;
 algorithm
@@ -4352,7 +4366,7 @@ algorithm
 
       //SimCodeUtil.execStat("START :");
       // Find known variables and all simple equations and add known variables to shared object!!!
-      (_, HTCrToExp, HTCrToCrEqLst, eqList, simpleEqList) = BackendEquation.traverseEquationArray(orderedEqs, findSimpleEquations,
+      (_, HTCrToExp, HTCrToCrEqLst, eqList, simpleEqList) = BackendEquation.traverseEquationArray(orderedEqs, function findSimpleEquations(findAliases=findAliases),
       (orderedVars, HTCrToExp, HTCrToCrEqLst, {}, {}));
       (tplExp) = BaseHashTable.hashTableList(HTCrToExp);
 //    (knvars, orderedVars) = moveVars(tplExp, knvars, orderedVars);
@@ -4541,7 +4555,8 @@ protected function findSimpleEquations "BB,
 main function for detecting simple equations
 "
   input BackendDAE.Equation inEq;
-  input  tuple <BackendDAE.Variables, HashTableCrToExp.HashTable, HashTableCrToCrEqLst.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Equation>> inTuple;
+  input tuple <BackendDAE.Variables, HashTableCrToExp.HashTable, HashTableCrToCrEqLst.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Equation>> inTuple;
+  input Boolean findAliases;
   output BackendDAE.Equation outEq;
   output tuple <BackendDAE.Variables, HashTableCrToExp.HashTable, HashTableCrToCrEqLst.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Equation>> outTuple;
 algorithm
@@ -4557,7 +4572,7 @@ algorithm
       list<BackendDAE.Equation> simpleEqList;
       Integer count, paramCount;
       DAE.ComponentRef cr, cr1, cr2;
-      DAE.Exp res, value;
+      DAE.Exp res, value, exp1, exp2;
       BackendDAE.Variables vars;
       Boolean keepEquation, cont;
       DAE.ElementSource source;
@@ -4578,15 +4593,16 @@ algorithm
           false = BackendVariable.isClockedState(cr,vars);
           false = BackendVariable.isOutput(cr,vars);
           false = BackendVariable.isDiscrete(cr,vars);
-          eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,Expression.crefExp(cr),NONE());
+          exp1 = Expression.crefExp(cr);
+          true = Types.isSimpleType(Expression.typeof(exp1));
+          eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp1,NONE());
           true = isSimple(res);
           if Flags.isSet(Flags.DEBUG_ALIAS) then
             print("Found Equation knw1: " + BackendDump.equationString(eq) + "\n");
           end if;
           HTCrToExp = addToCrToExp(cr, eqSolved, HTCrToExp, HTCrToCrEqLst);
           keepEquation = false;
-       end if;
-       if (count == 2) then
+       elseif (count == 2) and findAliases then
           if Flags.isSet(Flags.DEBUG_ALIAS) then
             print("Found Equation al0: " + BackendDump.equationString(eq) + "\n");
           end if;
@@ -4599,10 +4615,13 @@ algorithm
           false = BackendVariable.isClockedState(cr1,vars) or BackendVariable.isClockedState(cr2,vars);
           false = BackendVariable.isOutput(cr1,vars) or BackendVariable.isOutput(cr2,vars);
           false = BackendVariable.isDiscrete(cr1,vars) or BackendVariable.isDiscrete(cr2,vars);
+          exp1 = Expression.crefExp(cr1);
+          true = Types.isSimpleType(Expression.typeof(exp1));
+          exp2 = Expression.crefExp(cr2);
 
-          eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,Expression.crefExp(cr2),NONE());
+          eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp2,NONE());
           true = isSimple(res);
-          eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,Expression.crefExp(cr1),NONE());
+          eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp1,NONE());
           true = isSimple(res);
           if Flags.isSet(Flags.DEBUG_ALIAS) then
             print("Found Equation al1: "  + BackendDump.equationString(eq) + "\n");
