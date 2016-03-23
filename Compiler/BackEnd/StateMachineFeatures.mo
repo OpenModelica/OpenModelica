@@ -2634,7 +2634,7 @@ algorithm
    sVarName := ComponentReference.crefStr(varName);
    sVarKind := BackendDump.kindString(varKind);
    sVarDirection := DAEDump.dumpDirectionStr(varDirection);
-   sVarType := BackendDump.dumpTypeStr(varType);
+   sVarType := DAEDump.daeTypeStr(varType);
    s1 := Util.applyOption(bindExp, function ExpressionDump.dumpExpStr(inInteger=0));
    sBindExp := Util.getOptionOrDefault(s1, "");
    s2 := Util.applyOption(bindValue, ValuesUtil.valString);

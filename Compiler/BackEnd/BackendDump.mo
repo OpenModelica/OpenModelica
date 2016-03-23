@@ -1974,34 +1974,6 @@ end printCallFunction2StrDIVISION;
 //   end matchcontinue;
 // end printVarsStatistics;
 
-public function dumpTypeStr
-"Dump BackendDAE.Type to a string."
-  input BackendDAE.Type inType;
-  output String outString;
-algorithm
-  outString:=
-  match (inType)
-    local
-      String s1,s2,str;
-      list<String> l;
-    case DAE.T_INTEGER() then "Integer";
-    case DAE.T_REAL() then "Real";
-    case DAE.T_BOOL() then "Boolean";
-    case DAE.T_STRING() then "String";
-    case DAE.T_CLOCK() then "Clock";
-    case DAE.T_ENUMERATION(names = l)
-      equation
-        s1 = stringDelimitList(l, ", ");
-        s2 = stringAppend("enumeration(", s1);
-        str = stringAppend(s2, ")");
-      then
-        str;
-    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)) then "ExternalObject";
-    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)) then "Record";
-    case DAE.T_ARRAY() then "Array";
-  end match;
-end dumpTypeStr;
-
 public function dumpWhenOperatorStr
 "Dumps a WhenOperator into a string, for debugging purposes."
   input BackendDAE.WhenOperator inWhenOperator;
@@ -2337,7 +2309,7 @@ algorithm
   outStr := DAEDump.dumpDirectionStr(inVar.varDirection) + ComponentReference.printComponentRefStr(inVar.varName) + ":"
             + kindString(inVar.varKind) + "(" + connectorTypeString(inVar.connectorType) + attributesString(inVar.values)
             + ") " + optExpressionString(inVar.bindExp, "") + DAEDump.dumpCommentAnnotationStr(inVar.comment)
-            + stringDelimitList(paths_lst, ", ") + " type: " + dumpTypeStr(inVar.varType) + dimensions + unreplaceableStr;
+            + stringDelimitList(paths_lst, ", ") + " type: " + DAEDump.daeTypeStr(inVar.varType) + dimensions + unreplaceableStr;
 end varString;
 
 public function dumpKind
