@@ -36,15 +36,12 @@ CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE) $(BOOST_ROOT_COMMAND) $(BOOST_STATIC
 runtimeCpp:
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  mkdir -p Build_$(PLATFORM); \
-	  test -d /usr/include/boost && ln -sf /usr/include/boost Build_$(PLATFORM)/; \
 	  (cd ./Build_$(PLATFORM) && echo "change to Build_$(PLATFORM)" && $(CMAKE_COMMANDS) cmake -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) ../); \
 	  $(MAKE) -C Build_$(PLATFORM) VERBOSE=1;)
 
-# Note: symlink boost includes outside platform specific /usr/include
 install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  (cd Build_$(PLATFORM); $(MAKE) install);)
-	test -d /usr/include/boost && ln -sf /usr/include/boost $(OMBUILDDIR)/include/omc/cpp/
 
 clean:
 	$(foreach PLATFORM, $(PLATFORMS), \

@@ -576,6 +576,12 @@ include_directories ("${PROJECT_SOURCE_DIR}")
 include_directories ("${PROJECT_BINARY_DIR}")
 
 message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
+
+if(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
+  # symlink boost includes outside platform specific /usr/include
+  execute_process(COMMAND ln -sf /usr/include/boost ./)
+endif(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
+
 #set (CMAKE_CXX_FLAGS "-Winvalid-pch")
 #build of simulation.core
 include_directories ("Include")
@@ -848,3 +854,8 @@ SET(HS Include/Core/Object/IObject.h
         Include/FMU2/FMU2Wrapper.cpp
         Include/FMU2/FMU2Wrapper.h)
    INSTALL_HEADERS_WITH_DIRECTORY(HS)
+
+if(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
+  # symlink boost includes outside platform specific /usr/include
+  install(CODE "execute_process(COMMAND ln -sf /usr/include/boost \"${CMAKE_INSTALL_PREFIX}/include/omc/cpp/\")")
+endif(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
