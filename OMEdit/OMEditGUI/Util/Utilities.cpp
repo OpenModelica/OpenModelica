@@ -320,5 +320,5 @@ void Utilities::parseMetaModelText(MessageHandler *pMessageHandler, QString cont
  */
 qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
 {
-  return (value - offset) * scaleFactor;
+  return (value - offset) / scaleFactor;
 }
