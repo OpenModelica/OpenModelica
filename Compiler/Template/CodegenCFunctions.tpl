@@ -3158,26 +3158,23 @@ template algStmtWhen(DAE.Statement when, Context context, Text &varDecls, Text &
     case SIMULATION_CONTEXT(__) then
       match when
         case STMT_WHEN(__) then
-          let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
+          let initial_condition = if initialCall then
+              'initial()'
+            else
+              '0'
+          let if_conditions = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
           let statements = (statementLst |> stmt =>
               algStatement(stmt, context, &varDecls, &auxFunction)
             ;separator="\n")
-          let initial_statements = match initialCall
-            case true then '<%statements%>'
-            else '; /* nothing to do */'
-          let else = algStatementWhenElse(elseWhen, &varDecls, &auxFunction)
+          let else_clause = algStatementWhenElse(elseWhen, &varDecls, &auxFunction)
           <<
           if(data->simulationInfo->discreteCall == 1)
           {
-            if(initial())
-            {
-              <%initial_statements%>
-            }
-            else if(0<%helpIf%>)
+            if(<%initial_condition%><%if_conditions%>)
             {
               <%statements%>
             }
-            <%else%>
+            <%else_clause%>
           }
           >>
       end match
