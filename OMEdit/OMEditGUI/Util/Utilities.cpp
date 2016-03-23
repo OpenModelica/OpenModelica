@@ -309,3 +309,16 @@ void Utilities::parseMetaModelText(MessageHandler *pMessageHandler, QString cont
     }
   }
 }
+
+/*!
+ * \brief Utilities::convertUnit
+ * Converts the value using the unit offset and scale factor.
+ * \param value
+ * \param offset
+ * \param scaleFactor
+ * \return
+ */
+qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
+{
+  return (value - offset) * scaleFactor;
+}

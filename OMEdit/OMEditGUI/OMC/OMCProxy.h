@@ -51,16 +51,17 @@ class StringHandler;
 class OMCInterface;
 class LibraryTreeItem;
 
-struct cachedOMCCommand
-{
-  QString mOMCCommand;
-  QString mOMCCommandResult;
-};
+typedef struct {
+  QString mFromUnit;
+  QString mToUnit;
+  OMCInterface::convertUnits_res mConvertUnits;
+} UnitConverion;
 
 class OMCProxy : public QObject
 {
   Q_OBJECT
 private:
+  MainWindow *mpMainWindow;
   bool mHasInitialized;
   QString mResult;
   QWidget *mpOMCLoggerWidget;
@@ -82,8 +83,8 @@ private:
   QTextStream mCommunicationLogFileTextStream;
   QFile mCommandsMosFile;
   QTextStream mCommandsLogFileTextStream;
-  MainWindow *mpMainWindow;
-  int mAnnotationVersion;
+  QList<UnitConverion> mUnitConversionList;
+  QMap<QString, QList<QString> > mDerivedUnitsMap;
   OMCInterface *mpOMCInterface;
 public:
   OMCProxy(MainWindow *pMainWindow);
@@ -212,6 +213,7 @@ public:
   QStringList getAvailableLibraries();
   QString getDerivedClassModifierValue(QString className, QString modifierName);
   OMCInterface::convertUnits_res convertUnits(QString from, QString to);
+  QList<QString> getDerivedUnits(QString baseUnit);
   bool getDocumentationClassAnnotation(QString className);
   int numProcessors();
   QString help(QString topic);

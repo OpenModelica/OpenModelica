@@ -305,6 +305,7 @@ private:
 
 namespace Utilities {
   void parseMetaModelText(MessageHandler *pMessageHandler, QString contents);
+  qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
 }
 
 #endif // UTILITIES_H

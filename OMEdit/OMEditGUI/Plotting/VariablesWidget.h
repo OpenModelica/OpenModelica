@@ -56,6 +56,7 @@ public:
   QString getVariableName() {return mVariableName;}
   bool isValueChanged() {return mValueChanged;}
   QString getUnit() {return mUnit;}
+  QString getDisplayUnit() {return mDisplayUnit;}
   bool isChecked() const {return mChecked;}
   void setChecked(bool set) {mChecked = set;}
   bool isEditable() const {return mEditable;}

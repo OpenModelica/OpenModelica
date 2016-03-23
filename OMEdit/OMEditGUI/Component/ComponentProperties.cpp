@@ -107,14 +107,16 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   mDisplayUnit = StringHandler::removeFirstLastQuotes(displayUnit);
   mPreviousUnit = mDisplayUnit;
   mpUnitComboBox = new QComboBox;
-  mpUnitComboBox->setDisabled(true);
   if (!mUnit.isEmpty()) {
     mpUnitComboBox->addItem(mUnit);
+    mpUnitComboBox->addItems(pOMCProxy->getDerivedUnits(mUnit));
   }
-//  if (mUnit.compare(mDisplayUnit) != 0) {
-//    mpUnitComboBox->addItem(mDisplayUnit);
-//    mpUnitComboBox->setCurrentIndex(1);
-//  }
+  if (mUnit.compare(mDisplayUnit) != 0) {
+    int index = mpUnitComboBox->findText(mDisplayUnit, Qt::MatchExactly);
+    if (index > -1) {
+      mpUnitComboBox->setCurrentIndex(index);
+    }
+  }
   connect(mpUnitComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(unitComboBoxChanged(QString)));
   mpCommentLabel = new Label(mpComponent->getComponentInfo()->getComment());
 }
@@ -134,8 +136,9 @@ void Parameter::updateNameLabel()
  * \param value
  * \param defaultValue
  * \param fromUnit
+ * \param valueChanged
  */
-void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUnit)
+void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified)
 {
   // convert the value to display unit
   if (!fromUnit.isEmpty()) {
@@ -145,7 +148,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
       OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
       OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(fromUnit, mpUnitComboBox->currentText());
       if (convertUnit.unitsCompatible) {
-        realValue = (realValue - convertUnit.offset) * convertUnit.scaleFactor;
+        realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
         value = QString::number(realValue);
       }
     }
@@ -158,6 +161,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
         mpValueComboBox->lineEdit()->setPlaceholderText(value);
       } else {
         mpValueComboBox->lineEdit()->setText(value);
+        mpValueComboBox->lineEdit()->setModified(valueModified);
       }
       /* Set the minimum width so that the value text will be readable */
       fm = QFontMetrics(mpValueComboBox->lineEdit()->font());
@@ -169,6 +173,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
         mpValueTextBox->setPlaceholderText(value);
       } else {
         mpValueTextBox->setText(value);
+        mpValueTextBox->setModified(valueModified);
       }
       /* Set the minimum width so that the value text will be readable */
       fm = QFontMetrics(mpValueTextBox->font());
@@ -332,12 +337,13 @@ void Parameter::createValueWidget()
  */
 void Parameter::unitComboBoxChanged(QString text)
 {
-  QString value = getValue();
   QString defaultValue = getDefaultValue();
   if (!defaultValue.isEmpty()) {
-    setValueWidget(defaultValue, true, mPreviousUnit);
-  } else {
-    setValueWidget(value, false, mPreviousUnit);
+    setValueWidget(getDefaultValue(), true, mPreviousUnit, false);
+  }
+  QString value = getValue();
+  if (!value.isEmpty()) {
+    setValueWidget(getValue(), false, mPreviousUnit, true);
   }
   mPreviousUnit = text;
 }
@@ -876,8 +882,16 @@ void ComponentParameters::fetchComponentModifiers()
             pParameter->setFixedState(fixed, mpComponent->getReferenceComponent() ? true : false);
           }
         }
-      } else {
+      } else if (modifiersIterator.key().compare(parameterName) == 0) {
         pParameter->setValueWidget(modifiersIterator.value(), mpComponent->getReferenceComponent() ? true : false, pParameter->getUnit());
+      }
+      if (modifiersIterator.key().compare(parameterName + ".displayUnit") == 0) {
+        QString displayUnit = StringHandler::removeFirstLastQuotes(modifiersIterator.value());
+        int index = pParameter->getUnitComboBox()->findText(displayUnit, Qt::MatchExactly);
+        if (index > -1) {
+          pParameter->getUnitComboBox()->setCurrentIndex(index);
+          pParameter->setDisplayUnit(displayUnit);
+        }
       }
     }
   }
@@ -918,8 +932,16 @@ void ComponentParameters::fetchExtendsModifiers()
                 pParameter->setFixedState(fixed, false);
               }
             }
-          } else {
+          } else if (extendsModifiersIterator.key().compare(parameterName) == 0) {
             pParameter->setValueWidget(extendsModifiersIterator.value(), false, pParameter->getUnit());
+          }
+          if (extendsModifiersIterator.key().compare(parameterName + ".displayUnit") == 0) {
+            QString displayUnit = StringHandler::removeFirstLastQuotes(extendsModifiersIterator.value());
+            int index = pParameter->getUnitComboBox()->findText(displayUnit, Qt::MatchExactly);
+            if (index > -1) {
+              pParameter->getUnitComboBox()->setCurrentIndex(index);
+              pParameter->setDisplayUnit(displayUnit);
+            }
           }
         }
       }
@@ -997,6 +1019,18 @@ void ComponentParameters::updateComponentParameters()
   foreach (Parameter *pParameter, mParametersList) {
     QString componentModifierKey = pParameter->getNameLabel()->text();
     QString componentModifierValue = pParameter->getValue();
+    // convert the value to display unit
+    if (!pParameter->getUnit().isEmpty() && pParameter->getUnit().compare(pParameter->getUnitComboBox()->currentText()) != 0) {
+      bool ok = true;
+      qreal componentModifierRealValue = componentModifierValue.toDouble(&ok);
+      if (ok) {
+        OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->currentText(), pParameter->getUnit());
+        if (convertUnit.unitsCompatible) {
+          componentModifierRealValue = Utilities::convertUnit(componentModifierRealValue, convertUnit.offset, convertUnit.scaleFactor);
+          componentModifierValue = QString::number(componentModifierRealValue);
+        }
+      }
+    }
     if (pParameter->isValueModified()) {
       valueChanged = true;
       /* If the component is inherited then add the modifier value into the extends. */
@@ -1015,6 +1049,26 @@ void ComponentParameters::updateComponentParameters()
         newComponentExtendsModifiersMap.insert(mpComponent->getName() + "." + componentModifierKey, componentModifierValue);
       } else {
         newComponentModifiersMap.insert(componentModifierKey, componentModifierValue);
+      }
+    }
+    // remove the .start or .fixed from modifier key
+    if (pParameter->isShowStartAttribute()) {
+      if (componentModifierKey.endsWith(".start")) {
+        componentModifierKey.chop(QString(".start").length());
+      }
+      if (componentModifierKey.endsWith(".fixed")) {
+        componentModifierKey.chop(QString(".fixed").length());
+      }
+    }
+    // if displayUnit is changed
+    if (pParameter->getDisplayUnit().compare(pParameter->getUnitComboBox()->currentText()) != 0) {
+      valueChanged = true;
+      /* If the component is inherited then add the modifier value into the extends. */
+      if (mpComponent->isInheritedComponent()) {
+        newComponentExtendsModifiersMap.insert(mpComponent->getName() + "." + componentModifierKey + ".displayUnit",
+                                               "\"" + pParameter->getUnitComboBox()->currentText() + "\"");
+      } else {
+        newComponentModifiersMap.insert(componentModifierKey + ".displayUnit", "\"" + pParameter->getUnitComboBox()->currentText() + "\"");
       }
     }
   }

@@ -62,13 +62,15 @@ public:
   FixedCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
   QString getOriginalFixedValue() {return mOriginalFixedValue;}
   void setValueType(ValueType valueType) {mValueType = valueType;}
-  void setValueWidget(QString value, bool defaultValue, QString fromUnit);
+  void setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified = false);
   ValueType getValueType() {return mValueType;}
   QWidget* getValueWidget();
   bool isValueModified();
   QString getValue();
   QString getDefaultValue();
   QString getUnit() {return mUnit;}
+  void setDisplayUnit(QString displayUnit) {mDisplayUnit = displayUnit;}
+  QString getDisplayUnit() {return mDisplayUnit;}
   QComboBox* getUnitComboBox() {return mpUnitComboBox;}
   Label* getCommentLabel() {return mpCommentLabel;}
   void setFixedState(QString fixed, bool defaultValue);
