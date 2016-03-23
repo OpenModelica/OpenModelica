@@ -6699,6 +6699,30 @@ algorithm
   fail();
 end mapFirst;
 
+public function isSorted<T>
+  input list<T> inList;
+  input Comp inFunc;
+  output Boolean b=true;
+
+  partial function Comp
+    input T a,b;
+    output Boolean c;
+  end Comp;
+protected
+  Boolean found;
+  T prev;
+algorithm
+  if listEmpty(inList) then
+    return;
+  end if;
+  prev::_ := inList;
+  for e in listRest(inList) loop
+    if not inFunc(prev,e) then
+      b := false;
+      return;
+    end if;
+  end for;
+end isSorted;
 
 annotation(__OpenModelica_Interface="util");
 end List;
