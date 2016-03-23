@@ -479,6 +479,185 @@ bool MetaModelEditor::deleteConnection(QString startSubModelName, QString endSub
   return false;
 }
 
+
+
+QGenericMatrix<3,3, double> MetaModelEditor::getRotationMatrix(QGenericMatrix<3,1,double> rotation)
+{
+    double alpha = rotation(0,0);
+    double beta = rotation(0,1);
+    double gamma = rotation(0,2);
+
+    //Compute rotational matrix around x-axis
+    double Rx_data[9];
+    Rx_data[0] = 1;             Rx_data[1] = 0;             Rx_data[2] = 0;
+    Rx_data[3] = 0;             Rx_data[4] = cos(alpha);    Rx_data[5] = -sin(alpha);
+    Rx_data[6] = 0;             Rx_data[7] = sin(alpha);    Rx_data[8] = cos(alpha);
+    QGenericMatrix<3,3,double> Rx(Rx_data);
+
+    //Compute rotational matrix around y-axis
+    double Ry_data[9];
+    Ry_data[0] = cos(beta);     Ry_data[1] = 0;             Ry_data[2] = sin(beta);
+    Ry_data[3] = 0;             Ry_data[4] = 1;             Ry_data[5] = 0;
+    Ry_data[6] = -sin(beta);    Ry_data[7] = 0;             Ry_data[8] = cos(beta);
+
+    QGenericMatrix<3,3,double> Ry(Ry_data);
+
+    //Compute rotational matrix around z-axis
+    double Rz_data[9];
+    Rz_data[0] = cos(gamma);    Rz_data[1] = -sin(gamma);   Rz_data[2] = 0;
+    Rz_data[3] = sin(gamma);    Rz_data[4] = cos(gamma);    Rz_data[5] = 0;
+    Rz_data[6] = 0;             Rz_data[7] = 0;             Rz_data[8] = 1;
+    QGenericMatrix<3,3,double> Rz(Rz_data);
+
+
+    //Compute complete rotational matrix
+    QGenericMatrix<3,3,double> R = Rx*Ry*Rz;
+
+    return R;
+}
+
+
+
+void MetaModelEditor::alignInterfaces(QString fromSubModel, QString toSubModel)
+{
+    //Extract submodel and interface names
+    QString model1 = fromSubModel.split(".").at(0);
+    QString interface1 = fromSubModel.split(".").at(1);
+    QString model2 = toSubModel.split(".").at(0);
+    QString interface2 = toSubModel.split(".").at(1);
+
+    //Read positions and rotations from XML
+    QDomElement subModelElement1;
+    QString x1_c1_r_x1_str, x1_c1_phi_x1_str, x2_c2_r_x2_str, x2_c2_phi_x2_str;
+    QString cg_x1_phi_cg_str, cg_x2_phi_cg_str, cg_x1_r_cg_str, cg_x2_r_cg_str;
+    QDomElement modelElement = mXmlDocument.firstChildElement("Model");
+    if(!modelElement.isNull()) {
+        QDomElement subModelsElement = modelElement.firstChildElement("SubModels");
+        if(!subModelsElement.isNull()) {
+            QDomElement subModelElement = subModelsElement.firstChildElement("SubModel");
+            while(!subModelElement.isNull()) {
+                if(subModelElement.attribute("Name").compare(model1) == 0) {
+                    cg_x1_r_cg_str = subModelElement.attribute("Position");
+                    cg_x1_phi_cg_str = subModelElement.attribute("Angle321");
+                    subModelElement1 = subModelElement;     //Store this element for writing back data after transformation
+                }
+                else if(subModelElement.attribute("Name").compare(model2) == 0) {
+                    cg_x2_r_cg_str = subModelElement.attribute("Position");
+                    cg_x2_phi_cg_str = subModelElement.attribute("Angle321");
+                }
+                QDomElement interfaceElement = subModelElement.firstChildElement("InterfacePoint");
+                while(!interfaceElement.isNull()) {
+                    if(subModelElement.attribute("Name").compare(model1) == 0 &&
+                       interfaceElement.attribute("Name").compare(interface1) == 0) {
+                        x1_c1_r_x1_str = interfaceElement.attribute("Position");
+                        x1_c1_phi_x1_str = interfaceElement.attribute("Angle321");
+                    }
+                    else if(subModelElement.attribute("Name").compare(model2) == 0 &&
+                            interfaceElement.attribute("Name").compare(interface2) == 0) {
+                        x2_c2_r_x2_str = interfaceElement.attribute("Position");
+                        x2_c2_phi_x2_str = interfaceElement.attribute("Angle321");
+                    }
+                    interfaceElement = interfaceElement.nextSiblingElement("InterfacePoint");
+                }
+                subModelElement = subModelElement.nextSiblingElement("SubModel");
+            }
+        }
+    }
+
+    //Assert that all rotations and positions were found (do something smarter?)
+    Q_ASSERT(!cg_x1_phi_cg_str.isEmpty());
+    Q_ASSERT(!cg_x2_phi_cg_str.isEmpty());
+    Q_ASSERT(!cg_x1_r_cg_str.isEmpty());
+    Q_ASSERT(!cg_x2_r_cg_str.isEmpty());
+    Q_ASSERT(!x1_c1_r_x1_str.isEmpty());
+    Q_ASSERT(!x1_c1_phi_x1_str.isEmpty());
+    Q_ASSERT(!x2_c2_r_x2_str.isEmpty());
+    Q_ASSERT(!x2_c2_phi_x2_str.isEmpty());
+
+    //Convert from strings to arrays
+    double cg_x1_phi_cg[3],cg_x2_phi_cg[3],x1_c1_phi_x1[3],x2_c2_phi_x2[3];
+    double cg_x1_r_cg[3],cg_x2_r_cg[3],x1_c1_r_x1[3],x2_c2_r_x2[3];
+
+    cg_x1_phi_cg[0] = cg_x1_phi_cg_str.split(",")[0].toDouble();
+    cg_x1_phi_cg[1] = cg_x1_phi_cg_str.split(",")[1].toDouble();
+    cg_x1_phi_cg[2] = cg_x1_phi_cg_str.split(",")[2].toDouble();
+
+    cg_x2_phi_cg[0] = cg_x2_phi_cg_str.split(",")[0].toDouble();
+    cg_x2_phi_cg[1] = cg_x2_phi_cg_str.split(",")[1].toDouble();
+    cg_x2_phi_cg[2] = cg_x2_phi_cg_str.split(",")[2].toDouble();
+
+    x1_c1_phi_x1[0] = x1_c1_phi_x1_str.split(",")[0].toDouble();
+    x1_c1_phi_x1[1] = x1_c1_phi_x1_str.split(",")[1].toDouble();
+    x1_c1_phi_x1[2] = x1_c1_phi_x1_str.split(",")[2].toDouble();
+
+    x2_c2_phi_x2[0] = x2_c2_phi_x2_str.split(",")[0].toDouble();
+    x2_c2_phi_x2[1] = x2_c2_phi_x2_str.split(",")[1].toDouble();
+    x2_c2_phi_x2[2] = x2_c2_phi_x2_str.split(",")[2].toDouble();
+
+    cg_x1_r_cg[0] = cg_x1_r_cg_str.split(",")[0].toDouble();
+    cg_x1_r_cg[1] = cg_x1_r_cg_str.split(",")[1].toDouble();
+    cg_x1_r_cg[2] = cg_x1_r_cg_str.split(",")[2].toDouble();
+
+    cg_x2_r_cg[0] = cg_x2_r_cg_str.split(",")[0].toDouble();
+    cg_x2_r_cg[1] = cg_x2_r_cg_str.split(",")[1].toDouble();
+    cg_x2_r_cg[2] = cg_x2_r_cg_str.split(",")[2].toDouble();
+
+    x1_c1_r_x1[0] = x1_c1_r_x1_str.split(",")[0].toDouble();
+    x1_c1_r_x1[1] = x1_c1_r_x1_str.split(",")[1].toDouble();
+    x1_c1_r_x1[2] = x1_c1_r_x1_str.split(",")[2].toDouble();
+
+    x2_c2_r_x2[0] = x2_c2_r_x2_str.split(",")[0].toDouble();
+    x2_c2_r_x2[1] = x2_c2_r_x2_str.split(",")[1].toDouble();
+    x2_c2_r_x2[2] = x2_c2_r_x2_str.split(",")[2].toDouble();
+
+
+    //Convert from arrays to Qt matrices
+    QGenericMatrix<3,1,double> CG_X1_PHI_CG(cg_x1_phi_cg);  //Rotation of X1 relative to CG expressed in CG
+    QGenericMatrix<3,1,double> CG_X2_PHI_CG(cg_x2_phi_cg);  //Rotation of X2 relative to CG expressed in CG
+    QGenericMatrix<3,1,double> X1_C1_PHI_X1(x1_c1_phi_x1);  //Rotation of C1 relative to X1 expressed in X1
+    QGenericMatrix<3,1,double> X2_C2_PHI_X2(x2_c2_phi_x2);  //Rotation of C2 relative to X2 expressed in X2
+    QGenericMatrix<3,1,double> CG_X1_R_CG(cg_x1_r_cg);      //Position of X1 relative to CG expressed in CG
+    QGenericMatrix<3,1,double> CG_X2_R_CG(cg_x2_r_cg);      //Position of X2 relative to CG expressed in CG
+    QGenericMatrix<3,1,double> X1_C1_R_X1(x1_c1_r_x1);      //Position of C1 relative to X1 expressed in X1
+    QGenericMatrix<3,1,double> X2_C2_R_X2(x2_c2_r_x2);      //Position of C2 relative to X2 expressed in X2
+
+    QGenericMatrix<3,3,double> R_X2_C2, R_CG_X1, R_CG_X2, R_CG_C2, R_X1_C1, R_CG_C1;
+    QGenericMatrix<3,1,double> X1_C1_PHI_CG, CG_C1_PHI_CG, X1_C1_R_CG, CG_C1_R_CG, X2_C2_PHI_CG, CG_C2_PHI_CG, X2_C2_R_CG, CG_C2_R_CG, ones;
+
+    //Equations from BEAST
+    R_X2_C2 = getRotationMatrix(X2_C2_PHI_X2);    //Rotation matrix between X2 and C2
+    R_CG_X2 = getRotationMatrix(CG_X2_PHI_CG);    //Rotation matrix between CG and X2
+    R_CG_C2 = R_X2_C2*R_CG_X2;                       //Rotation matrix between CG and C2
+
+    R_X1_C1 = getRotationMatrix(X1_C1_PHI_X1);    //Rotation matrix between X1 and C1
+    R_CG_X1 = R_X1_C1.transposed()*R_CG_C2;          //New rotation matrix between CG and X1
+
+    //Extract angles from rotation matrix
+    CG_X1_PHI_CG(0,0) = atan2(R_CG_X1(2,1),R_CG_X1(2,2));
+    CG_X1_PHI_CG(0,1) = atan2(-R_CG_X1(2,0),sqrt(R_CG_X1(2,1)*R_CG_X1(2,1) + R_CG_X1(2,2)*R_CG_X1(2,2)));
+    CG_X1_PHI_CG(0,2) = atan2(R_CG_X1(1,0),R_CG_X1(0,0));
+
+    //New position of X1 relative to CG
+    CG_X1_R_CG = CG_X2_R_CG + X2_C2_R_X2*R_CG_X2 - X1_C1_R_X1*R_CG_X1;
+
+//    //Verify positions
+//    qDebug() << CG_X1_R_CG +X1_C1_R_X1*R_CG_X1;
+//    qDebug() << CG_X2_R_CG +X2_C2_R_X2*R_CG_X2;
+
+//    //Verify rotations
+//    R_CG_C1 = R_X1_C1*R_CG_X1;
+//    qDebug() << R_CG_C1;
+//    qDebug() << R_CG_C2;
+
+    //Write back new rotation and position to XML
+    cg_x1_r_cg_str = QString("%1,%2,%3").arg(CG_X1_R_CG(0,0)).arg(CG_X1_R_CG(0,1)).arg(CG_X1_R_CG(0,2));
+    subModelElement1.setAttribute("Position", cg_x1_r_cg_str);
+    cg_x1_phi_cg_str = QString("%1,%2,%3").arg(CG_X1_PHI_CG(0,0)).arg(CG_X1_PHI_CG(0,1)).arg(CG_X1_PHI_CG(0,2));
+    subModelElement1.setAttribute("Angle321", cg_x1_phi_cg_str);
+    setPlainText(mXmlDocument.toString());
+}
+
+
 /*!
  * \brief MetaModelEditor::showContextMenu
  * Create a context menu.
