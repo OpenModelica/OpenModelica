@@ -8,40 +8,48 @@ template dumpProgram(list<SCode.Element> program, SCodeDumpOptions options)
 end dumpProgram;
 
 template dumpElements(list<SCode.Element> elements, Boolean indent, SCodeDumpOptions options)
-::= dumpElements2(filterElements(elements,options), "", indent, true, true, options)
+::= dumpElements2(filterElements(elements,options), indent, options)
 end dumpElements;
 
-template dumpElements2(list<SCode.Element> elements, String prevSpacing,
-    Boolean indent, Boolean firstElement, Boolean inPublicSection, SCodeDumpOptions options)
+template dumpElements2(list<SCode.Element> elements,
+    Boolean indent, SCodeDumpOptions options)
 ::=
-match elements
-  case el :: rest_els then
+  dumpElements3(elements, listLength(elements), makeStatefulBoolean(false), indent, makeStatefulBoolean(true), options)
+end dumpElements2;
+
+template dumpElements3(list<SCode.Element> elements, Integer numElements, array<Boolean> prevSpacing,
+    Boolean indent, array<Boolean> inPublicSection, SCodeDumpOptions options)
+::=
+  elements |> el hasindex i1 fromindex 1 =>
     let spacing = dumpElementSpacing(el)
-    let pre_spacing = if not firstElement then
-      dumpPreElementSpacing(spacing, prevSpacing)
+    let pre_spacing = if boolNot(intEq(1,i1)) then dumpPreElementSpacing(spacing, getStatefulBoolean(prevSpacing))
     let el_str = dumpElement(el,'',options)
-    let vis_str = dumpElementVisibility(el, inPublicSection)
-    let rest_str = if vis_str then
-        dumpElements2(rest_els, spacing, indent, false, boolNot(inPublicSection), options)
+    let vis_str = dumpElementVisibility(el, getStatefulBoolean(inPublicSection))
+    let dummyTxt = if vis_str then setStatefulBoolean(inPublicSection, boolNot(getStatefulBoolean(inPublicSection)))
+    let post_spacing = if boolNot(intEq(i1, numElements))
+      then
+        (if spacing then
+          let () = setStatefulBoolean(prevSpacing, true)
+          spacing
+        else
+          let () = setStatefulBoolean(prevSpacing, false)
+          "")
       else
-        dumpElements2(rest_els, spacing, indent, false, inPublicSection, options)
-    let post_spacing = if rest_str then spacing
-    let elements_str = if indent then
+        let () = setStatefulBoolean(prevSpacing, false)
+        ""
+    if indent then
       <<
       <%pre_spacing%><%vis_str%>
         <%el_str%>;<%post_spacing%><%\n%>
-      <%rest_str%>
       >>
       else
       <<
       <%pre_spacing%><%vis_str%>
       <%el_str%>;<%post_spacing%><%\n%>
-      <%rest_str%>
       >>
-    elements_str
-end dumpElements2;
+end dumpElements3;
 
-template dumpPreElementSpacing(String curSpacing, String prevSpacing)
+template dumpPreElementSpacing(String curSpacing, Boolean prevSpacing)
 ::= if not prevSpacing then curSpacing
 end dumpPreElementSpacing;
 
