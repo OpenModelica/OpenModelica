@@ -95,6 +95,9 @@ TextAnnotation::TextAnnotation(Component *pParent)
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
   ShapeAnnotation::setDefaults();
+  // give a reasonable size to default component text
+  mExtents.replace(0, QPointF(-50, -50));
+  mExtents.replace(1, QPointF(50, 50));
   setTextString("%name");
   initUpdateTextString();
   setPos(mOrigin);
