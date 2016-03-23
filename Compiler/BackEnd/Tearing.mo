@@ -49,6 +49,7 @@ protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import Config;
+protected import DoubleEndedList;
 protected import DumpGraphML;
 protected import Error;
 protected import ExecStat.execStat;
@@ -1693,6 +1694,7 @@ algorithm
 
   // Get advanced adjacency matrix (determine how the variables occur in the equations)
   (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,false);
+  if debug then execStat("Tearing.CellierTearing -> 1.5"); end if;
 
   // Determine unsolvable vars to consider solvability
   unsolvables := getUnsolvableVars(1,size,meT,{});
@@ -1749,7 +1751,7 @@ algorithm
 
   if debug then execStat("Tearing.CellierTearing -> 3.2"); end if;
   // Unassigned equations are residual equations
-  ((_,residual)) := Array.fold(ass2,getUnassigned,(1,{}));
+  residual := getUnassigned(ass2);
   if debug then execStat("Tearing.CellierTearing -> 3.3"); end if;
   residual_coll := List.map1r(residual,arrayGet,mapIncRowEqn);
   if debug then execStat("Tearing.CellierTearing -> 3.4"); end if;
@@ -1840,7 +1842,7 @@ algorithm
     if intLt(listLength(OutTVars), tornsize) then
 
       // Unassigned equations are residual equations
-      ((_,residual)) := Array.fold(ass2,getUnassigned,(1,{}));
+      residual := getUnassigned(ass2);
       residual_coll := List.map1r(residual,arrayGet,mapIncRowEqn);
       residual_coll := List.unique(residual_coll);
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -2243,9 +2245,7 @@ algorithm
   end if;
 
   // 5. select the rows(eqs) from mIn which could be causalized by knowing one more Var
-  ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
-  (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1);
-  selectedrows := listAppend(assEq_multi,assEq_single);
+  selectedrows := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
@@ -2290,9 +2290,7 @@ algorithm
   end if;
 
   // 2. select the rows(eqs) from mIn which could be causalized by knowing one more Var
-  ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
-  (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1);
-  selectedrows := listAppend(assEq_multi,assEq_single);
+  selectedrows := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
@@ -2349,9 +2347,7 @@ algorithm
   end if;
 
   // 5. select the rows(eqs) from mIn which could be causalized by knowing one more Var
-  ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
-  (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1);
-  selectedrows := listAppend(assEq_multi,assEq_single);
+  selectedrows := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
@@ -2402,9 +2398,7 @@ algorithm
   end if;
 
   // 2. select the rows(eqs) from mIn which could be causalized by knowing one more Var
-  ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
-  (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1);
-  selectedrows := listAppend(assEq_multi,assEq_single);
+  selectedrows := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
@@ -2473,9 +2467,7 @@ algorithm
   end if;
 
   // 6. select the rows(eqs) from mIn which could be causalized by knowing one more Var
-  ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
-  (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1);
-  selectedrows := listAppend(assEq_multi,assEq_single);
+  selectedrows := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
@@ -2526,9 +2518,7 @@ algorithm
   end if;
 
   // 3. select the rows(eqs) from mIn which could be causalized by knowing one more Var
-  ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
-  (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1);
-  selectedrows := listAppend(assEq_multi,assEq_single);
+  selectedrows := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
@@ -2585,9 +2575,7 @@ algorithm
   end if;
 
   // 5. select the rows(eqs) from mIn which could be causalized by knowing one more Var
-  ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
-  (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1);
-  selectedrows := listAppend(assEq_multi,assEq_single);
+  selectedrows := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
@@ -2644,9 +2632,7 @@ algorithm
   end if;
 
   // 3. select the rows(eqs) from mIn which could be causalized by knowing one more Var
-  ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
-  (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1);
-  selectedrows := listAppend(assEq_multi,assEq_single);
+  selectedrows := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
@@ -2708,9 +2694,7 @@ algorithm
   end if;
 
   // 3. select the rows(eqs) from mIn which could be causalized by knowing one more Var
-  ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
-  (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1);
-  selectedrows := listAppend(assEq_multi,assEq_single);
+  selectedrows := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
@@ -2797,15 +2781,10 @@ algorithm
   // Cellier heuristic [MC3]
 
   // 1. Find all unassigned equations
-  ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
-  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("1st: "+ stringDelimitList(List.map(assEq,intString),",")+"\n(All unassigned equations)\n\n");
-  end if;
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 1"); end if;
 
   // 2. Determine the equations with size(equation)+1 variables and save them in causEq
-  (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1);
-  causEq := listAppend(assEq_multi,assEq_single);
+  causEq := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("2nd: "+ stringDelimitList(List.map(causEq,intString),",")+"\n(Equations from (1st) which could be causalized by knowing one more variable)\n\n");
   end if;
@@ -2829,7 +2808,8 @@ algorithm
 
   // 4.1 Check if potentialTVars is empty, if yes, choose all unassigned non-discrete variables without attribute tearingSelect=never as potentialTVars
   if listEmpty(potentialTVars) then
-    ((_,potentialTVars)) := Array.fold(ass1In,getUnassigned,(1,{}));
+    potentialTVars := getUnassigned(ass1In);
+
     (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,discreteVars,intEq);
     (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,tSel_never,intEq);
   if listEmpty(potentialTVars) then
@@ -3190,6 +3170,7 @@ protected
   list<Integer> subOrder,unassigned,eqQueue=eqQueueIn;
   list<Integer> order=orderIn;
   Boolean assignable = true;
+  constant Boolean debug = false;
 algorithm
   while assignable loop
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -3197,8 +3178,9 @@ algorithm
     end if;
     (eqQueue,order,assignable) := TarjanAssignment(eqQueue,mIn,mtIn,meIn,metIn,ass1In,ass2In,order,mapEqnIncRow,mapIncRowEqn);
   end while;
+  if debug then execStat("Tearing.TarjanMatching iters done"); end if;
 
-  ((_,unassigned)) := Array.fold(ass1In,getUnassigned,(1,{}));
+  unassigned := getUnassigned(ass1In);
   if listEmpty(unassigned) then
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\ncausal\n");
@@ -3212,6 +3194,7 @@ algorithm
     orderOut := order;
     causal := false;
   end if;
+  if debug then execStat("Tearing.TarjanMatching done"); end if;
 end TarjanMatching;
 
 
@@ -3232,12 +3215,8 @@ author: ptaeuber FHB 2013-2015"
 protected
   list<Integer> assEq,assEq_multi,assEq_single,assEq_coll,eqns,vars;
 algorithm
-  // select equations not assigned yet
-  ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
-
   // find equations with one variable
-  (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,0);
-  assEq := listAppend(assEq_multi,assEq_single);
+  assEq := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,0);
 
   // transform equationlist to equationlist with collective equations
   assEq_coll := List.map1r(assEq,arrayGet,mapIncRowEqn);
@@ -3297,50 +3276,35 @@ algorithm
   end matchcontinue;
 end TarjanGetAssignable;
 
-
-protected function getUnassigned " finds the unassigned vars or eqs.combine with List.fold"
-  input Integer assEntry;
-  input tuple<Integer,list<Integer>> InValue;
-  output tuple<Integer,list<Integer>> OutValue;
-algorithm
-OutValue := match(assEntry,InValue)
-  local
-    Integer indx;
-    list<Integer> lst;
-  case(_,(indx,lst))
-    then
-      if intEq(assEntry,-1) then
-        ((indx+1,indx::lst))
-      else
-        ((indx+1,lst));
-  end match;
-end getUnassigned;
-
-
 protected function traverseEqnsforAssignable
 " selects next equations that can be causalized
   author: ptaeuber FHB 2013-10"
-  input list<Integer> inAssEq;
+  input array<Integer> inAss;
   input BackendDAE.IncidenceMatrix m;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input Integer prescient;
-  output list<Integer> outAssEq_multi = {};
-  output list<Integer> outAssEq_single = {};
+  output list<Integer> selectedrows;
 protected
   Integer eqnColl,eqnSize;
+  DoubleEndedList<Integer> delst;
 algorithm
-  for e in inAssEq loop
+  delst := DoubleEndedList.empty(0);
+  for e in 1:arrayLength(inAss) loop
+    if arrayGet(inAss,e)<>-1 then
+      continue;
+    end if;
     eqnColl := mapIncRowEqn[e];
     eqnSize := listLength(mapEqnIncRow[eqnColl]);
     if listLength(m[e]) == eqnSize + prescient then
       if eqnSize == 1 then
-        outAssEq_single := e::outAssEq_single;
+        DoubleEndedList.push_back(delst, e);
       else
-        outAssEq_multi := e::outAssEq_multi;
+        DoubleEndedList.push_front(delst, e);
       end if;
     end if;
   end for;
+  selectedrows := DoubleEndedList.toListAndClear(delst);
 end traverseEqnsforAssignable;
 
 
@@ -4027,6 +3991,17 @@ algorithm
   end if;
 
 end recursiveTearingReplace;
+
+protected function getUnassigned
+  input array<Integer> ass;
+  output list<Integer> unassigned={};
+algorithm
+  for i in 1:arrayLength(ass) loop
+    if Dangerous.arrayGetNoBoundsChecking(ass, i)==-1 then
+      unassigned := i::unassigned;
+    end if;
+  end for;
+end getUnassigned;
 
 annotation(__OpenModelica_Interface="backend");
 end Tearing;
