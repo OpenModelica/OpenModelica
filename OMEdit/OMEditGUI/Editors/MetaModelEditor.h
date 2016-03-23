@@ -89,12 +89,14 @@ private:
   bool mTextChanged;
   bool mForceSetPlainText;
   XMLDocument mXmlDocument;
+  QGenericMatrix<3,3,double> getRotationMatrix(QGenericMatrix<3,1,double> rotation);
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:
   void setPlainText(const QString &text);
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
   virtual void toggleCommentSelection() {}
+  void alignInterfaces(QString fromSubModel, QString toSubModel);
 };
 
 class MetaModelEditorPage;
