@@ -603,6 +603,7 @@ typedef struct SIMULATION_DATA
 
 }SIMULATION_DATA;
 
+#if !defined(OMC_MINIMAL_RUNTIME)
 typedef struct {
   int enabled;
   double scaling;
@@ -610,6 +611,7 @@ typedef struct {
   rtclock_t clock;
   int64_t maxLate;
 } real_time_sync_t;
+#endif
 
 /* top-level struct to collect dynamic and static model data */
 typedef struct DATA
@@ -619,8 +621,10 @@ typedef struct DATA
   MODEL_DATA *modelData;                /* static stuff */
   SIMULATION_INFO *simulationInfo;
   struct OpenModelicaGeneratedFunctionCallbacks *callback;
+#if !defined(OMC_MINIMAL_RUNTIME)
   void *embeddedServerState; /* Variable sent around controlling the state of the embedded server */
   real_time_sync_t real_time_sync;
+#endif
 } DATA;
 
 #include "openmodelica_func.h"
