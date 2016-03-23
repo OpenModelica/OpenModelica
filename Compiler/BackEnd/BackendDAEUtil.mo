@@ -6499,13 +6499,13 @@ protected function traverseBackendDAEExpsOptEqnWithUpdate "author: Frenkel TUD 2
 algorithm
   (outEquation,outTypeA) := match (inEquation,func,inTypeA)
     local
-      BackendDAE.Equation eqn;
+      BackendDAE.Equation eqn1,eqn2;
      Type_a ext_arg_1;
-    case (SOME(eqn),_,_)
+    case (SOME(eqn1),_,_)
       equation
-        (eqn,ext_arg_1) = BackendEquation.traverseExpsOfEquation(eqn,func,inTypeA);
+        (eqn2,ext_arg_1) = BackendEquation.traverseExpsOfEquation(eqn1,func,inTypeA);
       then
-        (SOME(eqn),ext_arg_1);
+        (if referenceEq(eqn1,eqn2) then inEquation else SOME(eqn2),ext_arg_1);
     else (NONE(),inTypeA);
   end match;
 end traverseBackendDAEExpsOptEqnWithUpdate;

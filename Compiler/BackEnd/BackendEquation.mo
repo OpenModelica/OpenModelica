@@ -675,7 +675,7 @@ algorithm
       list<DAE.Exp> expl;
       DAE.Type tp;
       DAE.ComponentRef cr, cr1;
-      BackendDAE.WhenEquation we;
+      BackendDAE.WhenEquation we, we_1;
       DAE.ElementSource source;
       Integer size;
       T extArg;
@@ -690,37 +690,36 @@ algorithm
     case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr) equation
       (e_1, extArg) = inFunc(e1, inTypeA);
       (e_2, extArg) = inFunc(e2, extArg);
-    then (BackendDAE.EQUATION(e_1, e_2, source, attr), extArg);
+    then (if referenceEq(e1,e_1) and referenceEq(e2,e_2) then inEquation else BackendDAE.EQUATION(e_1, e_2, source, attr), extArg);
 
     case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=source, attr=attr) equation
       (e_1, extArg) = inFunc(e1, inTypeA);
       (e_2, extArg) = inFunc(e2, extArg);
-    then (BackendDAE.ARRAY_EQUATION(dimSize, e_1, e_2, source, attr), extArg);
+    then (if referenceEq(e1,e_1) and referenceEq(e2,e_2) then inEquation else BackendDAE.ARRAY_EQUATION(dimSize, e_1, e_2, source, attr), extArg);
 
     case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=attr) equation
       tp = Expression.typeof(e2);
       e1 = Expression.makeCrefExp(cr, tp);
       (DAE.CREF(cr1, _), extArg) = inFunc(e1, inTypeA);
       (e_2, extArg) = inFunc(e2, extArg);
-    then (BackendDAE.SOLVED_EQUATION(cr1, e_2, source, attr), extArg);
+    then (if referenceEq(cr,cr1) and referenceEq(e2,e_2) then inEquation else BackendDAE.SOLVED_EQUATION(cr1, e_2, source, attr), extArg);
 
     case BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, attr=attr) equation
       (e_1, extArg) = inFunc(e1, inTypeA);
-    then (BackendDAE.RESIDUAL_EQUATION(e_1, source, attr), extArg);
+    then (if referenceEq(e1,e_1) then inEquation else BackendDAE.RESIDUAL_EQUATION(e_1, source, attr), extArg);
 
     case BackendDAE.WHEN_EQUATION(size=size, whenEquation= we, source=source, attr=attr) equation
-      (we, extArg) = traverseExpsOfWhenEquation(we, inFunc, inTypeA);
-    then (BackendDAE.WHEN_EQUATION(size, we, source, attr), extArg);
+      (we_1, extArg) = traverseExpsOfWhenEquation(we, inFunc, inTypeA);
+    then (if referenceEq(we,we_1) then inEquation else BackendDAE.WHEN_EQUATION(size, we_1, source, attr), extArg);
 
     case BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts), source=source, expand=crefExpand, attr=attr) equation
       (stmts1, extArg) = DAEUtil.traverseDAEEquationsStmts(stmts, inFunc, inTypeA);
-      alg = if referenceEq(stmts, stmts1) then alg else DAE.ALGORITHM_STMTS(stmts1);
-    then (BackendDAE.ALGORITHM(size, alg, source, crefExpand, attr), extArg);
+    then (if referenceEq(stmts,stmts1) then inEquation else BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(stmts1), source, crefExpand, attr), extArg);
 
     case BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source, attr=attr) equation
       (e_1, extArg) = inFunc(e1, inTypeA);
       (e_2, extArg) = inFunc(e2, extArg);
-    then (BackendDAE.COMPLEX_EQUATION(size, e_1, e_2, source, attr), extArg);
+    then (if referenceEq(e1,e_1) and referenceEq(e2,e_2) then inEquation else BackendDAE.COMPLEX_EQUATION(size, e_1, e_2, source, attr), extArg);
 
     case BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, attr=attr) equation
       (expl, extArg) = traverseExpsOfExpList(expl, inFunc, inTypeA);
@@ -731,7 +730,7 @@ algorithm
     case BackendDAE.FOR_EQUATION(iter=iter,start=start,stop=stop,left=e1, right=e2, source=source, attr=attr) equation
       (e_1, extArg) = inFunc(e1, inTypeA);
       (e_2, extArg) = inFunc(e2, extArg);
-    then (BackendDAE.FOR_EQUATION(iter,start,stop,e_1,e_2,source,attr), extArg);
+    then (if referenceEq(e1,e_1) and referenceEq(e2,e_2) then inEquation else BackendDAE.FOR_EQUATION(iter,start,stop,e_1,e_2,source,attr), extArg);
   end match;
 end traverseExpsOfEquation;
 
