@@ -1293,7 +1293,7 @@ algorithm
       equation
         inputVarsLst = List.map1(eqns, Array.getIndexFirst, inMatrix);
         inputVars = List.flatten(inputVarsLst);
-        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        inputVars = list(v for v guard not listMember(v, solvedVars) in inputVars);
 
         getSparsePattern2(inputVars, solvedVars, eqns, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
