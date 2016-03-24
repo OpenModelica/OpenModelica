@@ -65,6 +65,7 @@ protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
+protected import DoubleEndedList;
 protected import FCore;
 protected import FGraph;
 protected import Error;
@@ -5454,15 +5455,31 @@ public function traverseExpList<ArgT> "Calls traverseExpBottomUp for each elemen
   end FuncExpType;
 protected
   DAE.Exp e1;
-  Boolean same = true;
+  Boolean allEq=true;
+  DoubleEndedList<DAE.Exp> delst;
+  Integer nEq=0;
 algorithm
   for e in inExpl loop
     (e1, ext_arg) := traverseExpBottomUp(e, rel, ext_arg);
-    expl := e1 :: expl;
-    same := same and referenceEq(e, e1);
+    // Preserve reference equality without any allocation if nothing changed
+    if (if allEq then not referenceEq(e, e1) else false) then
+      allEq:=false;
+      delst := DoubleEndedList.empty(e1);
+      for elt in inExpl loop
+        if nEq < 1 then
+          break;
+        end if;
+        DoubleEndedList.push_back(delst, elt);
+        nEq := nEq-1;
+      end for;
+    end if;
+    if allEq then
+      nEq := nEq + 1;
+    else
+      DoubleEndedList.push_back(delst, e1);
+    end if;
   end for;
-
-  expl := if same then inExpl else listReverse(expl);
+  expl := if allEq then inExpl else DoubleEndedList.toListAndClear(delst);
 end traverseExpList;
 
 public function traverseExpTopDown
@@ -7211,23 +7228,23 @@ algorithm
   (outCref, outArg) := match(inCref, rel, iarg)
     local
       String name;
-      ComponentRef cr;
+      ComponentRef cr, cr_1;
       Type ty;
-      list<DAE.Subscript> subs;
+      list<DAE.Subscript> subs, subs_1;
       Argument arg;
 
     case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _, arg)
       equation
-        (subs,arg) = traverseExpTopDownSubs(subs, rel, arg);
-        (cr, arg) = traverseExpTopDownCrefHelper(cr, rel, arg);
+        (subs_1,arg) = traverseExpTopDownSubs(subs, rel, arg);
+        (cr_1, arg) = traverseExpTopDownCrefHelper(cr, rel, arg);
       then
-        (DAE.CREF_QUAL(name, ty, subs, cr), arg);
+        (if referenceEq(subs,subs_1) and referenceEq(cr,cr_1) then inCref else DAE.CREF_QUAL(name, ty, subs_1, cr_1), arg);
 
     case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _, arg)
       equation
-        (subs,arg) = traverseExpTopDownSubs(subs, rel, arg);
+        (subs_1,arg) = traverseExpTopDownSubs(subs, rel, arg);
       then
-        (DAE.CREF_IDENT(name, ty, subs), arg);
+        (if referenceEq(subs,subs_1) then inCref else DAE.CREF_IDENT(name, ty, subs_1), arg);
 
     case (DAE.WILD(), _, arg) then (inCref, arg);
   end match;
@@ -7283,7 +7300,7 @@ protected function traverseExpTopDownSubs
   input FuncType rel;
   input Argument iarg;
   output list<DAE.Subscript> outSubscript;
-  output Argument outArg;
+  output Argument arg=iarg;
 
   partial function FuncType
     input DAE.Exp inExp;
@@ -7294,41 +7311,48 @@ protected function traverseExpTopDownSubs
   end FuncType;
 
   replaceable type Argument subtypeof Any;
+protected
+  DAE.Exp exp;
+  DAE.Subscript nsub;
+  Boolean allEq=true;
+  DoubleEndedList<DAE.Subscript> delst;
+  Integer nEq=0;
 algorithm
-  (outSubscript, outArg) := match(inSubscript, rel, iarg)
-    local
-      DAE.Exp sub_exp;
-      list<DAE.Subscript> rest;
-      Argument arg;
-
-    case ({}, _, arg) then ({},arg);
-    case (DAE.WHOLEDIM()::rest, _, arg)
-      equation
-        (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
-      then (DAE.WHOLEDIM()::rest, arg);
-
-    case (DAE.SLICE(exp = sub_exp)::rest, _, arg)
-      equation
-        (sub_exp,arg) = traverseExpTopDown(sub_exp, rel, arg);
-        (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
-      then
-        (DAE.SLICE(sub_exp)::rest, arg);
-
-    case (DAE.INDEX(exp = sub_exp)::rest, _, arg)
-      equation
-        (sub_exp,arg) = traverseExpTopDown(sub_exp, rel, arg);
-        (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
-      then
-        (DAE.INDEX(sub_exp)::rest, arg);
-
-    case (DAE.WHOLE_NONEXP(exp = sub_exp)::rest, _, arg)
-      equation
-        (sub_exp,arg) = traverseExpTopDown(sub_exp, rel, arg);
-        (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
-      then
-        (DAE.WHOLE_NONEXP(sub_exp)::rest, arg);
-
-  end match;
+  for sub in inSubscript loop
+    nsub := match sub
+      case DAE.WHOLEDIM() then sub;
+      case DAE.SLICE()
+        algorithm
+          (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
+        then if referenceEq(sub.exp, exp) then sub else DAE.SLICE(exp);
+      case DAE.INDEX()
+        algorithm
+          (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
+        then if referenceEq(sub.exp, exp) then sub else DAE.INDEX(exp);
+      case DAE.WHOLE_NONEXP()
+        algorithm
+          (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
+        then if referenceEq(sub.exp, exp) then sub else DAE.WHOLE_NONEXP(exp);
+    end match;
+    // Preserve reference equality without any allocation if nothing changed
+    if (if allEq then not referenceEq(nsub, sub) else false) then
+      allEq:=false;
+      delst := DoubleEndedList.empty(nsub);
+      for elt in inSubscript loop
+        if nEq < 1 then
+          break;
+        end if;
+        DoubleEndedList.push_back(delst, elt);
+        nEq := nEq-1;
+      end for;
+    end if;
+    if allEq then
+      nEq := nEq + 1;
+    else
+      DoubleEndedList.push_back(delst, nsub);
+    end if;
+  end for;
+  outSubscript := if allEq then inSubscript else DoubleEndedList.toListAndClear(delst);
 end traverseExpTopDownSubs;
 
 /***************************************************/
