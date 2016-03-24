@@ -168,6 +168,7 @@ private:
   QGridLayout *mpLoggingGroupLayout;
   Label *mpAdditionalSimulationFlagsLabel;
   QLineEdit *mpAdditionalSimulationFlagsTextBox;
+  QToolButton *mpSimulationFlagsHelpButton;
   // Archived Simulation Flags Tab
   QWidget *mpArchivedSimulationsTab;
   QTreeWidget *mpArchivedSimulationsTreeWidget;
@@ -202,6 +203,7 @@ public slots:
   void buildOnly(bool checked);
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
+  void showSimulationFlagsHelp();
   void showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem);
   void simulate();
 private slots:

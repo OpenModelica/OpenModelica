@@ -475,6 +475,7 @@ private:
   QComboBox *mpTargetCompilerComboBox;
   Label *mpOMCFlagsLabel;
   QLineEdit *mpOMCFlagsTextBox;
+  QToolButton *mpOMCFlagsHelpButton;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
   QGroupBox *mpOutputGroupBox;
   QRadioButton *mpStructuredRadioButton;
@@ -482,6 +483,7 @@ private:
 public slots:
   void updateMatchingAlgorithmToolTip(int index);
   void updateIndexReductionToolTip(int index);
+  void showOMCFlagsHelp();
 };
 
 class MessagesPage : public QWidget

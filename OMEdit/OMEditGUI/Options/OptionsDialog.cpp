@@ -2622,8 +2622,12 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   }
   // OMC Flags
   mpOMCFlagsLabel = new Label(tr("OMC Flags"));
-  mpOMCFlagsLabel->setToolTip(tr("Space separated list of flags e.g. +d=initialization +cheapmatchingAlgorithm=3"));
+  mpOMCFlagsLabel->setToolTip(tr("Space separated list of flags e.g., +d=initialization +cheapmatchingAlgorithm=3"));
   mpOMCFlagsTextBox = new QLineEdit("+d=initialization");
+  mpOMCFlagsHelpButton = new QToolButton;
+  mpOMCFlagsHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
+  mpOMCFlagsHelpButton->setToolTip(tr("OMC flags help"));
+  connect(mpOMCFlagsHelpButton, SIGNAL(clicked()), SLOT(showOMCFlagsHelp()));
   /* save class before simulation checkbox */
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
   mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
@@ -2651,17 +2655,18 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   QGridLayout *pSimulationLayout = new QGridLayout;
   pSimulationLayout->setAlignment(Qt::AlignTop);
   pSimulationLayout->addWidget(mpMatchingAlgorithmLabel, 0, 0);
-  pSimulationLayout->addWidget(mpMatchingAlgorithmComboBox, 0, 1);
+  pSimulationLayout->addWidget(mpMatchingAlgorithmComboBox, 0, 1, 1, 2);
   pSimulationLayout->addWidget(mpIndexReductionMethodLabel, 1, 0);
-  pSimulationLayout->addWidget(mpIndexReductionMethodComboBox, 1, 1);
+  pSimulationLayout->addWidget(mpIndexReductionMethodComboBox, 1, 1, 1, 2);
   pSimulationLayout->addWidget(mpTargetLanguageLabel, 2, 0);
-  pSimulationLayout->addWidget(mpTargetLanguageComboBox, 2, 1);
+  pSimulationLayout->addWidget(mpTargetLanguageComboBox, 2, 1, 1, 2);
   pSimulationLayout->addWidget(mpCompilerLabel, 3, 0);
-  pSimulationLayout->addWidget(mpTargetCompilerComboBox, 3, 1);
+  pSimulationLayout->addWidget(mpTargetCompilerComboBox, 3, 1, 1, 2);
   pSimulationLayout->addWidget(mpOMCFlagsLabel, 4, 0);
   pSimulationLayout->addWidget(mpOMCFlagsTextBox, 4, 1);
-  pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 5, 0, 1, 2);
-  pSimulationLayout->addWidget(mpOutputGroupBox, 6, 0, 1, 2);
+  pSimulationLayout->addWidget(mpOMCFlagsHelpButton, 4, 2);
+  pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 5, 0, 1, 3);
+  pSimulationLayout->addWidget(mpOutputGroupBox, 6, 0, 1, 3);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;
@@ -2707,6 +2712,22 @@ void SimulationPage::updateMatchingAlgorithmToolTip(int index)
 void SimulationPage::updateIndexReductionToolTip(int index)
 {
   mpIndexReductionMethodComboBox->setToolTip(mpIndexReductionMethodComboBox->itemData(index, Qt::ToolTipRole).toString());
+}
+
+/*!
+ * \brief SimulationPage::showOMCFlagsHelp
+ * Slot activated when mpOMCFlagsHelpButton clicked signal is raised.\n
+ * Opens the omchelptext.html page of OpenModelica users guide.
+ */
+void SimulationPage::showOMCFlagsHelp()
+{
+  QUrl omcHelpTextPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
+                        .append("/share/doc/omc/OpenModelicaUsersGuide/omchelptext.html"));
+  if (!QDesktopServices::openUrl(omcHelpTextPath)) {
+    QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(omcHelpTextPath.toString());
+    mpOptionsDialog->getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
+                                                                                     Helper::scriptingKind, Helper::errorLevel));
+  }
 }
 
 //! @class MessagesPage
