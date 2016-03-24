@@ -955,7 +955,7 @@ algorithm
         //newExp = VarTransform.getReplacement(repl,cr);
         newExp = Expression.makeTuple(list( VarTransform.getReplacement(repl,cr) for cr in lst_cr));
         argmap = List.threadTuple(crefs,args);
-        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
+        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTableSized(BaseHashTable.lowBucketSize));
         // compare types
         true = checkExpsTypeEquiv(e1, newExp);
         // add noEvent to avoid events as usually for functions
