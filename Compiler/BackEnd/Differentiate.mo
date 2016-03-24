@@ -563,6 +563,7 @@ algorithm
     case DAE.BCONST(bool=b) then (DAE.BCONST(b), inFunctionTree);
     case DAE.ICONST() then (DAE.ICONST(0), inFunctionTree);
     case DAE.RCONST() then (DAE.RCONST(0.0), inFunctionTree);
+    case DAE.SCONST() then (inExp, inFunctionTree);
 
     // differentiate cref
     case DAE.CREF() equation
