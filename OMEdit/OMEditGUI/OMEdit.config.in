@@ -1,7 +1,4 @@
 # @author Martin Sjölund <martin.sjolund@liu.se>
-#
-# RCS: $Id: OMEdit.config.in 13565 2012-10-23 01:07:41Z adeas31 $
-#
 
 QMAKE_CC  = @CC@
 QMAKE_CXX = @CXX@
