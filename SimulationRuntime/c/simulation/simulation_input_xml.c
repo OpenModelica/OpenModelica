@@ -409,7 +409,7 @@ static void read_var_attribute_string(omc_ScalarVariable *v, STRING_ATTRIBUTE *a
   read_value_string(findHashStringStringEmpty(v,"start"), &start);
   attribute->start = mmc_mk_scon_persist(start);
 
-  infoStreamPrint(LOG_DEBUG, 0, "String %s(%sstart=%s%s)", findHashStringString(v,"name"), attribute->useStart?"":"{", attribute->start, attribute->useStart?"":"}");
+  infoStreamPrint(LOG_DEBUG, 0, "String %s(%sstart=%s%s)", findHashStringString(v,"name"), attribute->useStart?"":"{", MMC_STRINGDATA(attribute->start), attribute->useStart?"":"}");
 }
 
 /* \brief
