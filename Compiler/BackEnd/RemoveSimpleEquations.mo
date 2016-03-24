@@ -5045,74 +5045,71 @@ set the corresponding values of the variable which is kept in the system
   input BackendDAE.Variables inVars;
   input BackendDAE.Variables inAliasVars;
   output BackendDAE.Variables outVars = inVars;
+protected
+  DAE.ComponentRef cr1;
+  list<DAE.ComponentRef> cr_lst;
+  DAE.Exp e;
+  BackendDAE.Var v;
+  Integer i, j;
+  list<tuple<DAE.ComponentRef,list<tuple<DAE.ComponentRef,BackendDAE.Equation>>>> tplCrEqRest;
+  list<tuple<DAE.ComponentRef,BackendDAE.Equation>> cr_eq_lst;
+  HashTableExpToIndex.HashTable HTStartExpToInt;
+  HashTableExpToIndex.HashTable HTNominalExpToInt;
+  list<tuple<DAE.Exp,Integer>> tplExpIndList;
 algorithm
-  outVars := matchcontinue(tplCrEqLst)
-  local
-    DAE.ComponentRef cr1;
-    list<DAE.ComponentRef> cr_lst;
-    DAE.Exp e;
-    BackendDAE.Var v;
-    Integer i, j;
-    list<tuple<DAE.ComponentRef,list<tuple<DAE.ComponentRef,BackendDAE.Equation>>>> tplCrEqRest;
-    list<tuple<DAE.ComponentRef,BackendDAE.Equation>> cr_eq_lst;
-    HashTableExpToIndex.HashTable HTStartExpToInt;
-    HashTableExpToIndex.HashTable HTNominalExpToInt;
-    list<tuple<DAE.Exp,Integer>> tplExpIndList;
-
-    case ({}) then (inVars);
-    case (cr1,cr_eq_lst)::tplCrEqRest equation
-        HTStartExpToInt = HashTableExpToIndex.emptyHashTableSized(100);
-        HTNominalExpToInt = HashTableExpToIndex.emptyHashTableSized(100);
-        ({v},{i}) = BackendVariable.getVar(cr1,inVars);
-        if BackendVariable.varHasStartValue(v) then
-          e = BackendVariable.varStartValue(v);
-          if Expression.isZero(e) then
-            e = DAE.RCONST(0.0);
-          end if;
-          cr_lst = Expression.extractCrefsFromExp(e);
-          j = 2 - listLength(cr_lst);
-          j = j*ComponentReference.crefDepth(cr1);
-          HTStartExpToInt = BaseHashTable.add((e, j), HTStartExpToInt);
-          if Flags.isSet(Flags.DEBUG_ALIAS) then
-            print("START: " + ComponentReference.printComponentRefStr(cr1) + " = " + ExpressionDump.printExpStr(e) + "\n");
-          end if;
-        end if;
-        if BackendVariable.varHasNominalValue(v) then
-          e = BackendVariable.varNominalValue(v);
-          cr_lst = Expression.extractCrefsFromExp(e);
-          j = 2 - listLength(cr_lst);
-          j = j*ComponentReference.crefDepth(cr1);
-          HTNominalExpToInt = BaseHashTable.add((e, j), HTNominalExpToInt);
-          if Flags.isSet(Flags.DEBUG_ALIAS) then
-            print("NOMINAL: " + ComponentReference.printComponentRefStr(cr1) + " = " + ExpressionDump.printExpStr(e) + "\n");
-          end if;
-        end if;
-        (HTStartExpToInt,HTNominalExpToInt) = getThisAttributes(cr1,cr_eq_lst,inAliasVars,HTStartExpToInt,HTNominalExpToInt);
-        tplExpIndList = BaseHashTable.hashTableList(HTStartExpToInt);
-        if not listEmpty(tplExpIndList) then
-          e = getDominantAttributeValue(tplExpIndList);
-          v = BackendVariable.setVarStartValue(v,e);
-          if Flags.isSet(Flags.DEBUG_ALIAS) then
-            print("START: " + ComponentReference.printComponentRefStr(cr1) + " = " + ExpressionDump.printExpStr(e) + "\n");
-            BaseHashTable.dumpHashTable(HTStartExpToInt);
-          end if;
-        end if;
-        tplExpIndList = BaseHashTable.hashTableList(HTNominalExpToInt);
-        if not listEmpty(tplExpIndList) then
-          e = getDominantAttributeValue(tplExpIndList);
-          v = BackendVariable.setVarNominalValue(v,e);
-          if Flags.isSet(Flags.DEBUG_ALIAS) then
-            print("NOMINAL: " + ComponentReference.printComponentRefStr(cr1) + " = " + ExpressionDump.printExpStr(e) + "\n");
-            BaseHashTable.dumpHashTable(HTNominalExpToInt);
-          end if;
-        end if;
-        outVars = BackendVariable.setVarAt(outVars,i,v);
-        outVars = setAttributes(tplCrEqRest,outVars,inAliasVars);
-    then (outVars);
-    else equation
-      print("\n++++++++++ Error in RemoveSimpleEquations.setAttributes ++++++++++\n");
-    then (inVars);
-  end matchcontinue;
+  try
+  for tpl in tplCrEqLst loop
+    (cr1,cr_eq_lst) := tpl;
+    HTStartExpToInt := HashTableExpToIndex.emptyHashTableSized(100);
+    HTNominalExpToInt := HashTableExpToIndex.emptyHashTableSized(100);
+    ({v},{i}) := BackendVariable.getVar(cr1,outVars);
+    if BackendVariable.varHasStartValue(v) then
+      e := BackendVariable.varStartValue(v);
+      if Expression.isZero(e) then
+        e := DAE.RCONST(0.0);
+      end if;
+      cr_lst := Expression.extractCrefsFromExp(e);
+      j := 2 - listLength(cr_lst);
+      j := j*ComponentReference.crefDepth(cr1);
+      HTStartExpToInt := BaseHashTable.add((e, j), HTStartExpToInt);
+      if Flags.isSet(Flags.DEBUG_ALIAS) then
+        print("START: " + ComponentReference.printComponentRefStr(cr1) + " = " + ExpressionDump.printExpStr(e) + "\n");
+      end if;
+    end if;
+    if BackendVariable.varHasNominalValue(v) then
+      e := BackendVariable.varNominalValue(v);
+      cr_lst := Expression.extractCrefsFromExp(e);
+      j := 2 - listLength(cr_lst);
+      j := j*ComponentReference.crefDepth(cr1);
+      HTNominalExpToInt := BaseHashTable.add((e, j), HTNominalExpToInt);
+      if Flags.isSet(Flags.DEBUG_ALIAS) then
+        print("NOMINAL: " + ComponentReference.printComponentRefStr(cr1) + " = " + ExpressionDump.printExpStr(e) + "\n");
+      end if;
+    end if;
+    (HTStartExpToInt,HTNominalExpToInt) := getThisAttributes(cr1,cr_eq_lst,inAliasVars,HTStartExpToInt,HTNominalExpToInt);
+    tplExpIndList := BaseHashTable.hashTableList(HTStartExpToInt);
+    if not listEmpty(tplExpIndList) then
+      e := getDominantAttributeValue(tplExpIndList);
+      v := BackendVariable.setVarStartValue(v,e);
+      if Flags.isSet(Flags.DEBUG_ALIAS) then
+        print("START: " + ComponentReference.printComponentRefStr(cr1) + " = " + ExpressionDump.printExpStr(e) + "\n");
+        BaseHashTable.dumpHashTable(HTStartExpToInt);
+      end if;
+    end if;
+    tplExpIndList := BaseHashTable.hashTableList(HTNominalExpToInt);
+    if not listEmpty(tplExpIndList) then
+      e := getDominantAttributeValue(tplExpIndList);
+      v := BackendVariable.setVarNominalValue(v,e);
+      if Flags.isSet(Flags.DEBUG_ALIAS) then
+        print("NOMINAL: " + ComponentReference.printComponentRefStr(cr1) + " = " + ExpressionDump.printExpStr(e) + "\n");
+        BaseHashTable.dumpHashTable(HTNominalExpToInt);
+      end if;
+    end if;
+    outVars := BackendVariable.setVarAt(outVars,i,v);
+  end for;
+  else
+    print("\n++++++++++ Error in RemoveSimpleEquations.setAttributes ++++++++++\n");
+  end try;
 end setAttributes;
 
 protected function getThisAttributes "BB,
