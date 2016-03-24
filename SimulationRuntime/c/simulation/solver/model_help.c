@@ -48,7 +48,7 @@
 #include "epsilon.h"
 #include "meta/meta_modelica.h"
 
-static const int IterationMax = 200;
+int maxEventIterations = 20;
 const size_t SIZERINGBUFFER = 3;
 
 static double tolZC;
@@ -63,7 +63,7 @@ static double tolZC;
 void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
-  int IterationNum = 0;
+  int numEventIterations = 0;
   int discreteChanged = 0;
   modelica_boolean relationChanged = 0;
   data->simulationInfo->needToIterate = 0;
@@ -99,9 +99,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 
     data->callback->functionDAE(data, threadData);
 
-    IterationNum++;
-    if(IterationNum > IterationMax) {
-      throwStreamPrint(threadData, "ERROR: Too many event iterations. System is inconsistent. Simulation terminate.");
+    numEventIterations++;
+    if(numEventIterations > maxEventIterations) {
+      throwStreamPrint(threadData, "Simulation terminated due to too many, i.e. %d, event iterations.\nThis could either indicate an inconsistent system or an undersized limit of event iterations.\nThe limit of event iterations can be specified using the runtime flag '–%s=<value>'.", maxEventIterations, FLAG_NAME[FLAG_MAX_EVENT_ITERATIONS]);
     }
 
     relationChanged = checkRelations(data);

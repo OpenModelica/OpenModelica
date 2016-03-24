@@ -503,6 +503,10 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     init_lambda_steps_string = omc_flagValue[FLAG_ILS];
     init_lambda_steps = atoi(init_lambda_steps_string.c_str());
   }
+  if(omc_flag[FLAG_MAX_EVENT_ITERATIONS]) {
+    maxEventIterations = atoi(omc_flagValue[FLAG_MAX_EVENT_ITERATIONS]);
+    infoStreamPrint(LOG_STDOUT, 0, "Maximum number of event iterations changed to %d", maxEventIterations);
+  }
   if(omc_flag[FLAG_OUTPUT]) {
     outputVariablesAtEnd = omc_flagValue[FLAG_OUTPUT];
   }

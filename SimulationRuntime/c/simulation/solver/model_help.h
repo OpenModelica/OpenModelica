@@ -74,6 +74,7 @@ extern "C" {
   } \
 }
 
+extern int maxEventIterations;
 extern const size_t SIZERINGBUFFER;
 
 void initializeDataStruc(DATA *data, threadData_t *threadData);
