@@ -4090,7 +4090,11 @@ end addRootsTempArray;
 
 template modelicaLine(builtin.SourceInfo info)
 ::=
-  if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#modelicaLine <%infoStr(info)%>*/<%\n%>'
+  if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
+    then (if Flags.isSet(OMC_RECORD_ALLOC_WORDS)
+    then '/*#modelicaLine <%infoStr(info)%>*/<%\n%>mmc_set_current_pos("<%infoStr(info)%>");<%\n%>'
+    else '/*#modelicaLine <%infoStr(info)%>*/<%\n%>'
+    )
 end modelicaLine;
 
 template endModelicaLine()

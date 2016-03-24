@@ -91,11 +91,22 @@ static inline void mmc_GC_init_default(void)
 #define mmc_GC_clear(void)
 #define mmc_GC_collect(local_GC_state)
 
+#if defined(OMC_RECORD_ALLOC_WORDS)
+void mmc_record_alloc_words(size_t n);
+void mmc_set_current_pos(const char *str);
+#endif
+
 static inline void* mmc_alloc_words_atomic(unsigned int nwords) {
+#if defined(OMC_RECORD_ALLOC_WORDS)
+  mmc_record_alloc_words((nwords) * sizeof(void*));
+#endif
   return GC_MALLOC_ATOMIC((nwords) * sizeof(void*));
 }
 
 static inline void* mmc_alloc_words(unsigned int nwords) {
+#if defined(OMC_RECORD_ALLOC_WORDS)
+  mmc_record_alloc_words((nwords) * sizeof(void*));
+#endif
   return GC_MALLOC((nwords) * sizeof(void*));
 }
 

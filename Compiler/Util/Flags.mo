@@ -484,6 +484,8 @@ constant DebugFlag DUMP_LOOPS = DEBUG_FLAG(157, "dumpLoops", false,
   Util.gettext("Dumps loop equation."));
 constant DebugFlag SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR = DEBUG_FLAG(158, "skipInputOutputSyntacticSugar", false,
   Util.gettext("Used when bootstrapping to preserve the input output parsing of the code output by the list command."));
+constant DebugFlag OMC_RECORD_ALLOC_WORDS = DEBUG_FLAG(159, "metaModelicaRecordAllocWords", false,
+  Util.gettext("Instrument the source code to record memory allocations (requires run-time and generated files compiled with -DOMC_RECORD_ALLOC_WORDS)."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -648,7 +650,8 @@ constant list<DebugFlag> allDebugFlags = {
   DISABLE_JACSCC,
   FORCE_NLS_ANALYTIC_JACOBIAN,
   DUMP_LOOPS,
-  SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR
+  SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR,
+  OMC_RECORD_ALLOC_WORDS
 };
 
 public

@@ -60,7 +60,7 @@ bootstrap-from-tarball: $(PATCHES)
 	@echo "Bootstrapping phase 1/3 completed"
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory clean OMC=$(BOOTSTRAP_OMC)
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory runtime-depends OMBUILDDIR=$(OMBUILDDIR)
-	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC)
+	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC) OMC_EXTRA_FLAGS=
 	# Patch _main.c to avoid a new tarball
 	$(PATCH_SOURCES)
 	echo '#include "Patternm.h"' >> build/SimCodeFunctionUtil_includes.h
@@ -71,7 +71,7 @@ bootstrap-from-tarball: $(PATCHES)
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC=$(BOOTSTRAP_OMC)
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template OMC=$(BOOTSTRAP_OMC) clean
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Script OMC=$(BOOTSTRAP_OMC) clean
-	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC)
+	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC) "OMC_EXTRA_FLAGS=$(OMC_EXTRA_FLAGS)"
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=$(BOOTSTRAP_OMC)
 	@echo "Bootstrapping phase 3/3 completed"
 
@@ -147,7 +147,7 @@ endif
 $(GEN_DIR)%.stamp:
 	@test ! -z "$^" || (echo Empty dependencies for $@ ; false)
 	@echo 'echo(false);files:={"'`echo $^ | sed 's/ /","/g'`'"};mainClass:=$$TypeName('`basename $@ | sed "s/[.]stamp//"`');runScript("CompileFile.mos");print("Something went horribly wrong for '$@'\\n");exit(1);' > $@.mos
-	$(OMC) -n=1 $@.mos
+	$(OMC) -n=1 $(OMC_EXTRA_FLAGS) $@.mos
 	@touch $@
 
 $(GEN_DIR)_main.c:
