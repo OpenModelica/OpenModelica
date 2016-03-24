@@ -1191,13 +1191,6 @@ algorithm
     // get state-index list
     stateIndices := BackendVariable.getVarIndexFromVariablesIndexInFirstSet(inEqSystem.orderedVars, initVars);
 
-    // get initial equation-index list
-    //(initEqs, _) := List.extractOnTrue(BackendEquation.equationList(inEqSystem.orderedEqs), BackendEquation.isInitialEquation);
-    //nInitEqs := BackendDAEUtil.equationSize(BackendEquation.listEquation(initEqs));
-    ((_, initEqsIndices)) := List.fold(BackendEquation.equationList(inEqSystem.orderedEqs), getInitEqIndex, (1, {}));
-    nInitEqs := listLength(initEqsIndices);
-    //print("{" + stringDelimitList(List.map(initEqsIndices, intString), ",") + "}\n");
-
     // modify incidence matrix for under-determined systems
     nAddEqs := intMax(nVars-nEqns + index, index);
     //print("nAddEqs: " + intString(nAddEqs) + "\n");
@@ -1206,7 +1199,7 @@ algorithm
     // modify incidence matrix for over-determined systems
     nAddVars := intMax(nEqns-nVars + index, index);
     //print("nAddVars: " + intString(nAddVars) + "\n");
-    m := fixOverDeterminedSystem(m, initEqsIndices, nVars, nAddVars);
+    m := fixOverDeterminedSystem(m, inEqSystem.orderedEqs, nVars, nAddVars);
 
     // match the system (nVars+nAddVars == nEqns+nAddEqs)
     //ass1 := arrayCreate(nVars+nAddVars, -1);
@@ -1305,12 +1298,12 @@ end squareIncidenceMatrix1;
 
 protected function fixOverDeterminedSystem "author: lochel"
   input BackendDAE.IncidenceMatrix inM;
-  input list<Integer> inInitEqnIndices;
+  input BackendDAE.EquationArray orderedEqs;
   input Integer inNVars;
   input Integer inNAddVars;
   output BackendDAE.IncidenceMatrix outM;
 protected
-  list<Integer> newVarIndices;
+  list<Integer> newVarIndices, initEqsIndices;
 algorithm
   if inNAddVars < 0 then
     Error.addInternalError("function fixOverDeterminedSystem failed due to invalid input", sourceInfo());
@@ -1318,8 +1311,9 @@ algorithm
   end if;
 
   if inNAddVars > 0 then
+    (_, initEqsIndices) := List.fold(BackendEquation.equationList(orderedEqs), getInitEqIndex, (1, {})); // TODO: Bad scaling. Can be done better. But only affects overdetermined systems
     newVarIndices := List.intRange2(inNVars+1, inNVars+inNAddVars);
-    outM := List.fold1(inInitEqnIndices, squareIncidenceMatrix2, newVarIndices, inM);
+    outM := List.fold1(initEqsIndices, squareIncidenceMatrix2, newVarIndices, inM);
   else
     outM := inM;
   end if;
