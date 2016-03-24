@@ -3534,6 +3534,8 @@ algorithm
     case (DAE.CREF_IDENT()) then Connect.OUTSIDE();
     // is a qualified cref and is a connector => OUTSIDE
     case (DAE.CREF_QUAL(identType = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Connect.OUTSIDE();
+    // is a qualified cref and is an array of connectors => OUTSIDE
+    case (DAE.CREF_QUAL(identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))))) then Connect.OUTSIDE();
     // is a qualified cref and is NOT a connector => INSIDE
     case (DAE.CREF_QUAL()) then Connect.INSIDE();
   end match;
