@@ -5894,7 +5894,7 @@ end traverseExpMatrixTopDown;
 
 public function traverseExpListTopDown
 " author PA:
- Calls traverseExpBottomUp for each element of list."
+ Calls traverseExpListTopDown for each element of list."
   replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> inExpl;
   input FuncExpType rel;
