@@ -7,6 +7,7 @@ LinearSysEq.mos \
 StepAdvanced.mos \
 Tank.mos TankPI.mos TankPID.mos TankHybridPID.mos TankHybridPI.mos TanksConnectedPI.mos \
 TopLevelNestedConnectors.mos \
+TopLevelConnectorArray.mos \
 
 
 # test that currently fail. Move up when fixed.
