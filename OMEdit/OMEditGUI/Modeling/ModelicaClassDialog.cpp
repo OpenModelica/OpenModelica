@@ -806,6 +806,15 @@ void DuplicateClassDialog::duplicateClass()
   }
   // if everything is fine then duplicate the class.
   if (mpMainWindow->getOMCProxy()->copyClass(mpLibraryTreeItem->getNameStructure(), mpNameTextBox->text(), mpPathTextBox->text())) {
+    /* Ticket #3793
+     * We need to call loadString with the new text of the class before creating the LibraryTreeItem
+     * So that the getClassInformation returns the correct line number information.
+     * Otherwise we have the problems like the one reported in Ticket #3793.
+     */
+    QString fileName = mpPathTextBox->text().isEmpty() ? mpNameTextBox->text() : mpPathTextBox->text() + "." + mpNameTextBox->text();
+    QString classText = QString("within %1;%2").arg(mpPathTextBox->text()).arg(mpMainWindow->getOMCProxy()->listFile(fileName));
+    mpMainWindow->getOMCProxy()->loadString(classText, fileName, Helper::utf8, false, false);
+    // create the new LibraryTreeItem
     LibraryTreeItem *pLibraryTreeItem;
     pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, false, false, true);
     pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
