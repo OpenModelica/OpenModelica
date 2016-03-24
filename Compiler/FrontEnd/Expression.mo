@@ -9771,7 +9771,7 @@ public function isExpIfExp
   output Boolean res;
 algorithm
   res := match(e)
-    case(DAE.IFEXP()) then true;
+    case DAE.IFEXP() then true;
     else false;
   end match;
 end isExpIfExp;
