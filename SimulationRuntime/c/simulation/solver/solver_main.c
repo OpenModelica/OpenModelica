@@ -51,8 +51,10 @@
 #include "simulation/solver/epsilon.h"
 #include "linearSystem.h"
 #include "sym_imp_euler.h"
+#if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
 #include "simulation/solver/real_time_sync.h"
+#endif
 
 #include "optimization/OptimizerInterface.h"
 
@@ -658,10 +660,11 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   }
   omc_alloc_interface.collect_a_little();
 
+#if !defined(OMC_MINIMAL_RUNTIME)
   dllHandle = embedded_server_load_functions(omc_flagValue[FLAG_EMBEDDED_SERVER]);
   omc_real_time_sync_init(threadData, data);
   data->embeddedServerState = embedded_server_init(data, data->localData[0]->timeValue, solverInfo.currentStepSize, argv_0, omc_real_time_sync_update);
-
+#endif
   if(0 == retVal) {
     /* if the model has no time changing variables skip the main loop*/
     if(data->modelData->nVariablesReal == 0    &&
@@ -719,9 +722,10 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     const char *unit = prettyPrintNanoSec(data->real_time_sync.maxLate, &tMaxLate);
     infoStreamPrint(LOG_RT, 0, "Maximum real-time latency was (positive=missed dealine, negative is slack): %d %s", tMaxLate, unit);
   }
+#if !defined(OMC_MINIMAL_RUNTIME)
   embedded_server_deinit(data->embeddedServerState);
   embedded_server_unload_functions(dllHandle);
-
+#endif
   /* free SolverInfo memory */
   freeSolverData(data, &solverInfo);
 

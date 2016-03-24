@@ -49,8 +49,10 @@
 #include <float.h>
 
 #include "simulation/solver/synchronous.h"
+#if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
 #include "simulation/solver/real_time_sync.h"
+#endif
 
 /*! \fn updateContinuousSystem
  *
@@ -216,6 +218,7 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
   if ((omc_flag[FLAG_NOEVENTEMIT] && didEventStep == 0) || !omc_flag[FLAG_NOEVENTEMIT]) {
     sim_result.emit(&sim_result, data, threadData);
   }
+#if !defined(OMC_MINIMAL_RUNTIME)
   embedded_server_update(data->embeddedServerState, data->localData[0]->timeValue);
   if (data->real_time_sync.enabled) {
     double time = data->localData[0]->timeValue;
@@ -233,6 +236,7 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
   }
 
   printAllVarsDebug(data, 0, LOG_DEBUG);  /* ??? */
+#endif
 }
 
 static void fmtClose(MEASURE_TIME* mt)

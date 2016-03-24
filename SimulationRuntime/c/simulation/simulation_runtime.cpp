@@ -884,6 +884,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *thre
   return retVal;
 }
 
+#if !defined(OMC_MINIMAL_RUNTIME)
 const char* prettyPrintNanoSec(int64_t ns, int *v)
 {
   if (ns > 100000000000L || ns < -100000000000L) {
@@ -900,5 +901,6 @@ const char* prettyPrintNanoSec(int64_t ns, int *v)
     return "ns";
   }
 }
+#endif
 
 } // extern "C"
