@@ -1439,19 +1439,23 @@ protected function markStateEquationsWork
 protected
   list<Integer> queue = inEqns;
   list<Integer> queue_tmp,vlst;
-  Integer eqn;
+  Integer j, eqn, len = arrayLength(ass1);
 algorithm
 
  while not listEmpty(queue) loop
    eqn :: queue := queue;
    if oMark[eqn] == 0 then // "Mark an unmarked node/equation"
-    arrayUpdate(oMark, eqn, 1);
-    vlst := List.select(m[eqn], Util.intPositive) "vars of equation";
-    vlst := List.removeOnTrue(arrayLength(ass1), intLt, vlst) "take care we access not behind ass1 length";
-    queue_tmp := List.map1r(vlst,arrayGet,ass1) "equations of vars";
-    queue_tmp := List.select(queue_tmp, Util.intPositive);
-    queue := List.appendNoCopy(queue_tmp, queue);
-    queue := list(e for e guard arrayGet(oMark,e) == 0 in queue);
+     arrayUpdate(oMark, eqn, 1);
+     for i in m[eqn] loop
+       if i>0 and i<=len then
+         // We already did bounds checking above
+         j := Dangerous.arrayGetNoBoundsChecking(ass1, i);
+         if if j>0 then arrayGet(oMark, j) == 0 else false then
+           // Only add positive, unmarked variables to the queue
+           queue := j::queue;
+          end if;
+       end if;
+     end for;
    end if;
  end while;
 
