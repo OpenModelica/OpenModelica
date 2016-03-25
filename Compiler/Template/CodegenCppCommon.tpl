@@ -913,9 +913,9 @@ template expTypeArrayDims(DAE.Type elty, DAE.Dimensions dims)
   let dimstr = listDimsFlat(dims, elty)
   match dimstr
   case "" then
-    'DynArrayDim<%nDimsFlat(dims, elty, 0)%><<%typeShort%>>/*expTypeArrayDims*/'
+    'DynArrayDim<%nDimsFlat(dims, elty, 0)%><<%typeShort%>>'
   else
-    'StatArrayDim<%nDimsFlat(dims, elty, 0)%><<%typeShort%>, <%dimstr%>>/*expTypeArrayDims*/'
+    'StatArrayDim<%nDimsFlat(dims, elty, 0)%><<%typeShort%>, <%dimstr%>>'
   end match
 end expTypeArrayDims;
 
@@ -1983,6 +1983,18 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let arr_tp_str = expTypeShort(ty)
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>>(<%expVar%>).first;<%\n%>'
+    '<%tvar%>'
+
+  case call as CALL(path=IDENT(name="vector"), expLst={exp}, attr=CALL_ATTR(ty=ty)) then
+    let expVar = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let tvar = match ty
+    case T_ARRAY(ty=elty) then
+      // use dynamic array as static arrays are treated during translation
+      'DynArrayDim1<<%expTypeShort(elty)%>>(<%expVar%>.getNumElems(), <%expVar%>.getData())'
+    else
+      // this should never happen because it is eliminated during translation
+      'StatArrayDim1<<%expTypeShort(ty)%>, 1, true>(&<%expVar%>)'
+    end match
     '<%tvar%>'
 
   case CALL(path=IDENT(name="fill"), expLst=val::dims, attr=attr as CALL_ATTR(__)) then

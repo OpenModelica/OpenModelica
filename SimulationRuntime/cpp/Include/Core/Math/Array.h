@@ -1536,6 +1536,16 @@ class DynArrayDim1 : public DynArray<T, 1>
     this->resize(dims);
   }
 
+  DynArrayDim1(size_t size1, const T *data)
+    :DynArray<T, 1>()
+  {
+    std::vector<size_t> dims;
+    dims.push_back(size1);
+    this->resize(dims);
+    if (size1 > 0)
+      std::copy(data, data + size1, this->_array_data);
+  }
+
   virtual ~DynArrayDim1()
   {
   }
