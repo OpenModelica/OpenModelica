@@ -1433,9 +1433,9 @@ algorithm
     case (e as DAE.CALL(), _, _, _, _)
       equation
         (e1, funcs) = differentiateFunctionCall(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, expStack);
-        (e,_,_,_) = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource/*TODO:Can we propagate source?*/);
+        (e1,_,_,_) = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}),DAE.emptyElementSource/*TODO:Can we propagate source?*/);
       then
-        (e, funcs);
+        (e1, funcs);
 /*
     case (e as DAE.CALL(expLst = _), _, _, _, _)
       equation
