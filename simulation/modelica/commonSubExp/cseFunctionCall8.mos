@@ -86,28 +86,26 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 // 5/5 (1): $cse1 = CSE.FunctionCallTest8.g(time ^ 2.0)   [binding]
 //
 //
-// ########### Updated Variable List ########### (8)
+// ########### Updated Variable List ########### (7)
 // ========================================
 // 1: i:VARIABLE() .CSE.FunctionCallTest8, .Real type: Real 
 // 2: u2:DUMMY_STATE() .CSE.FunctionCallTest8, .Real type: Real 
 // 3: u1:STATE(1)() .CSE.FunctionCallTest8, .Real type: Real 
 // 4: $DER.u2:DUMMY_DER(fixed = false ) .CSE.FunctionCallTest8, .Real type: Real 
-// 5: $cse6:VARIABLE()  type: Real  unreplaceable
-// 6: $cse5:VARIABLE()  type: Real  unreplaceable
-// 7: $cse4:VARIABLE()  type: Real  unreplaceable
-// 8: $cse3:VARIABLE()  type: Real  unreplaceable
+// 5: $cse5:VARIABLE()  type: Real  unreplaceable
+// 6: $cse4:VARIABLE()  type: Real  unreplaceable
+// 7: $cse3:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List ########### (8, 8)
+// ########### Updated Equation List ########### (7, 7)
 // ========================================
-// 1/1 (1): 0.0 = $cse4 * der(u1) + (1.0 + 2.0 * ($cse5 + time * $cse6)) * u1 + $DER.u2   [dynamic]
+// 1/1 (1): 0.0 = $cse4 * der(u1) + $cse5 * u1 + $DER.u2   [dynamic]
 // 2/2 (1): i = C * $DER.u2   [dynamic]
 // 3/3 (1): i = C * der(u1)   [dynamic]
 // 4/4 (1): 10.0 = $cse4 * u1 + u2   [dynamic]
-// 5/5 (1): $cse6 = cos(time)   [binding]
-// 6/6 (1): $cse5 = sin(time ^ 2.0)   [binding]
-// 7/7 (1): $cse4 = CSE.FunctionCallTest8.f(time, $cse3)   [binding]
-// 8/8 (1): $cse3 = CSE.FunctionCallTest8.g(time ^ 2.0)   [binding]
+// 5/5 (1): $cse5 = CSE.FunctionCallTest8.f_der(time, $cse3, 1.0)   [binding]
+// 6/6 (1): $cse4 = CSE.FunctionCallTest8.f(time, $cse3)   [binding]
+// 7/7 (1): $cse3 = CSE.FunctionCallTest8.g(time ^ 2.0)   [binding]
 //
 //
 // ########### Updated Variable List ########### (3)
