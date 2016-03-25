@@ -555,6 +555,7 @@ algorithm
       DAE.Type tp;
       Integer i;
       String s1, s2;
+      list<String> strLst;
       //String se1;
       list<DAE.Exp> sub, expl;
       list<list<DAE.Exp>> matrix, dmatrix;
@@ -564,6 +565,17 @@ algorithm
     case DAE.ICONST() then (DAE.ICONST(0), inFunctionTree);
     case DAE.RCONST() then (DAE.RCONST(0.0), inFunctionTree);
     case DAE.SCONST() then (inExp, inFunctionTree);
+
+
+    case DAE.RECORD(path = p, exps = expl, comp = strLst, ty=tp)
+      algorithm
+       sub := {};
+       functionTree := inFunctionTree;
+       for e in expl loop
+         (e1, functionTree) := differentiateExp(e,inDiffwrtCref, inInputData, inDiffType, functionTree, maxIter, inExpStack);
+          sub := e1 :: sub;
+       end for;
+    then  (DAE.RECORD(p, listReverse(sub), strLst, tp), functionTree);
 
     // differentiate cref
     case DAE.CREF() equation
