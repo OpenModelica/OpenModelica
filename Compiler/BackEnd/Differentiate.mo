@@ -2355,7 +2355,7 @@ algorithm
     then DAE.CALL(path, listAppend(inOrginalExpl,inArgs), attr);
 
     case (DAE.T_TUPLE(types = tys), _) equation
-      expLst = createPartialArgumentsTuple(tys, inArgs, inDiffedArgs, inOrginalExpl, 1, inCall, {});
+      expLst = createPartialArgumentsTuple(tys, inArgs, inDiffedArgs, inOrginalExpl, inCall);
     then DAE.TUPLE(expLst);
 
     else
@@ -2372,25 +2372,13 @@ protected function createPartialArgumentsTuple
   input list<DAE.Exp> inArgs;
   input list<DAE.Exp> inDiffedArgs;
   input list<DAE.Exp> inOrginalExpl;
-  input Integer number;
   input DAE.Exp inCall;
-  input list<DAE.Exp> inAccum;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := match(inTypesLst, inArgs, inDiffedArgs, inOrginalExpl, number, inCall, inAccum)
-    local
-      list<DAE.Type> expTypes;
-      DAE.Type tp;
-      DAE.Exp e, res;
-
-    case ({}, _, _, _, _, _, _)
-    then listReverse(inAccum);
-
-    case (tp::expTypes, _, _, _, _, _, _) equation
-      res = DAE.TSUB(inCall, number, tp);
-      e = createPartialArguments(tp, inArgs, inDiffedArgs, inOrginalExpl, res);
-    then createPartialArgumentsTuple(expTypes, inArgs, inDiffedArgs, inOrginalExpl, number+1, inCall, e::inAccum);
-  end match;
+  outExpLst := list( createPartialArguments(
+                                             tp, inArgs, inDiffedArgs, inOrginalExpl, (DAE.TSUB(inCall, number, tp))
+                                           )
+                     threaded  for tp in inTypesLst, number  in 1:listLength(inTypesLst));
 end createPartialArgumentsTuple;
 
 protected function createPartialDifferentiatedExp
