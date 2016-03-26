@@ -226,7 +226,7 @@ private:
 public slots:
   void startConnectorChanged(const QModelIndex &current, const QModelIndex &previous);
   void endConnectorChanged(const QModelIndex &current, const QModelIndex &previous);
-  void createArrayConnection();
+  void createConnection();
 };
 
 #endif // LINEANNOTATION_H

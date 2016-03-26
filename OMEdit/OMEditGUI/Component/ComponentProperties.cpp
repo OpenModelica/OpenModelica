@@ -555,13 +555,9 @@ ComponentParameters::~ComponentParameters()
 void ComponentParameters::setUpDialog()
 {
   // heading label
-  mpParametersHeading = new Label(Helper::parameters);
-  mpParametersHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
-  mpParametersHeading->setAlignment(Qt::AlignTop);
+  mpParametersHeading = Utilities::getHeadingLabel(Helper::parameters);
   // set separator line
-  mHorizontalLine = new QFrame();
-  mHorizontalLine->setFrameShape(QFrame::HLine);
-  mHorizontalLine->setFrameShadow(QFrame::Sunken);
+  mHorizontalLine = Utilities::getHeadingLine();
   // parameters tab widget
   mpParametersTabWidget = new QTabWidget;
   // Component Group Box
@@ -1140,13 +1136,9 @@ ComponentAttributes::ComponentAttributes(Component *pComponent, MainWindow *pMai
 void ComponentAttributes::setUpDialog()
 {
   // heading label
-  mpAttributesHeading = new Label(Helper::attributes);
-  mpAttributesHeading->setFont(QFont("", Helper::headingFontSize));
-  mpAttributesHeading->setAlignment(Qt::AlignTop);
+  mpAttributesHeading = Utilities::getHeadingLabel(Helper::attributes);
   // set separator line
-  mHorizontalLine = new QFrame();
-  mHorizontalLine->setFrameShape(QFrame::HLine);
-  mHorizontalLine->setFrameShadow(QFrame::Sunken);
+  mHorizontalLine = Utilities::getHeadingLine();
   // create Type Group Box
   mpTypeGroupBox = new QGroupBox(Helper::type);
   QGridLayout *pTypeGroupBoxLayout = new QGridLayout;

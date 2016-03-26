@@ -56,13 +56,9 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(title).append(" ").append(Helper::properties));
   setAttribute(Qt::WA_DeleteOnClose);
   // heading label
-  mpShapePropertiesHeading = new Label(QString(title).append(" ").append(Helper::properties));
-  mpShapePropertiesHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
-  mpShapePropertiesHeading->setAlignment(Qt::AlignTop);
+  mpShapePropertiesHeading = Utilities::getHeadingLabel(QString(title).append(" ").append(Helper::properties));
   // set separator line
-  mHorizontalLine = new QFrame();
-  mHorizontalLine->setFrameShape(QFrame::HLine);
-  mHorizontalLine->setFrameShadow(QFrame::Sunken);
+  mHorizontalLine = Utilities::getHeadingLine();
   // Transformations Group Box
   mpTransformationGroupBox = new QGroupBox(tr("Transformation"));
   mpOriginXLabel = new Label(Helper::originX);

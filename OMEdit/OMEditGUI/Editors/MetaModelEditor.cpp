@@ -112,6 +112,16 @@ QDomElement MetaModelEditor::getSubModelsElement()
 }
 
 /*!
+ * \brief MetaModelEditor::getSubModels
+ * Returns the list of SubModel tags.
+ * \return
+ */
+QDomNodeList MetaModelEditor::getSubModels()
+{
+  return mXmlDocument.elementsByTagName("SubModel");
+}
+
+/*!
  * \brief MetaModelEditor::getConnectionsElement
  * Returns the Connections element tag.
  * \return
@@ -123,16 +133,6 @@ QDomElement MetaModelEditor::getConnectionsElement()
     return connections.at(0).toElement();
   }
   return QDomElement();
-}
-
-/*!
- * \brief MetaModelEditor::getSubModels
- * Returns the list of SubModel tags.
- * \return
- */
-QDomNodeList MetaModelEditor::getSubModels()
-{
-  return mXmlDocument.elementsByTagName("SubModel");
 }
 
 /*!

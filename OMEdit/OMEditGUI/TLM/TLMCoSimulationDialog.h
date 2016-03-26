@@ -105,12 +105,13 @@ public:
 private:
   GraphicsView *mpGraphicsView;
   LibraryTreeItem *mpLibraryTreeItem;
+  Label *mpSimulationParamsHeading;
+  QFrame *mpHorizontalLine;
   Label *mpStartTimeLabel;
   QLineEdit *mpStartTimeTextBox;
   Label *mpStopTimeLabel;
   QLineEdit *mpStopTimeTextBox;
   QPushButton *mpSaveButton;
-  QPushButton *mpSaveAndCoSimulateButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
   QString mOldStartTime;

@@ -2520,10 +2520,16 @@ void MainWindow::createActions()
   mpExportToClipboardAction->setStatusTip(Helper::exportAsImageTip);
   mpExportToClipboardAction->setEnabled(false);
   connect(mpExportToClipboardAction, SIGNAL(triggered()), SLOT(exportToClipboard()));
+  // simulation parameters
+  mpSimulationParamsAction = new QAction(QIcon(":/Resources/icons/simulation-parameters.svg"), Helper::simulationParams, this);
+  mpSimulationParamsAction->setStatusTip(Helper::simulationParamsTip);
   // fetch interface data
   mpFetchInterfaceDataAction = new QAction(QIcon(":/Resources/icons/interface-data.svg"), Helper::fetchInterfaceData, this);
   mpFetchInterfaceDataAction->setStatusTip(Helper::fetchInterfaceDataTip);
   connect(mpFetchInterfaceDataAction, SIGNAL(triggered()), SLOT(fetchInterfaceData()));
+  // align interfaces
+  mpAlignInterfacesAction = new QAction(QIcon(":/Resources/icons/align-interfaces.svg"), Helper::alignInterfaces, this);
+  mpAlignInterfacesAction->setStatusTip(Helper::alignInterfacesTip);
   // TLM simulate action
   mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulationSetup, this);
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
@@ -3002,7 +3008,11 @@ void MainWindow::createToolbars()
   mpTLMSimulationToolbar->setObjectName("TLM Simulation Toolbar");
   mpTLMSimulationToolbar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to TLM Simulation Toolbar
+  mpTLMSimulationToolbar->addAction(mpSimulationParamsAction);
+  mpTLMSimulationToolbar->addSeparator();
   mpTLMSimulationToolbar->addAction(mpFetchInterfaceDataAction);
+  mpTLMSimulationToolbar->addAction(mpAlignInterfacesAction);
+  mpTLMSimulationToolbar->addSeparator();
   mpTLMSimulationToolbar->addAction(mpTLMCoSimulationAction);
 }
 

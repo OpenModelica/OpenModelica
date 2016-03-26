@@ -55,12 +55,9 @@ ImportFMUDialog::ImportFMUDialog(MainWindow *pParent)
   // set parent widget
   mpMainWindow = pParent;
   // set import heading
-  mpImportFMUHeading = new Label(Helper::importFMU);
-  mpImportFMUHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
+  mpImportFMUHeading = Utilities::getHeadingLabel(Helper::importFMU);
   // set separator line
-  mpHorizontalLine = new QFrame();
-  mpHorizontalLine->setFrameShape(QFrame::HLine);
-  mpHorizontalLine->setFrameShadow(QFrame::Sunken);
+  mpHorizontalLine = Utilities::getHeadingLine();
   // create FMU File selection controls
   mpFmuFileLabel = new Label(tr("FMU File:"));
   mpFmuFileTextBox = new QLineEdit;

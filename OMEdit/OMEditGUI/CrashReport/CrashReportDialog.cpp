@@ -50,12 +50,9 @@ CrashReportDialog::CrashReportDialog()
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::crashReport));
   setAttribute(Qt::WA_DeleteOnClose);
   // set heading
-  mpCrashReportHeading = new Label(Helper::crashReport);
-  mpCrashReportHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
+  mpCrashReportHeading = Utilities::getHeadingLabel(Helper::crashReport);
   // set separator line
-  mpHorizontalLine = new QFrame();
-  mpHorizontalLine->setFrameShape(QFrame::HLine);
-  mpHorizontalLine->setFrameShadow(QFrame::Sunken);
+  mpHorizontalLine = Utilities::getHeadingLine();
   // Email label and textbox
   mpEmailLabel = new Label(tr("Your Email (in case you want us to contact you regarding this error):"));
   mpEmailTextBox = new QLineEdit;

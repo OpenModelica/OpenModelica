@@ -306,6 +306,8 @@ private:
 namespace Utilities {
   void parseMetaModelText(MessageHandler *pMessageHandler, QString contents);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
+  Label* getHeadingLabel(QString heading);
+  QFrame* getHeadingLine();
 }
 
 #endif // UTILITIES_H

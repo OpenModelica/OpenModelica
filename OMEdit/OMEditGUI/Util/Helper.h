@@ -300,6 +300,8 @@ public:
   static QString cancelSimulation;
   static QString fetchInterfaceData;
   static QString fetchInterfaceDataTip;
+  static QString alignInterfaces;
+  static QString alignInterfacesTip;
   static QString tlmCoSimulationSetup;
   static QString tlmCoSimulationSetupTip;
   static QString tlmCoSimulation;

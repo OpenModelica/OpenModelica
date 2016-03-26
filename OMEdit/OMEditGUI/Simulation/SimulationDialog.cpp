@@ -117,13 +117,10 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
 void SimulationDialog::setUpForm()
 {
   // simulation widget heading
-  mpSimulationHeading = new Label;
+  mpSimulationHeading = Utilities::getHeadingLabel("");
   mpSimulationHeading->setElideMode(Qt::ElideMiddle);
-  mpSimulationHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
   // Horizontal separator
-  mpHorizontalLine = new QFrame();
-  mpHorizontalLine->setFrameShape(QFrame::HLine);
-  mpHorizontalLine->setFrameShadow(QFrame::Sunken);
+  mpHorizontalLine = Utilities::getHeadingLine();
   // simulation tab widget
   mpSimulationTabWidget = new QTabWidget;
   // General Tab

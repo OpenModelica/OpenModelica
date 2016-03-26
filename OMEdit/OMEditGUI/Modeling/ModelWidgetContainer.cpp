@@ -43,6 +43,7 @@
 #include "ShapePropertiesDialog.h"
 #include "ComponentProperties.h"
 #include "Commands.h"
+#include "FetchInterfaceDataDialog.h"
 
 //! @class GraphicsScene
 //! @brief The GraphicsScene class is a container for graphicsl components in a simulationmodel.
@@ -929,7 +930,7 @@ void GraphicsView::createActions()
   mpPropertiesAction = new QAction(Helper::properties, this);
   connect(mpPropertiesAction, SIGNAL(triggered()), SLOT(showGraphicsViewProperties()));
   // Simulation Params Action
-  mpSimulationParamsAction = new QAction(Helper::simulationParams, this);
+  mpSimulationParamsAction = new QAction(QIcon(":/Resources/icons/simulation-parameters.svg"), Helper::simulationParams, this);
   mpSimulationParamsAction->setStatusTip(Helper::simulationParamsTip);
   connect(mpSimulationParamsAction, SIGNAL(triggered()), SLOT(showSimulationParamsDialog()));
   // Actions for shapes and Components
@@ -2033,8 +2034,7 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   mpPixmapLabel->setPixmap(pixmap.scaled(75, 72, Qt::KeepAspectRatio, Qt::SmoothTransformation));
   mpPixmapLabel->setStyleSheet("background-color : transparent;");
   // top frame heading
-  mpHeadingLabel = new Label(QString(Helper::applicationName).append(" - ").append(Helper::applicationIntroText));
-  mpHeadingLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
+  mpHeadingLabel = Utilities::getHeadingLabel(QString(Helper::applicationName).append(" - ").append(Helper::applicationIntroText));
   mpHeadingLabel->setStyleSheet("background-color : transparent; color : white;");
 #ifndef Q_OS_MAC
   mpHeadingLabel->setGraphicsEffect(new QGraphicsDropShadowEffect);
@@ -2050,8 +2050,7 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   mpRecentFilesFrame->setFrameShape(QFrame::StyledPanel);
   mpRecentFilesFrame->setStyleSheet("QFrame{background-color: white;}");
   // recent items list
-  mpRecentFilesLabel = new Label(tr("Recent Files"));
-  mpRecentFilesLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
+  mpRecentFilesLabel = Utilities::getHeadingLabel(tr("Recent Files"));
   mpNoRecentFileLabel = new Label(tr("No recent files found."));
   mpRecentItemsList = new QListWidget;
   mpRecentItemsList->setObjectName("RecentItemsList");
@@ -2083,8 +2082,7 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   if (!mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked())
     mpLatestNewsFrame->setVisible(false);
   // latest news
-  mpLatestNewsLabel = new Label(tr("Latest News"));
-  mpLatestNewsLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
+  mpLatestNewsLabel = Utilities::getHeadingLabel(tr("Latest News"));
   mpNoLatestNewsLabel = new Label;
   mpLatestNewsListWidget = new QListWidget;
   mpLatestNewsListWidget->setObjectName("LatestNewsList");
@@ -3858,6 +3856,8 @@ ModelWidgetContainer::ModelWidgetContainer(MainWindow *pParent)
   connect(mpMainWindow->getSaveAsAction(), SIGNAL(triggered()), SLOT(saveAsModelWidget()));
   connect(mpMainWindow->getSaveTotalAction(), SIGNAL(triggered()), SLOT(saveTotalModelWidget()));
   connect(mpMainWindow->getPrintModelAction(), SIGNAL(triggered()), SLOT(printModel()));
+  connect(mpMainWindow->getSimulationParamsAction(), SIGNAL(triggered()), SLOT(showSimulationParams()));
+  connect(mpMainWindow->getAlignInterfacesAction(), SIGNAL(triggered()), SLOT(alignInterfaces()));
 }
 
 void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView)
@@ -4233,7 +4233,9 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getExportAsImageAction()->setEnabled(enabled);
   getMainWindow()->getExportToClipboardAction()->setEnabled(enabled);
   getMainWindow()->getPrintModelAction()->setEnabled(enabled);
+  getMainWindow()->getSimulationParamsAction()->setEnabled(enabled && metaModel);
   getMainWindow()->getFetchInterfaceDataAction()->setEnabled(enabled && metaModel);
+  getMainWindow()->getAlignInterfacesAction()->setEnabled(enabled && metaModel);
   getMainWindow()->getTLMSimulationAction()->setEnabled(enabled && metaModel);
   /* disable the save actions if class is a system library class. */
   if (pModelWidget) {
@@ -4355,4 +4357,29 @@ void ModelWidgetContainer::printModel()
     delete pPrintDialog;
   }
 #endif
+}
+
+/*!
+ * \brief ModelWidgetContainer::showSimulationParams
+ * Slot activated when MainWindow::mpSimulationParamsAction triggered SIGNAL is raised.
+ * Shows the MetaModelSimulationParamsDialog
+ */
+void ModelWidgetContainer::showSimulationParams()
+{
+  if (ModelWidget *pModelWidget = getCurrentModelWidget()) {
+    pModelWidget->getDiagramGraphicsView()->showSimulationParamsDialog();
+  }
+}
+
+/*!
+ * \brief ModelWidgetContainer::alignInterfaces
+ * Slot activated when MainWindow::mpAlignInterfacesAction triggered SIGNAL is raised.
+ * Shows the AlignInterfacesDialog
+ */
+void ModelWidgetContainer::alignInterfaces()
+{
+  if (ModelWidget *pModelWidget = getCurrentModelWidget()) {
+    AlignInterfacesDialog *pAlignInterfacesDialog = new AlignInterfacesDialog(pModelWidget);
+    pAlignInterfacesDialog->exec();
+  }
 }

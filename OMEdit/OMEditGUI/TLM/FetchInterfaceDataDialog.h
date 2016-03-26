@@ -64,4 +64,22 @@ signals:
   void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
 };
 
+class AlignInterfacesDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  AlignInterfacesDialog(ModelWidget *pModelWidget);
+private:
+  ModelWidget *mpModelWidget;
+  Label *mpAlignInterfacesHeading;
+  QFrame *mpHorizontalLine;
+  QListWidget *mpFromInterfaceListWidget;
+  QListWidget *mpToInterfaceListWidget;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+public slots:
+  void alignInterfaces();
+};
+
 #endif // FETCHINTERFACEDATADIALOG_H

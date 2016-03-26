@@ -455,6 +455,8 @@ public slots:
   void saveAsModelWidget();
   void saveTotalModelWidget();
   void printModel();
+  void showSimulationParams();
+  void alignInterfaces();
 };
 
 #endif // MODELWIDGETCONTAINER_H

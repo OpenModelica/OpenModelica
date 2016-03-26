@@ -1147,13 +1147,9 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::createConnection));
   setAttribute(Qt::WA_DeleteOnClose);
   // heading
-  mpHeading = new Label(Helper::createConnection);
-  mpHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
-  mpHeading->setAlignment(Qt::AlignTop);
+  mpHeading = Utilities::getHeadingLabel(Helper::createConnection);
   // horizontal line
-  mpHorizontalLine = new QFrame();
-  mpHorizontalLine->setFrameShape(QFrame::HLine);
-  mpHorizontalLine->setFrameShadow(QFrame::Sunken);
+  mpHorizontalLine = Utilities::getHeadingLine();
   // Start expandable connector treeview
   mpStartExpandableConnectorTreeView = 0;
   if ((!mpConnectionLineAnnotation->getStartComponent()->getParentComponent() && mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
@@ -1235,7 +1231,7 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(createArrayConnection()));
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(createConnection()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
@@ -1470,7 +1466,7 @@ void CreateConnectionDialog::endConnectorChanged(const QModelIndex &current, con
  * \brief ConnectionArray::createArrayConnection
  * Slot activated when mpOkButton clicked SIGNAL is raised. Creates an array connection.
  */
-void CreateConnectionDialog::createArrayConnection()
+void CreateConnectionDialog::createConnection()
 {
   QString startComponentName, endComponentName;
   // set start component name

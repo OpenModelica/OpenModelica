@@ -55,13 +55,10 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   mpMainWindow = pMainWindow;
   setIsTLMCoSimulationRunning(false);
   // simulation widget heading
-  mpHeadingLabel = new Label;
+  mpHeadingLabel = Utilities::getHeadingLabel("");
   mpHeadingLabel->setElideMode(Qt::ElideMiddle);
-  mpHeadingLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
   // Horizontal separator
-  mpHorizontalLine = new QFrame();
-  mpHorizontalLine->setFrameShape(QFrame::HLine);
-  mpHorizontalLine->setFrameShadow(QFrame::Sunken);
+  mpHorizontalLine = Utilities::getHeadingLine();
   // TLM Plugin Path
   mpTLMPluginPathLabel = new Label(tr("TLM Plugin Path:"));
   mpTLMPluginPathTextBox = new QLineEdit;
@@ -403,6 +400,11 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::simulationParams)
                  .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  // set heading
+  mpSimulationParamsHeading = Utilities::getHeadingLabel(QString("%1 - %2").arg(Helper::simulationParams)
+                                                         .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  // set separator line
+  mpHorizontalLine = Utilities::getHeadingLine();
   mpGraphicsView = pGraphicsView;
   mpLibraryTreeItem = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem();
   // Initialize simulation parameters
@@ -435,11 +437,13 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
   // set the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  pMainLayout->addWidget(mpStartTimeLabel, 0, 0);
-  pMainLayout->addWidget(mpStartTimeTextBox, 0, 1);
-  pMainLayout->addWidget(mpStopTimeLabel, 1, 0);
-  pMainLayout->addWidget(mpStopTimeTextBox, 1, 1);
-  pMainLayout->addWidget(mpButtonBox, 2, 1, 1, 1, Qt::AlignRight);
+  pMainLayout->addWidget(mpSimulationParamsHeading, 0, 0, 1, 2);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
+  pMainLayout->addWidget(mpStartTimeLabel, 2, 0);
+  pMainLayout->addWidget(mpStartTimeTextBox, 2, 1);
+  pMainLayout->addWidget(mpStopTimeLabel, 3, 0);
+  pMainLayout->addWidget(mpStopTimeTextBox, 3, 1);
+  pMainLayout->addWidget(mpButtonBox, 4, 1, 1, 1, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 

@@ -322,3 +322,18 @@ qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
 {
   return (value - offset) / scaleFactor;
 }
+
+Label* Utilities::getHeadingLabel(QString heading)
+{
+  Label *pHeadingLabel = new Label(heading);
+  pHeadingLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
+  return pHeadingLabel;
+}
+
+QFrame* Utilities::getHeadingLine()
+{
+  QFrame *pHeadingLine = new QFrame();
+  pHeadingLine->setFrameShape(QFrame::HLine);
+  pHeadingLine->setFrameShadow(QFrame::Sunken);
+  return pHeadingLine;
+}

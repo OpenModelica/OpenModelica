@@ -158,7 +158,9 @@ public:
   QAction* getConnectModeAction() {return mpConnectModeAction;}
   QAction* getReSimulateModelAction() {return mpReSimulateModelAction;}
   QAction* getReSimulateSetupAction() {return mpReSimulateSetupAction;}
+  QAction* getSimulationParamsAction() {return mpSimulationParamsAction;}
   QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
+  QAction* getAlignInterfacesAction() {return mpAlignInterfacesAction;}
   QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
   void addRecentFile(const QString &fileName, const QString &encoding);
   void updateRecentFileActions();
@@ -318,7 +320,9 @@ private:
   QAction *mpExportAsImageAction;
   QAction *mpExportToClipboardAction;
   // TLM Simulation Action
+  QAction *mpSimulationParamsAction;
   QAction *mpFetchInterfaceDataAction;
+  QAction *mpAlignInterfacesAction;
   QAction *mpTLMCoSimulationAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;

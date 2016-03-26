@@ -47,8 +47,8 @@ class ImportFMUDialog : public QDialog
   Q_OBJECT
 public:
   ImportFMUDialog(MainWindow *pParent = 0);
-  MainWindow *mpMainWindow;
 private:
+  MainWindow *mpMainWindow;
   Label *mpImportFMUHeading;
   QFrame *mpHorizontalLine;
   Label *mpFmuFileLabel;
