@@ -1357,7 +1357,7 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
     QString contents = pOMCProxy->diffModelicaFileListings(before, after);
     pParentLibraryTreeItem->setClassText(contents);
     if (pParentLibraryTreeItem->getModelWidget()) {
-      pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getNameStructure()).append("*"));
+      pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getName()).append("*"));
       ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
       if (pModelicaTextEditor) {
         pModelicaTextEditor->setPlainText(contents);
@@ -1391,7 +1391,7 @@ void LibraryTreeModel::updateLibraryTreeItemClassTextManually(LibraryTreeItem *p
   OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
   pParentLibraryTreeItem->setClassText(contents);
   if (pParentLibraryTreeItem->getModelWidget()) {
-    pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getNameStructure()).append("*"));
+    pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getName()).append("*"));
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
     if (pModelicaTextEditor) {
       pModelicaTextEditor->setPlainText(contents);
@@ -1558,9 +1558,11 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QStrin
   if (!pLibraryTreeItem->getModelWidget()) {
     ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, mpLibraryWidget->getMainWindow()->getModelWidgetContainer(), text);
     pLibraryTreeItem->setModelWidget(pModelWidget);
-    pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure() + (pLibraryTreeItem->isSaved() ? "" : "*"));
   }
-  pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure() + (pLibraryTreeItem->isSaved() ? "" : "*"));
+  /* Ticket #3797
+   * Only show the class Name as window title instead of full path
+   */
+  pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName() + (pLibraryTreeItem->isSaved() ? "" : "*"));
   if (show) {
     mpLibraryWidget->getMainWindow()->getModelWidgetContainer()->addModelWidget(pLibraryTreeItem->getModelWidget(), true);
   } else {
@@ -1843,7 +1845,7 @@ void LibraryTreeModel::moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool u
       pParentLibraryTreeItem->setIsSaved(false);
       updateLibraryTreeItem(pParentLibraryTreeItem);
       if (pParentLibraryTreeItem->getModelWidget()) {
-        pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getNameStructure()).append("*"));
+        pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getName()).append("*"));
       }
     }
   }
@@ -1892,7 +1894,7 @@ void LibraryTreeModel::moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, boo
       pParentLibraryTreeItem->setIsSaved(false);
       updateLibraryTreeItem(pParentLibraryTreeItem);
       if (pParentLibraryTreeItem->getModelWidget()) {
-        pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getNameStructure()).append("*"));
+        pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getName()).append("*"));
       }
     }
   }
@@ -3308,7 +3310,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
     pLibraryTreeItem->mClassInformation.fileName = fileName;
     mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), fileName);
     if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
-      pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure());
+      pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
       pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
     }
     mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
@@ -3344,7 +3346,7 @@ void LibraryWidget::saveChildLibraryTreeItemsOneFileHelper(LibraryTreeItem *pLib
   pLibraryTreeItem->mClassInformation.fileName = pLibraryTreeItem->parent()->getFileName();
   mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->parent()->getFileName());
   if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
-    pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure());
+    pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
     pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(pLibraryTreeItem->parent()->getFileName());
   }
   mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
@@ -3403,7 +3405,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
       pLibraryTreeItem->mClassInformation.fileName = fileName;
       mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), fileName);
       if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
-        pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure());
+        pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
         pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
       }
       mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
@@ -3489,7 +3491,7 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileName);
     if (pLibraryTreeItem->getModelWidget()) {
-      pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure());
+      pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
       pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
     }
   } else {
@@ -3553,7 +3555,7 @@ bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeIt
     QString oldMetaModelFile = pLibraryTreeItem->getFileName();
     pLibraryTreeItem->setFileName(fileName);
     if (pLibraryTreeItem->getModelWidget()) {
-      pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure());
+      pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
       pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
     }
     mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);

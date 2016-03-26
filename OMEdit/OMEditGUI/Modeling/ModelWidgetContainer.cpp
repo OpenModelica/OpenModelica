@@ -2574,6 +2574,7 @@ void ModelWidget::createModelWidgetComponents()
     mpReadOnlyLabel = mpLibraryTreeItem->isReadOnly() ? new Label(Helper::readOnly) : new Label(tr("Writable"));
     mpModelicaTypeLabel = new Label;
     mpViewTypeLabel = new Label;
+    mpModelClassPathLabel = new Label(mpLibraryTreeItem->getNameStructure());
     mpModelFilePathLabel = new Label(mpLibraryTreeItem->getFileName());
     mpModelFilePathLabel->setElideMode(Qt::ElideMiddle);
     mpCursorPositionLabel = new Label;
@@ -2621,6 +2622,7 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelicaTypeLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
+      mpModelStatusBar->addPermanentWidget(mpModelClassPathLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
@@ -2899,6 +2901,8 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     mpLibraryTreeItem->setModelWidget(0);
     QString name = StringHandler::getLastWordAfterDot(className);
     LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, mpLibraryTreeItem->parent(), false, false, true, row);
+    setWindowTitle(pNewLibraryTreeItem->getName() + (pNewLibraryTreeItem->isSaved() ? "" : "*"));
+    setModelClassPathLabel(pNewLibraryTreeItem->getNameStructure());
     pNewLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
     pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     // make the new created LibraryTreeItem selected
@@ -3006,7 +3010,7 @@ void ModelWidget::updateClassAnnotationIfNeeded()
  */
 void ModelWidget::updateModelText()
 {
-  setWindowTitle(QString(mpLibraryTreeItem->getNameStructure()).append("*"));
+  setWindowTitle(QString(mpLibraryTreeItem->getName()).append("*"));
   LibraryTreeModel *pLibraryTreeModel = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel();
   pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
 }
@@ -3018,7 +3022,7 @@ void ModelWidget::updateModelText()
  */
 void ModelWidget::updateModelicaTextManually(QString contents)
 {
-  setWindowTitle(QString(mpLibraryTreeItem->getNameStructure()).append("*"));
+  setWindowTitle(QString(mpLibraryTreeItem->getName()).append("*"));
   LibraryTreeModel *pLibraryTreeModel = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel();
   pLibraryTreeModel->updateLibraryTreeItemClassTextManually(mpLibraryTreeItem, contents);
 }

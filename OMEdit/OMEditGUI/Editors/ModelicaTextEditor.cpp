@@ -364,7 +364,7 @@ void ModelicaTextEditor::contentsHasChanged(int position, int charsRemoved, int 
     } else {
       /* if user is changing, the normal class. */
       if (!mForceSetPlainText) {
-        mpModelWidget->setWindowTitle(QString(mpModelWidget->getLibraryTreeItem()->getNameStructure()).append("*"));
+        mpModelWidget->setWindowTitle(QString(mpModelWidget->getLibraryTreeItem()->getName()).append("*"));
         mpModelWidget->getLibraryTreeItem()->setIsSaved(false);
         mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
         mTextChanged = true;

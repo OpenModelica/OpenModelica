@@ -337,6 +337,7 @@ public:
   GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
   QUndoStack* getUndoStack() {return mpUndoStack;}
   BaseEditor* getEditor() {return mpEditor;}
+  void setModelClassPathLabel(QString path) {mpModelClassPathLabel->setText(path);}
   void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
   Label* getCursorPositionLabel() {return mpCursorPositionLabel;}
   bool isLoadedWidgetComponents() {return mCreateModelWidgetComponents;}
@@ -376,6 +377,7 @@ private:
   Label *mpReadOnlyLabel;
   Label *mpModelicaTypeLabel;
   Label *mpViewTypeLabel;
+  Label *mpModelClassPathLabel;
   Label *mpModelFilePathLabel;
   Label *mpCursorPositionLabel;
   QToolButton *mpFileLockToolButton;

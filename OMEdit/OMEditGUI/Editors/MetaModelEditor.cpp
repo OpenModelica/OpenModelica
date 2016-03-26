@@ -715,7 +715,7 @@ void MetaModelEditor::contentsHasChanged(int position, int charsRemoved, int cha
     } else {
       /* if user is changing, the normal file. */
       if (!mForceSetPlainText) {
-        mpModelWidget->setWindowTitle(QString(mpModelWidget->getLibraryTreeItem()->getNameStructure()).append("*"));
+        mpModelWidget->setWindowTitle(QString(mpModelWidget->getLibraryTreeItem()->getName()).append("*"));
         mpModelWidget->getLibraryTreeItem()->setIsSaved(false);
         mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
         mTextChanged = true;
