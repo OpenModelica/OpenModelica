@@ -41,6 +41,7 @@ model RecordTupleReturn
     R r;
   equation
     (y, r) = g(u + 1);
+    annotation(experiment(StopTime = 0));
   end Test;
 end RecordTupleReturn;
 ");
@@ -58,7 +59,7 @@ getErrorString();
 // ""
 // record SimulationResult
 // resultFile = "RecordTupleReturn.Test_res.mat",
-// simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'RecordTupleReturn.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+// simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'RecordTupleReturn.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 // messages = ""
 // end SimulationResult;
 // 2.0
