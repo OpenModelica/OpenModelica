@@ -458,7 +458,7 @@ template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
 ::=
   let tmp_slice = tempDecl("vector<Slice>", &varDecls /*BUFD*/)
   let &preExp += '<%tmp_slice%>.clear();<%\n%>'
-  let idx_str = (subs |> sub hasindex i1 =>
+  let _ = (subs |> sub hasindex i1 =>
     match sub
       case INDEX(__) then
         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -468,12 +468,23 @@ template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
         let &preExp += '<%tmp_slice%>.push_back(Slice());<%\n%>'
         ''
       case SLICE(__) then
-        let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-        let &preExp += '<%tmp_slice%>.push_back(Slice(<%expPart%>));<%\n%>'
-        ''
+        match exp
+        case RANGE(__) then
+          let start_exp = daeExp(start, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+          let stop_exp = daeExp(stop, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+          let step_exp = match step case SOME(stepExp) then daeExp(stepExp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) else "1"
+          let &preExp += '<%tmp_slice%>.push_back(Slice(<%start_exp%>, <%step_exp%>, <%stop_exp%>));<%\n%>'
+          ''
+        else
+          // this default branch should not be used because exp is a range
+          let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+          let &preExp += '<%tmp_slice%>.push_back(Slice(<%expPart%>));<%\n%>'
+          ''
+        end match
     ;separator="\n ")
-  <<<%tmp_slice%>>>
+  '<%tmp_slice%>'
 end daeExpCrefIndexSpec;
+
 template daeExpCrefRhsArrayBox(ComponentRef cr,DAE.Type ty, Context context, Text &preExp /*BUFP*/,
                                Text &varDecls /*BUFP*/,SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Helper to daeExpCrefRhs."
@@ -1990,7 +2001,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let tvar = match ty
     case T_ARRAY(ty=elty) then
       // use dynamic array as static arrays are treated during translation
-      'DynArrayDim1<<%expTypeShort(elty)%>>(<%expVar%>.getNumElems(), <%expVar%>.getData())'
+      'DynArrayDim1<<%expTypeShort(elty)%>>(<%expVar%>.getNumElems(), ConstArray(<%expVar%>).getData())'
     else
       // this should never happen because it is eliminated during translation
       'StatArrayDim1<<%expTypeShort(ty)%>, 1, true>(&<%expVar%>)'
