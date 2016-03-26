@@ -109,12 +109,14 @@ class ArraySliceConst: public BaseArray<T> {
                                     "Wrong dimensions for ArraySlice");
     // create an explicit index set per dimension,
     // except for all indices that are indicated with an empty index set
-    size_t dim;
+    size_t dim, size;
     vector<Slice>::const_iterator sit;
     vector< vector<size_t> >::iterator dit = _idxs.begin();
     for (dim = 1, sit = slice.begin(); sit != slice.end(); dim++, sit++) {
-      if (sit->step == 0)
+      if (sit->iset != NULL) {
         _isets[dim - 1] = sit->iset;
+        size = sit->iset->getNumElems();
+      }
       else {
         _isets[dim - 1] = NULL;
         size_t maxIndex = baseArray.getDim(dim);
@@ -126,13 +128,14 @@ class ArraySliceConst: public BaseArray<T> {
         if (start > 1 || sit->step > 1 || stop < maxIndex)
           for (size_t i = start; i <= stop; i += sit->step)
             dit->push_back(i);
+        size = dit->size();
       }
-      if (dit->size() == 1)
-        // prefill constant _baseIdx in case of reduction
-        _baseIdx[dim - 1] = (*dit)[0];
+      if (size == 1)
+         // prefill constant _baseIdx in case of reduction
+        _baseIdx[dim - 1] = sit->iset != NULL? (*_isets[dim - 1])(1): (*dit)[0];
       else
         // store dimension of array slice
-        _dims.push_back(dit->size() != 0? dit->size(): _baseArray.getDim(dim));
+        _dims.push_back(size != 0? size: _baseArray.getDim(dim));
       dit++;
     }
   }
