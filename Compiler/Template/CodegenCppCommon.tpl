@@ -1053,26 +1053,17 @@ template daeExpRange(Exp exp, Context context, Text &preExp, Text &varDecls, Sim
     let ty_str = expTypeShort(ty)
     let start_exp = daeExp(start, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let stop_exp = daeExp(stop, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    //previous multi_array     let tmp = tempDecl('multi_array<<%ty_str%>,1>', &varDecls /*BUFD*/)
     let tmp = tempDecl('DynArrayDim1<<%ty_str%>>', &varDecls /*BUFD*/)
     let step_exp = match step case SOME(stepExp) then daeExp(stepExp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) else "1"
-    /* previous multi_array
-  let &preExp += 'int num_elems =(<%stop_exp%>-<%start_exp%>)/<%step_exp%>+1;
-    <%tmp%>.resize((boost::extents[num_elems]));
-    <%tmp%>.reindex(1);
-    for(int i= 1;i<=num_elems;i++)
-        <%tmp%>[i] =<%start_exp%>+(i-1)*<%step_exp%>;
-    '
-    '<%tmp%>'
-  */
-  let &preExp += 'int <%tmp%>_num_elems =(<%stop_exp%>-<%start_exp%>)/<%step_exp%>+1;
-    <%tmp%>.setDims(<%tmp%>_num_elems)/*setDims 2*/;
-    for (int <%tmp%>_i = 1; <%tmp%>_i <= <%tmp%>_num_elems; <%tmp%>_i++)
-      <%tmp%>(<%tmp%>_i) = <%start_exp%>+(<%tmp%>_i-1)*<%step_exp%>;
-    '
+    let &preExp +=
+      <<
+      int <%tmp%>_num_elems =(<%stop_exp%>-<%start_exp%>)/<%step_exp%>+1;
+      <%tmp%>.setDims(<%tmp%>_num_elems) /*daeExpRange*/;
+      for (int <%tmp%>_i = 1; <%tmp%>_i <= <%tmp%>_num_elems; <%tmp%>_i++)
+        <%tmp%>(<%tmp%>_i) = <%start_exp%>+(<%tmp%>_i-1)*<%step_exp%>;<%\n%>
+      >>
     '<%tmp%>'
 end daeExpRange;
-
 
 template daeExpReduction(Exp exp, Context context, Text &preExp,
                          Text &varDecls,SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -2043,11 +2034,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let arrays_exp = (arrays |> array =>
     '<%tvar%>_list.push_back(&<%daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>);' ;separator="\n")
     let &preExp +=
-    'vector<const BaseArray<<%ty_str%>>*> <%tvar%>_list;
-     <%tvar%>_list.push_back(&<%a0str%>);
-     <%arrays_exp%>
-     cat_array<<%ty_str%>>(<%dim_exp%>, <%tvar%>_list, <%tvar%>);
-    '
+      <<
+      vector<const BaseArray<<%ty_str%>>*> <%tvar%>_list;
+      <%tvar%>_list.push_back(&<%a0str%>);
+      <%arrays_exp%>
+      cat_array<<%ty_str%>>(<%dim_exp%>, <%tvar%>_list, <%tvar%>);<%\n%>
+      >>
     '<%tvar%>'
 
   case CALL(path=IDENT(name="promote"), expLst={A, n}, attr=attr as CALL_ATTR(ty=ty)) then
@@ -2063,8 +2055,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
 
    // let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     //let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
-    let &preExp += 'promote_array(<%var2%>,<%var1%>, <%tmp%>);<%\n%>'
-
+    let &preExp += 'promote_array(<%var2%>, <%var1%>, <%tmp%>);<%\n%>'
 
     '<%tmp%> '
    //else
