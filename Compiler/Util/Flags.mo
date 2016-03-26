@@ -1202,22 +1202,22 @@ constant ConfigFlag DEFAULT_OPT_MODULES_ORDERING = CONFIG_FLAG(80, "defaultOptMo
   Util.gettext("If this is activated, then the specified pre-/post-/init-optimization modules will be rearranged to the recommended ordering."));
 constant ConfigFlag PRE_OPT_MODULES_ADD = CONFIG_FLAG(81, "preOptModules+",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
-  Util.gettext("Sets additional pre-optimization modules to use in the back end. See --help=optmodules for more info."));
+  Util.gettext("Enables additional pre-optimization modules, e.g. --preOptModules+=module1,module2 would additionally enable module1 and module2. See --help=optmodules for more info."));
 constant ConfigFlag PRE_OPT_MODULES_SUB = CONFIG_FLAG(82, "preOptModules-",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
-  Util.gettext("Disables a list of pre-optimization modules. See --help=optmodules for more info."));
+  Util.gettext("Disables a list of pre-optimization modules, e.g. --preOptModules-=module1,module2 would disable module1 and module2. See --help=optmodules for more info."));
 constant ConfigFlag POST_OPT_MODULES_ADD = CONFIG_FLAG(83, "postOptModules+",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
-  Util.gettext("Sets additional post-optimization modules to use in the back end. See --help=optmodules for more info."));
+  Util.gettext("Enables additional post-optimization modules, e.g. --postOptModules+=module1,module2 would additionally enable module1 and module2. See --help=optmodules for more info."));
 constant ConfigFlag POST_OPT_MODULES_SUB = CONFIG_FLAG(84, "postOptModules-",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
-  Util.gettext("Disables a list of post-optimization modules. See --help=optmodules for more info."));
+  Util.gettext("Disables a list of post-optimization modules, e.g. --postOptModules-=module1,module2 would disable module1 and module2. See --help=optmodules for more info."));
 constant ConfigFlag INIT_OPT_MODULES_ADD = CONFIG_FLAG(85, "initOptModules+",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
-  Util.gettext("Sets additional init-optimization modules to use in the back end. See --help=optmodules for more info."));
+  Util.gettext("Enables additional init-optimization modules, e.g. --initOptModules+=module1,module2 would additionally enable module1 and module2. See --help=optmodules for more info."));
 constant ConfigFlag INIT_OPT_MODULES_SUB = CONFIG_FLAG(86, "initOptModules-",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
-  Util.gettext("Disables a list of init-optimization modules. See --help=optmodules for more info."));
+  Util.gettext("Disables a list of init-optimization modules, e.g. --initOptModules-=module1,module2 would disable module1 and module2. See --help=optmodules for more info."));
 constant ConfigFlag PERMISSIVE = CONFIG_FLAG(87, "permissive",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Disables some error checks to allow erroneous models to compile."));
