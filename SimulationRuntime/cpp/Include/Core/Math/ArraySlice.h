@@ -131,11 +131,8 @@ class ArraySliceConst: public BaseArray<T> {
         // prefill constant _baseIdx in case of reduction
         _baseIdx[dim - 1] = (*dit)[0];
       else
-	// store dimension of array slice
-	if(_isets[dim-1] !=NULL && _isets[dim-1]->getDim(0) > 1)
-	   _dims.push_back(_isets[dim-1]->getData()[1]-_isets[dim-1]->getData()[0] +1);
-	else
-	   _dims.push_back(dit->size() != 0? dit->size(): _baseArray.getDim(dim));
+        // store dimension of array slice
+        _dims.push_back(dit->size() != 0? dit->size(): _baseArray.getDim(dim));
       dit++;
     }
   }
