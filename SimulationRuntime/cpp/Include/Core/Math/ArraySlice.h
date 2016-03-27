@@ -84,9 +84,9 @@ class Slice {
     iset = &indices;
   }
 
-  size_t start;
-  size_t step;
-  size_t stop;
+  int start;
+  int step;
+  int stop;
   const BaseArray<int> *iset;
 };
 
@@ -119,23 +119,28 @@ class ArraySliceConst: public BaseArray<T> {
       }
       else {
         _isets[dim - 1] = NULL;
-        size_t maxIndex = baseArray.getDim(dim);
-        size_t start = sit->start > 0? sit->start: maxIndex;
-        size_t stop = sit->stop > 0? sit->stop: maxIndex;
-        if (start > maxIndex || stop > maxIndex)
+        int maxIndex = baseArray.getDim(dim);
+        int start = sit->start > 0? sit->start: maxIndex;
+        int stop = sit->stop > 0? sit->stop: maxIndex;
+        int step = sit->step;
+        if (start > maxIndex || stop > maxIndex || step == 0)
           throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                         "Wrong slice exceeding array size");
-        if (start > 1 || sit->step > 1 || stop < maxIndex)
-          for (size_t i = start; i <= stop; i += sit->step)
-            dit->push_back(i);
-        size = dit->size();
+        if (start == 1 && step == 1 && stop == maxIndex)
+          // all indices; avoid trivial fill of _idxs
+          size = _baseArray.getDim(dim);
+        else {
+          size = std::max(0, (stop - start) / step + 1);
+          for (int i = 0; i < size; i++)
+            dit->push_back(start + i * step);
+        }
       }
       if (size == 1)
-         // prefill constant _baseIdx in case of reduction
+        // prefill constant _baseIdx in case of reduction
         _baseIdx[dim - 1] = sit->iset != NULL? (*_isets[dim - 1])(1): (*dit)[0];
       else
         // store dimension of array slice
-        _dims.push_back(size != 0? size: _baseArray.getDim(dim));
+        _dims.push_back(size);
       dit++;
     }
   }
