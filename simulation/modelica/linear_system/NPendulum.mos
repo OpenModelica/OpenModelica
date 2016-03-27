@@ -83,7 +83,7 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
   "NPendulum_diff.csv",0.01,0.0001,
   {"phi[10]"});
 */
-setCommandLineOptions("--disableLinearTearing");
+setCommandLineOptions("--disableLinearTearing +d=sortEqnsAndVars");
 getErrorString();
 buildModel(NPendulum); getErrorString();
 system("./NPendulum -ls totalpivot");
@@ -97,7 +97,6 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
   "ReferenceFiles/NPendulum_10.mat",
   "NPendulum_diff.csv",0.01,0.01,
   {"phi[10]"});
-
 system("./NPendulum -ls umfpack");
 res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
   "ReferenceFiles/NPendulum_10.mat",
@@ -109,7 +108,6 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
   "ReferenceFiles/NPendulum_10.mat",
   "NPendulum_diff.csv",0.01,0.01,
   {"phi[10]"});
-
 
 // Result:
 // true
@@ -128,7 +126,8 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
 // true
 // ""
 // {"NPendulum","NPendulum_init.xml"}
-// ""
+// "Warning: Deprecated debug flag --d=sortEqnsAndVars detected. Use --preOptModules+=sortEqnsVars instead.
+// "
 // 0
 // {"Files Equal!"}
 // 0
