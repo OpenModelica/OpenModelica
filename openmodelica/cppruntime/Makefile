@@ -4,6 +4,7 @@ TESTFILES = \
 tearnonlin1.mos \
 WhenStatement1.mos \
 BouncingBall.mos \
+arraySliceTest.mos \
 clockedTest.mos \
 clockedEventTest.mos \
 clockedSolverTest.mos \
