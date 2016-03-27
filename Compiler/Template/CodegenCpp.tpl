@@ -5214,10 +5214,9 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssig
     daeExternalCExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case SIMEXTARGSIZE(cref=c) then
     let typeStr = expTypeShort(type_)
-    let name = if outputIndex then 'out.targTest4<%outputIndex%>' else contextCref2(c,contextFunction)
+    let name = contextCref2(c, contextFunction)
     let dim = daeExp(exp, contextFunction, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     '<%name%>.getDim(<%dim%>)'
-
 end extArg;
 
 
@@ -13490,17 +13489,18 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     /* Records need to be traversed, assigning each component by itself */
   case STMT_ASSIGN(exp1=CREF(componentRef=cr,ty = T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
     let &preExp = buffer ""
-    let rec = daeExp(exp, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let rec = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
 
     <%preExp%>
     <% varLst |> var as TYPES_VAR(__) =>
+      let varNameStr = crefStr(makeUntypedCrefIdent(var.name))
       match var.ty
       case T_ARRAY(__) then
-        copyArrayData(var.ty, '<%rec%>.<%var.name%>', appendStringCref(var.name,cr), context)
+        copyArrayData(var.ty, '<%rec%>.<%varNameStr%>', appendStringCref(var.name, cr), context)
       else
-        let varPart = contextCref(appendStringCref(var.name,cr),context,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-        '<%varPart%> = <%rec%>.<%var.name%>;'
+        let varPart = contextCref(appendStringCref(var.name, cr), context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        '<%varPart%> = <%rec%>.<%varNameStr%>;'
     ; separator="\n"
     %>
     >>

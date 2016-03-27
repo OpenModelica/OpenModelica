@@ -1726,7 +1726,9 @@ template daeExpRecord(Exp rec, Context context, Text &preExp, Text &varDecls, Si
   match rec
   case RECORD(__) then
   let name = tempDecl(underscorePath(path) + "Type", &varDecls)
-  let ass = threadTuple(exps,comp) |>  (exp,compn) => '<%name%>.<%compn%> = <%daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
+  let ass = threadTuple(exps,comp) |>  (exp,compn) =>
+    let compnStr = crefStr(makeUntypedCrefIdent(compn))
+    '<%name%>.<%compnStr%> = <%daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
   let &preExp += ass
   name
 end daeExpRecord;
@@ -2740,7 +2742,6 @@ template algStmtTupleAssign(DAE.Statement stmt, Context context, Text &varDecls,
 match stmt
 case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
   let &preExp = buffer "" /*BUFD*/
-  let &afterExp = buffer "" /*BUFD*/
   let crefs = (expExpLst |> e => ExpressionDump.printExpStr(e) ;separator=", ")
   let marker = '(<%crefs%>) = <%ExpressionDump.printExpStr(exp)%>'
   let retStruct = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -2751,12 +2752,10 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
                     writeLhsCref(cr, rhsStr, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
                   ;separator="\n";empty)
   <<
-  // algStmtTupleAssign: preExp printout <%marker%>
+  // algStmtTupleAssign: preExp <%marker%>
   <%preExp%>
   // algStmtTupleAssign: writeLhsCref
   <%lhsCrefs%>
-  // algStmtTupleAssign: afterExp
-  <%afterExp%>
   >>
 
 else error(sourceInfo(), 'algStmtTupleAssign failed')
