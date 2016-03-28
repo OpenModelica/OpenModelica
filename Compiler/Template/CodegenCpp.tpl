@@ -4839,8 +4839,6 @@ case FUNCTION(__) then
   }
   >>
   %>
-
-
   >>
 end functionBodyRegularFunction;
 
@@ -4885,8 +4883,6 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     )
    end match
 
-   let &varDecls1 = buffer ""
-   let &outVarInits1 = buffer ""
    let &outVarCopy1 = buffer ""
    let &outVarAssign1 = buffer ""
 
@@ -4895,16 +4891,16 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
    case {var} then "1"
 
    else
-     //(List.restOrEmpty(outVars) |> var hasindex i1 fromindex 1 =>  varOutputTuple(fn, var,i1, &varDecls1, &outVarInits1, &outVarCopy1, &outVarAssign1, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)
      (outVars |> var hasindex i1 fromindex 0 =>  varOutputTuple(fn, var, i1, &varDeclsvOutputTuple, &outVarInits, &outVarCopy1, &outVarAssign1, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      ;separator="\n"; empty /* increase the counter! */)
   end match
-    let functionBodyExternalFunctionreturn = match outVarAssign1
-   case "" then << <%if retVar then 'output = <%retVar%>;' else '/*no output*/' %> >>
-   else outVarAssign1
+  let functionBodyExternalFunctionreturn = match outVarAssign1
+    case "" then <<<%if retVar then 'output = <%retVar%>;' else '/*no output*/' %>>>
+    else outVarAssign1
 
-  let fnBody = <<
-  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then '<%retType%>& output' %>)/*function2*/
+  let fnBody =
+  <<
+  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then '<%retType%>& output' %>)
   {
     /* functionBodyExternalFunction: varDecls */
     /*1*/
@@ -4917,10 +4913,10 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     <%varDeclsvOutputTuple%>
     /* functionBodyExternalFunction: preExp */
     <%preExp%>
-    <%inputAssign%>
     /* functionBodyExternalFunction: outVarInits */
     <%outVarInits%>
     /* functionBodyExternalFunction: callPart */
+    <%inputAssign%>
     <%callPart%>
     <%outputAssign%>
     /* functionBodyExternalFunction: return */
@@ -4948,8 +4944,6 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     return 0;
   }
   >> %>
-
-
   >>
 end functionBodyExternalFunction;
 
@@ -5109,16 +5103,11 @@ case EXTERNAL_FUNCTION(__) then
   <%varDecs%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls /*BUFD*/)%>
   <%dynamicCheck%>
-  /*test0*/
   <%returnAssign%><%extName%>(<%args%>);
   >>
-   /*test1*/
- // <%extArgs |> arg => extFunCallVarcopy(arg,fname,useTuple, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n"%>
-  /*test2*/
-  //<%match extReturn case SIMEXTARG(__) then extFunCallVarcopy(extReturn,fname,useTuple, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-  /*test3*/
-
 end extFunCallC;
+
+
 template extFunCallVarcopy(SimExtArg arg, String fnName,Boolean useTuple, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Helper to extFunCall."
 ::=
@@ -5193,12 +5182,8 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssig
  "Helper to extFunCall."
 ::=
   match extArg
-  case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t) then
-    //let name = if oi then 'out.targTest5<%oi%>' else contextCref2(c,contextFunction)
-  let arrayArg = extCArrayArg(extArg, &preExp, &varDecls, &inputAssign /*BUFD*/, &outputAssign /*BUFD*/)
-  <<
-  <%arrayArg%>
-  >>
+  case SIMEXTARG(isArray=true) then
+    extCArrayArg(extArg, &preExp, &varDecls, &inputAssign, &outputAssign)
 
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     let cr = '<%contextCref2(c,contextFunction)%>'
@@ -5232,22 +5217,23 @@ case SIMEXTARG(cref=c, isInput =iI, outputIndex=oi, isArray=true, type_=t)then
     let dimsStr = checkDimension(dims)
     let elType = expTypeShort(ty)
     let extType = if stringEq(elType, "string") then elType else extType2(ty, true, false)
-    let extCStr = if stringEq(elType, "string") then 'CStrArray'
-    if boolOr(intGt(listLength(dims), 1), stringEq(elType, "bool")) then
+    if stringEq(elType, "string") then
+      let extName = extVarName2(c)
+      let &inputAssign += 'CStrArray <%extName%>(<%name%>);<%\n%>'
+      let &outputAssign += if intGt(oi, 0) then '<%extName%>.writeBack(<%name%>);<%\n%>'
+      '<%extName%>'
+    else if boolOr(intGt(listLength(dims), 1), stringEq(elType, "bool")) then
       let tmp = match dimsStr
         case "" then
-          tempDecl('DynArrayDim<%listLength(dims)%><<%extType%>>', &varDecls /*BUFD*/)
+          tempDecl('DynArrayDim<%listLength(dims)%><<%extType%>>', &varDecls)
         else
-          tempDecl('StatArrayDim<%dimStr%><<%extType%>, <%dimsStr%>>', &varDecls /*BUFD*/)
+          tempDecl('StatArrayDim<%dimStr%><<%extType%>, <%dimsStr%>>', &varDecls)
       let &inputAssign += 'convertArrayLayout(<%name%>, <%tmp%>);'
       let &outputAssign += if intGt(oi, 0) then 'convertArrayLayout(<%tmp%>, <%name%>);'
-      let arg = if extCStr then 'CStrArray(<%tmp%>)' else '<%tmp%>.getData()'
-      '<%arg%>'
+      '<%tmp%>.getData()'
     else
-      let arg = if extCStr then 'CStrArray(<%name%>)'
-                else if iI then 'ConstArray(<%name%>).getData()'
-                else '<%name%>.getData()'
-      '<%arg%>'
+      <<<%if iI then 'ConstArray(<%name%>).getData()'
+                else '<%name%>.getData()'%>>>
 end extCArrayArg;
 
 

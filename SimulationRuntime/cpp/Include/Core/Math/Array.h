@@ -179,13 +179,24 @@ class CStrArray
       _c_str_array[i] = data[i].c_str();
   }
 
-
   /**
    * Convert to c_str array
    */
   operator const char**()
   {
     return &_c_str_array[0];
+  }
+
+  /**
+   * Write back to string array and free c strings if allocated
+   */
+  void writeBack(BaseArray<string>& stringArray)
+  {
+    string *data = stringArray.getData();
+    for(size_t i = 0; i < _c_str_array.size(); i++) {
+      data[i] = _c_str_array[i];
+      _ModelicaFreeStringIfAllocated(_c_str_array[i]);
+    }
   }
 
  private:
