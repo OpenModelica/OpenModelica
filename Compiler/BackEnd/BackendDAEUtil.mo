@@ -4749,6 +4749,7 @@ algorithm
     fail();
    end if;
    true := solved or derived;
+   //print("tryToSolveOrDerive" + ExpressionDump.printExpStr(e) + " -> " +  ExpressionDump.printExpStr(f) + " == " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n");
 end tryToSolveOrDerive;
 
 

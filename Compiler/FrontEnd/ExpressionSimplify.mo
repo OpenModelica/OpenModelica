@@ -329,8 +329,7 @@ algorithm
 
     // Simplify asubs which result from function calls
     case (_, DAE.TUPLE(PR=eLst), {DAE.ICONST(sub)})
-      equation
-        true = sub<=listLength(eLst);
+      guard sub<=listLength(eLst)
       then listGet(eLst,sub);
 
     // Simplify asubs where some of the subscripts are slices.
@@ -3072,6 +3071,7 @@ algorithm
       Real rstart,rstop,rstep,rval;
       DAE.ComponentRef c,c_1;
       Integer n;
+      Operator op;
       list<DAE.ReductionIterator> iters;
 
     // subscript of an array
@@ -3137,6 +3137,24 @@ algorithm
         exp = Expression.makeCrefExp(c_1, t);
       then
         exp;
+
+   // BINARAY
+    case(DAE.BINARY(e1,op,e2), _, _)
+      guard Expression.isMulOrDiv(op) or Expression.isAddOrSub(op)
+      equation
+        e1 = Expression.makeASUB(e1,{inSubExp});
+        e2 = Expression.makeASUB(e2,{inSubExp});
+        //wrap operator
+        e = if Expression.isMul(op) then
+          Expression.expMul(e1,e2)
+        elseif Expression.isDiv(op) then
+          Expression.makeDiv(e1,e2)
+        elseif Expression.isAdd(op) then
+          Expression.expAdd(e1,e2)
+        else
+          Expression.expSub(e1,e2);
+      then
+        e;
 
   end match;
 end simplifyAsub0;
