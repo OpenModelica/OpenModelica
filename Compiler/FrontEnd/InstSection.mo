@@ -1230,7 +1230,7 @@ algorithm
     Values.ARRAY(valueLst = values) := inValue;
 
     for val in values loop
-      env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName), NONE());
+      env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), FCore.forScopeName, NONE());
       // The iterator is not constant but the range is constant.
       env := FGraph.addForIterator(env, inIdent, inIteratorType,
         DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
@@ -1263,7 +1263,7 @@ protected function addForLoopScope
   input Option<DAE.Const> constOfForIteratorRange;
   output FCore.Graph newEnv;
 algorithm
-  newEnv := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName), NONE());
+  newEnv := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), FCore.forScopeName, NONE());
   newEnv := FGraph.addForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange);
 end addForLoopScope;
 
@@ -1279,7 +1279,7 @@ protected function addParForLoopScope
   input Option<DAE.Const> constOfForIteratorRange;
   output FCore.Graph newEnv;
 algorithm
-  newEnv := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.parForScopeName), NONE());
+  newEnv := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), FCore.parForScopeName, NONE());
   newEnv := FGraph.addForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange);
 end addParForLoopScope;
 
@@ -2597,7 +2597,7 @@ algorithm
       equation
         dim = dim-1;
         dims = dim::dims;
-        env_1 = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName),NONE());
+        env_1 = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), FCore.forScopeName,NONE());
         // the iterator is not constant but the range is constant
         env_2 = FGraph.addForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/

@@ -2514,7 +2514,7 @@ algorithm
       then (cache,SOME((env,DAE.emptyDae,declsTree)));
     case (cache,env,ld,_,_,_)
       equation
-        env2 = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
+        env2 = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), scopeName,NONE());
 
         // Tranform declarations such as Real x,y; to Real x; Real y;
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());

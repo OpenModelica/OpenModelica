@@ -168,7 +168,7 @@ algorithm
           // Fully qualify modifiers in extends in the extends environment.
           (outCache, emod) := fixModifications(outCache, inEnv, emod, {ht});
 
-          cenv := FGraph.openScope(cenv, encf, SOME(cn), FGraph.classInfToScopeType(inState));
+          cenv := FGraph.openScope(cenv, encf, cn, FGraph.classInfToScopeType(inState));
 
           // Add classdefs and imports to env, so e.g. imports from baseclasses can be found.
           (import_els, cdef_els, clsext_els, rest_els) :=
@@ -957,7 +957,7 @@ algorithm
         // lookup as it might have been redeclared!!!
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
                      cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
-        env = FGraph.openScope(env, SCode.ENCAPSULATED(), SOME(name), FGraph.restrictionToScopeType(restriction));
+        env = FGraph.openScope(env, SCode.ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
         (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
@@ -966,7 +966,7 @@ algorithm
     case (cache,env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //fprintln(Flags.DEBUG,"fixClassdef " + name);
-        env = FGraph.openScope(env, SCode.ENCAPSULATED(), SOME(name), FGraph.restrictionToScopeType(restriction));
+        env = FGraph.openScope(env, SCode.ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
         (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
@@ -979,7 +979,7 @@ algorithm
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
                      cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
 
-        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), FGraph.restrictionToScopeType(restriction));
+        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
         (cache,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
@@ -988,7 +988,7 @@ algorithm
     case (cache,env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //fprintln(Flags.DEBUG,"fixClassdef " + name + str);
-        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), FGraph.restrictionToScopeType(restriction));
+        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
         (cache,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
@@ -1599,7 +1599,7 @@ algorithm
         (denv,id) = lookupVarNoErrorMessage(cache,env,cref_);
         //fprintln(Flags.DEBUG,"Got env " + intString(listLength(env)));
         // isOutside = FGraph.graphPrefixOf(denv, env);
-        denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
+        denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),id,NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
         // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
@@ -1616,7 +1616,7 @@ algorithm
         // id might come from named import, make sure you use the actual class name!
         id = SCode.getElementName(c);
         //fprintln(Flags.DEBUG,"Got env " + intString(listLength(env)));
-        denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
+        denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),id,NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
         // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);

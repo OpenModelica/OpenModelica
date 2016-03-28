@@ -589,7 +589,7 @@ algorithm
         isPartialFn = isFn and SCode.partialBool(partialPrefix);
         true = notIsPartial or isPartialFn;
 
-        env_1 = FGraph.openScope(env, encflag, SOME(n), FGraph.restrictionToScopeType(r));
+        env_1 = FGraph.openScope(env, encflag, n, FGraph.restrictionToScopeType(r));
 
         ci_state = ClassInf.start(r,FGraph.getGraphName(env_1));
         csets = ConnectUtil.newSet(pre, inSets);
@@ -693,7 +693,7 @@ algorithm
 
     case (cache,env,ih,store,mod,pre,(c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r)),inst_dims,impl,_,_) /* impl */
       equation
-        env_1 = FGraph.openScope(env, encflag, SOME(n), FGraph.restrictionToScopeType(r));
+        env_1 = FGraph.openScope(env, encflag, n, FGraph.restrictionToScopeType(r));
         ci_state = ClassInf.start(r, FGraph.getGraphName(env_1));
         c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
         (cache,env_3,ih,store,dae1,csets,ci_state_1,tys,bc_ty,_,_,_)
@@ -791,7 +791,7 @@ algorithm
         FCore.CL(status = FCore.CLS_INSTANCE(n)) = FNode.refData(FGraph.lastScopeRef(inEnv));
         (env, _) = FGraph.stripLastScopeRef(inEnv);
 
-        env = FGraph.openScope(env, encflag, SOME(n), FGraph.restrictionToScopeType(r));
+        env = FGraph.openScope(env, encflag, n, FGraph.restrictionToScopeType(r));
         ci_state = ClassInf.start(r,FGraph.getGraphName(env));
 
         // lookup in IH
@@ -1630,7 +1630,6 @@ algorithm
       equation
         true = Flags.isSet(Flags.CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
-        _ = SCode.className(c);
 
         fullEnvPathPlusClass = generateCachePath(inEnv, c, pre, InstTypes.INNER_CALL());
 
@@ -2325,7 +2324,7 @@ algorithm
           Lookup.lookupClass(cache, env, cn, SOME(info));
 
         // keep the old behaviour
-        env3 = FGraph.openScope(cenv, enc2, SOME(cn2), SOME(FCore.CLASS_SCOPE()));
+        env3 = FGraph.openScope(cenv, enc2, cn2, SOME(FCore.CLASS_SCOPE()));
         ci_state2 = ClassInf.start(r, FGraph.getGraphName(env3));
         new_ci_state = ClassInf.start(r, FGraph.getGraphName(env3));
 
@@ -2368,7 +2367,7 @@ algorithm
         Util.setStatefulBoolean(stopInst, not valid_connector);
         true = valid_connector;
 
-        cenv_2 = FGraph.openScope(cenv, enc2, SOME(cn2), FGraph.classInfToScopeType(ci_state));
+        cenv_2 = FGraph.openScope(cenv, enc2, cn2, FGraph.classInfToScopeType(ci_state));
         new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
 
         // chain the redeclares
@@ -2439,7 +2438,7 @@ algorithm
         // not a basic type, change class name!
         false = InstUtil.checkDerivedRestriction(re, r, cn2);
 
-        cenv_2 = FGraph.openScope(cenv, enc2, SOME(className), FGraph.classInfToScopeType(ci_state));
+        cenv_2 = FGraph.openScope(cenv, enc2, className, FGraph.classInfToScopeType(ci_state));
         new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
 
         c = SCode.setClassName(className, c);
@@ -3033,7 +3032,7 @@ algorithm
         if is_basic_type or has_dims then
           scope_ty := if is_basic_type then FGraph.restrictionToScopeType(der_re) else
                                             FGraph.classInfToScopeType(inState);
-          cenv := FGraph.openScope(cenv, enc, SOME(class_name), scope_ty);
+          cenv := FGraph.openScope(cenv, enc, class_name, scope_ty);
           outState := ClassInf.start(der_re, FGraph.getGraphName(cenv));
           (outCache, outEnv, outIH, outState, outVars) :=
             partialInstClassIn(outCache, cenv, inIH, mod, inPrefix, outState, cls,
@@ -5484,7 +5483,7 @@ algorithm
         true = Flags.isSet(Flags.CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
         FCore.CL(e2 as SCode.CLASS(restriction = restr, encapsulatedPrefix=encflag), pre2, m2, _, _) = FNode.refData(inRef);
-        env = FGraph.openScope(inEnv, encflag, SOME(inName), FGraph.restrictionToScopeType(restr));
+        env = FGraph.openScope(inEnv, encflag, inName, FGraph.restrictionToScopeType(restr));
         fullEnvPathPlusClass = generateCachePath(env, e2, pre2, InstTypes.INNER_CALL());
 
         // print("Try cached instance: " + Absyn.pathString(fullEnvPathPlusClass) + "\n");
@@ -5512,8 +5511,8 @@ algorithm
         true = Flags.isSet(Flags.CACHE);
         _ = getGlobalRoot(Global.instHashIndex);
         FCore.CL(e2 as SCode.CLASS(restriction = restr, encapsulatedPrefix=encflag), pre2, _, _, _) = FNode.refData(inRef);
-        env = FGraph.openScope(inEnv, encflag, SOME(inName), FGraph.restrictionToScopeType(restr));
-        _ = generateCachePath(env, e2, pre2, InstTypes.INNER_CALL());
+        env = FGraph.openScope(inEnv, encflag, inName, FGraph.restrictionToScopeType(restr));
+        // _ = generateCachePath(env, e2, pre2, InstTypes.INNER_CALL());
 
         // print("Could not get the cached instance: " + Absyn.pathString(fullEnvPathPlusClass) + "\n");
         env = FGraph.pushScopeRef(inEnv, inRef);

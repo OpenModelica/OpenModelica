@@ -1677,7 +1677,7 @@ algorithm
         (sp, st) = GlobalScriptUtil.symbolTableToSCode(st);
         (cache, env) = Inst.makeEnvFromProgram(sp);
         (cache,(cl as SCode.CLASS(name=name,encapsulatedPrefix=encflag,restriction=restr)),env) = Lookup.lookupClass(cache, env, classpath, NONE());
-        env = FGraph.openScope(env, encflag, SOME(name), FGraph.restrictionToScopeType(restr));
+        env = FGraph.openScope(env, encflag, name, FGraph.restrictionToScopeType(restr));
         (_, env) = Inst.partialInstClassIn(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
           ClassInf.start(restr, FGraph.getGraphName(env)), cl, SCode.PUBLIC(), {}, 0);
         valsLst = list(getComponentInfo(c, env, isProtected=false) for c in Interactive.getPublicComponentsInClass(absynClass));

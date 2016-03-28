@@ -1324,7 +1324,7 @@ protected
 algorithm
   try
     env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(),
-      SOME(FCore.forIterScopeName), NONE());
+      FCore.forIterScopeName, NONE());
 
     // Elaborate the iterators.
     (outCache, env, reduction_iters, dims, iter_const, has_guard_exp, outST) :=
@@ -8956,7 +8956,7 @@ algorithm
   // Create a new implicit scope with the needed parameters on top of the
   // current env so we can find the bindings if needed. We need an implicit
   // scope so comp1.comp2 can be looked up without package constant restriction.
-  env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName), NONE());
+  env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), FCore.forScopeName, NONE());
 
   // Add variables to the environment.
   env := makeDummyFuncEnv(env, vars, dummy_var);

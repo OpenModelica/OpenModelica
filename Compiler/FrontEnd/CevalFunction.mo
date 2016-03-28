@@ -1520,7 +1520,7 @@ protected function setupFunctionEnvironment
   output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
-  outEnv := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(inFuncName), SOME(FCore.FUNCTION_SCOPE()));
+  outEnv := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), inFuncName, SOME(FCore.FUNCTION_SCOPE()));
   (outCache, outEnv, outST) :=
     extendEnvWithFunctionVars(inCache, outEnv, inFuncParams, inST);
 end setupFunctionEnvironment;
