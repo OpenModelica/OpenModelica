@@ -58,18 +58,21 @@ static std::map<const char*, char*> _allocatedStrings;
 
 char* ModelicaAllocateString(size_t len)
 {
-  char *res = new char[len];
+  char *res = new char[len + 1];
   if (!res)
     ModelicaFormatError("%s:%d: ModelicaAllocateString failed", __FILE__, __LINE__);
   _allocatedStrings[res] = res;
+  res[len] = '\0';
   return res;
 }
 
 char* ModelicaAllocateStringWithErrorReturn(size_t len)
 {
-  char *res = new char[len];
-  if (res)
+  char *res = new char[len + 1];
+  if (res) {
     _allocatedStrings[res] = res;
+    res[len] = '\0';
+  }
   return res;
 }
 
