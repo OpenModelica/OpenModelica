@@ -4470,7 +4470,7 @@ template extType(Type type, String language, Boolean isReference,
 ::=
   match language
   case "C" then extType2(type, isInput, isArray)
-  case "FORTRAN 77" then extTypeF77(type, isReference)
+  case "FORTRAN 77" then extTypeF77(type, isInput, isReference)
   else error(sourceInfo(), 'Unsupported external language: <%language%>')
 end extType;
 
@@ -4495,23 +4495,23 @@ template extType2(Type type, Boolean isInput, Boolean isArray)
 end extType2;
 
 
-template extTypeF77(Type type, Boolean isReference)
+template extTypeF77(Type type, Boolean isInput, Boolean isReference)
   "Generates type for external function argument or return value for F77."
 ::=
   let s = match type
   case T_INTEGER(__)     then "int"
   case T_REAL(__)        then "double"
-  case T_STRING(__)      then "char"
+  case T_STRING(__)      then "const char*"
   case T_BOOL(__)        then "int"
   case T_ENUMERATION(__) then "int"
-  case T_ARRAY(__)       then extTypeF77(ty, true)
+  case T_ARRAY(__)       then extTypeF77(ty, isInput, true)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                          then "void*"
   case T_COMPLEX(complexClassType=RECORD(path=rname))
                          then '<%underscorePath(rname)%>'
   case T_METATYPE(__) case T_METABOXED(__) then "void*"
   else error(sourceInfo(), 'Unknown external F77 type <%unparseType(type)%>')
-  match type case T_ARRAY(__) then s else if isReference then '<%s%>*' else s
+  match type case T_ARRAY(__) case T_STRING(__) then s else if isReference then '<%if isInput then "const "%><%s%>*' else s
 end extTypeF77;
 
 
@@ -5336,7 +5336,7 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls,
     match type_
     case T_ARRAY(__) then
       let elType = expTypeShort(ty)
-      let extType = extTypeF77(ty, false)
+      let extType = extTypeF77(ty, false, false)
       let extName = '<%varName%>_ext'
       let nDims = listLength(dims)
       if stringEq(elType, "bool") then
@@ -5355,7 +5355,7 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls,
   case SIMEXTARG(cref=c, type_=t) then
     let varName = contextCref2(c, contextFunction)
     let varType = expTypeShort(t)
-    let extType = extTypeF77(t, false)
+    let extType = extTypeF77(t, false, false)
     let extName = '<%varName%>_ext'
     if stringEq(varType, extType) then
       <<
@@ -5367,13 +5367,13 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls,
       <<
       &<%extName%>
       >>
-  case SIMEXTARGEXP(__) then
+  case SIMEXTARGEXP(type_=t) then
     // pass a pointer to a temporary variable
-    let extType = extTypeF77(type_, false)
+    let extType = extTypeF77(t, false, false)
     let extName = tempDecl(extType, &varDecls)
     let &inputAssign += '<%extName%> = <%daeExp(exp, contextFunction, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
     <<
-    &<%extName%>
+    <%match t case T_STRING(__) then '' else '&'%><%extName%>
     >>
   case SIMEXTARGSIZE(cref=c) then
     let varName = contextCref2(c, contextFunction)
