@@ -34,13 +34,13 @@ simulate(Tearing12); getErrorString();
 //  * Number of equations: 9901
 //  * Number of variables: 9901
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 2864
+//  * Number of independent subsystems: 2869
 //  * Number of states: 0 ('+d=stateselection' for list of states)
 //  * Number of discrete variables: 319 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (4850):
-//  * Single equations (assignments): 4849
+// Notification: Strong component statistics for initialization (4871):
+//  * Single equations (assignments): 4870
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -53,13 +53,13 @@ simulate(Tearing12); getErrorString();
 //  * Linear torn systems: 1 {(35,80.8%) 290}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 643
+//  * Number of independent subsystems: 666
 //  * Number of states: 62 ('+d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1684):
-//  * Single equations (assignments): 1683
+// Notification: Strong component statistics for simulation (1702):
+//  * Single equations (assignments): 1701
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -69,7 +69,7 @@ simulate(Tearing12); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(39,32.8%) 261}
+//  * Linear torn systems: 1 {(39,29.5%) 261}
 //  * Non-linear torn systems: 0
 // "
 // endResult
