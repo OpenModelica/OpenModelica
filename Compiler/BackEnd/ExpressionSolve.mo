@@ -121,7 +121,6 @@ protected
   BackendDAE.EquationAttributes attr;
   DAE.ElementSource source;
 algorithm
-  solved := false; // make sure you set this if you do return below :)
   BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr) := eqn;
   if not (Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e1)) and Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e2))) then
     return;
