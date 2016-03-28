@@ -132,7 +132,7 @@ algorithm
     cr := ComponentReference.crefPrefixDer(cr);
 	end if;
 
-  (e1, e2) := preprocessingSolve(e1, e2, varexp, SOME(shared.functionTree), NONE(), 0);
+  (e1, e2) := preprocessingSolve(e1, e2, varexp, SOME(shared.functionTree), NONE(), 0, false);
 
 	try
     e := solve2(e1, e2, varexp, SOME(shared.functionTree), NONE());
@@ -209,7 +209,7 @@ algorithm
   (outExp,outAsserts,dummy1, dummy2, dummyI) := matchcontinue inExp1
     case _ then solveSimple(inExp1, inExp2, inExp3, 0);
     case _ then solveSimple(inExp2, inExp1, inExp3, 0);
-    case _ then solveWork(inExp1, inExp2, inExp3, NONE(), NONE(), 0);
+    case _ then solveWork(inExp1, inExp2, inExp3, NONE(), NONE(), 0, false);
     else equation
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addInternalError("Failed to solve \"" + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionDump.printExpStr(inExp3) + "\"", sourceInfo());
@@ -231,6 +231,7 @@ public function solve2
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
   input Option<DAE.FunctionTree> functions "need for solve modelica functions";
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
+  input Boolean doInline = true;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
   output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
@@ -247,7 +248,7 @@ algorithm
   (outExp,outAsserts,eqnForNewVars,newVarsCrefs,dummyI) := matchcontinue inExp1
     case _ then solveSimple(inExp1, inExp2, inExp3, 0);
     case _ then solveSimple(inExp2, inExp1, inExp3, 0);
-    case _ then solveWork(inExp1, inExp2, inExp3, functions, uniqueEqIndex, 0);
+    case _ then solveWork(inExp1, inExp2, inExp3, functions, uniqueEqIndex, 0, doInline);
     else equation
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addInternalError("Failed to solve \"" + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionDump.printExpStr(inExp3) + "\"", sourceInfo());
@@ -267,6 +268,7 @@ protected function solveWork
  input Option<DAE.FunctionTree> functions;
  input Option<Integer> uniqueEqIndex "offset for tmp vars";
  input Integer idepth;
+ input Boolean doInline;
  output DAE.Exp outExp;
  output list<DAE.Statement> outAsserts;
  output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
@@ -280,7 +282,7 @@ protected
  list<DAE.ComponentRef> newVarsCrefs1;
 algorithm
  (e1, e2, eqnForNewVars, newVarsCrefs, depth) := matchcontinue inExp1
-               case _ then preprocessingSolve(inExp1, inExp2, inExp3, functions, uniqueEqIndex, idepth);
+               case _ then preprocessingSolve(inExp1, inExp2, inExp3, functions, uniqueEqIndex, idepth, doInline);
                else
                 equation
                   if Flags.isSet(Flags.FAILTRACE) then
@@ -292,7 +294,7 @@ algorithm
               end matchcontinue;
 
  (outExp, outAsserts, eqnForNewVars1, newVarsCrefs1, depth) := matchcontinue e1
-                          case _ then  solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex, depth);
+                          case _ then  solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex, depth, doInline);
                           case _ then  solveSimple(e1, e2, inExp3, depth);
                           case _ then  solveLinearSystem(e1, e2, inExp3, functions, depth);
                           else fail();
@@ -468,6 +470,7 @@ preprocessing for solve1,
   input Option<DAE.FunctionTree> functions;
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Integer idepth;
+  input Boolean doInline;
   output DAE.Exp x;
   output DAE.Exp y;
   output list<BackendDAE.Equation> eqnForNewVars = {} "eqn for tmp vars";
@@ -542,7 +545,7 @@ preprocessing for solve1,
        (rhsX, rhsY) := preprocessingSolve5(y, inExp3, false);
        x := Expression.expSub(lhsX, rhsX);
        y := Expression.expSub(rhsY, lhsY);
-     elseif inlineFun then
+     elseif doInline and inlineFun then
        iter := iter + 50;
        if inlineFun then
 	       (x,con) := solveFunCalls(x, inExp3, functions);
@@ -1710,6 +1713,7 @@ protected function solveIfExp
   input Option<DAE.FunctionTree> functions;
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Integer idepth;
+  input Boolean doInline;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
   output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
@@ -1733,8 +1737,8 @@ algorithm
         equation
           false = expHasCref(e1, inExp3);
 
-          (lhs, asserts1, eqns, var, depth) = solveWork(e2, inExp2, inExp3, functions, uniqueEqIndex, idepth);
-          (rhs,_, eqns1, var1, depth) = solveWork(e3, inExp2, inExp3, functions, uniqueEqIndex, depth);
+          (lhs, asserts1, eqns, var, depth) = solveWork(e2, inExp2, inExp3, functions, uniqueEqIndex, idepth, doInline);
+          (rhs,_, eqns1, var1, depth) = solveWork(e3, inExp2, inExp3, functions, uniqueEqIndex, depth, doInline);
 
           res = DAE.IFEXP(e1,lhs,rhs);
           asserts = listAppend(asserts1,asserts1);
