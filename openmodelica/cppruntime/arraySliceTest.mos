@@ -1,4 +1,4 @@
-// name: arrayAppendTest
+// name: arraySliceTest
 // keywords: slice array
 // status: correct
 // teardown_command: rm -f *ArraySlice.Test*
@@ -8,15 +8,17 @@ setCommandLineOptions("+simCodeTarget=Cpp");
 loadString("
 package ArraySlice
 model Test
-  Real[:] v = {1, 2, 3, 4, 5};
-  Real[:] w = reverse(v);
+  Real[:,:] m = [1; 2; 3; 4; 5];
+  Real[:] w = reverse(m);
   annotation(experiment(StopTime = 0));
 end Test;
 function reverse
-  input Real[:] v;
-  output Real[size(v, 1) - 1] w;
+  input Real[:,1] m;
+  output Real[size(m, 1) - 1] w;
+protected
+  Real[:] v = m[:,1];      // test reduction if size(dim) is 1
 algorithm
-  w := v[size(w, 1):-1:1];
+  w := v[size(w, 1):-1:1]; // test slice with negative step
 end reverse;
 end ArraySlice;
 ");
