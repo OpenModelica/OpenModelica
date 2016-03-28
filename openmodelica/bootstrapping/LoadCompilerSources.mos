@@ -227,6 +227,7 @@ if true then /* Suppress output */
     prefixPath + "Util/Corba.mo",
   //  prefixPath + "Util/Database.mo",
     prefixPath + "Util/Debug.mo",
+    prefixPath + "Util/DoubleEndedList.mo",
     prefixPath + "Util/DynLoad.mo",
     prefixPath + "Util/ErrorExt.mo",
     prefixPath + "Util/Error.mo",
