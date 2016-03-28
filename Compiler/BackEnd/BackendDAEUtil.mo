@@ -6759,7 +6759,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
   // reduce index
   (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{},false);
-  //execStat("matching");
+  execStat("causalizeDAE -> matching");
   // do late inline
   outDAE := if dolateinline then BackendInline.lateInlineFunction(BackendDAE.DAE(systs,shared)) else BackendDAE.DAE(systs,shared);
   // do state selection
@@ -6767,7 +6767,7 @@ algorithm
   // sort assigned equations to blt form
   systs := mapSortEqnsDAE(systs,shared,{});
   outDAE := BackendDAE.DAE(systs,shared);
-  //execStat("sorting");
+  execStat("causalizeDAE -> state selection");
 end causalizeDAE;
 
 protected function mapCausalizeDAE "
