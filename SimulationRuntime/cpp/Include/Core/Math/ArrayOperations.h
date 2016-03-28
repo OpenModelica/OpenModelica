@@ -49,6 +49,8 @@ void create_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d
 template < typename T >
 void fill_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d);
 
+void identity_alloc(size_t n, DynArrayDim2<int>& I);
+
 template <typename T>
 void promote_array(size_t n, const BaseArray<T>& s, BaseArray<T>& d);
 

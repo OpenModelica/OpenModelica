@@ -2081,14 +2081,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     '<%tvar%>'
 
   case CALL(path=IDENT(name="identity"), expLst={A}) then
-    let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let arr_tp_str = '<%expTypeFromExpArray(A)%>'
-    let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
-    let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
+    let var1 = daeExp(A, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let tvar = tempDecl('DynArrayDim2<int>', &varDecls)
+    let &preExp += 'identity_alloc(<%var1%>, <%tvar%>);<%\n%>'
     '<%tvar%>'
 
-   case CALL(path=IDENT(name="rem"),
-             expLst={e1, e2}) then
+  case CALL(path=IDENT(name="rem"), expLst={e1, e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let typeStr = expTypeFromExpShort(e1)
@@ -2268,6 +2266,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case e as RELATION(__) then expTypeFromOpFlag(e.operator, flag)
   case IFEXP(__)         then expTypeFromExpFlag(expThen, flag)
   case CALL(attr=CALL_ATTR(__))          then expTypeFlag(attr.ty, flag)
+  case c as RECORD(__)   then expTypeFlag(c.ty, flag)
   case c as ARRAY(__)
   case c as MATRIX(__)
   case c as RANGE(__)
@@ -2276,9 +2275,9 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case c as CODE(__)     then expTypeFlag(c.ty, flag)
   case ASUB(__)          then expTypeFromExpFlag(exp, flag)
   case REDUCTION(__)     then expTypeFlag(typeof(exp), flag)
-  case BOX(__)
   case CONS(__)
   case LIST(__)
+  case SIZE(__)          then expTypeFlag(typeof(exp), flag)
 
   case META_TUPLE(__)
   case META_OPTION(__)
@@ -2287,7 +2286,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
   case c as SHARED_LITERAL(__) then expTypeFromExpFlag(c.exp, flag)
-  else ""
+  else 'ERROR:expTypeFromExpFlag <%printExpStr(exp)%> '
 end expTypeFromExpFlag;
 
 template expTypeFromOpFlag(Operator op, Integer flag)

@@ -211,6 +211,13 @@ void fill_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d)
      delete [] data;
 }
 
+void identity_alloc(size_t n, DynArrayDim2<int>& I)
+{
+  I.setDims(n, n);
+  fill_array(I, 0);
+  for (size_t i = 1; i <= n; i++)
+    I(i, i) = 1;
+}
 
  //template < typename T , size_t NumDims, size_t NumDims2 >
 template <typename T>
@@ -552,6 +559,9 @@ template void BOOST_EXTENSION_EXPORT_DECL
 transpose_array(const BaseArray<int>& x, BaseArray<int>& a);
 template void BOOST_EXTENSION_EXPORT_DECL
 transpose_array(const BaseArray<bool>& x, BaseArray<bool>& a);
+
+void BOOST_EXTENSION_EXPORT_DECL
+identity_alloc(size_t n, DynArrayDim2<int>& I);
 
 template void BOOST_EXTENSION_EXPORT_DECL
 promote_array(size_t n, const BaseArray<double>& s, BaseArray<double>& d);
