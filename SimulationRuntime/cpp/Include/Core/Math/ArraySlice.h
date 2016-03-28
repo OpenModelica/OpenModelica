@@ -126,14 +126,17 @@ class ArraySliceConst: public BaseArray<T> {
         if (start > maxIndex || stop > maxIndex || step == 0)
           throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                         "Wrong slice exceeding array size");
-        size = std::max(0, (stop - start) / step + 1);
-        // avoid trivial fill of _idxs if slice accesses all indices
-        if (start > 1 || step != 1 || stop < maxIndex || size == 1)
-          for (size_t i = 0; i < size; i++)
+        if (start == 1 && step == 1 && stop == maxIndex)
+          // all indices; avoid trivial fill of _idxs
+          size = _baseArray.getDim(dim);
+        else {
+          size = std::max(0, (stop - start) / step + 1);
+          for (int i = 0; i < size; i++)
             dit->push_back(start + i * step);
+        }
       }
       if (size == 1)
-        // preset constant _baseIdx in case of reduction
+        // prefill constant _baseIdx in case of reduction
         _baseIdx[dim - 1] = sit->iset != NULL? (*_isets[dim - 1])(1): (*dit)[0];
       else
         // store dimension of array slice
