@@ -325,8 +325,9 @@ algorithm
       HashSet.HashSet set;
       list<DAE.ComponentRef> dests;
     case (_,_,_) equation
-      (_,set) = Expression.traverseExpTopDown(dst, traversingCrefFinder, HashSet.emptyHashSet());
-      dests = BaseHashSet.hashSetList(set);
+      // (_,set) = Expression.traverseExpTopDown(dst, traversingCrefFinder, HashSet.emptyHashSet() /* Very expensive operation */);
+      // dests = BaseHashSet.hashSetList(set);
+      dests = Expression.extractCrefsFromExp(dst);
       invHt_1 = List.fold(dests,BaseHashTable.delete,invHt);
       then
         invHt_1;
@@ -350,8 +351,9 @@ algorithm
       HashSet.HashSet set;
       list<DAE.ComponentRef> dests;
     case (_,_,_) equation
-      (_,set) = Expression.traverseExpTopDown(dst, traversingCrefFinder, HashSet.emptyHashSet());
-      dests = BaseHashSet.hashSetList(set);
+      // (_,set) = Expression.traverseExpTopDown(dst, traversingCrefFinder, HashSet.emptyHashSet() /* Very expensive operation */);
+      // dests = BaseHashSet.hashSetList(set);
+      dests = Expression.extractCrefsFromExp(dst);
       invHt_1 = List.fold1r(dests,addReplacementInv2,src,invHt);
       then
         invHt_1;
