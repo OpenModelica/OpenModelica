@@ -474,6 +474,8 @@ uniontype StateOrder
     HashTableCG.HashTable hashTable "x -> dx";
     HashTable3.HashTable invHashTable "dx -> {x,y,z}";
   end STATEORDER;
+  record NOSTATEORDER "Index reduction disabled; don't need big hashtables"
+  end NOSTATEORDER;
 end StateOrder;
 
 public

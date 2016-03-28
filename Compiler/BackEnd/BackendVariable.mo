@@ -3159,6 +3159,13 @@ algorithm
   v_lst := traverseBackendDAEVars(inVariables,traversingisStateVarFinder,{});
 end getAllStateVarFromVariables;
 
+public function getNumStateVarFromVariables
+  input BackendDAE.Variables inVariables;
+  output Integer count;
+algorithm
+  count := traverseBackendDAEVars(inVariables,traversingisStateCount,0);
+end getNumStateVarFromVariables;
+
 protected function traversingisStateVarFinder
   input BackendDAE.Var inVar;
   input list<BackendDAE.Var> inVars;
@@ -3168,6 +3175,15 @@ algorithm
   v := inVar;
   v_lst := List.consOnTrue(isStateVar(v),v,inVars);
 end traversingisStateVarFinder;
+
+protected function traversingisStateCount
+  input output BackendDAE.Var v;
+  input output Integer count;
+algorithm
+  if isStateVar(v) then
+    count := count + 1;
+  end if;
+end traversingisStateCount;
 
 public function getAllStateDerVarIndexFromVariables
   input BackendDAE.Variables inVariables;

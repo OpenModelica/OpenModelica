@@ -713,8 +713,8 @@ algorithm
       if Util.isSome(eqTplOpt) then
          outEqnTpl := Util.getOption(eqTplOpt)::outEqnTpl;
       else
-			  outEqnTpl := {};
-			  oShared := inShared;
+        outEqnTpl := {};
+        oShared := inShared;
        return;
       end if;
   end while;
@@ -775,9 +775,9 @@ protected function replaceDifferentiatedEqns
   output list<Integer> outChangedVars;
   output BackendDAE.ConstraintEquations outOrgEqns;
 protected
-	Integer eqIdx;
-	list<Integer> changedVars;
-	BackendDAE.Equation eqOrig, eqDiff;
+  Integer eqIdx;
+  list<Integer> changedVars;
+  BackendDAE.Equation eqOrig, eqDiff;
   tuple<Integer, Option<BackendDAE.Equation>, BackendDAE.Equation> eqTpl;
 algorithm
   outVars := vars;
@@ -791,10 +791,10 @@ algorithm
       (eqDiff, _) := BackendEquation.traverseExpsOfEquation(eqDiff, replaceStateOrderExp, outVars);
       // change the variable types (algebraic -> state, 1.der -> 2.der, ...)
       (eqDiff, (_, (outVars, outEqns, outChangedVars, _, _, _))) := BackendEquation.traverseExpsOfEquation(eqDiff, Expression.traverseSubexpressionsHelper, (changeDerVariablesToStatesFinder, (outVars, outEqns, outChangedVars, eqIdx, imapIncRowEqn, mt)));
-	      if Flags.isSet(Flags.BLT_DUMP) then
-	        print("replaced differentiated eqs:");
-	        debugdifferentiateEqns((eqOrig, eqDiff));
-	      end if;
+        if Flags.isSet(Flags.BLT_DUMP) then
+          print("replaced differentiated eqs:");
+          debugdifferentiateEqns((eqOrig, eqDiff));
+        end if;
       outEqns := BackendEquation.setAtIndex(outEqns, eqIdx, eqDiff);
       //collect original equations
       outOrgEqns := addOrgEqn(eqIdx, eqOrig, outOrgEqns);
@@ -1218,10 +1218,23 @@ protected
   HashTable3.HashTable dht;
   BackendDAE.StateOrder so;
   BackendDAE.EquationArray eqns;
+  Integer count;
 algorithm
-  ht := HashTableCG.emptyHashTable();
-  dht := HashTable3.emptyHashTable();
-  so := BackendDAE.STATEORDER(ht,dht);
+  if Config.getIndexReductionMethod()=="uode" then
+    // Disabled state selection, so do not allocate expensive tables
+    so := BackendDAE.NOSTATEORDER();
+  else
+    // Get a rough count of number of states before allocating the table
+    // TODO: Only allocate the table once and clear it for each new matching. Currently, the same variables are allocated over and over again.
+    count := integer(/* 8/3 determined by scientifically guessing */ (8/3)*BackendVariable.getNumStateVarFromVariables(inSystem.orderedVars));
+    if count==0 then
+      so := BackendDAE.NOSTATEORDER();
+    else
+      ht := HashTableCG.emptyHashTableSized(count);
+      dht := HashTable3.emptyHashTableSized(count);
+      so := BackendDAE.STATEORDER(ht,dht);
+    end if;
+  end if;
   eqns := BackendEquation.getEqnsFromEqSystem(inSystem);
   if Flags.isSet(Flags.BLT_DUMP) then
     dumpStateOrder(so);
@@ -2845,13 +2858,13 @@ algorithm
   for e in List.intRange(numEqs) loop
     orgeqns := arrayGet(outOrgEqns,e);
     if not listEmpty(orgeqns) then
-	    (outEqnsLst, orgeqns) := match orgeqns
-	                             local BackendDAE.Equation eqn; list<BackendDAE.Equation> eqns;
-	                             case {eqn} then (eqn :: outEqnsLst, {});
-	                             case eqn::eqns then (eqn :: outEqnsLst, eqns);
-	                             end match;
-	    arrayUpdate(outOrgEqns,e,orgeqns);
-	  end if;
+      (outEqnsLst, orgeqns) := match orgeqns
+                               local BackendDAE.Equation eqn; list<BackendDAE.Equation> eqns;
+                               case {eqn} then (eqn :: outEqnsLst, {});
+                               case eqn::eqns then (eqn :: outEqnsLst, eqns);
+                               end match;
+      arrayUpdate(outOrgEqns,e,orgeqns);
+    end if;
   end for;
 end removeFirstOrgEqns;
 

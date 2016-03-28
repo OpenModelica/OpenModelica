@@ -6308,7 +6308,7 @@ algorithm
   end matchcontinue;
 end testMatchingAlgorithms1;
 
-public function testMatchingAlgorithm
+protected function testMatchingAlgorithm
 "function testMatchingAlgorithm, tests a specific matching algorithm
  author: Frenkel TUD 2012-04"
   input Integer index;
