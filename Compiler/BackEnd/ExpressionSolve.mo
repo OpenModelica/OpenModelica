@@ -123,6 +123,7 @@ protected
 algorithm
   BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr) := eqn;
   if not (Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e1)) and Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e2))) then
+    solved := true;
     return;
   end if;
   BackendDAE.VAR(varName = cr) := var;
