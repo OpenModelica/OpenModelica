@@ -118,7 +118,7 @@ int vasprintf(char **strp, const char *fmt, va_list ap);
 unsigned int alarm (unsigned int seconds);
 #endif
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if (defined(__MINGW32__) || defined(_MSC_VER)) && !defined(OMC_MINIMAL_RUNTIME)
 static int RTLD_LAZY=0;
 char* mkdtemp(char *tpl);
 void* omc_dlopen(const char *filename, int flag);

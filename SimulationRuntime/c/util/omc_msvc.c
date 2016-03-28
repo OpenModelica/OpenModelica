@@ -217,10 +217,12 @@ char *mkdtemp(char *tpl)
   return NULL;
 }
 
+#if !defined(OMC_MINIMAL_RUNTIME)
 void* omc_dlopen(const char *filename, int flag)
 {
   return (void*) LoadLibrary(filename);
 }
+#endif
 
 #include <windows.h>
 
