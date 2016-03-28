@@ -1961,7 +1961,7 @@ algorithm
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
         BackendDAE.SHARED(functionTree = funcs) = shared;
-        (exp_, asserts, solveEqns, solveCr) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(iuniqueEqIndex));
+        (exp_, asserts, solveEqns, solveCr) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
         solveEqns = listReverse(solveEqns);
         solveCr = listReverse(solveCr);
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
@@ -3189,7 +3189,7 @@ algorithm
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
         BackendDAE.SHARED(functionTree = funcs) = ishared;
-        (expr, {}, {}, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE());
+        (expr, {}, {}, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE(), true, BackendDAEUtil.isSimulationDAE(ishared));
         dcr = if BackendVariable.isStateVar(var) then ComponentReference.crefPrefixDer(cr) else cr;
         repl = BackendVarTransform.addReplacement(inRepl, dcr, expr, SOME(BackendVarTransform.skipPreOperator));
         repl = if BackendVariable.isStateVar(var) then BackendVarTransform.addDerConstRepl(cr, expr, repl) else repl;
@@ -3216,7 +3216,7 @@ algorithm
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
         BackendDAE.SHARED(functionTree = funcs) = ishared;
-        (expr, {}, {}, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE());
+        (expr, {}, {}, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE(), true, BackendDAEUtil.isSimulationDAE(ishared));
         dcr = if BackendVariable.isStateVar(var) then ComponentReference.crefPrefixDer(cr) else cr;
         repl = BackendVarTransform.addReplacement(inRepl, dcr, expr, SOME(BackendVarTransform.skipPreOperator));
         repl = if BackendVariable.isStateVar(var) then BackendVarTransform.addDerConstRepl(cr, expr, repl) else repl;
@@ -3265,7 +3265,7 @@ algorithm
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
         BackendDAE.SHARED(functionTree = funcs) = ishared;
-        (expr, {}, {}, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE());
+        (expr, {}, {}, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE(), true, BackendDAEUtil.isSimulationDAE(ishared));
         dcr = if BackendVariable.isStateVar(var) then ComponentReference.crefPrefixDer(cr) else cr;
         repl = BackendVarTransform.addReplacement(inRepl, dcr, expr, SOME(BackendVarTransform.skipPreOperator));
         repl = if BackendVariable.isStateVar(var) then BackendVarTransform.addDerConstRepl(cr, expr, repl) else repl;

@@ -120,6 +120,7 @@ protected
   DAE.Exp e1,e2,varexp,e;
   BackendDAE.EquationAttributes attr;
   DAE.ElementSource source;
+  Boolean isContinuousIntegration = BackendDAEUtil.isSimulationDAE(shared);
 algorithm
   BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr) := eqn;
     BackendDAE.VAR(varName = cr) := var;
@@ -207,7 +208,7 @@ algorithm
   (outExp,outAsserts,dummy1, dummy2, dummyI) := matchcontinue inExp1
     case _ then solveSimple(inExp1, inExp2, inExp3, 0);
     case _ then solveSimple(inExp2, inExp1, inExp3, 0);
-    case _ then solveWork(inExp1, inExp2, inExp3, NONE(), NONE(), 0, false);
+    case _ then solveWork(inExp1, inExp2, inExp3, NONE(), NONE(), 0, false, false);
     else equation
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addInternalError("Failed to solve \"" + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionDump.printExpStr(inExp3) + "\"", sourceInfo());
@@ -230,6 +231,7 @@ public function solve2
   input Option<DAE.FunctionTree> functions "need for solve modelica functions";
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Boolean doInline = true;
+  input Boolean isContinuousIntegration = false;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
   output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
@@ -246,7 +248,7 @@ algorithm
   (outExp,outAsserts,eqnForNewVars,newVarsCrefs,dummyI) := matchcontinue inExp1
     case _ then solveSimple(inExp1, inExp2, inExp3, 0);
     case _ then solveSimple(inExp2, inExp1, inExp3, 0);
-    case _ then solveWork(inExp1, inExp2, inExp3, functions, uniqueEqIndex, 0, doInline);
+    case _ then solveWork(inExp1, inExp2, inExp3, functions, uniqueEqIndex, 0, doInline, isContinuousIntegration);
     else equation
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addInternalError("Failed to solve \"" + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionDump.printExpStr(inExp3) + "\"", sourceInfo());
@@ -267,6 +269,7 @@ protected function solveWork
  input Option<Integer> uniqueEqIndex "offset for tmp vars";
  input Integer idepth;
  input Boolean doInline;
+ input Boolean isContinuousIntegration;
  output DAE.Exp outExp;
  output list<DAE.Statement> outAsserts;
  output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
@@ -292,7 +295,7 @@ algorithm
               end matchcontinue;
 
  (outExp, outAsserts, eqnForNewVars1, newVarsCrefs1, depth) := matchcontinue e1
-                          case _ then  solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex, depth, doInline);
+                          case _ then  solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex, depth, doInline, isContinuousIntegration);
                           case _ then  solveSimple(e1, e2, inExp3, depth);
                           case _ then  solveLinearSystem(e1, e2, inExp3, functions, depth);
                           else fail();
@@ -1712,6 +1715,7 @@ protected function solveIfExp
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Integer idepth;
   input Boolean doInline;
+  input Boolean isContinuousIntegration;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
   output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
@@ -1719,7 +1723,7 @@ protected function solveIfExp
   output Integer odepth;
 
 algorithm
-   (outExp,outAsserts,eqnForNewVars,newVarsCrefs,odepth) := match(inExp1,inExp2,inExp3, functions, uniqueEqIndex)
+   (outExp,outAsserts,eqnForNewVars,newVarsCrefs,odepth) := match inExp1
    local
       DAE.Exp e1,e2,e3,res,lhs,rhs;
       list<DAE.Statement> asserts,asserts1,asserts2;
@@ -1731,12 +1735,13 @@ algorithm
       //  a1 = solve(f(a),f1(a)) for a
       //  a2 = solve(f(a),f2(a)) for a
       //  => a = if g(b) then a1 else a2
-      case (DAE.IFEXP(e1,e2,e3),_,_,_,_)
+      case DAE.IFEXP(e1,e2,e3)
+        guard
+           isContinuousIntegration or not expHasCref(e1, inExp3)
         equation
-          false = expHasCref(e1, inExp3);
 
-          (lhs, asserts1, eqns, var, depth) = solveWork(e2, inExp2, inExp3, functions, uniqueEqIndex, idepth, doInline);
-          (rhs,_, eqns1, var1, depth) = solveWork(e3, inExp2, inExp3, functions, uniqueEqIndex, depth, doInline);
+          (lhs, asserts1, eqns, var, depth) = solveWork(e2, inExp2, inExp3, functions, uniqueEqIndex, idepth, doInline, isContinuousIntegration);
+          (rhs,_, eqns1, var1, depth) = solveWork(e3, inExp2, inExp3, functions, uniqueEqIndex, depth, doInline, isContinuousIntegration);
 
           res = DAE.IFEXP(e1,lhs,rhs);
           asserts = listAppend(asserts1,asserts1);
