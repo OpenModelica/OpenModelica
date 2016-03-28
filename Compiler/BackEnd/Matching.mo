@@ -36,27 +36,30 @@ encapsulated package Matching
 
 
 
-public import BackendDAE;
-public import BackendDAEFunc;
-public import DAE;
+import BackendDAE;
+import BackendDAEFunc;
+import DAE;
 
-protected import Array;
-protected import BackendDAEEXT;
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import ClockIndexes;
-protected import Config;
-protected import DAEUtil;
-protected import Debug;
-protected import DumpGraphML;
-protected import Error;
-protected import Flags;
-protected import IndexReduction;
-protected import List;
-protected import Util;
-protected import System;
+protected
+
+import Array;
+import BackendDAEEXT;
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVariable;
+import ClockIndexes;
+import Config;
+import DAEUtil;
+import Debug;
+import DumpGraphML;
+import Error;
+import Flags;
+import IndexReduction;
+import List;
+import MetaModelica.Dangerous;
+import Util;
+import System;
 
 // =============================================================================
 // just a matching algorithm
@@ -89,11 +92,15 @@ public function RegularMatching "
 protected
   Integer i, j;
   array<Boolean> eMark, vMark;
+  array<Integer> eMarkIx, vMarkIx;
+  Integer eMarkN=0, vMarkN=0;
 algorithm
   ass2 := arrayCreate(nEqns, -1);
   ass1 := arrayCreate(nVars, -1);
   vMark := arrayCreate(nVars, false);
   eMark := arrayCreate(nEqns, false);
+  vMarkIx := arrayCreate(nVars, 0);
+  eMarkIx := arrayCreate(nEqns, 0);
 
   i := 1;
   while i<=nEqns and outPerfectMatching loop
@@ -101,9 +108,9 @@ algorithm
     if (j>0 and ass1[j] == i) then
       outPerfectMatching :=true;
     else
-      Array.setRange(1, nVars, vMark, false);
-      Array.setRange(1, nEqns, eMark, false);
-      outPerfectMatching := BBPathFound(i, m, eMark, vMark, ass1, ass2);
+      clearArrayWithKnownSetIndexes(eMark, eMarkIx, eMarkN);
+      clearArrayWithKnownSetIndexes(vMark, vMarkIx, vMarkN);
+      (outPerfectMatching,eMarkN,vMarkN) := BBPathFound(i, m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, 0, 0);
     end if;
     i := i+1;
   end while;
@@ -126,6 +133,8 @@ protected
   Integer nVars, nEqns, j;
   array<Integer> ass1, ass2;
   array<Boolean> eMark, vMark;
+  array<Integer> eMarkIx, vMarkIx;
+  Integer eMarkN=0, vMarkN=0;
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
   list<Integer> mEqns;
@@ -144,15 +153,17 @@ algorithm
   //end if;
   vMark := arrayCreate(nVars, false);
   eMark := arrayCreate(nEqns, false);
+  vMarkIx := arrayCreate(nVars, 0);
+  eMarkIx := arrayCreate(nEqns, 0);
   i := 1;
   while i<=nEqns and success loop
     j := ass2[i];
     if ((j>0) and ass1[j] == i) then
       success :=true;
     else
-      Array.setRange(1, nVars, vMark, false);
-      Array.setRange(1, nEqns, eMark, false);
-      success := BBPathFound(i, m, eMark, vMark, ass1, ass2);
+      clearArrayWithKnownSetIndexes(eMark, eMarkIx, eMarkN);
+      clearArrayWithKnownSetIndexes(vMark, vMarkIx, vMarkN);
+      (success,eMarkN,vMarkN) := BBPathFound(i, m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, 0, 0);
       if not success then
         mEqns := {};
         for j in 1:nEqns loop
@@ -188,9 +199,17 @@ protected function BBPathFound
   input array<Boolean> vMark;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
+  input array<Integer> eMarkIx;
+  input array<Integer> vMarkIx;
   output Boolean success=false;
+  input output Integer eMarkN, vMarkN;
 algorithm
+  if arrayGet(eMark, i) then
+    return;
+  end if;
   arrayUpdate(eMark, i, true);
+  eMarkN := eMarkN+1;
+  arrayUpdate(eMarkIx, eMarkN, i);
 
   for j in m[i] loop
     // negative entries in adjacence matrix belong to states!!!
@@ -206,7 +225,9 @@ algorithm
     // negative entries in adjacence matrix belong to states!!!
     if (j>0 and not vMark[j]) then
       arrayUpdate(vMark, j, true);
-      success := BBPathFound(ass1[j], m, eMark, vMark, ass1, ass2);
+      vMarkN := vMarkN+1;
+      arrayUpdate(vMarkIx, vMarkN, j);
+      (success, eMarkN, vMarkN) := BBPathFound(ass1[j], m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, eMarkN, vMarkN);
       if success then
         arrayUpdate(ass1, j, i);
         arrayUpdate(ass2, i, j);
@@ -6503,6 +6524,30 @@ algorithm
   b := intGt(i,0);
   oAcc := List.consOnTrue(b,i,iAcc);
 end getAssignedVars;
+
+protected function clearArrayWithKnownSetIndexes "Sets elements of arr in arrIx[1:n] to false; if n>0.3*size(arr), clear all of them"
+  input array<Boolean> arr;
+  input array<Integer> arrIx;
+  input Integer n;
+protected
+  constant Boolean debug = false;
+algorithm
+  if n>0.3*arrayLength(arr) then
+    for i in 1:arrayLength(arr) loop
+      Dangerous.arrayUpdateNoBoundsChecking(arr, i, false);
+    end for;
+  else
+    true := n <= arrayLength(arrIx);
+    for i in 1:n loop
+      Dangerous.arrayUpdate(arr, Dangerous.arrayGetNoBoundsChecking(arrIx, i), false);
+    end for;
+  end if;
+  if debug then
+    for e in 1:arrayLength(arr) loop
+      Error.assertion(not arrayGet(arr,e), "clearArrayWithKnownSetIndexes failed: " + String(e) + " n=" + String(n)+" ixs="+stringDelimitList(list(String(arrayGet(arrIx,i)) for i in 1:n),","), sourceInfo());
+    end for;
+  end if;
+end clearArrayWithKnownSetIndexes;
 
 annotation(__OpenModelica_Interface="backend");
 end Matching;
