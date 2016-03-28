@@ -5657,41 +5657,40 @@ algorithm
     case (_,DAE.CREF(cr,tp),rel,ext_arg)
       equation
         (cr_1,ext_arg_1) = traverseExpTopDownCrefHelper(cr,rel,ext_arg);
-        e = if referenceEq(cr,cr_1) then inExp else DAE.CREF(cr_1,tp);
-      then (e,ext_arg_1);
+      then (if referenceEq(cr,cr_1) then inExp else DAE.CREF(cr_1,tp),ext_arg_1);
     // unary
     case (_,DAE.UNARY(operator = op,exp = e1),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
       then
-        (DAE.UNARY(op,e1_1),ext_arg_1);
+        (if referenceEq(e1, e1_1) then inExp else DAE.UNARY(op,e1_1),ext_arg_1);
 
     // binary
     case (_,DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-      then (DAE.BINARY(e1_1,op,e2_1),ext_arg_2);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.BINARY(e1_1,op,e2_1),ext_arg_2);
 
     // logical unary
     case (_,DAE.LUNARY(operator = op,exp = e1),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
-      then (DAE.LUNARY(op,e1_1),ext_arg_1);
+      then (if referenceEq(e1, e1_1) then inExp else DAE.LUNARY(op,e1_1),ext_arg_1);
 
     // logical binary
     case (_,DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-      then (DAE.LBINARY(e1_1,op,e2_1),ext_arg_2);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.LBINARY(e1_1,op,e2_1),ext_arg_2);
 
     // relation
     case (_,DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-      then (DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),ext_arg_2);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),ext_arg_2);
 
     // if expressions
     case (_,(DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),rel,ext_arg)
@@ -5699,7 +5698,7 @@ algorithm
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
         (e3_1,ext_arg_3) = traverseExpTopDown(e3, rel, ext_arg_2);
-      then (DAE.IFEXP(e1_1,e2_1,e3_1),ext_arg_3);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) and referenceEq(e3, e3_1) then inExp else DAE.IFEXP(e1_1,e2_1,e3_1),ext_arg_3);
 
     // call
     case (_,(DAE.CALL(path = fn,expLst = expl,attr = attr)),rel,ext_arg)
@@ -5731,14 +5730,14 @@ algorithm
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-      then (DAE.RANGE(tp,e1_1,NONE(),e2_1),ext_arg_2);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.RANGE(tp,e1_1,NONE(),e2_1),ext_arg_2);
 
     case (_,(DAE.RANGE(ty = tp,start = e1,step = SOME(e2),stop = e3)),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
         (e3_1,ext_arg_3) = traverseExpTopDown(e3, rel, ext_arg_2);
-      then (DAE.RANGE(tp,e1_1,SOME(e2_1),e3_1),ext_arg_3);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) and referenceEq(e3, e3_1) then inExp else DAE.RANGE(tp,e1_1,SOME(e2_1),e3_1),ext_arg_3);
 
     case (_,(DAE.TUPLE(PR = expl)),rel,ext_arg)
       equation
@@ -5778,7 +5777,7 @@ algorithm
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-      then (DAE.SIZE(e1_1,SOME(e2_1)),ext_arg_2);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.SIZE(e1_1,SOME(e2_1)),ext_arg_2);
 
     case (_,DAE.CODE(),_,ext_arg) then (inExp,ext_arg);
 
@@ -5796,7 +5795,7 @@ algorithm
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-      then (DAE.CONS(e1_1,e2_1),ext_arg_2);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.CONS(e1_1,e2_1),ext_arg_2);
 
     case (_,DAE.LIST(expl),rel,ext_arg)
       equation

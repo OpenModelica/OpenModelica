@@ -161,6 +161,7 @@ if true then /* Suppress output */
     "../Util/Corba.mo",
     //"../Util/Database.mo",
     "../Util/Debug.mo",
+    "../Util/DoubleEndedList.mo",
     "../Util/DynLoad.mo",
     "../Util/ErrorExt.mo",
     "../Util/Error.mo",
@@ -323,7 +324,6 @@ if true then /* Suppress output */
     "../Util/AvlTree.mo",
     "../Util/AvlTreeString2.mo",
 
-    "../Util/DoubleEndedList.mo",
     "../Util/DiffAlgorithm.mo",
     "../Util/FMI.mo",
     "../Util/FMIExt.mo",

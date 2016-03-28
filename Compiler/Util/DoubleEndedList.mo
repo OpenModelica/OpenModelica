@@ -220,5 +220,5 @@ algorithm
   end for;
 end clear;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="util");
 end DoubleEndedList;
