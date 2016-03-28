@@ -38,8 +38,9 @@
 
 /**
  * Modelica slice.
- * Defined by start:stop or start:step:stop, start = 0 or stop = 0 meaning end,
- * or by an index vector if step = 0.
+ * Defined by an index vector iset != NULL or by start:stop or start:step:stop,
+ * start == stop and step == 0 meaning reduction of dimension,
+ * start == 0 or stop == 0 meaning end.
  */
 class Slice {
  public:
@@ -51,10 +52,10 @@ class Slice {
     iset = NULL;
   }
 
-  // one index
+  // one index (reduction)
   Slice(int index) {
     start = index;
-    step = 1;
+    step = 0;
     stop = index;
     iset = NULL;
   }
@@ -73,6 +74,7 @@ class Slice {
     iset = NULL;
   }
 
+  // index set, reduction if size(indices) == 1
   Slice(const BaseArray<int> &indices) {
     start = 0;
     step = 0;
@@ -123,20 +125,20 @@ class ArraySliceConst: public BaseArray<T> {
         int start = sit->start > 0? sit->start: maxIndex;
         int stop = sit->stop > 0? sit->stop: maxIndex;
         int step = sit->step;
-        if (start > maxIndex || stop > maxIndex || step == 0)
+        if (start > maxIndex || stop > maxIndex)
           throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                         "Wrong slice exceeding array size");
         if (start == 1 && step == 1 && stop == maxIndex)
           // all indices; avoid trivial fill of _idxs
           size = _baseArray.getDim(dim);
         else {
-          size = std::max(0, (stop - start) / step + 1);
+          size = step == 0? 1: std::max(0, (stop - start) / step + 1);
           for (int i = 0; i < size; i++)
             dit->push_back(start + i * step);
         }
       }
-      if (size == 1)
-        // prefill constant _baseIdx in case of reduction
+      if (size == 1 && sit->step == 0)
+        // preset constant _baseIdx in case of reduction
         _baseIdx[dim - 1] = sit->iset != NULL? (*_isets[dim - 1])(1): (*dit)[0];
       else
         // store dimension of array slice

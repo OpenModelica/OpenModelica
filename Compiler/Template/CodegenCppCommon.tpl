@@ -476,7 +476,7 @@ template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
           let &preExp += '<%tmp_slice%>.push_back(Slice(<%start_exp%>, <%step_exp%>, <%stop_exp%>));<%\n%>'
           ''
         else
-          // this default branch should not be used because exp is a range
+          // default branch if exp is no range
           let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
           let &preExp += '<%tmp_slice%>.push_back(Slice(<%expPart%>));<%\n%>'
           ''
