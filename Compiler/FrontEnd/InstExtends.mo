@@ -1587,6 +1587,7 @@ algorithm
         cref = Absyn.crefReplaceFirstIdent(cref,path);
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
         //fprintln(Flags.DEBUG, "Cref HT fixed: " + Absyn.printComponentRefStr(cref));
+        cref = if Absyn.crefEqual(cref, inCref) then inCref else cref;
       then (cache,cref);
 
     // try lookup var (constant in a package?)
@@ -1603,6 +1604,7 @@ algorithm
         // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
         //fprintln(Flags.DEBUG, "Cref VAR fixed: " + Absyn.printComponentRefStr(cref));
+        cref = if Absyn.crefEqual(cref, inCref) then inCref else cref;
       then (cache,cref);
 
     case (cache,env,cref,_)
@@ -1619,13 +1621,10 @@ algorithm
         // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
         //print("Cref CLASS fixed: " + Absyn.printComponentRefStr(cref) + "\n");
+        cref = if Absyn.crefEqual(cref, inCref) then inCref else cref;
       then (cache,cref);
 
-    case (cache,_,cref,_)
-      equation
-        //fprintln(Flags.DEBUG, "Cref not fixed: " + Absyn.printComponentRefStr(cref));
-      then
-        (cache,cref);
+    else (inCache, inCref);
 
   end matchcontinue;
 end fixCref;
@@ -1740,7 +1739,7 @@ algorithm
   (outExp,outTpl) := match (inExp,inTpl)
     local
       Absyn.FunctionArgs fargs;
-      Absyn.ComponentRef cref;
+      Absyn.ComponentRef cref, cref1;
       Absyn.Path path;
       FCore.Cache cache;
       FCore.Graph env;
@@ -1748,20 +1747,20 @@ algorithm
 
     case (Absyn.CREF(cref),(cache,env,ht))
       equation
-        (cache,cref) = fixCref(cache,env,cref,ht);
-      then (Absyn.CREF(cref),(cache,env,ht));
+        (cache,cref1) = fixCref(cache,env,cref,ht);
+      then (if referenceEq(cref, cref1) then inExp else Absyn.CREF(cref1),(cache,env,ht));
 
     case (Absyn.CALL(cref,fargs),(cache,env,ht))
       equation
         // print("cref actual: " + Absyn.crefString(cref) + " scope: " + FGraph.printGraphPathStr(env) + "\n");
-        (cache,cref) = fixCref(cache,env,cref,ht);
+        (cache,cref1) = fixCref(cache,env,cref,ht);
         // print("cref fixed : " + Absyn.crefString(cref) + "\n");
-      then (Absyn.CALL(cref,fargs),(cache,env,ht));
+      then (if referenceEq(cref, cref1) then inExp else Absyn.CALL(cref1,fargs),(cache,env,ht));
 
     case (Absyn.PARTEVALFUNCTION(cref,fargs),(cache,env,ht))
       equation
-        (cache,cref) = fixCref(cache,env,cref,ht);
-      then (Absyn.PARTEVALFUNCTION(cref,fargs),(cache,env,ht));
+        (cache,cref1) = fixCref(cache,env,cref,ht);
+      then (if referenceEq(cref, cref1) then inExp else Absyn.PARTEVALFUNCTION(cref1,fargs),(cache,env,ht));
 
     else (inExp,inTpl);
   end match;
