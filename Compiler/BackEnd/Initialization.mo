@@ -57,6 +57,7 @@ import BaseHashSet;
 import CheckModel;
 import ComponentReference;
 import DAEUtil;
+import DoubleEndedList;
 import Error;
 import ExecStat.execStat;
 import Expression;
@@ -1114,23 +1115,28 @@ protected
   BackendDAE.BackendDAE dae;
   BackendDAE.EqSystem syst;
   list<BackendDAE.EqSystem> eqs;
+  DoubleEndedList<BackendDAE.Var> dumpVars;
+  DoubleEndedList<BackendDAE.Equation> removedEqns;
 algorithm
   // filter empty systems
   eqs := {};
   outRemovedEqns := {};
+  dumpVars := DoubleEndedList.fromList({});
+  removedEqns := DoubleEndedList.fromList({});
   for syst in inInitDAE.eqs loop
     if BackendDAEUtil.nonEmptySystem(syst) then
       eqs := syst::eqs;
     else
-      outRemovedEqns := List.append_reverse(BackendEquation.equationList(syst.orderedEqs), outRemovedEqns);
-      outRemovedEqns := List.append_reverse(BackendEquation.equationList(syst.removedEqs), outRemovedEqns);
+      DoubleEndedList.push_list_back(removedEqns, BackendEquation.equationList(syst.orderedEqs));
+      DoubleEndedList.push_list_back(removedEqns, BackendEquation.equationList(syst.removedEqs));
     end if;
   end for;
   dae := BackendDAE.DAE(eqs, inInitDAE.shared);
-  outRemovedEqns := Dangerous.listReverseInPlace(outRemovedEqns);
 
   //execStat("reset analyzeInitialSystem (initialization)");
-  (outDAE, (_, outDumpVars, outRemovedEqns)) := BackendDAEUtil.mapEqSystemAndFold(dae, fixInitialSystem, (inInitVars, {}, outRemovedEqns));
+  outDAE := BackendDAEUtil.mapEqSystemAndFold(dae, function fixInitialSystem(initVars=inInitVars, dumpVars=dumpVars, removedEqns=removedEqns), 0);
+  outRemovedEqns := DoubleEndedList.toListAndClear(removedEqns);
+  outDumpVars := DoubleEndedList.toListAndClear(dumpVars);
 end analyzeInitialSystem;
 
 protected function getInitEqIndex
@@ -1150,15 +1156,16 @@ protected function fixInitialSystem "author: lochel
   This function handles under-, over-, and mixed-determined systems with a given index."
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.Shared inShared;
-  input tuple<BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> inTpl;
   output BackendDAE.EqSystem outEqSystem;
   output BackendDAE.Shared outShared = inShared;
-  output tuple<BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> outTpl;
+  input output Integer dummy;
+  input BackendDAE.Variables initVars;
+  input DoubleEndedList<BackendDAE.Var> dumpVars;
+  input DoubleEndedList<BackendDAE.Equation> removedEqns;
 protected
   BackendDAE.EquationArray eqns2;
-  BackendDAE.Variables initVars;
-  list<BackendDAE.Var> dumpVars, dumpVars2;
-  list<BackendDAE.Equation> removedEqns, removedEqns2;
+  list<BackendDAE.Var> dumpVars2;
+  list<BackendDAE.Equation> removedEqns2;
   Integer nVars, nEqns, nInitEqs, nAddEqs, nAddVars;
   list<Integer> stateIndices, range, initEqsIndices, redundantEqns;
   list<BackendDAE.Var> initVarList;
@@ -1174,8 +1181,6 @@ protected
 algorithm
   for index in 0:maxMixedDeterminedIndex loop
     //print("index-" + intString(index) + " start\n");
-
-    ((initVars, dumpVars, removedEqns)) := inTpl;
 
     // nVars = nEqns
     nVars := BackendVariable.varsSize(inEqSystem.orderedVars);
@@ -1233,7 +1238,7 @@ algorithm
         //BackendDump.dumpEquationList(removedEqns2, "removed equations");
         eqns2 := BackendEquation.equationDelete(inEqSystem.orderedEqs, redundantEqns);
         //BackendDump.dumpEquationArray(eqns2, "remaining equations");
-        removedEqns := listAppend(removedEqns, removedEqns2);
+        DoubleEndedList.push_list_back(removedEqns, removedEqns2);
       else
         eqns2 := inEqSystem.orderedEqs;
       end if;
@@ -1248,12 +1253,11 @@ algorithm
         initVarList := List.map1r(range, BackendVariable.getVarAt, inEqSystem.orderedVars);
         (eqns2, dumpVars2) := addStartValueEquations(initVarList, eqns2, {});
         //BackendDump.dumpEquationArray(eqns2, "remaining equations");
-        dumpVars := listAppend(dumpVars, dumpVars2);
+        DoubleEndedList.push_list_back(dumpVars, dumpVars2);
       end if;
 
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
       //print("index-" + intString(index) + " ende\n");
-      outTpl := ((initVars, dumpVars, removedEqns));
       //execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
       return;
     end if;
