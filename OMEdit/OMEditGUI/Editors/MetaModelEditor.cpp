@@ -582,8 +582,6 @@ void MetaModelEditor::alignInterfaces(QString fromSubModel, QString toSubModel)
       return;
   }
 
-  Q_ASSERT(1==2);
-
   //Convert from strings to arrays
   double cg_x1_phi_cg[3],cg_x2_phi_cg[3],x1_c1_phi_x1[3],x2_c2_phi_x2[3];
   double cg_x1_r_cg[3],cg_x2_r_cg[3],x1_c1_r_x1[3],x2_c2_r_x2[3];
