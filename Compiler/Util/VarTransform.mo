@@ -59,53 +59,6 @@ uniontype VariableReplacements
 
 end VariableReplacements;
 
-public
-uniontype BinTree
-  record TREENODE
-    Option<TreeValue> value "Value" ;
-    Option<BinTree> left "left subtree" ;
-    Option<BinTree> right "right subtree" ;
-  end TREENODE;
-
-end BinTree;
-
-public
-uniontype BinTree2
-  record TREENODE2
-    Option<TreeValue2> value "Value" ;
-    Option<BinTree2> left "left subtree" ;
-    Option<BinTree2> right "right subtree" ;
-  end TREENODE2;
-
-end BinTree2;
-
-public
-uniontype TreeValue "Each node in the binary tree can have a value associated with it."
-  record TREEVALUE
-    Key key "Key" ;
-    Value value "Value" ;
-  end TREEVALUE;
-
-end TreeValue;
-
-public
-uniontype TreeValue2
-  record TREEVALUE2
-    Key key "Key" ;
-    Value2 value "Value" ;
-  end TREEVALUE2;
-
-end TreeValue2;
-
-public
-type Key = DAE.ComponentRef "Key" ;
-
-public
-type Value = DAE.Exp;
-
-public
-type Value2 = list<DAE.ComponentRef>;
-
 protected import Absyn;
 protected import BaseHashTable;
 protected import ComponentReference;
@@ -1599,60 +1552,6 @@ algorithm
   outTplExpExpBooleanLstLst := listReverseInPlace(acc1);
   replacementPerformed := acc2;
 end replaceExpMatrix;
-
-protected function bintreeToExplist2 "helper function to bintree_to_list"
-  input BinTree inBinTree1;
-  input list<DAE.Exp> inExpExpLst2;
-  input list<DAE.Exp> inExpExpLst3;
-  output list<DAE.Exp> outExpExpLst1;
-  output list<DAE.Exp> outExpExpLst2;
-algorithm
-  (outExpExpLst1,outExpExpLst2):=
-  matchcontinue (inBinTree1,inExpExpLst2,inExpExpLst3)
-    local
-      list<DAE.Exp> klst,vlst;
-      DAE.ComponentRef key;
-      DAE.Exp value,crefExp;
-      Option<BinTree> left,right;
-
-    case (TREENODE(value = NONE(),left = NONE(),right = NONE()),klst,vlst) then (klst,vlst);
-    case (TREENODE(value = SOME(TREEVALUE(key,value)),left = left,right = right),klst,vlst)
-      equation
-        (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
-        (klst,vlst) = bintreeToExplistOpt(right, klst, vlst);
-        crefExp = Expression.crefExp(key);
-      then
-        ((crefExp :: klst),(value :: vlst));
-
-    case (TREENODE(value = NONE(),left = left),klst,vlst)
-      equation
-        (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
-        (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
-      then
-        (klst,vlst);
-  end matchcontinue;
-end bintreeToExplist2;
-
-protected function bintreeToExplistOpt "helper function to bintree_to_list"
-  input Option<BinTree> inBinTreeOption1;
-  input list<DAE.Exp> inExpExpLst2;
-  input list<DAE.Exp> inExpExpLst3;
-  output list<DAE.Exp> outExpExpLst1;
-  output list<DAE.Exp> outExpExpLst2;
-algorithm
-  (outExpExpLst1,outExpExpLst2):=
-  match (inBinTreeOption1,inExpExpLst2,inExpExpLst3)
-    local
-      list<DAE.Exp> klst,vlst;
-      BinTree bt;
-    case (SOME(bt),klst,vlst)
-      equation
-        (klst,vlst) = bintreeToExplist2(bt, klst, vlst);
-      then
-        (klst,vlst);
-    else then (inExpExpLst2,inExpExpLst3);
-  end match;
-end bintreeToExplistOpt;
 
 annotation(__OpenModelica_Interface="frontend");
 end VarTransform;
