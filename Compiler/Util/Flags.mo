@@ -1232,7 +1232,7 @@ constant ConfigFlag DEFAULT_CLOCK_PERIOD = CONFIG_FLAG(89, "defaultClockPeriod",
   NONE(), INTERNAL(), REAL_FLAG(1.0), NONE(),
   Util.gettext("Sets the default clock period (in seconds) for state machines (default: 1.0)."));
 constant ConfigFlag INST_CACHE_SIZE = CONFIG_FLAG(90, "instCacheSize",
-  NONE(), EXTERNAL(), INT_FLAG(250007), NONE(),
+  NONE(), EXTERNAL(), INT_FLAG(25343), NONE(),
   Util.gettext("Sets the size of the internal hash table used for instantiation caching."));
 
 
