@@ -14,7 +14,6 @@ smallValues.mos \
 simLotkaVolterra.mos \
 simTwoTank.mos \
 simNonlinear.mos \
-simNonlinear_numeric.mos \
 simextfunction.mos \
 test_01.mos \
 test_02.mos \

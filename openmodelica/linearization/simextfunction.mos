@@ -3,9 +3,30 @@
 // status:   correct
 // teardown_command: rm -rf extfunction.* extfunction_* output.log linear_extfunction.* linear_extfunction_* linear_extfunction extfunction
 // 
+//  Case for numeric linearization of extfunctions model
+//
+//linearize with numeric linearization and data recovery at time 0
+loadFile("modelextfunction.mo");
+simulate(extfunction, simflags="-l=0 -l_datarec");
+getErrorString();
+loadFile("linear_extfunction.mo");
+list(linear_extfunction);
+simulate(linear_extfunction);
+getErrorString();
+readFile("linear_extfunction.log"); // Check that output log is empty
+
+//linearize with numeric linearization and data recovery at time 0
+simulate(extfunction, simflags="-l=1 -l_datarec");
+getErrorString();
+loadFile("linear_extfunction.mo");
+list(linear_extfunction);
+simulate(linear_extfunction);
+getErrorString();
+readFile("linear_extfunction.log"); // Check that output log is empty
+
+// 
 //  Case for linearization of extfunctions model
 //
-loadFile("modelextfunction.mo");
 setCommandLineOptions("+generateSymbolicLinearization");
 //linearize at point in time 0 
 linearize(extfunction, stopTime=0);
@@ -14,6 +35,7 @@ loadFile("linear_extfunction.mo");
 list(linear_extfunction);
 simulate(linear_extfunction);
 getErrorString();
+readFile("linear_extfunction.log"); // Check that output log is empty
 
 //linearize at point in time 1 
 linearize(extfunction, stopTime=1);
@@ -22,9 +44,104 @@ loadFile("linear_extfunction.mo");
 list(linear_extfunction);
 simulate(linear_extfunction);
 getErrorString();
+readFile("linear_extfunction.log"); // Check that output log is empty
 
 // Result:
 // true
+// record SimulationResult
+//     resultFile = "extfunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=0 -l_datarec'",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 0.000000
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// true
+// "model linear_extfunction
+//   parameter Integer n = 2;
+//   // states
+//   parameter Integer k = 0;
+//   // top-level inputs
+//   parameter Integer l = 0;
+//   // top-level outputs
+//   parameter Integer nz = 0;
+//   // data recovery variables
+//   parameter Real x0[2] = {1, -1};
+//   parameter Real u0[0] = {i for i in 1:0};
+//   parameter Real z0[0] = {i for i in 1:0};
+//   parameter Real A[2, 2] = [0.5403023054793894, 0.8414709479039962; 0.8414710212080169, 0.5403023054793894];
+//   parameter Real B[2, 0] = zeros(2, 0);
+//   parameter Real C[0, 2] = zeros(0, 2);
+//   parameter Real D[0, 0] = zeros(0, 0);
+//   parameter Real Cz[0, 2] = zeros(0, 2);
+//   parameter Real Dz[0, 0] = zeros(0, 0);
+//   Real x[2](start = x0);
+//   input Real u[0];
+//   output Real y[0];
+//   output Real z[0];
+//   Real x_Px = x[1];
+//   Real x_Py = x[2];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+//   z = Cz * x + Dz * u;
+// end linear_extfunction;"
+// record SimulationResult
+//     resultFile = "linear_extfunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// ""
+// record SimulationResult
+//     resultFile = "extfunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=1 -l_datarec'",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 1.000000
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// true
+// "model linear_extfunction
+//   parameter Integer n = 2;
+//   // states
+//   parameter Integer k = 0;
+//   // top-level inputs
+//   parameter Integer l = 0;
+//   // top-level outputs
+//   parameter Integer nz = 0;
+//   // data recovery variables
+//   parameter Real x0[2] = {1.398992320427181, -1.398992320427181};
+//   parameter Real u0[0] = {i for i in 1:0};
+//   parameter Real z0[0] = {i for i in 1:0};
+//   parameter Real A[2, 2] = [0.170960074125255, 1.378396277040127; 1.378396314888112, 0.1709600739516404];
+//   parameter Real B[2, 0] = zeros(2, 0);
+//   parameter Real C[0, 2] = zeros(0, 2);
+//   parameter Real D[0, 0] = zeros(0, 0);
+//   parameter Real Cz[0, 2] = zeros(0, 2);
+//   parameter Real Dz[0, 0] = zeros(0, 0);
+//   Real x[2](start = x0);
+//   input Real u[0];
+//   output Real y[0];
+//   output Real z[0];
+//   Real x_Px = x[1];
+//   Real x_Py = x[2];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+//   z = Cz * x + Dz * u;
+// end linear_extfunction;"
+// record SimulationResult
+//     resultFile = "linear_extfunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// ""
 // true
 // record SimulationResult
 //     resultFile = "extfunction_res.mat",
@@ -65,6 +182,7 @@ getErrorString();
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
+// ""
 // record SimulationResult
 //     resultFile = "extfunction_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
@@ -104,4 +222,5 @@ getErrorString();
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
+// ""
 // endResult

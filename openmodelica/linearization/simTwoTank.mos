@@ -13,7 +13,19 @@ loadFile("linear_twoflattankmodel.mo");
 list(linear_twoflattankmodel);
 simulate(linear_twoflattankmodel,method="dassl");
 getErrorString();
-readFile("linear_twoflattankmodel.log"); // Check that output log is emtpy
+readFile("linear_twoflattankmodel.log"); // Check that output log is empty
+
+// 
+//  Case for numeric linearization of twoflattankmodel model
+//
+//linearize with numeric linearization and data recovery
+simulate(twoflattankmodel, simflags="-l=0 -l_datarec");
+getErrorString();
+loadFile("linear_twoflattankmodel.mo");
+list(linear_twoflattankmodel);
+simulate(linear_twoflattankmodel);
+getErrorString();
+readFile("linear_twoflattankmodel.log"); // Check that output log is empty
 
 // Result:
 // true
@@ -50,6 +62,58 @@ readFile("linear_twoflattankmodel.log"); // Check that output log is emtpy
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
+// end linear_twoflattankmodel;"
+// record SimulationResult
+//     resultFile = "linear_twoflattankmodel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_twoflattankmodel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// ""
+// record SimulationResult
+//     resultFile = "twoflattankmodel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'twoflattankmodel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=0 -l_datarec'",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 0.000000
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// true
+// "model linear_twoflattankmodel
+//   parameter Integer n = 2;
+//   // states
+//   parameter Integer k = 1;
+//   // top-level inputs
+//   parameter Integer l = 1;
+//   // top-level outputs
+//   parameter Integer nz = 3;
+//   // data recovery variables
+//   parameter Real x0[2] = {2, 1};
+//   parameter Real u0[1] = {0};
+//   parameter Real z0[3] = {0, 2, 1};
+//   parameter Real A[2, 2] = [-0.4999999873490973, 0.5000000165041055; 1.999999949396389, -3.000000034050615];
+//   parameter Real B[2, 1] = [0.500000000677101; 0];
+//   parameter Real C[1, 2] = [0, 0.4999999840170964];
+//   parameter Real D[1, 1] = [0];
+//   parameter Real Cz[3, 2] = [0, 0; 0.9999999746981947, -1.000000033008211; 0, 0.4999999840170964];
+//   parameter Real Dz[3, 1] = [1; 0; 0];
+//   Real x[2](start = x0);
+//   input Real u[1](start = u0);
+//   output Real y[1];
+//   output Real z[3];
+//   Real x_Ph1 = x[1];
+//   Real x_Ph2 = x[2];
+//   Real u_PF = u[1];
+//   Real y_PF2 = y[1];
+//   Real z_PF = z[1];
+//   Real z_PF1 = z[2];
+//   Real z_PF2 = z[3];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+//   z = Cz * x + Dz * u;
 // end linear_twoflattankmodel;"
 // record SimulationResult
 //     resultFile = "linear_twoflattankmodel_res.mat",

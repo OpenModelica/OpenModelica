@@ -22,8 +22,20 @@ equation
 end mathFuncsTest;
 ");
 
+// 
+//  Case for numeric linearization of mathFuncsTest model
+//
+//linearize with numeric linearization and data recovery
+simulate(mathFuncsTest, simflags="-l=0 -l_datarec");
+getErrorString();
+loadFile("linear_mathFuncsTest.mo");
+list(linear_mathFuncsTest);
+simulate(linear_mathFuncsTest);
+getErrorString();
+readFile("linear_mathFuncsTest.log"); // Check that output log is empty
+
+// Symbolically linearize
 setCommandLineOptions("+generateSymbolicLinearization");
-//linearize
 linearize(mathFuncsTest,stopTime=0);
 getErrorString();
 loadFile("linear_mathFuncsTest.mo");
@@ -35,6 +47,65 @@ readFile("linear_mathFuncsTest.log"); // Check that output log is empty
 
 // Result:
 // true
+// record SimulationResult
+//     resultFile = "mathFuncsTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'mathFuncsTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=0 -l_datarec'",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 0.000000
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// true
+// "model linear_mathFuncsTest
+//   parameter Integer n = 2;
+//   // states
+//   parameter Integer k = 0;
+//   // top-level inputs
+//   parameter Integer l = 6;
+//   // top-level outputs
+//   parameter Integer nz = 6;
+//   // data recovery variables
+//   parameter Real x0[2] = {-2, 1};
+//   parameter Real u0[0] = {i for i in 1:0};
+//   parameter Real z0[6] = {0, -2, 0, -2, -2, -2};
+//   parameter Real A[2, 2] = [0, 0; 0, 0];
+//   parameter Real B[2, 0] = zeros(2, 0);
+//   parameter Real C[6, 2] = [0.9999999991328683, 1.999999999376403; 0, 0; 0.9999999991328683, 1.999999999376403; 0, 0; 0, 0; 0, 0];
+//   parameter Real D[6, 0] = zeros(6, 0);
+//   parameter Real Cz[6, 2] = [0.9999999991328683, 1.999999999376403; 0, 0; 0.9999999991328683, 1.999999999376403; 0, 0; 0, 0; 0, 0];
+//   parameter Real Dz[6, 0] = zeros(6, 0);
+//   Real x[2](start = x0);
+//   input Real u[0];
+//   output Real y[6];
+//   output Real z[6];
+//   Real x_Px = x[1];
+//   Real x_Py = x[2];
+//   Real y_Pr1 = y[1];
+//   Real y_Pr2 = y[2];
+//   Real y_Pr3 = y[3];
+//   Real y_Pr4 = y[4];
+//   Real y_Pr5 = y[5];
+//   Real y_Pr6 = y[6];
+//   Real z_Pr1 = z[1];
+//   Real z_Pr2 = z[2];
+//   Real z_Pr3 = z[3];
+//   Real z_Pr4 = z[4];
+//   Real z_Pr5 = z[5];
+//   Real z_Pr6 = z[6];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+//   z = Cz * x + Dz * u;
+// end linear_mathFuncsTest;"
+// record SimulationResult
+//     resultFile = "linear_mathFuncsTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_mathFuncsTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// ""
 // true
 // record SimulationResult
 //     resultFile = "mathFuncsTest_res.mat",
