@@ -303,6 +303,13 @@ private:
   bool mFailed;
 };
 
+typedef struct {
+  QString mDelay;
+  QString mZf;
+  QString mZfr;
+  QString mAlpha;
+} MetaModelConnection;
+
 namespace Utilities {
   void parseMetaModelText(MessageHandler *pMessageHandler, QString contents);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);

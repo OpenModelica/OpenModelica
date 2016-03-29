@@ -44,6 +44,10 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
   setEndComponent(0);
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -60,6 +64,10 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
   setEndComponent(0);
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
   setPos(mOrigin);
   setRotation(mRotation);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
@@ -99,6 +107,10 @@ LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphi
   // set the start component
   setStartComponent(pStartComponent);
   setEndComponent(0);
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
 }
 
 LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView)
@@ -114,6 +126,10 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, C
   setStartComponent(pStartComponent);
   // set the end component
   setEndComponent(pEndComponent);
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
   QList<QPointF> points;
@@ -133,6 +149,10 @@ LineAnnotation::LineAnnotation(Component *pParent)
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
   setEndComponent(0);
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -157,6 +177,10 @@ LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
   setEndComponent(0);
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -676,6 +700,10 @@ void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   setStartComponentName(pLineAnnotation->getStartComponentName());
   setEndComponent(pLineAnnotation->getEndComponent());
   setEndComponentName(pLineAnnotation->getEndComponentName());
+  setDelay(pLineAnnotation->getDelay());
+  setZf(pLineAnnotation->getZf());
+  setZfr(pLineAnnotation->getZfr());
+  setAlpha(pLineAnnotation->getAlpha());
   // set the default values
   GraphicItem::setDefaults(pShapeAnnotation);
   mPoints.clear();
@@ -725,7 +753,7 @@ void LineAnnotation::updateConnectionAnnotation()
 {
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
     MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
-    pMetaModelEditor->updateConnection(getStartComponentName(), getEndComponentName(), getMetaModelShapeAnnotation());
+    pMetaModelEditor->updateConnection(this);
   } else {
     // get the connection line annotation.
     QString annotationString = QString("annotate=").append(getShapeAnnotation());

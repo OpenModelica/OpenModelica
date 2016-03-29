@@ -259,30 +259,24 @@ void MetaModelEditor::updateSubModelParameters(QString name, QString startComman
 
 /*!
  * \brief MetaModelEditor::createConnection
- * Adds a a connection tag with Annotation tag as child of it.
- * \param from
- * \param to
- * \param delay
- * \param alpha
- * \param zf
- * \param zfr
- * \param points
+ * Adds a connection tag with Annotation tag as child of it.
+ * \param pConnectionLineAnnotation
  * \return
  */
-bool MetaModelEditor::createConnection(QString from, QString to, QString delay, QString alpha, QString zf, QString zfr, QString points)
+bool MetaModelEditor::createConnection(LineAnnotation *pConnectionLineAnnotation)
 {
   QDomElement connections = getConnectionsElement();
   if (!connections.isNull()) {
     QDomElement connection = mXmlDocument.createElement("Connection");
-    connection.setAttribute("From", from);
-    connection.setAttribute("To", to);
-    connection.setAttribute("Delay", delay);
-    connection.setAttribute("alpha", alpha);
-    connection.setAttribute("Zf", zf);
-    connection.setAttribute("Zfr", zfr);
+    connection.setAttribute("From", pConnectionLineAnnotation->getStartComponentName());
+    connection.setAttribute("To", pConnectionLineAnnotation->getEndComponentName());
+    connection.setAttribute("Delay", pConnectionLineAnnotation->getDelay());
+    connection.setAttribute("alpha", pConnectionLineAnnotation->getAlpha());
+    connection.setAttribute("Zf", pConnectionLineAnnotation->getZf());
+    connection.setAttribute("Zfr", pConnectionLineAnnotation->getZfr());
     // create Annotation Element
     QDomElement annotation = mXmlDocument.createElement("Annotation");
-    annotation.setAttribute("Points", points);
+    annotation.setAttribute("Points", pConnectionLineAnnotation->getMetaModelShapeAnnotation());
     connection.appendChild(annotation);
     connections.appendChild(connection);
     setPlainText(mXmlDocument.toString());
@@ -294,23 +288,26 @@ bool MetaModelEditor::createConnection(QString from, QString to, QString delay, 
 /*!
  * \brief MetaModelEditor::updateConnection
  * Updates the MetaModel connection annotation.
- * \param fromSubModel
- * \param toSubModel
- * \param points
+ * \param pConnectionLineAnnotation
  */
-void MetaModelEditor::updateConnection(QString fromSubModel, QString toSubModel, QString points)
+void MetaModelEditor::updateConnection(LineAnnotation *pConnectionLineAnnotation)
 {
   QDomNodeList connectionList = mXmlDocument.elementsByTagName("Connection");
   for (int i = 0 ; i < connectionList.size() ; i++) {
     QDomElement connection = connectionList.at(i).toElement();
-    if (connection.attribute("From").compare(fromSubModel) == 0 && connection.attribute("To").compare(toSubModel) == 0) {
+    if (connection.attribute("From").compare(pConnectionLineAnnotation->getStartComponentName()) == 0 &&
+        connection.attribute("To").compare(pConnectionLineAnnotation->getEndComponentName()) == 0) {
+      connection.setAttribute("Delay", pConnectionLineAnnotation->getDelay());
+      connection.setAttribute("alpha", pConnectionLineAnnotation->getAlpha());
+      connection.setAttribute("Zf", pConnectionLineAnnotation->getZf());
+      connection.setAttribute("Zfr", pConnectionLineAnnotation->getZfr());
       QDomNodeList connectionChildren = connection.childNodes();
       bool annotationFound = false;
       for (int j = 0 ; j < connectionChildren.size() ; j++) {
         QDomElement annotationElement = connectionChildren.at(j).toElement();
         if (annotationElement.tagName().compare("Annotation") == 0) {
           annotationFound = true;
-          annotationElement.setAttribute("Points", points);
+          annotationElement.setAttribute("Points", pConnectionLineAnnotation->getMetaModelShapeAnnotation());
           setPlainText(mXmlDocument.toString());
           return;
         }
@@ -318,7 +315,7 @@ void MetaModelEditor::updateConnection(QString fromSubModel, QString toSubModel,
       // if we found the connection and there is no annotation with it then add the annotation element.
       if (!annotationFound) {
         QDomElement annotationElement = mXmlDocument.createElement("Annotation");
-        annotationElement.setAttribute("Points", points);
+        annotationElement.setAttribute("Points", pConnectionLineAnnotation->getMetaModelShapeAnnotation());
         connection.appendChild(annotationElement);
         setPlainText(mXmlDocument.toString());
       }

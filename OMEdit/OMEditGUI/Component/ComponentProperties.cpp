@@ -1508,104 +1508,92 @@ void TLMInterfacePointInfo::setInterfaceName(QString interfacePoint)
   \param pConnectionLineAnnotation - pointer to LineAnnotation
   \param pMainWindow - pointer to MainWindow
   */
-MetaModelConnectionAttributes::MetaModelConnectionAttributes(LineAnnotation *pConnectionLineAnnotation, MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint)
+MetaModelConnectionAttributes::MetaModelConnectionAttributes(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation,
+                                                             MainWindow *pMainWindow, bool edit)
+  : QDialog(pMainWindow, Qt::WindowTitleHint), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation),
+    mpMainWindow(pMainWindow), mEdit(edit)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("TLM Connection Attributes")));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::connectionAttributes));
   setAttribute(Qt::WA_DeleteOnClose);
-  setModal(true);
-  mpConnectionLineAnnotation = pConnectionLineAnnotation;
-  mpMainWindow = pMainWindow;
-  setUpDialog();
-  initializeDialog();
-}
-
-/*!
-  Creates the Dialog and set up attributes .
-  */
-void MetaModelConnectionAttributes::setUpDialog()
-{
+  // heading
+  mpHeading = Utilities::getHeadingLabel(Helper::connectionAttributes);
+  // horizontal line
+  mpHorizontalLine = Utilities::getHeadingLine();
   // Create the start component class name label and text box
-  mpStartSubModelNameLabel = new Label(tr("From:"));
-  mpStartSubModelNameTextBox = new QLineEdit;
-  mpStartSubModelNameTextBox->setDisabled(true);
-  // Create the start component interface points  combo box
-  mpStartSubModelInterfacePointComboBox = new QComboBox;
+  mpFromLabel = new Label(tr("From:"));
+  mpConnectionStartLabel = new Label(mpConnectionLineAnnotation->getStartComponentName());
   // Create the end component class name label and text box
-  mpEndSubModelNameLabel = new Label(tr("To:"));
-  mpEndSubModelNameTextBox = new QLineEdit;
-  mpEndSubModelNameTextBox->setDisabled(true);
-  // Create the end component interface points  combo box
-  mpEndSubModelInterfacePointComboBox = new QComboBox;
+  mpToLabel = new Label(tr("To:"));
+  mpConnectionEndLabel = new Label(mpConnectionLineAnnotation->getEndComponentName());
   // Create the delay label and text box
   mpDelayLabel = new Label(tr("Delay:"));
-  mpDelayTextBox = new QLineEdit;
-
+  mpDelayTextBox = new QLineEdit(mpConnectionLineAnnotation->getDelay());
   mpZfLabel = new Label(tr("Zf:"));
-  mpZfTextBox = new QLineEdit;
+  mpZfTextBox = new QLineEdit(mpConnectionLineAnnotation->getZf());
   mpZfrLabel = new Label(tr("Zfr:"));
-  mpZfrTextBox = new QLineEdit;
-
+  mpZfrTextBox = new QLineEdit(mpConnectionLineAnnotation->getZfr());
   // Create the alpha label and text box
   mpAlphapLabel = new Label(tr("Alpha:"));
-  mpAlphaTextBox = new QLineEdit;
+  mpAlphaTextBox = new QLineEdit(mpConnectionLineAnnotation->getAlpha());
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(createTLMConnection()));
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(createMetaModelConnection()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Create a layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  pMainLayout->addWidget(mpStartSubModelNameLabel, 0, 0);
-  pMainLayout->addWidget(mpStartSubModelNameTextBox, 0, 1);
-  pMainLayout->addWidget(mpStartSubModelInterfacePointComboBox, 0, 2);
-  pMainLayout->addWidget(mpEndSubModelNameLabel, 1, 0);
-  pMainLayout->addWidget(mpEndSubModelNameTextBox, 1, 1);
-  pMainLayout->addWidget(mpEndSubModelInterfacePointComboBox, 1, 2);
-  pMainLayout->addWidget(mpDelayLabel, 2, 0);
-  pMainLayout->addWidget(mpDelayTextBox, 2, 1, 1, 3);
-  pMainLayout->addWidget(mpZfLabel,3, 0);
-  pMainLayout->addWidget(mpZfTextBox,3, 1, 1, 3);
-  pMainLayout->addWidget(mpZfrLabel, 4, 0);
-  pMainLayout->addWidget(mpZfrTextBox,4, 1, 1, 3);
-  pMainLayout->addWidget(mpAlphapLabel, 5, 0);
-  pMainLayout->addWidget(mpAlphaTextBox, 5, 1, 1, 3);
-  pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 4, Qt::AlignRight);
+  pMainLayout->addWidget(mpHeading, 0, 0, 1, 2);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
+  pMainLayout->addWidget(mpFromLabel, 2, 0);
+  pMainLayout->addWidget(mpConnectionStartLabel, 2, 1);
+  pMainLayout->addWidget(mpToLabel, 3, 0);
+  pMainLayout->addWidget(mpConnectionEndLabel, 3, 1);
+  pMainLayout->addWidget(mpDelayLabel, 4, 0);
+  pMainLayout->addWidget(mpDelayTextBox, 4, 1);
+  pMainLayout->addWidget(mpZfLabel,5, 0);
+  pMainLayout->addWidget(mpZfTextBox, 5, 1);
+  pMainLayout->addWidget(mpZfrLabel, 6, 0);
+  pMainLayout->addWidget(mpZfrTextBox, 6, 1);
+  pMainLayout->addWidget(mpAlphapLabel, 7, 0);
+  pMainLayout->addWidget(mpAlphaTextBox, 7, 1);
+  pMainLayout->addWidget(mpButtonBox, 8, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
 /*!
-  Initialize the fields with default values.
-  */
-void MetaModelConnectionAttributes::initializeDialog()
-{
-  mpStartSubModelNameTextBox->setText(mpConnectionLineAnnotation->getStartComponent()->getName());
-  mpEndSubModelNameTextBox->setText(mpConnectionLineAnnotation->getEndComponent()->getName());
-  mInterfacepointsList = mpConnectionLineAnnotation->getStartComponent()->getInterfacepointsList();
-  for( int i=0; i<mInterfacepointsList.count(); ++i )
-  {
-   mpStartSubModelInterfacePointComboBox->addItem(mInterfacepointsList.at(i)->getInterfaceName());
-  }
-
-  mInterfacepointsList = mpConnectionLineAnnotation->getEndComponent()->getInterfacepointsList();
-  for( int i=0; i<mInterfacepointsList.count(); ++i )
-  {
-   mpEndSubModelInterfacePointComboBox->addItem(mInterfacepointsList.at(i)->getInterfaceName());
-  }
-}
-
-/*!
-  Slot activated when mpOkButton clicked signal is raised.\n
-  Updates the TLM component attributes.
-  */
+ * \brief MetaModelConnectionAttributes::createMetaModelConnection
+ * Slot activated when mpOkButton clicked signal is raised.\n
+ * Creates a connection
+ */
 void MetaModelConnectionAttributes::createMetaModelConnection()
 {
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor());
-  QString startFrom = mpStartSubModelNameTextBox->text().append(".").append(mpStartSubModelInterfacePointComboBox->currentText());
-  QString endTo = mpEndSubModelNameTextBox->text().append(".").append(mpEndSubModelInterfacePointComboBox->currentText());
-  pMetaModelEditor->createConnection(startFrom, endTo, mpDelayTextBox->text(), mpAlphaTextBox->text(),mpZfTextBox->text(), mpZfrTextBox->text(),
-                                     mpConnectionLineAnnotation->getMetaModelShapeAnnotation());
+  if (mEdit) {
+    MetaModelConnection oldMetaModelConnection;
+    oldMetaModelConnection.mDelay = mpConnectionLineAnnotation->getDelay();
+    oldMetaModelConnection.mZf = mpConnectionLineAnnotation->getZf();
+    oldMetaModelConnection.mZfr = mpConnectionLineAnnotation->getZfr();
+    oldMetaModelConnection.mAlpha = mpConnectionLineAnnotation->getAlpha();
+    MetaModelConnection newMetaModelConnection;
+    newMetaModelConnection.mDelay = mpDelayTextBox->text();
+    newMetaModelConnection.mZf = mpZfTextBox->text();
+    newMetaModelConnection.mZfr = mpZfrTextBox->text();
+    newMetaModelConnection.mAlpha = mpAlphaTextBox->text();
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateMetaModelConnection(mpConnectionLineAnnotation, oldMetaModelConnection,
+                                                                                         newMetaModelConnection));
+  } else {
+    mpConnectionLineAnnotation->setDelay(mpDelayTextBox->text());
+    mpConnectionLineAnnotation->setZf(mpZfTextBox->text());
+    mpConnectionLineAnnotation->setZfr(mpZfrTextBox->text());
+    mpConnectionLineAnnotation->setAlpha(mpAlphaTextBox->text());
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
+  }
+  mpGraphicsView->getModelWidget()->updateModelText();
   accept();
 }

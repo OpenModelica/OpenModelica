@@ -856,6 +856,43 @@ void UpdateConnectionCommand::undo()
   mpConnectionLineAnnotation->updateConnectionAnnotation();
 }
 
+UpdateMetaModelConnection::UpdateMetaModelConnection(LineAnnotation *pConnectionLineAnnotation, MetaModelConnection oldMetaModelConnection,
+                                                     MetaModelConnection newMetaModelConnection, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpConnectionLineAnnotation = pConnectionLineAnnotation;
+  mOldMetaModelConnection = oldMetaModelConnection;
+  mNewMetaModelConnection = newMetaModelConnection;
+  setText(QString("Update MetaModel Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
+                                                                     mpConnectionLineAnnotation->getEndComponentName()));
+}
+
+/*!
+ * \brief UpdateMetaModelConnection::redo
+ * Redo the UpdateMetaModelConnection.
+ */
+void UpdateMetaModelConnection::redo()
+{
+  mpConnectionLineAnnotation->setDelay(mNewMetaModelConnection.mDelay);
+  mpConnectionLineAnnotation->setZf(mNewMetaModelConnection.mZf);
+  mpConnectionLineAnnotation->setZfr(mNewMetaModelConnection.mZfr);
+  mpConnectionLineAnnotation->setAlpha(mNewMetaModelConnection.mAlpha);
+  mpConnectionLineAnnotation->getGraphicsView()->updateConnectionInClass(mpConnectionLineAnnotation);
+}
+
+/*!
+ * \brief UpdateMetaModelConnection::undo
+ * Undo the UpdateMetaModelConnection.
+ */
+void UpdateMetaModelConnection::undo()
+{
+  mpConnectionLineAnnotation->setDelay(mOldMetaModelConnection.mDelay);
+  mpConnectionLineAnnotation->setZf(mOldMetaModelConnection.mZf);
+  mpConnectionLineAnnotation->setZfr(mOldMetaModelConnection.mZfr);
+  mpConnectionLineAnnotation->setAlpha(mOldMetaModelConnection.mAlpha);
+  mpConnectionLineAnnotation->getGraphicsView()->updateConnectionInClass(mpConnectionLineAnnotation);
+}
+
 DeleteConnectionCommand::DeleteConnectionCommand(LineAnnotation *pConnectionLineAnnotation, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {

@@ -164,6 +164,8 @@ public:
   Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentComponent);
   Component(Component *pComponent, Component *pParentComponent, Component *pRootParentComponent);
   Component(Component *pComponent, GraphicsView *pGraphicsView);
+  // used for interface point
+  Component(ComponentInfo *pComponentInfo, Component *pParentComponent);
   bool isInheritedComponent() {return mIsInheritedComponent;}
   bool hasShapeAnnotation(Component *pComponent);
   bool hasNonExistingClass();
@@ -220,6 +222,7 @@ public:
   void addInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
   void removeInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
   void renameInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo, QString interfacePoint);
+  void insertInterfacePoint(ComponentInfo *pComponentInfo);
 
   Transformation mTransformation;
   Transformation mOldTransformation;
@@ -263,6 +266,7 @@ private:
   QPointF mOldPosition;
   void createNonExistingComponent();
   void createDefaultComponent();
+  void drawInterfacePoints();
   void drawComponent();
   void drawInheritedComponentsAndShapes();
   void showNonExistingOrDefaultComponentIfNeeded();

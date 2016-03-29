@@ -113,6 +113,7 @@ private:
   QPointF mOldScenePosition;
   bool mIsCornerItemClicked;
   QAction *mpShapePropertiesAction;
+  QAction *mpShapeAttributesAction;
 public:
   enum LineGeometryType {VerticalLine, HorizontalLine};
   Transformation mTransformation;
@@ -225,6 +226,7 @@ public slots:
   LineGeometryType findLineGeometryType(QPointF point1, QPointF point2);
   bool isLineStraight(QPointF point1, QPointF point2);
   void showShapeProperties();
+  void showShapeAttributes();
   void manhattanizeShape(bool addToStack = true);
   void referenceShapeAdded();
   void referenceShapeChanged();

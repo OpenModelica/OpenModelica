@@ -170,6 +170,19 @@ private:
   QString mNewAnnotation;
 };
 
+class UpdateMetaModelConnection : public QUndoCommand
+{
+public:
+  UpdateMetaModelConnection(LineAnnotation *pConnectionLineAnnotation, MetaModelConnection oldMetaModelConnection,
+                            MetaModelConnection newMetaModelConnection, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LineAnnotation *mpConnectionLineAnnotation;
+  MetaModelConnection mOldMetaModelConnection;
+  MetaModelConnection mNewMetaModelConnection;
+};
+
 class DeleteConnectionCommand : public QUndoCommand
 {
 public:

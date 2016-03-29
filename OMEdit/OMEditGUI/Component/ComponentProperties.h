@@ -270,19 +270,19 @@ class MetaModelConnectionAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  MetaModelConnectionAttributes(LineAnnotation *pConnectionLineAnnotation, MainWindow *pMainWindow);
-  void setUpDialog();
-  void initializeDialog();
+  MetaModelConnectionAttributes(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, MainWindow *pMainWindow, bool edit);
 private:
+  GraphicsView *mpGraphicsView;
   LineAnnotation *mpConnectionLineAnnotation;
   MainWindow *mpMainWindow;
+  bool mEdit;
+  Label *mpHeading;
+  QFrame *mpHorizontalLine;
   QList<TLMInterfacePointInfo*> mInterfacepointsList;
-  Label *mpStartSubModelNameLabel;
-  QLineEdit *mpStartSubModelNameTextBox;
-  QComboBox *mpStartSubModelInterfacePointComboBox;
-  QComboBox *mpEndSubModelInterfacePointComboBox;
-  Label *mpEndSubModelNameLabel;
-  QLineEdit *mpEndSubModelNameTextBox;
+  Label *mpFromLabel;
+  Label *mpConnectionStartLabel;
+  Label *mpToLabel;
+  Label *mpConnectionEndLabel;
   Label *mpDelayLabel;
   QLineEdit *mpDelayTextBox;
   Label *mpZfLabel;
@@ -292,6 +292,7 @@ private:
   Label *mpAlphapLabel;
   QLineEdit *mpAlphaTextBox;
   QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 public slots:
   void createMetaModelConnection();

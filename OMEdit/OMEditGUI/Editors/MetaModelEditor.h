@@ -42,6 +42,7 @@
 class MainWindow;
 class ModelWidget;
 class MetaModelEditor;
+class LineAnnotation;
 
 /*!
  * \class XMLDocument
@@ -74,8 +75,8 @@ public:
   void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);
   void updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
   void updateSubModelParameters(QString name, QString startCommand, QString exactStepFlag);
-  bool createConnection(QString From, QString To, QString delay, QString alpha, QString zf, QString zfr, QString points);
-  void updateConnection(QString fromSubModel, QString toSubModel, QString points);
+  bool createConnection(LineAnnotation *pConnectionLineAnnotation);
+  void updateConnection(LineAnnotation *pConnectionLineAnnotation);
   void updateSimulationParams(QString startTime, QString stopTime);
   bool isSimulationParams();
   QString getSimulationStartTime();

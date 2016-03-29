@@ -260,6 +260,7 @@ public:
   static QString center;
   static QString right;
   static QString createConnection;
+  static QString connectionAttributes;
   static QString findVariables;
   static QString openClass;
   static QString openClassTip;

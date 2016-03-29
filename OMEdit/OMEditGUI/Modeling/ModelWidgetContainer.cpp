@@ -507,10 +507,10 @@ bool GraphicsView::checkComponentName(QString componentName)
 void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotation)
 {
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
-    // show TLM connection attributes dialog
-    MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-    MetaModelConnectionAttributes *pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(pConnectionLineAnnotation, pMainWindow);
-    pMetaModelConnectionAttributes->show();
+    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
+    if (pMetaModelEditor) {
+      pMetaModelEditor->createConnection(pConnectionLineAnnotation);
+    }
   } else {
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     if (pMainWindow->getOMCProxy()->addConnection(pConnectionLineAnnotation->getStartComponentName(),
@@ -528,18 +528,33 @@ void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
 /*!
  * \brief GraphicsView::deleteConnectionFromOMC
  * Deletes the connection from OMC.
- * \param pConnectonLineAnnotation - the connection to delete.
+ * \param pConnectionLineAnnotation - the connection to delete.
  */
-void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectonLineAnnotation)
+void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
     MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
-    pMetaModelEditor->deleteConnection(pConnectonLineAnnotation->getStartComponentName(), pConnectonLineAnnotation->getEndComponentName());
+    pMetaModelEditor->deleteConnection(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
   } else {
-    pMainWindow->getOMCProxy()->deleteConnection(pConnectonLineAnnotation->getStartComponentName(),
-                                                 pConnectonLineAnnotation->getEndComponentName(),
+    pMainWindow->getOMCProxy()->deleteConnection(pConnectionLineAnnotation->getStartComponentName(),
+                                                 pConnectionLineAnnotation->getEndComponentName(),
                                                  mpModelWidget->getLibraryTreeItem()->getNameStructure());
+  }
+}
+
+/*!
+ * \brief GraphicsView::updateConnectionInClass
+ * Updates a connection in a class.
+ * \param pConnectonLineAnnotation
+ */
+void GraphicsView::updateConnectionInClass(LineAnnotation *pConnectionLineAnnotation)
+{
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
+    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
+    if (pMetaModelEditor) {
+      pMetaModelEditor->updateConnection(pConnectionLineAnnotation);
+    }
   }
 }
 
@@ -1117,9 +1132,19 @@ void GraphicsView::addConnection(Component *pComponent)
         }
         mpConnectionLineAnnotation->setStartComponentName(startComponentName);
         mpConnectionLineAnnotation->setEndComponentName(endComponentName);
-        mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
-        mpModelWidget->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
-        mpModelWidget->updateModelText();
+        if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+          MetaModelConnectionAttributes *pMetaModelConnectionAttributes;
+          pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(this, mpConnectionLineAnnotation,
+                                                                             mpModelWidget->getModelWidgetContainer()->getMainWindow(), false);
+          // if user cancels the array connection
+          if (!pMetaModelConnectionAttributes->exec()) {
+            removeCurrentConnection();
+          }
+        } else {
+          mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
+          mpModelWidget->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
+          mpModelWidget->updateModelText();
+        }
       }
       setIsCreatingConnection(false);
     }
@@ -1569,8 +1594,10 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
         Component *pRootComponent = pComponent->getRootParentComponent();
         if (pRootComponent && !pRootComponent->isSelected()) {
           if (pMainWindow->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-              pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector() &&
-              !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+              !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
+              ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) ||
+               (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel &&
+                pComponent->getComponentType() == Component::Port))) {
             if (!isCreatingConnection()) {
               mpClickedComponent = pComponent;
             } else if (isCreatingConnection()) {
@@ -1609,8 +1636,10 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
         Component *pRootComponent = pComponent->getRootParentComponent();
         if (pRootComponent && !pRootComponent->isSelected()) {
           if (pMainWindow->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-              pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector() &&
-              !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+              !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
+              ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) ||
+               (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel &&
+                pComponent->getComponentType() == Component::Port))) {
             setCrossCursor = true;
             /* If setOverrideCursor() has been called twice, calling restoreOverrideCursor() will activate the first cursor set.
            * Calling this function a second time restores the original widgets' cursors.
@@ -1760,13 +1789,15 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     return;
   }
   ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemAt(event->pos()));
-  if (pShapeAnnotation) {
-    /*
-      Double click on Component also end up here.
-      But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
-      */
-    if (pShapeAnnotation->getGraphicsView()) {
+  /* Double click on Component also end up here.
+   * But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
+   */
+  if (pShapeAnnotation && pShapeAnnotation->getGraphicsView()) {
+    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       pShapeAnnotation->showShapeProperties();
+      return;
+    } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+      pShapeAnnotation->showShapeAttributes();
       return;
     }
   }
@@ -2690,8 +2721,8 @@ void ModelWidget::createModelWidgetComponents()
       connect(pMainWindow->getOptionsDialog(), SIGNAL(MetaModelEditorSettingsChanged()), mpMetaModelHighlighter, SLOT(settingsChanged()));
       // only get the TLM submodels and connectors if the we are not creating a new class.
       if (!mpLibraryTreeItem->getFileName().isEmpty()) {
-        getTLMSubModels();
-        getTLMConnections();
+        getMetaModelSubModels();
+        getMetaModelConnections();
       }
       mpIconGraphicsScene->clearSelection();
       mpDiagramGraphicsScene->clearSelection();
@@ -2769,8 +2800,8 @@ void ModelWidget::reDrawModelWidget()
   mpDiagramGraphicsView->scene()->clear();
   /* get model components, connection and shapes. */
   if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
-    getTLMSubModels();
-    getTLMConnections();
+    getMetaModelSubModels();
+    getMetaModelConnections();
   } else {
     // Draw icon view
     mExtendsModifiersLoaded = false;
@@ -3532,10 +3563,10 @@ void ModelWidget::getModelConnections()
 }
 
 /*!
- * \brief ModelWidget::getTLMSubModels
+ * \brief ModelWidget::getMetaModelSubModels
  * Gets the submodels of the TLM and place them in the diagram GraphicsView.
  */
-void ModelWidget::getTLMSubModels()
+void ModelWidget::getMetaModelSubModels()
 {
   QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
@@ -3589,35 +3620,57 @@ void ModelWidget::getTLMSubModels()
 }
 
 /*!
- * \brief ModelWidget::getTLMConnections
+ * \brief ModelWidget::getMetaModelConnections
  * Reads the TLM connections and draws them.
  */
-void ModelWidget::getTLMConnections()
+void ModelWidget::getMetaModelConnections()
 {
   MessagesWidget *pMessagesWidget = mpModelWidgetContainer->getMainWindow()->getMessagesWidget();
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
   QDomNodeList connections = pMetaModelEditor->getConnections();
   for (int i = 0; i < connections.size(); i++) {
     QDomElement connection = connections.at(i).toElement();
-    // get start component
-    QString startComponentName = StringHandler::getFirstWordBeforeDot(connection.attribute("From"));
-    Component *pStartComponent = mpDiagramGraphicsView->getComponentObject(startComponentName);
-    if (!pStartComponent) {
+    // get start submodel
+    QStringList startConnectionList = connection.attribute("From").split(".");
+    if (startConnectionList.size() < 2) {
+      continue;
+    }
+    Component *pStartSubModelComponent = mpDiagramGraphicsView->getComponentObject(startConnectionList.at(0));
+    if (!pStartSubModelComponent) {
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT).arg(startComponentName)
+                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT).arg(startConnectionList.at(0))
                                                  .arg(connection.attribute("From")), Helper::scriptingKind, Helper::errorLevel));
       continue;
     }
-    // get end component
-    QString endComponentName = StringHandler::getFirstWordBeforeDot(connection.attribute("To"));
-    Component *pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentName);
-    if (!pEndComponent) {
+    // get start interface point
+    Component *pStartInterfacePointComponent = getConnectorComponent(pStartSubModelComponent, startConnectionList.at(1));
+    if (!pStartInterfacePointComponent) {
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT).arg(endComponentName)
+                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT).arg(startConnectionList.at(1))
+                                                 .arg(connection.attribute("From")), Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+    // get end submodel
+    QStringList endConnectionList = connection.attribute("To").split(".");
+    if (endConnectionList.size() < 2) {
+      continue;
+    }
+    Component *pEndSubModelComponent = mpDiagramGraphicsView->getComponentObject(endConnectionList.at(0));
+    if (!pEndSubModelComponent) {
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT).arg(endConnectionList.at(0))
                                                  .arg(connection.attribute("To")), Helper::scriptingKind, Helper::errorLevel));
       continue;
     }
-    // defaul connection annotation
+    // get end interface point
+    Component *pEndInterfacePointComponent = getConnectorComponent(pEndSubModelComponent, endConnectionList.at(1));
+    if (!pEndInterfacePointComponent) {
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT).arg(endConnectionList.at(1))
+                                                 .arg(connection.attribute("To")), Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+    // default connection annotation
     QString annotation = QString("{Line(true,{0.0,0.0},0,%1,{0,0,0},LinePattern.Solid,0.25,{Arrow.None,Arrow.None},3,Smooth.None)}");
     QStringList shapesList;
     bool annotationFound = false;
@@ -3633,29 +3686,31 @@ void ModelWidget::getTLMConnections()
     if (!annotationFound) {
       QString point = QString("{%1,%2}");
       QStringList points;
-      QPointF startPoint = pStartComponent->mapToScene(pStartComponent->boundingRect().center());
+      QPointF startPoint = pStartInterfacePointComponent->mapToScene(pStartInterfacePointComponent->boundingRect().center());
       points.append(point.arg(startPoint.x()).arg(startPoint.y()));
-      QPointF endPoint = pEndComponent->mapToScene(pEndComponent->boundingRect().center());
+      QPointF endPoint = pEndInterfacePointComponent->mapToScene(pEndInterfacePointComponent->boundingRect().center());
       points.append(point.arg(endPoint.x()).arg(endPoint.y()));
       QString pointsString = QString("{%1}").arg(points.join(","));
       shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)), '(', ')');
     }
     // Now parse the shapes available in list
+    QString lineShape = "";
     foreach (QString shape, shapesList) {
       if (shape.startsWith("Line")) {
-        shape = shape.mid(QString("Line").length());
-        shape = StringHandler::removeFirstLastBrackets(shape);
-        LineAnnotation *pConnectionLineAnnotation;
-        pConnectionLineAnnotation = new LineAnnotation(shape, pStartComponent, pEndComponent, mpDiagramGraphicsView);
-        pStartComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-        pConnectionLineAnnotation->setStartComponentName(connection.attribute("From"));
-        pEndComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-        pConnectionLineAnnotation->setEndComponentName(connection.attribute("To"));
-        pConnectionLineAnnotation->drawCornerItems();
-        pConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-        mpDiagramGraphicsView->addConnectionToList(pConnectionLineAnnotation);
+        lineShape = shape.mid(QString("Line").length());
+        lineShape = StringHandler::removeFirstLastBrackets(lineShape);
+        break;  // break the loop once we have got the line annotation.
       }
     }
+    LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartInterfacePointComponent, pEndInterfacePointComponent,
+                                                                   mpDiagramGraphicsView);
+    pConnectionLineAnnotation->setStartComponentName(connection.attribute("From"));
+    pConnectionLineAnnotation->setEndComponentName(connection.attribute("To"));
+    pConnectionLineAnnotation->setDelay(connection.attribute("Delay"));
+    pConnectionLineAnnotation->setZf(connection.attribute("Zf"));
+    pConnectionLineAnnotation->setZfr(connection.attribute("Zfr"));
+    pConnectionLineAnnotation->setAlpha(connection.attribute("alpha"));
+    mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
   }
 }
 
@@ -4212,17 +4267,17 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getSaveAsAction()->setEnabled(enabled);
   //  getMainWindow()->getSaveAllAction()->setEnabled(enabled);
   getMainWindow()->getSaveTotalAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getShowGridLinesAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked() && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
-  getMainWindow()->getResetZoomAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
-  getMainWindow()->getZoomInAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
-  getMainWindow()->getZoomOutAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getShowGridLinesAction()->setEnabled(enabled && (modelica || metaModel) && !pModelWidget->getTextViewToolButton()->isChecked() && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
+  getMainWindow()->getResetZoomAction()->setEnabled(enabled && (modelica || metaModel) && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getZoomInAction()->setEnabled(enabled && (modelica || metaModel) && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getZoomOutAction()->setEnabled(enabled && (modelica || metaModel) && !pModelWidget->getTextViewToolButton()->isChecked());
   getMainWindow()->getLineShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   getMainWindow()->getPolygonShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   getMainWindow()->getRectangleShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   getMainWindow()->getEllipseShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   getMainWindow()->getTextShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   getMainWindow()->getBitmapShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
-  getMainWindow()->getConnectModeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
+  getMainWindow()->getConnectModeAction()->setEnabled(enabled && (modelica || metaModel) && !pModelWidget->getTextViewToolButton()->isChecked());
   getMainWindow()->getSimulateModelAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   getMainWindow()->getSimulateWithTransformationalDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   getMainWindow()->getSimulateWithAlgorithmicDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());

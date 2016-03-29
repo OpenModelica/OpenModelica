@@ -120,6 +120,7 @@ private:
   QAction *mpRotateAntiClockwiseAction;
   QAction *mpFlipHorizontalAction;
   QAction *mpFlipVerticalAction;
+  QAction *mpAttributesAction;
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent);
   CoOrdinateSystem mCoOrdinateSystem;
@@ -183,7 +184,8 @@ public:
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
   QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
   void addConnectionToClass(LineAnnotation *pConnectionLineAnnotation);
-  void deleteConnectionFromClass(LineAnnotation *pConnectonLineAnnotation);
+  void deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation);
+  void updateConnectionInClass(LineAnnotation *pConnectionLineAnnotation);
   void addConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.append(pConnectionLineAnnotation);}
   void addInheritedConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.append(pConnectionLineAnnotation);}
   void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
@@ -412,8 +414,8 @@ private:
   void drawModelInheritedClassConnections(ModelWidget *pModelWidget);
   void removeInheritedClassConnections();
   void getModelConnections();
-  void getTLMSubModels();
-  void getTLMConnections();
+  void getMetaModelSubModels();
+  void getMetaModelConnections();
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);

@@ -39,6 +39,7 @@
 #include "ModelWidgetContainer.h"
 #include "ShapePropertiesDialog.h"
 #include "Commands.h"
+#include "ComponentProperties.h"
 
 /*!
  * \brief GraphicItem::setDefaults
@@ -414,14 +415,19 @@ bool ShapeAnnotation::isInheritedShape()
 }
 
 /*!
-  Defines the actions used by the shape's context menu.
-  */
+ * \brief ShapeAnnotation::createActions
+ * Defines the actions used by the shape's context menu.
+ */
 void ShapeAnnotation::createActions()
 {
   // shape properties
   mpShapePropertiesAction = new QAction(Helper::properties, mpGraphicsView);
   mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
   connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(showShapeProperties()));
+  // shape attributes
+  mpShapeAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
+  mpShapeAttributesAction->setStatusTip(tr("Shows the shape attributes"));
+  connect(mpShapeAttributesAction, SIGNAL(triggered()), SLOT(showShapeAttributes()));
 }
 
 /*!
@@ -1474,6 +1480,22 @@ void ShapeAnnotation::showShapeProperties()
 }
 
 /*!
+ * \brief ShapeAnnotation::showShapeAttributes
+ * Slot activated when Attributes option is chosen from context menu of the shape.
+ */
+void ShapeAnnotation::showShapeAttributes()
+{
+  if (!mpGraphicsView) {
+    return;
+  }
+  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
+  MetaModelConnectionAttributes *pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(mpGraphicsView,
+                                                                                                    pConnectionLineAnnotation, pMainWindow, true);
+  pMetaModelConnectionAttributes->exec();
+}
+
+/*!
  * \brief ShapeAnnotation::contextMenuEvent
  * Reimplementation of contextMenuEvent.\n
  * Creates a context menu for the shape.\n
@@ -1492,6 +1514,8 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
 
   QMenu menu(mpGraphicsView);
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
+    menu.addAction(mpShapeAttributesAction);
+    menu.addSeparator();
     menu.addAction(mpGraphicsView->getDeleteAction());
   } else {
     menu.addAction(mpShapePropertiesAction);

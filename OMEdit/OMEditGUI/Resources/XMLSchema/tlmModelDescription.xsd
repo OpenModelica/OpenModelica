@@ -43,7 +43,7 @@
   <xs:element name="Model">
     <xs:complexType>
       <xs:sequence>
-        <xs:element name="SubModels" minOccurs="0" maxOccurs="1">
+        <xs:element name="SubModels" minOccurs="1" maxOccurs="1">
           <xs:annotation>
             <xs:documentation>List of connected sub-models</xs:documentation>
           </xs:annotation>
@@ -53,7 +53,7 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element name="Connections" minOccurs="0" maxOccurs="1">
+        <xs:element name="Connections" minOccurs="1" maxOccurs="1">
           <xs:annotation>
             <xs:documentation>List of TLM connections</xs:documentation>
           </xs:annotation>

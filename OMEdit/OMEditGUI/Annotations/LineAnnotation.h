@@ -92,6 +92,14 @@ public:
   Component* getEndComponent() {return mpEndComponent;}
   void setEndComponentName(QString name) {mEndComponentName = name;}
   QString getEndComponentName() {return mEndComponentName;}
+  void setDelay(QString delay) {mDelay = delay;}
+  QString getDelay() {return mDelay;}
+  void setZf(QString zf) {mZf = zf;}
+  QString getZf() {return mZf;}
+  void setZfr(QString zfr) {mZfr = zfr;}
+  QString getZfr() {return mZfr;}
+  void setAlpha(QString alpha) {mAlpha = alpha;}
+  QString getAlpha() {return mAlpha;}
   void setShapeFlags(bool enable);
   void updateShape(ShapeAnnotation *pShapeAnnotation);
 private:
@@ -100,6 +108,11 @@ private:
   QString mStartComponentName;
   Component *mpEndComponent;
   QString mEndComponentName;
+  // MetaModel attributes
+  QString mDelay;
+  QString mZf;
+  QString mZfr;
+  QString mAlpha;
 public slots:
   void handleComponentMoved();
   void updateConnectionAnnotation();

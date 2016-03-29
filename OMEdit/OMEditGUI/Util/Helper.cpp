@@ -253,6 +253,7 @@ QString Helper::left;
 QString Helper::center;
 QString Helper::right;
 QString Helper::createConnection;
+QString Helper::connectionAttributes;
 QString Helper::findVariables;
 QString Helper::openClass;
 QString Helper::openClassTip;
@@ -454,6 +455,7 @@ void Helper::initHelperVariables()
   Helper::center = tr("Center");
   Helper::right = tr("Right");
   Helper::createConnection = tr("Create Connection");
+  Helper::connectionAttributes = tr("Connection Attributes");
   Helper::findVariables = tr("Find Variables");
   Helper::openClass = tr("Open Class");
   Helper::openClassTip = tr("Opens the class details");

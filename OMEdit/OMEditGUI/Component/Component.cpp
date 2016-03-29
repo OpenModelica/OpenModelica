@@ -359,6 +359,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
     mpDefaultComponentRectangle->setVisible(true);
     mpDefaultComponentText->setVisible(true);
+    drawInterfacePoints();
   } else {
     drawComponent();
   }
@@ -491,6 +492,32 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SIGNAL(displayTextChanged()));
   connect(mpReferenceComponent, SIGNAL(changed()), SLOT(referenceComponentChanged()));
   connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceComponentDeleted()));
+}
+
+Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
+  : QGraphicsItem(pParentComponent), mpReferenceComponent(0), mpParentComponent(pParentComponent)
+{
+  mpLibraryTreeItem = 0;
+  mpComponentInfo = pComponentInfo;
+  mIsInheritedComponent = false;
+  mComponentType = Component::Port;
+  mpGraphicsView = mpParentComponent->getGraphicsView();
+  mTransformationString = "";
+  mDialogAnnotation.clear();
+  createNonExistingComponent();
+  createDefaultComponent();
+  mpDefaultComponentRectangle->setVisible(true);
+  mpDefaultComponentRectangle->setLineColor(QColor(0, 0, 0));
+  mpDefaultComponentRectangle->setFillColor(QColor(110, 214, 0));
+  mpDefaultComponentRectangle->setFillPattern(StringHandler::FillSolid);
+  // transformation
+  qreal yPosition = 80 - mpParentComponent->getComponentsList().size() * 40;
+  QString transformation = QString("Placement(true,110.0,%1,-15.0,-15.0,15.0,15.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)").arg(yPosition);
+  mTransformation = Transformation(mpGraphicsView->getViewType(), this);
+  mTransformation.parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
+  setTransform(mTransformation.getTransformationMatrix());
+  mpOriginItem = 0;
+  updateToolTip();
 }
 
 /*!
@@ -1018,6 +1045,11 @@ void Component::renameInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointIn
   pTLMInterfacePointInfo->setInterfaceName(interfacePoint);
 }
 
+void Component::insertInterfacePoint(ComponentInfo *pComponentInfo)
+{
+  mComponentsList.append(new Component(pComponentInfo, this));
+}
+
 /*!
  * \brief Component::createNonExistingComponent
  * Creates a non-existing component.
@@ -1038,6 +1070,30 @@ void Component::createDefaultComponent()
   mpDefaultComponentRectangle->setVisible(false);
   mpDefaultComponentText = new TextAnnotation(this);
   mpDefaultComponentText->setVisible(false);
+}
+
+/*!
+ * \brief Component::drawInterfacePoints
+ * Draws the interface points of the submodel component.
+ */
+void Component::drawInterfacePoints()
+{
+  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
+  if (pMetaModelEditor) {
+    QDomNodeList subModels = pMetaModelEditor->getSubModels();
+    for (int i = 0; i < subModels.size(); i++) {
+      QDomElement subModel = subModels.at(i).toElement();
+      if (subModel.attribute("Name").compare(mpComponentInfo->getName()) == 0) {
+        QDomNodeList interfacePoints = subModel.elementsByTagName("InterfacePoint");
+        for (int j = 0; j < interfacePoints.size(); j++) {
+          QDomElement interfacePoint = interfacePoints.at(j).toElement();
+          ComponentInfo *pComponentInfo = new ComponentInfo;
+          pComponentInfo->setName(interfacePoint.attribute("Name"));
+          mComponentsList.append(new Component(pComponentInfo, this));
+        }
+      }
+    }
+  }
 }
 
 /*!
@@ -1457,7 +1513,7 @@ void Component::updateToolTip()
   comment.replace("src=\"file://", "src=\"");
 #endif
 
-  if (mIsInheritedComponent || mComponentType == Component::Port) {
+  if ((mIsInheritedComponent || mComponentType == Component::Port) && mpReferenceComponent) {
     setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Component declared in %4").arg(mpComponentInfo->getClassName())
                .arg(mpComponentInfo->getName()).arg(comment)
                .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
