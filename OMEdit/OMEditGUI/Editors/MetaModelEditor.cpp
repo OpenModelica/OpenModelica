@@ -571,14 +571,21 @@ void MetaModelEditor::alignInterfaces(QString fromSubModel, QString toSubModel)
   }
 
   //Assert that all rotations and positions were found (do something smarter?)
-  Q_ASSERT(!cg_x1_phi_cg_str.isEmpty());
-  Q_ASSERT(!cg_x2_phi_cg_str.isEmpty());
-  Q_ASSERT(!cg_x1_r_cg_str.isEmpty());
-  Q_ASSERT(!cg_x2_r_cg_str.isEmpty());
-  Q_ASSERT(!x1_c1_r_x1_str.isEmpty());
-  Q_ASSERT(!x1_c1_phi_x1_str.isEmpty());
-  Q_ASSERT(!x2_c2_r_x2_str.isEmpty());
-  Q_ASSERT(!x2_c2_phi_x2_str.isEmpty());
+  if(cg_x1_phi_cg_str.isEmpty() ||
+     cg_x2_phi_cg_str.isEmpty() ||
+     cg_x1_r_cg_str.isEmpty() ||
+     cg_x2_r_cg_str.isEmpty() ||
+     x1_c1_r_x1_str.isEmpty() ||
+     x1_c1_phi_x1_str.isEmpty() ||
+     x2_c2_r_x2_str.isEmpty() ||
+     x2_c2_phi_x2_str.isEmpty())
+  {
+      QString msg = "Interface coordinates does not exist in xml";
+      mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "",false,0,0,0,0,msg,Helper::scriptingKind,Helper::errorLevel));
+      return;
+  }
+
+  Q_ASSERT(1==2);
 
   //Convert from strings to arrays
   double cg_x1_phi_cg[3],cg_x2_phi_cg[3],x1_c1_phi_x1[3],x2_c2_phi_x2[3];
@@ -616,7 +623,6 @@ void MetaModelEditor::alignInterfaces(QString fromSubModel, QString toSubModel)
   x2_c2_r_x2[1] = x2_c2_r_x2_str.split(",")[1].toDouble();
   x2_c2_r_x2[2] = x2_c2_r_x2_str.split(",")[2].toDouble();
 
-
   //Convert from arrays to Qt matrices
   QGenericMatrix<3,1,double> CG_X1_PHI_CG(cg_x1_phi_cg);  //Rotation of X1 relative to CG expressed in CG
   QGenericMatrix<3,1,double> CG_X2_PHI_CG(cg_x2_phi_cg);  //Rotation of X2 relative to CG expressed in CG
@@ -627,8 +633,7 @@ void MetaModelEditor::alignInterfaces(QString fromSubModel, QString toSubModel)
   QGenericMatrix<3,1,double> X1_C1_R_X1(x1_c1_r_x1);      //Position of C1 relative to X1 expressed in X1
   QGenericMatrix<3,1,double> X2_C2_R_X2(x2_c2_r_x2);      //Position of C2 relative to X2 expressed in X2
 
-  QGenericMatrix<3,3,double> R_X2_C2, R_CG_X1, R_CG_X2, R_CG_C2, R_X1_C1, R_CG_C1;
-  QGenericMatrix<3,1,double> X1_C1_PHI_CG, CG_C1_PHI_CG, X1_C1_R_CG, CG_C1_R_CG, X2_C2_PHI_CG, CG_C2_PHI_CG, X2_C2_R_CG, CG_C2_R_CG, ones;
+  QGenericMatrix<3,3,double> R_X2_C2, R_CG_X1, R_CG_X2, R_CG_C2, R_X1_C1;
 
   //Equations from BEAST
   R_X2_C2 = getRotationMatrix(X2_C2_PHI_X2);    //Rotation matrix between X2 and C2
@@ -645,15 +650,6 @@ void MetaModelEditor::alignInterfaces(QString fromSubModel, QString toSubModel)
 
   //New position of X1 relative to CG
   CG_X1_R_CG = CG_X2_R_CG + X2_C2_R_X2*R_CG_X2 - X1_C1_R_X1*R_CG_X1;
-
-  //    //Verify positions
-  //    qDebug() << CG_X1_R_CG +X1_C1_R_X1*R_CG_X1;
-  //    qDebug() << CG_X2_R_CG +X2_C2_R_X2*R_CG_X2;
-
-  //    //Verify rotations
-  //    R_CG_C1 = R_X1_C1*R_CG_X1;
-  //    qDebug() << R_CG_C1;
-  //    qDebug() << R_CG_C2;
 
   //Write back new rotation and position to XML
   cg_x1_r_cg_str = QString("%1,%2,%3").arg(CG_X1_R_CG(0,0)).arg(CG_X1_R_CG(0,1)).arg(CG_X1_R_CG(0,2));

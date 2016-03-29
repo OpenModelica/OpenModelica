@@ -210,32 +210,25 @@ AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget)
   QStringList interfaces;
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pModelWidget->getEditor());
   if (pMetaModelEditor) {
-    QDomNodeList subModels = pMetaModelEditor->getSubModels();
-    for (int i = 0; i < subModels.size(); i++) {
-      QDomElement subModel = subModels.at(i).toElement();
-      QDomNodeList interfacePoints = subModel.elementsByTagName("InterfacePoint");
-      for (int j = 0; j < interfacePoints.size(); j++) {
-        QDomElement interfacePoint = interfacePoints.at(j).toElement();
-        interfaces << subModel.attribute("Name") + "." + interfacePoint.attribute("Name");
-      }
+    QDomNodeList connections = pMetaModelEditor->getConnections();
+    for (int i = 0; i < connections.size(); i++) {
+      QDomElement connection = connections.at(i).toElement();
+      interfaces << connection.attribute("From")+" to "+connection.attribute("To");
+      interfaces << connection.attribute("To")+" to "+connection.attribute("From");
     }
   }
-  // from interfaces list
-  mpFromInterfaceListWidget = new QListWidget;
-  mpFromInterfaceListWidget->setItemDelegate(new ItemDelegate(mpFromInterfaceListWidget));
-  mpFromInterfaceListWidget->setTextElideMode(Qt::ElideMiddle);
-  mpFromInterfaceListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
-  mpFromInterfaceListWidget->addItems(interfaces);
-  // to interfaces list
-  mpToInterfaceListWidget = new QListWidget;
-  mpToInterfaceListWidget->setItemDelegate(new ItemDelegate(mpFromInterfaceListWidget));
-  mpToInterfaceListWidget->setTextElideMode(Qt::ElideMiddle);
-  mpToInterfaceListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
-  mpToInterfaceListWidget->addItems(interfaces);
+
+  // interfaces list
+  mpInterfaceListWidget = new QListWidget;
+  mpInterfaceListWidget->setItemDelegate(new ItemDelegate(mpInterfaceListWidget));
+  mpInterfaceListWidget->setTextElideMode(Qt::ElideMiddle);
+  mpInterfaceListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+  mpInterfaceListWidget->addItems(interfaces);
+
   if (interfaces.size() > 0) {
-    mpFromInterfaceListWidget->item(0)->setSelected(true);
-    mpToInterfaceListWidget->item(0)->setSelected(true);
+    mpInterfaceListWidget->item(0)->setSelected(true);
   }
+
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -250,13 +243,11 @@ AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget)
   // Create a layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pMainLayout->addWidget(mpAlignInterfacesHeading, 0, 0, 1, 2);
-  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
-  pMainLayout->addWidget(new Label(tr("From Interface")), 2, 0);
-  pMainLayout->addWidget(new Label(tr("To Interface")), 2, 1);
-  pMainLayout->addWidget(mpFromInterfaceListWidget, 3, 0);
-  pMainLayout->addWidget(mpToInterfaceListWidget, 3, 1);
-  pMainLayout->addWidget(mpButtonBox, 4, 0, 1, 2, Qt::AlignRight);
+  pMainLayout->addWidget(mpAlignInterfacesHeading,      0, 0);
+  pMainLayout->addWidget(mpHorizontalLine,              1, 0);
+  pMainLayout->addWidget(new Label(tr("Interfaces")),   2, 0);
+  pMainLayout->addWidget(mpInterfaceListWidget,         3, 0);
+  pMainLayout->addWidget(mpButtonBox,                   4, 0, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -269,10 +260,11 @@ void AlignInterfacesDialog::alignInterfaces()
 {
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
   if (pMetaModelEditor) {
-    QList<QListWidgetItem*> fromSelectedItems = mpFromInterfaceListWidget->selectedItems();
-    QList<QListWidgetItem*> toSelectedItems = mpToInterfaceListWidget->selectedItems();
-    if (fromSelectedItems.size() > 0 && toSelectedItems.size() > 0) {
-      pMetaModelEditor->alignInterfaces(fromSelectedItems.at(0)->text(), toSelectedItems.at(0)->text());
+    QList<QListWidgetItem*> selectedItems = mpInterfaceListWidget->selectedItems();
+    if (!selectedItems.isEmpty()) {
+      QString fromInterface = selectedItems.first()->text().section(" to ",0,0);
+      QString toInterface = selectedItems.first()->text().section(" to ",1,1);
+      pMetaModelEditor->alignInterfaces(fromInterface, toInterface);
     }
   }
   accept();

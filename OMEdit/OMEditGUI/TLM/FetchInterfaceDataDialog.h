@@ -73,7 +73,7 @@ private:
   ModelWidget *mpModelWidget;
   Label *mpAlignInterfacesHeading;
   QFrame *mpHorizontalLine;
-  QListWidget *mpFromInterfaceListWidget;
+  QListWidget *mpInterfaceListWidget;
   QListWidget *mpToInterfaceListWidget;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
