@@ -2642,9 +2642,7 @@ protected function joinExtEquations
 algorithm
   outEq := match(inEq, inExtEq, inCallingScope)
     case (_, _, InstTypes.TYPE_CALL()) then {};
-    // Take the union of the equations in the current scope and equations
-    // from extends, to filter out identical equations.
-    else List.unionOnTrue(inEq, inExtEq, SCode.equationEqual);
+    else listAppend(inEq, inExtEq);
   end match;
 end joinExtEquations;
 
