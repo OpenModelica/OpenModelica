@@ -560,9 +560,6 @@ transpose_array(const BaseArray<int>& x, BaseArray<int>& a);
 template void BOOST_EXTENSION_EXPORT_DECL
 transpose_array(const BaseArray<bool>& x, BaseArray<bool>& a);
 
-void BOOST_EXTENSION_EXPORT_DECL
-identity_alloc(size_t n, DynArrayDim2<int>& I);
-
 template void BOOST_EXTENSION_EXPORT_DECL
 promote_array(size_t n, const BaseArray<double>& s, BaseArray<double>& d);
 template void BOOST_EXTENSION_EXPORT_DECL
