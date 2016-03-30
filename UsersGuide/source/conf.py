@@ -40,7 +40,6 @@ sys.path.append(os.path.abspath('.')) # For myext
 extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
-    'sphinx.ext.pngmath',
     'sphinx.ext.ifconfig',
     'sphinxcontrib.bibtex',
     'sphinxcontrib.inlinesyntaxhighlight',
@@ -48,7 +47,9 @@ extensions = [
 ]
 
 # As long as we are not generating with the epub tag it is save to use MathJax.
-if 'nomathjax' not in tags: extensions.append('sphinx.ext.mathjax')
+if 'latex' not in tags:
+  extensions.append('sphinx.ext.imgmath' if 'nomathjax' in tags else 'sphinx.ext.mathjax')
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -425,3 +426,4 @@ numfig = True
 numfig_format = {'figure': "Figure %s", 'table': "Table %s", 'code-block': "Listing %s"}
 
 highlight_language = 'modelica'
+imgmath_image_format = 'svg'

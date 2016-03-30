@@ -39,4 +39,4 @@ for rel in releases:
   # Removes {{{#!div lines; easier on the rst since it's a 1-line pattern
   contentrst = re.sub(r'`PageOutline\(2-3\) <PageOutline\(2-3\)>`__\n', '', contentrst)
   result += contentrst + "\n"
-open("tracreleases.inc", "w").write(result)
+open("tracreleases.rst", "w").write(result)

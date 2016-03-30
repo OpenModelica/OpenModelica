@@ -59,10 +59,8 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/*
 
-html: dvisvgm.sh all-dep
-	test -f dvisvgm.sh
-	$(SPHINXBUILD) -b html -t nomathjax -D pngmath_dvipng="`pwd`"/dvisvgm.sh $(ALLSPHINXOPTS) $(BUILDDIR)/html
-	./fix-math.sh build/html/*.html
+html: all-dep
+	$(SPHINXBUILD) -b html -t nomathjax $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
@@ -215,7 +213,7 @@ addedPdfs: $(ADDED_SVGS:%.svg=%.pdf)
 pdf: latex
 	$(MAKE) addedPdfs
 	sed -i "s/usepackage.utf8..inputenc./usepackage[utf8x]{inputenc}/" build/latex/OpenModelicaUsersGuide.tex
-	sed -i "/DeclareUnicodeCharacter/d" build/latex/OpenModelicaUsersGuide.tex
+	# sed -i "/DeclareUnicodeCharacter/d" build/latex/OpenModelicaUsersGuide.tex
 	# sphinx seems to only handle .* extension for images?
 	sed -i "s,{\(media/[A-Za-z_0-9.-]*\)[.][*],{`pwd`/source/\1.pdf,g" build/latex/OpenModelicaUsersGuide.tex
 	sed -i "s,{ProfilingTest_prof[.]\([^.]*\)[.]thumb[.]svg,{`pwd`/source/ProfilingTest_prof-\1-thumb.pdf,g" build/latex/OpenModelicaUsersGuide.tex

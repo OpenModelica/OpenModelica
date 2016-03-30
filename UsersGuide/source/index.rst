@@ -34,7 +34,7 @@ OpenModelica User's Guide
 .. toctree::
   :maxdepth: 1
 
-  releases
+  tracreleases
   contributors
 
 .. only:: html or epub
