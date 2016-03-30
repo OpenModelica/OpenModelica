@@ -213,7 +213,7 @@ addedPdfs: $(ADDED_SVGS:%.svg=%.pdf)
 pdf: latex
 	$(MAKE) addedPdfs
 	sed -i "s/usepackage.utf8..inputenc./usepackage[utf8x]{inputenc}/" build/latex/OpenModelicaUsersGuide.tex
-	# sed -i "/DeclareUnicodeCharacter/d" build/latex/OpenModelicaUsersGuide.tex
+	sed -i -e "/^ *\\\\DeclareUnicodeCharacter/d" build/latex/OpenModelicaUsersGuide.tex
 	# sphinx seems to only handle .* extension for images?
 	sed -i "s,{\(media/[A-Za-z_0-9.-]*\)[.][*],{`pwd`/source/\1.pdf,g" build/latex/OpenModelicaUsersGuide.tex
 	sed -i "s,{ProfilingTest_prof[.]\([^.]*\)[.]thumb[.]svg,{`pwd`/source/ProfilingTest_prof-\1-thumb.pdf,g" build/latex/OpenModelicaUsersGuide.tex
