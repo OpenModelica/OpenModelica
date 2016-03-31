@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+bug1228.mos \
 bug2667.mos \
 bug2718.mos \
 bug2752.mos \
@@ -31,7 +32,6 @@ ZeroCrossing.mos \
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES=  \
-bug1228.mos \
 ChatteringFunctionTest1.mos \
 ChatteringFunctionTest2.mos \
 ChatteringNoEventsTest1.mos \
