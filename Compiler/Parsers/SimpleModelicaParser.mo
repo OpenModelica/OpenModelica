@@ -922,7 +922,7 @@ algorithm
   (tokens, tree) := scanOpt(tokens, tree, TokenId.FINAL);
   (tokens, tree, b) := LA1(tokens, tree, {TokenId.REPLACEABLE});
   if b then
-    (tokens, tree) := element_replaceable(tokens, tree);
+    (tokens, tree, nodeName) := element_replaceable(tokens, tree);
   else
     (tokens, tree, b) := LA1(tokens, tree, First.class_prefixes);
     if b then
