@@ -5821,8 +5821,7 @@ public function traverseStrongComponentsJacobiansExp
   replaceable type Type_a subtypeof Any;
   input BackendDAE.StrongComponents inComps;
   input FuncExpType inFunc;
-  input Type_a inTypeA;
-  output Type_a outTypeA;
+  input output Type_a arg;
   partial function FuncExpType
     input DAE.Exp inExp;
     input Type_a inTypeA;
@@ -5830,33 +5829,20 @@ public function traverseStrongComponentsJacobiansExp
     output Type_a outA;
   end FuncExpType;
 algorithm
-  outTypeA :=
-  matchcontinue(inComps, inFunc, inTypeA)
-    local
-      BackendDAE.StrongComponents rest;
-      BackendDAE.StrongComponent comp;
-      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-      BackendDAE.BackendDAE bdae;
-      Type_a arg;
-    case ({}, _, _) then inTypeA;
-    case (BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN(SOME(jac)))::rest, _, _)
-      equation
-        arg = traverseBackendDAEExpsJacobianEqn(jac, inFunc, inTypeA);
-      then
-        traverseStrongComponentsJacobiansExp(rest, inFunc, arg);
-    case (BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.GENERIC_JACOBIAN(jacobian = (bdae,_,_,_,_)))::rest, _, _)
-      equation
-        arg = traverseBackendDAEExps(bdae, inFunc, inTypeA);
-      then
-        traverseStrongComponentsJacobiansExp(rest, inFunc, arg);
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(jac=BackendDAE.GENERIC_JACOBIAN(jacobian = (bdae,_,_,_,_))))::rest, _, _)
-      equation
-        arg = traverseBackendDAEExps(bdae, inFunc, inTypeA);
-      then
-        traverseStrongComponentsJacobiansExp(rest, inFunc, arg);
-    case (_::rest, _, _) then
-        traverseStrongComponentsJacobiansExp(rest, inFunc, inTypeA);
-  end matchcontinue;
+  for comp in inComps loop
+    arg := match comp
+      local
+        list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+        BackendDAE.BackendDAE bdae;
+      case BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN(SOME(jac)))
+        then traverseBackendDAEExpsJacobianEqn(jac, inFunc, arg);
+      case BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.GENERIC_JACOBIAN(jacobian = (bdae,_,_,_,_)))
+        then traverseBackendDAEExps(bdae, inFunc, arg);
+      case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(jac=BackendDAE.GENERIC_JACOBIAN(jacobian = (bdae,_,_,_,_))))
+        then traverseBackendDAEExps(bdae, inFunc, arg);
+      else arg;
+    end match;
+  end for;
 end traverseStrongComponentsJacobiansExp;
 
 protected function traverseBackendDAEExpsJacobianEqn "Helper for traverseExpsOfEquation."
