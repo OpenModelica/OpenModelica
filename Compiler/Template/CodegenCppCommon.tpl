@@ -23,7 +23,14 @@ template cref(ComponentRef cr, Boolean useFlatArrayNotation)
   case WILD(__) then ''
   else "_"+crefToCStr(cr, useFlatArrayNotation)
 end cref;
-
+template localcref(ComponentRef cr, Boolean useFlatArrayNotation)
+ "Generates C equivalent name for component reference."
+::=
+  match cr
+  case CREF_IDENT(ident = "time") then "_simTime"
+  case WILD(__) then ''
+  else crefToCStr(cr,useFlatArrayNotation)
+end localcref;
 template subscriptsToCStr(list<Subscript> subscripts, Boolean useFlatArrayNotation)
 ::=
   if subscripts then
@@ -222,10 +229,11 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
         case SIMVAR(index=-2) then
           match context
             case JACOBIAN_CONTEXT() then
-              '_<%crefToCStr(inCref, false)%>'
+              '_<%crefToCStr(inCref,false)%>'
+            case ALGLOOP_CONTEXT(__) then
+              '_system->_<%crefToCStr(inCref,false)%>'
             else
-              // a local variable, like an iterator
-              '<%crefToCStr(inCref, useFlatArrayNotation)%>'
+              '<%localcref(inCref, useFlatArrayNotation)%>'
           end match
         else
           match context
