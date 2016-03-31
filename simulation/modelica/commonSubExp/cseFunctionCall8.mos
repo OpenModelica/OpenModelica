@@ -107,20 +107,6 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 // 6/6 (1): $cse4 = CSE.FunctionCallTest8.f(time, $cse3)   [binding]
 // 7/7 (1): $cse3 = CSE.FunctionCallTest8.g(time ^ 2.0)   [binding]
 //
-//
-// ########### Updated Variable List ########### (3)
-// ========================================
-// 1: $res1.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: $DER.u2.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
-// 3: i.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
-//
-//
-// ########### Updated Equation List ########### (3, 3)
-// ========================================
-// 1/1 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = C * $DER.u2.$pDERLSJac1.dummyVarLSJac1 - i.$pDERLSJac1.dummyVarLSJac1   [dynamic]
-// 2/2 (1): i.$pDERLSJac1.dummyVarLSJac1 = C * $DER_u1SeedLSJac1   [dynamic]
-// 3/3 (1): 0.0 = $cse4 * $DER_u1SeedLSJac1 + $DER.u2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
-//
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest8_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

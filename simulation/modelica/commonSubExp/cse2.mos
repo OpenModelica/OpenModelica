@@ -49,39 +49,25 @@ simulate(Tearing3); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List ########### (3)
-// ========================================
-// 1: $res1.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real unreplaceable
-// 2: $DER.uL.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real
-// 3: $DER.u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real
-//
-//
-// ########### Updated Equation List ########### (3, 3)
-// ========================================
-// 1/1 (1): $DER.uL.$pDERLSJac0.dummyVarLSJac0 = R2 * $DER_i2SeedLSJac0   [dynamic]
-// 2/2 (1): $DER.u1.$pDERLSJac0.dummyVarLSJac0 = R1 * $DER_i2SeedLSJac0   [dynamic]
-// 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = $DER.uL.$pDERLSJac0.dummyVarLSJac0 + $DER.u1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
-//
-//
 // ########### Updated Variable List ########### (17)
 // ========================================
-// 1: iC:VARIABLE() .Tearing3, .Real type: Real
-// 2: iL:DUMMY_STATE() .Tearing3, .Real type: Real
-// 3: i2:STATE(1)(start = 0.0 fixed = true ) .Tearing3, .Real type: Real
-// 4: i1:DUMMY_STATE() .Tearing3, .Real type: Real
-// 5: i0:VARIABLE() .Tearing3, .Real type: Real
-// 6: uC:DUMMY_STATE() .Tearing3, .Real type: Real
-// 7: uL:DUMMY_STATE() .Tearing3, .Real type: Real
-// 8: u1:DUMMY_STATE() .Tearing3, .Real type: Real
-// 9: u0:DUMMY_STATE() .Tearing3, .Real type: Real
-// 10: $DER.uC:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 11: $DER.iL:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 12: $DER.u0:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 13: $DER.i1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 14: $DER.u1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 15: $DER.uL:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 16: $cse2:VARIABLE()  type: Real unreplaceable
-// 17: $cse1:VARIABLE()  type: Real unreplaceable
+// 1: iC:VARIABLE() .Tearing3, .Real type: Real 
+// 2: iL:DUMMY_STATE() .Tearing3, .Real type: Real 
+// 3: i2:STATE(1)(start = 0.0 fixed = true ) .Tearing3, .Real type: Real 
+// 4: i1:DUMMY_STATE() .Tearing3, .Real type: Real 
+// 5: i0:VARIABLE() .Tearing3, .Real type: Real 
+// 6: uC:DUMMY_STATE() .Tearing3, .Real type: Real 
+// 7: uL:DUMMY_STATE() .Tearing3, .Real type: Real 
+// 8: u1:DUMMY_STATE() .Tearing3, .Real type: Real 
+// 9: u0:DUMMY_STATE() .Tearing3, .Real type: Real 
+// 10: $DER.uC:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 11: $DER.iL:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 12: $DER.u0:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 13: $DER.i1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 14: $DER.u1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 15: $DER.uL:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 16: $cse2:VARIABLE()  type: Real  unreplaceable
+// 17: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List ########### (17, 17)
@@ -107,25 +93,25 @@ simulate(Tearing3); getErrorString();
 //
 // ########### Updated Variable List ########### (19)
 // ========================================
-// 1: iC:VARIABLE() .Tearing3, .Real type: Real
-// 2: iL:DUMMY_STATE() .Tearing3, .Real type: Real
-// 3: i2:STATE(1)(start = 0.0 fixed = true ) .Tearing3, .Real type: Real
-// 4: i1:DUMMY_STATE() .Tearing3, .Real type: Real
-// 5: i0:VARIABLE() .Tearing3, .Real type: Real
-// 6: uC:DUMMY_STATE() .Tearing3, .Real type: Real
-// 7: uL:DUMMY_STATE() .Tearing3, .Real type: Real
-// 8: u1:DUMMY_STATE() .Tearing3, .Real type: Real
-// 9: u0:DUMMY_STATE() .Tearing3, .Real type: Real
-// 10: $DER.uC:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 11: $DER.iL:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 12: $DER.u0:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 13: $DER.i1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 14: $DER.u1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 15: $DER.uL:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 16: $cse2:VARIABLE()  type: Real unreplaceable
-// 17: $cse1:VARIABLE()  type: Real unreplaceable
-// 18: $cseb10:VARIABLE()  type: Real unreplaceable
-// 19: $cseb3:VARIABLE()  type: Real unreplaceable
+// 1: iC:VARIABLE() .Tearing3, .Real type: Real 
+// 2: iL:DUMMY_STATE() .Tearing3, .Real type: Real 
+// 3: i2:STATE(1)(start = 0.0 fixed = true ) .Tearing3, .Real type: Real 
+// 4: i1:DUMMY_STATE() .Tearing3, .Real type: Real 
+// 5: i0:VARIABLE() .Tearing3, .Real type: Real 
+// 6: uC:DUMMY_STATE() .Tearing3, .Real type: Real 
+// 7: uL:DUMMY_STATE() .Tearing3, .Real type: Real 
+// 8: u1:DUMMY_STATE() .Tearing3, .Real type: Real 
+// 9: u0:DUMMY_STATE() .Tearing3, .Real type: Real 
+// 10: $DER.uC:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 11: $DER.iL:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 12: $DER.u0:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 13: $DER.i1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 14: $DER.u1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 15: $DER.uL:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 16: $cse2:VARIABLE()  type: Real  unreplaceable
+// 17: $cse1:VARIABLE()  type: Real  unreplaceable
+// 18: $cseb10:VARIABLE()  type: Real  unreplaceable
+// 19: $cseb3:VARIABLE()  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List ########### (19, 19)
@@ -149,20 +135,6 @@ simulate(Tearing3); getErrorString();
 // 17/17 (1): $cse1 = cos(time)   [binding]
 // 18/18 (1): $cseb10 = u1 + uL   [binding]
 // 19/19 (1): $cseb3 = $DER.u1 + $DER.uL   [binding]
-//
-//
-// ########### Updated Variable List ########### (3)
-// ========================================
-// 1: $res1.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real unreplaceable
-// 2: $DER.uL.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real
-// 3: $DER.u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real
-//
-//
-// ########### Updated Equation List ########### (3, 3)
-// ========================================
-// 1/1 (1): $DER.uL.$pDERLSJac1.dummyVarLSJac1 = R2 * $DER_i2SeedLSJac1   [dynamic]
-// 2/2 (1): $DER.u1.$pDERLSJac1.dummyVarLSJac1 = R1 * $DER_i2SeedLSJac1   [dynamic]
-// 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = $DER.uL.$pDERLSJac1.dummyVarLSJac1 + $DER.u1.$pDERLSJac1.dummyVarLSJac1   [binding]
 //
 // record SimulationResult
 //     resultFile = "Tearing3_res.mat",
