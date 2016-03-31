@@ -75,7 +75,7 @@ protected
   BackendDAE.Variables orderedVars;
   DAE.FunctionTree functionTree;
   HashTableExpToExp.HashTable HT;
-  Integer index=System.tmpTickIndex(Global.backendDAE_cseIndex);
+  Integer index=System.tmpTickIndex(Global.backendDAE_cseIndex), index2;
   list<BackendDAE.Equation> eqList;
   list<BackendDAE.Var> varList;
 algorithm
@@ -98,15 +98,17 @@ algorithm
       BaseHashTable.dumpHashTable(HT);
     end if;
 
-    syst.orderedEqs := BackendEquation.addEquations(eqList, orderedEqs);
-    syst.orderedVars := BackendVariable.addVars(varList, orderedVars);
-    syst.m := NONE();
-    syst.mT := NONE();
-    syst.matching := BackendDAE.NO_MATCHING();
+    if not listEmpty(eqList) or not listEmpty(varList) then
+      syst.orderedEqs := BackendEquation.addEquations(eqList, orderedEqs);
+      syst.orderedVars := BackendVariable.addVars(varList, orderedVars);
+      syst.m := NONE();
+      syst.mT := NONE();
+      syst.matching := BackendDAE.NO_MATCHING();
 
-    if Flags.isSet(Flags.DUMP_CSE) or Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-      BackendDump.dumpVariables(syst.orderedVars, "########### Updated Variable List ###########");
-      BackendDump.dumpEquationArray(syst.orderedEqs, "########### Updated Equation List ###########");
+      if Flags.isSet(Flags.DUMP_CSE) or Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        BackendDump.dumpVariables(syst.orderedVars, "########### Updated Variable List ###########");
+        BackendDump.dumpEquationArray(syst.orderedEqs, "########### Updated Equation List ###########");
+      end if;
     end if;
 
     eqs := syst::eqs;

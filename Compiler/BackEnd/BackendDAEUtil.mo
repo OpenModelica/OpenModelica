@@ -6741,19 +6741,22 @@ protected
   BackendDAE.Shared shared;
   list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
   Boolean causalized;
+  constant Boolean debug = false;
 algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
   // reduce index
   (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{},false);
-  execStat("causalizeDAE -> matching");
+  if debug then execStat("causalizeDAE -> matching"); end if;
   // do late inline
   outDAE := if dolateinline then BackendInline.lateInlineFunction(BackendDAE.DAE(systs,shared)) else BackendDAE.DAE(systs,shared);
+  if debug and dolateinline then execStat("causalizeDAE -> lateInlineFunction"); end if;
   // do state selection
   BackendDAE.DAE(systs,shared) := stateDeselectionDAE(causalized,outDAE,args,stateDeselection);
+  if debug then execStat("causalizeDAE -> state selection"); end if;
   // sort assigned equations to blt form
   systs := mapSortEqnsDAE(systs,shared,{});
+  if debug then execStat("causalizeDAE -> sort equations"); end if;
   outDAE := BackendDAE.DAE(systs,shared);
-  execStat("causalizeDAE -> state selection");
 end causalizeDAE;
 
 protected function mapCausalizeDAE "
@@ -6959,6 +6962,7 @@ protected
   String moduleStr;
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
+  constant Boolean debug = false;
 algorithm
   execStat("prepare postOptimizeDAE");
   for postOptModule in inPostOptModules loop
@@ -6968,8 +6972,9 @@ algorithm
       BackendDAE.DAE(systs, shared) := optModule(outDAE);
       (systs, shared) := filterEmptySystems(systs, shared);
       outDAE := BackendDAE.DAE(systs, shared);
+      if debug then execStat("postOpt " + moduleStr); end if;
       outDAE := causalizeDAE(outDAE, NONE(), inMatchingAlgorithm, inDAEHandler, false);
-      execStat("postOpt " + moduleStr);
+      execStat("postOpt " + (if debug then "causalize " else "") + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
         print("\npost-optimization module " + moduleStr + ":\n\n");
         BackendDump.printBackendDAE(outDAE);
@@ -7011,6 +7016,7 @@ algorithm
 
   // transformation phase (matching and sorting using a index reduction method
   dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
+  execStat("causalizeDAE (first run)");
   //fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump", dae));
 
   // post-optimization phase
