@@ -76,6 +76,7 @@ typedef void* iconv_t;
 
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+#include <rpc.h>
 #define getFunctionPointerFromDLL  GetProcAddress
 #define FreeLibraryFromHandle !FreeLibrary
 
@@ -1189,7 +1190,7 @@ int setenv(const char* envname, const char* envvalue, int overwrite)
 static const char* SystemImpl__getUUIDStr(void)
 {
   static char uuidStr[37] = "8c4e810f-3df3-4a00-8276-176fa3c9f9e0";
-#if defined(USE_WIN32_UUID)
+#if defined(__MINGW32__) || defined(_MSC_VER)
   unsigned char *tmp;
   UUID uuid;
   if (UuidCreate(&uuid) == RPC_S_OK)
