@@ -1330,10 +1330,10 @@ algorithm
   foldArg := List.fold1(comps, createEquationsForSystem1, arg, foldArg);
   (ouniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
    otempvars, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping, _) := foldArg;
-  outOdeEquations := List.flatten(listReverse(odeEquations));
-  outAlgebraicEquations := List.flatten(listReverse(algebraicEquations));
-  outAllEquations := List.flatten(listReverse(allEquations));
-  outEquationsforZeroCrossings := List.flatten(listReverse(equationsforZeroCrossings));
+  outOdeEquations := List.flattenReverse(odeEquations);
+  outAlgebraicEquations := List.flattenReverse(algebraicEquations);
+  outAllEquations := List.flattenReverse(allEquations);
+  outEquationsforZeroCrossings := List.flattenReverse(equationsforZeroCrossings);
 end createEquationsForSystem;
 
 protected function addEquationsToLists
@@ -1609,7 +1609,7 @@ algorithm
       BackendDAE.ExtraInfo ei;
 
       // handle empty
-    case (_, _, _, _, _, _, {}, _, _, _, _) then (List.flatten(listReverse(accEquations)), List.flatten(listReverse(accNoDiscEquations)), iuniqueEqIndex, itempvars);
+    case (_, _, _, _, _, _, {}, _, _, _, _) then (List.flattenReverse(accEquations), List.flattenReverse(accNoDiscEquations), iuniqueEqIndex, itempvars);
 
       // ignore when equations if we should not generate them
     case (_, _, _, _, _, _, comp :: restComps, _, _, _, _)
@@ -4470,8 +4470,7 @@ algorithm
         // select all discrete vars.
         // remove those vars that are solved in when equations
         // replace var with cref
-        vLst2 = BackendVariable.traverseBackendDAEVars(v, traversingisVarDiscreteCrefFinder, {});
-        vLst2 = listAppend(vLst2, acc);
+        vLst2 = BackendVariable.traverseBackendDAEVars(v, traversingisVarDiscreteCrefFinder, acc);
         // vLst2 = List.unionOnTrue(vLst2, vLst1, ComponentReference.crefEqual);
       then vLst2;
     else

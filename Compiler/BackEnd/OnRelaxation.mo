@@ -1472,7 +1472,7 @@ algorithm
   mt := BackendDAEUtil.transposeMatrix(m, arrayLength(mt));
   comps := Sorting.TarjanTransposed(mt, ass);
   //  BackendDump.dumpComponentsOLD(comps);
-  sortvorphans := List.flatten(listReverse(comps));
+  sortvorphans := List.flattenReverse(comps);
   // map back to global indexes
   sortvorphans := List.map1r(sortvorphans, arrayGet, map);
   //  print("sortvorphans: " + stringDelimitList(List.map(sortvorphans, intString), ", ") + "\n");
