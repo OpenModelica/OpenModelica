@@ -4872,7 +4872,7 @@ algorithm
   //terms
   (noLoopTerm,_) := ExpressionSimplify.simplify1(Expression.makeSum1(noLoopTerms));
   if useTmpVars and simDAE then
-    (noLoopTerm, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(noLoopTerm, tmpVarName + "T", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared);
+    (noLoopTerm, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(noLoopTerm, tmpVarName + "T", System.tmpTickIndex(Global.tmpVariableIndex), outEqns, outVars, outShared);
     (outUpdate, ass1, ass2, outIndx, outCompOrder) := simplifyLoopExpHelper(update, outUpdate, para, ass1, ass2, outVars, outEqns, outIndx, ii, outCompOrder);
   end if;
 
