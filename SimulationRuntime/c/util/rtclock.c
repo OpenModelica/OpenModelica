@@ -402,6 +402,24 @@ double rt_ext_tp_tock(rtclock_t* tick_tp) {
   return d - min_time;
 }
 
+void rt_ext_tp_tick_realtime(rtclock_t* tick_tp) {
+  *tick_tp = mach_absolute_time();
+}
+
+double rt_ext_tp_tock_realtime(rtclock_t* tick_tp) {
+  double d=0;
+  rtclock_t tock_tp = mach_absolute_time();
+  d = rtclock_value(tock_tp - *tick_tp);
+  return d;
+}
+
+int64_t rt_ext_tp_sync_nanosec(rtclock_t* tick_tp, uint64_t nsec)
+{
+  int64_t res = 0;
+  throwStreamPrint(NULL, "%s not implemented for OSX", __FUNCTION__);
+  return res;
+}
+
 #else
 
 /* CLOCK_MONOTONIC_RAW: since Linux 2.6.28 */
