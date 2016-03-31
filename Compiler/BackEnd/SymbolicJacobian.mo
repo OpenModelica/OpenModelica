@@ -3349,11 +3349,11 @@ algorithm
         (_,_) = BackendVariable.getVar(cr, vars);
       then (e,false,(vars,true));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "pre")),(vars,b))
-      then (e,false,(vars,b));
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "pre")),_)
+      then (e,false,tpl);
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "previous")),(vars,b))
-      then (e,false,(vars,b));
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "previous")),_)
+      then (e,false,tpl);
 
     case (e,(_,b)) then (e,not b,tpl);
   end matchcontinue;

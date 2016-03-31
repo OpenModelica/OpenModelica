@@ -3230,14 +3230,14 @@ algorithm
     case (exp as DAE.CREF(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))),(ht,i,j))
       equation
         (e1,true) = Expression.extendArrExp(exp,false);
-        (e1,(ht,i,k)) = Expression.traverseExpBottomUp(e1,evaluateAnnotationTraverse,(ht,i,j));
+        (e1,(ht,i,k)) = Expression.traverseExpBottomUp(e1,evaluateAnnotationTraverse,itpl);
         true = intGt(k,j);
       then (e1,(ht,i,k));
     // Special Case for Arrays
     case (exp as DAE.CREF(ty = DAE.T_ARRAY()),(ht,i,j))
       equation
         (e1,true) = Expression.extendArrExp(exp,false);
-        (e1,(ht,i,k)) = Expression.traverseExpBottomUp(e1,evaluateAnnotationTraverse,(ht,i,j));
+        (e1,(ht,i,k)) = Expression.traverseExpBottomUp(e1,evaluateAnnotationTraverse,itpl);
         true = intGt(k,j);
       then (e1,(ht,i,k));
 
@@ -3746,7 +3746,7 @@ protected function isInvalidFunctionEntry
 algorithm
   b := match tpl
     case ((_,NONE())) then true;
-    case ((_,_)) then false;
+    else false;
   end match;
 end isInvalidFunctionEntry;
 

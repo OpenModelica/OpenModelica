@@ -76,7 +76,7 @@ public function translateAbsyn2SCode
 algorithm
   outProgram := match(inProgram)
     local
-      SCode.Program spInitial, spAbsyn, sp;
+      SCode.Program spInitial, sp;
       list<Absyn.Class> inClasses,initialClasses;
 
     case _
@@ -94,8 +94,7 @@ algorithm
         System.setHasStreamConnectors(false);
 
         // translate given absyn to scode.
-        spAbsyn = List.fold(inClasses, translate2, {});
-        sp = listReverse(spAbsyn);
+        sp = list(translateClass(c) for c in inClasses);
 
         // adrpo: note that WE DO NOT NEED to add initial functions to the program
         //        as they are already part of the initialEnv done by Builtin.initialGraph
@@ -103,19 +102,6 @@ algorithm
         sp;
   end match;
 end translateAbsyn2SCode;
-
-public function translate2
-"Folds an Absyn.Program into SCode.Program."
-  input Absyn.Class inClass;
-  input SCode.Program acc;
-  output SCode.Program outAcc;
-protected
-  SCode.Element cl;
-algorithm
-  cl := translateClass(inClass);
-  // print("\n" + SCodeDump.printElementStr(cl) + "\n");
-  outAcc := cl :: acc;
-end translate2;
 
 public function translateClass
   input Absyn.Class inClass;

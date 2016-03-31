@@ -751,40 +751,29 @@ algorithm
   outSubPartitions := inPartition.subPartitions;
 end getSubPartition;
 
-protected type AddTempVarsArg =
-tuple<Integer /*numAlgVars*/, list<SimCodeVar.SimVar> /*algVars*/,
-      Integer /*numIntAlgVars*/, list<SimCodeVar.SimVar> /*intAlgVars*/,
-      Integer /*numBoolAlgVars*/, list<SimCodeVar.SimVar> /*boolAlgVars*/,
-      Integer /*numStringAlgVars*/, list<SimCodeVar.SimVar> /*stringAlgVars*/>;
-
 protected function addTempVars
   input list<SimCodeVar.SimVar> tempVars;
   input SimCode.ModelInfo modelInfo;
   output SimCode.ModelInfo omodelInfo = modelInfo;
 protected
-  AddTempVarsArg arg;
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
-  Integer numAlgVars, numIntAlgVars, numBoolAlgVars, numStringAlgVars;
-  list<SimCodeVar.SimVar> algVars, intAlgVars, boolAlgVars, stringAlgVars;
 algorithm
   varInfo := omodelInfo.varInfo;
   vars := omodelInfo.vars;
 
-  arg := (varInfo.numAlgVars, listReverse(vars.algVars), varInfo.numIntAlgVars, listReverse(vars.intAlgVars),
-          varInfo.numBoolAlgVars, listReverse(vars.boolAlgVars), varInfo.numStringAlgVars, listReverse(vars.stringAlgVars));
-  arg := List.fold(tempVars, addTempVars1, arg);
-  (numAlgVars, algVars, numIntAlgVars, intAlgVars, numBoolAlgVars, boolAlgVars, numStringAlgVars, stringAlgVars) := arg;
+  vars.algVars := listReverse(vars.algVars);
+  vars.intAlgVars := listReverse(vars.intAlgVars);
+  vars.boolAlgVars := listReverse(vars.boolAlgVars);
+  vars.stringAlgVars := listReverse(vars.stringAlgVars);
+  for e in tempVars loop
+    (vars, varInfo) := addTempVars1(e, vars, varInfo);
+  end for;
 
-  vars.algVars := listReverse(algVars);
-  vars.intAlgVars := listReverse(intAlgVars);
-  vars.boolAlgVars := listReverse(boolAlgVars);
-  vars.stringAlgVars := listReverse(stringAlgVars);
-
-  varInfo.numAlgVars := numAlgVars;
-  varInfo.numIntAlgVars := numIntAlgVars;
-  varInfo.numBoolAlgVars := numBoolAlgVars;
-  varInfo.numStringAlgVars := numStringAlgVars;
+  vars.algVars := listReverse(vars.algVars);
+  vars.intAlgVars := listReverse(vars.intAlgVars);
+  vars.boolAlgVars := listReverse(vars.boolAlgVars);
+  vars.stringAlgVars := listReverse(vars.stringAlgVars);
 
   omodelInfo.vars := vars;
   omodelInfo.varInfo := varInfo;
@@ -792,39 +781,46 @@ end addTempVars;
 
 protected function addTempVars1
   input SimCodeVar.SimVar inVar;
-  input AddTempVarsArg inArg;
-  output AddTempVarsArg outArg;
+  input output SimCodeVar.SimVars vars;
+  input output SimCode.VarInfo varInfo;
 protected
-  Integer numAlgVars, numIntAlgVars, numBoolAlgVars, numStringAlgVars;
-  list<SimCodeVar.SimVar> algVars, intAlgVars, boolAlgVars, stringAlgVars;
   SimCodeVar.SimVar var = inVar;
 algorithm
-  (numAlgVars, algVars, numIntAlgVars, intAlgVars, numBoolAlgVars, boolAlgVars, numStringAlgVars, stringAlgVars) := inArg;
-  outArg := match inVar.type_
+  _ := match inVar.type_
     case DAE.T_INTEGER()
-      equation var.index = numIntAlgVars;
-      then
-        (numAlgVars, algVars, numIntAlgVars+1, var::intAlgVars, numBoolAlgVars, boolAlgVars, numStringAlgVars, stringAlgVars);
+      equation
+        var.index = varInfo.numIntAlgVars;
+        varInfo.numIntAlgVars = varInfo.numIntAlgVars+1;
+        vars.intAlgVars = var::vars.intAlgVars;
+        then ();
 
     case DAE.T_ENUMERATION()
-      equation var.index = numIntAlgVars;
-      then
-        (numAlgVars, algVars, numIntAlgVars+1, var::intAlgVars, numBoolAlgVars, boolAlgVars, numStringAlgVars, stringAlgVars);
+      equation
+        var.index = varInfo.numIntAlgVars;
+        varInfo.numIntAlgVars = varInfo.numIntAlgVars+1;
+        vars.intAlgVars = var::vars.intAlgVars;
+        then ();
 
     case DAE.T_BOOL()
-      equation var.index = numBoolAlgVars;
-      then
-        (numAlgVars, algVars, numIntAlgVars, intAlgVars, numBoolAlgVars+1, var::boolAlgVars, numStringAlgVars, stringAlgVars);
+      equation
+        var.index = varInfo.numBoolAlgVars;
+        varInfo.numBoolAlgVars = varInfo.numBoolAlgVars+1;
+        vars.boolAlgVars = var::vars.boolAlgVars;
+      then ();
 
     case DAE.T_STRING()
-      equation var.index = numStringAlgVars;
-      then
-        (numAlgVars, algVars, numIntAlgVars, intAlgVars, numBoolAlgVars, boolAlgVars, numStringAlgVars+1, var::stringAlgVars);
+      equation
+        var.index = varInfo.numStringAlgVars;
+        varInfo.numStringAlgVars = varInfo.numStringAlgVars+1;
+        vars.stringAlgVars = var::vars.stringAlgVars;
+      then ();
 
     else
-      equation var.index = numAlgVars;
-      then
-        (numAlgVars+1, var::algVars, numIntAlgVars, intAlgVars, numBoolAlgVars, boolAlgVars, numStringAlgVars, stringAlgVars);
+      equation
+        var.index = varInfo.numAlgVars;
+        varInfo.numAlgVars = varInfo.numAlgVars+1;
+        vars.algVars = var::vars.algVars;
+      then ();
   end match;
 end addTempVars1;
 
@@ -1815,7 +1811,7 @@ algorithm
     list<Integer> occurEquLst;
     list<BackendDAE.ZeroCrossing> rest;
 
-   case ({}, _, _) then listReverse(iAccum);
+   case ({}, _, _) then Dangerous.listReverseInPlace(iAccum);
 
    case (BackendDAE.ZERO_CROSSING(relation_=exp, occurEquLst=occurEquLst)::rest, _, _)
      equation
@@ -2433,7 +2429,7 @@ algorithm
           var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, true, false, NONE());
           ttmpvars := var::ttmpvars;
         end for;
-        ttmpvars := listReverse(ttmpvars);
+        ttmpvars := Dangerous.listReverseInPlace(ttmpvars);
         ttmpvars := listAppend(itempvars,ttmpvars);
       then createTempVars(rest, inCrefPrefix, ttmpvars);
 
@@ -4019,7 +4015,7 @@ algorithm
       newCref := Differentiate.createSeedCrefName(oldCref, inMatrixName);
       outSimVars := replaceSimVarName(newCref, v)::outSimVars;
   end for;
-  outSimVars := listReverse(outSimVars);
+  outSimVars := Dangerous.listReverseInPlace(outSimVars);
 end replaceSeedVarsName;
 
 protected function sortBackVarWithSimVarsOrder
@@ -4347,7 +4343,7 @@ algorithm
   evarLst := BackendVariable.varList(evars);
   evarLst := orderExtVars(evarLst);
   //evarLst := listReverse(evarLst);
-  (simvars, aliases) := extractExtObjInfo2(evarLst, evars, {}, {});
+  (simvars, aliases) := extractExtObjInfo2(evarLst, evars);
   extObjInfo := SimCode.EXTOBJINFO(simvars, aliases);
 end createExtObjInfo;
 
@@ -4380,28 +4376,27 @@ end orderExtVars;
 protected function extractExtObjInfo2
   input list<BackendDAE.Var> varLst;
   input BackendDAE.Variables evars;
-  input list<SimCodeVar.SimVar> ivars;
-  input list<SimCode.ExtAlias> ialiases;
-  output list<SimCodeVar.SimVar> vars;
-  output list<SimCode.ExtAlias> aliases;
+  output list<SimCodeVar.SimVar> vars = {};
+  output list<SimCode.ExtAlias> aliases = {};
 algorithm
-  (vars, aliases) := match (varLst, evars, ivars, ialiases)
-    local
-      BackendDAE.Var bv;
-      SimCodeVar.SimVar sv;
-      list<BackendDAE.Var> vs;
-      DAE.ComponentRef cr, name;
-    case ({}, _, _, _) then (listReverse(ivars), listReverse(ialiases));
-    case (BackendDAE.VAR(varName=name, bindExp=SOME(DAE.CREF(cr, _)), varKind=BackendDAE.EXTOBJ(_))::vs, _, _, _)
-      equation
-        (vars, aliases) = extractExtObjInfo2(vs, evars, ivars, (name, cr)::ialiases);
-      then (vars, aliases);
-    case (bv::vs, _, _, _)
-      equation
-        sv = dlowvarToSimvar(bv, NONE(), evars);
-        (vars, aliases) = extractExtObjInfo2(vs, evars, sv::ivars, ialiases);
-      then (vars, aliases);
-  end match;
+  for bv in varLst loop
+    _ := match bv
+      local
+        DAE.ComponentRef cr, name;
+        SimCodeVar.SimVar sv;
+      case BackendDAE.VAR(varName=name, bindExp=SOME(DAE.CREF(cr, _)), varKind=BackendDAE.EXTOBJ(_))
+        equation
+          aliases = (name, cr)::aliases;
+        then ();
+      else
+        equation
+          sv = dlowvarToSimvar(bv, NONE(), evars);
+          vars = sv::vars;
+        then ();
+      end match;
+  end for;
+  vars := Dangerous.listReverseInPlace(vars);
+  aliases := Dangerous.listReverseInPlace(aliases);
 end extractExtObjInfo2;
 
 protected function createAlgorithmAndEquationAsserts
@@ -7327,27 +7322,17 @@ end fixIndex;
 protected function rewriteIndex
   input list<SimCodeVar.SimVar> inVars;
   input Integer iindex;
-  output list<SimCodeVar.SimVar> outVars;
+  output list<SimCodeVar.SimVar> outVars = {};
+protected
+  Integer index = iindex;
 algorithm
-  outVars := rewriteIndexWork(inVars, iindex, {});
+  for var in inVars loop
+    var.index := index;
+    outVars := var::outVars;
+    index := index+1;
+  end for;
+  outVars := Dangerous.listReverseInPlace(outVars);
 end rewriteIndex;
-
-protected function rewriteIndexWork
-  input list<SimCodeVar.SimVar> inVars;
-  input Integer iindex;
-  input list<SimCodeVar.SimVar> inAcc;
-  output list<SimCodeVar.SimVar> outVars;
-algorithm
-  outVars := match inVars
-    local
-      SimCodeVar.SimVar var;
-      list<SimCodeVar.SimVar> rest;
-    case {} then listReverse(inAcc);
-    case var::rest
-      equation var.index = iindex;
-      then rewriteIndexWork(rest, iindex + 1, var::inAcc);
-  end match;
-end rewriteIndexWork;
 
 protected function setVariableIndex
   input SimCodeVar.SimVars inSimVars;
@@ -11480,7 +11465,7 @@ algorithm
   allEqs := List.fold(odeEquations, getDaeEqsNotPartOfOdeSystem2, allEqs);
   tmpEqs := {};
   tmpEqs := Array.fold(allEqs, getDaeEqsNotPartOfOdeSystem4, tmpEqs);
-  oEqs := listReverse(tmpEqs);
+  oEqs := Dangerous.listReverseInPlace(tmpEqs);
 end getDaeEqsNotPartOfOdeSystem;
 
 protected function getDaeEqsNotPartOfOdeSystem0 "Add the given equation system object to the mapping list (simEqIdx -> SimEqSystem).

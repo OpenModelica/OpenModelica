@@ -288,12 +288,12 @@ algorithm
       list<Integer> ilst;
 
     // special case for time, it is never part of the equation system
-    case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), (vars, bt))
-    then (e, true, (vars, bt));
+    case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), _)
+    then (e, true, inTuple);
 
     // case for function pointers
-    case (e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC()), (vars, bt))
-    then (e, true, (vars, bt));
+    case (e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC()), _)
+    then (e, true, inTuple);
 
     // case for pre vars
     case (e as DAE.CALL(path = Absyn.IDENT(name = "pre")), _)

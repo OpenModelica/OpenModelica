@@ -1192,7 +1192,7 @@ algorithm
       BackendDAE.Variables vars,vars1;
       DAE.ComponentRef cr;
     case (v as BackendDAE.VAR(varKind = BackendDAE.PARAM()),(vars,vars1))
-      then (v,(vars,vars1));
+      then (v,inTpl);
     case (v as BackendDAE.VAR(),(vars,vars1))
       equation
         vars1 = BackendVariable.addVar(v,vars1);
@@ -1212,7 +1212,7 @@ algorithm
       BackendDAE.Variables vars,vars1;
     case (exp,(vars,vars1))
       equation
-         (_,(_,vars1)) = Expression.traverseExpBottomUp(exp,checkUnusedParameterExp,(vars,vars1));
+         (_,(_,vars1)) = Expression.traverseExpBottomUp(exp,checkUnusedParameterExp,inTpl);
        then (exp,(vars,vars1));
     else (inExp,inTpl);
   end matchcontinue;
@@ -1232,24 +1232,25 @@ algorithm
       list<DAE.Exp> expl;
       list<DAE.Var> varLst;
       BackendDAE.Var var;
+      tuple<BackendDAE.Variables,BackendDAE.Variables> tp;
 
     // special case for time, it is never part of the equation system
     case (e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,vars1))
-      then (e, (vars,vars1));
+      then (e, inTuple);
 
     // Special Case for Records
-    case (e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1))
+    case (e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),tp)
       equation
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (_,(vars,vars1)) = Expression.traverseExpList(expl,checkUnusedParameterExp,(vars,vars1));
-      then (e, (vars,vars1));
+        (_,tp) = Expression.traverseExpList(expl,checkUnusedParameterExp,tp);
+      then (e, tp);
 
     // Special Case for Arrays
-    case (e as DAE.CREF(ty = DAE.T_ARRAY()),(vars,vars1))
+    case (e as DAE.CREF(ty = DAE.T_ARRAY()),tp)
       equation
         (e1,true) = Expression.extendArrExp(e,false);
-        (_,(vars,vars1)) = Expression.traverseExpBottomUp(e1,checkUnusedParameterExp,(vars,vars1));
-      then (e, (vars,vars1));
+        (_,tp) = Expression.traverseExpBottomUp(e1,checkUnusedParameterExp,tp);
+      then (e, tp);
 
     // case for functionpointers
     case (e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC()),_)
@@ -1315,9 +1316,9 @@ algorithm
     local
       DAE.Exp exp;
       BackendDAE.Variables vars,vars1;
-    case (exp,(vars,vars1))
+    case (exp,(vars,_))
       equation
-         (_,(_,vars1)) = Expression.traverseExpBottomUp(exp,checkUnusedVariablesExp,(vars,vars1));
+         (_,(_,vars1)) = Expression.traverseExpBottomUp(exp,checkUnusedVariablesExp,inTpl);
        then (exp,(vars,vars1));
     else (inExp,inTpl);
   end matchcontinue;
@@ -1337,24 +1338,25 @@ algorithm
       list<DAE.Exp> expl;
       list<DAE.Var> varLst;
       BackendDAE.Var var;
+      tuple<BackendDAE.Variables,BackendDAE.Variables> tp;
 
     // special case for time, it is never part of the equation system
-    case (e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,vars1))
-      then (e, (vars,vars1));
+    case (e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),tp)
+      then (e, tp);
 
     // Special Case for Records
-    case (e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1))
+    case (e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),tp)
       equation
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (_,(vars,vars1)) = Expression.traverseExpList(expl,checkUnusedVariablesExp,(vars,vars1));
-      then (e, (vars,vars1));
+        (_,tp) = Expression.traverseExpList(expl,checkUnusedVariablesExp,tp);
+      then (e, tp);
 
     // Special Case for Arrays
-    case (e as DAE.CREF(ty = DAE.T_ARRAY()),(vars,vars1))
+    case (e as DAE.CREF(ty = DAE.T_ARRAY()),tp)
       equation
         (e1,true) = Expression.extendArrExp(e,false);
-        (_,(vars,vars1)) = Expression.traverseExpBottomUp(e1,checkUnusedVariablesExp,(vars,vars1));
-      then (e, (vars,vars1));
+        (_,tp) = Expression.traverseExpBottomUp(e1,checkUnusedVariablesExp,tp);
+      then (e, tp);
 
     // case for functionpointers
     case (DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC()),_)
@@ -3812,13 +3814,13 @@ algorithm
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(ty = DAE.T_ARRAY())}), (vars, shared as BackendDAE.SHARED(), b))
       equation
         (e2, true) = Expression.extendArrExp(e1, false);
-        (e,tpl) = Expression.traverseExpBottomUp(e2, expandDerExp, (vars, shared, b));
+        (e,tpl) = Expression.traverseExpBottomUp(e2, expandDerExp, itpl);
       then (e,tpl);
     // case for records
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))}), (vars, shared as BackendDAE.SHARED(), b))
       equation
         (e2, true) = Expression.extendArrExp(e1, false);
-        (e,tpl) = Expression.traverseExpBottomUp(e2, expandDerExp, (vars, shared, b));
+        (e,tpl) = Expression.traverseExpBottomUp(e2, expandDerExp, itpl);
       then (e,tpl);
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)}), (vars, shared, _))
       equation
