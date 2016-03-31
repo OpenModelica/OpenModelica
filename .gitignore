@@ -98,6 +98,7 @@ SimulationRuntime/ParModelica/explicit/openclrt/Makefile
 SimulationRuntime/build_c/
 SimulationRuntime/opc/ua/open62541.h
 SimulationRuntime/opc/ua/open62541.c
+SimulationRuntime/opc/ua/libomopcua.dll
 
 # OpenModelicaSetup
 Compiler/OpenModelicaSetup
