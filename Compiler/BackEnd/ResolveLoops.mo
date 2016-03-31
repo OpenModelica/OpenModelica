@@ -1692,11 +1692,9 @@ protected function connectPaths "author:Waurich TUD 2014-02
   output list<list<Integer>> loopsOut;
 protected
   list<Integer> path;
-  Integer last;
 algorithm
-  path := listDelete(pathIn, 1);
-  last := listLength(path);
-  path := listDelete(path, last);
+  _::path := pathIn;
+  path := List.stripLast(path);
   loopsOut := List.map1(closingPaths,listAppend,path);
 end connectPaths;
 

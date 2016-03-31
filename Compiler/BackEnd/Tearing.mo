@@ -462,60 +462,20 @@ end getUnsolvableVars;
 public function unsolvable
 "  author: Frenkel TUD 2012-08"
   input BackendDAE.AdjacencyMatrixElementEnhanced elem;
-  output Boolean b;
+  output Boolean b = true;
+protected
+  Integer e;
+  BackendDAE.Solvability s;
 algorithm
-  b := match(elem)
-    local
-      Integer e;
-      BackendDAE.AdjacencyMatrixElementEnhanced rest;
-      Boolean b1;
-    case ({}) then true;
-    case ((e,BackendDAE.SOLVABILITY_SOLVED(),_)::rest)
-      equation
-        b1 = intLe(e,0);
-        b1 = if b1 then unsolvable(rest) else false;
-      then
-        b1;
-    case ((e,BackendDAE.SOLVABILITY_CONSTONE(),_)::rest)
-      equation
-        b1 = intLe(e,0);
-        b1 = if b1 then unsolvable(rest) else false;
-      then
-        b1;
-    case ((e,BackendDAE.SOLVABILITY_CONST(),_)::rest)
-      equation
-        b1 = intLe(e,0);
-        b1 = if b1 then unsolvable(rest) else false;
-      then
-        b1;
-    case ((_,BackendDAE.SOLVABILITY_PARAMETER(b=false),_)::rest)
-      then
-        unsolvable(rest);
-    case ((e,BackendDAE.SOLVABILITY_PARAMETER(b=true),_)::rest)
-      equation
-        b1 = intLe(e,0);
-        b1 = if b1 then unsolvable(rest) else false;
-      then
-        b1;
-    case ((_,BackendDAE.SOLVABILITY_LINEAR(b=false),_)::rest)
-      then
-        unsolvable(rest);
-    case ((_,BackendDAE.SOLVABILITY_LINEAR(b=true),_)::rest)
-      then
-        unsolvable(rest);
-    case ((_,BackendDAE.SOLVABILITY_NONLINEAR(),_)::rest)
-      then
-        unsolvable(rest);
-    case ((_,BackendDAE.SOLVABILITY_UNSOLVABLE(),_)::rest)
-      then
-        unsolvable(rest);
-    case ((e,BackendDAE.SOLVABILITY_SOLVABLE(),_)::rest)
-      equation
-        b1 = intLe(e,0);
-        b1 = if b1 then unsolvable(rest) else false;
-      then
-        b1;
-  end match;
+  for el in elem loop
+    (e,s,_) := el;
+    if solvable(s) then
+      if e > 0 then
+        b := false;
+        return;
+      end if;
+    end if;
+  end for;
 end unsolvable;
 
 
@@ -1424,6 +1384,7 @@ algorithm
     case BackendDAE.SOLVABILITY_NONLINEAR() then false;
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then false;
     case BackendDAE.SOLVABILITY_SOLVABLE() then true;
+    else false;
   end match;
 end solvable;
 

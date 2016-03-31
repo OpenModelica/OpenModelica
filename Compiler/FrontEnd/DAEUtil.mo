@@ -489,7 +489,7 @@ algorithm
 
     case (DAE.DAE(elements), _)
       equation
-        elements = removeVariablesFromElements(elements, vars, {});
+        elements = removeVariablesFromElements(elements, vars);
       then
         DAE.DAE(elements);
 
@@ -501,49 +501,49 @@ protected function removeVariablesFromElements
   remove the variables that match for the element list"
   input list<DAE.Element> inElements;
   input list<DAE.ComponentRef> variableNames;
-  input list<DAE.Element> inAcc;
-  output list<DAE.Element> outElements;
+  output list<DAE.Element> outElements = {};
 algorithm
-  outElements := match (inElements,variableNames,inAcc)
-    local
-      DAE.ComponentRef cr;
-      list<DAE.Element> rest, els, elist;
-      DAE.Element v;
-      String id;
-      DAE.ElementSource source "the origin of the element";
-      Option<SCode.Comment> cmt;
-      Boolean isEmpty;
+  if listEmpty(variableNames) then
+    outElements := inElements;
+    return;
+  end if;
+  for el in inElements loop
+    _ := match el
+      local
+        DAE.ComponentRef cr;
+        list<DAE.Element> elist;
+        DAE.Element v;
+        String id;
+        DAE.ElementSource source "the origin of the element";
+        Option<SCode.Comment> cmt;
+        Boolean isEmpty;
 
-    // empty case for vars
-    case(_,{},_) then inElements;
+      case (v as DAE.VAR(componentRef = cr))
+        equation
+          // variable is in the list! jump over it
+          if listEmpty(List.select1(variableNames, ComponentReference.crefEqual, cr)) then
+            outElements = v::outElements;
+          end if;
+          then ();
 
-    // empty case for elements
-    case({},_,_) then listReverse(inAcc);
+      // handle components
+      case DAE.COMP(id,elist,source,cmt)
+        equation
+          elist = removeVariablesFromElements(elist, variableNames);
+          outElements = DAE.COMP(id,elist,source,cmt)::outElements;
+        then ();
 
-    // variable present, remove it
-    case((v as DAE.VAR(componentRef = cr))::rest, _, _)
-      equation
-        // variable is in the list! jump over it
-        isEmpty = listEmpty(List.select1(variableNames, ComponentReference.crefEqual, cr));
-        els = removeVariablesFromElements(rest, variableNames, List.consOnTrue(isEmpty, v, inAcc));
-      then els;
-
-    // handle components
-    case(DAE.COMP(id,elist,source,cmt)::rest, _, _)
-      equation
-        elist = removeVariablesFromElements(elist, variableNames, {});
-        els = removeVariablesFromElements(rest, variableNames, DAE.COMP(id,elist,source,cmt)::inAcc);
-      then els;
-
-    // anything else, just keep it
-    case(v::rest, _, _)
-      equation
-        els = removeVariablesFromElements(rest, variableNames, v::inAcc);
-      then els;
-  end match;
+      // anything else, just keep it
+      else
+        equation
+          outElements = el::outElements;
+        then ();
+    end match;
+  end for;
+  outElements := MetaModelica.Dangerous.listReverseInPlace(outElements);
 end removeVariablesFromElements;
 
-protected function removeVariable "Remove the variable from the DAE"
+protected function removeVariable "Remove the variable from the DAE, UNUSED"
   input DAE.ComponentRef var;
   input DAE.DAElist dae;
   output DAE.DAElist outDae;
@@ -589,10 +589,10 @@ public function removeInnerAttr "Remove the inner attribute from variable in the
   input DAE.DAElist dae;
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue(var,dae)
+  outDae := match(var,dae)
     local
       DAE.ComponentRef cr,oldVar,newVar;
-      list<DAE.Element> elist,elist2,elist3;
+      list<DAE.Element> elist,elist2;
       DAE.Element e,v,u,o; String id;
       DAE.VarKind kind; DAE.VarParallelism prl;
       DAE.VarDirection dir; DAE.Type tp;
@@ -609,19 +609,20 @@ algorithm
         These are named uniqly and renamed later in "instClass"
      */
     case(_,DAE.DAE(DAE.VAR(oldVar,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,(Absyn.INNER_OUTER()))::elist))
+      guard
+        compareUniquedVarWithNonUnique(var,oldVar)
       equation
-        true = compareUniquedVarWithNonUnique(var,oldVar);
         newVar = nameInnerouterUniqueCref(oldVar);
         o = DAE.VAR(oldVar,kind,dir,prl,prot,tp,NONE(),dim,ct,source,attr,cmt,Absyn.OUTER()) "intact";
         u = DAE.VAR(newVar,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,Absyn.NOT_INNER_OUTER()) " unique'ified";
-        elist3 = u::{o};
-        elist= listAppend(elist3,elist);
+        elist= u::o::elist;
       then
         DAE.DAE(elist);
 
     case(_,DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io)::elist))
+      guard
+        ComponentReference.crefEqualNoStringCompare(var,cr)
       equation
-        true = ComponentReference.crefEqualNoStringCompare(var,cr);
         io2 = removeInnerAttribute(io);
       then
         DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io2)::elist);
@@ -636,7 +637,7 @@ algorithm
       equation
         DAE.DAE(elist)= removeInnerAttr(var,DAE.DAE(elist));
       then DAE.DAE(e::elist);
-  end matchcontinue;
+  end match;
 end removeInnerAttr;
 
 protected function compareUniquedVarWithNonUnique "
@@ -677,8 +678,7 @@ algorithm outCr := match(inCr)
       newChild = nameInnerouterUniqueCref(child);
     then
       ComponentReference.makeCrefQual(id,idt,subs,newChild);
-
-end match;
+  end match;
 end nameInnerouterUniqueCref;
 
 public function unNameInnerouterUniqueCref "
@@ -1373,8 +1373,8 @@ protected
 algorithm
   DAE.DAE(elementLst = elements) := dae;
   (el1, el2) := findAllMatchingElements2(elements, cond1, cond2);
-  firstList := DAE.DAE(listReverse(el1));
-  secondList := DAE.DAE(listReverse(el2));
+  firstList := DAE.DAE(MetaModelica.Dangerous.listReverseInPlace(el1));
+  secondList := DAE.DAE(MetaModelica.Dangerous.listReverseInPlace(el2));
 end findAllMatchingElements;
 
 protected function findAllMatchingElements2
@@ -1860,30 +1860,12 @@ protected function getVariableList "
   input list<DAE.Element> inElementLst;
   output list<DAE.Element> outElementLst;
 algorithm
-  outElementLst := matchcontinue (inElementLst)
-    local
-      list<DAE.Element> res,lst;
-      DAE.Element x;
-
-    /* adrpo: filter out records! */
-    case ((DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))))::lst)
-      equation
-        res = getVariableList(lst);
-      then
-        (res);
-
-    case ((x as DAE.VAR())::lst)
-      equation
-        res = getVariableList(lst);
-      then
-        (x::res);
-    case (_::lst)
-      equation
-        res = getVariableList(lst);
-      then
-        res;
-    case {} then {};
-  end matchcontinue;
+  /* adrpo: filter out records! */
+  outElementLst := list(e for e guard match e
+      case DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))) then false;
+      case DAE.VAR() then true;
+      else false;
+    end match in inElementLst);
 end getVariableList;
 
 public function getVariableType
@@ -6554,7 +6536,7 @@ public function addSymbolicTransformation
   input DAE.SymbolicOperation op;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := matchcontinue (source,op)
+  outSource := match (source,op)
     local
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -6567,9 +6549,10 @@ algorithm
       list<SCode.Comment> comment;
 
     case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es1 as (h1::_),t1)::operations,comment),DAE.SUBSTITUTION(es2,t2))
-      equation
+      guard
         // The tail of the new substitution chain is the same as the head of the old one...
-        true = Expression.expEqual(t2,h1);
+        Expression.expEqual(t2,h1)
+      equation
         // Reference equality would be fine as otherwise it is not really a chain... But replaceExp is stupid :(
         // true = referenceEq(t2,h1);
         es = listAppend(es2,es1);
@@ -6577,7 +6560,7 @@ algorithm
 
     case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment),_)
       then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, op::operations,comment);
-  end matchcontinue;
+  end match;
 end addSymbolicTransformation;
 
 public function condAddSymbolicTransformation

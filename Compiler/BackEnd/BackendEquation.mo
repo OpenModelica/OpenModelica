@@ -76,19 +76,17 @@ algorithm
   rlen := intReal(len) * 1.4;
   arrsize := realInt(rlen);
   optarr := arrayCreate(arrsize, NONE());
-  (size, optarr) := listEquation1(inEquationList, 1, 0, optarr);
+  (size, optarr) := listEquation1(inEquationList, optarr);
   outEquationArray := BackendDAE.EQUATION_ARRAY(size, len, arrsize, optarr);
 end listEquation;
 
 protected function listEquation1
   input list<BackendDAE.Equation> inEquationList;
-  input Integer inPos "initially call this with 1";
-  input Integer inSize "initially call this with 0";
   input array<Option<BackendDAE.Equation>> inEquOptArr;
-  output Integer outSize = inSize;
+  output Integer outSize = 0;
   output array<Option<BackendDAE.Equation>> outEquOptArr = inEquOptArr;
 protected
-  Integer pos = inPos;
+  Integer pos = 1;
 algorithm
   for eq in inEquationList loop
     outSize := outSize + equationSize(eq);
@@ -1482,13 +1480,12 @@ end removeRemovedEqs;
 public function setAtIndex "author: lochel
   Sets the n-th array element of an EquationArray.
   Please note: one-based indexing"
-  input BackendDAE.EquationArray inEquationArray;
+  input output BackendDAE.EquationArray inEquationArray;
   input Integer inPos "one-based indexing";
   input BackendDAE.Equation inEquation;
-  output BackendDAE.EquationArray outEquationArray = inEquationArray;
 algorithm
-  outEquationArray.size := inEquationArray.size -equationOptSize(arrayGet(inEquationArray.equOptArr, inPos)) +equationSize(inEquation);
-  outEquationArray.equOptArr := arrayUpdate(inEquationArray.equOptArr, inPos, SOME(inEquation));
+  inEquationArray.size := inEquationArray.size -equationOptSize(arrayGet(inEquationArray.equOptArr, inPos)) +equationSize(inEquation);
+  inEquationArray.equOptArr := arrayUpdate(inEquationArray.equOptArr, inPos, SOME(inEquation));
 end setAtIndex;
 
 public function setAtIndexFirst "author: waurich
@@ -1588,7 +1585,7 @@ algorithm
 
     case _ equation
       equOptArr = List.fold1r(inIndices, arrayUpdate, NONE(), inEquationArray.equOptArr);
-      eqnlst = equationDelete1(inEquationArray.arrSize, equOptArr, {});
+      eqnlst = equationDelete1(inEquationArray.arrSize, equOptArr);
     then listEquation(eqnlst);
 
     else equation
@@ -1602,23 +1599,16 @@ protected function equationDelete1 "author: Frenkel TUD 2012-09
   helper for equationDelete."
   input Integer index;
   input array<Option<BackendDAE.Equation>> equOptArr;
-  input list<BackendDAE.Equation> iAcc;
-  output list<BackendDAE.Equation> oAcc;
+  output list<BackendDAE.Equation> oAcc = {};
+protected
+  BackendDAE.Equation eqn;
 algorithm
-  oAcc := matchcontinue (index, equOptArr, iAcc)
-    local
-      BackendDAE.Equation eqn;
-
-    case (0, _, _)
-    then iAcc;
-
-    case (_, _, _) equation
-      SOME(eqn) = equOptArr[index];
-    then equationDelete1(index-1, equOptArr, eqn::iAcc);
-
-    case (_, _, _)
-    then equationDelete1(index-1, equOptArr, iAcc);
-  end matchcontinue;
+  for i in index:-1:1 loop
+    if isSome(equOptArr[i]) then
+      SOME(eqn) := equOptArr[i];
+      oAcc := eqn::oAcc;
+    end if;
+  end for;
 end equationDelete1;
 
 public function equationRemove "author: Frenkel TUD 2012-09
@@ -1659,7 +1649,7 @@ algorithm
 
     case BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfElement, equOptArr=equOptArr) equation
       outEquationArray = emptyEqnsSized(numberOfElement);
-    then compressEquations1(1, numberOfElement, equOptArr, outEquationArray);
+    then compressEquations1(numberOfElement, equOptArr, outEquationArray);
 
     else equation
       print("BackendEquation.compressEquations failed\n");
@@ -1668,39 +1658,18 @@ algorithm
 end compressEquations;
 
 protected function compressEquations1 "author: Frenkel TUD 2012-09"
-  input Integer index;
   input Integer nEqns;
   input array<Option<BackendDAE.Equation>> equOptArr;
-  input BackendDAE.EquationArray iEqns;
-  output BackendDAE.EquationArray oEqns;
+  input output BackendDAE.EquationArray eqns;
+protected
+  BackendDAE.Equation eqn;
 algorithm
-  oEqns := matchcontinue (index, nEqns, equOptArr, iEqns)
-    local
-      BackendDAE.Equation eqn;
-      BackendDAE.EquationArray eqns;
-
-    // found element
-    case (_, _, _, _) equation
-      true = intLe(index, nEqns);
-      SOME(eqn) = equOptArr[index];
-      eqns = addEquation(eqn, iEqns);
-    then compressEquations1(index+1, nEqns, equOptArr, eqns);
-
-    // found non element
-    case (_, _, _, _) equation
-      true = intLe(index, nEqns);
-      NONE() = equOptArr[index];
-    then compressEquations1(index+1, nEqns, equOptArr, iEqns);
-
-    // at the end
-    case (_, _, _, _) equation
-      false = intLe(index, nEqns);
-    then iEqns;
-
-    else equation
-      print("BackendEquation.compressEquations1 failed for index " + intString(index) + " and Number of Equations " + intString(nEqns) + "\n");
-    then fail();
-  end matchcontinue;
+  for index in 1:nEqns loop
+    _ := match equOptArr[index]
+        case SOME(eqn) equation eqns = addEquation(eqn, eqns); then ();
+        else ();
+      end match;
+  end for;
 end compressEquations1;
 
 public function equationToScalarResidualForm "author: Frenkel TUD 2012-06
@@ -2026,35 +1995,19 @@ public function equationOptSize
 algorithm
   size := match (oeqn)
     local BackendDAE.Equation eqn;
-    case (NONE()) then 0;
     case (SOME(eqn)) then equationSize(eqn);
+    else 0;
   end match;
 end equationOptSize;
 
 public function equationLstSize
   input list<BackendDAE.Equation> inEqns;
-  output Integer size;
+  output Integer size = 0;
 algorithm
-  size := equationLstSize_impl(inEqns, 0);
+  for eqn in inEqns loop
+    size := size + equationSize(eqn);
+  end for;
 end equationLstSize;
-
-protected function equationLstSize_impl
-  input list<BackendDAE.Equation> inEqns;
-  input Integer isize;
-  output Integer size;
-algorithm
-  size := match (inEqns, isize)
-    local
-      BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> rest;
-
-    case ({}, _)
-    then isize;
-
-    case (eqn::rest, _)
-    then equationLstSize_impl(rest, isize+equationSize(eqn));
-  end match;
-end equationLstSize_impl;
 
 public function generateEquation "author Frenkel TUD 2012-12
   helper to generate an equation from lhs and rhs.
@@ -2069,7 +2022,7 @@ protected
   DAE.Type ty;
 algorithm
   ty := Expression.typeof(lhs);
-  outEqn := matchcontinue ()
+  outEqn := match ()
     local
       Integer size;
       DAE.Dimensions dims;
@@ -2077,23 +2030,24 @@ algorithm
       Boolean b1, b2;
 
     // complex types to complex equations
-    case () equation
-      true = DAEUtil.expTypeComplex(ty) or DAEUtil.expTypeTuple(ty);
+    case () guard
+      DAEUtil.expTypeComplex(ty) or DAEUtil.expTypeTuple(ty)
+    equation
       size = Expression.sizeOf(ty);
     then BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, inEqAttr);
 
     // array types to array equations
-    case () equation
-      true = DAEUtil.expTypeArray(ty);
+    case () guard
+      DAEUtil.expTypeArray(ty)
+    equation
       dims = Expression.arrayDimension(ty);
       ds = Expression.dimensionsSizes(dims);
     then BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source, inEqAttr);
 
     // other types
-    case () equation
-      b1 = DAEUtil.expTypeComplex(ty);
-      b2 = DAEUtil.expTypeArray(ty);
-      false = b1 or b2;
+    case () guard
+      not DAEUtil.expTypeComplex(ty) and
+      not DAEUtil.expTypeArray(ty)
     then BackendDAE.EQUATION(lhs, rhs, source, inEqAttr);
 
     else equation
@@ -2101,7 +2055,7 @@ algorithm
       true = Flags.isSet(Flags.FAILTRACE);
       Debug.traceln("- BackendEquation.generateEquation failed on: " + ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs) + "\n");
     then fail();
-  end matchcontinue;
+  end match;
 end generateEquation;
 
 public function generateEQUATION "author: Frenkel TUD 2010-05"
@@ -2747,30 +2701,30 @@ protected function aliasEquation2 "author Frenkel TUD 2011-04
   input list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> inTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
   output list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> outTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
 algorithm
-  outTpls := matchcontinue (lhs, rhs, inTpls)
+  outTpls := match (lhs, rhs, inTpls)
     local
       list<DAE.Exp> elst1, elst2;
 
     // {a1+b1, a2+b2, a3+b3, ..} = 0;
-    case (DAE.ARRAY(array = elst1), _, _) equation
-      true = Expression.isZero(rhs);
+    case (DAE.ARRAY(array = elst1), _, _) guard
+      Expression.isZero(rhs)
     then List.fold(elst1, aliasExpression, inTpls);
 
     // 0 = {a1+b1, a2+b2, a3+b3, ..};
-    case (_, DAE.ARRAY(array = elst2), _) equation
-      true = Expression.isZero(lhs);
+    case (_, DAE.ARRAY(array = elst2), _) guard
+      Expression.isZero(lhs)
     then List.fold(elst2, aliasExpression, inTpls);
 
     // lhs = 0
-    case (_, _, _) equation
-      true = Expression.isZero(rhs);
+    case (_, _, _) guard
+      Expression.isZero(rhs)
     then aliasExpression(lhs, inTpls);
 
     // 0 = rhs
-    case (_, _, _) equation
-      true = Expression.isZero(lhs);
+    case (_, _, _) guard
+      Expression.isZero(lhs)
     then aliasExpression(rhs, inTpls);
-  end matchcontinue;
+  end match;
 end aliasEquation2;
 
 protected function aliasRecord "author Frenkel TUD 2011-04
@@ -3132,10 +3086,9 @@ algorithm
 end markDifferentiated;
 
 protected function markDifferentiated2
-  input BackendDAE.EquationAttributes inAttr;
-  output BackendDAE.EquationAttributes outAttr = inAttr;
+  input output BackendDAE.EquationAttributes attr;
 algorithm
-  outAttr.differentiated := true;
+  attr.differentiated := true;
 end markDifferentiated2;
 
 public function isDifferentiated
