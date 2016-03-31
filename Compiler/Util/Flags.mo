@@ -760,7 +760,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("sortEqnsVars", Util.notrans("Heuristic sorting for equations and variables. This module requires +d=sortEqnsAndVars.")),
     ("stateMachineElab", Util.gettext("Does the elaboration of state machines.")),
     ("unitChecking", Util.gettext("advanced unit checking: 1. calculation of unspecified unit information for variables; 2. unit consistency check for equations")),
-    ("wrapFunctionCalls", Util.gettext("This module wraps function calls to gain speed up."))
+    ("wrapFunctionCalls", Util.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))
     })),
   Util.gettext("Sets the pre optimization modules to use in the back end. See --help=optmodules for more info."));
 
@@ -869,7 +869,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("solveSimpleEquations", Util.notrans("Solves simple equations")),
     ("symEuler", Util.notrans("Rewrites the ode system for implicit Euler method. This module requires +symEuler.")),
     ("tearingSystem", Util.notrans("For method selection use flag tearingMethod.")),
-    ("wrapFunctionCalls", Util.gettext("This module wraps function calls to gain speed up."))
+    ("wrapFunctionCalls", Util.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See --help=optmodules for more info."));
 
