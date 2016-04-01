@@ -746,13 +746,6 @@ bool MetaModelEditor::interfacesAligned(QString interface1, QString interface2)
     }
   }
 
-#if 1
-  qDebug() << R_CG_C1;
-  qDebug() << R_CG_C2;
-  qDebug() << CG_C1_R_CG;
-  qDebug() << CG_C2_R_CG;
-  qDebug() << success;
-#endif
   return success;
 }
 
