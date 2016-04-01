@@ -7,6 +7,7 @@ echo(false);
 prefixPath := "../../../OMCompiler/Compiler/Util/";
 echo(true);
 loadFiles({
+  prefixPath + "DoubleEndedList.mo",
   prefixPath + "Print.mo",
   prefixPath + "ErrorExt.mo",
   prefixPath + "Error.mo",
