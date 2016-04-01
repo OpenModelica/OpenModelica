@@ -198,9 +198,17 @@ end push_list_back;
 
 function toListAndClear
   input DoubleEndedList<T> delst;
+  input list<T> prependToList={};
   output list<T> res;
 algorithm
+  if arrayGet(delst.length,1)==0 then
+    res := prependToList;
+    return;
+  end if;
   res := arrayGet(delst.front,1);
+  if not listEmpty(prependToList) then
+    Dangerous.listSetRest(arrayGet(delst.back,1), prependToList);
+  end if;
   arrayUpdate(delst.back, 1, {});
   arrayUpdate(delst.front, 1, {});
   arrayUpdate(delst.length, 1, 0);

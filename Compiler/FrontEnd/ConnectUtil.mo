@@ -1659,9 +1659,8 @@ protected function setTrieUpdateLeaf
   "Helper funtion to setTrieUpdate, updates a trie leaf."
   input String inId;
   input Arg inArg;
-  input list<SetTrieNode> inNodes;
+  input output list<SetTrieNode> nodes;
   input UpdateFunc inUpdateFunc;
-  output list<SetTrieNode> outNodes;
 
   replaceable type Arg subtypeof Any;
 
@@ -1670,39 +1669,19 @@ protected function setTrieUpdateLeaf
     input SetTrieNode inNode;
     output SetTrieNode outNode;
   end UpdateFunc;
+protected
+  Integer n=1;
 algorithm
-  outNodes := matchcontinue(inId, inArg, inNodes, inUpdateFunc)
-    local
-      SetTrieNode node;
-      list<SetTrieNode> rest_nodes;
-      String id;
-
-    // No matching leaves, add a new leaf.
-    case (_, _, {}, _)
-      equation
-        node = Connect.SET_TRIE_LEAF(inId, NONE(), NONE(), NONE(), 0);
-        node = inUpdateFunc(inArg, node);
-      then
-        {node};
-
-    // Found matching leaf, update it.
-    //case (_, _, (node as Connect.SET_TRIE_LEAF(name = id)) :: rest_nodes, _)
-    case (_, _, node :: rest_nodes, _)
-      equation
-        id = setTrieNodeName(node);
-        true = stringEqual(inId, id);
-        node = inUpdateFunc(inArg, node);
-      then
-        node :: rest_nodes;
-
-    // No matching leaves, search rest of leaves.
-    case (_, _, node :: rest_nodes, _)
-      equation
-        rest_nodes = setTrieUpdateLeaf(inId, inArg, rest_nodes, inUpdateFunc);
-      then
-        node :: rest_nodes;
-
-  end matchcontinue;
+  for node in nodes loop
+    if setTrieNodeName(node)==inId then
+      // Found matching leaf, update it.
+      nodes := List.replaceAt(inUpdateFunc(inArg, node), n, nodes); // Can be slow in time and memory...
+      return;
+    end if;
+    n := n+1;
+  end for;
+  // Is slow in time; need to do a linear search. Cheap in memory (single cons)
+  nodes := inUpdateFunc(inArg, Connect.SET_TRIE_LEAF(inId, NONE(), NONE(), NONE(), 0))::nodes;
 end setTrieUpdateLeaf;
 
 public function traverseSets

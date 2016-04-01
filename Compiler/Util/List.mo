@@ -98,6 +98,7 @@ encapsulated package List
 protected
 import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
 import MetaModelica.Dangerous;
+import DoubleEndedList;
 
 public function create<T>
   "Creates a list from an element."
@@ -5726,19 +5727,20 @@ public function replaceAt<T>
 protected
   T e;
   list<T> rest = inList;
+  DoubleEndedList<T> delst;
 algorithm
   true := inPosition >= 1;
+  delst := DoubleEndedList.fromList({});
 
   // Shuffle elements from inList to outList until the position is reached.
   for i in 1:inPosition-1 loop
     e :: rest := rest;
-    outList := e :: outList;
+    DoubleEndedList.push_back(delst, e);
   end for;
 
   // Replace the element at the position and append the remaining elements.
   _ :: rest := rest;
-  rest := inElement :: rest;
-  outList := append_reverse(outList, rest);
+  outList := DoubleEndedList.toListAndClear(delst, prependToList=inElement::rest);
 end replaceAt;
 
 public function replaceOnTrue<T>
