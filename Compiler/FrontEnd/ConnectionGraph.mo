@@ -1723,7 +1723,7 @@ algorithm
 
     case (cset, c::rest)
       equation
-        (cset, true) = ConnectUtil.removeReferenceFromConnects(cset, c, {});
+        (cset, true) = ConnectUtil.removeReferenceFromConnects(cset, c);
         cset = removeFromConnects(cset, rest);
       then
         cset;

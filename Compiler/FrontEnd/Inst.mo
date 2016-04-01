@@ -2220,7 +2220,7 @@ algorithm
         // in it as inside connectors.
         zero_dims = InstUtil.instDimsHasZeroDims(inst_dims);
         elementSource = DAEUtil.createElementSource(info, FGraph.getScopePath(env3), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        csets1 = ConnectUtil.addConnectorVariablesFromDAE(zero_dims, ci_state1, pre, vars, csets, info, elementSource);
+        csets1 = ConnectUtil.addConnectorVariablesFromDAE(zero_dims, ci_state1, pre, vars, info, elementSource, csets);
 
         // Reorder the connect equations to have non-expandable connect first:
         //   connect(non_expandable, non_expandable);

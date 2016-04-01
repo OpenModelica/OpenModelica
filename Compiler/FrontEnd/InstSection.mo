@@ -2989,8 +2989,8 @@ algorithm
         (cache,attr2 as DAE.ATTR(_,_,vt2,_,io2,_),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         validConnector(ty1, c1_2, info) "Check that the type of the connectors are good." ;
         validConnector(ty2, c2_2, info);
-        f1 = ConnectUtil.componentFace(env,ih,c1_2);
-        f2 = ConnectUtil.componentFace(env,ih,c2_2);
+        f1 = ConnectUtil.componentFace(env,c1_2);
+        f2 = ConnectUtil.componentFace(env,c2_2);
 
         ty1 = sortConnectorType(ty1);
         ty2 = sortConnectorType(ty2);

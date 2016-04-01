@@ -45,44 +45,46 @@ encapsulated package ConnectUtil
   in DAEUtil.mo."
 
 // public imports
-public import Absyn;
-public import SCode;
-public import ClassInf;
-public import Config;
-public import Connect;
-public import DAE;
-public import FCore;
-public import InnerOuter;
-public import Prefix;
-public import ConnectionGraph;
+public
+import Absyn;
+import SCode;
+import ClassInf;
+import Config;
+import Connect;
+import DAE;
+import FCore;
+import InnerOuter;
+import Prefix;
+import ConnectionGraph;
 
 // protected imports
-protected import ComponentReference;
-protected import DAEUtil;
-protected import Debug;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import Flags;
-protected import List;
-protected import Lookup;
-protected import PrefixUtil;
-protected import System;
-protected import Types;
-protected import Util;
-protected import InstSection;
+protected
+import ComponentReference;
+import DAEUtil;
+import Debug;
+import Error;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import Flags;
+import List;
+import Lookup;
+import PrefixUtil;
+import System;
+import Types;
+import Util;
+import InstSection;
 
 // Import some types from Connect.
-public type Face = Connect.Face;
-public type ConnectorType = Connect.ConnectorType;
-public type ConnectorElement = Connect.ConnectorElement;
-public type SetTrieNode = Connect.SetTrieNode;
-public type SetTrie = Connect.SetTrie;
-public type SetConnection = Connect.SetConnection;
-public type OuterConnect = Connect.OuterConnect;
-public type Sets = Connect.Sets;
-public type Set = Connect.Set;
+import Connect.Face;
+import Connect.ConnectorType;
+import Connect.ConnectorElement;
+import Connect.SetTrieNode;
+import Connect.SetTrie;
+import Connect.SetConnection;
+import Connect.OuterConnect;
+import Connect.Sets;
+import Connect.Set;
 
 // Set graph represented as an adjacency list.
 protected type SetGraph = array<list<Integer>>;
@@ -94,240 +96,157 @@ public function newSet
   connections down in the instance hierarchy, but the list of connection crefs
   needs to be propagated to be able to evaluate the cardinality operator. See
   comments in addSet below for how the sets are merged later."
-  input Prefix.Prefix inPrefix;
-  input Sets inSets;
-  output Sets outSets;
+  input Prefix.Prefix prefix;
+  input output Sets sets;
+protected
+  String pstr;
+  Integer sc;
+  DAE.ComponentRef cr;
 algorithm
-  outSets := matchcontinue(inPrefix, inSets)
-    local
-      String pstr;
-      Integer sc;
-      DAE.ComponentRef cr;
+  Sets.SETS(setCount = sc) := sets;
 
-    case (_, Connect.SETS(setCount = sc))
-      equation
-        cr = PrefixUtil.prefixFirstCref(inPrefix);
-        pstr = ComponentReference.printComponentRefStr(cr);
-      then
-        Connect.SETS(Connect.SET_TRIE_NODE(pstr, cr, {}, 0), sc, {}, {});
+  try
+    cr := PrefixUtil.prefixFirstCref(prefix);
+    pstr := ComponentReference.printComponentRefStr(cr);
+  else
+    cr := DAE.WILD();
+    pstr := "";
+  end try;
 
-    case (_, Connect.SETS(setCount = sc))
-      then
-        Connect.SETS(Connect.SET_TRIE_NODE("", DAE.WILD(), {}, 0), sc, {}, {});
-
-  end matchcontinue;
+  sets := Sets.SETS(SetTrieNode.SET_TRIE_NODE(pstr, cr, {}, 0), sc, {}, {});
 end newSet;
 
 public function addSet
   "This function adds a child set to a parent set."
-  input Connect.Sets inParentSets;
-  input Connect.Sets inChildSets;
-  output Connect.Sets outSets;
+  input Sets parentSets;
+  input Sets childSets;
+  output Sets sets;
 algorithm
-  outSets := matchcontinue(inParentSets, inChildSets)
+  sets := matchcontinue(parentSets, childSets)
     local
-      String name;
-      list<SetTrieNode> nodes;
       list<SetConnection> c1, c2;
       list<OuterConnect> o1, o2;
-      Integer sc, count;
+      Integer sc;
       SetTrieNode node;
-      DAE.ComponentRef cr;
 
     // If the child set is empty we don't need to add it.
-    case (_, _)
-      equation
-        true = isEmptySet(inChildSets);
-      then
-        inParentSets;
+    case (_, _) guard isEmptySet(childSets)
+      then parentSets;
 
     // If both sets are nameless, i.e. a top scope set, just return the child
     // set as it is. This is to avoid getting nestled top scope sets in some
     // cases, and the child should be a superset of the parent.
-    case (Connect.SETS(sets = Connect.SET_TRIE_NODE(cref = DAE.WILD())),
-        Connect.SETS(sets = Connect.SET_TRIE_NODE(cref = DAE.WILD())))
-      then inChildSets;
+    case (Sets.SETS(sets = SetTrieNode.SET_TRIE_NODE(cref = DAE.WILD())),
+         Sets.SETS(sets = SetTrieNode.SET_TRIE_NODE(cref = DAE.WILD())))
+      then childSets;
 
     // Check if the node already exists. In that case it's probably due to
     // multiple inheritance and we should ignore it.
-    case (Connect.SETS(sets = Connect.SET_TRIE_NODE(nodes = nodes)),
-        Connect.SETS(sets = node))
-      equation
-        name = setTrieNodeName(node);
-        _ = setTrieGetNode(name, nodes);
+    case (Sets.SETS(sets = node as SetTrieNode.SET_TRIE_NODE()),
+          Sets.SETS())
+      algorithm
+        _ := setTrieGetNode(setTrieNodeName(childSets.sets), node.nodes);
       then
-        inParentSets;
+        parentSets;
 
     // In the normal case we add the trie on the child sets to the parent, and
     // also merge their lists of outer connects.
-    case (Connect.SETS(Connect.SET_TRIE_NODE(name = name, cref = cr,
-        nodes = nodes, connectCount = count), _, c1, o1), Connect.SETS(node, sc, c2, o2))
-      equation
-        c1 = listAppend(c2, c1);
-        o1 = listAppend(o2, o1);
-        nodes = node :: nodes;
+    case (Sets.SETS(node as SetTrieNode.SET_TRIE_NODE(), _, c1, o1),
+          Sets.SETS(_, sc, c2, o2))
+      algorithm
+        c1 := listAppend(c2, c1);
+        o1 := listAppend(o2, o1);
+        node.nodes := childSets.sets :: node.nodes;
       then
-        Connect.SETS(Connect.SET_TRIE_NODE(name, cr, nodes, count), sc, c1, o1);
+        Sets.SETS(node, sc, c1, o1);
 
   end matchcontinue;
 end addSet;
 
 protected function isEmptySet
   "Check if a given set is empty."
-  input Connect.Sets inSets;
-  output Boolean outIsEmpty;
+  input Sets sets;
+  output Boolean isEmpty;
 algorithm
-  outIsEmpty := match(inSets)
-    case Connect.SETS(sets = Connect.SET_TRIE_NODE(nodes = {}),
+  isEmpty := match(sets)
+    case Sets.SETS(sets = SetTrieNode.SET_TRIE_NODE(nodes = {}),
       connections = {}, outerConnects = {}) then true;
     else false;
   end match;
 end isEmptySet;
 
-protected function setSets
-  input SetTrie inTrie;
-  input Sets inSets;
-  output Sets outSets;
-protected
-  Integer sc;
-  list<SetConnection> c;
-  list<OuterConnect> o;
-algorithm
-  Connect.SETS(_, sc, c, o) := inSets;
-  outSets := Connect.SETS(inTrie, sc, c, o);
-end setSets;
-
 public function addConnection
   "Adds a new connection by looking up both the given connector elements in the
    set trie and merging the sets together."
-  input Sets inSets;
-  input DAE.ComponentRef inCref1;
-  input Face inFace1;
-  input DAE.ComponentRef inCref2;
-  input Face inFace2;
-  input SCode.ConnectorType inConnectorType;
-  input DAE.ElementSource inSource;
-  output Sets outSets;
+  input output Sets sets;
+  input DAE.ComponentRef cref1;
+  input Face face1;
+  input DAE.ComponentRef cref2;
+  input Face face2;
+  input SCode.ConnectorType connectorType;
+  input DAE.ElementSource source;
+protected
+  ConnectorElement e1, e2;
+  ConnectorType ty;
 algorithm
-  outSets := match(inSets, inCref1, inFace1, inCref2, inFace2, inConnectorType, inSource)
-    local
-      ConnectorElement e1, e2;
-      ConnectorType ty;
-      Sets sets;
-
-    case (_, _, _, _, _, _, _)
-      equation
-        ty = makeConnectorType(inConnectorType);
-        e1 = findElement(inCref1, inFace1, ty, inSource, inSets);
-        e2 = findElement(inCref2, inFace2, ty, inSource, inSets);
-        sets = mergeSets(e1, e2, inSets);
-      then
-        sets;
-
-  end match;
+  ty := makeConnectorType(connectorType);
+  e1 := findElement(cref1, face1, ty, source, sets);
+  e2 := findElement(cref2, face2, ty, source, sets);
+  sets := mergeSets(e1, e2, sets);
 end addConnection;
 
 protected function getConnectCount
-  input DAE.ComponentRef inCref;
-  input SetTrie inTrie;
-  output Integer outCount;
+  input DAE.ComponentRef cref;
+  input SetTrie trie;
+  output Integer count;
+protected
+  SetTrieNode node;
 algorithm
-  outCount := matchcontinue(inCref, inTrie)
-    local
-      SetTrieNode node;
-      Integer count;
+  try
+    node := setTrieGet(cref, trie, false);
 
-    case (_, _)
-      equation
-        node = setTrieGet(inCref, inTrie, false);
-      then
-        getConnectCount2(node);
-
-    else 0;
-  end matchcontinue;
+    count := match node
+      case SetTrieNode.SET_TRIE_NODE() then node.connectCount;
+      case SetTrieNode.SET_TRIE_LEAF() then node.connectCount;
+    end match;
+  else
+    count := 0;
+  end try;
 end getConnectCount;
-
-protected function getConnectCount2
-  input SetTrieNode inNode;
-  output Integer outCount;
-algorithm
-  outCount := match(inNode)
-    local
-      Integer count;
-
-    case Connect.SET_TRIE_NODE(connectCount = count) then count;
-    case Connect.SET_TRIE_LEAF(connectCount = count) then count;
-
-  end match;
-end getConnectCount2;
 
 public function addArrayConnection
   "Connects two arrays of connectors."
-  input Connect.Sets inSets;
-  input DAE.ComponentRef inCref1;
-  input Connect.Face inFace1;
-  input DAE.ComponentRef inCref2;
-  input Connect.Face inFace2;
-  input DAE.ElementSource inSource;
-  input SCode.ConnectorType inConnectorType;
-  output Connect.Sets outSets;
+  input output Sets sets;
+  input DAE.ComponentRef cref1;
+  input Face face1;
+  input DAE.ComponentRef cref2;
+  input Face face2;
+  input DAE.ElementSource source;
+  input SCode.ConnectorType connectorType;
+protected
+  list<DAE.ComponentRef> crefs1, crefs2;
+  DAE.ComponentRef cr2;
 algorithm
-  outSets :=
-  match(inSets, inCref1, inFace1, inCref2, inFace2, inSource, inConnectorType)
-    local
-      list<DAE.ComponentRef> crefs1, crefs2;
+  crefs1 := ComponentReference.expandCref(cref1, false);
+  crefs2 := ComponentReference.expandCref(cref2, false);
 
-    case (_, _, _, _, _, _, _)
-      equation
-        crefs1 = ComponentReference.expandCref(inCref1,false);
-        crefs2 = ComponentReference.expandCref(inCref2,false);
-      then
-        addArrayConnection2(inSets, crefs1, inFace1, crefs2, inFace2, inSource,
-          inConnectorType);
-
-  end match;
+  for cr1 in crefs1 loop
+    cr2 :: crefs2 := crefs2;
+    sets := addConnection(sets, cr1, face1, cr2, face2, connectorType, source);
+  end for;
 end addArrayConnection;
-
-protected function addArrayConnection2
-  input Connect.Sets inSets;
-  input list<DAE.ComponentRef> inCrefs1;
-  input Connect.Face inFace1;
-  input list<DAE.ComponentRef> inCrefs2;
-  input Connect.Face inFace2;
-  input DAE.ElementSource inSource;
-  input SCode.ConnectorType inConnectorType;
-  output Connect.Sets outSets;
-algorithm
-  outSets := match(inSets, inCrefs1, inFace1, inCrefs2, inFace2, inSource,
-      inConnectorType)
-    local
-      DAE.ComponentRef cref1, cref2;
-      list<DAE.ComponentRef> rest_crefs1, rest_crefs2;
-      Connect.Sets cs;
-
-    case (cs, cref1 :: rest_crefs1, _, cref2 :: rest_crefs2, _, _, _)
-      equation
-        cs = addConnection(cs, cref1, inFace1, cref2, inFace2, inConnectorType, inSource);
-      then
-        addArrayConnection2(cs, rest_crefs1, inFace1, rest_crefs2, inFace2,
-          inSource, inConnectorType);
-
-    else inSets;
-
-  end match;
-end addArrayConnection2;
 
 protected function makeConnectorType
   "Creates a connector type from the flow or stream prefix given."
-  input SCode.ConnectorType inConnectorType;
-  output ConnectorType outType;
+  input SCode.ConnectorType connectorType;
+  output ConnectorType ty;
 algorithm
-  outType := match(inConnectorType)
-    case SCode.POTENTIAL() then Connect.EQU();
-    case SCode.FLOW() then Connect.FLOW();
-    case SCode.STREAM() then Connect.STREAM(NONE());
+  ty := match(connectorType)
+    case SCode.POTENTIAL() then ConnectorType.EQU();
+    case SCode.FLOW() then ConnectorType.FLOW();
+    case SCode.STREAM() then ConnectorType.STREAM(NONE());
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,
           {"ConnectUtil.makeConnectorType: invalid connector type."});
       then
@@ -338,270 +257,203 @@ end makeConnectorType;
 public function addConnectorVariablesFromDAE
   "If the class state indicates a connector, this function adds all flow
   variables in the dae as inside connectors to the connection sets."
-  input Boolean inIgnore;
-  input ClassInf.State inClassState;
-  input Prefix.Prefix inPrefix;
-  input list<DAE.Var> inVars;
-  input Sets inConnectionSet;
+  input Boolean ignore;
+  input ClassInf.State classState;
+  input Prefix.Prefix prefix;
+  input list<DAE.Var> vars;
   input SourceInfo info;
-  input DAE.ElementSource inElementSource;
-  output Sets outConnectionSet;
+  input DAE.ElementSource elementSource;
+  input output Sets sets;
 algorithm
-  outConnectionSet :=
-  match(inIgnore, inClassState, inPrefix, inVars, inConnectionSet, info, inElementSource)
+  sets := match classState
     local
       Absyn.Path class_path;
-      list<DAE.Var> vars, streams, flows;
-      Sets cs;
+      list<DAE.Var> streams, flows;
 
-    // check balance of non expandable connectors!
-    case (false, ClassInf.CONNECTOR(path = class_path, isExpandable = false), _, _, cs, _, _)
-      equation
-        checkConnectorBalance(inVars, class_path, info);
-        vars = if Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ) then {} else inVars;
-        (flows, streams) = getStreamAndFlowVariables(vars, {}, {});
-        cs = List.fold2(flows, addFlowVariableFromDAE, inElementSource, inPrefix, cs);
-        cs = addStreamFlowAssociations(cs, inPrefix, streams, flows);
+    case ClassInf.CONNECTOR(path = class_path, isExpandable = false) guard not ignore
+      algorithm
+        // Check balance of non expandable connectors.
+        checkConnectorBalance(vars, class_path, info);
+
+        // Add flow variables as inside connectors, unless disabled by flag.
+        if not Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ) then
+          (flows, streams) := getStreamAndFlowVariables(vars);
+          sets := List.fold2(flows, addFlowVariableFromDAE, elementSource, prefix, sets);
+          sets := addStreamFlowAssociations(sets, prefix, streams, flows);
+        end if;
       then
-        cs;
+        sets;
 
-    else inConnectionSet;
+    else sets;
   end match;
 end addConnectorVariablesFromDAE;
 
 protected function addFlowVariableFromDAE
   "Adds a flow variable from the DAE to the sets as an inside flow variable."
-  input DAE.Var inVariable;
-  input DAE.ElementSource inElementSource;
-  input Prefix.Prefix inPrefix;
-  input Sets inConnectionSet;
-  output Sets outConnectionSet;
+  input DAE.Var variable;
+  input DAE.ElementSource elementSource;
+  input Prefix.Prefix prefix;
+  input output Sets sets;
 protected
   list<DAE.ComponentRef> crefs;
 algorithm
-  crefs := daeVarToCrefs(inVariable);
-  outConnectionSet := List.fold2r(crefs, addInsideFlowVariable,
-    inElementSource, inPrefix, inConnectionSet);
+  crefs := daeVarToCrefs(variable);
+
+  for cr in crefs loop
+    sets := addInsideFlowVariable(sets, cr, elementSource, prefix);
+  end for;
 end addFlowVariableFromDAE;
 
 public function isExpandable
-  input DAE.ComponentRef inName;
-  output Boolean isExpandableConnector;
+  input DAE.ComponentRef name;
+  output Boolean expandableConnector;
 algorithm
-  isExpandableConnector := match(inName)
-    local
-      DAE.Type ty;
-      Boolean b;
-      DAE.ComponentRef cr;
+  expandableConnector := match(name)
+    case DAE.CREF_IDENT()
+      then InstSection.isExpandableConnectorType(name.identType);
 
-    case (DAE.CREF_IDENT(identType = ty))
-      equation
-        b = InstSection.isExpandableConnectorType(ty);
-      then
-        b;
-
-    case (DAE.CREF_QUAL(identType = ty, componentRef = cr))
-      equation
-        b = InstSection.isExpandableConnectorType(ty);
-        b = diveIsExpandable(b, cr);
-      then
-        b;
+    case DAE.CREF_QUAL()
+      then InstSection.isExpandableConnectorType(name.identType) or
+           isExpandable(name.componentRef);
 
     else false;
 
   end match;
 end isExpandable;
 
-protected function diveIsExpandable
-"@author: adrpo
- if isExpandable is true don't dive in"
-  input Boolean inIsExpandable;
-  input DAE.ComponentRef inName;
-  output Boolean b;
-algorithm
-  b := match(inIsExpandable, inName)
-
-    case (true, _) then true;
-
-    case (false, _)
-      equation
-        b = isExpandable(inName);
-      then
-        b;
-
-  end match;
-end diveIsExpandable;
-
 protected function daeHasExpandableConnectors
-"Goes through a list of variables and returns their crefs"
-  input DAE.DAElist inDAE;
+  "Checks if a DAE contains any expandable connectors."
+  input DAE.DAElist DAE;
   output Boolean hasExpandable;
+protected
+  list<DAE.Element> vars;
 algorithm
-  hasExpandable := matchcontinue(inDAE)
-    local
-      list<DAE.Element> vars;
-      DAE.ComponentRef name;
-      Boolean b;
-
-    // if we didn't detect any there aren't any
-    case (_)
-      equation
-        false = System.getHasExpandableConnectors();
-      then false;
-
-    case (DAE.DAE(vars)) then List.exist(vars, isVarExpandable);
-
-  end matchcontinue;
+  if System.getHasExpandableConnectors() then
+    DAE.DAE(vars) := DAE;
+    hasExpandable := List.exist(vars, isVarExpandable);
+  else
+    hasExpandable := false;
+  end if;
 end daeHasExpandableConnectors;
 
 protected function isVarExpandable
   input DAE.Element var;
-  output Boolean b;
+  output Boolean isExpandable;
 algorithm
-  b := match var
-    local
-      DAE.ComponentRef name;
-    case DAE.VAR(componentRef = name) then isExpandable(name);
+  isExpandable := match var
+    case DAE.VAR() then isExpandable(var.componentRef);
     else false;
   end match;
 end isVarExpandable;
 
 protected function getExpandableVariablesWithNoBinding
-"@author: adrpo
- Goes through a list of expandable variables
- THAT HAVE NO BINDING and returns their crefs"
-  input list<DAE.Element> inVariables;
-  input list<DAE.ComponentRef> inAccPotential;
-  output list<DAE.ComponentRef> outPotential;
+  "@author: adrpo
+   Goes through a list of expandable variables
+   THAT HAVE NO BINDING and returns their crefs"
+  input list<DAE.Element> variables;
+  output list<DAE.ComponentRef> potential = {};
+protected
+  DAE.ComponentRef name;
 algorithm
-  outPotential := match (inVariables, inAccPotential)
-    local
-      list<DAE.Element> rest_vars;
-      DAE.ComponentRef name;
-      list<DAE.ComponentRef> potential;
-      Option<DAE.Exp> bnd;
+  for var in variables loop
+    _ := match var
+      // do not return the ones that have a binding as they are used
+      // TODO: actually only if their binding is not another expandable??!!
+      case DAE.VAR(componentRef = name, binding = NONE())
+        algorithm
+          if isExpandable(name) then
+            potential := name :: potential;
+          end if;
+        then
+          ();
 
-    case ({}, _) then (inAccPotential);
-
-    // do not return the ones that have a binding as they are used
-    // TODO: actually only if their binding is not another expandable??!!
-    case (DAE.VAR(componentRef = name, binding = bnd) :: rest_vars, _)
-      equation
-        potential =
-          if isSome(bnd)
-            then inAccPotential
-            else List.consOnTrue(isExpandable(name), name, inAccPotential);
-        potential = getExpandableVariablesWithNoBinding(rest_vars, potential);
-      then
-        potential;
-
-    case (_::rest_vars, _)
-      equation
-        potential = getExpandableVariablesWithNoBinding(rest_vars, inAccPotential);
-      then
-        potential;
-
-  end match;
+      else ();
+    end match;
+  end for;
 end getExpandableVariablesWithNoBinding;
 
 protected function getStreamAndFlowVariables
   "Goes through a list of variables and filters out all flow and stream
-  variables into separate lists."
-  input list<DAE.Var> inVariable;
-  input list<DAE.Var> inAccFlows;
-  input list<DAE.Var> inAccStreams;
-  output list<DAE.Var> outFlows;
-  output list<DAE.Var> outStreams;
+   variables into separate lists."
+  input list<DAE.Var> variables;
+  output list<DAE.Var> flows = {};
+  output list<DAE.Var> streams = {};
 algorithm
-  (outFlows, outStreams) := match(inVariable, inAccFlows, inAccStreams)
-    local
-      DAE.Var var;
-      list<DAE.Var> rest_vars, flows, streams;
+  for var in variables loop
+    _ := match var
+      case DAE.TYPES_VAR(attributes = DAE.ATTR(connectorType = SCode.FLOW()))
+        algorithm
+          flows := var :: flows;
+        then
+          ();
 
-    case ({}, _, _) then (inAccFlows, inAccStreams);
+      case DAE.TYPES_VAR(attributes = DAE.ATTR(connectorType = SCode.STREAM()))
+        algorithm
+          streams := var :: streams;
+        then
+          ();
 
-    case ((var as DAE.TYPES_VAR(attributes = DAE.ATTR(
-        connectorType = SCode.FLOW()))) :: rest_vars, _, _)
-      equation
-        (flows, streams) =
-          getStreamAndFlowVariables(rest_vars, var :: inAccFlows, inAccStreams);
-      then
-        (flows, streams);
-
-    case ((var as DAE.TYPES_VAR(attributes = DAE.ATTR(
-        connectorType = SCode.STREAM()))) :: rest_vars, _, _)
-      equation
-        (flows, streams) =
-          getStreamAndFlowVariables(rest_vars, inAccFlows, var :: inAccStreams);
-      then
-        (flows, streams);
-
-    case (_ :: rest_vars, _ ,_)
-      equation
-        (flows, streams) =
-          getStreamAndFlowVariables(rest_vars, inAccFlows, inAccStreams);
-      then
-        (flows, streams);
-
-  end match;
+      else ();
+    end match;
+  end for;
 end getStreamAndFlowVariables;
 
 protected function addStreamFlowAssociations
   "Adds information to the connection sets about which flow variables each
   stream variable is associated to."
-  input Sets inSets;
-  input Prefix.Prefix inPrefix;
-  input list<DAE.Var> inStreamVars;
-  input list<DAE.Var> inFlowVars;
-  output Sets outSets;
+  input output Sets sets;
+  input Prefix.Prefix prefix;
+  input list<DAE.Var> streamVars;
+  input list<DAE.Var> flowVars;
+protected
+  DAE.Var flow_var;
+  DAE.ComponentRef flow_cr;
+  list<DAE.ComponentRef> stream_crs;
 algorithm
-  outSets := match(inSets, inPrefix, inStreamVars, inFlowVars)
-    local
-      DAE.Var flow_var;
-      DAE.ComponentRef flow_cr;
-      list<DAE.ComponentRef> stream_crs;
-      Sets sets;
+  // No stream variables => not a stream connector.
+  if listEmpty(streamVars) then
+    return;
+  end if;
 
-    // No stream variables => not a stream connector.
-    case (_, _, {}, _) then inSets;
+  // Stream variables and exactly one flow => add associations.
+  {flow_var} := flowVars;
+  {flow_cr} := daeVarToCrefs(flow_var);
+  flow_cr := PrefixUtil.prefixCrefNoContext(prefix, flow_cr);
 
-    // Stream variables and exactly one flow => add associations.
-    case (_, _, _, {flow_var})
-      equation
-        {flow_cr} = daeVarToCrefs(flow_var);
-        flow_cr = PrefixUtil.prefixCrefNoContext(inPrefix, flow_cr);
-        stream_crs = List.mapFlat(inStreamVars, daeVarToCrefs);
-        sets = List.fold1(stream_crs, addStreamFlowAssociation,
-          flow_cr, inSets);
-      then sets;
-  end match;
+  for stream_var in streamVars loop
+    stream_crs := daeVarToCrefs(stream_var);
+
+    for stream_cr in stream_crs loop
+      sets := addStreamFlowAssociation(stream_cr, flow_cr, sets);
+    end for;
+  end for;
 end addStreamFlowAssociations;
 
 protected function daeVarToCrefs
   "Converts a DAE.Var to a list of crefs."
-  input DAE.Var inVar;
-  output list<DAE.ComponentRef> outCrefs;
+  input DAE.Var var;
+  output list<DAE.ComponentRef> crefs;
 protected
   String name;
   DAE.Type ty;
-  list<DAE.ComponentRef> crefs;
+  list<DAE.ComponentRef> crs;
   DAE.Dimensions dims;
   DAE.ComponentRef cr;
 algorithm
-  DAE.TYPES_VAR(name = name, ty = ty) := inVar;
+  DAE.TYPES_VAR(name = name, ty = ty) := var;
   ty := Types.derivedBasicType(ty);
 
-  outCrefs := match ty
+  crefs := match ty
     // Scalar
     case DAE.T_REAL() then {DAE.CREF_IDENT(name, ty, {})};
 
     // Complex type
     case DAE.T_COMPLEX()
       algorithm
-        crefs := listAppend(daeVarToCrefs(v) for v in listReverse(ty.varLst));
+        crs := listAppend(daeVarToCrefs(v) for v in listReverse(ty.varLst));
         cr := DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {});
       then
-        list(ComponentReference.joinCrefs(cr, c) for c in crefs);
+        list(ComponentReference.joinCrefs(cr, c) for c in crs);
 
     // Array
     case DAE.T_ARRAY()
@@ -609,7 +461,7 @@ algorithm
         dims := Types.getDimensions(ty);
         cr := DAE.CREF_IDENT(name, ty, {});
       then
-        expandArrayCref(cr, dims, {});
+        expandArrayCref(cr, dims);
 
     else
       algorithm
@@ -624,31 +476,31 @@ end daeVarToCrefs;
 protected function expandArrayCref
   "This function takes an array cref and a list of dimensions, and generates all
   scalar crefs by expanding the dimensions into subscripts."
-  input DAE.ComponentRef inCref;
-  input DAE.Dimensions inDims;
-  input list<DAE.ComponentRef> inAccumCrefs;
-  output list<DAE.ComponentRef> outCrefs;
+  input DAE.ComponentRef cref;
+  input DAE.Dimensions dims;
+  input list<DAE.ComponentRef> accumCrefs = {};
+  output list<DAE.ComponentRef> crefs;
 algorithm
-  outCrefs := matchcontinue(inCref, inDims, inAccumCrefs)
+  crefs := matchcontinue dims
     local
       DAE.Dimension dim;
-      DAE.Dimensions dims;
+      DAE.Dimensions rest_dims;
       DAE.Exp idx;
       DAE.ComponentRef cr;
-      list<DAE.ComponentRef> crefs;
+      list<DAE.ComponentRef> crs;
 
-    case (_, {}, _) then inCref :: inAccumCrefs;
+    case {} then cref :: accumCrefs;
 
-    case (_, dim :: dims, _)
-      equation
-        (idx, dim) = getNextIndex(dim);
-        cr = ComponentReference.subscriptCref(inCref, {DAE.INDEX(idx)});
-        crefs = expandArrayCref(cr, dims, inAccumCrefs);
-        crefs = expandArrayCref(inCref, dim :: dims, crefs);
+    case dim :: rest_dims
+      algorithm
+        (idx, dim) := getNextIndex(dim);
+        cr := ComponentReference.subscriptCref(cref, {DAE.INDEX(idx)});
+        crs := expandArrayCref(cr, rest_dims, accumCrefs);
+        crs := expandArrayCref(cref, dim :: rest_dims, crs);
       then
-        crefs;
+        crs;
 
-    else inAccumCrefs;
+    else accumCrefs;
 
   end matchcontinue;
 end expandArrayCref;
@@ -658,30 +510,27 @@ protected function reverseEnumType
   returns the given dimension if it's not an enumeration. This is used by
   getNextIndex that starts from the end, so that it can take the first literal
   in the list instead of the last (more efficient)."
-  input DAE.Dimension inDim;
-  output DAE.Dimension outDim;
+  input output DAE.Dimension dim;
 algorithm
-  outDim := match(inDim)
-    local
-      Absyn.Path p;
-      list<String> lits;
-      Integer dim_size;
-    case DAE.DIM_ENUM(p, lits, dim_size)
-      equation
-        lits = listReverse(lits);
-      then DAE.DIM_ENUM(p, lits, dim_size);
-    else inDim;
+  _ := match dim
+    case DAE.DIM_ENUM()
+      algorithm
+        dim.literals := listReverse(dim.literals);
+      then
+        ();
+
+    else ();
   end match;
 end reverseEnumType;
 
 protected function getNextIndex
   "Returns the next index given a dimension, and updates the dimension. Fails
   when there are no indices left."
-  input DAE.Dimension inDim;
-  output DAE.Exp outNextIndex;
-  output DAE.Dimension outDim;
+  input DAE.Dimension dim;
+  output DAE.Exp nextIndex;
+  output DAE.Dimension restDim;
 algorithm
-  (outNextIndex, outDim) := match(inDim)
+  (nextIndex, restDim) := match dim
     local
       Integer new_idx, dim_size;
       Absyn.Path p, ep;
@@ -692,16 +541,16 @@ algorithm
     case DAE.DIM_ENUM(size = 0) then fail();
 
     case DAE.DIM_INTEGER(integer = new_idx)
-      equation
-        dim_size = new_idx - 1;
+      algorithm
+        dim_size := new_idx - 1;
       then
         (DAE.ICONST(new_idx), DAE.DIM_INTEGER(dim_size));
 
     // Assumes that the enum has been reversed with reverseEnumType.
     case DAE.DIM_ENUM(p, l :: l_rest, new_idx)
-      equation
-        ep = Absyn.joinPaths(p, Absyn.IDENT(l));
-        dim_size = new_idx - 1;
+      algorithm
+        ep := Absyn.joinPaths(p, Absyn.IDENT(l));
+        dim_size := new_idx - 1;
       then
         (DAE.ENUM_LITERAL(ep, new_idx), DAE.DIM_ENUM(p, l_rest, dim_size));
   end match;
@@ -709,235 +558,151 @@ end getNextIndex;
 
 protected function addInsideFlowVariable
   "Adds a single inside flow variable to the connection sets."
-  input Connect.Sets inSets;
-  input DAE.ComponentRef inCref;
-  input DAE.ElementSource inSource;
-  input Prefix.Prefix inPrefix;
-  output Connect.Sets outSets;
+  input output Sets sets;
+  input DAE.ComponentRef cref;
+  input DAE.ElementSource source;
+  input Prefix.Prefix prefix;
+protected
+  ConnectorElement e;
 algorithm
-  outSets := matchcontinue(inSets, inCref, inSource, inPrefix)
-    local
-      ConnectorElement e;
-      SetTrie sets;
-      Integer sc;
-      list<SetConnection> c;
-      list<OuterConnect> o;
-      SourceInfo info;
-      DAE.ElementSource src;
-
+  try
     // Check if it exists in the sets already.
-    case (Connect.SETS(sets = sets), _, _, _)
-      equation
-        _ = setTrieGetElement(inCref, Connect.INSIDE(), sets);
-      then
-        inSets;
-
+    setTrieGetElement(cref, Face.INSIDE(), sets.sets);
+  else
     // Otherwise, add a new set for it.
-    case (Connect.SETS(sets, sc, c, o), _, DAE.SOURCE(), _)
-      equation
-        sc = sc + 1;
-        //src = DAEUtil.addAdditionalComment(inSource, " add inside flow(" +
-        //        PrefixUtil.printPrefixStr(inPrefix) + "/" +
-        //        ComponentReference.printComponentRefStr(inCref) +
-        //        ")");
-        e = newElement(inCref, Connect.INSIDE(), Connect.FLOW(), inSource, sc);
-        sets = setTrieAdd(e, sets);
-      then
-        Connect.SETS(sets, sc, c, o);
-
-  end matchcontinue;
+    sets.setCount := sets.setCount + 1;
+    e := newElement(cref, Face.INSIDE(), ConnectorType.FLOW(), source, sets.setCount);
+    sets.sets := setTrieAdd(e, sets.sets);
+  end try;
 end addInsideFlowVariable;
 
 protected function addStreamFlowAssociation
   "Adds an association between a stream variable and a flow."
-  input DAE.ComponentRef inStreamCref;
-  input DAE.ComponentRef inFlowCref;
-  input Connect.Sets inSets;
-  output Connect.Sets outSets;
+  input DAE.ComponentRef streamCref;
+  input DAE.ComponentRef flowCref;
+  input output Sets sets;
 algorithm
-  outSets := updateSetLeaf(inSets, inStreamCref, inFlowCref,
-    addStreamFlowAssociation2);
+  sets := updateSetLeaf(sets, streamCref, flowCref, addStreamFlowAssociation2);
 end addStreamFlowAssociation;
 
 protected function addStreamFlowAssociation2
   "Helper function to addSTreamFlowAssocication, sets the flow association in a
-  leaf node."
-  input DAE.ComponentRef inFlowCref;
-  input SetTrieNode inNode;
-  output SetTrieNode outNode;
+   leaf node."
+  input DAE.ComponentRef flowCref;
+  input output SetTrieNode node;
 algorithm
-  outNode := match(inFlowCref, inNode)
-    local
-      String name;
-      Option<ConnectorElement> ie, oe;
-      Integer c;
-
-    case (_, Connect.SET_TRIE_LEAF(name, ie, oe, _, c))
-      then Connect.SET_TRIE_LEAF(name, ie, oe, SOME(inFlowCref), c);
-
+  _ := match node
+    case SetTrieNode.SET_TRIE_LEAF()
+      algorithm
+        node.flowAssociation := SOME(flowCref);
+      then
+        ();
   end match;
 end addStreamFlowAssociation2;
 
 protected function getStreamFlowAssociation
   "Returns the associated flow variable for a stream variable."
-  input DAE.ComponentRef inStreamCref;
-  input Connect.Sets inSets;
-  output DAE.ComponentRef outFlowCref;
-protected
-  SetTrie sets;
+  input DAE.ComponentRef streamCref;
+  input Sets sets;
+  output DAE.ComponentRef flowCref;
 algorithm
-  Connect.SETS(sets = sets) := inSets;
-  Connect.SET_TRIE_LEAF(flowAssociation = SOME(outFlowCref)) :=
-    setTrieGet(inStreamCref, sets, false);
+  SetTrieNode.SET_TRIE_LEAF(flowAssociation = SOME(flowCref)) :=
+    setTrieGet(streamCref, sets.sets, false);
 end getStreamFlowAssociation;
-
-public function addOuterConnect
-  "Adds an outer connect to a Connect.Sets."
-  input Sets inSets;
-  input OuterConnect inOuterConnect;
-  output Sets outSets;
-protected
-  SetTrie sets;
-  Integer sc;
-  list<SetConnection> c;
-  list<OuterConnect> o;
-algorithm
-  Connect.SETS(sets, sc, c, o) := inSets;
-  outSets := Connect.SETS(sets, sc, c, inOuterConnect :: o);
-end addOuterConnect;
-
-public function setOuterConnects
-  "Sets the outer connect part of a Connect.Sets."
-  input Sets inSets;
-  input list<OuterConnect> inOuterConnects;
-  output Sets outSets;
-protected
-  SetTrie sets;
-  Integer sc;
-  list<SetConnection> c;
-algorithm
-  Connect.SETS(sets, sc, c, _) := inSets;
-  outSets := Connect.SETS(sets, sc, c, inOuterConnects);
-end setOuterConnects;
 
 public function addOuterConnection
   "Adds a connection with a reference to an outer connector These are added to a
    special list, such that they can be moved up in the instance hierarchy to a
    place where both instances are defined."
   input Prefix.Prefix scope;
-  input Connect.Sets sets;
+  input output Sets sets;
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
-  input Connect.Face f1;
-  input Connect.Face f2;
+  input Face f1;
+  input Face f2;
   input DAE.ElementSource source;
-  output Connect.Sets outSets;
+protected
+  OuterConnect new_oc;
 algorithm
-  outSets := matchcontinue(scope,sets,cr1,cr2,io1,io2,f1,f2,source)
-    local
-      list<Connect.OuterConnect> oc;
-      Connect.OuterConnect new_oc;
-    // First check if already added
-    case(_, Connect.SETS(outerConnects = oc),_,_,_,_,_,_,_)
-      equation
-        _::_ = List.select2(oc,outerConnectionMatches,cr1,cr2);
-      then sets;
-    // add the outerconnect
-    else
-      equation
-        new_oc = Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2, source);
-      then addOuterConnect(sets, new_oc);
-  end matchcontinue;
+  // Only add a new outer connection if it doesn't already exist in the list.
+  if not List.exist2(sets.outerConnects, outerConnectionMatches, cr1, cr2) then
+    new_oc := OuterConnect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2, source);
+    sets.outerConnects := new_oc :: sets.outerConnects;
+  end if;
 end addOuterConnection;
 
 protected function outerConnectionMatches
   "Returns true if Connect.OuterConnect matches the two component references
   passed as argument."
-  input Connect.OuterConnect oc;
+  input OuterConnect oc;
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
   output Boolean matches;
 algorithm
-  matches := match(oc,cr1,cr2)
-    local DAE.ComponentRef cr11,cr22;
-    case(Connect.OUTERCONNECT(cr1=cr11,cr2=cr22),_,_)
-      equation
-        matches =
-        ComponentReference.crefEqual(cr11,cr1) and ComponentReference.crefEqual(cr22,cr2) or
-        ComponentReference.crefEqual(cr11,cr2) and ComponentReference.crefEqual(cr22,cr1);
-      then matches;
+  matches := match oc
+    case OuterConnect.OUTERCONNECT()
+      then ComponentReference.crefEqual(oc.cr1,cr1) and ComponentReference.crefEqual(oc.cr2,cr2) or
+           ComponentReference.crefEqual(oc.cr1,cr2) and ComponentReference.crefEqual(oc.cr2,cr1);
   end match;
 end outerConnectionMatches;
 
 public function addDeletedComponent
   "Marks a component as deleted in the sets."
-  input String inComponentName;
-  input Sets inSets;
-  output Sets outSets;
+  input String componentName;
+  input output Sets sets;
 protected
-  SetTrie sets;
-  Integer sc, count;
-  list<SetConnection> c;
-  list<OuterConnect> o;
-  String name;
-  DAE.ComponentRef cref;
-  list<SetTrieNode> nodes;
+  SetTrie node;
 algorithm
-  Connect.SETS(sets, sc, c, o) := inSets;
-  Connect.SET_TRIE_NODE(name, cref, nodes, count) := sets;
-  nodes := Connect.SET_TRIE_DELETED(inComponentName) :: nodes;
-  sets := Connect.SET_TRIE_NODE(name, cref, nodes, count);
-  outSets := Connect.SETS(sets, sc, c, o);
+  node := sets.sets;
+
+  sets.sets := match node
+    case SetTrieNode.SET_TRIE_NODE()
+      algorithm
+        node.nodes := SetTrieNode.SET_TRIE_DELETED(componentName) :: node.nodes;
+      then
+        node;
+  end match;
 end addDeletedComponent;
 
 protected function isDeletedComponent
   "Checks if the given component is deleted or not."
-  input DAE.ComponentRef inComponent;
-  input SetTrie inSets;
-protected
-  DAE.ComponentRef cr;
+  input DAE.ComponentRef component;
+  input SetTrie sets;
+  output Boolean isDeleted;
 algorithm
   // Send true as last argument to setTrieGet, so that it also matches any
   // prefix of the cref in case the cref is a subcomponent of a deleted component.
-  //cr := ComponentReference.crefStripSubs(inComponent);
-  Connect.SET_TRIE_DELETED() := setTrieGet(inComponent, inSets, true);
+  try
+    SetTrieNode.SET_TRIE_DELETED() := setTrieGet(component, sets, true);
+    isDeleted := true;
+  else
+    isDeleted := false;
+  end try;
 end isDeletedComponent;
 
 public function connectionContainsDeletedComponents
   "Checks if a connection contains a deleted component, i.e. if either of the
   given crefs belong to a deleted component."
-  input DAE.ComponentRef inComponent1;
-  input DAE.ComponentRef inComponent2;
-  input Sets inSets;
+  input DAE.ComponentRef component1;
+  input DAE.ComponentRef component2;
+  input Sets sets;
   output Boolean containsDeletedComponent;
+protected
+  SetTrie node;
 algorithm
-  containsDeletedComponent := matchcontinue(inComponent1, inComponent2, inSets)
-    local
-      SetTrie sets;
+  node := sets.sets;
 
+  containsDeletedComponent := match node
     // No sets, so nothing can be deleted.
-    case (_, _, Connect.SETS(sets = Connect.SET_TRIE_NODE(nodes = {})))
-      then
-        false;
-
+    case SetTrieNode.SET_TRIE_NODE(nodes = {}) then false;
     // Check if the first component is deleted.
-    case (_, _, Connect.SETS(sets = sets))
-      equation
-        isDeletedComponent(inComponent1, sets);
-      then
-        true;
-
+    case _ guard isDeletedComponent(component1, node) then true;
     // Check if the second component is deleted.
-    case (_, _, Connect.SETS(sets = sets))
-      equation
-        isDeletedComponent(inComponent2, sets);
-      then
-        true;
-
+    case _ guard isDeletedComponent(component2, node) then true;
     else false;
-  end matchcontinue;
+  end match;
 end connectionContainsDeletedComponents;
 
 public function addOuterConnectToSets
@@ -946,196 +711,155 @@ public function addOuterConnectToSets
   we have an outer connection connect(world, a2.aPin), the connection is added
   to the sets, resulting in {world.v, topPin.v, a2.aPin.v}. Returns the updated
   sets and a boolean that indicates if anything was added or not."
-  input DAE.ComponentRef inCref1;
-  input DAE.ComponentRef inCref2;
-  input Absyn.InnerOuter inIO1;
-  input Absyn.InnerOuter inIO2;
-  input Connect.Face inFace1;
-  input Connect.Face inFace2;
-  input Connect.Sets inSets;
+  input DAE.ComponentRef cref1;
+  input DAE.ComponentRef cref2;
+  input Absyn.InnerOuter io1;
+  input Absyn.InnerOuter io2;
+  input Face face1;
+  input Face face2;
+  input output Sets sets;
   input SourceInfo inInfo;
-  output Connect.Sets outSets;
-  output Boolean outAdded;
+  output Boolean added;
 protected
   Boolean is_outer1, is_outer2;
 algorithm
-  is_outer1 := Absyn.isOuter(inIO1);
-  is_outer2 := Absyn.isOuter(inIO2);
-  (outSets, outAdded) := addOuterConnectToSets2(inCref1, inCref2, is_outer1,
-    is_outer2, inFace1, inFace2, inSets, inInfo);
-end addOuterConnectToSets;
+  is_outer1 := Absyn.isOuter(io1);
+  is_outer2 := Absyn.isOuter(io2);
 
-protected function addOuterConnectToSets2
-  "Helper function to addOuterConnectToSets. Dispatches based on the inner/outer
-   prefix of both connector elements."
-  input DAE.ComponentRef inCref1;
-  input DAE.ComponentRef inCref2;
-  input Boolean inIsOuter1;
-  input Boolean inIsOuter2;
-  input Face inFace1;
-  input Face inFace2;
-  input Sets inSets;
-  input SourceInfo inInfo;
-  output Sets outSets;
-  output Boolean outAdded;
-algorithm
-  (outSets, outAdded) := match(inCref1, inCref2, inIsOuter1, inIsOuter2,
-      inFace1, inFace2, inSets, inInfo)
-    local
-      Sets sets;
-      Boolean added;
-
+  added := match(is_outer1, is_outer2)
     // Both are outer => error.
-    case (_, _, true, true, _, _, _, _)
-      equation
+    case (true, true)
+      algorithm
         Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
           {"Connections where both connectors are outer references", "No suggestion"}, inInfo);
       then
-        (inSets, false);
+        false;
 
     // Both are inner => do nothing.
-    case (_, _, false, false, _, _, _, _) then (inSets, false);
+    case (false, false) then false;
 
-    // The first is outer and the second inner, call addOuterConnectToSets3.
-    case (_, _, true, false, _, _, _, _)
-      equation
-        (sets, added) = addOuterConnectToSets3(inCref1, inCref2, inFace1,
-          inFace2, inSets);
+    // The first is outer and the second inner, call addOuterConnectToSets2.
+    case (true, false)
+      algorithm
+        (sets, added) := addOuterConnectToSets2(cref1, cref2, face1, face2, sets);
       then
-        (sets, added);
+        added;
 
-    // The first is inner and the second outer, call addOuterConnectToSets3 with
+    // The first is inner and the second outer, call addOuterConnectToSets2 with
     // reversed order on the components compared to above.
-    case (_, _, false, true, _, _, _, _)
-      equation
-        (sets, added) = addOuterConnectToSets3(inCref2, inCref1, inFace2,
-          inFace1, inSets);
+    case (false, true)
+      algorithm
+        (sets, added) := addOuterConnectToSets2(cref2, cref1, face2, face1, sets);
       then
-        (sets, added);
+        added;
   end match;
-end addOuterConnectToSets2;
+end addOuterConnectToSets;
 
-protected function addOuterConnectToSets3
-  "Helper function to addOuterConnectToSets2. Tries to add connections between
+protected function addOuterConnectToSets2
+  "Helper function to addOuterConnectToSets. Tries to add connections between
    the inner and outer components."
-  input DAE.ComponentRef inOuterCref;
-  input DAE.ComponentRef inInnerCref;
-  input Face inOuterFace;
-  input Face inInnerFace;
-  input Sets inSets;
-  output Sets outSets;
-  output Boolean outAdded;
+  input DAE.ComponentRef outerCref;
+  input DAE.ComponentRef innerCref;
+  input Face outerFace;
+  input Face innerFace;
+  input output Sets sets;
+  output Boolean added;
+protected
+  SetTrieNode node;
+  list<ConnectorElement> outer_els, inner_els;
+  Integer sc;
 algorithm
-  (outSets, outAdded) :=
-  matchcontinue(inOuterCref, inInnerCref, inOuterFace, inInnerFace, inSets)
-    local
-      Sets sets;
-      SetTrieNode node;
-      SetTrie trie;
-      Integer sc, sets_added;
-      list<ConnectorElement> outer_els, inner_els;
-      Boolean added;
-
-    case (_, _, _, _, Connect.SETS(sets = trie, setCount = sc))
-      equation
-        // Find the trie node for the outer component.
-        node = setTrieGet(inOuterCref, trie, true);
-        // Collect all connector elements in the node.
-        outer_els = collectOuterElements(node, inOuterFace);
-        // Find or create inner elements corresponding to the outer elements.
-        inner_els = List.map3(outer_els, findInnerElement, inInnerCref,
-          inInnerFace, inSets);
-        // Merge the inner and outer sets pairwise from the two lists.
-        (sets as Connect.SETS(setCount = sets_added)) = List.threadFold(outer_els, inner_els, mergeSets, inSets);
-        // Check if the number of sets changed.
-        added = not intEq(sc, sets_added);
-      then
-        (sets, added);
-
-    else (inSets, false);
-
-  end matchcontinue;
-end addOuterConnectToSets3;
+  try
+    // Find the trie node for the outer component.
+    node := setTrieGet(outerCref, sets.sets, true);
+    // Collect all connector elements in the node.
+    outer_els := collectOuterElements(node, outerFace);
+    // Find or create inner elements corresponding to the outer elements.
+    inner_els := list(findInnerElement(oe, innerCref, innerFace, sets) for oe in outer_els);
+    // Merge the inner and outer sets pairwise from the two lists.
+    sc := sets.setCount;
+    sets := List.threadFold(outer_els, inner_els, mergeSets, sets);
+    // Check if the number of sets changed.
+    added := sc <> sets.setCount;
+  else
+    added := false;
+  end try;
+end addOuterConnectToSets2;
 
 protected function collectOuterElements
   "Collects all connector elements with a certain face from a trie node."
-  input SetTrieNode inNode;
-  input Connect.Face inFace;
-  output list<ConnectorElement> outOuterElements;
+  input SetTrieNode node;
+  input Face face;
+  output list<ConnectorElement> outerElements;
 algorithm
-  outOuterElements := match(inNode, inFace)
-    local
-      list<SetTrieNode> nodes;
+  outerElements := match node
+    case SetTrieNode.SET_TRIE_NODE()
+      then List.map2Flat(node.nodes, collectOuterElements2, face, NONE());
 
-    case (Connect.SET_TRIE_NODE(nodes = nodes), _)
-      then List.map2Flat(nodes, collectOuterElements2, inFace, NONE());
-
-    else collectOuterElements2(inNode, inFace, NONE());
+    else collectOuterElements2(node, face, NONE());
   end match;
 end collectOuterElements;
 
 protected function collectOuterElements2
   "Helper function to collectOuterElements."
-  input SetTrieNode inNode;
-  input Connect.Face inFace;
-  input Option<DAE.ComponentRef> inPrefix;
-  output list<ConnectorElement> outOuterElements;
+  input SetTrieNode node;
+  input Face face;
+  input Option<DAE.ComponentRef> prefix;
+  output list<ConnectorElement> outerElements;
 algorithm
-  outOuterElements := match(inNode, inFace, inPrefix)
+  outerElements := match node
     local
       DAE.ComponentRef cr;
       list<SetTrieNode> nodes;
       ConnectorElement e;
 
-    case (Connect.SET_TRIE_NODE(cref = cr, nodes = nodes), _, _)
-      equation
-        cr = optPrefixCref(inPrefix, cr);
+    case SetTrieNode.SET_TRIE_NODE(cref = cr)
+      algorithm
+        cr := optPrefixCref(prefix, cr);
       then
-        List.map2Flat(nodes, collectOuterElements2, inFace, SOME(cr));
+        List.map2Flat(node.nodes, collectOuterElements2, face, SOME(cr));
 
-    case (Connect.SET_TRIE_LEAF(), _, _)
-      equation
-        e = setTrieGetLeafElement(inNode, inFace);
-        cr = getElementName(e);
-        e = setElementName(e, optPrefixCref(inPrefix, cr));
+    case SetTrieNode.SET_TRIE_LEAF()
+      algorithm
+        e := setTrieGetLeafElement(node, face);
+        cr := getElementName(e);
+        e := setElementName(e, optPrefixCref(prefix, cr));
       then
         {e};
 
-    case (Connect.SET_TRIE_DELETED(), _, _) then {};
+    case SetTrieNode.SET_TRIE_DELETED() then {};
 
   end match;
 end collectOuterElements2;
 
 protected function findInnerElement
   "Finds or creates an inner element based on a given outer element."
-  input ConnectorElement inOuterElement;
-  input DAE.ComponentRef inInnerCref;
-  input Face inInnerFace;
-  input Sets inSets;
-  output ConnectorElement outInnerElement;
+  input ConnectorElement outerElement;
+  input DAE.ComponentRef innerCref;
+  input Face innerFace;
+  input Sets sets;
+  output ConnectorElement innerElement;
 protected
   DAE.ComponentRef name;
   ConnectorType ty;
   DAE.ElementSource src;
 algorithm
-  Connect.CONNECTOR_ELEMENT(name = name, ty = ty, source = src) := inOuterElement;
-  name := ComponentReference.joinCrefs(inInnerCref, name);
-  outInnerElement := findElement(name, inInnerFace, ty, src, inSets);
+  ConnectorElement.CONNECTOR_ELEMENT(name = name, ty = ty, source = src) := outerElement;
+  name := ComponentReference.joinCrefs(innerCref, name);
+  innerElement := findElement(name, innerFace, ty, src, sets);
 end findInnerElement;
 
 protected function optPrefixCref
   "Appends an optional prefix to a cref."
-  input Option<DAE.ComponentRef> inPrefix;
-  input DAE.ComponentRef inCref;
-  output DAE.ComponentRef outCref;
+  input Option<DAE.ComponentRef> prefix;
+  input output DAE.ComponentRef cref;
 algorithm
-  outCref := match(inPrefix, inCref)
+  cref := match prefix
     local
       DAE.ComponentRef cr;
 
-    case (NONE(), _) then inCref;
-    case (SOME(cr), _)
-      then ComponentReference.joinCrefs(cr, inCref);
+    case NONE() then cref;
+    case SOME(cr) then ComponentReference.joinCrefs(cr, cref);
 
   end match;
 end optPrefixCref;
@@ -1143,48 +867,41 @@ end optPrefixCref;
 protected function findElement
   "Tries to find a connector element in the sets given a cref and a face. If no
    element can be found it creates a new one."
-  input DAE.ComponentRef inCref;
-  input Face inFace;
-  input ConnectorType inType;
-  input DAE.ElementSource inSource;
-  input Sets inSets;
-  output ConnectorElement outElement;
+  input DAE.ComponentRef cref;
+  input Face face;
+  input ConnectorType ty;
+  input DAE.ElementSource source;
+  input Sets sets;
+  output ConnectorElement element;
 algorithm
-  outElement := matchcontinue(inCref, inFace, inType, inSource, inSets)
-    local
-      SetTrie sets;
-
-    // first try the actual face
-    case (_, _, _, _, Connect.SETS(sets = sets))
-      then setTrieGetElement(inCref, inFace, sets);
-
-    else newElement(inCref, inFace, inType, inSource, Connect.NEW_SET);
-  end matchcontinue;
+  try
+    element := setTrieGetElement(cref, face, sets.sets);
+  else
+    element := newElement(cref, face, ty, source, Connect.NEW_SET);
+  end try;
 end findElement;
 
 protected function newElement
   "Creates a new connector element."
-  input DAE.ComponentRef inCref;
-  input Face inFace;
-  input ConnectorType inType;
-  input DAE.ElementSource inSource;
-  input Integer inSet;
-  output ConnectorElement outElement;
-protected
-  DAE.ComponentRef name;
+  input DAE.ComponentRef cref;
+  input Face face;
+  input ConnectorType ty;
+  input DAE.ElementSource source;
+  input Integer set;
+  output ConnectorElement element;
 algorithm
-  outElement := Connect.CONNECTOR_ELEMENT(inCref, inFace, inType, inSource, inSet);
+  element := ConnectorElement.CONNECTOR_ELEMENT(cref, face, ty, source, set);
 end newElement;
 
 protected function isNewElement
   "Checks if the element is new, i.e. hasn't been assigned to a set yet."
-  input ConnectorElement inElement;
-  output Boolean outIsNew;
+  input ConnectorElement element;
+  output Boolean isNew;
 protected
   Integer set;
 algorithm
-  Connect.CONNECTOR_ELEMENT(set = set) := inElement;
-  outIsNew := (set == Connect.NEW_SET);
+  ConnectorElement.CONNECTOR_ELEMENT(set = set) := element;
+  isNew := set == Connect.NEW_SET;
 end isNewElement;
 
 protected function getElementSetIndex
@@ -1192,557 +909,447 @@ protected function getElementSetIndex
   input ConnectorElement inElement;
   output Integer outIndex;
 algorithm
-  Connect.CONNECTOR_ELEMENT(set = outIndex) := inElement;
+  ConnectorElement.CONNECTOR_ELEMENT(set = outIndex) := inElement;
 end getElementSetIndex;
 
 protected function setElementSetIndex
   "Sets the set index of a connector element."
-  input ConnectorElement inElement;
-  input Integer inIndex;
-  output ConnectorElement outElement;
-protected
-  DAE.ComponentRef name;
-  Face face;
-  ConnectorType ty;
-  DAE.ElementSource source;
+  input output ConnectorElement element;
+  input Integer index;
 algorithm
-  Connect.CONNECTOR_ELEMENT(name, face, ty, source, _) := inElement;
-  outElement := Connect.CONNECTOR_ELEMENT(name, face, ty, source, inIndex);
+  element.set := index;
 end setElementSetIndex;
 
 protected function getElementName
   "Returns the name of a connector element."
-  input ConnectorElement inElement;
-  output DAE.ComponentRef outName;
+  input ConnectorElement element;
+  output DAE.ComponentRef name;
 algorithm
-  Connect.CONNECTOR_ELEMENT(name = outName) := inElement;
+  ConnectorElement.CONNECTOR_ELEMENT(name = name) := element;
 end getElementName;
 
 protected function setElementName
   "Sets the name of a connector element."
-  input ConnectorElement inElement;
-  input DAE.ComponentRef inName;
-  output ConnectorElement outElement;
-protected
-  Face face;
-  ConnectorType ty;
-  DAE.ElementSource source;
-  Integer set;
+  input output ConnectorElement element;
+  input DAE.ComponentRef name;
 algorithm
-  Connect.CONNECTOR_ELEMENT(_, face, ty, source, set) := inElement;
-  outElement := Connect.CONNECTOR_ELEMENT(inName, face, ty, source, set);
+  element.name := name;
 end setElementName;
 
 protected function getElementSource
   "Returns the element source of a connector element."
-  input ConnectorElement inElement;
-  output DAE.ElementSource outSource;
+  input ConnectorElement element;
+  output DAE.ElementSource source;
 algorithm
-  Connect.CONNECTOR_ELEMENT(source = outSource) := inElement;
+  ConnectorElement.CONNECTOR_ELEMENT(source = source) := element;
 end getElementSource;
 
 protected function setTrieNewLeaf
   "Creates a new trie leaf."
-  input String inId;
-  input ConnectorElement inElement;
-  output SetTrieNode outLeaf;
+  input String id;
+  input ConnectorElement element;
+  output SetTrieNode leaf;
 algorithm
-  outLeaf := match(inId, inElement)
-    local
-      String name;
+  leaf := match element
+    case ConnectorElement.CONNECTOR_ELEMENT(face = Face.INSIDE())
+      then SetTrieNode.SET_TRIE_LEAF(id, SOME(element), NONE(), NONE(), 0);
 
-    case (_, Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE()))
-      then Connect.SET_TRIE_LEAF(inId, SOME(inElement), NONE(), NONE(), 0);
-
-    case (_, Connect.CONNECTOR_ELEMENT(face = Connect.OUTSIDE()))
-      then Connect.SET_TRIE_LEAF(inId, NONE(), SOME(inElement), NONE(), 0);
+    case ConnectorElement.CONNECTOR_ELEMENT(face = Face.OUTSIDE())
+      then SetTrieNode.SET_TRIE_LEAF(id, NONE(), SOME(element), NONE(), 0);
 
   end match;
 end setTrieNewLeaf;
 
 protected function setTrieNewNode
   "Creates a new trie node."
-  input DAE.ComponentRef inCref;
-  input ConnectorElement inElement;
-  output SetTrieNode outNode;
+  input DAE.ComponentRef cref;
+  input ConnectorElement element;
+  output SetTrieNode node;
 algorithm
-  outNode := match(inCref, inElement)
+  node := match cref
     local
       String id;
-      DAE.ComponentRef rest_cr;
-      SetTrieNode node;
       DAE.ComponentRef cr;
-      DAE.Type ty;
-      ConnectorElement el;
 
     // A simple identifier, just create a new leaf.
-    case (DAE.CREF_IDENT(), _)
-      equation
-        id = ComponentReference.printComponentRefStr(inCref);
-        el = setElementName(inElement, inCref);
+    case DAE.CREF_IDENT()
+      algorithm
+        id := ComponentReference.printComponentRefStr(cref);
       then
-        setTrieNewLeaf(id, el);
+        setTrieNewLeaf(id, setElementName(element, cref));
 
     // A qualified identifier, call this function recursively.
     // I.e. a.b.c becomes NODE(a, {NODE(b, {NODE(c)})});
-    case (DAE.CREF_QUAL(componentRef = rest_cr), _)
-      equation
-        cr = ComponentReference.crefFirstCref(inCref);
-        id = ComponentReference.printComponentRefStr(cr);
-        node = setTrieNewNode(rest_cr, inElement);
+    case DAE.CREF_QUAL()
+      algorithm
+        cr := ComponentReference.crefFirstCref(cref);
+        id := ComponentReference.printComponentRefStr(cr);
+        node := setTrieNewNode(cref.componentRef, element);
       then
-        Connect.SET_TRIE_NODE(id, cr, {node}, 0);
+        SetTrieNode.SET_TRIE_NODE(id, cr, {node}, 0);
 
   end match;
 end setTrieNewNode;
 
 protected function setTrieNodeName
-  input SetTrieNode inNode;
-  output String outName;
+  input SetTrieNode node;
+  output String name;
 algorithm
-  outName := match(inNode)
-    local
-      String name;
-
-    case Connect.SET_TRIE_NODE(name = name) then name;
-    case Connect.SET_TRIE_LEAF(name = name) then name;
-    case Connect.SET_TRIE_DELETED(name = name) then name;
-
+  name := match node
+    case SetTrieNode.SET_TRIE_NODE() then node.name;
+    case SetTrieNode.SET_TRIE_LEAF() then node.name;
+    case SetTrieNode.SET_TRIE_DELETED() then node.name;
   end match;
 end setTrieNodeName;
 
 protected function mergeSets
   "Merges two sets."
-  input ConnectorElement inElement1;
-  input ConnectorElement inElement2;
-  input Sets inSets;
-  output Sets outSets;
+  input ConnectorElement element1;
+  input ConnectorElement element2;
+  input output Sets sets;
 protected
   Boolean new1, new2;
 algorithm
-  new1 := isNewElement(inElement1);
-  new2 := isNewElement(inElement2);
-  outSets := mergeSets2(inElement1, inElement2, new1, new2, inSets);
+  new1 := isNewElement(element1);
+  new2 := isNewElement(element2);
+  sets := mergeSets2(element1, element2, new1, new2, sets);
 end mergeSets;
 
 protected function mergeSets2
   "Helper function to mergeSets, dispatches to the correct function based on if
    the elements are new or not."
-  input ConnectorElement inElement1;
-  input ConnectorElement inElement2;
-  input Boolean inIsNew1;
-  input Boolean inIsNew2;
-  input Sets inSets;
-  output Sets outSets;
+  input ConnectorElement element1;
+  input ConnectorElement element2;
+  input Boolean isNew1;
+  input Boolean isNew2;
+  input output Sets sets;
 algorithm
-  outSets := match(inElement1, inElement2, inIsNew1, inIsNew2, inSets)
-
+  sets := match(isNew1, isNew2)
     // Both elements are new, add them to a new set.
-    case (_, _, true, true, _)
-      then addNewSet(inElement1, inElement2, inSets);
+    case (true, true) then addNewSet(element1, element2, sets);
 
     // The first is new and the second old, add the first to the same set as the
     // second.
-    case (_, _, true, false, _)
-      then addToSet(inElement1, inElement2, inSets);
+    case (true, false) then addToSet(element1, element2, sets);
 
     // The second is new and the first old, add the second to the same set as
     // the first.
-    case (_, _, false, true, _)
-      then addToSet(inElement2, inElement1, inSets);
+    case (false, true) then addToSet(element2, element1, sets);
 
     // Both sets are old, add a connection between their sets.
-    case (_, _, false, false, _)
-      then connectSets(inElement1, inElement2, inSets);
-
+    case (false, false) then connectSets(element1, element2, sets);
   end match;
 end mergeSets2;
 
 protected function addNewSet
   "Adds a new set containing the given two elements to the sets."
-  input ConnectorElement inElement1;
-  input ConnectorElement inElement2;
-  input Sets inSets;
-  output Sets outSets;
+  input ConnectorElement element1;
+  input ConnectorElement element2;
+  input output Sets sets;
 protected
-  SetTrie sets;
+  SetTrie node;
   Integer sc;
-  list<SetConnection> c;
-  list<OuterConnect> o;
   ConnectorElement e1, e2;
 algorithm
-  Connect.SETS(sets, sc, c, o) := inSets;
-  sc := sc + 1;
-  e1 := setElementSetIndex(inElement1, sc);
-  e2 := setElementSetIndex(inElement2, sc);
-  sets := setTrieAdd(e1, sets);
-  sets := setTrieAdd(e2, sets);
-  outSets := Connect.SETS(sets, sc, c, o);
+  sc := sets.setCount + 1;
+  e1 := setElementSetIndex(element1, sc);
+  e2 := setElementSetIndex(element2, sc);
+  node := sets.sets;
+  node := setTrieAdd(e1, node);
+  sets.sets := setTrieAdd(e2, node);
+  sets.setCount := sc;
 end addNewSet;
 
 protected function addToSet
   "Adds the first connector element to the same set as the second."
-  input ConnectorElement inElement;
-  input ConnectorElement inSet;
-  input Sets inSets;
-  output Sets outSets;
+  input ConnectorElement element;
+  input ConnectorElement set;
+  input output Sets sets;
 protected
-  SetTrie sets;
-  Integer sc, index;
-  list<SetConnection> c;
-  list<OuterConnect> o;
+  Integer index;
   ConnectorElement e;
 algorithm
-  index := getElementSetIndex(inSet);
-  e := setElementSetIndex(inElement, index);
-  Connect.SETS(sets, sc, c, o) := inSets;
-  sets := setTrieAdd(e, sets);
-  outSets := Connect.SETS(sets, sc, c, o);
+  index := getElementSetIndex(set);
+  e := setElementSetIndex(element, index);
+  sets.sets := setTrieAdd(e, sets.sets);
 end addToSet;
 
 protected function connectSets
   "Connects two sets."
-  input ConnectorElement inElement1;
-  input ConnectorElement inElement2;
-  input Sets inSets;
-  output Sets outSets;
+  input ConnectorElement element1;
+  input ConnectorElement element2;
+  input output Sets sets;
+protected
+  Integer set1, set2;
 algorithm
-  outSets := matchcontinue(inElement1, inElement2, inSets)
-    local
-      Integer set1, set2;
-      SetTrie sets;
-      Integer sc;
-      list<SetConnection> connections;
-      list<OuterConnect> o;
+  set1 := getElementSetIndex(element1);
+  set2 := getElementSetIndex(element2);
 
-    // The elements already belong to the same set, nothing needs to be done.
-    case (_, _, _)
-      equation
-        set1 = getElementSetIndex(inElement1);
-        set2 = getElementSetIndex(inElement2);
-        true = intEq(set1, set2);
-      then
-        inSets;
-
-    // Otherwise, add a connection to the connection list.
-    case (_, _, Connect.SETS(sets, sc, connections, o))
-      equation
-        set1 = getElementSetIndex(inElement1);
-        set2 = getElementSetIndex(inElement2);
-      then
-        Connect.SETS(sets, sc, (set1, set2) :: connections, o);
-
-  end matchcontinue;
+  // Add a new connection if the elements don't belong to the same set already.
+  if set1 <> set2 then
+    sets.connections := (set1, set2) :: sets.connections;
+  end if;
 end connectSets;
 
 protected function setTrieGetElement
   "Fetches a connector element from the trie given a cref and a face."
-  input DAE.ComponentRef inCref;
-  input Face inFace;
-  input SetTrie inTrie;
-  output ConnectorElement outElement;
+  input DAE.ComponentRef cref;
+  input Face face;
+  input SetTrie trie;
+  output ConnectorElement element;
 protected
   SetTrieNode node;
 algorithm
-  node := setTrieGet(inCref, inTrie, false);
-  outElement := setTrieGetLeafElement(node, inFace);
+  node := setTrieGet(cref, trie, false);
+  element := setTrieGetLeafElement(node, face);
 end setTrieGetElement;
 
 protected function setTrieAddLeafElement
   "Adds a connector element to a trie leaf."
-  input ConnectorElement inElement;
-  input SetTrieNode inNode;
-  output SetTrieNode outNode;
+  input ConnectorElement element;
+  input output SetTrieNode node;
 algorithm
-  outNode := match(inElement, inNode)
-    local
-      String name;
-      Option<ConnectorElement> oce;
-      Option<DAE.ComponentRef> fa;
-      Integer c;
+  _ := match node
+    case SetTrieNode.SET_TRIE_LEAF()
+      algorithm
+        _ := match element.face
+          case Face.INSIDE()
+            algorithm
+              node.insideElement := SOME(element);
+            then
+              ();
 
-    case (Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE()),
-        Connect.SET_TRIE_LEAF(name, _, oce, fa, c))
-      then Connect.SET_TRIE_LEAF(name, SOME(inElement), oce, fa, c);
-
-    case (Connect.CONNECTOR_ELEMENT(face = Connect.OUTSIDE()),
-        Connect.SET_TRIE_LEAF(name, oce, _, fa, c))
-      then Connect.SET_TRIE_LEAF(name, oce, SOME(inElement), fa, c);
-
+          case Face.OUTSIDE()
+            algorithm
+              node.outsideElement := SOME(element);
+            then
+              ();
+        end match;
+      then
+        ();
   end match;
 end setTrieAddLeafElement;
 
 protected function setTrieGetLeafElement
   "Returns the connector element of a trie leaf, given a face."
-  input SetTrieNode inNode;
-  input Face inFace;
-  output ConnectorElement outElement;
+  input SetTrieNode node;
+  input Face face;
+  output ConnectorElement element;
 algorithm
-  outElement := match(inNode, inFace)
+  element := match(face, node)
     local
       ConnectorElement e;
 
-    case (Connect.SET_TRIE_LEAF(insideElement = SOME(e)), Connect.INSIDE()) then e;
-    case (Connect.SET_TRIE_LEAF(outsideElement = SOME(e)), Connect.OUTSIDE()) then e;
+    case (Face.INSIDE(), SetTrieNode.SET_TRIE_LEAF(insideElement = SOME(e))) then e;
+    case (Face.OUTSIDE(), SetTrieNode.SET_TRIE_LEAF(outsideElement = SOME(e))) then e;
   end match;
 end setTrieGetLeafElement;
 
 protected function setTrieAdd
   "Adds a connector element to the trie."
-  input ConnectorElement inElement;
-  input SetTrie inTrie;
-  output SetTrie outTrie;
+  input ConnectorElement element;
+  input output SetTrie trie;
 protected
   DAE.ComponentRef cref, el_cr;
   ConnectorElement el;
 algorithm
-  cref := getElementName(inElement);
+  cref := getElementName(element);
   el_cr := ComponentReference.crefLastCref(cref);
-  el := setElementName(inElement, el_cr);
-  outTrie := setTrieUpdate(cref, el, inTrie, setTrieAddLeafElement);
+  el := setElementName(element, el_cr);
+  trie := setTrieUpdate(cref, el, trie, setTrieAddLeafElement);
 end setTrieAdd;
 
-protected function updateSetLeaf
+protected function updateSetLeaf<Arg>
   "Updates a trie leaf in the sets with the given update function."
-  input Sets inSets;
-  input DAE.ComponentRef inCref;
-  input Arg inArg;
-  input UpdateFunc inUpdateFunc;
-  output Sets outSets;
-
-  replaceable type Arg subtypeof Any;
+  input output Sets sets;
+  input DAE.ComponentRef cref;
+  input Arg arg;
+  input UpdateFunc updateFunc;
 
   partial function UpdateFunc
-    input Arg inArg;
-    input SetTrieNode inNode;
-    output SetTrieNode outNode;
+    input Arg arg;
+    input output SetTrieNode node;
   end UpdateFunc;
-protected
-  SetTrie sets;
-  Integer sc;
-  list<SetConnection> c;
-  list<OuterConnect> o;
 algorithm
-  Connect.SETS(sets, sc, c, o) := inSets;
-  sets := setTrieUpdate(inCref, inArg, sets, inUpdateFunc);
-  outSets := Connect.SETS(sets, sc, c, o);
+  sets.sets := setTrieUpdate(cref, arg, sets.sets, updateFunc);
 end updateSetLeaf;
 
-protected function setTrieUpdate
+protected function setTrieUpdate<Arg>
   "Updates a trie leaf in the trie with the given update function."
-  input DAE.ComponentRef inCref;
-  input Arg inArg;
-  input SetTrie inTrie;
-  input UpdateFunc inUpdateFunc;
-  output SetTrie outTrie;
-
-  replaceable type Arg subtypeof Any;
+  input DAE.ComponentRef cref;
+  input Arg arg;
+  input output SetTrie trie;
+  input UpdateFunc updateFunc;
 
   partial function UpdateFunc
-    input Arg inArg;
-    input SetTrieNode inNode;
-    output SetTrieNode outNode;
+    input Arg arg;
+    input output SetTrieNode node;
   end UpdateFunc;
 algorithm
-  outTrie := match(inCref, inArg, inTrie, inUpdateFunc)
+  _ := match(cref, trie)
     local
-      String id, name;
-      DAE.ComponentRef el_cr, rest_cref;
-      list<SetTrieNode> nodes;
-      list<DAE.Subscript> subs;
-      Integer cc;
+      String id;
 
-    case (DAE.CREF_QUAL(ident = id, subscriptLst = subs, componentRef = rest_cref),
-        _, Connect.SET_TRIE_NODE(name, el_cr, nodes, cc), _)
-      equation
-        id = ComponentReference.printComponentRef2Str(id, subs);
-        nodes = setTrieUpdateNode(id, inCref, rest_cref, inArg, nodes, inUpdateFunc, {});
+    case (DAE.CREF_QUAL(), SetTrieNode.SET_TRIE_NODE())
+      algorithm
+        id := ComponentReference.printComponentRef2Str(cref.ident, cref.subscriptLst);
+        trie.nodes := setTrieUpdateNode(id, cref, cref.componentRef, arg, updateFunc, trie.nodes);
       then
-        Connect.SET_TRIE_NODE(name, el_cr, nodes, cc);
+        ();
 
-    case (DAE.CREF_IDENT(ident = id, subscriptLst = subs), _,
-        Connect.SET_TRIE_NODE(name, el_cr, nodes, cc), _)
-      equation
-        id = ComponentReference.printComponentRef2Str(id, subs);
-        nodes = setTrieUpdateLeaf(id, inArg, nodes, inUpdateFunc);
+    case (DAE.CREF_IDENT(), SetTrieNode.SET_TRIE_NODE())
+      algorithm
+        id := ComponentReference.printComponentRef2Str(cref.ident, cref.subscriptLst);
+        trie.nodes := setTrieUpdateLeaf(id, arg, trie.nodes, updateFunc);
       then
-        Connect.SET_TRIE_NODE(name, el_cr, nodes, cc);
+        ();
 
   end match;
 end setTrieUpdate;
 
-protected function setTrieUpdateNode
+protected function setTrieUpdateNode<Arg>
   "Helper function to setTrieUpdate, updates a node in the trie."
   input String id;
   input DAE.ComponentRef wholeCref;
-  input DAE.ComponentRef inCref;
-  input Arg inArg;
-  input list<SetTrieNode> inNodes;
-  input UpdateFunc inUpdateFunc;
-  input list<SetTrieNode> acc;
-  output list<SetTrieNode> outNodes;
-
-  replaceable type Arg subtypeof Any;
+  input DAE.ComponentRef cref;
+  input Arg arg;
+  input UpdateFunc updateFunc;
+  input output list<SetTrieNode> nodes;
 
   partial function UpdateFunc
-    input Arg inArg;
-    input SetTrieNode inNode;
-    output SetTrieNode outNode;
+    input Arg arg;
+    input output SetTrieNode node;
   end UpdateFunc;
 protected
   SetTrieNode node2;
   Integer n=1;
 algorithm
-  for node in inNodes loop
-    if elementIsTrieNodeNamed(node, id) then
-      node2 := setTrieUpdate(inCref, inArg, node, inUpdateFunc);
-      outNodes := List.replaceAt(node2, n, inNodes); // Can be slow in memory and time
+  for node in nodes loop
+    if setTrieIsNode(node) and setTrieNodeName(node) == id then
+      node2 := setTrieUpdate(cref, arg, node, updateFunc);
+      nodes := List.replaceAt(node2, n, nodes); // Can be slow in memory and time
       return;
     else
       n := n+1;
     end if;
   end for;
-  outNodes := setTrieUpdateNode2(wholeCref, inArg, inUpdateFunc, inNodes);
+
+  nodes := setTrieUpdateNode2(wholeCref, arg, updateFunc, nodes);
 end setTrieUpdateNode;
 
-protected function setTrieUpdateNode2
+protected function setTrieUpdateNode2<Arg>
   "Helper function to setTrieUpdateNode."
-  input DAE.ComponentRef inCref;
-  input Arg inArg;
-  input UpdateFunc inUpdateFunc;
-  input list<SetTrieNode> acc;
-  output list<SetTrieNode> nodes;
-
-  replaceable type Arg subtypeof Any;
+  input DAE.ComponentRef cref;
+  input Arg arg;
+  input UpdateFunc updateFunc;
+  input output list<SetTrieNode> nodes;
 
   partial function UpdateFunc
-    input Arg inArg;
-    input SetTrieNode inNode;
-    output SetTrieNode outNode;
+    input Arg arg;
+    input output SetTrieNode node;
   end UpdateFunc;
 algorithm
-  nodes := match(inCref, inArg, inUpdateFunc, acc)
+  nodes := match cref
     local
       String id;
       DAE.ComponentRef cr, rest_cr;
       SetTrieNode node;
+      list<SetTrieNode> child_nodes;
 
-    case (DAE.CREF_IDENT(), _, _, _)
-      equation
-        id = ComponentReference.printComponentRefStr(inCref);
-        node = Connect.SET_TRIE_LEAF(id, NONE(), NONE(), NONE(), 0);
-        node = inUpdateFunc(inArg, node);
+    case DAE.CREF_IDENT()
+      algorithm
+        id := ComponentReference.printComponentRefStr(cref);
+        node := SetTrieNode.SET_TRIE_LEAF(id, NONE(), NONE(), NONE(), 0);
+        node := updateFunc(arg, node);
       then
-        node :: acc;
+        node :: nodes;
 
-    case (DAE.CREF_QUAL(componentRef = rest_cr), _, _, _)
-      equation
-        cr = ComponentReference.crefFirstCref(inCref);
-        id = ComponentReference.printComponentRefStr(cr);
-        nodes = setTrieUpdateNode2(rest_cr, inArg, inUpdateFunc, {});
+    case DAE.CREF_QUAL()
+      algorithm
+        cr := ComponentReference.crefFirstCref(cref);
+        id := ComponentReference.printComponentRefStr(cr);
+        child_nodes := setTrieUpdateNode2(cref.componentRef, arg, updateFunc, {});
       then
-        Connect.SET_TRIE_NODE(id, cr, nodes, 0) :: acc;
+        SetTrieNode.SET_TRIE_NODE(id, cr, child_nodes, 0) :: nodes;
 
   end match;
 end setTrieUpdateNode2;
 
-protected function setTrieUpdateLeaf
+protected function setTrieUpdateLeaf<Arg>
   "Helper funtion to setTrieUpdate, updates a trie leaf."
-  input String inId;
-  input Arg inArg;
+  input String id;
+  input Arg arg;
   input output list<SetTrieNode> nodes;
-  input UpdateFunc inUpdateFunc;
-
-  replaceable type Arg subtypeof Any;
+  input UpdateFunc updateFunc;
 
   partial function UpdateFunc
-    input Arg inArg;
-    input SetTrieNode inNode;
-    output SetTrieNode outNode;
+    input Arg arg;
+    input output SetTrieNode node;
   end UpdateFunc;
 protected
-  Integer n=1;
+  Integer n = 1;
 algorithm
   for node in nodes loop
-    if setTrieNodeName(node)==inId then
+    if setTrieNodeName(node) == id then
       // Found matching leaf, update it.
-      nodes := List.replaceAt(inUpdateFunc(inArg, node), n, nodes); // Can be slow in time and memory...
+      nodes := List.replaceAt(updateFunc(arg, node), n, nodes); // Can be slow in time and memory...
       return;
     end if;
+
     n := n+1;
   end for;
+
   // Is slow in time; need to do a linear search. Cheap in memory (single cons)
-  nodes := inUpdateFunc(inArg, Connect.SET_TRIE_LEAF(inId, NONE(), NONE(), NONE(), 0))::nodes;
+  nodes := updateFunc(arg, Connect.SET_TRIE_LEAF(id, NONE(), NONE(), NONE(), 0)) :: nodes;
 end setTrieUpdateLeaf;
 
-public function traverseSets
+public function traverseSets<Arg>
   "Traverses the trie leaves in a sets."
-  input Sets inSets;
-  input Arg inArg;
-  input UpdateFunc inUpdateFunc;
-  output Sets outSets;
-  output Arg outArg;
-
-  replaceable type Arg subtypeof Any;
+  input output Sets sets;
+  input output Arg arg;
+  input UpdateFunc updateFunc;
 
   partial function UpdateFunc
-    input SetTrieNode inNode;
-    input Arg inArg;
-    output SetTrieNode outNode;
-    output Arg outArg;
+    input output SetTrieNode node;
+    input output Arg arg;
   end UpdateFunc;
 protected
-  SetTrie sets;
-  Integer sc;
-  list<SetConnection> c;
-  list<OuterConnect> o;
+  SetTrieNode node;
 algorithm
-  Connect.SETS(sets, sc, c, o) := inSets;
-  (sets, outArg) := setTrieTraverseLeaves(sets, inUpdateFunc, inArg);
-  outSets := Connect.SETS(sets, sc, c, o);
+  (node, arg) := setTrieTraverseLeaves(sets.sets, updateFunc, arg);
+  sets.sets := node;
 end traverseSets;
 
-protected function setTrieTraverseLeaves
+protected function setTrieTraverseLeaves<Arg>
   "Traverses the leaves of a trie."
-  input SetTrieNode inNode;
-  input UpdateFunc inUpdateFunc;
-  input Arg inArg;
-  output SetTrieNode outNode;
-  output Arg outArg;
-
-  replaceable type Arg subtypeof Any;
+  input output SetTrieNode node;
+  input UpdateFunc updateFunc;
+  input output Arg arg;
 
   partial function UpdateFunc
-    input SetTrieNode inNode;
-    input Arg inArg;
-    output SetTrieNode outNode;
-    output Arg outArg;
+    input output SetTrieNode node;
+    input output Arg arg;
   end UpdateFunc;
 algorithm
-  (outNode, outArg) := match(inNode, inUpdateFunc, inArg)
+  _ := match node
     local
-      String name;
-      DAE.ComponentRef cref;
       list<SetTrieNode> nodes;
-      SetTrieNode node;
-      Arg arg;
-      Integer cc;
 
-    case (Connect.SET_TRIE_NODE(name, cref, nodes, cc), _, _)
-      equation
-        (nodes, arg) = List.map1Fold(nodes, setTrieTraverseLeaves,
-          inUpdateFunc, inArg);
+    case SetTrieNode.SET_TRIE_NODE()
+      algorithm
+        (nodes, arg) := List.map1Fold(node.nodes, setTrieTraverseLeaves, updateFunc, arg);
+        node.nodes := nodes;
       then
-        (Connect.SET_TRIE_NODE(name, cref, nodes, cc), arg);
+        ();
 
-     case (Connect.SET_TRIE_LEAF(), _, _)
-       equation
-         (node, arg) = inUpdateFunc(inNode, inArg);
+     case SetTrieNode.SET_TRIE_LEAF()
+       algorithm
+         (node, arg) := updateFunc(node, arg);
        then
-         (node, arg);
+         ();
 
-     case (Connect.SET_TRIE_DELETED(), _, _)
-       then (inNode, inArg);
+     case SetTrieNode.SET_TRIE_DELETED()
+       then ();
 
   end match;
 end setTrieTraverseLeaves;
@@ -1750,41 +1357,41 @@ end setTrieTraverseLeaves;
 protected function setTrieGet
   "Fetches a node from the trie given a cref to search for. If inMatchPrefix is
   true it also matches a prefix of the cref if the full cref couldn't be found."
-  input DAE.ComponentRef inCref;
-  input SetTrie inTrie;
-  input Boolean inMatchPrefix;
-  output SetTrieNode outLeaf;
+  input DAE.ComponentRef cref;
+  input SetTrie trie;
+  input Boolean matchPrefix;
+  output SetTrieNode leaf;
 protected
   list<SetTrieNode> nodes;
   String subs_str, id_subs, id_nosubs;
   SetTrieNode node;
 algorithm
-  Connect.SET_TRIE_NODE(nodes = nodes) := inTrie;
+  SetTrieNode.SET_TRIE_NODE(nodes = nodes) := trie;
 
-  id_nosubs := ComponentReference.crefFirstIdent(inCref);
-  subs_str := List.toString(ComponentReference.crefFirstSubs(inCref),
+  id_nosubs := ComponentReference.crefFirstIdent(cref);
+  subs_str := List.toString(ComponentReference.crefFirstSubs(cref),
     ExpressionDump.printSubscriptStr, "", "[", ",", "]", false);
   id_subs := id_nosubs + subs_str;
 
   try
     // Try to look up the identifier with subscripts, in case single array
     // elements have been added to the trie.
-    outLeaf := setTrieGetNode(id_subs, nodes);
+    leaf := setTrieGetNode(id_subs, nodes);
   else
     // If the above fails, try again without the subscripts in case a whole
     // array has been added to the trie.
-    outLeaf := setTrieGetNode(id_nosubs, nodes);
+    leaf := setTrieGetNode(id_nosubs, nodes);
   end try;
 
   // If the cref is qualified, continue to look up the rest of the cref in node
   // we just found.
-  if not ComponentReference.crefIsIdent(inCref) then
+  if not ComponentReference.crefIsIdent(cref) then
     try
-      outLeaf := setTrieGet(ComponentReference.crefRest(inCref), outLeaf, inMatchPrefix);
+      leaf := setTrieGet(ComponentReference.crefRest(cref), leaf, matchPrefix);
     else
       // Look up failed, return the previously found node if prefix matching is
       // turned on and the node we found is a leaf.
-      true := inMatchPrefix and not setTrieIsNode(outLeaf);
+      true := matchPrefix and not setTrieIsNode(leaf);
     end try;
   end if;
 end setTrieGet;
@@ -1792,33 +1399,24 @@ end setTrieGet;
 protected function setTrieGetNode
   "Returns a node with a given name from a list of nodes, or fails if no such
   node exists in the list."
-  input String inId;
-  input list<SetTrieNode> inNodes;
-  output SetTrieNode outNode;
+  input String id;
+  input list<SetTrieNode> nodes;
+  output SetTrieNode node;
 algorithm
-  outNode := List.getMemberOnTrue(inId, inNodes, setTrieNodeNamed);
+  node := List.getMemberOnTrue(id, nodes, setTrieNodeNamed);
 end setTrieGetNode;
 
 protected function setTrieNodeNamed
   "Returns true if the given node has the same name as the given string,
   otherwise false."
-  input String inId;
-  input SetTrieNode inNode;
-  output Boolean outIsNamed;
+  input String id;
+  input SetTrieNode node;
+  output Boolean isNamed;
 algorithm
-  outIsNamed := match(inId, inNode)
-    local
-      String id;
-
-    case (_, Connect.SET_TRIE_NODE(name = id))
-      then stringEqual(inId, id);
-
-    case (_, Connect.SET_TRIE_LEAF(name = id))
-      then stringEqual(inId, id);
-
-    case (_, Connect.SET_TRIE_DELETED(name = id))
-      then stringEqual(inId, id);
-
+  isNamed := match node
+    case SetTrieNode.SET_TRIE_NODE() then id == node.name;
+    case SetTrieNode.SET_TRIE_LEAF() then id == node.name;
+    case SetTrieNode.SET_TRIE_DELETED() then id == node.name;
     else false;
   end match;
 end setTrieNodeNamed;
@@ -1826,40 +1424,33 @@ end setTrieNodeNamed;
 protected function setTrieGetLeaf
   "Returns a leaf node with a given name from a list of nodes, or fails if no
   such node exists in the list."
-  input String inId;
-  input list<SetTrieNode> inNodes;
-  output SetTrieNode outNode;
+  input String id;
+  input list<SetTrieNode> nodes;
+  output SetTrieNode node;
 algorithm
-  outNode := List.getMemberOnTrue(inId, inNodes, setTrieLeafNamed);
+  node := List.getMemberOnTrue(id, nodes, setTrieLeafNamed);
 end setTrieGetLeaf;
 
 protected function setTrieLeafNamed
   "Returns true if the given leaf node has the same name as the given string,
   otherwise false."
-  input String inId;
-  input SetTrieNode inNode;
-  output Boolean outIsNamed;
+  input String id;
+  input SetTrieNode node;
+  output Boolean isNamed;
 algorithm
-  outIsNamed := match(inId, inNode)
-    local
-      String id;
-
-    case (_, Connect.SET_TRIE_LEAF(name = id))
-      then stringEqual(inId, id);
-
-    case (_, Connect.SET_TRIE_DELETED(name = id))
-      then stringEqual(inId, id);
-
+  isNamed := match node
+    case SetTrieNode.SET_TRIE_LEAF() then id == node.name;
+    case SetTrieNode.SET_TRIE_DELETED() then id == node.name;
     else false;
   end match;
 end setTrieLeafNamed;
 
 protected function setTrieIsNode
-  input SetTrieNode inNode;
-  output Boolean outIsNode;
+  input SetTrieNode node;
+  output Boolean isNode;
 algorithm
-  outIsNode := match inNode
-    case Connect.SET_TRIE_NODE() then true;
+  isNode := match node
+    case SetTrieNode.SET_TRIE_NODE() then true;
     else false;
   end match;
 end setTrieIsNode;
@@ -1867,108 +1458,96 @@ end setTrieIsNode;
 public function equations
   "Generates equations from a connection set and evaluates stream operators if
   called from the top scope, otherwise does nothing."
-  input Boolean inTopScope;
-  input Sets inSets;
-  input DAE.DAElist inDae;
-  input ConnectionGraph.ConnectionGraph inConnectionGraph;
-  input String inModelNameQualified;
-  output DAE.DAElist outDae;
+  input Boolean topScope;
+  input Sets sets;
+  input output DAE.DAElist DAE;
+  input ConnectionGraph.ConnectionGraph connectionGraph;
+  input String modelNameQualified;
 protected
-  list<Set> sets;
+  list<Set> set_list;
   array<Set> set_array;
+  DAE.DAElist dae, dae2;
+  Boolean has_stream, has_expandable, has_cardinality;
+  ConnectionGraph.DaeEdges broken, connected;
 algorithm
-  outDae := match(inTopScope, inSets, inDae, inConnectionGraph, inModelNameQualified)
-    local
-      DAE.DAElist dae, dae2;
-      Boolean has_stream, has_expandable, has_cardinality;
-      ConnectionGraph.DaeEdges broken, connected;
-      Real flow_threshold;
+  if not topScope then
+    return;
+  end if;
 
-    case (true, _, _, _, _)
-      equation
-        //print(printSetsStr(inSets) + "\n");
-        set_array = generateSetArray(inSets);
-        sets = arrayList(set_array);
-        //print("Sets:\n");
-        //print(stringDelimitList(List.map(sets, printSetStr), "\n") + "\n");
+  //print(printSetsStr(inSets) + "\n");
+  set_array := generateSetArray(sets);
+  set_list := arrayList(set_array);
+  //print("Sets:\n");
+  //print(stringDelimitList(List.map(sets, printSetStr), "\n") + "\n");
 
-        has_expandable = daeHasExpandableConnectors(inDae);
-        (sets, dae) = removeUnusedExpandableVariablesAndConnections(sets, inDae, has_expandable);
+  if daeHasExpandableConnectors(DAE) then
+    (set_list, dae) := removeUnusedExpandableVariablesAndConnections(set_list, DAE);
+  else
+    dae := DAE;
+  end if;
 
-        // send in the connection graph and build the connected/broken connects
-        // we do this here so we do it once and not for every EQU set.
-        (dae, connected, broken) = ConnectionGraph.handleOverconstrainedConnections(inConnectionGraph, inModelNameQualified, dae);
-        // adrpo: FIXME: maybe we should just remove them from the sets then send the updates sets further
-        flow_threshold = Flags.getConfigReal(Flags.FLOW_THRESHOLD);
-        dae2 = equationsDispatch(listReverse(sets), connected, broken, flow_threshold);
-        dae = DAEUtil.joinDaes(dae, dae2);
-        has_stream = System.getHasStreamConnectors();
-        has_cardinality = System.getUsesCardinality();
-        dae = evaluateConnectionOperators(has_stream, has_cardinality, inSets, set_array, dae);
-        // add the equality constraint equations to the dae.
-        dae = ConnectionGraph.addBrokenEqualityConstraintEquations(dae, broken);
-      then
-        dae;
+  // send in the connection graph and build the connected/broken connects
+  // we do this here so we do it once and not for every EQU set.
+  (dae, connected, broken) := ConnectionGraph.handleOverconstrainedConnections(
+    connectionGraph, modelNameQualified, dae);
 
-    else inDae;
-
-  end match;
+  // adrpo: FIXME: maybe we should just remove them from the sets then send the
+  // updates sets further
+  dae2 := equationsDispatch(listReverse(set_list), connected, broken);
+  DAE := DAEUtil.joinDaes(dae, dae2);
+  DAE := evaluateConnectionOperators(sets, set_array, DAE);
+  // add the equality constraint equations to the dae.
+  DAE := ConnectionGraph.addBrokenEqualityConstraintEquations(DAE, broken);
 end equations;
 
 protected function getExpandableEquSetsAsCrefs
 "@author: adrpo
  returns only the sets containing expandable connectors"
-  input list<Set> inSets;
-  input list<list<DAE.ComponentRef>> inSetsAcc;
-  output list<list<DAE.ComponentRef>> outSets;
+  input list<Set> sets;
+  output list<list<DAE.ComponentRef>> crefSets = {};
+protected
+  list<DAE.ComponentRef> cref_set;
 algorithm
-  outSets := match (inSets, inSetsAcc)
-    local
-      list<Set> rest;
-      list<DAE.ComponentRef> crefSet;
-      Set set;
-      Boolean b;
+  for set in sets loop
+    _ := match set
+      case Set.SET(ty = ConnectorType.EQU())
+        algorithm
+          cref_set := getAllEquCrefs({set});
 
-    case ({}, _) then inSetsAcc;
+          if List.applyAndFold(cref_set, boolOr, isExpandable, false) then
+            crefSets := cref_set :: crefSets;
+          end if;
+        then
+          ();
 
-    case ((set as Connect.SET(ty = Connect.EQU()))::rest, _)
-      equation
-        crefSet = getAllEquCrefs({set}, {});
-        b = List.applyAndFold(crefSet, boolOr, isExpandable, false);
-      then
-        getExpandableEquSetsAsCrefs(rest, List.consOnTrue(b,crefSet,inSetsAcc));
-
-    case (_::rest, _)
-      then getExpandableEquSetsAsCrefs(rest, inSetsAcc);
-  end match;
+      else ();
+    end match;
+  end for;
 end getExpandableEquSetsAsCrefs;
 
-
 protected function removeCrefsFromSets
-  input list<Set> inSets;
-  input list<DAE.ComponentRef> inNonUsefulExpandable;
-  output list<Set> outSets;
+  input output list<Set> sets;
+  input list<DAE.ComponentRef> nonUsefulExpandable;
 algorithm
-  outSets := List.select1(inSets, removeCrefsFromSets2, inNonUsefulExpandable);
+  sets := List.select1(sets, removeCrefsFromSets2, nonUsefulExpandable);
 end removeCrefsFromSets;
 
 protected function removeCrefsFromSets2
-  input Set inSet;
-  input list<DAE.ComponentRef> inNonUsefulExpandable;
+  input Set set;
+  input list<DAE.ComponentRef> nonUsefulExpandable;
   output Boolean isInSet;
 protected
   list<DAE.ComponentRef> setCrefs, lst;
 algorithm
-  setCrefs := getAllEquCrefs({inSet}, {});
-  lst := List.intersectionOnTrue(setCrefs, inNonUsefulExpandable, ComponentReference.crefEqualNoStringCompare);
+  setCrefs := getAllEquCrefs({set});
+  lst := List.intersectionOnTrue(setCrefs, nonUsefulExpandable, ComponentReference.crefEqualNoStringCompare);
   isInSet := listEmpty(lst);
 end removeCrefsFromSets2;
 
 function mergeEquSetsAsCrefs
-  input list<list<DAE.ComponentRef>> inSetsAsCrefs;
-  output list<list<DAE.ComponentRef>> outSetsAsCrefs;
+  input output list<list<DAE.ComponentRef>> setsAsCrefs;
 algorithm
-  outSetsAsCrefs := matchcontinue(inSetsAsCrefs)
+  setsAsCrefs := match(setsAsCrefs)
     local
       list<DAE.ComponentRef> set;
       list<list<DAE.ComponentRef>> rest, sets;
@@ -1976,106 +1555,71 @@ algorithm
     case ({}) then {};
     case ({set}) then {set};
     case (set::rest)
-      equation
-        (set, rest) = mergeWithRest(set, rest, {});
-        sets = mergeEquSetsAsCrefs(rest);
+      algorithm
+        (set, rest) := mergeWithRest(set, rest);
+        sets := mergeEquSetsAsCrefs(rest);
       then
         set::sets;
-  end matchcontinue;
+  end match;
 end mergeEquSetsAsCrefs;
 
 protected function mergeWithRest
-  input list<DAE.ComponentRef> inSet;
-  input list<list<DAE.ComponentRef>> inSets;
-  input list<list<DAE.ComponentRef>> inAcc;
-  output list<DAE.ComponentRef> outSet;
-  output list<list<DAE.ComponentRef>> outSets;
+  input output list<DAE.ComponentRef> set;
+  input output list<list<DAE.ComponentRef>> sets;
+  input list<list<DAE.ComponentRef>> acc = {};
 algorithm
-  (outSet, outSets) := match (inSet, inSets, inAcc)
+  (set, sets) := match (set, sets)
     local
-      list<DAE.ComponentRef> set, set1, set2;
-      list<list<DAE.ComponentRef>> rest, acc;
+      list<DAE.ComponentRef> set1, set2;
+      list<list<DAE.ComponentRef>> rest;
       Boolean b;
-    case (_, {}, _) then (inSet, listReverse(inAcc));
-    case (set1, set2::rest, acc)
-      equation
+    case (_, {}) then (set, listReverse(acc));
+    case (set1, set2::rest)
+      algorithm
          // Could be faster if we had a function for intersectionExist in a set
-         b = listEmpty(List.intersectionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare));
-         set = if not b then List.unionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare) else set1;
-         acc = List.consOnTrue(b, set2, acc);
-         (set, rest) = mergeWithRest(set, rest, acc);
+         b := listEmpty(List.intersectionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare));
+         set := if not b then List.unionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare) else set1;
+         (set, rest) := mergeWithRest(set, rest, List.consOnTrue(b, set2, acc));
       then (set, rest);
   end match;
 end mergeWithRest;
 
 protected function getOnlyExpandableConnectedCrefs
-  input list<list<DAE.ComponentRef>> inSets;
-  input list<DAE.ComponentRef> inAcc;
-  output list<DAE.ComponentRef> outUsefulConnectedExpandable;
+  input list<list<DAE.ComponentRef>> sets;
+  output list<DAE.ComponentRef> usefulConnectedExpandable = {};
 algorithm
-  outUsefulConnectedExpandable := match (inSets, inAcc)
-    local
-      list<DAE.ComponentRef> set, acc;
-      list<list<DAE.ComponentRef>> rest;
-
-    case ({}, _) then inAcc;
-
-    case (set::rest, _)
-      equation
-        // print("OnlyExp Set:\n\t" + stringDelimitList(List.map(set, ComponentReference.printComponentRefStr), "\n\t") + "\n");
-        acc = if allCrefsAreExpandable(set) then listAppend(set, inAcc) else inAcc;
-        acc = getOnlyExpandableConnectedCrefs(rest, acc);
-      then
-        acc;
-
-  end match;
+  for set in sets loop
+    if allCrefsAreExpandable(set) then
+      usefulConnectedExpandable := listAppend(set, usefulConnectedExpandable);
+    end if;
+  end for;
 end getOnlyExpandableConnectedCrefs;
 
 public function allCrefsAreExpandable
-  input list<DAE.ComponentRef> inConnects;
+  input list<DAE.ComponentRef> connects;
   output Boolean allAreExpandable;
 algorithm
-  allAreExpandable := match(inConnects)
-    local
-      list<DAE.ComponentRef> rest;
-      DAE.ComponentRef name;
-      Boolean b;
+  for cr in connects loop
+    if not isExpandable(cr) then
+      allAreExpandable := false;
+      return;
+    end if;
+  end for;
 
-    case ({}) then true;
-
-    case (name::rest)
-      equation
-        b = if isExpandable(name) then allCrefsAreExpandable(rest) else false;
-      then b;
-
-  end match;
+  allAreExpandable := true;
 end allCrefsAreExpandable;
 
 protected function generateSetArray
   "Generates an array of sets from a connection set."
-  input Sets inSets;
-  output array<Set> outSetArray;
+  input Sets sets;
+  output array<Set> setArray;
 algorithm
-  outSetArray := match(inSets)
-    local
-      SetTrie sets;
-      Integer set_count;
-      list<SetConnection> connections;
-      array<Set> set_array;
-
-    case (Connect.SETS(sets = sets, setCount = set_count,
-        connections = connections))
-      equation
-        // Create a new array.
-        set_array = arrayCreate(set_count, Connect.SET(Connect.NO_TYPE(), {}));
-        // Add connection pointers to the array.
-        set_array = setArrayAddConnections(connections, set_count, set_array);
-        // Fill the array with sets.
-        set_array = generateSetArray2(sets, {}, set_array);
-      then
-        set_array;
-
-  end match;
+  // Create a new array.
+  setArray := arrayCreate(sets.setCount, Set.SET(ConnectorType.NO_TYPE(), {}));
+  // Add connection pointers to the array.
+  setArray := setArrayAddConnections(sets.connections, sets.setCount, setArray);
+  // Fill the array with sets.
+  setArray := generateSetArray2(sets.sets, {}, setArray);
 end generateSetArray;
 
 protected function setArrayAddConnections
@@ -2087,400 +1631,275 @@ protected function setArrayAddConnections
   that belongs to set 2 are instead added to set 1. To make sure that we get
   correct pointers we build a graph and use an algorithm to find the strongly
   connected components in it."
-  input list<SetConnection> inConnections;
-  input Integer inSetCount;
-  input array<Set> inSets;
-  output array<Set> outSets;
+  input list<SetConnection> connections;
+  input Integer setCount;
+  input output array<Set> sets;
 protected
   SetGraph graph;
 algorithm
   // Create a new graph, represented as an adjacency list.
-  graph := arrayCreate(inSetCount, {});
+  graph := arrayCreate(setCount, {});
   // Add the connections to the graph.
-  graph := List.fold(inConnections, addConnectionToGraph, graph);
+  graph := List.fold(connections, addConnectionToGraph, graph);
+
   // Add the connections to the array with help from the graph.
-  outSets := setArrayAddConnections2(1 <= arrayLength(graph), 1, graph, inSets);
+  for i in 1:arrayLength(graph) loop
+    (sets, graph) := setArrayAddConnection(i, graph[i], sets, graph);
+  end for;
 end setArrayAddConnections;
 
 protected function addConnectionToGraph
   "Adds a connection to the set graph."
-  input SetConnection inConnection;
-  input SetGraph inGraph;
-  output SetGraph outGraph;
+  input SetConnection connection;
+  input output SetGraph graph;
 protected
   Integer set1, set2;
   list<Integer> node1, node2;
 algorithm
-  (set1, set2) := inConnection;
-  node1 := arrayGet(inGraph, set1);
-  outGraph := arrayUpdate(inGraph, set1, set2 :: node1);
-  node2 := arrayGet(inGraph, set2);
-  outGraph := arrayUpdate(inGraph, set2, set1 :: node2);
+  (set1, set2) := connection;
+  node1 := arrayGet(graph, set1);
+  graph := arrayUpdate(graph, set1, set2 :: node1);
+  node2 := arrayGet(graph, set2);
+  graph := arrayUpdate(graph, set2, set1 :: node2);
 end addConnectionToGraph;
 
-protected function setArrayAddConnections2
-  "Adds pointers to the set array."
-  input Boolean stop;
-  input Integer inIndex;
-  input SetGraph inGraph;
-  input array<Set> inSets;
-  output array<Set> outSets;
-algorithm
-  outSets := match (stop, inIndex, inGraph, inSets)
-    local
-      list<Integer> edges;
-      array<Set> sets;
-      SetGraph graph;
-
-    case (false, _, _, _) then inSets;
-    else
-      equation
-        edges = arrayGet(inGraph, inIndex);
-        (sets, graph) = setArrayAddConnection(inIndex, edges, inSets, inGraph);
-      then setArrayAddConnections2(inIndex+1 <= arrayLength(graph), inIndex + 1, graph, sets);
-
-  end match;
-end setArrayAddConnections2;
-
 protected function setArrayAddConnection
-  "Helper function to setArrayAddConnections2, adds a connection pointer to the
+  "Helper function to setArrayAddConnections, adds a connection pointer to the
    set array."
-  input Integer inSet;
-  input list<Integer> inEdges;
-  input array<Set> inSets;
-  input SetGraph inGraph;
-  output array<Set> outSets;
-  output SetGraph outGraph;
+  input Integer set;
+  input list<Integer> edges;
+  input output array<Set> sets;
+  input output SetGraph graph;
+protected
+  list<Integer> edge_lst;
 algorithm
-  (outSets, outGraph) := matchcontinue(inSet, inEdges, inSets, inGraph)
-    local
-      Integer edge;
-      list<Integer> edges, rest_edges;
-      array<Set> sets;
-      SetGraph graph;
-
-    case (_, {}, _, _) then (inSets, inGraph);
-
-    case (_, edge :: rest_edges, _, _)
-      equation
-        false = intEq(inSet, edge);
-        // Create a pointer to the given set.
-        sets = setArrayAddConnection2(edge, inSet, inSets);
-        edges = arrayGet(inGraph, edge);
-        graph = arrayUpdate(inGraph, edge, {});
-        (sets, graph) = setArrayAddConnection(inSet, edges, sets, graph);
-        (sets, graph) = setArrayAddConnection(inSet, rest_edges, sets, graph);
-      then
-        (sets, graph);
-
-    case (_, _ :: rest_edges, _, _)
-      equation
-        (sets, graph) = setArrayAddConnection(inSet, rest_edges, inSets,
-          inGraph);
-      then
-        (sets, graph);
-
-  end matchcontinue;
+  for e in edges loop
+    if e <> set then
+      // Create a pointer to the given set.
+      sets := setArrayAddConnection2(e, set, sets);
+      edge_lst := graph[e];
+      graph[e] := {};
+      (sets, graph) := setArrayAddConnection(set, edge_lst, sets, graph);
+    end if;
+  end for;
 end setArrayAddConnection;
 
 protected function setArrayAddConnection2
   "Helper function to setArrayAddConnection, adds a pointer from the given
    pointer to the pointee."
-  input Integer inSetPointer;
-  input Integer inSetPointee;
-  input array<Set> inSets;
-  output array<Set> outSets;
+  input Integer setPointer;
+  input Integer setPointee;
+  input output array<Set> sets;
+protected
+  Set set;
 algorithm
-  outSets := match(inSetPointer, inSetPointee, inSets)
-    local
-      Integer pointee;
-      Set set;
+  set := sets[setPointee];
 
-    case (_, _, _)
-      equation
-        set = arrayGet(inSets, inSetPointee);
-        outSets = match(set)
-                    // If the set pointed at is a real set, add a pointer to it.
-                    case Connect.SET()
-                      then arrayUpdate(inSets, inSetPointer, Connect.SET_POINTER(inSetPointee));
-                    // If the set pointed at is itself a pointer, follow the pointer until a
-                    // real set is found (path compression).
-                    case Connect.SET_POINTER(index = pointee)
-                      then setArrayAddConnection2(inSetPointer, pointee, inSets);
-                 end match;
-      then
-        outSets;
+  sets := match set
+    // If the set pointed at is a real set, add a pointer to it.
+    case Set.SET()
+      then arrayUpdate(sets, setPointer, Set.SET_POINTER(setPointee));
 
+    // If the set pointed at is itself a pointer, follow the pointer until a
+    // real set is found (path compression).
+    case Set.SET_POINTER()
+      then setArrayAddConnection2(setPointer, set.index, sets);
   end match;
 end setArrayAddConnection2;
 
 protected function generateSetArray2
   "This function fills the set array with the sets from the set trie."
-  input SetTrie inSets;
-  input list<DAE.ComponentRef> inPrefix;
-  input array<Set> inSetArray;
-  output array<Set> outSetArray;
+  input SetTrie sets;
+  input list<DAE.ComponentRef> prefix;
+  input output array<Set> setArray;
 algorithm
-  outSetArray := match(inSets, inPrefix, inSetArray)
+  setArray := match sets
     local
-      list<SetTrieNode> nodes;
-      array<Set> sets;
       Option<ConnectorElement> ie, oe;
-      DAE.ComponentRef node_cr;
       Option<DAE.ComponentRef> prefix_cr, flow_cr;
-      list<DAE.ComponentRef> prefix;
 
-    case (Connect.SET_TRIE_NODE(cref = DAE.WILD(), nodes = nodes), _, _)
+    case SetTrieNode.SET_TRIE_NODE(cref = DAE.WILD())
+      then List.fold1(sets.nodes, generateSetArray2, prefix, setArray);
+
+    case SetTrieNode.SET_TRIE_NODE()
+      then List.fold1(sets.nodes, generateSetArray2, sets.cref :: prefix, setArray);
+
+    case SetTrieNode.SET_TRIE_LEAF(insideElement = ie, outsideElement = oe,
+        flowAssociation = flow_cr)
+      algorithm
+        ie := insertFlowAssociationInStreamElement(sets.insideElement, flow_cr);
+        oe := insertFlowAssociationInStreamElement(sets.outsideElement, flow_cr);
+        prefix_cr := buildElementPrefix(prefix);
+        setArray := setArrayAddElement(ie, prefix_cr, setArray);
+        setArray := setArrayAddElement(oe, prefix_cr, setArray);
       then
-        List.fold1(nodes, generateSetArray2, inPrefix, inSetArray);
+        setArray;
 
-    case (Connect.SET_TRIE_NODE(cref = node_cr, nodes = nodes),
-        prefix, _)
-      then
-        List.fold1(nodes, generateSetArray2, node_cr :: prefix, inSetArray);
-
-    case (Connect.SET_TRIE_LEAF(insideElement = ie, outsideElement = oe,
-        flowAssociation = flow_cr), prefix, sets)
-      equation
-        prefix_cr = buildElementPrefix(prefix);
-        ie = insertFlowAssociationInStreamElement(ie, flow_cr);
-        oe = insertFlowAssociationInStreamElement(oe, flow_cr);
-        sets = setArrayAddElement(ie, prefix_cr, sets);
-        sets = setArrayAddElement(oe, prefix_cr, sets);
-      then
-        sets;
-
-    else inSetArray;
+    else setArray;
   end match;
 end generateSetArray2;
 
 protected function insertFlowAssociationInStreamElement
   "If the given element is a stream element, sets the associated flow. Otherwise
   does nothing."
-  input Option<ConnectorElement> inElement;
-  input Option<DAE.ComponentRef> inFlowCref;
-  output Option<ConnectorElement> outElement;
+  input output Option<ConnectorElement> element;
+  input Option<DAE.ComponentRef> flowCref;
+protected
+  ConnectorElement el;
 algorithm
-  outElement := match(inElement, inFlowCref)
-    local
-      DAE.ComponentRef name, flow_cr;
-      Face face;
-      DAE.ElementSource source;
-      Integer set;
+  if isSome(element) then
+    SOME(el) := element;
 
-    case (SOME(Connect.CONNECTOR_ELEMENT(name = name, face = face,
-        ty = Connect.STREAM(NONE()), source = source, set = set)),
-        SOME(flow_cr))
-      then
-        SOME(Connect.CONNECTOR_ELEMENT(name, face,
-          Connect.STREAM(SOME(flow_cr)), source, set));
+    element := match el
+      case ConnectorElement.CONNECTOR_ELEMENT(ty = ConnectorType.STREAM(NONE()))
+        algorithm
+          el.ty := ConnectorType.STREAM(flowCref);
+        then
+          SOME(el);
 
-    else inElement;
-  end match;
+      else element;
+    end match;
+  end if;
 end insertFlowAssociationInStreamElement;
 
 protected function setArrayAddElement
   "Adds a connector element to the set array."
-  input Option<ConnectorElement> inElement;
-  input Option<DAE.ComponentRef> inPrefix;
-  input array<Set> inSets;
-  output array<Set> outSets;
+  input Option<ConnectorElement> element;
+  input Option<DAE.ComponentRef> prefix;
+  input output array<Set> sets;
 algorithm
-  outSets := match(inElement, inPrefix, inSets)
+  sets := match (element, prefix)
     local
       ConnectorElement el;
-      DAE.ComponentRef name, prefix;
-      Face face;
-      ConnectorType ty;
-      DAE.ElementSource src;
-      Integer set;
+      DAE.ComponentRef prefix_cr;
 
     // No element, do nothing.
-    case (NONE(), _, _) then inSets;
+    case (NONE(), _) then sets;
 
     // An element but no prefix, add the element as it is.
-    case (SOME(el as Connect.CONNECTOR_ELEMENT(set = set)), NONE(), _)
-      then setArrayUpdate(inSets, set, el);
+    case (SOME(el as ConnectorElement.CONNECTOR_ELEMENT()), NONE())
+      then setArrayUpdate(sets, el.set, el);
 
     // Both an element and a prefix, add the prefix to the element before adding
     // it to the array.
-    case (SOME(Connect.CONNECTOR_ELEMENT(name, face, ty, src, set)),
-        SOME(prefix), _)
-      equation
-        name = ComponentReference.joinCrefs(prefix, name);
-        el = Connect.CONNECTOR_ELEMENT(name, face, ty, src, set);
+    case (SOME(el as ConnectorElement.CONNECTOR_ELEMENT()), SOME(prefix_cr))
+      algorithm
+        el.name := ComponentReference.joinCrefs(prefix_cr, el.name);
       then
-        setArrayUpdate(inSets, set, el);
+        setArrayUpdate(sets, el.set, el);
 
   end match;
 end setArrayAddElement;
 
 protected function buildElementPrefix
   "Helper function to generateSetArray2, build a prefix from a list of crefs."
-  input list<DAE.ComponentRef> inPrefix;
-  output Option<DAE.ComponentRef> outCref;
+  input list<DAE.ComponentRef> prefix;
+  output Option<DAE.ComponentRef> cref;
+protected
+  DAE.ComponentRef cr;
+  String id;
+  list<DAE.Subscript> subs;
 algorithm
-  outCref := match(inPrefix)
-    local
-      DAE.ComponentRef cr;
-      list<DAE.ComponentRef> rest_cr;
+  // If a connector that extends a basic type is used on the top level we
+  // don't have a prefix.
+  if listEmpty(prefix) then
+    cref := NONE();
+  else
+    cr := listHead(prefix);
+    for c in listRest(prefix) loop
+      DAE.CREF_IDENT(ident = id, subscriptLst = subs) := c;
+      cr := DAE.CREF_QUAL(id, DAE.T_UNKNOWN_DEFAULT, subs, cr);
+    end for;
 
-    // If a connector that extends a basic type is used on the top level we
-    // don't have a prefix.
-    case ({}) then NONE();
-
-    case (cr :: rest_cr)
-      equation
-        cr = buildElementPrefix2(rest_cr, cr);
-      then
-        SOME(cr);
-
-  end match;
+    cref := SOME(cr);
+  end if;
 end buildElementPrefix;
-
-protected function buildElementPrefix2
-  "Helper function to buildElementPrefix."
-  input list<DAE.ComponentRef> inPrefix;
-  input DAE.ComponentRef inAccumCref;
-  output DAE.ComponentRef outCref;
-algorithm
-  outCref := match(inPrefix, inAccumCref)
-    local
-      DAE.ComponentRef cr;
-      list<DAE.ComponentRef> rest_cr;
-      String id;
-      list<DAE.Subscript> subs;
-
-    case ({}, _) then inAccumCref;
-
-    case (DAE.CREF_IDENT(ident = id, subscriptLst = subs) :: rest_cr, cr)
-      equation
-        cr = DAE.CREF_QUAL(id, DAE.T_UNKNOWN_DEFAULT, subs, cr);
-      then
-        buildElementPrefix2(rest_cr, cr);
-
-  end match;
-end buildElementPrefix2;
 
 protected function setArrayUpdate
   "Updates the element at a given index in the set array."
-  input array<Set> inSets;
-  input Integer inIndex;
-  input ConnectorElement inElement;
-  output array<Set> outSets;
+  input output array<Set> sets;
+  input Integer index;
+  input ConnectorElement element;
 protected
   Set set;
+  list<ConnectorElement> el;
 algorithm
-  set := arrayGet(inSets, inIndex);
-  outSets := setArrayUpdate2(inSets, set, inIndex, inElement);
-end setArrayUpdate;
+  set := sets[index];
 
-protected function setArrayUpdate2
-  "Helper function to setArrayUpdate."
-  input array<Set> inSets;
-  input Set inSet;
-  input Integer inIndex;
-  input ConnectorElement inElement;
-  output array<Set> outSets;
-algorithm
-  outSets := matchcontinue(inSets, inSet, inIndex, inElement)
-    local
-      list<ConnectorElement> el;
-      ConnectorType ty;
-      Integer index;
-
-    // Sort the elements if orderConnections is true and the set is an equality set.
-    case (_, Connect.SET(elements = el), _,
-        Connect.CONNECTOR_ELEMENT(ty = ty as Connect.EQU()))
-      equation
-        true = Config.orderConnections();
-        el = List.mergeSorted({inElement}, el, equSetElementLess);
+  sets := match (set, element)
+    case (Set.SET(), ConnectorElement.CONNECTOR_ELEMENT())
+      algorithm
+        if Config.orderConnections() and isEquType(element.ty) then
+          // Sort the elements if orderConnections is true and the set is an equality set.
+          el := List.mergeSorted({element}, set.elements, equSetElementLess);
+        else
+          // Other sets, just add them.
+          el := element :: set.elements;
+        end if;
       then
-        arrayUpdate(inSets, inIndex, Connect.SET(ty, el));
-
-    // Other sets, just add them.
-    case (_, Connect.SET(elements = el), _, Connect.CONNECTOR_ELEMENT(ty = ty))
-      then arrayUpdate(inSets, inIndex, Connect.SET(ty, inElement :: el));
+        arrayUpdate(sets, index, Set.SET(element.ty, el));
 
     // A pointer, follow the pointer.
-    case (_, Connect.SET_POINTER(index = index), _, _)
-      then setArrayUpdate(inSets, index, inElement);
+    case (Set.SET_POINTER(), _)
+      then setArrayUpdate(sets, set.index, element);
 
-  end matchcontinue;
-end setArrayUpdate2;
+  end match;
+end setArrayUpdate;
 
 protected function equSetElementLess
   "Comparison function used by setArrayUpdate2 to order equ sets."
-  input ConnectorElement inElement1;
-  input ConnectorElement inElement2;
-  output Boolean outIsLess;
-protected
-  DAE.ComponentRef name1, name2;
+  input ConnectorElement element1;
+  input ConnectorElement element2;
+  output Boolean isLess;
 algorithm
-  Connect.CONNECTOR_ELEMENT(name = name1) := inElement1;
-  Connect.CONNECTOR_ELEMENT(name = name2) := inElement2;
-  outIsLess := ComponentReference.crefSortFunc(name2, name1);
+  isLess := ComponentReference.crefSortFunc(element2.name, element1.name);
 end equSetElementLess;
 
 protected function setArrayGet
   "Returns the set on a given index in the set array."
-  input array<Set> inSetArray;
-  input Integer inIndex;
-  output Set outSet;
-protected
-  Set set;
+  input array<Set> setArray;
+  input Integer index;
+  output Set set;
 algorithm
-  set := arrayGet(inSetArray, inIndex);
-  outSet := setArrayGet2(set, inSetArray);
-end setArrayGet;
+  set := setArray[index];
 
-protected function setArrayGet2
-  "Helper function to setArrayGet, follows pointers until a real set is found."
-  input Set inSet;
-  input array<Set> inSetArray;
-  output Set outSet;
-algorithm
-  outSet := match(inSet, inSetArray)
-    local
-      Integer set;
-
-    case (Connect.SET(), _) then inSet;
-    case (Connect.SET_POINTER(index = set), _)
-      then setArrayGet(inSetArray, set);
+  set := match set
+    case Set.SET() then set;
+    case Set.SET_POINTER() then setArrayGet(setArray, set.index);
   end match;
-end setArrayGet2;
+end setArrayGet;
 
 protected function equationsDispatch
   "Dispatches to the correct equation generating function based on the type of
   the given set."
-  input list<Set> inSets;
-  input ConnectionGraph.DaeEdges inConnected;
-  input ConnectionGraph.DaeEdges inBroken;
-  input Real inFlowThreshold;
-  output DAE.DAElist outDae = DAE.emptyDae;
+  input list<Set> sets;
+  input ConnectionGraph.DaeEdges connected;
+  input ConnectionGraph.DaeEdges broken;
+  output DAE.DAElist DAE = DAE.emptyDae;
 protected
   list<ConnectorElement> eql;
+  Real flowThreshold = Flags.getConfigReal(Flags.FLOW_THRESHOLD);
 algorithm
-  for set in inSets loop
-    outDae := match set
+  for set in sets loop
+    DAE := match set
       // A set pointer left from generateSetList, ignore it.
-      case Connect.SET_POINTER() then outDae;
+      case Set.SET_POINTER() then DAE;
 
-      case Connect.SET(ty = Connect.EQU(), elements = eql)
+      case Set.SET(ty = ConnectorType.EQU())
         algorithm
           // Here we do some overconstrained connection breaking.
-          eql := ConnectionGraph.removeBrokenConnects(eql, inConnected, inBroken);
+          eql := ConnectionGraph.removeBrokenConnects(set.elements, connected, broken);
         then
-          DAEUtil.joinDaes(generateEquEquations(eql), outDae);
+          DAEUtil.joinDaes(generateEquEquations(eql), DAE);
 
-      case Connect.SET(ty = Connect.FLOW(), elements = eql)
-        then DAEUtil.joinDaes(generateFlowEquations(eql), outDae);
+      case Set.SET(ty = ConnectorType.FLOW(), elements = eql)
+        then DAEUtil.joinDaes(generateFlowEquations(set.elements), DAE);
 
-      case Connect.SET(ty = Connect.STREAM(), elements = eql)
-        then DAEUtil.joinDaes(generateStreamEquations(eql, inFlowThreshold), outDae);
+      case Set.SET(ty = ConnectorType.STREAM(), elements = eql)
+        then DAEUtil.joinDaes(generateStreamEquations(set.elements, flowThreshold), DAE);
 
       // Should never happen.
-      case Connect.SET(ty = Connect.NO_TYPE())
+      case Set.SET(ty = ConnectorType.NO_TYPE())
         algorithm
           Error.addMessage(Error.INTERNAL_ERROR,
             {"ConnectUtil.equationsDispatch failed on connection set with no type."});
@@ -2505,44 +1924,37 @@ protected function generateEquEquations
    X, Y.A and Z.B, the equations generated will be X = Y.A and X = Z.B. The
    order of the equations depends on whether the compiler flag orderConnections
    is true or false."
-  input list<ConnectorElement> inElements;
-  output DAE.DAElist outDae;
+  input list<ConnectorElement> elements;
+  output DAE.DAElist DAE = DAE.emptyDae;
+protected
+  list<DAE.Element> eql = {};
+  ConnectorElement e1;
+  DAE.ElementSource src, x_src, y_src;
+  DAE.ComponentRef x, y;
 algorithm
-  outDae := matchcontinue(inElements)
-    local
-      DAE.ComponentRef x, y;
-      DAE.ElementSource x_src, y_src, src;
-      list<ConnectorElement> rest_el;
-      ConnectorElement e1, e2;
-      list<DAE.Element> eq;
-      String str;
-      Boolean order_conn;
+  if listEmpty(elements) then
+    return;
+  end if;
 
-    case {} then DAE.emptyDae;
+  e1 := listHead(elements);
 
-    case {_} then DAE.emptyDae;
+  if Config.orderConnections() then
+    for e2 in listRest(elements) loop
+      src := DAEUtil.mergeSources(e1.source, e2.source);
+      src := DAEUtil.addElementSourceConnectOpt(src, SOME((e1.name, e2.name)));
+      eql := DAE.EQUEQUATION(e1.name, e2.name, src) :: eql;
+    end for;
+  else
+    for e2 in listRest(elements) loop
+      (x, y) := Util.swap(shouldFlipEquEquation(e1.name, e1.source), e1.name, e2.name);
+      src := DAEUtil.mergeSources(e1.source, e2.source);
+      src := DAEUtil.addElementSourceConnectOpt(src, SOME((x, y)));
+      eql := DAE.EQUEQUATION(x, y, src) :: eql;
+      e1 := e2;
+    end for;
+  end if;
 
-    case ((e1 as Connect.CONNECTOR_ELEMENT(name = x, source = x_src)) ::
-          (e2 as Connect.CONNECTOR_ELEMENT(name = y, source = y_src)) :: rest_el)
-      equation
-        order_conn = Config.orderConnections();
-        e1 = if order_conn then e1 else e2;
-        DAE.DAE(eq) = generateEquEquations(e1 :: rest_el);
-        (x, y) = Util.swap(shouldFlipEquEquation(x, x_src, order_conn), x, y);
-        src = DAEUtil.mergeSources(x_src, y_src);
-        src = DAEUtil.addElementSourceConnectOpt(src, SOME((x, y)));
-      then
-        DAE.DAE(DAE.EQUEQUATION(x, y, src) :: eq);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        str = stringDelimitList(List.map(inElements, printElementStr), ", ");
-        Debug.traceln("- ConnectUtil.generateEquEquations failed on {" + str + "}");
-      then
-        fail();
-
-  end matchcontinue;
+  DAE := DAE.DAE(listReverse(eql));
 end generateEquEquations;
 
 protected function shouldFlipEquEquation
@@ -2551,20 +1963,19 @@ protected function shouldFlipEquEquation
    case we check if the cref of the first argument to the first connection
    stored in the element source is a prefix of the connector element cref. If
    it isn't, indicate that we should flip the generated equation."
-  input DAE.ComponentRef inLhsCref;
-  input DAE.ElementSource inLhsSource;
-  input Boolean inShouldOrder;
-  output Boolean outShouldFlip;
+  input DAE.ComponentRef lhsCref;
+  input DAE.ElementSource lhsSource;
+  output Boolean shouldFlip;
 algorithm
-  outShouldFlip := matchcontinue(inLhsCref, inLhsSource, inShouldOrder)
+  shouldFlip := match lhsSource
     local
       DAE.ComponentRef lhs;
 
-    case (_, DAE.SOURCE(connectEquationOptLst = SOME((lhs, _)) :: _), false)
-      then not ComponentReference.crefPrefixOf(lhs, inLhsCref);
+    case DAE.SOURCE(connectEquationOptLst = SOME((lhs, _)) :: _)
+      then not ComponentReference.crefPrefixOf(lhs, lhsCref);
 
     else false;
-  end matchcontinue;
+  end match;
 end shouldFlipEquEquation;
 
 protected function generateFlowEquations
@@ -2573,157 +1984,114 @@ protected function generateFlowEquations
    whether the components were inside or outside connectors. This function
    creates a sum expression of all components (some of which will be negated),
    and the returns the equation where this sum is equal to 0.0."
-  input list<ConnectorElement> inElements;
-  output DAE.DAElist outDae;
+  input list<ConnectorElement> elements;
+  output DAE.DAElist DAE;
 protected
   DAE.Exp sum;
   DAE.ElementSource src;
-  list<DAE.ElementSource> srcl;
-  DAE.FunctionTree funcs;
 algorithm
-  sum := List.reduce(List.map(inElements, makeFlowExp),Expression.makeRealAdd);
-  srcl := List.map(inElements, getElementSource);
-  src := List.reduce(srcl, DAEUtil.mergeSources);
-  outDae := DAE.DAE({DAE.EQUATION(sum, DAE.RCONST(0.0), src)});
+  sum := makeFlowExp(listHead(elements));
+  src := getElementSource(listHead(elements));
+
+  for e in listRest(elements) loop
+    sum := Expression.makeRealAdd(sum, makeFlowExp(e));
+    src := DAEUtil.mergeSources(src, e.source);
+  end for;
+
+  DAE := DAE.DAE({DAE.EQUATION(sum, DAE.RCONST(0.0), src)});
 end generateFlowEquations;
 
 protected function makeFlowExp
   "Creates an expression from a connector element, which is the element itself
    if it's an inside connector, or negated if it's outside."
-  input ConnectorElement inElement;
-  output DAE.Exp outExp;
+  input ConnectorElement element;
+  output DAE.Exp exp;
 algorithm
-  outExp := match(inElement)
-    local
-      DAE.ComponentRef name;
+  exp := Expression.crefExp(element.name);
 
-    case Connect.CONNECTOR_ELEMENT(name = name, face = Connect.INSIDE())
-      then Expression.crefExp(name);
-
-    case Connect.CONNECTOR_ELEMENT(name = name, face = Connect.OUTSIDE())
-      then Expression.negateReal(Expression.crefExp(name));
-
-  end match;
+  if isOutsideElement(element) then
+    exp := Expression.negateReal(exp);
+  end if;
 end makeFlowExp;
 
 public function increaseConnectRefCount
-  input DAE.ComponentRef inLhsCref;
-  input DAE.ComponentRef inRhsCref;
-  input Sets inSets;
-  output Sets outSets;
-algorithm
-  outSets := matchcontinue(inLhsCref, inRhsCref, inSets)
-    local
-      SetTrie sets;
-      list<DAE.ComponentRef> crefs;
-
-    case (_, _, _)
-      equation
-        false = System.getUsesCardinality();
-      then
-        inSets;
-
-    case (_, _, Connect.SETS(sets = sets))
-      equation
-        crefs = ComponentReference.expandCref(inLhsCref, false);
-        sets = increaseConnectRefCount2(crefs, sets);
-        crefs = ComponentReference.expandCref(inRhsCref, false);
-        sets = increaseConnectRefCount2(crefs, sets);
-      then
-        setSets(sets, inSets);
-
-  end matchcontinue;
-end increaseConnectRefCount;
-
-public function increaseConnectRefCount2
-  input list<DAE.ComponentRef> inCref;
-  input SetTrie inSets;
-  output SetTrie outSets;
+  input DAE.ComponentRef lhsCref;
+  input DAE.ComponentRef rhsCref;
+  input output Sets sets;
 protected
   list<DAE.ComponentRef> crefs;
 algorithm
-  outSets := match(inCref, inSets)
-    local
-      DAE.ComponentRef cref;
-      list<DAE.ComponentRef> rest_crefs;
-      SetTrie sets;
+  if System.getUsesCardinality() then
+    crefs := ComponentReference.expandCref(lhsCref, false);
+    sets.sets := increaseConnectRefCount2(crefs, sets.sets);
+    crefs := ComponentReference.expandCref(rhsCref, false);
+    sets.sets := increaseConnectRefCount2(crefs, sets.sets);
+  end if;
+end increaseConnectRefCount;
 
-    case (cref :: rest_crefs, _)
-      equation
-        sets = setTrieUpdate(cref, 1, inSets, increaseRefCount);
-      then
-        increaseConnectRefCount2(rest_crefs, sets);
-
-    else inSets;
-
-  end match;
+public function increaseConnectRefCount2
+  input list<DAE.ComponentRef> crefs;
+  input output SetTrie sets;
+algorithm
+  for cr in crefs loop
+    sets := setTrieUpdate(cr, 1, sets, increaseRefCount);
+  end for;
 end increaseConnectRefCount2;
 
 protected function increaseRefCount
-  input Integer inAmount;
-  input SetTrieNode inNode;
-  output SetTrieNode outNode;
+  input Integer amount;
+  input output SetTrieNode node;
 algorithm
-  outNode := match(inAmount, inNode)
-    local
-      String name;
-      DAE.ComponentRef cref;
-      list<SetTrieNode> nodes;
-      Integer cc;
-      Option<ConnectorElement> ie, oe;
-      Option<DAE.ComponentRef> fa;
-
-    case (_, Connect.SET_TRIE_NODE(name, cref, nodes, cc))
-      equation
-        cc = cc + inAmount;
+  _ := match node
+    case SetTrieNode.SET_TRIE_NODE()
+      algorithm
+        node.connectCount := node.connectCount + amount;
       then
-        Connect.SET_TRIE_NODE(name, cref, nodes, cc);
+        ();
 
-    case (_, Connect.SET_TRIE_LEAF(name, ie, oe, fa, cc))
-      equation
-        cc = cc + inAmount;
+    case SetTrieNode.SET_TRIE_LEAF()
+      algorithm
+        node.connectCount := node.connectCount + amount;
       then
-        Connect.SET_TRIE_LEAF(name, ie, oe, fa, cc);
-
+        ();
   end match;
 end increaseRefCount;
 
 protected function generateStreamEquations
   "Generates the equations for a stream connection set."
-  input list<ConnectorElement> inElements;
-  input Real inFlowThreshold;
-  output DAE.DAElist outDae;
+  input list<ConnectorElement> elements;
+  input Real flowThreshold;
+  output DAE.DAElist DAE;
 algorithm
-  outDae := match(inElements)
+  DAE := match elements
     local
       DAE.ComponentRef cr1, cr2;
       DAE.ElementSource src1, src2, src;
       DAE.DAElist dae;
-      Connect.Face f1, f2;
       DAE.Exp cref1, cref2, e1, e2;
       list<ConnectorElement> inside, outside;
 
     // Unconnected stream connector, do nothing!
-    case ({Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE())})
+    case {ConnectorElement.CONNECTOR_ELEMENT(face = Face.INSIDE())}
       then DAE.emptyDae;
 
     // Both inside, do nothing!
-    case ({Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE()),
-           Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE())})
+    case {ConnectorElement.CONNECTOR_ELEMENT(face = Face.INSIDE()),
+          ConnectorElement.CONNECTOR_ELEMENT(face = Face.INSIDE())}
       then DAE.emptyDae;
 
     // Both outside:
     // cr1 = inStream(cr2);
     // cr2 = inStream(cr1);
-    case ({Connect.CONNECTOR_ELEMENT(name = cr1, face = Connect.OUTSIDE(), source = src1),
-           Connect.CONNECTOR_ELEMENT(name = cr2, face = Connect.OUTSIDE(), source = src2)})
-      equation
-        cref1 = Expression.crefExp(cr1);
-        cref2 = Expression.crefExp(cr2);
-        e1 = makeInStreamCall(cref2);
-        e2 = makeInStreamCall(cref1);
-        src = DAEUtil.mergeSources(src1, src2);
-        dae = DAE.DAE({
+    case {ConnectorElement.CONNECTOR_ELEMENT(name = cr1, face = Face.OUTSIDE(), source = src1),
+          ConnectorElement.CONNECTOR_ELEMENT(name = cr2, face = Face.OUTSIDE(), source = src2)}
+      algorithm
+        cref1 := Expression.crefExp(cr1);
+        cref2 := Expression.crefExp(cr2);
+        e1 := makeInStreamCall(cref2);
+        e2 := makeInStreamCall(cref1);
+        src := DAEUtil.mergeSources(src1, src2);
+        dae := DAE.DAE({
           DAE.EQUATION(cref1, e1, src),
           DAE.EQUATION(cref2, e2, src)});
       then
@@ -2731,55 +2099,56 @@ algorithm
 
     // One inside, one outside:
     // cr1 = cr2;
-    case ({Connect.CONNECTOR_ELEMENT(name = cr1, source = src1),
-           Connect.CONNECTOR_ELEMENT(name = cr2, source = src2)})
-      equation
-        src = DAEUtil.mergeSources(src1, src2);
-        e1 = Expression.crefExp(cr1);
-        e2 = Expression.crefExp(cr2);
-        dae = DAE.DAE({DAE.EQUATION(e1,e2,src)});
-      then dae;
+    case {ConnectorElement.CONNECTOR_ELEMENT(name = cr1, source = src1),
+           ConnectorElement.CONNECTOR_ELEMENT(name = cr2, source = src2)}
+      algorithm
+        src := DAEUtil.mergeSources(src1, src2);
+        e1 := Expression.crefExp(cr1);
+        e2 := Expression.crefExp(cr2);
+        dae := DAE.DAE({DAE.EQUATION(e1,e2,src)});
+      then
+        dae;
 
     // The general case with N inside connectors and M outside:
     else
       algorithm
-        (outside, inside) := List.splitOnTrue(inElements, isOutsideStream);
-        dae := streamEquationGeneral(outside, inside, inFlowThreshold);
+        (outside, inside) := List.splitOnTrue(elements, isOutsideElement);
+        dae := streamEquationGeneral(outside, inside, flowThreshold);
       then
         dae;
 
   end match;
 end generateStreamEquations;
 
-protected function isOutsideStream
-  "Returns true if the stream connector element belongs to an outside connector."
-  input ConnectorElement inElement;
+protected function isOutsideElement
+  "Returns true if the connector element belongs to an outside connector."
+  input ConnectorElement element;
   output Boolean isOutside;
 algorithm
-  isOutside := match(inElement)
-    case Connect.CONNECTOR_ELEMENT(face = Connect.OUTSIDE()) then true;
+  isOutside := match element
+    case ConnectorElement.CONNECTOR_ELEMENT(face = Face.OUTSIDE()) then true;
     else false;
   end match;
-end isOutsideStream;
+end isOutsideElement;
 
 protected function isZeroFlowMinMax
   "Returns true if the given flow attribute of a connector is zero."
-  input DAE.ComponentRef inStreamCref;
-  input ConnectorElement inElement;
+  input DAE.ComponentRef streamCref;
+  input ConnectorElement element;
   output Boolean isZero;
 algorithm
-  if compareCrefStreamSet(inStreamCref, inElement) then
+  if compareCrefStreamSet(streamCref, element) then
     isZero := false;
-  elseif isOutsideStream(inElement) then
-    isZero := isZeroFlow(inElement, "max");
+  elseif isOutsideElement(element) then
+    isZero := isZeroFlow(element, "max");
   else
-    isZero := isZeroFlow(inElement, "min");
+    isZero := isZeroFlow(element, "min");
   end if;
 end isZeroFlowMinMax;
 
 protected function isZeroFlow
   "Returns true if the given flow attribute of a connector is zero."
-  input ConnectorElement inElement;
+  input ConnectorElement element;
   input String attr;
   output Boolean isZero;
 protected
@@ -2787,7 +2156,7 @@ protected
   Option<DAE.Exp> attr_oexp;
   DAE.Exp flow_exp, attr_exp;
 algorithm
-  flow_exp := flowExp(inElement);
+  flow_exp := flowExp(element);
   ty := Expression.typeof(flow_exp);
   attr_oexp := Types.lookupAttributeExp(Types.getAttributes(ty), attr);
   if isSome(attr_oexp) then
@@ -2800,26 +2169,27 @@ end isZeroFlow;
 
 protected function streamEquationGeneral
   "Generates an equation for an outside stream connector element."
-  input list<ConnectorElement> inOutsideElements;
-  input list<ConnectorElement> inInsideElements;
-  input Real inFlowThreshold;
-  output DAE.DAElist outDae = DAE.emptyDae;
+  input list<ConnectorElement> outsideElements;
+  input list<ConnectorElement> insideElements;
+  input Real flowThreshold;
+  output DAE.DAElist DAE;
 protected
   list<ConnectorElement> outside;
   DAE.Exp cref_exp, res;
   DAE.ElementSource src;
   DAE.DAElist dae;
   DAE.ComponentRef name;
+  list<DAE.Element> eql = {};
 algorithm
-  for e in inOutsideElements loop
-    Connect.CONNECTOR_ELEMENT(name = name, source = src) := e;
-    cref_exp := Expression.crefExp(name);
-    outside := removeStreamSetElement(name, inOutsideElements);
-    res := streamSumEquationExp(outside, inInsideElements, inFlowThreshold);
-    src := DAEUtil.addAdditionalComment(src, " equation generated by stream handling");
-    dae := DAE.DAE({DAE.EQUATION(cref_exp, res, src)});
-    outDae := DAEUtil.joinDaes(dae, outDae);
+  for e in outsideElements loop
+    cref_exp := Expression.crefExp(e.name);
+    outside := removeStreamSetElement(e.name, outsideElements);
+    res := streamSumEquationExp(outside, insideElements, flowThreshold);
+    src := DAEUtil.addAdditionalComment(e.source, " equation generated by stream handling");
+    eql := DAE.EQUATION(cref_exp, res, src) :: eql;
   end for;
+
+  DAE := DAE.DAE(eql);
 end streamEquationGeneral;
 
 protected function streamSumEquationExp
@@ -2833,30 +2203,30 @@ protected function streamSumEquationExp
 
   where eps = inFlowThreshold.
   "
-  input list<ConnectorElement> inOutsideElements;
-  input list<ConnectorElement> inInsideElements;
-  input Real inFlowThreshold;
-  output DAE.Exp outSumExp;
+  input list<ConnectorElement> outsideElements;
+  input list<ConnectorElement> insideElements;
+  input Real flowThreshold;
+  output DAE.Exp sumExp;
 protected
   DAE.Exp outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
 algorithm
-  if listEmpty(inOutsideElements) then
+  if listEmpty(outsideElements) then
     // No outside components.
-    inside_sum1 := sumMap(inInsideElements, sumInside1, inFlowThreshold);
-    inside_sum2 := sumMap(inInsideElements, sumInside2, inFlowThreshold);
-    outSumExp := Expression.expDiv(inside_sum1, inside_sum2);
-  elseif listEmpty(inInsideElements) then
+    inside_sum1 := sumMap(insideElements, sumInside1, flowThreshold);
+    inside_sum2 := sumMap(insideElements, sumInside2, flowThreshold);
+    sumExp := Expression.expDiv(inside_sum1, inside_sum2);
+  elseif listEmpty(insideElements) then
     // No inside components.
-    outside_sum1 := sumMap(inOutsideElements, sumOutside1, inFlowThreshold);
-    outside_sum2 := sumMap(inOutsideElements, sumOutside2, inFlowThreshold);
-    outSumExp := Expression.expDiv(outside_sum1, outside_sum2);
+    outside_sum1 := sumMap(outsideElements, sumOutside1, flowThreshold);
+    outside_sum2 := sumMap(outsideElements, sumOutside2, flowThreshold);
+    sumExp := Expression.expDiv(outside_sum1, outside_sum2);
   else
     // Both outside and inside components.
-    outside_sum1 := sumMap(inOutsideElements, sumOutside1, inFlowThreshold);
-    outside_sum2 := sumMap(inOutsideElements, sumOutside2, inFlowThreshold);
-    inside_sum1 := sumMap(inInsideElements, sumInside1, inFlowThreshold);
-    inside_sum2 := sumMap(inInsideElements, sumInside2, inFlowThreshold);
-    outSumExp := Expression.expDiv(Expression.expAdd(outside_sum1, inside_sum1),
+    outside_sum1 := sumMap(outsideElements, sumOutside1, flowThreshold);
+    outside_sum2 := sumMap(outsideElements, sumOutside2, flowThreshold);
+    inside_sum1 := sumMap(insideElements, sumInside1, flowThreshold);
+    inside_sum2 := sumMap(insideElements, sumInside2, flowThreshold);
+    sumExp := Expression.expDiv(Expression.expAdd(outside_sum1, inside_sum1),
                                    Expression.expAdd(outside_sum2, inside_sum2));
   end if;
 end streamSumEquationExp;
@@ -2864,57 +2234,57 @@ end streamSumEquationExp;
 protected function sumMap
   "Creates a sum expression by applying the given function on the list of
   elements and summing up the resulting expressions."
-  input list<ConnectorElement> inElements;
-  input FuncType inFunc;
-  input Real inFlowThreshold;
-  output DAE.Exp outExp;
+  input list<ConnectorElement> elements;
+  input FuncType func;
+  input Real flowThreshold;
+  output DAE.Exp exp;
 
   partial function FuncType
-    input ConnectorElement inElement;
-    input Real inFlowThreshold;
-    output DAE.Exp outExp;
+    input ConnectorElement element;
+    input Real flowThreshold;
+    output DAE.Exp exp;
   end FuncType;
 algorithm
-  outExp := Expression.expAdd(inFunc(e, inFlowThreshold) for e in listReverse(inElements));
+  exp := Expression.expAdd(func(e, flowThreshold) for e in listReverse(elements));
 end sumMap;
 
 protected function streamFlowExp
   "Returns the stream and flow component in a stream set element as expressions."
-  input ConnectorElement inElement;
-  output DAE.Exp outStreamExp;
-  output DAE.Exp outFlowExp;
+  input ConnectorElement element;
+  output DAE.Exp streamExp;
+  output DAE.Exp flowExp;
 protected
-  DAE.ComponentRef stream_cr, flow_cr;
+  DAE.ComponentRef flow_cr;
 algorithm
-  Connect.CONNECTOR_ELEMENT(name = stream_cr, ty = Connect.STREAM(SOME(flow_cr))) := inElement;
-  outStreamExp := Expression.crefExp(stream_cr);
-  outFlowExp := Expression.crefExp(flow_cr);
+  ConnectorElement.CONNECTOR_ELEMENT(ty = ConnectorType.STREAM(SOME(flow_cr))) := element;
+  streamExp := Expression.crefExp(element.name);
+  flowExp := Expression.crefExp(flow_cr);
 end streamFlowExp;
 
 protected function flowExp
   "Returns the flow component in a stream set element as an expression."
-  input ConnectorElement inElement;
-  output DAE.Exp outFlowExp;
+  input ConnectorElement element;
+  output DAE.Exp flowExp;
 protected
   DAE.ComponentRef flow_cr;
 algorithm
-  Connect.CONNECTOR_ELEMENT(ty = Connect.STREAM(SOME(flow_cr))) := inElement;
-  outFlowExp := Expression.crefExp(flow_cr);
+  ConnectorElement.CONNECTOR_ELEMENT(ty = ConnectorType.STREAM(SOME(flow_cr))) := element;
+  flowExp := Expression.crefExp(flow_cr);
 end flowExp;
 
 protected function sumOutside1
   "Helper function to streamSumEquationExp. Returns the expression
     max(flow_exp, eps) * inStream(stream_exp)
   given a stream set element."
-  input ConnectorElement inElement;
-  input Real inFlowThreshold;
-  output DAE.Exp outExp;
+  input ConnectorElement element;
+  input Real flowThreshold;
+  output DAE.Exp exp;
 protected
   DAE.Exp stream_exp, flow_exp, flow_threshold;
 algorithm
-  (stream_exp, flow_exp) := streamFlowExp(inElement);
-  flow_threshold := DAE.RCONST(inFlowThreshold);
-  outExp := Expression.expMul(makePositiveMaxCall(flow_exp, flow_threshold),
+  (stream_exp, flow_exp) := streamFlowExp(element);
+  flow_threshold := DAE.RCONST(flowThreshold);
+  exp := Expression.expMul(makePositiveMaxCall(flow_exp, flow_threshold),
                               makeInStreamCall(stream_exp));
 end sumOutside1;
 
@@ -2922,80 +2292,74 @@ protected function sumInside1
   "Helper function to streamSumEquationExp. Returns the expression
     max(-flow_exp, eps) * stream_exp
   given a stream set element."
-  input ConnectorElement inElement;
-  input Real inFlowThreshold;
-  output DAE.Exp outExp;
+  input ConnectorElement element;
+  input Real flowThreshold;
+  output DAE.Exp exp;
 protected
   DAE.Exp stream_exp, flow_exp, flow_threshold;
   DAE.Type flowTy, streamTy;
 algorithm
-  (stream_exp, flow_exp) := streamFlowExp(inElement);
+  (stream_exp, flow_exp) := streamFlowExp(element);
   flowTy := Expression.typeof(flow_exp);
   flow_exp := DAE.UNARY(DAE.UMINUS(flowTy), flow_exp);
-  flow_threshold := DAE.RCONST(inFlowThreshold);
-  outExp := Expression.expMul(makePositiveMaxCall(flow_exp, flow_threshold), stream_exp);
+  flow_threshold := DAE.RCONST(flowThreshold);
+  exp := Expression.expMul(makePositiveMaxCall(flow_exp, flow_threshold), stream_exp);
 end sumInside1;
 
 protected function sumOutside2
   "Helper function to streamSumEquationExp. Returns the expression
     max(flow_exp, eps)
   given a stream set element."
-  input ConnectorElement inElement;
-  input Real inFlowThreshold;
-  output DAE.Exp outExp;
+  input ConnectorElement element;
+  input Real flowThreshold;
+  output DAE.Exp exp;
 protected
   DAE.Exp flow_exp;
 algorithm
-  flow_exp := flowExp(inElement);
-  outExp := makePositiveMaxCall(flow_exp, DAE.RCONST(inFlowThreshold));
+  flow_exp := flowExp(element);
+  exp := makePositiveMaxCall(flow_exp, DAE.RCONST(flowThreshold));
 end sumOutside2;
 
 protected function sumInside2
   "Helper function to streamSumEquationExp. Returns the expression
     max(-flow_exp, eps)
   given a stream set element."
-  input ConnectorElement inElement;
-  input Real inFlowThreshold;
-  output DAE.Exp outExp;
+  input ConnectorElement element;
+  input Real flowThreshold;
+  output DAE.Exp exp;
 protected
   DAE.Exp flow_exp;
   DAE.Type flowTy;
 algorithm
-  flow_exp := flowExp(inElement);
+  flow_exp := flowExp(element);
   flowTy := Expression.typeof(flow_exp);
   flow_exp := DAE.UNARY(DAE.UMINUS(flowTy), flow_exp);
-  outExp := makePositiveMaxCall(flow_exp, DAE.RCONST(inFlowThreshold));
+  exp := makePositiveMaxCall(flow_exp, DAE.RCONST(flowThreshold));
 end sumInside2;
 
 public function faceEqual "Test for face equality."
-  input Connect.Face inFace1;
-  input Connect.Face inFace2;
-  output Boolean sameFaces;
-algorithm
-  sameFaces := match (inFace1,inFace2)
-    case (Connect.INSIDE(),Connect.INSIDE()) then true;
-    case (Connect.OUTSIDE(),Connect.OUTSIDE()) then true;
-    else false;
-  end match;
+  input Face face1;
+  input Face face2;
+  output Boolean sameFaces = valueConstructor(face1) == valueConstructor(face2);
 end faceEqual;
 
 protected function makeInStreamCall
   "Creates an inStream call expression."
-  input DAE.Exp inStreamExp;
-  output DAE.Exp outInStreamCall;
+  input DAE.Exp streamExp;
+  output DAE.Exp inStreamCall;
   annotation(__OpenModelica_EarlyInline = true);
 protected
   DAE.Type ty;
 algorithm
-  ty := Expression.typeof(inStreamExp);
-  outInStreamCall := Expression.makeBuiltinCall("inStream",{inStreamExp},ty,false);
+  ty := Expression.typeof(streamExp);
+  inStreamCall := Expression.makeBuiltinCall("inStream", {streamExp}, ty, false);
 end makeInStreamCall;
 
 protected function makePositiveMaxCall
   "Generates a max(flow_exp, eps) call."
-  input DAE.Exp inFlowExp;
-  input DAE.Exp inFlowThreshold;
-  output DAE.Exp outPositiveMaxCall;
+  input DAE.Exp flowExp;
+  input DAE.Exp flowThreshold;
+  output DAE.Exp positiveMaxCall;
   annotation(__OpenModelica_EarlyInline = true);
 protected
   DAE.Type ty;
@@ -3003,77 +2367,69 @@ protected
   Option<DAE.Exp> nominal_oexp;
   DAE.Exp nominal_exp, flow_threshold;
 algorithm
-  ty := Expression.typeof(inFlowExp);
+  ty := Expression.typeof(flowExp);
   nominal_oexp := Types.lookupAttributeExp(Types.getAttributes(ty), "nominal");
 
   if isSome(nominal_oexp) then
     SOME(nominal_exp) := nominal_oexp;
-    flow_threshold := Expression.expMul(inFlowThreshold, nominal_exp);
+    flow_threshold := Expression.expMul(flowThreshold, nominal_exp);
   else
-    flow_threshold := inFlowThreshold;
+    flow_threshold := flowThreshold;
   end if;
 
-  outPositiveMaxCall :=
-     DAE.CALL(
-        Absyn.IDENT("max"),
-        {inFlowExp, flow_threshold},
-        DAE.CALL_ATTR(
-          ty,
-          false,
-          true,
-          false,
-          false,
-          DAE.NO_INLINE(),
-          DAE.NO_TAIL()));
+  positiveMaxCall :=
+    DAE.CALL(Absyn.IDENT("max"), {flowExp, flow_threshold},
+      DAE.CALL_ATTR(
+        ty,
+        false,
+        true,
+        false,
+        false,
+        DAE.NO_INLINE(),
+        DAE.NO_TAIL()));
 end makePositiveMaxCall;
 
 protected function evaluateConnectionOperators
   "Evaluates connection operators inStream, actualStream and cardinality in the
    given DAE."
-  input Boolean inHasStream;
-  input Boolean inHasCardinality;
-  input Sets inSets;
-  input array<Set> inSetArray;
-  input DAE.DAElist inDae;
-  output DAE.DAElist outDae;
+  input Sets sets;
+  input array<Set> setArray;
+  input output DAE.DAElist DAE;
 protected
   Real flow_threshold;
+  Boolean has_cardinality = System.getUsesCardinality();
 algorithm
-  // Skip this phase if we have no connection operators.
-  if not inHasStream and not inHasCardinality then
-    outDae := inDae;
-  else
+  // Only do this phase if we have any connection operators.
+  if System.getHasStreamConnectors() or has_cardinality then
     flow_threshold := Flags.getConfigReal(Flags.FLOW_THRESHOLD);
-    outDae := DAEUtil.traverseDAE(inDae, DAE.emptyFuncTree,
+    DAE := DAEUtil.traverseDAE(DAE, DAE.emptyFuncTree,
       function evaluateConnectionOperators2(
-        inHasCardinality = inHasCardinality,
-        inSetArray = inSetArray,
-        inFlowThreshold = flow_threshold), inSets);
-    outDae := simplifyDAEElements(inHasCardinality, outDae);
+        hasCardinality = has_cardinality,
+        setArray = setArray,
+        flowThreshold = flow_threshold), sets);
+    DAE := simplifyDAEElements(has_cardinality, DAE);
   end if;
 end evaluateConnectionOperators;
 
 protected function evaluateConnectionOperators2
   "Helper function to evaluateConnectionOperators."
-  input DAE.Exp inExp;
-  input Connect.Sets inSets;
-  input array<Set> inSetArray;
-  input Boolean inHasCardinality;
-  input Real inFlowThreshold;
-  output DAE.Exp outExp;
-  output Connect.Sets outSets = inSets;
+  input output DAE.Exp exp;
+  input output Sets sets;
+  input array<Set> setArray;
+  input Boolean hasCardinality;
+  input Real flowThreshold;
 protected
   Boolean changed;
 algorithm
-  (outExp, changed) := Expression.traverseExpBottomUp(inExp,
+  (exp, changed) := Expression.traverseExpBottomUp(exp,
     function evaluateConnectionOperatorsExp(
-      inSets = inSets,
-      inSetArray = inSetArray,
-      inFlowThreshold = inFlowThreshold), false);
+      sets = sets,
+      setArray = setArray,
+      flowThreshold = flowThreshold), false);
 
   // Only apply simplify if the expression changed *AND* we have cardinality.
-  if changed and inHasCardinality then
-    outExp := ExpressionSimplify.simplify(outExp);
+  if changed and hasCardinality then
+    exp := ExpressionSimplify.simplify(exp);
   end if;
 end evaluateConnectionOperators2;
 
@@ -3081,46 +2437,41 @@ protected function evaluateConnectionOperatorsExp
   "Helper function to evaluateConnectionOperators2. Checks if the given
    expression is a call to inStream or actualStream, and if so calls the
    appropriate function in ConnectUtil to evaluate the call."
-  input DAE.Exp inExp;
-  input Sets inSets;
-  input array<Set> inSetArray;
-  input Real inFlowThreshold;
-  input Boolean inChanged;
-  output DAE.Exp outExp;
-  output Boolean outChanged;
+  input output DAE.Exp exp;
+  input Sets sets;
+  input array<Set> setArray;
+  input Real flowThreshold;
+  input output Boolean changed;
 algorithm
-  (outExp, outChanged) := match inExp
+  (exp, changed) := match exp
     local
       DAE.ComponentRef cr;
-      Connect.Sets sets;
-      array<Set> set_arr;
       DAE.Exp e;
-      DAE.Type ty;
 
     case DAE.CALL(path = Absyn.IDENT("inStream"),
                   expLst = {DAE.CREF(componentRef = cr)})
-      equation
-        e = evaluateInStream(cr, inSets, inSetArray, inFlowThreshold);
+      algorithm
+        e := evaluateInStream(cr, sets, setArray, flowThreshold);
         //print("Evaluated inStream(" + ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) + ") ->\n" + ExpressionDump.dumpExpStr(e, 0) + "\n");
       then
         (e, true);
 
     case DAE.CALL(path = Absyn.IDENT("actualStream"),
                   expLst = {DAE.CREF(componentRef = cr)})
-      equation
-        e = evaluateActualStream(cr, inSets, inSetArray, inFlowThreshold);
+      algorithm
+        e := evaluateActualStream(cr, sets, setArray, flowThreshold);
         //print("Evaluated actualStream(" + ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) + ") ->\n" + ExpressionDump.dumpExpStr(e, 0) + "\n");
       then
         (e, true);
 
     case DAE.CALL(path = Absyn.IDENT("cardinality"),
                   expLst = {DAE.CREF(componentRef = cr)})
-      equation
-        e = evaluateCardinality(cr, inSets);
+      algorithm
+        e := evaluateCardinality(cr, sets);
       then
         (e, true);
 
-    else (inExp, inChanged);
+    else (exp, changed);
 
   end match;
 end evaluateConnectionOperatorsExp;
@@ -3128,43 +2479,28 @@ end evaluateConnectionOperatorsExp;
 protected function mkArrayIfNeeded
 "@author: adrpo
  does an array out of exp if needed"
-  input DAE.Type inTy;
-  input DAE.Exp inExp;
-  output DAE.Exp outExp;
+  input DAE.Type ty;
+  input output DAE.Exp exp;
 algorithm
-  outExp := matchcontinue(inTy, inExp)
-    local
-      DAE.Exp exp;
-      DAE.Dimensions dims;
-
-    case (_, _)
-      equation
-        dims = Types.getDimensions(inTy);
-        exp = Expression.arrayFill(dims, inExp);
-      then
-        exp;
-
-    else inExp;
-
-  end matchcontinue;
+  exp := Expression.arrayFill(Types.getDimensions(ty), exp);
 end mkArrayIfNeeded;
 
 protected function evaluateInStream
   "This function evaluates the inStream operator for a component reference,
    given the connection sets."
-  input DAE.ComponentRef inStreamCref;
-  input Sets inSets;
-  input array<Set> inSetArray;
-  input Real inFlowThreshold;
-  output DAE.Exp outExp;
+  input DAE.ComponentRef streamCref;
+  input Sets sets;
+  input array<Set> setArray;
+  input Real flowThreshold;
+  output DAE.Exp exp;
 protected
   ConnectorElement e;
   list<ConnectorElement> sl;
   Integer set;
 algorithm
   try
-    e := findElement(inStreamCref, Connect.INSIDE(), Connect.STREAM(NONE()),
-      DAE.emptyElementSource, inSets);
+    e := findElement(streamCref, Face.INSIDE(), ConnectorType.STREAM(NONE()),
+      DAE.emptyElementSource, sets);
 
     if isNewElement(e) then
       // A new element means that the stream element couldn't be found in the sets
@@ -3173,76 +2509,76 @@ algorithm
     else
       // Otherwise, fetch the set that the element belongs to and evaluate the
       // inStream call.
-      Connect.CONNECTOR_ELEMENT(set = set) := e;
-      Connect.SET(ty = Connect.STREAM(), elements = sl) :=
-        setArrayGet(inSetArray, set);
+      ConnectorElement.CONNECTOR_ELEMENT(set = set) := e;
+      Set.SET(ty = ConnectorType.STREAM(), elements = sl) :=
+        setArrayGet(setArray, set);
     end if;
 
-    outExp := generateInStreamExp(inStreamCref, sl, inSets, inSetArray, inFlowThreshold);
+    exp := generateInStreamExp(streamCref, sl, sets, setArray, flowThreshold);
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- ConnectUtil.evaluateInStream failed for " +
-      ComponentReference.crefStr(inStreamCref) + "\n");
+      ComponentReference.crefStr(streamCref) + "\n");
   end try;
 end evaluateInStream;
 
 protected function generateInStreamExp
   "Helper function to evaluateInStream. Generates an expression for inStream
   given a connection set."
-  input DAE.ComponentRef inStreamCref;
-  input list<ConnectorElement> inStreams;
-  input Sets inSets;
-  input array<Set> inSetArray;
-  input Real inFlowThreshold;
-  output DAE.Exp outExp;
+  input DAE.ComponentRef streamCref;
+  input list<ConnectorElement> streams;
+  input Sets sets;
+  input array<Set> setArray;
+  input Real flowThreshold;
+  output DAE.Exp exp;
 protected
   list<ConnectorElement> reducedStreams;
 algorithm
-  reducedStreams := List.filterOnFalse(inStreams, function isZeroFlowMinMax(inStreamCref = inStreamCref));
-  outExp := match reducedStreams
+  reducedStreams := List.filterOnFalse(streams, function isZeroFlowMinMax(streamCref = streamCref));
+
+  exp := match reducedStreams
     local
       DAE.ComponentRef c;
-      Connect.Face f1, f2;
+      Face f1, f2;
       DAE.Exp e;
       list<ConnectorElement>  inside, outside;
 
     // Unconnected stream connector:
     // inStream(c) = c;
-    case {Connect.CONNECTOR_ELEMENT(name = c, face = Connect.INSIDE())}
+    case {ConnectorElement.CONNECTOR_ELEMENT(name = c, face = Face.INSIDE())}
       then Expression.crefExp(c);
 
     // Two inside connected stream connectors:
     // inStream(c1) = c2;
     // inStream(c2) = c1;
-    case {Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE()),
-          Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE())}
+    case {ConnectorElement.CONNECTOR_ELEMENT(face = Face.INSIDE()),
+          ConnectorElement.CONNECTOR_ELEMENT(face = Face.INSIDE())}
       algorithm
-        {Connect.CONNECTOR_ELEMENT(name = c)} :=
-          removeStreamSetElement(inStreamCref, reducedStreams);
+        {ConnectorElement.CONNECTOR_ELEMENT(name = c)} :=
+          removeStreamSetElement(streamCref, reducedStreams);
         e := Expression.crefExp(c);
       then
         e;
 
     // One inside, one outside connected stream connector:
     // inStream(c1) = inStream(c2);
-    case {Connect.CONNECTOR_ELEMENT(face = f1),
-          Connect.CONNECTOR_ELEMENT(face = f2)}
+    case {ConnectorElement.CONNECTOR_ELEMENT(face = f1),
+          ConnectorElement.CONNECTOR_ELEMENT(face = f2)} guard not faceEqual(f1, f2)
       algorithm
-        false := faceEqual(f1, f2);
-        {Connect.CONNECTOR_ELEMENT(name = c)} :=
-          removeStreamSetElement(inStreamCref, reducedStreams);
-        e := evaluateInStream(c, inSets, inSetArray, inFlowThreshold);
+        {ConnectorElement.CONNECTOR_ELEMENT(name = c)} :=
+          removeStreamSetElement(streamCref, reducedStreams);
+        e := evaluateInStream(c, sets, setArray, flowThreshold);
       then
         e;
 
     // The general case:
     else
       algorithm
-        (outside, inside) := List.splitOnTrue(reducedStreams, isOutsideStream);
-        inside := removeStreamSetElement(inStreamCref, inside);
-        e := streamSumEquationExp(outside, inside, inFlowThreshold);
+        (outside, inside) := List.splitOnTrue(reducedStreams, isOutsideElement);
+        inside := removeStreamSetElement(streamCref, inside);
+        e := streamSumEquationExp(outside, inside, flowThreshold);
         // Evaluate any inStream calls that were generated.
-        e := evaluateConnectionOperators2(e, inSets, inSetArray, false, inFlowThreshold);
+        e := evaluateConnectionOperators2(e, sets, setArray, false, flowThreshold);
       then
         e;
   end match;
@@ -3251,32 +2587,31 @@ end generateInStreamExp;
 protected function evaluateActualStream
   "This function evaluates the actualStream operator for a component reference,
   given the connection sets."
-  input DAE.ComponentRef inStreamCref;
-  input Connect.Sets inSets;
-  input array<Set> inSetArray;
-  input Real inFlowThreshold;
-  output DAE.Exp outExp;
+  input DAE.ComponentRef streamCref;
+  input Sets sets;
+  input array<Set> setArray;
+  input Real flowThreshold;
+  output DAE.Exp exp;
 protected
   DAE.ComponentRef flow_cr;
   DAE.Exp e, flow_exp, stream_exp, instream_exp, rel_exp;
   DAE.Type ety;
   Integer flow_dir;
 algorithm
-  flow_cr := getStreamFlowAssociation(inStreamCref, inSets);
+  flow_cr := getStreamFlowAssociation(streamCref, sets);
   ety := ComponentReference.crefLastType(flow_cr);
   flow_dir := evaluateFlowDirection(ety);
 
   // Select a branch if we know the flow direction, otherwise generate the whole
   // if-equation.
   if flow_dir == 1 then
-    rel_exp := evaluateInStream(inStreamCref, inSets, inSetArray, inFlowThreshold);
+    rel_exp := evaluateInStream(streamCref, sets, setArray, flowThreshold);
   elseif flow_dir == -1 then
-    rel_exp := Expression.crefExp(inStreamCref);
+    rel_exp := Expression.crefExp(streamCref);
   else
     flow_exp := Expression.crefExp(flow_cr);
-    stream_exp := Expression.crefExp(inStreamCref);
-    instream_exp := evaluateInStream(inStreamCref, inSets, inSetArray,
-                      inFlowThreshold);
+    stream_exp := Expression.crefExp(streamCref);
+    instream_exp := evaluateInStream(streamCref, sets, setArray, flowThreshold);
     rel_exp := DAE.IFEXP(
       DAE.RELATION(flow_exp, DAE.GREATER(ety), DAE.RCONST(0.0), -1, NONE()),
       instream_exp, stream_exp);
@@ -3284,7 +2619,7 @@ algorithm
 
   // actualStream(stream_var) = smooth(0, if flow_var > 0 then inStream(stream_var)
   //                                                      else stream_var);
-  outExp := DAE.CALL(Absyn.IDENT("smooth"), {DAE.ICONST(0), rel_exp},
+  exp := DAE.CALL(Absyn.IDENT("smooth"), {DAE.ICONST(0), rel_exp},
     DAE.callAttrBuiltinReal);
 end evaluateActualStream;
 
@@ -3292,20 +2627,20 @@ protected function evaluateFlowDirection
   "Checks the min/max attributes of a flow variables type to try and determine
   the flow direction. If the flow is positive 1 is returned, if it is negative
   -1, otherwise 0 if the direction can't be decided."
-  input DAE.Type inType;
-  output Integer outDirection = 0;
+  input DAE.Type ty;
+  output Integer direction = 0;
 protected
   list<DAE.Var> attr;
   Option<Values.Value> min_oval, max_oval;
   Real min_val, max_val;
 algorithm
-  attr := Types.getAttributes(inType);
+  attr := Types.getAttributes(ty);
   if listEmpty(attr) then return; end if;
 
   min_oval := Types.lookupAttributeValue(attr, "min");
   max_oval := Types.lookupAttributeValue(attr, "max");
 
-  outDirection := match (min_oval, max_oval)
+  direction := match (min_oval, max_oval)
     // No attributes, flow direction can't be decided.
     case (NONE(), NONE()) then 0;
     // Flow is positive if min is positive.
@@ -3326,117 +2661,88 @@ algorithm
 end evaluateFlowDirection;
 
 protected function evaluateCardinality
-  input DAE.ComponentRef inCref;
-  input Connect.Sets inSets;
-  output DAE.Exp outExp;
-protected
-  SetTrie sets;
-  Integer count;
+  input DAE.ComponentRef cref;
+  input Sets sets;
+  output DAE.Exp exp;
 algorithm
-  Connect.SETS(sets = sets) := inSets;
-  count := getConnectCount(inCref, sets);
-  outExp := DAE.ICONST(count);
+  exp := DAE.ICONST(getConnectCount(cref, sets.sets));
 end evaluateCardinality;
 
 protected function simplifyDAEElements
 "run this only if we have cardinality"
-  input Boolean inHasCardinality;
-  input DAE.DAElist inDAE;
-  output DAE.DAElist outDAE;
+  input Boolean hasCardinality;
+  input output DAE.DAElist DAE;
 algorithm
-  outDAE := match(inHasCardinality, inDAE)
-    local
-      list<DAE.Element> elems;
-
-    case (false, _) then inDAE;
-
-    case (true, _)
-      equation
-        DAE.DAE(elementLst = elems) = inDAE;
-        elems = List.mapFlat(elems, simplifyDAEElement);
-        outDAE = DAE.DAE(elems);
-      then
-        outDAE;
-
-  end match;
+  if hasCardinality then
+    DAE := DAE.DAE(List.mapFlat(DAE.elementLst, simplifyDAEElement));
+  end if;
 end simplifyDAEElements;
 
 protected function simplifyDAEElement
-  input DAE.Element inElement;
-  output list<DAE.Element> outElements;
+  input DAE.Element element;
+  output list<DAE.Element> elements;
 algorithm
-  outElements := matchcontinue(inElement)
+  elements := matchcontinue(element)
     local
       list<DAE.Exp> conds;
       list<list<DAE.Element>> branches;
       list<DAE.Element> else_branch;
-      DAE.ElementSource src;
 
-    case DAE.IF_EQUATION(conds, branches, else_branch, src)
-      then simplifyDAEIfEquation(conds, branches, else_branch, src);
+    case DAE.IF_EQUATION(conds, branches, else_branch)
+      then simplifyDAEIfEquation(conds, branches, else_branch);
 
-    case DAE.INITIAL_IF_EQUATION(conds, branches, else_branch, src)
-      then simplifyDAEIfEquation(conds, branches, else_branch, src);
+    case DAE.INITIAL_IF_EQUATION(conds, branches, else_branch)
+      then simplifyDAEIfEquation(conds, branches, else_branch);
 
     case DAE.ASSERT(condition = DAE.BCONST(true)) then {};
-    else {inElement};
+
+    else {element};
 
   end matchcontinue;
 end simplifyDAEElement;
 
 protected function simplifyDAEIfEquation
-  input list<DAE.Exp> inConditions;
-  input list<list<DAE.Element>> inBranches;
-  input list<DAE.Element> inElseBranch;
-  input DAE.ElementSource inSource;
-  output list<DAE.Element> outElements;
+  input list<DAE.Exp> conditions;
+  input list<list<DAE.Element>> branches;
+  input list<DAE.Element> elseBranch;
+  output list<DAE.Element> elements;
+protected
+  Boolean cond_value;
+  list<list<DAE.Element>> rest_branches = branches;
 algorithm
-  outElements := match(inConditions, inBranches, inElseBranch, inSource)
-    local
-      list<DAE.Element> elems;
-      list<list<DAE.Element>> rest_branches;
-      list<DAE.Exp> rest_cond;
+  for cond in conditions loop
+    DAE.BCONST(cond_value) := cond;
 
     // Condition is true, substitute if-equation with the branch contents.
-    case (DAE.BCONST(true) :: _, elems :: _, _, _)
-      then listReverse(elems);
+    if cond_value == true then
+      elements := listReverse(listHead(rest_branches));
+      return;
+    end if;
 
     // Condition is false, discard the branch and continue with the other branches.
-    case (DAE.BCONST(false) :: rest_cond, _ :: rest_branches, _, _)
-      then simplifyDAEIfEquation(rest_cond, rest_branches, inElseBranch, inSource);
+    rest_branches := listRest(rest_branches);
+  end for;
 
-    // All conditions were false, substitute if-equation with else-branch contents.
-    case ({}, {}, _, _) then listReverse(inElseBranch);
-
-  end match;
+  // All conditions were false, substitute if-equation with else-branch contents.
+  elements := listReverse(elseBranch);
 end simplifyDAEIfEquation;
 
 protected function removeStreamSetElement
   "This function removes the given cref from a connection set."
-  input DAE.ComponentRef inCref;
-  input list<ConnectorElement> inElements;
-  output list<ConnectorElement> outElements;
+  input DAE.ComponentRef cref;
+  input output list<ConnectorElement> elements;
 algorithm
-  (outElements, _) := List.deleteMemberOnTrue(inCref, inElements, compareCrefStreamSet);
+  elements := List.deleteMemberOnTrue(cref, elements, compareCrefStreamSet);
 end removeStreamSetElement;
 
 protected function compareCrefStreamSet
   "Helper function to removeStreamSetElement. Checks if the cref in a stream set
   element matches the given cref."
-  input DAE.ComponentRef inCref;
-  input ConnectorElement inElement;
-  output Boolean outRes;
+  input DAE.ComponentRef cref;
+  input ConnectorElement element;
+  output Boolean matches;
 algorithm
-  outRes := matchcontinue(inCref, inElement)
-    local
-      DAE.ComponentRef cr;
-    case (_, Connect.CONNECTOR_ELEMENT(name = cr))
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(inCref, cr);
-      then
-        true;
-    else false;
-  end matchcontinue;
+  matches := ComponentReference.crefEqualNoStringCompare(cref, element.name);
 end compareCrefStreamSet;
 
 public function componentFace
@@ -3454,30 +2760,26 @@ public function componentFace
   of M, is called an inside connector with respect to M. This is done **BEFORE** resolving outer elements
   to corresponding inner ones."
   input FCore.Graph env;
-  input InnerOuter.InstHierarchy inIH;
-  input DAE.ComponentRef inComponentRef;
-  output Connect.Face outFace;
+  input DAE.ComponentRef componentRef;
+  output Face face;
 algorithm
-  outFace := matchcontinue (env,inIH,inComponentRef)
+  face := matchcontinue componentRef
     local
-      DAE.ComponentRef cr;
       DAE.Ident id;
-      InnerOuter.InstHierarchy ih;
 
     // is a non-qualified cref => OUTSIDE
-    case (_,_,DAE.CREF_IDENT())
-      then Connect.OUTSIDE();
+    case DAE.CREF_IDENT() then Face.OUTSIDE();
 
     // is a qualified cref and is a connector => OUTSIDE
-    case (_,_,DAE.CREF_QUAL(ident = id))
-      equation
-       (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_,_,_,_,_,_)
-         = Lookup.lookupVar(FCore.emptyCache(),env,ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
-      then Connect.OUTSIDE();
+    case DAE.CREF_QUAL(ident = id)
+      algorithm
+       (_, _, DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_,_,_,_,_,_)
+         := Lookup.lookupVar(FCore.emptyCache(), env,
+           ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT,{}));
+      then Face.OUTSIDE();
 
     // is a qualified cref and is NOT a connector => INSIDE
-    case (_,_,DAE.CREF_QUAL())
-      then Connect.INSIDE();
+    case DAE.CREF_QUAL() then Face.INSIDE();
   end matchcontinue;
 end componentFace;
 
@@ -3497,104 +2799,89 @@ public function componentFaceType
   of M, is called an inside connector with respect to M. This is done **BEFORE** resolving outer elements
   to corresponding inner ones."
   input DAE.ComponentRef inComponentRef;
-  output Connect.Face outFace;
+  output Face outFace;
 algorithm
   outFace := match (inComponentRef)
     // is a non-qualified cref => OUTSIDE
-    case (DAE.CREF_IDENT()) then Connect.OUTSIDE();
+    case (DAE.CREF_IDENT()) then Face.OUTSIDE();
     // is a qualified cref and is a connector => OUTSIDE
-    case (DAE.CREF_QUAL(identType = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Connect.OUTSIDE();
+    case (DAE.CREF_QUAL(identType = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Face.OUTSIDE();
     // is a qualified cref and is an array of connectors => OUTSIDE
-    case (DAE.CREF_QUAL(identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))))) then Connect.OUTSIDE();
+    case (DAE.CREF_QUAL(identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))))) then Face.OUTSIDE();
     // is a qualified cref and is NOT a connector => INSIDE
-    case (DAE.CREF_QUAL()) then Connect.INSIDE();
+    case (DAE.CREF_QUAL()) then Face.INSIDE();
   end match;
 end componentFaceType;
 
 public function checkConnectorBalance
   "Checks if a connector class is balanced or not, according to the rules in the
   Modelica 3.2 specification."
-  input list<DAE.Var> inVars;
+  input list<DAE.Var> vars;
   input Absyn.Path path;
   input SourceInfo info;
 protected
   Integer potentials, flows, streams;
 algorithm
-  (potentials, flows, streams) := countConnectorVars(inVars);
+  (potentials, flows, streams) := countConnectorVars(vars);
   true := checkConnectorBalance2(potentials, flows, streams, path, info);
   //print(Absyn.pathString(path) + " has:\n\t" +
-  //  intString(potentials) + " potential variables\n\t" +
-  //  intString(flows) + " flow variables\n\t" +
-  //  intString(streams) + " stream variables\n\n");
+  //  String(potentials) + " potential variables\n\t" +
+  //  String(flows) + " flow variables\n\t" +
+  //  String(streams) + " stream variables\n\n");
 end checkConnectorBalance;
 
 protected function checkConnectorBalance2
-  input Integer inPotentialVars;
-  input Integer inFlowVars;
-  input Integer inStreamVars;
+  input Integer potentialVars;
+  input Integer flowVars;
+  input Integer streamVars;
   input Absyn.Path path;
   input SourceInfo info;
-  output Boolean outIsBalanced;
+  output Boolean isBalanced = true;
+protected
+  String error_str, flow_str, potential_str, class_str;
 algorithm
-  outIsBalanced :=
-  matchcontinue(inPotentialVars, inFlowVars, inStreamVars, path, info)
-    local
-      String error_str, flow_str, potential_str, class_str;
+  // Don't check connector balance for language version 2.x and earlier.
+  if Config.languageStandardAtMost(Config.LanguageStandard.'2.x') then
+    return;
+  end if;
 
-    // The connector is balanced.
-    case (_, _, _, _, _)
-      equation
-        true = intEq(inPotentialVars, inFlowVars) or
-          Config.languageStandardAtMost(Config.LanguageStandard.'2.x');
-        true = if intEq(inStreamVars, 0) then true else intEq(inFlowVars, 1);
-      then
-        true;
+  // Modelica 3.2 section 9.3.1:
+  // For each non-partial connector class the number of flow variables shall
+  // be equal to the number of variables that are neither parameter, constant,
+  // input, output, stream nor flow.
+  if potentialVars <> flowVars then
+    flow_str := String(flowVars);
+    potential_str := String(potentialVars);
+    class_str := Absyn.pathString(path);
+    error_str := stringAppendList({
+      "The number of potential variables (",
+      potential_str,
+      ") is not equal to the number of flow variables (",
+      flow_str, ")."});
+    Error.addSourceMessage(Error.UNBALANCED_CONNECTOR, {class_str, error_str}, info);
 
-    // Modelica 3.2 section 9.3.1:
-    // For each non-partial connector class the number of flow variables shall
-    // be equal to the number of variables that are neither parameter, constant,
-    // input, output, stream nor flow.
-    case (_, _, _, _, _)
-      equation
-        false = intEq(inPotentialVars, inFlowVars);
-        flow_str = intString(inFlowVars);
-        potential_str = intString(inPotentialVars);
-        class_str = Absyn.pathString(path);
-        error_str = stringAppendList({
-          "The number of potential variables (",
-          potential_str,
-          ") is not equal to the number of flow variables (",
-          flow_str, ")."});
-        Error.addSourceMessage(Error.UNBALANCED_CONNECTOR,
-          {class_str, error_str}, info);
-      then
-        fail();
+    // This should be a hard error, but there are models that contain such
+    // connectors. So we print an error but return that the connector is balanced.
+  end if;
 
-    // Modelica 3.2 section 15.1:
-    // A stream connector must have exactly one scalar variable with the flow prefix.
-    case (_, _, _, _, _)
-      equation
-        false = intEq(inStreamVars, 0);
-        false = intEq(inFlowVars, 1);
-        flow_str = intString(inFlowVars);
-        class_str = Absyn.pathString(path);
-        error_str = stringAppendList({
-          "A stream connector must have exactly one flow variable, this connector has ",
-          flow_str, " flow variables."});
-        Error.addSourceMessage(Error.INVALID_STREAM_CONNECTOR,
-          {class_str, error_str}, info);
-      then
-        false;
-
-    else true;
-
-  end matchcontinue;
+  // Modelica 3.2 section 15.1:
+  // A stream connector must have exactly one scalar variable with the flow prefix.
+  if streamVars > 0 and flowVars <> 1 then
+    flow_str := String(flowVars);
+    class_str := Absyn.pathString(path);
+    error_str := stringAppendList({
+      "A stream connector must have exactly one flow variable, this connector has ",
+      flow_str, " flow variables."});
+    Error.addSourceMessage(Error.INVALID_STREAM_CONNECTOR,
+      {class_str, error_str}, info);
+    isBalanced := false;
+  end if;
 end checkConnectorBalance2;
 
 protected function countConnectorVars
   "Given a list of connector variables, this function counts how many potential,
   flow and stream variables it contains."
-  input list<DAE.Var> inVars;
+  input list<DAE.Var> vars;
   output Integer potentialVars = 0;
   output Integer flowVars = 0;
   output Integer streamVars = 0;
@@ -3602,9 +2889,8 @@ protected
   DAE.Type ty, ty2;
   DAE.Attributes attr;
   Integer n, p, f, s;
-  list<DAE.Var> vars;
 algorithm
-  for var in inVars loop
+  for var in vars loop
     DAE.TYPES_VAR(ty = ty, attributes = attr) := var;
     ty2 := Types.arrayElementType(ty);
 
@@ -3614,8 +2900,7 @@ algorithm
       n := product(dim for dim in Types.getDimensionSizes(ty));
       // Count the number of different variables inside the connector, and then
       // multiply those numbers with the dimensions of the array.
-      vars := Types.getConnectorVars(ty2);
-      (p, f, s) := countConnectorVars(vars);
+      (p, f, s) := countConnectorVars(Types.getConnectorVars(ty2));
 
       // If the variable is input/output we don't count potential variables.
       if Absyn.isInputOrOutput(DAEUtil.getAttrDirection(attr)) then
@@ -3630,21 +2915,21 @@ algorithm
         // A flow variable.
         case DAE.ATTR(connectorType = SCode.FLOW())
           algorithm
-            flowVars := flowVars + sizeOfVariable(var);
+            flowVars := flowVars + sizeOfType(var.ty);
           then
             ();
 
         // A stream variable.
         case DAE.ATTR(connectorType = SCode.STREAM())
           algorithm
-            streamVars := streamVars + sizeOfVariable(var);
+            streamVars := streamVars + sizeOfType(var.ty);
           then
             ();
 
         // A potential variable.
         case DAE.ATTR(direction = Absyn.BIDIR(), variability = SCode.VAR())
           algorithm
-            potentialVars := potentialVars + sizeOfVariable(var);
+            potentialVars := potentialVars + sizeOfType(var.ty);
           then
             ();
 
@@ -3656,33 +2941,21 @@ end countConnectorVars;
 
 protected function sizeOfVariableList
   "Calls sizeOfVariable on a list of variables, and adds up the results."
-  input list<DAE.Var> inVar;
-  output Integer outSize;
-protected
-  list<Integer> sizes;
+  input list<DAE.Var> vars;
+  output Integer size = 0;
 algorithm
-  sizes := List.map(inVar, sizeOfVariable);
-  outSize := List.fold(sizes, intAdd, 0);
+  for var in vars loop
+    size := size + sizeOfType(var.ty);
+  end for;
 end sizeOfVariableList;
 
-protected function sizeOfVariable
+protected function sizeOfType
   "Different types of variables have different size, for example arrays. This
-  function checks the size of one variable."
-  input DAE.Var inVar;
-  output Integer outSize;
+   function checks the size of one variable."
+  input DAE.Type ty;
+  output Integer size;
 algorithm
-  outSize := match(inVar)
-    local DAE.Type t;
-    case DAE.TYPES_VAR(ty = t) then sizeOfVariable2(t);
-  end match;
-end sizeOfVariable;
-
-protected function sizeOfVariable2
-  "Helper function to sizeOfVariable."
-  input DAE.Type inType;
-  output Integer outSize;
-algorithm
-  outSize := match inType
+  size := match ty
     local
       Integer n;
       DAE.Type t;
@@ -3696,8 +2969,7 @@ algorithm
     case DAE.T_ENUMERATION(index = NONE()) then 1;
     // The size of an array is its dimension multiplied with the size of its type.
     case DAE.T_ARRAY()
-      then intMul(Expression.dimensionSize(dim) for dim in inType.dims) *
-           sizeOfVariable2(inType.ty);
+      then intMul(Expression.dimensionSize(dim) for dim in ty.dims) * sizeOfType(ty.ty);
     // The size of a complex type without an equalityConstraint (such as a
     // record), is the sum of the sizes of its components.
     case DAE.T_COMPLEX(varLst = v, equalityConstraint = NONE())
@@ -3708,166 +2980,127 @@ algorithm
     // The size of a basic subtype with equality constraint is ZERO.
     case DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_)) then 0;
     // The size of a basic subtype is the size of the extended type.
-    case DAE.T_SUBTYPE_BASIC(complexType = t) then sizeOfVariable2(t);
+    case DAE.T_SUBTYPE_BASIC(complexType = t) then sizeOfType(t);
     // Anything we forgot?
-    case t
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- ConnectUtil.sizeOfVariable failed on " + Types.printTypeStr(t));
+    else
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- ConnectUtil.sizeOfType failed on " + Types.printTypeStr(ty));
       then
         fail();
   end match;
-end sizeOfVariable2;
+end sizeOfType;
 
 public function checkShortConnectorDef
   "Checks a short connector definition that has extended a basic type, i.e.
    connector C = Real;."
-  input ClassInf.State inState;
-  input SCode.Attributes inAttributes;
-  input SourceInfo inInfo;
+  input ClassInf.State state;
+  input SCode.Attributes attributes;
+  input SourceInfo info;
   output Boolean isValid;
 algorithm
-  isValid := matchcontinue(inState, inAttributes, inInfo)
+  isValid := match(state, attributes)
     local
-      Absyn.Path class_path;
-      Integer pv, fv, sv;
+      Integer pv = 0, fv = 0, sv = 0;
       SCode.ConnectorType ct;
-      Boolean bf, bs;
 
     // Extended from bidirectional basic type, which means that it can't be
     // balanced.
-    case (ClassInf.CONNECTOR(path = class_path),
-        SCode.ATTR(connectorType = ct, direction = Absyn.BIDIR()), _)
-      equation
+    case (ClassInf.CONNECTOR(),
+        SCode.ATTR(connectorType = ct, direction = Absyn.BIDIR()))
+      algorithm
         // The connector might be either flow, stream or neither.
         // This will set either fv, sv, or pv to 1, and the rest to 0, and
         // checkConnectorBalance2 will then be called to provide the appropriate
         // error message (or might actually succeed if +std=2.x or 1.x).
-        bf = SCode.flowBool(ct);
-        bs = SCode.streamBool(ct);
-        fv = if bf then 1 else 0;
-        sv = if bs then 1 else 0;
-        pv = if bf or bs then 0 else 1;
-        true = checkConnectorBalance2(pv, fv, sv, class_path, inInfo);
+        if SCode.flowBool(ct) then
+          fv := 1;
+        elseif SCode.streamBool(ct) then
+          sv := 1;
+        else
+          pv := 1;
+        end if;
       then
-        true;
-
-    // Previous case failed, not a valid connector.
-    case (ClassInf.CONNECTOR(),
-      SCode.ATTR(direction = Absyn.BIDIR()), _) then false;
+        checkConnectorBalance2(pv, fv, sv, state.path, info);
 
     // All other cases are ok.
     else true;
-  end matchcontinue;
+  end match;
 end checkShortConnectorDef;
 
 public function isReferenceInConnects
-  input list<ConnectorElement> inConnects;
-  input DAE.ComponentRef inCref;
-  output Boolean isThere;
+  input list<ConnectorElement> connects;
+  input DAE.ComponentRef cref;
+  output Boolean isThere = false;
 algorithm
-  isThere := match(inConnects, inCref)
-    local
-      list<ConnectorElement> rest;
-      DAE.ComponentRef name;
-      Boolean b;
-
-    case ({}, _) then false;
-
-    case (Connect.CONNECTOR_ELEMENT(name = name)::rest, _)
-      equation
-        b = if (ComponentReference.crefPrefixOf(inCref, name))
-            then true
-            else isReferenceInConnects(rest, inCref);
-      then
-        b;
-
-  end match;
+  for ce in connects loop
+    if ComponentReference.crefPrefixOf(cref, ce.name) then
+      isThere := true;
+      return;
+    end if;
+  end for;
 end isReferenceInConnects;
 
 public function removeReferenceFromConnects
-  input list<ConnectorElement> inConnects;
-  input DAE.ComponentRef inCref;
-  input list<ConnectorElement> inPrefix;
-  output list<ConnectorElement> outConnects;
+  input output list<ConnectorElement> connects;
+  input DAE.ComponentRef cref;
   output Boolean wasRemoved;
+protected
+  Option<ConnectorElement> oe;
 algorithm
-  (outConnects, wasRemoved) := match(inConnects, inCref, inPrefix)
-    local
-      list<ConnectorElement> rest,  all;
-      ConnectorElement e;
-      DAE.ComponentRef name;
-      Boolean b;
-
-    // not there
-    case ({}, _, _) then (listReverse(inPrefix), false);
-
-    // there or middleground
-    case ((e as Connect.CONNECTOR_ELEMENT(name = name))::rest, _, _)
-      equation
-        if (ComponentReference.crefPrefixOf(inCref, name))
-        then
-          all = List.append_reverse(inPrefix, rest);
-          b = true;
-        else
-          (all, b) = removeReferenceFromConnects(rest, inCref, e::inPrefix);
-        end if;
-      then
-        (all, b);
-
-  end match;
+  (connects, oe) := List.deleteMemberOnTrue(cref, connects,
+    removeReferenceFromConnects2);
+  wasRemoved := isSome(oe);
 end removeReferenceFromConnects;
+
+protected function removeReferenceFromConnects2
+  input DAE.ComponentRef cref;
+  input ConnectorElement element;
+  output Boolean matches;
+algorithm
+  matches := ComponentReference.crefPrefixOf(cref, element.name);
+end removeReferenceFromConnects2;
 
 public function printSetsStr
   "Prints a Sets to a String."
-  input Sets inSets;
-  output String outString;
-protected
-  SetTrie sets;
-  Integer sc;
-  list<SetConnection> c;
-  list<OuterConnect> o;
+  input Sets sets;
+  output String string;
 algorithm
-  Connect.SETS(sets, sc, c, o) := inSets;
-  outString := intString(sc) + " sets:\n";
-  outString := outString + printSetTrieStr(sets, "\t");
-  outString := outString + "Connected sets:\n";
-  outString := outString + printSetConnections(c) + "\n";
+  string := String(sets.setCount) + " sets:\n";
+  string := string + printSetTrieStr(sets.sets, "\t");
+  string := string + "Connected sets:\n";
+  string := string + printSetConnections(sets.connections) + "\n";
 end printSetsStr;
 
 protected function printSetTrieStr
   "Prints a SetTrie to a String."
-  input SetTrie inTrie;
-  input String inAccumName;
-  output String outString;
+  input SetTrie trie;
+  input String accumName;
+  output String string;
 algorithm
-  outString := match(inTrie, inAccumName)
+  string := match trie
     local
       String name, res;
-      Option<ConnectorElement> ie, oe;
-      Option<DAE.ComponentRef> fa;
-      list<SetTrieNode> nodes;
 
-    case (Connect.SET_TRIE_DELETED(name = name), _)
-      then inAccumName + "." + name + ": deleted\n";
+    case SetTrieNode.SET_TRIE_DELETED()
+      then accumName + "." + trie.name + ": deleted\n";
 
-    case (Connect.SET_TRIE_LEAF(name = name,
-        insideElement = ie, outsideElement = oe, flowAssociation = fa), _)
-      equation
-        res = inAccumName + "." + name + ":";
-        res = res + printLeafElementStr(ie);
-        res = res + printLeafElementStr(oe);
-        res = res + printOptFlowAssociation(fa) + "\n";
+    case SetTrieNode.SET_TRIE_LEAF()
+      algorithm
+        res := accumName + "." + trie.name + ":";
+        res := res + printLeafElementStr(trie.insideElement);
+        res := res + printLeafElementStr(trie.outsideElement);
+        res := res + printOptFlowAssociation(trie.flowAssociation) + "\n";
       then
         res;
 
-    case (Connect.SET_TRIE_NODE(name = "", nodes = nodes), _)
-      then stringAppendList(List.map1(nodes, printSetTrieStr, inAccumName));
+    case SetTrieNode.SET_TRIE_NODE(name = "")
+      then stringAppendList(List.map1(trie.nodes, printSetTrieStr, accumName));
 
-    case (Connect.SET_TRIE_NODE(name = name, nodes = nodes), _)
-      equation
-        name = inAccumName + "." + name;
-        res = stringAppendList(List.map1(nodes, printSetTrieStr, name));
+    case SetTrieNode.SET_TRIE_NODE()
+      algorithm
+        name := accumName + "." + trie.name;
+        res := stringAppendList(List.map1(trie.nodes, printSetTrieStr, name));
       then
         res;
 
@@ -3876,21 +3109,18 @@ end printSetTrieStr;
 
 protected function printLeafElementStr
   "Prints an optional connector element to a String."
-  input Option<ConnectorElement> inElement;
-  output String outString;
+  input Option<ConnectorElement> element;
+  output String string;
 algorithm
-  outString := match(inElement)
+  string := match(element)
     local
       ConnectorElement e;
-      Integer set;
-      ConnectorType ty;
-      Face face;
       String res;
 
-    case SOME(Connect.CONNECTOR_ELEMENT(face = face, ty = ty, set = set))
-      equation
-        res = " " + printFaceStr(face) + " ";
-        res = res + printConnectorTypeStr(ty) + " [" + intString(set) + "]";
+    case SOME(e as ConnectorElement.CONNECTOR_ELEMENT())
+      algorithm
+        res := " " + printFaceStr(e.face) + " ";
+        res := res + printConnectorTypeStr(e.ty) + " [" + String(e.set) + "]";
       then
         res;
 
@@ -3901,150 +3131,108 @@ end printLeafElementStr;
 
 protected function printElementStr
   "Prints a connector element to a String."
-  input ConnectorElement inElement;
-  output String outString;
+  input ConnectorElement element;
+  output String string;
 algorithm
-  outString := match(inElement)
-    local
-      DAE.ComponentRef name;
-      Integer set;
-      ConnectorType ty;
-      Face face;
-      String res;
-
-    case Connect.CONNECTOR_ELEMENT(name = name, face = face, ty = ty, set = set)
-      equation
-        res = ComponentReference.printComponentRefStr(name) + " ";
-        res = res + printFaceStr(face) + " ";
-        res = res + printConnectorTypeStr(ty) + " [" + intString(set) + "]";
-      then
-        res;
-
-  end match;
+  string := ComponentReference.printComponentRefStr(element.name) + " ";
+  string := string + printFaceStr(element.face) + " ";
+  string := string + printConnectorTypeStr(element.ty) + " [" + String(element.set) + "]";
 end printElementStr;
 
 public function printFaceStr
   "Prints the Face to a String."
-  input Face inFace;
-  output String outString;
+  input Face face;
+  output String string;
 algorithm
-  outString := match(inFace)
-    case Connect.INSIDE() then "inside";
-    case Connect.OUTSIDE() then "outside";
-    case Connect.NO_FACE() then "unknown";
+  string := match face
+    case Face.INSIDE() then "inside";
+    case Face.OUTSIDE() then "outside";
+    case Face.NO_FACE() then "unknown";
   end match;
 end printFaceStr;
 
 protected function printConnectorTypeStr
   "Prints the connector type to a String."
-  input ConnectorType inType;
-  output String outString;
+  input ConnectorType ty;
+  output String string;
 algorithm
-  outString := match(inType)
-    case Connect.EQU() then "equ";
-    case Connect.FLOW() then "flow";
-    case Connect.STREAM(_) then "stream";
+  string := match ty
+    case ConnectorType.EQU() then "equ";
+    case ConnectorType.FLOW() then "flow";
+    case ConnectorType.STREAM() then "stream";
   end match;
 end printConnectorTypeStr;
 
 protected function printOptFlowAssociation
   "Print an optional flow association to a String."
-  input Option<DAE.ComponentRef> inCref;
-  output String outString;
+  input Option<DAE.ComponentRef> cref;
+  output String string;
 algorithm
-  outString := match(inCref)
+  string := match cref
     local
       DAE.ComponentRef cr;
 
-    case NONE() then "";
-    case SOME(cr) then " associated flow: " +
-      ComponentReference.printComponentRefStr(cr);
+    case NONE()
+      then "";
+
+    case SOME(cr)
+      then " associated flow: " + ComponentReference.printComponentRefStr(cr);
 
   end match;
 end printOptFlowAssociation;
 
 protected function printSetConnections
   "Prints a list of set connection to a String."
-  input list<SetConnection> inConnections;
-  output String outString;
+  input list<SetConnection> connections;
+  output String string;
 algorithm
-  outString := stringAppendList(List.map(inConnections, printSetConnection));
+  string := stringAppendList(List.map(connections, printSetConnection));
 end printSetConnections;
 
 protected function printSetConnection
   "Prints a set connection to a String."
-  input SetConnection inConnection;
-  output String outString;
+  input SetConnection connection;
+  output String string;
 protected
   Integer set1, set2;
 algorithm
-  (set1, set2) := inConnection;
-  outString := "\t" + intString(set1) + " connected to " + intString(set2) + "\n";
+  (set1, set2) := connection;
+  string := "\t" + String(set1) + " connected to " + intString(set2) + "\n";
 end printSetConnection;
 
 protected function printSetStr
   "Prints a Set to a String."
-  input Set inSet;
-  output String outString;
+  input Set set;
+  output String string;
 algorithm
-  outString := match(inSet)
-    local
-      list<ConnectorElement> el;
-      String str;
-      Integer index;
+  string := match set
+    case Set.SET()
+      then stringDelimitList(List.map(set.elements, printElementStr), ", ");
 
-    case Connect.SET(elements = el)
-      equation
-        str = stringDelimitList(List.map(el, printElementStr), ", ");
-      then
-        str;
-
-    case Connect.SET_POINTER(index = index)
-      equation
-        str = "pointer to set " + intString(index);
-      then
-        str;
-
+    case Set.SET_POINTER()
+      then "pointer to set " + intString(set.index);
   end match;
 end printSetStr;
 
 protected function getAllEquCrefs
 "@author: adrpo
  return all crefs present in EQU sets"
-  input list<Set> inSets;
-  input list<DAE.ComponentRef> inAcc;
-  output list<DAE.ComponentRef> outCrefs;
+  input list<Set> sets;
+  output list<DAE.ComponentRef> crefs = {};
 algorithm
-  outCrefs := match (inSets, inAcc)
-    local
-      list<Set> rest;
-      list<ConnectorElement> elms;
-      DAE.ComponentRef name;
-      list<DAE.ComponentRef> acc;
+  for set in sets loop
+    _ := match set
+      case Set.SET(ty = ConnectorType.EQU())
+        algorithm
+          for e in set.elements loop
+            crefs := e.name :: crefs;
+          end for;
+        then
+          ();
 
-    case ({}, _) then inAcc;
-
-    case (Connect.SET(ty = Connect.EQU(), elements = {})::rest, _)
-      then getAllEquCrefs(rest, inAcc);
-
-    case (Connect.SET(ty = Connect.EQU(), elements = Connect.CONNECTOR_ELEMENT(name = name)::elms)::rest, _)
-      equation
-        acc = getAllEquCrefs(Connect.SET(Connect.EQU(), elms)::rest, name::inAcc);
-      then
-        acc;
-    /* TODO! FIXME! check if flow can be here or not, in an expandable connector
-    case (Connect.SET(ty = Connect.FLOW(), elements = {})::rest, _)
-      then getAllEquCrefs(rest, inAcc);
-
-    case (Connect.SET(ty = Connect.FLOW(), elements = Connect.CONNECTOR_ELEMENT(name = name)::elms)::rest, _)
-      equation
-        acc = getAllEquCrefs(Connect.SET(Connect.FLOW(), elms)::rest, name::inAcc);
-      then
-        acc;
-    */
-    case (_::rest, _)
-      then getAllEquCrefs(rest, inAcc);
-  end match;
+      else ();
+    end match;
+  end for;
 end getAllEquCrefs;
 
 protected function removeUnusedExpandableVariablesAndConnections
@@ -4060,75 +3248,61 @@ protected function removeUnusedExpandableVariablesAndConnections
  7. substract (2) from (1)
  8. substract (6) from (7)
  9. remove (8) from the DAE (5)"
-  input list<Set> inSets;
-  input DAE.DAElist inDAE;
-  input Boolean hasExpandable;
-  output list<Set> outSets;
-  output DAE.DAElist outDAE;
+  input output list<Set> sets;
+  input output DAE.DAElist DAE;
+protected
+  list<DAE.Element> elems;
+  list<DAE.ComponentRef> expandableVars, unnecessary, usedInDAE, onlyExpandableConnected, equVars;
+  DAE.DAElist dae;
+  list<list<DAE.ComponentRef>> setsAsCrefs;
 algorithm
-  (outSets, outDAE) := match(inSets, inDAE, hasExpandable)
-    local
-      list<DAE.Element> elems;
-      list<DAE.ComponentRef> expandableVars, unnecessary, usedInDAE, onlyExpandableConnected, equVars;
-      DAE.DAElist dae;
-      list<Set> sets;
-      list<list<DAE.ComponentRef>> setsAsCrefs;
+  DAE.DAE(elems) := DAE;
 
-    case (_, _, false) then (inSets, inDAE);
+  // 1 - get all expandable crefs
+  expandableVars := getExpandableVariablesWithNoBinding(elems);
+  // print("All expandable (1):\n  " + stringDelimitList(List.map(expandableVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
 
-    case (_, DAE.DAE(elems), true)
-      equation
-        // 1 - get all expandable crefs
-        expandableVars = getExpandableVariablesWithNoBinding(elems, {});
-        // print("All expandable (1):\n  " + stringDelimitList(List.map(expandableVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // 2 - remove all expandable without binding from the dae
+  dae := DAEUtil.removeVariables(DAE, expandableVars);
+  // 2 - get all expandable crefs used in the dae (without the expandable vars)
+  usedInDAE := DAEUtil.getAllExpandableCrefsFromDAE(dae);
+  // print("Used in the DAE (2):\n  " + stringDelimitList(List.map(usedInDAE, ComponentReference.printComponentRefStr), "\n  ") + "\n");
 
-        // 2 - remove all expandable without binding from the dae
-        dae = DAEUtil.removeVariables(inDAE, expandableVars);
-        // 2 - get all expandable crefs used in the dae (without the expandable vars)
-        usedInDAE = DAEUtil.getAllExpandableCrefsFromDAE(dae);
-        // print("Used in the DAE (2):\n  " + stringDelimitList(List.map(usedInDAE, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // 3 - get all expandable crefs that are connected ONLY with expandable
+  setsAsCrefs := getExpandableEquSetsAsCrefs(sets);
+  setsAsCrefs := mergeEquSetsAsCrefs(setsAsCrefs);
+  // TODO! FIXME! maybe we should do fixpoint here??
+  setsAsCrefs := mergeEquSetsAsCrefs(setsAsCrefs);
+  onlyExpandableConnected := getOnlyExpandableConnectedCrefs(setsAsCrefs);
+  // print("All expandable - expandable connected (3):\n  " + stringDelimitList(List.map(onlyExpandableConnected, ComponentReference.printComponentRefStr), "\n  ") + "\n");
 
-        // 3 - get all expandable crefs that are connected ONLY with expandable
-        setsAsCrefs = getExpandableEquSetsAsCrefs(inSets, {});
-        setsAsCrefs = mergeEquSetsAsCrefs(setsAsCrefs);
-        // TODO! FIXME! maybe we should do fixpoint here??
-        setsAsCrefs = mergeEquSetsAsCrefs(setsAsCrefs);
-        onlyExpandableConnected = getOnlyExpandableConnectedCrefs(setsAsCrefs, {});
-        // print("All expandable - expandable connected (3):\n  " + stringDelimitList(List.map(onlyExpandableConnected, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // 4 - subtract (2) from (3)
+  unnecessary := List.setDifferenceOnTrue(onlyExpandableConnected, usedInDAE, ComponentReference.crefEqualWithoutSubs);
+  // print("REMOVE: (3)-(2):\n  " + stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") + "\n");
 
-        // 4 - subtract (2) from (3)
-        unnecessary = List.setDifferenceOnTrue(onlyExpandableConnected, usedInDAE, ComponentReference.crefEqualWithoutSubs);
-        // print("REMOVE: (3)-(2):\n  " + stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // 5 - remove unnecessary variables form the DAE
+  DAE := DAEUtil.removeVariables(DAE, unnecessary);
+  // 5 - remove unnecessary variables form the connection sets
+  sets := removeCrefsFromSets(sets, unnecessary);
 
-        // 5 - remove unnecessary variables form the DAE
-        dae = DAEUtil.removeVariables(inDAE, unnecessary);
-        // 5 - remove unnecessary variables form the connection sets
-        sets = removeCrefsFromSets(inSets, unnecessary);
-
-        equVars = getAllEquCrefs(sets, {});
-        // print("(6):\n  " + stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
-        expandableVars = List.setDifferenceOnTrue(expandableVars, usedInDAE, ComponentReference.crefEqualWithoutSubs);
-        // print("(1)-(2)=(7):\n  " + stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
-        unnecessary = List.setDifferenceOnTrue(expandableVars, equVars, ComponentReference.crefEqualWithoutSubs);
-        // print("REMOVE: (7)-(6):\n  " + stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") + "\n");
-        dae = DAEUtil.removeVariables(dae, unnecessary);
-      then
-        (sets, dae);
-  end match;
+  equVars := getAllEquCrefs(sets);
+  // print("(6):\n  " + stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  expandableVars := List.setDifferenceOnTrue(expandableVars, usedInDAE, ComponentReference.crefEqualWithoutSubs);
+  // print("(1)-(2)=(7):\n  " + stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  unnecessary := List.setDifferenceOnTrue(expandableVars, equVars, ComponentReference.crefEqualWithoutSubs);
+  // print("REMOVE: (7)-(6):\n  " + stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  DAE := DAEUtil.removeVariables(DAE, unnecessary);
 end removeUnusedExpandableVariablesAndConnections;
 
-protected function elementIsTrieNodeNamed
-  input SetTrieNode node;
-  input String name;
-  output Boolean b;
+protected function isEquType
+  input ConnectorType ty;
+  output Boolean isEqu;
 algorithm
-  b := match node
-    local
-      String named;
-    case Connect.SET_TRIE_NODE(name = named) then stringEq(name,named);
+  isEqu := match ty
+    case ConnectorType.EQU() then true;
     else false;
   end match;
-end elementIsTrieNodeNamed;
+end isEquType;
 
 annotation(__OpenModelica_Interface="frontend");
 end ConnectUtil;

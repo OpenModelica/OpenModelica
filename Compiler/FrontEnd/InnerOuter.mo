@@ -183,14 +183,9 @@ end handleInnerOuterEquations;
 
 public function changeInnerOuterInOuterConnect
   "changes inner to outer and outer to inner where needed"
-  input Connect.Sets inSets;
-  output Connect.Sets outSets;
-protected
-  list<Connect.OuterConnect> outerConnects;
+  input output Connect.Sets sets;
 algorithm
-  Connect.SETS(outerConnects = outerConnects) := inSets;
-  outerConnects := List.map(outerConnects, changeInnerOuterInOuterConnect2);
-  outSets := ConnectUtil.setOuterConnects(inSets, outerConnects);
+  sets.outerConnects := List.map(sets.outerConnects, changeInnerOuterInOuterConnect2);
 end changeInnerOuterInOuterConnect;
 
 public function changeInnerOuterInOuterConnect2
@@ -411,12 +406,11 @@ public function retrieveOuterConnections
   output ConnectionGraph.ConnectionGraph outCGraph;
 protected
   list<Connect.OuterConnect> oc;
-  Connect.Sets csets;
 algorithm
   Connect.SETS(outerConnects = oc) := inSets;
-  (oc, csets, outInnerOuterConnects, outCGraph) :=
+  (oc, outSets, outInnerOuterConnects, outCGraph) :=
     retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, oc, inSets, inTopCall, inCGraph);
-  outSets := ConnectUtil.setOuterConnects(csets, oc);
+  outSets.outerConnects := oc;
 end retrieveOuterConnections;
 
 protected function removeInnerPrefixFromCref
@@ -924,30 +918,6 @@ algorithm
     else false;
   end match;
 end outerConnection;
-
-public function assertDifferentFaces
-"faces, e.g both inside or both outside connectors"
-  input FCore.Graph env;
-  input InstHierarchy inIH;
-  input DAE.ComponentRef inComponentRef1;
-  input DAE.ComponentRef inComponentRef2;
-algorithm
-  _ := match(env,inIH,inComponentRef1,inComponentRef2)
-    local
-      DAE.ComponentRef c1,c2;
-      Connect.Face f1, f2;
-      Boolean b1, b2;
-    case (_,_,c1,_)
-      equation
-        f1 = ConnectUtil.componentFace(env,inIH,c1);
-        f2 = ConnectUtil.componentFace(env,inIH,c1);
-        b1 = valueEq(f1, Connect.INSIDE()) and valueEq(f2, Connect.OUTSIDE());
-        b2 = valueEq(f2, Connect.INSIDE()) and valueEq(f1, Connect.OUTSIDE());
-        true = b1 or b2;
-      then
-        ();
-  end match;
-end assertDifferentFaces;
 
 protected function lookupInnerInIH
 "@author: adrpo
