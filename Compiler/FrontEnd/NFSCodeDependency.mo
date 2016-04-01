@@ -277,7 +277,11 @@ protected function analyseItem
   input Item inItem;
   input Env inEnv;
 algorithm
-  _ := matchcontinue(inItem, inEnv)
+  // Check if the item is already marked as used, then we can stop here.
+  if NFSCodeEnv.isItemUsed(inItem) then
+    return;
+  end if;
+  _ := match(inItem, inEnv)
     local
       SCode.ClassDef cdef;
       NFSCodeEnv.Frame cls_env;
@@ -286,13 +290,6 @@ algorithm
       SCode.Restriction res;
       SCode.Element cls;
       SCode.Comment cmt;
-
-    // Check if the item is already marked as used, then we can stop here.
-    case (_, _)
-      equation
-        true = NFSCodeEnv.isItemUsed(inItem);
-      then
-        ();
 
     // A component, mark it and it's environment as used.
     case (NFSCodeEnv.VAR(), env)
@@ -311,6 +308,9 @@ algorithm
       equation
         markItemAsUsed(inItem, env);
         env = NFSCodeEnv.enterFrame(cls_env, env);
+        if (if cls.name=="cardinality" then match inEnv case {NFSCodeEnv.FRAME(name=NONE())} then true; else false; end match else false) then
+          System.setUsesCardinality(true);
+        end if;
         analyseClassDef(cdef, res, env, false, info);
         analyseMetaType(res, env, info);
         analyseComment(cmt, env, info);
@@ -328,7 +328,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end analyseItem;
 
 protected function analyseItemIfRedeclares

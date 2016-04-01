@@ -114,6 +114,7 @@ algorithm
         //System.startTimer();
         System.tmpTickResetIndex(0, NFSCodeEnv.tmpTickIndex);
         System.tmpTickResetIndex(1, NFSCodeEnv.extendsTickIndex);
+        System.setUsesCardinality(false);
         // TODO: Enable this when NFSCodeEnv.tmpTickIndex is removed.
         //System.tmpTickResetIndex(0, NFSCodeEnv.tmpTickIndex);
 
@@ -122,7 +123,6 @@ algorithm
         env = NFEnvExtends.update(env);
 
         (prog, env) = NFSCodeDependency.analyse(inClassName, env, prog);
-        checkForCardinality(env);
         (prog, env) = NFSCodeFlattenImports.flattenProgram(prog, env);
 
         //System.stopTimer();
@@ -142,29 +142,6 @@ algorithm
 
   end matchcontinue;
 end flattenClassInProgram;
-
-protected function checkForCardinality
-  "Checks if the cardinality operator is used or not and sets the system flag,
-  so that some work can be avoided in Inst if cardinality isn't used."
-  input Env inEnv;
-algorithm
-  _ := matchcontinue(inEnv)
-    case _
-      equation
-        (_, _, _) = NFSCodeLookup.lookupNameSilent(Absyn.IDENT("cardinality"),
-          inEnv, Absyn.dummyInfo);
-        System.setUsesCardinality(true);
-      then
-        ();
-
-    else
-      equation
-        System.setUsesCardinality(false);
-      then
-        ();
-
-  end matchcontinue;
-end checkForCardinality;
 
 public function flattenCompleteProgram
   input SCode.Program inProgram;
