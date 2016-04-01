@@ -58,6 +58,7 @@ void TLMCoSimulationThread::runManager()
   TLMCoSimulationOptions tlmCoSimulationOptions = mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions();
   QFileInfo fileInfo(tlmCoSimulationOptions.getFileName());
   mpManagerProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
+  qDebug() << "Working directory: " << fileInfo.absoluteDir().absolutePath();
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
   qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
   connect(mpManagerProcess, SIGNAL(started()), SLOT(managerProcessStarted()));
@@ -76,6 +77,7 @@ void TLMCoSimulationThread::runManager()
   environment.insert("PATH", tlmCoSimulationOptions.getTLMPluginPath() + ";" + environment.value("PATH"));
   environment.insert("TLMPluginPath", tlmCoSimulationOptions.getTLMPluginPath());
   mpManagerProcess->setProcessEnvironment(environment);
+  qDebug() << "PATH: " << environment.value("PATH");
   // start the executable
   mpManagerProcess->start(fileName, args);
   emit sendManagerOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo);

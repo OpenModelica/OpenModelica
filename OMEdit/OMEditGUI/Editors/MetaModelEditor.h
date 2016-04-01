@@ -70,6 +70,7 @@ public:
   QDomNodeList getSubModels();
   QDomElement getConnectionsElement();
   QDomNodeList getConnections();
+  QDomElement getSubModelElement(QString name);
   bool addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin, QString extent,
                    QString rotation);
   void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);
@@ -91,6 +92,9 @@ private:
   bool mForceSetPlainText;
   XMLDocument mXmlDocument;
   QGenericMatrix<3,3,double> getRotationMatrix(QGenericMatrix<3,1,double> rotation);
+  bool getPositionAndRotationVectors(QString interface, QGenericMatrix<3,1,double> &CG_X_PHI_CG, QGenericMatrix<3,1,double> &X_C_PHI_X, QGenericMatrix<3,1,double> &CG_X_R_CG, QGenericMatrix<3,1,double> &X_C_R_X);
+  bool interfacesAligned(QString interface1, QString interface2);
+  bool fuzzyCompare(double p1, double p2);
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:
