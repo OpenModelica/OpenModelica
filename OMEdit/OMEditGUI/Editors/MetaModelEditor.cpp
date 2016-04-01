@@ -506,35 +506,19 @@ bool MetaModelEditor::deleteConnection(QString startSubModelName, QString endSub
  */
 QGenericMatrix<3,3, double> MetaModelEditor::getRotationMatrix(QGenericMatrix<3,1,double> rotation)
 {
-  double alpha = rotation(0,0);
-  double beta = rotation(0,1);
-  double gamma = rotation(0,2);
+  double c1 = cos(rotation(0,0));
+  double s1 = sin(rotation(0,0));
+  double c2 = cos(rotation(0,1));
+  double s2 = sin(rotation(0,1));
+  double c3 = cos(rotation(0,2));
+  double s3 = sin(rotation(0,2));
 
-  //Compute rotational matrix around x-axis
-  double Rx_data[9];
-  Rx_data[0] = 1;             Rx_data[1] = 0;             Rx_data[2] = 0;
-  Rx_data[3] = 0;             Rx_data[4] = cos(alpha);    Rx_data[5] = -sin(alpha);
-  Rx_data[6] = 0;             Rx_data[7] = sin(alpha);    Rx_data[8] = cos(alpha);
-  QGenericMatrix<3,3,double> Rx(Rx_data);
+  double R_data[9];
+  R_data[0] = c2*c3;             R_data[1] = c2*s3;              R_data[2] = -s2;
+  R_data[3] = -c1*s3+s1*s2*c3;   R_data[4] = c1*c3+s1*s2*s3;     R_data[5] = s1*c2;
+  R_data[6] = s1*s3+c1*s2*c3;    R_data[7] = -s1*c3+c1*s2*s3;    R_data[8] = c1*c2;
 
-  //Compute rotational matrix around y-axis
-  double Ry_data[9];
-  Ry_data[0] = cos(beta);     Ry_data[1] = 0;             Ry_data[2] = sin(beta);
-  Ry_data[3] = 0;             Ry_data[4] = 1;             Ry_data[5] = 0;
-  Ry_data[6] = -sin(beta);    Ry_data[7] = 0;             Ry_data[8] = cos(beta);
-
-  QGenericMatrix<3,3,double> Ry(Ry_data);
-
-  //Compute rotational matrix around z-axis
-  double Rz_data[9];
-  Rz_data[0] = cos(gamma);    Rz_data[1] = -sin(gamma);   Rz_data[2] = 0;
-  Rz_data[3] = sin(gamma);    Rz_data[4] = cos(gamma);    Rz_data[5] = 0;
-  Rz_data[6] = 0;             Rz_data[7] = 0;             Rz_data[8] = 1;
-  QGenericMatrix<3,3,double> Rz(Rz_data);
-
-
-  //Compute complete rotational matrix
-  QGenericMatrix<3,3,double> R = Rz*Ry*Rx;
+  QGenericMatrix<3,3,double> R(R_data);
 
   return R;
 }
@@ -736,7 +720,7 @@ bool MetaModelEditor::interfacesAligned(QString interface1, QString interface2)
     }
   }
 
-#if 0
+#if 1
   qDebug() << R_CG_C1;
   qDebug() << R_CG_C2;
   qDebug() << CG_C1_R_CG;
