@@ -42,6 +42,7 @@ end ConnectTypes;
 //   parameter Integer c.n = 1;
 //   constant Real c.c = 2.0;
 // equation
+//   assert(true, "automatically generated from connect");
 //   assert(c.n == a.c.n, "automatically generated from connect");
 //   assert(c.p == a.c.p, "automatically generated from connect");
 //   c.e[1] = time;

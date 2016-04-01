@@ -3346,14 +3346,17 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   when initial() then
 //     plant.compressor.Eta.tableOnFileRead = 1.0;
 //   end when;
+//   assert(true, \"tableOnFile = false and parameter table is an empty matrix\");
 //   plant.compressor.Eta.y = Modelica.Blocks.Tables.CombiTable2D$plant$compressor$Eta.getTableValue(plant.compressor.Eta.tableID, plant.compressor.Eta.u1, plant.compressor.Eta.u2, plant.compressor.Eta.tableOnFileRead);
 //   when initial() then
 //     plant.compressor.PressRatio.tableOnFileRead = 1.0;
 //   end when;
+//   assert(true, \"tableOnFile = false and parameter table is an empty matrix\");
 //   plant.compressor.PressRatio.y = Modelica.Blocks.Tables.CombiTable2D$plant$compressor$PressRatio.getTableValue(plant.compressor.PressRatio.tableID, plant.compressor.PressRatio.u1, plant.compressor.PressRatio.u2, plant.compressor.PressRatio.tableOnFileRead);
 //   when initial() then
 //     plant.compressor.Phic.tableOnFileRead = 1.0;
 //   end when;
+//   assert(true, \"tableOnFile = false and parameter table is an empty matrix\");
 //   plant.compressor.Phic.y = Modelica.Blocks.Tables.CombiTable2D$plant$compressor$Phic.getTableValue(plant.compressor.Phic.tableID, plant.compressor.Phic.u1, plant.compressor.Phic.u2, plant.compressor.Phic.tableOnFileRead);
 //   plant.compressor.N_T_design = plant.compressor.Ndesign / sqrt(plant.compressor.Tdes_in);
 //   plant.compressor.N_T = 100.0 * plant.compressor.omega / (sqrt(plant.compressor.gas_in.T) * plant.compressor.N_T_design);
@@ -3471,10 +3474,12 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   when initial() then
 //     plant.turbine.Phic.tableOnFileRead = 1.0;
 //   end when;
+//   assert(true, \"tableOnFile = false and parameter table is an empty matrix\");
 //   plant.turbine.Phic.y = Modelica.Blocks.Tables.CombiTable2D$plant$turbine$Phic.getTableValue(plant.turbine.Phic.tableID, plant.turbine.Phic.u1, plant.turbine.Phic.u2, plant.turbine.Phic.tableOnFileRead);
 //   when initial() then
 //     plant.turbine.Eta.tableOnFileRead = 1.0;
 //   end when;
+//   assert(true, \"tableOnFile = false and parameter table is an empty matrix\");
 //   plant.turbine.Eta.y = Modelica.Blocks.Tables.CombiTable2D$plant$turbine$Eta.getTableValue(plant.turbine.Eta.tableID, plant.turbine.Eta.u1, plant.turbine.Eta.u2, plant.turbine.Eta.tableOnFileRead);
 //   plant.turbine.N_T_design = plant.turbine.Ndesign / sqrt(plant.turbine.Tdes_in);
 //   plant.turbine.N_T = 100.0 * plant.turbine.omega / (sqrt(plant.turbine.gas_in.T) * plant.turbine.N_T_design);
