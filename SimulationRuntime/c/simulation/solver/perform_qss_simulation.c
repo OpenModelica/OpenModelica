@@ -530,7 +530,7 @@ static modelica_integer getStatesInDer(const unsigned int* index, const unsigned
       /* stackPointer refers to the next free position for der[i] in StatesInDer */
       StatesInDer[ der[i] ][ stackPointer[ der[i] ] ] = k;
       stackPointer[ der[i] ]++;
-      der[i] = -1;  // clear all
+      der[i] = -1;  /* clear all */
     }
   }
 

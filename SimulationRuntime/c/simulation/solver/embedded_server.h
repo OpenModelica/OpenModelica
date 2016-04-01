@@ -39,8 +39,9 @@ extern "C" {
 
 extern void* (*embedded_server_init)(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling));
 extern void (*embedded_server_deinit)(void *handle);
-// Tells the embedded server that a simulation step has passed; the server
-// can read/write values from/to the simulator
+/* Tells the embedded server that a simulation step has passed; the server
+ * can read/write values from/to the simulator
+ */
 extern void (*embedded_server_update)(void *handle, double tout);
 /* Give the filename or generic name to use for loading an embedded server */
 extern void* embedded_server_load_functions(const char *name);

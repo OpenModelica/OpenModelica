@@ -67,7 +67,7 @@ static inline double rt_tock(int ix) {return 0.0;}
 #define SIM_PROF_TICK_FN(ix) rt_tick(ix+SIM_TIMER_FIRST_FUNCTION)
 #define SIM_PROF_ACC_FN(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION)
 
-//These functions are used for profileBlocks, not for equations
+/* These functions are used for profileBlocks, not for equations */
 #define SIM_PROF_TICK_EQ(ix) rt_tick(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions)
 #define SIM_PROF_ACC_EQ(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions)
 #define SIM_PROF_ADD_NCALL_EQ(ix,num) rt_add_ncall(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions,num)
