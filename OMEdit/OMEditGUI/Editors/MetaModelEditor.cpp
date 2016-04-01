@@ -525,6 +525,31 @@ QGenericMatrix<3,3, double> MetaModelEditor::getRotationMatrix(QGenericMatrix<3,
 
 
 /*!
+ * \brief MetaModelEditor::getRotationVector
+ * Computes a rotation vector (321) from a rotation matrix
+ * \param R
+ * \return
+ */
+QGenericMatrix<3,1,double> MetaModelEditor::getRotationVector(QGenericMatrix<3,3,double> R)
+{
+    double a11 = R(0,0);
+    double a12 = R(0,1);
+    double a13 = R(0,2);
+    double a23 = R(1,2);
+    double a33 = R(2,2);
+
+    double phi[3];
+    phi[1] = (fabs(a13) < DBL_MIN)? 0.0 : asin((a13<-1.0) ? 1.0 : ((a13>1.0) ? -1.0 : -a13));
+    double tmp = cos(phi[2]);
+    double cosphi2 = tmp+sign(tmp)*1.0e-50;
+
+    phi[0] = atan2(a23/cosphi2, a33/cosphi2);
+    phi[2] = atan2(a12/cosphi2, a11/cosphi2);
+
+    return QGenericMatrix<3,1,double>(phi);
+}
+
+/*!
  * \brief MetaModelEditor::getPositionAndRotationVectors
  * Extracts position and rotation vectors for specified TLM interface, both between CG and model X and between X and interface C
  * \param interface Interface on the form "submodel.interface"
@@ -632,9 +657,10 @@ void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface
   R_CG_X1 = R_X1_C1.transposed()*R_CG_C2;          //New rotation matrix between CG and X1
 
   //Extract angles from rotation matrix
-  CG_X1_PHI_CG(0,0) = atan2(R_CG_X1(2,1),R_CG_X1(2,2));
-  CG_X1_PHI_CG(0,1) = atan2(-R_CG_X1(2,0),sqrt(R_CG_X1(2,1)*R_CG_X1(2,1) + R_CG_X1(2,2)*R_CG_X1(2,2)));
-  CG_X1_PHI_CG(0,2) = atan2(R_CG_X1(1,0),R_CG_X1(0,0));
+  CG_X1_PHI_CG = getRotationVector(R_CG_X1);
+//  CG_X1_PHI_CG(0,0) = atan2(R_CG_X1(2,1),R_CG_X1(2,2));
+//  CG_X1_PHI_CG(0,1) = atan2(-R_CG_X1(2,0),sqrt(R_CG_X1(2,1)*R_CG_X1(2,1) + R_CG_X1(2,2)*R_CG_X1(2,2)));
+//  CG_X1_PHI_CG(0,2) = atan2(R_CG_X1(1,0),R_CG_X1(0,0));
 
   //New position of X1 relative to CG
   CG_X1_R_CG = CG_X2_R_CG + X2_C2_R_X2*R_CG_X2 - X1_C1_R_X1*R_CG_X1;

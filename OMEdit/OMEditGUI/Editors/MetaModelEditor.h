@@ -95,6 +95,7 @@ private:
   bool getPositionAndRotationVectors(QString interface, QGenericMatrix<3,1,double> &CG_X_PHI_CG, QGenericMatrix<3,1,double> &X_C_PHI_X, QGenericMatrix<3,1,double> &CG_X_R_CG, QGenericMatrix<3,1,double> &X_C_R_X);
   bool interfacesAligned(QString interface1, QString interface2);
   bool fuzzyCompare(double p1, double p2);
+  QGenericMatrix<3, 1, double> getRotationVector(QGenericMatrix<3, 3, double> R);
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:
