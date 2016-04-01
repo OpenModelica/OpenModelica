@@ -3130,9 +3130,10 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
  * Saves the file with contents.
  * \param fileName
  * \param contents
+ * \param pLibraryTreeItem
  * \return
  */
-bool LibraryWidget::saveFile(QString fileName, QString contents, bool hasBOM)
+bool LibraryWidget::saveFile(QString fileName, QString contents, LibraryTreeItem *pLibraryTreeItem)
 {
   QFile file(fileName);
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
@@ -3145,13 +3146,19 @@ bool LibraryWidget::saveFile(QString fileName, QString contents, bool hasBOM)
     switch (bomMode) {
       case Utilities::AlwaysAddBom:
         textStream.setGenerateByteOrderMark(true);
+        if (pLibraryTreeItem) {
+          pLibraryTreeItem->setHasBOM(true);
+        }
         break;
       case Utilities::KeepBom:
-        textStream.setGenerateByteOrderMark(hasBOM);
+        textStream.setGenerateByteOrderMark(pLibraryTreeItem ? pLibraryTreeItem->hasBOM() : false);
         break;
       case Utilities::AlwaysDeleteBom:
       default:
         textStream.setGenerateByteOrderMark(false);
+        if (pLibraryTreeItem) {
+          pLibraryTreeItem->setHasBOM(false);
+        }
         break;
     }
     // set the line ending format
@@ -3357,7 +3364,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
   } else {
     contents = pLibraryTreeItem->getClassText(mpLibraryTreeModel);
   }
-  if (saveFile(fileName, contents, pLibraryTreeItem->hasBOM())) {
+  if (saveFile(fileName, contents, pLibraryTreeItem)) {
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileName);
@@ -3452,7 +3459,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
     } else {
       contents = pLibraryTreeItem->getClassText(mpLibraryTreeModel);
     }
-    if (saveFile(fileName, contents, pLibraryTreeItem->hasBOM())) {
+    if (saveFile(fileName, contents, pLibraryTreeItem)) {
       /* mark the file as saved and update the labels. */
       pLibraryTreeItem->setIsSaved(true);
       pLibraryTreeItem->setFileName(fileName);
@@ -3499,7 +3506,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
     contents.append(pLibraryTreeItem->child(i)->getName()).append("\n");
   }
   // create a new package.order file
-  saveFile(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()), contents, pLibraryTreeItem->hasBOM());
+  saveFile(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()), contents, pLibraryTreeItem);
   return true;
 }
 
@@ -3523,7 +3530,7 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     fileName = pLibraryTreeItem->getFileName();
   }
 
-  if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText(), pLibraryTreeItem->hasBOM())) {
+  if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText(), pLibraryTreeItem)) {
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileName);
@@ -3578,7 +3585,7 @@ bool LibraryWidget::saveAsMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTree
  */
 bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName)
 {
-  if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText(), pLibraryTreeItem->hasBOM())) {
+  if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText(), pLibraryTreeItem)) {
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
     QString oldMetaModelFile = pLibraryTreeItem->getFileName();

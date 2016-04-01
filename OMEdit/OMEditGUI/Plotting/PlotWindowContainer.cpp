@@ -233,7 +233,7 @@ void PlotWindowContainer::exportVariables()
     contents.append(data.join(",")).append("\n");
   }
   // create a file
-  if (mpMainWindow->getLibraryWidget()->saveFile(fileName, contents, false)) {
+  if (mpMainWindow->getLibraryWidget()->saveFile(fileName, contents)) {
     mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Exported variables in %1")
                                                                  .arg(fileName), Helper::scriptingKind, Helper::notificationLevel));
   }

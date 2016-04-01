@@ -366,7 +366,7 @@ public:
   void openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
   bool parseMetaModelFile(QFileInfo fileInfo);
   void parseAndLoadModelicaText(QString modelText);
-  bool saveFile(QString fileName, QString contents, bool hasBOM);
+  bool saveFile(QString fileName, QString contents, LibraryTreeItem *pLibraryTreeItem = 0);
   bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
