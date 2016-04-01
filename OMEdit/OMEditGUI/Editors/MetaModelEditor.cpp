@@ -552,22 +552,22 @@ QGenericMatrix<3,1,double> MetaModelEditor::getRotationVector(QGenericMatrix<3,3
 /*!
  * \brief MetaModelEditor::getPositionAndRotationVectors
  * Extracts position and rotation vectors for specified TLM interface, both between CG and model X and between X and interface C
- * \param interface Interface on the form "submodel.interface"
+ * \param interfacePoint Interface on the form "submodel.interface"
  * \param CG_X_PHI_CG Rotation vector between CG abd X
  * \param X_C_PHI_X Rotation vector between X and C
  * \param CG_X_R_CG Position vector between CG and X
  * \param X_C_R_X Position vector between X and C
  * \return
  */
-bool MetaModelEditor::getPositionAndRotationVectors(QString interface,
+bool MetaModelEditor::getPositionAndRotationVectors(QString interfacePoint,
                                                     QGenericMatrix<3,1,double> &CG_X_PHI_CG,
                                                     QGenericMatrix<3,1,double> &X_C_PHI_X,
                                                     QGenericMatrix<3,1,double> &CG_X_R_CG,
                                                     QGenericMatrix<3,1,double> &X_C_R_X)
 {
   //Extract submodel and interface names
-  QString modelName = interface.split(".").at(0);
-  QString interfaceName = interface.split(".").at(1);
+  QString modelName = interfacePoint.split(".").at(0);
+  QString interfaceName = interfacePoint.split(".").at(1);
 
   //Read positions and rotations from XML
   QString x_c_r_x_str, x_c_phi_x_str;
