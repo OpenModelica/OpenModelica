@@ -34,7 +34,7 @@ end CardinalityArray;
 //   Integer c = 1;
 // equation
 //   a1[2].c.f + a2[2].c.f = 0.0;
-//   a2[1].c.f + a1[1].c.f = 0.0;
+//   a1[1].c.f + a2[1].c.f = 0.0;
 //   a1[1].c.e = a2[1].c.e;
 //   a1[2].c.e = a2[2].c.e;
 // end CardinalityArray;

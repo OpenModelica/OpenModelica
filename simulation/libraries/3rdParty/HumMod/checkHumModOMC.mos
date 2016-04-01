@@ -18,7 +18,7 @@ checkModel(HumModTest); getErrorString();
 // ""
 // "Check of HumModTest completed successfully.
 // Class HumModTest has 29145 equation(s) and 29145 variable(s).
-// 25801 of these are trivial equation(s)."
+// 25876 of these are trivial equation(s)."
 // "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.

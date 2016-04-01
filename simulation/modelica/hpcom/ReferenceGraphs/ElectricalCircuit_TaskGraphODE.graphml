@@ -67,9 +67,9 @@
     <graph edgedefault="directed" id="TaskGraph">
         <data key="cust16"><![CDATA[ ;; critical path with costs of 868.0 cycles -- 1,2,3,4critical path' with costs of 646.0 cycles -- 1,2,3,4 sum: (646.0 ; 13)]]></data>
         <node id="Node4">
-            <data key="cust1"><![CDATA[{5:2}]]></data>
-            <data key="cust3">67</data>
-            <data key="cust2">1</data>
+            <data key="cust1"><![CDATA[{5:1}]]></data>
+            <data key="cust3">72</data>
+            <data key="cust2">0</data>
             <data key="cust4"><![CDATA[ 4 ]]></data>
             <data key="cust5"><![CDATA[{4}]]></data>
             <data key="cust6">0</data>
@@ -80,21 +80,21 @@
             <data key="cust17">false</data>
             <data key="cust18">false</data>
             <data key="cust19">false</data>
-            <data key="ddesc"><![CDATA[capacitor.i = capacitor.C * der(capacitor.v) FOR  der(capacitor.v)]]></data>
+            <data key="ddesc"><![CDATA[der(capacitor.v) = sineVoltage.i / capacitor.C FOR  der(capacitor.v)]]></data>
             <data key="gi1">
                 <y:ShapeNode>
                   <y:Fill color="#FFCC00" transparent="false"/>
                   <y:BorderStyle color="#000000" type="line" width="1.0"/>
-                  <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#FFFF00" fontFamily="Dialog" fontSize="12" fontStyle="bold" hasLineColor="false" modelName="corners" modelPosition="se" textColor="#000000" visible="true">67</y:NodeLabel>
+                  <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#FFFF00" fontFamily="Dialog" fontSize="12" fontStyle="bold" hasLineColor="false" modelName="corners" modelPosition="se" textColor="#000000" visible="true">72</y:NodeLabel>
                   <y:NodeLabel alignment="center" autoSizePolicy="content"  fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" modelName="internal" modelPosition="c" textColor="#000000" visible="true"> 4 </y:NodeLabel>
                   <y:Shape type="rectangle"/>
                 </y:ShapeNode>
             </data>
         </node>
         <node id="Node3">
-            <data key="cust1"><![CDATA[{2:1}]]></data>
-            <data key="cust3">67</data>
-            <data key="cust2">1</data>
+            <data key="cust1"><![CDATA[{2:4}]]></data>
+            <data key="cust3">72</data>
+            <data key="cust2">0</data>
             <data key="cust4"><![CDATA[ 3 ]]></data>
             <data key="cust5"><![CDATA[{3}]]></data>
             <data key="cust6">0</data>
@@ -105,19 +105,19 @@
             <data key="cust17">false</data>
             <data key="cust18">false</data>
             <data key="cust19">false</data>
-            <data key="ddesc"><![CDATA[resistor.v = resistor.R_actual * capacitor.i FOR capacitor.i]]></data>
+            <data key="ddesc"><![CDATA[sineVoltage.i = resistor.v / resistor.R_actual FOR sineVoltage.i]]></data>
             <data key="gi1">
                 <y:ShapeNode>
                   <y:Fill color="#FFCC00" transparent="false"/>
                   <y:BorderStyle color="#000000" type="line" width="1.0"/>
-                  <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#FFFF00" fontFamily="Dialog" fontSize="12" fontStyle="bold" hasLineColor="false" modelName="corners" modelPosition="se" textColor="#000000" visible="true">67</y:NodeLabel>
+                  <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#FFFF00" fontFamily="Dialog" fontSize="12" fontStyle="bold" hasLineColor="false" modelName="corners" modelPosition="se" textColor="#000000" visible="true">72</y:NodeLabel>
                   <y:NodeLabel alignment="center" autoSizePolicy="content"  fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" modelName="internal" modelPosition="c" textColor="#000000" visible="true"> 3 </y:NodeLabel>
                   <y:Shape type="rectangle"/>
                 </y:ShapeNode>
             </data>
         </node>
         <node id="Node2">
-            <data key="cust1"><![CDATA[{4:4}]]></data>
+            <data key="cust1"><![CDATA[{4:3}]]></data>
             <data key="cust3">59</data>
             <data key="cust2">2</data>
             <data key="cust4"><![CDATA[ 2 ]]></data>

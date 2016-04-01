@@ -56,7 +56,7 @@ end ActualStreamMinMax;
 //   actual_stream_s3 = smooth(0, if a.s3.f > 0.0 then a.s4.s else a.s3.s);
 //   actual_stream_s4 = smooth(0, if a.s4.f > 0.0 then a.s3.s else a.s4.s);
 //   a.s1.f + a.s2.f = 0.0;
-//   a.s4.f + a.s3.f = 0.0;
+//   a.s3.f + a.s4.f = 0.0;
 //   a.s1.r = a.s2.r;
 //   a.s3.r = a.s4.r;
 // end ActualStreamMinMax;

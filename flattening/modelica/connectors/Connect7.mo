@@ -38,7 +38,7 @@ end Connect7;
 //   cx.x = 0.0;
 //   cy.x = 0.0;
 //   c[1].r = cx.r;
-//   (-cx.x) + (-c[1].x) = 0.0;
+//   (-c[1].x) + (-cx.x) = 0.0;
 //   c[2].r = cy.r;
 //   (-c[2].x) + (-cy.x) = 0.0;
 // end Connect7;

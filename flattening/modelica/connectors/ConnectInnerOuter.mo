@@ -40,7 +40,7 @@ end Top;
 //   topPin.i = 0.0;
 //   a1.aPin.i = 0.0;
 //   a2.aPin.i = 0.0;
-//   (-world.i) + (-topPin.i) + (-a2.aPin.i) + (-a1.aPin.i) = 0.0;
+//   (-world.i) + (-topPin.i) + (-a1.aPin.i) + (-a2.aPin.i) = 0.0;
 //   a1.aPin.v = a2.aPin.v;
 //   a1.aPin.v = topPin.v;
 //   a1.aPin.v = world.v;

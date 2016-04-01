@@ -51,10 +51,10 @@ runScript(modelTesting);getErrorString();
 //  * candidate: valve3.m_flow(start = valve3.m_flow_start)
 // => select value from valve3.m_flow(start = valve3.m_flow_start) for variable: pipe11.m_flows[3]
 // Warning: Alias set with several free start values
-//  * candidate: pipe4.m_flows[1](start = 0.0)
 //  * candidate: pipe3.m_flows[3](start = 0.0)
+//  * candidate: pipe4.m_flows[1](start = 0.0)
 //  * candidate: valve2.m_flow(start = valve2.m_flow_start)
-// => select value from valve2.m_flow(start = valve2.m_flow_start) for variable: pipe4.m_flows[1]
+// => select value from valve2.m_flow(start = valve2.m_flow_start) for variable: pipe3.m_flows[3]
 // Warning: Alias set with several free start values
 //  * candidate: pipe2.m_flows[3](start = 0.0)
 //  * candidate: pipe7.m_flows[1](start = 0.0)
@@ -70,10 +70,10 @@ runScript(modelTesting);getErrorString();
 // Warning: Alias set with several free start values
 //  * candidate: pipe3.m_flows[1](start = 0.0)
 //  * candidate: pipe3.m_flows[2](start = 0.0)
-//  * candidate: pipe4.m_flows[1](start = valve2.m_flow_start)
+//  * candidate: pipe3.m_flows[3](start = valve2.m_flow_start)
 //  * candidate: pipe4.m_flows[2](start = 0.0)
 //  * candidate: pipe4.m_flows[3](start = 0.0)
-// => select value from pipe4.m_flows[1](start = valve2.m_flow_start) for variable: pipe3.m_flows[1]
+// => select value from pipe3.m_flows[3](start = valve2.m_flow_start) for variable: pipe3.m_flows[1]
 // Warning: Alias set with several free start values
 //  * candidate: pipe11.m_flows[1](start = 0.0)
 //  * candidate: pipe11.m_flows[2](start = 0.0)

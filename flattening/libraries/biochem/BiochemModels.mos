@@ -472,17 +472,17 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   trans_Bmal1 = v4b * nucleus.y3.c ^ r_sbml / (k4b ^ r_sbml + nucleus.y3.c ^ r_sbml);
 //   y5_y6_y7 = cytoplasm.y5.c + nucleus.y6.c + nucleus.y7.c;
 //   der(V) = 0.0 \"Compartment volume is constant\";
-//   cytoplasm.y1.n1.r + cytoplasm.per2_cry_mRNA_degradation.s1.r + cytoplasm.per2_cry_complex_formation.m1.r + cytoplasm.per2_cry_transcription.p1.r = 0.0;
-//   cytoplasm.per2_cry_complex_formation.p1.r + cytoplasm.y2.n1.r + cytoplasm.per2_cry_nuclear_import.s1.r + cytoplasm.cytoplasmic_per2_cry_complex_degradation.s1.r + (-cytoplasm.y2_node.r) = 0.0;
-//   cytoplasm.Bmal1_mRNA_degradation.s1.r + cytoplasm.Bmal1_transcription.p1.r + cytoplasm.y4.n1.r + cytoplasm.BMAL1_translation.m1.r = 0.0;
-//   (-cytoplasm.y5_node.r) + cytoplasm.cytoplasmic_BMAL1_degradation.s1.r + cytoplasm.BMAL1_nuclear_import.s1.r + cytoplasm.y5.n1.r + cytoplasm.BMAL1_translation.p1.r = 0.0;
-//   cytoplasm.per2_cry_mRNA_degradation.p1.r + cytoplasm.ambientSubstance.n1.r + cytoplasm.per2_cry_complex_formation.s1.r + cytoplasm.per2_cry_transcription.s1.r + cytoplasm.cytoplasmic_per2_cry_complex_degradation.p1.r + cytoplasm.Bmal1_mRNA_degradation.p1.r + cytoplasm.cytoplasmic_BMAL1_degradation.p1.r + cytoplasm.Bmal1_transcription.s1.r + cytoplasm.BMAL1_translation.s1.r = 0.0;
+//   cytoplasm.y1.n1.r + cytoplasm.per2_cry_transcription.p1.r + cytoplasm.per2_cry_mRNA_degradation.s1.r + cytoplasm.per2_cry_complex_formation.m1.r = 0.0;
+//   cytoplasm.y2.n1.r + (-cytoplasm.y2_node.r) + cytoplasm.per2_cry_complex_formation.p1.r + cytoplasm.cytoplasmic_per2_cry_complex_degradation.s1.r + cytoplasm.per2_cry_nuclear_import.s1.r = 0.0;
+//   cytoplasm.y4.n1.r + cytoplasm.Bmal1_transcription.p1.r + cytoplasm.Bmal1_mRNA_degradation.s1.r + cytoplasm.BMAL1_translation.m1.r = 0.0;
+//   cytoplasm.y5.n1.r + (-cytoplasm.y5_node.r) + cytoplasm.BMAL1_translation.p1.r + cytoplasm.cytoplasmic_BMAL1_degradation.s1.r + cytoplasm.BMAL1_nuclear_import.s1.r = 0.0;
+//   cytoplasm.ambientSubstance.n1.r + cytoplasm.per2_cry_transcription.s1.r + cytoplasm.per2_cry_mRNA_degradation.p1.r + cytoplasm.per2_cry_complex_formation.s1.r + cytoplasm.cytoplasmic_per2_cry_complex_degradation.p1.r + cytoplasm.Bmal1_transcription.s1.r + cytoplasm.Bmal1_mRNA_degradation.p1.r + cytoplasm.BMAL1_translation.s1.r + cytoplasm.cytoplasmic_BMAL1_degradation.p1.r = 0.0;
 //   cytoplasm.y3_node.r + nucleus.y3_node.r = 0.0;
 //   cytoplasm.y2_node.r + nucleus.y2_node.r = 0.0;
 //   cytoplasm.y6_node.r + nucleus.y6_node.r = 0.0;
 //   cytoplasm.y5_node.r + nucleus.y5_node.r = 0.0;
 //   (-cytoplasm.y3_node.r) + cytoplasm.per2_cry_nuclear_import.p1.r = 0.0;
-//   cytoplasm.BMAL1_nuclear_import.p1.r + (-cytoplasm.y6_node.r) = 0.0;
+//   (-cytoplasm.y6_node.r) + cytoplasm.BMAL1_nuclear_import.p1.r = 0.0;
 //   cytoplasm.BMAL1_nuclear_import.p1.V = cytoplasm.y6_node.V;
 //   cytoplasm.BMAL1_nuclear_import.p1.c = cytoplasm.y6_node.c;
 //   cytoplasm.cytoplasmic_per2_cry_complex_degradation.s1.V = cytoplasm.per2_cry_complex_formation.p1.V;
@@ -531,10 +531,10 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytoplasm.BMAL1_translation.m1.c = cytoplasm.Bmal1_mRNA_degradation.s1.c;
 //   cytoplasm.BMAL1_translation.m1.c = cytoplasm.Bmal1_transcription.p1.c;
 //   cytoplasm.BMAL1_translation.m1.c = cytoplasm.y4.n1.c;
-//   nucleus.y3.n1.r + nucleus.per2_cry_nuclear_export.s1.r + (-nucleus.y3_node.r) + nucleus.nuclear_per2_cry_complex_degradation.s1.r = 0.0;
-//   nucleus.y6.n1.r + nucleus.BMAL1_nuclear_export.s1.r + nucleus.BMAL1_deactivation.p1.r + (-nucleus.y6_node.r) + nucleus.nuclear_BMAL1_degradation.s1.r + nucleus.BMAL1_activation.s1.r = 0.0;
-//   nucleus.y7.n1.r + nucleus.BMAL1_deactivation.s1.r + nucleus.Active_BMAL1_degradation.s1.r + nucleus.BMAL1_activation.p1.r = 0.0;
-//   nucleus.Active_BMAL1_degradation.p1.r + nucleus.ambientSubstance.n1.r + nucleus.nuclear_BMAL1_degradation.p1.r + nucleus.nuclear_per2_cry_complex_degradation.p1.r = 0.0;
+//   nucleus.y3.n1.r + (-nucleus.y3_node.r) + nucleus.per2_cry_nuclear_export.s1.r + nucleus.nuclear_per2_cry_complex_degradation.s1.r = 0.0;
+//   nucleus.y6.n1.r + (-nucleus.y6_node.r) + nucleus.BMAL1_nuclear_export.s1.r + nucleus.nuclear_BMAL1_degradation.s1.r + nucleus.BMAL1_activation.s1.r + nucleus.BMAL1_deactivation.p1.r = 0.0;
+//   nucleus.y7.n1.r + nucleus.BMAL1_activation.p1.r + nucleus.BMAL1_deactivation.s1.r + nucleus.Active_BMAL1_degradation.s1.r = 0.0;
+//   nucleus.ambientSubstance.n1.r + nucleus.nuclear_per2_cry_complex_degradation.p1.r + nucleus.nuclear_BMAL1_degradation.p1.r + nucleus.Active_BMAL1_degradation.p1.r = 0.0;
 //   (-nucleus.y2_node.r) + nucleus.per2_cry_nuclear_export.p1.r = 0.0;
 //   (-nucleus.y5_node.r) + nucleus.BMAL1_nuclear_export.p1.r = 0.0;
 //   nucleus.nuclear_per2_cry_complex_degradation.s1.V = nucleus.per2_cry_nuclear_export.s1.V;
@@ -586,7 +586,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // "
 // "Check of BioChem_Examples_CircadianOscillator_Container completed successfully.
 // Class BioChem_Examples_CircadianOscillator_Container has 252 equation(s) and 252 variable(s).
-// 179 of these are trivial equation(s)."
+// 180 of these are trivial equation(s)."
 // "[flattening/libraries/biochem/ContainerSimple.mo:177:9-177:51:writable] Warning: Connecting two signal sources while connecting cytoplasm.y5_node.V to nucleus.y5_node.V.
 // [flattening/libraries/biochem/ContainerSimple.mo:178:9-178:51:writable] Warning: Connecting two signal sources while connecting nucleus.y6_node.V to cytoplasm.y6_node.V.
 // [flattening/libraries/biochem/ContainerSimple.mo:179:9-179:51:writable] Warning: Connecting two signal sources while connecting cytoplasm.y2_node.V to nucleus.y2_node.V.
@@ -1191,22 +1191,22 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   vef.p1.r + LACext.n1.r = 0.0;
 //   cytosol.NADH.n1.r + cytosol.vldh.s2.r + cytosol.mitochondria.node_NADH.r + cytosol.vgpdh_1.p1.r = 0.0;
 //   cytosol.FDP.n1.r + cytosol.vpfk.p1.r + cytosol.vald.s1.r = 0.0;
-//   cytosol.vpdh.s1.r + cytosol.vldh.s1.r + cytosol.vgpdh_1.p2.r + cytosol.PYR.n1.r = 0.0;
-//   cytosol.vpdh.s2.r + cytosol.mitochondria.node_ADP.r + cytosol.jak.p1.r + cytosol.vgpdh_1.s1.r + cytosol.ADP.n1.r + cytosol.jatpase.p1.r + cytosol.vpfk.p2.r + cytosol.jck.p1.r = 0.0;
-//   cytosol.jda.p1.r + cytosol.IMP.n1.r + cytosol.vgph.m[1].r = 0.0;
-//   cytosol.jda.s1.r + cytosol.jak.s1.r + cytosol.vgph.m[2].r + cytosol.AMP.n1.r = 0.0;
-//   cytosol.vldh.p1.r + cytosol.LAC.n1.r + (-cytosol.node_LAC.r) = 0.0;
-//   cytosol.jck.p2.r + cytosol.CP.n1.r = 0.0;
+//   cytosol.PYR.n1.r + cytosol.vldh.s1.r + cytosol.vpdh.s1.r + cytosol.vgpdh_1.p2.r = 0.0;
+//   cytosol.ADP.n1.r + cytosol.vpfk.p2.r + cytosol.vpdh.s2.r + cytosol.jak.p1.r + cytosol.jatpase.p1.r + cytosol.jck.p1.r + cytosol.mitochondria.node_ADP.r + cytosol.vgpdh_1.s1.r = 0.0;
+//   cytosol.IMP.n1.r + cytosol.jda.p1.r + cytosol.vgph.m[1].r = 0.0;
+//   cytosol.AMP.n1.r + cytosol.jda.s1.r + cytosol.jak.s1.r + cytosol.vgph.m[2].r = 0.0;
+//   cytosol.LAC.n1.r + cytosol.vldh.p1.r + (-cytosol.node_LAC.r) = 0.0;
+//   cytosol.CP.n1.r + cytosol.jck.p2.r = 0.0;
 //   cytosol.GLY.n1.r + cytosol.vgph.s1.r = 0.0;
-//   cytosol.NAD.n1.r + cytosol.vpdh.m1.r + cytosol.vldh.m1.r = 0.0;
-//   cytosol.vH6P.p1.r + cytosol.F6P.n1.r + cytosol.vpfk.s1.r = 0.0;
+//   cytosol.vldh.m1.r + cytosol.vpdh.m1.r + cytosol.NAD.n1.r = 0.0;
+//   cytosol.vpfk.s1.r + cytosol.F6P.n1.r + cytosol.vH6P.p1.r = 0.0;
 //   cytosol.vpdh.p1.r + cytosol.mitochondria.node_NADHm.r = 0.0;
-//   cytosol.mitochondria.node_ATP.r + cytosol.jak.m1.r + cytosol.ATP.n1.r + cytosol.jatpase.s1.r + cytosol.jck.s1.r = 0.0;
-//   cytosol.Cr.n1.r + cytosol.jck.s2.r = 0.0;
-//   cytosol.mitochondria.NADHm.n1.r + (-cytosol.mitochondria.node_NADHm.r) + cytosol.mitochondria.jox.s2.r + cytosol.mitochondria.vn.p1.r = 0.0;
+//   cytosol.jak.m1.r + cytosol.jatpase.s1.r + cytosol.jck.s1.r + cytosol.mitochondria.node_ATP.r + cytosol.ATP.n1.r = 0.0;
+//   cytosol.jck.s2.r + cytosol.Cr.n1.r = 0.0;
+//   cytosol.mitochondria.NADHm.n1.r + (-cytosol.mitochondria.node_NADHm.r) + cytosol.mitochondria.vn.p1.r + cytosol.mitochondria.jox.s2.r = 0.0;
 //   cytosol.mitochondria.NADm.n1.r + cytosol.mitochondria.jox.p1.r = 0.0;
-//   (-cytosol.mitochondria.node_NADH.r) + cytosol.mitochondria.vn.s1.r = 0.0;
-//   cytosol.mitochondria.jox.s1.r + (-cytosol.mitochondria.node_ADP.r) = 0.0;
+//   cytosol.mitochondria.vn.s1.r + (-cytosol.mitochondria.node_NADH.r) = 0.0;
+//   (-cytosol.mitochondria.node_ADP.r) + cytosol.mitochondria.jox.s1.r = 0.0;
 //   (-cytosol.mitochondria.node_ATP.r) + cytosol.mitochondria.jox.p2.r = 0.0;
 //   cytosol.mitochondria.NADm.n1.V = cytosol.mitochondria.jox.p1.V;
 //   cytosol.mitochondria.NADm.n1.c = cytosol.mitochondria.jox.p1.c;
@@ -1222,10 +1222,10 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytosol.mitochondria.jox.s1.c = cytosol.mitochondria.node_ADP.c;
 //   cytosol.mitochondria.node_NADH.V = cytosol.mitochondria.vn.s1.V;
 //   cytosol.mitochondria.node_NADH.c = cytosol.mitochondria.vn.s1.c;
-//   cytosol.vT3P.p1.r + cytosol.vgpdh_1.s2.r + cytosol.G3P.n1.r = 0.0;
-//   cytosol.vgph.m[3].r + cytosol.vgpdh_1.m1.r + cytosol.PN.n1.r = 0.0;
-//   cytosol.vgph.p1.r + cytosol.vH6P.s1.r + cytosol.G6P.n1.r = 0.0;
-//   cytosol.vT3P.s1.r + cytosol.DHAP.n1.r + cytosol.vald.p1.r = 0.0;
+//   cytosol.vgpdh_1.s2.r + cytosol.G3P.n1.r + cytosol.vT3P.p1.r = 0.0;
+//   cytosol.vgpdh_1.m1.r + cytosol.PN.n1.r + cytosol.vgph.m[3].r = 0.0;
+//   cytosol.G6P.n1.r + cytosol.vgph.p1.r + cytosol.vH6P.s1.r = 0.0;
+//   cytosol.vald.p1.r + cytosol.DHAP.n1.r + cytosol.vT3P.s1.r = 0.0;
 //   cytosol.PN.n1.V = cytosol.vgpdh_1.m1.V;
 //   cytosol.PN.n1.V = cytosol.vgph.m[3].V;
 //   cytosol.PN.n1.c = cytosol.vgpdh_1.m1.c;
@@ -1738,17 +1738,17 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   trans_Bmal1 = v4b * nucleus.y3.c ^ r_sbml / (k4b ^ r_sbml + nucleus.y3.c ^ r_sbml);
 //   y5_y6_y7 = cytoplasm.y5.c + nucleus.y6.c + nucleus.y7.c;
 //   der(V) = 0.0 \"Compartment volume is constant\";
-//   cytoplasm.y1.n1.r + cytoplasm.per2_cry_mRNA_degradation.s1.r + cytoplasm.per2_cry_complex_formation.m1.r + cytoplasm.per2_cry_transcription.p1.r = 0.0;
-//   cytoplasm.per2_cry_complex_formation.p1.r + cytoplasm.y2.n1.r + cytoplasm.per2_cry_nuclear_import.s1.r + cytoplasm.cytoplasmic_per2_cry_complex_degradation.s1.r + (-cytoplasm.y2_node.r) = 0.0;
-//   cytoplasm.Bmal1_mRNA_degradation.s1.r + cytoplasm.Bmal1_transcription.p1.r + cytoplasm.y4.n1.r + cytoplasm.BMAL1_translation.m1.r = 0.0;
-//   (-cytoplasm.y5_node.r) + cytoplasm.cytoplasmic_BMAL1_degradation.s1.r + cytoplasm.BMAL1_nuclear_import.s1.r + cytoplasm.y5.n1.r + cytoplasm.BMAL1_translation.p1.r = 0.0;
-//   cytoplasm.per2_cry_mRNA_degradation.p1.r + cytoplasm.ambientSubstance.n1.r + cytoplasm.per2_cry_complex_formation.s1.r + cytoplasm.per2_cry_transcription.s1.r + cytoplasm.cytoplasmic_per2_cry_complex_degradation.p1.r + cytoplasm.Bmal1_mRNA_degradation.p1.r + cytoplasm.cytoplasmic_BMAL1_degradation.p1.r + cytoplasm.Bmal1_transcription.s1.r + cytoplasm.BMAL1_translation.s1.r = 0.0;
+//   cytoplasm.y1.n1.r + cytoplasm.per2_cry_transcription.p1.r + cytoplasm.per2_cry_mRNA_degradation.s1.r + cytoplasm.per2_cry_complex_formation.m1.r = 0.0;
+//   cytoplasm.y2.n1.r + (-cytoplasm.y2_node.r) + cytoplasm.per2_cry_complex_formation.p1.r + cytoplasm.cytoplasmic_per2_cry_complex_degradation.s1.r + cytoplasm.per2_cry_nuclear_import.s1.r = 0.0;
+//   cytoplasm.y4.n1.r + cytoplasm.Bmal1_transcription.p1.r + cytoplasm.Bmal1_mRNA_degradation.s1.r + cytoplasm.BMAL1_translation.m1.r = 0.0;
+//   cytoplasm.y5.n1.r + (-cytoplasm.y5_node.r) + cytoplasm.BMAL1_translation.p1.r + cytoplasm.cytoplasmic_BMAL1_degradation.s1.r + cytoplasm.BMAL1_nuclear_import.s1.r = 0.0;
+//   cytoplasm.ambientSubstance.n1.r + cytoplasm.per2_cry_transcription.s1.r + cytoplasm.per2_cry_mRNA_degradation.p1.r + cytoplasm.per2_cry_complex_formation.s1.r + cytoplasm.cytoplasmic_per2_cry_complex_degradation.p1.r + cytoplasm.Bmal1_transcription.s1.r + cytoplasm.Bmal1_mRNA_degradation.p1.r + cytoplasm.BMAL1_translation.s1.r + cytoplasm.cytoplasmic_BMAL1_degradation.p1.r = 0.0;
 //   cytoplasm.y3_node.r + nucleus.y3_node.r = 0.0;
 //   cytoplasm.y2_node.r + nucleus.y2_node.r = 0.0;
 //   cytoplasm.y6_node.r + nucleus.y6_node.r = 0.0;
 //   cytoplasm.y5_node.r + nucleus.y5_node.r = 0.0;
 //   (-cytoplasm.y3_node.r) + cytoplasm.per2_cry_nuclear_import.p1.r = 0.0;
-//   cytoplasm.BMAL1_nuclear_import.p1.r + (-cytoplasm.y6_node.r) = 0.0;
+//   (-cytoplasm.y6_node.r) + cytoplasm.BMAL1_nuclear_import.p1.r = 0.0;
 //   cytoplasm.BMAL1_nuclear_import.p1.V = cytoplasm.y6_node.V;
 //   cytoplasm.BMAL1_nuclear_import.p1.c = cytoplasm.y6_node.c;
 //   cytoplasm.cytoplasmic_per2_cry_complex_degradation.s1.V = cytoplasm.per2_cry_complex_formation.p1.V;
@@ -1797,10 +1797,10 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytoplasm.BMAL1_translation.m1.c = cytoplasm.Bmal1_mRNA_degradation.s1.c;
 //   cytoplasm.BMAL1_translation.m1.c = cytoplasm.Bmal1_transcription.p1.c;
 //   cytoplasm.BMAL1_translation.m1.c = cytoplasm.y4.n1.c;
-//   nucleus.y3.n1.r + nucleus.per2_cry_nuclear_export.s1.r + (-nucleus.y3_node.r) + nucleus.nuclear_per2_cry_complex_degradation.s1.r = 0.0;
-//   nucleus.y6.n1.r + nucleus.BMAL1_nuclear_export.s1.r + nucleus.BMAL1_deactivation.p1.r + (-nucleus.y6_node.r) + nucleus.nuclear_BMAL1_degradation.s1.r + nucleus.BMAL1_activation.s1.r = 0.0;
-//   nucleus.y7.n1.r + nucleus.BMAL1_deactivation.s1.r + nucleus.Active_BMAL1_degradation.s1.r + nucleus.BMAL1_activation.p1.r = 0.0;
-//   nucleus.Active_BMAL1_degradation.p1.r + nucleus.ambientSubstance.n1.r + nucleus.nuclear_BMAL1_degradation.p1.r + nucleus.nuclear_per2_cry_complex_degradation.p1.r = 0.0;
+//   nucleus.y3.n1.r + (-nucleus.y3_node.r) + nucleus.per2_cry_nuclear_export.s1.r + nucleus.nuclear_per2_cry_complex_degradation.s1.r = 0.0;
+//   nucleus.y6.n1.r + (-nucleus.y6_node.r) + nucleus.BMAL1_nuclear_export.s1.r + nucleus.nuclear_BMAL1_degradation.s1.r + nucleus.BMAL1_activation.s1.r + nucleus.BMAL1_deactivation.p1.r = 0.0;
+//   nucleus.y7.n1.r + nucleus.BMAL1_activation.p1.r + nucleus.BMAL1_deactivation.s1.r + nucleus.Active_BMAL1_degradation.s1.r = 0.0;
+//   nucleus.ambientSubstance.n1.r + nucleus.nuclear_per2_cry_complex_degradation.p1.r + nucleus.nuclear_BMAL1_degradation.p1.r + nucleus.Active_BMAL1_degradation.p1.r = 0.0;
 //   (-nucleus.y2_node.r) + nucleus.per2_cry_nuclear_export.p1.r = 0.0;
 //   (-nucleus.y5_node.r) + nucleus.BMAL1_nuclear_export.p1.r = 0.0;
 //   nucleus.nuclear_per2_cry_complex_degradation.s1.V = nucleus.per2_cry_nuclear_export.s1.V;
@@ -1852,7 +1852,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // "
 // "Check of BioChem_Examples_CircadianOscillator_Container completed successfully.
 // Class BioChem_Examples_CircadianOscillator_Container has 252 equation(s) and 252 variable(s).
-// 179 of these are trivial equation(s)."
+// 180 of these are trivial equation(s)."
 // "[flattening/libraries/biochem/ContainerTotal.mo:867:9-867:145:writable] Warning: Connecting two signal sources while connecting cytoplasm.y5_node.V to nucleus.y5_node.V.
 // [flattening/libraries/biochem/ContainerTotal.mo:868:9-868:144:writable] Warning: Connecting two signal sources while connecting nucleus.y6_node.V to cytoplasm.y6_node.V.
 // [flattening/libraries/biochem/ContainerTotal.mo:869:9-869:144:writable] Warning: Connecting two signal sources while connecting cytoplasm.y2_node.V to nucleus.y2_node.V.
@@ -1963,8 +1963,8 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   der(V) = 0.0 \"Compartment volume is constant\";
 //   Ca_Cyt.n1.r + Jpump.s1.r + Endoplasmic_Reticulum.Ca_Cyt_node.r = 0.0;
 //   Jpump.p1.r + Endoplasmic_Reticulum.CaER_node.r = 0.0;
-//   Endoplasmic_Reticulum.CaER.n1.r + Endoplasmic_Reticulum.Jleak.s1.r + Endoplasmic_Reticulum.Jch.s1.r + (-Endoplasmic_Reticulum.CaER_node.r) = 0.0;
-//   Endoplasmic_Reticulum.Jleak.p1.r + Endoplasmic_Reticulum.Jch.p1.r + (-Endoplasmic_Reticulum.Ca_Cyt_node.r) = 0.0;
+//   Endoplasmic_Reticulum.CaER.n1.r + Endoplasmic_Reticulum.Jleak.s1.r + (-Endoplasmic_Reticulum.CaER_node.r) + Endoplasmic_Reticulum.Jch.s1.r = 0.0;
+//   (-Endoplasmic_Reticulum.Ca_Cyt_node.r) + Endoplasmic_Reticulum.Jleak.p1.r + Endoplasmic_Reticulum.Jch.p1.r = 0.0;
 //   Endoplasmic_Reticulum.Ca_Cyt_node.V = Endoplasmic_Reticulum.Jch.p1.V;
 //   Endoplasmic_Reticulum.Ca_Cyt_node.V = Endoplasmic_Reticulum.Jleak.p1.V;
 //   Endoplasmic_Reticulum.Ca_Cyt_node.c = Endoplasmic_Reticulum.Jch.p1.c;
@@ -2017,7 +2017,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // "
 // "Check of BioChem.Examples.CircadianOscillator.Container completed successfully.
 // Class BioChem.Examples.CircadianOscillator.Container has 252 equation(s) and 252 variable(s).
-// 179 of these are trivial equation(s)."
+// 180 of these are trivial equation(s)."
 // "[BioChem 1.0.1/Examples/package.mo:1086:7-1086:129:writable] Warning: Connecting two signal sources while connecting cytoplasm.y5_node.V to nucleus.y5_node.V.
 // [BioChem 1.0.1/Examples/package.mo:1087:7-1087:128:writable] Warning: Connecting two signal sources while connecting nucleus.y6_node.V to cytoplasm.y6_node.V.
 // [BioChem 1.0.1/Examples/package.mo:1088:7-1088:128:writable] Warning: Connecting two signal sources while connecting cytoplasm.y2_node.V to nucleus.y2_node.V.
@@ -2029,7 +2029,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // ""
 // "Check of BioChem.Examples.CircadianOscillator.Cytoplasm completed successfully.
 // Class BioChem.Examples.CircadianOscillator.Cytoplasm has 140 equation(s) and 142 variable(s).
-// 99 of these are trivial equation(s)."
+// 100 of these are trivial equation(s)."
 // ""
 // "Check of BioChem.Examples.CellDivison.cell completed successfully.
 // Class BioChem.Examples.CellDivison.cell has 148 equation(s) and 148 variable(s).
@@ -2046,7 +2046,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // ""
 // "Check of BioChem.Examples.GlucoseInsulinModel.GlucoseInsulinModel completed successfully.
 // Class BioChem.Examples.GlucoseInsulinModel.GlucoseInsulinModel has 687 equation(s) and 687 variable(s).
-// 520 of these are trivial equation(s)."
+// 530 of these are trivial equation(s)."
 // "[BioChem 1.0.1/Examples/package.mo:2450:11-2450:101:writable] Warning: Connecting two signal sources while connecting Ra_calc.n1.V to Ra_connector.V.
 // [BioChem 1.0.1/Examples/package.mo:2666:11-2666:131:writable] Warning: Connecting two signal sources while connecting G_t.n1.V to U_idm_connector.V.
 // [BioChem 1.0.1/Examples/package.mo:2667:11-2667:130:writable] Warning: Connecting two signal sources while connecting G_t.n1.V to U_idf_connector.V.

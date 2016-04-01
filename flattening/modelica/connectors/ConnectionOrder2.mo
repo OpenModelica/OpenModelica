@@ -69,10 +69,10 @@ end ConnectionOrder2;
 //   APNzi.e = wWAqt.e;
 //   (-APNzi.f) + (-wWAqt.f) = 0.0;
 //   CauvN.e = Nizss.e;
-//   (-Nizss.f) + (-CauvN.f) = 0.0;
+//   (-CauvN.f) + (-Nizss.f) = 0.0;
 //   SsIbl.e = iCWhD.e;
 //   (-iCWhD.f) + (-SsIbl.f) = 0.0;
 //   hAhvy.e = xPLdp.e;
-//   (-hAhvy.f) + (-xPLdp.f) = 0.0;
+//   (-xPLdp.f) + (-hAhvy.f) = 0.0;
 // end ConnectionOrder2;
 // endResult

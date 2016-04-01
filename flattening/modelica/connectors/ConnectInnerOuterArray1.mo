@@ -40,7 +40,7 @@ end ConnectInnerOuterArray1;
 //   Real lowerLevelModel[2].c.e;
 //   Real lowerLevelModel[2].c.f;
 // equation
-//   innerOuterModel.c1.f + (-lowerLevelModel[1].c.f) + (-lowerLevelModel[2].c.f) = 0.0;
+//   innerOuterModel.c1.f + (-lowerLevelModel[2].c.f) + (-lowerLevelModel[1].c.f) = 0.0;
 //   innerOuterModel.c2.f = 0.0;
 //   innerOuterModel.c1.e = innerOuterModel.c2.e;
 //   (-innerOuterModel.c1.f) + (-innerOuterModel.c2.f) = 0.0;

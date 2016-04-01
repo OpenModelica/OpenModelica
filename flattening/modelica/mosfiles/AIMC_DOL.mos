@@ -12,6 +12,6 @@ getErrorString();
 // true
 // "Check of Modelica_Electrical_Machines_Examples_AIMC_DOL completed successfully.
 // Class Modelica_Electrical_Machines_Examples_AIMC_DOL has 376 equation(s) and 376 variable(s).
-// 268 of these are trivial equation(s)."
+// 275 of these are trivial equation(s)."
 // ""
 // endResult

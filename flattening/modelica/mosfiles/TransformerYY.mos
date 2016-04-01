@@ -12,6 +12,6 @@ getErrorString();
 // true
 // "Check of Modelica.Electrical.MultiPhase.Examples.TransformerYY completed successfully.
 // Class Modelica.Electrical.MultiPhase.Examples.TransformerYY has 257 equation(s) and 257 variable(s).
-// 197 of these are trivial equation(s)."
+// 202 of these are trivial equation(s)."
 // ""
 // endResult

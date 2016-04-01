@@ -17,6 +17,6 @@ checkModel(SiemensPower.Components.Pipes.Tests.tube_test); getErrorString();
 // ""
 // "Check of SiemensPower.Components.Pipes.Tests.tube_test completed successfully.
 // Class SiemensPower.Components.Pipes.Tests.tube_test has 2465 equation(s) and 2465 variable(s).
-// 1493 of these are trivial equation(s)."
+// 1568 of these are trivial equation(s)."
 // ""
 // endResult

@@ -37,6 +37,6 @@ end ConnectionOrder1;
 //   c1.e = c2.e;
 //   (-c1.f) + (-c2.f) = 0.0;
 //   c4.e = c3.e;
-//   (-c4.f) + (-c3.f) = 0.0;
+//   (-c3.f) + (-c4.f) = 0.0;
 // end ConnectionOrder1;
 // endResult

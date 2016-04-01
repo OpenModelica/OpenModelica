@@ -53,7 +53,7 @@ getErrorString();
 //   G6P.c = G6P.n / V;
 //   der(V) = 0.0 \"Compartment volume is constant\";
 //   F6P.n1.r + uur.p1.r = 0.0;
-//   G6P.n1.r + uur.s1.r = 0.0;
+//   uur.s1.r + G6P.n1.r = 0.0;
 //   F6P.n1.V = uur.p1.V;
 //   F6P.n1.c = uur.p1.c;
 //   G6P.n1.V = uur.s1.V;
