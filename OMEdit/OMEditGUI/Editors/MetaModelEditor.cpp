@@ -45,7 +45,7 @@ XMLDocument::XMLDocument(MetaModelEditor *pMetaModelEditor)
 
 QString XMLDocument::toString() const
 {
-  TabSettings tabSettings = mpMetaModelEditor->getMainWindow()->getOptionsDialog()->getMetaModelTabSettings();
+  TabSettings tabSettings = mpMetaModelEditor->getMainWindow()->getOptionsDialog()->getTabSettings();
   return QDomDocument::toString(tabSettings.getIndentSize());
 }
 
@@ -731,10 +731,10 @@ MetaModelHighlighter::MetaModelHighlighter(MetaModelEditorPage *pMetaModelEditor
 void MetaModelHighlighter::initializeSettings()
 {
   QFont font;
-  font.setFamily(mpMetaModelEditorPage->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(mpMetaModelEditorPage->getFontSizeSpinBox()->value());
+  font.setFamily(mpMetaModelEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(mpMetaModelEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
   mpPlainTextEdit->document()->setDefaultFont(font);
-  mpPlainTextEdit->setTabStopWidth(mpMetaModelEditorPage->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
+  mpPlainTextEdit->setTabStopWidth(mpMetaModelEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;
@@ -848,7 +848,7 @@ void MetaModelHighlighter::highlightMultiLine(const QString &text)
 void MetaModelHighlighter::highlightBlock(const QString &text)
 {
   /* Only highlight the text if user has enabled the syntax highlighting */
-  if (!mpMetaModelEditorPage->getSyntaxHighlightingCheckbox()->isChecked()) {
+  if (!mpMetaModelEditorPage->getOptionsDialog()->getTextEditorPage()->getSyntaxHighlightingCheckbox()->isChecked()) {
     return;
   }
   setCurrentBlockState(0);

@@ -39,21 +39,26 @@
 TextEditor::TextEditor(ModelWidget *pModelWidget)
   : BaseEditor(pModelWidget)
 {
-  //! @todo for now set the font of TextEditor to default monospaced font. Later define settings for it and read from there.
-  mpPlainTextEdit->setFont(QFont(Helper::monospacedFontInfo.family()));
-  mpPlainTextEdit->setTabStopWidth(4 * QFontMetrics(mpPlainTextEdit->font()).width(QLatin1Char(' ')));
+  MainWindow *pMainWindow = pModelWidget->getModelWidgetContainer()->getMainWindow();
+  QFont font;
+  font.setFamily(pMainWindow->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(pMainWindow->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
+  mpPlainTextEdit->document()->setDefaultFont(font);
+  mpPlainTextEdit->setTabStopWidth(pMainWindow->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
 }
 
 TextEditor::TextEditor(MainWindow *pMainWindow)
   : BaseEditor(pMainWindow)
 {
-  //! @todo for now set the font of TextEditor to default monospaced font. Later define settings for it and read from there.
-  mpPlainTextEdit->setFont(QFont(Helper::monospacedFontInfo.family()));
-  mpPlainTextEdit->setTabStopWidth(4 * QFontMetrics(mpPlainTextEdit->font()).width(QLatin1Char(' ')));
+  QFont font;
+  font.setFamily(pMainWindow->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(pMainWindow->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
+  mpPlainTextEdit->document()->setDefaultFont(font);
+  mpPlainTextEdit->setTabStopWidth(pMainWindow->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
 }
 
 /*!
- * \brief ModelicaTextEditor::setPlainText
+ * \brief TextEditor::setPlainText
  * Reimplementation of QPlainTextEdit::setPlainText method.
  * Makes sure we dont update if the passed text is same.
  * \param text the string to set.

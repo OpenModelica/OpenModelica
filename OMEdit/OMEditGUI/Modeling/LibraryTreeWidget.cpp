@@ -308,6 +308,7 @@ LibraryTreeItem::LibraryTreeItem()
   setClassTextAfter("");
   setExpanded(false);
   setNonExisting(true);
+  setHasBOM(false);
 }
 
 /*!
@@ -337,6 +338,7 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
     setReadOnly(!StringHandler::isFileWritAble(fileName));
   }
   setIsSaved(isSaved);
+  detectBOM();
   if (isFilePathValid()) {
     QFileInfo fileInfo(getFileName());
     // if item has file name as package.mo and is top level then its save folder structure
@@ -710,6 +712,31 @@ void LibraryTreeItem::emitComponentAdded(Component *pComponent)
 {
   emit componentAdded(pComponent);
   emit componentAddedForComponent();
+}
+
+/*!
+ * \brief LibraryTreeItem::detectBOM
+ * Detects if the file has byte order mark (BOM) or not.
+ */
+void LibraryTreeItem::detectBOM()
+{
+  if (isFilePathValid()) {
+    QFile file(getFileName());
+    if (file.open(QIODevice::ReadOnly)) {
+      QByteArray data = file.readAll();
+      const int bytesRead = data.size();
+      const unsigned char *buf = reinterpret_cast<const unsigned char *>(data.constData());
+      // code taken from qtextstream
+      if (bytesRead >= 3 && ((buf[0] == 0xef && buf[1] == 0xbb) && buf[2] == 0xbf)) {
+        setHasBOM(true);
+      } else {
+        setHasBOM(false);
+      }
+      file.close();
+    }
+  } else {
+    setHasBOM(false);
+  }
 }
 
 /*!
@@ -1358,9 +1385,9 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
     pParentLibraryTreeItem->setClassText(contents);
     if (pParentLibraryTreeItem->getModelWidget()) {
       pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getName()).append("*"));
-      ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
-      if (pModelicaTextEditor) {
-        pModelicaTextEditor->setPlainText(contents);
+      ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
+      if (pModelicaEditor) {
+        pModelicaEditor->setPlainText(contents);
       }
     }
     // if we first updated the parent class then the child classes needs to be updated as well.
@@ -1392,9 +1419,9 @@ void LibraryTreeModel::updateLibraryTreeItemClassTextManually(LibraryTreeItem *p
   pParentLibraryTreeItem->setClassText(contents);
   if (pParentLibraryTreeItem->getModelWidget()) {
     pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getName()).append("*"));
-    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
-    if (pModelicaTextEditor) {
-      pModelicaTextEditor->setPlainText(contents);
+    ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
+    if (pModelicaEditor) {
+      pModelicaEditor->setPlainText(contents);
     }
   }
   // if we first updated the parent class then the child classes needs to be updated as well.
@@ -2002,11 +2029,11 @@ void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLib
       pChildLibraryTreeItem->setClassInformation(mpLibraryWidget->getMainWindow()->getOMCProxy()->getClassInformation(pChildLibraryTreeItem->getNameStructure()));
       readLibraryTreeItemClassTextFromText(pChildLibraryTreeItem, contents);
       if (pChildLibraryTreeItem->getModelWidget()) {
-        ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pChildLibraryTreeItem->getModelWidget()->getEditor());
-        if (pModelicaTextEditor) {
-          pModelicaTextEditor->setPlainText(pChildLibraryTreeItem->getClassText(this));
-          if (pModelicaTextEditor->isVisible()) {
-            pModelicaTextEditor->getPlainTextEdit()->getLineNumberArea()->update();
+        ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pChildLibraryTreeItem->getModelWidget()->getEditor());
+        if (pModelicaEditor) {
+          pModelicaEditor->setPlainText(pChildLibraryTreeItem->getClassText(this));
+          if (pModelicaEditor->isVisible()) {
+            pModelicaEditor->getPlainTextEdit()->getLineNumberArea()->update();
           }
         }
       }
@@ -3099,6 +3126,59 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
 }
 
 /*!
+ * \brief LibraryWidget::saveFile
+ * Saves the file with contents.
+ * \param fileName
+ * \param contents
+ * \return
+ */
+bool LibraryWidget::saveFile(QString fileName, QString contents, bool hasBOM)
+{
+  QFile file(fileName);
+  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    QTextStream textStream(&file);
+    // set to UTF-8
+    textStream.setCodec(Helper::utf8.toStdString().data());
+    // set the BOM settings
+    QComboBox *pBOMComboBox = mpMainWindow->getOptionsDialog()->getTextEditorPage()->getBOMComboBox();
+    Utilities::BomMode bomMode = (Utilities::BomMode)pBOMComboBox->itemData(pBOMComboBox->currentIndex()).toInt();
+    switch (bomMode) {
+      case Utilities::AlwaysAddBom:
+        textStream.setGenerateByteOrderMark(true);
+        break;
+      case Utilities::KeepBom:
+        textStream.setGenerateByteOrderMark(hasBOM);
+        break;
+      case Utilities::AlwaysDeleteBom:
+      default:
+        textStream.setGenerateByteOrderMark(false);
+        break;
+    }
+    // set the line ending format
+    QComboBox *pLineEndingComboBox = mpMainWindow->getOptionsDialog()->getTextEditorPage()->getLineEndingComboBox();
+    Utilities::LineEndingMode lineEndingMode = (Utilities::LineEndingMode)pLineEndingComboBox->itemData(pLineEndingComboBox->currentIndex()).toInt();
+    switch (lineEndingMode) {
+      case Utilities::CRLFLineEnding:
+        contents.replace(QLatin1Char('\n'), QLatin1String("\r\n"));
+        break;
+      case Utilities::LFLineEnding:
+        contents.replace(QLatin1String("\r\n"), QLatin1String("\n"));
+      default:
+        break;
+    }
+    textStream << contents;
+    file.close();
+    return true;
+  } else {
+    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+                                                                 .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
+                                                                      .arg(file.errorString())), Helper::scriptingKind, Helper::errorLevel));
+    return false;
+  }
+}
+
+/*!
  * \brief LibraryWidget::saveLibraryTreeItem
  * Saves the LibraryTreeItem
  * \param pLibraryTreeItem
@@ -3180,32 +3260,6 @@ void LibraryWidget::openLibraryTreeItem(QString nameStructure)
     return;
   } else {
     mpLibraryTreeModel->showModelWidget(pLibraryTreeItem);
-  }
-}
-
-/*!
- * \brief LibraryWidget::saveFile
- * Saves the file with contents.
- * \param fileName
- * \param contents
- * \return
- */
-bool LibraryWidget::saveFile(QString fileName, QString contents)
-{
-  QFile file(fileName);
-  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    QTextStream textStream(&file);
-    textStream.setCodec(Helper::utf8.toStdString().data());
-    textStream.setGenerateByteOrderMark(false);
-    textStream << contents;
-    file.close();
-    return true;
-  } else {
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                                                                 .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
-                                                                      .arg(file.errorString())), Helper::scriptingKind, Helper::errorLevel));
-    return false;
   }
 }
 
@@ -3303,7 +3357,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
   } else {
     contents = pLibraryTreeItem->getClassText(mpLibraryTreeModel);
   }
-  if (saveFile(fileName, contents)) {
+  if (saveFile(fileName, contents, pLibraryTreeItem->hasBOM())) {
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileName);
@@ -3398,7 +3452,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
     } else {
       contents = pLibraryTreeItem->getClassText(mpLibraryTreeModel);
     }
-    if (saveFile(fileName, contents)) {
+    if (saveFile(fileName, contents, pLibraryTreeItem->hasBOM())) {
       /* mark the file as saved and update the labels. */
       pLibraryTreeItem->setIsSaved(true);
       pLibraryTreeItem->setFileName(fileName);
@@ -3445,18 +3499,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
     contents.append(pLibraryTreeItem->child(i)->getName()).append("\n");
   }
   // create a new package.order file
-  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    QTextStream textStream(&file);
-    textStream.setCodec(Helper::utf8.toStdString().data());
-    textStream.setGenerateByteOrderMark(false);
-    textStream << contents;
-    file.close();
-  } else {
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                                                                 .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
-                                                                      .arg(file.errorString())), Helper::scriptingKind, Helper::errorLevel));
-  }
+  saveFile(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()), contents, pLibraryTreeItem->hasBOM());
   return true;
 }
 
@@ -3480,13 +3523,7 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     fileName = pLibraryTreeItem->getFileName();
   }
 
-  QFile file(fileName);
-  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    QTextStream textStream(&file);
-    textStream.setCodec(Helper::utf8.toStdString().data());
-    textStream.setGenerateByteOrderMark(false);
-    textStream << pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
-    file.close();
+  if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText(), pLibraryTreeItem->hasBOM())) {
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileName);
@@ -3495,8 +3532,6 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
       pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
     }
   } else {
-    QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                             .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE).arg(file.errorString())), Helper::ok);
     return false;
   }
   return true;
@@ -3543,13 +3578,7 @@ bool LibraryWidget::saveAsMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTree
  */
 bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName)
 {
-  QFile file(fileName);
-  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    QTextStream textStream(&file);
-    textStream.setCodec(Helper::utf8.toStdString().data());
-    textStream.setGenerateByteOrderMark(false);
-    textStream << pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
-    file.close();
+  if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText(), pLibraryTreeItem->hasBOM())) {
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
     QString oldMetaModelFile = pLibraryTreeItem->getFileName();
@@ -3590,8 +3619,6 @@ bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeIt
       QFile::copy(modelFileInfo.absoluteFilePath(), newFileName);
     }
   } else {
-    QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                             .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE).arg(file.errorString())), Helper::ok);
     return false;
   }
   return true;

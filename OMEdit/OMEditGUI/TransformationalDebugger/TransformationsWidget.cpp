@@ -607,7 +607,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpTSourceEditorInfoBar->hide();
   mpTransformationsEditor = new TransformationsEditor(this);
   ModelicaTextHighlighter *pModelicaTextHighlighter;
-  pModelicaTextHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaTextEditorPage(),
+  pModelicaTextHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaEditorPage(),
                                                          mpTransformationsEditor->getPlainTextEdit());
   connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   QVBoxLayout *pTSourceEditorVerticalLayout = new QVBoxLayout;

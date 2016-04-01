@@ -337,3 +337,95 @@ QFrame* Utilities::getHeadingLine()
   pHeadingLine->setFrameShadow(QFrame::Sunken);
   return pHeadingLine;
 }
+
+QTextCharFormat Utilities::getParenthesesMatchFormat()
+{
+  QTextCharFormat parenthesesMatchFormat;
+  parenthesesMatchFormat.setForeground(Qt::red);
+  parenthesesMatchFormat.setBackground(QColor(160, 238, 160));
+  return parenthesesMatchFormat;
+}
+
+QTextCharFormat Utilities::getParenthesesMisMatchFormat()
+{
+  QTextCharFormat parenthesesMisMatchFormat;
+  parenthesesMisMatchFormat.setBackground(Qt::red);
+  return parenthesesMisMatchFormat;
+}
+
+void Utilities::highlightCurrentLine(QPlainTextEdit *pPlainTextEdit)
+{
+  QList<QTextEdit::ExtraSelection> selections = pPlainTextEdit->extraSelections();
+  QTextEdit::ExtraSelection selection;
+  QColor lineColor = QColor(232, 242, 254);
+  selection.format.setBackground(lineColor);
+  selection.format.setProperty(QTextFormat::FullWidthSelection, true);
+  selection.cursor = pPlainTextEdit->textCursor();
+  selection.cursor.clearSelection();
+  selections.append(selection);
+  pPlainTextEdit->setExtraSelections(selections);
+}
+
+void Utilities::highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFormat parenthesesMatchFormat,
+                                     QTextCharFormat parenthesesMisMatchFormat)
+{
+  if (pPlainTextEdit->isReadOnly()) {
+    return;
+  }
+
+  QTextCursor backwardMatch = pPlainTextEdit->textCursor();
+  QTextCursor forwardMatch = pPlainTextEdit->textCursor();
+  if (pPlainTextEdit->overwriteMode()) {
+    backwardMatch.movePosition(QTextCursor::Right);
+  }
+
+  const TextBlockUserData::MatchType backwardMatchType = TextBlockUserData::matchCursorBackward(&backwardMatch);
+  const TextBlockUserData::MatchType forwardMatchType = TextBlockUserData::matchCursorForward(&forwardMatch);
+  QList<QTextEdit::ExtraSelection> selections = pPlainTextEdit->extraSelections();
+
+  if (backwardMatchType == TextBlockUserData::NoMatch && forwardMatchType == TextBlockUserData::NoMatch) {
+    pPlainTextEdit->setExtraSelections(selections);
+    return;
+  }
+
+  if (backwardMatch.hasSelection()) {
+    QTextEdit::ExtraSelection selection;
+    if (backwardMatchType == TextBlockUserData::Mismatch) {
+      selection.cursor = backwardMatch;
+      selection.format = parenthesesMisMatchFormat;
+      selections.append(selection);
+    } else {
+      selection.cursor = backwardMatch;
+      selection.format = parenthesesMatchFormat;
+
+      selection.cursor.setPosition(backwardMatch.selectionStart());
+      selection.cursor.setPosition(selection.cursor.position() + 1, QTextCursor::KeepAnchor);
+      selections.append(selection);
+
+      selection.cursor.setPosition(backwardMatch.selectionEnd());
+      selection.cursor.setPosition(selection.cursor.position() - 1, QTextCursor::KeepAnchor);
+      selections.append(selection);
+    }
+  }
+
+  if (forwardMatch.hasSelection()) {
+    QTextEdit::ExtraSelection selection;
+    if (forwardMatchType == TextBlockUserData::Mismatch) {
+      selection.cursor = forwardMatch;
+      selection.format = parenthesesMisMatchFormat;
+      selections.append(selection);
+    } else {
+      selection.cursor = forwardMatch;
+      selection.format = parenthesesMatchFormat;
+
+      selection.cursor.setPosition(forwardMatch.selectionStart());
+      selection.cursor.setPosition(selection.cursor.position() + 1, QTextCursor::KeepAnchor);
+      selections.append(selection);
+
+      selection.cursor.setPosition(forwardMatch.selectionEnd());
+      selection.cursor.setPosition(selection.cursor.position() - 1, QTextCursor::KeepAnchor);
+      selections.append(selection);
+    }
+  }
+  pPlainTextEdit->setExtraSelections(selections);
+}

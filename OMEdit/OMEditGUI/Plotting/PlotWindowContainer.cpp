@@ -212,37 +212,30 @@ void PlotWindowContainer::exportVariables()
   if (fileName.isEmpty()) { // if user press ESC
     return;
   }
-  // create the file
-  QFile file(fileName);
-  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    QTextStream textStream(&file);
-    textStream.setCodec(Helper::utf8.toStdString().data());
-    textStream.setGenerateByteOrderMark(false);
-    QStringList headers;
-    int dataPoints = 0;
-    headers << "\"time\"";
-    foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
-      headers << "\"" + pPlotCurve->getName() + "\"";
-      dataPoints = pPlotCurve->getXAxisData().size();
+  QString contents;
+  QStringList headers;
+  int dataPoints = 0;
+  headers << "\"time\"";
+  foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+    headers << "\"" + pPlotCurve->getName() + "\"";
+    dataPoints = pPlotCurve->getXAxisData().size();
+  }
+  // write the csv header
+  contents.append(headers.join(",")).append("\n");
+  // write csv data
+  for (int i = 0 ; i < dataPoints ; ++i) {
+    QStringList data;
+    // write time data
+    data << QString::number(pPlotWindow->getPlot()->getPlotCurvesList().at(0)->getXAxisData().at(i));
+    for (int j = 0; j < headers.size() - 1; ++j) {
+      data << QString::number(pPlotWindow->getPlot()->getPlotCurvesList().at(j)->getYAxisData().at(i));
     }
-    // write the csv header
-    textStream << headers.join(",") << "\n";
-    // write csv data
-    for (int i = 0 ; i < dataPoints ; ++i) {
-      QStringList data;
-      // write time data
-      data << QString::number(pPlotWindow->getPlot()->getPlotCurvesList().at(0)->getXAxisData().at(i));
-      for (int j = 0; j < headers.size() - 1; ++j) {
-        data << QString::number(pPlotWindow->getPlot()->getPlotCurvesList().at(j)->getYAxisData().at(i));
-      }
-      textStream << data.join(",") << "\n";
-    }
-    file.close();
+    contents.append(data.join(",")).append("\n");
+  }
+  // create a file
+  if (mpMainWindow->getLibraryWidget()->saveFile(fileName, contents, false)) {
     mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Exported variables in %1")
                                                                  .arg(fileName), Helper::scriptingKind, Helper::notificationLevel));
-  } else {
-    QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                             .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE).arg(file.errorString())), Helper::ok);
   }
 }
 

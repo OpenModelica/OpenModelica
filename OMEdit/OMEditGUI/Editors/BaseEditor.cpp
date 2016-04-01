@@ -443,9 +443,8 @@ BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   // line numbers widget
   mpLineNumberArea = new LineNumberArea(mpBaseEditor);
   // parentheses matcher
-  mParenthesesMatchFormat.setForeground(Qt::red);
-  mParenthesesMatchFormat.setBackground(QColor(160, 238, 160));
-  mParenthesesMisMatchFormat.setBackground(Qt::red);
+  mParenthesesMatchFormat = Utilities::getParenthesesMatchFormat();
+  mParenthesesMisMatchFormat = Utilities::getParenthesesMisMatchFormat();
 
   updateLineNumberAreaWidth(0);
   updateHighlights();
@@ -669,18 +668,10 @@ void BaseEditor::PlainTextEdit::updateCursorPosition()
 void BaseEditor::PlainTextEdit::setLineWrapping()
 {
   OptionsDialog *pOptionsDialog = mpBaseEditor->getMainWindow()->getOptionsDialog();
-  if (dynamic_cast<MetaModelEditor*>(mpBaseEditor)) {
-    if (pOptionsDialog->getMetaModelEditorPage()->getLineWrappingCheckbox()->isChecked()) {
-      setLineWrapMode(QPlainTextEdit::WidgetWidth);
-    } else {
-      setLineWrapMode(QPlainTextEdit::NoWrap);
-    }
-  } else {  //! @todo we should check all editors here.
-    if (pOptionsDialog->getModelicaTextEditorPage()->getLineWrappingCheckbox()->isChecked()) {
-      setLineWrapMode(QPlainTextEdit::WidgetWidth);
-    } else {
-      setLineWrapMode(QPlainTextEdit::NoWrap);
-    }
+  if (pOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox()->isChecked()) {
+    setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  } else {
+    setLineWrapMode(QPlainTextEdit::NoWrap);
   }
 }
 
@@ -715,12 +706,7 @@ void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lin
  */
 void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
 {
-  TabSettings tabSettings;
-  if (dynamic_cast<MetaModelEditor*>(mpBaseEditor)) {
-    tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getMetaModelTabSettings();
-  } else {  //! @todo we should check all editors here.
-    tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
-  }
+  TabSettings tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTabSettings();
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
   // Indent or unindent the selected lines
@@ -774,15 +760,7 @@ void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
  */
 void BaseEditor::PlainTextEdit::highlightCurrentLine()
 {
-  QList<QTextEdit::ExtraSelection> selections = extraSelections();
-  QTextEdit::ExtraSelection selection;
-  QColor lineColor = QColor(232, 242, 254);
-  selection.format.setBackground(lineColor);
-  selection.format.setProperty(QTextFormat::FullWidthSelection, true);
-  selection.cursor = textCursor();
-  selection.cursor.clearSelection();
-  selections.append(selection);
-  setExtraSelections(selections);
+  Utilities::highlightCurrentLine(this);
 }
 
 /*!
@@ -791,65 +769,7 @@ void BaseEditor::PlainTextEdit::highlightCurrentLine()
  */
 void BaseEditor::PlainTextEdit::highlightParentheses()
 {
-  if (isReadOnly()) {
-    return;
-  }
-
-  QTextCursor backwardMatch = textCursor();
-  QTextCursor forwardMatch = textCursor();
-  if (overwriteMode()) {
-    backwardMatch.movePosition(QTextCursor::Right);
-  }
-
-  const TextBlockUserData::MatchType backwardMatchType = TextBlockUserData::matchCursorBackward(&backwardMatch);
-  const TextBlockUserData::MatchType forwardMatchType = TextBlockUserData::matchCursorForward(&forwardMatch);
-  QList<QTextEdit::ExtraSelection> selections = extraSelections();
-
-  if (backwardMatchType == TextBlockUserData::NoMatch && forwardMatchType == TextBlockUserData::NoMatch) {
-    setExtraSelections(selections);
-    return;
-  }
-
-  if (backwardMatch.hasSelection()) {
-    QTextEdit::ExtraSelection selection;
-    if (backwardMatchType == TextBlockUserData::Mismatch) {
-      selection.cursor = backwardMatch;
-      selection.format = mParenthesesMisMatchFormat;
-      selections.append(selection);
-    } else {
-      selection.cursor = backwardMatch;
-      selection.format = mParenthesesMatchFormat;
-
-      selection.cursor.setPosition(backwardMatch.selectionStart());
-      selection.cursor.setPosition(selection.cursor.position() + 1, QTextCursor::KeepAnchor);
-      selections.append(selection);
-
-      selection.cursor.setPosition(backwardMatch.selectionEnd());
-      selection.cursor.setPosition(selection.cursor.position() - 1, QTextCursor::KeepAnchor);
-      selections.append(selection);
-    }
-  }
-
-  if (forwardMatch.hasSelection()) {
-    QTextEdit::ExtraSelection selection;
-    if (forwardMatchType == TextBlockUserData::Mismatch) {
-      selection.cursor = forwardMatch;
-      selection.format = mParenthesesMisMatchFormat;
-      selections.append(selection);
-    } else {
-      selection.cursor = forwardMatch;
-      selection.format = mParenthesesMatchFormat;
-
-      selection.cursor.setPosition(forwardMatch.selectionStart());
-      selection.cursor.setPosition(selection.cursor.position() + 1, QTextCursor::KeepAnchor);
-      selections.append(selection);
-
-      selection.cursor.setPosition(forwardMatch.selectionEnd());
-      selection.cursor.setPosition(selection.cursor.position() - 1, QTextCursor::KeepAnchor);
-      selections.append(selection);
-    }
-  }
-  setExtraSelections(selections);
+  Utilities::highlightParentheses(this, mParenthesesMatchFormat, mParenthesesMisMatchFormat);
 }
 
 /*!
@@ -948,12 +868,7 @@ void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
    */
   /*! @todo We should add formatter classes to handle this based on editor language i.e Modelica or C/C++. */
   if (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return) {
-    TabSettings tabSettings;
-    if (dynamic_cast<MetaModelEditor*>(mpBaseEditor)) {
-      tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getMetaModelTabSettings();
-    } else {  //! @todo we should check all editors here.
-      tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
-    }
+    TabSettings tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTabSettings();
     QTextCursor cursor = textCursor();
     const QTextBlock previousBlock = cursor.block().previous();
     QString indentText = previousBlock.text();

@@ -39,7 +39,11 @@
 CEditor::CEditor(MainWindow *pMainWindow)
   : BaseEditor(pMainWindow)
 {
-
+  QFont font;
+  font.setFamily(pMainWindow->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(pMainWindow->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
+  mpPlainTextEdit->document()->setDefaultFont(font);
+  mpPlainTextEdit->setTabStopWidth(pMainWindow->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
 }
 
 /*!

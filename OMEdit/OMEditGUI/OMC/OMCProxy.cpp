@@ -1637,7 +1637,7 @@ QString OMCProxy::diffModelicaFileListings(QString before, QString after)
   QString escapedAfter = StringHandler::escapeString(after);
   QString result;
   // only use the diffModelicaFileListings when preserve text indentation settings is true
-  if (mpMainWindow->getOptionsDialog()->getModelicaTextEditorPage()->getPreserveTextIndentationCheckBox()->isChecked()) {
+  if (mpMainWindow->getOptionsDialog()->getModelicaEditorPage()->getPreserveTextIndentationCheckBox()->isChecked()) {
     sendCommand("diffModelicaFileListings(\"" + escapedBefore + "\", \"" + escapedAfter + "\", OpenModelica.Scripting.DiffFormat.plain)");
     result = StringHandler::unparse(getResult());
     printMessagesStringInternal();

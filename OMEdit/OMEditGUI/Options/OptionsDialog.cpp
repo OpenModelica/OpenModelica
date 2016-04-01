@@ -51,7 +51,10 @@ OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
   mpMainWindow = pMainWindow;
   mpGeneralSettingsPage = new GeneralSettingsPage(this);
   mpLibrariesPage = new LibrariesPage(this);
-  mpModelicaTextEditorPage = new ModelicaTextEditorPage(this);
+  mpTextEditorPage = new TextEditorPage(this);
+  mpModelicaEditorPage = new ModelicaEditorPage(this);
+  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpModelicaEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpModelicaEditorPage, SIGNAL(updatePreview()));
   mpGraphicalViewsPage = new GraphicalViewsPage(this);
   mpSimulationPage = new SimulationPage(this);
   mpMessagesPage = new MessagesPage(this);
@@ -64,6 +67,8 @@ OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
   mpFMIPage = new FMIPage(this);
   mpTLMPage = new TLMPage(this);
   mpMetaModelEditorPage = new MetaModelEditorPage(this);
+  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpMetaModelEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpMetaModelEditorPage, SIGNAL(updatePreview()));
   // get the settings
   readSettings();
   // set up the Options Dialog
@@ -76,7 +81,8 @@ void OptionsDialog::readSettings()
   mpSettings->sync();
   readGeneralSettings();
   readLibrariesSettings();
-  readModelicaTextSettings();
+  readTextEditorSettings();
+  readModelicaEditorSettings();
   emit modelicaTextSettingsChanged();
   readGraphicalViewsSettings();
   readSimulationSettings();
@@ -202,61 +208,88 @@ void OptionsDialog::readLibrariesSettings()
   mpSettings->endGroup();
 }
 
-//! Reads the ModelicaText settings from omedit.ini
-void OptionsDialog::readModelicaTextSettings()
+/*!
+ * \brief OptionsDialog::readTextEditorSettings
+ * Reads the Text editor settings from omedit.ini
+ */
+void OptionsDialog::readTextEditorSettings()
 {
-  int currentIndex;
+  int index;
+  if (mpSettings->contains("textEditor/lineEnding")) {
+    index = mpTextEditorPage->getLineEndingComboBox()->findData(mpSettings->value("textEditor/lineEnding").toInt());
+    if (index > -1) {
+      mpTextEditorPage->getLineEndingComboBox()->setCurrentIndex(index);
+    }
+  }
+  if (mpSettings->contains("textEditor/bom")) {
+    index = mpTextEditorPage->getBOMComboBox()->findData(mpSettings->value("textEditor/bom").toInt());
+    if (index > -1) {
+      mpTextEditorPage->getBOMComboBox()->setCurrentIndex(index);
+    }
+  }
   if (mpSettings->contains("textEditor/tabPolicy")) {
-    currentIndex = mpModelicaTextEditorPage->getTabPolicyComboBox()->findData(mpSettings->value("textEditor/tabPolicy").toInt());
-    mpModelicaTextEditorPage->getTabPolicyComboBox()->setCurrentIndex(currentIndex);
+    index = mpTextEditorPage->getTabPolicyComboBox()->findData(mpSettings->value("textEditor/tabPolicy").toInt());
+    if (index > -1) {
+      mpTextEditorPage->getTabPolicyComboBox()->setCurrentIndex(index);
+    }
   }
   if (mpSettings->contains("textEditor/tabSize")) {
-    mpModelicaTextEditorPage->getTabSizeSpinBox()->setValue(mpSettings->value("textEditor/tabSize").toInt());
+    mpTextEditorPage->getTabSizeSpinBox()->setValue(mpSettings->value("textEditor/tabSize").toInt());
   }
   if (mpSettings->contains("textEditor/indentSize")) {
-    mpModelicaTextEditorPage->getIndentSpinBox()->setValue(mpSettings->value("textEditor/indentSize").toInt());
-  }
-  if (mpSettings->contains("textEditor/preserveTextIndentation")) {
-    mpModelicaTextEditorPage->getPreserveTextIndentationCheckBox()->setChecked(mpSettings->value("textEditor/preserveTextIndentation").toBool());
+    mpTextEditorPage->getIndentSpinBox()->setValue(mpSettings->value("textEditor/indentSize").toInt());
   }
   if (mpSettings->contains("textEditor/enableSyntaxHighlighting")) {
-    mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->setChecked(mpSettings->value("textEditor/enableSyntaxHighlighting").toBool());
+    mpTextEditorPage->getSyntaxHighlightingCheckbox()->setChecked(mpSettings->value("textEditor/enableSyntaxHighlighting").toBool());
   }
   if (mpSettings->contains("textEditor/matchParenthesesCommentsQuotes")) {
-    mpModelicaTextEditorPage->getMatchParenthesesCommentsQuotesCheckBox()->setChecked(mpSettings->value("textEditor/matchParenthesesCommentsQuotes").toBool());
+    mpTextEditorPage->getMatchParenthesesCommentsQuotesCheckBox()->setChecked(mpSettings->value("textEditor/matchParenthesesCommentsQuotes").toBool());
   }
   if (mpSettings->contains("textEditor/enableLineWrapping")) {
-    mpModelicaTextEditorPage->getLineWrappingCheckbox()->setChecked(mpSettings->value("textEditor/enableLineWrapping").toBool());
+    mpTextEditorPage->getLineWrappingCheckbox()->setChecked(mpSettings->value("textEditor/enableLineWrapping").toBool());
   }
   if (mpSettings->contains("textEditor/fontFamily")) {
     // select font family item
-    currentIndex = mpModelicaTextEditorPage->getFontFamilyComboBox()->findText(mpSettings->value("textEditor/fontFamily").toString(), Qt::MatchExactly);
-    mpModelicaTextEditorPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
+    index = mpTextEditorPage->getFontFamilyComboBox()->findText(mpSettings->value("textEditor/fontFamily").toString(), Qt::MatchExactly);
+    if (index > -1) {
+      mpTextEditorPage->getFontFamilyComboBox()->setCurrentIndex(index);
+    }
   }
   if (mpSettings->contains("textEditor/fontSize")) {
     // select font size item
-    mpModelicaTextEditorPage->getFontSizeSpinBox()->setValue(mpSettings->value("textEditor/fontSize").toDouble());
+    mpTextEditorPage->getFontSizeSpinBox()->setValue(mpSettings->value("textEditor/fontSize").toDouble());
   }
-  if (mpSettings->contains("textEditor/textRuleColor")) {
-    mpModelicaTextEditorPage->setTextRuleColor(QColor(mpSettings->value("textEditor/textRuleColor").toUInt()));
+}
+
+/*!
+ * \brief OptionsDialog::readModelicaEditorSettings
+ * Reads the ModelicaEditor settings from omedit.ini
+ */
+void OptionsDialog::readModelicaEditorSettings()
+{
+  if (mpSettings->contains("modelicaEditor/preserveTextIndentation")) {
+    mpModelicaEditorPage->getPreserveTextIndentationCheckBox()->setChecked(mpSettings->value("modelicaEditor/preserveTextIndentation").toBool());
   }
-  if (mpSettings->contains("textEditor/keywordRuleColor")) {
-    mpModelicaTextEditorPage->setKeywordRuleColor(QColor(mpSettings->value("textEditor/keywordRuleColor").toUInt()));
+  if (mpSettings->contains("modelicaEditor/textRuleColor")) {
+    mpModelicaEditorPage->setTextRuleColor(QColor(mpSettings->value("modelicaEditor/textRuleColor").toUInt()));
   }
-  if (mpSettings->contains("textEditor/typeRuleColor")) {
-    mpModelicaTextEditorPage->setTypeRuleColor(QColor(mpSettings->value("textEditor/typeRuleColor").toUInt()));
+  if (mpSettings->contains("modelicaEditor/keywordRuleColor")) {
+    mpModelicaEditorPage->setKeywordRuleColor(QColor(mpSettings->value("modelicaEditor/keywordRuleColor").toUInt()));
   }
-  if (mpSettings->contains("textEditor/functionRuleColor")) {
-    mpModelicaTextEditorPage->setFunctionRuleColor(QColor(mpSettings->value("textEditor/functionRuleColor").toUInt()));
+  if (mpSettings->contains("modelicaEditor/typeRuleColor")) {
+    mpModelicaEditorPage->setTypeRuleColor(QColor(mpSettings->value("modelicaEditor/typeRuleColor").toUInt()));
   }
-  if (mpSettings->contains("textEditor/quotesRuleColor")) {
-    mpModelicaTextEditorPage->setQuotesRuleColor(QColor(mpSettings->value("textEditor/quotesRuleColor").toUInt()));
+  if (mpSettings->contains("modelicaEditor/functionRuleColor")) {
+    mpModelicaEditorPage->setFunctionRuleColor(QColor(mpSettings->value("modelicaEditor/functionRuleColor").toUInt()));
   }
-  if (mpSettings->contains("textEditor/commentRuleColor")) {
-    mpModelicaTextEditorPage->setCommentRuleColor(QColor(mpSettings->value("textEditor/commentRuleColor").toUInt()));
+  if (mpSettings->contains("modelicaEditor/quotesRuleColor")) {
+    mpModelicaEditorPage->setQuotesRuleColor(QColor(mpSettings->value("modelicaEditor/quotesRuleColor").toUInt()));
   }
-  if (mpSettings->contains("textEditor/numberRuleColor")) {
-    mpModelicaTextEditorPage->setNumberRuleColor(QColor(mpSettings->value("textEditor/numberRuleColor").toUInt()));
+  if (mpSettings->contains("modelicaEditor/commentRuleColor")) {
+    mpModelicaEditorPage->setCommentRuleColor(QColor(mpSettings->value("modelicaEditor/commentRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("modelicaEditor/numberRuleColor")) {
+    mpModelicaEditorPage->setNumberRuleColor(QColor(mpSettings->value("modelicaEditor/numberRuleColor").toUInt()));
   }
 }
 
@@ -572,43 +605,27 @@ void OptionsDialog::readTLMSettings()
   }
 }
 
-//! Reads the MetaModelEditor settings from omedit.ini
+/*!
+ * \brief OptionsDialog::readMetaModelEditorSettings
+ * Reads the MetaModelEditor settings from omedit.ini
+ */
 void OptionsDialog::readMetaModelEditorSettings()
 {
-  int currentIndex;
-  if (mpSettings->contains("MetaModelEditor/tabPolicy")) {
-    currentIndex = mpMetaModelEditorPage->getTabPolicyComboBox()->findData(mpSettings->value("MetaModelEditor/tabPolicy").toInt());
-    mpMetaModelEditorPage->getTabPolicyComboBox()->setCurrentIndex(currentIndex);
-  }
-  if (mpSettings->contains("MetaModelEditor/tabSize")) {
-    mpMetaModelEditorPage->getTabSizeSpinBox()->setValue(mpSettings->value("MetaModelEditor/tabSize").toInt());
-  }
-  if (mpSettings->contains("MetaModelEditor/indentSize")) {
-    mpMetaModelEditorPage->getIndentSpinBox()->setValue(mpSettings->value("MetaModelEditor/indentSize").toInt());
-  }
-  if (mpSettings->contains("MetaModelEditor/enableSyntaxHighlighting")) {
-    mpMetaModelEditorPage->getSyntaxHighlightingCheckbox()->setChecked(mpSettings->value("MetaModelEditor/enableSyntaxHighlighting").toBool());
-  }
-  if (mpSettings->contains("MetaModelEditor/enableLineWrapping")) {
-    mpMetaModelEditorPage->getLineWrappingCheckbox()->setChecked(mpSettings->value("MetaModelEditor/enableLineWrapping").toBool());
-  }
-  if (mpSettings->contains("MetaModelEditor/fontFamily")){
-      // select font family item
-    currentIndex = mpMetaModelEditorPage->getFontFamilyComboBox()->findText(mpSettings->value("MetaModelEditor/fontFamily").toString(), Qt::MatchExactly);
-    mpMetaModelEditorPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
-  }
-  if (mpSettings->contains("MetaModelEditor/fontSize"))
-    mpMetaModelEditorPage->getFontSizeSpinBox()->setValue(mpSettings->value("MetaModelEditor/fontSize").toDouble());
-  if (mpSettings->contains("MetaModelEditor/textRuleColor"))
+  if (mpSettings->contains("MetaModelEditor/textRuleColor")) {
     mpMetaModelEditorPage->setTextRuleColor(QColor(mpSettings->value("MetaModelEditor/textRuleColor").toUInt()));
-  if (mpSettings->contains("MetaModelEditor/commentRuleColor"))
+  }
+  if (mpSettings->contains("MetaModelEditor/commentRuleColor")) {
     mpMetaModelEditorPage->setCommentRuleColor(QColor(mpSettings->value("MetaModelEditor/commentRuleColor").toUInt()));
-  if (mpSettings->contains("MetaModelEditor/tagRuleColor"))
+  }
+  if (mpSettings->contains("MetaModelEditor/tagRuleColor")) {
     mpMetaModelEditorPage->setTagRuleColor(QColor(mpSettings->value("MetaModelEditor/tagRuleColor").toUInt()));
-  if (mpSettings->contains("MetaModelEditor/quotesRuleColor"))
+  }
+  if (mpSettings->contains("MetaModelEditor/quotesRuleColor")) {
     mpMetaModelEditorPage->setQuotesRuleColor(QColor(mpSettings->value("MetaModelEditor/quotesRuleColor").toUInt()));
-  if (mpSettings->contains("MetaModelEditor/elementsRuleColor"))
+  }
+  if (mpSettings->contains("MetaModelEditor/elementsRuleColor")) {
     mpMetaModelEditorPage->setElementRuleColor(QColor(mpSettings->value("MetaModelEditor/elementsRuleColor").toUInt()));
+  }
 }
 
 //! Saves the General section settings to omedit.ini
@@ -713,25 +730,38 @@ void OptionsDialog::saveLibrariesSettings()
   mpSettings->endGroup();
 }
 
-//! Saves the ModelicaText settings to omedit.ini
-void OptionsDialog::saveModelicaTextSettings()
+/*!
+ * \brief OptionsDialog::saveTextEditorSettings
+ * Saves the TextEditor settings to omedit.ini
+ */
+void OptionsDialog::saveTextEditorSettings()
 {
-  mpSettings->setValue("textEditor/tabPolicy", mpModelicaTextEditorPage->getTabPolicyComboBox()->itemData(mpModelicaTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
-  mpSettings->setValue("textEditor/tabSize", mpModelicaTextEditorPage->getTabSizeSpinBox()->value());
-  mpSettings->setValue("textEditor/indentSize", mpModelicaTextEditorPage->getIndentSpinBox()->value());
-  mpSettings->setValue("textEditor/preserveTextIndentation", mpModelicaTextEditorPage->getPreserveTextIndentationCheckBox()->isChecked());
-  mpSettings->setValue("textEditor/enableSyntaxHighlighting", mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->isChecked());
-  mpSettings->setValue("textEditor/matchParenthesesCommentsQuotes", mpModelicaTextEditorPage->getMatchParenthesesCommentsQuotesCheckBox()->isChecked());
-  mpSettings->setValue("textEditor/enableLineWrapping", mpModelicaTextEditorPage->getLineWrappingCheckbox()->isChecked());
-  mpSettings->setValue("textEditor/fontFamily", mpModelicaTextEditorPage->getFontFamilyComboBox()->currentFont().family());
-  mpSettings->setValue("textEditor/fontSize", mpModelicaTextEditorPage->getFontSizeSpinBox()->value());
-  mpSettings->setValue("textEditor/textRuleColor", mpModelicaTextEditorPage->getTextRuleColor().rgba());
-  mpSettings->setValue("textEditor/keywordRuleColor", mpModelicaTextEditorPage->getKeywordRuleColor().rgba());
-  mpSettings->setValue("textEditor/typeRuleColor", mpModelicaTextEditorPage->getTypeRuleColor().rgba());
-  mpSettings->setValue("textEditor/functionRuleColor", mpModelicaTextEditorPage->getFunctionRuleColor().rgba());
-  mpSettings->setValue("textEditor/quotesRuleColor", mpModelicaTextEditorPage->getQuotesRuleColor().rgba());
-  mpSettings->setValue("textEditor/commentRuleColor", mpModelicaTextEditorPage->getCommentRuleColor().rgba());
-  mpSettings->setValue("textEditor/numberRuleColor", mpModelicaTextEditorPage->getNumberRuleColor().rgba());
+  mpSettings->setValue("textEditor/lineEnding", mpTextEditorPage->getLineEndingComboBox()->itemData(mpTextEditorPage->getLineEndingComboBox()->currentIndex()).toInt());
+  mpSettings->setValue("textEditor/bom", mpTextEditorPage->getBOMComboBox()->itemData(mpTextEditorPage->getBOMComboBox()->currentIndex()).toInt());
+  mpSettings->setValue("textEditor/tabPolicy", mpTextEditorPage->getTabPolicyComboBox()->itemData(mpTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
+  mpSettings->setValue("textEditor/tabSize", mpTextEditorPage->getTabSizeSpinBox()->value());
+  mpSettings->setValue("textEditor/indentSize", mpTextEditorPage->getIndentSpinBox()->value());
+  mpSettings->setValue("textEditor/enableSyntaxHighlighting", mpTextEditorPage->getSyntaxHighlightingCheckbox()->isChecked());
+  mpSettings->setValue("textEditor/matchParenthesesCommentsQuotes", mpTextEditorPage->getMatchParenthesesCommentsQuotesCheckBox()->isChecked());
+  mpSettings->setValue("textEditor/enableLineWrapping", mpTextEditorPage->getLineWrappingCheckbox()->isChecked());
+  mpSettings->setValue("textEditor/fontFamily", mpTextEditorPage->getFontFamilyComboBox()->currentFont().family());
+  mpSettings->setValue("textEditor/fontSize", mpTextEditorPage->getFontSizeSpinBox()->value());
+}
+
+/*!
+ * \brief OptionsDialog::saveModelicaEditorSettings
+ * Saves the ModelicaEditor settings to omedit.ini
+ */
+void OptionsDialog::saveModelicaEditorSettings()
+{
+  mpSettings->setValue("modelicaEditor/preserveTextIndentation", mpModelicaEditorPage->getPreserveTextIndentationCheckBox()->isChecked());
+  mpSettings->setValue("modelicaEditor/textRuleColor", mpModelicaEditorPage->getTextRuleColor().rgba());
+  mpSettings->setValue("modelicaEditor/keywordRuleColor", mpModelicaEditorPage->getKeywordRuleColor().rgba());
+  mpSettings->setValue("modelicaEditor/typeRuleColor", mpModelicaEditorPage->getTypeRuleColor().rgba());
+  mpSettings->setValue("modelicaEditor/functionRuleColor", mpModelicaEditorPage->getFunctionRuleColor().rgba());
+  mpSettings->setValue("modelicaEditor/quotesRuleColor", mpModelicaEditorPage->getQuotesRuleColor().rgba());
+  mpSettings->setValue("modelicaEditor/commentRuleColor", mpModelicaEditorPage->getCommentRuleColor().rgba());
+  mpSettings->setValue("modelicaEditor/numberRuleColor", mpModelicaEditorPage->getNumberRuleColor().rgba());
 }
 
 //! Saves the GraphicsViews section settings to omedit.ini
@@ -927,16 +957,12 @@ void OptionsDialog::saveTLMSettings()
   mpSettings->setValue("TLM/MonitorProcess", mpTLMPage->getTLMMonitorProcessTextBox()->text());
 }
 
-//! Saves the MetaModelEditor settings to omedit.ini
+/*!
+ * \brief OptionsDialog::saveMetaModelEditorSettings
+ * Saves the MetaModelEditor settings to omedit.ini
+ */
 void OptionsDialog::saveMetaModelEditorSettings()
 {
-  mpSettings->setValue("MetaModelEditor/tabPolicy", mpMetaModelEditorPage->getTabPolicyComboBox()->itemData(mpModelicaTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
-  mpSettings->setValue("MetaModelEditor/tabSize", mpMetaModelEditorPage->getTabSizeSpinBox()->value());
-  mpSettings->setValue("MetaModelEditor/indentSize", mpMetaModelEditorPage->getIndentSpinBox()->value());
-  mpSettings->setValue("MetaModelEditor/enableSyntaxHighlighting", mpMetaModelEditorPage->getSyntaxHighlightingCheckbox()->isChecked());
-  mpSettings->setValue("MetaModelEditor/enableLineWrapping", mpMetaModelEditorPage->getLineWrappingCheckbox()->isChecked());
-  mpSettings->setValue("MetaModelEditor/fontFamily", mpMetaModelEditorPage->getFontFamilyComboBox()->currentFont().family());
-  mpSettings->setValue("MetaModelEditor/fontSize", mpMetaModelEditorPage->getFontSizeSpinBox()->value());
   mpSettings->setValue("MetaModelEditor/textRuleColor", mpMetaModelEditorPage->getTextRuleColor().rgba());
   mpSettings->setValue("MetaModelEditor/commentRuleColor", mpMetaModelEditorPage->getCommentRuleColor().rgba());
   mpSettings->setValue("MetaModelEditor/tagRuleColor", mpMetaModelEditorPage->getTagRuleColor().rgba());
@@ -1003,10 +1029,14 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pLibrariesItem = new QListWidgetItem(mpOptionsList);
   pLibrariesItem->setIcon(QIcon(":/Resources/icons/libraries.svg"));
   pLibrariesItem->setText(Helper::libraries);
-  // Modelica Text Item
-  QListWidgetItem *pModelicaTextEditorItem = new QListWidgetItem(mpOptionsList);
-  pModelicaTextEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  pModelicaTextEditorItem->setText(tr("Modelica Text Editor"));
+  // Text Editor Item
+  QListWidgetItem *pTextEditorItem = new QListWidgetItem(mpOptionsList);
+  pTextEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+  pTextEditorItem->setText(tr("Text Editor"));
+  // Modelica Editor Item
+  QListWidgetItem *pModelicaEditorItem = new QListWidgetItem(mpOptionsList);
+  pModelicaEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+  pModelicaEditorItem->setText(tr("Modelica Editor"));
   // Graphical Views Item
   QListWidgetItem *pGraphicalViewsItem = new QListWidgetItem(mpOptionsList);
   pGraphicalViewsItem->setIcon(QIcon(":/Resources/icons/modeling.png"));
@@ -1064,7 +1094,8 @@ void OptionsDialog::createPages()
   mpPagesWidget->setContentsMargins(5, 2, 5, 2);
   mpPagesWidget->addWidget(mpGeneralSettingsPage);
   mpPagesWidget->addWidget(mpLibrariesPage);
-  mpPagesWidget->addWidget(mpModelicaTextEditorPage);
+  mpPagesWidget->addWidget(mpTextEditorPage);
+  mpPagesWidget->addWidget(mpModelicaEditorPage);
   mpPagesWidget->addWidget(mpGraphicalViewsPage);
   mpPagesWidget->addWidget(mpSimulationPage);
   mpPagesWidget->addWidget(mpMessagesPage);
@@ -1091,8 +1122,9 @@ void OptionsDialog::saveDialogGeometry()
 }
 
 /*!
-  Reimplementation of QDialog::show method.
-  */
+ * \brief OptionsDialog::show
+ * Reimplementation of QDialog::show method.
+ */
 void OptionsDialog::show()
 {
   /* restore the window geometry. */
@@ -1102,24 +1134,26 @@ void OptionsDialog::show()
   setVisible(true);
 }
 
-TabSettings OptionsDialog::getModelicaTabSettings()
+/*!
+ * \brief OptionsDialog::getTabSettings
+ * Returns a TabSettings
+ * \return
+ */
+TabSettings OptionsDialog::getTabSettings()
 {
   TabSettings tabSettings;
-  tabSettings.setTabPolicy(mpModelicaTextEditorPage->getTabPolicyComboBox()->itemData(mpModelicaTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
-  tabSettings.setTabSize(mpModelicaTextEditorPage->getTabSizeSpinBox()->value());
-  tabSettings.setIndentSize(mpModelicaTextEditorPage->getIndentSpinBox()->value());
+  tabSettings.setTabPolicy(mpTextEditorPage->getTabPolicyComboBox()->itemData(mpTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
+  tabSettings.setTabSize(mpTextEditorPage->getTabSizeSpinBox()->value());
+  tabSettings.setIndentSize(mpTextEditorPage->getIndentSpinBox()->value());
   return tabSettings;
 }
 
-TabSettings OptionsDialog::getMetaModelTabSettings()
-{
-  TabSettings tabSettings;
-  tabSettings.setTabPolicy(mpMetaModelEditorPage->getTabPolicyComboBox()->itemData(mpMetaModelEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
-  tabSettings.setTabSize(mpMetaModelEditorPage->getTabSizeSpinBox()->value());
-  tabSettings.setIndentSize(mpMetaModelEditorPage->getIndentSpinBox()->value());
-  return tabSettings;
-}
-//! Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
+/*!
+ * \brief OptionsDialog::changePage
+ * Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
+ * \param current
+ * \param previous
+ */
 void OptionsDialog::changePage(QListWidgetItem *current, QListWidgetItem *previous)
 {
   if (!current) {
@@ -1142,7 +1176,8 @@ void OptionsDialog::saveSettings()
 {
   saveGeneralSettings();
   saveLibrariesSettings();
-  saveModelicaTextSettings();
+  saveTextEditorSettings();
+  saveModelicaEditorSettings();
   // emit the signal so that all syntax highlighters are updated
   emit modelicaTextSettingsChanged();
   saveGraphicalViewsSettings();
@@ -1917,15 +1952,48 @@ void AddUserLibraryDialog::addUserLibrary()
   accept();
 }
 
-//! @class ModelicaTextEditorPage
-//! @brief Creates an interface for Modelica Text settings.
-
-//! Constructor
-//! @param pOptionsDialog is the pointer to OptionsDialog
-ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
+/*!
+ * \class TextEditorPage
+ * \brief Creates an interface for Text Editor settings.
+ */
+/*!
+ * \brief TextEditorPage::TextEditorPage
+ * \param pOptionsDialog is the pointer to OptionsDialog
+ */
+TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
+  // format groupbox
+  mpFormatGroupBox = new QGroupBox(tr("Format"));
+  // line ending
+  mpLineEndingLabel = new Label(tr("Line Ending:"));
+  mpLineEndingComboBox = new QComboBox;
+  mpLineEndingComboBox->addItem(tr("Windows (CRLF)"), Utilities::CRLFLineEnding);
+  mpLineEndingComboBox->addItem(tr("Unix (LF)"), Utilities::LFLineEnding);
+#ifndef WIN32
+  mpLineEndingComboBox->setCurrentIndex(1);
+#endif
+  // Byte Order Mark BOM
+  mpBOMLabel = new Label(tr("Byte Order Mark (BOM):"));
+  mpBOMComboBox = new QComboBox;
+  mpBOMComboBox->setToolTip(tr("<html><head/><body>"
+                               "<p>Note that BOMs are uncommon and treated incorrectly by some editors, so it usually makes little sense to add any.</p>"
+                               "<ul><li><i>Always Add:</i> always add a BOM when saving a file.</li>"
+                               "<li><i>Keep If Already Present:</i> save the file with a BOM if it already had one when it was loaded.</li>"
+                               "<li><i>Always Delete:</i> never write a BOM, possibly deleting a pre-existing one.</li></ul>"
+                               "</body></html>"));
+  mpBOMComboBox->addItem(tr("Always Add"), Utilities::AlwaysAddBom);
+  mpBOMComboBox->addItem(tr("Keep If Already Present"), Utilities::KeepBom);
+  mpBOMComboBox->addItem(tr("Always Delete"), Utilities::AlwaysDeleteBom);
+  mpBOMComboBox->setCurrentIndex(1);
+  // set format groupbox layout
+  QGridLayout *pFormatGroupBoxLayout = new QGridLayout;
+  pFormatGroupBoxLayout->addWidget(mpLineEndingLabel, 0, 0);
+  pFormatGroupBoxLayout->addWidget(mpLineEndingComboBox, 0, 1);
+  pFormatGroupBoxLayout->addWidget(mpBOMLabel, 1, 0);
+  pFormatGroupBoxLayout->addWidget(mpBOMComboBox, 1, 1);
+  mpFormatGroupBox->setLayout(pFormatGroupBoxLayout);
   // tabs and indentation groupbox
   mpTabsAndIndentation = new QGroupBox(tr("Tabs and Indentation"));
   // tab policy
@@ -1943,9 +2011,6 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   mpIndentSpinBox = new QSpinBox;
   mpIndentSpinBox->setRange(1, 20);
   mpIndentSpinBox->setValue(2);
-  // preserve text indentation
-  mpPreserveTextIndentationCheckBox = new QCheckBox(tr("Preserve Text Indentation"));
-  mpPreserveTextIndentationCheckBox->setChecked(true);
   // set tabs & indentation groupbox layout
   QGridLayout *pTabsAndIndentationGroupBoxLayout = new QGridLayout;
   pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyLabel, 0, 0);
@@ -1954,7 +2019,6 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   pTabsAndIndentationGroupBoxLayout->addWidget(mpTabSizeSpinBox, 1, 1);
   pTabsAndIndentationGroupBoxLayout->addWidget(mpIndentSizeLabel, 2, 0);
   pTabsAndIndentationGroupBoxLayout->addWidget(mpIndentSpinBox, 2, 1);
-  pTabsAndIndentationGroupBoxLayout->addWidget(mpPreserveTextIndentationCheckBox, 3, 0, 1, 2);
   mpTabsAndIndentation->setLayout(pTabsAndIndentationGroupBoxLayout);
   // syntax highlight and text wrapping groupbox
   mpSyntaxHighlightAndTextWrappingGroupBox = new QGroupBox(tr("Syntax Highlight and Text Wrapping"));
@@ -1966,29 +2030,103 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   // line wrap checkbox
   mpLineWrappingCheckbox = new QCheckBox(tr("Enable Line Wrapping"));
   mpLineWrappingCheckbox->setChecked(true);
-  connect(mpLineWrappingCheckbox, SIGNAL(toggled(bool)), this, SLOT(setLineWrapping()));
   // set Syntax Highlight & Text Wrapping groupbox layout
   QGridLayout *pSyntaxHighlightAndTextWrappingGroupBoxLayout = new QGridLayout;
   pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpSyntaxHighlightingCheckbox, 0, 0);
   pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpMatchParenthesesCommentsQuotesCheckBox, 1, 0);
   pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpLineWrappingCheckbox, 2, 0);
   mpSyntaxHighlightAndTextWrappingGroupBox->setLayout(pSyntaxHighlightAndTextWrappingGroupBoxLayout);
-  // fonts & colors groupbox
-  mpFontColorsGroupBox = new QGroupBox(Helper::fontAndColors);
+  // font groupbox
+  mpFontGroupBox = new QGroupBox(tr("Font"));
   // font family combobox
   mpFontFamilyLabel = new Label(Helper::fontFamily);
   mpFontFamilyComboBox = new QFontComboBox;
   int currentIndex;
   currentIndex = mpFontFamilyComboBox->findText(Helper::monospacedFontInfo.family(), Qt::MatchExactly);
   mpFontFamilyComboBox->setCurrentIndex(currentIndex);
-  connect(mpFontFamilyComboBox, SIGNAL(currentFontChanged(QFont)), SIGNAL(updatePreview()));
   // font size combobox
   mpFontSizeLabel = new Label(Helper::fontSize);
   mpFontSizeSpinBox = new DoubleSpinBox;
   mpFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpFontSizeSpinBox->setValue(Helper::monospacedFontInfo.pointSizeF());
   mpFontSizeSpinBox->setSingleStep(1);
-  connect(mpFontSizeSpinBox, SIGNAL(valueChanged(double)), SIGNAL(updatePreview()));
+  // set font groupbox layout
+  QGridLayout *pFontGroupBoxLayout = new QGridLayout;
+  pFontGroupBoxLayout->addWidget(mpFontFamilyLabel, 0, 0);
+  pFontGroupBoxLayout->addWidget(mpFontSizeLabel, 0, 1);
+  pFontGroupBoxLayout->addWidget(mpFontFamilyComboBox, 1, 0);
+  pFontGroupBoxLayout->addWidget(mpFontSizeSpinBox, 1, 1);
+  mpFontGroupBox->setLayout(pFontGroupBoxLayout);
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->addWidget(mpFormatGroupBox);
+  pMainLayout->addWidget(mpTabsAndIndentation);
+  pMainLayout->addWidget(mpSyntaxHighlightAndTextWrappingGroupBox);
+  pMainLayout->addWidget(mpFontGroupBox);
+  setLayout(pMainLayout);
+}
+
+PreviewPlainTextEdit::PreviewPlainTextEdit(QWidget *parent)
+ : QPlainTextEdit(parent)
+{
+  QTextDocument *pTextDocument = document();
+  pTextDocument->setDocumentMargin(2);
+  BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(pTextDocument);
+  pTextDocument->setDocumentLayout(pModelicaTextDocumentLayout);
+  setDocument(pTextDocument);
+  // parentheses matcher
+  mParenthesesMatchFormat = Utilities::getParenthesesMatchFormat();
+  mParenthesesMisMatchFormat = Utilities::getParenthesesMisMatchFormat();
+
+  updateHighlights();
+  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateHighlights()));
+}
+
+/*!
+ * \brief PreviewPlainTextEdit::highlightCurrentLine
+ * Hightlights the current line.
+ */
+void PreviewPlainTextEdit::highlightCurrentLine()
+{
+  Utilities::highlightCurrentLine(this);
+}
+
+/*!
+ * \brief PreviewPlainTextEdit::highlightParentheses
+ * Highlights the matching parentheses.
+ */
+void PreviewPlainTextEdit::highlightParentheses()
+{
+  Utilities::highlightParentheses(this, mParenthesesMatchFormat, mParenthesesMisMatchFormat);
+}
+
+void PreviewPlainTextEdit::updateHighlights()
+{
+  QList<QTextEdit::ExtraSelection> selections;
+  setExtraSelections(selections);
+  highlightCurrentLine();
+  highlightParentheses();
+}
+
+/*!
+ * \class ModelicaEditorPage
+ * \brief Creates an interface for Modelica Text settings.
+ */
+/*!
+ * \brief ModelicaEditorPage::ModelicaEditorPage
+ * \param pOptionsDialog is the pointer to OptionsDialog
+ */
+ModelicaEditorPage::ModelicaEditorPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  // preserve text indentation
+  mpPreserveTextIndentationCheckBox = new QCheckBox(tr("Preserve Text Indentation"));
+  mpPreserveTextIndentationCheckBox->setChecked(true);
+  // colors groupbox
+  mpColorsGroupBox = new QGroupBox(Helper::Colors);
   // Item color label and pick color button
   mpItemColorLabel = new Label(tr("Item Color:"));
   mpItemColorPickButton = new QPushButton(Helper::pickColor);
@@ -2005,8 +2143,8 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   mpItemsList->setCurrentRow(0, QItemSelectionModel::Select);
   // preview textbox
   mpPreviewLabel = new Label(tr("Preview:"));
-  mpPreviewPlainTextBox = new QPlainTextEdit;
-  mpPreviewPlainTextBox->setTabStopWidth(Helper::tabWidth);
+  mpPreviewPlainTextEdit = new PreviewPlainTextEdit;
+  mpPreviewPlainTextEdit->setTabStopWidth(Helper::tabWidth);
   QString previewText;
   previewText.append("class HelloWorld /* block\n"
                      "comment */\n"
@@ -2017,38 +2155,36 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
                      "equation\n"
                      "\tder(x) = - a * x;\n"
                      "end HelloWorld;\n");
-  mpPreviewPlainTextBox->setPlainText(previewText);
+  mpPreviewPlainTextEdit->setPlainText(previewText);
   // highlight preview textbox
-  ModelicaTextHighlighter *pModelicaTextHighlighter = new ModelicaTextHighlighter(this, mpPreviewPlainTextBox);
+  ModelicaTextHighlighter *pModelicaTextHighlighter = new ModelicaTextHighlighter(this, mpPreviewPlainTextEdit);
   connect(this, SIGNAL(updatePreview()), pModelicaTextHighlighter, SLOT(settingsChanged()));
-  connect(mpSyntaxHighlightingCheckbox, SIGNAL(toggled(bool)), pModelicaTextHighlighter, SLOT(settingsChanged()));
-  connect(mpMatchParenthesesCommentsQuotesCheckBox, SIGNAL(toggled(bool)), pModelicaTextHighlighter, SLOT(settingsChanged()));
-  // set fonts & colors groupbox layout
-  QGridLayout *pFontsColorsGroupBoxLayout = new QGridLayout;
-  pFontsColorsGroupBoxLayout->addWidget(mpFontFamilyLabel, 0, 0);
-  pFontsColorsGroupBoxLayout->addWidget(mpFontSizeLabel, 0, 1);
-  pFontsColorsGroupBoxLayout->addWidget(mpFontFamilyComboBox, 1, 0);
-  pFontsColorsGroupBoxLayout->addWidget(mpFontSizeSpinBox, 1, 1);
-  pFontsColorsGroupBoxLayout->addWidget(mpItemsLabel, 2, 0);
-  pFontsColorsGroupBoxLayout->addWidget(mpItemColorLabel, 2, 1);
-  pFontsColorsGroupBoxLayout->addWidget(mpItemsList, 3, 0);
-  pFontsColorsGroupBoxLayout->addWidget(mpItemColorPickButton, 3, 1, Qt::AlignTop);
-  pFontsColorsGroupBoxLayout->addWidget(mpPreviewLabel, 4, 0, 1, 2);
-  pFontsColorsGroupBoxLayout->addWidget(mpPreviewPlainTextBox, 5, 0, 1, 2);
-  mpFontColorsGroupBox->setLayout(pFontsColorsGroupBoxLayout);
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingCheckbox(), SIGNAL(toggled(bool)),
+          pModelicaTextHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
+          pModelicaTextHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  // set colors groupbox layout
+  QGridLayout *pColorsGroupBoxLayout = new QGridLayout;
+  pColorsGroupBoxLayout->addWidget(mpItemsLabel, 1, 0);
+  pColorsGroupBoxLayout->addWidget(mpItemColorLabel, 1, 1);
+  pColorsGroupBoxLayout->addWidget(mpItemsList, 2, 0);
+  pColorsGroupBoxLayout->addWidget(mpItemColorPickButton, 2, 1, Qt::AlignTop);
+  pColorsGroupBoxLayout->addWidget(mpPreviewLabel, 3, 0, 1, 2);
+  pColorsGroupBoxLayout->addWidget(mpPreviewPlainTextEdit, 4, 0, 1, 2);
+  mpColorsGroupBox->setLayout(pColorsGroupBoxLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(mpTabsAndIndentation);
-  pMainLayout->addWidget(mpSyntaxHighlightAndTextWrappingGroupBox);
-  pMainLayout->addWidget(mpFontColorsGroupBox);
+  pMainLayout->addWidget(mpPreserveTextIndentationCheckBox);
+  pMainLayout->addWidget(mpColorsGroupBox);
   setLayout(pMainLayout);
 }
 
 //! Adds the Modelica Text settings rules to the mpItemsList.
-void ModelicaTextEditorPage::addListItems()
+void ModelicaEditorPage::addListItems()
 {
-  // don't change the Data of items as it is being used in ModelicaTextEditorPage::pickColor slot to identify the items
+  // don't change the Data of items as it is being used in ModelicaEditorPage::pickColor slot to identify the items
   // text
   mpTextItem = new QListWidgetItem(mpItemsList);
   mpTextItem->setText("Text");
@@ -2087,95 +2223,81 @@ void ModelicaTextEditorPage::addListItems()
 }
 
 /*!
- * \brief ModelicaTextEditorPage::setTextRuleColor
+ * \brief ModelicaEditorPage::setTextRuleColor
  * \param color
  */
-void ModelicaTextEditorPage::setTextRuleColor(QColor color)
+void ModelicaEditorPage::setTextRuleColor(QColor color)
 {
   mTextColor = color;
   mpTextItem->setForeground(color);
 }
 
 /*!
- * \brief ModelicaTextEditorPage::setNumberRuleColor
+ * \brief ModelicaEditorPage::setNumberRuleColor
  * \param color
  */
-void ModelicaTextEditorPage::setNumberRuleColor(QColor color)
+void ModelicaEditorPage::setNumberRuleColor(QColor color)
 {
   mNumberColor = color;
   mpNumberItem->setForeground(color);
 }
 
 /*!
- * \brief ModelicaTextEditorPage::setKeywordRuleColor
+ * \brief ModelicaEditorPage::setKeywordRuleColor
  * \param color
  */
-void ModelicaTextEditorPage::setKeywordRuleColor(QColor color)
+void ModelicaEditorPage::setKeywordRuleColor(QColor color)
 {
   mKeywordColor = color;
   mpKeywordItem->setForeground(color);
 }
 
 /*!
- * \brief ModelicaTextEditorPage::setTypeRuleColor
+ * \brief ModelicaEditorPage::setTypeRuleColor
  * \param color
  */
-void ModelicaTextEditorPage::setTypeRuleColor(QColor color)
+void ModelicaEditorPage::setTypeRuleColor(QColor color)
 {
   mTypeColor = color;
   mpTypeItem->setForeground(color);
 }
 
 /*!
- * \brief ModelicaTextEditorPage::setFunctionRuleColor
+ * \brief ModelicaEditorPage::setFunctionRuleColor
  * \param color
  */
-void ModelicaTextEditorPage::setFunctionRuleColor(QColor color)
+void ModelicaEditorPage::setFunctionRuleColor(QColor color)
 {
   mFunctionColor = color;
   mpFunctionItem->setForeground(color);
 }
 
 /*!
- * \brief ModelicaTextEditorPage::setQuotesRuleColor
+ * \brief ModelicaEditorPage::setQuotesRuleColor
  * \param color
  */
-void ModelicaTextEditorPage::setQuotesRuleColor(QColor color)
+void ModelicaEditorPage::setQuotesRuleColor(QColor color)
 {
   mQuotesColor = color;
   mpQuotesItem->setForeground(color);
 }
 
 /*!
- * \brief ModelicaTextEditorPage::setCommentRuleColor
+ * \brief ModelicaEditorPage::setCommentRuleColor
  * \param color
  */
-void ModelicaTextEditorPage::setCommentRuleColor(QColor color)
+void ModelicaEditorPage::setCommentRuleColor(QColor color)
 {
   mCommentColor = color;
   mpCommentItem->setForeground(color);
 }
 
 /*!
- * \brief ModelicaTextEditorPage::setLineWrapping
- * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
- * Sets the mpPreviewPlainTextBox line wrapping mode.
- */
-void ModelicaTextEditorPage::setLineWrapping()
-{
-  if (mpLineWrappingCheckbox->isChecked()) {
-    mpPreviewPlainTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
-  } else {
-    mpPreviewPlainTextBox->setLineWrapMode(QPlainTextEdit::NoWrap);
-  }
-}
-
-/*!
- * \brief ModelicaTextEditorPage::pickColor
+ * \brief ModelicaEditorPage::pickColor
  * Picks a color for one of the Modelica Text Settings rules.
  * This method is called when mpColorPickButton clicked SIGNAL raised.
  */
-void ModelicaTextEditorPage::pickColor()
+void ModelicaEditorPage::pickColor()
 {
   QListWidgetItem *item = mpItemsList->currentItem();
   QColor initialColor;
@@ -2216,6 +2338,20 @@ void ModelicaTextEditorPage::pickColor()
     setCommentRuleColor(color);
   }
   emit updatePreview();
+}
+
+/*!
+ * \brief ModelicaEditorPage::setLineWrapping
+ * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
+ * Sets the mpPreviewPlainTextBox line wrapping mode.
+ */
+void ModelicaEditorPage::setLineWrapping(bool enabled)
+{
+  if (enabled) {
+    mpPreviewPlainTextEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  } else {
+    mpPreviewPlainTextEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
+  }
 }
 
 GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
@@ -2761,7 +2897,7 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   pGeneralGroupBoxLayout->addWidget(mpResetMessagesNumberBeforeSimulationCheckBox, 1, 0, 1, 2);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   // Font and Colors
-  mpFontColorsGroupBox = new QGroupBox(Helper::fontAndColors);
+  mpFontColorsGroupBox = new QGroupBox(Helper::Colors);
   // font family combobox
   mpFontFamilyLabel = new Label(Helper::fontFamily);
   mpFontFamilyComboBox = new QFontComboBox;
@@ -3732,72 +3868,20 @@ void TLMPage::browseTLMMonitorProcess()
   mpTLMMonitorProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
                                                                      NULL, Helper::exeFileTypes, NULL));
 }
-
-//! @class MetaModelEditorPage
-//! @brief Creates an interface for MetaModel Text settings.
-
-//! Constructor
-//! @param pOptionsDialog is the pointer to OptionsDialog
+/*!
+ * \class MetaModelEditorPage
+ * \brief Creates an interface for MetaModel Text settings.
+ */
+/*!
+ * \brief MetaModelEditorPage::MetaModelEditorPage
+ * \param pOptionsDialog is the pointer to OptionsDialog
+ */
 MetaModelEditorPage::MetaModelEditorPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
-  // tabs and indentation groupbox
-  mpTabsAndIndentation = new QGroupBox(tr("Tabs and Indentation"));
-  // tab policy
-  mpTabPolicyLabel = new Label(tr("Tab Policy:"));
-  mpTabPolicyComboBox = new QComboBox;
-  mpTabPolicyComboBox->addItem(tr("Spaces Only"), 0);
-  mpTabPolicyComboBox->addItem(tr("Tabs Only"), 1);
-  // tab size
-  mpTabSizeLabel = new Label(tr("Tab Size:"));
-  mpTabSizeSpinBox = new QSpinBox;
-  mpTabSizeSpinBox->setRange(1, 20);
-  mpTabSizeSpinBox->setValue(4);
-  // indent size
-  mpIndentSizeLabel = new Label(tr("Indent Size:"));
-  mpIndentSpinBox = new QSpinBox;
-  mpIndentSpinBox->setRange(1, 20);
-  mpIndentSpinBox->setValue(2);
-  // set tabs & indentation groupbox layout
-  QGridLayout *pTabsAndIndentationGroupBoxLayout = new QGridLayout;
-  pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyLabel, 0, 0);
-  pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyComboBox, 0, 1);
-  pTabsAndIndentationGroupBoxLayout->addWidget(mpTabSizeLabel, 1, 0);
-  pTabsAndIndentationGroupBoxLayout->addWidget(mpTabSizeSpinBox, 1, 1);
-  pTabsAndIndentationGroupBoxLayout->addWidget(mpIndentSizeLabel, 2, 0);
-  pTabsAndIndentationGroupBoxLayout->addWidget(mpIndentSpinBox, 2, 1);
-  mpTabsAndIndentation->setLayout(pTabsAndIndentationGroupBoxLayout);
-  // syntax highlight and text wrapping groupbox
-  mpSyntaxHighlightAndTextWrappingGroupBox = new QGroupBox(tr("Syntax Highlight and Text Wrapping"));
-  // syntax highlighting checkbox
-  mpSyntaxHighlightingCheckbox = new QCheckBox(tr("Enable Syntax Highlighting"));
-  mpSyntaxHighlightingCheckbox->setChecked(true);
-  // line wrap checkbox
-  mpLineWrappingCheckbox = new QCheckBox(tr("Enable Line Wrapping"));
-  mpLineWrappingCheckbox->setChecked(true);
-  connect(mpLineWrappingCheckbox, SIGNAL(toggled(bool)), this, SLOT(setLineWrapping()));
-  // set Syntax Highlight & Text Wrapping groupbox layout
-  QGridLayout *pSyntaxHighlightAndTextWrappingGroupBoxLayout = new QGridLayout;
-  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpSyntaxHighlightingCheckbox, 0, 0);
-  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpLineWrappingCheckbox, 1, 0);
-  mpSyntaxHighlightAndTextWrappingGroupBox->setLayout(pSyntaxHighlightAndTextWrappingGroupBoxLayout);
-  // fonts & colors groupbox
-  mpFontColorsGroupBox = new QGroupBox(Helper::fontAndColors);
-  // font family combobox
-  mpFontFamilyLabel = new Label(Helper::fontFamily);
-  mpFontFamilyComboBox = new QFontComboBox;
-  int currentIndex;
-  currentIndex = mpFontFamilyComboBox->findText(Helper::monospacedFontInfo.family(), Qt::MatchExactly);
-  mpFontFamilyComboBox->setCurrentIndex(currentIndex);
-  connect(mpFontFamilyComboBox, SIGNAL(currentFontChanged(QFont)), SIGNAL(updatePreview()));
-  // font size combobox
-  mpFontSizeLabel = new Label(Helper::fontSize);
-  mpFontSizeSpinBox = new DoubleSpinBox;
-  mpFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
-  mpFontSizeSpinBox->setValue(Helper::monospacedFontInfo.pointSizeF());
-  mpFontSizeSpinBox->setSingleStep(1);
-  connect(mpFontSizeSpinBox, SIGNAL(valueChanged(double)), SIGNAL(updatePreview()));
+  // colors groupbox
+  mpColorsGroupBox = new QGroupBox(Helper::Colors);
   // Item color label and pick color button
   mpItemColorLabel = new Label(tr("Item Color:"));
   mpItemColorPickButton = new QPushButton(Helper::pickColor);
@@ -3814,8 +3898,8 @@ MetaModelEditorPage::MetaModelEditorPage(OptionsDialog *pOptionsDialog)
   mpItemsList->setCurrentRow(0, QItemSelectionModel::Select);
   // preview textbox
   mpPreviewLabel = new Label(tr("Preview:"));
-  mpPreviewPlainTextBox = new QPlainTextEdit;
-  mpPreviewPlainTextBox->setTabStopWidth(Helper::tabWidth);
+  mpPreviewPlainTextEdit = new PreviewPlainTextEdit;
+  mpPreviewPlainTextEdit->setTabStopWidth(Helper::tabWidth);
   QString previewText;
   previewText.append("<!-- This is a comment. -->\n"
                      "<Model Name=\"model\">\n"
@@ -3827,30 +3911,28 @@ MetaModelEditorPage::MetaModelEditorPage(OptionsDialog *pOptionsDialog)
                      "\t\t<Connection From=\"from\" To=\"to\">\n"
                      "\t</Connections>\n"
                      "</Model>\n");
-  mpPreviewPlainTextBox->setPlainText(previewText);
+  mpPreviewPlainTextEdit->setPlainText(previewText);
   // highlight preview textbox
-  MetaModelHighlighter *pMetaModelHighlighter = new MetaModelHighlighter(this, mpPreviewPlainTextBox);
+  MetaModelHighlighter *pMetaModelHighlighter = new MetaModelHighlighter(this, mpPreviewPlainTextEdit);
   connect(this, SIGNAL(updatePreview()), pMetaModelHighlighter, SLOT(settingsChanged()));
-  connect(mpSyntaxHighlightingCheckbox, SIGNAL(toggled(bool)), pMetaModelHighlighter, SLOT(settingsChanged()));
-  // set fonts & colors groupbox layout
-  QGridLayout *pFontsColorsGroupBoxLayout = new QGridLayout;
-  pFontsColorsGroupBoxLayout->addWidget(mpFontFamilyLabel, 0, 0);
-  pFontsColorsGroupBoxLayout->addWidget(mpFontSizeLabel, 0, 1);
-  pFontsColorsGroupBoxLayout->addWidget(mpFontFamilyComboBox, 1, 0);
-  pFontsColorsGroupBoxLayout->addWidget(mpFontSizeSpinBox, 1, 1);
-  pFontsColorsGroupBoxLayout->addWidget(mpItemsLabel, 2, 0);
-  pFontsColorsGroupBoxLayout->addWidget(mpItemColorLabel, 2, 1);
-  pFontsColorsGroupBoxLayout->addWidget(mpItemsList, 3, 0);
-  pFontsColorsGroupBoxLayout->addWidget(mpItemColorPickButton, 3, 1, Qt::AlignTop);
-  pFontsColorsGroupBoxLayout->addWidget(mpPreviewLabel, 4, 0, 1, 2);
-  pFontsColorsGroupBoxLayout->addWidget(mpPreviewPlainTextBox, 5, 0, 1, 2);
-  mpFontColorsGroupBox->setLayout(pFontsColorsGroupBoxLayout);
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingCheckbox(), SIGNAL(toggled(bool)),
+          pMetaModelHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
+          pMetaModelHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  // set colors groupbox layout
+  QGridLayout *pColorsGroupBoxLayout = new QGridLayout;
+  pColorsGroupBoxLayout->addWidget(mpItemsLabel, 1, 0);
+  pColorsGroupBoxLayout->addWidget(mpItemColorLabel, 1, 1);
+  pColorsGroupBoxLayout->addWidget(mpItemsList, 2, 0);
+  pColorsGroupBoxLayout->addWidget(mpItemColorPickButton, 2, 1, Qt::AlignTop);
+  pColorsGroupBoxLayout->addWidget(mpPreviewLabel, 3, 0, 1, 2);
+  pColorsGroupBoxLayout->addWidget(mpPreviewPlainTextEdit, 4, 0, 1, 2);
+  mpColorsGroupBox->setLayout(pColorsGroupBoxLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(mpTabsAndIndentation);
-  pMainLayout->addWidget(mpSyntaxHighlightAndTextWrappingGroupBox);
-  pMainLayout->addWidget(mpFontColorsGroupBox);
+  pMainLayout->addWidget(mpColorsGroupBox);
   setLayout(pMainLayout);
 }
 
@@ -3935,20 +4017,6 @@ void MetaModelEditorPage::setCommentRuleColor(QColor color)
   mpCommentItem->setForeground(color);
 }
 
-/*!
- * \brief MetaModelEditorPage::setLineWrapping
- * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
- * Sets the mpPreviewPlainTextBox line wrapping mode.
- */
-void MetaModelEditorPage::setLineWrapping()
-{
-  if (mpLineWrappingCheckbox->isChecked()) {
-    mpPreviewPlainTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
-  } else {
-    mpPreviewPlainTextBox->setLineWrapMode(QPlainTextEdit::NoWrap);
-  }
-}
-
 //! Picks a color for one of the MetaModelEditor Settings rules.
 //! This method is called when mpColorPickButton clicked signal raised.
 void MetaModelEditorPage::pickColor()
@@ -3983,4 +4051,18 @@ void MetaModelEditorPage::pickColor()
     setCommentRuleColor(color);
   }
   emit updatePreview();
+}
+
+/*!
+ * \brief MetaModelEditorPage::setLineWrapping
+ * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
+ * Sets the mpPreviewPlainTextBox line wrapping mode.
+ */
+void MetaModelEditorPage::setLineWrapping(bool enabled)
+{
+  if (enabled) {
+    mpPreviewPlainTextEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  } else {
+    mpPreviewPlainTextEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
+  }
 }

@@ -52,7 +52,7 @@
 #include "StringHandler.h"
 #include "Helper.h"
 #include "BaseEditor.h"
-#include "ModelicaTextEditor.h"
+#include "ModelicaEditor.h"
 #include "MetaModelEditor.h"
 #include "TextEditor.h"
 

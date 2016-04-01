@@ -92,7 +92,7 @@ DebuggerMainWindow::DebuggerMainWindow(MainWindow *pMainWindow)
   mpDebuggerSourceEditorInfoBar->hide();
   mpDebuggerSourceEditor = new DebuggerSourceEditor(this);
   ModelicaTextHighlighter *pModelicaTextHighlighter;
-  pModelicaTextHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaTextEditorPage(),
+  pModelicaTextHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaEditorPage(),
                                                          mpDebuggerSourceEditor->getPlainTextEdit());
   connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   connect(mpGDBAdapter, SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));

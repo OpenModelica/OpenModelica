@@ -229,7 +229,7 @@ public:
   static QString size;
   static QString lineStyle;
   static QString color;
-  static QString fontAndColors;
+  static QString Colors;
   static QString fontFamily;
   static QString fontSize;
   static QString pickColor;
@@ -382,7 +382,6 @@ public:
 
   static QString getMessage(int type);
 };
-
 
 namespace OpenModelica {
   QString& tempDirectory();

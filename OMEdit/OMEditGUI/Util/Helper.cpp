@@ -222,7 +222,7 @@ QString Helper::arrowSize;
 QString Helper::size;
 QString Helper::lineStyle;
 QString Helper::color;
-QString Helper::fontAndColors;
+QString Helper::Colors;
 QString Helper::fontFamily;
 QString Helper::fontSize;
 QString Helper::pickColor;
@@ -424,7 +424,7 @@ void Helper::initHelperVariables()
   Helper::size = tr("Size:");
   Helper::lineStyle = tr("Line Style");
   Helper::color = tr("Color:");
-  Helper::fontAndColors = tr("Font and Colors");
+  Helper::Colors = tr("Colors");
   Helper::fontFamily = tr("Font Family:");
   Helper::fontSize = tr("Font Size:");
   Helper::pickColor = tr("Pick Color");

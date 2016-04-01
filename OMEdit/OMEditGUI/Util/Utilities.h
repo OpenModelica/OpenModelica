@@ -47,6 +47,8 @@
 #include <QVariant>
 #include <QAbstractMessageHandler>
 #include <QDebug>
+#include <QPlainTextEdit>
+#include <QTextEdit>
 
 #ifndef UTILITIES_H
 #define UTILITIES_H
@@ -311,10 +313,33 @@ typedef struct {
 } MetaModelConnection;
 
 namespace Utilities {
+
+  enum LineEndingMode {
+    CRLFLineEnding = 0,
+    LFLineEnding = 1,
+    NativeLineEnding =
+#ifdef WIN32
+    CRLFLineEnding,
+#else
+    LFLineEnding
+#endif
+  };
+
+  enum BomMode {
+    AlwaysAddBom = 0,
+    KeepBom = 1,
+    AlwaysDeleteBom = 2
+  };
+
   void parseMetaModelText(MessageHandler *pMessageHandler, QString contents);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
   Label* getHeadingLabel(QString heading);
   QFrame* getHeadingLine();
+  QTextCharFormat getParenthesesMatchFormat();
+  QTextCharFormat getParenthesesMisMatchFormat();
+  void highlightCurrentLine(QPlainTextEdit *pPlainTextEdit);
+  void highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFormat parenthesesMatchFormat, QTextCharFormat parenthesesMisMatchFormat);
+
 }
 
 #endif // UTILITIES_H

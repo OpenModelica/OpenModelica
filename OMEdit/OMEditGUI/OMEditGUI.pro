@@ -103,7 +103,7 @@ SOURCES += main.cpp \
   Modeling/ModelicaClassDialog.cpp \
   Options/OptionsDialog.cpp \
   Editors/BaseEditor.cpp \
-  Editors/ModelicaTextEditor.cpp \
+  Editors/ModelicaEditor.cpp \
   Editors/TransformationsEditor.cpp \
   Editors/DebuggerSourceEditor.cpp \
   Editors/TextEditor.cpp \
@@ -168,7 +168,7 @@ HEADERS  += Util/Helper.h \
   Modeling/ModelicaClassDialog.h \
   Options/OptionsDialog.h \
   Editors/BaseEditor.h \
-  Editors/ModelicaTextEditor.h \
+  Editors/ModelicaEditor.h \
   Editors/TransformationsEditor.h \
   Editors/DebuggerSourceEditor.h \
   Editors/TextEditor.h \

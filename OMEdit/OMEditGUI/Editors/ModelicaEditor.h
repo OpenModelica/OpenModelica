@@ -35,8 +35,8 @@
  *
  */
 
-#ifndef MODELICATEXTEDITOR_H
-#define MODELICATEXTEDITOR_H
+#ifndef MODELICAEDITOR_H
+#define MODELICAEDITOR_H
 
 #include <QSyntaxHighlighter>
 
@@ -71,11 +71,11 @@ private:
   QString m_multiLineEnd;
 };
 
-class ModelicaTextEditor : public BaseEditor
+class ModelicaEditor : public BaseEditor
 {
   Q_OBJECT
 public:
-  ModelicaTextEditor(ModelWidget *pParent);
+  ModelicaEditor(ModelWidget *pParent);
   QString getLastValidText() {return mLastValidText;}
   QStringList getClassNames(QString *errorString);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
@@ -94,18 +94,18 @@ public slots:
   virtual void toggleCommentSelection();
 };
 
-class ModelicaTextEditorPage;
+class ModelicaEditorPage;
 class ModelicaTextHighlighter : public QSyntaxHighlighter
 {
   Q_OBJECT
 public:
-  ModelicaTextHighlighter(ModelicaTextEditorPage *pModelicaTextEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
+  ModelicaTextHighlighter(ModelicaEditorPage *pModelicaEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
   void initializeSettings();
   void highlightMultiLine(const QString &text);
 protected:
   virtual void highlightBlock(const QString &text);
 private:
-  ModelicaTextEditorPage *mpModelicaTextEditorPage;
+  ModelicaEditorPage *mpModelicaEditorPage;
   QPlainTextEdit *mpPlainTextEdit;
   struct HighlightingRule
   {
@@ -125,4 +125,4 @@ public slots:
   void settingsChanged();
 };
 
-#endif // MODELICATEXTEDITOR_H
+#endif // MODELICAEDITOR_H

@@ -45,8 +45,9 @@
 class MainWindow;
 class GeneralSettingsPage;
 class LibrariesPage;
+class TextEditorPage;
 class ModelicaTextHighlighter;
-class ModelicaTextEditorPage;
+class ModelicaEditorPage;
 class GraphicalViewsPage;
 class SimulationPage;
 class MessagesPage;
@@ -69,7 +70,8 @@ public:
   void readSettings();
   void readGeneralSettings();
   void readLibrariesSettings();
-  void readModelicaTextSettings();
+  void readTextEditorSettings();
+  void readModelicaEditorSettings();
   void readGraphicalViewsSettings();
   void readSimulationSettings();
   void readMessagesSettings();
@@ -84,7 +86,8 @@ public:
   void readMetaModelEditorSettings();
   void saveGeneralSettings();
   void saveLibrariesSettings();
-  void saveModelicaTextSettings();
+  void saveTextEditorSettings();
+  void saveModelicaEditorSettings();
   void saveTLMSettings();
   void saveMetaModelEditorSettings();
   void saveGraphicalViewsSettings();
@@ -102,7 +105,8 @@ public:
   void createPages();
   MainWindow* getMainWindow() {return mpMainWindow;}
   GeneralSettingsPage* getGeneralSettingsPage() {return mpGeneralSettingsPage;}
-  ModelicaTextEditorPage* getModelicaTextEditorPage() {return mpModelicaTextEditorPage;}
+  TextEditorPage* getTextEditorPage() {return mpTextEditorPage;}
+  ModelicaEditorPage* getModelicaEditorPage() {return mpModelicaEditorPage;}
   GraphicalViewsPage* getGraphicalViewsPage() {return mpGraphicalViewsPage;}
   SimulationPage* getSimulationPage() {return mpSimulationPage;}
   MessagesPage* getMessagesPage() {return mpMessagesPage;}
@@ -117,8 +121,7 @@ public:
   MetaModelEditorPage* getMetaModelEditorPage() {return mpMetaModelEditorPage;}
   void saveDialogGeometry();
   void show();
-  TabSettings getModelicaTabSettings();
-  TabSettings getMetaModelTabSettings();
+  TabSettings getTabSettings();
 signals:
   void modelicaTextSettingsChanged();
   void MetaModelEditorSettingsChanged();
@@ -131,7 +134,8 @@ private:
   MainWindow *mpMainWindow;
   GeneralSettingsPage *mpGeneralSettingsPage;
   LibrariesPage *mpLibrariesPage;
-  ModelicaTextEditorPage *mpModelicaTextEditorPage;
+  TextEditorPage *mpTextEditorPage;
+  ModelicaEditorPage *mpModelicaEditorPage;
   GraphicalViewsPage *mpGraphicalViewsPage;
   SimulationPage *mpSimulationPage;
   MessagesPage *mpMessagesPage;
@@ -294,20 +298,68 @@ private slots:
   void addUserLibrary();
 };
 
-class ModelicaTextEditorPage : public QWidget
+class TextEditorPage : public QWidget
 {
   Q_OBJECT
 public:
-  ModelicaTextEditorPage(OptionsDialog *pOptionsDialog);
+  TextEditorPage(OptionsDialog *pOptionsDialog);
+  QComboBox *getLineEndingComboBox() {return mpLineEndingComboBox;}
+  QComboBox *getBOMComboBox() {return mpBOMComboBox;}
   QComboBox *getTabPolicyComboBox() {return mpTabPolicyComboBox;}
   QSpinBox *getTabSizeSpinBox() {return mpTabSizeSpinBox;}
   QSpinBox *getIndentSpinBox() {return mpIndentSpinBox;}
-  QCheckBox *getPreserveTextIndentationCheckBox() {return mpPreserveTextIndentationCheckBox;}
   QCheckBox* getSyntaxHighlightingCheckbox() {return mpSyntaxHighlightingCheckbox;}
   QCheckBox* getMatchParenthesesCommentsQuotesCheckBox() {return mpMatchParenthesesCommentsQuotesCheckBox;}
   QCheckBox* getLineWrappingCheckbox() {return mpLineWrappingCheckbox;}
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
   DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpFormatGroupBox;
+  Label *mpLineEndingLabel;
+  QComboBox *mpLineEndingComboBox;
+  Label *mpBOMLabel;
+  QComboBox *mpBOMComboBox;
+  QGroupBox *mpTabsAndIndentation;
+  Label *mpTabPolicyLabel;
+  QComboBox *mpTabPolicyComboBox;
+  Label *mpTabSizeLabel;
+  QSpinBox *mpTabSizeSpinBox;
+  Label *mpIndentSizeLabel;
+  QSpinBox *mpIndentSpinBox;
+  QGroupBox *mpSyntaxHighlightAndTextWrappingGroupBox;
+  QCheckBox *mpSyntaxHighlightingCheckbox;
+  QCheckBox *mpMatchParenthesesCommentsQuotesCheckBox;
+  QCheckBox *mpLineWrappingCheckbox;
+  QGroupBox *mpFontGroupBox;
+  Label *mpFontFamilyLabel;
+  QFontComboBox *mpFontFamilyComboBox;
+  Label *mpFontSizeLabel;
+  DoubleSpinBox *mpFontSizeSpinBox;
+};
+
+class PreviewPlainTextEdit : public QPlainTextEdit
+{
+  Q_OBJECT
+public:
+  PreviewPlainTextEdit(QWidget *parent = 0);
+private:
+  QTextCharFormat mParenthesesMatchFormat;
+  QTextCharFormat mParenthesesMisMatchFormat;
+
+  void highlightCurrentLine();
+  void highlightParentheses();
+public slots:
+  void updateHighlights();
+};
+
+class ModelicaEditorPage : public QWidget
+{
+  Q_OBJECT
+public:
+  ModelicaEditorPage(OptionsDialog *pOptionsDialog);
+  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
+  QCheckBox *getPreserveTextIndentationCheckBox() {return mpPreserveTextIndentationCheckBox;}
   void addListItems();
   void setTextRuleColor(QColor color);
   QColor getTextRuleColor() {return mTextColor;}
@@ -325,29 +377,14 @@ public:
   QColor getCommentRuleColor() {return mCommentColor;}
 private:
   OptionsDialog *mpOptionsDialog;
-  QGroupBox *mpTabsAndIndentation;
-  Label *mpTabPolicyLabel;
-  QComboBox *mpTabPolicyComboBox;
-  Label *mpTabSizeLabel;
-  QSpinBox *mpTabSizeSpinBox;
-  Label *mpIndentSizeLabel;
-  QSpinBox *mpIndentSpinBox;
   QCheckBox *mpPreserveTextIndentationCheckBox;
-  QGroupBox *mpSyntaxHighlightAndTextWrappingGroupBox;
-  QCheckBox *mpSyntaxHighlightingCheckbox;
-  QCheckBox *mpMatchParenthesesCommentsQuotesCheckBox;
-  QCheckBox *mpLineWrappingCheckbox;
-  QGroupBox *mpFontColorsGroupBox;
-  Label *mpFontFamilyLabel;
-  QFontComboBox *mpFontFamilyComboBox;
-  Label *mpFontSizeLabel;
-  DoubleSpinBox *mpFontSizeSpinBox;
+  QGroupBox *mpColorsGroupBox;
   Label *mpItemsLabel;
   QListWidget *mpItemsList;
   Label *mpItemColorLabel;
   QPushButton *mpItemColorPickButton;
   Label *mpPreviewLabel;
-  QPlainTextEdit *mpPreviewPlainTextBox;
+  PreviewPlainTextEdit *mpPreviewPlainTextEdit;
   QColor mTextColor;
   QListWidgetItem *mpTextItem;
   QColor mNumberColor;
@@ -365,8 +402,8 @@ private:
 signals:
   void updatePreview();
 public slots:
-  void setLineWrapping();
   void pickColor();
+  void setLineWrapping(bool enabled);
 };
 
 class GraphicalViewsPage : public QWidget
@@ -761,13 +798,7 @@ class MetaModelEditorPage : public QWidget
   Q_OBJECT
 public:
   MetaModelEditorPage(OptionsDialog *pOptionsDialog);
-  QComboBox *getTabPolicyComboBox() {return mpTabPolicyComboBox;}
-  QSpinBox *getTabSizeSpinBox() {return mpTabSizeSpinBox;}
-  QSpinBox *getIndentSpinBox() {return mpIndentSpinBox;}
-  QCheckBox* getSyntaxHighlightingCheckbox() {return mpSyntaxHighlightingCheckbox;}
-  QCheckBox* getLineWrappingCheckbox() {return mpLineWrappingCheckbox;}
-  QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
-  DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
+  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
   void addListItems();
   void setTextRuleColor(QColor color);
   QColor getTextRuleColor(){return mTextColor;}
@@ -781,27 +812,13 @@ public:
   QColor getElementRuleColor(){return mElementColor;}
 private:
   OptionsDialog *mpOptionsDialog;
-  QGroupBox *mpTabsAndIndentation;
-  Label *mpTabPolicyLabel;
-  QComboBox *mpTabPolicyComboBox;
-  Label *mpTabSizeLabel;
-  QSpinBox *mpTabSizeSpinBox;
-  Label *mpIndentSizeLabel;
-  QSpinBox *mpIndentSpinBox;
-  QGroupBox *mpSyntaxHighlightAndTextWrappingGroupBox;
-  QCheckBox *mpSyntaxHighlightingCheckbox;
-  QCheckBox *mpLineWrappingCheckbox;
-  QGroupBox *mpFontColorsGroupBox;
-  Label *mpFontFamilyLabel;
-  QFontComboBox *mpFontFamilyComboBox;
-  Label *mpFontSizeLabel;
-  DoubleSpinBox *mpFontSizeSpinBox;
+  QGroupBox *mpColorsGroupBox;
   Label *mpItemsLabel;
   QListWidget *mpItemsList;
   Label *mpItemColorLabel;
   QPushButton *mpItemColorPickButton;
   Label *mpPreviewLabel;
-  QPlainTextEdit *mpPreviewPlainTextBox;
+  PreviewPlainTextEdit *mpPreviewPlainTextEdit;
   QColor mTextColor;
   QListWidgetItem *mpTextItem;
   QColor mQuotesColor;
@@ -815,8 +832,8 @@ private:
 signals:
   void updatePreview();
 public slots:
-  void setLineWrapping();
   void pickColor();
+  void setLineWrapping(bool enabled);
 };
 
 #endif // OPTIONSDIALOG_H

@@ -35,7 +35,7 @@
  *
  */
 #include "BreakpointMarker.h"
-#include "ModelicaTextEditor.h"
+#include "ModelicaEditor.h"
 #include "Helper.h"
 
 /*!
@@ -125,7 +125,7 @@ bool isComment(const QString &text,
 //! @brief An editor for Modelica Text. Subclass QPlainTextEdit
 
 //! Constructor
-ModelicaTextEditor::ModelicaTextEditor(ModelWidget *pParent)
+ModelicaEditor::ModelicaEditor(ModelWidget *pParent)
   : BaseEditor(pParent), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
 {
   setCanHaveBreakpoints(true);
@@ -134,13 +134,13 @@ ModelicaTextEditor::ModelicaTextEditor(ModelWidget *pParent)
 }
 
 /*!
- * \brief ModelicaTextEditor::getClassNames
+ * \brief ModelicaEditor::getClassNames
  * Uses the OMC parseString API to check the class names inside the Modelica Text
  * \param errorString
  * \return QStringList a list of class names
  * \sa ModelWidget::modelicaEditorTextChanged()
  */
-QStringList ModelicaTextEditor::getClassNames(QString *errorString)
+QStringList ModelicaEditor::getClassNames(QString *errorString)
 {
   OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
   QStringList classNames;
@@ -183,12 +183,12 @@ QStringList ModelicaTextEditor::getClassNames(QString *errorString)
 }
 
 /*!
- * \brief ModelicaTextEditor::validateText
- * When user make some changes in the ModelicaTextEditor text then this method validates the text and show text correct options.
+ * \brief ModelicaEditor::validateText
+ * When user make some changes in the ModelicaEditor text then this method validates the text and show text correct options.
  * \param pLibraryTreeItem
  * \return
  */
-bool ModelicaTextEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
+bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
 {
   if (mTextChanged) {
     // if the user makes few mistakes in the text then dont let him change the perspective
@@ -225,12 +225,12 @@ bool ModelicaTextEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
 }
 
 /*!
- * \brief ModelicaTextEditor::removeLeadingSpaces
+ * \brief ModelicaEditor::removeLeadingSpaces
  * Removes the leading spaces from a nested class text to make it more readable.
  * \param contents
  * \return
  */
-QString ModelicaTextEditor::removeLeadingSpaces(QString contents)
+QString ModelicaEditor::removeLeadingSpaces(QString contents)
 {
   QString text;
   int startLeadingSpaces = 0;
@@ -252,11 +252,11 @@ QString ModelicaTextEditor::removeLeadingSpaces(QString contents)
 }
 
 /*!
- * \brief ModelicaTextEditor::storeLeadingSpaces
+ * \brief ModelicaEditor::storeLeadingSpaces
  * Stores the leading spaces information in the text block user data.
  * \param leadingSpacesMap
  */
-void ModelicaTextEditor::storeLeadingSpaces(QMap<int, int> leadingSpacesMap)
+void ModelicaEditor::storeLeadingSpaces(QMap<int, int> leadingSpacesMap)
 {
   QTextBlock block = mpPlainTextEdit->document()->firstBlock();
   while (block.isValid()) {
@@ -269,11 +269,11 @@ void ModelicaTextEditor::storeLeadingSpaces(QMap<int, int> leadingSpacesMap)
 }
 
 /*!
- * \brief ModelicaTextEditor::getPlainText
+ * \brief ModelicaEditor::getPlainText
  * Reads the leading spaces information from the text block user data and inserts them to the actual string.
  * \return
  */
-QString ModelicaTextEditor::getPlainText()
+QString ModelicaEditor::getPlainText()
 {
   if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
     QString text;
@@ -304,11 +304,11 @@ QString ModelicaTextEditor::getPlainText()
 }
 
 /*!
- * \brief ModelicaTextEditor::showContextMenu
+ * \brief ModelicaEditor::showContextMenu
  * Create a context menu.
  * \param point
  */
-void ModelicaTextEditor::showContextMenu(QPoint point)
+void ModelicaEditor::showContextMenu(QPoint point)
 {
   QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->addSeparator();
@@ -318,12 +318,12 @@ void ModelicaTextEditor::showContextMenu(QPoint point)
 }
 
 /*!
- * \brief ModelicaTextEditor::setPlainText
+ * \brief ModelicaEditor::setPlainText
  * Reimplementation of QPlainTextEdit::setPlainText method.
  * Makes sure we dont update if the passed text is same.
  * \param text the string to set.
  */
-void ModelicaTextEditor::setPlainText(const QString &text)
+void ModelicaEditor::setPlainText(const QString &text)
 {
   QMap<int, int> leadingSpacesMap;
   QString contents = text;
@@ -348,7 +348,7 @@ void ModelicaTextEditor::setPlainText(const QString &text)
 
 //! Slot activated when ModelicaTextEdit's QTextDocument contentsChanged SIGNAL is raised.
 //! Sets the model as modified so that user knows that his current model is not saved.
-void ModelicaTextEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
+void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
 {
   Q_UNUSED(position);
   if (mpModelWidget->isVisible()) {
@@ -392,7 +392,7 @@ void ModelicaTextEditor::contentsHasChanged(int position, int charsRemoved, int 
   Slot activated when toggle comment selection is seleteted from context menu or ctrl+k is pressed.
   The implementation and logic is inspired from Qt Creator sources.
   */
-void ModelicaTextEditor::toggleCommentSelection()
+void ModelicaEditor::toggleCommentSelection()
 {
   CommentDefinition definition;
   if (!definition.hasSingleLineStyle() && !definition.hasMultiLineStyle()) {
@@ -571,10 +571,10 @@ void ModelicaTextEditor::toggleCommentSelection()
 //! @brief A syntax highlighter for ModelicaEditor.
 
 //! Constructor
-ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaTextEditorPage *pModelicaTextEditorPage, QPlainTextEdit *pPlainTextEdit)
+ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaEditorPage *pModelicaEditorPage, QPlainTextEdit *pPlainTextEdit)
   : QSyntaxHighlighter(pPlainTextEdit->document())
 {
-  mpModelicaTextEditorPage = pModelicaTextEditorPage;
+  mpModelicaEditorPage = pModelicaEditorPage;
   mpPlainTextEdit = pPlainTextEdit;
   initializeSettings();
 }
@@ -583,22 +583,22 @@ ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaTextEditorPage *pModeli
 void ModelicaTextHighlighter::initializeSettings()
 {
   QFont font;
-  font.setFamily(mpModelicaTextEditorPage->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(mpModelicaTextEditorPage->getFontSizeSpinBox()->value());
+  font.setFamily(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
   mpPlainTextEdit->document()->setDefaultFont(font);
-  mpPlainTextEdit->setTabStopWidth(mpModelicaTextEditorPage->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
+  mpPlainTextEdit->setTabStopWidth(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;
-  mTextFormat.setForeground(mpModelicaTextEditorPage->getTextRuleColor());
-  mKeywordFormat.setForeground(mpModelicaTextEditorPage->getKeywordRuleColor());
-  mTypeFormat.setForeground(mpModelicaTextEditorPage->getTypeRuleColor());
-  mSingleLineCommentFormat.setForeground(mpModelicaTextEditorPage->getCommentRuleColor());
-  mMultiLineCommentFormat.setForeground(mpModelicaTextEditorPage->getCommentRuleColor());
-  mFunctionFormat.setForeground(mpModelicaTextEditorPage->getFunctionRuleColor());
-  mQuotationFormat.setForeground(QColor(mpModelicaTextEditorPage->getQuotesRuleColor()));
+  mTextFormat.setForeground(mpModelicaEditorPage->getTextRuleColor());
+  mKeywordFormat.setForeground(mpModelicaEditorPage->getKeywordRuleColor());
+  mTypeFormat.setForeground(mpModelicaEditorPage->getTypeRuleColor());
+  mSingleLineCommentFormat.setForeground(mpModelicaEditorPage->getCommentRuleColor());
+  mMultiLineCommentFormat.setForeground(mpModelicaEditorPage->getCommentRuleColor());
+  mFunctionFormat.setForeground(mpModelicaEditorPage->getFunctionRuleColor());
+  mQuotationFormat.setForeground(QColor(mpModelicaEditorPage->getQuotesRuleColor()));
   // Priority: keyword > func() > ident > number. Yes, the order matters :)
-  mNumberFormat.setForeground(mpModelicaTextEditorPage->getNumberRuleColor());
+  mNumberFormat.setForeground(mpModelicaEditorPage->getNumberRuleColor());
   rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
   rule.mFormat = mNumberFormat;
   mHighlightingRules.append(rule);
@@ -750,7 +750,7 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
         }
     }
     // if no single line comment, no multi line comment and no quotes then store the parentheses
-    if (pTextBlockUserData && (blockState < 1 || blockState > 3 || mpModelicaTextEditorPage->getMatchParenthesesCommentsQuotesCheckBox()->isChecked())) {
+    if (pTextBlockUserData && (blockState < 1 || blockState > 3 || mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox()->isChecked())) {
       if (text[index] == '(' || text[index] == '{' || text[index] == '[') {
         parentheses.append(Parenthesis(Parenthesis::Opened, text[index], index));
       } else if (text[index] == ')' || text[index] == '}' || text[index] == ']') {
@@ -780,12 +780,12 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
 void ModelicaTextHighlighter::highlightBlock(const QString &text)
 {
   /* Only highlight the text if user has enabled the syntax highlighting */
-  if (!mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->isChecked()) {
+  if (!mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getSyntaxHighlightingCheckbox()->isChecked()) {
     return;
   }
   // set text block state
   setCurrentBlockState(0);
-  setFormat(0, text.length(), mpModelicaTextEditorPage->getTextRuleColor());
+  setFormat(0, text.length(), mpModelicaEditorPage->getTextRuleColor());
   foreach (const HighlightingRule &rule, mHighlightingRules) {
     QRegExp expression(rule.mPattern);
     int index = expression.indexIn(text);
