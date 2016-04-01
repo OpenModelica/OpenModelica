@@ -123,65 +123,43 @@ the extendhashtable is not updated"
   input VariableReplacements repl;
   input DAE.ComponentRef inSrc;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-  output VariableReplacements outRepl;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
+protected
+  DAE.Exp dst;
+  HashTable2.HashTable ht,ht_1,eht,eht_1;
+  HashTable3.HashTable invHt,invHt_1;
+  list<DAE.Ident> iv;
+  String s;
+  Option<HashTable2.HashTable> derConst;
 algorithm
-  outRepl := matchcontinue (repl,inSrc,inFuncTypeExpExpToBooleanOption)
-    local
-      DAE.Exp dst;
-      HashTable2.HashTable ht,ht_1,eht,eht_1;
-      HashTable3.HashTable invHt,invHt_1;
-      list<DAE.Ident> iv;
-      String s;
-      Option<HashTable2.HashTable> derConst;
-    case (_,_,_)
-      equation
-        REPLACEMENTS(ht,_,_,_,_) = repl;
-        false = BaseHashTable.hasKey(inSrc,ht);
-      then
-        repl;
-    case (_,_,_)
-      equation
-        REPLACEMENTS(ht,invHt,eht,iv,derConst) = repl;
-        dst = BaseHashTable.get(inSrc,ht);
-        ht_1 = BaseHashTable.delete(inSrc,ht);
-        _ = removeReplacementInv(invHt, inSrc, dst);
-      then
-        REPLACEMENTS(ht_1,invHt,eht,iv,derConst);
-    case (_,_,_)
-      equation
-        s = ComponentReference.printComponentRefStr(inSrc);
-        print("-BackendVarTransform.removeReplacement failed for " + s +"\n");
-      then
-        fail();
-  end matchcontinue;
+  REPLACEMENTS(ht,invHt,eht,iv,derConst) := repl;
+  if not BaseHashTable.hasKey(inSrc,ht) then
+    return;
+  end if;
+  try
+    dst := BaseHashTable.get(inSrc,ht);
+    BaseHashTable.delete(inSrc,ht);
+    removeReplacementInv(invHt, dst);
+  else
+    Error.addInternalError("-BackendVarTransform.removeReplacement failed for " + ComponentReference.printComponentRefStr(inSrc) +"\n", sourceInfo());
+  end try;
 end removeReplacement;
 
 public function removeReplacements
   input VariableReplacements iRepl;
   input list<DAE.ComponentRef> inSrcs;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-  output VariableReplacements outRepl;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-   outRepl := match(iRepl,inSrcs,inFuncTypeExpExpToBooleanOption)
-     local
-       DAE.ComponentRef cr;
-       list<DAE.ComponentRef> crlst;
-       VariableReplacements repl;
-     case (_,{},_) then iRepl;
-     case (_,cr::crlst,_)
-       equation
-         repl = removeReplacement(iRepl,cr,inFuncTypeExpExpToBooleanOption);
-       then
-         removeReplacements(repl,crlst,inFuncTypeExpExpToBooleanOption);
-   end match;
+  for cr in inSrcs loop
+    removeReplacement(iRepl,cr,inFuncTypeExpExpToBooleanOption);
+  end for;
 end removeReplacements;
 
 public function addReplacements
@@ -314,24 +292,11 @@ protected function removeReplacementInv "
   of VariableReplacements.
 "
   input HashTable3.HashTable invHt;
-  input DAE.ComponentRef src;
   input DAE.Exp dst;
-  output HashTable3.HashTable outInvHt;
 algorithm
-  outInvHt:=
-  match (invHt,src,dst)
-    local
-      HashTable3.HashTable invHt_1;
-      HashSet.HashSet set;
-      list<DAE.ComponentRef> dests;
-    case (_,_,_) equation
-      // (_,set) = Expression.traverseExpTopDown(dst, traversingCrefFinder, HashSet.emptyHashSet() /* Very expensive operation */);
-      // dests = BaseHashSet.hashSetList(set);
-      dests = Expression.extractCrefsFromExp(dst);
-      invHt_1 = List.fold(dests,BaseHashTable.delete,invHt);
-      then
-        invHt_1;
-  end match;
+  for d in Expression.extractCrefsFromExp(dst) loop
+    BaseHashTable.delete(d, invHt);
+  end for;
 end removeReplacementInv;
 
 protected function addReplacementInv "

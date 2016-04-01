@@ -633,11 +633,11 @@ algorithm
         if BaseHashTable.hasKey(inExp, HT) then
           value = BaseHashTable.get(inExp, HT);
           counter = BaseHashTable.get(value, HT2) + 1;
-          HT2 = BaseHashTable.update((value, counter), HT2);
+          BaseHashTable.update((value, counter), HT2);
 
           if isCommutative(op) then
             value = BaseHashTable.get(DAE.BINARY(exp2, op, exp1), HT);
-            HT2 = BaseHashTable.update((value, counter), HT2);
+            BaseHashTable.update((value, counter), HT2);
           end if;
         else
           (value, i) = createReturnExp(Expression.typeof(inExp), i, "$cseb");

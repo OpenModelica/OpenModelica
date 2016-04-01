@@ -5386,7 +5386,6 @@ protected type InstHashTable = tuple<
   array<list<tuple<Key,Integer>>>,
   tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>,
   Integer,
-  Integer,
   HashTableKeyFunctionsType
 >;
 

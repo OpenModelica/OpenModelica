@@ -533,7 +533,7 @@ algorithm
       elseif BaseHashSet.has(componentRef, crefSharedSet) then
         if BaseHashTable.hasKey(exp,sharedCrefToStateExps) then
           sharedStateExps := (i,scalar) :: BaseHashTable.get(exp,sharedCrefToStateExps);
-          sharedCrefToStateExps := BaseHashTable.update((exp,sharedStateExps),sharedCrefToStateExps);
+          BaseHashTable.update((exp,sharedStateExps),sharedCrefToStateExps);
         else
           sharedCrefToStateExps := BaseHashTable.addNoUpdCheck((exp,{(i,scalar)}),sharedCrefToStateExps);
         end if;
@@ -591,7 +591,7 @@ algorithm
 
   if BaseHashTable.hasKey(key,outTable) then
     sharedStateExps := (i,exp) :: BaseHashTable.get(key,outTable);
-    outTable := BaseHashTable.update((key,sharedStateExps),outTable);
+    BaseHashTable.update((key,sharedStateExps),outTable);
   else
     outTable := BaseHashTable.addNoUpdCheck((key,{(i,exp)}),outTable);
   end if;
@@ -1538,7 +1538,7 @@ algorithm
           mode.outLocal = var :: mode.outLocal;
       then mode;
     end match;
-    mt := BaseHashTable.update((cref, mode), mt);
+    BaseHashTable.update((cref, mode), mt);
     outVarModeTable := (SOME(var), mt);
   else
     outVarModeTable := inVarModeTable;
@@ -1586,7 +1586,7 @@ algorithm
           mode.outShared = var :: mode.outShared;
       then mode;
     end match;
-    mt := BaseHashTable.update((cref, mode), mt);
+    BaseHashTable.update((cref, mode), mt);
     outVarModeTable := (SOME(var), mt);
   else
     outVarModeTable := inVarModeTable;
@@ -1696,15 +1696,15 @@ algorithm
       equation
         eqs = BackendEquation.addEquation(eq, eqs);
         ps = listAppend(ps, equationsPreviousCrefs({eq}));
-        modeTableNew = BaseHashTable.update((cref, MODE(name,isInitial,edges,eqs,outgoing,os,ol,ps)), modeTable);
-      then (NONE(), modeTableNew);
+        BaseHashTable.update((cref, MODE(name,isInitial,edges,eqs,outgoing,os,ol,ps)), modeTable);
+      then (NONE(), modeTable);
 
     // Move transtion(..) statement to mode/state where it is the outgoing transition
     case (SOME(MODE(name,isInitial,edges,eqs,outgoing,os,ol,ps)), SOME(cref), SOME((_,T_TRANSITION())), SOME(eq))
       equation
         outgoing = BackendEquation.addEquation(eq, outgoing);
-        modeTableNew = BaseHashTable.update((cref, MODE(name,isInitial,edges,eqs,outgoing,os,ol,ps)), modeTable);
-      then (NONE(), modeTableNew);
+        BaseHashTable.update((cref, MODE(name,isInitial,edges,eqs,outgoing,os,ol,ps)), modeTable);
+      then (NONE(), modeTable);
 
     // Remove initialState(..) statement
     case (SOME(MODE()), _, SOME((_,T_INITIAL_STATE())), SOME(_))
@@ -1827,7 +1827,7 @@ algorithm
   orderedVars := BackendVariable.listVar(varLst);
 
   mode := MODE(name,isInitial,edges,eqs,outgoing,listReverse(outSharedNew),outLocal,crefPrevious);
-  modes := BaseHashTable.update((keyCref, mode), modes);
+  BaseHashTable.update((keyCref, mode), modes);
   syst.orderedVars := orderedVars;
   outModesSyst := (modes,syst);
 end elaborateMode;

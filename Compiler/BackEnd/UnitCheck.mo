@@ -374,8 +374,8 @@ algorithm
     then ((inHtCr2U, inHtS2U, inHtU2S));
 
     case (true, true, true, _, _, _, _, _) equation
-      HtCr2U = BaseHashTable.delete(Unit.UPDATECREF,inHtCr2U);
-      ((HtCr2U, HtS2U, HtU2S))=algo(inparaList, ineqList, HtCr2U, inHtS2U, inHtU2S);
+      BaseHashTable.delete(Unit.UPDATECREF,inHtCr2U);
+      ((HtCr2U, HtS2U, HtU2S))=algo(inparaList, ineqList, inHtCr2U, inHtS2U, inHtU2S);
     then ((HtCr2U, HtS2U, HtU2S));
 
     else fail();
@@ -1112,14 +1112,14 @@ algorithm
   case (_,_,_)
     equation
       true = BaseHashTable.hasKey(Unit.UPDATECREF, inHtCr2U);
-      HtCr2U = BaseHashTable.update((inCr,inUt),inHtCr2U);
-  then HtCr2U;
+      BaseHashTable.update((inCr,inUt),inHtCr2U);
+    then inHtCr2U;
 
   else
     equation
-      _ = BaseHashTable.add((Unit.UPDATECREF, Unit.MASTER({})),inHtCr2U);
-      HtCr2U = BaseHashTable.update((inCr,inUt),inHtCr2U);
-  then HtCr2U;
+      HtCr2U = BaseHashTable.add((Unit.UPDATECREF, Unit.MASTER({})),inHtCr2U);
+      BaseHashTable.update((inCr,inUt),HtCr2U);
+    then HtCr2U;
 
   end matchcontinue;
 end updateHtCr2U;

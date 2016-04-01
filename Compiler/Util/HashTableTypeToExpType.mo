@@ -61,7 +61,6 @@ public type HashTable = tuple<
   array<list<tuple<Key,Integer>>>,
   tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>,
   Integer,
-  Integer,
   HashTableCrefFunctionsType
 >;
 
