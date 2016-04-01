@@ -97,6 +97,28 @@ bool MetaModelEditor::validateText()
   return true;
 }
 
+
+/*!
+ * @\brief MetaModelEditor::getSubModelElement
+ * Returns SubModel element tag by model name
+ * @param name Name of the sub model to search for
+ * @return
+ */
+QDomElement MetaModelEditor::getSubModelElement(QString name)
+{
+    QDomElement subModelsElement = getSubModelsElement();
+    if(!subModelsElement.isNull()) {
+      QDomElement subModelElement = subModelsElement.firstChildElement("SubModel");
+      while(!subModelElement.isNull()) {
+        if(subModelElement.attribute("Name").compare(name) == 0) {
+            return subModelElement;
+        }
+        subModelElement = subModelElement.nextSiblingElement("SubModel");
+      }
+    }
+    return QDomElement();
+}
+
 /*!
  * \brief MetaModelEditor::getSubModelsElement
  * Returns the SubModels element tag.
@@ -478,155 +500,151 @@ bool MetaModelEditor::deleteConnection(QString startSubModelName, QString endSub
 
 /*!
  * \brief MetaModelEditor::getRotationMatrix
- * \param rotation
+ * Computes the corresponding rotation matrix for specified rotation vector
+ * \param rotation Rotation vector with Euler angles
  * \return
  */
 QGenericMatrix<3,3, double> MetaModelEditor::getRotationMatrix(QGenericMatrix<3,1,double> rotation)
 {
-  double alpha = rotation(0,0);
-  double beta = rotation(0,1);
-  double gamma = rotation(0,2);
+  double c1 = cos(rotation(0,0));
+  double s1 = sin(rotation(0,0));
+  double c2 = cos(rotation(0,1));
+  double s2 = sin(rotation(0,1));
+  double c3 = cos(rotation(0,2));
+  double s3 = sin(rotation(0,2));
 
-  //Compute rotational matrix around x-axis
-  double Rx_data[9];
-  Rx_data[0] = 1;             Rx_data[1] = 0;             Rx_data[2] = 0;
-  Rx_data[3] = 0;             Rx_data[4] = cos(alpha);    Rx_data[5] = -sin(alpha);
-  Rx_data[6] = 0;             Rx_data[7] = sin(alpha);    Rx_data[8] = cos(alpha);
-  QGenericMatrix<3,3,double> Rx(Rx_data);
+  double R_data[9];
+  R_data[0] = c2*c3;             R_data[1] = c2*s3;              R_data[2] = -s2;
+  R_data[3] = -c1*s3+s1*s2*c3;   R_data[4] = c1*c3+s1*s2*s3;     R_data[5] = s1*c2;
+  R_data[6] = s1*s3+c1*s2*c3;    R_data[7] = -s1*c3+c1*s2*s3;    R_data[8] = c1*c2;
 
-  //Compute rotational matrix around y-axis
-  double Ry_data[9];
-  Ry_data[0] = cos(beta);     Ry_data[1] = 0;             Ry_data[2] = sin(beta);
-  Ry_data[3] = 0;             Ry_data[4] = 1;             Ry_data[5] = 0;
-  Ry_data[6] = -sin(beta);    Ry_data[7] = 0;             Ry_data[8] = cos(beta);
-
-  QGenericMatrix<3,3,double> Ry(Ry_data);
-
-  //Compute rotational matrix around z-axis
-  double Rz_data[9];
-  Rz_data[0] = cos(gamma);    Rz_data[1] = -sin(gamma);   Rz_data[2] = 0;
-  Rz_data[3] = sin(gamma);    Rz_data[4] = cos(gamma);    Rz_data[5] = 0;
-  Rz_data[6] = 0;             Rz_data[7] = 0;             Rz_data[8] = 1;
-  QGenericMatrix<3,3,double> Rz(Rz_data);
-
-
-  //Compute complete rotational matrix
-  QGenericMatrix<3,3,double> R = Rx*Ry*Rz;
+  QGenericMatrix<3,3,double> R(R_data);
 
   return R;
 }
 
+
 /*!
- * \brief MetaModelEditor::alignInterfaces
- * \param fromSubModel
- * \param toSubModel
+ * \brief MetaModelEditor::getRotationVector
+ * Computes a rotation vector (321) from a rotation matrix
+ * \param R
+ * \return
  */
-void MetaModelEditor::alignInterfaces(QString fromSubModel, QString toSubModel)
+QGenericMatrix<3,1,double> MetaModelEditor::getRotationVector(QGenericMatrix<3,3,double> R)
+{
+    double a11 = R(0,0);
+    double a12 = R(0,1);
+    double a13 = R(0,2);
+    double a23 = R(1,2);
+    double a33 = R(2,2);
+
+    double phi[3];
+    phi[1] = (fabs(a13) < DBL_MIN)? 0.0 : asin((a13<-1.0) ? 1.0 : ((a13>1.0) ? -1.0 : -a13));
+    double tmp = cos(phi[2]);
+    double cosphi2 = tmp+sign(tmp)*1.0e-50;
+
+    phi[0] = atan2(a23/cosphi2, a33/cosphi2);
+    phi[2] = atan2(a12/cosphi2, a11/cosphi2);
+
+    return QGenericMatrix<3,1,double>(phi);
+}
+
+/*!
+ * \brief MetaModelEditor::getPositionAndRotationVectors
+ * Extracts position and rotation vectors for specified TLM interface, both between CG and model X and between X and interface C
+ * \param interface Interface on the form "submodel.interface"
+ * \param CG_X_PHI_CG Rotation vector between CG abd X
+ * \param X_C_PHI_X Rotation vector between X and C
+ * \param CG_X_R_CG Position vector between CG and X
+ * \param X_C_R_X Position vector between X and C
+ * \return
+ */
+bool MetaModelEditor::getPositionAndRotationVectors(QString interface,
+                                                    QGenericMatrix<3,1,double> &CG_X_PHI_CG,
+                                                    QGenericMatrix<3,1,double> &X_C_PHI_X,
+                                                    QGenericMatrix<3,1,double> &CG_X_R_CG,
+                                                    QGenericMatrix<3,1,double> &X_C_R_X)
 {
   //Extract submodel and interface names
-  QString model1 = fromSubModel.split(".").at(0);
-  QString interface1 = fromSubModel.split(".").at(1);
-  QString model2 = toSubModel.split(".").at(0);
-  QString interface2 = toSubModel.split(".").at(1);
+  QString modelName = interface.split(".").at(0);
+  QString interfaceName = interface.split(".").at(1);
 
   //Read positions and rotations from XML
-  QDomElement subModelElement1;
-  QString x1_c1_r_x1_str, x1_c1_phi_x1_str, x2_c2_r_x2_str, x2_c2_phi_x2_str;
-  QString cg_x1_phi_cg_str, cg_x2_phi_cg_str, cg_x1_r_cg_str, cg_x2_r_cg_str;
-  QDomElement modelElement = mXmlDocument.firstChildElement("Model");
-  if(!modelElement.isNull()) {
-    QDomElement subModelsElement = modelElement.firstChildElement("SubModels");
-    if(!subModelsElement.isNull()) {
-      QDomElement subModelElement = subModelsElement.firstChildElement("SubModel");
-      while(!subModelElement.isNull()) {
-        if(subModelElement.attribute("Name").compare(model1) == 0) {
-          cg_x1_r_cg_str = subModelElement.attribute("Position");
-          cg_x1_phi_cg_str = subModelElement.attribute("Angle321");
-          subModelElement1 = subModelElement;     //Store this element for writing back data after transformation
-        }
-        else if(subModelElement.attribute("Name").compare(model2) == 0) {
-          cg_x2_r_cg_str = subModelElement.attribute("Position");
-          cg_x2_phi_cg_str = subModelElement.attribute("Angle321");
-        }
-        QDomElement interfaceElement = subModelElement.firstChildElement("InterfacePoint");
-        while(!interfaceElement.isNull()) {
-          if(subModelElement.attribute("Name").compare(model1) == 0 &&
-             interfaceElement.attribute("Name").compare(interface1) == 0) {
-            x1_c1_r_x1_str = interfaceElement.attribute("Position");
-            x1_c1_phi_x1_str = interfaceElement.attribute("Angle321");
-          }
-          else if(subModelElement.attribute("Name").compare(model2) == 0 &&
-                  interfaceElement.attribute("Name").compare(interface2) == 0) {
-            x2_c2_r_x2_str = interfaceElement.attribute("Position");
-            x2_c2_phi_x2_str = interfaceElement.attribute("Angle321");
-          }
-          interfaceElement = interfaceElement.nextSiblingElement("InterfacePoint");
-        }
-        subModelElement = subModelElement.nextSiblingElement("SubModel");
-      }
+  QString x_c_r_x_str, x_c_phi_x_str;
+  QString cg_x_phi_cg_str, cg_x_r_cg_str;
+  QDomElement subModelElement = getSubModelElement(modelName);
+  cg_x_r_cg_str = subModelElement.attribute("Position");
+  cg_x_phi_cg_str = subModelElement.attribute("Angle321");
+  QDomElement interfaceElement = subModelElement.firstChildElement("InterfacePoint");
+  while(!interfaceElement.isNull()) {
+    if(interfaceElement.attribute("Name").compare(interfaceName) == 0) {
+      x_c_r_x_str = interfaceElement.attribute("Position");
+      x_c_phi_x_str = interfaceElement.attribute("Angle321");
     }
+    interfaceElement = interfaceElement.nextSiblingElement("InterfacePoint");
   }
 
-  //Assert that all rotations and positions were found (do something smarter?)
-  if(cg_x1_phi_cg_str.isEmpty() ||
-     cg_x2_phi_cg_str.isEmpty() ||
-     cg_x1_r_cg_str.isEmpty() ||
-     cg_x2_r_cg_str.isEmpty() ||
-     x1_c1_r_x1_str.isEmpty() ||
-     x1_c1_phi_x1_str.isEmpty() ||
-     x2_c2_r_x2_str.isEmpty() ||
-     x2_c2_phi_x2_str.isEmpty())
+  //Make sure that all vector strings are found in XML
+  if(cg_x_phi_cg_str.isEmpty() ||
+     cg_x_r_cg_str.isEmpty() ||
+     x_c_r_x_str.isEmpty() ||
+     x_c_phi_x_str.isEmpty())
   {
-      QString msg = "Interface coordinates does not exist in xml";
-      mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "",false,0,0,0,0,msg,Helper::scriptingKind,Helper::errorLevel));
-      return;
+    QString msg = "Interface coordinates does not exist in xml";
+    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "",false,0,0,0,0,msg,Helper::scriptingKind,Helper::errorLevel));
+    return false;
   }
 
   //Convert from strings to arrays
-  double cg_x1_phi_cg[3],cg_x2_phi_cg[3],x1_c1_phi_x1[3],x2_c2_phi_x2[3];
-  double cg_x1_r_cg[3],cg_x2_r_cg[3],x1_c1_r_x1[3],x2_c2_r_x2[3];
+  double cg_x_phi_cg[3],x_c_phi_x[3];
+  double cg_x_r_cg[3],x_c_r_x[3];
 
-  cg_x1_phi_cg[0] = cg_x1_phi_cg_str.split(",")[0].toDouble();
-  cg_x1_phi_cg[1] = cg_x1_phi_cg_str.split(",")[1].toDouble();
-  cg_x1_phi_cg[2] = cg_x1_phi_cg_str.split(",")[2].toDouble();
+  cg_x_phi_cg[0] = cg_x_phi_cg_str.split(",")[0].toDouble();
+  cg_x_phi_cg[1] = cg_x_phi_cg_str.split(",")[1].toDouble();
+  cg_x_phi_cg[2] = cg_x_phi_cg_str.split(",")[2].toDouble();
 
-  cg_x2_phi_cg[0] = cg_x2_phi_cg_str.split(",")[0].toDouble();
-  cg_x2_phi_cg[1] = cg_x2_phi_cg_str.split(",")[1].toDouble();
-  cg_x2_phi_cg[2] = cg_x2_phi_cg_str.split(",")[2].toDouble();
+  x_c_phi_x[0] = x_c_phi_x_str.split(",")[0].toDouble();
+  x_c_phi_x[1] = x_c_phi_x_str.split(",")[1].toDouble();
+  x_c_phi_x[2] = x_c_phi_x_str.split(",")[2].toDouble();
 
-  x1_c1_phi_x1[0] = x1_c1_phi_x1_str.split(",")[0].toDouble();
-  x1_c1_phi_x1[1] = x1_c1_phi_x1_str.split(",")[1].toDouble();
-  x1_c1_phi_x1[2] = x1_c1_phi_x1_str.split(",")[2].toDouble();
+  cg_x_r_cg[0] = cg_x_r_cg_str.split(",")[0].toDouble();
+  cg_x_r_cg[1] = cg_x_r_cg_str.split(",")[1].toDouble();
+  cg_x_r_cg[2] = cg_x_r_cg_str.split(",")[2].toDouble();
 
-  x2_c2_phi_x2[0] = x2_c2_phi_x2_str.split(",")[0].toDouble();
-  x2_c2_phi_x2[1] = x2_c2_phi_x2_str.split(",")[1].toDouble();
-  x2_c2_phi_x2[2] = x2_c2_phi_x2_str.split(",")[2].toDouble();
-
-  cg_x1_r_cg[0] = cg_x1_r_cg_str.split(",")[0].toDouble();
-  cg_x1_r_cg[1] = cg_x1_r_cg_str.split(",")[1].toDouble();
-  cg_x1_r_cg[2] = cg_x1_r_cg_str.split(",")[2].toDouble();
-
-  cg_x2_r_cg[0] = cg_x2_r_cg_str.split(",")[0].toDouble();
-  cg_x2_r_cg[1] = cg_x2_r_cg_str.split(",")[1].toDouble();
-  cg_x2_r_cg[2] = cg_x2_r_cg_str.split(",")[2].toDouble();
-
-  x1_c1_r_x1[0] = x1_c1_r_x1_str.split(",")[0].toDouble();
-  x1_c1_r_x1[1] = x1_c1_r_x1_str.split(",")[1].toDouble();
-  x1_c1_r_x1[2] = x1_c1_r_x1_str.split(",")[2].toDouble();
-
-  x2_c2_r_x2[0] = x2_c2_r_x2_str.split(",")[0].toDouble();
-  x2_c2_r_x2[1] = x2_c2_r_x2_str.split(",")[1].toDouble();
-  x2_c2_r_x2[2] = x2_c2_r_x2_str.split(",")[2].toDouble();
+  x_c_r_x[0] = x_c_r_x_str.split(",")[0].toDouble();
+  x_c_r_x[1] = x_c_r_x_str.split(",")[1].toDouble();
+  x_c_r_x[2] = x_c_r_x_str.split(",")[2].toDouble();
 
   //Convert from arrays to Qt matrices
-  QGenericMatrix<3,1,double> CG_X1_PHI_CG(cg_x1_phi_cg);  //Rotation of X1 relative to CG expressed in CG
-  QGenericMatrix<3,1,double> CG_X2_PHI_CG(cg_x2_phi_cg);  //Rotation of X2 relative to CG expressed in CG
-  QGenericMatrix<3,1,double> X1_C1_PHI_X1(x1_c1_phi_x1);  //Rotation of C1 relative to X1 expressed in X1
-  QGenericMatrix<3,1,double> X2_C2_PHI_X2(x2_c2_phi_x2);  //Rotation of C2 relative to X2 expressed in X2
-  QGenericMatrix<3,1,double> CG_X1_R_CG(cg_x1_r_cg);      //Position of X1 relative to CG expressed in CG
-  QGenericMatrix<3,1,double> CG_X2_R_CG(cg_x2_r_cg);      //Position of X2 relative to CG expressed in CG
-  QGenericMatrix<3,1,double> X1_C1_R_X1(x1_c1_r_x1);      //Position of C1 relative to X1 expressed in X1
-  QGenericMatrix<3,1,double> X2_C2_R_X2(x2_c2_r_x2);      //Position of C2 relative to X2 expressed in X2
+  CG_X_PHI_CG = QGenericMatrix<3,1,double>(cg_x_phi_cg);  //Rotation of X relative to CG expressed in CG
+  X_C_PHI_X = QGenericMatrix<3,1,double>(x_c_phi_x);  //Rotation of C relative to X expressed in X
+  CG_X_R_CG = QGenericMatrix<3,1,double>(cg_x_r_cg);      //Position of X1 relative to CG expressed in CG
+  X_C_R_X = QGenericMatrix<3,1,double>(x_c_r_x);      //Position of C relative to X expressed in X
+
+  return true;
+}
+
+/*!
+ * \brief MetaModelEditor::alignInterfaces
+ * Aligns interface C1 in model X1 to interface C2 in model X2
+ * \param fromSubModel Full name of first interfae (X1.C1)
+ * \param toSubModel Full name of second interface (X2.C2)
+ */
+void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface)
+{
+
+  //Extract rotation and position vectors to Qt matrices
+  QGenericMatrix<3,1,double> CG_X1_PHI_CG;  //Rotation of X1 relative to CG expressed in CG
+  QGenericMatrix<3,1,double> X1_C1_PHI_X1;  //Rotation of C1 relative to X1 expressed in X1
+  QGenericMatrix<3,1,double> CG_X1_R_CG;      //Position of X1 relative to CG expressed in CG
+  QGenericMatrix<3,1,double> X1_C1_R_X1;      //Position of C1 relative to X1 expressed in X1
+  if(!getPositionAndRotationVectors(fromInterface,CG_X1_PHI_CG, X1_C1_PHI_X1,CG_X1_R_CG,X1_C1_R_X1)) return;
+
+  QGenericMatrix<3,1,double> CG_X2_PHI_CG;  //Rotation of X2 relative to CG expressed in CG
+  QGenericMatrix<3,1,double> X2_C2_PHI_X2;  //Rotation of C2 relative to X2 expressed in X2
+  QGenericMatrix<3,1,double> CG_X2_R_CG;      //Position of X2 relative to CG expressed in CG
+  QGenericMatrix<3,1,double> X2_C2_R_X2;      //Position of C2 relative to X2 expressed in X2
+  if(!getPositionAndRotationVectors(toInterface,CG_X2_PHI_CG, X2_C2_PHI_X2,CG_X2_R_CG,X2_C2_R_X2)) return;
 
   QGenericMatrix<3,3,double> R_X2_C2, R_CG_X1, R_CG_X2, R_CG_C2, R_X1_C1;
 
@@ -639,20 +657,98 @@ void MetaModelEditor::alignInterfaces(QString fromSubModel, QString toSubModel)
   R_CG_X1 = R_X1_C1.transposed()*R_CG_C2;          //New rotation matrix between CG and X1
 
   //Extract angles from rotation matrix
-  CG_X1_PHI_CG(0,0) = atan2(R_CG_X1(2,1),R_CG_X1(2,2));
-  CG_X1_PHI_CG(0,1) = atan2(-R_CG_X1(2,0),sqrt(R_CG_X1(2,1)*R_CG_X1(2,1) + R_CG_X1(2,2)*R_CG_X1(2,2)));
-  CG_X1_PHI_CG(0,2) = atan2(R_CG_X1(1,0),R_CG_X1(0,0));
+  CG_X1_PHI_CG = getRotationVector(R_CG_X1);
+//  CG_X1_PHI_CG(0,0) = atan2(R_CG_X1(2,1),R_CG_X1(2,2));
+//  CG_X1_PHI_CG(0,1) = atan2(-R_CG_X1(2,0),sqrt(R_CG_X1(2,1)*R_CG_X1(2,1) + R_CG_X1(2,2)*R_CG_X1(2,2)));
+//  CG_X1_PHI_CG(0,2) = atan2(R_CG_X1(1,0),R_CG_X1(0,0));
 
   //New position of X1 relative to CG
   CG_X1_R_CG = CG_X2_R_CG + X2_C2_R_X2*R_CG_X2 - X1_C1_R_X1*R_CG_X1;
 
   //Write back new rotation and position to XML
-  cg_x1_r_cg_str = QString("%1,%2,%3").arg(CG_X1_R_CG(0,0)).arg(CG_X1_R_CG(0,1)).arg(CG_X1_R_CG(0,2));
-  subModelElement1.setAttribute("Position", cg_x1_r_cg_str);
-  cg_x1_phi_cg_str = QString("%1,%2,%3").arg(CG_X1_PHI_CG(0,0)).arg(CG_X1_PHI_CG(0,1)).arg(CG_X1_PHI_CG(0,2));
-  subModelElement1.setAttribute("Angle321", cg_x1_phi_cg_str);
+  QString cg_x1_r_cg_str = QString("%1,%2,%3").arg(CG_X1_R_CG(0,0)).arg(CG_X1_R_CG(0,1)).arg(CG_X1_R_CG(0,2));
+  getSubModelElement(fromInterface.split(".").first()).setAttribute("Position", cg_x1_r_cg_str);
+  QString cg_x1_phi_cg_str = QString("%1,%2,%3").arg(CG_X1_PHI_CG(0,0)).arg(CG_X1_PHI_CG(0,1)).arg(CG_X1_PHI_CG(0,2));
+  getSubModelElement(fromInterface.split(".").first()).setAttribute("Angle321", cg_x1_phi_cg_str);
   setPlainText(mXmlDocument.toString());
+
+  //Give error message if alignment failed
+  if(!interfacesAligned(fromInterface, toInterface))
+  {
+    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "",false,0,0,0,0,"Alignment operation failed.",Helper::scriptingKind,Helper::errorLevel));
+  }
 }
+
+
+/*!
+ * \brief MetaModelEditor::fuzzyCompare
+ * Special implementation of fuzzyCompare. Uses much larger tolerance than built-in qFuzzyCompare()
+ * \param p1
+ * \param p2
+ * \return
+ */
+inline bool MetaModelEditor::fuzzyCompare(double p1, double p2)
+{
+  //! @todo What tolerance should be used? This is just a random number that seemed to work for some reason.
+  return (qAbs(p1 - p2) <= 0.00001 * qMin(qAbs(p1), qAbs(p2)));
+}
+
+
+/*!
+ * \brief MetaModelEditor::interfacesAligned
+ * Checkes whether specified TLM interfaces are aligned
+ * \param interface1 First interface (submodel1.interface1)
+ * \param interface2 Second interface (submodel2.interface2)
+ * \return
+ */
+bool MetaModelEditor::interfacesAligned(QString interface1, QString interface2)
+{
+  //Extract rotation and position vectors to Qt matrices
+  QGenericMatrix<3,1,double> CG_X1_PHI_CG;  //Rotation of X1 relative to CG expressed in CG
+  QGenericMatrix<3,1,double> X1_C1_PHI_X1;  //Rotation of C1 relative to X1 expressed in X1
+  QGenericMatrix<3,1,double> CG_X1_R_CG;      //Position of X1 relative to CG expressed in CG
+  QGenericMatrix<3,1,double> X1_C1_R_X1;      //Position of C1 relative to X1 expressed in X1
+  if(!getPositionAndRotationVectors(interface1,CG_X1_PHI_CG, X1_C1_PHI_X1,CG_X1_R_CG,X1_C1_R_X1)) return false;
+
+  QGenericMatrix<3,1,double> CG_X2_PHI_CG;  //Rotation of X2 relative to CG expressed in CG
+  QGenericMatrix<3,1,double> X2_C2_PHI_X2;  //Rotation of C2 relative to X2 expressed in X2
+  QGenericMatrix<3,1,double> CG_X2_R_CG;      //Position of X2 relative to CG expressed in CG
+  QGenericMatrix<3,1,double> X2_C2_R_X2;      //Position of C2 relative to X2 expressed in X2
+  if(!getPositionAndRotationVectors(interface2,CG_X2_PHI_CG, X2_C2_PHI_X2,CG_X2_R_CG,X2_C2_R_X2)) return false;
+
+  QGenericMatrix<3,1,double> CG_C1_R_CG, CG_C1_PHI_CG, CG_C2_R_CG, CG_C2_PHI_CG;
+  QGenericMatrix<3,3,double> R_X1_C1, R_CG_X1, R_CG_C1, R_X2_C2, R_CG_X2, R_CG_C2;
+
+  //Compute rotation matrices for both interfaces relative to CG and make sure they are the same
+  R_X1_C1 = getRotationMatrix(X1_C1_PHI_X1);    //Rotation matrix between X1 and C1
+  R_CG_X1 = getRotationMatrix(CG_X1_PHI_CG);    //Rotation matrix between CG and X1
+  R_CG_C1 = R_X1_C1*R_CG_X1;                       //Rotation matrix between CG and C1
+  R_X2_C2 = getRotationMatrix(X2_C2_PHI_X2);    //Rotation matrix between X2 and C2
+  R_CG_X2 = getRotationMatrix(CG_X2_PHI_CG);    //Rotation matrix between CG and X2
+  R_CG_C2 = R_X2_C2*R_CG_X2;                       //Rotation matrix between CG and C2
+
+  bool success=true;
+  for(int i=0; i<3; ++i) {
+    for(int j=0; j<3; ++j) {
+      if(!fuzzyCompare(R_CG_C1(i,j),R_CG_C2(i,j))) {
+        success=false;
+      }
+    }
+  }
+
+  //Compute positions for both interfaces relative to CG and make sure they are the same
+  CG_C1_R_CG = CG_X1_R_CG + X1_C1_R_X1*R_CG_X1;   //Position of C1 relative to CG exressed in CG
+  CG_C2_R_CG = CG_X2_R_CG + X2_C2_R_X2*R_CG_X2;   //Position of C2 relative to CG exressed in CG
+
+  for(int i=0; i<3; ++i) {
+    if(!fuzzyCompare(CG_C1_R_CG(0,i),CG_C2_R_CG(0,i))) {
+      success=false;
+    }
+  }
+
+  return success;
+}
+
 
 /*!
  * \brief MetaModelEditor::showContextMenu

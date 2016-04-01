@@ -213,8 +213,8 @@ AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget)
     QDomNodeList connections = pMetaModelEditor->getConnections();
     for (int i = 0; i < connections.size(); i++) {
       QDomElement connection = connections.at(i).toElement();
-      interfaces << connection.attribute("From")+" to "+connection.attribute("To");
-      interfaces << connection.attribute("To")+" to "+connection.attribute("From");
+      interfaces << connection.attribute("From")+"  ->  "+connection.attribute("To");
+      interfaces << connection.attribute("To")+"  ->  "+connection.attribute("From");
     }
   }
 
@@ -262,8 +262,8 @@ void AlignInterfacesDialog::alignInterfaces()
   if (pMetaModelEditor) {
     QList<QListWidgetItem*> selectedItems = mpInterfaceListWidget->selectedItems();
     if (!selectedItems.isEmpty()) {
-      QString fromInterface = selectedItems.first()->text().section(" to ",0,0);
-      QString toInterface = selectedItems.first()->text().section(" to ",1,1);
+      QString fromInterface = selectedItems.first()->text().section("  ->  ",0,0);
+      QString toInterface = selectedItems.first()->text().section("  ->  ",1,1);
       pMetaModelEditor->alignInterfaces(fromInterface, toInterface);
     }
   }

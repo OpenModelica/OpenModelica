@@ -76,7 +76,7 @@ void TLMCoSimulationThread::runManager()
   environment.insert("PATH", tlmCoSimulationOptions.getTLMPluginPath() + ";" + environment.value("PATH"));
   environment.insert("TLMPluginPath", tlmCoSimulationOptions.getTLMPluginPath());
   mpManagerProcess->setProcessEnvironment(environment);
-  // start the executable
+    // start the executable
   mpManagerProcess->start(fileName, args);
   emit sendManagerOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo);
 }
