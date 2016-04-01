@@ -1317,30 +1317,16 @@ algorithm
 end splitBlocks;
 
 public function blockIsDynamic "Return true if the block contains a variable that is marked"
-  input list<Integer> inIntegerLst;
-  input array<Integer> inIntegerArray;
-  output Boolean outBoolean;
+  input list<Integer> lst;
+  input array<Integer> arr;
+  output Boolean outBoolean=true;
 algorithm
-  outBoolean := matchcontinue (inIntegerLst,inIntegerArray)
-    local
-      Integer x,mark_value;
-      Boolean res;
-      list<Integer> xs;
-      array<Integer> arr;
-
-    case ({},_)
-    then false;
-
-    case ((x::xs),arr) equation
-      0 = arr[x];
-      res = blockIsDynamic(xs, arr);
-    then res;
-
-    case ((x::_),arr) equation
-      mark_value = arr[x];
-      (mark_value <> 0) = true;
-    then true;
-  end matchcontinue;
+  for x in lst loop
+    if arr[x]<>0 then
+      return;
+    end if;
+  end for;
+  outBoolean := false;
 end blockIsDynamic;
 
 public function markStateEquations "This function goes through all equations and marks the ones that
