@@ -7260,11 +7260,11 @@ protected function allPreOptimizationModules
     (DynamicOptimization.inputDerivativesForDynOpt, "inputDerivativesForDynOpt"), // only for dyn. opt.
     (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange"),
     (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn"),
+    (BackendDAEOptimize.sortEqnsVars, "sortEqnsVars"),
     (RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations"),
     (CommonSubExpression.commonSubExpressionReplacement, "comSubExp"),
     (ResolveLoops.resolveLoops, "resolveLoops"),
     (EvaluateFunctions.evalFunctions, "evalFunc"),
-    (BackendDAEOptimize.sortEqnsVars, "sortEqnsVars"),
     (FindZeroCrossings.encapsulateWhenConditions, "encapsulateWhenConditions"),
     // TODO: move the following modules to the correct position
     (BackendDAEOptimize.removeProtectedParameters, "removeProtectedParameters"),

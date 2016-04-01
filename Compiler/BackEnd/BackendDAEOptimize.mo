@@ -4073,7 +4073,7 @@ protected
   list<BackendDAE.Var> var_lst;
   list<BackendDAE.Equation> eqn_lst;
 algorithm
-  //BackendDump.bltdump("START:", outDAE);
+  //BackendDump.bltdump("Start", outDAE);
   BackendDAE.DAE(systlst, shared) := inDAE;
   BackendDAE.SHARED(functionTree=functionTree) := shared;
   for syst in systlst loop
@@ -4082,7 +4082,10 @@ algorithm
         BackendDAE.EqSystem syst1;
       case syst1 as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
         algorithm
-          (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.SPARSE(), SOME(functionTree));
+          (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.ABSOLUTE(), SOME(functionTree));
+          //debug
+          //BackendDump.dumpIncidenceMatrix(m);
+          //BackendDump.dumpIncidenceMatrixT(mT);
           BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr = varOptArr, numberOfElements = nv)) := vars;
           BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr, numberOfElement = ne) := eqns;
           //init weights
@@ -4095,7 +4098,7 @@ algorithm
           //sort vars
           tplIndexWeight := list((i, w_vars[i]) for i in 1:nv);
           //sorted vars
-          tplIndexWeight := List.sort(tplIndexWeight, compWeightsVars);
+          tplIndexWeight := List.sort(tplIndexWeight, Util.compareTuple2IntLt);
           //new order vars indexs
           indexs := sortEqnsVarsWorkTpl(tplIndexWeight);
           var_lst := list(BackendVariable.getVarAt(vars, i) for i in indexs);
@@ -4104,7 +4107,7 @@ algorithm
           //sort eqns
           tplIndexWeight := list((i, w_eqns[i]) for i in 1:ne);
           //sorted eqns
-          tplIndexWeight := List.sort(tplIndexWeight, compWeightsEqns);
+          tplIndexWeight := List.sort(tplIndexWeight, Util.compareTuple2IntLt);
           //new order eqns indexs
           indexs := sortEqnsVarsWorkTpl(tplIndexWeight);
           eqn_lst := list(BackendEquation.equationNth1(eqns, i) for i in indexs);
@@ -4112,13 +4115,17 @@ algorithm
           eqns := BackendEquation.listEquation(eqn_lst);
           syst1.orderedEqs := eqns;
           syst1.orderedVars := vars;
+          //debug
+          //(_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst1, BackendDAE.ABSOLUTE(), SOME(functionTree));
+          //BackendDump.dumpIncidenceMatrix(m);
+          //BackendDump.dumpIncidenceMatrixT(mT);
         then BackendDAEUtil.clearEqSyst(syst1);
     end match;
     new_systlst := syst :: new_systlst;
   end for; //syst
 
   outDAE:= BackendDAE.DAE(new_systlst, shared);
-  //BackendDump.bltdump("ENDE:", outDAE);
+  //BackendDump.bltdump("End", outDAE);
 end sortEqnsVars;
 
 protected function sortEqnsVarsWorkTpl
@@ -4140,33 +4147,6 @@ algorithm
     outW[i] := listLength(m[i]);
   end for;
 end sortEqnsVarsWeights;
-
-// sort({2, 1, 3}, intGt) => {1, 2, 3}
-// sort({2, 1, 3}, intLt) => {3, 2, 1}
-protected function compWeightsVars
-  input tuple<Integer,Integer> inTpl1;
-  input tuple<Integer,Integer> inTpl2;
-  output Boolean b;
-protected
-  Integer i1,i2;
-algorithm
-  (_,i1) := inTpl1;
-  (_,i2) := inTpl2;
-  b := intGt(i1 ,i2);
-end compWeightsVars;
-
-protected function compWeightsEqns
-  input tuple<Integer,Integer> inTpl1;
-  input tuple<Integer,Integer> inTpl2;
-  output Boolean b;
-protected
-  Integer i1,i2;
-algorithm
-  (_,i1) := inTpl1;
-  (_,i2) := inTpl2;
-  //b := intLt(i1 ,i2);
-  b := intGt(i1 ,i2);
-end compWeightsEqns;
 
 // =============================================================================
 // fix some bugs for complex function
