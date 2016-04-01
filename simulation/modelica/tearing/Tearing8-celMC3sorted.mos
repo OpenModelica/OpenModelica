@@ -1,4 +1,4 @@
-// name:      Tearing8-celMC3
+// name:      Tearing8-celMC3sorted
 // keywords:  tearing
 // status:    correct
 // cflags: 	 +d=backenddaeinfo
@@ -85,7 +85,7 @@ val(R1.v,0.2); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(9,42.0%) 20}
+//  * Linear torn systems: 1 {(10,35.0%) 19}
 //  * Non-linear torn systems: 0
 // "
 // 0.3170188387650511
