@@ -29,7 +29,7 @@ algorithm
   ht := add((def,DAE.ICONST(i*7)),ht);
   lst := get(def,ht)::lst;
   ht := add((wild,DAE.ICONST(i*9)),ht);
-  ht := delete(wild,ht);
+  delete(wild,ht);
   failure(lst := get(wild,ht)::lst);
   values := BaseHashTable.hashTableValueList(ht);
   HashTableStringToPath.emptyHashTable() "verify that this also works";
