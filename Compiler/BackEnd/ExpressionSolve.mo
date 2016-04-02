@@ -120,7 +120,7 @@ protected
   DAE.Exp e1,e2,varexp,e;
   BackendDAE.EquationAttributes attr;
   DAE.ElementSource source;
-  Boolean isContinuousIntegration = BackendDAEUtil.isSimulationDAE(shared);
+  //Boolean isContinuousIntegration = BackendDAEUtil.isSimulationDAE(shared);
 algorithm
   BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr) := eqn;
     BackendDAE.VAR(varName = cr) := var;
@@ -131,8 +131,9 @@ algorithm
     end if;
 
   if (Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e1)) and Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e2))) then
-    (e1, e2) := preprocessingSolve(e1, e2, varexp, SOME(shared.functionTree), NONE(), 0, false);
+    (e1, e2) := preprocessingSolve(e1, e2, varexp, SOME(shared.functionTree), NONE(), 0,  false);
   end if;
+
   try
     e := solve2(e1, e2, varexp, SOME(shared.functionTree), NONE());
     source := DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, e, {});
@@ -465,15 +466,13 @@ preprocessing for solve1,
  author: Vitalij Ruge
 "
 
-  input DAE.Exp inExp1 "lhs";
-  input DAE.Exp inExp2 "rhs";
+  input output DAE.Exp x "lhs";
+  input output DAE.Exp y "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
   input Option<DAE.FunctionTree> functions;
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Integer idepth;
   input Boolean doInline;
-  output DAE.Exp x;
-  output DAE.Exp y;
   output list<BackendDAE.Equation> eqnForNewVars = {} "eqn for tmp vars";
   output list<DAE.ComponentRef> newVarsCrefs = {};
   output Integer depth = idepth;
@@ -489,13 +488,10 @@ preprocessing for solve1,
   Integer numSimplifed = 0 ;
 
  algorithm
-   (x, _) := ExpressionSimplify.simplify(inExp1);
-   (y, _) := ExpressionSimplify.simplify(inExp2);
-   res := Expression.expSub(x, y);
 
    // split and sort
-   (lhsX, lhsY) := preprocessingSolve5(inExp1, inExp3,true);
-   (rhsX, rhsY) := preprocessingSolve5(inExp2, inExp3,true);
+   (lhsX, lhsY) := preprocessingSolve5(x, inExp3,true);
+   (rhsX, rhsY) := preprocessingSolve5(y, inExp3,true);
    x := Expression.expSub(lhsX, rhsX);
    y := Expression.expSub(rhsY, lhsY);
 
@@ -561,7 +557,7 @@ preprocessing for solve1,
      //print("\nx ");print(ExpressionDump.printExpStr(x));print("\ny ");print(ExpressionDump.printExpStr(y));
    end while;
 
-   (y,_) := ExpressionSimplify.simplify1(y);
+   y := ExpressionSimplify.simplify1(y);
 
 /*
    if not Expression.expEqual(inExp1,x) then
