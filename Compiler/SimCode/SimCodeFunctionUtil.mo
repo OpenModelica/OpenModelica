@@ -1478,7 +1478,7 @@ algorithm
       DAE.VarDirection vd;
     case DAE.VAR(kind=vk, direction=vd)
       guard
-        isVarVarOrConstant(vk) and
+        isVarKindVarOrParameter(vk) and
         isDirectionNotInput(vd)
       then true;
     else false;
@@ -1497,14 +1497,14 @@ algorithm
       DAE.VarDirection vd;
     case DAE.VAR(kind=vk, direction=vd)
       guard
-        isVarVarOrConstant(vk) and
+        isVarKindVarOrParameter(vk) and
         isDirectionNotInputNotOutput(vd)
       then true;
     else false;
   end match;
 end isVarNotInputNotOutput;
 
-protected function isVarVarOrConstant
+protected function isVarKindVarOrParameter
   input DAE.VarKind inVarKind;
   output Boolean outB;
 algorithm
@@ -1514,7 +1514,7 @@ algorithm
     case DAE.CONST() then true;
     else false;
   end match;
-end isVarVarOrConstant;
+end isVarKindVarOrParameter;
 
 protected function isDirectionNotInput
   input DAE.VarDirection inVarDirection;
