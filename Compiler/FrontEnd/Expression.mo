@@ -4881,7 +4881,7 @@ algorithm
     case (e, (s, t))
       equation
       ((e1, _)) = replaceExp(e, s, t);
-      then (e1, (s, t));
+      then (e1, tpl);
 
   end match;
 end replaceExpTpl;
@@ -4956,7 +4956,7 @@ algorithm
     case (DAE.CREF(componentRef=cr),(cr1,target))
       guard ComponentReference.crefEqualNoStringCompare(cr, cr1)
       then
-        (target,(cr1,target));
+        (target,inTpl);
     else (inExp,inTpl);
   end match;
 end replaceCref;
@@ -6342,7 +6342,7 @@ algorithm
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
       then
-        (inExp,not b,(cr,b));
+        (inExp,not b,if b then (cr,b) else inTpl);
 
     case (_,(_,b)) then (inExp,not b,inTpl);
 
@@ -6380,7 +6380,7 @@ algorithm
     case (DAE.CREF(componentRef = cr), (name,false))
       equation
         b = name == ComponentReference.crefFirstIdent(cr);
-      then (inExp,not b,(name,b));
+      then (inExp,not b,if b then (name,b) else inTpl);
     case (_,(_,b)) then (inExp,not b,inTpl);
   end match;
 end traversingexpHasName;
@@ -6412,12 +6412,12 @@ algorithm
     case (DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr1)}), (cr,false))
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
-      then (inExp,not b,(cr,b));
+      then (inExp,not b,if b then (cr,b) else inTpl);
 
     case (DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr1)}), (cr,false))
       equation
         b = ComponentReference.crefPrefixOf(cr,cr1);
-      then (inExp,not b,(cr,b));
+      then (inExp,not b,if b then (cr,b) else inTpl);
 
     case (_,(_,b)) then (inExp,not b,inTpl);
 
@@ -6493,7 +6493,7 @@ algorithm
     case (DAE.CREF(componentRef = cr1), (cr,false))
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
-      then (inExp,not b,(cr,b));
+      then (inExp,not b,if b then (cr,b) else inTpl);
 
 /* Not reachable...
     case (DAE.CREF(componentRef = cr1), (cr,false))
@@ -6566,7 +6566,7 @@ algorithm
     case (DAE.CREF(componentRef = cr1), (cr,false))
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
-      then (inExp,not b,(cr,b));
+      then (inExp,not b,if b then (cr,b) else inTpl);
 
     case (_,(_,b)) then (inExp,not b,inTpl);
 
@@ -6602,7 +6602,7 @@ algorithm
     guard(not isFunCall(e1,"noEvent"))
      equation
        b = expHasCref(e1,cr);
-     then (e1, true,(cr,b));
+     then (e1, true,if b then (cr,b) else inTpl);
 
     case(DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {DAE.ICONST(i),e1}),(cr,false))
     guard(i>1)
@@ -6612,17 +6612,17 @@ algorithm
     guard(isEventTriggeringFunctionExp(inExp))
      equation
      b = expHasCref(inExp, cr);
-     then(inExp, true,(cr,b));
+     then(inExp, true,if b then (cr,b) else inTpl);
 
     case(DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {e1,_,_}),(cr,false))
      equation
        b = expHasCref(e1,cr);
-     then (e1, true,(cr,b));
+     then (e1, true,if b then (cr,b) else inTpl);
 
     case(DAE.CALL(path = Absyn.IDENT(name = "sign"),expLst = {e1}),(cr,false))
      equation
        b = expHasCref(e1,cr);
-     then (e1, not b,(cr,b));
+     then (e1, not b,if b then (cr,b) else inTpl);
 
     case (_, (_,true)) then (inExp,false,inTpl);
     else (inExp, true, inTpl);

@@ -1685,7 +1685,6 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.Variables  knvars, knvars1;
       list<BackendDAE.Var> diffedVars, diffVarsTmp, seedlst, knvarsTmp;
-      String s,s1;
 
       BackendDAE.SparsePattern sparsepattern;
       BackendDAE.SparseColoring colsColors;
@@ -1696,14 +1695,12 @@ algorithm
       equation
 
         diffedVars = BackendVariable.varList(inDifferentiatedVars);
-        s =  intString(listLength(diffedVars));
         comref_differentiatedVars = List.map(diffedVars, BackendVariable.varCref);
 
         reduceDAE = BackendDAEUtil.reduceEqSystemsInDAE(inBackendDAE, diffedVars);
 
         comref_vars = List.map(inDiffVars, BackendVariable.varCref);
         seedlst = List.map1(comref_vars, createSeedVars, inName);
-        s1 =  intString(listLength(inVars));
 
         // Differentiate the ODE system w.r.t states for jacobian
         (backendDAE as BackendDAE.DAE(shared=shared), funcs) = generateSymbolicJacobian(reduceDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);

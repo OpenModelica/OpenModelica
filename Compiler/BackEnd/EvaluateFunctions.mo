@@ -2483,8 +2483,8 @@ algorithm
       (rhs,_,(lhs,funcs,idx,stmts)) = evaluateConstantFunctionWrapper(rhs,inTpl);
     then (rhs,true,(lhs,funcs,idx,stmts));
 
-  case (rhs,(lhs,funcs,idx,stmtsIn))
-    then (rhs,false,(lhs,funcs,idx,stmtsIn));
+  case (rhs,(_,_,_,_))
+    then (rhs,false,inTpl);
   end matchcontinue;
 end evaluateConstantFunctionWrapper;
 

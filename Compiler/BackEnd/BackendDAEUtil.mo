@@ -7857,12 +7857,14 @@ protected function filterEmptySystems
   "Filter out equation systems leaving at least one behind"
   input BackendDAE.EqSystems inSysts;
   input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystems outSysts;
+  output BackendDAE.EqSystems outSysts = {};
   output BackendDAE.Shared outShared = inShared;
 protected
-  list<BackendDAE.Equation> reqns;
+  list<BackendDAE.Equation> reqns = {};
 algorithm
-  (reqns, outSysts) := List.fold(inSysts, filterEmptySystem, ({}, {}));
+  for e in inSysts loop
+    (reqns, outSysts) := filterEmptySystem(e, reqns, outSysts);
+  end for;
 
   if listEmpty(outSysts) then
     outSysts := {BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())};
@@ -7875,17 +7877,15 @@ end filterEmptySystems;
 
 protected function filterEmptySystem
   input BackendDAE.EqSystem inSyst;
-  input tuple<list<BackendDAE.Equation>, BackendDAE.EqSystems> inTpl;
-  output tuple<list<BackendDAE.Equation>, BackendDAE.EqSystems> outTpl;
-protected
-  list<BackendDAE.Equation> reqs;
-  BackendDAE.EqSystems systs;
+  input output list<BackendDAE.Equation> reqs;
+  input output BackendDAE.EqSystems systs;
 algorithm
-  (reqs, systs) := inTpl;
-  outTpl := if BackendVariable.varsSize(inSyst.orderedVars) <> 0
-               or (isClockedSyst(inSyst) and BackendDAEUtil.equationArraySize(inSyst.removedEqs) <> 0)
-            then (reqs, inSyst::systs)
-            else (listAppend(BackendEquation.equationList(inSyst.removedEqs), reqs), systs);
+  if BackendVariable.varsSize(inSyst.orderedVars) <> 0 or
+     (isClockedSyst(inSyst) and BackendDAEUtil.equationArraySize(inSyst.removedEqs) <> 0) then
+    systs := inSyst::systs;
+  else
+     reqs := listAppend(BackendEquation.equationList(inSyst.removedEqs), reqs);
+  end if;
 end filterEmptySystem;
 
 public function getAllVarLst "retrieve all variables of the dae by collecting them from each equation system and combining with known vars"

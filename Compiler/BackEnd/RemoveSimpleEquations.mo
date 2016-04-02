@@ -1603,18 +1603,18 @@ algorithm
       list<Integer> ilst, vlst;
       list<BackendDAE.Var> varlst;
 
-    case (DAE.CREF(DAE.CREF_IDENT(ident="time", subscriptLst={}), _), (_, vars, knvars, b1, b2, ilst))
-    then (inExp, false, (true, vars, knvars, b1, b2, ilst));
+    case (DAE.CREF(DAE.CREF_IDENT(ident="time", subscriptLst={}), _), (b, vars, knvars, b1, b2, ilst))
+    then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
 
-    case (DAE.CREF(cr, _), (_, vars, knvars, b1, b2, ilst)) equation
+    case (DAE.CREF(cr, _), (b, vars, knvars, b1, b2, ilst)) equation
       (varlst, _::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level";
       false = List.mapAllValueBool(varlst, toplevelInputOrUnfixed, false);
-    then (inExp, false, (true, vars, knvars, b1, b2, ilst));
+    then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
 
-    case (DAE.CALL(path = Absyn.IDENT(name="pre")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst));
-    case (DAE.CALL(path = Absyn.IDENT(name="previous")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst) );
-    case (DAE.CALL(path = Absyn.IDENT(name="change")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst));
-    case (DAE.CALL(path = Absyn.IDENT(name="edge")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="pre")), (b, vars, knvars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="previous")), (b, vars, knvars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst) );
+    case (DAE.CALL(path = Absyn.IDENT(name="change")), (b, vars, knvars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="edge")), (b, vars, knvars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
 
     // var
     case (DAE.CREF(cr, _), (b, vars, knvars, b1, b2, ilst)) equation
@@ -1622,8 +1622,8 @@ algorithm
       ilst = listAppend(ilst, vlst);
     then (inExp, true, (b, vars, knvars, b1, b2, ilst));
 
-    case (_, (b, vars, knvars, b1, b2, ilst))
-    then (inExp, not b, (b, vars, knvars, b1, b2, ilst));
+    case (_, (b, _, _, _, _, _))
+    then (inExp, not b, inTuple);
   end matchcontinue;
 end traversingTimeVarsFinder;
 
@@ -3302,8 +3302,8 @@ algorithm
     local
       DAE.Exp e;
       DAE.ComponentRef cr;
-    case((NONE(), _), _) then iAcc;
     case ((SOME(e), cr), _) then (e, cr)::iAcc;
+    else iAcc;
   end match;
 end getZeroFreeValues;
 

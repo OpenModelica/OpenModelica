@@ -2987,12 +2987,12 @@ algorithm
       BackendDAE.Var v;
       ArgT arg;
 
-    case NONE() then inArg;
     case SOME(v)
       algorithm
         (_, arg) := inFunc(v, inArg);
       then
         arg;
+      else inArg;
   end match;
 end traverseBackendDAEVars2;
 

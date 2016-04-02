@@ -1267,7 +1267,7 @@ algorithm
       equation
         ix = BaseHashTable.get(exp, ht);
         nexp = DAE.SHARED_LITERAL(ix, exp);
-      then (nexp, (i, ht, l));
+      then (nexp, inTpl);
     case (exp, (i, ht, l))
       equation
         ht = BaseHashTable.add((exp, i), ht);

@@ -3583,14 +3583,14 @@ algorithm
       list<BackendDAE.Var> varlst;
       DAE.VarInnerOuter io;
     // state with stateSelect.always, diffed once
-    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
+    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),_)
       guard intEq(diffcount,1)
-      then (var,(vars,so,varlst,ht));
+      then (var,inTpl);
     // state with stateSelect.always, diffed more than once, known derivative
-    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(cr)),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
+    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(cr)),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),_)
       equation
         var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,SOME(cr)));
-      then (var,(vars,so,varlst,ht));
+      then (var,inTpl);
     // state with stateSelect.always, diffed more than once, unknown derivative
     case (var as BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffcount,derName=NONE()),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
       equation
