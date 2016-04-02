@@ -13,7 +13,7 @@ res :=simulate(drumBoiler.optDrumBoiler, stopTime=3600, fileNamePrefix = "init")
 setCommandLineOptions("+gDynOpt +d=reduceDynOpt +loop2con=noLin +demoMode");
 getErrorString();
 
-res :=optimize(drumBoiler.optDrumBoiler, stopTime=3600, numberOfIntervals=50, tolerance=1e-4, simflags="-lv=LOG_IPOPT_ERROR -optimizerNP 1 -s optimization -iif init_res.mat -ipopt_init FILE");
+res :=optimize(drumBoiler.optDrumBoiler, stopTime=3600, numberOfIntervals=50, tolerance=1e-4, simflags="-lv=LOG_IPOPT_ERROR -optimizerNP 1 -s optimization -iif init_res.mat -ipopt_init FILE -ipopt_max_iter=100");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("drumBoiler.optDrumBoiler_res.mat","ReferenceFiles/drumBoiler.optDrumBoiler_ref.mat","drumBoiler.optDrumBoiler_res.csv",0.01,0.0001,{"controller.x", "evaporator.V_l", "evaporator.p", "q_F", "Y_Valve", "dq_F"});
@@ -81,7 +81,7 @@ getErrorString();
 // "
 // record SimulationResult
 //     resultFile = "drumBoiler.optDrumBoiler_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 50, tolerance = 0.0001, method = 'optimization', fileNamePrefix = 'drumBoiler.optDrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_IPOPT_ERROR -optimizerNP 1 -s optimization -iif init_res.mat -ipopt_init FILE'",
+//     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 50, tolerance = 0.0001, method = 'optimization', fileNamePrefix = 'drumBoiler.optDrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_IPOPT_ERROR -optimizerNP 1 -s optimization -iif init_res.mat -ipopt_init FILE -ipopt_max_iter=100'",
 //     messages = "
 // Optimizer Variables
 // ========================================================
@@ -98,6 +98,7 @@ getErrorString();
 // ========================================================
 // stdout            | info    | Using values from file as initial guess.
 //
+// max_iter = 100
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.
 //  Ipopt is released as open source code under the Eclipse Public License (EPL).
