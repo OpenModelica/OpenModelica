@@ -877,9 +877,12 @@ protected
   package OperatorsBinary
     import int_scalar = DAE.T_INTEGER_DEFAULT;
     import real_scalar = DAE.T_REAL_DEFAULT;
+    import bool_scalar = DAE.T_BOOL_DEFAULT;
     constant DAE.Operator
       int_mul = DAE.MUL(int_scalar),
       real_mul = DAE.MUL(real_scalar),
+      real_div = DAE.DIV(real_scalar),
+      real_pow = DAE.POW(real_scalar),
       int_mul_sp = DAE.MUL_SCALAR_PRODUCT(int_scalar),
       real_mul_sp = DAE.MUL_SCALAR_PRODUCT(real_scalar),
       int_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.T_INTEGER_DEFAULT),
@@ -900,13 +903,11 @@ protected
         (DAE.ADD(DAE.T_STRING_DEFAULT), {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_STRING_DEFAULT)
       },
       addTypes = listAppend(addScalars, listAppend(addIntArrays, listAppend(addRealArrays, addStringArrays))),
-
       // ADD_EW
       addIntArrayScalars = list((DAE.ADD_ARRAY_SCALAR(int_vector), {at,rhs},at) threaded for at in intarrtypes, rhs in inttypes),
       addRealArrayScalars = list((DAE.ADD_ARRAY_SCALAR(real_vector), {at,rhs},at) threaded for at in realarrtypes, rhs in realtypes),
       addStringArrayScalars = list((DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)), {at,rhs},at) threaded for at in stringarrtypes, rhs in stringtypes),
       addEwTypes = listAppend(addIntArrayScalars, listAppend(addRealArrayScalars, listAppend(addStringArrayScalars, addTypes))),
-
       // SUB
       subIntArrays = list((DAE.SUB_ARR(int_vector), {at,at},at) for at in intarrtypes),
       subRealArrays = list((DAE.SUB_ARR(real_vector), {at,at},at) for at in realarrtypes),
@@ -915,12 +916,10 @@ protected
         (DAE.SUB(real_scalar),{real_scalar,real_scalar},real_scalar)
       },
       subTypes = listAppend(subScalars, listAppend(subIntArrays, subRealArrays)),
-
       // SUB_EW
       subIntArrayScalars = list((DAE.SUB_SCALAR_ARRAY(int_vector), {lhs,at},at) threaded for at in intarrtypes, lhs in inttypes),
       subRealArrayScalars = list((DAE.SUB_SCALAR_ARRAY(real_vector), {lhs,at},at) threaded for at in realarrtypes, lhs in realtypes),
       subEwTypes = listAppend(subScalars, listAppend(subIntArrayScalars, listAppend(subRealArrayScalars, listAppend(subIntArrays, subRealArrays)))),
-
       // MUL
       mulScalars = {
           (int_mul,{int_scalar,int_scalar},int_scalar),
@@ -941,11 +940,28 @@ protected
       mulIntArrayScalars = list((DAE.MUL_ARRAY_SCALAR(int_vector), {at,rhs},at) threaded for at in intarrtypes, rhs in inttypes),
       mulRealArrayScalars = list((DAE.MUL_ARRAY_SCALAR(real_vector), {at,rhs},at) threaded for at in realarrtypes, rhs in realtypes),
       mulTypes = listAppend(mulScalars, listAppend(mulIntArrayScalars, listAppend(mulRealArrayScalars, listAppend(mulScalarProduct,mulMatrixProduct)))),
-
       // MUL_EW
       mulIntArray = list((DAE.MUL_ARR(int_vector), {at,at},at) for at in intarrtypes),
       mulRealArray = list((DAE.MUL_ARR(real_vector), {at,at},at) for at in realarrtypes),
-      mulEwTypes = listAppend(mulScalars, listAppend(mulIntArrayScalars, listAppend(mulRealArrayScalars, listAppend(mulIntArray, mulRealArray))));
+      mulEwTypes = listAppend(mulScalars, listAppend(mulIntArrayScalars, listAppend(mulRealArrayScalars, listAppend(mulIntArray, mulRealArray)))),
+      // DIV
+      divTypes = (real_div,{real_scalar,real_scalar},real_scalar) ::
+        list((DAE.DIV_ARRAY_SCALAR(real_vector), {at,rhs},at) threaded for at in realarrtypes, rhs in realtypes),
+      // DIV_EW
+      divRealScalarArray = list((DAE.DIV_SCALAR_ARRAY(real_vector), {lhs,at},at) threaded for at in realarrtypes, lhs in realtypes),
+      divArrs = list((DAE.DIV_ARR(real_vector), {at,at},at) for at in realarrtypes),
+      divEwTypes = listAppend(divTypes, listAppend(divRealScalarArray, divArrs)),
+      // POW
+      powTypes = {
+        (real_pow,{real_scalar,real_scalar},real_scalar),
+        (DAE.POW_ARR(real_scalar),{real_matrix,int_scalar},real_matrix)
+      },
+      // AND
+      andTypes = (DAE.AND(bool_scalar), {bool_scalar, bool_scalar}, bool_scalar) ::
+        list((DAE.AND(bool_scalar), {at,at},at) threaded for at in boolarrtypes),
+      // OR
+      orTypes = (DAE.OR(bool_scalar), {bool_scalar, bool_scalar}, bool_scalar) ::
+        list((DAE.OR(bool_scalar), {at,at},at) threaded for at in boolarrtypes);
   end OperatorsBinary;
   DAE.Type t;
   DAE.Exp e;
@@ -983,46 +999,9 @@ algorithm
     case Absyn.SUB_EW() then OperatorsBinary.subEwTypes;
     case Absyn.MUL() then OperatorsBinary.mulTypes;
     case Absyn.MUL_EW() then OperatorsBinary.mulEwTypes;
-
-    case Absyn.DIV()
-      equation
-        real_div = DAE.DIV(DAE.T_REAL_DEFAULT);
-        real_scalar = DAE.T_REAL_DEFAULT;
-        scalars = {(real_div,{real_scalar,real_scalar},real_scalar)};
-        realarrscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realarrtypes, realtypes, realarrtypes);
-        types = List.flatten({scalars,realarrscalar});
-      then types;
-
-    case Absyn.DIV_EW()
-      equation
-        realarrs = operatorReturn(DAE.DIV_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realarrtypes, realarrtypes, realarrtypes);
-        scalars = {
-          (DAE.DIV(DAE.T_REAL_DEFAULT),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        realscalararrs = operatorReturn(DAE.DIV_SCALAR_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realtypes, realarrtypes, realarrtypes);
-        realarrsscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realarrtypes, realtypes, realarrtypes);
-        types = List.flatten({scalars,realscalararrs,
-          realarrsscalar,realarrs});
-      then types;
-
-    case Absyn.POW()
-      equation
-        // Note: POW_ARR uses Integer exponents, while POW only uses Real exponents
-        real_scalar = DAE.T_REAL_DEFAULT;
-        int_scalar = DAE.T_INTEGER_DEFAULT;
-        real_vector = DAE.T_ARRAY(real_scalar,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
-        real_matrix = DAE.T_ARRAY(real_vector,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
-        real_pow = DAE.POW(DAE.T_REAL_DEFAULT);
-        scalars = {(real_pow,{real_scalar,real_scalar},real_scalar)};
-        arrscalar = {
-          (DAE.POW_ARR(DAE.T_REAL_DEFAULT),{real_matrix,int_scalar},
-          real_matrix)};
-        types = List.flatten({scalars,arrscalar});
-      then types;
+    case Absyn.DIV() then OperatorsBinary.divTypes;
+    case Absyn.DIV_EW() then OperatorsBinary.divEwTypes;
+    case Absyn.POW() then OperatorsBinary.powTypes;
 
     case Absyn.POW_EW()
       equation
@@ -1039,19 +1018,8 @@ algorithm
           realarrsscalar,realarrs});
       then types;
 
-    case Absyn.AND()
-      equation
-        scalars = {(DAE.AND(DAE.T_BOOL_DEFAULT), {DAE.T_BOOL_DEFAULT, DAE.T_BOOL_DEFAULT}, DAE.T_BOOL_DEFAULT)};
-        boolarrs = operatorReturn(DAE.AND(DAE.T_BOOL_DEFAULT), boolarrtypes, boolarrtypes, boolarrtypes);
-        types = List.flatten({scalars, boolarrs});
-      then types;
-
-    case Absyn.OR()
-      equation
-        scalars = {(DAE.OR(DAE.T_BOOL_DEFAULT), {DAE.T_BOOL_DEFAULT, DAE.T_BOOL_DEFAULT}, DAE.T_BOOL_DEFAULT)};
-        boolarrs = operatorReturn(DAE.OR(DAE.T_BOOL_DEFAULT), boolarrtypes, boolarrtypes, boolarrtypes);
-        types = List.flatten({scalars, boolarrs});
-      then types;
+    case Absyn.AND() then OperatorsBinary.andTypes;
+    case Absyn.OR() then OperatorsBinary.orTypes;
 
     // Relational operators
     case Absyn.LESS()
