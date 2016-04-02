@@ -1292,7 +1292,7 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp, Text &varDecls, Si
 ///////////////////////////////////////////////CED
  let matrixassign = match m.matrix
     case row::_ then
-        let vars = daeExpMatrixRow(m.matrix,context,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName)
+        let vars = "NO_ASSIGN" //daeExpMatrixRow(m.matrix,context,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName)
         match vars
         case "NO_ASSIGN"
         then
