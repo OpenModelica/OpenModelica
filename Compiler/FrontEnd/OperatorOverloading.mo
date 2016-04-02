@@ -873,6 +873,29 @@ function operatorsBinary "This function relates the operators in the abstract sy
   output DAE.Exp oe1;
   output DAE.Type oty2;
   output DAE.Exp oe2;
+protected
+  package OperatorsBinary
+    constant list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>>
+      // ADD
+      addIntArrays = list((DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)), {at,at},at) for at in intarrtypes),
+      addRealArrays = list((DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)), {at,at},at) for at in realarrtypes),
+      addStringArrays = list((DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)), {at,at},at) for at in stringarrtypes),
+      addScalars = {
+            (DAE.ADD(DAE.T_INTEGER_DEFAULT),
+            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
+            (DAE.ADD(DAE.T_REAL_DEFAULT),
+            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT),
+            (DAE.ADD(DAE.T_STRING_DEFAULT),
+            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_STRING_DEFAULT)},
+      addTypes = listAppend(addScalars, listAppend(addIntArrays, listAppend(addRealArrays, addStringArrays))),
+
+      // ADD_EW
+      addIntArrayScalars = list((DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)), {at,rhs},at) threaded for at in intarrtypes, rhs in inttypes),
+      addRealArrayScalars = list((DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)), {at,rhs},at) threaded for at in realarrtypes, rhs in realtypes),
+      addStringArrayScalars = list((DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)), {at,rhs},at) threaded for at in stringarrtypes, rhs in stringtypes),
+      addEwTypes = listAppend(addIntArrayScalars, listAppend(addRealArrayScalars, listAppend(addStringArrayScalars, addTypes)))
+      ;
+  end OperatorsBinary;
 algorithm
   (ops,oty1,oe1,oty2,oe2) :=
   matchcontinue (inOperator1,inType3,inE1,inType4,inE2)
@@ -886,51 +909,13 @@ algorithm
 
     // arithmetical operators
     case (Absyn.ADD(),t1,e1,t2,e2)
-      equation
-        intarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                    intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                     realarrtypes, realarrtypes, realarrtypes);
-        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                       stringarrtypes, stringarrtypes, stringarrtypes);
-        scalars = {
-          (DAE.ADD(DAE.T_INTEGER_DEFAULT),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
-          (DAE.ADD(DAE.T_REAL_DEFAULT),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT),
-          (DAE.ADD(DAE.T_STRING_DEFAULT),
-          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_STRING_DEFAULT)};
-        arrays = List.flatten({intarrs,realarrs,stringarrs});
-        types = List.flatten({scalars,arrays});
-      then
-        (types,t1,e1,t2,e2);
+      then (OperatorsBinary.addTypes,t1,e1,t2,e2);
 
     // arithmetical element wise operators
     case (Absyn.ADD_EW(),t1,e1,t2,e2)
       equation
         false = Types.isArray(t2) and (not Types.isArray(t1));
-        intarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                    intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                     realarrtypes, realarrtypes, realarrtypes);
-        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                       stringarrtypes, stringarrtypes, stringarrtypes);
-        scalars = {
-          (DAE.ADD(DAE.T_INTEGER_DEFAULT),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
-          (DAE.ADD(DAE.T_REAL_DEFAULT),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT),
-          (DAE.ADD(DAE.T_STRING_DEFAULT),
-          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_STRING_DEFAULT)};
-        intarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                          intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                           realarrtypes, realtypes, realarrtypes);
-        stringarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                             stringarrtypes, stringtypes, stringarrtypes);
-        types = List.flatten({scalars,intarrsscalar,realarrsscalar,stringarrsscalar,intarrs,realarrs,stringarrs});
-      then
-        (types,t1,e1,t2,e2);
+      then (OperatorsBinary.addEwTypes,t1,e1,t2,e2);
 
     // arithmetical operators
     case (Absyn.SUB(),t1,e1,t2,e2)
@@ -1340,21 +1325,8 @@ function operatorReturn "This function collects the types and operator lists int
   input list<DAE.Type> inReturnTypes;
   output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outOperators;
 algorithm
-  outOperators := match(inOperator, inLhsTypes, inRhsTypes, inReturnTypes)
-    local
-      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> rest;
-      tuple<DAE.Operator, list<DAE.Type>, DAE.Type> t;
-      DAE.Operator op;
-      DAE.Type l,r,re;
-      list<DAE.Type> lr,rr,rer;
-    case (_,{},{},{}) then {};
-    case (op,(l :: lr),(r :: rr),(re :: rer))
-      equation
-        rest = operatorReturn(op, lr, rr, rer);
-        t = (op,{l,r},re) "list contains two types, i.e. BINARY operations" ;
-      then
-        (t :: rest);
-  end match;
+  outOperators := list((inOperator,{l,r},re) threaded for l in inLhsTypes, r in inRhsTypes, re in inReturnTypes);
+  annotation(__OpenModelica_EarlyInline=true);
 end operatorReturn;
 
 function operatorReturnUnary "This function collects the types and operator lists into a tuple list,
