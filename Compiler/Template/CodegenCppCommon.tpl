@@ -23,14 +23,16 @@ template cref(ComponentRef cr, Boolean useFlatArrayNotation)
   case WILD(__) then ''
   else "_"+crefToCStr(cr, useFlatArrayNotation)
 end cref;
-template localcref(ComponentRef cr, Boolean useFlatArrayNotation)
- "Generates C equivalent name for component reference."
+
+template localCref(ComponentRef cr, Boolean useFlatArrayNotation)
+ "Generates C equivalent name for a local component reference."
 ::=
   match cr
   case CREF_IDENT(ident = "time") then "_simTime"
   case WILD(__) then ''
   else crefToCStr(cr,useFlatArrayNotation)
-end localcref;
+end localCref;
+
 template subscriptsToCStr(list<Subscript> subscripts, Boolean useFlatArrayNotation)
 ::=
   if subscripts then
@@ -221,28 +223,24 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
   cref2simvar(inCref, simCode) |> var as SIMVAR(__) =>
   match varKind
     case STATE(__)        then
-        << <%representationCref1(inCref,var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context, useFlatArrayNotation)%> >>
+      representationCref1(inCref, var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, useFlatArrayNotation)
     case STATE_DER(__)   then
-        << <%representationCref2(inCref,var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context, stateDerVectorName)%> >>
+      representationCref2(inCref, var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName)
     case VARIABLE(__) then
       match var
         case SIMVAR(index=-2) then
-          match context
-            case JACOBIAN_CONTEXT() then
-              '_<%crefToCStr(inCref,false)%>'
-            case ALGLOOP_CONTEXT(__) then
-              '_system->_<%crefToCStr(inCref,false)%>'
-            else
-              '<%localcref(inCref, useFlatArrayNotation)%>'
-          end match
+          // unknown in cref2simvar, e.g. local in a function, iterator or time
+          localCref(inCref, useFlatArrayNotation)
         else
           match context
             case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=false) then
               '_system-><%cref(inCref, useFlatArrayNotation)%>'
             case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=true) then
               '_system->_<%crefToCStr(inCref,false)%>'
+            case JACOBIAN_CONTEXT() then
+              '_<%crefToCStr(inCref, false)%>'
             else
-              '<%varToString(inCref,context, useFlatArrayNotation)%>'
+              cref(inCref, useFlatArrayNotation)
       else
         match context
           case ALGLOOP_CONTEXT(genInitialisation = false) then
@@ -251,31 +249,6 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
           else
             '<%cref(inCref, useFlatArrayNotation)%>'
 end representationCref;
-
-
-template varToString(ComponentRef cr,Context context, Boolean useFlatArrayNotation)
- "Generates C equivalent name for component reference."
-::=
- match context
-    case JACOBIAN_CONTEXT()
-              //then   <<<%crefWithoutIndexOperator(cr)%>>>
-              then   '_<%crefToCStr(cr,false)%>'
- else
-  match cr
-   case CREF_IDENT(ident = "time") then "_simTime"
-   case WILD(__) then ''
-   else "_"+crefToCStr(cr, useFlatArrayNotation)
-end varToString;
-
-template crefWithoutIndexOperator(ComponentRef cr)
- "Generates C equivalent name for component reference."
-::=
-   match cr
-    case CREF_IDENT(ident = "xloc") then crefStr(cr)
-    case CREF_IDENT(ident = "time") then "_simTime"
-    case WILD(__) then ''
-    else crefToCStrWithoutIndexOperator(cr)
-end crefWithoutIndexOperator;
 
 template crefToCStrWithoutIndexOperator(ComponentRef cr)
  "Helper function to cref."
@@ -346,25 +319,26 @@ template crefToCStr(ComponentRef cr, Boolean useFlatArrayNotation)
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
 
-template representationCref1(ComponentRef inCref,SimVar var, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation) ::=
-   match var
-    case SIMVAR(index=i) then
+template representationCref1(ComponentRef inCref, SimVar var, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation)
+::=
+  match var
+  case SIMVAR(index=i) then
     match i
-   case -1 then
-  '<%cref2(inCref, useFlatArrayNotation)%>'
-   case _  then
-   << __z[<%i%>] >>
+    case -1 then
+      cref2(inCref, useFlatArrayNotation)
+    else
+      '__z[<%i%>]'
 end representationCref1;
 
-template representationCref2(ComponentRef inCref, SimVar var,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot */) ::=
- match var
-case(SIMVAR(index=i)) then
-  match context
-         case JACOBIAN_CONTEXT()
-                //then   <<<%crefWithoutIndexOperator(inCref)%>>>
-                then  '_<%crefToCStr(inCref,false)%>'
-        else
-             <<<%stateDerVectorName%>[<%i%>]>>
+template representationCref2(ComponentRef inCref, SimVar var, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot */)
+::=
+  match var
+  case(SIMVAR(index=i)) then
+    match context
+    case JACOBIAN_CONTEXT() then
+      '_<%crefToCStr(inCref, false)%>'
+    else
+      '<%stateDerVectorName%>[<%i%>]'
 end representationCref2;
 
 template representationCrefDerVar(ComponentRef inCref, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot */) ::=
@@ -398,7 +372,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp, Text &varDecls, 
 ::=
   match ecr
   case component as CREF(componentRef=cr, ty=ty) then
-    let box = daeExpCrefRhsArrayBox(cr,ty, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
+    let box = daeExpCrefRhsArrayBox(cr, ty, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     if box then
      box
     else if crefIsScalar(cr, context) then
@@ -484,19 +458,20 @@ template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
   '<%tmp_slice%>'
 end daeExpCrefIndexSpec;
 
-template daeExpCrefRhsArrayBox(ComponentRef cr,DAE.Type ty, Context context, Text &preExp /*BUFP*/,
-                               Text &varDecls /*BUFP*/,SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template daeExpCrefRhsArrayBox(ComponentRef cr, DAE.Type ty, Context context, Text &preExp,
+                               Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                               Text extraFuncsNamespace, Text stateDerVectorName, Boolean useFlatArrayNotation)
  "Helper to daeExpCrefRhs."
 ::=
  cref2simvar(cr, simCode) |> var as SIMVAR(index=i) =>
     match varKind
         case STATE(__)     then
-              let statvar = '__z[<%i%>]'
-              let tmpArr = '<%daeExpCrefRhsArrayBox2(statvar,ty,context,preExp,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
+              let statvar = representationCref1(cr, var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, useFlatArrayNotation)
+              let tmpArr = daeExpCrefRhsArrayBox2(statvar, ty, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
               tmpArr
         case STATE_DER(__)      then
-              let statvar = '__zDot[<%i%>]'
-              let tmpArr = '<%daeExpCrefRhsArrayBox2(statvar,ty,context,preExp,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
+              let statvar = representationCref2(cr, var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName)
+              let tmpArr = daeExpCrefRhsArrayBox2(statvar, ty, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
               tmpArr
         else
           match context

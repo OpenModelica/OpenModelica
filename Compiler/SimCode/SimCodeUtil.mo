@@ -222,7 +222,7 @@ protected
   list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
   list<SimCode.StateSet> stateSets;
   list<SimCodeVar.SimVar> mixedArrayVars;
-  list<SimCodeVar.SimVar> tempvars, jacobianSimvars;
+  list<SimCodeVar.SimVar> tempvars, jacobianSimvars, seedVars;
   list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
   list<list<SimCode.SimEqSystem>> odeEquations;         // --> functionODE
   list<tuple<Integer, Integer>> equationSccMapping, eqBackendSimCodeMapping;
@@ -390,6 +390,8 @@ algorithm
     SymbolicJacs := listAppend(SymbolicJacsNLS, SymbolicJacs);
     jacobianSimvars := collectAllJacobianVars(SymbolicJacs);
     modelInfo := setJacobianVars(jacobianSimvars, modelInfo);
+    seedVars := collectAllSeedVars(SymbolicJacs);
+    modelInfo := setSeedVars(seedVars, modelInfo);
     execStat("simCode: created linear, non-linear and system jacobian parts");
 
     // map index also odeEquations and algebraicEquations
@@ -679,15 +681,15 @@ protected function collectClockedVars "author: rfranke
   input tuple<HashTable.HashTable, Integer> inTpl;
   output tuple<HashTable.HashTable, Integer> outTpl;
 protected
-  HashTable.HashTable outHT;
+  HashTable.HashTable inHT, outHT;
   Integer clockIndex;
 algorithm
-  (_, clockIndex) := inTpl;
+  (inHT, clockIndex) := inTpl;
   outTpl := match inEqSystem
     case BackendDAE.EQSYSTEM(partitionKind = BackendDAE.CLOCKED_PARTITION(_)) equation
-      (outHT, _) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectClockedVars1, inTpl);
+      (outHT, _) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectClockedVars1, (inHT, clockIndex));
     then (outHT, clockIndex + 1);
-  else inTpl;
+    else (inHT, clockIndex);
   end match;
 end collectClockedVars;
 
@@ -838,6 +840,19 @@ algorithm
     oModelInfo.vars := vars;
   end if;
 end setJacobianVars;
+
+protected function setSeedVars
+  "Set the given seed vars in the given model info, replacing old seed vars.
+   author: rfranke"
+  input list<SimCodeVar.SimVar> seedVars;
+  input output SimCode.ModelInfo modelInfo;
+protected
+  SimCodeVar.SimVars vars;
+algorithm
+  vars := modelInfo.vars;
+  vars.seedVars := seedVars;
+  modelInfo.vars := vars;
+end setSeedVars;
 
 protected function setMixedArrayVars "author: marcusw
   Set the given mixed array vars in the given model info. The old mixed variables will be replaced."
@@ -3742,10 +3757,8 @@ algorithm
   b := ComponentReference.crefLastIdentEqual(BackendVariable.varCref(v), diffCref);
   if not b then
     vars := v::vars;
-    outTpl := (vars, diffCref);
-  else
-    outTpl := inTpl;
   end if;
+  outTpl := (vars, diffCref);
 end getFurtherVars;
 
 protected function createJacobianLinearCode
@@ -4157,6 +4170,19 @@ algorithm
     end for;
   end for;
 end collectAllJacobianVars;
+
+protected function collectAllSeedVars
+ "Collect seed vars of Jacobian matrices. author: rfranke"
+  input list<SimCode.JacobianMatrix> inJacobianMatrices;
+  output list<SimCodeVar.SimVar> outVars = {};
+protected
+  list<SimCodeVar.SimVar> seedVars;
+algorithm
+  for m in inJacobianMatrices loop
+    (_, seedVars, _, _, _, _, _) := m;
+    outVars := listAppend(outVars, seedVars);
+  end for;
+end collectAllSeedVars;
 
 protected function sortSparsePattern
   input list<SimCodeVar.SimVar> inSimVars;
@@ -6222,8 +6248,6 @@ protected
   BackendDAE.EqSystems systs1, systs2;
   DAE.FunctionTree funcTree;
   HashSet.HashSet hs = HashSet.emptyHashSet();
-protected
-  array<list<SimCodeVar.SimVar>> outVarsArr;
 algorithm
   BackendDAE.DAE(eqs=systs1, shared=BackendDAE.SHARED(knownVars=knvars1, externalObjects=extvars1, aliasVars=aliasVars1, functionTree=funcTree)) := inSimDAE;
   BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(knownVars=knvars2, externalObjects=extvars2, aliasVars=aliasVars2)) := inInitDAE;
@@ -6237,38 +6261,37 @@ algorithm
     //systs2 := List.map1(systs2, preCalculateStartValues, knvars2);
   end if;
 
-  outVarsArr := arrayCreate(26,{});
   // ### simulation ###
   // Extract from variable list
-  ((outVarsArr, _, _, hs)) := List.fold1(List.map(systs1, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (outVarsArr, aliasVars1, knvars1, hs));
+  ((outVars, _, _, hs)) := List.fold1(List.map(systs1, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (SimCodeVar.emptySimVars, aliasVars1, knvars1, hs));
 
   // Extract from known variable list
-  ((outVarsArr, _, _, hs)) := BackendVariable.traverseBackendDAEVars(knvars1, extractVarsFromList, (outVarsArr, aliasVars1, knvars1, hs));
+  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(knvars1, extractVarsFromList, (outVars, aliasVars1, knvars1, hs));
 
   // Extract from removed variable list
-  ((outVarsArr, _, _, hs)) := BackendVariable.traverseBackendDAEVars(aliasVars1, extractVarsFromList, (outVarsArr, aliasVars1, knvars1, hs));
+  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(aliasVars1, extractVarsFromList, (outVars, aliasVars1, knvars1, hs));
 
   // Extract from external object list
-  ((outVarsArr, _, _, hs)) := BackendVariable.traverseBackendDAEVars(extvars1, extractVarsFromList, (outVarsArr, aliasVars1, knvars1, hs));
+  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(extvars1, extractVarsFromList, (outVars, aliasVars1, knvars1, hs));
 
 
   // ### initialization ###
   // Extract from variable list
-  ((outVarsArr, _, _, hs)) := List.fold1(List.map(systs2, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (outVarsArr, aliasVars2, knvars2, hs));
+  ((outVars, _, _, hs)) := List.fold1(List.map(systs2, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (outVars, aliasVars2, knvars2, hs));
 
   // Extract from known variable list
-  ((outVarsArr, _, _, hs)) := BackendVariable.traverseBackendDAEVars(knvars2, extractVarsFromList, (outVarsArr, aliasVars2, knvars2, hs));
+  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(knvars2, extractVarsFromList, (outVars, aliasVars2, knvars2, hs));
 
   // Extract from removed variable list
-  ((outVarsArr, _, _, hs)) := BackendVariable.traverseBackendDAEVars(aliasVars2, extractVarsFromList, (outVarsArr, aliasVars2, knvars2, hs));
+  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(aliasVars2, extractVarsFromList, (outVars, aliasVars2, knvars2, hs));
 
   // Extract from external object list
-  ((outVarsArr, _, _, hs)) := BackendVariable.traverseBackendDAEVars(extvars2, extractVarsFromList, (outVarsArr, aliasVars2, knvars2, hs));
+  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(extvars2, extractVarsFromList, (outVars, aliasVars2, knvars2, hs));
 
   //BaseHashSet.printHashSet(hs);
 
   // sort variables on index
-  outVars := sortSimvars(outVarsArr);
+  outVars := sortSimvars(outVars);
   outVars := if stringEqual(Config.simCodeTarget(), "Cpp") then extendIncompleteArray(outVars) else outVars;
 
   // Index of algebraic and parameters need to fix due to separation of integer variables
@@ -6388,11 +6411,11 @@ end getRecordPathFromCref;
 
 protected function extractVarsFromList
   input BackendDAE.Var inVar;
-  input tuple<array<list<SimCodeVar.SimVar>>, BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet /*all processed crefs*/> inTpl;
+  input tuple<SimCodeVar.SimVars, BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet /*all processed crefs*/> inTpl;
   output BackendDAE.Var outVar = inVar;
-  output tuple<array<list<SimCodeVar.SimVar>>, BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet /*all processed crefs*/> outTpl;
+  output tuple<SimCodeVar.SimVars, BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet /*all processed crefs*/> outTpl;
 protected
-  array<list<SimCodeVar.SimVar>> vars;
+  SimCodeVar.SimVars vars;
   BackendDAE.Variables aliasVars, v;
   HashSet.HashSet hs;
 algorithm
@@ -6403,11 +6426,9 @@ algorithm
   //  print("Added  " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
   //else
   //  print("Skiped " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
-    outTpl := (vars, aliasVars, v, hs);
-  else
-    outTpl := inTpl;
   end if;
 
+  outTpl := (vars, aliasVars, v, hs);
 end extractVarsFromList;
 
 // one dlow var can result in multiple simvars: input and output are a subset
@@ -6416,17 +6437,48 @@ protected function extractVarFromVar
   input BackendDAE.Var dlowVar;
   input BackendDAE.Variables inAliasVars;
   input BackendDAE.Variables inVars;
-  input array<list<SimCodeVar.SimVar>> varsIn;
+  input SimCodeVar.SimVars varsIn;
   input HashSet.HashSet inHS "all processed crefs";
-  output array<list<SimCodeVar.SimVar>> varsOut = varsIn;
+  output SimCodeVar.SimVars varsOut;
   output HashSet.HashSet outHS = inHS;
 protected
+  list<SimCodeVar.SimVar> stateVars;
+  list<SimCodeVar.SimVar> derivativeVars;
+  list<SimCodeVar.SimVar> algVars;
+  list<SimCodeVar.SimVar> discreteAlgVars;
+  list<SimCodeVar.SimVar> intAlgVars;
+  list<SimCodeVar.SimVar> boolAlgVars;
+  list<SimCodeVar.SimVar> inputVars;
+  list<SimCodeVar.SimVar> outputVars;
+  list<SimCodeVar.SimVar> aliasVars;
+  list<SimCodeVar.SimVar> intAliasVars;
+  list<SimCodeVar.SimVar> boolAliasVars;
+  list<SimCodeVar.SimVar> paramVars;
+  list<SimCodeVar.SimVar> intParamVars;
+  list<SimCodeVar.SimVar> boolParamVars;
+  list<SimCodeVar.SimVar> stringAlgVars;
+  list<SimCodeVar.SimVar> stringParamVars;
+  list<SimCodeVar.SimVar> stringAliasVars;
+  list<SimCodeVar.SimVar> extObjVars;
+  list<SimCodeVar.SimVar> constVars;
+  list<SimCodeVar.SimVar> intConstVars;
+  list<SimCodeVar.SimVar> boolConstVars;
+  list<SimCodeVar.SimVar> stringConstVars;
+  list<SimCodeVar.SimVar> jacobianVars;
+  list<SimCodeVar.SimVar> seedVars;
+  list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
+  list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
+  list<SimCodeVar.SimVar> mixedArrayVars;
   SimCodeVar.SimVar simvar;
   SimCodeVar.SimVar derivSimvar;
   Boolean isalias, isAlg, isParam, isConst;
   DAE.ComponentRef name;
   Integer len;
 algorithm
+  SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars,
+    aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+    stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars) := varsIn;
+
   // extract the sim var
   simvar := dlowvarToSimvar(dlowVar, SOME(inAliasVars), inVars);
   derivSimvar := derVarFromStateVar(simvar);
@@ -6460,83 +6512,87 @@ algorithm
 
   // for inputs and outputs we have additional lists
   if BackendVariable.isVarOnTopLevelAndInputNoDerInput(dlowVar) then
-    varsOut[7] := simvar::varsOut[7];
+    inputVars := simvar::inputVars;
   end if;
   if BackendVariable.isVarOnTopLevelAndOutput(dlowVar) then
-    varsOut[8] := simvar::varsOut[8];
+    outputVars := simvar::outputVars;
   end if;
   // check if alias
   if isalias then
     if Types.isReal(dlowVar.varType) then
-      varsOut[9] := simvar::varsOut[9];
+      aliasVars := simvar::aliasVars;
     elseif Types.isInteger(dlowVar.varType) or  Types.isEnumeration(dlowVar.varType) then
-      varsOut[10] := simvar::varsOut[10];
+      intAliasVars := simvar::intAliasVars;
     elseif Types.isBoolean(dlowVar.varType) then
-      varsOut[11] := simvar::varsOut[11];
+      boolAliasVars := simvar::boolAliasVars;
     elseif Types.isString(dlowVar.varType) then
-      varsOut[17] := simvar::varsOut[17];
+      stringAliasVars := simvar::stringAliasVars;
     end if;
   // check for states
   elseif BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar) then
-    varsOut[1] := simvar::varsOut[1];
-    varsOut[2] := derivSimvar::varsOut[2];
+    stateVars := simvar::stateVars;
+    derivativeVars := derivSimvar::derivativeVars;
   // check for algebraic varibales
   elseif isAlg or isParam or isConst then
     // Real vars
     if Types.isReal(dlowVar.varType) then
       if isAlg then
         if BackendVariable.isVarDiscrete(dlowVar) then
-          varsOut[4] := simvar::varsOut[4];
+          discreteAlgVars := simvar::discreteAlgVars;
         else
-          varsOut[3] := simvar::varsOut[3];
+          algVars := simvar::algVars;
         end if;
       elseif isParam then
-        varsOut[12] := simvar::varsOut[12];
+        paramVars := simvar::paramVars;
       elseif isConst then
-        varsOut[19] := simvar::varsOut[19];
+        constVars := simvar::constVars;
       end if;
     // Integer vars
     elseif Types.isInteger(dlowVar.varType) or  Types.isEnumeration(dlowVar.varType) then
       if isAlg then
-        varsOut[5] := simvar::varsOut[5];
+        intAlgVars := simvar::intAlgVars;
       elseif isParam then
-        varsOut[13] := simvar::varsOut[13];
+        intParamVars := simvar::intParamVars;
       elseif isConst then
-        varsOut[20] := simvar::varsOut[20];
+        intConstVars := simvar::intConstVars;
       end if;
     // Boolean vars
     elseif Types.isBoolean(dlowVar.varType) then
       if isAlg then
-        varsOut[6] := simvar::varsOut[6];
+        boolAlgVars := simvar::boolAlgVars;
       elseif isParam then
-        varsOut[14] := simvar::varsOut[14];
+        boolParamVars := simvar::boolParamVars;
       elseif isConst then
-        varsOut[21] := simvar::varsOut[21];
+        boolConstVars := simvar::boolConstVars;
       end if;
     // String vars
     elseif Types.isString(dlowVar.varType) then
       if isAlg then
-        varsOut[15] := simvar::varsOut[15];
+        stringAlgVars := simvar::stringAlgVars;
       elseif isParam then
-        varsOut[16] := simvar::varsOut[16];
+        stringParamVars := simvar::stringParamVars;
       elseif isConst then
-        varsOut[22] := simvar::varsOut[22];
+        stringConstVars := simvar::stringConstVars;
       end if;
     end if;
   // external objects
   elseif BackendVariable.isExtObj(dlowVar) then
-    varsOut[18] := simvar::varsOut[18];
+    extObjVars := simvar::extObjVars;
   // optimize constraints
   elseif BackendVariable.isRealOptimizeConstraintsVars(dlowVar) then
-    varsOut[24] := simvar::varsOut[24];
+    realOptimizeConstraintsVars := simvar::realOptimizeConstraintsVars;
   // optimize final constraints vars
   elseif BackendVariable.isRealOptimizeFinalConstraintsVars(dlowVar) then
-    varsOut[25] := simvar::varsOut[25];
+    realOptimizeFinalConstraintsVars := simvar::realOptimizeFinalConstraintsVars;
   elseif BackendVariable.isOptInputVar(dlowVar) then
-    varsOut[3] := simvar::varsOut[3]; // TODO is this correct?
+    algVars := simvar::algVars;
   else
     Error.addInternalError("Failed to find the correct SimVar list for Var: " + BackendDump.varString(dlowVar), sourceInfo());
   end if;
+
+  varsOut := SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars,
+    aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+    stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars);
 end extractVarFromVar;
 
 protected function derVarFromStateVar
@@ -7077,39 +7133,19 @@ algorithm
 end isAliasVar;
 
 protected function sortSimvars
-  input array<list<SimCodeVar.SimVar>> unsortedSimvars;
-  output SimCodeVar.SimVars sortedSimvars;
+  input SimCodeVar.SimVars unsortedSimvars;
+  output SimCodeVar.SimVars sortedSimvars = unsortedSimvars;
 protected
   Integer i = 0;
   array<Integer> arr;
 algorithm
-  sortedSimvars := SimCodeVar.SIMVARS(
-                    List.sort(unsortedSimvars[1], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[2], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[3], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[4], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[5], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[6], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[7], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[8], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[9], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[10], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[11], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[12], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[13], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[14], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[15], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[16], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[17], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[18], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[19], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[20], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[21], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[22], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[23], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[24], simVarCompareByCrefSubsAtEndlLexical),
-                    List.sort(unsortedSimvars[25], simVarCompareByCrefSubsAtEndlLexical),
-                    unsortedSimvars[26]); // TODO why are mixedArrayVars not sorted?
+  sortedSimvars.stateVars := List.sort(sortedSimvars.stateVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.derivativeVars := List.sort(sortedSimvars.derivativeVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.algVars := List.sort(sortedSimvars.algVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.discreteAlgVars := List.sort(sortedSimvars.discreteAlgVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.intAlgVars := List.sort(sortedSimvars.intAlgVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.boolAlgVars := List.sort(sortedSimvars.boolAlgVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.inputVars := List.sort(sortedSimvars.inputVars, simVarCompareByCrefSubsAtEndlLexical);
   for v in sortedSimvars.inputVars loop
     // Set input indexes as they appear in the sorted order; is mutable since we need the same index in the other lists of vars...
     i := match v
@@ -7123,6 +7159,25 @@ algorithm
         then fail();
     end match;
   end for;
+  sortedSimvars.outputVars := List.sort(sortedSimvars.outputVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.aliasVars := List.sort(sortedSimvars.aliasVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.intAliasVars := List.sort(sortedSimvars.intAliasVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.boolAliasVars := List.sort(sortedSimvars.boolAliasVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.paramVars := List.sort(sortedSimvars.paramVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.intParamVars := List.sort(sortedSimvars.intParamVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.boolParamVars := List.sort(sortedSimvars.boolParamVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.stringAlgVars := List.sort(sortedSimvars.stringAlgVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.stringParamVars := List.sort(sortedSimvars.stringParamVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.stringAliasVars := List.sort(sortedSimvars.stringAliasVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.extObjVars := List.sort(sortedSimvars.extObjVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.constVars := List.sort(sortedSimvars.constVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.intConstVars := List.sort(sortedSimvars.intConstVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.boolConstVars := List.sort(sortedSimvars.boolConstVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.stringConstVars := List.sort(sortedSimvars.stringConstVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.jacobianVars := List.sort(sortedSimvars.jacobianVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.seedVars := List.sort(sortedSimvars.seedVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.realOptimizeConstraintsVars := List.sort(sortedSimvars.realOptimizeConstraintsVars, simVarCompareByCrefSubsAtEndlLexical);
+  sortedSimvars.realOptimizeFinalConstraintsVars := List.sort(sortedSimvars.realOptimizeFinalConstraintsVars, simVarCompareByCrefSubsAtEndlLexical);
 end sortSimvars;
 
 public function simVarCompareByCrefSubsAtEndlLexical
@@ -7177,6 +7232,7 @@ algorithm
   set := List.fold(sortedSimvars.boolConstVars, collectArrayFirstVars, set);
   set := List.fold(sortedSimvars.stringConstVars, collectArrayFirstVars, set);
   set := List.fold(sortedSimvars.jacobianVars, collectArrayFirstVars, set);
+  set := List.fold(sortedSimvars.seedVars, collectArrayFirstVars, set);
   set := List.fold(sortedSimvars.realOptimizeConstraintsVars, collectArrayFirstVars, set);
   set := List.fold(sortedSimvars.realOptimizeFinalConstraintsVars, collectArrayFirstVars, set);
 
@@ -7204,6 +7260,7 @@ algorithm
   (simVars, set) := List.mapFold(sortedSimvars.boolConstVars, setArrayElementnoFirst, set); sortedSimvars.boolConstVars := simVars;
   (simVars, set) := List.mapFold(sortedSimvars.stringConstVars, setArrayElementnoFirst, set); sortedSimvars.stringConstVars := simVars;
   (simVars, set) := List.mapFold(sortedSimvars.jacobianVars, setArrayElementnoFirst, set); sortedSimvars.jacobianVars := simVars;
+  (simVars, set) := List.mapFold(sortedSimvars.seedVars, setArrayElementnoFirst, set); sortedSimvars.seedVars := simVars;
   (simVars, set) := List.mapFold(sortedSimvars.realOptimizeConstraintsVars, setArrayElementnoFirst, set); sortedSimvars.realOptimizeConstraintsVars := simVars;
   (simVars, set) := List.mapFold(sortedSimvars.realOptimizeFinalConstraintsVars, setArrayElementnoFirst, set); sortedSimvars.realOptimizeFinalConstraintsVars := simVars;
 end extendIncompleteArray;
@@ -7289,9 +7346,9 @@ algorithm
   fixedSimvars.extObjVars := rewriteIndex(fixedSimvars.extObjVars, 0);
   fixedSimvars.inputVars := rewriteIndex(fixedSimvars.inputVars, 0);
   fixedSimvars.outputVars := rewriteIndex(fixedSimvars.outputVars, 0);
+  //jacobianVars and seedVars don't need index rewrite
   fixedSimvars.realOptimizeConstraintsVars := rewriteIndex(fixedSimvars.realOptimizeConstraintsVars, 0);
   fixedSimvars.realOptimizeFinalConstraintsVars := rewriteIndex(fixedSimvars.realOptimizeFinalConstraintsVars, 0);
-  //jacobianVars don't need a index rewrite
 end fixIndex;
 
 protected function rewriteIndex
@@ -7345,9 +7402,9 @@ algorithm
 
   (simVars, index_) := setVariableIndexHelper(outSimVars.inputVars, index_); outSimVars.inputVars := simVars;
   (simVars, index_) := setVariableIndexHelper(outSimVars.outputVars, index_); outSimVars.outputVars := simVars;
+  //jacobianVars and seedVars don't need index rewrite
   (simVars, index_) := setVariableIndexHelper(outSimVars.realOptimizeConstraintsVars, index_); outSimVars.realOptimizeConstraintsVars := simVars;
   (simVars, index_) := setVariableIndexHelper(outSimVars.realOptimizeFinalConstraintsVars, index_); outSimVars.realOptimizeFinalConstraintsVars := simVars;
-  //jacobianVars don't need a index rewrite
 end setVariableIndex;
 
 protected function setVariableIndexHelper
@@ -7415,6 +7472,7 @@ algorithm
     outHT := List.fold(vars.boolConstVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.stringConstVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.jacobianVars, addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.seedVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.realOptimizeConstraintsVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.realOptimizeFinalConstraintsVars, addSimVarToHashTable, outHT);
 
@@ -8908,15 +8966,15 @@ algorithm
       SimCode.Files files;
       list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars,
                    boolAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars,
-                   extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars;
+                   extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars;
 
     case (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars),
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars),
           files)
       equation
         (_, files) = List.mapFoldList(
                        {stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                        paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars},
+                        paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars},
                        getFilesFromSimVar, files);
       then
         files;
@@ -9596,11 +9654,11 @@ algorithm
     local
      list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars,
                    boolAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars,
-                   extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayCrefs;
+                   extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayCrefs;
      tpl intpl;
 
     case (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayCrefs), _, intpl)
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayCrefs), _, intpl)
          equation
            (stateVars, intpl) = List.mapFoldTuple(stateVars, func, intpl);
            (derivativeVars, intpl) = List.mapFoldTuple(derivativeVars, func, intpl);
@@ -9624,12 +9682,13 @@ algorithm
            (boolConstVars, intpl) = List.mapFoldTuple(boolConstVars, func, intpl);
            (stringConstVars, intpl) = List.mapFoldTuple(stringConstVars, func, intpl);
            (jacobianVars, intpl) = List.mapFoldTuple(jacobianVars, func, intpl);
+           (seedVars, intpl) = List.mapFoldTuple(seedVars, func, intpl);
            (realOptimizeConstraintsVars, intpl) = List.mapFoldTuple(realOptimizeConstraintsVars, func, intpl);
            (realOptimizeFinalConstraintsVars, intpl) = List.mapFoldTuple(realOptimizeFinalConstraintsVars, func, intpl);
 
 
          then (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars,realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayCrefs), intpl);
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayCrefs), intpl);
     case (_, _, _) then fail();
   end match;
 end traveseSimVars;
@@ -9970,6 +10029,7 @@ protected
   list<SimCodeVar.SimVar> boolConstVars;
   list<SimCodeVar.SimVar> stringConstVars;
   //list<SimCodeVar.SimVar> jacobianVars;
+  //list<SimCodeVar.SimVar> seedVars;
   list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
   list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
   HashTableCrILst.HashTable varIndexMappingHashTable;
@@ -10371,6 +10431,7 @@ protected
   list<SimCodeVar.SimVar> boolConstVars;
   list<SimCodeVar.SimVar> stringConstVars;
   list<SimCodeVar.SimVar> jacobianVars;
+  list<SimCodeVar.SimVar> seedVars;
   list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
   list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
   list<tuple<Integer,SimCodeVar.SimVar>> idxSimVarMappingTplList;
@@ -10379,7 +10440,7 @@ protected
 algorithm
   SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-      stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars) := simVars;
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars) := simVars;
 
   numStateVars := listLength(stateVars);
   varCount := 0;
@@ -10488,6 +10549,7 @@ algorithm
         outVars := getEnumerationTypesHelper(inVars.boolConstVars, outVars);
         outVars := getEnumerationTypesHelper(inVars.stringConstVars, outVars);
         outVars := getEnumerationTypesHelper(inVars.jacobianVars, outVars);
+        outVars := getEnumerationTypesHelper(inVars.seedVars, outVars);
         outVars := getEnumerationTypesHelper(inVars.realOptimizeConstraintsVars, outVars);
         outVars := getEnumerationTypesHelper(inVars.realOptimizeFinalConstraintsVars, outVars);
       then
