@@ -394,13 +394,15 @@ modelica_metatype boxptr_stringUpdateStringChar(threadData_t *threadData,metamod
 modelica_metatype listReverse(modelica_metatype lst)
 {
   modelica_metatype res = NULL;
-
+  if (MMC_NILTEST(lst) || MMC_NILTEST(MMC_CDR(lst))) {
+    // 0/1 elements are already reversed
+    return lst;
+  }
   res = mmc_mk_nil();
-  while (!MMC_NILTEST(lst))
-  {
+  do {
     res = mmc_mk_cons(MMC_CAR(lst),res);
     lst = MMC_CDR(lst);
-  }
+  } while (!MMC_NILTEST(lst));
   return res;
 }
 
