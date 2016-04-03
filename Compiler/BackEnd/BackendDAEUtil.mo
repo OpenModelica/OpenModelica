@@ -2737,7 +2737,8 @@ algorithm
 
     // use the inlined function to analyze the ocuring variables
     case (DAE.CALL(), tpl as (_, _, SOME(functionTree))) equation
-      (e1,(_, true, _)) = Inline.forceInlineCall(inExp, ((SOME(functionTree), {DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),false,{}));
+      (e1,_) = Inline.forceInlineCall(inExp, {}, (SOME(functionTree), {DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}));
+      false = referenceEq(inExp,e1);
       (_, tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
     then (inExp, false, tpl);
 

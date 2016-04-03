@@ -612,5 +612,59 @@ algorithm
   outCopy := (hv, (vs, ve, vae), bs, ft);
 end copy;
 
+public function clear
+  "Makes a copy of a hashtable."
+  input output HashTable ht;
+protected
+  HashVector hv;
+  Integer bs, sz, vs, ve, hash_idx;
+  FuncsTuple ft;
+  FuncHash hashFunc;
+  Key key;
+  array<Option<HashEntry>> vae;
+algorithm
+  (hv, (vs, ve, vae), bs, ft as (hashFunc,_,_,_)) := ht;
+  for i in 1:vs loop
+    _ := match arrayGet(vae, i)
+      case SOME((key,_))
+        algorithm
+          hash_idx := hashFunc(key, bs) + 1;
+          arrayUpdate(hv, hash_idx, {});
+          arrayUpdate(vae, i, NONE());
+        then ();
+      else ();
+    end match;
+  end for;
+  ht := (hv, (0, ve, vae), bs, ft);
+end clear;
+
+public function clearAssumeNoDelete
+  "Clears a HashTable that has not been properly stored, but was known to never delete an element (making the values sequential SOME() for as long as there are elements). NOTE: Does not handle arrays that were expanded?"
+  input HashTable ht;
+protected
+  HashVector hv;
+  Integer bs, sz, vs, ve, hash_idx;
+  FuncsTuple ft;
+  FuncHash hashFunc;
+  Key key;
+  array<Option<HashEntry>> vae;
+algorithm
+  (hv, (vs, ve, vae), bs, ft as (hashFunc,_,_,_)) := ht;
+  for i in 1:ve loop
+    _ := match arrayGet(vae, i)
+      case SOME((key,_))
+        algorithm
+          hash_idx := hashFunc(key, bs) + 1;
+          arrayUpdate(hv, hash_idx, {});
+          arrayUpdate(vae, i, NONE());
+        then ();
+      else
+        algorithm
+          return;
+        then ();
+    end match;
+  end for;
+end clearAssumeNoDelete;
+
 annotation(__OpenModelica_Interface="util");
 end BaseHashTable;
