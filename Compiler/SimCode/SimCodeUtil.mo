@@ -4180,9 +4180,17 @@ protected
 algorithm
   for m in inJacobianMatrices loop
     (_, seedVars, _, _, _, _, _) := m;
-    outVars := listAppend(outVars, seedVars);
+    outVars := listAppend(seedVars, outVars);
   end for;
+  outVars := List.map1(outVars, setSimVarKind, BackendDAE.SEED_VAR());
 end collectAllSeedVars;
+
+protected function setSimVarKind
+  input output SimCodeVar.SimVar simVar;
+  input BackendDAE.VarKind varKind;
+algorithm
+  simVar.varKind := varKind;
+end setSimVarKind;
 
 protected function sortSparsePattern
   input list<SimCodeVar.SimVar> inSimVars;

@@ -466,11 +466,11 @@ template daeExpCrefRhsArrayBox(ComponentRef cr, DAE.Type ty, Context context, Te
  cref2simvar(cr, simCode) |> var as SIMVAR(index=i) =>
     match varKind
         case STATE(__)     then
-              let statvar = representationCref1(cr, var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, useFlatArrayNotation)
+              let statvar = '__z[<%i%>]'
               let tmpArr = daeExpCrefRhsArrayBox2(statvar, ty, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
               tmpArr
         case STATE_DER(__)      then
-              let statvar = representationCref2(cr, var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName)
+              let statvar = '__zDot[<%i%>]'
               let tmpArr = daeExpCrefRhsArrayBox2(statvar, ty, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
               tmpArr
         else
