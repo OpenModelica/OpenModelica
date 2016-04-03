@@ -812,10 +812,10 @@ algorithm
           crefs = List.select(crefs,removeWilds);
           argmap = List.threadTuple(crefs,args);
           false = List.exist(fn,DAEUtil.isProtectedVar);
-          (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
           newExp = getRhsExp(fn);
           // compare types
           true = checkExpsTypeEquiv(e1, newExp);
+          (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
           // add noEvent to avoid events as usually for functions
           // MSL 3.2.1 need GenerateEvents to disable this
           newExp = Expression.addNoEventToRelationsAndConds(newExp);
@@ -831,10 +831,10 @@ algorithm
           if (listEmpty(assrtStmts))
           then // no assert detected
             newExp = Expression.makeTuple(list( getReplacementCheckComplex(repl,cr,ty) for cr in lst_cr));
-            argmap = List.threadTuple(crefs,args);
-            (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
             // compare types
             true = checkExpsTypeEquiv(e1, newExp);
+            argmap = List.threadTuple(crefs,args);
+            (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
             // add noEvent to avoid events as usually for functions
             // MSL 3.2.1 need GenerateEvents to disable this
             generateEvents = hasGenerateEventsAnnotation(comment);
@@ -848,10 +848,10 @@ algorithm
             DAE.STMT_ASSERT() = assrt;
             //newExp = getReplacementCheckComplex(repl,cr,ty); // the function that replaces the output variable
             newExp = Expression.makeTuple(list( getReplacementCheckComplex(repl,cr,ty) for cr in lst_cr));
-            argmap = List.threadTuple(crefs,args);
-            (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
             // compare types
             true = checkExpsTypeEquiv(e1, newExp);
+            argmap = List.threadTuple(crefs,args);
+            (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
             // add noEvent to avoid events as usually for functions
             // MSL 3.2.1 need GenerateEvents to disable this
             generateEvents = hasGenerateEventsAnnotation(comment);
