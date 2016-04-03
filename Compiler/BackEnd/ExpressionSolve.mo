@@ -120,7 +120,7 @@ protected
   DAE.Exp e1,e2,varexp,e;
   BackendDAE.EquationAttributes attr;
   DAE.ElementSource source;
-  //Boolean isContinuousIntegration = BackendDAEUtil.isSimulationDAE(shared);
+  Boolean isContinuousIntegration = BackendDAEUtil.isSimulationDAE(shared);
 algorithm
   BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr) := eqn;
     BackendDAE.VAR(varName = cr) := var;
@@ -135,7 +135,7 @@ algorithm
   end if;
 
   try
-    e := solve2(e1, e2, varexp, SOME(shared.functionTree), NONE());
+    e := solve2(e1, e2, varexp, SOME(shared.functionTree), NONE(), false, isContinuousIntegration);
     source := DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, e, {});
     eqn := BackendEquation.generateEquation(varexp, e, source, attr);
     solved := true;
