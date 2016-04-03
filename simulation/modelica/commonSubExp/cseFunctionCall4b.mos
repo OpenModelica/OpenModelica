@@ -39,18 +39,18 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List ########### (7)
+// ########### Updated Variable List (simulation) ########### (7)
 // ========================================
-// 1: y.r1[3]:VARIABLE() .CSE.FunctionCallTest4, .CSE.R, .Real type: Real [3]
-// 2: y.r1[2]:VARIABLE() .CSE.FunctionCallTest4, .CSE.R, .Real type: Real [3]
-// 3: y.r1[1]:VARIABLE() .CSE.FunctionCallTest4, .CSE.R, .Real type: Real [3]
-// 4: $cse2.r1[1]:VARIABLE()  type: Real [3] unreplaceable
-// 5: $cse2.r1[2]:VARIABLE()  type: Real [3] unreplaceable
-// 6: $cse2.r1[3]:VARIABLE()  type: Real [3] unreplaceable
-// 7: $cse1:VARIABLE()  type: Real unreplaceable
+// 1: y.r1[3]:VARIABLE() .CSE.FunctionCallTest4, .CSE.R, .Real type: Real  [3]
+// 2: y.r1[2]:VARIABLE() .CSE.FunctionCallTest4, .CSE.R, .Real type: Real  [3]
+// 3: y.r1[1]:VARIABLE() .CSE.FunctionCallTest4, .CSE.R, .Real type: Real  [3]
+// 4: $cse2.r1[1]:VARIABLE()  type: Real  [3] unreplaceable
+// 5: $cse2.r1[2]:VARIABLE()  type: Real  [3] unreplaceable
+// 6: $cse2.r1[3]:VARIABLE()  type: Real  [3] unreplaceable
+// 7: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List ########### (3, 7)
+// ########### Updated Equation List (simulation) ########### (3, 7)
 // ========================================
 // 1/1 (3): y = $cse2   [binding]
 // 2/4 (3): $cse2 = CSE.f3(time, $cse1)   [binding]

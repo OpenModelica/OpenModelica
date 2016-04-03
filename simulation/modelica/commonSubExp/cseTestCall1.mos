@@ -42,38 +42,36 @@ simulate(CSE.TestCall1); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List ########### (2)
+// ########### Updated Variable List (simulation) ########### (2)
 // ========================================
-// 1: y:VARIABLE() .CSE.TestCall1, .Real type: Real
-// 2: x:VARIABLE() .CSE.TestCall1, .Real type: Real
+// 1: y:VARIABLE() .CSE.TestCall1, .Real type: Real 
+// 2: x:VARIABLE() .CSE.TestCall1, .Real type: Real 
 //
 //
-// ########### Updated Equation List ########### (2, 2)
+// ########### Updated Equation List (simulation) ########### (2, 2)
 // ========================================
 // 1/1 (1): y = 1.0 + time   [dynamic]
 // 2/2 (1): x = time   [dynamic]
 //
 //
-// ########### Updated Variable List ########### (7)
+// ########### Updated Variable List (simulation) ########### (6)
 // ========================================
-// 1: E:VARIABLE() .CSE.TestCall1, .Real type: Real
-// 2: D:VARIABLE() .CSE.TestCall1, .Real type: Real
-// 3: C:VARIABLE() .CSE.TestCall1, .Real type: Real
-// 4: A:VARIABLE() .CSE.TestCall1, .Real type: Real
-// 5: $cse3:VARIABLE()  type: Real unreplaceable
-// 6: $cse2:VARIABLE()  type: Real unreplaceable
-// 7: $cse1:VARIABLE()  type: Real unreplaceable
+// 1: E:VARIABLE() .CSE.TestCall1, .Real type: Real 
+// 2: D:VARIABLE() .CSE.TestCall1, .Real type: Real 
+// 3: C:VARIABLE() .CSE.TestCall1, .Real type: Real 
+// 4: A:VARIABLE() .CSE.TestCall1, .Real type: Real 
+// 5: $cse2:VARIABLE()  type: Real  unreplaceable
+// 6: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List ########### (7, 7)
+// ########### Updated Equation List (simulation) ########### (6, 6)
 // ========================================
-// 1/1 (1): E = A + $cse3   [dynamic]
-// 2/2 (1): D = $cse1   [dynamic]
+// 1/1 (1): E = A + $cse2   [dynamic]
+// 2/2 (1): D = log(A)   [dynamic]
 // 3/3 (1): A = 4.0 * C   [dynamic]
 // 4/4 (1): C = 1.0 + time   [binding]
-// 5/5 (1): $cse3 = log($cse2)   [binding]
-// 6/6 (1): $cse2 = log($cse1)   [binding]
-// 7/7 (1): $cse1 = log(A)   [binding]
+// 5/5 (1): $cse2 = log($cse1)   [binding]
+// 6/6 (1): $cse1 = log(D)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.TestCall1_res.mat",

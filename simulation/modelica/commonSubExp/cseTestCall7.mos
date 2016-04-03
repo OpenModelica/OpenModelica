@@ -37,15 +37,15 @@ simulate(CSE.TestCall7); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List ########### (4)
+// ########### Updated Variable List (simulation) ########### (4)
 // ========================================
-// 1: b:VARIABLE() .CSE.TestCall7, .Real type: Real
-// 2: a:VARIABLE() .CSE.TestCall7, .Real type: Real
-// 3: $cse1.y:VARIABLE()  type: Real unreplaceable
-// 4: $cse1.x:VARIABLE()  type: Real unreplaceable
+// 1: b:VARIABLE() .CSE.TestCall7, .Real type: Real 
+// 2: a:VARIABLE() .CSE.TestCall7, .Real type: Real 
+// 3: $cse1.y:VARIABLE()  type: Real  unreplaceable
+// 4: $cse1.x:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List ########### (2, 4)
+// ########### Updated Equation List (simulation) ########### (2, 4)
 // ========================================
 // 1/1 (2): CSE.TestCall7.foo(a, b) = $cse1   [binding]
 // 2/3 (2): $cse1 = CSE.TestCall7.func(time)   [binding]

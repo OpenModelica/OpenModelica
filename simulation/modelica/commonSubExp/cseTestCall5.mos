@@ -36,13 +36,13 @@ simulate(CSE.TestCall5); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List ########### (2)
+// ########### Updated Variable List (simulation) ########### (2)
 // ========================================
-// 1: a.x:VARIABLE() .CSE.TestCall5, .CSE.TestCall5.rec, .Real type: Real
-// 2: $cse1.x:VARIABLE()  type: Real unreplaceable
+// 1: a.x:VARIABLE() .CSE.TestCall5, .CSE.TestCall5.rec, .Real type: Real 
+// 2: $cse1.x:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List ########### (2, 2)
+// ########### Updated Equation List (simulation) ########### (2, 2)
 // ========================================
 // 1/1 (1): a = $cse1   [binding]
 // 2/2 (1): $cse1 = CSE.TestCall5.f(time)   [binding]
