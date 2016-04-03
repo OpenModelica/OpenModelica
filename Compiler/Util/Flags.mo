@@ -488,8 +488,10 @@ constant DebugFlag OMC_RECORD_ALLOC_WORDS = DEBUG_FLAG(159, "metaModelicaRecordA
   Util.gettext("Instrument the source code to record memory allocations (requires run-time and generated files compiled with -DOMC_RECORD_ALLOC_WORDS)."));
 constant DebugFlag TOTAL_TEARING_DUMP = DEBUG_FLAG(160, "totaltearingdump", false,
   Util.gettext("Dumps total tearing information."));
-  constant DebugFlag TOTAL_TEARING_DUMPVERBOSE = DEBUG_FLAG(161, "totaltearingdumpV", false,
+constant DebugFlag TOTAL_TEARING_DUMPVERBOSE = DEBUG_FLAG(161, "totaltearingdumpV", false,
   Util.gettext("Dumps verbose total tearing information."));
+constant DebugFlag PARALLEL_CODEGEN = DEBUG_FLAG(162, "parallelCodegen", true,
+  Util.gettext("Enables code generation in parallel (disable this if compiling a model causes you to run out of RAM)."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -657,7 +659,8 @@ constant list<DebugFlag> allDebugFlags = {
   SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR,
   OMC_RECORD_ALLOC_WORDS,
   TOTAL_TEARING_DUMP,
-  TOTAL_TEARING_DUMPVERBOSE
+  TOTAL_TEARING_DUMPVERBOSE,
+  PARALLEL_CODEGEN
 };
 
 public

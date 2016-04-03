@@ -101,6 +101,7 @@ end IterOptions;
 replaceable type ArgType1 subtypeof Any;
 replaceable type ArgType2 subtypeof Any;
 replaceable type ArgType3 subtypeof Any;
+replaceable type ArgType4 subtypeof Any;
 
 //by default, we will parse new lines in every non-token string
 public function writeStr
@@ -1371,7 +1372,24 @@ algorithm
  end match;
 end failIfTrue;
 
-protected function tplCallWithFailError
+public function tplCallWithFailErrorNoArg
+  input Tpl_Fun inFun;
+  output Text txt;
+
+  partial function Tpl_Fun
+    input Text in_txt;
+    output Text out_txt;
+  end Tpl_Fun;
+algorithm
+  try
+    txt := inFun(emptyTxt);
+  else
+    addTemplateError("A template call failed (a call with 0 parameters: " + System.dladdr(inFun) +"). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
+    fail();
+  end try;
+end tplCallWithFailErrorNoArg;
+
+public function tplCallWithFailError
   input Tpl_Fun inFun;
   input ArgType1 inArg;
   output Text outTxt;
@@ -1392,12 +1410,12 @@ algorithm
       then txt;
     else
       equation
-        addTemplateError("A template call failed (a call with 1 parameter). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
+        addTemplateError("A template call failed (a call with 1 parameter: " + System.dladdr(inFun) +"). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
       then fail();
   end matchcontinue;
 end tplCallWithFailError;
 
-protected function tplCallWithFailError2
+public function tplCallWithFailError2
   input Tpl_Fun inFun;
   input ArgType1 inArgA;
   input ArgType2 inArgB;
@@ -1455,10 +1473,35 @@ algorithm
       then txt;
     else
       equation
-        addTemplateError("A template call failed (a call with 3 parameters). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
+        addTemplateError("A template call failed (a call with 3 parameters: " + System.dladdr(inFun) +"). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
       then fail();
   end matchcontinue;
 end tplCallWithFailError3;
+
+protected function tplCallWithFailError4
+  input Tpl_Fun func;
+  input ArgType1 argA;
+  input ArgType2 argB;
+  input ArgType3 argC;
+  input ArgType4 argD;
+  output Text txt;
+
+  partial function Tpl_Fun
+    input Text in_txt;
+    input ArgType1 inArgA;
+    input ArgType2 inArgB;
+    input ArgType3 inArgC;
+    input ArgType4 inArgD;
+    output Text out_txt;
+  end Tpl_Fun;
+algorithm
+  try
+    txt := func(emptyTxt, argA, argB, argC, argD);
+  else
+    addTemplateError("A template call failed (a call with 4 parameters: " + System.dladdr(func) +"). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
+    fail();
+  end try;
+end tplCallWithFailError4;
 
 public function tplString
   input Tpl_Fun inFun;
@@ -1593,13 +1636,13 @@ public function tplNoret3
   input Tpl_Fun inFun;
   input ArgType1 inArg;
   input ArgType2 inArg2;
-  input ArgType2 inArg3;
+  input ArgType3 inArg3;
 
   partial function Tpl_Fun
     input Text in_txt;
     input ArgType1 inArgA;
     input ArgType2 inArgB;
-    input ArgType2 inArgC;
+    input ArgType3 inArgC;
     output Text out_txt;
   end Tpl_Fun;
 protected
@@ -1609,6 +1652,29 @@ algorithm
   _ := tplCallWithFailError3(inFun, inArg, inArg2, inArg3);
   failIfTrue(Error.getNumErrorMessages() > nErr);
 end tplNoret3;
+
+public function tplNoret4
+  input Tpl_Fun inFun;
+  input ArgType1 inArg;
+  input ArgType2 inArg2;
+  input ArgType3 inArg3;
+  input ArgType4 inArg4;
+
+  partial function Tpl_Fun
+    input Text in_txt;
+    input ArgType1 inArgA;
+    input ArgType2 inArgB;
+    input ArgType3 inArgC;
+    input ArgType4 inArgD;
+    output Text out_txt;
+  end Tpl_Fun;
+protected
+  Integer nErr;
+algorithm
+  nErr := Error.getNumErrorMessages();
+  _ := tplCallWithFailError4(inFun, inArg, inArg2, inArg3, inArg4);
+  failIfTrue(Error.getNumErrorMessages() > nErr);
+end tplNoret4;
 
 public function tplNoret2
   input Tpl_Fun inFun;

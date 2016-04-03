@@ -50,7 +50,7 @@ import interface SimCodeBackendTV;
 import CodegenUtil.*;
 import CodegenCFunctions.*;
 
-/* public */ template translateModel(SimCode simCode, String guid)
+/* public */ template translateModel(SimCode simCode)
   "Generates C code and Makefile for compiling and running a simulation of a
   Modelica model.
   used in Compiler/SimCode/SimCodeMain.mo"
@@ -70,11 +70,10 @@ import CodegenCFunctions.*;
 
     let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
 
-    let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
+    let()= textFile(simulationHeaderFile(simCode), '<%fileNamePrefix%>_model.h')
     // adpro: write the main .c file last! Make on windows doesn't seem to realize that
     //        the .c file is newer than the .o file if we have succesive simulate commands
     //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
-    let _ = generateSimulationFiles(simCode,guid,fileNamePrefix,false)
 
     // If ParModelica generate the kernels file too.
     if acceptParModelicaGrammar() then
@@ -97,7 +96,7 @@ end translateModel;
     ""
 end translateInitFile;
 
-/* public */ template simulationHeaderFile(SimCode simCode, String guid)
+/* public */ template simulationHeaderFile(SimCode simCode)
   "Generates code for main C file for simulation target.
    used in Compiler/Template/CodegenFMU.tpl"
 ::=
@@ -157,54 +156,15 @@ end translateInitFile;
   end match
 end simulationHeaderFile;
 
-/* public */ template generateSimulationFiles(SimCode simCode, String guid, String modelNamePrefix, Boolean isModelExchangeFMU)
- "Generates code in different C files for the simulation target.
-  To make the compilation faster we split the simulation files into several
-  used in Compiler/Template/CodegenFMU.tpl"
+template simulationFile_mixAndHeader(SimCode simCode, String modelNamePrefix)
 ::=
-  match simCode
-    case simCode as SIMCODE(__) then
-     // external objects
-     let()= textFileConvertLines(simulationFile_exo(simCode,guid), '<%modelNamePrefix%>_01exo.c')
-     // non-linear systems
-     let()= textFileConvertLines(simulationFile_nls(simCode,guid), '<%modelNamePrefix%>_02nls.c')
-     // linear systems
-     let()= textFileConvertLines(simulationFile_lsy(simCode,guid), '<%modelNamePrefix%>_03lsy.c')
-     // state set
-     let()= textFileConvertLines(simulationFile_set(simCode,guid), '<%modelNamePrefix%>_04set.c')
-     // events: sample, zero crossings, relations
-     let()= textFileConvertLines(simulationFile_evt(simCode,guid), '<%modelNamePrefix%>_05evt.c')
-     // initialization
-     let()= textFileConvertLines(simulationFile_inz(simCode,guid), '<%modelNamePrefix%>_06inz.c')
-     // delay
-     let()= textFileConvertLines(simulationFile_dly(simCode,guid), '<%modelNamePrefix%>_07dly.c')
-     // update bound start values, update bound parameters
-     let()= textFileConvertLines(simulationFile_bnd(simCode,guid), '<%modelNamePrefix%>_08bnd.c')
-     // algebraic
-     let()= textFileConvertLines(simulationFile_alg(simCode,guid), '<%modelNamePrefix%>_09alg.c')
-     // asserts
-     let()= textFileConvertLines(simulationFile_asr(simCode,guid), '<%modelNamePrefix%>_10asr.c')
-     // mixed systems
-     let &mixheader = buffer ""
-     let()= textFileConvertLines(simulationFile_mix(simCode,guid,&mixheader), '<%modelNamePrefix%>_11mix.c')
-     let()= textFile(&mixheader, '<%modelNamePrefix%>_11mix.h')
-     // jacobians
-     let()= textFileConvertLines(simulationFile_jac(simCode,guid), '<%modelNamePrefix%>_12jac.c')
-     let()= textFile(simulationFile_jac_header(simCode,guid), '<%modelNamePrefix%>_12jac.h')
-     // optimization
-     let()= textFileConvertLines(simulationFile_opt(simCode,guid), '<%modelNamePrefix%>_13opt.c')
-     let()= textFile(simulationFile_opt_header(simCode,guid), '<%modelNamePrefix%>_13opt.h')
-     // linearization
-     let()= textFileConvertLines(simulationFile_lnz(simCode,guid), '<%modelNamePrefix%>_14lnz.c')
-     // synchronous
-     let()= textFileConvertLines(simulationFile_syn(simCode,guid), '<%modelNamePrefix%>_15syn.c')
-     // main file
-     let()= textFileConvertLines(simulationFile(simCode,guid,isModelExchangeFMU), '<%modelNamePrefix%>.c')
-     ""
-  end match
-end generateSimulationFiles;
+  let &mixheader = buffer ""
+  let()= textFileConvertLines(simulationFile_mix(simCode,&mixheader), '<%modelNamePrefix%>_11mix.c')
+  let()= textFile(&mixheader, '<%modelNamePrefix%>_11mix.h')
+  ""
+end simulationFile_mixAndHeader;
 
-template simulationFile_syn(SimCode simCode, String guid)
+template simulationFile_syn(SimCode simCode)
 "Synchonous features"
 ::= match simCode
     case simCode as SIMCODE(__) then
@@ -449,7 +409,7 @@ template functionEquationsSynchronous(Integer i, list<tuple<SimCodeVar.SimVar, B
   >>
 end functionEquationsSynchronous;
 
-template simulationFile_exo(SimCode simCode, String guid)
+template simulationFile_exo(SimCode simCode)
 "External Objects"
 ::=
   match simCode
@@ -473,7 +433,7 @@ template simulationFile_exo(SimCode simCode, String guid)
   end match
 end simulationFile_exo;
 
-template simulationFile_nls(SimCode simCode, String guid)
+template simulationFile_nls(SimCode simCode)
 "Non Linear Systems"
 ::=
   match simCode
@@ -504,7 +464,7 @@ template simulationFile_nls(SimCode simCode, String guid)
   end match
 end simulationFile_nls;
 
-template simulationFile_lsy(SimCode simCode, String guid)
+template simulationFile_lsy(SimCode simCode)
 "Linear Systems"
 ::=
   match simCode
@@ -530,7 +490,7 @@ template simulationFile_lsy(SimCode simCode, String guid)
   end match
 end simulationFile_lsy;
 
-template simulationFile_set(SimCode simCode, String guid)
+template simulationFile_set(SimCode simCode)
 "Initial State Set"
 ::=
   match simCode
@@ -554,7 +514,7 @@ template simulationFile_set(SimCode simCode, String guid)
   end match
 end simulationFile_set;
 
-template simulationFile_evt(SimCode simCode, String guid)
+template simulationFile_evt(SimCode simCode)
 "Events: Sample, Zero Crossings, Relations, Discrete Changes"
 ::=
   match simCode
@@ -583,7 +543,7 @@ template simulationFile_evt(SimCode simCode, String guid)
   end match
 end simulationFile_evt;
 
-template simulationFile_inz(SimCode simCode, String guid)
+template simulationFile_inz(SimCode simCode)
 "Initialization"
 ::=
   match simCode
@@ -612,7 +572,7 @@ template simulationFile_inz(SimCode simCode, String guid)
   end match
 end simulationFile_inz;
 
-template simulationFile_dly(SimCode simCode, String guid)
+template simulationFile_dly(SimCode simCode)
 "Delay"
 ::=
   match simCode
@@ -635,7 +595,7 @@ template simulationFile_dly(SimCode simCode, String guid)
   end match
 end simulationFile_dly;
 
-template simulationFile_bnd(SimCode simCode, String guid)
+template simulationFile_bnd(SimCode simCode)
 "update bound parameters and variable attributes (start, nominal, min, max)"
 ::=
   match simCode
@@ -660,7 +620,7 @@ template simulationFile_bnd(SimCode simCode, String guid)
   end match
 end simulationFile_bnd;
 
-template simulationFile_alg(SimCode simCode, String guid)
+template simulationFile_alg(SimCode simCode)
 "Algebraic"
 ::=
   match simCode
@@ -683,7 +643,7 @@ template simulationFile_alg(SimCode simCode, String guid)
   end match
 end simulationFile_alg;
 
-template simulationFile_asr(SimCode simCode, String guid)
+template simulationFile_asr(SimCode simCode)
 "Asserts"
 ::=
   match simCode
@@ -706,7 +666,7 @@ template simulationFile_asr(SimCode simCode, String guid)
   end match
 end simulationFile_asr;
 
-template simulationFile_mix(SimCode simCode, String guid, Text &header)
+template simulationFile_mix(SimCode simCode, Text &header)
 "Mixed Systems"
 ::=
   match simCode
@@ -724,7 +684,7 @@ template simulationFile_mix(SimCode simCode, String guid, Text &header)
   end match
 end simulationFile_mix;
 
-template simulationFile_jac(SimCode simCode, String guid)
+template simulationFile_jac(SimCode simCode)
 "Jacobians"
 ::=
   match simCode
@@ -741,7 +701,7 @@ template simulationFile_jac(SimCode simCode, String guid)
   end match
 end simulationFile_jac;
 
-template simulationFile_jac_header(SimCode simCode, String guid)
+template simulationFile_jac_header(SimCode simCode)
 "Jacobians"
 ::=
   match simCode
@@ -756,7 +716,7 @@ template simulationFile_jac_header(SimCode simCode, String guid)
   end match
 end simulationFile_jac_header;
 
-template simulationFile_opt(SimCode simCode, String guid)
+template simulationFile_opt(SimCode simCode)
 "Optimization"
 ::=
   match simCode
@@ -778,7 +738,7 @@ template simulationFile_opt(SimCode simCode, String guid)
   end match
 end simulationFile_opt;
 
-template simulationFile_opt_header(SimCode simCode, String guid)
+template simulationFile_opt_header(SimCode simCode)
 "Jacobians"
 ::=
   match simCode
@@ -801,7 +761,7 @@ template simulationFile_opt_header(SimCode simCode, String guid)
   end match
 end simulationFile_opt_header;
 
-template simulationFile_lnz(SimCode simCode, String guid)
+template simulationFile_lnz(SimCode simCode)
 "Linearization"
 ::=
   match simCode
