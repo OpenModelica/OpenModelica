@@ -220,13 +220,13 @@ template cref1(ComponentRef cr, SimCode simCode ,Text& extraFuncs,Text& extraFun
 end cref1;
 
 template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text &varDecls, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
-  cref2simvar(inCref, simCode) |> var as SIMVAR(__) =>
+  cref2simvar(inCref, simCode) |> var as SIMVAR(varKind=varKind, index=i) =>
   match varKind
-    case STATE(__)        then
-      representationCref1(inCref, var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, useFlatArrayNotation)
-    case STATE_DER(__)   then
-      representationCref2(inCref, var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName)
-    case VARIABLE(__) then
+    case STATE() then
+      '__z[<%i%>]'
+    case STATE_DER() then
+      '__zDot[<%i%>]'
+    case VARIABLE() then
       match var
         case SIMVAR(index=-2) then
           // unknown in cref2simvar, e.g. local in a function, iterator or time
@@ -241,7 +241,7 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
               '_<%crefToCStr(inCref, false)%>'
             else
               cref(inCref, useFlatArrayNotation)
-      else
+    else
         match context
           case ALGLOOP_CONTEXT(genInitialisation = false) then
             let &varDecls += '//_system-><%cref(inCref, useFlatArrayNotation)%>; definition of global variable<%\n%>'
@@ -318,28 +318,6 @@ template crefToCStr(ComponentRef cr, Boolean useFlatArrayNotation)
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
-
-template representationCref1(ComponentRef inCref, SimVar var, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation)
-::=
-  match var
-  case SIMVAR(index=i) then
-    match i
-    case -1 then
-      cref2(inCref, useFlatArrayNotation)
-    else
-      '__z[<%i%>]'
-end representationCref1;
-
-template representationCref2(ComponentRef inCref, SimVar var, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot */)
-::=
-  match var
-  case(SIMVAR(index=i)) then
-    match context
-    case JACOBIAN_CONTEXT() then
-      '_<%crefToCStr(inCref, false)%>'
-    else
-      '<%stateDerVectorName%>[<%i%>]'
-end representationCref2;
 
 template representationCrefDerVar(ComponentRef inCref, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot */) ::=
   cref2simvar(inCref, simCode ) |> SIMVAR(__) =>'<%stateDerVectorName%>[<%index%>]'

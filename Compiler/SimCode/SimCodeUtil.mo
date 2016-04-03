@@ -4157,7 +4157,7 @@ end collectAllJacobianEquations;
 
 protected function collectAllJacobianVars
   input list<SimCode.JacobianMatrix> inJacobianMatrix;
-  output list<SimCodeVar.SimVar> outEqn = {};
+  output list<SimCodeVar.SimVar> outVars = {};
 protected
   list<SimCode.JacobianColumn> column;
   list<SimCodeVar.SimVar> tmp;
@@ -4166,9 +4166,10 @@ algorithm
     (column, _, _, _, _, _, _) := m;
     for c in column loop
       (_,tmp,_) := c;
-      outEqn := listAppend(tmp, outEqn);
+      outVars := listAppend(tmp, outVars);
     end for;
   end for;
+  outVars := List.map1(outVars, setSimVarKind, BackendDAE.JAC_VAR());
 end collectAllJacobianVars;
 
 protected function collectAllSeedVars
