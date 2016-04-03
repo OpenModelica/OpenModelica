@@ -67,38 +67,34 @@ end lateInlineFunction;
 //
 // =============================================================================
 
-public function inlineCalls
+protected function inlineCalls
 "searches for calls where the inline flag is true, and inlines them"
   input list<DAE.InlineType> inITLst;
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
+protected
+  list<DAE.InlineType> itlst;
+  Inline.Functiontuple tpl;
+  BackendDAE.EqSystems eqs;
+  BackendDAE.Shared shared;
 algorithm
-  outBackendDAE := matchcontinue(inBackendDAE)
-    local
-      list<DAE.InlineType> itlst;
-      Inline.Functiontuple tpl;
-      BackendDAE.EqSystems eqs;
-      BackendDAE.Shared shared;
-
-    case BackendDAE.DAE(eqs, shared)
-      algorithm
-        tpl := (SOME(shared.functionTree), inITLst);
-        eqs := List.map1(eqs, inlineEquationSystem, tpl);
-        shared.knownVars := inlineVariables(shared.knownVars, tpl);
-        shared.externalObjects := inlineVariables(shared.externalObjects, tpl);
-        shared.initialEqs := inlineEquationArray(shared.initialEqs, tpl);
-        shared.removedEqs := inlineEquationArray(shared.removedEqs, tpl);
-        shared.eventInfo := inlineEventInfo(shared.eventInfo, tpl);
-      then
-        BackendDAE.DAE(eqs, shared);
-
-    else
-      algorithm
-        true := Flags.isSet(Flags.FAILTRACE);
+  try
+    shared := inBackendDAE.shared;
+    eqs := inBackendDAE.eqs;
+    tpl := (SOME(shared.functionTree), inITLst);
+    eqs := List.map1(eqs, inlineEquationSystem, tpl);
+    shared.knownVars := inlineVariables(shared.knownVars, tpl);
+    shared.externalObjects := inlineVariables(shared.externalObjects, tpl);
+    shared.initialEqs := inlineEquationArray(shared.initialEqs, tpl);
+    shared.removedEqs := inlineEquationArray(shared.removedEqs, tpl);
+    shared.eventInfo := inlineEventInfo(shared.eventInfo, tpl);
+    outBackendDAE := BackendDAE.DAE(eqs, shared);
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
         Debug.traceln("Inline.inlineCalls failed");
-      then
-        fail();
-  end matchcontinue;
+    end if;
+    fail();
+  end try;
 end inlineCalls;
 
 protected function inlineEquationSystem
