@@ -1890,6 +1890,46 @@ algorithm
   outList := list(inFunc(e) for e in inList);
 end map;
 
+public function mapCheckReferenceEq<TI>
+  "Takes a list and a function, and creates a new list by applying the function
+   to each element of the list."
+  input list<TI> inList;
+  input MapFunc inFunc;
+  output list<TI> outList={};
+
+  partial function MapFunc
+    input TI inElement;
+    output TI outElement;
+  end MapFunc;
+protected
+  Boolean allEq=true;
+  DoubleEndedList<TI> delst;
+  Integer n=0;
+  TI e1;
+algorithm
+  for e in inList loop
+    e1 := inFunc(e);
+    // Preserve reference equality without any allocation if nothing changed
+    if (if allEq then not referenceEq(e, e1) else false) then
+      allEq:=false;
+      delst := DoubleEndedList.empty(e1);
+      for elt in inList loop
+        if n < 1 then
+          break;
+        end if;
+        DoubleEndedList.push_back(delst, elt);
+        n := n-1;
+      end for;
+    end if;
+    if allEq then
+      n := n + 1;
+    else
+      DoubleEndedList.push_back(delst, e1);
+    end if;
+  end for;
+  outList := if allEq then inList else DoubleEndedList.toListAndClear(delst);
+end mapCheckReferenceEq;
+
 public function mapReverse<TI, TO>
   "Takes a list and a function, and creates a new list by applying the function
    to each element of the list. The created list will be reversed compared to

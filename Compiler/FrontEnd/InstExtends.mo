@@ -115,6 +115,9 @@ algorithm
         list<SCode.AlgorithmSection> alg1, ialg1, alg2, ialg2;
         DAE.Mod mod;
         HashTableStringToPath.HashTable ht;
+        list<HashTableStringToPath.HashTable> lht;
+        array<FCore.Cache> cacheArr;
+        Boolean htHasEntries;
 
       // Instantiate a basic type base class.
       case SCode.EXTENDS()
@@ -166,7 +169,8 @@ algorithm
           ht := getLocalIdentList(InstUtil.constantAndParameterEls(els1), ht, getLocalIdentElement);
 
           // Fully qualify modifiers in extends in the extends environment.
-          (outCache, emod) := fixModifications(outCache, inEnv, emod, {ht});
+          cacheArr := arrayCreate(1, outCache);
+          emod := fixModifications(cacheArr, inEnv, emod, {ht});
 
           cenv := FGraph.openScope(cenv, encf, cn, FGraph.classInfToScopeType(inState));
 
@@ -192,8 +196,13 @@ algorithm
           ht := getLocalIdentList(els2, ht, getLocalIdentElementTpl);
           ht := getLocalIdentList(cdef_els, ht, getLocalIdentElement);
           ht := getLocalIdentList(import_els, ht, getLocalIdentElement);
+          htHasEntries := BaseHashTable.hashTableCurrentSize(ht)<>0;
+          lht := {ht};
 
-          (outCache, els2) := fixLocalIdents(outCache, cenv, els2, {ht});
+          arrayUpdate(cacheArr, 1, outCache);
+          if htHasEntries then
+            els2 := fixList(cacheArr, cenv, els2, lht, fixLocalIdent);
+          end if;
           // Update components with new merged modifiers.
           //(els2, outMod) := updateComponentsAndClassdefs(els2, outMod, inEnv);
           outElements := listAppend(els2, outElements);
@@ -204,15 +213,18 @@ algorithm
           outInitialAlgs := List.unionAppendListOnTrue(listReverse(ialg2), outInitialAlgs, valueEq);
 
           if not inPartialInst then
-            (outCache,   eq1) := fixList(outCache, cenv,   eq1, {ht}, fixEquation);
-            (outCache,  ieq1) := fixList(outCache, cenv,  ieq1, {ht}, fixEquation);
-            (outCache,  alg1) := fixList(outCache, cenv,  alg1, {ht}, fixAlgorithm);
-            (outCache, ialg1) := fixList(outCache, cenv, ialg1, {ht}, fixAlgorithm);
+            if htHasEntries then
+              eq1 := fixList(cacheArr, cenv,   eq1, lht, fixEquation);
+              ieq1 := fixList(cacheArr, cenv,  ieq1, lht, fixEquation);
+              alg1 := fixList(cacheArr, cenv,  alg1, lht, fixAlgorithm);
+              ialg1 := fixList(cacheArr, cenv, ialg1, lht, fixAlgorithm);
+            end if;
             outNormalEqs := List.unionAppendListOnTrue(listReverse(eq1), outNormalEqs, valueEq);
             outInitialEqs := List.unionAppendListOnTrue(listReverse(ieq1), outInitialEqs, valueEq);
             outNormalAlgs := List.unionAppendListOnTrue(listReverse(alg1), outNormalAlgs, valueEq);
             outInitialAlgs := List.unionAppendListOnTrue(listReverse(ialg1), outInitialAlgs, valueEq);
           end if;
+          outCache := arrayGet(cacheArr, 1);
 
         then
           ();
@@ -861,47 +873,38 @@ algorithm
   end matchcontinue;
 end getLocalIdentElement;
 
-protected function fixLocalIdents
+protected function fixLocalIdent
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
-  input list<tuple<SCode.Element,DAE.Mod,Boolean>> inElts;
+  input output tuple<SCode.Element,DAE.Mod,Boolean> elt;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache = inCache;
-  output list<tuple<SCode.Element,DAE.Mod,Boolean>> outElts = {};
 protected
-  SCode.Element elt;
+  SCode.Element elt1,elt2;
   DAE.Mod mod;
   Boolean b;
 algorithm
-  if listEmpty(inElts) then
-    return;
+  (elt1, mod, b) := elt;
+  elt2 := fixElement(inCache, inEnv, elt1, inHt);
+  if (not referenceEq(elt1, elt2)) or not b then
+    elt := (elt2, mod, true);
   end if;
-
-  for e in inElts loop
-    (elt, mod, b) := e;
-    (outCache, elt) := fixElement(outCache, inEnv, elt, inHt);
-    outElts := (elt, mod, true) :: outElts;
-  end for;
-
-  outElts := listReverse(outElts);
-end fixLocalIdents;
+end fixLocalIdent;
 
 protected function fixElement
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
   input SCode.Element inElt;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache;
   output SCode.Element outElts;
 algorithm
-  (outCache,outElts) := matchcontinue (inCache,inEnv,inElt,inHt)
+  outElts := matchcontinue (inEnv,inElt,inHt)
     local
       String name;
       SCode.Prefixes prefixes;
@@ -927,30 +930,30 @@ algorithm
       list<HashTableStringToPath.HashTable> ht;
       SCode.Element elt;
 
-    case (cache,env,SCode.COMPONENT(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
+    case (env,SCode.COMPONENT(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
                                     SCode.ATTR(ad, ct, prl, var, dir, isf), typeSpec, modifications, comment, condition, info),ht)
       equation
         //fprintln(Flags.DEBUG,"fix comp " + SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
         // lookup as it might have been redeclared!!!
         (_, _, SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info),
-         _, _, _) = Lookup.lookupIdentLocal(cache, env, name);
-        (cache,modifications) = fixModifications(cache,env,modifications,ht);
-        (cache,typeSpec) = fixTypeSpec(cache,env,typeSpec,ht);
-        (cache,SOME(ad)) = fixArrayDim(cache, env, SOME(ad), ht);
+         _, _, _) = Lookup.lookupIdentLocal(arrayGet(inCache, 1), env, name);
+        modifications = fixModifications(inCache,env,modifications,ht);
+        typeSpec = fixTypeSpec(inCache,env,typeSpec,ht);
+        ad = fixArrayDim(inCache, env, ad, ht);
       then
-        (cache,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir, isf), typeSpec, modifications, comment, condition, info));
+        (SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir, isf), typeSpec, modifications, comment, condition, info));
 
     // we failed above
-    case (cache,env,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir, isf), typeSpec, modifications, comment, condition, info),ht)
+    case (env,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir, isf), typeSpec, modifications, comment, condition, info),ht)
       equation
         //fprintln(Flags.DEBUG,"fix comp " + SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
-        (cache,modifications) = fixModifications(cache,env,modifications,ht);
-        (cache,typeSpec) = fixTypeSpec(cache,env,typeSpec,ht);
-        (cache,SOME(ad)) = fixArrayDim(cache, env, SOME(ad), ht);
+        modifications = fixModifications(inCache,env,modifications,ht);
+        typeSpec = fixTypeSpec(inCache,env,typeSpec,ht);
+        ad = fixArrayDim(inCache, env, ad, ht);
       then
-        (cache,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir, isf), typeSpec, modifications, comment, condition, info));
+        (SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir, isf), typeSpec, modifications, comment, condition, info));
 
-    case (cache,env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
+    case (env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
                                 SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //fprintln(Flags.DEBUG,"fixClassdef " + name);
@@ -958,20 +961,20 @@ algorithm
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
                      cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
         env = FGraph.openScope(env, SCode.ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
-        (cache,classDef) = fixClassdef(cache,env,classDef,ht);
+        classDef = fixClassdef(inCache, env,classDef,ht);
       then
-        (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
+        (SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
 
     // failed above
-    case (cache,env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
+    case (env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //fprintln(Flags.DEBUG,"fixClassdef " + name);
         env = FGraph.openScope(env, SCode.ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
-        (cache,classDef) = fixClassdef(cache,env,classDef,ht);
+        classDef = fixClassdef(inCache, env,classDef,ht);
       then
-        (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
+        (SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
 
-    case (cache,env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
+    case (env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
                                 SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //fprintln(Flags.DEBUG,"fixClassdef " + name + str);
@@ -980,30 +983,30 @@ algorithm
                      cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
 
         env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
-        (cache,classDef) = fixClassdef(cache,env,classDef,ht);
+        classDef = fixClassdef(inCache,env,classDef,ht);
       then
-        (cache,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
+        (SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
 
     // failed above
-    case (cache,env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
+    case (env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //fprintln(Flags.DEBUG,"fixClassdef " + name + str);
         env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
-        (cache,classDef) = fixClassdef(cache,env,classDef,ht);
+        classDef = fixClassdef(inCache,env,classDef,ht);
       then
-        (cache,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
+        (SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
 
-    case (cache,env,SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info),ht)
+    case (env,SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info),ht)
       equation
         //fprintln(Flags.DEBUG,"fix extends " + SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
-        (cache,extendsPath) = fixPath(cache,env,extendsPath,ht);
-        (cache,modifications) = fixModifications(cache,env,modifications,ht);
+        extendsPath = fixPath(inCache,env,extendsPath,ht);
+        modifications = fixModifications(inCache,env,modifications,ht);
       then
-        (cache,SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info));
+        (SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info));
 
-    case (cache,_,SCode.IMPORT(),_) then (cache,inElt);
+    case (_,SCode.IMPORT(),_) then inElt;
 
-    case (_,_,elt,_)
+    case (_,elt,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("InstExtends.fixElement failed: " + SCodeDump.unparseElementStr(elt));
@@ -1016,14 +1019,13 @@ protected function fixClassdef
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input FCore.Cache inCache;
+  input array<FCore.Cache> cache;
   input FCore.Graph inEnv;
   input SCode.ClassDef inCd;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache;
   output SCode.ClassDef outCd;
 algorithm
-  (outCache,outCd) := matchcontinue (inCache,inEnv,inCd,inHt)
+  outCd := matchcontinue (inEnv,inCd,inHt)
     local
       list<SCode.Element> elts;
       list<SCode.Equation> ne,ie;
@@ -1037,13 +1039,12 @@ algorithm
       SCode.Attributes attr;
       String name;
       SCode.Mod mod;
-      FCore.Cache cache;
       FCore.Graph env;
       list<HashTableStringToPath.HashTable> ht;
       HashTableStringToPath.HashTable cls_ht;
       SCode.ClassDef cd;
 
-    case (cache,env,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed),ht)
+    case (env,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed),ht)
       algorithm
         if not listEmpty(elts) then
           cls_ht := HashTableStringToPath.emptyHashTableSized(Util.nextPrime(listLength(elts)));
@@ -1051,36 +1052,36 @@ algorithm
           ht := cls_ht :: ht;
         end if;
 
-        (cache,elts) := fixList(cache,env,elts,ht,fixElement);
-        (cache,ne) := fixList(cache,env,ne,ht,fixEquation);
-        (cache,ie) := fixList(cache,env,ie,ht,fixEquation);
-        (cache,na) := fixList(cache,env,na,ht,fixAlgorithm);
-        (cache,ia) := fixList(cache,env,ia,ht,fixAlgorithm);
-        (cache,nc) := fixList(cache,env,nc,ht,fixConstraint);
-      then (cache,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed));
+        elts := fixList(cache,env,elts,ht,fixElement);
+        ne := fixList(cache,env,ne,ht,fixEquation);
+        ie := fixList(cache,env,ie,ht,fixEquation);
+        na := fixList(cache,env,na,ht,fixAlgorithm);
+        ia := fixList(cache,env,ia,ht,fixAlgorithm);
+        nc := fixList(cache,env,nc,ht,fixConstraint);
+      then SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed);
 
-    case (cache,env,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed)),ht)
+    case (env,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed)),ht)
       equation
-        (cache,mod) = fixModifications(cache,env,mod,ht);
-        (cache,elts) = fixList(cache,env,elts,ht,fixElement);
-        (cache,ne) = fixList(cache,env,ne,ht,fixEquation);
-        (cache,ie) = fixList(cache,env,ie,ht,fixEquation);
-        (cache,na) = fixList(cache,env,na,ht,fixAlgorithm);
-        (cache,ia) = fixList(cache,env,ia,ht,fixAlgorithm);
-        (cache,nc) = fixList(cache,env,nc,ht,fixConstraint);
-      then (cache,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed)));
+        mod = fixModifications(cache,env,mod,ht);
+        elts = fixList(cache,env,elts,ht,fixElement);
+        ne = fixList(cache,env,ne,ht,fixEquation);
+        ie = fixList(cache,env,ie,ht,fixEquation);
+        na = fixList(cache,env,na,ht,fixAlgorithm);
+        ia = fixList(cache,env,ia,ht,fixAlgorithm);
+        nc = fixList(cache,env,nc,ht,fixConstraint);
+      then (SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed)));
 
-    case (cache,env,SCode.DERIVED(ts,mod,attr),ht)
+    case (env,SCode.DERIVED(ts,mod,attr),ht)
       equation
-        (cache,ts) = fixTypeSpec(cache,env,ts,ht);
-        (cache,mod) = fixModifications(cache,env,mod,ht);
-      then (cache,SCode.DERIVED(ts,mod,attr));
+        ts = fixTypeSpec(cache,env,ts,ht);
+        mod = fixModifications(cache,env,mod,ht);
+      then SCode.DERIVED(ts,mod,attr);
 
-    case (cache,_,cd as SCode.ENUMERATION(),_) then (cache,cd);
-    case (cache,_,cd as SCode.OVERLOAD(),_) then (cache,cd);
-    case (cache,_,cd as SCode.PDER(),_) then (cache,cd);
+    case (_,cd as SCode.ENUMERATION(),_) then cd;
+    case (_,cd as SCode.OVERLOAD(),_) then cd;
+    case (_,cd as SCode.PDER(),_) then cd;
 
-    case (_,_,cd,_)
+    case (_,cd,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("InstExtends.fixClassDef failed: " + SCodeDump.classDefStr(cd));
@@ -1095,29 +1096,26 @@ protected function fixEquation
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
   input SCode.Equation inEq;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache;
   output SCode.Equation outEq;
 algorithm
-  (outCache,outEq) := match inEq
+  outEq := match inEq
     local
       SCode.EEquation eeq;
 
     case SCode.EQUATION(eeq)
       algorithm
-        (outCache, eeq) := fixEEquation(inCache, inEnv, eeq, inHt);
-      then
-        (outCache, SCode.EQUATION(eeq));
+        eeq := fixEEquation(inCache, inEnv, eeq, inHt);
+      then SCode.EQUATION(eeq);
 
     case SCode.EQUATION(eeq)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.fixEquation failed: " + SCodeDump.equationStr(eeq));
-      then
-        fail();
+      then fail();
   end match;
 end fixEquation;
 
@@ -1126,14 +1124,13 @@ protected function fixEEquation
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache inCache;
+  input array<FCore.Cache> cache;
   input FCore.Graph inEnv;
   input SCode.EEquation inEeq;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache = inCache;
   output SCode.EEquation outEeq;
 algorithm
-  (outCache,outEeq) := match inEeq
+  outEeq := match inEeq
     local
       String id;
       Absyn.ComponentRef cref,cref1,cref2;
@@ -1148,56 +1145,56 @@ algorithm
 
     case SCode.EQ_IF(expl,eqll,eql,comment,info)
       equation
-        (outCache,expl) = fixList(outCache,inEnv,expl,inHt,fixExp);
-        (outCache,eqll) = fixListList(outCache,inEnv,eqll,inHt,fixEEquation);
-        (outCache,eql) = fixList(outCache,inEnv,eql,inHt,fixEEquation);
-      then (outCache,SCode.EQ_IF(expl,eqll,eql,comment,info));
+        expl = fixList(cache,inEnv,expl,inHt,fixExp);
+        eqll = fixListList(cache,inEnv,eqll,inHt,fixEEquation);
+        eql = fixList(cache,inEnv,eql,inHt,fixEEquation);
+      then (SCode.EQ_IF(expl,eqll,eql,comment,info));
     case SCode.EQ_EQUALS(exp1,exp2,comment,info)
       equation
-        (outCache,exp1) = fixExp(outCache,inEnv,exp1,inHt);
-        (outCache,exp2) = fixExp(outCache,inEnv,exp2,inHt);
-      then (outCache,SCode.EQ_EQUALS(exp1,exp2,comment,info));
+        exp1 = fixExp(cache,inEnv,exp1,inHt);
+        exp2 = fixExp(cache,inEnv,exp2,inHt);
+      then (SCode.EQ_EQUALS(exp1,exp2,comment,info));
     case SCode.EQ_PDE(exp1,exp2,cref,comment,info)
       equation
-        (outCache,exp1) = fixExp(outCache,inEnv,exp1,inHt);
-        (outCache,exp2) = fixExp(outCache,inEnv,exp2,inHt);
-        (outCache,cref) = fixCref(outCache,inEnv,cref,inHt);
-      then (outCache,SCode.EQ_PDE(exp1,exp2,cref,comment,info));
+        exp1 = fixExp(cache,inEnv,exp1,inHt);
+        exp2 = fixExp(cache,inEnv,exp2,inHt);
+        cref = fixCref(cache,inEnv,cref,inHt);
+      then (SCode.EQ_PDE(exp1,exp2,cref,comment,info));
     case SCode.EQ_CONNECT(cref1,cref2,comment,info)
       equation
-        (outCache,cref1) = fixCref(outCache,inEnv,cref1,inHt);
-        (outCache,cref2) = fixCref(outCache,inEnv,cref2,inHt);
-      then (outCache,SCode.EQ_CONNECT(cref1,cref2,comment,info));
+        cref1 = fixCref(cache,inEnv,cref1,inHt);
+        cref2 = fixCref(cache,inEnv,cref2,inHt);
+      then (SCode.EQ_CONNECT(cref1,cref2,comment,info));
     case SCode.EQ_FOR(id,optExp,eql,comment,info)
       equation
-        (outCache,optExp) = fixOption(outCache,inEnv,optExp,inHt,fixExp);
-        (outCache,eql) = fixList(outCache,inEnv,eql,inHt,fixEEquation);
-      then (outCache,SCode.EQ_FOR(id,optExp,eql,comment,info));
+        optExp = fixOption(cache,inEnv,optExp,inHt,fixExp);
+        eql = fixList(cache,inEnv,eql,inHt,fixEEquation);
+      then (SCode.EQ_FOR(id,optExp,eql,comment,info));
     case SCode.EQ_WHEN(exp,eql,whenlst,comment,info)
       equation
-        (outCache,exp) = fixExp(outCache,inEnv,exp,inHt);
-        (outCache,eql) = fixList(outCache,inEnv,eql,inHt,fixEEquation);
-        (outCache,whenlst) = fixListTuple2(outCache,inEnv,whenlst,inHt,fixExp,fixListEEquation);
-      then (outCache,SCode.EQ_WHEN(exp,eql,whenlst,comment,info));
+        exp = fixExp(cache,inEnv,exp,inHt);
+        eql = fixList(cache,inEnv,eql,inHt,fixEEquation);
+        whenlst = fixListTuple2(cache,inEnv,whenlst,inHt,fixExp,fixListEEquation);
+      then (SCode.EQ_WHEN(exp,eql,whenlst,comment,info));
     case SCode.EQ_ASSERT(exp1,exp2,exp3,comment,info)
       equation
-        (outCache,exp1) = fixExp(outCache,inEnv,exp1,inHt);
-        (outCache,exp2) = fixExp(outCache,inEnv,exp2,inHt);
-        (outCache,exp3) = fixExp(outCache,inEnv,exp3,inHt);
-      then (outCache,SCode.EQ_ASSERT(exp1,exp2,exp3,comment,info));
+        exp1 = fixExp(cache,inEnv,exp1,inHt);
+        exp2 = fixExp(cache,inEnv,exp2,inHt);
+        exp3 = fixExp(cache,inEnv,exp3,inHt);
+      then (SCode.EQ_ASSERT(exp1,exp2,exp3,comment,info));
     case SCode.EQ_TERMINATE(exp,comment,info)
       equation
-        (outCache,exp) = fixExp(outCache,inEnv,exp,inHt);
-      then (outCache,SCode.EQ_TERMINATE(exp,comment,info));
+        exp = fixExp(cache,inEnv,exp,inHt);
+      then (SCode.EQ_TERMINATE(exp,comment,info));
     case SCode.EQ_REINIT(cref,exp,comment,info)
       equation
-        (outCache,cref) = fixCref(outCache,inEnv,cref,inHt);
-        (outCache,exp) = fixExp(outCache,inEnv,exp,inHt);
-      then (outCache,SCode.EQ_REINIT(cref,exp,comment,info));
+        cref = fixCref(cache,inEnv,cref,inHt);
+        exp = fixExp(cache,inEnv,exp,inHt);
+      then (SCode.EQ_REINIT(cref,exp,comment,info));
     case SCode.EQ_NORETCALL(exp,comment,info)
       equation
-        (outCache,exp) = fixExp(outCache,inEnv,exp,inHt);
-      then (outCache,SCode.EQ_NORETCALL(exp,comment,info));
+        exp = fixExp(cache,inEnv,exp,inHt);
+      then (SCode.EQ_NORETCALL(exp,comment,info));
   end match;
 end fixEEquation;
 
@@ -1206,14 +1203,13 @@ protected function fixListEEquation
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache cache;
+  input array<FCore.Cache> cache;
   input FCore.Graph env;
   input list<SCode.EEquation> eeq;
   input list<HashTableStringToPath.HashTable> ht;
-  output FCore.Cache outCache;
   output list<SCode.EEquation> outEeq;
 algorithm
-  (outCache,outEeq) := fixList(cache,env,eeq,ht,fixEEquation);
+  outEeq := fixList(cache,env,eeq,ht,fixEEquation);
 end fixListEEquation;
 
 protected function fixAlgorithm
@@ -1221,17 +1217,16 @@ protected function fixAlgorithm
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
   input SCode.AlgorithmSection inAlg;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache;
   output SCode.AlgorithmSection outAlg;
 protected
   list<SCode.Statement> stmts;
 algorithm
   SCode.ALGORITHM(stmts) := inAlg;
-  (outCache, stmts) := fixList(inCache, inEnv, stmts, inHt, fixStatement);
+  stmts := fixList(inCache, inEnv, stmts, inHt, fixStatement);
   outAlg := SCode.ALGORITHM(stmts);
 end fixAlgorithm;
 
@@ -1240,17 +1235,16 @@ protected function fixConstraint
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
   input SCode.ConstraintSection inConstrs;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache;
   output SCode.ConstraintSection outConstrs;
 protected
   list<Absyn.Exp> exps;
 algorithm
   SCode.CONSTRAINTS(exps) := inConstrs;
-  (outCache, exps) := fixList(inCache, inEnv, exps, inHt, fixExp);
+  exps := fixList(inCache, inEnv, exps, inHt, fixExp);
   outConstrs := SCode.CONSTRAINTS(exps);
 end fixConstraint;
 
@@ -1259,14 +1253,13 @@ protected function fixListAlgorithmItem
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache cache;
+  input array<FCore.Cache> cache;
   input FCore.Graph env;
   input list<SCode.Statement> alg;
   input list<HashTableStringToPath.HashTable> ht;
-  output FCore.Cache outCache;
   output list<SCode.Statement> outAlg;
 algorithm
-  (outCache,outAlg) := fixList(cache,env,alg,ht,fixStatement);
+  outAlg := fixList(cache,env,alg,ht,fixStatement);
 end fixListAlgorithmItem;
 
 protected function fixStatement
@@ -1274,14 +1267,13 @@ protected function fixStatement
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache inCache;
+  input array<FCore.Cache> cache;
   input FCore.Graph inEnv;
   input SCode.Statement inStmt;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache = inCache;
   output SCode.Statement outStmt;
 algorithm
-  (outCache,outStmt) := matchcontinue inStmt
+  outStmt := matchcontinue inStmt
     local
       Absyn.Exp exp,exp1,exp2;
       Option<Absyn.Exp> optExp;
@@ -1295,70 +1287,67 @@ algorithm
 
     case SCode.ALG_ASSIGN(exp1,exp2,comment,info)
       equation
-        (outCache,exp1) = fixExp(outCache,inEnv,exp1,inHt);
-        (outCache,exp2) = fixExp(outCache,inEnv,exp2,inHt);
-      then (outCache,SCode.ALG_ASSIGN(exp1,exp2,comment,info));
+        exp1 = fixExp(cache,inEnv,exp1,inHt);
+        exp2 = fixExp(cache,inEnv,exp2,inHt);
+      then SCode.ALG_ASSIGN(exp1,exp2,comment,info);
 
     case SCode.ALG_IF(exp,truebranch,elseifbranch,elsebranch,comment,info)
       equation
-        (outCache,exp) = fixExp(outCache,inEnv,exp,inHt);
-        (outCache,truebranch) = fixList(outCache,inEnv,truebranch,inHt,fixStatement);
-        (outCache,elseifbranch) = fixListTuple2(outCache,inEnv,elseifbranch,inHt,fixExp,fixListAlgorithmItem);
-        (outCache,elsebranch) = fixList(outCache,inEnv,elsebranch,inHt,fixStatement);
-      then (outCache,SCode.ALG_IF(exp,truebranch,elseifbranch,elsebranch,comment,info));
+        exp = fixExp(cache,inEnv,exp,inHt);
+        truebranch = fixList(cache,inEnv,truebranch,inHt,fixStatement);
+        elseifbranch = fixListTuple2(cache,inEnv,elseifbranch,inHt,fixExp,fixListAlgorithmItem);
+        elsebranch = fixList(cache,inEnv,elsebranch,inHt,fixStatement);
+      then SCode.ALG_IF(exp,truebranch,elseifbranch,elsebranch,comment,info);
 
     case SCode.ALG_FOR(iter,optExp,forbody,comment,info)
       equation
-        (outCache,optExp) = fixOption(outCache,inEnv,optExp,inHt,fixExp);
-        (outCache,forbody) = fixList(outCache,inEnv,forbody,inHt,fixStatement);
-      then (outCache,SCode.ALG_FOR(iter,optExp,forbody,comment,info));
+        optExp = fixOption(cache,inEnv,optExp,inHt,fixExp);
+        forbody = fixList(cache,inEnv,forbody,inHt,fixStatement);
+      then SCode.ALG_FOR(iter,optExp,forbody,comment,info);
 
     case SCode.ALG_PARFOR(iter,optExp,forbody,comment,info)
       equation
-        (outCache,optExp) = fixOption(outCache,inEnv,optExp,inHt,fixExp);
-        (outCache,forbody) = fixList(outCache,inEnv,forbody,inHt,fixStatement);
-      then (outCache,SCode.ALG_PARFOR(iter,optExp,forbody,comment,info));
+        optExp = fixOption(cache,inEnv,optExp,inHt,fixExp);
+        forbody = fixList(cache,inEnv,forbody,inHt,fixStatement);
+      then SCode.ALG_PARFOR(iter,optExp,forbody,comment,info);
 
     case SCode.ALG_WHILE(exp,whilebody,comment,info)
       equation
-        (outCache,exp) = fixExp(outCache,inEnv,exp,inHt);
-        (outCache,_) = fixList(outCache,inEnv,whilebody,inHt,fixStatement);
-      then (outCache,SCode.ALG_WHILE(exp,whilebody,comment,info));
+        exp = fixExp(cache,inEnv,exp,inHt);
+        whilebody = fixList(cache,inEnv,whilebody,inHt,fixStatement);
+      then SCode.ALG_WHILE(exp,whilebody,comment,info);
 
     case SCode.ALG_WHEN_A(whenlst,comment,info)
       equation
-        (outCache,whenlst) = fixListTuple2(outCache,inEnv,whenlst,inHt,fixExp,fixListAlgorithmItem);
-      then (outCache,SCode.ALG_WHEN_A(whenlst,comment,info));
+        whenlst = fixListTuple2(cache,inEnv,whenlst,inHt,fixExp,fixListAlgorithmItem);
+      then SCode.ALG_WHEN_A(whenlst,comment,info);
 
     case SCode.ALG_ASSERT(exp, exp1, exp2, comment, info)
       algorithm
-        (outCache, exp) := fixExp(outCache, inEnv, exp, inHt);
-        (outCache, exp1) := fixExp(outCache, inEnv, exp1, inHt);
-        (outCache, exp2) := fixExp(outCache, inEnv, exp2, inHt);
-      then
-        (outCache, SCode.ALG_ASSERT(exp, exp1, exp2, comment, info));
+        exp := fixExp(cache, inEnv, exp, inHt);
+        exp1 := fixExp(cache, inEnv, exp1, inHt);
+        exp2 := fixExp(cache, inEnv, exp2, inHt);
+      then SCode.ALG_ASSERT(exp, exp1, exp2, comment, info);
 
     case SCode.ALG_TERMINATE(exp, comment, info)
       algorithm
-        (outCache, exp) := fixExp(outCache, inEnv, exp, inHt);
-      then
-        (outCache, SCode.ALG_TERMINATE(exp, comment, info));
+        exp := fixExp(cache, inEnv, exp, inHt);
+      then SCode.ALG_TERMINATE(exp, comment, info);
 
     case SCode.ALG_REINIT(cr, exp, comment, info)
       algorithm
-        (outCache, cr) := fixCref(outCache, inEnv, cr, inHt);
-        (outCache, exp) := fixExp(outCache, inEnv, exp, inHt);
-      then
-        (outCache, SCode.ALG_REINIT(cr, exp, comment, info));
+        cr := fixCref(cache, inEnv, cr, inHt);
+        exp := fixExp(cache, inEnv, exp, inHt);
+      then SCode.ALG_REINIT(cr, exp, comment, info);
 
     case SCode.ALG_NORETCALL(exp,comment,info)
       equation
-        (outCache,exp) = fixExp(outCache,inEnv,exp,inHt);
-      then (outCache,SCode.ALG_NORETCALL(exp,comment,info));
+        exp = fixExp(cache,inEnv,exp,inHt);
+      then SCode.ALG_NORETCALL(exp,comment,info);
 
-    case SCode.ALG_RETURN(comment,info) then (outCache, inStmt);
+    case SCode.ALG_RETURN(comment,info) then inStmt;
 
-    case SCode.ALG_BREAK(comment,info) then (outCache, inStmt);
+    case SCode.ALG_BREAK(comment,info) then inStmt;
 
     else
       equation
@@ -1373,23 +1362,12 @@ protected function fixArrayDim
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
-  input Option<Absyn.ArrayDim> inAd;
+  input output Absyn.ArrayDim ads;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache;
-  output Option<Absyn.ArrayDim> outAd;
 algorithm
-  (outCache,outAd) := match inAd
-    local
-      list<Absyn.Subscript> ads;
-
-    case NONE() then (inCache,NONE());
-    case SOME(ads)
-      algorithm
-        (outCache, ads) := fixList(inCache, inEnv, ads, inHt, fixSubscript);
-      then (outCache,SOME(ads));
-  end match;
+  ads := fixList(inCache, inEnv, ads, inHt, fixSubscript);
 end fixArrayDim;
 
 protected function fixSubscript
@@ -1397,22 +1375,21 @@ protected function fixSubscript
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache inCache;
+  input array<FCore.Cache> cache;
   input FCore.Graph inEnv;
   input Absyn.Subscript inSub;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache;
   output Absyn.Subscript outSub;
 algorithm
-  (outCache,outSub) := match inSub
+  outSub := match inSub
     local
       Absyn.Exp exp;
 
-    case Absyn.NOSUB() then (inCache,Absyn.NOSUB());
+    case Absyn.NOSUB() then inSub;
     case Absyn.SUBSCRIPT(exp)
       algorithm
-        (outCache, exp) := fixExp(inCache, inEnv, exp, inHt);
-      then (outCache, Absyn.SUBSCRIPT(exp));
+        exp := fixExp(cache, inEnv, exp, inHt);
+      then Absyn.SUBSCRIPT(exp);
   end match;
 end fixSubscript;
 
@@ -1421,14 +1398,13 @@ protected function fixTypeSpec
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache inCache;
+  input array<FCore.Cache> cache;
   input FCore.Graph inEnv;
   input Absyn.TypeSpec inTs;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache = inCache;
   output Absyn.TypeSpec outTs;
 algorithm
-  (outCache,outTs) := match inTs
+  outTs := match inTs
     local
       Absyn.Path path;
       Option<Absyn.ArrayDim> arrayDim;
@@ -1436,15 +1412,15 @@ algorithm
 
     case Absyn.TPATH(path,arrayDim)
       equation
-        (outCache,arrayDim) = fixArrayDim(outCache,inEnv,arrayDim,inHt);
-        (outCache,path) = fixPath(outCache,inEnv,path,inHt);
-      then (outCache,Absyn.TPATH(path,arrayDim));
+        arrayDim = fixOption(cache,inEnv,arrayDim,inHt,fixArrayDim);
+        path = fixPath(cache,inEnv,path,inHt);
+      then Absyn.TPATH(path,arrayDim);
     case Absyn.TCOMPLEX(path,typeSpecs,arrayDim)
       equation
-        (outCache,arrayDim) = fixArrayDim(outCache,inEnv,arrayDim,inHt);
-        (outCache,path) = fixPath(outCache,inEnv,path,inHt);
-        (outCache,typeSpecs) = fixList(outCache,inEnv,typeSpecs,inHt,fixTypeSpec);
-      then (outCache,Absyn.TCOMPLEX(path,typeSpecs,arrayDim));
+        arrayDim = fixOption(cache,inEnv,arrayDim,inHt,fixArrayDim);
+        path = fixPath(cache,inEnv,path,inHt);
+        typeSpecs = fixList(cache,inEnv,typeSpecs,inHt,fixTypeSpec);
+      then Absyn.TCOMPLEX(path,typeSpecs,arrayDim);
   end match;
 end fixTypeSpec;
 
@@ -1452,20 +1428,20 @@ protected function fixPath
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
   input Absyn.Path inPath;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache;
   output Absyn.Path outPath;
 algorithm
-  (outCache,outPath) := matchcontinue inPath
+  outPath := matchcontinue inPath
     local
       String id;
       Absyn.Path path2,path;
+      FCore.Cache cache;
 
     case Absyn.FULLYQUALIFIED()
-      then (inCache, inPath);
+      then inPath;
 
     case _
       equation
@@ -1474,7 +1450,7 @@ algorithm
         path2 = Absyn.pathReplaceFirstIdent(inPath, path2);
         path2 = FGraph.pathStripGraphScopePrefix(path2, inEnv, false);
         //fprintln(Flags.DEBUG, "Replacing: " + Absyn.pathString(inPath) + " with " + Absyn.pathString(path2) + " s:" + FGraph.printGraphPathStr(inEnv));
-      then (inCache, path2);
+      then path2;
 
     // first indent is local in the inEnv, DO NOT QUALIFY!
     case _
@@ -1483,24 +1459,24 @@ algorithm
         (_, _) = Lookup.lookupClassLocal(inEnv, Absyn.pathFirstIdent(inPath));
         path = FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
         //fprintln(Flags.DEBUG,"FullyQual: " + Absyn.pathString(path));
-      then (inCache, path);
+      then path;
 
     case _
       equation
         // isOutside = isPathOutsideScope(cache, inEnv, path);
         //print("Try makeFullyQualified " + Absyn.pathString(path) + "\n");
-        (outCache, path) = Inst.makeFullyQualified(inCache, inEnv, inPath);
+        (cache, path) = Inst.makeFullyQualified(arrayGet(inCache,1), inEnv, inPath);
         // path = if_(isOutside, path, FGraph.pathStripGraphScopePrefix(path, inEnv, false));
         path = FGraph.pathStripGraphScopePrefix(path, inEnv, false);
         //print("FullyQual: " + Absyn.pathString(path) + "\n");
-      then (outCache, path);
+        arrayUpdate(inCache, 1, cache);
+      then path;
 
     else
       equation
         path = FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
         //fprintln(Flags.DEBUG, "Path not fixed: " + Absyn.pathString(path) + "\n");
-      then
-        (inCache, path);
+      then path;
 
   end matchcontinue;
 end fixPath;
@@ -1519,24 +1495,6 @@ algorithm
   end for;
   fail();
 end lookupName;
-
-public function isPathOutsideScope
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path inPath;
-  output Boolean yes;
-protected
-  FCore.Graph env;
-algorithm
-  try
-    // see where the first ident from the path leads, if is outside the current env DO NOT strip!
-    (_, _, env) := Lookup.lookupClass(inCache, inEnv, Absyn.makeIdentPathFromString(Absyn.pathFirstIdent(inPath)));
-    // if envClass is prefix of env then is outside scope
-    yes := FGraph.graphPrefixOf(env, inEnv);
-  else
-    yes := false;
-  end try;
-end isPathOutsideScope;
 
 protected function lookupVarNoErrorMessage
   input FCore.Cache inCache;
@@ -1559,26 +1517,24 @@ protected function fixCref
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input FCore.Cache inCache;
+  input array<FCore.Cache> cache;
   input FCore.Graph inEnv;
   input Absyn.ComponentRef inCref;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache;
   output Absyn.ComponentRef outCref;
 algorithm
-  (outCache,outCref) := matchcontinue (inCache,inEnv,inCref,inHt)
+  outCref := matchcontinue (inEnv,inCref,inHt)
     local
       String id;
       Absyn.Path path;
       DAE.ComponentRef cref_;
-      FCore.Cache cache;
       FCore.Graph env, denv;
       list<HashTableStringToPath.HashTable> ht;
       Absyn.ComponentRef cref;
       SCode.Element c;
       Boolean isOutside;
 
-    case (cache,env,cref,ht)
+    case (env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
         //fprintln(Flags.DEBUG,"Try ht lookup " + id);
@@ -1588,15 +1544,15 @@ algorithm
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
         //fprintln(Flags.DEBUG, "Cref HT fixed: " + Absyn.printComponentRefStr(cref));
         cref = if Absyn.crefEqual(cref, inCref) then inCref else cref;
-      then (cache,cref);
+      then cref;
 
     // try lookup var (constant in a package?)
-    case (cache,env,cref,_)
+    case (env,cref,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         cref_ = ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{});
         //fprintln(Flags.DEBUG,"Try lookupV " + id);
-        (denv,id) = lookupVarNoErrorMessage(cache,env,cref_);
+        (denv,id) = lookupVarNoErrorMessage(arrayGet(cache,1),env,cref_);
         //fprintln(Flags.DEBUG,"Got env " + intString(listLength(env)));
         // isOutside = FGraph.graphPrefixOf(denv, env);
         denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),id,NONE());
@@ -1605,13 +1561,13 @@ algorithm
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
         //fprintln(Flags.DEBUG, "Cref VAR fixed: " + Absyn.printComponentRefStr(cref));
         cref = if Absyn.crefEqual(cref, inCref) then inCref else cref;
-      then (cache,cref);
+      then cref;
 
-    case (cache,env,cref,_)
+    case (env,cref,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         //print("Try lookupC " + id + "\n");
-        (_,c,denv) = Lookup.lookupClass(cache,env,Absyn.IDENT(id));
+        (_,c,denv) = Lookup.lookupClass(arrayGet(cache,1),env,Absyn.IDENT(id));
         // isOutside = FGraph.graphPrefixOf(denv, env);
         // id might come from named import, make sure you use the actual class name!
         id = SCode.getElementName(c);
@@ -1622,9 +1578,9 @@ algorithm
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
         //print("Cref CLASS fixed: " + Absyn.printComponentRefStr(cref) + "\n");
         cref = if Absyn.crefEqual(cref, inCref) then inCref else cref;
-      then (cache,cref);
+      then cref;
 
-    else (inCache, inCref);
+    else inCref;
 
   end matchcontinue;
 end fixCref;
@@ -1634,49 +1590,45 @@ protected function fixModifications
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
   input SCode.Mod inMod;
   input list<HashTableStringToPath.HashTable> inHT;
-  output FCore.Cache outCache;
   output SCode.Mod outMod = inMod;
 algorithm
-  (outCache, outMod) := matchcontinue outMod
+  outMod := matchcontinue outMod
     local
       list<SCode.SubMod> subModLst;
       Absyn.Exp exp;
       SCode.Element e;
       SCode.ClassDef cdef;
 
-    case SCode.NOMOD() then (inCache, inMod);
+    case SCode.NOMOD() then inMod;
 
     case SCode.MOD()
       algorithm
-        (outCache, subModLst) := fixSubModList(inCache, inEnv, outMod.subModLst, inHT);
+        subModLst := fixList(inCache, inEnv, outMod.subModLst, inHT, fixSubMod);
         outMod.subModLst := subModLst;
 
         if isSome(outMod.binding) then
           SOME(exp) := outMod.binding;
-          (outCache, exp) := fixExp(outCache, inEnv, exp, inHT);
+          exp := fixExp(inCache, inEnv, exp, inHT);
           outMod.binding := SOME(exp);
         end if;
-      then
-        (outCache, outMod);
+      then outMod;
 
     case SCode.REDECL(element = SCode.COMPONENT())
       algorithm
-        (outCache, e) := fixElement(inCache, inEnv, outMod.element, inHT);
+        e := fixElement(inCache, inEnv, outMod.element, inHT);
         outMod.element := e;
-      then
-        (outCache, outMod);
+      then outMod;
 
     case SCode.REDECL(element = e as SCode.CLASS(classDef = cdef))
       algorithm
-        (outCache, cdef) := fixClassdef(inCache, inEnv, cdef, inHT);
+        cdef := fixClassdef(inCache, inEnv, cdef, inHT);
         e.classDef := cdef;
         outMod.element := e;
-      then
-        (outCache, outMod);
+      then outMod;
 
     else
       equation
@@ -1688,42 +1640,37 @@ algorithm
   end matchcontinue;
 end fixModifications;
 
-protected function fixSubModList
+protected function fixSubMod
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
-  input list<SCode.SubMod> inSubMods;
+  input output SCode.SubMod subMod;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache = inCache;
-  output list<SCode.SubMod> outSubMods = {};
 protected
   Absyn.Ident ident;
-  SCode.Mod mod;
+  SCode.Mod mod1, mod2;
 algorithm
-  for sm in inSubMods loop
-    SCode.NAMEMOD(ident, mod) := sm;
-    (outCache, mod) := fixModifications(outCache, inEnv, mod, inHt);
-    outSubMods := SCode.NAMEMOD(ident, mod) :: outSubMods;
-  end for;
-
-  outSubMods := listReverse(outSubMods);
-end fixSubModList;
+  SCode.NAMEMOD(ident, mod1) := subMod;
+  mod2 := fixModifications(inCache, inEnv, mod1, inHt);
+  if not referenceEq(mod1, mod2) then
+    subMod := SCode.NAMEMOD(ident, mod2);
+  end if;
+end fixSubMod;
 
 protected function fixExp
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input FCore.Cache inCache;
+  input array<FCore.Cache> cache;
   input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input list<HashTableStringToPath.HashTable> inHt;
-  output FCore.Cache outCache;
   output Absyn.Exp outExp;
 algorithm
-  (outExp,(outCache,_,_)) := Absyn.traverseExp(inExp,fixExpTraverse,(inCache,inEnv,inHt));
+  (outExp,_) := Absyn.traverseExp(inExp,fixExpTraverse,(cache,inEnv,inHt));
 end fixExp;
 
 protected function fixExpTraverse
@@ -1731,166 +1678,182 @@ protected function fixExpTraverse
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Absyn.Exp inExp;
-  input tuple<FCore.Cache,FCore.Graph,list<HashTableStringToPath.HashTable>> inTpl;
-  output Absyn.Exp outExp;
-  output tuple<FCore.Cache,FCore.Graph,list<HashTableStringToPath.HashTable>> outTpl;
+  input output Absyn.Exp exp;
+  input output tuple<array<FCore.Cache>,FCore.Graph,list<HashTableStringToPath.HashTable>> tpl;
 algorithm
-  (outExp,outTpl) := match (inExp,inTpl)
+  exp := match (exp,tpl)
     local
       Absyn.FunctionArgs fargs;
       Absyn.ComponentRef cref, cref1;
       Absyn.Path path;
-      FCore.Cache cache;
+      array<FCore.Cache> cache;
       FCore.Graph env;
       list<HashTableStringToPath.HashTable> ht;
 
     case (Absyn.CREF(cref),(cache,env,ht))
       equation
-        (cache,cref1) = fixCref(cache,env,cref,ht);
-      then (if referenceEq(cref, cref1) then inExp else Absyn.CREF(cref1),(cache,env,ht));
+        cref1 = fixCref(cache,env,cref,ht);
+      then (if referenceEq(cref, cref1) then exp else Absyn.CREF(cref1));
 
     case (Absyn.CALL(cref,fargs),(cache,env,ht))
       equation
         // print("cref actual: " + Absyn.crefString(cref) + " scope: " + FGraph.printGraphPathStr(env) + "\n");
-        (cache,cref1) = fixCref(cache,env,cref,ht);
+        cref1 = fixCref(cache,env,cref,ht);
         // print("cref fixed : " + Absyn.crefString(cref) + "\n");
-      then (if referenceEq(cref, cref1) then inExp else Absyn.CALL(cref1,fargs),(cache,env,ht));
+      then (if referenceEq(cref, cref1) then exp else Absyn.CALL(cref1,fargs));
 
     case (Absyn.PARTEVALFUNCTION(cref,fargs),(cache,env,ht))
       equation
-        (cache,cref1) = fixCref(cache,env,cref,ht);
-      then (if referenceEq(cref, cref1) then inExp else Absyn.PARTEVALFUNCTION(cref1,fargs),(cache,env,ht));
+        cref1 = fixCref(cache,env,cref,ht);
+      then (if referenceEq(cref, cref1) then exp else Absyn.PARTEVALFUNCTION(cref1,fargs));
 
-    else (inExp,inTpl);
+    else exp;
   end match;
 end fixExpTraverse;
 
 protected function fixOption<Type_A>
 " Generic function to fix an optional element."
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
   input Option<Type_A> inA;
   input list<HashTableStringToPath.HashTable> inHt;
   input FixAFn fixA;
-  output FCore.Cache outCache;
   output Option<Type_A> outA;
 
   partial function FixAFn
-    input FCore.Cache inCache;
+    input array<FCore.Cache> inCache;
     input FCore.Graph inEnv;
     input Type_A inA;
     input list<HashTableStringToPath.HashTable> inHt;
-    output FCore.Cache outCache;
     output Type_A outTypeA;
   end FixAFn;
 algorithm
-  (outCache,outA) := match inA
+  outA := match inA
     local
-      Type_A A;
+      Type_A A1,A2;
 
-    case NONE() then (inCache, NONE());
-    case SOME(A)
+    case NONE() then inA;
+    case SOME(A1)
       equation
-        (outCache, A) = fixA(inCache, inEnv, A, inHt);
-      then (outCache, SOME(A));
+        A2 = fixA(inCache, inEnv, A1, inHt);
+      then if referenceEq(A1,A2) then inA else SOME(A2);
   end match;
 end fixOption;
 
 protected function fixList<Type_A>
 " Generic function to fix a list of elements."
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
   input list<Type_A> inA;
   input list<HashTableStringToPath.HashTable> inHt;
   input FixAFn fixA;
-  output FCore.Cache outCache = inCache;
-  output list<Type_A> outA = {};
+  output list<Type_A> outA;
 
   partial function FixAFn
-    input FCore.Cache inCache;
+    input array<FCore.Cache> inCache;
     input FCore.Graph inEnv;
     input Type_A inA;
     input list<HashTableStringToPath.HashTable> inHt;
-    output FCore.Cache outCache;
     output Type_A outTypeA;
   end FixAFn;
 algorithm
-  for a in inA loop
-    (outCache, a) := fixA(outCache, inEnv, a, inHt);
-    outA := a :: outA;
-  end for;
-
-  outA := listReverse(outA);
+  if listEmpty(inA) then
+    outA := {};
+    return;
+  end if;
+  outA := List.mapCheckReferenceEq(inA, function fixA(inCache=inCache, inEnv=inEnv, inHt=inHt));
 end fixList;
 
 protected function fixListList<Type_A>
 " Generic function to fix a list of elements."
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
   input list<list<Type_A>> inA;
   input list<HashTableStringToPath.HashTable> inHt;
   input FixAFn fixA;
-  output FCore.Cache outCache = inCache;
   output list<list<Type_A>> outA = {};
 
   partial function FixAFn
-    input FCore.Cache inCache;
+    input array<FCore.Cache> inCache;
     input FCore.Graph inEnv;
     input Type_A inA;
     input list<HashTableStringToPath.HashTable> inHt;
-    output FCore.Cache outCache;
     output Type_A outTypeA;
   end FixAFn;
 algorithm
-  for a in inA loop
-    (outCache, a) := fixList(outCache, inEnv, a, inHt, fixA);
-    outA := a :: outA;
-  end for;
+  if listEmpty(inA) then
+    outA := {};
+    return;
+  end if;
 
-  outA := listReverse(outA);
+  outA := List.mapCheckReferenceEq(inA, function fixList(inCache=inCache, inEnv=inEnv, inHt=inHt, fixA=fixA));
 end fixListList;
 
 protected function fixListTuple2<Type_A, Type_B>
 " Generic function to fix a list of elements."
-  input FCore.Cache inCache;
+  input array<FCore.Cache> inCache;
   input FCore.Graph inEnv;
   input list<tuple<Type_A,Type_B>> inRest;
   input list<HashTableStringToPath.HashTable> inHt;
   input FixAFn fixA;
   input FixBFn fixB;
-  output FCore.Cache outCache = inCache;
-  output list<tuple<Type_A,Type_B>> outA = {};
+  output list<tuple<Type_A,Type_B>> outA;
 
   partial function FixAFn
-    input FCore.Cache inCache;
+    input array<FCore.Cache> inCache;
     input FCore.Graph inEnv;
     input Type_A inA;
     input list<HashTableStringToPath.HashTable> inHt;
-    output FCore.Cache outCache;
     output Type_A outLst;
   end FixAFn;
   partial function FixBFn
-    input FCore.Cache inCache;
+    input array<FCore.Cache> inCache;
     input FCore.Graph inEnv;
     input Type_B inA;
     input list<HashTableStringToPath.HashTable> inHt;
-    output FCore.Cache outCache;
     output Type_B outTypeA;
   end FixBFn;
 protected
-  Type_A a;
-  Type_B b;
+  Type_A a1,a2;
+  Type_B b1,b2;
 algorithm
-  for t in inRest loop
-    (a, b) := t;
-    (outCache, a) := fixA(outCache, inEnv, a, inHt);
-    (outCache, b) := fixB(outCache, inEnv, b, inHt);
-    outA := (a, b) :: outA;
-  end for;
-
-  outA := listReverse(outA);
+  outA := fixList(inCache, inEnv, inRest, inHt, function fixTuple2(fixA=fixA, fixB=fixB));
 end fixListTuple2;
+
+protected function fixTuple2<Type_A, Type_B>
+" Generic function to fix a list of elements."
+  input array<FCore.Cache> inCache;
+  input FCore.Graph inEnv;
+  input output tuple<Type_A,Type_B> tpl;
+  input list<HashTableStringToPath.HashTable> inHt;
+  input FixAFn fixA;
+  input FixBFn fixB;
+
+  partial function FixAFn
+    input array<FCore.Cache> inCache;
+    input FCore.Graph inEnv;
+    input Type_A inA;
+    input list<HashTableStringToPath.HashTable> inHt;
+    output Type_A outLst;
+  end FixAFn;
+  partial function FixBFn
+    input array<FCore.Cache> inCache;
+    input FCore.Graph inEnv;
+    input Type_B inA;
+    input list<HashTableStringToPath.HashTable> inHt;
+    output Type_B outTypeA;
+  end FixBFn;
+protected
+  Type_A a1,a2;
+  Type_B b1,b2;
+algorithm
+  (a1, b1) := tpl;
+  a2 := fixA(inCache, inEnv, a1, inHt);
+  b2 := fixB(inCache, inEnv, b1, inHt);
+  if not (referenceEq(a1,a2) and referenceEq(b1,b2)) then
+    tpl := (a2, b2);
+  end if;
+end fixTuple2;
 
 annotation(__OpenModelica_Interface="frontend");
 end InstExtends;
