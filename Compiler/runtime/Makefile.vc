@@ -2,21 +2,19 @@
 # Peter.aronsson@mathcore.com
 
 USE_CORBA = /DUSE_CORBA
-CORBAHOME = $(OMDEV)
-RMLINCLUDE = $(OMDEV)tools\\rml\\include\\plain
 
-INCLUDES = $(INCP) /I. /I $(OMDEV)\tools\rml\include\plain /I..\..\SimulationRuntime\c\ /I..\ /I$(OMDEV)\include\mico-win32-msvc /Ilpsolve
+INCLUDES = $(INCP) /I. /I..\..\SimulationRuntime\c\ /I..\ /I$(OMDEV)/lib/omniORB-4.2.0-msvc-10/include /Ilpsolve
 
 CFLAGS = /O2 /Ot $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TC
 CXXFLAGS = /O2 /Ot $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TP
 
 CORBASRC = omc_communication.cc omc_communication_impl.cpp corbaimpl.cpp
-CORBAINCL = -I$(CORBAHOME)/include/mico-msys-mingw/
+CORBAINCL = -I$(OMDEV)/lib/omniORB-4.2.0-msvc-10/include
 
 SHELL	= /bin/sh
 CC	= cl
-IDL	= $(OMDEV)\bin\mico\idl
-IDLPYTHON = $(OMDEV)\lib\omniORB-4.1.6-msvc-10\bin\x86_win32\omniidl
+IDL	= $(OMDEV)/lib/omniORB-4.2.0-msvc-10/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
+IDLPYTHON = $(IDL)
 
 OBJ = socketimpl.obj printimpl.obj systemimpl.obj systemimplmisc.obj dynload.obj dynload_try.obj settingsimpl.obj \
 ptolemyio.obj BackendDAEEXT.obj ErrorMessage.obj errorext.obj \

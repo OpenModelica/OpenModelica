@@ -2806,7 +2806,7 @@ algorithm
     makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", ".dll");
     makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
     makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
-    makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", "win32");
+    makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
     makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "");
     makefileStr := System.stringReplace(makefileStr, "\r\n", "\n");
     System.writeFile(dir + "Makefile", makefileStr);

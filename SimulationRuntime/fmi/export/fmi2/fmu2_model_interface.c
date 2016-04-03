@@ -309,17 +309,21 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   }
   comp = (ModelInstance *)functions->allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
+    DATA* fmudata = NULL;
+	MODEL_DATA* modelData = NULL;
+	SIMULATION_INFO* simInfo = NULL;
+    threadData_t *threadData = NULL;
+    int i;
+
     comp->instanceName = (fmi2String)functions->allocateMemory(1 + strlen(instanceName), sizeof(char));
     comp->GUID = (fmi2String)functions->allocateMemory(1 + strlen(fmuGUID), sizeof(char));
-    DATA* fmudata = (DATA *)functions->allocateMemory(1, sizeof(DATA));
-    MODEL_DATA* modelData = (MODEL_DATA *)functions->allocateMemory(1, sizeof(MODEL_DATA));
-    SIMULATION_INFO* simInfo = (SIMULATION_INFO *)functions->allocateMemory(1, sizeof(SIMULATION_INFO));
+    fmudata = (DATA *)functions->allocateMemory(1, sizeof(DATA));
+    modelData = (MODEL_DATA *)functions->allocateMemory(1, sizeof(MODEL_DATA));
+    simInfo = (SIMULATION_INFO *)functions->allocateMemory(1, sizeof(SIMULATION_INFO));
     fmudata->modelData = modelData;
     fmudata->simulationInfo = simInfo;
 
-
-
-    threadData_t *threadData = (threadData_t *)functions->allocateMemory(1, sizeof(threadData_t));
+    threadData = (threadData_t *)functions->allocateMemory(1, sizeof(threadData_t));
     memset(threadData, 0, sizeof(threadData_t));
     /*
     pthread_key_create(&fmu2_thread_data_key,NULL);
@@ -333,7 +337,6 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
       return NULL;
     }
     // set all categories to on or off. fmi2SetDebugLogging should be called to choose specific categories.
-    int i;
     for (i = 0; i < NUMBER_OF_CATEGORIES; i++) {
       comp->logCategories[i] = loggingOn;
     }
@@ -422,6 +425,8 @@ fmi2Status fmi2SetupExperiment(fmi2Component c, fmi2Boolean toleranceDefined, fm
 fmi2Status fmi2EnterInitializationMode(fmi2Component c) {
   ModelInstance *comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
+  double nextSampleEvent;
+
   threadData->currentErrorStage = ERROR_SIMULATION;
   if (invalidState(comp, "fmi2EnterInitializationMode", modelInstantiated))
     return fmi2Error;
@@ -454,7 +459,7 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c) {
       comp->eventInfo.valuesOfContinuousStatesChanged = fmi2True;
 
       /* Get next event time (sample calls)*/
-      double nextSampleEvent = 0;
+      nextSampleEvent = 0;
       nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
       if (nextSampleEvent == -1) {
         comp->eventInfo.nextEventTimeDefined = fmi2False;

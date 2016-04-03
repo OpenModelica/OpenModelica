@@ -730,57 +730,41 @@ public function setWindowsPaths
 algorithm
   _ := matchcontinue(inOMHome)
     local
-      String oldPath,newPath,omHome,omdevPath;
+      String oldPath, newPath, omHome, omdevPath, mingwDir, binDir, libBinDir, msysBinDir;
+      Boolean hasBinDir, hasLibBinDir;
 
     // check if we have OMDEV set
     case (omHome)
       equation
         System.setEnv("OPENMODELICAHOME",omHome,true);
         omdevPath = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
-        // we have something!
-        false = stringEq(omdevPath, "");
-        // do we have bin?
-        true = System.directoryExists(omdevPath + "\\tools\\mingw\\bin");
-        // do we have the correct libexec stuff?
-        true = System.directoryExists(omdevPath + "\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
-        oldPath = System.readEnv("PATH");
-        newPath = stringAppendList({omHome,"\\bin;",
-                                    omHome,"\\lib;",
-                                    omdevPath,"\\tools\\mingw\\bin;",
-                                    omdevPath,"\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
-                                    oldPath});
-        System.setEnv("PATH",newPath,true);
+        mingwDir = System.openModelicaPlatform();
+        // if we don't have something in OMDEV use OMHOME
+        if stringEq(omdevPath, "") then
+          omdevPath = omHome;
+        end if;
+        msysBinDir = omdevPath + "\\tools\\msys\\usr\\bin";
+        binDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\bin";
+        libBinDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
+        // do we have bin and lib bin?
+        hasBinDir = System.directoryExists(binDir);
+        hasLibBinDir = System.directoryExists(libBinDir);
+        if hasBinDir and hasLibBinDir
+        then
+          oldPath = System.readEnv("PATH");
+          newPath = stringAppendList({omHome, "\\bin;", omHome, "\\lib;", binDir + ";", libBinDir + ";", msysBinDir + ";"});
+          newPath = System.stringReplace(newPath, "/", "\\") + oldPath;
+          // print("Path set: " + newPath + "\n");
+          System.setEnv("PATH",newPath,true);
+        else
+          // do not display anything if +d=disableWindowsPathCheckWarning
+          if not Flags.isSet(Flags.DISABLE_WINDOWS_PATH_CHECK_WARNING) then
+            print("We could not find some needed MINGW paths in $OPENMODELICAHOME or $OMDEV. Searched for paths:\n");
+            print("\t" + binDir + (if hasBinDir then " [found] " else " [not found] ") + "\n");
+            print("\t" + libBinDir + (if hasLibBinDir then " [found] " else " [not found] ") + "\n");
+          end if;
+        end if;
       then ();
-
-    case (omHome)
-      equation
-        System.setEnv("OPENMODELICAHOME",omHome,true);
-        oldPath = System.readEnv("PATH");
-        // do we have bin?
-        true = System.directoryExists(omHome + "\\mingw\\bin");
-        // do we have the correct libexec stuff?
-        true = System.directoryExists(omHome + "\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
-        newPath = stringAppendList({omHome,"\\bin;",
-                                    omHome,"\\lib;",
-                                    omHome,"\\mingw\\bin;",
-                                    omHome,"\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
-                                    oldPath});
-        System.setEnv("PATH",newPath,true);
-      then ();
-
-    // do not display anything if +d=disableWindowsPathCheckWarning
-    case (_)
-      equation
-        true = Flags.isSet(Flags.DISABLE_WINDOWS_PATH_CHECK_WARNING);
-      then ();
-
-    else
-      equation
-        print("We could not find any of:\n");
-        print("\t"+inOMHome+"/MinGW/bin and "+inOMHome+"/MinGW/libexec/gcc/mingw32/4.4.0\n");
-        print("\t$OMDEV/tools/MinGW/bin and $OMDEV/tools/MinGW/libexec/gcc/mingw32/4.4.0\n");
-      then ();
-
   end matchcontinue;
 end setWindowsPaths;
 

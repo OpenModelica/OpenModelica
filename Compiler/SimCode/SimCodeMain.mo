@@ -705,7 +705,7 @@ algorithm
         if Flags.isSet(Flags.MODEL_INFO_JSON) then
           SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
           str := fmutmp + "/sources/" + simCode.fileNamePrefix;
-          true := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", str+"_info.c");
+          true := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", str+"_info.c", Flags.getConfigString(Flags.TARGET));
         else
           Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
         end if;

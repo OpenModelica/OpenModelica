@@ -226,8 +226,10 @@ public function compileModel "Compiles a model given a file-prefix, helper funct
 protected
   String omhome = Settings.getInstallationDirectoryPath(),omhome_1 = System.stringReplace(omhome, "\"", "");
   String pd = System.pathDelimiter();
-  String cdWorkingDir,setMakeVars,libsfilename,libs_str,s_call,filename,winCompileMode;
-  String fileDLL = fileprefix + System.getDllExt(),fileEXE = fileprefix + System.getExeExt(),fileLOG = fileprefix + ".log";
+  String cdWorkingDir,setMakeVars,libsfilename,libs_str,s_call,filename,winCompileMode,workDir = (if stringEq(workingDir, "") then "" else workingDir + pd);
+  String fileDLL = workDir + fileprefix + System.getDllExt(),
+         fileEXE = workDir + fileprefix + System.getExeExt(),
+         fileLOG = workDir + fileprefix + ".log";
   Integer numParallel,res;
   Boolean isWindows = System.os() == "Windows_NT";
   list<String> makeVarsNoBinding;
@@ -248,7 +250,7 @@ algorithm
     setMakeVars := sum("set "+var+"&& " for var in makeVarsNoBinding);
     cdWorkingDir := if stringLength(workingDir) == 0 then "" else ("cd \"" + workingDir + "\"&& ");
     winCompileMode := if Config.getRunningTestsuite() then "serial" else "parallel";
-    s_call := stringAppendList({omhome,cdWorkingDir,setMakeVars,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", winCompileMode});
+    s_call := stringAppendList({omhome,cdWorkingDir,setMakeVars,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", System.openModelicaPlatform(), " ", winCompileMode});
   else
     numParallel := if Config.getRunningTestsuite() then 1 else Config.noProc();
     cdWorkingDir := if stringLength(workingDir) == 0 then "" else (" -C \"" + workingDir + "\"");

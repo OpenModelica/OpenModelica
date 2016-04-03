@@ -16,7 +16,6 @@ ifndef OMDEV
 	ABORT
 endif
 
-USE_CORBA = -DUSE_CORBA
 USE_METIS = -DUSE_METIS
 CORBAHOME = $(OMDEV)
 FMIINCLUDE = ../../3rdParty/FMIL/install/include
@@ -24,19 +23,28 @@ GRAPHINCLUDE=../../3rdParty/metis-5.1.0/include
 GRAPHSTREAMINCLUDE = ../../3rdParty/graphstream/gs-netstream/c++/src/
 CJSONINCLUDE = ../../3rdParty/cJSON/
 OMBUILDDIR = ../../build
+LPSOLVEINCLUDE = ../../3rdParty/lpsolve/build/include/
+SQLITE3INCLUDE = ../../3rdParty/sqlite3/build/include/
 OMC=$(OMBUILDDIR)/bin/omc
 
 OMPCC = gcc -fopenmp
 
 # We always compile with corba on OMDev-mingw
-CORBAINCL = -I$(CORBAHOME)/include/mico-msys-mingw/
+ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
+USE_CORBA = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4
+CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw32/include
+IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
+else # 64 bit
+USE_CORBA = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4 -D_WIN64 -DMS_WIN64
+CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw64/include
+IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
+endif
 OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
 
 SHELL	= /bin/sh
 CC	= gcc
 CXX = g++
-IDL	= $(OMDEV)/bin/mico/idl
-override CFLAGS += -I. $(USE_CORBA) $(USE_METIS) -DNO_AUTOCONF -DBUILD_MICO_DLL -Wall -Wno-unused-variable -I../../ -I$(top_builddir) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I../ $(CORBAINCL) -I$(FMIINCLUDE) -I../../3rdParty/gc/include -I$(GRAPHSTREAMINCLUDE) -I$(CJSONINCLUDE) -I$(GRAPHINCLUDE)
+override CFLAGS += -I. $(USE_CORBA) $(USE_METIS) -Wall -Wno-unused-variable -I../../ -I$(top_builddir) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I../ $(CORBAINCL) -I$(FMIINCLUDE) -I../../3rdParty/gc/include -I$(GRAPHSTREAMINCLUDE) -I$(CJSONINCLUDE) -I$(GRAPHINCLUDE) -I$(LPSOLVEINCLUDE) -I$(SQLITE3INCLUDE)
 CXXFLAGS = $(CFLAGS)
 
 include Makefile.common

@@ -177,7 +177,6 @@ DWORD WINAPI runOrb(void* arg) {
 int CorbaImpl__initialize()
 {
 #ifndef NOMICO
-#if defined(USE_OMNIORB)
   int argc = 4;
   const char *dummyArgv[] = {
     "-ORBendPoint",
@@ -185,16 +184,6 @@ int CorbaImpl__initialize()
     "-ORBgiopMaxMsgSize",
     "2147483647"
   };
-#else
-  int argc = 4;
-  const char *dummyArgv[] = {
-    "omc",
-    "-ORBNoResolve",
-    "-ORBIIOPAddr",
-    "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */
-  };
-#endif
-
   string omc_client_request_event_name   = "omc_client_request_event";
   string omc_return_value_ready_name     = "omc_return_value_ready";
   DWORD lastError = 0;
@@ -227,11 +216,7 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   InitializeCriticalSection(&clientlock);
 
   char **argv = construct_dummy_args(argc, dummyArgv);
-#if defined(USE_OMNIORB)
   orb = CORBA::ORB_init(argc, argv, "omniORB4");
-#else
-  orb = CORBA::ORB_init(argc, argv, "mico-local-orb");
-#endif
   free_dummy_args(argc, argv);
 
   poaobj = orb->resolve_initial_references("RootPOA");
@@ -330,17 +315,14 @@ void* runOrb(void* arg)
     // run can throw exception when other side closes.
   }
 
-#if defined(USE_OMNIORB)
-try {
-  if (poa) {
-    poa->destroy(true,true);
+  try {
+    if (poa) {
+      poa->destroy(true,true);
+    }
+  } catch (CORBA::Exception&) {
+    // silently ignore errors here
   }
-} catch (CORBA::Exception&) {
-  // silently ignore errors here
-}
-#else
-  poa->destroy(TRUE,TRUE);
-#endif
+
   if (server) {
       delete server;
   }
@@ -352,7 +334,6 @@ try {
 int CorbaImpl__initialize()
 {
 #ifndef NOMICO
-#if defined(USE_OMNIORB)
   int argc = 4;
   const char *dummyArgv[] = {
     "-ORBendPoint",
@@ -360,15 +341,6 @@ int CorbaImpl__initialize()
     "-ORBgiopMaxMsgSize",
     "2147483647"
   };
-#else
-  int argc = 4;
-  const char *dummyArgv[] = {
-    "omc",
-    "-ORBNoResolve",
-    "-ORBIIOPAddr",
-    "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */
-  };
-#endif
 
   pthread_cond_init(&omc_waitformsg,NULL);
   pthread_cond_init(&corba_waitformsg,NULL);
@@ -377,11 +349,8 @@ int CorbaImpl__initialize()
   pthread_mutex_init(&omc_corba_clientlock, NULL);
 
   char **argv = construct_dummy_args(argc, dummyArgv);
-#if defined(USE_OMNIORB)
+
   orb = CORBA::ORB_init(argc, argv, "omniORB4");
-#else
-  orb = CORBA::ORB_init(argc, argv, "mico-local-orb");
-#endif
   free_dummy_args(argc, argv);
   poaobj = orb->resolve_initial_references("RootPOA");
   poa = PortableServer::POA::_narrow(poaobj);
@@ -412,11 +381,9 @@ int CorbaImpl__initialize()
 
     oid = PortableServer::string_to_ObjectId (corbaSessionName);
     server = new OmcCommunication_impl();
-#if defined(USE_OMNIORB)
+
     omcpoa->activate_object_with_id(oid, server);
-#else
-    omcpoa->activate_object_with_id(*oid, server);
-#endif
+
     /*
      * build the reference to store in the file
      */
@@ -468,8 +435,7 @@ const char* CorbaImpl__waitForCommand()
   omc_waiting = false;
   pthread_mutex_unlock(&omc_waitlock);
 #endif
-  /*if (rml_trace_enabled)
-    fprintf(stderr, "Corba.mo (corbaimpl.cpp): received cmd: %s\n", omc_cmd_message);*/
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
   EnterCriticalSection(&lock); // Lock so no other tread can talk to omc.
 #else
@@ -514,11 +480,7 @@ void CorbaImpl__close()
   remove(objref_file.str().c_str());
 #else
   try {
-#if defined(USE_OMNIORB)
     orb->shutdown(true); // true otherwise we get a crash on Leopard
-#else
-    orb->shutdown(FALSE);
-#endif
   } catch (CORBA::Exception&) {
     cerr << "Error shutting down." << endl;
   }

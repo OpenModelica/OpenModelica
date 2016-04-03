@@ -3256,7 +3256,7 @@ case "gcc" then
             <%\t%>$(CXX) $(CFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
             endif
 
-            <%if boolNot(stringEq(makefileParams.platform, "win32")) then
+            <%if boolNot(boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64"))) then
                 <<
                 <%\t%>chmod +x <%fileNamePrefix%>.sh
                 >>

@@ -196,8 +196,8 @@ struct record_description {
 }
 #endif
 
-/* adrpo: undefine _inline for mingw64 */
-#if defined(_inline) && defined(__MINGW64__)
+/* adrpo: undefine _inline for mingw32 and mingw64 */
+#if defined(_inline) && (defined(__MINGW32__) || defined(__MINGW64__))
 #undef _inline
 #endif
 

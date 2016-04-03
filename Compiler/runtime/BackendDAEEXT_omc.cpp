@@ -111,7 +111,7 @@ extern void BackendDAEEXT_vMark(int _inInteger)
 extern void BackendDAEEXT_setIncidenceMatrix(modelica_integer nvars, modelica_integer neqns, modelica_integer nz, modelica_metatype incidencematrix)
 {
   int i=0;
-  long int i1;
+  mmc_sint_t i1;
   int j=0;
   modelica_integer nelts = MMC_HDRSLOTS(MMC_GETHDR(incidencematrix));
 
@@ -127,7 +127,7 @@ extern void BackendDAEEXT_setIncidenceMatrix(modelica_integer nvars, modelica_in
     while(MMC_GETHDR(ie) == MMC_CONSHDR) {
       i1 = MMC_UNTAGFIXNUM(MMC_CAR(ie));
       if (i1>0) {
-        col_ids[j++] = i1-1;
+        col_ids[j++] = (int)i1-1;
       }
       ie = MMC_CDR(ie);
     }
@@ -143,8 +143,8 @@ extern void BackendDAEEXT_matching(modelica_integer nv, modelica_integer ne, mod
 extern void BackendDAEEXT_getAssignment(modelica_metatype ass1, modelica_metatype ass2)
 {
   int i=0;
-  long len1 = MMC_HDRSLOTS(MMC_GETHDR(ass1));
-  long len2 = MMC_HDRSLOTS(MMC_GETHDR(ass2));
+  mmc_uint_t len1 = MMC_HDRSLOTS(MMC_GETHDR(ass1));
+  mmc_uint_t len2 = MMC_HDRSLOTS(MMC_GETHDR(ass2));
   if (n > len1 || m > len2) {
     char nstr[64],mstr[64],len1str[64],len2str[64];
     const char *tokens[4] = {len2str,mstr,len1str,nstr};

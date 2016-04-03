@@ -68,7 +68,7 @@ static uinteger minStep( const modelica_real* tqp, const uinteger size );
  *
  *  This function performs the simulation controlled by solverInfo.
  */
-modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   TRACE_PUSH
 
@@ -78,6 +78,18 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *thr
   modelica_integer retValIntegrator = 0;
   modelica_integer retValue = 0;
   uinteger ind = 0;
+  uinteger i = 0;
+  SIMULATION_DATA *sData = NULL;
+  modelica_real* state = NULL;
+  modelica_real* stateDer = NULL;
+  SPARSE_PATTERN* pattern = NULL;
+  uinteger ROWS = 0;
+  uinteger STATES = 0;
+  uinteger numDer = 0;
+  modelica_boolean fail = 0;
+  modelica_real *qik, *xik, *derXik, *tq, *tx, *tqp, *nQh, *dQ;
+  modelica_real diffQ = 0.0, dTnextQ = 0.0, nextQ = 0.0;
+  modelica_integer* der = NULL;
 
   solverInfo->currentTime = simInfo->startTime;
 
@@ -92,24 +104,24 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *thr
 
 /* *********************************************************************************** */
   /* Initialization */
-  uinteger i = 0; /* loop var */
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  modelica_real* state = sData->realVars;
-  modelica_real* stateDer = sData->realVars + data->modelData->nStates;
-  const SPARSE_PATTERN* pattern = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
-  const uinteger ROWS = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows;
-  const uinteger STATES = data->modelData->nStates;
-  uinteger numDer = 0;  /* number of derivatives influenced by state k */
+  i = 0; /* loop var */
+  sData = (SIMULATION_DATA*)data->localData[0];
+  state = sData->realVars;
+  stateDer = sData->realVars + data->modelData->nStates;
+  pattern = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
+  ROWS = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows;
+  STATES = data->modelData->nStates;
+  numDer = 0;  /* number of derivatives influenced by state k */
 
-  modelica_boolean fail = 0;
-  modelica_real* qik = NULL;  /* Approximation of states */
-  modelica_real* xik = NULL;  /* states */
-  modelica_real* derXik = NULL;  /* Derivative of states */
-  modelica_real* tq = NULL;    /* Time of approximation, because not all approximations are calculated at a specific time, each approx. has its own timestamp */
-  modelica_real* tx = NULL;    /* Time of the states, because not all states are calculated at a specific time, each state has its own timestamp */
-  modelica_real* tqp = NULL;    /* Time of the next change in state */
-  modelica_real* nQh = NULL;    /* next value of the state */
-  modelica_real* dQ = NULL;    /* change in quantity of every state, default = nominal*10^-4 */
+  fail = 0;
+  qik = NULL;  /* Approximation of states */
+  xik = NULL;  /* states */
+  derXik = NULL;  /* Derivative of states */
+  tq = NULL;    /* Time of approximation, because not all approximations are calculated at a specific time, each approx. has its own timestamp */
+  tx = NULL;    /* Time of the states, because not all states are calculated at a specific time, each state has its own timestamp */
+  tqp = NULL;    /* Time of the next change in state */
+  nQh = NULL;    /* next value of the state */
+  dQ = NULL;    /* change in quantity of every state, default = nominal*10^-4 */
 
   /* allocate memory*/
   qik = (modelica_real*)calloc(STATES, sizeof(modelica_real));
@@ -136,7 +148,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *thr
 
   /* further initialization of local variables */
 
-  modelica_real diffQ = 0.0, dTnextQ = 0.0, nextQ = 0.0;
+  diffQ = 0.0; dTnextQ = 0.0; nextQ = 0.0;
   for (i = 0; i < STATES; i++)
   {
     dQ[i] = 0.0001 * data->modelData->realVarsData[i].attribute.nominal;
@@ -152,7 +164,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *thr
   }
 
 /* Transform the sparsity pattern into a data structure for an index based access. */
-  modelica_integer* der = (modelica_integer*)calloc(ROWS, sizeof(modelica_integer));
+  der = (modelica_integer*)calloc(ROWS, sizeof(modelica_integer));
   if (NULL==der)
     return OO_MEMORY;
   for (i = 0; i < ROWS; i++)
@@ -199,6 +211,8 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *thr
   while(solverInfo->currentTime < simInfo->stopTime)
   {
     modelica_integer success = 0;
+	uinteger k = 0, j = 0;
+
     threadData->currentErrorStage = ERROR_SIMULATION;
     omc_alloc_interface.collect_a_little();
 
@@ -276,7 +290,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *thr
       der[i] = -1;
     retValue = getDerWithStateK(pattern->index, pattern->leadindex, der, &numDer, ind);
 
-    uinteger k = 0, j = 0;
+    k = 0, j = 0;
     for (k = 0; k < numDer; k++)
     {
       j = der[k];
@@ -335,7 +349,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *thr
     /* recalculate the time of next change only for the affected states */
     for (k = 0; k < numDer; k++)
     {
-       j = der[k];
+      j = der[k];
       retValue = deltaQ(data, dQ[j], j, &dTnextQ, &nextQ, &diffQ);
       if (OK != retValue)
         return retValue;
@@ -481,11 +495,11 @@ static modelica_integer deltaQ( DATA* data, const modelica_real dQ, const modeli
  */
 static modelica_integer getDerWithStateK(const unsigned int *index, const unsigned int* leadindex, modelica_integer* der, uinteger* numDer, const uinteger k)
 {
-  uinteger start = 0;
+  uinteger start = 0, j, i;
   if (0 < k)
     start = leadindex[k - 1];
-  uinteger j = 0;
-  uinteger i = 0;
+  j = 0;
+  i = 0;
   for (i = start; i < leadindex[k]; i++)
   {
     der[j] = index[i];
@@ -494,6 +508,7 @@ static modelica_integer getDerWithStateK(const unsigned int *index, const unsign
   *numDer = j;
   return OK;
 }
+
 /*! static int getStatesInDer(const unsigned int* index, const unsigned int* leadindex, const unsigned int ROWS, const unsigned int STATES, unsigned int** StatesInDer)
  *  \brief  Return the indices of all states in each derivative for an indexed access.
  *  \param [ref] [index]

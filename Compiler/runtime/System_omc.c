@@ -687,6 +687,16 @@ extern const char* System_openModelicaPlatform()
   return CONFIG_OPENMODELICA_SPEC_PLATFORM;
 }
 
+extern const char* System_gccDumpMachine()
+{
+  return CONFIG_GCC_DUMPMACHINE;
+}
+
+extern const char* System_gccVersion()
+{
+  return CONFIG_GCC_VERSION;
+}
+
 extern void System_getGCStatus(double *used, double *allocated)
 {
   *allocated = GC_get_heap_size();

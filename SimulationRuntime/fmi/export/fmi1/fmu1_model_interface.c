@@ -143,20 +143,25 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
   }
   comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
+    DATA* fmudata = NULL;
+	MODEL_DATA* modelData = NULL;
+	SIMULATION_INFO* simInfo = NULL;
+	threadData_t *threadData = NULL;
+
     comp->functions = functions;
     comp->loggingOn = loggingOn;
     comp->state = modelInstantiated;
     comp->instanceName = functions.allocateMemory(1 + strlen(instanceName), sizeof(char));
     comp->GUID = functions.allocateMemory(1 + strlen(GUID), sizeof(char));
     /* Cannot use functions.allocateMemory since the pointer might not be stored on the stack of the parent */
-    DATA* fmudata = (DATA *)functions.allocateMemory(1, sizeof(DATA));
-    MODEL_DATA* modelData = (MODEL_DATA *)functions.allocateMemory(1, sizeof(MODEL_DATA));
-    SIMULATION_INFO* simInfo = (SIMULATION_INFO *)functions.allocateMemory(1, sizeof(SIMULATION_INFO));
+    fmudata = (DATA *)functions.allocateMemory(1, sizeof(DATA));
+    modelData = (MODEL_DATA *)functions.allocateMemory(1, sizeof(MODEL_DATA));
+    simInfo = (SIMULATION_INFO *)functions.allocateMemory(1, sizeof(SIMULATION_INFO));
     fmudata->modelData = modelData;
     fmudata->simulationInfo = simInfo;
 
 
-    threadData_t *threadData = (threadData_t *)functions.allocateMemory(1, sizeof(threadData_t));
+    threadData = (threadData_t *)functions.allocateMemory(1, sizeof(threadData_t));
     memset(threadData, 0, sizeof(threadData_t));
     /*
     pthread_key_create(&fmu1_thread_data_key,NULL);

@@ -2881,11 +2881,11 @@ int SystemImpl__alarm(int seconds)
 
 #endif
 
-int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFile)
+int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFile, const char* target)
 {
   FILE *fin;
   FILE *fout = NULL;
-  int result = 0, n, i, j;
+  int result = 0, n, i, j, k, isMSVC = !strcmp(target, "msvc");
   char buffer[512];
   char obuffer[1024];
   fin = fopen(textFile, "r");
@@ -2896,41 +2896,89 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
   if (!fout) {
     goto done;
   }
-  fputc('\"', fout);
-  do {
-    n = fread(buffer,1,128,fin);
 
-    j = 0;
-    for (i=0; i<n; i++) {
-      switch (buffer[i]) {
-      case '\n':
-        obuffer[j++] = '\\';
-        obuffer[j++] = 'n';
-        break;
-      case '\r':
-        obuffer[j++] = '\\';
-        obuffer[j++] = 'r';
-        break;
-      case '\\':
-        obuffer[j++] = '\\';
-        obuffer[j++] = '\\';
-        break;
-      case '"':
-        obuffer[j++] = '\\';
-        obuffer[j++] = '"';
-        break;
-      default:
-        obuffer[j++] = buffer[i];
+  if (isMSVC) /* handle joke compilers */
+  {
+    fputc('{', fout);
+    fputc('\n', fout);
+    do {
+      n = fread(buffer,1,511,fin);
+      j = 0;
+      /* adrpo: encode each char */
+      for (i=0; i<n; i++) {
+	    fputc('\'', fout);
+
+        switch (buffer[i]) {
+        case '\n':
+          fputc('\\', fout);
+          fputc('n', fout);
+          break;
+        case '\r':
+          fputc('\\', fout);
+          fputc('r', fout);
+          break;
+        case '\\':
+          fputc('\\', fout);
+          fputc('\\', fout);
+          break;
+		case '"':
+          fputc('\\', fout);
+          fputc('\"', fout);
+          break;
+		case '\'':
+          fputc('\\', fout);
+          fputc('\'', fout);
+          break;
+        default:
+          fputc(buffer[i], fout);
+        }
+        fputc('\'', fout);
+        fputc(',', fout);
       }
-    }
-    if (j!=fwrite(obuffer,1,j,fout)) {
-      fprintf(stderr, "failed to write\n");
-      return 1;
-    }
-  } while (!feof(fin));
-  fputc('\"', fout);
+      fputc('\n', fout);
+    } while (!feof(fin));
+
+    fputc('\'', fout); fputc('\\', fout); fputc('0', fout); fputc('\'', fout); fputc('\n', fout);
+    fputc('}', fout);
+  }
+  else /* handle real compilers */
+  {
+    fputc('\"', fout);
+    do {
+      n = fread(buffer,1,511,fin);
+      j = 0;
+      for (i=0; i<n; i++) {
+        switch (buffer[i]) {
+        case '\n':
+          obuffer[j++] = '\\';
+          obuffer[j++] = 'n';
+          break;
+        case '\r':
+          obuffer[j++] = '\\';
+          obuffer[j++] = 'r';
+          break;
+        case '\\':
+          obuffer[j++] = '\\';
+          obuffer[j++] = '\\';
+          break;
+        case '"':
+          obuffer[j++] = '\\';
+          obuffer[j++] = '"';
+          break;
+        default:
+          obuffer[j++] = buffer[i];
+        }
+      }
+      if (j!=fwrite(obuffer,1,j,fout)) {
+        fprintf(stderr, "failed to write\n");
+        return 1;
+      }
+    } while (!feof(fin));
+    fputc('\"', fout);
+  }
 
   result = 1;
+
 done:
   if (fin) {
     fclose(fin);

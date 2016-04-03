@@ -90,4 +90,13 @@ const char* prettyPrintNanoSec(int64_t ns, int *v);
 }
 #endif
 
+/*
+ * adrpo: weird msvc _C2 defined inside stdint.h via yvals.h interferes with some generated Modelica code
+ */
+#if defined(_MSC_VER)
+#if defined(_C2)
+#undef _C2
+#endif
+#endif
+
 #endif
