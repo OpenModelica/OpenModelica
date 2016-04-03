@@ -504,7 +504,7 @@ algorithm
       equation
         (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
         cr = ComponentReference.makeCrefIdent(id,tp,subs);
-      then (cache,ComponentReference.implode(listReverse(cr::acc)));
+      then (cache,ComponentReference.implode_reverse(cr::acc));
     case(cache,env,_,_,DAE.CREF_QUAL(id,tp,subs,cr),_)
       equation
         (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
