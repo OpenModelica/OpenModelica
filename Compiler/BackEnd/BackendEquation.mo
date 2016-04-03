@@ -987,6 +987,29 @@ algorithm
   end match;
 end traverseExpsOfWhenEquation_WithStop;
 
+public function statementEq
+"Creates equation from one statement."
+  input DAE.Statement iStmts;
+  output BackendDAE.Equation oEq;
+algorithm
+  (oEq) := match(iStmts)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp exp;
+      list<DAE.Exp> explst;
+
+    case (DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr), exp = exp))
+      then generateEquation(Expression.crefExp(cr), exp);
+
+    case (DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr), exp = exp))
+      then generateEquation(Expression.crefExp(cr), exp);
+
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = explst, exp = exp))
+      then generateEquation(Expression.makeTuple(explst), exp);
+
+  end match;
+end statementEq;
+
 public function traverseExpsOfWhenOps_WithStop<T>
 "Traverses all expressions of a when equation.
   Helper function of traverseExpsOfEquation."
@@ -2015,8 +2038,8 @@ public function generateEquation "author Frenkel TUD 2012-12
   This function is called if an equation is found which is not simple"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
-  input DAE.ElementSource source;
-  input BackendDAE.EquationAttributes inEqAttr;
+  input DAE.ElementSource source = DAE.emptyElementSource;
+  input BackendDAE.EquationAttributes inEqAttr = BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN;
   output BackendDAE.Equation outEqn;
 protected
   DAE.Type ty;

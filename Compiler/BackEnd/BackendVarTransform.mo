@@ -47,6 +47,7 @@ protected import Absyn;
 protected import BaseHashTable;
 protected import BaseHashSet;
 protected import BackendEquation;
+protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendDump;
 protected import ClassInf;
@@ -248,6 +249,21 @@ algorithm
         fail();
   end matchcontinue;
 end addReplacement;
+
+public function performReplacementsEqSystem
+  input BackendDAE.EqSystem inEqs;
+  input VariableReplacements inRepl;
+  output BackendDAE.EqSystem outEqs = inEqs;
+protected
+  list<BackendDAE.Equation> eqnslst = {};
+  Boolean b1 = false;
+  BackendDAE.EquationArray eqArr;
+algorithm
+  eqArr := inEqs.orderedEqs;
+  (_, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(inEqs.orderedVars, replaceVarTraverser, inRepl);
+  ((eqArr, _)) := replaceEquationsArr(eqArr, inRepl, NONE());
+  outEqs.orderedEqs := eqArr;
+end performReplacementsEqSystem;
 
 protected function addReplacementNoTransitive "Similar to addReplacement but
 does not make transitive replacement rules.
@@ -2564,6 +2580,20 @@ algorithm
     else (inExp,false);
   end match;
 end controlExp;
+
+/*********************************************************/
+/* variable replacements  */
+/*********************************************************/
+
+public function replaceVarTraverser "author: Frenkel TUD 2011-03"
+  input BackendDAE.Var inVar;
+  input VariableReplacements inRepl;
+  output BackendDAE.Var outVar;
+  output VariableReplacements repl = inRepl;
+algorithm
+  outVar := replaceBindingExp(inVar, inRepl);
+  outVar := replaceVariableAttributesInVar(outVar, inRepl);
+end replaceVarTraverser;
 
 public function replaceBindingExp
   input BackendDAE.Var varIn;

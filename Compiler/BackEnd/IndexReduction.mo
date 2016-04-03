@@ -3167,58 +3167,6 @@ algorithm
   outExp := DAE.CALL(Absyn.IDENT("der"), {inExp}, DAE.CALL_ATTR(tp, false, true, false, false, DAE.NO_INLINE(),DAE.NO_TAIL()));
 end makeder;
 
-protected function generateVar
-"author: Frenkel TUD 2012-08"
-  input DAE.ComponentRef cr;
-  input BackendDAE.VarKind varKind;
-  input DAE.Type varType;
-  input DAE.InstDims subs;
-  input Option<DAE.VariableAttributes> attr;
-  output BackendDAE.Var var;
-algorithm
-  var := BackendDAE.VAR(cr,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),subs,DAE.emptyElementSource,attr,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(),false);
-end generateVar;
-
-protected function generateArrayVar
-"author: Frenkel TUD 2012-08"
-  input DAE.ComponentRef name;
-  input BackendDAE.VarKind varKind;
-  input DAE.Type varType;
-  input Option<DAE.VariableAttributes> attr;
-  output list<BackendDAE.Var> outVars;
-algorithm
-  outVars := match(name,varKind,varType,attr)
-    local
-      list<DAE.ComponentRef> crlst;
-      BackendDAE.Var var;
-      list<BackendDAE.Var> vars;
-      DAE.Dimensions dims;
-      list<Integer> ilst;
-      DAE.InstDims subs;
-      DAE.Type tp;
-    case (_,_,DAE.T_ARRAY(ty=tp,dims=dims),_)
-      equation
-        crlst = ComponentReference.expandCref(name,false);
-        /*
-        TODO: mahge: what is this supposed to do?.
-        Why are even these dims needed separetely in BackendDAE.VAR
-        They are already in the cref */
-        /*
-        ilst = Expression.dimensionsSizes(dims);
-        subs = Expression.intSubscripts(ilst);
-        */
-        // the rest not
-        vars = List.map4(crlst,generateVar,varKind,tp,dims,NONE());
-      then
-        vars;
-    case (_,_,_,_)
-      equation
-        var = BackendDAE.VAR(name,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),{},DAE.emptyElementSource,attr,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
-      then
-        {var};
-  end match;
-end generateArrayVar;
-
 protected function notVarStateSelectAlways
 "author: Frenkel TUD 2012-06
   true if var is not StateSelect.always"
@@ -4130,7 +4078,7 @@ algorithm
   set := ComponentReference.makeCrefIdent("$STATESET" + intString(index),DAE.T_COMPLEX_DEFAULT,{});
   tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource) else DAE.T_REAL_DEFAULT;
   crstates := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("x",tp,{}));
-  oSetVars := generateArrayVar(crstates,BackendDAE.STATE(1,NONE()),tp,NONE());
+  oSetVars := BackendVariable.generateArrayVar(crstates,BackendDAE.STATE(1,NONE()),tp,NONE());
   oSetVars := List.map1(oSetVars,BackendVariable.setVarFixed,false);
   crset := List.map(oSetVars,BackendVariable.varCref);
   tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource)
@@ -4138,14 +4086,14 @@ algorithm
   realtp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource)
                                 else DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
   ocrA := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("A",tp,{}));
-  oAVars := generateArrayVar(ocrA,BackendDAE.VARIABLE(),tp,NONE());
+  oAVars := BackendVariable.generateArrayVar(ocrA,BackendDAE.VARIABLE(),tp,NONE());
   oAVars := List.map1(oAVars,BackendVariable.setVarFixed,true);
   // add start value A[i,j] = if i==j then 1 else 0 via initial equations
   oAVars := List.map1(oAVars,BackendVariable.setVarStartValue,DAE.ICONST(0));
   oAVars := setSetAStart(oAVars,1,1,setsize,{});
   tp := if intGt(nCEqns,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCEqns)}, DAE.emptyTypeSource) else DAE.T_REAL_DEFAULT;
   ocrJ := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("J",tp,{}));
-  oJVars := generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
+  oJVars := BackendVariable.generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
   oJVars := List.map1(oJVars,BackendVariable.setVarFixed,false);
 end getSetVars;
 

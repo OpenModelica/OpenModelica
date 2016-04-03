@@ -55,9 +55,11 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import Global;
 protected import HashSet;
 protected import List;
 protected import MetaModelica.Dangerous;
+protected import System;
 protected import Util;
 protected import Types;
 
@@ -1457,6 +1459,15 @@ algorithm
   outVar := makeVar(cr);
 end createVar;
 
+public function createTmpVar
+"Creates a  variable with <input> as cref and unique index"
+  input DAE.ComponentRef inCref;
+  input String prependStringCref;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := createVar(inCref, prependStringCref+intString(System.tmpTickIndex(Global.tmpVariableIndex)));
+end createTmpVar;
+
 public function createCSEVar "Creates a cse variable with the name of inCref.
   TODO: discrete real variables are not treated correctly"
   input DAE.ComponentRef inCref;
@@ -1483,6 +1494,58 @@ algorithm
     then outVar;
   end match;
 end createCSEVar;
+
+public function generateVar
+"author: Frenkel TUD 2012-08"
+  input DAE.ComponentRef cr;
+  input BackendDAE.VarKind varKind;
+  input DAE.Type varType;
+  input DAE.InstDims subs;
+  input Option<DAE.VariableAttributes> attr;
+  output BackendDAE.Var var;
+algorithm
+  var := BackendDAE.VAR(cr,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),subs,DAE.emptyElementSource,attr,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(),false);
+end generateVar;
+
+public function generateArrayVar
+"author: Frenkel TUD 2012-08"
+  input DAE.ComponentRef name;
+  input BackendDAE.VarKind varKind;
+  input DAE.Type varType;
+  input Option<DAE.VariableAttributes> attr;
+  output list<BackendDAE.Var> outVars;
+algorithm
+  outVars := match(name,varKind,varType,attr)
+    local
+      list<DAE.ComponentRef> crlst;
+      BackendDAE.Var var;
+      list<BackendDAE.Var> vars;
+      DAE.Dimensions dims;
+      list<Integer> ilst;
+      DAE.InstDims subs;
+      DAE.Type tp;
+    case (_,_,DAE.T_ARRAY(ty=tp,dims=dims),_)
+      equation
+        crlst = ComponentReference.expandCref(name,false);
+        /*
+        TODO: mahge: what is this supposed to do?.
+        Why are even these dims needed separetely in BackendDAE.VAR
+        They are already in the cref */
+        /*
+        ilst = Expression.dimensionsSizes(dims);
+        subs = Expression.intSubscripts(ilst);
+        */
+        // the rest not
+        vars = List.map4(crlst,generateVar,varKind,tp,dims,NONE());
+      then
+        vars;
+    case (_,_,_,_)
+      equation
+        var = BackendDAE.VAR(name,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),{},DAE.emptyElementSource,attr,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
+      then
+        {var};
+  end match;
+end generateArrayVar;
 
 public function createCSEArrayVar "Creates a cse array variable with the name of inCref.
   TODO: discrete real variables are not treated correctly"
@@ -2104,6 +2167,25 @@ algorithm
   BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=outNumVariables)) := inVariables;
 end varsSize;
 
+public function varDim
+  "Returns the dimension of variables in the Variables structure.
+  NOTE: function fail if dimension is not constant
+  "
+  input BackendDAE.Var inVar;
+  output Integer outDimVariables = 1;
+ protected
+  DAE.Dimensions dims;
+  Integer n;
+algorithm
+
+  BackendDAE.VAR(arryDim=dims) := inVar;
+  for dim in dims loop
+    DAE.DIM_INTEGER(n) := dim;
+	outDimVariables := n * outDimVariables;
+  end for;
+
+end varDim;
+
 protected function varsLoadFactor
   input BackendDAE.Variables inVariables;
   input Integer inIncrease = 0;
@@ -2413,7 +2495,12 @@ end existsAnyVar;
 
 public function makeVar
  input DAE.ComponentRef cr;
- output BackendDAE.Var v = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+ output BackendDAE.Var v;
+protected
+  DAE.Type tp = ComponentReference.crefLastType(cr);
+  DAE.Dimensions dims = Expression.arrayDimension(tp);
+algorithm
+ v := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), dims, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
 end makeVar;
 
 public function addVarDAE
@@ -2426,6 +2513,17 @@ public function addVarDAE
 algorithm
   outEqSystem := BackendDAEUtil.setEqSystVars(inEqSystem, addVar(inVar, inEqSystem.orderedVars));
 end addVarDAE;
+
+public function addVarsDAE
+"author: Frenkel TUD 2011-04
+  Add a variable to Variables of a BackendDAE.
+  If the variable already exists, the function updates the variable."
+  input list<BackendDAE.Var> inVars;
+  input BackendDAE.EqSystem inEqSystem;
+  output BackendDAE.EqSystem outEqSystem = inEqSystem;
+algorithm
+  outEqSystem := List.fold(inVars, addVarDAE, outEqSystem);
+end addVarsDAE;
 
 public function addKnVarDAE
 "author: Frenkel TUD 2011-04
