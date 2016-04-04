@@ -6450,7 +6450,7 @@ algorithm
 
     //isAlias
     case(DAE.CREF(componentRef = cr), false)
-    guard intEq(System.strncmp(ComponentReference.crefStr(cr),"$DERAlias",9),0)  //BackendDAE.derivativeNamePrefix
+    guard intEq(System.strncmp(ComponentReference.crefFirstIdent(cr),"$DERAlias",9),0)  //BackendDAE.derivativeNamePrefix
      equation
       then (inExp,false,true);
 

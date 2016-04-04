@@ -52,6 +52,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
 protected import List;
+protected import MetaModelica.Dangerous;
 protected import Print;
 protected import System;
 protected import Types;
@@ -473,42 +474,12 @@ algorithm
   end matchcontinue;
 end toExpCrefSubs;
 
-
-public function crefToStr
-"This function converts a ComponentRef to a String.
-  It is a tail recursive implementation, because of that it
-  neads inPreString. Use inNameSeperator to define the
-  Separator inbetween and between the namespace names and the name"
-  input String inPreString;
-  input DAE.ComponentRef inComponentRef "The ComponentReference";
-  input String inNameSeparator "The Separator between the Names";
-  output String outString;
-algorithm
-  outString:=
-  match (inPreString,inComponentRef,inNameSeparator)
-    local
-      DAE.Ident s,ns,ss;
-      DAE.ComponentRef n;
-    case (_,DAE.CREF_IDENT(ident = s),_)
-      equation
-        ss = stringAppend(inPreString, s);
-      then ss;
-    case (_,DAE.CREF_QUAL(ident = s,componentRef = n),_)
-      equation
-        ns = stringAppendList({inPreString, s, inNameSeparator});
-        ss = crefToStr(ns,n,inNameSeparator);
-      then ss;
-  end match;
-end crefToStr;
-
 public function crefStr
 "This function simply converts a ComponentRef to a String."
   input DAE.ComponentRef inComponentRef;
   output String outString;
 algorithm
-  outString := if Flags.getConfigBool(Flags.MODELICA_OUTPUT)
-                    then crefToStr("",inComponentRef,"__")
-                    else crefToStr("",inComponentRef,".");
+  outString := stringDelimitList(toStringList(inComponentRef), if Flags.getConfigBool(Flags.MODELICA_OUTPUT) then "__" else ".");
 end crefStr;
 
 public function crefModelicaStr
@@ -516,7 +487,7 @@ public function crefModelicaStr
   input DAE.ComponentRef inComponentRef;
   output String outString;
 algorithm
-  outString:= crefToStr("",inComponentRef,"_");
+  outString := stringDelimitList(toStringList(inComponentRef), "_");
 end crefModelicaStr;
 
 public function printComponentRefOptStr
@@ -2577,7 +2548,7 @@ algorithm
       else s::osubs;
     end match;
   end for;
-  osubs := MetaModelica.Dangerous.listReverseInPlace(osubs);
+  osubs := Dangerous.listReverseInPlace(osubs);
 end removeSliceSubs;
 
 public function crefStripSubs "
@@ -2960,7 +2931,7 @@ public function toStringList
   input DAE.ComponentRef inCref;
   output list<String> outStringList;
 algorithm
-  outStringList := toStringList_tail(inCref, {});
+  outStringList := Dangerous.listReverseInPlace(toStringList_tail(inCref, {}));
 end toStringList;
 
 protected function toStringList_tail
@@ -2978,7 +2949,7 @@ algorithm
       then toStringList_tail(cref, id :: inAccumStrings);
 
     case (DAE.CREF_IDENT(ident = id), _)
-      then listReverse(id :: inAccumStrings);
+      then id :: inAccumStrings;
 
     else {};
 
@@ -3326,7 +3297,7 @@ public function explode
   input DAE.ComponentRef inCref;
   output list<DAE.ComponentRef> outParts;
 algorithm
-  outParts := listReverse(explode_tail(inCref, {}));
+  outParts := Dangerous.listReverse(explode_tail(inCref, {}));
 end explode;
 
 protected function explode_tail
@@ -3589,7 +3560,7 @@ public function crefAppendedSubs
 protected
   String s1,s2;
 algorithm
-  s1 := crefToStr("",cref,"_P");
+  s1 := stringDelimitList(toStringList(cref), "_P");
   s2 := stringDelimitList(List.map(List.map(crefSubs(cref),Expression.getSubscriptExp),ExpressionDump.printExpStr),",");
   s := s1+"["+s2+"]";
 end  crefAppendedSubs;
