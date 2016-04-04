@@ -159,7 +159,8 @@ if true then /* Suppress output */
     prefixPath + "BackEnd/Uncertainties.mo",
     prefixPath + "BackEnd/Unit.mo",
     prefixPath + "BackEnd/UnitCheck.mo",
-  prefixPath + "BackEnd/Vectorization.mo",
+    prefixPath + "BackEnd/Vectorization.mo",
+    prefixPath + "BackEnd/VisualXML.mo",
     prefixPath + "BackEnd/XMLDump.mo",
 
   // "SimCode";
@@ -273,8 +274,7 @@ if true then /* Suppress output */
     prefixPath + "Util/Socket.mo",
     prefixPath + "Util/System.mo",
     prefixPath + "Util/Util.mo",
-    prefixPath + "Util/VarTransform.mo",
-    prefixPath + "Util/VisualXML.mo"
+    prefixPath + "Util/VarTransform.mo"
   };
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));
   if not LoadCompilerSourcesRes then
