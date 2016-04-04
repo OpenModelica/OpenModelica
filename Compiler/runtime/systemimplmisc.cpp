@@ -36,7 +36,7 @@ extern "C" {
     FindAndReplace(str,string(search_str),string(replace_str));
 
     len = strlen(str.c_str());
-    char* res = (char *)GC_malloc_atomic(len + 1);
+    char* res = (char *)omc_alloc_interface.malloc_atomic(len + 1);
     strcpy(res, str.c_str());
     res[len] = '\0';
     return res;

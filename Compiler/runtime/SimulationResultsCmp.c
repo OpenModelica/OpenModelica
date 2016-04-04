@@ -79,7 +79,7 @@ static char ** getVars(void *vars, unsigned int* nvars)
   }
 
   /* Allocate a new string array to contain the variable names. */
-  cmpvars = (char**)GC_malloc(sizeof(char*)*(ncmpvars));
+  cmpvars = (char**)omc_alloc_interface.malloc(sizeof(char*)*(ncmpvars));
 
   /* Copy the variable names from the MetaModelica list to the string array. */
   for(; MMC_NILHDR != MMC_GETHDR(vars); vars = MMC_CDR(vars)) {
@@ -552,7 +552,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   /* open files */
   /*  fprintf(stderr, "Open File %s\n", filename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,&simresglob_c)) {
-    char *str = (char*) GC_malloc(25+strlen(filename));
+    char *str = (char*) omc_alloc_interface.malloc(25+strlen(filename));
     void *res = NULL;
     *str = 0;
     strcat(strcat(str,"Error opening file: "), filename);
@@ -562,7 +562,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   }
   /* fprintf(stderr, "Open File %s\n", reffilename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(reffilename,&simresglob_ref)) {
-    char *str = (char*) GC_malloc(35+strlen(reffilename));
+    char *str = (char*) omc_alloc_interface.malloc(35+strlen(reffilename));
     void *res = NULL;
     *str = 0;
     strcat(strcat(str,"Error opening reference file: "), reffilename);
@@ -604,7 +604,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   if (timeref.n==0) {
     return mmc_mk_cons(mmc_mk_scon("Error get ref time!"),mmc_mk_nil());
   }
-  cmpdiffvars = (char**)GC_malloc(sizeof(char*)*(ncmpvars));
+  cmpdiffvars = (char**)omc_alloc_interface.malloc(sizeof(char*)*(ncmpvars));
   /* check if time is larger or less reftime */
   res = mmc_mk_nil();
   if (fabs(time.data[time.n-1]-timeref.data[timeref.n-1]) > reltol*fabs(timeref.data[timeref.n-1])) {
@@ -628,7 +628,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
       free(var1);
       var1 = NULL;
     }
-    var1 = (char*) GC_malloc(len+10);
+    var1 = (char*) omc_alloc_interface.malloc(len+10);
     k = 0;
     for (j=0;j<len;j++) {
       if (var[j] !='\"' ) {

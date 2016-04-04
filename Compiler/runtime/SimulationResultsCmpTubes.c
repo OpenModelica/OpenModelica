@@ -201,7 +201,7 @@ static void generateLowTube(privates *priv, double *x, double *y)
 
 static privates* skipCalculateTubes(double *x, double *y, size_t length)
 {
-  privates *priv = (privates*) GC_malloc(sizeof(privates));
+  privates *priv = (privates*) omc_alloc_interface.malloc(sizeof(privates));
 
   /* set tStart and tStop */
   priv->length = length;
@@ -211,8 +211,8 @@ static privates* skipCalculateTubes(double *x, double *y, size_t length)
   priv->xMinStep = ((priv->tStop - priv->tStart) + fabs(priv->tStart)) * priv->xRelEps;
   priv->countLow = length;
   priv->countHigh = length;
-  priv->yHigh = (double*)GC_malloc_atomic(sizeof(double)*length);
-  priv->yLow  = (double*)GC_malloc_atomic(sizeof(double)*length);
+  priv->yHigh = (double*)omc_alloc_interface.malloc_atomic(sizeof(double)*length);
+  priv->yLow  = (double*)omc_alloc_interface.malloc_atomic(sizeof(double)*length);
   memcpy(priv->yHigh, y, length * sizeof(double));
   memcpy(priv->yLow, y, length * sizeof(double));
   return priv;
@@ -221,7 +221,7 @@ static privates* skipCalculateTubes(double *x, double *y, size_t length)
 /* This method generates tubes around a given curve */
 static privates* calculateTubes(double *x, double *y, size_t length, double r)
 {
-  privates *priv = (privates*) GC_malloc(sizeof(privates));
+  privates *priv = (privates*) omc_alloc_interface.malloc(sizeof(privates));
   int i;
   /* set tStart and tStop */
   priv->length = length;
@@ -233,18 +233,18 @@ static privates* calculateTubes(double *x, double *y, size_t length, double r)
   priv->countHigh = 0;
 
   /* Initialize lists (upper tube) */
-  priv->mh  = (double*)GC_malloc_atomic(sizeof(double)*length);
-  priv->i0h = (int*)GC_malloc_atomic(sizeof(int)*length);
-  priv->i1h = (int*)GC_malloc_atomic(sizeof(int)*length);
+  priv->mh  = (double*)omc_alloc_interface.malloc_atomic(sizeof(double)*length);
+  priv->i0h = (int*)omc_alloc_interface.malloc_atomic(sizeof(int)*length);
+  priv->i1h = (int*)omc_alloc_interface.malloc_atomic(sizeof(int)*length);
   /* Initialize lists (lower tube) */
-  priv->ml  = (double*)GC_malloc_atomic(sizeof(double)*length);
-  priv->i0l = (int*)GC_malloc_atomic(sizeof(int)*length);
-  priv->i1l = (int*)GC_malloc_atomic(sizeof(int)*length);
+  priv->ml  = (double*)omc_alloc_interface.malloc_atomic(sizeof(double)*length);
+  priv->i0l = (int*)omc_alloc_interface.malloc_atomic(sizeof(int)*length);
+  priv->i1l = (int*)omc_alloc_interface.malloc_atomic(sizeof(int)*length);
 
-  priv->xHigh = (double*)GC_malloc_atomic(sizeof(double)*length);
-  priv->xLow  = (double*)GC_malloc_atomic(sizeof(double)*length);
-  priv->yHigh = (double*)GC_malloc_atomic(sizeof(double)*length);
-  priv->yLow  = (double*)GC_malloc_atomic(sizeof(double)*length);
+  priv->xHigh = (double*)omc_alloc_interface.malloc_atomic(sizeof(double)*length);
+  priv->xLow  = (double*)omc_alloc_interface.malloc_atomic(sizeof(double)*length);
+  priv->yHigh = (double*)omc_alloc_interface.malloc_atomic(sizeof(double)*length);
+  priv->yLow  = (double*)omc_alloc_interface.malloc_atomic(sizeof(double)*length);
 
   /* calculate the tubes delta */
   priv->delta = r * (priv->tStop - priv->tStart);
@@ -381,7 +381,7 @@ static double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, d
   }
 
   n = *nsource;
-  interpolatedValues = (double*) GC_malloc_atomic(sizeof(double)*n);
+  interpolatedValues = (double*) omc_alloc_interface.malloc_atomic(sizeof(double)*n);
 
   j = 1;
   for (i = 0; i < n; i++) {
@@ -449,8 +449,8 @@ static addTargetEventTimesRes addTargetEventTimes(double* sourceTimeLine, double
     return res;
   }
   res.size = nsource+count;
-  res.values = GC_malloc_atomic(sizeof(double)*res.size);
-  res.time = GC_malloc_atomic(sizeof(double)*res.size);
+  res.values = omc_alloc_interface.malloc_atomic(sizeof(double)*res.size);
+  res.time = omc_alloc_interface.malloc_atomic(sizeof(double)*res.size);
   i=0;
   count=0;
   j=findNextEvent(1,targetTimeLine,ntarget,xabstol);
@@ -491,8 +491,8 @@ static addTargetEventTimesRes mergeTimelines(addTargetEventTimesRes ref, addTarg
   int i=0,j=0,count=0;
   addTargetEventTimesRes res;
   res.size = ref.size + actual.size;
-  res.values = GC_malloc_atomic(sizeof(double)*res.size);
-  res.time = GC_malloc_atomic(sizeof(double)*res.size);
+  res.values = omc_alloc_interface.malloc_atomic(sizeof(double)*res.size);
+  res.time = omc_alloc_interface.malloc_atomic(sizeof(double)*res.size);
   res.values[count] = ref.values[0];
   res.time[count++] = ref.time[0];
   for (i=1; i<ref.size; i++) {
@@ -526,8 +526,8 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
 {
   int i;
   addTargetEventTimesRes res;
-  res.values = (double*) GC_malloc_atomic(in.size * sizeof(double));
-  res.time = (double*) GC_malloc_atomic(in.size * sizeof(double));
+  res.values = (double*) omc_alloc_interface.malloc_atomic(in.size * sizeof(double));
+  res.time = (double*) omc_alloc_interface.malloc_atomic(in.size * sizeof(double));
 
   do {
     int iter = 0;
@@ -603,7 +603,7 @@ static void assertMonotonic(addTargetEventTimesRes series)
 /* Return NULL if there were no errors */
 static double* validate(int n, addTargetEventTimesRes ref, double *low, double *high, double *calibrated_values, double reltol, double abstol, double xabstol)
 {
-  double *error = GC_malloc_atomic(n * sizeof(double));
+  double *error = omc_alloc_interface.malloc_atomic(n * sizeof(double));
   int isdifferent = 0;
   int i,lastStepError = 1;
   for (i=0; i<n; i++) {
@@ -731,7 +731,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   rangeDelta
 );
   } else if (!isResultCmp && (error || keepEqualResults)) {
-    fname = (char*) GC_malloc_atomic(25 + strlen(prefix) + strlen(varname));
+    fname = (char*) omc_alloc_interface.malloc_atomic(25 + strlen(prefix) + strlen(varname));
     sprintf(fname, "%s.%s.csv", prefix, varname);
     fout = fopen(fname,"w");
   }
