@@ -68,8 +68,8 @@ end ForceAndTorque;
 //   forceAndTorque.basicForce.force[1] = forceAndTorque.force[1];
 //   forceAndTorque.basicForce.force[2] = forceAndTorque.force[2];
 //   forceAndTorque.basicForce.force[3] = forceAndTorque.force[3];
-//   forceAndTorque.force[1] = force[1].y;
-//   forceAndTorque.force[2] = force[2].y;
-//   forceAndTorque.force[3] = force[3].y;
+//   force[1].y = forceAndTorque.force[1];
+//   force[2].y = forceAndTorque.force[2];
+//   force[3].y = forceAndTorque.force[3];
 // end ForceAndTorque;
 // endResult
