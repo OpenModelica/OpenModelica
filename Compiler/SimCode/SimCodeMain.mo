@@ -632,7 +632,7 @@ algorithm
         if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 or (not stringEq(Flags.getConfigString(Flags.RUNNING_TESTSUITE),"")) then
           true := max(func() for func in codegenFuncs);
         else
-          true := max(l for l in System.launchParallelTasks(min(4, numThreads) /* Boehm GC does not scale to infinity */, codegenFuncs, runCodegenFunc));
+          true := max(l for l in System.launchParallelTasks(min(2, numThreads) /* Boehm GC does not scale to infinity */, codegenFuncs, runCodegenFunc));
         end if;
       then ();
 
