@@ -649,16 +649,22 @@ algorithm
       DAE.Exp e,e_1,e_2;
       DAE.ElementSource source;
       list<DAE.Statement> assrtLst;
+      DAE.EquationExp eq;
 
     // never inline WILD!
     case (DAE.CREF(componentRef = DAE.WILD()),_,_) then (inExp,inSource,false,{});
 
     case (e,fns,source)
-      equation
-        (e_1,assrtLst) = Expression.traverseExpBottomUp(e,function inlineCall(fns=fns),{});
-        false = referenceEq(e, e_1);
-        source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
-        (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
+      algorithm
+        (e_1,assrtLst) := Expression.traverseExpBottomUp(e,function inlineCall(fns=fns),{});
+        false := referenceEq(e, e_1);
+        if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+          eq := DAE.PARTIAL_EQUATION(e_1);
+          source := DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
+          (DAE.PARTIAL_EQUATION(e_2),source) := ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
+        else
+          e_2 := ExpressionSimplify.simplify(e_1);
+        end if;
       then
         (e_2,source,true,assrtLst);
 

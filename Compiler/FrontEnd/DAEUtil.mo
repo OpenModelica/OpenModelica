@@ -5074,23 +5074,10 @@ algorithm
 end addElementSourceTypeOpt;
 
 public function addElementSourcePartOf
-  input DAE.ElementSource inSource;
+  input output DAE.ElementSource source;
   input Absyn.Within withinPath;
-  output DAE.ElementSource outSource;
 algorithm
-  outSource := match(inSource, withinPath)
-    local
-      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Path> typeLst "the absyn type of the element" ;
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      list<DAE.SymbolicOperation> operations;
-      list<SCode.Comment> comment;
-
-    case (DAE.SOURCE(info,partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations,comment), _)
-      then DAE.SOURCE(info,withinPath::partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations,comment);
-  end match;
+  source.partOfLst := withinPath::source.partOfLst;
 end addElementSourcePartOf;
 
 public function addElementSourcePartOfOpt
@@ -6532,11 +6519,13 @@ algorithm
 end getAttrDirection;
 
 public function addSymbolicTransformation
-  input DAE.ElementSource source;
+  input output DAE.ElementSource source;
   input DAE.SymbolicOperation op;
-  output DAE.ElementSource outSource;
 algorithm
-  outSource := match (source,op)
+  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+    return;
+  end if;
+  source := match (source,op)
     local
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -6565,45 +6554,46 @@ end addSymbolicTransformation;
 
 public function condAddSymbolicTransformation
   input Boolean cond;
-  input DAE.ElementSource source;
+  input output DAE.ElementSource source;
   input DAE.SymbolicOperation op;
-  output DAE.ElementSource outSource;
 algorithm
-  outSource := match (cond,source,op)
-    case (true,_,_)
-      then addSymbolicTransformation(source,op);
-    else source;
-  end match;
+  if not cond then
+    return;
+  end if;
+  source := addSymbolicTransformation(source,op);
 end condAddSymbolicTransformation;
 
 public function addSymbolicTransformationDeriveLst
-  input DAE.ElementSource isource;
+  input output DAE.ElementSource source;
   input list<DAE.Exp> explst1;
   input list<DAE.Exp> explst2;
-  output DAE.ElementSource outSource;
 algorithm
-  outSource := match(isource,explst1,explst2)
+  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+    return;
+  end if;
+  source := match(explst1,explst2)
     local
       DAE.SymbolicOperation op;
       list<DAE.Exp> rexplst1,rexplst2;
       DAE.Exp exp1,exp2;
-      DAE.ElementSource source;
-    case(_,{},_) then isource;
-    case(_,exp1::rexplst1,exp2::rexplst2)
+    case({},_) then source;
+    case(exp1::rexplst1,exp2::rexplst2)
       equation
         op = DAE.OP_DIFFERENTIATE(DAE.crefTime,exp1,exp2);
-        source = addSymbolicTransformation(isource,op);
+        source = addSymbolicTransformation(source,op);
       then
         addSymbolicTransformationDeriveLst(source,rexplst1,rexplst2);
   end match;
 end addSymbolicTransformationDeriveLst;
 
 public function addSymbolicTransformationFlattenedEqs
-  input DAE.ElementSource source;
+  input output DAE.ElementSource source;
   input DAE.Element elt;
-  output DAE.ElementSource outSource;
 algorithm
-  outSource := match (source,elt)
+  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+    return;
+  end if;
+  source := match (source,elt)
     local
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -6626,85 +6616,93 @@ end addSymbolicTransformationFlattenedEqs;
 
 public function addSymbolicTransformationSubstitutionLst
   input list<Boolean> add;
-  input DAE.ElementSource isource;
+  input output DAE.ElementSource source;
   input list<DAE.Exp> explst1;
   input list<DAE.Exp> explst2;
-  output DAE.ElementSource outSource;
 algorithm
-  outSource := match(add,isource,explst1,explst2)
+  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+    return;
+  end if;
+  source := match(add,explst1,explst2)
     local
       list<Boolean> brest;
       list<DAE.Exp> rexplst1,rexplst2;
       DAE.Exp exp1,exp2;
-      DAE.ElementSource source;
-    case({},_,_,_) then isource;
-    case(true::brest,_,exp1::rexplst1,exp2::rexplst2)
+    case({},_,_) then source;
+    case(true::brest,exp1::rexplst1,exp2::rexplst2)
       equation
-        source = addSymbolicTransformationSubstitution(true,isource,exp1,exp2);
+        source = addSymbolicTransformationSubstitution(true,source,exp1,exp2);
       then
         addSymbolicTransformationSubstitutionLst(brest,source,rexplst1,rexplst2);
-    case(false::brest,_,_::rexplst1,_::rexplst2)
+    case(false::brest,_::rexplst1,_::rexplst2)
       then
-        addSymbolicTransformationSubstitutionLst(brest,isource,rexplst1,rexplst2);
+        addSymbolicTransformationSubstitutionLst(brest,source,rexplst1,rexplst2);
   end match;
 end addSymbolicTransformationSubstitutionLst;
 
 public function addSymbolicTransformationSubstitution
   input Boolean add;
-  input DAE.ElementSource source;
+  input output DAE.ElementSource source;
   input DAE.Exp exp1;
   input DAE.Exp exp2;
-  output DAE.ElementSource outSource;
 algorithm
-  outSource := condAddSymbolicTransformation(add,source,DAE.SUBSTITUTION({exp2},exp1));
+  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+    return;
+  end if;
+  source := condAddSymbolicTransformation(add,source,DAE.SUBSTITUTION({exp2},exp1));
 end addSymbolicTransformationSubstitution;
 
 public function addSymbolicTransformationSimplifyLst
   input list<Boolean> add;
-  input DAE.ElementSource isource;
+  input output DAE.ElementSource source;
   input list<DAE.Exp> explst1;
   input list<DAE.Exp> explst2;
-  output DAE.ElementSource outSource;
 algorithm
-  outSource := match(add,isource,explst1,explst2)
+  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+    return;
+  end if;
+  source := match(add,explst1,explst2)
     local
       list<Boolean> brest;
       list<DAE.Exp> rexplst1,rexplst2;
       DAE.Exp exp1,exp2;
-      DAE.ElementSource source;
-    case({},_,_,_) then isource;
-    case(true::brest,_,exp1::rexplst1,exp2::rexplst2)
+    case({},_,_) then source;
+    case(true::brest,exp1::rexplst1,exp2::rexplst2)
       equation
-        source = addSymbolicTransformation(isource, DAE.SIMPLIFY(DAE.PARTIAL_EQUATION(exp1),DAE.PARTIAL_EQUATION(exp2)));
+        source = addSymbolicTransformation(source, DAE.SIMPLIFY(DAE.PARTIAL_EQUATION(exp1),DAE.PARTIAL_EQUATION(exp2)));
       then
         addSymbolicTransformationSimplifyLst(brest,source,rexplst1,rexplst2);
-    case(false::brest,_,_::rexplst1,_::rexplst2)
+    case(false::brest,_::rexplst1,_::rexplst2)
       then
-        addSymbolicTransformationSimplifyLst(brest,isource,rexplst1,rexplst2);
+        addSymbolicTransformationSimplifyLst(brest,source,rexplst1,rexplst2);
   end match;
 end addSymbolicTransformationSimplifyLst;
 
 public function addSymbolicTransformationSimplify
   input Boolean add;
-  input DAE.ElementSource source;
+  input output DAE.ElementSource source;
   input DAE.EquationExp exp1;
   input DAE.EquationExp exp2;
-  output DAE.ElementSource outSource;
 algorithm
-  outSource := condAddSymbolicTransformation(add,source,DAE.SIMPLIFY(exp1,exp2));
+  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+    return;
+  end if;
+  source := condAddSymbolicTransformation(add,source,DAE.SIMPLIFY(exp1,exp2));
 end addSymbolicTransformationSimplify;
 
 public function addSymbolicTransformationSolve
   input Boolean add;
-  input DAE.ElementSource source;
+  input output DAE.ElementSource source;
   input DAE.ComponentRef cr;
   input DAE.Exp exp1;
   input DAE.Exp exp2;
   input DAE.Exp exp;
   input list<DAE.Statement> asserts;
-  output DAE.ElementSource outSource;
 algorithm
-  outSource := match (add,source,cr,exp1,exp2,exp,asserts)
+  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+    return;
+  end if;
+  source := match (add,source,cr,exp1,exp2,exp,asserts)
     local
       list<DAE.Exp> assertExps;
       DAE.SymbolicOperation op,op1,op2;
