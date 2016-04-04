@@ -724,12 +724,112 @@ algorithm
   outEqual := stringEq(id1, id2);
 end crefFirstIdentEqual;
 
+protected
+
+type CompareWithSubsType = enumeration(WithoutSubscripts, WithGenericSubscript, WithIntSubscript);
+
+package CompareWithGenericSubscript "Package that can be modified to do different kinds of comparisons"
+  constant CompareWithSubsType compareSubscript=CompareWithSubsType.WithGenericSubscript;
+  function compare
+    input DAE.ComponentRef cr1, cr2;
+    output Integer res=0;
+  algorithm
+    res := match (cr1, cr2)
+      case (DAE.CREF_IDENT(),DAE.CREF_IDENT())
+        algorithm
+          res := stringCompare(cr1.ident, cr2.ident);
+          if compareSubscript==CompareWithSubsType.WithoutSubscripts or res <> 0 then
+            return;
+          end if;
+        then compareSubs(cr1.subscriptLst, cr2.subscriptLst);
+      case (DAE.CREF_QUAL(),DAE.CREF_QUAL())
+        algorithm
+          res := stringCompare(cr1.ident, cr2.ident);
+          if res <> 0 then
+            return;
+          end if;
+          if compareSubscript<>CompareWithSubsType.WithoutSubscripts then
+            res := compareSubs(cr1.subscriptLst, cr2.subscriptLst);
+            if res <> 0 then
+              return;
+            end if;
+          end if;
+        then compare(cr1.componentRef, cr2.componentRef);
+      case (DAE.CREF_QUAL(),DAE.CREF_IDENT())
+        algorithm
+          res := stringCompare(cr1.ident, cr2.ident);
+          if res <> 0 then
+            return;
+          end if;
+          if compareSubscript<>CompareWithSubsType.WithoutSubscripts then
+            res := compareSubs(cr1.subscriptLst, cr2.subscriptLst);
+          end if;
+          if res <> 0 then
+            return;
+          end if;
+        then 1;
+      case (DAE.CREF_IDENT(),DAE.CREF_QUAL())
+        algorithm
+          res := stringCompare(cr1.ident, cr2.ident);
+          if res <> 0 then
+            return;
+          end if;
+          if compareSubscript<>CompareWithSubsType.WithoutSubscripts then
+            res := compareSubs(cr1.subscriptLst, cr2.subscriptLst);
+          end if;
+          if res <> 0 then
+            return;
+          end if;
+        then -1;
+    end match;
+  end compare;
+  function compareSubs
+    input list<DAE.Subscript> ss1, ss2;
+    output Integer res=0;
+  protected
+    list<DAE.Subscript> ss=ss2;
+    DAE.Subscript s2;
+    Integer i1, i2;
+    DAE.Exp e1, e2;
+  algorithm
+    for s1 in ss1 loop
+      if listEmpty(ss) then
+        res := -1;
+        return;
+      end if;
+      s2::ss := ss;
+      if compareSubscript == CompareWithSubsType.WithGenericSubscript then
+        e1 := Expression.getSubscriptExp(s1);
+        e2 := Expression.getSubscriptExp(s2);
+        res := stringCompare(ExpressionDump.printExpStr(e1),ExpressionDump.printExpStr(e2));
+      else
+        i1 := Expression.subscriptInt(s1);
+        i2 := Expression.subscriptInt(s2);
+        res := if i1 < i2 then -1 elseif i1 > i2 then 1 else 0;
+      end if;
+      if res <> 0 then
+        return;
+      end if;
+    end for;
+    if not listEmpty(ss) then
+      res := 1;
+    end if;
+  end compareSubs;
+end CompareWithGenericSubscript;
+
+package CompareWithoutSubscripts
+  extends CompareWithGenericSubscript(compareSubscript=CompareWithSubsType.WithoutSubscripts);
+end CompareWithoutSubscripts;
+package CompareWithIntSubscript "More efficient than CompareWithGenericSubscript, assuming all subscripts are integers"
+  extends CompareWithGenericSubscript(compareSubscript=CompareWithSubsType.WithIntSubscript);
+end CompareWithIntSubscript;
+
 public function crefSortFunc "A sorting function (greatherThan) for crefs"
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
   output Boolean greaterThan;
 algorithm
-  greaterThan := stringCompare(printComponentRefStr(cr1),printComponentRefStr(cr2)) > 0;
+  greaterThan := CompareWithGenericSubscript.compare(cr1,cr2) > 0;
 end crefSortFunc;
 
 public function crefLexicalGreaterSubsAtEnd
@@ -742,10 +842,10 @@ public function crefLexicalGreaterSubsAtEnd
   input DAE.ComponentRef cr2;
   output Boolean isGreater;
 algorithm
-  isGreater := crefLexicalCompareubsAtEnd(cr1,cr2) > 0;
+  isGreater := crefLexicalCompareSubsAtEnd(cr1,cr2) > 0;
 end crefLexicalGreaterSubsAtEnd;
 
-public function crefLexicalCompareubsAtEnd
+public function crefLexicalCompareSubsAtEnd
 "mahge:
   Compares two crefs lexically. Subscripts are treated as if they are
   they are at the end of the whole component reference.
@@ -753,77 +853,40 @@ public function crefLexicalCompareubsAtEnd
   returns value is same as C strcmp. 0 if equal, 1 if first is greater, -1 otherwise"
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
-  output Integer comapred;
+  output Integer res;
 protected
-  String cr1_nosub_str;
-  String cr2_nosub_str;
   list<Integer> subs1;
   list<Integer> subs2;
-  Integer idents_comapred;
 algorithm
-  cr1_nosub_str := crefStr(cr1);
-  cr2_nosub_str := crefStr(cr2);
+  res := CompareWithoutSubscripts.compare(cr1, cr2);
+  if res <> 0 then
+    return;
+  end if;
   subs1 := Expression.subscriptsInt(crefSubs(cr1));
   subs2 := Expression.subscriptsInt(crefSubs(cr2));
-  idents_comapred := stringCompare(cr1_nosub_str, cr2_nosub_str);
-  comapred := crefLexicalCompareubsAtEnd2(idents_comapred, subs1, subs2);
-end crefLexicalCompareubsAtEnd;
+  res := crefLexicalCompareSubsAtEnd2(subs1, subs2);
+end crefLexicalCompareSubsAtEnd;
 
-protected function crefLexicalCompareubsAtEnd2
+protected function crefLexicalCompareSubsAtEnd2
 "mahge:
   Helper function for crefLexicalCompareubsAtEnd
   compares subs. However only if the crefs with out subs are equal.
   (i.e. identsCompared is 0)
   otheriwse just returns"
-  input Integer identsCompared;
   input list<Integer> inSubs1;
   input list<Integer> inSubs2;
-  output Integer outCompared;
+  output Integer res;
+protected
+  list<Integer> rest=inSubs2;
 algorithm
-  outCompared := match(identsCompared, inSubs1, inSubs2)
-    local
-      Integer sub1, sub2;
-      list<Integer> rest1, rest2;
-
-    case (1, _, _)
-      then 1;
-
-    case (-1, _, _)
-      then -1;
-
-    // No subs
-    case (_, {}, {})
-      then identsCompared;
-
-    // One of them has subs while the nosub crefs are the same
-    case (0, {}, _)
-      then -1;
-
-    case (0, _, {})
-      then 1;
-
-    case (0, sub1::rest1, sub2::rest2)
-      guard
-        intEq(sub1,sub2)
-       then
-         crefLexicalCompareubsAtEnd2(0, rest1,rest2);
-
-    case (0, sub1::_, sub2::_)
-      guard
-        intGe(sub1,sub2)
-       then 1;
-
-    case (0, _::_, _::_)
-       then -1;
-
-    case (_, _, _)
-      equation
-        print("ComponentReference.crefLexicalCompareubsAtEnd2 failed \n");
-       then
-         fail();
-
-  end match;
-end crefLexicalCompareubsAtEnd2;
+  for i in inSubs1 loop
+    res::rest := rest;
+    res := if i>res then 1 elseif i<res then -1 else 0;
+    if res <> 0 then
+      return;
+    end if;
+  end for;
+end crefLexicalCompareSubsAtEnd2;
 
 public function crefContainedIn
 "author: PA

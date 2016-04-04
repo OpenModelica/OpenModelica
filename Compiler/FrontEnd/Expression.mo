@@ -101,7 +101,7 @@ algorithm
   outSubscripts := List.map(inIntegers, intSubscript);
 end intSubscripts;
 
-protected function subscriptInt
+public function subscriptInt
   "Tries to convert a subscript to an integer index."
   input DAE.Subscript inSubscript;
   output Integer outInteger = expArrayIndex(subscriptIndexExp(inSubscript));
