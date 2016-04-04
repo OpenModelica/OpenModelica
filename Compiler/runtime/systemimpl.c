@@ -378,7 +378,7 @@ static char* SystemImpl__readFile(const char* filename)
       2);
     MMC_THROW();
   }
-  buf = (char*) GC_malloc_atomic(statstr.st_size+1);
+  buf = (char*) omc_alloc_interface.malloc_atomic(statstr.st_size+1);
 
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size) {
     const char *c_tokens[2]={strerror(errno),filename};
@@ -502,7 +502,7 @@ static char* SystemImpl__trim(const char* str, const char* chars_to_be_removed)
     str2 = str;
   //fprintf(stderr, "trim right '%s'\n", str2);
   length = str2 - str + 1;
-  res = (char*) GC_malloc_atomic(length+1);
+  res = (char*) omc_alloc_interface.malloc_atomic(length+1);
   strncpy(res,str,length);
   res[length] = '\0';
   return res;
@@ -523,7 +523,7 @@ void* SystemImpl__trimChar(const char* str, char char_to_be_trimmed)
     while(str[end_pos] == char_to_be_trimmed) {
       end_pos--;
     }
-    res = (char*)GC_malloc_atomic(end_pos - start_pos +2);
+    res = (char*)omc_alloc_interface.malloc_atomic(end_pos - start_pos +2);
     strncpy(res,&str[start_pos],end_pos - start_pos+1);
     res[end_pos - start_pos+1] = '\0';
     rmlRes = (void*) mmc_mk_scon(res);
@@ -550,7 +550,7 @@ int runProcess(const char* cmd)
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   char *c = "cmd /c";
-  char *command = (char *)GC_malloc_atomic(strlen(cmd) + strlen(c) + 2);
+  char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(cmd) + strlen(c) + 2);
   DWORD exitCode = 1;
 
   ZeroMemory(&si, sizeof(si));
@@ -586,7 +586,7 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
   fflush(NULL); /* flush output so the testsuite is deterministic */
 #if defined(__MINGW32__) || defined(_MSC_VER)
   if (*outFile) {
-    char *command = (char *)GC_malloc_atomic(strlen(str) + strlen(outFile) + 10);
+    char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(str) + strlen(outFile) + 10);
     sprintf(command, "%s >> %s 2>&1", str, outFile);
     status = runProcess(command);
     GC_free((void*)command);
@@ -754,9 +754,9 @@ void* SystemImpl__systemCallParallel(void *lst, int numThreads)
     tmp = MMC_CDR(tmp);
   }
   if (sz == 0) return mmc_mk_nil();
-  calls = (char**) GC_malloc(sz*sizeof(char*));
+  calls = (char**) omc_alloc_interface.malloc(sz*sizeof(char*));
   assert(calls);
-  results = (int*) GC_malloc_atomic(sz*sizeof(int));
+  results = (int*) omc_alloc_interface.malloc_atomic(sz*sizeof(int));
   assert(results);
   tmp = lst;
   if (numThreads > sz) {
@@ -775,7 +775,7 @@ void* SystemImpl__systemCallParallel(void *lst, int numThreads)
     struct systemCallWorkerThreadArgs args = {&mutex,&index,sz,calls,results};
     pthread_t *th = NULL;
     pthread_mutex_init(&mutex,NULL);
-    th = GC_malloc(sizeof(pthread_t)*numThreads);
+    th = omc_alloc_interface.malloc(sizeof(pthread_t)*numThreads);
     /* Last element is NULL from GC_malloc */
     for (i=0; i<numThreads; i++) {
       GC_pthread_create(&th[i],NULL,systemCallWorkerThread,&args);
@@ -927,7 +927,7 @@ static int SystemImpl__removeDirectoryItem(const char *path)
       }
 
       len = path_len + strlen(p->d_name) + 2;
-      buf = (char *)GC_malloc_atomic(len);
+      buf = (char *)omc_alloc_interface.malloc_atomic(len);
       if (buf != NULL)
       {
         struct stat statbuf;
@@ -1021,7 +1021,7 @@ extern int SystemImpl__removeDirectory(const char *path)
       basepath = ".";
     } else {
       size_t len = ctmp-path;
-      basepath = (char *)GC_malloc_atomic(len);
+      basepath = (char *)omc_alloc_interface.malloc_atomic(len);
       strncpy(basepath, path, len);
       basepath[len-1] = 0;
     }
@@ -1064,7 +1064,7 @@ extern int SystemImpl__removeDirectory(const char *path)
           {
             /* pre and post pattern do match */
             struct stat statbuf;
-            char * newdir = (char *)GC_malloc_atomic(len_base+len+len_sub+3);
+            char * newdir = (char *)omc_alloc_interface.malloc_atomic(len_base+len+len_sub+3);
 
             strcpy(newdir, basepath);
             strcat(newdir, "/");
@@ -1127,8 +1127,8 @@ extern char* SystemImpl__readFileNoNumeric(const char* filename)
   }
 
   file = fopen(filename,"rb");
-  buf = (char*) GC_malloc_atomic(statstr.st_size+1);
-  bufRes = (char*) GC_malloc_atomic((statstr.st_size+70)*sizeof(char));
+  buf = (char*) omc_alloc_interface.malloc_atomic(statstr.st_size+1);
+  bufRes = (char*) omc_alloc_interface.malloc_atomic((statstr.st_size+70)*sizeof(char));
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size) {
     fclose(file);
     return "Failed while reading file";
@@ -1179,7 +1179,7 @@ static int file_select_mo(direntry entry)
 int setenv(const char* envname, const char* envvalue, int overwrite)
 {
   int res;
-  char *temp = (char*)GC_malloc_atomic(strlen(envname)+strlen(envvalue)+2);
+  char *temp = (char*)omc_alloc_interface.malloc_atomic(strlen(envname)+strlen(envvalue)+2);
   sprintf(temp,"%s=%s", envname, envvalue);
   res = _putenv(temp);
   return res;
@@ -1549,7 +1549,7 @@ extern char* SystemImpl__unescapedString(const char* str)
   len1 = strlen(str);
   len2 = SystemImpl__unescapedStringLength(str);
   if (len1 == len2) return NULL;
-  res = (char*) GC_malloc_atomic(len2+1);
+  res = (char*) omc_alloc_interface.malloc_atomic(len2+1);
   while (*str) {
     res[i] = str[0];
     if (str[0] == '\\') {
@@ -1594,7 +1594,7 @@ extern char* SystemImpl__unquoteIdentifier(const char* str)
   const char _omcQuot[]="_omcQuot_";
   if (*str != '\'') return NULL;
   len = strlen(str)-2;
-  res = (char*) GC_malloc_atomic(2*len+offset+64);
+  res = (char*) omc_alloc_interface.malloc_atomic(2*len+offset+64);
   cur = res;
   cur += sprintf(cur,"%s",_omcQuot);
   for (i=0; i<len; i++) {
@@ -1680,9 +1680,9 @@ static void decodeUri(const char *src, char **name, char **path)
   const char *srcName = src;
   int len = strlen(src);
   int lenPath = srcPath ? strlen(srcPath+1) : 0;
-  *name = (char*) GC_malloc_atomic(len - lenPath + 2);
+  *name = (char*) omc_alloc_interface.malloc_atomic(len - lenPath + 2);
   decodeUri2(src,*name,'/');
-  *path = (char*) GC_malloc_atomic(lenPath+2);
+  *path = (char*) omc_alloc_interface.malloc_atomic(lenPath+2);
   **path = '\0';
   if (srcPath == NULL) {
     return;
@@ -1750,9 +1750,9 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
     sz++;
     tmp = MMC_CDR(tmp);
   }
-  A = (double*) GC_malloc_atomic(sz*sz*sizeof(double));
+  A = (double*) omc_alloc_interface.malloc_atomic(sz*sz*sizeof(double));
   assert(A != NULL);
-  B = (double*) GC_malloc_atomic(sz*sizeof(double));
+  B = (double*) omc_alloc_interface.malloc_atomic(sz*sizeof(double));
   assert(B != NULL);
   for (i=0; i<sz; i++) {
     tmp = MMC_CAR(lA);
@@ -1764,7 +1764,7 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
     lA = MMC_CDR(lA);
     lB = MMC_CDR(lB);
   }
-  ipiv = (integer*) GC_malloc_atomic(sz*sizeof(integer));
+  ipiv = (integer*) omc_alloc_interface.malloc_atomic(sz*sizeof(integer));
   memset(ipiv,0,sz*sizeof(integer));
   assert(ipiv != 0);
   lda = sz;
@@ -1801,7 +1801,7 @@ int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
     sz++;
     tmp = MMC_CDR(tmp);
   }
-  vres = (double*)GC_malloc_atomic(sz*sizeof(double));
+  vres = (double*)omc_alloc_interface.malloc_atomic(sz*sizeof(double));
   memset(vres,0,sz*sizeof(double));
   lp = make_lp(sz, sz);
   set_verbose(lp, 1);
@@ -1875,7 +1875,7 @@ static int regularFileExistsInDirectory(const char *dir1, const char *dir2, cons
 {
   char *str;
   int res;
-  str = (char*) GC_malloc_atomic(strlen(dir1) + strlen(dir2) + strlen(file) + 3);
+  str = (char*) omc_alloc_interface.malloc_atomic(strlen(dir1) + strlen(dir2) + strlen(file) + 3);
   sprintf(str,"%s/%s/%s", dir1, dir2, file);
   res = SystemImpl__regularFileExists(str);
   return res;
@@ -1917,7 +1917,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
   }
   /* fprintf(stderr, "numMatches: %ld\n", *numMatches); */
   /*** NOTE: Doing the same thing again. It is very important the same (number of) entries are match as in the loop above ***/
-  res = (modelicaPathEntry*) GC_malloc(*numMatches*sizeof(modelicaPathEntry));
+  res = (modelicaPathEntry*) omc_alloc_interface.malloc(*numMatches*sizeof(modelicaPathEntry));
   mps = save_mps;
   while (MMC_NILHDR != MMC_GETHDR(mps)) {
     const char *mp = MMC_STRINGDATA(MMC_CAR(mps));
@@ -2218,7 +2218,7 @@ char* SystemImpl__iconv__ascii(const char * str)
   size_t sz;
   int i;
   sz = strlen(str);
-  buf = GC_malloc_atomic(sz+1);
+  buf = omc_alloc_interface.malloc_atomic(sz+1);
   *buf = 0;
   for (i=0; i<=sz; i++)
     buf[i] = str[i] & 0x80 ? '?' : str[i];
@@ -2234,7 +2234,7 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   char *buf;
   sz = strlen(str);
   buflen = sz*8;
-  buf = (char*) GC_malloc_atomic(buflen);
+  buf = (char*) omc_alloc_interface.malloc_atomic(buflen);
   assert(buf != 0);
   *buf = 0;
   /* fprintf(stderr,"iconv(%s,to=%s,%s) of size %d, buflen %d\n",str,to,from,sz,buflen); */
@@ -2312,7 +2312,7 @@ int SystemImpl__intRandom(int n)
 
 char* alloc_locale_str(const char *locale, int llen, const char *suffix, int slen)
 {
-  char *loc = (char*)GC_malloc_atomic(sizeof(char) * (llen + slen + 1));
+  char *loc = (char*)omc_alloc_interface.malloc_atomic(sizeof(char) * (llen + slen + 1));
   assert(loc != NULL);
   strncpy(loc, locale, llen);
   strncpy(loc + llen, suffix, slen + 1);
@@ -2390,7 +2390,7 @@ void SystemImpl__gettextInit(const char *locale)
   return;
   }
   omlen = strlen(omhome);
-  localedir = (char*) GC_malloc_atomic(omlen + 25);
+  localedir = (char*) omc_alloc_interface.malloc_atomic(omlen + 25);
   sprintf(localedir, "%s/share/locale", omhome);
   bindtextdomain ("openmodelica", localedir);
   textdomain ("openmodelica");
@@ -2417,7 +2417,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
   {
     const char *c_tokens[0]={};
     const char* fmt = "System.realpath failed on %s with errno: %d";
-    char* msg = (char*)GC_malloc_atomic(strlen(path) + strlen(fmt) + 10);
+    char* msg = (char*)omc_alloc_interface.malloc_atomic(strlen(path) + strlen(fmt) + 10);
     sprintf(msg, fmt, path, errno);
     c_add_message(NULL,6000,
       ErrorType_scripting,
@@ -2960,7 +2960,7 @@ void SystemImpl__dladdr(void *symbol, const char **file, const char **name)
 
 const char* SystemImpl__createTemporaryDirectory(const char *templatePrefix)
 {
-  char *template = (char*) GC_malloc_atomic(strlen(templatePrefix) + 7);
+  char *template = (char*) omc_alloc_interface.malloc_atomic(strlen(templatePrefix) + 7);
   const char *c_tokens[2];
   sprintf(template, "%sXXXXXX", templatePrefix);
   if (template==mkdtemp(template)) {

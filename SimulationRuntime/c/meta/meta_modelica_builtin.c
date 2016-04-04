@@ -509,7 +509,7 @@ modelica_metatype boxptr_listDelete(threadData_t *threadData, modelica_metatype 
     MMC_THROW_INTERNAL();
   }
 
-  tmpArr = (modelica_metatype *) GC_malloc(sizeof(modelica_metatype)*(ix-1)); /* We know the size of the first part of the list */
+  tmpArr = (modelica_metatype *) mmc_alloc_words(ix-1); /* We know the size of the first part of the list */
   if (tmpArr == NULL) {
     fprintf(stderr, "%s:%d: malloc failed", __FILE__, __LINE__);
     EXIT(1);

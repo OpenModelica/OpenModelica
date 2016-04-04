@@ -578,7 +578,7 @@ extern void* System_regex(const char* str, const char* re, int maxn, int extende
 #if !defined(_MSC_VER)
   void *matches[maxn];
 #else
-  void **matches = GC_malloc(sizeof(void*)*maxn);
+  void **matches = omc_alloc_interface.malloc(sizeof(void*)*maxn);
 #endif
   *nmatch = OpenModelica_regexImpl(str,re,maxn,extended,sensitive,mmc_mk_scon,(void**)&matches);
   res = mmc_mk_nil();
@@ -787,10 +787,10 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
   int ids[len];
   pthread_t th[numThreads];
 #else
-  void **commands = (void**) GC_malloc(sizeof(void*)*len);
-  void **status = (void**) GC_malloc(sizeof(void*)*len);
-  int *ids = (int*) GC_malloc_atomic(sizeof(int)*len);
-  pthread_t *th = (pthread_t*) GC_malloc(sizeof(pthread_t)*numThreads);
+  void **commands = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
+  void **status = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
+  int *ids = (int*) omc_alloc_interface.malloc_atomic(sizeof(int)*len);
+  pthread_t *th = (pthread_t*) omc_alloc_interface.malloc(sizeof(pthread_t)*numThreads);
 #endif
   if (len == 0) {
     return mmc_mk_nil();
