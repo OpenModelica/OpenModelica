@@ -142,8 +142,38 @@ omc_alloc_interface_t omc_alloc_interface_pooled = {
   free
 };
 
+#if defined(OMC_RECORD_ALLOC_WORDS)
+#include "meta/gc/mmc_gc.h"
+
+static void* OMC_record_malloc(size_t sz)
+{
+  mmc_record_alloc_words(sz);
+  return GC_malloc(sz);
+}
+
+static void* OMC_record_malloc_uncollectable(size_t sz)
+{
+  mmc_record_alloc_words(sz);
+  return GC_malloc_uncollectable(sz);
+}
+
+static void* OMC_record_malloc_atomic(size_t sz)
+{
+  mmc_record_alloc_words(sz);
+  return GC_malloc_atomic(sz);
+}
+
+static void* OMC_record_strdup(const char *str)
+{
+  mmc_record_alloc_words(strlen(str)+1);
+  return GC_strdup(sz);
+}
+
+#endif
+
 omc_alloc_interface_t omc_alloc_interface = {
 #if !defined(OMC_MINIMAL_RUNTIME)
+#if !defined(OMC_RECORD_ALLOC_WORDS)
   GC_init,
   GC_malloc,
   GC_malloc_atomic,
@@ -154,6 +184,18 @@ omc_alloc_interface_t omc_alloc_interface = {
   GC_free,
   GC_malloc_atomic,
   nofree
+#else
+  GC_init,
+  OMC_record_malloc,
+  OMC_record_malloc_atomic,
+  (char*(*)(size_t)) OMC_record_malloc_atomic,
+  OMC_record_strdup,
+  GC_collect_a_little_or_not,
+  OMC_record_malloc_uncollectable,
+  GC_free,
+  OMC_record_malloc_atomic,
+  nofree
+#endif
 #else
   pool_init,
   pool_malloc,
