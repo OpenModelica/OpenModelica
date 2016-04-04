@@ -66,6 +66,7 @@ protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
+protected import ElementSource;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -2882,7 +2883,7 @@ algorithm
         cycles_str = stringDelimitList(cycles_strs, "}, {");
         cycles_str = "{" + cycles_str + "}";
         scope_str = "";
-        info = DAEUtil.getElementSourceFileInfo(inSource);
+        info = ElementSource.getElementSourceFileInfo(inSource);
         Error.addSourceMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str}, info);
       then
         fail();

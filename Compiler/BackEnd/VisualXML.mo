@@ -48,7 +48,7 @@ import BackendEquation;
 import BackendVariable;
 import ComponentReference;
 import DAE;
-import DAEUtil;
+import ElementSource;
 import ExpressionDump;
 import ExpressionSolve;
 import List;
@@ -446,7 +446,7 @@ algorithm
     list<String> paths_lst;
     case(BackendDAE.VAR(varName=varName, varType = varType, source=source), (varLst,crefs))
       algorithm
-       paths := DAEUtil.getElementSourceTypes(source);
+       paths := ElementSource.getElementSourceTypes(source);
        paths_lst := list(Absyn.pathString(p) for p in paths);
          //print("paths_lst "+stringDelimitList(paths_lst, "; ")+"\n");
        (obj,idx) := hasVisPath(paths,1);

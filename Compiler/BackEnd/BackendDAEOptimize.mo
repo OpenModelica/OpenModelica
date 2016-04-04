@@ -65,6 +65,7 @@ import DAEUtil;
 import DAEDump;
 import Debug;
 import Differentiate;
+import ElementSource;
 import Expression;
 import ExpressionDump;
 import ExpressionSolve;
@@ -1724,7 +1725,7 @@ algorithm
         false = Expression.isZero(e1) or Expression.isZero(e2);
         e = DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2);
         (e,_) = ExpressionSimplify.simplify(e);
-        source = DAEUtil.addSymbolicTransformation(source, DAE.OP_RESIDUAL(e1,e2,e));
+        source = ElementSource.addSymbolicTransformation(source, DAE.OP_RESIDUAL(e1,e2,e));
       then (BackendDAE.EQUATION(DAE.RCONST(0.0),e,source,eqAttr),i);
     else (inEq,ii);
   end matchcontinue;
@@ -2711,7 +2712,7 @@ algorithm
     case (_, {}, _)
       equation
         Error.addSourceMessage(Error.IF_EQUATION_MISSING_ELSE, {},
-          DAEUtil.getElementSourceFileInfo(source));
+          ElementSource.getElementSourceFileInfo(source));
       then
         fail();
 
@@ -2725,7 +2726,7 @@ algorithm
         strs = List.map(nrOfEquationsBranches, intString);
         str = stringDelimitList(strs,",");
         str = "{" + str + "," + intString(nrOfEquations) + "}";
-        Error.addSourceMessage(Error.IF_EQUATION_UNBALANCED_2,{str,eqstr},DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.IF_EQUATION_UNBALANCED_2,{str,eqstr},ElementSource.getElementSourceFileInfo(source));
       then
         fail();
 
@@ -2748,7 +2749,7 @@ algorithm
       equation
         str = BackendDump.equationString(eq);
         str = Util.stringReplaceChar(str,"\n","");
-        Error.addSourceMessage(Error.IF_EQUATION_WARNING,{str},DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.IF_EQUATION_WARNING,{str},ElementSource.getElementSourceFileInfo(source));
         exps = makeEquationLstToResidualExpLst(rest);
       then exps;
     case (eq::rest)
@@ -4202,20 +4203,20 @@ algorithm
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) := syst;
     BackendDAE.EQUATION_ARRAY(numberOfElement = n) := eqns;
     update := false;
-	  indRemove := {};
+    indRemove := {};
 
     for i in 1:n loop
-		  try
-			  eqn := BackendEquation.equationNth1(eqns, i);
-		  else
-		    continue;
-		  end try;
+      try
+        eqn := BackendEquation.equationNth1(eqns, i);
+      else
+        continue;
+      end try;
       if BackendEquation.isComplexEquation(eqn) or BackendEquation.isArrayEquation(eqn) then
-		    if BackendEquation.isComplexEquation(eqn) then
-			    BackendDAE.COMPLEX_EQUATION(size=size,left=left, right=right, attr= attr, source=source) := eqn;
-			  else
-			    BackendDAE.ARRAY_EQUATION(left=left, right=right, attr= attr, source=source) := eqn;
-			  end if;
+        if BackendEquation.isComplexEquation(eqn) then
+          BackendDAE.COMPLEX_EQUATION(size=size,left=left, right=right, attr= attr, source=source) := eqn;
+        else
+          BackendDAE.ARRAY_EQUATION(left=left, right=right, attr= attr, source=source) := eqn;
+        end if;
 
         if Expression.isTuple(left) and Expression.isTuple(right) then // tuple() = tuple()
           //print(BackendDump.equationString(eqn) + "--In--\n");
@@ -4243,39 +4244,39 @@ algorithm
               end if; //isScalar
             end if; // isWild
           end for;
-		  elseif Expression.isArray(left) and Expression.isArray(right)
-		  then // array{} = array{} // not work with arrayType
+      elseif Expression.isArray(left) and Expression.isArray(right)
+      then // array{} = array{} // not work with arrayType
           //print(BackendDump.equationString(eqn) + "--In--\n");
-			  try
-					left_lst := Expression.getArrayOrRangeContents(left);
-					right_lst := Expression.getArrayOrRangeContents(right);
-					update := true;
-					indRemove := i :: indRemove;
-					for e1 in left_lst loop
-					e2 :: right_lst := right_lst;
-					//print("=>" +  ExpressionDump.printExpStr(e2) + " = " +  ExpressionDump.printExpStr(e1) + "\n");
-					if not Expression.isWild(e1) then
-					  if Expression.isScalar(e2) then
-						eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
-						eqns := BackendEquation.addEquation(eqn1, eqns);
-						//print(BackendDump.equationString(eqn1) + "--new--\n");
-					  else
-						expLst := simplifyComplexFunction2(e1);
-						arrayLst := simplifyComplexFunction2(e2);
-						for e_asub in arrayLst loop
-						  e3 :: expLst := expLst;
-						  eqn1 := BackendEquation.generateEquation(e_asub, e3, source, attr);
-						  eqns := BackendEquation.addEquation(eqn1, eqns);
-						  //print(BackendDump.equationString(eqn1) + "--new--\n");
-						end for;
-					  end if; //isScalar
-					end if; // isWild
-					end for;
-			  else
-			    continue;
-			  end try;
+        try
+          left_lst := Expression.getArrayOrRangeContents(left);
+          right_lst := Expression.getArrayOrRangeContents(right);
+          update := true;
+          indRemove := i :: indRemove;
+          for e1 in left_lst loop
+          e2 :: right_lst := right_lst;
+          //print("=>" +  ExpressionDump.printExpStr(e2) + " = " +  ExpressionDump.printExpStr(e1) + "\n");
+          if not Expression.isWild(e1) then
+            if Expression.isScalar(e2) then
+            eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
+            eqns := BackendEquation.addEquation(eqn1, eqns);
+            //print(BackendDump.equationString(eqn1) + "--new--\n");
+            else
+            expLst := simplifyComplexFunction2(e1);
+            arrayLst := simplifyComplexFunction2(e2);
+            for e_asub in arrayLst loop
+              e3 :: expLst := expLst;
+              eqn1 := BackendEquation.generateEquation(e_asub, e3, source, attr);
+              eqns := BackendEquation.addEquation(eqn1, eqns);
+              //print(BackendDump.equationString(eqn1) + "--new--\n");
+            end for;
+            end if; //isScalar
+          end if; // isWild
+          end for;
+        else
+          continue;
+        end try;
       elseif withTmpVars and  Expression.isTuple(left) and Expression.isCall(right)  //tuple() = call()
-		  then
+      then
         DAE.TUPLE(PR = left_lst) := left;
         DAE.CALL(path=path,expLst = expLst, attr= cattr) := right;
         expLst := {};
@@ -4347,8 +4348,8 @@ algorithm
 
     if update then
       for i in listReverse(indRemove) loop
-	    //print("\neqns:" + intString(i) + "\n");
-	    //BackendDump.printEquationArray(eqns);
+      //print("\neqns:" + intString(i) + "\n");
+      //BackendDump.printEquationArray(eqns);
         eqns := BackendEquation.equationRemove(i,eqns);
       end for;
       eqns := BackendEquation.listEquation(BackendEquation.equationList(eqns));

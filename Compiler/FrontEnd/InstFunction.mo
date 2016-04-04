@@ -56,6 +56,7 @@ protected import Lookup;
 protected import Inst;
 protected import InstUtil;
 protected import UnitAbsynBuilder;
+protected import ElementSource;
 protected import List;
 protected import Types;
 protected import Flags;
@@ -121,9 +122,9 @@ algorithm
         env = FGraph.pushScopeRef(env, r);
 
         // set the  of this element
-       source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
-       source = DAEUtil.addCommentToSource(source, SOME(comment));
-       source = DAEUtil.addElementSourceFileInfo(source, info);
+       source = ElementSource.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
+       source = ElementSource.addCommentToSource(source, SOME(comment));
+       source = ElementSource.addElementSourceFileInfo(source, info);
       then
         (cache,env,ih,DAE.DAE({DAE.EXTOBJECTCLASS(classNameFQ,source)}),ClassInf.EXTERNAL_OBJ(classNameFQ));
 
@@ -369,7 +370,7 @@ algorithm
         env_1 = FGraph.mkTypeNode(env_1, n, ty1);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         inlineType = InstUtil.isInlineFunc(c);
         partialPrefixBool = SCode.partialBool(partialPrefix);
 
@@ -412,7 +413,7 @@ algorithm
         (cache,ih,extdecl) = instExtDecl(cache, tempenv,ih, n, parts, true, pre,info) "impl" ;
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         partialPrefixBool = SCode.partialBool(partialPrefix);
         InstUtil.checkExternalFunction(daeElts,extdecl,Absyn.pathString(fpath));
       then

@@ -61,6 +61,7 @@ import BaseHashTable;
 import ComponentReference;
 import Connect;
 import DAEUtil;
+import ElementSource;
 import Expression;
 import ExpressionDump;
 import Error;
@@ -2074,7 +2075,7 @@ algorithm
         (_, env) = traversePatternList(elabPatterns2, addEnvKnownAsBindings, env);
         eqAlgs = Static.fromEquationsToAlgAssignments(cp);
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
-        (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, InstTypes.neverUnroll);
+        (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, ElementSource.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, InstTypes.neverUnroll);
         (cache,body,elabResult,resultInfo,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,resultInfo);
         (cache,dPatternGuard,st) = elabPatternGuard(cache,env,patternGuard,impl,st,performVectorization,pre,patternInfo);
         localsTree = AvlTreeString.joinAvlTrees(matchExpLocalTree, caseLocalTree);
@@ -3047,7 +3048,7 @@ protected function isNotDummyStatement
   output Boolean b;
 algorithm
   b := Algorithm.isNotDummyStatement(statement);
-  Error.assertionOrAddSourceMessage(b or not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_DEAD_CODE,{"Statement optimised away"},DAEUtil.getElementSourceFileInfo(Algorithm.getStatementSource(statement)));
+  Error.assertionOrAddSourceMessage(b or not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_DEAD_CODE,{"Statement optimised away"},ElementSource.getElementSourceFileInfo(Algorithm.getStatementSource(statement)));
 end isNotDummyStatement;
 
 protected function makeTupleFromMetaTuple

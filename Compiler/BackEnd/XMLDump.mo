@@ -92,6 +92,7 @@ protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
+protected import ElementSource;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -3321,7 +3322,7 @@ algorithm
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
-        paths = DAEUtil.getElementSourceTypes(source);
+        paths = ElementSource.getElementSourceTypes(source);
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
         dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES,addMMLCode);
         dumpStrCloseTag(VARIABLE);
@@ -3384,7 +3385,7 @@ algorithm
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
-        paths = DAEUtil.getElementSourceTypes(source);
+        paths = ElementSource.getElementSourceTypes(source);
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
         dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES,addMMLCode);
         dumpVarsAdditionalInfo(crefIdxLstArr,varno);

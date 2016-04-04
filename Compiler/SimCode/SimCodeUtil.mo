@@ -80,6 +80,7 @@ import DAEUtil;
 import Debug;
 import Differentiate;
 import DoubleEndedList;
+import ElementSource;
 import Error;
 import EvaluateFunctions;
 import ExecStat.execStat;
@@ -1935,7 +1936,7 @@ algorithm
         varexp = Expression.crefExp(cr);
         varexp = bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
         (exp_, asserts) = ExpressionSolve.solveLin(e1, e2, varexp);
-        source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
+        source = ElementSource.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
         (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, exp_, source)}, iuniqueEqIndex+1);
       then
         (resEqs, uniqueEqIndex, itempvars);
@@ -1980,7 +1981,7 @@ algorithm
         solveEqns = listReverse(solveEqns);
         solveCr = listReverse(solveCr);
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
-        source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
+        source = ElementSource.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
         (eqSystlst, uniqueEqIndex) = List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
         (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source)}, uniqueEqIndex+1);
         eqSystlst = List.appendNoCopy(eqSystlst,resEqs);
@@ -2130,7 +2131,7 @@ algorithm
       varexp1 = if BackendVariable.isStateVar(v1) then Expression.expDer(varexp1) else varexp1;
       (solvedExp1, asserts) = ExpressionSolve.solve(e11, e12, varexp1);
       cr1 = if BackendVariable.isStateVar(v1) then ComponentReference.crefPrefixDer(cr1) else cr1;
-      source1 = DAEUtil.addSymbolicTransformationSolve(true, source1, cr1, e11, e12, solvedExp1, asserts);
+      source1 = ElementSource.addSymbolicTransformationSolve(true, source1, cr1, e11, e12, solvedExp1, asserts);
       tp1 = Expression.typeof(varexp1);
     then {DAE.STMT_ASSIGN(tp1, varexp1, solvedExp1, source1)};
 
@@ -2144,14 +2145,14 @@ algorithm
       varexp1 = if BackendVariable.isStateVar(v1) then Expression.expDer(varexp1) else varexp1;
       (solvedExp1, asserts) = ExpressionSolve.solve(e11, e12, varexp1);
       cr1 = if BackendVariable.isStateVar(v1) then ComponentReference.crefPrefixDer(cr1) else cr1;
-      source1 = DAEUtil.addSymbolicTransformationSolve(true, source1, cr1, e11, e12, solvedExp1, asserts);
+      source1 = ElementSource.addSymbolicTransformationSolve(true, source1, cr1, e11, e12, solvedExp1, asserts);
       tp1 = Expression.typeof(varexp1);
 
       varexp2 = Expression.crefExp(cr2);
       varexp2 = if BackendVariable.isStateVar(v2) then Expression.expDer(varexp2) else varexp2;
       (solvedExp2, asserts) = ExpressionSolve.solve(e21, e22, varexp2);
       cr2 = if BackendVariable.isStateVar(v2) then ComponentReference.crefPrefixDer(cr2) else cr2;
-      source2 = DAEUtil.addSymbolicTransformationSolve(true, source2, cr2, e21, e22, solvedExp2, asserts);
+      source2 = ElementSource.addSymbolicTransformationSolve(true, source2, cr2, e21, e22, solvedExp2, asserts);
       tp2 = Expression.typeof(varexp2);
     then {DAE.STMT_ASSIGN(tp1, varexp1, solvedExp1, source1), DAE.STMT_ASSIGN(tp2, varexp2, solvedExp2, source2)};
   end match;
@@ -2868,7 +2869,7 @@ algorithm
       names = List.map(simVars, varName);
       checkLinearSystem(linInfo, names, jacVals, rhsVals);
       // TODO: Move these to known vars :/ This is done in the wrong phase of the compiler... Also, if done as an optimization module, we can optimize more!
-      sources = List.map1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names, jacVals, rhsVals, solvedVals));
+      sources = List.map1(sources, ElementSource.addSymbolicTransformation, DAE.LINEAR_SOLVED(names, jacVals, rhsVals, solvedVals));
       (equations_, uniqueEqIndex) = List.thread3MapFold(simVars, solvedVals, sources, generateSolvedEquation, iuniqueEqIndex);
     then (equations_, uniqueEqIndex, itempvars);
 
@@ -6382,7 +6383,7 @@ protected
   list<Absyn.Path> paths;
 algorithm
   BackendDAE.VAR(varName=cref, source=source) := var;
-  _::paths := DAEUtil.getElementSourceTypes(source);
+  _::paths := ElementSource.getElementSourceTypes(source);
   path := getRecordPathFromCref(cref,paths);
   bLst := List.map1(paths,Absyn.pathEqual,path);
   (_,paths) := List.filter1OnTrueSync(bLst,boolEq,true,paths);

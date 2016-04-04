@@ -53,14 +53,14 @@ protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BaseHashTable;
 protected import ComponentReference;
-protected import DAEUtil;
 protected import Differentiate;
-protected import FCore;
+protected import ElementSource;
 protected import Error;
 protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import FCore;
 protected import Flags;
 protected import HashTable2;
 protected import HashTable3;
@@ -3554,7 +3554,7 @@ algorithm
         // add replacement for each derivative
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(1,1,name,name,var,vars,so,varlst,ht);
         cr = ComponentReference.crefPrefixDer(name);
-        source = DAEUtil.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
+        source = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
       then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,value,dim,source,attr,ts,comment,ct,io,false),(vars,so,varlst,ht));
     // state replacable without unknown derivative
     case (var as BackendDAE.VAR(name,BackendDAE.STATE(index=diffcount,derName=NONE()),dir,prl,tp,bind,value,dim,source,attr,ts,comment,ct,io),(vars,so,varlst,ht))
@@ -3563,7 +3563,7 @@ algorithm
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(diffcount,1,name,name,var,vars,so,varlst,ht);
         // dummy_der name vor Source information
         cr = ComponentReference.crefPrefixDer(name);
-        source = DAEUtil.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
+        source = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
       then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,value,dim,source,attr,ts,comment,ct,io,false),(vars,so,varlst,ht));
     else (inVar,inTpl);
   end matchcontinue;
@@ -3710,7 +3710,7 @@ algorithm
         dn = intMax(diffindex-level,0);
         // generate names
         (name,dummyderName) = crefPrefixDerN(dn,name);
-        _ = DAEUtil.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(dummyderName,{}));
+        _ = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(dummyderName,{}));
         /* Dummy variables are algebraic variables, hence fixed = false */
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));

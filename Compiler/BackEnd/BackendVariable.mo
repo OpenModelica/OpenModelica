@@ -50,6 +50,7 @@ protected import BaseHashTable;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
+protected import ElementSource;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -1817,7 +1818,7 @@ algorithm
       // if is real use %g otherwise use %d (ints and enums)
       format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
       msg = DAE.BINARY(DAE.SCONST(str), DAE.ADD(DAE.T_STRING_DEFAULT), DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString));
-      BackendDAEUtil.checkAssertCondition(cond, msg, DAE.ASSERTIONLEVEL_WARNING, DAEUtil.getElementSourceFileInfo(source));
+      BackendDAEUtil.checkAssertCondition(cond, msg, DAE.ASSERTIONLEVEL_WARNING, ElementSource.getElementSourceFileInfo(source));
     then DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, DAE.ASSERTIONLEVEL_WARNING, source)})::inAsserts;
 
     else inAsserts;
@@ -1879,7 +1880,7 @@ algorithm
       // if is real use %g otherwise use %d (ints and enums)
       format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
       msg = DAE.BINARY(DAE.SCONST(str), DAE.ADD(DAE.T_STRING_DEFAULT), DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString));
-      BackendDAEUtil.checkAssertCondition(cond, msg, DAE.ASSERTIONLEVEL_WARNING, DAEUtil.getElementSourceFileInfo(source));
+      BackendDAEUtil.checkAssertCondition(cond, msg, DAE.ASSERTIONLEVEL_WARNING, ElementSource.getElementSourceFileInfo(source));
     then DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, DAE.ASSERTIONLEVEL_WARNING, source)})::inAsserts;
 
     else inAsserts;
@@ -2181,7 +2182,7 @@ algorithm
   BackendDAE.VAR(arryDim=dims) := inVar;
   for dim in dims loop
     DAE.DIM_INTEGER(n) := dim;
-	outDimVariables := n * outDimVariables;
+  outDimVariables := n * outDimVariables;
   end for;
 
 end varDim;
@@ -3377,7 +3378,7 @@ protected
   list<DAE.SymbolicOperation> ops;
 algorithm
   ops := listReverse(inOps);
-  outVar.source := List.foldr(ops, DAEUtil.addSymbolicTransformation, inVar.source);
+  outVar.source := List.foldr(ops, ElementSource.addSymbolicTransformation, inVar.source);
 end mergeVariableOperations;
 
 public function mergeAliasVars "author: Frenkel TUD 2011-04"

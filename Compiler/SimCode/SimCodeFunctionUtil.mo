@@ -44,6 +44,7 @@ import ComponentReference;
 import DAEDump;
 import DAEUtil;
 import Debug;
+import ElementSource;
 import Error;
 import Expression;
 import ExpressionSimplify;
@@ -699,7 +700,7 @@ algorithm
         vars = List.filterOnTrue(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
       then
         (SimCode.FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, visibility, info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
 
@@ -718,7 +719,7 @@ algorithm
         vars = List.filterOnTrue(daeElts, isVarNotInputNotOutput);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
       then
         (SimCode.KERNEL_FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
 
@@ -737,7 +738,7 @@ algorithm
         vars = List.filterOnTrue(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
         bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
       then
         (SimCode.PARALLEL_FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
 
@@ -756,7 +757,7 @@ algorithm
         inVars = List.map(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = List.map(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         (fn_includes, fn_includeDirs, fn_libs, fn_paths,dynamicLoad) = generateExtFunctionIncludes(program, fpath, ann, info);
         includes = List.union(fn_includes, includes);
         includeDirs = List.union(fn_includeDirs, includeDirs);
@@ -780,7 +781,7 @@ algorithm
         DAE.T_COMPLEX(varLst = varlst) = restype;
         varlst = List.filterOnTrue(varlst, Types.isProtectedVar);
         varDecls = List.map(varlst, typesVar);
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
       then
         (SimCode.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info, kind), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
 

@@ -55,6 +55,7 @@ protected import Config;
 protected import ConnectUtil;
 protected import DAEDump;
 protected import Debug;
+protected import ElementSource;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -2180,7 +2181,7 @@ algorithm
           source= source)::rest, impl)
       equation
         // fprintln(Flags.FAILTRACE, "- DAEUtil.daeToRecordValue typeOfRHS: " + ExpressionDump.typeOfString(rhs));
-        info = getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         (cache, value,_) = Ceval.ceval(cache, env, rhs, impl, NONE(), Absyn.MSG(info),0);
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
         cr_str = ComponentReference.printComponentRefStr(cr);
@@ -2887,7 +2888,7 @@ algorithm
         then ();
       case DAE.REINIT()
         equation
-          info = getElementSourceFileInfo(getElementSource(el));
+          info = ElementSource.getElementSourceFileInfo(ElementSource.getElementSource(el));
           Error.addSourceMessageAndFail(Error.REINIT_NOTIN_WHEN, {}, info);
         then ();
       else ();
@@ -2916,7 +2917,7 @@ protected
   SourceInfo info;
 algorithm
   if not isNone(ew) then
-    info := getElementSourceFileInfo(source);
+    info := ElementSource.getElementSourceFileInfo(source);
     Error.addSourceMessageAndFail(Error.ELSE_WHEN_CLOCK, {}, info);
   end if;
   verifyClockWhenEquation1(eqs);
@@ -2937,13 +2938,13 @@ algorithm
         SourceInfo info;
       case DAE.REINIT()
         equation
-          info = getElementSourceFileInfo(getElementSource(el));
+          info = ElementSource.getElementSourceFileInfo(ElementSource.getElementSource(el));
           Error.addSourceMessageAndFail(Error.REINIT_NOTIN_WHEN, {}, info);
         then ();
       case DAE.WHEN_EQUATION(cond, eqs, ew, source)
         equation
           if Types.isClockOrSubTypeClock(Expression.typeof(cond)) then
-            info = getElementSourceFileInfo(getElementSource(el));
+            info = ElementSource.getElementSourceFileInfo(ElementSource.getElementSource(el));
             Error.addSourceMessageAndFail(Error.NESTED_CLOCKED_WHEN, {}, info);
           end if;
           verifyBoolWhenEquation(cond, eqs, ew, source);
@@ -2971,13 +2972,13 @@ algorithm
   for whenBranch in whenBranches loop
     (cond, eqs) := whenBranch;
     if Types.isClockOrSubTypeClock(Expression.typeof(cond)) then
-      info := getElementSourceFileInfo(source);
+      info := ElementSource.getElementSourceFileInfo(source);
       Error.addSourceMessageAndFail(Error.CLOCKED_WHEN_BRANCH, {}, info);
     end if;
     crefs2 := verifyBoolWhenEquationBranch(cond, eqs);
     crefs2 := List.unionOnTrue(crefs1, crefs2, ComponentReference.crefEqual);
     if listLength(crefs2) <> listLength(crefs1) then
-      info := getElementSourceFileInfo(source);
+      info := ElementSource.getElementSourceFileInfo(source);
       Error.addSourceMessageAndFail(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN, {}, info);
     end if;
   end for;
@@ -3003,7 +3004,7 @@ algorithm
     case SOME(el)
       equation
         msg = "- DAEUtil.collectWhenEquationBranches failed on: " + DAEDump.dumpElementsStr({el});
-        info = getElementSourceFileInfo(getElementSource(el));
+        info = ElementSource.getElementSourceFileInfo(ElementSource.getElementSource(el));
         Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, info);
       then fail();
   end match;
@@ -3066,7 +3067,7 @@ outCrefs := match inElems
         crefsLists = crefs::crefsLists;
         (crefs, b) = compareCrefList(crefsLists);
         if not b then
-          info = getElementSourceFileInfo(source);
+          info = ElementSource.getElementSourceFileInfo(source);
           msg = "All branches must write to the same variable";
           Error.addSourceMessage(Error.WHEN_EQ_LHS, {msg}, info);
           fail();
@@ -3082,7 +3083,7 @@ outCrefs := match inElems
     case DAE.REINIT(source = source)::rest
       equation
         if initCond then
-          info = getElementSourceFileInfo(source);
+          info = ElementSource.getElementSourceFileInfo(source);
           Error.addSourceMessage(Error.REINIT_IN_WHEN_INITIAL, {}, info);
           fail();
         end if;
@@ -3094,7 +3095,7 @@ outCrefs := match inElems
 
     case DAE.WHEN_EQUATION(condition = e, source=source)::_
       equation
-        info = getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         if Types.isClockOrSubTypeClock(Expression.typeof(e)) then
           Error.addSourceMessage(Error.CLOCKED_WHEN_IN_WHEN_EQ , {}, info);
         else
@@ -3105,7 +3106,7 @@ outCrefs := match inElems
     case el::_
       equation
         msg = "- DAEUtil.verifyWhenEquationStatements failed on: " + DAEDump.dumpElementsStr({el});
-        info = getElementSourceFileInfo(getElementSource(el));
+        info = ElementSource.getElementSourceFileInfo(ElementSource.getElementSource(el));
         Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, info);
       then fail();
   end match;
@@ -3139,7 +3140,7 @@ algorithm
     else
       equation
         msg = ExpressionDump.printExpStr(inExp);
-        info = getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.WHEN_EQ_LHS, {msg}, info);
       then fail();
   end match;
@@ -4215,7 +4216,7 @@ algorithm
     // Empty function call - stefan
     case(DAE.NORETCALL(source = source),_,_)
       equation
-        info = getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
           {"Empty function call in equations",
            "Move the function calls to appropriate algorithm section"}, info);
@@ -4898,65 +4899,6 @@ algorithm
   end match;
 end traverseDAEVarAttr;
 
-public function getElementSourceFileInfo
-"Gets the file information associated with an element.
-If there are several candidates, select the first one."
-  input DAE.ElementSource source;
-  output SourceInfo info;
-algorithm
-  info := match source
-    case DAE.SOURCE(info = info) then info;
-  end match;
-end getElementSourceFileInfo;
-
-public function getElementSourceTypes
-"@author: adrpo
- retrieves the paths from the DAE.ElementSource.SOURCE.typeLst"
- input DAE.ElementSource source "the source of the element";
- output list<Absyn.Path> pathLst;
-algorithm
-  pathLst := match(source)
-    local list<Absyn.Path> pLst;
-    case DAE.SOURCE(typeLst = pLst) then pLst;
-  end match;
-end getElementSourceTypes;
-
-public function getElementSourceInstances
-"@author: adrpo
- retrieves the paths from the DAE.ElementSource.SOURCE.instanceOpt"
- input DAE.ElementSource source "the source of the element";
- output Option<DAE.ComponentRef> instanceOpt;
-algorithm
-  instanceOpt := match(source)
-    local Option<DAE.ComponentRef> pLst;
-    case DAE.SOURCE(instanceOpt = pLst) then pLst;
-  end match;
-end getElementSourceInstances;
-
-public function getElementSourceConnects
-"@author: adrpo
- retrieves the paths from the DAE.ElementSource.SOURCE.connectEquationOptLst"
- input DAE.ElementSource source "the source of the element";
- output list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst;
-algorithm
-  connectEquationOptLst := match(source)
-    local list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> pLst;
-    case DAE.SOURCE(connectEquationOptLst = pLst) then pLst;
-  end match;
-end getElementSourceConnects;
-
-public function getElementSourcePartOfs
-"@author: adrpo
- retrieves the withins from the DAE.ElementSource.SOURCE.partOfLst"
- input DAE.ElementSource source "the source of the element";
- output list<Absyn.Within> withinLst;
-algorithm
-  withinLst := match(source)
-    local list<Absyn.Within> pLst;
-    case DAE.SOURCE(partOfLst = pLst) then pLst;
-  end match;
-end getElementSourcePartOfs;
-
 public function addComponentTypeOpt "
   See setComponentType"
   input DAE.DAElist inDae;
@@ -4994,171 +4936,19 @@ protected function addComponentType2 "
   This function takes a dae element list and a type name and
   inserts the type name into each Var (variable) of the dae.
   This type name is the origin of the variable."
-  input DAE.Element elt;
+  input output DAE.Element elt;
   input Absyn.Path inPath;
-  output DAE.Element outElt;
 algorithm
-  outElt := match (elt,inPath)
+  elt := match elt
     local
-      DAE.ComponentRef cr;
-      DAE.VarKind kind;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      DAE.Type tp;
-      DAE.InstDims dim;
-      DAE.ConnectorType ct;
-      DAE.VarVisibility prot;
-      Option<DAE.Exp> bind;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      Absyn.Path newtype;
-      Absyn.InnerOuter io;
-      DAE.ElementSource source "the element origin";
-
-    case (DAE.VAR(componentRef = cr,
-               kind = kind,
-               direction = dir,
-               parallelism = prl,
-               protection = prot,
-               ty = tp,
-               binding = bind,
-               dims = dim,
-               connectorType = ct,
-               source = source,
-               variableAttributesOption = dae_var_attr,
-               comment = comment,
-               innerOuter=io),newtype)
+      DAE.ElementSource source;
+    case DAE.VAR()
       equation
-        source = addElementSourceType(source, newtype);
-      then
-        DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,dae_var_attr,comment,io);
+        elt.source = ElementSource.addElementSourceType(elt.source, inPath);
+      then elt;
     else elt;
   end match;
 end addComponentType2;
-
-protected function addElementSourceType
-  input DAE.ElementSource inSource;
-  input Absyn.Path classPath;
-  output DAE.ElementSource outSource;
-algorithm
-  outSource := match(inSource, classPath)
-    local
-      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Path> typeLst "the absyn type of the element" ;
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      list<DAE.SymbolicOperation> operations;
-      list<SCode.Comment> comment;
-
-    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations,comment), _)
-      then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, classPath::typeLst, operations,comment);
-  end match;
-end addElementSourceType;
-
-protected function addElementSourceTypeOpt
-  input DAE.ElementSource inSource;
-  input Option<Absyn.Path> classPathOpt;
-  output DAE.ElementSource outSource;
-algorithm
-  outSource := match(inSource, classPathOpt)
-    local
-      Absyn.Path classPath;
-      DAE.ElementSource src;
-    case (_, NONE()) then inSource; // no source change.
-    case (_, SOME(classPath))
-      equation
-        src = addElementSourceType(inSource, classPath);
-      then src;
-  end match;
-end addElementSourceTypeOpt;
-
-public function addElementSourcePartOf
-  input output DAE.ElementSource source;
-  input Absyn.Within withinPath;
-algorithm
-  source.partOfLst := withinPath::source.partOfLst;
-end addElementSourcePartOf;
-
-public function addElementSourcePartOfOpt
-  input DAE.ElementSource inSource;
-  input Option<Absyn.Path> classPathOpt;
-  output DAE.ElementSource outSource;
-algorithm
-  outSource := match(inSource, classPathOpt)
-    local
-      Absyn.Path classPath;
-      DAE.ElementSource src;
-    // a top level
-    case (_, NONE())
-      equation
-        _ = addElementSourcePartOf(inSource, Absyn.TOP());
-      then inSource;
-    case (_, SOME(classPath))
-      equation
-        src = addElementSourcePartOf(inSource, Absyn.WITHIN(classPath));
-      then src;
-  end match;
-end addElementSourcePartOfOpt;
-
-public function addElementSourceFileInfo
-  input DAE.ElementSource source;
-  input SourceInfo fileInfo;
-  output DAE.ElementSource outSource = source;
-algorithm
-  outSource := match outSource
-    case DAE.SOURCE()
-      algorithm
-        outSource.info := fileInfo;
-      then
-        outSource;
-  end match;
-end addElementSourceFileInfo;
-
-protected function addElementSourceInstanceOpt
-  input DAE.ElementSource inSource;
-  input Option<DAE.ComponentRef> instanceOpt;
-  output DAE.ElementSource outSource;
-algorithm
-  outSource := match(inSource, instanceOpt)
-    local
-      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
-      list<DAE.SymbolicOperation> operations;
-      list<SCode.Comment> comment;
-      DAE.ComponentRef cr;
-
-    // a NONE() means top level (equivalent to NO_PRE, SOME(cref) means subcomponent
-    case (_, NONE())
-      then inSource;
-    case (DAE.SOURCE(info,partOfLst,_,connectEquationOptLst,typeLst,operations,comment), SOME(cr))
-      then DAE.SOURCE(info,partOfLst,SOME(cr),connectEquationOptLst,typeLst,operations,comment);
-  end match;
-end addElementSourceInstanceOpt;
-
-public function addElementSourceConnectOpt
-  input DAE.ElementSource inSource;
-  input Option<tuple<DAE.ComponentRef,DAE.ComponentRef>> connectEquationOpt;
-  output DAE.ElementSource outSource;
-algorithm
-  outSource := match(inSource, connectEquationOpt)
-    local
-      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
-      list<DAE.SymbolicOperation> operations;
-      list<SCode.Comment> comment;
-
-    // a top level
-    case (_, NONE()) then inSource;
-    case (DAE.SOURCE(info,partOfLst,instanceOpt,connectEquationOptLst,typeLst,operations,comment), _)
-      then DAE.SOURCE(info,partOfLst,instanceOpt,connectEquationOpt::connectEquationOptLst,typeLst,operations,comment);
-  end match;
-end addElementSourceConnectOpt;
 
 public function isExtFunction "returns true if element matches an external function"
   input DAE.Function elt;
@@ -5180,75 +4970,6 @@ algorithm
     case(DAE.RECORD_CONSTRUCTOR(path=name)) then name;
   end match;
 end functionName;
-
-public function mergeSources
-  input DAE.ElementSource src1;
-  input DAE.ElementSource src2;
-  output DAE.ElementSource mergedSrc;
-algorithm
-  mergedSrc := match(src1,src2)
-    local
-      SourceInfo info;
-      list<Absyn.Within> partOfLst1,partOfLst2,p;
-      Option<DAE.ComponentRef> instanceOpt1,instanceOpt2,i;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst1,connectEquationOptLst2,c;
-      list<Absyn.Path> typeLst1,typeLst2,t;
-      list<DAE.SymbolicOperation> o,operations1,operations2;
-      list<SCode.Comment> comment, comment1,comment2;
-    case (DAE.SOURCE(info, partOfLst1, instanceOpt1, connectEquationOptLst1, typeLst1, operations1, comment1),
-          DAE.SOURCE(_ /* Discard */, partOfLst2, instanceOpt2, connectEquationOptLst2, typeLst2, operations2, comment2))
-      equation
-        p = List.union(partOfLst1, partOfLst2);
-        i = if isSome(instanceOpt1) then instanceOpt1 else instanceOpt2;
-        c = List.union(connectEquationOptLst1, connectEquationOptLst2);
-        t = List.union(typeLst1, typeLst2);
-        o = listAppend(operations1, operations2);
-        comment = List.union(comment1,comment2);
-      then DAE.SOURCE(info,p,i,c,t, o,comment);
- end match;
-end mergeSources;
-
-public function addCommentToSource
-  input DAE.ElementSource src1;
-  input Option<SCode.Comment> commentIn;
-  output DAE.ElementSource mergedSrc;
-algorithm
-  mergedSrc := match(src1,commentIn)
-    local
-      SourceInfo info;
-      list<Absyn.Within> partOfLst1;
-      Option<DAE.ComponentRef> instanceOpt1;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst1;
-      list<Absyn.Path> typeLst1;
-      list<DAE.SymbolicOperation> operations1;
-      list<SCode.Comment> comment1,comment2;
-      SCode.Comment comment;
-    case (DAE.SOURCE(info, partOfLst1, instanceOpt1, connectEquationOptLst1, typeLst1, operations1, comment1),SOME(comment))
-      equation
-        comment2 = comment::comment1;
-      then DAE.SOURCE(info,partOfLst1,instanceOpt1,connectEquationOptLst1,typeLst1, operations1,comment2);
-    else
-      then
-        src1;
- end match;
-end addCommentToSource;
-
-function createElementSource
-"@author: adrpo
- set the various sources of the element"
-  input SourceInfo fileInfo;
-  input Option<Absyn.Path> partOf "the model(s) this element came from";
-  input Option<DAE.ComponentRef> instanceOpt "the instance(s) this element is part of";
-  input Option<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOpt "this element came from this connect(s)";
-  input Option<Absyn.Path> typeOpt "the classes where the type(s) of the element is defined";
-  output DAE.ElementSource source;
-algorithm
-  source := addElementSourceFileInfo(DAE.emptyElementSource, fileInfo);
-  source := addElementSourcePartOfOpt(source, partOf);
-  source := addElementSourceInstanceOpt(source, instanceOpt);
-  source := addElementSourceConnectOpt(source, connectEquationOpt);
-  source := addElementSourceTypeOpt(source, typeOpt);
-end createElementSource;
 
 public function convertInlineTypeToBool "
 Author: BZ, 2009-12
@@ -6518,212 +6239,6 @@ algorithm
   DAE.ATTR(direction = outDir) := inAttr;
 end getAttrDirection;
 
-public function addSymbolicTransformation
-  input output DAE.ElementSource source;
-  input DAE.SymbolicOperation op;
-algorithm
-  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-    return;
-  end if;
-  source := match (source,op)
-    local
-      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Path> typeLst "the absyn type of the element" ;
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      list<DAE.SymbolicOperation> operations;
-      DAE.Exp h1,t1,t2;
-      list<DAE.Exp> es1,es2,es;
-      list<SCode.Comment> comment;
-
-    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es1 as (h1::_),t1)::operations,comment),DAE.SUBSTITUTION(es2,t2))
-      guard
-        // The tail of the new substitution chain is the same as the head of the old one...
-        Expression.expEqual(t2,h1)
-      equation
-        // Reference equality would be fine as otherwise it is not really a chain... But replaceExp is stupid :(
-        // true = referenceEq(t2,h1);
-        es = listAppend(es2,es1);
-      then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es,t1)::operations,comment);
-
-    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment),_)
-      then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, op::operations,comment);
-  end match;
-end addSymbolicTransformation;
-
-public function condAddSymbolicTransformation
-  input Boolean cond;
-  input output DAE.ElementSource source;
-  input DAE.SymbolicOperation op;
-algorithm
-  if not cond then
-    return;
-  end if;
-  source := addSymbolicTransformation(source,op);
-end condAddSymbolicTransformation;
-
-public function addSymbolicTransformationDeriveLst
-  input output DAE.ElementSource source;
-  input list<DAE.Exp> explst1;
-  input list<DAE.Exp> explst2;
-algorithm
-  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-    return;
-  end if;
-  source := match(explst1,explst2)
-    local
-      DAE.SymbolicOperation op;
-      list<DAE.Exp> rexplst1,rexplst2;
-      DAE.Exp exp1,exp2;
-    case({},_) then source;
-    case(exp1::rexplst1,exp2::rexplst2)
-      equation
-        op = DAE.OP_DIFFERENTIATE(DAE.crefTime,exp1,exp2);
-        source = addSymbolicTransformation(source,op);
-      then
-        addSymbolicTransformationDeriveLst(source,rexplst1,rexplst2);
-  end match;
-end addSymbolicTransformationDeriveLst;
-
-public function addSymbolicTransformationFlattenedEqs
-  input output DAE.ElementSource source;
-  input DAE.Element elt;
-algorithm
-  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-    return;
-  end if;
-  source := match (source,elt)
-    local
-      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Path> typeLst "the absyn type of the element" ;
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      list<DAE.SymbolicOperation> operations;
-      DAE.Exp h1,t1,t2;
-      list<SCode.Comment> comment;
-      SCode.EEquation scode;
-      list<DAE.Element> elts;
-    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,NONE())::operations,comment),_)
-      then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,SOME(elt))::operations,comment);
-    case (DAE.SOURCE(info=info),_)
-      equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Tried to add the flattened elements to the list of operations, but did not find the SCode equation"}, info);
-      then fail();
-  end match;
-end addSymbolicTransformationFlattenedEqs;
-
-public function addSymbolicTransformationSubstitutionLst
-  input list<Boolean> add;
-  input output DAE.ElementSource source;
-  input list<DAE.Exp> explst1;
-  input list<DAE.Exp> explst2;
-algorithm
-  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-    return;
-  end if;
-  source := match(add,explst1,explst2)
-    local
-      list<Boolean> brest;
-      list<DAE.Exp> rexplst1,rexplst2;
-      DAE.Exp exp1,exp2;
-    case({},_,_) then source;
-    case(true::brest,exp1::rexplst1,exp2::rexplst2)
-      equation
-        source = addSymbolicTransformationSubstitution(true,source,exp1,exp2);
-      then
-        addSymbolicTransformationSubstitutionLst(brest,source,rexplst1,rexplst2);
-    case(false::brest,_::rexplst1,_::rexplst2)
-      then
-        addSymbolicTransformationSubstitutionLst(brest,source,rexplst1,rexplst2);
-  end match;
-end addSymbolicTransformationSubstitutionLst;
-
-public function addSymbolicTransformationSubstitution
-  input Boolean add;
-  input output DAE.ElementSource source;
-  input DAE.Exp exp1;
-  input DAE.Exp exp2;
-algorithm
-  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-    return;
-  end if;
-  source := condAddSymbolicTransformation(add,source,DAE.SUBSTITUTION({exp2},exp1));
-end addSymbolicTransformationSubstitution;
-
-public function addSymbolicTransformationSimplifyLst
-  input list<Boolean> add;
-  input output DAE.ElementSource source;
-  input list<DAE.Exp> explst1;
-  input list<DAE.Exp> explst2;
-algorithm
-  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-    return;
-  end if;
-  source := match(add,explst1,explst2)
-    local
-      list<Boolean> brest;
-      list<DAE.Exp> rexplst1,rexplst2;
-      DAE.Exp exp1,exp2;
-    case({},_,_) then source;
-    case(true::brest,exp1::rexplst1,exp2::rexplst2)
-      equation
-        source = addSymbolicTransformation(source, DAE.SIMPLIFY(DAE.PARTIAL_EQUATION(exp1),DAE.PARTIAL_EQUATION(exp2)));
-      then
-        addSymbolicTransformationSimplifyLst(brest,source,rexplst1,rexplst2);
-    case(false::brest,_::rexplst1,_::rexplst2)
-      then
-        addSymbolicTransformationSimplifyLst(brest,source,rexplst1,rexplst2);
-  end match;
-end addSymbolicTransformationSimplifyLst;
-
-public function addSymbolicTransformationSimplify
-  input Boolean add;
-  input output DAE.ElementSource source;
-  input DAE.EquationExp exp1;
-  input DAE.EquationExp exp2;
-algorithm
-  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-    return;
-  end if;
-  source := condAddSymbolicTransformation(add,source,DAE.SIMPLIFY(exp1,exp2));
-end addSymbolicTransformationSimplify;
-
-public function addSymbolicTransformationSolve
-  input Boolean add;
-  input output DAE.ElementSource source;
-  input DAE.ComponentRef cr;
-  input DAE.Exp exp1;
-  input DAE.Exp exp2;
-  input DAE.Exp exp;
-  input list<DAE.Statement> asserts;
-algorithm
-  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-    return;
-  end if;
-  source := match (add,source,cr,exp1,exp2,exp,asserts)
-    local
-      list<DAE.Exp> assertExps;
-      DAE.SymbolicOperation op,op1,op2;
-    case (false,_,_,_,_,_,_) then source;
-    else
-      equation
-        assertExps = List.map(asserts,Algorithm.getAssertCond);
-        op1 = DAE.SOLVE(cr,exp1,exp2,exp,assertExps);
-        op2 = DAE.SOLVED(cr,exp2) "If it was already on solved form";
-        op = if Expression.expEqual(exp2,exp) then op2 else op1;
-      then addSymbolicTransformation(source,op);
-  end match;
-end addSymbolicTransformationSolve;
-
-public function getSymbolicTransformations
-  input DAE.ElementSource source;
-  output list<DAE.SymbolicOperation> ops;
-algorithm
-  DAE.SOURCE(operations=ops) := source;
-end getSymbolicTransformations;
-
 public function translateSCodeAttrToDAEAttr
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
@@ -6926,71 +6441,6 @@ algorithm
   DAE.DAE(outElements) := inDAE;
 end getElements;
 
-public function addAdditionalComment
-  input DAE.ElementSource source;
-  input String message;
-  output DAE.ElementSource outSource;
-algorithm
-  outSource := match (source,message)
-    local
-      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Path> typeLst "the absyn type of the element" ;
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      list<DAE.SymbolicOperation> operations;
-      list<SCode.Comment> comment;
-      Boolean b;
-      SCode.Comment c;
-
-    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment),_)
-      equation
-        c = SCode.COMMENT(NONE(), SOME(message));
-        b = listMember(c, comment);
-        comment = if b then comment else (c::comment);
-      then
-        DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment);
-
-  end match;
-end addAdditionalComment;
-
-public function addAnnotation
-  input DAE.ElementSource source;
-  input SCode.Comment comment;
-  output DAE.ElementSource outSource;
-algorithm
-  outSource := match (source,comment)
-    local
-      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Path> typeLst "the absyn type of the element" ;
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      list<DAE.SymbolicOperation> operations;
-      list<SCode.Comment> commentLst;
-      Boolean b;
-      SCode.Comment c;
-
-    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, commentLst),SCode.COMMENT(annotation_=SOME(_)))
-      then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment::commentLst);
-    else source;
-
-  end match;
-end addAnnotation;
-
-public function getCommentsFromSource
-  input DAE.ElementSource source;
-  output list<SCode.Comment> outComments;
-algorithm
-  outComments := match (source)
-    local
-      list<SCode.Comment> comment;
-
-    case (DAE.SOURCE(comment = comment)) then comment;
-
-  end match;
-end getCommentsFromSource;
-
 public function mkEmptyVar
   input String name;
   output DAE.Var outVar;
@@ -7002,71 +6452,6 @@ algorithm
               DAE.UNBOUND(),
               NONE());
 end mkEmptyVar;
-
-public function getElementSource
-  input DAE.Element element;
-  output DAE.ElementSource source;
-algorithm
-  source := match element
-    case DAE.VAR(source=source) then source;
-    case DAE.DEFINE(source=source) then source;
-    case DAE.INITIALDEFINE(source=source) then source;
-    case DAE.EQUATION(source=source) then source;
-    case DAE.EQUEQUATION(source=source) then source;
-    case DAE.ARRAY_EQUATION(source=source) then source;
-    case DAE.INITIAL_ARRAY_EQUATION(source=source) then source;
-    case DAE.COMPLEX_EQUATION(source=source) then source;
-    case DAE.INITIAL_COMPLEX_EQUATION(source=source) then source;
-    case DAE.WHEN_EQUATION(source=source) then source;
-    case DAE.IF_EQUATION(source=source) then source;
-    case DAE.INITIAL_IF_EQUATION(source=source) then source;
-    case DAE.INITIALEQUATION(source=source) then source;
-    case DAE.ALGORITHM(source=source) then source;
-    case DAE.INITIALALGORITHM(source=source) then source;
-    case DAE.COMP(source=source) then source;
-    case DAE.EXTOBJECTCLASS(source=source) then source;
-    case DAE.ASSERT(source=source) then source;
-    case DAE.TERMINATE(source=source) then source;
-    case DAE.REINIT(source=source) then source;
-    case DAE.NORETCALL(source=source) then source;
-    case DAE.CONSTRAINT(source=source) then source;
-    case DAE.INITIAL_NORETCALL(source=source) then source;
-
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"DAEUtil.getElementSource failed: Element does not have a source"});
-      then fail();
-  end match;
-end getElementSource;
-
-public function getStatementSource
-  "Returns the element source associated with a statement."
-  input DAE.Statement inStatement;
-  output DAE.ElementSource outSource;
-algorithm
-  outSource := match(inStatement)
-    local
-      DAE.ElementSource source;
-
-    case DAE.STMT_ASSIGN(source = source) then source;
-    case DAE.STMT_TUPLE_ASSIGN(source = source) then source;
-    case DAE.STMT_ASSIGN_ARR(source = source) then source;
-    case DAE.STMT_IF(source = source) then source;
-    case DAE.STMT_FOR(source = source) then source;
-    case DAE.STMT_PARFOR(source = source) then source;
-    case DAE.STMT_WHILE(source = source) then source;
-    case DAE.STMT_WHEN(source = source) then source;
-    case DAE.STMT_ASSERT(source = source) then source;
-    case DAE.STMT_TERMINATE(source = source) then source;
-    case DAE.STMT_REINIT(source = source) then source;
-    case DAE.STMT_NORETCALL(source = source) then source;
-    case DAE.STMT_RETURN(source = source) then source;
-    case DAE.STMT_BREAK(source = source) then source;
-    case DAE.STMT_ARRAY_INIT(source = source) then source;
-    case DAE.STMT_FAILURE(source = source) then source;
-
-  end match;
-end getStatementSource;
 
 public function sortDAEInModelicaCodeOrder
 "@author: adrpo

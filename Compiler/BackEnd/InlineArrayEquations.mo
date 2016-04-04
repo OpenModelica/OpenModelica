@@ -43,6 +43,7 @@ protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import DAEUtil;
 protected import Debug;
+protected import ElementSource;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -223,7 +224,7 @@ algorithm
       tp = Expression.typeof(inExp1);
       true = DAEUtil.expTypeComplex(tp);
       size = Expression.sizeOf(tp);
-      source = DAEUtil.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
+      source = ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
     then ((i+1, BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(inDiffed, inEqKind))::eqns));
 
     // array types to array equations
@@ -232,7 +233,7 @@ algorithm
       true = DAEUtil.expTypeArray(tp);
       dims = Expression.arrayDimension(tp);
       ds = Expression.dimensionsSizes(dims);
-      source = DAEUtil.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
+      source = ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
     then ((i+1, BackendDAE.ARRAY_EQUATION(ds, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(inDiffed, inEqKind))::eqns));
 
     // other types
@@ -241,7 +242,7 @@ algorithm
       b1 = DAEUtil.expTypeComplex(tp);
       b2 = DAEUtil.expTypeArray(tp);
       false = b1 or b2;
-      source = DAEUtil.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
+      source = ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
     then ((i+1, BackendDAE.EQUATION(inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(inDiffed, inEqKind))::eqns));
 
     else equation

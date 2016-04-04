@@ -51,6 +51,7 @@ protected import ConnectUtil;
 protected import DAEUtil;
 protected import Debug;
 protected import Dump;
+protected import ElementSource;
 protected import Error;
 protected import ErrorExt;
 protected import Expression;
@@ -842,7 +843,7 @@ algorithm
           then
             str2 = Dump.unparseInnerouterStr(io);
             str = ComponentReference.printComponentRefStr(cr);
-            info = DAEUtil.getElementSourceFileInfo(source);
+            info = ElementSource.getElementSourceFileInfo(source);
             Error.addSourceMessage(Error.MISSING_INNER_PREFIX, {str,str2}, info);
             fail();
           end if;

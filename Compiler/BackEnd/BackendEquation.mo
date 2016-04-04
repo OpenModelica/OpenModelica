@@ -52,6 +52,7 @@ protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
+protected import ElementSource;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -1807,7 +1808,7 @@ algorithm
 
     case (_, _, _, _, (i, _)) equation
       str = "BackendEquation.equationTupleToScalarResidualForm failed: " + intString(i) + ": " + ExpressionDump.printExpStr(cr);
-      Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, DAEUtil.getElementSourceFileInfo(inSource));
+      Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, ElementSource.getElementSourceFileInfo(inSource));
     then fail();
   end match;
 end equationTupleToScalarResidualForm;
@@ -1892,7 +1893,7 @@ public function equationInfo "
   input BackendDAE.Equation eq;
   output SourceInfo info;
 algorithm
-  info := DAEUtil.getElementSourceFileInfo(equationSource(eq));
+  info := ElementSource.getElementSourceFileInfo(equationSource(eq));
 end equationInfo;
 
 public function markedEquationSource
@@ -2944,35 +2945,35 @@ algorithm
       BackendDAE.EquationAttributes eqAttr;
 
     case (BackendDAE.EQUATION(e1, e2, source, eqAttr), _) equation
-      source = DAEUtil.addSymbolicTransformation(source, inSymOp);
+      source = ElementSource.addSymbolicTransformation(source, inSymOp);
     then BackendDAE.EQUATION(e1, e2, source, eqAttr);
 
     case (BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, eqAttr), _) equation
-      source = DAEUtil.addSymbolicTransformation(source, inSymOp);
+      source = ElementSource.addSymbolicTransformation(source, inSymOp);
     then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, eqAttr);
 
     case (BackendDAE.SOLVED_EQUATION(cr1, e1, source, eqAttr), _) equation
-      source = DAEUtil.addSymbolicTransformation(source, inSymOp);
+      source = ElementSource.addSymbolicTransformation(source, inSymOp);
     then BackendDAE.SOLVED_EQUATION(cr1, e1, source, eqAttr);
 
     case (BackendDAE.RESIDUAL_EQUATION(e1, source, eqAttr), _) equation
-      source = DAEUtil.addSymbolicTransformation(source, inSymOp);
+      source = ElementSource.addSymbolicTransformation(source, inSymOp);
     then BackendDAE.RESIDUAL_EQUATION(e1, source, eqAttr);
 
     case (BackendDAE.ALGORITHM(size, alg, source, crefExpand, eqAttr), _) equation
-      source = DAEUtil.addSymbolicTransformation(source, inSymOp);
+      source = ElementSource.addSymbolicTransformation(source, inSymOp);
     then BackendDAE.ALGORITHM(size, alg, source, crefExpand, eqAttr);
 
     case (BackendDAE.WHEN_EQUATION(size, whenEquation, source, eqAttr), _) equation
-      source = DAEUtil.addSymbolicTransformation(source, inSymOp);
+      source = ElementSource.addSymbolicTransformation(source, inSymOp);
     then BackendDAE.WHEN_EQUATION(size, whenEquation, source, eqAttr);
 
     case (BackendDAE.COMPLEX_EQUATION(size, e1, e2, source, eqAttr), _) equation
-      source = DAEUtil.addSymbolicTransformation(source, inSymOp);
+      source = ElementSource.addSymbolicTransformation(source, inSymOp);
     then BackendDAE.COMPLEX_EQUATION(size, e1, e2, source, eqAttr);
 
     case (BackendDAE.IF_EQUATION(conditions, eqnstrue, eqnsfalse, source, eqAttr), _) equation
-      source = DAEUtil.addSymbolicTransformation(source, inSymOp);
+      source = ElementSource.addSymbolicTransformation(source, inSymOp);
     then BackendDAE.IF_EQUATION(conditions, eqnstrue, eqnsfalse, source, eqAttr);
 
     else equation

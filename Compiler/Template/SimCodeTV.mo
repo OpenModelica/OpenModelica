@@ -3340,11 +3340,14 @@ package Algorithm
   end getStatementSource;
 end Algorithm;
 
-package DAEUtil
+package ElementSource
   function getElementSourceFileInfo
     input DAE.ElementSource source;
     output builtin.SourceInfo info;
   end getElementSourceFileInfo;
+end ElementSource;
+
+package DAEUtil
 
   function statementsContainReturn
     input list<DAE.Statement> stmts;

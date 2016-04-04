@@ -51,6 +51,7 @@ protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
+protected import ElementSource;
 protected import Error;
 protected import Flags;
 protected import InstBinding;
@@ -300,7 +301,7 @@ algorithm
       equation
         true = Config.splitArrays();
         s = ComponentReference.printComponentRefStr(vn);
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {s}, info);
       then
         fail();

@@ -55,10 +55,10 @@ import Ceval;
 import ClockIndexes;
 import Config;
 import ComponentReference;
-import DAEUtil;
 import Debug;
 import Differentiate;
 import DynamicOptimization;
+import ElementSource;
 import ExecStat.execStat;
 import Expression;
 import ExpressionDump;
@@ -861,7 +861,7 @@ algorithm
         (solvedVals, linInfo) = System.dgesv(jacVals, rhsVals);
         names = List.map(var_lst, BackendVariable.varCref);
         checkLinearSystem(linInfo, names, jacVals, rhsVals, eqn_lst);
-        sources = List.map1( sources, DAEUtil.addSymbolicTransformation,
+        sources = List.map1( sources, ElementSource.addSymbolicTransformation,
                              DAE.LINEAR_SOLVED(names, jacVals, rhsVals, solvedVals) );
         (v, eqns, shared) = changeConstantLinearSystemVars( var_lst, solvedVals, sources, var_indxs,
                                                                            syst.orderedVars, syst.orderedEqs, ishared );

@@ -58,6 +58,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import FCore;
 protected import FGraph;
+protected import ElementSource;
 protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
@@ -5666,13 +5667,13 @@ algorithm
       equation
         (e,changed) = simplify(e);
         outExp = if changed then DAE.PARTIAL_EQUATION(e) else exp;
-        outSource = DAEUtil.condAddSymbolicTransformation(changed,source,DAE.SIMPLIFY(exp,outExp));
+        outSource = ElementSource.condAddSymbolicTransformation(changed,source,DAE.SIMPLIFY(exp,outExp));
       then (outExp,outSource);
     case (DAE.RESIDUAL_EXP(e),_)
       equation
         (e,changed) = simplify(e);
         outExp = if changed then DAE.RESIDUAL_EXP(e) else exp;
-        outSource = DAEUtil.condAddSymbolicTransformation(changed,source,DAE.SIMPLIFY(exp,outExp));
+        outSource = ElementSource.condAddSymbolicTransformation(changed,source,DAE.SIMPLIFY(exp,outExp));
       then (outExp,outSource);
     case (DAE.EQUALITY_EXPS(e1,e2),_)
       equation
@@ -5680,7 +5681,7 @@ algorithm
         (e2,changed2) = simplify(e2);
         changed = changed1 or changed2;
         outExp = if changed then DAE.EQUALITY_EXPS(e1,e2) else exp;
-        outSource = DAEUtil.condAddSymbolicTransformation(changed,source,DAE.SIMPLIFY(exp,outExp));
+        outSource = ElementSource.condAddSymbolicTransformation(changed,source,DAE.SIMPLIFY(exp,outExp));
       then (outExp,outSource);
     else
       equation

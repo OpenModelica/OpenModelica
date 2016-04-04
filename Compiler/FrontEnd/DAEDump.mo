@@ -47,6 +47,7 @@ public import SCode;
 protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
+protected import ElementSource;
 protected import Error;
 protected import Print;
 protected import Util;
@@ -980,7 +981,7 @@ algorithm
 
     case (DAE.EQUATION(exp = e1,scalar = e2,source = src))
       equation
-        cmt = DAEUtil.getCommentsFromSource(src);
+        cmt = ElementSource.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -990,7 +991,7 @@ algorithm
 
      case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2,source = src))
       equation
-        cmt = DAEUtil.getCommentsFromSource(src);
+        cmt = ElementSource.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
         s1 = ComponentReference.printComponentRefStr(cr1);
         s2 = ComponentReference.printComponentRefStr(cr2);
@@ -1000,7 +1001,7 @@ algorithm
 
     case(DAE.ARRAY_EQUATION(exp=e1,array=e2,source = src))
       equation
-        cmt = DAEUtil.getCommentsFromSource(src);
+        cmt = ElementSource.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1010,7 +1011,7 @@ algorithm
 
     case(DAE.COMPLEX_EQUATION(lhs=e1,rhs=e2,source = src))
       equation
-        cmt = DAEUtil.getCommentsFromSource(src);
+        cmt = ElementSource.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1020,7 +1021,7 @@ algorithm
 
     case (DAE.DEFINE(componentRef = c,exp = e,source = src))
       equation
-        cmt = DAEUtil.getCommentsFromSource(src);
+        cmt = ElementSource.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
         s1 = ComponentReference.printComponentRefStr(c);
         s2 = stringAppend("  ", s1);
@@ -1033,7 +1034,7 @@ algorithm
 
     case (DAE.ASSERT(condition=e1,message = e2,source = src))
       equation
-        cmt = DAEUtil.getCommentsFromSource(src);
+        cmt = ElementSource.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1043,7 +1044,7 @@ algorithm
 
     case (DAE.TERMINATE(message=e1,source = src))
       equation
-        cmt = DAEUtil.getCommentsFromSource(src);
+        cmt = ElementSource.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
         s1 = ExpressionDump.printExpStr(e1);
         str = stringAppendList({"  terminate(",s1,") ", sourceStr, ";\n"});
@@ -1052,7 +1053,7 @@ algorithm
 
     case (DAE.NORETCALL(exp=e1,source = src))
       equation
-        cmt = DAEUtil.getCommentsFromSource(src);
+        cmt = ElementSource.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
         s1 = ExpressionDump.printExpStr(e1);
         str = stringAppendList({"  ", s1, sourceStr, ";\n"});
@@ -1352,7 +1353,7 @@ algorithm
         Print.printBuf(" := ");
         ExpressionDump.printExp(e);
         if Config.typeinfo() then
-          Print.printBuf(" /* " + Error.infoStr(DAEUtil.getElementSourceFileInfo(source)) + " */");
+          Print.printBuf(" /* " + Error.infoStr(ElementSource.getElementSourceFileInfo(source)) + " */");
         end if;
         Print.printBuf(";\n");
       then
@@ -2809,16 +2810,16 @@ algorithm
 
         str := IOStream.append(str, name + cstr + "\n");
 
-	      str := dumpCompWithSplitElementsStream(sm, str);
-	      str := dumpVarsStream(v, false, str);
-	      str := IOStream.append(str, if listEmpty(ie) then "" else "initial equation\n");
-	      str := dumpInitialEquationsStream(ie, str);
-	      str := dumpInitialAlgorithmsStream(ia, str);
-	      str := IOStream.append(str, if listEmpty(e) then "" else "equation\n");
-	      str := dumpEquationsStream(e, str);
-	      str := dumpAlgorithmsStream(a, str);
-	      str := IOStream.append(str, if listEmpty(co) then "" else "constraint\n");
-	      str := dumpConstraintStream(co, str);
+        str := dumpCompWithSplitElementsStream(sm, str);
+        str := dumpVarsStream(v, false, str);
+        str := IOStream.append(str, if listEmpty(ie) then "" else "initial equation\n");
+        str := dumpInitialEquationsStream(ie, str);
+        str := dumpInitialAlgorithmsStream(ia, str);
+        str := IOStream.append(str, if listEmpty(e) then "" else "equation\n");
+        str := dumpEquationsStream(e, str);
+        str := dumpAlgorithmsStream(a, str);
+        str := IOStream.append(str, if listEmpty(co) then "" else "constraint\n");
+        str := dumpConstraintStream(co, str);
 
         str := IOStream.append(str, "end " + name + cstr + ";\n");
         str := dumpCompWithSplitElementsStream(xs, str);

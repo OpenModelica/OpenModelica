@@ -54,6 +54,7 @@ public import SCode;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
+protected import ElementSource;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -206,7 +207,7 @@ algorithm
         DAE.C_PARAM() = Types.propAnyConst(lprop);
         lhs_str = ExpressionDump.printExpStr(lhs);
         rhs_str = ExpressionDump.printExpStr(rhs);
-        Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str, rhs_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str, rhs_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
 
@@ -214,7 +215,7 @@ algorithm
     case (lhs, _, _, _, DAE.ATTR(variability = SCode.CONST()), _, _)
       equation
         lhs_str = ExpressionDump.printExpStr(lhs);
-        Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"constant", lhs_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"constant", lhs_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
 
@@ -241,7 +242,7 @@ algorithm
         rhs_str = ExpressionDump.printExpStr(rhs);
         lt_str = Types.unparseTypeNoAttr(lt);
         rt_str = Types.unparseTypeNoAttr(rt);
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         Types.typeErrorSanityCheck(lt_str, rt_str, info);
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
           {lhs_str, rhs_str, lt_str, rt_str}, info);
@@ -286,9 +287,9 @@ algorithm
           case DAE.CALL(attr=DAE.CALL_ATTR(builtin=true), path=Absyn.IDENT("listAppend"), expLst=(e1 as DAE.CREF())::_)
             guard Expression.expEqual(lhs, e1)
             algorithm
-              print(stringDelimitList(list(SCodeDump.printCommentAndAnnotationStr(comment) for comment in DAEUtil.getCommentsFromSource(source)), "\n"));
-              if not max(SCode.commentHasBooleanNamedAnnotation(comment, "__OpenModelica_DisableListAppendWarning") for comment in DAEUtil.getCommentsFromSource(source)) then
-                Error.addSourceMessage(Error.LIST_REVERSE_WRONG_ORDER, {ExpressionDump.printExpStr(e1)}, DAEUtil.getElementSourceFileInfo(source));
+              print(stringDelimitList(list(SCodeDump.printCommentAndAnnotationStr(comment) for comment in ElementSource.getCommentsFromSource(source)), "\n"));
+              if not max(SCode.commentHasBooleanNamedAnnotation(comment, "__OpenModelica_DisableListAppendWarning") for comment in ElementSource.getCommentsFromSource(source)) then
+                Error.addSourceMessage(Error.LIST_REVERSE_WRONG_ORDER, {ExpressionDump.printExpStr(e1)}, ElementSource.getElementSourceFileInfo(source));
                 fail();
               end if;
             then ();
@@ -398,7 +399,7 @@ algorithm
         s = stringDelimitList(sl, ", ");
         lhs_str = stringAppendList({"(", s, ")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
-        Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str, rhs_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str, rhs_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
     case (lhs, lprop, rhs, _, SCode.NON_INITIAL(), _)
@@ -409,7 +410,7 @@ algorithm
         s = stringDelimitList(sl, ", ");
         lhs_str = stringAppendList({"(", s, ")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
-        Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str, rhs_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str, rhs_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
     // a normal prop in rhs that contains a T_TUPLE!
@@ -498,7 +499,7 @@ algorithm
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseTypeNoAttr(t);
-        Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
   end matchcontinue;
@@ -611,7 +612,7 @@ algorithm
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseTypeNoAttr(t);
-        info = DAEUtil.getElementSourceFileInfo(inSource);
+        info = ElementSource.getElementSourceFileInfo(inSource);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str}, info);
       then
         fail();
@@ -656,7 +657,7 @@ algorithm
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseTypeNoAttr(t);
-        Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
   end matchcontinue;
@@ -693,7 +694,7 @@ algorithm
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseTypeNoAttr(t);
-        Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
   end matchcontinue;
@@ -719,7 +720,7 @@ algorithm
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseTypeNoAttr(t);
-        Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
   end matchcontinue;
@@ -748,7 +749,7 @@ algorithm
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseTypeNoAttr(t);
-        Error.addSourceMessage(Error.WHEN_CONDITION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.WHEN_CONDITION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
   end matchcontinue;
@@ -778,7 +779,7 @@ algorithm
 
     else
       equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"reinit called with wrong args"}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"reinit called with wrong args"}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
 
@@ -808,7 +809,7 @@ algorithm
       then {DAE.STMT_ASSERT(cond, msg, level, source)};
     case (_, _, _, DAE.PROP(type_ = t1), DAE.PROP(type_ = t2), DAE.PROP(type_ = t3), _)
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         strExp = ExpressionDump.printExpStr(cond);
         strTy = Types.unparseType(t1);
         Error.assertionOrAddSourceMessage(Types.isBooleanOrSubTypeBoolean(t1), Error.EXP_TYPE_MISMATCH, {strExp, "Boolean", strTy}, info);

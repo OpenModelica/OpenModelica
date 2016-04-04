@@ -50,9 +50,9 @@ import BackendEquation;
 import BackendVariable;
 import ClockIndexes;
 import Config;
-import DAEUtil;
 import Debug;
 import DumpGraphML;
+import ElementSource;
 import Error;
 import Flags;
 import IndexReduction;
@@ -4157,7 +4157,7 @@ algorithm
         unmatched1 = getUnassigned(nv, ass2, {});
         var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
         source = BackendEquation.markedEquationSource(isyst, listHead(unmatched1));
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
       then
         fail();
@@ -6507,7 +6507,7 @@ algorithm
   vars := List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
   var_str := BackendDump.dumpMarkedVars(isyst, vars);
   source := BackendEquation.markedEquationSource(isyst, listHead(unmatched1));
-  info := DAEUtil.getElementSourceFileInfo(source);
+  info := ElementSource.getElementSourceFileInfo(source);
   Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
 end singularSystemError;
 

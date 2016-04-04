@@ -123,6 +123,7 @@ import Config;
 import DAEUtil;
 import Debug;
 import Dump;
+import ElementSource;
 import Error;
 import ErrorExt;
 import ExecStat;
@@ -202,7 +203,7 @@ algorithm
         env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
 
         // set the source of this element
-        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
+        source = ElementSource.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
 
         if Flags.isSet(Flags.GC_PROF) then
           print(GC.profStatsStr(GC.getProfStats(), head="GC stats after pre-frontend work (building graphs):") + "\n");
@@ -274,7 +275,7 @@ algorithm
         //System.startTimer();
         //print("\nSetSource+DAE");
         // set the source of this element
-        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
+        source = ElementSource.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
         daeElts = DAEUtil.daeElements(dae);
         cmt = SCode.getElementComment(cdef);
         dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,cmt)});
@@ -386,7 +387,7 @@ algorithm
         (cache,env) = Builtin.initialGraph(cache);
         env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
         cdecls = List.map1(cdecls,SCode.classSetPartial,SCode.NOT_PARTIAL());
-        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
+        source = ElementSource.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
         (cache,env_2,ih,dae) = instClassInProgram(cache, env_1, ih, cdecls, path, source);
       then
         (cache,env_2,ih,dae);
@@ -405,7 +406,7 @@ algorithm
         pathstr = Absyn.pathString(path);
 
         // set the source of this element
-        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
+        source = ElementSource.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
         daeElts = DAEUtil.daeElements(dae);
         cmt = SCode.getElementComment(cdef);
         dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,cmt)});
@@ -2219,7 +2220,7 @@ algorithm
         // If we are currently instantiating a connector, add all flow variables
         // in it as inside connectors.
         zero_dims = InstUtil.instDimsHasZeroDims(inst_dims);
-        elementSource = DAEUtil.createElementSource(info, FGraph.getScopePath(env3), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        elementSource = ElementSource.createElementSource(info, FGraph.getScopePath(env3), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         csets1 = ConnectUtil.addConnectorVariablesFromDAE(zero_dims, ci_state1, pre, vars, info, elementSource, csets);
 
         // Reorder the connect equations to have non-expandable connect first:

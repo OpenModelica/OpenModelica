@@ -59,9 +59,9 @@ protected import BaseHashSet;
 protected import BaseHashTable;
 protected import Ceval;
 protected import ComponentReference;
-protected import DAEUtil;
 protected import SimCodeUtil;
 protected import Debug;
+protected import ElementSource;
 protected import Error;
 protected import EvaluateFunctions;
 protected import Expression;
@@ -1466,7 +1466,7 @@ algorithm
         crexp2 = negateExpression(negatedCr2, crexp2, crexp2, " generateSimpleContainter ");
         lhs = ExpressionDump.printExpStr(crexp1);
         rhs = ExpressionDump.printExpStr(crexp2);
-        Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {lhs, rhs}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {lhs, rhs}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
 
@@ -1500,7 +1500,7 @@ algorithm
         crexp1 = negateExpression(negatedCr1, crexp1, crexp1, " checkEqualAlias ");
         crexp2 = negateExpression(negatedCr2, crexp2, crexp2, " checkEqualAlias ");
         eqn_str = ExpressionDump.printExpStr(crexp1) + " = " + ExpressionDump.printExpStr(crexp2) + "\n";
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str, var_str}, info);
       then
         fail();
@@ -2652,7 +2652,7 @@ algorithm
   BackendDAE.VAR(varName=cr) := v;
   // add bindExp
   v1 := BackendVariable.setBindExp(v, SOME(exp));
-  ops := DAEUtil.getSymbolicTransformations(source);
+  ops := ElementSource.getSymbolicTransformations(source);
   v1 := BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr, exp)::ops);
   // State?
   bs := BackendVariable.isStateVar(v);
@@ -2786,7 +2786,7 @@ algorithm
         crexp = negateExpression(negated, crexp, crexp, " PARAMETERLAIAS ");
         lhs = ExpressionDump.printExpStr(exp);
         rhs = ExpressionDump.printExpStr(crexp);
-        Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {lhs, rhs}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {lhs, rhs}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
 
@@ -2794,7 +2794,7 @@ algorithm
       equation
         // report error
         rhs = ExpressionDump.printExpStr(exp);
-        Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {"time", rhs}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {"time", rhs}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
 
@@ -2803,7 +2803,7 @@ algorithm
         // report error
         lhs = ExpressionDump.printExpStr(exp);
         rhs = ExpressionDump.printExpStr(exp1);
-        Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {lhs, rhs}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {lhs, rhs}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
 
@@ -2833,7 +2833,7 @@ algorithm
   oSource := match(optExp, exp, iSource)
     local DAE.Exp e;
     case (NONE(), _, _) then iSource;
-    case (SOME(e), _, _) then DAEUtil.addSymbolicTransformationSubstitution(true, iSource, exp, e);
+    case (SOME(e), _, _) then ElementSource.addSymbolicTransformationSubstitution(true, iSource, exp, e);
   end match;
 end addSubstitutionOption;
 
@@ -4474,7 +4474,7 @@ algorithm
       // add bindExp
       v := BackendVariable.setBindExp(v, SOME(e));
       // Update this to given source information!!!!
-      ops := DAEUtil.getSymbolicTransformations(DAE.emptyElementSource);
+      ops := ElementSource.getSymbolicTransformations(DAE.emptyElementSource);
       v := BackendVariable.mergeVariableOperations(v, DAE.SOLVED(cr, e)::ops);
       bs := BackendVariable.isStateVar(v);
       v := if bs then BackendVariable.setVarKind(v, BackendDAE.DUMMY_STATE()) else v;
@@ -4816,7 +4816,7 @@ algorithm
         BackendDAE.EQUATION(scalar=res, source=source, attr=eqAttr) = BackendEquation.solveEquation(eq, Expression.crefExp(cr1),NONE());
         (res,_) = Expression.replaceExp(res,Expression.crefExp(cr),value);
         (res,_) = ExpressionSimplify.simplify(res);
-        //source = DAEUtil.addSymbolicTransformationSubstitution(true, source, Expression.crefExp(cr1), res);
+        //source = ElementSource.addSymbolicTransformationSubstitution(true, source, Expression.crefExp(cr1), res);
         HTCrToExp = addToCrToExp(cr1, BackendDAE.EQUATION(Expression.crefExp(cr1), res, source, eqAttr), inHTCrToExp, inHTCrToCrEqLst);
       end if;
       HTCrToExp = solveAllCrefs1(cr, value, cr_eq_rest, HTCrToExp, inHTCrToCrEqLst);

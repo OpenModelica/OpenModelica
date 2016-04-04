@@ -46,6 +46,7 @@ public import DAE;
 protected import ComponentReference;
 protected import Debug;
 protected import Differentiate;
+protected import ElementSource;
 protected import Expression;
 protected import ExpressionDump;
 protected import BackendDump;
@@ -136,12 +137,12 @@ algorithm
 
   try
     e := solve2(e1, e2, varexp, SOME(shared.functionTree), NONE(), false, isContinuousIntegration);
-    source := DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, e, {});
+    source := ElementSource.addSymbolicTransformationSolve(true, source, cr, e1, e2, e, {});
     eqn := BackendEquation.generateEquation(varexp, e, source, attr);
     solved := true;
   else
     //eqn is change by possible simplification inside preprocessingSolve for solve the eqn with respect to varexp
-    //source := DAEUtil.addSymbolicTransformationSimplify(true, source, DAE.PARTIAL_EQUATION(e1), DAE.PARTIAL_EQUATION(e2));
+    //source := ElementSource.addSymbolicTransformationSimplify(true, source, DAE.PARTIAL_EQUATION(e1), DAE.PARTIAL_EQUATION(e2));
     eqn := BackendEquation.generateEquation(e1, e2, source, attr);
     solved := false;
   end try;

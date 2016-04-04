@@ -56,8 +56,8 @@ import BackendVariable;
 import BaseHashSet;
 import CheckModel;
 import ComponentReference;
-import DAEUtil;
 import DoubleEndedList;
+import ElementSource;
 import Error;
 import ExecStat.execStat;
 import Expression;
@@ -2113,7 +2113,7 @@ algorithm
       var = BackendVariable.setBindExp(var, SOME(startExp));
       var = BackendVariable.setVarFixed(var, true);
 
-      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+      info = ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str}, info);
 
       //vars = BackendVariable.addVar(var, vars);
@@ -2128,7 +2128,7 @@ algorithm
 
       s = ComponentReference.printComponentRefStr(cr);
       str = ExpressionDump.printExpStr(bindExp);
-      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+      info = ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, s, str}, info);
 
       eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
@@ -2150,7 +2150,7 @@ algorithm
 
       s = ComponentReference.printComponentRefStr(cr);
       str = ExpressionDump.printExpStr(bindExp);
-      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+      info = ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING_31, {s, s, str}, info);
 
       vars = BackendVariable.addVar(var, vars);
@@ -2169,7 +2169,7 @@ algorithm
       s = ComponentReference.printComponentRefStr(cr);
       str = ExpressionDump.printExpStr(bindExp);
       sv = ExpressionDump.printExpStr(startExp);
-      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+      info = ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING_AND_START_VALUE_31, {s, sv, s, str}, info);
 
       vars = BackendVariable.addVar(var, vars);

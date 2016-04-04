@@ -53,8 +53,8 @@ protected import Ceval;
 protected import ClassInf;
 protected import ComponentReference;
 protected import Config;
-protected import DAEUtil;
 protected import Debug;
+protected import ElementSource;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -660,7 +660,7 @@ algorithm
         false := referenceEq(e, e_1);
         if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
           eq := DAE.PARTIAL_EQUATION(e_1);
-          source := DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
+          source := ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
           (DAE.PARTIAL_EQUATION(e_2),source) := ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
         else
           e_2 := ExpressionSimplify.simplify(e_1);
@@ -693,13 +693,13 @@ algorithm
       equation
         true = Expression.isConst(inExp);
         e_1 = Ceval.cevalSimpleWithFunctionTreeReturnExp(inExp, functionTree);
-        source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
+        source = ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
       then (e_1,source,true);
     case (e,fns,source)
       equation
         (e_1,_) = Expression.traverseExpBottomUp(e,function forceInlineCall(fns=fns),{});
         false = referenceEq(e, e_1);
-        source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
+        source = ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
         (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
       then
         (e_2,source,true);
@@ -1609,7 +1609,7 @@ algorithm
         (e_1,_) = Expression.traverseExpBottomUp(e,fn,{});
         changed = not referenceEq(e, e_1);
         eq2 = DAE.PARTIAL_EQUATION(e_1);
-        source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
+        source = ElementSource.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
         (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
       then (eq2,source);
     case DAE.RESIDUAL_EXP(e)
@@ -1617,7 +1617,7 @@ algorithm
         (e_1,_) = Expression.traverseExpBottomUp(e,fn,{});
         changed = not referenceEq(e, e_1);
         eq2 = DAE.RESIDUAL_EXP(e_1);
-        source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
+        source = ElementSource.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
         (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
       then (eq2,source);
     case DAE.EQUALITY_EXPS(e1,e2)
@@ -1626,7 +1626,7 @@ algorithm
         (e2_1,_) = Expression.traverseExpBottomUp(e2,fn,{});
         changed = not (referenceEq(e1, e1_1) and referenceEq(e2, e2_1));
         eq2 = DAE.EQUALITY_EXPS(e1_1,e2_1);
-        source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
+        source = ElementSource.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
         (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
       then (eq2,source);
     else

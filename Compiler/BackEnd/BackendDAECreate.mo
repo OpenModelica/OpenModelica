@@ -56,6 +56,7 @@ protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
 protected import DynamicOptimization;
+protected import ElementSource;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -778,7 +779,7 @@ algorithm
       equation
         e1 = BaseHashTable.get(iExp,iInlineHT);
         // print("use chache Inline\n" + ExpressionDump.printExpStr(iExp) + "\n");
-        source = DAEUtil.addSymbolicTransformation(iSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(iExp),DAE.PARTIAL_EQUATION(e1)));
+        source = ElementSource.addSymbolicTransformation(iSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(iExp),DAE.PARTIAL_EQUATION(e1)));
       then (e1,source,iInlineHT,{});
     case (DAE.CALL(),_,_,_)
       equation
@@ -790,7 +791,7 @@ algorithm
       equation
         e1 = BaseHashTable.get(e,iInlineHT);
         // print("use chache Inline\n" + ExpressionDump.printExpStr(iExp) + "\n");
-        source = DAEUtil.addSymbolicTransformation(iSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e1)));
+        source = ElementSource.addSymbolicTransformation(iSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e1)));
         (e, source, _,_) = Inline.inlineExp(DAE.ASUB(e1,elst), fnstpl, source);
       then (e,source,iInlineHT,{});
     case (DAE.ASUB(e,elst),_,_,_)
@@ -1248,7 +1249,7 @@ algorithm
     case (_,_,_,_,_)
       equation
         s = "BackendDAECreate.lowerEqn failed for " + DAEDump.dumpElementsStr({inElement});
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {s}, DAEUtil.getElementSourceFileInfo(DAEUtil.getElementSource(inElement)));
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {s}, ElementSource.getElementSourceFileInfo(ElementSource.getElementSource(inElement)));
       then fail();
 
   end match;
@@ -1739,10 +1740,10 @@ algorithm
 
     else
       equation
-        source = DAEUtil.getElementSource(inElement);
+        source = ElementSource.getElementSource(inElement);
         str = "BackendDAECreate.lowerWhenEqn: equation not handled:\n" +
               DAEDump.dumpElementsStr({inElement});
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
   end matchcontinue;
@@ -1993,7 +1994,7 @@ algorithm
         inEqns;
     case ((cr, (e, source))::rest, _, _, _)
       equation
-        source = DAEUtil.mergeSources(iSource, source);
+        source = ElementSource.mergeSources(iSource, source);
         size = Expression.sizeOf(Expression.typeof(e));
         whenOp = BackendDAE.ASSIGN(cr, e, source);
         whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
@@ -2059,7 +2060,7 @@ algorithm
         (e, source, _,_) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ((exp, source1)) = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(condition, e, exp);
-        source = DAEUtil.mergeSources(source, source1);
+        source = ElementSource.mergeSources(source, source1);
         ht = BaseHashTable.add((cr, (exp, source)), iHt);
       then
         lowerWhenIfEqns1(condition, rest, functionTree, ht);
@@ -2069,7 +2070,7 @@ algorithm
         (e, source, _,_) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ((exp, source1)) = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(condition, e, exp);
-        source = DAEUtil.mergeSources(source, source1);
+        source = ElementSource.mergeSources(source, source1);
         ht = BaseHashTable.add((cr, (exp, source)), iHt);
       then
         lowerWhenIfEqns1(condition, rest, functionTree, ht);
@@ -2079,7 +2080,7 @@ algorithm
         (e, source, _,_) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ((exp, source1)) = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(condition, e, exp);
-        source = DAEUtil.mergeSources(source, source1);
+        source = ElementSource.mergeSources(source, source1);
         ht = BaseHashTable.add((cr, (exp, source)), iHt);
       then
         lowerWhenIfEqns1(condition, rest, functionTree, ht);
@@ -2089,7 +2090,7 @@ algorithm
         (e, source, _,_) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ((exp, source1)) = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(condition, e, exp);
-        source = DAEUtil.mergeSources(source, source1);
+        source = ElementSource.mergeSources(source, source1);
         ht = BaseHashTable.add((cr, (exp, source)), iHt);
       then
         lowerWhenIfEqns1(condition, rest, functionTree, ht);
@@ -2099,7 +2100,7 @@ algorithm
         (e, source, _,_) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ((exp, source1)) = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(condition, e, exp);
-        source = DAEUtil.mergeSources(source, source1);
+        source = ElementSource.mergeSources(source, source1);
         ht = BaseHashTable.add((cr, (exp, source)), iHt);
       then
         lowerWhenIfEqns1(condition, rest, functionTree, ht);
@@ -2139,7 +2140,7 @@ algorithm
       equation
         ((exp, _)) = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(inCond, e, exp);
-        source = DAEUtil.mergeSources(iSource, source);
+        source = ElementSource.mergeSources(iSource, source);
         ht = BaseHashTable.add((cr, (exp, source)), iHt);
       then
        lowerWhenIfEqnsMergeNestedIf(rest, inCond, iSource, ht);
@@ -2435,7 +2436,7 @@ algorithm
       (cond, source, _,_) = Inline.inlineExp(cond, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
       (msg, source, _,_) = Inline.inlineExp(msg, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
       (level, source, _,_) = Inline.inlineExp(level, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-      BackendDAEUtil.checkAssertCondition(cond, msg, level, DAEUtil.getElementSourceFileInfo(source));
+      BackendDAEUtil.checkAssertCondition(cond, msg, level, ElementSource.getElementSourceFileInfo(source));
       alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, level, source)});
     then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
 
@@ -2456,7 +2457,7 @@ algorithm
       // only report error if no other error is in the queue!
       0 = Error.getNumErrorMessages();
       str = "BackendDAECreate.lowerAlgorithm failed for:\n" + DAEDump.dumpElementsStr({inElement});
-      Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, DAEUtil.getElementSourceFileInfo(DAEUtil.getElementSource(inElement)));
+      Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, ElementSource.getElementSourceFileInfo(ElementSource.getElementSource(inElement)));
     then fail();
   end matchcontinue;
 end lowerAlgorithm;
@@ -2799,7 +2800,7 @@ algorithm
         // merge fixed, start, nominal
         var = BackendVariable.mergeAliasVars(v1, v2, false, iKnVars);
         // setAliasType
-        ops = DAEUtil.getSymbolicTransformations(source);
+        ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2, DAE.SOLVED(cr2, e1)::ops);
         avar = BackendVariable.setBindExp(avar, SOME(e1));
         // remove from vars
@@ -2825,7 +2826,7 @@ algorithm
         // merge fixed, start, nominal
         var = BackendVariable.mergeAliasVars(v2, v1, false, iKnVars);
         // setAliasType
-        ops = DAEUtil.getSymbolicTransformations(source);
+        ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr1, e2)::ops);
         avar = BackendVariable.setBindExp(avar, SOME(e2));
         // remove from vars
@@ -2860,7 +2861,7 @@ algorithm
         // merge fixed, start, nominal
         var = BackendVariable.mergeAliasVars(var, avar, false, iKnVars);
         // setAliasType
-        ops = DAEUtil.getSymbolicTransformations(source);
+        ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(avar, DAE.SOLVED(acr, e)::ops);
         avar = BackendVariable.setBindExp(avar, SOME(e));
         avar = if b1 then BackendVariable.setVarKind(avar, BackendDAE.DUMMY_STATE()) else avar;
@@ -2886,7 +2887,7 @@ algorithm
         // merge fixed, start, nominal
         var = BackendVariable.mergeAliasVars(v2, v1, false, iKnVars);
         // setAliasType
-        ops = DAEUtil.getSymbolicTransformations(source);
+        ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr1, e2)::ops);
         avar = BackendVariable.setBindExp(avar, SOME(e2));
         avar = if BackendVariable.isStateVar(v1) then BackendVariable.setVarKind(avar, BackendDAE.DUMMY_STATE()) else avar;
@@ -2912,7 +2913,7 @@ algorithm
         // merge fixed, start, nominal
         var = BackendVariable.mergeAliasVars(v1, v2, false, iKnVars);
         // setAliasType
-        ops = DAEUtil.getSymbolicTransformations(source);
+        ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2, DAE.SOLVED(cr2, e1)::ops);
         avar = BackendVariable.setBindExp(avar, SOME(e1));
         avar = if BackendVariable.isStateVar(v2) then BackendVariable.setVarKind(avar, BackendDAE.DUMMY_STATE()) else avar;
@@ -2938,7 +2939,7 @@ algorithm
         // merge fixed, start, nominal
         var = BackendVariable.mergeAliasVars(v2, v1, false, iKnVars);
         // setAliasType
-        ops = DAEUtil.getSymbolicTransformations(source);
+        ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr1, e2)::ops);
         avar = BackendVariable.setBindExp(avar, SOME(e2));
         avar = if BackendVariable.isStateVar(v1) then BackendVariable.setVarKind(avar, BackendDAE.DUMMY_STATE()) else avar;
@@ -2964,7 +2965,7 @@ algorithm
         // merge fixed, start, nominal
         var = BackendVariable.mergeAliasVars(v1, v2, false, iKnVars);
         // setAliasType
-        ops = DAEUtil.getSymbolicTransformations(source);
+        ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2, DAE.SOLVED(cr2, e1)::ops);
         avar = BackendVariable.setBindExp(avar, SOME(e1));
         avar = if BackendVariable.isStateVar(v2) then BackendVariable.setVarKind(avar, BackendDAE.DUMMY_STATE()) else avar;
