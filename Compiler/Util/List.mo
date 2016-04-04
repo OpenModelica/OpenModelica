@@ -406,10 +406,9 @@ public function append_reverse<T>
   input list<T> inList2;
   output list<T> outList=inList2;
 algorithm
-  if listEmpty(outList) then
-    outList := listReverse(inList1);
-    return;
-  end if;
+  // Do not optimize the case listEmpty(inList2) and listLength(inList1)==1
+  // since we use listReverseInPlace together with this function.
+  // An alternative would be to keep both (and rename this append_reverse_always_copy)
   for e in inList1 loop
     outList := e::outList;
   end for;
