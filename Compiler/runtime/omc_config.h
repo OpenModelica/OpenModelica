@@ -37,7 +37,7 @@
 #define CONFIG_USER_IS_ROOT (geteuid() == 0 ? 1 : 0)
 #endif
 
-#if !defined(MSYS2_AUTOCONF)
+#if !defined(MSYS2_AUTOCONF) && (defined(__MINGW32__) || defined(_MSC_VER))
 /* Windows */
 #if defined(__MINGW64__)
 
@@ -76,8 +76,6 @@
 #define DEFAULT_TRIPLE "i686-msvc64"
 
 #endif
-
-/* #endif !defined(MSYS2_AUTOCONF) */
 
 #define DEFAULT_CC "gcc"
 #define DEFAULT_CXX "g++"
@@ -146,13 +144,13 @@
 
 #define WITH_UMFPACK
 
-#else /* Unix */
+#else /* Unix */ /* #if !defined(MSYS2_AUTOCONF) && (defined(__MINGW32__) || defined(_MSC_VER)) */
 
 #define DEFAULT_LDFLAGS ""
 
 #include "config.unix.h"
 
-#endif
+#endif /* #if !defined(MSYS2_AUTOCONF) && (defined(__MINGW32__) || defined(_MSC_VER)) */
 
 #ifdef CONFIG_REVISION
 #define CONFIG_VERSION CONFIG_REVISION
