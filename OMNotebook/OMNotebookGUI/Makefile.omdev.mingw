@@ -36,15 +36,6 @@ build: $(NAME)
 	mkdir -p $$DIRS) && \
 	cd ../../DrControl/ && \
 	find . -name \*.onb -exec cp {} $(builddir_share)/omnotebook/drcontrol/{} \;)
-	echo Copying needed .dlls
-	cp -puf $(OMDEV)/tools/OMTools/dll/libgcc_s_dw2-1.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/mingwm10.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtCore4.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtGui4.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtSvg4.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtXml4.dll $(builddir_bin)
-	mkdir -p $(builddir_bin)/iconengines/
-	cp -puf $(OMDEV)/tools/OMTools/dll/qsvgicon4.dll $(builddir_bin)/iconengines/
 	cp -puf ../../common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
 
 Makefile: OMNotebookGUI.pro
