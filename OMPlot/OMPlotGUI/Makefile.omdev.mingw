@@ -34,11 +34,4 @@ $(LIB): Makefile.lib
 
 build: $(NAME) $(LIB)
 	cp -p ../bin/$(NAME)$(EXE) $(OMBUILDDIR)/bin
-	cp -puf $(OMDEV)/tools/OMTools/dll/mingwm10.dll $(OMBUILDDIR)/bin
-	cp -puf $(OMDEV)/tools/OMTools/dll/libgcc_s_dw2-1.dll $(OMBUILDDIR)/bin
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtCore4.dll $(OMBUILDDIR)/bin
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtGui4.dll $(OMBUILDDIR)/bin
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtSvg4.dll $(OMBUILDDIR)/bin
-	mkdir -p $(OMBUILDDIR)/bin/iconengines/
-	cp -puf $(OMDEV)/tools/OMTools/dll/qsvgicon4.dll $(OMBUILDDIR)/bin/iconengines/
 	cp -a *.h $(OMBUILDDIR)/include/omplot
