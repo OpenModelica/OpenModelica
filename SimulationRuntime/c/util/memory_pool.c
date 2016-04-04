@@ -166,7 +166,7 @@ static void* OMC_record_malloc_atomic(size_t sz)
 static void* OMC_record_strdup(const char *str)
 {
   mmc_record_alloc_words(strlen(str)+1);
-  return GC_strdup(sz);
+  return GC_strdup(str);
 }
 
 #endif
