@@ -25,7 +25,6 @@ HEADERS += commandcompletion.h \
 
 # -------For OMNIorb
 win32 {
-  # QMAKE_CXXFLAGS += -fpermissive
   QMAKE_LFLAGS += -Wl,--enable-auto-import
   # win32 vs. win64
   UNAME = $$system(uname)
@@ -33,8 +32,8 @@ win32 {
   ISMINGW32 = $$find(UNAME, MINGW32)
   message(uname: $$UNAME)
   count( ISMINGW32, 1 ) {
-    CORBAINC = $$(OMDEV)/lib/omniORB-4.1.6-mingw/include
-    CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt
+    CORBAINC = $$(OMDEV)/lib/omniORB-4.2.0-mingw32/include
+    CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.2.0-mingw32/lib/x86_win32 -lomniORB420_rt -lomnithread40_rt
     DEFINES += __x86__ \
                __NT__ \
                __OSVERSION__=4 \

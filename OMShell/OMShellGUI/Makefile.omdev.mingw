@@ -22,7 +22,7 @@ clean: Makefile
 
 omc_communication.cc: $(builddir_share)/omc/omc_communication.idl
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	$(OMDEV)/lib/omniORB-4.1.6-mingw/bin/x86_win32/omniidl -bcxx -Wbh=.h -Wbs=.cc $<
+	$(OMDEV)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug $<
 else
 	$(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug $<
 endif
@@ -36,14 +36,6 @@ build: $(NAME)
 	cp -p ../bin/$(NAME)$(EXE) $(builddir_bin)
 	cp -p commands.xml $(builddir_share)/omshell/
 	cp -p OMShell_*.qm $(builddir_share)/omshell/nls/
-	cp -puf $(OMDEV)/tools/OMTools/dll/mingwm10.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/libgcc_s_dw2-1.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/mingw/bin/libintl-8.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/mingw/bin/libiconv-2.dll $(builddir_bin)
-	cp -puf $(OMDEV)/lib/omniORB-4.1.6-mingw/bin/x86_win32/omniORB416_rt.dll $(builddir_bin)
-	cp -puf $(OMDEV)/lib/omniORB-4.1.6-mingw/bin/x86_win32/omnithread34_rt.dll $(builddir_bin)
-	cp -puf $(OMDEV)/lib/pthread/pthreadGC2.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtCore4.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtGui4.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtXml4.dll $(builddir_bin)
 	cp -puf ../../common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
+
+
