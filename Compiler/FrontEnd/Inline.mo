@@ -655,7 +655,7 @@ algorithm
 
     case (e,fns,source)
       equation
-        (e_1,assrtLst) = Expression.Expression.traverseExpBottomUp(e,function inlineCall(fns=fns),{});
+        (e_1,assrtLst) = Expression.traverseExpBottomUp(e,function inlineCall(fns=fns),{});
         false = referenceEq(e, e_1);
         source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
         (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);

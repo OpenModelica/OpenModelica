@@ -10331,7 +10331,7 @@ algorithm
       DAE.ReductionIterator iter;
       DAE.ReductionIterators iters;
 
-    case ({},_,arg) then ({},arg);
+    case ({},_,arg) then (inIters,arg);
     case (iter::iters,_,arg)
       equation
         (iter, arg) = traverseReductionIteratorTopDown(iter, func, arg);
@@ -10373,11 +10373,9 @@ algorithm
 end traverseReductionIterator;
 
 protected function traverseReductionIterators
-  input DAE.ReductionIterators inIters;
+  input output DAE.ReductionIterators iters;
   input FuncExpType func;
-  input Type_a inArg;
-  output DAE.ReductionIterators outIters;
-  output Type_a outArg;
+  input output Type_a arg;
 
   partial function FuncExpType
     input DAE.Exp inExp;
@@ -10387,18 +10385,17 @@ protected function traverseReductionIterators
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outIters,outArg) := match (inIters,func,inArg)
+  (iters,arg) := match iters
     local
       DAE.ReductionIterator iter,iter1;
-      DAE.ReductionIterators iters,iters1;
-      Type_a arg;
+      DAE.ReductionIterators rest,iters1;
 
-    case ({},_,arg) then ({},arg);
-    case (iter::iters,_,arg)
+    case {} then (iters,arg);
+    case iter::rest
       equation
         (iter1, arg) = traverseReductionIterator(iter, func, arg);
-        (iters1, arg) = traverseReductionIterators(iters, func, arg);
-        iters = if referenceEq(iter,iter1) and referenceEq(iters,iters1) then inIters else (iter1::iters1);
+        (iters1, arg) = traverseReductionIterators(rest, func, arg);
+        iters = if referenceEq(iter,iter1) and referenceEq(rest,iters1) then iters else (iter1::iters1);
       then (iters, arg);
   end match;
 end traverseReductionIterators;
