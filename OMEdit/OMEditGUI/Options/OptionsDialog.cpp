@@ -3535,12 +3535,18 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   // GDB Path
   mpGDBPathLabel = new Label(tr("GDB Path:"));
 #ifdef WIN32
+#if defined(__MINGW32__) && !defined(__MINGW64__)
+  const char *sgdb = "/tools/msys/mingw32/bin/gdb.exe";
+#endif
+#if defined(__MINGW64__)
+  const char *sgdb = "/tools/msys/mingw64/bin/gdb.exe";
+#endif
   const char *OMDEV = getenv("OMDEV");
   if (QString(OMDEV).isEmpty()) {
-    mpGDBPathTextBox = new QLineEdit(QString(Helper::OpenModelicaHome).append("/MinGW/bin/gdb.exe"));
+    mpGDBPathTextBox = new QLineEdit(QString(Helper::OpenModelicaHome).append(sgdb));
   } else {
     QString qOMDEV = QString(OMDEV).replace("\\", "/");
-    mpGDBPathTextBox = new QLineEdit(QString(qOMDEV).append("/tools/mingw/bin/gdb.exe"));
+    mpGDBPathTextBox = new QLineEdit(QString(qOMDEV).append(sgdb));
   }
 #else
   mpGDBPathTextBox = new QLineEdit("gdb");

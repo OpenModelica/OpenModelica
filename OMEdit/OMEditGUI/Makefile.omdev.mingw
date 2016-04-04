@@ -18,19 +18,6 @@ install: build Resources/nls/qm.stamp
 	mkdir -p $(builddir_share)/omedit/nls/
 	cp -p $(resourcedir)/*.qm $(builddir_share)/omedit/nls/
 	cp -p ../bin/$(NAME)$(EXE) $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/libgcc_s_dw2-1.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/mingwm10.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/mingw/bin/libintl-8.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/mingw/bin/libiconv-2.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtCore4.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtGui4.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtNetwork4.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtSvg4.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtWebKit4.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtXml4.dll $(builddir_bin)
-	cp -puf $(OMDEV)/tools/OMTools/dll/QtXmlPatterns4.dll $(builddir_bin)
-	mkdir -p $(builddir_bin)/iconengines/
-	cp -puf $(OMDEV)/tools/OMTools/dll/qsvgicon4.dll $(builddir_bin)/iconengines/
 
 Resources/nls/qm.stamp: OMEditGUI.pro Resources/nls/*.ts
 	lrelease $<
@@ -46,7 +33,7 @@ clean: MakefileClean
 
 parsergen:
 	$(MAKE) -C Debugger/Parser -f Makefile.lib.omdev.mingw
-  
+
 build: version $(NAME)
 	$(MAKE) -f Makefile
 Makefile: parsergen OMEditGUI.pro
