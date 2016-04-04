@@ -146,6 +146,8 @@
 
 #else /* Unix */ /* #if !defined(MSYS2_AUTOCONF) && (defined(__MINGW32__) || defined(_MSC_VER)) */
 
+#define CONFIG_GCC_DUMPMACHINE ""
+#define CONFIG_GCC_VERSION ""
 #define DEFAULT_LDFLAGS ""
 
 #include "config.unix.h"
