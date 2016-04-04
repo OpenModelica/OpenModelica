@@ -648,22 +648,42 @@ protected
   FuncHash hashFunc;
   Key key;
   array<Option<HashEntry>> vae;
+  constant Boolean workaroundForBug=true "TODO: Make it impossible to update a value by not updating n (fully mutable HT instead of this hybrid)";
+  constant Boolean debug=false;
 algorithm
   (hv, (vs, ve, vae), bs, ft as (hashFunc,_,_,_)) := ht;
   for i in 1:ve loop
     _ := match arrayGet(vae, i)
       case SOME((key,_))
         algorithm
-          hash_idx := hashFunc(key, bs) + 1;
-          arrayUpdate(hv, hash_idx, {});
+          if not workaroundForBug then
+            hash_idx := hashFunc(key, bs) + 1;
+            arrayUpdate(hv, hash_idx, {});
+          end if;
           arrayUpdate(vae, i, NONE());
         then ();
       else
         algorithm
-          return;
+          if not workaroundForBug then return; end if;
         then ();
     end match;
   end for;
+  if debug then
+    for i in vae loop
+      if isSome(i) then
+        print("vae not empty\n");
+        break;
+      end if;
+    end for;
+  end if;
+  if workaroundForBug then
+    for i in 1:arrayLength(hv) loop
+      if not listEmpty(arrayGet(hv,i)) then
+        if debug then print("hv not empty\n"); end if;
+        arrayUpdate(hv,i,{});
+      end if;
+    end for;
+  end if;
 end clearAssumeNoDelete;
 
 annotation(__OpenModelica_Interface="util");

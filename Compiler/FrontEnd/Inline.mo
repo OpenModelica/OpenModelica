@@ -691,7 +691,7 @@ algorithm
       then (e_1,source,true);
     case (e,fns,source)
       equation
-        (e_1,_) = Expression.Expression.traverseExpBottomUp(e,function forceInlineCall(fns=fns),{});
+        (e_1,_) = Expression.traverseExpBottomUp(e,function forceInlineCall(fns=fns),{});
         false = referenceEq(e, e_1);
         source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
         (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
@@ -821,9 +821,9 @@ algorithm
           // add noEvent to avoid events as usually for functions
           // MSL 3.2.1 need GenerateEvents to disable this
           newExp = Expression.addNoEventToRelationsAndConds(newExp);
-          (newExp,(_,_,true)) = Expression.Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
+          (newExp,(_,_,true)) = Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
           // for inlinecalls in functions
-          (newExp1,assrtLst) = Expression.Expression.traverseExpBottomUp(newExp,function inlineCall(fns=fns),assrtLst);
+          (newExp1,assrtLst) = Expression.traverseExpBottomUp(newExp,function inlineCall(fns=fns),assrtLst);
         else // normal Modelica
           // get inputs, body and output
           (crefs,lst_cr,stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},repl);
@@ -842,9 +842,9 @@ algorithm
             // MSL 3.2.1 need GenerateEvents to disable this
             generateEvents = hasGenerateEventsAnnotation(comment);
             newExp = if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
-            (newExp,(_,_,true)) = Expression.Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
+            (newExp,(_,_,true)) = Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
             // for inlinecalls in functions
-            (newExp1,assrtLst) = Expression.Expression.traverseExpBottomUp(newExp,function inlineCall(fns=fns),assrtLst);
+            (newExp1,assrtLst) = Expression.traverseExpBottomUp(newExp,function inlineCall(fns=fns),assrtLst);
           else // assert detected
             true = listLength(assrtStmts) == 1;
             assrt = listHead(assrtStmts);
@@ -859,10 +859,10 @@ algorithm
             // MSL 3.2.1 need GenerateEvents to disable this
             generateEvents = hasGenerateEventsAnnotation(comment);
             newExp = if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
-            (newExp,(_,_,true)) = Expression.Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
+            (newExp,(_,_,true)) = Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
             assrt = inlineAssert(assrt,fns,argmap,checkcr);
             // for inlinecalls in functions
-            (newExp1,assrtLst) = Expression.Expression.traverseExpBottomUp(newExp,function inlineCall(fns=fns),assrt::assrtLst);
+            (newExp1,assrtLst) = Expression.traverseExpBottomUp(newExp,function inlineCall(fns=fns),assrt::assrtLst);
           end if;
         end if;
       then
@@ -886,11 +886,12 @@ protected
   DAE.Exp cond, msg, level;
 algorithm
   DAE.STMT_ASSERT(cond=cond, msg=msg, level=level, source=source) := assrtIn;
-  (cond,_,_,_) := inlineExp(cond,fns,source);
-  (cond,(_,_,true)) := Expression.Expression.traverseExpBottomUp(cond,replaceArgs,(argmap,checkcr,true));
+  (cond,(_,_,true)) := Expression.traverseExpBottomUp(cond,replaceArgs,(argmap,checkcr,true));
   //print("ASSERT inlined: "+ExpressionDump.printExpStr(cond)+"\n");
-  (msg,_,_,_) := inlineExp(msg,fns,source);
-  (msg,(_,_,true)) := Expression.Expression.traverseExpBottomUp(msg,replaceArgs,(argmap,checkcr,true));
+  (msg,(_,_,true)) := Expression.traverseExpBottomUp(msg,replaceArgs,(argmap,checkcr,true));
+  // These clear checkcr/repl and need to be performed last
+  // (cond,_,_,_) := inlineExp(cond,fns,source);
+  // (msg,_,_,_) := inlineExp(msg,fns,source);
   assrtOut := DAE.STMT_ASSERT(cond, msg, level, source);
 end inlineAssert;
 
@@ -965,7 +966,7 @@ algorithm
         // MSL 3.2.1 need GenerateEvents to disable this
         generateEvents = hasGenerateEventsAnnotation(comment);
         newExp = if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
-        (newExp,(_,_,true)) = Expression.Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
+        (newExp,(_,_,true)) = Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
         (newExp1,assrtLst) = Expression.traverseExpBottomUp(newExp,function forceInlineCall(fns=fns),assrtLst);
       then (newExp1,assrtLst);
@@ -1599,7 +1600,7 @@ algorithm
       list<DAE.Statement> assrtLst;
     case DAE.PARTIAL_EQUATION(e)
       equation
-        (e_1,_) = Expression.Expression.traverseExpBottomUp(e,fn,{});
+        (e_1,_) = Expression.traverseExpBottomUp(e,fn,{});
         changed = not referenceEq(e, e_1);
         eq2 = DAE.PARTIAL_EQUATION(e_1);
         source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
@@ -1607,7 +1608,7 @@ algorithm
       then (eq2,source);
     case DAE.RESIDUAL_EXP(e)
       equation
-        (e_1,_) = Expression.Expression.traverseExpBottomUp(e,fn,{});
+        (e_1,_) = Expression.traverseExpBottomUp(e,fn,{});
         changed = not referenceEq(e, e_1);
         eq2 = DAE.RESIDUAL_EXP(e_1);
         source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
@@ -1615,8 +1616,8 @@ algorithm
       then (eq2,source);
     case DAE.EQUALITY_EXPS(e1,e2)
       equation
-        (e1_1,_) = Expression.Expression.traverseExpBottomUp(e1,fn,{});
-        (e2_1,_) = Expression.Expression.traverseExpBottomUp(e2,fn,{});
+        (e1_1,_) = Expression.traverseExpBottomUp(e1,fn,{});
+        (e2_1,_) = Expression.traverseExpBottomUp(e2,fn,{});
         changed = not (referenceEq(e1, e1_1) and referenceEq(e2, e2_1));
         eq2 = DAE.EQUALITY_EXPS(e1_1,e2_1);
         source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
