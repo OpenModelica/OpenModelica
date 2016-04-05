@@ -747,39 +747,26 @@ protected function orderConnectsGuidedByUser
   input DaeEdges inConnections;
   input list<tuple<String,String>> inUserSelectedBreaking;
   output DaeEdges outOrderedConnections;
+protected
+  DaeEdges front = {};
+  DaeEdges back = {};
+  DAE.ComponentRef c1, c2;
+  String sc1,sc2;
 algorithm
-  outOrderedConnections := match(inConnections, inUserSelectedBreaking)
-    local
-      String sc1,sc2;
-      DAE.ComponentRef c1, c2;
-      DaeEdge e;
-      list<DAE.Element> els;
-      DaeEdges rest, ordered;
-      Boolean  b1, b2;
+  for e in inConnections loop
+    (c1, c2, _) := e;
+    sc1 := ComponentReference.printComponentRefStr(c1);
+    sc2 := ComponentReference.printComponentRefStr(c2);
 
-    // handle empty case
-    case ({}, _) then {};
-
-    // handle match and miss
-    case ((e as (c1, c2, _))::rest, _)
-      equation
-        sc1 = ComponentReference.printComponentRefStr(c1);
-        sc2 = ComponentReference.printComponentRefStr(c2);
-        ordered = orderConnectsGuidedByUser(rest, inUserSelectedBreaking);
-        // see both ways!
-        b1 = listMember((sc1, sc2), inUserSelectedBreaking);
-        b2 = listMember((sc2, sc1), inUserSelectedBreaking);
-        if b1 or b2 then
-          // put them at the end to be tried last (more chance to be broken)
-          ordered = List.appendElt(e, ordered);
-        else
-          // put them at the front to be tried first (less chance to be broken)
-          ordered = e::ordered;
-        end if;
-      then
-        ordered;
-
-  end match;
+    if listMember((sc1, sc2), inUserSelectedBreaking) or listMember((sc2, sc1), inUserSelectedBreaking) then
+      // put them at the end to be tried last (more chance to be broken)
+      back := e::back;
+    else
+      // put them at the front to be tried first (less chance to be broken)
+      front := e::front;
+    end if;
+  end for;
+  outOrderedConnections := List.append_reverse(front, back);
 end orderConnectsGuidedByUser;
 
 protected function printTupleStr
