@@ -4343,7 +4343,7 @@ algorithm
       equation
         ((_,exps)) = BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsHelper, (collectDelayExpressions, {}));
         delayedExps = List.map(exps, extractIdAndExpFromDelayExp);
-        maxDelayedExpIndex = List.fold(List.map(delayedExps, Util.tuple21), intMax, -1);
+        maxDelayedExpIndex = List.applyAndFold(delayedExps, intMax, Util.tuple21, -1);
       then
         (delayedExps, maxDelayedExpIndex+1);
     else
@@ -4833,7 +4833,7 @@ algorithm
 
       // check that all crefs are of Type Real
       // otherwise we can't solve that with one Non-linear equation
-      true = Util.boolAndList(List.map(List.map(crefs, ComponentReference.crefLastType), Types.isRealOrSubTypeReal));
+      true = Util.boolAndList(List.mapMap(crefs, ComponentReference.crefLastType, Types.isRealOrSubTypeReal));
 
       // wbraun:
       // TODO: Fix createNonlinearResidualEquations support cases where
@@ -4849,7 +4849,7 @@ algorithm
 
       // check that all crefs are of Type Real
       // otherwise we can't solve that with one Non-linear equation
-      false = Util.boolAndList(List.map(List.map(crefs, ComponentReference.crefLastType), Types.isRealOrSubTypeReal));
+      false = Util.boolAndList(List.mapMap(crefs, ComponentReference.crefLastType, Types.isRealOrSubTypeReal));
 
       s1 = ExpressionDump.printExpStr(e1);
       s2 = ExpressionDump.printExpStr(e2);
@@ -4864,7 +4864,7 @@ algorithm
 
       // check that all crefs are of Type Real
       // otherwise we can't solve that with one Non-linear equation
-      true = Util.boolAndList(List.map(List.map(crefs, ComponentReference.crefLastType), Types.isRealOrSubTypeReal));
+      true = Util.boolAndList(List.mapMap(crefs, ComponentReference.crefLastType, Types.isRealOrSubTypeReal));
 
       s1 = ExpressionDump.printExpStr(e1);
       s2 = ExpressionDump.printExpStr(e2);
@@ -6357,7 +6357,7 @@ algorithm
     case((rec as DAE.RECORD_CONSTRUCTOR(path=path,type_= ty,source=source))::rest,_,_,_)
       equation
        DAE.T_FUNCTION(funcArg=args) = ty;
-       numScalars = List.fold(List.map(args,DAEUtil.funcArgDim),intAdd,0);
+       numScalars = List.applyAndFold(args,intAdd,DAEUtil.funcArgDim,0);
        bLst = List.map1(pathsIn,Absyn.pathEqual,path);
        (_,vars) = List.filter1OnTrueSync(bLst,boolEq,true,recVarsIn);  // all vars that have the same record path
        true = intEq(listLength(vars),numScalars);
@@ -9629,11 +9629,11 @@ algorithm
 
     case ((i1, l1), q)
       equation
-        // print("priorities before: " + stringDelimitList(List.map(List.map(PriorityQueue.elements(q), Util.tuple21), intString), ", ") + "\n");
+        // print("priorities before: " + stringDelimitList(List.mapMap(PriorityQueue.elements(q), Util.tuple21, intString), ", ") + "\n");
         (q, (i2, l2)) = PriorityQueue.deleteAndReturnMin(q);
-        // print("priorities (popped): " + stringDelimitList(List.map(List.map(PriorityQueue.elements(q), Util.tuple21), intString), ", ") + "\n");
+        // print("priorities (popped): " + stringDelimitList(List.mapMap(PriorityQueue.elements(q), Util.tuple21, intString), ", ") + "\n");
         q = PriorityQueue.insert((i1+i2, listAppend(l2, l1)), q);
-        // print("priorities after (i1=" + intString(i1) + "): " + stringDelimitList(List.map(List.map(PriorityQueue.elements(q), Util.tuple21), intString), ", ") + "\n");
+        // print("priorities after (i1=" + intString(i1) + "): " + stringDelimitList(List.mapMap(PriorityQueue.elements(q), Util.tuple21, intString), ", ") + "\n");
       then q;
   end match;
 end makeEqualLengthLists2;
@@ -10642,8 +10642,8 @@ algorithm
       equation
         BackendDAE.DAE(eqs=eqs) = dae;
         tpl = List.map(eqs,setUpSystMapping);
-        sizeE = List.fold(List.map(tpl,Util.tuple61),intAdd,0);
-        sizeV = List.fold(List.map(tpl,Util.tuple62),intAdd,0);
+        sizeE = List.applyAndFold(tpl,intAdd,Util.tuple61,0);
+        sizeV = List.applyAndFold(tpl,intAdd,Util.tuple62,0);
         eqMap = {};
         varMap = {};
         simVarMapping = arrayCreate(sizeV,{});

@@ -3711,7 +3711,7 @@ algorithm
         repl = getAliasReplacements(iStatesetrepl, aliasVars);
         // do not replace the set variables
         hs = HashSet.emptyHashSet();
-        hs = List.fold(List.map(statescandidates, BackendVariable.varCref), BaseHashSet.add, hs);
+        hs = List.applyAndFold(statescandidates, BaseHashSet.add, BackendVariable.varCref, hs);
         ovars = replaceOtherStateSetVars(ovars, vars, aliasVars, hs, {});
         (eqns, b) = BackendVarTransform.replaceEquations(eqns, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         (oeqns, b1) = BackendVarTransform.replaceEquations(oeqns, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));

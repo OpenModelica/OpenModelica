@@ -357,17 +357,13 @@ public function consOnBool<T>
   "Adds an element to one of two lists, depending on the given boolean value."
   input Boolean inValue;
   input T inElement;
-  input list<T> inTrueList;
-  input list<T> inFalseList;
-  output list<T> outTrueList;
-  output list<T> outFalseList;
+  input output list<T> trueList;
+  input output list<T> falseList;
 algorithm
   if inValue then
-    outTrueList := inElement :: inTrueList;
-    outFalseList := inFalseList;
+    trueList := inElement :: trueList;
   else
-    outTrueList := inTrueList;
-    outFalseList := inElement :: inFalseList;
+    falseList := inElement :: falseList;
   end if;
 end consOnBool;
 
@@ -376,11 +372,10 @@ public function consN<T>
   n = 5, inElement=1, list={1,2} -> list={1,1,1,1,1,1,2}"
   input Integer size;
   input T inElement;
-  input list<T> inList;
-  output list<T> outList = inList;
+  input output list<T> inList;
 algorithm
   for i in 1:size loop
-    outList := inElement :: outList;
+    inList := inElement :: inList;
   end for;
 end consN;
 
@@ -1965,11 +1960,15 @@ algorithm
   for e in inList loop
     (e1, e2) := inFunc(e);
     outList1 := e1 :: outList1;
-    outList2 := e2 :: outList2;
+    if isPresent(outList2) then
+      outList2 := e2 :: outList2;
+    end if;
   end for;
 
   outList1 := listReverseInPlace(outList1);
-  outList2 := listReverseInPlace(outList2);
+  if isPresent(outList2) then
+    outList2 := listReverseInPlace(outList2);
+  end if;
 end map_2;
 
 public function map_3<TI, TO1, TO2, TO3>
@@ -1995,13 +1994,21 @@ algorithm
   for e in inList loop
     (e1, e2, e3) := inFunc(e);
     outList1 := e1 :: outList1;
-    outList2 := e2 :: outList2;
-    outList3 := e3 :: outList3;
+    if isPresent(outList2) then
+      outList2 := e2 :: outList2;
+    end if;
+    if isPresent(outList3) then
+      outList3 := e3 :: outList3;
+    end if;
   end for;
 
   outList1 := listReverseInPlace(outList1);
-  outList2 := listReverseInPlace(outList2);
-  outList3 := listReverseInPlace(outList3);
+  if isPresent(outList2) then
+    outList2 := listReverseInPlace(outList2);
+  end if;
+  if isPresent(outList3) then
+    outList3 := listReverseInPlace(outList3);
+  end if;
 end map_3;
 
 public function mapOption<TI, TO>

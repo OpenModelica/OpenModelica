@@ -3712,8 +3712,8 @@ protected
   list<tuple<Boolean,String>> varAtts,eqAtts;
 algorithm
   BackendDAE.DAE(eqs=eqSysts, shared=shared) := dae;
-  eqLst := List.flatten(List.map(List.map(eqSysts,BackendEquation.getEqnsFromEqSystem),BackendEquation.equationList));
-  varLst := List.flatten(List.map(List.map(eqSysts,BackendVariable.daeVars),BackendVariable.varList));
+  eqLst := List.flatten(List.mapMap(eqSysts,BackendEquation.getEqnsFromEqSystem,BackendEquation.equationList));
+  varLst := List.flatten(List.mapMap(eqSysts,BackendVariable.daeVars,BackendVariable.varList));
   vars := BackendVariable.listVar1(varLst);
   eqs := BackendEquation.listEquation(eqLst);
   // build the incidence matrix for the whole System

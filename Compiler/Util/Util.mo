@@ -1252,7 +1252,7 @@ algorithm
       Integer sz,maxSz;
     case (_,SOME(maxSz),_)
       equation
-        sz = intMul(listLength(lst),List.fold(List.map(lst,listLength),intMul,1));
+        sz = intMul(listLength(lst),List.applyAndFold(lst,intMul,listLength,1));
         true = (sz <= maxSz);
       then allCombinations2(lst);
 

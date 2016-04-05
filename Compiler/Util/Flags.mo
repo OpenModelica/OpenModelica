@@ -2379,7 +2379,7 @@ algorithm
     case STRING_DESC_OPTION(options)
       equation
         validStrings = List.map(options,Util.tuple21);
-        descriptions = List.map(List.map(options,Util.tuple22),Util.translateContent);
+        descriptions = List.mapMap(options,Util.tuple22,Util.translateContent);
       then (validStrings,descriptions);
   end match;
 end getValidOptionsAndDescription2;

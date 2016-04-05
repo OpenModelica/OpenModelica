@@ -1913,11 +1913,11 @@ algorithm
   b1 := intEq(listLength(row),2);  // only two variables
   eqLst := List.mapList((List.map1(vars,Array.getIndexFirst,meT)),Util.tuple31);
   numEqs := List.map(eqLst,listLength);
-  b3 := List.fold(List.map1(numEqs,intEq,2),boolOr,false);  // at least one adjacent variable hast only 2 adj equations
+  b3 := List.applyAndFold1(numEqs,boolOr,intEq,2,false);  // at least one adjacent variable hast only 2 adj equations
   eqs := List.flatten(eqLst);
   b2 := intEq(listLength(eqs),listLength(List.unique(eqs))+2);
   b1 := b1 and b2 and b3;
-  chooseThis := b1 and List.fold(List.map(row,isSolvable),boolAnd,true);
+  chooseThis := b1 and List.applyAndFold(row,boolAnd,isSolvable,true);
 end chooseEquation;
 
 protected function getDoublicates

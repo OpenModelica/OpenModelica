@@ -3576,10 +3576,9 @@ protected
   String s1,s2;
 algorithm
   s1 := stringDelimitList(toStringList(cref), "_P");
-  s2 := stringDelimitList(List.map(List.map(crefSubs(cref),Expression.getSubscriptExp),ExpressionDump.printExpStr),",");
+  s2 := stringDelimitList(List.mapMap(crefSubs(cref),Expression.getSubscriptExp,ExpressionDump.printExpStr),",");
   s := s1+"["+s2+"]";
-end  crefAppendedSubs;
+end crefAppendedSubs;
 
 annotation(__OpenModelica_Interface="frontend");
 end ComponentReference;
-

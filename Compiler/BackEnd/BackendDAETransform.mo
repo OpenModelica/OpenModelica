@@ -253,7 +253,7 @@ algorithm
       var_lst = List.map(var_varindx_lst, Util.tuple21);
       crlst = List.map(var_lst,BackendVariable.varCref);
        // its only an array equation if all the solved variables belong to an array. Otherwise we have to handle it as a non-linear system
-      b1 =  List.fold(List.map(crlst,ComponentReference.isArrayElement),boolAnd,true);
+      b1 =  List.applyAndFold(crlst,boolAnd,ComponentReference.isArrayElement,true);
       if not b1 then
         expLst = List.map(crlst, Expression.crefExp);
         true = List.exist1(inEqnLst,crefsAreArray,expLst);
@@ -380,7 +380,7 @@ algorithm
   if info < 0 then
     // info < 0:  if INFO = -i, the i-th argument had an illegal value
     // this case should never happen
-    varnames := stringDelimitList(List.map(List.map(inVars, BackendVariable.varCref), ComponentReference.printComponentRefStr), " ;\n  ");
+    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReference.printComponentRefStr), " ;\n  ");
     eqns := BackendEquation.listEquation(inEqns);
     vars := BackendVariable.listVar1(inVars);
     funcs := BackendDAEUtil.getFunctions(inShared);
@@ -398,7 +398,7 @@ algorithm
     //            singular, so the solution could not be computed.
     varname := ComponentReference.printComponentRefStr(BackendVariable.varCref(listGet(inVars, info)));
     infoStr := intString(info);
-    varnames := stringDelimitList(List.map(List.map(inVars, BackendVariable.varCref), ComponentReference.printComponentRefStr), " ;\n  ");
+    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReference.printComponentRefStr), " ;\n  ");
     eqns := BackendEquation.listEquation(inEqns);
     vars := BackendVariable.listVar1(inVars);
     funcs := BackendDAEUtil.getFunctions(inShared);

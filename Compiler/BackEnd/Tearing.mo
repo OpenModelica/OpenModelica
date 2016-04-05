@@ -1249,7 +1249,7 @@ algorithm
         eqnsize = listLength(mapEqnIncRow[cnonscalar]);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Eqn Size: " + intString(eqnsize) + "\n");
-          // fcall(Flags.TEARING_DUMPVERBOSE, print,"Rows(not assigned variables in eqn " + intString(c) + ":\n" + stringDelimitList(List.map(List.map(rows,Util.tuple21),intString),", ") + "\n");
+          // fcall(Flags.TEARING_DUMPVERBOSE, print,"Rows(not assigned variables in eqn " + intString(c) + ":\n" + stringDelimitList(List.mapMap(rows,Util.tuple21,intString),", ") + "\n");
           print("Rows (not assigned variables in eqn " + intString(c) + "):\n");
           BackendDump.dumpAdjacencyRowEnhanced(rows);
           print("\n");
@@ -4421,4 +4421,3 @@ end dumpMatchingList;
 
 annotation(__OpenModelica_Interface="backend");
 end Tearing;
-

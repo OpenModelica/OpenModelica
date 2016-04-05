@@ -501,8 +501,8 @@ algorithm
   for i in 1:n loop
     cref := arrayGet(states, i);
     MODE(name, isInitial, edges, eqs, outgoing, outShared, outLocal, crefPrevious) := BaseHashTable.get(cref, modes);
-    crefLocalsSet := List.fold(List.map(outLocal, BackendVariable.varCref), BaseHashSet.add, HashSet.emptyHashSet());
-    crefSharedSet := List.fold(List.map(outShared, BackendVariable.varCref), BaseHashSet.add, HashSet.emptyHashSet());
+    crefLocalsSet := List.applyAndFold(outLocal, BaseHashSet.add, BackendVariable.varCref, HashSet.emptyHashSet());
+    crefSharedSet := List.applyAndFold(outShared, BaseHashSet.add, BackendVariable.varCref, HashSet.emptyHashSet());
     // collect all inner outer outputs together with the index of the state they occur in
     outStateInnerOuters := listAppend(outStateInnerOuters, List.map(List.filterOnTrue(outLocal,filterInnerOuters), function Util.makeTuple(inValue1=i)));
 

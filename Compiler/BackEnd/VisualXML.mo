@@ -103,7 +103,7 @@ algorithm
   //get all variables that contain visualization vars
   knownVarLst := BackendVariable.varList(knownVars);
   aliasVarLst := BackendVariable.varList(aliasVars);
-  allVarLst := List.flatten(List.map(List.map(eqs, BackendVariable.daeVars),BackendVariable.varList));
+  allVarLst := List.flatten(List.mapMap(eqs, BackendVariable.daeVars,BackendVariable.varList));
 
   //collect all visualization objects
   (knownVarLst,allVisuals) := List.fold(knownVarLst,isVisualizationVar,({},{}));

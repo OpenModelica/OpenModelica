@@ -1298,12 +1298,11 @@ algorithm
   eqsOut := generateConstEqs(lhsExps2,constComplExps,eqsOut);
 
   // build the partial function algorithm, replace the qualified crefs
-  stmts1 := List.mapFlat(funcAlgs, DAEUtil.getStatement);
-  //stmts1 := listReverse(stmts1);
+  stmts1 := List.mapFlatReverse(funcAlgs, DAEUtil.getStatement);
   //stmts1 := List.filterOnTrue(stmts1,statementRHSIsNotConst);
   // remove the constant values
   //stmts1 := traverseStmtsAndUpdate(stmts1,stmtCanBeRemoved,replIn,{});
-    stmts1 := listReverse(stmts1);
+  // stmts1 := listReverse(stmts1);
 
   // build new crefs for the scalars
   (stmts1,_) := DAEUtil.traverseDAEEquationsStmts(stmts1,Expression.traverseSubexpressionsHelper,(makeIdentCref,varScalarCrefs));
@@ -2046,7 +2045,7 @@ algorithm
       lhsExps := List.fold1(stmts,getStatementLHSScalar,funcTreeIn,{});
       lhsExps := List.unique(lhsExps);
       outputs := List.map(lhsExps,Expression.expCref);
-      hasNoRepl := List.fold(List.map1(outputs,BackendVarTransform.hasNoReplacementCrefFirst,repl),boolAnd,true);
+      hasNoRepl := List.applyAndFold1(outputs,boolAnd,BackendVarTransform.hasNoReplacementCrefFirst,repl,true);
       if hasNoRepl then
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("For-loop evaluation is skipped, since the first loop evaluated nothing.\n"); end if;
         fail();

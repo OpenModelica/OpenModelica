@@ -1025,9 +1025,9 @@ algorithm
     case (_, _)
       equation
         s = originalScope(toRef(inNode));
-        b1 = List.fold(List.map(s, inFunctionRefIs), boolOr, false);
+        b1 = List.applyAndFold(s, boolOr, inFunctionRefIs, false);
         s = contextualScope(toRef(inNode));
-        b2 = List.fold(List.map(s, inFunctionRefIs), boolOr, false);
+        b2 = List.applyAndFold(s, boolOr, inFunctionRefIs, false);
         b = boolOr(b1, b2);
       then
         b;

@@ -6628,7 +6628,7 @@ algorithm
       list<String> names;
   case(DAE.FUNCARG(ty = DAE.T_ARRAY(dims=arrayDims)))
     equation
-      then List.fold(List.map(arrayDims, Expression.dimensionSize),intAdd,0);
+      then List.applyAndFold(arrayDims, intAdd, Expression.dimensionSize,0);
   case(DAE.FUNCARG(ty = DAE.T_ENUMERATION(names=names)))
     equation
     then listLength(names);

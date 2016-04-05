@@ -2521,7 +2521,7 @@ algorithm
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
 
         // Filter out the components (just to be sure)
-        true = List.fold(List.map1(ld2, SCode.isComponentWithDirection, Absyn.BIDIR()), boolAnd, true);
+        true = List.applyAndFold1(ld2, boolAnd, SCode.isComponentWithDirection, Absyn.BIDIR(), true);
         ((cache,b)) = List.fold1(ld2, checkLocalShadowing, env, (cache,false));
         ld2 = if b then {} else ld2;
 

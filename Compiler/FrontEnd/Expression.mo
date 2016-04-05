@@ -2141,7 +2141,7 @@ algorithm
     // count the variables in record
     case DAE.T_COMPLEX(varLst = varLst)
       equation
-        lstInt = List.map(List.map(varLst, varType), sizeOf);
+        lstInt = List.mapMap(varLst, varType, sizeOf);
         nr = List.reduce(lstInt, intAdd);
       then
         nr;
@@ -6362,7 +6362,7 @@ public function anyExpHasCrefName "Returns a true if any exp contains a cref tha
   input String name;
   output Boolean hasCref;
 algorithm
-  hasCref := List.fold(List.map1(inExps, expHasCrefName, name), boolOr, false);
+  hasCref := List.applyAndFold1(inExps, boolOr, expHasCrefName, name, false);
 end anyExpHasCrefName;
 
 public function traversingexpHasName "Returns a true if the exp contains a cref that starts with the given name"
@@ -10496,30 +10496,30 @@ algorithm
       then c1+intMax(c2,c3);
     case DAE.CALL(path=Absyn.IDENT(name),expLst=exps,attr=DAE.CALL_ATTR(ty=tp,builtin=true))
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,0);
+        c1 = List.applyAndFold(exps,intAdd,complexity,0);
         c2 = complexityBuiltin(name,tp);
         /* TODO: Cost is based on type and size of inputs. Maybe even name for builtins :) */
       then c1+c2;
     case DAE.CALL(expLst=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,0);
+        c1 = List.applyAndFold(exps,intAdd,complexity,0);
         c2 = listLength(exps);
         /* TODO: Cost is based on type and size of inputs. Maybe even name for builtins :) */
       then c1+c2+25;
     case DAE.RECORD(exps=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,1);
+        c1 = List.applyAndFold(exps,intAdd,complexity,1);
       then c1;
     case DAE.PARTEVALFUNCTION()
       then complexityVeryBig; /* This should not be here anyway :) */
     case DAE.ARRAY(array=exps,ty=tp)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,if isArrayType(tp) then 0 else complexityAlloc);
+        c1 = List.applyAndFold(exps,intAdd,complexity,if isArrayType(tp) then 0 else complexityAlloc);
         c2 = listLength(exps);
       then c1+c2;
     case DAE.MATRIX(matrix=matrix as (exps::_))
       equation
-        c1 = List.fold(List.map(List.flatten(matrix),complexity),intAdd,complexityAlloc);
+        c1 = List.applyAndFold(List.flatten(matrix),intAdd,complexity,complexityAlloc);
         c2 = listLength(exps)*listLength(matrix);
       then c1 + c2;
     case DAE.RANGE(start=e1,stop=e2,step=NONE())
@@ -10528,13 +10528,13 @@ algorithm
       then complexityDimLarge+complexity(e1)+complexity(e2)+complexity(e3); /* TODO: Check type maybe? */
     case DAE.TUPLE(PR=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c1 = List.applyAndFold(exps,intAdd,complexity,complexityAlloc);
         c2 = listLength(exps);
       then c1+c2;
     case DAE.CAST(exp=e,ty=tp) then tpComplexity(tp)+complexity(e);
     case DAE.ASUB(exp=e,sub=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c1 = List.applyAndFold(exps,intAdd,complexity,complexityAlloc);
         c2 = listLength(exps);
         c3 = complexity(e);
       then c1+c2+c3;
@@ -10546,21 +10546,21 @@ algorithm
     case DAE.REDUCTION() then complexityVeryBig; /* TODO: We need a real traversal... */
     case DAE.LIST(valList=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c1 = List.applyAndFold(exps,intAdd,complexity,complexityAlloc);
         c2 = listLength(exps);
       then c1+c2+complexityAlloc;
     case DAE.CONS(car=e1,cdr=e2)
       then complexityAlloc+complexity(e1)+complexity(e2);
     case DAE.META_TUPLE(listExp=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c1 = List.applyAndFold(exps,intAdd,complexity,complexityAlloc);
         c2 = listLength(exps);
       then complexityAlloc+c1+c2;
     case DAE.META_OPTION(exp=NONE()) then 0;
     case DAE.META_OPTION(exp=SOME(e)) then complexity(e)+complexityAlloc;
     case DAE.METARECORDCALL(args=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c1 = List.applyAndFold(exps,intAdd,complexity,complexityAlloc);
         c2 = listLength(exps);
       then c1+c2+complexityAlloc;
     case DAE.MATCHEXPRESSION() then complexityVeryBig;
@@ -10596,7 +10596,7 @@ algorithm
       list<DAE.Dimension> dims;
     case DAE.T_ARRAY(dims=dims)
       equation
-        i = List.fold(List.map(dims,dimComplexity),intMul,1);
+        i = List.applyAndFold(dims,intMul,dimComplexity,1);
       then i;
     else 0;
   end match;

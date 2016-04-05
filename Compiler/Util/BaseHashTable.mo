@@ -173,7 +173,7 @@ algorithm
  local HashVector hvec;
    case((hvec,_,_,_)) equation
       print("index list lengths:\n");
-      print(stringDelimitList(List.map(List.map(arrayList(hvec),listLength),intString),","));
+      print(stringDelimitList(List.mapMap(arrayList(hvec),listLength,intString),","));
       print("\n");
    then ();
  end match;

@@ -2305,7 +2305,7 @@ algorithm
           print("### Detailed arguments list: \n");
           print(stringDelimitList(List.map(expl, ExpressionDump.printExpStr), ", ") + "\n");
           print("### and argument types: \n");
-          print(stringDelimitList(List.map(List.map(expl, Expression.typeof), Types.printTypeStr), " | ") + "\n");
+          print(stringDelimitList(List.mapMap(expl, Expression.typeof, Types.printTypeStr), " | ") + "\n");
           print("### and output type: \n"  + Types.printTypeStr(dtp) + "\n");
         end if;
 
