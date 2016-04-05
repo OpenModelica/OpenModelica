@@ -3197,11 +3197,11 @@ public function instElement2
   input Connect.Sets inSets;
   input Boolean inStopOnError;
   output FCore.Cache outCache;
-  output FCore.Graph outEnv = inEnv;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH = inIH;
   output UnitAbsyn.InstStore outStore = inStore;
   output list<DAE.Element> outDae = {};
-  output Connect.Sets outSets;
+  output Connect.Sets outSets = inSets;
   output ClassInf.State outState = inState;
   output list<DAE.Var> outVars = {};
   output ConnectionGraph.ConnectionGraph outGraph = inGraph;
@@ -3211,8 +3211,8 @@ protected
   Boolean is_deleted;
 algorithm
   // Check if the component has a conditional expression that evaluates to false.
-  (is_deleted, outSets, outCache) := isDeletedComponent(inElement, inCache,
-      inEnv, inPrefix, inSets, inStopOnError);
+  (is_deleted, outEnv, outCache) := isDeletedComponent(inElement, inPrefix,
+      inStopOnError, inEnv, inCache);
 
   // Skip the component if it was deleted by a conditional expression.
   if is_deleted then
@@ -3246,52 +3246,50 @@ protected function isDeletedComponent
   "Checks if an element has a conditional expression that evaluates to false,
    and adds it to the set of deleted components if it does. Otherwise the
    function does nothing."
-  input tuple<SCode.Element, DAE.Mod> inElement;
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Prefix.Prefix inPrefix;
-  input Connect.Sets inSets;
-  input Boolean inStopOnError;
-  output Boolean outIsDeleted;
-  output Connect.Sets outSets = inSets;
-  output FCore.Cache outCache;
+  input tuple<SCode.Element, DAE.Mod> element;
+  input Prefix.Prefix prefix;
+  input Boolean stopOnError;
+        output Boolean isDeleted;
+  input output FCore.Graph env;
+  input output FCore.Cache cache;
 protected
   SCode.Element el;
   String el_name;
   SourceInfo info;
   Option<Boolean> cond_val_opt;
   Boolean cond_val;
+  DAE.Var var;
 algorithm
   // If the element has a conditional expression, try to evaluate it.
-  if InstUtil.componentHasCondition(inElement) then
-    (el, _) := inElement;
+  if InstUtil.componentHasCondition(element) then
+    (el, _) := element;
     (el_name, info) := InstUtil.extractCurrentName(el);
 
-    (cond_val_opt, outCache) :=
-      InstUtil.instElementCondExp(inCache, inEnv, el, inPrefix, info);
+    (cond_val_opt, cache) :=
+      InstUtil.instElementCondExp(cache, env, el, prefix, info);
 
     // If a conditional expression was present but couldn't be instantiatied, stop.
     if isNone(cond_val_opt) then
-      if inStopOnError then // We should stop instantiation completely, fail.
+      if stopOnError then // We should stop instantiation completely, fail.
         fail();
       else  // We should continue instantiation, pretend that it was deleted.
-        outIsDeleted := false;
+        isDeleted := false;
         return;
       end if;
     end if;
 
     // If we succeeded, check if the condition is true or false.
     SOME(cond_val) := cond_val_opt;
-    outIsDeleted := not cond_val;
+    isDeleted := not cond_val;
 
-    // The component was deleted, add it to the connection set so we can ignore
-    // connections to it.
-    if outIsDeleted == true then
-      outSets := ConnectUtil.addDeletedComponent(el_name, inSets);
+    // The component was deleted, update its status in the environment so we can
+    // look it up when instantiating connections.
+    if isDeleted == true then
+      var := DAE.TYPES_VAR(el_name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), NONE());
+      env := FGraph.updateComp(env, var, FCore.VAR_DELETED(), FGraph.emptyGraph);
     end if;
   else
-    outIsDeleted := false;
-    outCache := inCache;
+    isDeleted := false;
   end if;
 end isDeletedComponent;
 

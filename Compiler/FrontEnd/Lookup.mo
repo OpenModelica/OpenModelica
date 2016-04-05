@@ -1056,48 +1056,85 @@ algorithm
 end lookupRecordConstructorClass;
 
 public function lookupConnectorVar
-"looks up a connector variable, but takes InnerOuter attribute from component if
- inside connector, i.e. for connector reference a.b the innerOuter attribute is
- fetched from a."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
+  "Simplified lookup of connector references. The lookup will stop if it finds a
+   deleted component, so if status is VAR_DELETED() then attr and ty will belong
+   to the deleted component instead of the looked for component."
+  input FCore.Graph env;
   input DAE.ComponentRef cr;
-  output FCore.Cache outCache;
+  input Boolean firstId = true;
   output DAE.Attributes attr;
-  output DAE.Type tp;
+  output DAE.Type ty;
+  output FCore.Status status;
+protected
+  FCore.Graph comp_env;
+  DAE.Attributes parent_attr;
 algorithm
-  (outCache,attr,tp) := match(inCache,inEnv,cr)
-    local
-      DAE.ComponentRef cr1;
-      SCode.ConnectorType ct;
-      SCode.Parallelism prl;
-      SCode.Variability var;
-      Absyn.Direction dir;
-      Absyn.InnerOuter io;
-      DAE.Type ty1;
-      DAE.Attributes attr1;
-      FCore.Cache cache;
-      FCore.Graph env;
-      SCode.Visibility vis;
-
-    // unqualified component reference
-    case(cache,env,DAE.CREF_IDENT())
-      equation
-        (cache,attr1,ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
+  (attr, ty, status) := match cr
+    case DAE.CREF_IDENT()
+      algorithm
+        (DAE.TYPES_VAR(attributes = attr, ty = ty), status, _) :=
+          lookupConnectorVar2(env, cr.ident);
+        ty := checkSubscripts(ty, cr.subscriptLst);
       then
-        (cache,attr1,ty1);
+        (attr, ty, status);
 
-    // qualified component reference
-    case(cache,env,DAE.CREF_QUAL())
-      equation
-        (cache,DAE.ATTR(ct,prl,var,dir,_,vis),ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
-        cr1 = ComponentReference.crefFirstCref(cr);
-        // Find innerOuter attribute from "parent"
-        (cache,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr1);
+    case DAE.CREF_QUAL()
+      algorithm
+        (DAE.TYPES_VAR(attributes = parent_attr, ty = ty), status, comp_env) :=
+          lookupConnectorVar2(env, cr.ident);
+
+        if FCore.isDeletedComp(status) then
+          // Stop if we find a deleted component.
+          attr := parent_attr;
+        else
+          (attr, ty, status) :=
+            lookupConnectorVar(comp_env, cr.componentRef, false);
+
+          // Propagate variability.
+          attr := DAEUtil.setAttrVariability(attr, SCode.variabilityOr(
+            DAEUtil.getAttrVariability(attr), DAEUtil.getAttrVariability(parent_attr)));
+
+          // Use the inner/outer from the first identifier.
+          if firstId then
+            attr := DAEUtil.setAttrInnerOuter(attr, DAEUtil.getAttrInnerOuter(parent_attr));
+          end if;
+        end if;
       then
-        (cache,DAE.ATTR(ct,prl,var,dir,io,vis),ty1);
+        (attr, ty, status);
+
   end match;
 end lookupConnectorVar;
+
+protected function lookupConnectorVar2
+  "Helper function to lookupConnectorVar."
+  input FCore.Graph env;
+  input String name;
+  output DAE.Var var;
+  output FCore.Status status;
+  output FCore.Graph compEnv;
+protected
+  FCore.Scope scope;
+  FCore.Children ht;
+algorithm
+  FCore.G(scope = scope) := env;
+
+  // Connectors are not allowed to be constant, so we don't need to look outside
+  // the local scope. But we do need to check outside implicit scopes, e.g.
+  // for-scopes.
+  for r in scope loop
+    ht := FNode.children(FNode.fromRef(r));
+
+    try
+      (var, _, _, status, compEnv) := lookupVar2(ht, name, env);
+      return;
+    else
+      // Continue to the next scope only if the current scope is implicit.
+      true := FNode.isImplicitRefName(r);
+    end try;
+  end for;
+
+  fail();
+end lookupConnectorVar2;
 
 public function lookupVar
   "LS: when looking up qualified component reference, lookupVar only

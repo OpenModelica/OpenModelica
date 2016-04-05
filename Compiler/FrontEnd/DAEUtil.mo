@@ -6194,50 +6194,49 @@ end showCacheFuncs;
 
 public function setAttrVariability "
   Sets the variability attribute in an Attributes record."
-  input DAE.Attributes inAttr;
-  input SCode.Variability inVar;
-  output DAE.Attributes outAttr;
-protected
-  SCode.ConnectorType ct;
-  SCode.Parallelism prl;
-  Absyn.Direction dir;
-  Absyn.InnerOuter io;
-  SCode.Visibility vis;
+  input output DAE.Attributes attr;
+  input SCode.Variability var;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  DAE.ATTR(ct, prl, _, dir, io, vis) := inAttr;
-  outAttr := DAE.ATTR(ct, prl, inVar, dir, io, vis);
+  attr.variability := var;
 end setAttrVariability;
 
 public function getAttrVariability "
   Get the variability attribute in an Attributes record."
-  input DAE.Attributes inAttr;
-  output SCode.Variability outVar;
-algorithm
-  DAE.ATTR(variability = outVar) := inAttr;
+  input DAE.Attributes attr;
+  output SCode.Variability var = attr.variability;
+  annotation(__OpenModelica_EarlyInline = true);
 end getAttrVariability;
 
 public function setAttrDirection
   "Sets the direction attribute in an Attributes record."
-  input DAE.Attributes inAttr;
-  input Absyn.Direction inDir;
-  output DAE.Attributes outAttr;
-protected
-  SCode.ConnectorType ct;
-  SCode.Parallelism prl;
-  SCode.Variability var;
-  Absyn.InnerOuter io;
-  SCode.Visibility vis;
+  input output DAE.Attributes attr;
+  input Absyn.Direction dir;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  DAE.ATTR(ct, prl, var, _, io, vis) := inAttr;
-  outAttr := DAE.ATTR(ct, prl, var, inDir, io, vis);
+  attr.direction := dir;
 end setAttrDirection;
 
 public function getAttrDirection
-  input DAE.Attributes inAttr;
-  output Absyn.Direction outDir;
-algorithm
-  DAE.ATTR(direction = outDir) := inAttr;
+  input DAE.Attributes attr;
+  output Absyn.Direction dir = attr.direction;
+  annotation(__OpenModelica_EarlyInline = true);
 end getAttrDirection;
+
+public function setAttrInnerOuter
+  "Sets the innerOuter attribute in an Attributes record."
+  input output DAE.Attributes attr;
+  input Absyn.InnerOuter io;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  attr.innerOuter := io;
+end setAttrInnerOuter;
+
+public function getAttrInnerOuter
+  input DAE.Attributes attr;
+  output Absyn.InnerOuter io = attr.innerOuter;
+  annotation(__OpenModelica_EarlyInline = true);
+end getAttrInnerOuter;
 
 public function translateSCodeAttrToDAEAttr
   input SCode.Attributes inAttributes;

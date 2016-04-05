@@ -649,63 +649,6 @@ algorithm
   end match;
 end outerConnectionMatches;
 
-public function addDeletedComponent
-  "Marks a component as deleted in the sets."
-  input String componentName;
-  input output Sets sets;
-protected
-  SetTrie node;
-algorithm
-  node := sets.sets;
-
-  sets.sets := match node
-    case SetTrieNode.SET_TRIE_NODE()
-      algorithm
-        node.nodes := SetTrieNode.SET_TRIE_DELETED(componentName) :: node.nodes;
-      then
-        node;
-  end match;
-end addDeletedComponent;
-
-protected function isDeletedComponent
-  "Checks if the given component is deleted or not."
-  input DAE.ComponentRef component;
-  input SetTrie sets;
-  output Boolean isDeleted;
-algorithm
-  // Send true as last argument to setTrieGet, so that it also matches any
-  // prefix of the cref in case the cref is a subcomponent of a deleted component.
-  try
-    SetTrieNode.SET_TRIE_DELETED() := setTrieGet(component, sets, true);
-    isDeleted := true;
-  else
-    isDeleted := false;
-  end try;
-end isDeletedComponent;
-
-public function connectionContainsDeletedComponents
-  "Checks if a connection contains a deleted component, i.e. if either of the
-  given crefs belong to a deleted component."
-  input DAE.ComponentRef component1;
-  input DAE.ComponentRef component2;
-  input Sets sets;
-  output Boolean containsDeletedComponent;
-protected
-  SetTrie node;
-algorithm
-  node := sets.sets;
-
-  containsDeletedComponent := match node
-    // No sets, so nothing can be deleted.
-    case SetTrieNode.SET_TRIE_NODE(nodes = {}) then false;
-    // Check if the first component is deleted.
-    case _ guard isDeletedComponent(component1, node) then true;
-    // Check if the second component is deleted.
-    case _ guard isDeletedComponent(component2, node) then true;
-    else false;
-  end match;
-end connectionContainsDeletedComponents;
-
 public function addOuterConnectToSets
   "Adds an outer connection to all sets where a corresponding inner definition
   is present. For instance, if a connection set contains {world.v, topPin.v} and
@@ -827,8 +770,6 @@ algorithm
         e := setElementName(e, optPrefixCref(prefix, cr));
       then
         {e};
-
-    case SetTrieNode.SET_TRIE_DELETED() then {};
 
   end match;
 end collectOuterElements2;
@@ -999,7 +940,6 @@ algorithm
   name := match node
     case SetTrieNode.SET_TRIE_NODE() then node.name;
     case SetTrieNode.SET_TRIE_LEAF() then node.name;
-    case SetTrieNode.SET_TRIE_DELETED() then node.name;
   end match;
 end setTrieNodeName;
 
@@ -1349,9 +1289,6 @@ algorithm
        then
          ();
 
-     case SetTrieNode.SET_TRIE_DELETED()
-       then ();
-
   end match;
 end setTrieTraverseLeaves;
 
@@ -1417,7 +1354,6 @@ algorithm
   isNamed := match node
     case SetTrieNode.SET_TRIE_NODE() then id == node.name;
     case SetTrieNode.SET_TRIE_LEAF() then id == node.name;
-    case SetTrieNode.SET_TRIE_DELETED() then id == node.name;
     else false;
   end match;
 end setTrieNodeNamed;
@@ -1441,7 +1377,6 @@ protected function setTrieLeafNamed
 algorithm
   isNamed := match node
     case SetTrieNode.SET_TRIE_LEAF() then id == node.name;
-    case SetTrieNode.SET_TRIE_DELETED() then id == node.name;
     else false;
   end match;
 end setTrieLeafNamed;
@@ -3082,9 +3017,6 @@ algorithm
   string := match trie
     local
       String name, res;
-
-    case SetTrieNode.SET_TRIE_DELETED()
-      then accumName + "." + trie.name + ": deleted\n";
 
     case SetTrieNode.SET_TRIE_LEAF()
       algorithm

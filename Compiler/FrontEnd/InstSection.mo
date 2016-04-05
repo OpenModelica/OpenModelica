@@ -2945,6 +2945,7 @@ algorithm
       list<Absyn.Subscript> subs1,subs2;
       list<Absyn.ComponentRef> crefs1,crefs2;
       String s1,s2;
+      Boolean del1, del2;
 
     // adrpo: check for connect(A, A) as we should give a warning and remove it!
     case (cache,env,ih,sets,_,c1,c2,_,graph,_)
@@ -2953,16 +2954,6 @@ algorithm
         s1 = Dump.printComponentRefStr(c1);
         s2 = Dump.printComponentRefStr(c1);
         Error.addSourceMessage(Error.SAME_CONNECT_INSTANCE, {s1, s2}, info);
-      then
-        (cache, env, ih, sets, DAE.emptyDae, graph);
-
-    // Check if either of the components are conditional components with
-    // condition = false, in which case we should not instantiate the connection.
-    case (cache,env,ih,sets,_,c1,c2,_,graph,_)
-      equation
-        c1_1 = ComponentReference.toExpCref(c1);
-        c2_1 = ComponentReference.toExpCref(c2);
-        true = ConnectUtil.connectionContainsDeletedComponents(c1_1, c2_1, sets);
       then
         (cache, env, ih, sets, DAE.emptyDae, graph);
 
@@ -2978,31 +2969,22 @@ algorithm
 
     // handle normal connectors!
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,_)
-      equation
+      algorithm
         ErrorExt.rollBack("expandableConnectors");
-        // Skip collection of dae functions here they can not be present in connector references
-        (cache,DAE.CREF(c1_1,_),_,attr1) = Static.elabCrefNoEval(cache,env, c1, impl, false, pre, info);
-        (cache,DAE.CREF(c2_1,_),_,attr2) = Static.elabCrefNoEval(cache,env, c2, impl, false, pre, info);
+        (cache, c1_2, attr1, ct1, vt1, io1, f1, ty1, del1) :=
+          instConnector(cache, env, ih, c1, impl, pre, info);
+        (cache, c2_2, attr2, _, vt2, io2, f2, ty2, del2) :=
+          instConnector(cache, env, ih, c2, impl, pre, info);
 
-        (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
-        (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,attr1 as DAE.ATTR(ct1,_,vt1,_,io1,_),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,attr2 as DAE.ATTR(_,_,vt2,_,io2,_),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
-        validConnector(ty1, c1_2, info) "Check that the type of the connectors are good." ;
-        validConnector(ty2, c2_2, info);
-        f1 = ConnectUtil.componentFace(env,c1_2);
-        f2 = ConnectUtil.componentFace(env,c2_2);
-
-        ty1 = sortConnectorType(ty1);
-        ty2 = sortConnectorType(ty2);
-
-        checkConnectTypes(c1_2, ty1, f1, attr1, c2_2, ty2, f2, attr2, info);
-        // print("add connect(");print(ComponentReference.printComponentRefStr(c1_2));print(", ");print(ComponentReference.printComponentRefStr(c2_2));
-        // print(") with ");print(Dump.unparseInnerouterStr(io1));print(", ");print(Dump.unparseInnerouterStr(io2));
-        // print("\n");
-        (cache,_,ih,sets,dae,graph) =
-          connectComponents(cache, env, ih, sets, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, ct1, io1, io2, graph, info);
-        sets = ConnectUtil.increaseConnectRefCount(c1_2, c2_2, sets);
+        // If neither connector is a deleted conditional components, create the connection.
+        if not (del1 or del2) then
+          checkConnectTypes(c1_2, ty1, f1, attr1, c2_2, ty2, f2, attr2, info);
+          (cache, _, ih, sets, dae, graph) :=
+            connectComponents(cache, env, ih, sets, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, ct1, io1, io2, graph, info);
+          sets := ConnectUtil.increaseConnectRefCount(c1_2, c2_2, sets);
+        else
+          dae := DAE.emptyDae;
+        end if;
       then
         (cache,env,ih,sets,dae,graph);
 
@@ -3033,6 +3015,46 @@ algorithm
         fail();
   end matchcontinue;
 end instConnect;
+
+protected function instConnector
+  input FCore.Cache inCache;
+  input FCore.Graph env;
+  input InnerOuter.InstHierarchy ih;
+  input Absyn.ComponentRef connectorCref;
+  input Boolean impl;
+  input Prefix.Prefix prefix;
+  input SourceInfo info;
+  output FCore.Cache outCache = inCache;
+  output DAE.ComponentRef outCref;
+  output DAE.Attributes outAttr;
+  output SCode.ConnectorType connectorType;
+  output SCode.Variability variability;
+  output Absyn.InnerOuter innerOuter;
+  output Connect.Face face;
+  output DAE.Type ty;
+  output Boolean deleted;
+protected
+  FCore.Status status;
+algorithm
+  outCref := ComponentReference.toExpCref(connectorCref);
+  (DAE.ATTR(connectorType = connectorType, variability = variability,
+    innerOuter = innerOuter), ty, status) :=
+      Lookup.lookupConnectorVar(env, outCref);
+
+  deleted := FCore.isDeletedComp(status);
+
+  if deleted then
+    face := Connect.NO_FACE();
+    outAttr := DAE.dummyAttrVar;
+  else
+    (outCache, DAE.CREF(componentRef = outCref), DAE.PROP(type_ = ty), outAttr) :=
+      Static.elabCrefNoEval(inCache, env, connectorCref, impl, false, prefix, info);
+    (outCache, outCref) := Static.canonCref(outCache, env, outCref, impl);
+    validConnector(ty, outCref, info);
+    face := ConnectUtil.componentFace(env, outCref);
+    ty := sortConnectorType(ty);
+  end if;
+end instConnector;
 
 protected function sortConnectorType
   input DAE.Type inType;
@@ -3177,8 +3199,8 @@ algorithm
         (cache,SOME((DAE.CREF(c2_1,_),_,attr2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache, env, c2_1, impl);
-        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (attr1,ty1) = Lookup.lookupConnectorVar(env,c1_2);
+        (attr2,ty2) = Lookup.lookupConnectorVar(env,c2_2);
         DAE.ATTR(connectorType = SCode.POTENTIAL()) = attr1;
         DAE.ATTR(connectorType = SCode.POTENTIAL()) = attr2;
         true = isExpandableConnectorType(ty1);
@@ -3254,7 +3276,7 @@ algorithm
 
         // lookup the existing connector
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (attr2,ty2) = Lookup.lookupConnectorVar(env,c2_2);
         // bind the attributes
         DAE.ATTR(ct2,prl2,vt2,_,io2,vis2) = attr2;
 
@@ -3266,7 +3288,7 @@ algorithm
         (cache,SOME((DAE.CREF(c1_1,_),_,_))) = Static.elabCref(cache,env,c1_prefix,impl,false,pre,info);
         // lookup the expandable connector
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
-        (cache,_,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
+        (_,ty1) = Lookup.lookupConnectorVar(env, c1_2);
         // make sure is expandable!
         true = isExpandableConnectorType(ty1);
         // strip last subs to get the full type!
@@ -3342,7 +3364,7 @@ algorithm
 
         // lookup the existing connector
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (attr2,ty2) = Lookup.lookupConnectorVar(env,c2_2);
         // bind the attributes
         DAE.ATTR(ct2,prl2,vt2,_,io2,vis2) = attr2;
 
@@ -3354,7 +3376,7 @@ algorithm
         (cache,SOME((DAE.CREF(c1_1,_),_,_))) = Static.elabCref(cache, env, c1_prefix, impl, false, pre, info);
         // lookup the expandable connector
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
-        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
+        (attr1,ty1) = Lookup.lookupConnectorVar(env, c1_2);
         // make sure is expandable!
         true = isExpandableConnectorType(ty1);
         // strip last subs to get the full type!
@@ -3422,7 +3444,7 @@ algorithm
         // now it should be in the Env, fetch the info!
         (cache,SOME((DAE.CREF(c1_1,_),_,_))) = Static.elabCref(cache, env, c1, impl, false, pre,info);
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
-        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
+        (attr1,ty1) = Lookup.lookupConnectorVar(env,c1_2);
         // bind the attributes
         DAE.ATTR(ct1,prl1,vt1,_,io1,vis1) = attr1;
 
@@ -3463,8 +3485,8 @@ algorithm
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,_,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,_,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (_,ty1) = Lookup.lookupConnectorVar(env,c1_2);
+        (_,ty2) = Lookup.lookupConnectorVar(env,c2_2);
 
         // non-expandable
         false = isExpandableConnectorType(ty1);

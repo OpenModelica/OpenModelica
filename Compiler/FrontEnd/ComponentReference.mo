@@ -388,90 +388,42 @@ algorithm
 end unelabSubscripts;
 
 public function toExpCref
-"Translate an Absyn.ComponentRef into a ComponentRef.
-  Note: Only support for indexed subscripts of integers"
-  input Absyn.ComponentRef inComponentRef;
-  output DAE.ComponentRef outComponentRef;
+  "Translates an Absyn cref to an untyped DAE cref."
+  input Absyn.ComponentRef absynCref;
+  output DAE.ComponentRef daeCref;
 algorithm
-  outComponentRef := match (inComponentRef)
+  daeCref := match absynCref
     local
-      list<DAE.Subscript> subs_1;
-      DAE.Ident id;
-      list<Absyn.Subscript> subs;
-      DAE.ComponentRef cr_1;
-      Absyn.ComponentRef cr;
 
-    // ids
-    case (Absyn.CREF_IDENT(name = id,subscripts = subs))
-      equation
-        subs_1 = toExpCrefSubs(subs);
-      then
-        makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,subs_1);
+    case Absyn.CREF_IDENT()
+      then makeCrefIdent(absynCref.name, DAE.T_UNKNOWN_DEFAULT,
+        toExpCrefSubs(absynCref.subscripts));
 
-    // qualified
-    case (Absyn.CREF_QUAL(name = id,subscripts = subs,componentRef = cr))
-      equation
-        cr_1 = toExpCref(cr);
-        subs_1 = toExpCrefSubs(subs);
-      then
-        makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,subs_1,cr_1);
+    case Absyn.CREF_QUAL()
+      then makeCrefQual(absynCref.name, DAE.T_UNKNOWN_DEFAULT,
+        toExpCrefSubs(absynCref.subscripts), toExpCref(absynCref.componentRef));
 
-    // fully qualified
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr))
-      equation
-        cr_1 = toExpCref(cr);
-      then
-        cr_1; // There is no fullyqualified cref, translate to qualified cref
+    case Absyn.CREF_FULLYQUALIFIED()
+      then toExpCref(absynCref.componentRef);
+
+    case Absyn.WILD() then DAE.WILD();
+    case Absyn.ALLWILD() then DAE.WILD();
   end match;
 end toExpCref;
 
 protected function toExpCrefSubs
-"Helper function to toExpCref."
-  input list<Absyn.Subscript> inAbsynSubscriptLst;
-  output list<DAE.Subscript> outSubscriptLst;
+  "Translates a list of Absyn subscripts to a list of untyped DAE subscripts."
+  input list<Absyn.Subscript> absynSubs;
+  output list<DAE.Subscript> daeSubs;
+protected
+  Integer i;
 algorithm
-  outSubscriptLst := matchcontinue (inAbsynSubscriptLst)
-    local
-      list<DAE.Subscript> xs_1;
-      Integer i;
-      list<Absyn.Subscript> xs;
-      DAE.ComponentRef cr_1;
-      Absyn.ComponentRef cr;
-      DAE.Ident s,str;
-      Absyn.Subscript e;
-      DAE.Exp exp;
-
-    // empty list
-    case ({}) then {};
-
-    // integer subscripts become indexes of integers
-    case ((Absyn.SUBSCRIPT(subscript = Absyn.INTEGER(value = i)) :: xs))
-      equation
-        xs_1 = toExpCrefSubs(xs);
-      then
-        (DAE.INDEX(DAE.ICONST(i)) :: xs_1);
-
-    // cref subscripts become indexes of crefs
-    // => Assumes index is INTEGER. FIXME! TODO!: what about if index is an array?
-    case ((Absyn.SUBSCRIPT(subscript = Absyn.CREF(componentRef = cr)) :: xs))
-      equation
-        cr_1 = toExpCref(cr);
-        xs_1 = toExpCrefSubs(xs);
-        exp = Expression.makeCrefExp(cr_1,DAE.T_INTEGER_DEFAULT);
-      then
-        (DAE.INDEX(exp) :: xs_1);
-
-    // when there is an error, move to next TODO! FIXME! report an error!
-    case ((e :: xs))
-      equation
-        s = Dump.printSubscriptsStr({e});
-        _ = stringAppendList({"#Error converting subscript: ",s," to Expression.\n"});
-        //print("#Error converting subscript: " + s + " to Expression.\n");
-        //Print.printErrorBuf(str);
-        xs_1 = toExpCrefSubs(xs);
-      then
-        xs_1;
-  end matchcontinue;
+  daeSubs := list(
+    match sub
+      case Absyn.SUBSCRIPT() then DAE.INDEX(Expression.fromAbsynExp(sub.subscript));
+      case Absyn.NOSUB() then DAE.WHOLEDIM();
+    end match
+  for sub in absynSubs);
 end toExpCrefSubs;
 
 public function crefStr

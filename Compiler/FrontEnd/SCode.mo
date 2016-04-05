@@ -3790,17 +3790,10 @@ algorithm
 end prefixesInnerOuter;
 
 public function prefixesSetInnerOuter
-  input Prefixes inPrefixes;
-  input Absyn.InnerOuter inInnerOuter;
-  output Prefixes outPrefixes;
-protected
-  Visibility v;
-  Redeclare rd;
-  Final f;
-  Replaceable rp;
+  input output Prefixes prefixes;
+  input Absyn.InnerOuter innerOuter;
 algorithm
-  PREFIXES(v, rd, f, _, rp) := inPrefixes;
-  outPrefixes := PREFIXES(v, rd, f, inInnerOuter, rp);
+  prefixes.innerOuter := innerOuter;
 end prefixesSetInnerOuter;
 
 public function removeAttributeDimensions
@@ -3818,18 +3811,10 @@ algorithm
 end removeAttributeDimensions;
 
 public function setAttributesDirection
-  input Attributes inAttributes;
-  input Absyn.Direction inDirection;
-  output Attributes outAttributes;
-protected
-  Absyn.ArrayDim ad;
-  ConnectorType ct;
-  Parallelism p;
-  Variability v;
-  Absyn.IsField isf;
+  input output Attributes attributes;
+  input Absyn.Direction direction;
 algorithm
-  ATTR(ad, ct, p, v, _, isf) := inAttributes;
-  outAttributes := ATTR(ad, ct, p, v, inDirection, isf);
+  attributes.direction := direction;
 end setAttributesDirection;
 
 public function attrVariability
@@ -3842,6 +3827,13 @@ algorithm
     case  ATTR(variability = v) then v;
   end match;
 end attrVariability;
+
+public function setAttributesVariability
+  input output Attributes attributes;
+  input Variability variability;
+algorithm
+  attributes.variability := variability;
+end setAttributesVariability;
 
 public function isDerivedClassDef
   input ClassDef inClassDef;
