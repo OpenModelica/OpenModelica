@@ -107,10 +107,10 @@ LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphi
   // set the start component
   setStartComponent(pStartComponent);
   setEndComponent(0);
-  setDelay("");
-  setZf("");
-  setZfr("");
-  setAlpha("");
+  setDelay("1e-4");
+  setZf("10000");
+  setZfr("100");
+  setAlpha("0.2");
 }
 
 LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView)
