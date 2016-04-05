@@ -17,7 +17,7 @@ end A;
 model ConnectArrayCond
   C c1[2] if false;
 equation
-  connect(c1[1].c, c2[2].c);
+  connect(c1[1].c, c1[2].c);
 end ConnectArrayCond;
 
 // Result:

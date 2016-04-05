@@ -36,9 +36,6 @@ end RegComponent;
   RegComponent rc(n = 6);
 end Test;
 
-// insert expected flat file here. Can be done by issuing the command
-// ./omc XXX.mo >> XXX.mo and then comment the inserted class.
-//
 // Result:
 // class Test
 // parameter Integer rc.n = 6;

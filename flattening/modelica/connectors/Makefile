@@ -18,7 +18,6 @@ Connect17.mo \
 Connect18.mo \
 ConnectArray1.mo \
 ConnectArrayCond.mo \
-ConnectArrayCond2.mo \
 ConnectEnumArray.mo \
 ConnectFlowEffort.mo \
 ConnectFlowEffort2.mo\
@@ -71,6 +70,7 @@ FAILINGTESTFILES=\
 Connect3.mo \
 Connect10.mo \
 Connect11.mo \
+ConnectArrayCond2.mo \
 ConnectConst1.mo \
 ConnectForEquations.mo \
 Units1.mo
