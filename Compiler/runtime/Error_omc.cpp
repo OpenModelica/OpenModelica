@@ -71,13 +71,13 @@ extern void* Error_getMessages(threadData_t *threadData)
 extern const char* Error_printErrorsNoWarning(threadData_t *threadData)
 {
   std::string res = ErrorImpl__printErrorsNoWarning(threadData);
-  return GC_strdup(res.c_str());
+  return omc_alloc_interface.malloc_strdup(res.c_str());
 }
 
 extern const char* Error_printMessagesStr(threadData_t *threadData,int warningsAsErrors)
 {
   std::string res = ErrorImpl__printMessagesStr(threadData,warningsAsErrors);
-  return GC_strdup(res.c_str());
+  return omc_alloc_interface.malloc_strdup(res.c_str());
 }
 
 extern void Error_addSourceMessage(threadData_t *threadData,int _id, void *msg_type, void *severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)

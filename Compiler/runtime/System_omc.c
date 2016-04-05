@@ -204,7 +204,7 @@ extern const char* System_basename(const char* str)
 
 extern const char* System_dirname(const char* str)
 {
-  char *cpy = GC_strdup(str);
+  char *cpy = omc_alloc_interface.malloc_strdup(str);
   char *res = NULL;
 #if defined(_MSC_VER)
   char drive[_MAX_DRIVE], dir[_MAX_DIR], filename[_MAX_FNAME], extension[_MAX_EXT];
@@ -318,7 +318,7 @@ extern void* System_strtok(const char *str0, const char *delimit)
 {
   char *s;
   void *res = mmc_mk_nil();
-  char *str = GC_strdup(str0);
+  char *str = omc_alloc_interface.malloc_strdup(str0);
   char *saveptr;
   s=strtok_r(str,delimit,&saveptr);
   if (s == NULL) {
@@ -395,7 +395,7 @@ const char* System_getClassnamesForSimulation()
 
 void System_setClassnamesForSimulation(const char *class_names)
 {
-  class_names_for_simulation = GC_strdup(class_names);
+  class_names_for_simulation = omc_alloc_interface.malloc_strdup(class_names);
 }
 
 extern double System_getVariableValue(double _timeStamp, void* _timeValues, void* _varValues)
@@ -727,7 +727,7 @@ extern const char* System_realpath(const char *path)
   if (realpath(path, buf) == NULL) {
     MMC_THROW();
   }
-  return GC_strdup(buf);
+  return omc_alloc_interface.malloc_strdup(buf);
 }
 
 extern int System_fileIsNewerThan(const char *file1, const char *file2)

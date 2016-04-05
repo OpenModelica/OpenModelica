@@ -233,35 +233,35 @@ static int filterString(char* buf,char* bufRes)
 
 extern int SystemImpl__setCCompiler(const char *str)
 {
-  cc = GC_strdup(str);
+  cc = omc_alloc_interface.malloc_strdup(str);
   if (cc == NULL) return -1;
   return 0;
 }
 
 extern int SystemImpl__setCXXCompiler(const char *str)
 {
-  cxx = GC_strdup(str);
+  cxx = omc_alloc_interface.malloc_strdup(str);
   if (cxx == NULL) return -1;
   return 0;
 }
 
 extern int SystemImpl__setLinker(const char *str)
 {
-  linker = GC_strdup(str);
+  linker = omc_alloc_interface.malloc_strdup(str);
   if (linker == NULL) return -1;
   return 0;
 }
 
 extern int SystemImpl__setCFlags(const char *str)
 {
-  cflags = GC_strdup(str);
+  cflags = omc_alloc_interface.malloc_strdup(str);
   if (cflags == NULL) return -1;
   return 0;
 }
 
 extern int SystemImpl__setLDFlags(const char *str)
 {
-  ldflags = GC_strdup(str);
+  ldflags = omc_alloc_interface.malloc_strdup(str);
   if (ldflags == NULL) return -1;
   return 0;
 }
@@ -281,13 +281,13 @@ extern char* SystemImpl__pwd(void)
   for (i=0; i<MAXPATHLEN && buf[i]; i++) {
     if (buf[i] == '\\') buf[i] = '/';
   }
-  return GC_strdup(buf);
+  return omc_alloc_interface.malloc_strdup(buf);
 #else
   if (NULL == getcwd(buf,MAXPATHLEN)) {
     fprintf(stderr, "System.pwd failed\n");
     return NULL;
   }
-  return GC_strdup(buf);
+  return omc_alloc_interface.malloc_strdup(buf);
 #endif
 }
 
@@ -683,7 +683,7 @@ char* System_popen(threadData_t *threadData, const char* command, int *status)
     fprintf(stderr, "System.pipe: returned\n"); fflush(NULL);
   }
 
-  char *res = GC_strdup(-1 == pclose(pipe) ? strerror(errno) : Print_getString(threadData));
+  char *res = omc_alloc_interface.malloc_strdup(-1 == pclose(pipe) ? strerror(errno) : Print_getString(threadData));
   Print_restoreBuf(threadData, handle);
 
   if (debug) {
@@ -994,7 +994,7 @@ extern int SystemImpl__removeDirectory(const char *path)
       if (res == NULL)
       {
         /* basepath is finally found */
-        pattern = GC_strdup(str);
+        pattern = omc_alloc_interface.malloc_strdup(str);
         break;
       }
       else
@@ -1008,7 +1008,7 @@ extern int SystemImpl__removeDirectory(const char *path)
         else
         {
           /* basepath is finally found */
-          pattern = GC_strdup(str);
+          pattern = omc_alloc_interface.malloc_strdup(str);
           sub = res;
           len_sub = strlen(sub);
           break;
@@ -1863,7 +1863,7 @@ void splitVersion(const char *version, long *versionNum, char **versionExtra)
     buf = next;
   } while (cont && ++i < MODELICAPATH_LEVELS);
   if (*buf == ' ') buf++;
-  *versionExtra = GC_strdup(buf);
+  *versionExtra = omc_alloc_interface.malloc_strdup(buf);
   len = strlen(*versionExtra);
   /* fprintf(stderr, "have len %ld versionExtra %s\n", len, *versionExtra); */
   if (len >= 2 && 0==strcmp("mo", *versionExtra+len-2)) {
@@ -1947,7 +1947,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
         if (!ok)
           continue;
         res[i].dir = mp;
-        res[i].file = GC_strdup(ent->d_name);
+        res[i].file = omc_alloc_interface.malloc_strdup(ent->d_name);
         if (res[i].file[nlen] == ' ') {
           splitVersion(res[i].file+nlen+1, res[i].version, &res[i].versionExtra);
         } else {
@@ -2348,7 +2348,7 @@ void SystemImpl__gettextInit(const char *locale)
   char *old_ctype_default = setlocale(LC_CTYPE, "");
   if (!old_ctype_default)
     old_ctype_default = "UTF-8";
-  char *old_ctype = GC_strdup(old_ctype_default);
+  char *old_ctype = omc_alloc_interface.malloc_strdup(old_ctype_default);
   int old_ctype_is_utf8 = strcmp(nl_langinfo(CODESET), "UTF-8") == 0;
 
   int res =
@@ -2799,7 +2799,7 @@ char* SystemImpl__ctime(double time)
 {
   char buf[64] = {0}; /* needs to be >=26 char */
   time_t t = (time_t) time;
-  return GC_strdup(ctime_r(&t,buf));
+  return omc_alloc_interface.malloc_strdup(ctime_r(&t,buf));
 }
 
 #if defined(__MINGW32__)
@@ -3000,8 +3000,8 @@ void SystemImpl__dladdr(void *symbol, const char **file, const char **name)
     *file = "dladdr failed";
     *name = "";
   } else {
-    *file = GC_strdup(info.dli_fname);
-    *name = GC_strdup(info.dli_sname);
+    *file = omc_alloc_interface.malloc_strdup(info.dli_fname);
+    *name = omc_alloc_interface.malloc_strdup(info.dli_sname);
   }
 #endif
 }

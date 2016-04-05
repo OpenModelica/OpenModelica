@@ -800,7 +800,7 @@ fprintf(fout, "{title: '%s',\n"
 
     fclose(fout);
     if (isHtml) {
-      *htmlOut = GC_strdup(html);
+      *htmlOut = omc_alloc_interface.malloc_strdup(html);
       free(html);
     }
   }

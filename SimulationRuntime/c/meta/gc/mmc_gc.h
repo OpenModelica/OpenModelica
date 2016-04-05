@@ -112,11 +112,17 @@ static inline void* mmc_alloc_words(unsigned int nwords) {
 
 /* for arrays only */
 static inline void* mmc_alloc_words_atomic_ignore_off_page(unsigned int nwords) {
+#if defined(OMC_RECORD_ALLOC_WORDS)
+  mmc_record_alloc_words((nwords) * sizeof(void*));
+#endif
   return GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE((nwords) * sizeof(void*));
 }
 
 /* for arrays only */
 static inline void* mmc_alloc_words_ignore_off_page(unsigned int nwords) {
+#if defined(OMC_RECORD_ALLOC_WORDS)
+  mmc_record_alloc_words((nwords) * sizeof(void*));
+#endif
   return GC_MALLOC_IGNORE_OFF_PAGE((nwords) * sizeof(void*));
 }
 
