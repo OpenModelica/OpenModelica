@@ -6256,6 +6256,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
                 return jacobian_system->getJacobian(<%index%>);
                 // cout << "A Matrix for system " << <%index%> << A_matrix << std::endl;
             }
+            else
+              throw ModelicaSimulationError(MATH_FUNCTION, "System matrix not available");
             >>
           case ("sparse") then
             'throw ModelicaSimulationError(MATH_FUNCTION,"Dense matrix is not activated");'

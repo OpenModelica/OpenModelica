@@ -319,10 +319,6 @@ template crefToCStr(ComponentRef cr, Boolean useFlatArrayNotation)
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
 
-template representationCrefDerVar(ComponentRef inCref, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot */) ::=
-  cref2simvar(inCref, simCode ) |> SIMVAR(__) =>'<%stateDerVectorName%>[<%index%>]'
-end representationCrefDerVar;
-
 template daeExpCrefRhs(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs,
                        Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for a component reference on the right hand side of an
@@ -1759,16 +1755,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     //let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, "<%var3%>");<%\n%>'
     '<%var%>'
 
-
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
-    representationCrefDerVar(arg.componentRef, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName)
-  case CALL(path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
-    let retType = '<%expTypeArrayIf(arg.ty)%>'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let cast = match arg.ty case T_INTEGER(__) then "(int)"
-                            case T_ENUMERATION(__) then "(int)" //else ""
-    let &preExp += '<%retVar%> = <%cast%>pre(<%cref(arg.componentRef, useFlatArrayNotation)%>);<%\n%>'
-    '<%retVar%>'
+    let var = cref2simvar(arg.componentRef, simCode) |> SIMVAR(index=i) => '__zDot[<%i%>]'
+    '<%var%>'
 
   case CALL(path=IDENT(name="print"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
