@@ -220,7 +220,7 @@ algorithm
   //print("InstStateMachineUtil.mergeVariableDefinitions: innerCrefToOuterOutputCrefs:\n"); BaseHashTable.dumpHashTable(innerCrefToOuterOutputCrefs);
 
   // Substitute occurrences of previous(outerCref) by previous(innerCref)
-  emptyTree := DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
+  emptyTree := DAE.AvlTreePathFunction.Tree.EMPTY();
   (DAE.DAE(dAElist), _, _) := DAEUtil.traverseDAE(DAE.DAE(dAElist), emptyTree, traverserHelperSubsOuterByInnerExp, outerOutputCrefToInnerCref);
 
   // FIXME add support for outers that don't have "inner outer" or "inner" at closest instance level (requires to introduce a fresh intermediate variable)

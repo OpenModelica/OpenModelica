@@ -101,7 +101,7 @@ algorithm
 
         funcs = List.map(BaseHashTable.hashTableValueList(inFunctions), expandFunction);
 
-        tree = DAE.emptyFuncTree;
+        tree = DAE.AvlTreePathFunction.Tree.EMPTY();
         tree = DAEUtil.addDaeFunction(funcs, tree);
 
         (_,_) = countElements(el, 0, 0);

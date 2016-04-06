@@ -176,7 +176,7 @@ algorithm
       local
         DAE.FunctionTree fun_;
       case SOME(fun_) then fun_;
-      else DAE.emptyFuncTree;
+      else DAE.AvlTreePathFunction.Tree.EMPTY();
     end match;
 
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
@@ -2088,7 +2088,7 @@ algorithm
         //print("Search for function mapper\n");
         (mapper, tp) = getFunctionMapper(path, inFunctionTree);
         (dpath, blst) = differentiateFunction1(path,mapper, tp, expl, (inDiffwrtCref, inInputData, inDiffType, inFunctionTree));
-        SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) = DAEUtil.avlTreeGet(inFunctionTree, dpath);
+        SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) = DAE.AvlTreePathFunction.get(inFunctionTree, dpath);
         // check if derivativ function has all expected inputs
         (true,_) = checkDerivativeFunctionInputs(blst, tp, dtp);
         (expl1,_) = List.splitOnBoolList(expl, blst);
@@ -2103,7 +2103,7 @@ algorithm
         //print("Search for function mapper2\n");
         (mapper, tp) = getFunctionMapper(path, inFunctionTree);
         (dpath, blst) = differentiateFunction1(path, mapper, tp, expl, (inDiffwrtCref, inInputData, inDiffType, inFunctionTree));
-        SOME(DAE.FUNCTION(type_ = dtp)) = DAEUtil.avlTreeGet(inFunctionTree, dpath);
+        SOME(DAE.FUNCTION(type_ = dtp)) = DAE.AvlTreePathFunction.get(inFunctionTree, dpath);
         // check if derivativ function has all expected inputs
         (false, tlst) = checkDerivativeFunctionInputs(blst, tp, dtp);
         // add Warning
@@ -2234,7 +2234,7 @@ algorithm
         //print("Search for function mapper\n");
         (mapper, tp) = getFunctionMapper(path, inFunctionTree);
         (dpath, blst) = differentiateFunction1(path,mapper, tp, expl, (inDiffwrtCref, inInputData, inDiffType, inFunctionTree));
-        SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) = DAEUtil.avlTreeGet(inFunctionTree, dpath);
+        SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) = DAE.AvlTreePathFunction.get(inFunctionTree, dpath);
         // check if derivativ function has all expected inputs
         (true,_) = checkDerivativeFunctionInputs(blst, tp, dtp);
         (expl1,_) = List.splitOnBoolList(expl, blst);
@@ -2259,7 +2259,7 @@ algorithm
         //print("Search for function mapper2\n");
         (mapper, tp) = getFunctionMapper(path, inFunctionTree);
         (dpath, blst) = differentiateFunction1(path, mapper, tp, expl, (inDiffwrtCref, inInputData, inDiffType, inFunctionTree));
-        SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(inFunctionTree, dpath);
+        SOME(DAE.FUNCTION(type_=dtp)) = DAE.AvlTreePathFunction.get(inFunctionTree, dpath);
         // check if derivativ function has all expected inputs
         (false, tlst) = checkDerivativeFunctionInputs(blst, tp, dtp);
         // add Warning
@@ -2280,7 +2280,7 @@ algorithm
         failure(BackendDAE.DIFF_FULL_JACOBIAN() = inDiffType);
 
         // get algorithm of the function
-        SOME(func) = DAEUtil.avlTreeGet(inFunctionTree,path);
+        SOME(func) = DAE.AvlTreePathFunction.get(inFunctionTree,path);
 
         // differentiate function
         (dfunc, functions, blst) = differentiatePartialFunction(func, inDiffwrtCref, NONE(), inInputData, inDiffType, inFunctionTree, maxIter, expStack);
@@ -2297,7 +2297,7 @@ algorithm
         functions = DAEUtil.addDaeFunction({dfunc}, functions);
         // add differentiated function as function mapper
         func = DAEUtil.addFunctionDefinition(func, DAE.FUNCTION_DER_MAPPER(path, dpath, 1, {}, NONE(), {}));
-        functions = DAEUtil.avlTreeAdd(functions, path, SOME(func));
+        functions = DAE.AvlTreePathFunction.add(functions, path, SOME(func));
 
         // debug
         // differentiate expl
@@ -2890,7 +2890,7 @@ algorithm
       Absyn.Path name;
     case(_,_)
       equation
-          SOME(DAE.FUNCTION(functions=flst)) = DAEUtil.avlTreeGet(functions,fname);
+          SOME(DAE.FUNCTION(functions=flst)) = DAE.AvlTreePathFunction.get(functions,fname);
           DAE.FUNCTION_DER_MAPPER(lowerOrderDerivatives=lowerOrderDerivatives) = getFunctionMapper1(flst);
           name = List.last(lowerOrderDerivatives);
       then name;
@@ -2911,7 +2911,7 @@ algorithm
       String s;
     case(_,_)
       equation
-        SOME(DAE.FUNCTION(functions=flst,type_=t)) = DAEUtil.avlTreeGet(functions,fname);
+        SOME(DAE.FUNCTION(functions=flst,type_=t)) = DAE.AvlTreePathFunction.get(functions,fname);
         m = getFunctionMapper1(flst);
       then (m,t);
     case (_,_)

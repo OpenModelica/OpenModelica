@@ -3233,14 +3233,14 @@ author:Waurich TUD 2014-10"
 algorithm
   fTreeOut := matchcontinue(fTreeIn)
     local
-      list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
+      list<tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value>> funcLst;
       DAE.FunctionTree funcs;
   case(_)
     equation
       true = stringEq(Flags.getConfigString(Flags.SIMCODE_TARGET),"Cpp");
-      funcLst = DAEUtil.avlTreeToList(fTreeIn);
+      funcLst = DAE.AvlTreePathFunction.toList(fTreeIn);
       funcLst = List.map(funcLst,renameFunctionParameter1);
-      funcs = DAEUtil.avlTreeAddLst(funcLst,DAEUtil.avlTreeNew());
+      funcs = DAE.AvlTreePathFunction.addList(DAE.AvlTreePathFunction.new(), funcLst);
     then funcs;
   else
     then fTreeIn;
@@ -3249,8 +3249,8 @@ end renameFunctionParameter;
 
 protected function renameFunctionParameter1"
 author:Waurich TUD 2014-10"
-  input tuple<DAE.AvlKey,DAE.AvlValue> funcIn;
-  output tuple<DAE.AvlKey,DAE.AvlValue> funcOut;
+  input tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value> funcIn;
+  output tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value> funcOut;
 algorithm
   funcOut := matchcontinue(funcIn)
     local
@@ -3258,7 +3258,7 @@ algorithm
       Boolean isImpure;
       String pathName;
       Absyn.Path path;
-      DAE.AvlKey key;
+      DAE.AvlTreePathFunction.Key key;
       DAE.ElementSource source;
       DAE.Function func;
       DAE.InlineType iType;

@@ -437,7 +437,7 @@ protected
   array<DAE.FunctionTree> instFuncs;
   StructuralParameters ht;
 algorithm
-  instFuncs := arrayCreate(1, DAE.emptyFuncTree);
+  instFuncs := arrayCreate(1, DAE.AvlTreePathFunction.Tree.EMPTY());
   ht := (HashTable.emptyHashTableSized(BaseHashTable.lowBucketSize),{});
   cache := CACHE(NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"),Absyn.dummyProgram);
 end emptyCache;
@@ -534,7 +534,7 @@ algorithm
       array<DAE.FunctionTree> ef;
     case(CACHE(functions=ef),_)
       equation
-        SOME(func) = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
+        SOME(func) = DAE.AvlTreePathFunction.get(arrayGet(ef,1),path);
       then func;
   end match;
 end getCachedInstFunc;
@@ -548,7 +548,7 @@ algorithm
     local
       array<DAE.FunctionTree> ef;
     case(CACHE(functions=ef),_) equation
-      _ = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
+      _ = DAE.AvlTreePathFunction.get(arrayGet(ef,1),path);
     then ();
   end match;
 end checkCachedInstFuncGuard;
@@ -562,7 +562,7 @@ algorithm
     local
       array<DAE.FunctionTree> ef;
     case CACHE(functions = ef) then arrayGet(ef, 1);
-    else DAE.emptyFuncTree;
+    else DAE.AvlTreePathFunction.Tree.EMPTY();
   end match;
 end getFunctionTree;
 
@@ -590,7 +590,7 @@ algorithm
 
     case (CACHE(igraph,ef,ht,p,program),Absyn.FULLYQUALIFIED(_))
       equation
-        ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
+        ef = arrayUpdate(ef,1,DAE.AvlTreePathFunction.add(arrayGet(ef, 1),func,NONE()));
         // print("Func quard [new]: " + Absyn.pathString(func) + "\n");
       then CACHE(igraph,ef,ht,p,program);
 

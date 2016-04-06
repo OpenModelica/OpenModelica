@@ -8771,7 +8771,7 @@ algorithm
       DAE.Function func;
     case (DAE.CALL(path=path),_)
       equation
-        SOME(func) = DAEUtil.avlTreeGet(funcsIn,path);
+        SOME(func) = DAE.AvlTreePathFunction.get(funcsIn,path);
          then listEmpty(DAEUtil.getFunctionElements(func));
     else false;
   end match;

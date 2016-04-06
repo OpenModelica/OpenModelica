@@ -486,7 +486,7 @@ algorithm
         end if;
 
         // get the elements of the function and the algorithms
-        SOME(func) = DAEUtil.avlTreeGet(funcsIn,path);
+        SOME(func) = DAE.AvlTreePathFunction.get(funcsIn,path);
         elements = DAEUtil.getFunctionElements(func);
 
         // get the input exps from the call
@@ -659,7 +659,7 @@ algorithm
         //------------------------------------------------
 
         // get the elements of the function and the algorithms
-        SOME(func) = DAEUtil.avlTreeGet(funcsIn,path);
+        SOME(func) = DAE.AvlTreePathFunction.get(funcsIn,path);
         elements = DAEUtil.getFunctionElements(func);
         protectVars = List.filterOnTrue(elements,DAEUtil.isProtectedVar);
         algs = List.filterOnTrue(elements,DAEUtil.isAlgorithm);
@@ -892,14 +892,14 @@ algorithm
       list<DAE.Element> elements, allOutputs;
     case(DAE.CALL(path=path, expLst=lst),_)
       equation
-        SOME(func) = DAEUtil.avlTreeGet(funcs,path);
+        SOME(func) = DAE.AvlTreePathFunction.get(funcs,path);
         elements = DAEUtil.getFunctionElements(func);
         if listEmpty(elements) then
         // its a record
           eLst = lst;
         else
        // its a call, get the scalar outputs
-        SOME(func) = DAEUtil.avlTreeGet(funcs,path);
+        SOME(func) = DAE.AvlTreePathFunction.get(funcs,path);
         elements = DAEUtil.getFunctionElements(func);
         allOutputs = List.filterOnTrue(elements,DAEUtil.isOutputVar);
         lst = List.map(List.flatten(List.map(allOutputs,getScalarsForComplexVar)),Expression.crefExp);
@@ -2638,7 +2638,7 @@ algorithm
     list<list<DAE.Statement>> stmtLstLst;
   case(DAE.STMT_ASSIGN(exp1=exp,exp=DAE.CALL(path=path)),_,_)
     equation
-      SOME(func) = DAEUtil.avlTreeGet(funcTree,path);
+      SOME(func) = DAE.AvlTreePathFunction.get(funcTree,path);
       elements = DAEUtil.getFunctionElements(func);
       algs = List.filterOnTrue(elements,DAEUtil.isAlgorithm);
       stmtLstLst = List.map(algs,DAEUtil.getStatement);

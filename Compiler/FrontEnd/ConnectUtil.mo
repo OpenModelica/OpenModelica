@@ -2337,7 +2337,7 @@ algorithm
   // Only do this phase if we have any connection operators.
   if System.getHasStreamConnectors() or has_cardinality then
     flow_threshold := Flags.getConfigReal(Flags.FLOW_THRESHOLD);
-    DAE := DAEUtil.traverseDAE(DAE, DAE.emptyFuncTree,
+    DAE := DAEUtil.traverseDAE(DAE, DAE.AvlTreePathFunction.Tree.EMPTY(),
       function evaluateConnectionOperators2(
         hasCardinality = has_cardinality,
         setArray = setArray,

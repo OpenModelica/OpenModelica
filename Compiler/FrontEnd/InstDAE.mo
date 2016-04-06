@@ -173,7 +173,7 @@ algorithm
         str = if System.getPartialInstantiation() then " partial" else " full";
         print("DAE: parent: " + FGraph.getGraphNameStr(inParentEnv) +
               " class: " + FGraph.getGraphNameStr(inClassEnv) + " state: " + sstr + str + "\n" +
-              DAEDump.dumpStr(dae, DAE.emptyFuncTree) + "\n");
+              DAEDump.dumpStr(dae, DAE.AvlTreePathFunction.Tree.EMPTY()) + "\n");
       then
         ();
 

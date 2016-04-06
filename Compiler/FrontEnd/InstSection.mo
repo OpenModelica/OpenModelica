@@ -237,7 +237,7 @@ algorithm
         (outCache, outEnv, outIH, outDae, outSets, outState, outGraph) :=
           instEquationCommonWork(inCache, inEnv, inIH, inPrefix, inSets, state,
             inEEquation, inInitial, inImpl, inGraph, DAE.FLATTEN(inEEquation,NONE()));
-        outDae := DAEUtil.traverseDAE(outDae, DAE.emptyFuncTree,
+        outDae := DAEUtil.traverseDAE(outDae, DAE.AvlTreePathFunction.Tree.EMPTY(),
           Expression.traverseSubexpressionsHelper,
           (ExpressionSimplify.simplifyWork, ExpressionSimplifyTypes.optionSimplifyOnly));
       then
@@ -3476,7 +3476,7 @@ algorithm
           source);
 
         dae = DAEUtil.joinDaes(dae, daeExpandable);
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "<<<< connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")"); // \nDAE:" + DAEDump.dumpStr(daeExpandable, DAE.emptyFuncTree));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "<<<< connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")"); // \nDAE:" + DAEDump.dumpStr(daeExpandable, DAE.AvlTreePathFunction.Tree.EMPTY()));
       then
         (cache,env,ih,sets,dae,graph);
 
