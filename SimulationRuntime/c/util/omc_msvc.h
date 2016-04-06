@@ -55,6 +55,11 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define NAN (__NAN.Value)
 #endif
 
+/* for non GNU compilers */
+#ifndef __GNUC__
+#define __attribute__(x)
+#endif
+
 /* Compatibility header for MSVC compiler.
  * (Things that MinGW has but MSVC does not)
  */
@@ -137,11 +142,6 @@ static OMC_INLINE void* dlsym(void *handle, const char *symbol) {
 static OMC_INLINE int dlclose(void *handle) {
   return omc_dlclose(handle);
 }
-#endif
-
-/* for non GNU compilers */
-#ifndef __GNUC__
-#define __attribute__(x)
 #endif
 
 #ifdef __cplusplus
