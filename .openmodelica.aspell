@@ -41,3 +41,5 @@ DisableListAppendWarning
 listAppend
 isPresent
 uniontypes
+maxSizeLinearTearing
+maxSizeNonlinearTearing
