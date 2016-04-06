@@ -35,8 +35,6 @@
  *
  */
 
-#include <OMC/Parser/OMCOutputLexer.h>
-#include <OMC/Parser/OMCOutputParser.h>
 #include "meta/meta_modelica.h"
 #ifdef WIN32
 #include "version.h"
@@ -61,29 +59,6 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #include "OMCProxy.h"
 #include "simulation_options.h"
 #include "omc_error.h"
-
-static QVariant parseExpression(QString result)
-{
-  QVariant res;
-  pANTLR3_INPUT_STREAM input;
-  pOMCOutputLexer lex;
-  pANTLR3_COMMON_TOKEN_STREAM tokens;
-  pOMCOutputParser parser;
-  QByteArray ba = result.toUtf8();
-
-  input  = antlr3NewAsciiStringInPlaceStream((pANTLR3_UINT8)ba.data(), ba.size(), (pANTLR3_UINT8)"");
-  lex    = OMCOutputLexerNew(input);
-  tokens = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(lex));
-  parser = OMCOutputParserNew(tokens);
-
-  parser->exp(parser, res);
-  // Clean up? Check error? For chickens
-  parser->free(parser);
-  tokens->free(tokens);
-  lex->free(lex);
-  input->close(input);
-  return res;
-}
 
 /*!
   \class OMCProxy

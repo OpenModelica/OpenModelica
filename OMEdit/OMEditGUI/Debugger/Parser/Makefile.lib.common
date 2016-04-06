@@ -1,5 +1,5 @@
 ANTLRCMD=java -cp $(ANTLRJAR) org.antlr.Tool -Xconversiontimeout 10000 -report
-PARSERGEN=GDBMIOutputLexer.c GDBMIOutputLexer.h GDBMIOutputParser.c GDBMIOutputParser.h ../../OMC/Parser/OMCOutputLexer.cpp ../../OMC/Parser/OMCOutputLexer.h ../../OMC/Parser/OMCOutputParser.cpp ../../OMC/Parser/OMCOutputParser.h
+PARSERGEN=GDBMIOutputLexer.c GDBMIOutputLexer.h GDBMIOutputParser.c GDBMIOutputParser.h
 
 all: $(PARSERGEN) libGDBMIParser.a
 
@@ -8,17 +8,6 @@ GDBMIOutputLexer.h: GDBMIOutputLexer.c
 GDBMIOutputParser.h: GDBMIOutputLexer.c
 GDBMIOutputLexer.c: GDBMIOutput.g
 	$(ANTLRCMD) $<
-
-../../OMC/Parser/OMCOutputLexer.cpp: ../../OMC/Parser/OMCOutputLexer.c
-	cp $< $@
-../../OMC/Parser/OMCOutputParser.cpp: ../../OMC/Parser/OMCOutputParser.c
-	cp $< $@
-
-../../OMC/Parser/OMCOutputLexer.c: ../../OMC/Parser/OMCOutputLexer.h
-../../OMC/Parser/OMCOutputLexer.h: ../../OMC/Parser/OMCOutputParser.h
-../../OMC/Parser/OMCOutputParser.h: ../../OMC/Parser/OMCOutputParser.c
-../../OMC/Parser/OMCOutputParser.c: ../../OMC/Parser/OMCOutput.g
-	(cd ../../OMC/Parser/ && $(ANTLRCMD) OMCOutput.g)
 
 OBJS = GDBMIOutputLexer.o \
 GDBMIOutputParser.o \
@@ -44,6 +33,4 @@ clean:
 	rm -f *.o *.a \
 	GDBMIOutput.tokens \
 	GDBMIOutputLexer.c GDBMIOutputLexer.h \
-	GDBMIOutputParser.c GDBMIOutputParser.h \
-	../../OMC/Parser/OMCOutput.tokens \
-	../../OMC/Parser/OMCOutput*.c* ../../OMC/Parser/OMCOutput*.h ../../OMC/Parser/*.o
+	GDBMIOutputParser.c GDBMIOutputParser.h

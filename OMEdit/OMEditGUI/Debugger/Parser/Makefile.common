@@ -12,9 +12,8 @@ libantlr3.a: $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
 	ranlib libantlr3.a
 	rm -f antlr3*.o
 
-parsergen: GDBMIOutput.g ../../OMC/Parser/OMCParser.g
+parsergen: GDBMIOutput.g
 	$(ANTLRCMD) GDBMIOutput.g
-	(cd ../../OMC/Parser/ && $(ANTLRCMD) OMCParser.g)
 
 OBJS = GDBMIOutputLexer.o \
 GDBMIOutputParser.o \

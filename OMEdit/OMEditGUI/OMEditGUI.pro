@@ -155,9 +155,7 @@ SOURCES += main.cpp \
   Debugger/Attach/AttachToProcessDialog.cpp \
   Debugger/Attach/ProcessListModel.cpp \
   CrashReport/backtrace.c \
-  CrashReport/CrashReportDialog.cpp \
-  OMC/Parser/OMCOutputParser.cpp \
-  OMC/Parser/OMCOutputLexer.cpp
+  CrashReport/CrashReportDialog.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -222,9 +220,7 @@ HEADERS  += Util/Helper.h \
   Debugger/Attach/AttachToProcessDialog.h \
   Debugger/Attach/ProcessListModel.h \
   CrashReport/backtrace.h \
-  CrashReport/CrashReportDialog.h \
-  OMC/Parser/OMCOutputParser.h \
-  OMC/Parser/OMCOutputLexer.h
+  CrashReport/CrashReportDialog.h
 
 LIBS += -lqjson
 INCLUDEPATH += ../../qjson/build/include
