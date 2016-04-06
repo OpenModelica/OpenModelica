@@ -50,13 +50,13 @@ omplot: omc qtclientsDLLs
 omedit: omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR)
 
-omnotebook: omplot qtclientsDLLs
+omnotebook: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR)
 
-omshell: qtclientsDLLs
+omshell: omc qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMShell/OMShell/OMShellGUI OMBUILDDIR=$(OMBUILDDIR)
 
-omoptim: omplot qtclientsDLLs
+omoptim: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMOptim OMBUILDDIR=$(OMBUILDDIR)
 
 qtclients: omplot omedit omnotebook omshell omoptim
