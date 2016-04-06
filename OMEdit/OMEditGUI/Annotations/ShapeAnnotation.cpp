@@ -334,7 +334,7 @@ void ShapeAnnotation::setDefaults()
   mOriginalTextString = "";
   mTextString = "";
   mFontSize = 0;
-  mFontName = "";
+  mFontName = Helper::systemFontInfo.family();
   mHorizontalAlignment = StringHandler::TextAlignmentCenter;
   mOriginalFileName = "";
   mFileName = "";
