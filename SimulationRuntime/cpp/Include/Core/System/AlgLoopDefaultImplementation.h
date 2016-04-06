@@ -63,12 +63,17 @@ enum OUTPUT
     RESULTS       =  0x00000020,      ///< Write out results
     SIMINFO       =  0x00000040      ///< Write out simulation info (e.g. number of steps)
   };
-/*
-#ifdef RUNTIME_STATIC_LINKING
-class AlgLoopDefaultImplementation
-#else*/
+
+/// store attributes of a variable
+struct AlgloopVarAttributes
+{
+  const char *name;
+  double nominal;
+  double min;
+  double max;
+};
+
 class BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL AlgLoopDefaultImplementation
-/*#endif*/
 {
 public:
   AlgLoopDefaultImplementation();
