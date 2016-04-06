@@ -278,6 +278,7 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
     WSADATA ws;
     int d;
     d = WSAStartup(0x0101,&ws);
+    Q_UNUSED(d);
 #endif
     gethostname(myname, MAXHOSTNAME);
     hp = gethostbyname((const char*) myname);

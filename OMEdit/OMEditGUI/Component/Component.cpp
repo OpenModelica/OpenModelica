@@ -1734,8 +1734,8 @@ void Component::resizeComponent(QPointF newPosition)
   CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
   if (coOrdinateSystem.getPreserveAspectRatio()) {
     qreal factor = qMax(fabs(mXFactor), fabs(mYFactor));
-    mXFactor = mXFactor < 0 ? mXFactor = factor * -1 : mXFactor = factor;
-    mYFactor = mYFactor < 0 ? mYFactor = factor * -1 : mYFactor = factor;
+    mXFactor = mXFactor < 0 ? factor * -1 : factor;
+    mYFactor = mYFactor < 0 ? factor * -1 : factor;
   }
   // Apply the transformation to the temporary polygon using the new scaling factors
   QPointF pivot = mPivotPoint - pos();
