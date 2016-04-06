@@ -49,6 +49,8 @@
 #include "meta/meta_modelica.h"
 
 int maxEventIterations = 20;
+double linearSparseSolverMaxDensity = 0.2;
+int linearSparseSolverMinSize = 4001;
 const size_t SIZERINGBUFFER = 3;
 
 static double tolZC;
@@ -909,6 +911,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->nlsMethod = NLS_HOMOTOPY;
 #endif
   data->simulationInfo->lsMethod = LS_LAPACK;
+  data->simulationInfo->lssMethod = LS_UMFPACK;
   data->simulationInfo->mixedMethod = MIXED_SEARCH;
   data->simulationInfo->newtonStrategy = NEWTON_PURE;
   data->simulationInfo->nlsCsvInfomation = 0;

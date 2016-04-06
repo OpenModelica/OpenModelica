@@ -75,6 +75,8 @@ extern "C" {
 }
 
 extern int maxEventIterations;
+extern double linearSparseSolverMaxDensity;
+extern int linearSparseSolverMinSize;
 extern const size_t SIZERINGBUFFER;
 
 void initializeDataStruc(DATA *data, threadData_t *threadData);

@@ -34,6 +34,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "model_help.h"
 #include "util/omc_error.h"
 #include "util/rtclock.h"
 #include "linearSystem.h"
@@ -107,6 +108,12 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       linsys[i].nnz = nnz;
     }
 
+    if(nnz/(double)(size*size)<=linearSparseSolverMaxDensity && size>=linearSparseSolverMinSize)
+    {
+      linsys[i].useSparseSolver = 1;
+      infoStreamPrint(LOG_STDOUT, 0, "Using sparse solver for linear system %d,\nbecause density of %.2f remains under threshold of %.2f and size of %d exceeds threshold of %d.\nThe maximum density and the minimal system size for using sparse solvers can be specified\nusing the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.", i, nnz/(double)(size*size), linearSparseSolverMaxDensity, size, linearSparseSolverMinSize);
+    }
+
     /* allocate more system data */
     linsys[i].nominal = (double*) malloc(size*sizeof(double));
     linsys[i].min = (double*) malloc(size*sizeof(double));
@@ -116,60 +123,95 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
 
     /* allocate solver data */
     /* the implementation of matrix A is solver-specific */
+    if(linsys[i].useSparseSolver == 1)
+    {
+      switch(data->simulationInfo->lssMethod)
+      {
+    #if !defined(OMC_MINIMAL_RUNTIME)
+      case LSS_LIS:
+        linsys[i].setAElement = setAElementLis;
+        linsys[i].setBElement = setBElementLis;
+        allocateLisData(size, size, nnz, &linsys[i].solverData);
+        break;
+    #endif
+    #ifdef WITH_UMFPACK
+      case LSS_UMFPACK:
+        linsys[i].setAElement = setAElementUmfpack;
+        linsys[i].setBElement = setBElement;
+        allocateUmfPackData(size, size, nnz, &linsys[i].solverData);
+        break;
+      case LSS_KLU:
+        linsys[i].setAElement = setAElementKlu;
+        linsys[i].setBElement = setBElement;
+        allocateKluData(size, size, nnz, &linsys[i].solverData);
+        break;
+    #else
+      case LSS_UMFPACK:
+        throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+        break;
+    #endif
+
+      default:
+        throwStreamPrint(threadData, "unrecognized linear solver");
+      }
+    }
+
+    else{
     switch(data->simulationInfo->lsMethod)
     {
-    case LS_LAPACK:
-      linsys[i].A = (double*) malloc(size*size*sizeof(double));
-      linsys[i].setAElement = setAElement;
-      linsys[i].setBElement = setBElement;
-      allocateLapackData(size, &linsys[i].solverData);
-      break;
+      case LS_LAPACK:
+        linsys[i].A = (double*) malloc(size*size*sizeof(double));
+        linsys[i].setAElement = setAElement;
+        linsys[i].setBElement = setBElement;
+        allocateLapackData(size, &linsys[i].solverData);
+        break;
 
-#if !defined(OMC_MINIMAL_RUNTIME)
-    case LS_LIS:
-      linsys[i].setAElement = setAElementLis;
-      linsys[i].setBElement = setBElementLis;
-      allocateLisData(size, size, nnz, &linsys[i].solverData);
-      break;
-#endif
-#ifdef WITH_UMFPACK
-    case LS_UMFPACK:
-      linsys[i].setAElement = setAElementUmfpack;
-      linsys[i].setBElement = setBElement;
-      allocateUmfPackData(size, size, nnz, &linsys[i].solverData);
-      break;
-    case LS_KLU:
-      linsys[i].setAElement = setAElementKlu;
-      linsys[i].setBElement = setBElement;
-      allocateKluData(size, size, nnz, &linsys[i].solverData);
-      break;
-#else
-    case LS_UMFPACK:
-      throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
-      break;
-#endif
+    #if !defined(OMC_MINIMAL_RUNTIME)
+      case LS_LIS:
+        linsys[i].setAElement = setAElementLis;
+        linsys[i].setBElement = setBElementLis;
+        allocateLisData(size, size, nnz, &linsys[i].solverData);
+        break;
+    #endif
+    #ifdef WITH_UMFPACK
+      case LS_UMFPACK:
+        linsys[i].setAElement = setAElementUmfpack;
+        linsys[i].setBElement = setBElement;
+        allocateUmfPackData(size, size, nnz, &linsys[i].solverData);
+        break;
+      case LS_KLU:
+        linsys[i].setAElement = setAElementKlu;
+        linsys[i].setBElement = setBElement;
+        allocateKluData(size, size, nnz, &linsys[i].solverData);
+        break;
+    #else
+      case LS_UMFPACK:
+        throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+        break;
+    #endif
 
-    case LS_TOTALPIVOT:
-      linsys[i].A = (double*) malloc(size*size*sizeof(double));
-      linsys[i].setAElement = setAElement;
-      linsys[i].setBElement = setBElement;
-      allocateTotalPivotData(size, &(linsys[i].solverData));
-      break;
+      case LS_TOTALPIVOT:
+        linsys[i].A = (double*) malloc(size*size*sizeof(double));
+        linsys[i].setAElement = setAElement;
+        linsys[i].setBElement = setBElement;
+        allocateTotalPivotData(size, &(linsys[i].solverData));
+        break;
 
-    case LS_DEFAULT:
-      defaultSolverData = (struct dataLapackAndTotalPivot*) malloc(sizeof(struct dataLapackAndTotalPivot));
-      linsys[i].A = (double*) malloc(size*size*sizeof(double));
-      linsys[i].setAElement = setAElement;
-      linsys[i].setBElement = setBElement;
+      case LS_DEFAULT:
+        defaultSolverData = (struct dataLapackAndTotalPivot*) malloc(sizeof(struct dataLapackAndTotalPivot));
+        linsys[i].A = (double*) malloc(size*size*sizeof(double));
+        linsys[i].setAElement = setAElement;
+        linsys[i].setBElement = setBElement;
 
-      allocateLapackData(size, &(defaultSolverData->lapackData));
-      allocateTotalPivotData(size, &(defaultSolverData->totalpivotData));
+        allocateLapackData(size, &(defaultSolverData->lapackData));
+        allocateTotalPivotData(size, &(defaultSolverData->totalpivotData));
 
-      linsys[i].solverData = (void*) defaultSolverData;
-      break;
+        linsys[i].solverData = (void*) defaultSolverData;
+        break;
 
-    default:
-      throwStreamPrint(threadData, "unrecognized linear solver");
+      default:
+        throwStreamPrint(threadData, "unrecognized linear solver");
+      }
     }
   }
 
@@ -246,45 +288,75 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
     free(linsys[i].min);
     free(linsys[i].max);
 
-    switch(data->simulationInfo->lsMethod)
+    if(linsys[i].useSparseSolver == 1)
     {
-    case LS_LAPACK:
-      freeLapackData(&linsys[i].solverData);
-      free(linsys[i].A);
-      break;
+      switch(data->simulationInfo->lssMethod)
+      {
+    #if !defined(OMC_MINIMAL_RUNTIME)
+      case LSS_LIS:
+        freeLisData(&linsys[i].solverData);
+        break;
+    #endif
 
-#if !defined(OMC_MINIMAL_RUNTIME)
-    case LS_LIS:
-      freeLisData(&linsys[i].solverData);
-      break;
-#endif
+    #ifdef WITH_UMFPACK
+      case LSS_UMFPACK:
+        freeUmfPackData(&linsys[i].solverData);
+        break;
+      case LSS_KLU:
+        freeKluData(&linsys[i].solverData);
+        break;
+    #else
+      case LSS_UMFPACK:
+        throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+        break;
+    #endif
 
-#ifdef WITH_UMFPACK
-    case LS_UMFPACK:
-      freeUmfPackData(&linsys[i].solverData);
-      break;
-    case LS_KLU:
-      freeKluData(&linsys[i].solverData);
-      break;
-#else
-    case LS_UMFPACK:
-      throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
-      break;
-#endif
+      default:
+        throwStreamPrint(threadData, "unrecognized linear solver");
+      }
+    }
 
-    case LS_TOTALPIVOT:
-      free(linsys[i].A);
-      freeTotalPivotData(&(linsys[i].solverData));
-      break;
+    else{
+      switch(data->simulationInfo->lsMethod)
+      {
+      case LS_LAPACK:
+        freeLapackData(&linsys[i].solverData);
+        free(linsys[i].A);
+        break;
 
-    case LS_DEFAULT:
-      free(linsys[i].A);
-      freeLapackData(&((struct dataLapackAndTotalPivot*) linsys[i].solverData)->lapackData);
-      freeTotalPivotData(&((struct dataLapackAndTotalPivot*) linsys[i].solverData)->totalpivotData);
-      break;
+  #if !defined(OMC_MINIMAL_RUNTIME)
+      case LS_LIS:
+        freeLisData(&linsys[i].solverData);
+        break;
+  #endif
 
-    default:
-      throwStreamPrint(threadData, "unrecognized linear solver");
+  #ifdef WITH_UMFPACK
+      case LS_UMFPACK:
+        freeUmfPackData(&linsys[i].solverData);
+        break;
+      case LS_KLU:
+        freeKluData(&linsys[i].solverData);
+        break;
+  #else
+      case LS_UMFPACK:
+        throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+        break;
+  #endif
+
+      case LS_TOTALPIVOT:
+        free(linsys[i].A);
+        freeTotalPivotData(&(linsys[i].solverData));
+        break;
+
+      case LS_DEFAULT:
+        free(linsys[i].A);
+        freeLapackData(&((struct dataLapackAndTotalPivot*) linsys[i].solverData)->lapackData);
+        freeTotalPivotData(&((struct dataLapackAndTotalPivot*) linsys[i].solverData)->totalpivotData);
+        break;
+
+      default:
+        throwStreamPrint(threadData, "unrecognized linear solver");
+      }
     }
 
     free(linsys[i].solverData);
@@ -317,77 +389,112 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
   /* enable to avoid division by zero */
   data->simulationInfo->noThrowDivZero = 1;
 
-  switch(data->simulationInfo->lsMethod)
+  if(linsys->useSparseSolver == 1)
   {
-  case LS_LAPACK:
-    success = solveLapack(data, threadData, sysNumber);
-    break;
+    switch(data->simulationInfo->lssMethod)
+    {
+  #if !defined(OMC_MINIMAL_RUNTIME)
+    case LSS_LIS:
+      success = solveLis(data, threadData, sysNumber);
+      break;
+  #endif
+  #ifdef WITH_UMFPACK
+    case LSS_KLU:
+      success = solveKlu(data, threadData, sysNumber);
+      break;
+    case LSS_UMFPACK:
+      success = solveUmfPack(data, threadData, sysNumber);
+      if (!success && linsys->strictTearingFunctionCall != NULL){
+        debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
+        success = linsys->strictTearingFunctionCall(data, threadData);
+        if (success) success=2;
+      }
+      break;
+  #else
+    case LSS_UMFPACK:
+      throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+      break;
+  #endif
 
-#if !defined(OMC_MINIMAL_RUNTIME)
-  case LS_LIS:
-    success = solveLis(data, threadData, sysNumber);
-    break;
-#endif
-#ifdef WITH_UMFPACK
-  case LS_KLU:
-    success = solveKlu(data, threadData, sysNumber);
-    break;
-  case LS_UMFPACK:
-    success = solveUmfPack(data, threadData, sysNumber);
-    if (!success && linsys->strictTearingFunctionCall != NULL){
-      debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
-      success = linsys->strictTearingFunctionCall(data, threadData);
-      if (success) success=2;
+    default:
+      throwStreamPrint(threadData, "unrecognized linear solver");
     }
-    break;
-#else
-  case LS_UMFPACK:
-    throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
-    break;
-#endif
+  }
 
-  case LS_TOTALPIVOT:
-    success = solveTotalPivot(data, threadData, sysNumber);
-    break;
+  else{
+    switch(data->simulationInfo->lsMethod)
+    {
+    case LS_LAPACK:
+      success = solveLapack(data, threadData, sysNumber);
+      break;
 
-  case LS_DEFAULT:
-    defaultSolverData = linsys->solverData;
-    linsys->solverData = defaultSolverData->lapackData;
+  #if !defined(OMC_MINIMAL_RUNTIME)
+    case LS_LIS:
+      success = solveLis(data, threadData, sysNumber);
+      break;
+  #endif
+  #ifdef WITH_UMFPACK
+    case LS_KLU:
+      success = solveKlu(data, threadData, sysNumber);
+      break;
+    case LS_UMFPACK:
+      success = solveUmfPack(data, threadData, sysNumber);
+      if (!success && linsys->strictTearingFunctionCall != NULL){
+        debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
+        success = linsys->strictTearingFunctionCall(data, threadData);
+        if (success) success=2;
+      }
+      break;
+  #else
+    case LS_UMFPACK:
+      throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+      break;
+  #endif
 
-    success = solveLapack(data, threadData, sysNumber);
+    case LS_TOTALPIVOT:
+      success = solveTotalPivot(data, threadData, sysNumber);
+      break;
 
-    /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
-    if (!success && linsys->strictTearingFunctionCall != NULL){
-      debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
-      success = linsys->strictTearingFunctionCall(data, threadData);
-      if (success){
-        success=2;
-        linsys->failed = 0;
+    case LS_DEFAULT:
+      defaultSolverData = linsys->solverData;
+      linsys->solverData = defaultSolverData->lapackData;
+
+      success = solveLapack(data, threadData, sysNumber);
+
+      /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
+      if (!success && linsys->strictTearingFunctionCall != NULL){
+        debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
+        success = linsys->strictTearingFunctionCall(data, threadData);
+        if (success){
+          success=2;
+          linsys->failed = 0;
+        }
+        else{
+          linsys->failed = 1;
+        }
       }
       else{
+      /* if there is no alternative tearing set, use fallback solver */
+      if (!success){
+        if (linsys->failed){
+          logLevel = LOG_LS;
+        } else {
+          logLevel = LOG_STDOUT;
+        }
+        warningStreamPrint(logLevel, 0, "The default linear solver fails, the fallback solver with total pivoting is started at time %f. That might raise performance issues, for more information use -lv LOG_LS.", data->localData[0]->timeValue);
+        linsys->solverData = defaultSolverData->totalpivotData;
+        success = solveTotalPivot(data, threadData, sysNumber);
         linsys->failed = 1;
+      }else{
+        linsys->failed = 0;
       }
-    }
-    else{
-    /* if there is no alternative tearing set, use fallback solver */
-    if (!success){
-      if (linsys->failed){
-        logLevel = LOG_LS;
-      } else {
-        logLevel = LOG_STDOUT;
       }
-      warningStreamPrint(logLevel, 0, "The default linear solver fails, the fallback solver with total pivoting is started at time %f. That might raise performance issues, for more information use -lv LOG_LS.", data->localData[0]->timeValue);
-      linsys->solverData = defaultSolverData->totalpivotData;
-      success = solveTotalPivot(data, threadData, sysNumber);
-      linsys->failed = 1;
-    }else{
-      linsys->failed = 0;
+      linsys->solverData = defaultSolverData;
+      break;
+
+    default:
+      throwStreamPrint(threadData, "unrecognized linear solver");
     }
-    }
-    linsys->solverData = defaultSolverData;
-    break;
-  default:
-    throwStreamPrint(threadData, "unrecognized linear solver");
   }
   linsys->solved = success;
 

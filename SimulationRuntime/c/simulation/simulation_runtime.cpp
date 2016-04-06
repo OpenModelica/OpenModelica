@@ -256,6 +256,28 @@ static int getlinearSolverMethod()
   return LS_NONE;
 }
 
+static int getlinearSparseSolverMethod()
+{
+  int i;
+  const char *cflags = omc_flagValue[FLAG_LSS];
+  const string *method = cflags ? new string(cflags) : NULL;
+
+  if(!method)
+    return LSS_KLU; /* default method */
+
+  for(i=1; i<LSS_MAX; ++i)
+    if(*method == LSS_NAME[i])
+      return i;
+
+  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -lss=%s, current options are:", method->c_str());
+  for(i=1; i<LSS_MAX; ++i)
+    warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LSS_NAME[i], LSS_DESC[i]);
+  messageClose(LOG_STDOUT);
+  throwStreamPrint(NULL,"see last warning");
+
+  return LSS_NONE;
+}
+
 static int getNewtonStrategy()
 {
   int i;
@@ -762,8 +784,18 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
   data->simulationInfo->nlsMethod = getNonlinearSolverMethod();
   data->simulationInfo->lsMethod = getlinearSolverMethod();
+  data->simulationInfo->lssMethod = getlinearSparseSolverMethod();
   data->simulationInfo->newtonStrategy = getNewtonStrategy();
   data->simulationInfo->nlsCsvInfomation = omc_flag[FLAG_NLS_INFO];
+
+  if(omc_flag[FLAG_LSS_MAX_DENSITY]) {
+    linearSparseSolverMaxDensity = atof(omc_flagValue[FLAG_LSS_MAX_DENSITY]);
+    infoStreamPrint(LOG_STDOUT, 0, "Maximum density for using linear sparse solver changed to %f", linearSparseSolverMaxDensity);
+  }
+  if(omc_flag[FLAG_LSS_MIN_SIZE]) {
+    linearSparseSolverMinSize = atoi(omc_flagValue[FLAG_LSS_MIN_SIZE]);
+    infoStreamPrint(LOG_STDOUT, 0, "Maximum system size for using linear sparse solver changed to %d", linearSparseSolverMinSize);
+  }
 
   rt_tick(SIM_TIMER_INIT_XML);
   read_input_xml(data->modelData, data->simulationInfo);

@@ -249,7 +249,7 @@ algorithm
       equality(jacType = BackendDAE.JAC_LINEAR());
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
-        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(listLength(vindx)),"Linear",intString(maxSize)});
+        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(listLength(vindx)),"linear",intString(maxSize)});
         fail();
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -273,7 +273,7 @@ algorithm
       failure(equality(jacType = BackendDAE.JAC_LINEAR()));
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
-        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(listLength(vindx)),"Nonlinear",intString(maxSize)});
+        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(listLength(vindx)),"nonlinear",intString(maxSize)});
         fail();
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then

@@ -331,6 +331,7 @@ typedef struct LINEAR_SYSTEM_DATA
   modelica_real residualError;          /* not used yet*/
   modelica_boolean solved;              /* 1: solved in current step - else not */
   modelica_boolean failed;              /* 1: failed while last try with lapack - else not */
+  modelica_boolean useSparseSolver;     /* 1: use sparse solver, - else any solver */
 
   /* statistics */
   unsigned long numberOfCall;           /* number of solving calls of this system */
@@ -505,6 +506,7 @@ typedef struct SIMULATION_INFO
   const char *outputFormat;
   const char *variableFilter;
   int lsMethod;                        /* linear solver */
+  int lssMethod;                       /* linear sparse solver */
   int mixedMethod;                     /* mixed solver */
   int nlsMethod;                       /* nonlinear solver */
   int newtonStrategy;                  /* newton damping strategy solver */

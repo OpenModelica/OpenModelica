@@ -72,6 +72,9 @@ enum _FLAG
   FLAG_LOG_FORMAT,
   FLAG_LS,
   FLAG_LS_IPOPT,
+  FLAG_LSS,
+  FLAG_LSS_MAX_DENSITY,
+  FLAG_LSS_MIN_SIZE,
   FLAG_LV,
   FLAG_MAX_EVENT_ITERATIONS,
   FLAG_MAX_ORDER,
@@ -168,8 +171,23 @@ enum LINEAR_SOLVER
   LS_MAX
 };
 
+enum LINEAR_SPARSE_SOLVER
+{
+  LSS_NONE = 0,
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+  LSS_LIS,
+#endif
+  LSS_KLU,
+  LSS_UMFPACK,
+
+  LSS_MAX
+};
+
 extern const char *LS_NAME[LS_MAX+1];
 extern const char *LS_DESC[LS_MAX+1];
+extern const char *LSS_NAME[LS_MAX+1];
+extern const char *LSS_DESC[LS_MAX+1];
 
 enum NONLINEAR_SOLVER
 {

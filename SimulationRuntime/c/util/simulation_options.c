@@ -64,6 +64,9 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_LOG_FORMAT */            "logFormat",
   /* FLAG_LS */                    "ls",
   /* FLAG_LS_IPOPT */              "ls_ipopt",
+  /* FLAG_LSS */                   "lss",
+  /* FLAG_LSS_MAX_DENSITY */       "lssMaxDensity",
+  /* FLAG_LSS_MIN_SIZE */          "lssMinSize",
   /* FLAG_LV */                    "lv",
   /* FLAG_MAX_EVENT_ITERATIONS */  "mei",
   /* FLAG_MAX_ORDER */             "maxIntegrationOrder",
@@ -125,8 +128,11 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
   /* FLAG_L_DATA_RECOVERY */       "emit data recovery matrices with model linearization",
   /* FLAG_LOG_FORMAT */            "value specifies the log format of the executable. -logFormat=text (default) or -logFormat=xml",
-  /* FLAG_LS */                    "value specifies the linear solver method",
+  /* FLAG_LS */                    "value specifies the linear solver method (default: lapack, totalpivot (fallback))",
   /* FLAG_LS_IPOPT */              "value specifies the linear solver method for ipopt",
+  /* FLAG_LSS */                   "value specifies the linear sparse solver method (default: umfpack)",
+  /* FLAG_LSS_MAX_DENSITY */       "[double (default 0.2)] value specifies the maximum density for using a linear sparse solver",
+  /* FLAG_LSS_MIN_SIZE */          "[int (default 4001)] value specifies the minimum system size for using a linear sparse solver",
   /* FLAG_LV */                    "[string list] value specifies the logging level",
   /* FLAG_MAX_EVENT_ITERATIONS */  "[int (default 20)] value specifies the maximum number of event iterations",
   /* FLAG_MAX_ORDER */             "value specifies maximum integration order, used by dassl solver",
@@ -237,6 +243,14 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_LS_IPOPT */
   "  Value specifies the linear solver method for Ipopt, default mumps.\n"
   "  Note: Use if you build ipopt with other linear solver like ma27",
+  /* FLAG_LSS */
+  "  Value specifies the linear sparse solver method",
+  /* FLAG_LSS_MAX_DENSITY */
+  "  Value specifies the maximum density for using a linear sparse solver.\n"
+  "  The value is a Double with default value 0.2.",
+  /* FLAG_LSS_MIN_SIZE */
+  "  Value specifies the minimum system size for using a linear sparse solver.\n"
+  "  The value is an Integer with default value 4001.",
   /* FLAG_LV */
   "  Value (a comma-separated String list) specifies which logging levels to\n"
   "  enable. Multiple options can be enabled at the same time.",
@@ -350,6 +364,9 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_LOG_FORMAT */            FLAG_TYPE_OPTION,
   /* FLAG_LS */                    FLAG_TYPE_OPTION,
   /* FLAG_LS_IPOPT */              FLAG_TYPE_OPTION,
+  /* FLAG_LSS */                   FLAG_TYPE_OPTION,
+  /* FLAG_LSS_MAX_DENSITY */       FLAG_TYPE_OPTION,
+  /* FLAG_LSS_MIN_SIZE */          FLAG_TYPE_OPTION,
   /* FLAG_LV */                    FLAG_TYPE_OPTION,
   /* FLAG_MAX_EVENT_ITERATIONS */  FLAG_TYPE_OPTION,
   /* FLAG_MAX_ORDER */             FLAG_TYPE_OPTION,
@@ -455,6 +472,29 @@ const char *LS_DESC[LS_MAX+1] = {
   "LS_MAX"
 };
 
+const char *LSS_NAME[LS_MAX+1] = {
+  "LS_UNKNOWN",
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* LS_LIS */          "lis",
+#endif
+  /* LS_KLU */          "klu",
+  /* LS_UMFPACK */      "umfpack",
+
+  "LSS_MAX"
+};
+
+const char *LSS_DESC[LS_MAX+1] = {
+  "unknown",
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* LS_LIS */          "method using iterativ solver Lis",
+#endif
+  /* LS_KLU */          "method using klu sparse linear solver",
+  /* LS_UMFPACK */      "method using umfpack sparse linear solver",
+
+  "LSS_MAX"
+};
 
 const char *NLS_NAME[NLS_MAX+1] = {
   "NLS_UNKNOWN",
