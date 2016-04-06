@@ -63,6 +63,7 @@ qtclients: omplot omedit omnotebook omshell omoptim
 
 qtclientsDLLs:
 	echo Copying needed .dlls
+	mkdir -p $(builddir_bin)/
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	cp -puf $(OMDEV)/tools/msys/mingw32/bin/libgcc_s*.dll $(builddir_bin)/
 	cp -puf $(OMDEV)/tools/msys/mingw32/bin/libintl-8.dll $(builddir_bin)/
