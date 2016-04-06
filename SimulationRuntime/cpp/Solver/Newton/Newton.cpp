@@ -97,45 +97,39 @@ void Newton::solve()
   long int
     dimRHS   = 1,        // Dimension of right hand side of linear system (=b)
     info     = 0;        // Retrun-flag of Fortran code
-
   int
-    totStps  = 0;        // Total number of steps
+    totSteps = 0;        // Total number of steps taken
+  double
+    atol = _newtonSettings->getAtol(),
+    rtol = _newtonSettings->getRtol();
 
   // If initialize() was not called yet
   if (_firstCall)
     initialize();
 
-  // Get initializeial values from system
+  // Get current values from system
   _algLoop->getReal(_y);
-  //_algLoop->evaluate(command);
-  _algLoop->getRHS(_f);
 
   // Reset status flag
   _iterationStatus = CONTINUE;
 
-  while(_iterationStatus == CONTINUE) {
-    _iterationStatus = DONE;
+  while (_iterationStatus == CONTINUE) {
     // Check stopping criterion
     calcFunction(_y,_f);
-    if (totStps) {
+    if (totSteps) {
+      _iterationStatus = DONE;
       for (int i=0; i<_dimSys; ++i) {
-        if (fabs(_f[i]) > _newtonSettings->getAtol() +_newtonSettings->getRtol() * ( fabs(_f[i]))) {
+        if (fabs(_f[i]) > atol + fabs(_y[i]) * rtol) {
           _iterationStatus = CONTINUE;
           break;
         }
       }
     }
-    else
-      _iterationStatus = CONTINUE;
-
-    // New right hand side
-    //calcFunction(_y,_f);
 
     if (_iterationStatus == CONTINUE) {
-      if (totStps < _newtonSettings->getNewtMax()) {
+      if (totSteps < _newtonSettings->getNewtMax()) {
         // Determination of Jacobian (Fortran-format)
-        if (_algLoop->isLinear()&&!_algLoop->isLinearTearing()) {
-          //calcFunction(_yHelp,_fHelp);
+        if (_algLoop->isLinear() && !_algLoop->isLinearTearing()) {
           const matrix_t& A = _algLoop->getSystemMatrix();
           const double* jac = A.data().begin();
           memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
@@ -143,14 +137,15 @@ void Newton::solve()
           memcpy(_y,_f,_dimSys*sizeof(double));
           _algLoop->setReal(_y);
           if (info != 0)
-            throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");
+            throw ModelicaSimulationError(ALGLOOP_SOLVER,
+              "error solving linear system (dgesv info: " + to_string(info) + ")");
           else
             _iterationStatus = DONE;
         }
         else if (_algLoop->isLinearTearing()) {
-          long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
+          long int dimRHS = 1;  // Dimension of right hand side (=b)
 
-          long int info  = 0;          // Retrun-flag of Fortran code
+          long int info = 0;    // Return-flag of Fortran code
 
           _algLoop->setReal(_zeroVec);
           _algLoop->evaluate();
@@ -168,7 +163,8 @@ void Newton::solve()
           _algLoop->setReal(_y);
           _algLoop->evaluate();
           if (info != 0)
-            throw ModelicaSimulationError(ALGLOOP_SOLVER, "error solving linear tearing system");
+            throw ModelicaSimulationError(ALGLOOP_SOLVER,
+              "error solving linear tearing system (dgesv info: " + to_string(info) + ")");
           else
             _iterationStatus = DONE;
         }
@@ -178,25 +174,22 @@ void Newton::solve()
           // Solve linear System
           dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
 
-          if (info != 0) {
-            // TODO: Throw an error message here.
-            _iterationStatus = SOLVERERROR;
-            break;
-          }
+          if (info != 0)
+            throw ModelicaSimulationError(ALGLOOP_SOLVER,
+              "error solving nonlinear system (iteration: " + to_string(totSteps)
+              + ", dgesv info: " + to_string(info) + ")");
 
           // Increase counter
-          ++ totStps;
+          ++ totSteps;
 
           // New solution
           for (int i=0; i<_dimSys; ++i)
             _y[i] -= _newtonSettings->getDelta() * _f[i];
         }
       }
-      else {
-        _iterationStatus = SOLVERERROR;
-        throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving non linear system");
-
-      }
+      else
+        throw ModelicaSimulationError(ALGLOOP_SOLVER,
+          "error solving nonlinear system (iteration limit: " + to_string(totSteps) + ")");
     }
   }
 }
