@@ -2685,7 +2685,7 @@ algorithm
         {e1 as DAE.RANGE()} := ExpressionSimplify.simplifyList(explst, {});
         subs := list(DAE.INDEX(e) for e in extendRange(e1, vars));
         crlst := list(ComponentReference.subscriptCref(cr, {s}) for s in subs);
-        (varslst, p) := BackendVariable.getVarLst(crlst, vars,{},{});
+        (varslst, p) := BackendVariable.getVarLst(crlst, vars);
         pa := incidenceRowExp1(varslst, p, pa, 0);
       then
         (inExp, false, (vars, pa, ofunctionTree));
@@ -6243,10 +6243,10 @@ protected function traverseBackendDAEExpsVarWithUpdate "author: Frenkel TUD
 algorithm
   (ovar, outTypeA) := matchcontinue(inVar)
     local
-      DAE.Exp e1;
+      DAE.Exp e1, e1_;
       DAE.ComponentRef cref;
       list<DAE.Dimension> instdims;
-      Option<DAE.VariableAttributes> attr;
+      Option<DAE.VariableAttributes> attr, attr_;
       Option<BackendDAE.TearingSelect> ts;
       Type_a ext_arg_1, ext_arg_2;
       BackendDAE.VarKind varKind;
@@ -6260,18 +6260,29 @@ algorithm
       DAE.VarInnerOuter io;
       Boolean unreplaceable;
       String name;
+      Option<BackendDAE.Var> v;
 
     case NONE()
     then (NONE(), inTypeA);
 
     case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1), bindValue, instdims, source, attr, ts, comment, ct, io, unreplaceable)) equation
-      (e1, ext_arg_1) = func(e1, inTypeA);
-      (attr, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, ext_arg_1);
-    then (SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1), bindValue, instdims, source, attr, ts, comment, ct, io, unreplaceable)), ext_arg_2);
+      (e1_, ext_arg_1) = func(e1, inTypeA);
+      (attr_, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, ext_arg_1);
+      if referenceEq(e1,e1_) and referenceEq(attr,attr_) then
+        v = inVar;
+      else
+        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1_), bindValue, instdims, source, attr_, ts, comment, ct, io, unreplaceable));
+      end if;
+    then (v, ext_arg_2);
 
     case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), bindValue, instdims, source, attr, ts, comment, ct, io, unreplaceable)) equation
-      (attr, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, inTypeA);
-    then (SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), bindValue, instdims, source, attr, ts, comment, ct, io, unreplaceable)), ext_arg_2);
+      (attr_, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, inTypeA);
+      if referenceEq(attr,attr_) then
+        v = inVar;
+      else
+        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), bindValue, instdims, source, attr_, ts, comment, ct, io, unreplaceable));
+      end if;
+    then (v, ext_arg_2);
 
     else equation
       true = Flags.isSet(Flags.FAILTRACE);
@@ -6301,57 +6312,86 @@ algorithm
  (outAttr,outExtraArg) := match(attr,func,extraArg)
    local
      Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound,startOrigin;
+     Option<DAE.Exp> q_,u_,du_,min_,max_,i_,f_,n_,eqbound_;
      Option<DAE.StateSelect> ss;
      Option<DAE.Uncertainty> unc;
-     Option<DAE.Distribution> dist;
+     Option<DAE.Distribution> dist, dist_;
      Option<Boolean> p,fin;
+     Option<DAE.VariableAttributes> a;
    case(NONE(),_,_) then (NONE(),extraArg);
    case(SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,dist,eqbound,p,fin,startOrigin)),_,_) equation
-     (q,outExtraArg) = Expression.traverseExpOpt(q,func,extraArg);
-     (u,outExtraArg) = Expression.traverseExpOpt(u,func,outExtraArg);
-     (du,outExtraArg) = Expression.traverseExpOpt(du,func,outExtraArg);
-     (min,outExtraArg) = Expression.traverseExpOpt(min,func,outExtraArg);
-     (max,outExtraArg) = Expression.traverseExpOpt(max,func,outExtraArg);
-     (i,outExtraArg) = Expression.traverseExpOpt(i,func,outExtraArg);
-     (f,outExtraArg) = Expression.traverseExpOpt(f,func,outExtraArg);
-     (n,outExtraArg) = Expression.traverseExpOpt(n,func,outExtraArg);
-     (eqbound,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
-     (dist,outExtraArg) = traverseBackendDAEAttrDistribution(dist,func,outExtraArg);
-   then (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,dist,eqbound,p,fin,startOrigin)),outExtraArg);
+     (q_,outExtraArg) = Expression.traverseExpOpt(q,func,extraArg);
+     (u_,outExtraArg) = Expression.traverseExpOpt(u,func,outExtraArg);
+     (du_,outExtraArg) = Expression.traverseExpOpt(du,func,outExtraArg);
+     (min_,outExtraArg) = Expression.traverseExpOpt(min,func,outExtraArg);
+     (max_,outExtraArg) = Expression.traverseExpOpt(max,func,outExtraArg);
+     (i_,outExtraArg) = Expression.traverseExpOpt(i,func,outExtraArg);
+     (f_,outExtraArg) = Expression.traverseExpOpt(f,func,outExtraArg);
+     (n_,outExtraArg) = Expression.traverseExpOpt(n,func,outExtraArg);
+     (eqbound_,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
+     (dist_,outExtraArg) = traverseBackendDAEAttrDistribution(dist,func,outExtraArg);
+     if referenceEq(q,q_) and referenceEq(u,u_) and referenceEq(du,du_) and referenceEq(min,min_) and referenceEq(max,max_) and referenceEq(i,i_) and referenceEq(f,f_) and referenceEq(n,n_)
+        and referenceEq(eqbound,eqbound_) and referenceEq(dist,dist_) then
+        a = attr;
+      else
+        a = SOME(DAE.VAR_ATTR_REAL(q_,u_,du_,min_,max_,i_,f_,n_,ss,unc,dist_,eqbound_,p,fin,startOrigin));
+     end if;
+   then (a,outExtraArg);
 
    case(SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,dist,eqbound,p,fin,startOrigin)),_,_) equation
-     (q,outExtraArg) = Expression.traverseExpOpt(q,func,extraArg);
-     (min,outExtraArg) = Expression.traverseExpOpt(min,func,outExtraArg);
-     (max,outExtraArg) = Expression.traverseExpOpt(max,func,outExtraArg);
-     (i,outExtraArg) = Expression.traverseExpOpt(i,func,outExtraArg);
-     (f,outExtraArg) = Expression.traverseExpOpt(f,func,outExtraArg);
-     (eqbound,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
-      (dist,outExtraArg) = traverseBackendDAEAttrDistribution(dist,func,outExtraArg);
-   then (SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,dist,eqbound,p,fin,startOrigin)),outExtraArg);
+     (q_,outExtraArg) = Expression.traverseExpOpt(q,func,extraArg);
+     (min_,outExtraArg) = Expression.traverseExpOpt(min,func,outExtraArg);
+     (max_,outExtraArg) = Expression.traverseExpOpt(max,func,outExtraArg);
+     (i_,outExtraArg) = Expression.traverseExpOpt(i,func,outExtraArg);
+     (f_,outExtraArg) = Expression.traverseExpOpt(f,func,outExtraArg);
+     (eqbound_,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
+     (dist_,outExtraArg) = traverseBackendDAEAttrDistribution(dist,func,outExtraArg);
+     if referenceEq(q,q_) and referenceEq(min,min_) and referenceEq(max,max_) and referenceEq(i,i_) and referenceEq(f,f_)
+        and referenceEq(eqbound,eqbound_) and referenceEq(dist,dist_) then
+        a = attr;
+      else
+        a = SOME(DAE.VAR_ATTR_INT(q_,min_,max_,i_,f_,unc,dist_,eqbound_,p,fin,startOrigin));
+     end if;
+   then (a,outExtraArg);
 
    case(SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin,startOrigin)),_,_) equation
-     (q,outExtraArg) = Expression.traverseExpOpt(q,func,extraArg);
-     (i,outExtraArg) = Expression.traverseExpOpt(i,func,outExtraArg);
-     (f,outExtraArg) = Expression.traverseExpOpt(f,func,outExtraArg);
-     (eqbound,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
-   then (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin,startOrigin)),outExtraArg);
+     (q_,outExtraArg) = Expression.traverseExpOpt(q,func,extraArg);
+     (i_,outExtraArg) = Expression.traverseExpOpt(i,func,outExtraArg);
+     (f_,outExtraArg) = Expression.traverseExpOpt(f,func,outExtraArg);
+     (eqbound_,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
+     if referenceEq(q,q_) and referenceEq(i,i_) and referenceEq(f,f_) and referenceEq(eqbound,eqbound_) then
+        a = attr;
+      else
+        a = SOME(DAE.VAR_ATTR_BOOL(q_,i_,f_,eqbound_,p,fin,startOrigin));
+     end if;
+   then (a,outExtraArg);
 
    case(SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin,startOrigin)),_,_) equation
-     (q,outExtraArg) = Expression.traverseExpOpt(q,func,extraArg);
-     (i,outExtraArg) = Expression.traverseExpOpt(i,func,outExtraArg);
-     (eqbound,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
-   then (SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin,startOrigin)),outExtraArg);
+     (q_,outExtraArg) = Expression.traverseExpOpt(q,func,extraArg);
+     (i_,outExtraArg) = Expression.traverseExpOpt(i,func,outExtraArg);
+     (eqbound_,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
+     if referenceEq(q,q_) and referenceEq(i,i_) and referenceEq(eqbound,eqbound_) then
+        a = attr;
+      else
+        a = SOME(DAE.VAR_ATTR_STRING(q_,i_,eqbound_,p,fin,startOrigin));
+     end if;
+   then (a,outExtraArg);
 
    case(SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,i,f,eqbound,p,fin,startOrigin)),_,_) equation
-     (q,outExtraArg) = Expression.traverseExpOpt(q,func,extraArg);
-     (min,outExtraArg) = Expression.traverseExpOpt(min,func,outExtraArg);
-     (max,outExtraArg) = Expression.traverseExpOpt(max,func,outExtraArg);
-     (i,outExtraArg) = Expression.traverseExpOpt(i,func,outExtraArg);
-     (f,outExtraArg) = Expression.traverseExpOpt(f,func,outExtraArg);
-     (eqbound,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
-    then (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,i,f,eqbound,p,fin,startOrigin)),outExtraArg);
+     (q_,outExtraArg) = Expression.traverseExpOpt(q,func,extraArg);
+     (min_,outExtraArg) = Expression.traverseExpOpt(min,func,outExtraArg);
+     (max_,outExtraArg) = Expression.traverseExpOpt(max,func,outExtraArg);
+     (i_,outExtraArg) = Expression.traverseExpOpt(i,func,outExtraArg);
+     (f_,outExtraArg) = Expression.traverseExpOpt(f,func,outExtraArg);
+     (eqbound_,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
+     if referenceEq(q,q_) and referenceEq(min,min_) and referenceEq(max,max_) and referenceEq(i,i_) and referenceEq(f,f_) and referenceEq(eqbound,eqbound_) then
+        a = attr;
+      else
+        a = SOME(DAE.VAR_ATTR_ENUMERATION(q_,min_,max_,i_,f_,eqbound_,p,fin,startOrigin));
+     end if;
+    then (a,outExtraArg);
   case(SOME(DAE.VAR_ATTR_CLOCK(p, fin)),_,_)
-    then (SOME(DAE.VAR_ATTR_CLOCK(p,fin)),extraArg);
+    then (attr,extraArg);
 
  end match;
 end traverseBackendDAEVarAttr;
@@ -6376,16 +6416,23 @@ algorithm
  (outDistOpt,outExtraArg) := match(distOpt,func,extraArg)
  local
    DAE.Exp name,arr,sarr;
+   DAE.Exp name_,arr_,sarr_;
+   Option<DAE.Distribution> d;
 
    case(NONE(),_,outExtraArg) then (NONE(),outExtraArg);
 
    case(SOME(DAE.DISTRIBUTION(name,arr,sarr)),_,_) equation
-     (arr,_) = Expression.extendArrExp(arr,false);
-     (sarr,_) = Expression.extendArrExp(sarr,false);
-     (name,outExtraArg) = Expression.traverseExpBottomUp(name,func,extraArg);
-     (arr,outExtraArg) = Expression.traverseExpBottomUp(arr,func,outExtraArg);
-     (sarr,outExtraArg) = Expression.traverseExpBottomUp(sarr,func,outExtraArg);
-    then (SOME(DAE.DISTRIBUTION(name,arr,sarr)),outExtraArg);
+     (arr_,_) = Expression.extendArrExp(arr,false);
+     (sarr_,_) = Expression.extendArrExp(sarr,false);
+     (name_,outExtraArg) = Expression.traverseExpBottomUp(name,func,extraArg);
+     (arr_,outExtraArg) = Expression.traverseExpBottomUp(arr_,func,outExtraArg);
+     (sarr_,outExtraArg) = Expression.traverseExpBottomUp(sarr_,func,outExtraArg);
+     if referenceEq(name, name_) and referenceEq(arr, arr_) and referenceEq(sarr, sarr_) then
+       d = distOpt;
+     else
+       d = SOME(DAE.DISTRIBUTION(name_,arr_,sarr_));
+     end if;
+    then (d,outExtraArg);
  end match;
 end traverseBackendDAEAttrDistribution;
 

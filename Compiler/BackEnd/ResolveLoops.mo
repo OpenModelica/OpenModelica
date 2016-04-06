@@ -117,7 +117,7 @@ algorithm
       eqMapping = List.map1(simpEqLst,List.position,eqLst);
       simpEqs = BackendEquation.listEquation(simpEqLst);
       crefs = BackendEquation.getAllCrefFromEquations(simpEqs);
-      (simpVarLst,varMapping) = BackendVariable.getVarLst(crefs,vars,{},{});
+      (simpVarLst,varMapping) = BackendVariable.getVarLst(crefs,vars);
       simpVars = BackendVariable.listVar1(simpVarLst);
 
       // build the incidence matrix for the linear equations

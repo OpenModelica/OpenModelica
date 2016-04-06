@@ -2689,7 +2689,7 @@ algorithm
     case((var as DAE.VAR(binding=SOME(binding)))::rest, _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars)), _, _, _, _, _) equation
       // check if bindung depends on independentVars
       crefLst = Expression.extractCrefsFromExp(binding);
-      ({},{}) = BackendVariable.getVarLst(crefLst, timevars, {}, {});
+      ({},{}) = BackendVariable.getVarLst(crefLst, timevars);
 
       vars = var::inElementsNoDer;
       blst = false::inBooleanLst;

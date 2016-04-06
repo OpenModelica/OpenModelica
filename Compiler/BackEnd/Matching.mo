@@ -5658,7 +5658,7 @@ algorithm
   for eq in BackendEquation.equationList(eqs) loop
     (hasNoDerAnno,noDerInputs) := BackendDAEUtil.isFuncCallWithNoDerAnnotation(eq,functionTree);
     if hasNoDerAnno then
-      (_,varIdxs) := BackendVariable.getVarLst(noDerInputs,vars,{},{});
+      (_,varIdxs) := BackendVariable.getVarLst(noDerInputs,vars);
         //print("remove edges between eq: "+intString(idx)+" and vars "+stringDelimitList(List.map(varIdxs,intString),", ")+"\n");
       //update m
       row := m[idx];

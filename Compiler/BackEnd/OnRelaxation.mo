@@ -3319,7 +3319,7 @@ algorithm
         set = addCrefandParentsToSet(crnosubs, set, NONE());
         set = List.fold(crlst, BaseHashSet.add, set);
         (_, (_, false)) = Expression.traverseExpTopDown(e2, expHasCreftraverser, (set, false));
-        (_, ilst) = BackendVariable.getVarLst(crlst, vars, {}, {});
+        (_, ilst) = BackendVariable.getVarLst(crlst, vars);
         // unassgned
         unassignedLst(ilst, vec1);
         // assign
@@ -3343,7 +3343,7 @@ algorithm
         set = addCrefandParentsToSet(crnosubs, set, NONE());
         set = List.fold(crlst, BaseHashSet.add, set);
         (_, (_, false)) = Expression.traverseExpTopDown(e1, expHasCreftraverser, (set, false));
-        (_, ilst) = BackendVariable.getVarLst(crlst, vars, {}, {});
+        (_, ilst) = BackendVariable.getVarLst(crlst, vars);
         // unassgned
         unassignedLst(ilst, vec1);
         // assign

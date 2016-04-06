@@ -5690,7 +5690,7 @@ algorithm
           //print("eq: "+BackendDump.equationString(eq)+"\n");
         crefs := BackendEquation.equationCrefs(eq);
         crefs := List.filter1OnTrue(crefs,BackendVariable.isState,vars);
-        (states,stateIndxs) := BackendVariable.getVarLst(crefs,vars,{},{});
+        (states,stateIndxs) := BackendVariable.getVarLst(crefs,vars);
         (stateIndxs,states) := List.filter1OnTrueSync(stateIndxs,stateVarIsNotVisited,varVisited,states);//not yet visited
         if not listEmpty(stateIndxs) then
             //print("states "+stringDelimitList(List.map(states,BackendDump.varString),"\n ")+"\n");

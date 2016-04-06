@@ -5913,20 +5913,24 @@ algorithm
     local
       Option<DAE.Exp> o1;
       Option<DAE.VariableAttributes> o2;
-      DAE.Exp startValue;
-      DAE.VariableAttributes attr;
+      DAE.Exp startValue, startValue_;
+      DAE.VariableAttributes attr, attr_;
   case(BackendDAE.VAR(bindExp = o1, values = o2), _)
     equation
       if isSome(o1) then
         startValue = Util.getOption(o1);
-        startValue = EvaluateFunctions.evaluateConstantFunctionCallExp(startValue,funcTreeIn);
-        inVar.bindExp = SOME(startValue);
+        startValue_ = EvaluateFunctions.evaluateConstantFunctionCallExp(startValue,funcTreeIn);
+        if not referenceEq(startValue, startValue_) then
+          inVar.bindExp = SOME(startValue_);
+        end if;
       end if;
 
       if isSome(o2) then
         attr = Util.getOption(o2);
-        attr = evaluateVariableAttributes(attr,funcTreeIn);
-        inVar.values = SOME(attr);
+        attr_ = evaluateVariableAttributes(attr,funcTreeIn);
+        if not referenceEq(attr, attr_) then
+          inVar.values = SOME(attr_);
+        end if;
       end if;
     then (inVar,funcTreeIn);
 
@@ -5942,11 +5946,13 @@ protected function evaluateVariableAttributes"evaluates functions in the start v
 algorithm
   attrOut := matchcontinue(attrIn, funcTree)
     local
-      DAE.Exp exp;
+      DAE.Exp exp, exp_;
   case(DAE.VAR_ATTR_REAL(start=SOME(exp)),_)
     equation
-      exp = EvaluateFunctions.evaluateConstantFunctionCallExp(exp,funcTree);
-      attrIn.start = SOME(exp);
+      exp_ = EvaluateFunctions.evaluateConstantFunctionCallExp(exp,funcTree);
+      if not referenceEq(exp, exp_) then
+        attrIn.start = SOME(exp);
+      end if;
     then attrIn;
   else
   then attrIn;
@@ -6113,7 +6119,7 @@ algorithm
      Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB;
      BackendDAE.Var var;
      DAE.ComponentRef cref;
-     DAE.Exp exp, exp1, exp2, exp3, startTime;
+     DAE.Exp exp, exp1, exp2, exp3, startTime, exp1_, exp2_, exp3_;
      DAE.Operator op;
      list<DAE.Exp> expLst;
 
@@ -6151,15 +6157,25 @@ algorithm
 
    case(DAE.BINARY(exp1=exp1,operator=op,exp2=exp2),_)
      equation
-       exp1 = replaceCrefWithStartValue(exp1,varsIn);
-       exp2 = replaceCrefWithStartValue(exp2,varsIn);
-     then (DAE.BINARY(exp1,op,exp2),varsIn);
+       exp1_ = replaceCrefWithStartValue(exp1,varsIn);
+       exp2_ = replaceCrefWithStartValue(exp2,varsIn);
+       if referenceEq(exp1, exp1_) and referenceEq(exp2,exp2_) then
+         exp = expIn;
+       else
+         exp = DAE.BINARY(exp1_,op,exp2_);
+       end if;
+     then (exp,varsIn);
 
      case(DAE.LBINARY(exp1=exp1,operator=op,exp2=exp2),_)
      equation
-       exp1 = replaceCrefWithStartValue(exp1,varsIn);
-       exp2 = replaceCrefWithStartValue(exp2,varsIn);
-     then (DAE.LBINARY(exp1,op,exp2),varsIn);
+       exp1_ = replaceCrefWithStartValue(exp1,varsIn);
+       exp2_ = replaceCrefWithStartValue(exp2,varsIn);
+       if referenceEq(exp1, exp1_) and referenceEq(exp2,exp2_) then
+         exp = expIn;
+       else
+         exp = DAE.LBINARY(exp1_,op,exp2_);
+       end if;
+     then (exp,varsIn);
 
      // time > -1.0 or similar
     case(DAE.RELATION(exp1=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),operator=DAE.GREATER(),exp2=DAE.RCONST(real=r),index=idx,optionExpisASUB=optionExpisASUB),_)
@@ -6187,17 +6203,27 @@ algorithm
 
     case(DAE.RELATION(exp1=exp1,operator=op,exp2=exp2,index=idx,optionExpisASUB=optionExpisASUB),_)
      equation
-       exp1 = replaceCrefWithStartValue(exp1,varsIn);
-       exp2 = replaceCrefWithStartValue(exp2,varsIn);
-     then (DAE.RELATION(exp1,op,exp2,idx,optionExpisASUB),varsIn);
+       exp1_ = replaceCrefWithStartValue(exp1,varsIn);
+       exp2_ = replaceCrefWithStartValue(exp2,varsIn);
+       if referenceEq(exp1, exp1_) and referenceEq(exp2,exp2_) then
+         exp = expIn;
+       else
+         exp = DAE.RELATION(exp1_,op,exp2_,idx,optionExpisASUB);
+       end if;
+     then (exp,varsIn);
 
     case(DAE.IFEXP(expCond=exp1,expThen=exp2,expElse=exp3),_)
      equation
        //print("IFEXP: "+ExpressionDump.dumpExpStr(expIn,0)+"\n");
-       exp1 = replaceCrefWithStartValue(exp1,varsIn);
-       exp2 = replaceCrefWithStartValue(exp2,varsIn);
-       exp3 = replaceCrefWithStartValue(exp3,varsIn);
-     then (DAE.IFEXP(exp1,exp2,exp3),varsIn);
+       exp1_ = replaceCrefWithStartValue(exp1,varsIn);
+       exp2_ = replaceCrefWithStartValue(exp2,varsIn);
+       exp3_ = replaceCrefWithStartValue(exp3,varsIn);
+       if referenceEq(exp1, exp1_) and referenceEq(exp2,exp2_) and referenceEq(exp3,exp3_) then
+         exp = expIn;
+       else
+         exp = DAE.IFEXP(exp1_,exp2_,exp3_);
+       end if;
+     then (exp,varsIn);
 
    else
      equation
@@ -6517,8 +6543,8 @@ algorithm
 
   // figure out in which lists to put it
   isAlg := BackendVariable.isVarAlg(dlowVar);
-  isParam := BackendVariable.BackendVariable.isParam(dlowVar);
-  isConst := BackendVariable.BackendVariable.isConst(dlowVar);
+  isParam := BackendVariable.isParam(dlowVar);
+  isConst := BackendVariable.isConst(dlowVar);
 
   // for inputs and outputs we have additional lists
   if BackendVariable.isVarOnTopLevelAndInputNoDerInput(dlowVar) then
@@ -9888,7 +9914,8 @@ algorithm
       Boolean partOfMixed;
       DAE.ComponentRef cr, left;
       DAE.ElementSource source;
-      DAE.Exp exp, right, leftexp;
+      DAE.Exp exp, exp_, right, leftexp;
+      SimCode.SimEqSystem eq_;
       Integer index, indexSys;
       Option<SimCode.JacobianMatrix> symJac;
       Option<SimCode.LinearSystem> alternativeTearingL;
@@ -9910,12 +9937,22 @@ algorithm
       list<BackendDAE.WhenOperator> whenStmtLst;
 
     case (SimCode.SES_RESIDUAL(index, exp, source), _, a) equation
-      (exp, a) = func(exp, a);
-    then (SimCode.SES_RESIDUAL(index, exp, source), a);
+      (exp_, a) = func(exp, a);
+      if referenceEq(exp,exp_) then
+        eq_ = eq;
+      else
+        eq_ = SimCode.SES_RESIDUAL(index, exp_, source);
+      end if;
+    then (eq_, a);
 
     case (SimCode.SES_SIMPLE_ASSIGN(index, cr, exp, source), _, a) equation
-      (exp, a) = func(exp, a);
-    then (SimCode.SES_SIMPLE_ASSIGN(index, cr, exp, source), a);
+      (exp_, a) = func(exp, a);
+      if referenceEq(exp,exp_) then
+        eq_ = eq;
+      else
+        eq_ = SimCode.SES_SIMPLE_ASSIGN(index, cr, exp_, source);
+      end if;
+    then (eq_, a);
 
     case (SimCode.SES_ARRAY_CALL_ASSIGN(index, leftexp, exp, source), _, a) equation
       (leftexp, a) = func(leftexp, a);
@@ -9924,31 +9961,31 @@ algorithm
 
     case (SimCode.SES_IFEQUATION(index, ifbranches, elsebranch, source), _, a)
       /* TODO: Me */
-    then (SimCode.SES_IFEQUATION(index, ifbranches, elsebranch, source), a);
+    then (eq, a);
 
     case (SimCode.SES_ALGORITHM(index, stmts), _, a)
       /* TODO: Me */
-    then (SimCode.SES_ALGORITHM(index, stmts), a);
+    then (eq, a);
 
     case (SimCode.SES_INVERSE_ALGORITHM(index, stmts, crefs), _, a)
       /* TODO: Me */
-    then (SimCode.SES_INVERSE_ALGORITHM(index, stmts, crefs), a);
+    then (eq, a);
 
     case (SimCode.SES_LINEAR(lSystem, alternativeTearingL), _, a)
       /* TODO: Me */
-    then (SimCode.SES_LINEAR(lSystem, alternativeTearingL), a);
+    then (eq, a);
 
     case (SimCode.SES_NONLINEAR(nlSystem, alternativeTearingNl), _, a)
       /* TODO: Me */
-    then (SimCode.SES_NONLINEAR(nlSystem, alternativeTearingNl), a);
+    then (eq, a);
 
     case (SimCode.SES_MIXED(index, cont, discVars, discEqs, indexSys), _, a)
       /* TODO: Me */
-    then (SimCode.SES_MIXED(index, cont, discVars, discEqs, indexSys), a);
+    then (eq, a);
 
     case (SimCode.SES_WHEN(index, conditions, initialCall, whenStmtLst, elseWhen, source), _, a)
       /* TODO: Me */
-    then (SimCode.SES_WHEN(index, conditions, initialCall, whenStmtLst, elseWhen, source), a);
+    then (eq, a);
 
     case (SimCode.SES_FOR_LOOP(), _, a)
       /* TODO: Me */

@@ -2747,7 +2747,7 @@ algorithm
     case (_,_) /* check if array or record */
       equation
         crlst = ComponentReference.expandCref(cr,true);
-        (vLst as _::_,indxs) = getVarLst(crlst,inVariables,{},{});
+        (vLst as _::_,indxs) = getVarLst(crlst,inVariables);
       then
         (vLst,indxs);
     // try again check if variable indexes used
@@ -2756,7 +2756,7 @@ algorithm
         // replace variables with WHOLEDIM()
         (cr1,true) = replaceVarWithWholeDim(cr, false);
         crlst = ComponentReference.expandCref(cr1,true);
-        (vLst as _::_,indxs) = getVarLst(crlst,inVariables,{},{});
+        (vLst as _::_,indxs) = getVarLst(crlst,inVariables);
       then
         (vLst,indxs);
     /* failure
@@ -2876,32 +2876,21 @@ end computeRangeExps;
 public function getVarLst
   input list<DAE.ComponentRef> inComponentRefLst;
   input BackendDAE.Variables inVariables;
-  input list<BackendDAE.Var> inVarLst;
-  input list<Integer> iIntegerLst;
-  output list<BackendDAE.Var> outVarLst;
-  output list<Integer> outIntegerLst;
+  output list<BackendDAE.Var> outVarLst = {};
+  output list<Integer> outIntegerLst = {};
+protected
+  BackendDAE.Var v;
+  Integer indx;
 algorithm
-  (outVarLst,outIntegerLst) := matchcontinue(inComponentRefLst,inVariables,inVarLst,iIntegerLst)
-    local
-      list<DAE.ComponentRef> crlst;
-      DAE.ComponentRef cr;
-      list<BackendDAE.Var> varlst;
-      list<Integer> ilst;
-      BackendDAE.Var v;
-      Integer indx;
-    case ({},_,_,_) then (inVarLst,iIntegerLst);
-    case (cr::crlst,_,_,_)
-      equation
-        (v,indx) = getVar2(cr, inVariables);
-        (varlst,ilst) = getVarLst(crlst,inVariables,v::inVarLst,indx::iIntegerLst);
-      then
-        (varlst,ilst);
-    case (_::crlst,_,_,_)
-      equation
-        (varlst,ilst) = getVarLst(crlst,inVariables,inVarLst,iIntegerLst);
-      then
-        (varlst,ilst);
-  end matchcontinue;
+  for cr in inComponentRefLst loop
+    try
+      (v,indx) := getVar2(cr, inVariables);
+      outVarLst := v::outVarLst;
+      outIntegerLst := indx::outIntegerLst;
+    else
+      // skip this element
+    end try;
+  end for;
 end getVarLst;
 
 public function getVar2
