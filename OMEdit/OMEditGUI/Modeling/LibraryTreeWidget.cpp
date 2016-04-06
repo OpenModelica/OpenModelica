@@ -204,11 +204,12 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
 
 void ItemDelegate::drawHover(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-  if (option.state & QStyle::State_MouseOver)
-  {
+  Q_UNUSED(index);
+  if (option.state & QStyle::State_MouseOver) {
     QPalette::ColorGroup cg = option.state & QStyle::State_Enabled ? QPalette::Normal : QPalette::Disabled;
-    if (cg == QPalette::Normal && !(option.state & QStyle::State_Active))
+    if (cg == QPalette::Normal && !(option.state & QStyle::State_Active)) {
       cg = QPalette::Inactive;
+    }
     painter->fillRect(option.rect, option.palette.brush(cg, QPalette::Highlight));
   }
 }
@@ -1755,7 +1756,7 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
      */
     int row = pLibraryTreeItem->row();
     LibraryTreeItem *pNextLibraryTreeItem = 0;
-    bool expandState;
+    bool expandState = false;
     if (pLibraryTreeItem->parent()->getChildren().size() > row + 1) {
       pNextLibraryTreeItem = pLibraryTreeItem->parent()->child(row + 1);
       QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);

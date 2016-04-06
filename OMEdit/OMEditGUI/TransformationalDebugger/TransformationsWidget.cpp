@@ -766,6 +766,7 @@ static OMOperation* variantToOperationPtr(QVariantMap var)
 
 static void variantToSource(QVariantMap var, OMInfo &info, QStringList &types, QList<OMOperation*> &ops)
 {
+  Q_UNUSED(types);
   QVariantMap vinfo = var["info"].toMap();
   info.file = vinfo["file"].toString();
   info.lineStart = vinfo["lineStart"].toInt();

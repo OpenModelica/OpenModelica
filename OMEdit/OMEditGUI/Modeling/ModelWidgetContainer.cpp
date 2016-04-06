@@ -1484,7 +1484,10 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     return;
   }
   // draw scene rectangle white background
-  painter->setPen(Qt::NoPen);
+  QPen pen;
+  pen.setWidth(0);
+  pen.setStyle(Qt::SolidLine);
+  painter->setPen(pen);
   if (mViewType == StringHandler::Icon) {
     painter->setBrush(QBrush(QColor(229, 244, 255), Qt::SolidPattern));
   } else {
@@ -1495,7 +1498,8 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   painter->drawRect(getExtentRectangle());
   if (mpModelWidget->getModelWidgetContainer()->isShowGridLines()) {
     painter->setBrush(Qt::NoBrush);
-    painter->setPen(QColor(229, 229, 229));
+    pen.setColor(QColor(229, 229, 229));
+    painter->setPen(pen);
     /* Draw left half vertical lines */
     int horizontalGridStep = mCoOrdinateSystem.getHorizontalGridStep() * 10;
     qreal xAxisStep = 0;
@@ -1527,12 +1531,14 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
       yAxisStep -= verticalGridStep;
     }
     /* set the middle horizontal and vertical line gray */
-    painter->setPen(QColor(192, 192, 192));
+    pen.setColor(QColor(192, 192, 192));
+    painter->setPen(pen);
     painter->drawLine(QPointF(rect.left(), 0), QPointF(rect.right(), 0));
     painter->drawLine(QPointF(0, rect.top()), QPointF(0, rect.bottom()));
   }
   // draw scene rectangle
-  painter->setPen(QColor(192, 192, 192));
+  pen.setColor(QColor(192, 192, 192));
+  painter->setPen(pen);
   painter->drawRect(getExtentRectangle());
 }
 
@@ -4234,7 +4240,7 @@ bool ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pListWidgetIte
  */
 void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 {
-  bool enabled, modelica, text, metaModel;
+  bool enabled, modelica, metaModel;
   ModelWidget *pModelWidget;
   LibraryTreeItem *pLibraryTreeItem;
   if (pSubWindow) {
@@ -4243,21 +4249,17 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
     if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
       modelica = true;
-      text = false;
       metaModel = false;
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
       modelica = false;
-      text = true;
       metaModel = false;
     } else {
       modelica = false;
-      text = false;
       metaModel = true;
     }
   } else {
     enabled = false;
     modelica = false;
-    text = false;
     metaModel = false;
     pModelWidget = 0;
     pLibraryTreeItem = 0;

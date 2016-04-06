@@ -30,7 +30,7 @@
 
 QT += network core gui webkit xml xmlpatterns svg
 greaterThan(QT_MAJOR_VERSION, 4) {
-  QT *= printsupport widgets webkitwidgets
+  QT += printsupport widgets webkitwidgets
 }
 
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
@@ -66,15 +66,11 @@ win32 {
     QMAKE_LFLAGS_RELEASE =
     # required for backtrace
     # win32 vs. win64
-    UNAME = $$system(uname)
-    isEmpty(UNAME): UNAME = MINGW32
-    ISMINGW32 = $$find(UNAME, MINGW32)
-    message(uname: $$UNAME)
-    count( ISMINGW32, 1 ) {
-	  LIBS += -L$$(OMDEV)/tools/msys/mingw32/bin -L$$(OMDEV)/tools/msys/mingw32/lib -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -limagehlp -lbfd -lintl -liberty
-    } else {
-      LIBS += -L$$(OMDEV)/tools/msys/mingw64/bin -L$$(OMDEV)/tools/msys/mingw64/lib -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -limagehlp -lbfd -lintl -liberty
-	}
+    contains(QT_ARCH, i386) { # 32-bit
+      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin -limagehlp -lbfd -lintl -liberty
+    } else { # 64-bit
+      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -limagehlp -lbfd -lintl -liberty
+    }
   }
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \

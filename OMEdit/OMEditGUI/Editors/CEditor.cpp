@@ -58,6 +58,13 @@ void CEditor::showContextMenu(QPoint point)
   delete pMenu;
 }
 
+void CEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
+{
+  Q_UNUSED(position);
+  Q_UNUSED(charsRemoved);
+  Q_UNUSED(charsAdded);
+}
+
 /*!
   * \class CHighlighter
   *  \brief A syntax highlighter for CEditor.

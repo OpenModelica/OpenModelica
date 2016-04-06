@@ -317,6 +317,8 @@ bool MyHandler::characters( const QString & ch )
 
 bool MyHandler::startElement( const QString & namespaceURI, const QString & localName, const QString & qName, const QXmlAttributes & atts)
 {
+  Q_UNUSED(namespaceURI);
+  Q_UNUSED(localName);
   if (qName == "variable") {
     currentVariable.name = atts.value("name");
     currentVariable.comment = atts.value("comment");
@@ -366,6 +368,8 @@ bool MyHandler::startElement( const QString & namespaceURI, const QString & loca
 
 bool MyHandler::endElement( const QString & namespaceURI, const QString & localName, const QString & qName)
 {
+  Q_UNUSED(namespaceURI);
+  Q_UNUSED(localName);
   if (qName == "type") {
     currentVariable.types.append(currentText);
   } else if (operationExpTags.contains(qName) || equationPartTags.contains(qName)) {
