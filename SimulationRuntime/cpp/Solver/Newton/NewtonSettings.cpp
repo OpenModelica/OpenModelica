@@ -2,61 +2,67 @@
  *
  *  @{
  */
+
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
-
 
 #include <Solver/Newton/NewtonSettings.h>
 
 NewtonSettings::NewtonSettings()
-: _iNewt_max                    (50)
-, _dRtol                        (1e-6)
-, _dAtol                        (1e-6)
-, _dDelta                    (1)
-, _continueOnError(false)
+  : _iNewt_max                 (50)
+  , _dRtol                     (1e-6)
+  , _dAtol                     (1e-6)
+  , _dDelta                    (1)
+  , _continueOnError           (false)
 {
-};
+}
 
 NewtonSettings::~NewtonSettings()
 {
-
 }
 
-/*max. Anzahl an Newtonititerationen pro Schritt (default: 25)*/
-long int     NewtonSettings::getNewtMax()
+/*max. Anzahl an Newtonititerationen pro Schritt (default: 50)*/
+long int NewtonSettings::getNewtMax()
 {
-    return _iNewt_max;
+  return _iNewt_max;
 }
-void         NewtonSettings::setNewtMax(long int max)
+
+void NewtonSettings::setNewtMax(long int max)
 {
-    _iNewt_max =max;
+  _iNewt_max = max;
 }
+
 /* Relative Toleranz für die Newtoniteration (default: 1e-6)*/
-double         NewtonSettings::getRtol()
+double NewtonSettings::getRtol()
 {
-    return _dRtol;
+  return _dRtol;
 }
-void         NewtonSettings::setRtol(double t)
+
+void NewtonSettings::setRtol(double t)
 {
-    _dRtol=t;
+  _dRtol=t;
 }
+
 /*Absolute Toleranz für die Newtoniteration (default: 1e-6)*/
-double         NewtonSettings::getAtol()
+double NewtonSettings::getAtol()
 {
-    return _dAtol;
+  return _dAtol;
 }
-void         NewtonSettings::setAtol(double t)
+
+void NewtonSettings::setAtol(double t)
 {
-    _dAtol =t;
+  _dAtol =t;
 }
+
 /*Dämpfungsfaktor (default: 0.9)*/
-double         NewtonSettings::getDelta()
+double NewtonSettings::getDelta()
 {
-    return _dDelta;
+  return _dDelta;
 }
-void         NewtonSettings::setDelta(double t)
+
+void NewtonSettings::setDelta(double t)
 {
-    _dDelta = t;
+  _dDelta = t;
 }
 
 void NewtonSettings::load(string)
@@ -72,4 +78,5 @@ bool NewtonSettings::getContinueOnError()
 {
   return _continueOnError;
 }
+
 /** @} */ // end of solverNewton
