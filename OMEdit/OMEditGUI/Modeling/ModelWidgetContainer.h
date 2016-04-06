@@ -43,7 +43,6 @@
 #include <QStatusBar>
 #include <QListWidget>
 #include <QMdiArea>
-#include <map>
 #include <QtWebKit>
 #include <QtXmlPatterns>
 

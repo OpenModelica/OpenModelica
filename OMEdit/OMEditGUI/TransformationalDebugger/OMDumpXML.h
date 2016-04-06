@@ -44,6 +44,7 @@
 
 class OMOperation {
 public:
+  virtual ~OMOperation() {}
   virtual QString toString();
   virtual QString toHtml();
   QString diffHtml(QString &before, QString &after);

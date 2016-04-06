@@ -174,6 +174,9 @@ void TLMCoSimulationThread::monitorProcessStarted()
     ticks++;
   }
   mpProgressFileTimer = new QTimer(this);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+  mpProgressFileTimer->setTimerType(Qt::PreciseTimer);
+#endif
   connect(mpProgressFileTimer, SIGNAL(timeout()), SLOT(progressFileChanged()));
   mpProgressFileTimer->start(2000);
 }

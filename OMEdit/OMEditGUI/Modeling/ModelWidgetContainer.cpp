@@ -1483,23 +1483,22 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   if (mSkipBackground || mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
     return;
   }
-  // draw scene rectangle white background
-  QPen pen;
-  pen.setWidth(0);
-  pen.setStyle(Qt::SolidLine);
-  painter->setPen(pen);
+  QPen grayPen(QBrush(QColor(192, 192, 192)), 0);
+  QPen lightGrayPen(QBrush(QColor(229, 229, 229)), 0);
+  //painter->setPen(pen);
   if (mViewType == StringHandler::Icon) {
     painter->setBrush(QBrush(QColor(229, 244, 255), Qt::SolidPattern));
   } else {
     painter->setBrush(QBrush(QColor(242, 242, 242), Qt::SolidPattern));
   }
+  // draw scene rectangle white background
+  painter->setPen(Qt::NoPen);
   painter->drawRect(rect);
   painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
   painter->drawRect(getExtentRectangle());
   if (mpModelWidget->getModelWidgetContainer()->isShowGridLines()) {
     painter->setBrush(Qt::NoBrush);
-    pen.setColor(QColor(229, 229, 229));
-    painter->setPen(pen);
+    painter->setPen(lightGrayPen);
     /* Draw left half vertical lines */
     int horizontalGridStep = mCoOrdinateSystem.getHorizontalGridStep() * 10;
     qreal xAxisStep = 0;
@@ -1531,14 +1530,12 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
       yAxisStep -= verticalGridStep;
     }
     /* set the middle horizontal and vertical line gray */
-    pen.setColor(QColor(192, 192, 192));
-    painter->setPen(pen);
+    painter->setPen(grayPen);
     painter->drawLine(QPointF(rect.left(), 0), QPointF(rect.right(), 0));
     painter->drawLine(QPointF(0, rect.top()), QPointF(0, rect.bottom()));
   }
   // draw scene rectangle
-  pen.setColor(QColor(192, 192, 192));
-  painter->setPen(pen);
+  painter->setPen(grayPen);
   painter->drawRect(getExtentRectangle());
 }
 
