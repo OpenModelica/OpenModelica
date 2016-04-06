@@ -180,7 +180,7 @@ static inline modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,mode
 
 extern modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,modelica_metatype, modelica_metatype, modelica_metatype);
 
-static inline modelica_metatype boxptr_arrayUpdateNoBoundsChecking(threadData_t *threadData,modelica_metatype arr, modelica_metatype i, modelica_metatype val)
+static inline modelica_metatype boxptr_arrayUpdateNoBoundsChecking(threadData_t *threadData __attribute__((unused)), modelica_metatype arr, modelica_metatype i, modelica_metatype val)
 {
   int ix = mmc_unbox_integer(i);
   MMC_STRUCTDATA(arr)[ix-1] = val;
