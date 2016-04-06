@@ -339,7 +339,7 @@ protected
   Ref parent;
 algorithm
   FCore.N(n, i, p, c, d) := fromRef(inParentRef);
-  c := RefTree.add(inName, inChildRef, c, RefTree.addConflictReplace);
+  c := RefTree.add(c, inName, inChildRef, RefTree.addConflictReplace);
   parent := updateRef(inParentRef, FCore.N(n, i, p, c, d));
   FGraphStream.edge(inName, fromRef(parent), fromRef(inChildRef));
 end addChildRef;

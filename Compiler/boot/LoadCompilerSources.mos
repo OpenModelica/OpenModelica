@@ -153,8 +153,9 @@ if true then /* Suppress output */
 
   // "Util";
     "../Util/Array.mo",
-    "../Util/AvlTreeString.mo",
+    "../Util/AvlSetString.mo",
     "../Util/BaseAvlTree.mo",
+    "../Util/BaseAvlSet.mo",
     "../Util/BaseHashTable.mo",
     "../Util/BaseHashSet.mo",
     "../Util/ClockIndexes.mo",
@@ -324,7 +325,7 @@ if true then /* Suppress output */
     "../Template/VisualXMLTpl.mo",
 
     "../Util/AvlTree.mo",
-    "../Util/AvlTreeString2.mo",
+    "../Util/AvlTreeString.mo",
 
     "../Util/DiffAlgorithm.mo",
     "../Util/FMI.mo",
