@@ -223,6 +223,7 @@ if true then /* Suppress output */
     prefixPath + "Util/BaseHashTable.mo",
     prefixPath + "Util/BaseHashSet.mo",
     prefixPath + "Util/BaseAvlTree.mo",
+    prefixPath + "Util/BaseAvlSet.mo",
     prefixPath + "Util/ClockIndexes.mo",
     prefixPath + "Util/Config.mo",
     prefixPath + "Util/Corba.mo",
