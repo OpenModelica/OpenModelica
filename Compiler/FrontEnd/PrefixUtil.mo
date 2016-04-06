@@ -300,26 +300,27 @@ public function prefixToPath "Convert a Prefix to a Path"
   input Prefix.Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue (inPrefix)
+  outPath := match inPrefix
+    local
+      Prefix.ComponentPrefix ss;
+    case Prefix.PREFIX(ss,_) then componentPrefixToPath(ss);
+  end match;
+end prefixToPath;
+
+protected function componentPrefixToPath "Convert a Prefix to a Path"
+  input Prefix.ComponentPrefix pre;
+  output Absyn.Path path;
+algorithm
+  path := match pre
     local
       String s;
-      Absyn.Path p;
       Prefix.ComponentPrefix ss;
-      Prefix.ClassPrefix cp;
-
-    case Prefix.NOPRE()
-      equation
-        /*Print.printBuf("#-- Error: Cannot convert empty prefix to a path\n");*/
-      then
-        fail();
-    case Prefix.PREFIX(Prefix.PRE(prefix = s,next = Prefix.NOCOMPPRE()),_) then Absyn.IDENT(s);
-    case Prefix.PREFIX(Prefix.PRE(prefix = s,next = ss),cp)
-      equation
-        p = prefixToPath(Prefix.PREFIX(ss,cp));
-      then
-        Absyn.QUALIFIED(s,p);
-  end matchcontinue;
-end prefixToPath;
+    case Prefix.PRE(prefix = s,next = Prefix.NOCOMPPRE())
+      then Absyn.IDENT(s);
+    case Prefix.PRE(prefix = s,next = ss)
+      then Absyn.QUALIFIED(s,componentPrefixToPath(ss));
+  end match;
+end componentPrefixToPath;
 
 public function prefixCref "Prefix a ComponentRef variable by adding the supplied prefix to
   it and returning a new ComponentRef.
