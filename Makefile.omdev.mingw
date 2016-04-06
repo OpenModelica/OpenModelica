@@ -44,7 +44,7 @@ omlibrary-all:
 	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary all
 	$(MAKE) -f $(defaultMakefileTarget) modelica3d
 
-omplot: qtclientsDLLs
+omplot: omc qtclientsDLLs
 	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 omedit: omplot qtclientsDLLs
