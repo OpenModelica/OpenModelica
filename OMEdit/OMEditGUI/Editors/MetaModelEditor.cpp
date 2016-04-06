@@ -540,11 +540,11 @@ QGenericMatrix<3,1,double> MetaModelEditor::getRotationVector(QGenericMatrix<3,3
 
     double phi[3];
     phi[1] = (fabs(a13) < DBL_MIN)? 0.0 : asin((a13<-1.0) ? 1.0 : ((a13>1.0) ? -1.0 : -a13));
-    double tmp = cos(phi[2]);
-    double cosphi2 = tmp+sign(tmp)*1.0e-50;
+    double tmp = cos(phi[1]);
+    double cosphi1 = tmp+sign(tmp)*1.0e-50;
 
-    phi[0] = atan2(a23/cosphi2, a33/cosphi2);
-    phi[2] = atan2(a12/cosphi2, a11/cosphi2);
+    phi[0] = atan2(a23/cosphi1, a33/cosphi1);
+    phi[2] = atan2(a12/cosphi1, a11/cosphi1);
 
     return QGenericMatrix<3,1,double>(phi);
 }
