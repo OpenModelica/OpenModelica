@@ -38,7 +38,6 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_CLOCK */                 "clock",
   /* FLAG_CPU */                   "cpu",
   /* FLAG_CSV_OSTEP */             "csvOstep",
-  /* FLAG_DASSL_JACOBIAN */        "dasslJacobian",
   /* FLAG_DASSL_NO_RESTART */      "dasslnoRestart",
   /* FLAG_DASSL_NO_ROOTFINDING */  "dasslnoRootFinding",
   /* FLAG_EMBEDDED_SERVER */       "embeddedServer",
@@ -59,6 +58,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_IPOPT_JAC*/              "ipopt_jac",
   /* FLAG_IPOPT_MAX_ITER */        "ipopt_max_iter",
   /* FLAG_IPOPT_WARM_START */      "ipopt_warm_start",
+  /* FLAG_JACOBIAN */              "jacobian",
   /* FLAG_L */                     "l",
   /* FLAG_L_DATA_RECOVERY */       "l_datarec",
   /* FLAG_LOG_FORMAT */            "logFormat",
@@ -104,7 +104,6 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU",
   /* FLAG_CPU */                   "dumps the cpu-time into the results-file",
   /* FLAG_CSV_OSTEP */             "value specifies csv-files for debuge values for optimizer step",
-  /* FLAG_DASSL_JACOBIAN */        "selects the type of the jacobians that is used for the dassl solver.\n  dasslJacobian=[coloredNumerical (default) |numerical|internalNumerical|coloredSymbolical|symbolical].",
   /* FLAG_DASSL_NO_RESTART */      "flag deactivates the restart of dassl after an event is performed.",
   /* FLAG_DASSL_NO_ROOTFINDING */  "flag deactivates the internal root finding procedure of dassl.",
   /* FLAG_EMBEDDED_SERVER */       "enables an embedded server. Valid values: none, opc-da [broken], opc-ua [experimental], or the path to a shared object.",
@@ -125,6 +124,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IPOPT_JAC */             "value specifies the jacobian for Ipopt",
   /* FLAG_IPOPT_MAX_ITER */        "value specifies the max number of iteration for ipopt",
   /* FLAG_IPOPT_WARM_START */      "value specifies lvl for a warm start in ipopt: 1,2,3,...",
+  /* FLAG_JACOBIAN */              "selects the type of the jacobians that is used for the integrator.\n  jacobian=[coloredNumerical (default) |numerical|internalNumerical|coloredSymbolical|symbolical].",
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
   /* FLAG_L_DATA_RECOVERY */       "emit data recovery matrices with model linearization",
   /* FLAG_LOG_FORMAT */            "value specifies the log format of the executable. -logFormat=text (default) or -logFormat=xml",
@@ -177,13 +177,6 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Dumps the cpu-time into the result-file using the variable named $cpuTime",
   /* FLAG_CSV_OSTEP */
   "value specifies csv-files for debuge values for optimizer step",
-  /* FLAG_DASSL_JACOBIAN */
-  "  Selects the type of the Jacobian that is used for the dassl solver:\n\n"
-  "  * coloredNumerical (colored numerical Jacobian, the default).\n"
-  "  * internalNumerical (internal dassl numerical Jacobian).\n"
-  "  * coloredSymbolical (colored symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.\n"
-  "  * numerical - numerical Jacobian.\n\n"
-  "  * symbolical - symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.",
   /* FLAG_DASSL_NO_RESTART */
   "  Deactivates the restart of dassl after an event is performed.",
   /* FLAG_DASSL_NO_ROOTFINDING */
@@ -230,6 +223,13 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the max number of iteration for ipopt.",
   /* FLAG_IPOPT_WARM_START */
   "  Value specifies lvl for a warm start in ipopt: 1,2,3,...",
+  /* FLAG_JACOBIAN */
+  "  Selects the type of the Jacobian that is used for the integrator:\n\n"
+  "  * coloredNumerical (colored numerical Jacobian, the default).\n"
+  "  * internalNumerical (internal dassl numerical Jacobian).\n"
+  "  * coloredSymbolical (colored symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.\n"
+  "  * numerical - numerical Jacobian.\n\n"
+  "  * symbolical - symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.",
   /* FLAG_L */
   "  Value specifies a time where the linearization of the model should be performed.",
   /* FLAG_L_DATA_RECOVERY */
@@ -338,7 +338,6 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_CLOCK */                 FLAG_TYPE_OPTION,
   /* FLAG_CPU */                   FLAG_TYPE_FLAG,
   /* FLAG_CSV_OSTEP */             FLAG_TYPE_OPTION,
-  /* FLAG_DASSL_JACOBIAN */        FLAG_TYPE_OPTION,
   /* FLAG_DASSL_NO_RESTART */      FLAG_TYPE_FLAG,
   /* FLAG_DASSL_NO_ROOTFINDING */  FLAG_TYPE_FLAG,
   /* FLAG_EMBEDDED_SERVER */       FLAG_TYPE_OPTION,
@@ -359,6 +358,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_IPOPT_JAC */             FLAG_TYPE_OPTION,
   /* FLAG_IPOPT_MAX_ITER */        FLAG_TYPE_OPTION,
   /* FLAG_IPOPT_WARM_START */      FLAG_TYPE_OPTION,
+  /* FLAG_JACOBIAN */              FLAG_TYPE_OPTION,
   /* FLAG_L */                     FLAG_TYPE_OPTION,
   /* FLAG_L_DATA_RECOVERY */       FLAG_TYPE_FLAG,
   /* FLAG_LOG_FORMAT */            FLAG_TYPE_OPTION,
@@ -549,3 +549,29 @@ const char *NEWTONSTRATEGY_DESC[NEWTON_MAX+1] = {
 
   "NEWTON_MAX"
 };
+
+
+const char *JACOBIAN_METHOD[JAC_MAX+1] = {
+  "unknown",
+
+  "coloredNumerical",
+  "coloredSymbolical",
+  "internalNumerical",
+  "numerical",
+  "symbolical",
+
+  "JAC_MAX"
+};
+
+const char *JACOBIAN_METHOD_DESC[JAC_MAX+1] = {
+  "unknown",
+
+  "colored numerical jacobian - default.",
+  "colored symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization.",
+  "internal numerical jacobian.",
+  "numerical jacobian.",
+  "symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization.",
+
+  "JAC_MAX"
+ };
+

@@ -38,17 +38,6 @@
 static const unsigned int maxOrder = 5;
 static const unsigned int infoLength = 20;
 
-enum DASSL_JACOBIAN
-{
-  DASSL_JAC_UNKNOWN = 0,
-  DASSL_COLOREDNUMJAC,
-  DASSL_COLOREDSYMJAC,
-  DASSL_INTERNALNUMJAC,
-  DASSL_NUMJAC,
-  DASSL_SYMJAC,
-  DASSL_JAC_MAX
-};
-
 typedef struct DASSL_DATA{
 
   int dasslSteps;               /* if TRUE then dassl internal steps are used to store results */
