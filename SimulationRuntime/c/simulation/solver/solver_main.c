@@ -185,6 +185,8 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;
+  solverInfo->solverStats = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
+  solverInfo->solverStatsTmp = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
 
   /* if FLAG_NOEQUIDISTANT_GRID is set, choose dassl step method */
   if (omc_flag[FLAG_NOEQUIDISTANT_GRID])
@@ -547,31 +549,22 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     infoStreamPrint(LOG_STATS, 0, "%5ld time events", solverInfo->sampleEvents);
     messageClose(LOG_STATS);
 
-#if defined(WITH_DASSL)
-    if(S_DASSL == solverInfo->solverMethod)
+    if(S_OPTIMIZATION == solverInfo->solverMethod || /* skip solver statistics for optimization */
+       S_QSS == solverInfo->solverMethod) /* skip also for qss, since not available*/
     {
-      /* save dassl stats before print */
+    }
+    else
+    {
+      /* save stats before print */
       for(ui=0; ui<numStatistics; ui++)
-        ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo->solverData)->dasslStatisticsTmp[ui];
+        solverInfo->solverStats[ui] += solverInfo->solverStatsTmp[ui];
 
-      infoStreamPrint(LOG_STATS, 1, "solver: DASSL");
-      infoStreamPrint(LOG_STATS, 0, "%5d steps taken", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[0]);
-      infoStreamPrint(LOG_STATS, 0, "%5d calls of functionODE", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[1]);
-      infoStreamPrint(LOG_STATS, 0, "%5d evaluations of jacobian", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[2]);
-      infoStreamPrint(LOG_STATS, 0, "%5d error test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[3]);
-      infoStreamPrint(LOG_STATS, 0, "%5d convergence test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[4]);
-      messageClose(LOG_STATS);
-    }
-    else
-#endif
-    if(S_OPTIMIZATION == solverInfo->solverMethod)
-    {
-      /* skip solver statistics for optimization */
-    }
-    else
-    {
-      infoStreamPrint(LOG_STATS, 1, "solver");
-      infoStreamPrint(LOG_STATS, 0, "sorry - no solver statistics available. [not yet implemented]");
+      infoStreamPrint(LOG_STATS, 1, "solver: %s", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
+      infoStreamPrint(LOG_STATS, 0, "%5d steps taken", solverInfo->solverStats[0]);
+      infoStreamPrint(LOG_STATS, 0, "%5d calls of functionODE", solverInfo->solverStats[1]);
+      infoStreamPrint(LOG_STATS, 0, "%5d evaluations of jacobian", solverInfo->solverStats[2]);
+      infoStreamPrint(LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats[3]);
+      infoStreamPrint(LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats[4]);
       messageClose(LOG_STATS);
     }
 
@@ -749,6 +742,12 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
   }
   sData->timeValue = solverInfo->currentTime;
 
+  /* save stats */
+  /* steps */
+  solverInfo->solverStatsTmp[0] += 1;
+  /* function ODE evaluation is done directly after this function */
+  solverInfo->solverStatsTmp[1] += 1;
+
   return 0;
 }
 
@@ -772,6 +771,12 @@ static int sym_euler_im_step(DATA* data, threadData_t *threadData, SOLVER_INFO* 
   /* update der(x)*/
   for(i=0, j=data->modelData->nStates; i<data->modelData->nStates; ++i, ++j)
     data->localData[0]->realVars[j] = (data->localData[0]->realVars[i]-data->localData[1]->realVars[i])/solverInfo->currentStepSize;
+
+  /* save stats */
+  /* steps */
+  solverInfo->solverStatsTmp[0] += 1;
+  /* function ODE evaluation is done directly after this */
+  solverInfo->solverStatsTmp[1] += 1;
   return retVal;
 }
 
@@ -824,6 +829,13 @@ static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
     sData->realVars[i] = sDataOld->realVars[i] + solverInfo->currentStepSize * sum;
   }
   sData->timeValue = solverInfo->currentTime;
+
+  /* save stats */
+  /* steps */
+  solverInfo->solverStatsTmp[0] += 1;
+  /* function ODE evaluation is done directly after this */
+  solverInfo->solverStatsTmp[1] += rk->work_states_ndims+1;
+
   return 0;
 }
 
@@ -845,7 +857,7 @@ static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverI
 /***************************************    Radau/Lobatto     ***********************************/
 int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  if(kinsolOde(solverInfo->solverData) == 0)
+  if(kinsolOde(solverInfo) == 0)
   {
     solverInfo->currentTime += solverInfo->currentStepSize;
     return 0;

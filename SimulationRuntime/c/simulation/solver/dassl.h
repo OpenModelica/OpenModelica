@@ -36,7 +36,6 @@
 #define DDASKR _daskr_ddaskr_
 
 static const unsigned int maxOrder = 5;
-static const unsigned int numStatistics = 5;
 static const unsigned int infoLength = 20;
 
 enum DASSL_JACOBIAN
@@ -58,9 +57,6 @@ typedef struct DASSL_DATA{
   int dasslRootFinding;         /* if TRUE then the internal root finding is used */
   int dasslJacobian;            /* specifices the method to calculate the jacobian matrix */
   int dasslAvoidEventRestart;   /* if TRUE then no restart after an event is performed */
-
-  unsigned int* dasslStatistics;
-  unsigned int* dasslStatisticsTmp;
 
   int* info;
 

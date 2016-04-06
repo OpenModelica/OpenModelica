@@ -652,31 +652,37 @@ static int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   return 0;
 }
 
-int kinsolOde(void* ode)
+int kinsolOde(SOLVER_INFO* solverInfo)
 {
-  KINODE *kinOde = (KINODE*) ode;
+  KINODE *kinOde = (KINODE*) solverInfo->solverData;
   KDATAODE *kData = kinOde->kData;
-  int i;
+  int i, flag, dense=0;
+  long int tmp;
   initKinsol(kinOde);
-  for(i = 0;i <3; ++i)
+  for(i = 0; i < 3; ++i)
   {
 
     kData->error_code = KINSol(kData->kmem,           /* KINSol memory block */
                                kData->x,              /* initial guess on input; solution vector */
-                               kData->glstr,          /* global stragegy choice */
+                               kData->glstr,          /* global strategy choice */
                                kData->sVars,          /* scaling vector, for the variable cc */
                                kData->sEqns );
+
     if(kData->error_code>=0)
-      return 0;
+    {
+      break;
+    }
 
     if(i == 0)
     {
      KINDense(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
+     dense=1;
      infoStreamPrint(LOG_SOLVER,0,"Restart Kinsol: change linear solver to KINDense.");
     }
     else if(i == 1)
     {
       KINSptfqmr(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
+      dense=0;
       infoStreamPrint(LOG_SOLVER,0,"Restart Kinsol: change linear solver to KINSptfqmr.");
     }
     else if(i == 2)
@@ -685,6 +691,34 @@ int kinsolOde(void* ode)
       infoStreamPrint(LOG_SOLVER,0,"Restart Kinsol: change linear solver to KINSpbcg.");
     }
   }
+  /* save stats */
+  /* steps */
+  solverInfo->solverStatsTmp[0] += 1;
+  /* functionODE evaluations */
+  tmp = 0;
+  flag = KINGetNumFuncEvals(kData->kmem, &tmp);
+  if (flag == KIN_SUCCESS)
+  {
+    solverInfo->solverStatsTmp[1] += tmp;
+  }
+
+  /* Jacobians evaluations */
+  tmp = 0;
+  flag = KINDlsGetNumJacEvals(kData->kmem, &tmp);
+  if (flag == KIN_SUCCESS)
+  {
+    solverInfo->solverStatsTmp[2] += tmp;
+  }
+
+  /* beta-condition failures evaluations */
+  tmp = 0;
+  flag = KINGetNumBetaCondFails(kData->kmem, &tmp);
+  if (flag == KIN_SUCCESS)
+  {
+    solverInfo->solverStatsTmp[4] += tmp;
+  }
+
+
   return (kData->error_code<0) ? -1 : 0;
 }
 #else

@@ -42,6 +42,8 @@
 #include "util/list.h"
 #include "util/simulation_options.h"
 
+static const unsigned int numStatistics = 5;
+
 typedef struct SOLVER_INFO
 {
   double currentTime;
@@ -66,6 +68,9 @@ typedef struct SOLVER_INFO
   /* stats */
   unsigned long stateEvents;
   unsigned long sampleEvents;
+  /* integrator stats */
+  unsigned int* solverStats;
+  unsigned int* solverStatsTmp;
 
   /* further options */
   int integratorSteps;

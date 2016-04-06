@@ -292,14 +292,14 @@ static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INF
   solverInfo->didEventStep = 1;
 }
 
-static void saveDasslStats(SOLVER_INFO* solverInfo)
+static void saveIntegratorStats(SOLVER_INFO* solverInfo)
 {
   int ui;
-  if (solverInfo->didEventStep == 1 && solverInfo->solverMethod == S_DASSL)
+  if (solverInfo->didEventStep == 1)
   {
     for(ui=0; ui<numStatistics; ui++)
     {
-      ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo->solverData)->dasslStatisticsTmp[ui];
+      solverInfo->solverStats[ui] += solverInfo->solverStatsTmp[ui];
     }
   }
 }
@@ -407,7 +407,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       retry = 0; /* reset retry */
 
       fmtEmitStep(data, threadData, &fmt, solverInfo->didEventStep);
-      saveDasslStats(solverInfo);
+      saveIntegratorStats(solverInfo);
       checkSimulationTerminated(data, solverInfo);
 
       /* terminate for some cases:

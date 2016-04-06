@@ -159,10 +159,6 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   dasslData->rtol = (double*) malloc(data->modelData->nStates*sizeof(double));
   dasslData->info = (int*) calloc(infoLength, sizeof(int));
   assertStreamPrint(threadData, 0 != dasslData->info,"out of memory");
-  dasslData->dasslStatistics = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
-  assertStreamPrint(threadData, 0 != dasslData->dasslStatistics,"out of memory");
-  dasslData->dasslStatisticsTmp = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
-  assertStreamPrint(threadData, 0 != dasslData->dasslStatisticsTmp,"out of memory");
 
   dasslData->idid = 0;
 
@@ -407,8 +403,6 @@ int dassl_deinitial(DASSL_DATA *dasslData)
   free(dasslData->delta_hh);
   free(dasslData->newdelta);
   free(dasslData->stateDer);
-  free(dasslData->dasslStatistics);
-  free(dasslData->dasslStatisticsTmp);
 
   free(dasslData);
 
@@ -637,7 +631,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   for(ui = 0; ui < numStatistics; ui++)
   {
     assert(10 + ui < dasslData->liw);
-    dasslData->dasslStatisticsTmp[ui] = dasslData->iwork[10 + ui];
+    solverInfo->solverStatsTmp[ui] = dasslData->iwork[10 + ui];
   }
 
   infoStreamPrint(LOG_DASSL, 0, "Finished DASSL step.");
