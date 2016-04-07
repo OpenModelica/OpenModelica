@@ -175,7 +175,7 @@ extern "C"
 {
 
 #if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
-extern extern void ErrorImpl__updateCurrentComponent(threadData_t *threadData,const char* newVar, int wr, const char* fn, int rs, int re, int cs, int ce)
+extern void ErrorImpl__updateCurrentComponent(threadData_t *threadData,const char* newVar, int wr, const char* fn, int rs, int re, int cs, int ce)
 {
 }
 #endif
