@@ -7586,6 +7586,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then listLength(ls.vars)
     case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then listLength(nls.crefs)
   <<
+  /// Provide index of equation
+  int <%modelname%>Algloop<%index%>::getEquationIndex() const
+  {
+    return <%index%>;
+  }
+
   /// Provide number (dimension) of variables according to data type
   int <%modelname%>Algloop<%index%>::getDimReal() const
   {
@@ -7603,14 +7609,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     return _system->isConsistent();
   }
 
-  /// Provide variables with given index to the system
-  void <%modelname%>Algloop<%index%>::getReal(double* vars)
-  {
-    <%getAlgloopVars(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
-  }
-
   /// Provide names of alg loop variables
-  void <%modelname%>Algloop<%index%>::getVarNames(const char** names)
+  void <%modelname%>Algloop<%index%>::getNamesReal(const char** names)
   {
     for (int i = 0; i < <%size%>; i++)
       names[i] = _vars[i].name;
@@ -7635,6 +7635,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   {
     for (int i = 0; i < <%size%>; i++)
       maxs[i] = _vars[i].max;
+  }
+
+  /// Provide variables with given index to the system
+  void <%modelname%>Algloop<%index%>::getReal(double* vars)
+  {
+    <%getAlgloopVars(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
   }
 
   /// Set variables with given index to the system
@@ -7788,6 +7794,8 @@ template generateAlgloopMethodDeclarationCode(SimCode simCode ,Text& extraFuncs,
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
     <<
+    /// Provide index of equation
+    virtual int getEquationIndex() const;
     /// Provide number (dimension) of variables according to data type
     virtual int getDimReal() const;
     /// Provide number (dimension) of residuals according to data type
@@ -7795,19 +7803,19 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      /// (Re-) initialize the system of equations
     virtual void initialize();
 
-    /// Provide variables with given index to the system
-    virtual void getReal(double* vars);
     /// Provide names of alg loop variables
-    virtual void getVarNames(const char** names);
+    virtual void getNamesReal(const char** names);
     /// Provide nominal values for alg loop variables
     virtual void getNominalReal(double* nominals);
     /// Provide min values for alg loop variables
     virtual void getMinReal(double* mins);
     /// Provide max values for alg loop variables
     virtual void getMaxReal(double* maxs);
-
+    /// Provide variables with given index to the system
+    virtual void getReal(double* vars);
     /// Set variables with given index to the system
     virtual void setReal(const double* vars);
+
     /// Update transfer behavior of the system of equations
     virtual void evaluate();
     /// Provide the right hand side (according to the index)

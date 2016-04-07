@@ -33,6 +33,9 @@ public:
 
   virtual ~IAlgLoop() {};
 
+  /// Provide index of equation
+  virtual int getEquationIndex() const = 0;
+
   /// Provide number (dimension) of variables according to the data type
   virtual int getDimReal() const = 0;
 
@@ -42,10 +45,16 @@ public:
   /// (Re-) initialize the system of equations
   virtual void initialize() = 0;
 
+  /// Provide names of alg loop variables
+  virtual void getNamesReal(const char** names) = 0;
+  /// Provide nominal values for alg loop variables
+  virtual void getNominalReal(double* nominals) = 0;
+  /// Provide min values for alg loop variables
+  virtual void getMinReal(double* mins) = 0;
+  /// Provide max values for alg loop variables
+  virtual void getMaxReal(double* maxs) = 0;
   /// Provide variables of given data type
   virtual void getReal(double* lambda) = 0;
-  /// Provide nominal values of given data type
-  virtual void getNominalReal(double* lambda) = 0;
   /// Set variables with given data type
   virtual void setReal(const double* lambda) = 0;
 
