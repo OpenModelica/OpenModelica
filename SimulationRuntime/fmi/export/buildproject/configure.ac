@@ -30,7 +30,7 @@ AC_MSG_CHECKING([for cross-compilation flags])
 if test "$host_short" = "$build_short"; then
   # Not cross-compiling or found a good tool; don't need special flags
   AC_MSG_RESULT([not cross-compiling])
-elif echo "$CC" | grep -q "$host_short" || echo "$CC" | grep -q "$host"; then
+elif echo "$CC" | grep -q "$host_short" || echo "$CC" | grep -q "$host" || echo "$CC" | grep -q "$host_cpu"; then
   AC_MSG_RESULT([not needed; $CC contains the prefix])
 elif test "$host_os" = "$build_os" && test "$host_short" = "x86_64"; then
   CFLAGS_BEFORE="$CFLAGS"

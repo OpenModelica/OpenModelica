@@ -72,6 +72,7 @@ public import Flags;
 protected
 
 import Config;
+import Global;
 
 public
 uniontype Severity "severity of message"
@@ -963,19 +964,77 @@ public constant Message PDEModelica_ERROR = MESSAGE(7013, TRANSLATION(), ERROR()
 
 protected import ErrorExt;
 
-public function updateCurrentComponent "Function: updateCurrentComponent
+public function updateCurrentComponent<T> "Function: updateCurrentComponent
 This function takes a String and set the global var to
 which the current variable the compiler is working with."
+  input T cpre; // Should be Prefix.ComponentPrefix
   input String component;
   input SourceInfo info;
+  input prefixToStr func;
+  partial function prefixToStr<T>
+    input String str;
+    input T t;
+    output String ostr;
+  end prefixToStr;
 protected
-  String filename;
-  Integer ls, le, cs, ce;
-  Boolean ro;
+  Option<tuple<array<T>, array<String>, array<SourceInfo>, array<prefixToStr>>> tpl;
+  array<T> apre;
+  array<String> astr;
+  array<SourceInfo> ainfo;
+  array<prefixToStr> afunc;
 algorithm
-  SOURCEINFO(filename, ro, ls, cs, le, ce, _) := info;
-  ErrorExt.updateCurrentComponent(component, ro, Util.testsuiteFriendly(filename), ls, le, cs, ce);
+  tpl := getGlobalRoot(Global.currentInstVar);
+  _ := match tpl
+    case NONE() algorithm setGlobalRoot(Global.currentInstVar, SOME((arrayCreate(1,cpre),arrayCreate(1,component),arrayCreate(1,info),arrayCreate(1,func)))); then ();
+    case SOME((apre,astr,ainfo,afunc))
+      algorithm
+        arrayUpdate(apre, 1, cpre);
+        arrayUpdate(astr, 1, component);
+        arrayUpdate(ainfo, 1, info);
+        arrayUpdate(afunc, 1, func);
+      then ();
+  end match;
 end updateCurrentComponent;
+
+public function getCurrentComponent<T> "Gets the current component as a string."
+  output String str;
+  output Integer sline=0, scol=0, eline=0, ecol=0;
+  output Boolean read_only=false;
+  output String filename="";
+protected
+  Option<tuple<array<T>, array<String>, array<SourceInfo>, array<prefixToStr>>> tpl;
+  array<T> apre;
+  array<String> astr;
+  array<SourceInfo> ainfo;
+  array<prefixToStr> afunc;
+  SourceInfo info;
+  prefixToStr func;
+  partial function prefixToStr<T>
+    input String str;
+    input T t;
+    output String ostr;
+  end prefixToStr;
+algorithm
+  tpl := getGlobalRoot(Global.currentInstVar);
+  str := match tpl
+    case NONE() then "";
+    case SOME((apre,astr,ainfo,afunc))
+      algorithm
+        str := arrayGet(astr, 1);
+        if str <> "" then
+          func := arrayGet(afunc, 1);
+          str := "Variable " + func(str,arrayGet(apre,1)) + ": ";
+          info := arrayGet(ainfo, 1);
+          sline := info.lineNumberStart;
+          scol := info.columnNumberStart;
+          eline := info.lineNumberEnd;
+          ecol := info.columnNumberEnd;
+          read_only := info.isReadOnly;
+          filename := info.fileName;
+        end if;
+      then str;
+  end match;
+end getCurrentComponent;
 
 public function addMessage "Implementation of Relations
   function: addMessage
@@ -986,15 +1045,17 @@ public function addMessage "Implementation of Relations
 protected
   MessageType msg_type;
   Severity severity;
-  String msg_str;
-  ErrorID error_id;
+  String str, msg_str, file;
+  ErrorID error_id,sline,scol,eline,ecol;
+  Boolean isReadOnly;
   Util.TranslatableContent msg;
 algorithm
   if not Flags.getConfigBool(Flags.DEMO_MODE) then
+    (str,sline,scol,eline,ecol,isReadOnly,file) := getCurrentComponent();
     //print(" adding message: " + intString(error_id) + "\n");
     MESSAGE(error_id, msg_type, severity, msg) := inErrorMsg;
     msg_str := Util.translateContent(msg);
-    ErrorExt.addMessage(error_id, msg_type, severity, msg_str, inMessageTokens);
+    ErrorExt.addSourceMessage(error_id, msg_type, severity, sline, scol, eline, ecol, isReadOnly, Util.testsuiteFriendly(file), str+msg_str, inMessageTokens);
     //print(" succ add " + msg_type_str + " " + severity_string + ",  " + msg + "\n");
   end if;
 end addMessage;

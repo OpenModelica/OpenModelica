@@ -3226,7 +3226,7 @@ algorithm
     (outCache, outEnv, outIH, outStore, DAE.DAE(outDae), outSets, outState, outVars, outGraph, outFieldDomOpt) :=
       instElement(outCache, outEnv, outIH, outStore, inMod, inPrefix, outState, elt, inInstDims,
         inImplicit, inCallingScope, outGraph, inSets);
-    Error.updateCurrentComponent("", Absyn.dummyInfo);
+    Error.updateCurrentComponent(Prefix.NOPRE(), "", Absyn.dummyInfo, PrefixUtil.identAndPrefixToPath);
     ErrorExt.delCheckpoint("instElement2");
   else // Instantiation failed, fail or skip the element depending on inStopOnError.
     if inStopOnError then

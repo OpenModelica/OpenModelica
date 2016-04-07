@@ -307,6 +307,14 @@ algorithm
   end match;
 end prefixToPath;
 
+public function identAndPrefixToPath "Convert a Ident/Prefix to a String"
+  input String ident;
+  input Prefix.Prefix inPrefix;
+  output String str;
+algorithm
+  str := Absyn.pathString(PrefixUtil.prefixPath(Absyn.IDENT(ident),inPrefix));
+end identAndPrefixToPath;
+
 protected function componentPrefixToPath "Convert a Prefix to a Path"
   input Prefix.ComponentPrefix pre;
   output Absyn.Path path;

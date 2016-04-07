@@ -58,6 +58,7 @@ constant Integer rewriteRulesIndex = 18;
 constant Integer stackoverFlowIndex = 19;
 constant Integer gcProfilingIndex = 20;
 constant Integer inlineHashTable = 21; // TODO: Should be a local root?
+constant Integer currentInstVar = 22;
 
 // indexes in System.tick
 // ----------------------
@@ -80,6 +81,7 @@ algorithm
   setGlobalRoot(rewriteRulesIndex,  NONE());
   setGlobalRoot(stackoverFlowIndex, NONE());
   setGlobalRoot(inlineHashTable, NONE());
+  setGlobalRoot(currentInstVar, NONE());
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

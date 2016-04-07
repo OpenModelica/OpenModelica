@@ -44,14 +44,6 @@
 
 using namespace std;
 
-struct absyn_info {
-  std::string *fn;
-  bool wr;
-  int rs;
-  int re;
-  int cs;
-  int ce;
-};
 const char* ErrorLevel_toStr(int ix) {
   const char* toStr[4] = {"Internal error","Error","Warning","Notification"};
   if (ix<0 || ix>=4) return "#Internal Error: Unknown ErrorLevel#";
@@ -70,11 +62,8 @@ typedef struct errorext_struct {
   bool pop_more_on_rollback;
   int numErrorMessages;
   int numWarningMessages;
-  absyn_info finfo;
-  bool haveInfo;
   deque<ErrorMessage*> *errorMessageQueue; // Global variable of all error messages.
   vector<pair<int,string> > *checkPoints; // a checkpoint has a message index no, and a unique identifier
-  string *currVariable;
   string *lastDeletedCheckpoint;
   int showErrorMessages;
 } errorext_members;
@@ -90,9 +79,7 @@ static void free_error(void *data)
   if (data == NULL) return;
   delete members->errorMessageQueue;
   delete members->checkPoints;
-  delete members->currVariable;
   delete members->lastDeletedCheckpoint;
-  delete members->finfo.fn;
   free(members);
 }
 
@@ -114,12 +101,9 @@ static errorext_members* getMembers(threadData_t *threadData)
   res->pop_more_on_rollback = false;
   res->numErrorMessages = 0;
   res->numWarningMessages = 0;
-  res->haveInfo = false;
   res->errorMessageQueue = new deque<ErrorMessage*>;
   res->checkPoints = new vector<pair<int,string> >;
-  res->currVariable = new string;
   res->lastDeletedCheckpoint = new string;
-  res->finfo.fn = new string;
   res->showErrorMessages = 0;
   pthread_setspecific(errorExtKey,res);
   if (threadData) {
@@ -159,28 +143,6 @@ static void pop_message(threadData_t *threadData, bool rollback)
   } while (pop_more);
 }
 
-/* Adds a message without file info. */
-extern void add_message(threadData_t *threadData, int errorID,
-     ErrorType type,
-     ErrorLevel severity,
-     const char* message,
-     ErrorMessage::TokenList tokens)
-{
-  errorext_members *members = getMembers(threadData);
-  std::string tmp("");
-  if (members->currVariable->length()>0) {
-    tmp = "Variable "+*members->currVariable+": " +message;
-  }
-  else {
-    tmp=message;
-  }
-  struct absyn_info *info = &members->finfo;
-  ErrorMessage *msg = members->haveInfo ?
-    new ErrorMessage((long)errorID, type, severity, tmp, tokens, info->rs,info->cs,info->re,info->ce,info->wr,*info->fn) :
-    new ErrorMessage((long)errorID, type, severity, tmp, tokens);
-  push_message(threadData,msg);
-}
-
 /* Adds a message with file information */
 void add_source_message(threadData_t *threadData,
       int errorID,
@@ -212,25 +174,11 @@ void add_source_message(threadData_t *threadData,
 extern "C"
 {
 
-#include <assert.h>
-
-/* sets the current_variable(which is being instantiated) */
-extern void ErrorImpl__updateCurrentComponent(threadData_t *threadData,const char* newVar, int wr, const char* fn, int rs, int re, int cs, int ce)
+#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
+extern extern void ErrorImpl__updateCurrentComponent(threadData_t *threadData,const char* newVar, int wr, const char* fn, int rs, int re, int cs, int ce)
 {
-  errorext_members *members = getMembers(threadData);
-  *members->currVariable = std::string(newVar);
-  if( (rs+re+cs+ce) > 0) {
-    members->finfo.wr = wr;
-    *members->finfo.fn = fn;
-    members->finfo.rs = rs;
-    members->finfo.re = re;
-    members->finfo.cs = cs;
-    members->finfo.ce = ce;
-    members->haveInfo = true;
-  } else {
-    members->haveInfo = false;
-  }
 }
+#endif
 
 static void printCheckpointStack(threadData_t *threadData)
 {
@@ -420,13 +368,38 @@ static const char* ErrorImpl__getLastDeletedCheckpoint(threadData_t *threadData)
   return getMembers(threadData)->lastDeletedCheckpoint->c_str();
 }
 
+#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
+extern void* omc_Error_getCurrentComponent(threadData_t *threadData, modelica_integer *sline, modelica_integer *scol, modelica_integer *eline, modelica_integer *ecol, modelica_integer *read_only, void **filename);
+#endif
+
 extern void c_add_message(threadData_t *threadData,int errorID, ErrorType type, ErrorLevel severity, const char* message, const char** ctokens, int nTokens)
 {
+  const char *str, *filename;
+  modelica_integer sline, scol, eline, ecol, read_only;
+  if (!threadData) {
+    threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  }
   ErrorMessage::TokenList tokens;
   for (int i=nTokens-1; i>=0; i--) {
     tokens.push_back(std::string(ctokens[i]));
   }
-  add_message(threadData,errorID,type,severity,message,tokens);
+#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
+  void *mmc_filename;
+  str = MMC_STRINGDATA(omc_Error_getCurrentComponent(threadData, &sline, &scol, &eline, &ecol, &read_only, &mmc_filename));
+  filename = MMC_STRINGDATA(mmc_filename);
+#else
+  sline=0;
+  scol=0;
+  eline=0;
+  ecol=0;
+  read_only=0;
+  str="";
+  filename="";
+#endif
+  ErrorMessage *msg = *(const char*)MMC_STRINGDATA(str) ?
+    new ErrorMessage((long)errorID, type, severity, std::string((const char*)MMC_STRINGDATA(str)) + std::string(message), tokens, sline , scol, eline, ecol, read_only, MMC_STRINGDATA(filename)) :
+    new ErrorMessage((long)errorID, type, severity, message, tokens);
+  push_message(threadData,msg);
 }
 
 extern void c_add_source_message(threadData_t *threadData,int errorID, ErrorType type, ErrorLevel severity, const char* message, const char** ctokens, int nTokens, int startLine, int startCol, int endLine, int endCol, int isReadOnly, const char* filename)

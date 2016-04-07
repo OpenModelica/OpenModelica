@@ -571,8 +571,7 @@ protected
   DAE.ElementSource source;
 algorithm
   try
-    comp_name := Absyn.pathString(PrefixUtil.prefixPath(Absyn.IDENT(inName), inPrefix));
-    Error.updateCurrentComponent(comp_name, inInfo);
+    Error.updateCurrentComponent(inPrefix, inName, inInfo, PrefixUtil.identAndPrefixToPath);
 
     (outCache, dims, cls, type_mods) :=
       InstUtil.getUsertypeDimensions(inCache, inEnv, inIH, inPrefix, inClass, inInstDims, inImpl);
@@ -604,9 +603,9 @@ algorithm
     outCache := InstFunction.addRecordConstructorFunction(outCache, inEnv,
       Types.arrayElementType(outType), SCode.elementInfo(inClass));
 
-    Error.updateCurrentComponent("", Absyn.dummyInfo);
+    Error.updateCurrentComponent(Prefix.NOPRE(), "", Absyn.dummyInfo, PrefixUtil.identAndPrefixToPath);
   else
-    Error.updateCurrentComponent("", Absyn.dummyInfo);
+    Error.updateCurrentComponent(Prefix.NOPRE(), "", Absyn.dummyInfo, PrefixUtil.identAndPrefixToPath);
     fail();
   end try;
 end instVar_dispatch;

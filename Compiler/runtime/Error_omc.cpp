@@ -49,20 +49,6 @@ void Error_registerModelicaFormatError()
   OpenModelica_ModelicaVFormatError = OpenModelica_ErrorModule_ModelicaVFormatError;
 }
 
-void Error_addMessage(threadData_t *threadData,int errorID, void *msg_type, void *severity, const char* message, modelica_metatype tokenlst)
-{
-  ErrorMessage::TokenList tokens;
-  while (MMC_GETHDR(tokenlst) != MMC_NILHDR) {
-    const char* token = MMC_STRINGDATA(MMC_CAR(tokenlst));
-    tokens.push_back(string(token));
-    tokenlst=MMC_CDR(tokenlst);
-  }
-  add_message(threadData,errorID,
-              (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
-              (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__INTERNAL_3dBOX0),
-              message,tokens);
-}
-
 extern void* Error_getMessages(threadData_t *threadData)
 {
   return listReverse(ErrorImpl__getMessages(threadData));
@@ -79,6 +65,22 @@ extern const char* Error_printMessagesStr(threadData_t *threadData,int warningsA
   std::string res = ErrorImpl__printMessagesStr(threadData,warningsAsErrors);
   return omc_alloc_interface.malloc_strdup(res.c_str());
 }
+
+#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
+extern void Error_addMessage(threadData_t *threadData,int errorID, void *msg_type, void *severity, const char* message, modelica_metatype tokenlst)
+{
+  ErrorMessage::TokenList tokens;
+  while (MMC_GETHDR(tokenlst) != MMC_NILHDR) {
+    const char* token = MMC_STRINGDATA(MMC_CAR(tokenlst));
+    tokens.push_back(string(token));
+    tokenlst=MMC_CDR(tokenlst);
+  }
+  add_source_message(threadData,errorID,
+              (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
+              (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__INTERNAL_3dBOX0),
+              message,tokens,0,0,0,0,0,"");
+}
+#endif
 
 extern void Error_addSourceMessage(threadData_t *threadData,int _id, void *msg_type, void *severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)
 {
