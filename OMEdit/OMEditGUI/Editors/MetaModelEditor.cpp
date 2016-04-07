@@ -436,8 +436,10 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
     QDomElement subModel = subModelList.at(i).toElement();
     QDomElement interfaceDataElement = interfaces.firstChildElement();
     while (!interfaceDataElement.isNull()) {
+      subModel = subModelList.at(i).toElement();
       if (subModel.attribute("Name").compare(interfaceDataElement.attribute("model")) == 0) {
         QDomElement interfacePoint;
+        // update interface point
         if (existInterfaceData(subModel.attribute("Name"), interfaceDataElement)) {
           interfacePoint = getInterfacePoint(subModel.attribute("Name"), interfaceDataElement.attribute("Name"));
           interfacePoint.setAttribute("Name", interfaceDataElement.attribute("Name"));
@@ -454,7 +456,7 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
               alignInterfaces(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName(), false);
             }
           }
-        } else {
+        } else {  // insert interface point
           QDomElement interfacePoint = mXmlDocument.createElement("InterfacePoint");
           interfacePoint.setAttribute("Name", interfaceDataElement.attribute("Name"));
           interfacePoint.setAttribute("Position", interfaceDataElement.attribute("Position"));
