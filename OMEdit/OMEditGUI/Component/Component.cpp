@@ -627,7 +627,7 @@ Component* Component::getRootParentComponent()
 CoOrdinateSystem Component::getCoOrdinateSystem() const
 {
   CoOrdinateSystem coOrdinateSystem;
-  if (mpLibraryTreeItem && !mpLibraryTreeItem->isNonExisting()) {
+  if (mpLibraryTreeItem && !mpLibraryTreeItem->isNonExisting() && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
     if (mpLibraryTreeItem->isConnector()) {
       if (mpGraphicsView->getViewType() == StringHandler::Icon) {
         coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mCoOrdinateSystem;
