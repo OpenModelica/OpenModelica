@@ -142,26 +142,26 @@ void Newton::solve()
   if (_firstCall)
     initialize();
 
-  // Get current values from system
+  // Get current values and residuals from system
   _algLoop->getReal(_y);
+  _algLoop->evaluate();
+  _algLoop->getRHS(_f);
 
   // Reset status flag
   _iterationStatus = CONTINUE;
 
   while (_iterationStatus == CONTINUE) {
     // Check stopping criterion
-    calcFunction(_y,_f);
-    if (totSteps) {
+    if (!_algLoop->isLinear()) {
       _iterationStatus = DONE;
       for (int i=0; i<_dimSys; ++i) {
-        if (fabs(_f[i]) > atol + fabs(_y[i]) * rtol) {
+        if (fabs(_f[i]) > atol + rtol * fabs(_y[i])) {
           _iterationStatus = CONTINUE;
           break;
         }
       }
     }
     if (_iterationStatus == CONTINUE) {
-      LogSysVec(_algLoop, "y" + to_string(totSteps), _y);
       if (totSteps < _newtonSettings->getNewtMax()) {
         // Determination of Jacobian (Fortran-format)
         if (_algLoop->isLinear() && !_algLoop->isLinearTearing()) {
@@ -169,7 +169,7 @@ void Newton::solve()
           const double* jac = A.data().begin();
           memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
           dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
-          memcpy(_y,_f,_dimSys*sizeof(double));
+          memcpy(_y, _f, _dimSys*sizeof(double));
           _algLoop->setReal(_y);
           if (info != 0)
             throw ModelicaSimulationError(ALGLOOP_SOLVER,
@@ -184,13 +184,11 @@ void Newton::solve()
 
           const matrix_t& A_sparse = _algLoop->getSystemMatrix();
           //m_t A_dense(A_sparse);
-
           const double* jac = A_sparse.data().begin();
-
           memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
           dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
-          for (int i=0; i<_dimSys; i++)
-            _y[i]=-_f[i];
+          for (int i = 0; i < _dimSys; i++)
+            _y[i] = -_f[i];
           _algLoop->setReal(_y);
           _algLoop->evaluate();
           if (info != 0)
@@ -200,6 +198,7 @@ void Newton::solve()
             _iterationStatus = DONE;
         }
         else {
+          LogSysVec(_algLoop, "y" + to_string(totSteps), _y);
           calcJacobian();
 
           // Solve linear System
@@ -213,9 +212,10 @@ void Newton::solve()
           // Increase counter
           ++ totSteps;
 
-          // New solution
-          for (int i=0; i<_dimSys; ++i)
+          // New iterate
+          for (int i = 0; i < _dimSys; ++i)
             _y[i] -= _newtonSettings->getDelta() * _f[i];
+          calcFunction(_y, _f);
         }
       }
       else
