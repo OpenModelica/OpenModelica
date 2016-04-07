@@ -6283,13 +6283,10 @@ protected
   BackendDAE.Variables aliasVars1, aliasVars2;
   BackendDAE.EqSystems systs1, systs2;
   DAE.FunctionTree funcTree;
-  HashSet.HashSet hs = HashSet.emptyHashSet();
+  array<HashSet.HashSet> hs = arrayCreate(1, HashSet.emptyHashSet());
 algorithm
   BackendDAE.DAE(eqs=systs1, shared=BackendDAE.SHARED(knownVars=knvars1, externalObjects=extvars1, aliasVars=aliasVars1, functionTree=funcTree)) := inSimDAE;
   BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(knownVars=knvars2, externalObjects=extvars2, aliasVars=aliasVars2)) := inInitDAE;
-
-  systs1 := List.filterOnFalse(systs1, BackendDAEUtil.isClockedSyst);
-  systs2 := List.filterOnFalse(systs2, BackendDAEUtil.isClockedSyst);
 
   if not Flags.isSet(Flags.NO_START_CALC) then
     (systs1) := List.map2(systs1, preCalculateStartValues, knvars1, funcTree);
@@ -6299,30 +6296,30 @@ algorithm
 
   // ### simulation ###
   // Extract from variable list
-  ((outVars, _, _, hs)) := List.fold1(List.map(systs1, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (SimCodeVar.emptySimVars, aliasVars1, knvars1, hs));
+  outVars := List.fold1(list(BackendVariable.daeVars(syst) for syst guard not BackendDAEUtil.isClockedSyst(syst) in systs1), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars1, vars=knvars1, hs=hs), SimCodeVar.emptySimVars);
 
   // Extract from known variable list
-  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(knvars1, extractVarsFromList, (outVars, aliasVars1, knvars1, hs));
+  outVars := BackendVariable.traverseBackendDAEVars(knvars1, function extractVarsFromList(aliasVars=aliasVars1, vars=knvars1, hs=hs), outVars);
 
   // Extract from removed variable list
-  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(aliasVars1, extractVarsFromList, (outVars, aliasVars1, knvars1, hs));
+  outVars := BackendVariable.traverseBackendDAEVars(aliasVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=knvars1, hs=hs), outVars);
 
   // Extract from external object list
-  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(extvars1, extractVarsFromList, (outVars, aliasVars1, knvars1, hs));
+  outVars := BackendVariable.traverseBackendDAEVars(extvars1, function extractVarsFromList(aliasVars=aliasVars1, vars=knvars1, hs=hs), outVars);
 
 
   // ### initialization ###
   // Extract from variable list
-  ((outVars, _, _, hs)) := List.fold1(List.map(systs2, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (outVars, aliasVars2, knvars2, hs));
+  outVars := List.fold1(list(BackendVariable.daeVars(syst) for syst guard not BackendDAEUtil.isClockedSyst(syst) in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=knvars2, hs=hs), outVars);
 
   // Extract from known variable list
-  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(knvars2, extractVarsFromList, (outVars, aliasVars2, knvars2, hs));
+  outVars := BackendVariable.traverseBackendDAEVars(knvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=knvars2, hs=hs), outVars);
 
   // Extract from removed variable list
-  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(aliasVars2, extractVarsFromList, (outVars, aliasVars2, knvars2, hs));
+  outVars := BackendVariable.traverseBackendDAEVars(aliasVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=knvars2, hs=hs), outVars);
 
   // Extract from external object list
-  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(extvars2, extractVarsFromList, (outVars, aliasVars2, knvars2, hs));
+  outVars := BackendVariable.traverseBackendDAEVars(extvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=knvars2, hs=hs), outVars);
 
   //BaseHashSet.printHashSet(hs);
 
@@ -6446,25 +6443,17 @@ algorithm
 end getRecordPathFromCref;
 
 protected function extractVarsFromList
-  input BackendDAE.Var inVar;
-  input tuple<SimCodeVar.SimVars, BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet /*all processed crefs*/> inTpl;
-  output BackendDAE.Var outVar = inVar;
-  output tuple<SimCodeVar.SimVars, BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet /*all processed crefs*/> outTpl;
-protected
-  SimCodeVar.SimVars vars;
-  BackendDAE.Variables aliasVars, v;
-  HashSet.HashSet hs;
+  input output BackendDAE.Var var;
+  input output SimCodeVar.SimVars simVars;
+  input BackendDAE.Variables aliasVars, vars;
+  input array<HashSet.HashSet> hs;
 algorithm
-  (vars, aliasVars, v, hs) := inTpl;
-
-  if not BaseHashSet.has(inVar.varName, hs) and not ComponentReference.isPreCref(inVar.varName) then
-    (vars, hs) := extractVarFromVar(inVar, aliasVars, v, vars, hs);
+  if if ComponentReference.isPreCref(var.varName) then false else not BaseHashSet.has(var.varName, arrayGet(hs,1)) then
+    simVars := extractVarFromVar(var, aliasVars, vars, simVars, hs);
   //  print("Added  " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
   //else
   //  print("Skiped " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
   end if;
-
-  outTpl := (vars, aliasVars, v, hs);
 end extractVarsFromList;
 
 // one dlow var can result in multiple simvars: input and output are a subset
@@ -6474,9 +6463,8 @@ protected function extractVarFromVar
   input BackendDAE.Variables inAliasVars;
   input BackendDAE.Variables inVars;
   input SimCodeVar.SimVars varsIn;
-  input HashSet.HashSet inHS "all processed crefs";
+  input array<HashSet.HashSet> hs "all processed crefs";
   output SimCodeVar.SimVars varsOut;
-  output HashSet.HashSet outHS = inHS;
 protected
   list<SimCodeVar.SimVar> stateVars;
   list<SimCodeVar.SimVar> derivativeVars;
@@ -6517,14 +6505,16 @@ algorithm
 
   // extract the sim var
   simvar := dlowvarToSimvar(dlowVar, SOME(inAliasVars), inVars);
-  derivSimvar := derVarFromStateVar(simvar);
   isalias := isAliasVar(simvar);
 
 
   // update HashSet
-  outHS := BaseHashSet.add(simvar.name, outHS);
+  arrayUpdate(hs, 1, BaseHashSet.add(simvar.name, arrayGet(hs,1)));
   if (not isalias) and (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)) then
-    outHS := BaseHashSet.add(derivSimvar.name, outHS);
+    derivSimvar := derVarFromStateVar(simvar);
+    arrayUpdate(hs, 1, BaseHashSet.add(derivSimvar.name, arrayGet(hs,1)));
+  else
+    derivSimvar := simvar; // Just in case
   end if;
 
   // If it is an input variable, we give it an index
