@@ -723,7 +723,7 @@ int kinsolOde(SOLVER_INFO* solverInfo)
 }
 #else
 
-int kinsolOde(void* ode)
+int kinsolOde(SOLVER_INFO* solverInfo)
 {
   assert(0);
   return -1;
