@@ -6318,7 +6318,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   match eq
   case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
    <<
-    void <%modelname%>Algloop<%nls.index%>::getRHS(double* residuals)
+    void <%modelname%>Algloop<%nls.index%>::getRHS(double* residuals) const
     {
          AlgLoopDefaultImplementation::getRHS(residuals);
     }
@@ -6328,7 +6328,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     match ls.jacobianMatrix
        case SOME(__) then
       <<
-      void <%modelname%>Algloop<%ls.index%>::getRHS(double* residuals)
+      void <%modelname%>Algloop<%ls.index%>::getRHS(double* residuals) const
       {
          AlgLoopDefaultImplementation::getRHS(residuals);
       }
@@ -6336,16 +6336,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       >>
       else
       <<
-      void <%modelname%>Algloop<%ls.index%>::getRHS(double* residuals)
+      void <%modelname%>Algloop<%ls.index%>::getRHS(double* residuals) const
       {
         memcpy(residuals,__b.getData(),sizeof(double)* _dimAEq);
       }
       >>
-
-
-
 end algloopRHSCode;
-
 
 template algloopResiduals(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eq)
 ::=
@@ -6360,7 +6356,7 @@ match eq
       return _dimAEq;
     }
 
-    void <%modelname%>Algloop<%ls.index%>::getRHS(double* vars)
+    void <%modelname%>Algloop<%ls.index%>::getRHS(double* vars) const
     {
         ublas::matrix<double> A=toMatrix(_dimAEq,_dimAEq,__A->data());
         double* doubleUnknowns = new double[_dimAEq];
@@ -6376,14 +6372,13 @@ match eq
     int <%modelname%>Algloop<%nls.index%>::giveDimRHS()
     {
       return _dimAEq;
-
     }
 
-    void <%modelname%>Algloop<%nls.index%>::getRHS(double* vars)
+    void <%modelname%>Algloop<%nls.index%>::getRHS(double* vars) const
     {
-          AlgLoopDefaultImplementation:::getRHS(vars)
+      AlgLoopDefaultImplementation:::getRHS(vars)
     }
-   >>
+    >>
  case SES_MIXED(__) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,cont)
 end algloopResiduals;
 
@@ -7610,35 +7605,41 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   }
 
   /// Provide names of alg loop variables
-  void <%modelname%>Algloop<%index%>::getNamesReal(const char** names)
+  void <%modelname%>Algloop<%index%>::getNamesReal(const char** names) const
   {
     for (int i = 0; i < <%size%>; i++)
       names[i] = _vars[i].name;
   }
 
   /// Provide nominal values for alg loop variables
-  void <%modelname%>Algloop<%index%>::getNominalReal(double* nominals)
+  void <%modelname%>Algloop<%index%>::getNominalReal(double* nominals) const
   {
     for (int i = 0; i < <%size%>; i++)
       nominals[i] = _vars[i].nominal;
   }
 
   /// Provide min values for alg loop variables
-  void <%modelname%>Algloop<%index%>::getMinReal(double* mins)
+  void <%modelname%>Algloop<%index%>::getMinReal(double* mins) const
   {
     for (int i = 0; i < <%size%>; i++)
       mins[i] = _vars[i].min;
   }
 
   /// Provide max values for alg loop variables
-  void <%modelname%>Algloop<%index%>::getMaxReal(double* maxs)
+  void <%modelname%>Algloop<%index%>::getMaxReal(double* maxs) const
   {
     for (int i = 0; i < <%size%>; i++)
       maxs[i] = _vars[i].max;
   }
 
+  /// Return simulation time
+  double <%modelname%>Algloop<%index%>::getSimTime() const
+  {
+    return _system->_simTime;
+  }
+
   /// Provide variables with given index to the system
-  void <%modelname%>Algloop<%index%>::getReal(double* vars)
+  void <%modelname%>Algloop<%index%>::getReal(double* vars) const
   {
     <%getAlgloopVars(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
   }
@@ -7804,22 +7805,25 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void initialize();
 
     /// Provide names of alg loop variables
-    virtual void getNamesReal(const char** names);
+    virtual void getNamesReal(const char** names) const;
     /// Provide nominal values for alg loop variables
-    virtual void getNominalReal(double* nominals);
+    virtual void getNominalReal(double* nominals) const;
     /// Provide min values for alg loop variables
-    virtual void getMinReal(double* mins);
+    virtual void getMinReal(double* mins) const;
     /// Provide max values for alg loop variables
-    virtual void getMaxReal(double* maxs);
+    virtual void getMaxReal(double* maxs) const;
+
+    /// Return simulation time
+    virtual double getSimTime() const;
     /// Provide variables with given index to the system
-    virtual void getReal(double* vars);
+    virtual void getReal(double* vars) const;
     /// Set variables with given index to the system
     virtual void setReal(const double* vars);
 
-    /// Update transfer behavior of the system of equations
+    /// Evaluate equations for given variables
     virtual void evaluate();
-    /// Provide the right hand side (according to the index)
-    virtual void getRHS(double* vars);
+    /// Provide the right hand side (residuals)
+    virtual void getRHS(double* vars) const;
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
     <<
     /// Provide dimensions of residuals for linear equation systems

@@ -46,26 +46,28 @@ public:
   virtual void initialize() = 0;
 
   /// Provide names of alg loop variables
-  virtual void getNamesReal(const char** names) = 0;
+  virtual void getNamesReal(const char** names) const = 0;
   /// Provide nominal values for alg loop variables
-  virtual void getNominalReal(double* nominals) = 0;
+  virtual void getNominalReal(double* nominals) const = 0;
   /// Provide min values for alg loop variables
-  virtual void getMinReal(double* mins) = 0;
+  virtual void getMinReal(double* mins) const = 0;
   /// Provide max values for alg loop variables
-  virtual void getMaxReal(double* maxs) = 0;
+  virtual void getMaxReal(double* maxs) const = 0;
+
+  /// Return simulation time
+  virtual double getSimTime() const = 0;
   /// Provide variables of given data type
-  virtual void getReal(double* lambda) = 0;
+  virtual void getReal(double* lambda) const = 0;
   /// Set variables with given data type
   virtual void setReal(const double* lambda) = 0;
 
-  /// Update transfer behavior of the system of equations according to command given by solver
+  /// Evaluate equations for given variables
   virtual void evaluate() = 0;
 
-  /// Provide the right hand side (according to the index)
-  virtual void getRHS(double* res) = 0;
+  /// Provide the right hand side (residuals)
+  virtual void getRHS(double* res) const = 0;
 
   virtual void getSparseAdata(double* data, int nonzeros) = 0;
-
 
   virtual const matrix_t& getSystemMatrix()  = 0;
   virtual const sparsematrix_t& getSystemSparseMatrix()  = 0;

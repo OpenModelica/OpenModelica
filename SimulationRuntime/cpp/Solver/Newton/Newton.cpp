@@ -14,9 +14,26 @@
 #include <Core/Math/ILapack.h>     // needed for solution of linear system with Lapack
 #include <Core/Math/Constants.h>   // definitializeion of constants like uround
 
+template <typename S, typename T>
+static inline void LogSysVec(IAlgLoop* algLoop, S name, T vec[]) {
+  if (Logger::getInstance()->isOutput(LC_NLS, LL_DEBUG)) {
+    std::stringstream ss;
+    ss << "Newton: eq" << to_string(algLoop->getEquationIndex());
+    ss << ", time " << algLoop->getSimTime() << ": " << name << " = {";
+    for (int i = 0; i < algLoop->getDimReal(); i++)
+      ss <<  (i > 0? ", ": "") << vec[i];
+    ss << "}";
+    Logger::write(ss.str(), LC_NLS, LL_DEBUG);
+  }
+}
+
 Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
   : _algLoop          (algLoop)
   , _newtonSettings   ((INonLinSolverSettings*)settings)
+  , _yNames           (NULL)
+  , _yNominal         (NULL)
+  , _yMin             (NULL)
+  , _yMax             (NULL)
   , _y                (NULL)
   , _yHelp            (NULL)
   , _f                (NULL)
@@ -32,6 +49,10 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 
 Newton::~Newton()
 {
+  if (_yNames)   delete []    _yNames;
+  if (_yNominal) delete []    _yNominal;
+  if (_yMin)     delete []    _yMin;
+  if (_yMax)     delete []    _yMax;
   if (_y)        delete []    _y;
   if (_yHelp)    delete []    _yHelp;
   if (_f)        delete []    _f;
@@ -39,7 +60,6 @@ Newton::~Newton()
   if (_iHelp)    delete []    _iHelp;
   if (_jac)      delete []    _jac;
   if (_zeroVec)  delete []   _zeroVec;
-
 }
 
 void Newton::initialize()
@@ -60,15 +80,23 @@ void Newton::initialize()
     _dimSys = dimDouble;
 
     if (_dimSys > 0) {
-      // initializeialization of vector of unknowns
+      // initialize of vectors of unknowns and residuals
+      if (_yNames)   delete []    _yNames;
+      if (_yNominal) delete []    _yNominal;
+      if (_yMin)     delete []    _yMin;
+      if (_yMax)     delete []    _yMax;
       if (_y)        delete []    _y;
       if (_f)        delete []    _f;
       if (_yHelp)    delete []    _yHelp;
       if (_fHelp)    delete []    _fHelp;
       if (_iHelp)    delete []    _iHelp;
       if (_jac)      delete []    _jac;
-      if (_zeroVec)  delete []   _zeroVec;
+      if (_zeroVec)  delete []    _zeroVec;
 
+      _yNames       = new const char* [_dimSys];
+      _yNominal     = new double[_dimSys];
+      _yMin         = new double[_dimSys];
+      _yMax         = new double[_dimSys];
       _y            = new double[_dimSys];
       _f            = new double[_dimSys];
       _yHelp        = new double[_dimSys];
@@ -77,19 +105,26 @@ void Newton::initialize()
       _jac          = new double[_dimSys*_dimSys];
       _zeroVec      = new double[_dimSys];
 
-
+      _algLoop->getNamesReal(_yNames);
+      _algLoop->getNominalReal(_yNominal);
+      _algLoop->getMinReal(_yMin);
+      _algLoop->getMaxReal(_yMax);
       _algLoop->getReal(_y);
-      memset(_f,0,_dimSys*sizeof(double));
-      memset(_yHelp,0,_dimSys*sizeof(double));
-      memset(_fHelp,0,_dimSys*sizeof(double));
-      memset(_jac,0,_dimSys*_dimSys*sizeof(double));
-      memset(_zeroVec,0,_dimSys*sizeof(double));
+      memset(_f, 0, _dimSys*sizeof(double));
+      memset(_yHelp, 0, _dimSys*sizeof(double));
+      memset(_fHelp, 0, _dimSys*sizeof(double));
+      memset(_jac, 0, _dimSys*_dimSys*sizeof(double));
+      memset(_zeroVec, 0, _dimSys*sizeof(double));
     }
     else {
       _iterationStatus = SOLVERERROR;
     }
   }
-  Logger::write("Newton: initialized",LC_NLS,LL_DEBUG);
+  if (Logger::getInstance()->isOutput(LC_NLS, LL_DEBUG)) {
+    Logger::write("Newton: eq" + to_string(_algLoop->getEquationIndex())
+                  + " initialized", LC_NLS, LL_DEBUG);
+    LogSysVec(_algLoop, "names", _yNames);
+  }
 }
 
 void Newton::solve()
@@ -125,8 +160,8 @@ void Newton::solve()
         }
       }
     }
-
     if (_iterationStatus == CONTINUE) {
+      LogSysVec(_algLoop, "y" + to_string(totSteps), _y);
       if (totSteps < _newtonSettings->getNewtMax()) {
         // Determination of Jacobian (Fortran-format)
         if (_algLoop->isLinear() && !_algLoop->isLinearTearing()) {
@@ -143,10 +178,6 @@ void Newton::solve()
             _iterationStatus = DONE;
         }
         else if (_algLoop->isLinearTearing()) {
-          long int dimRHS = 1;  // Dimension of right hand side (=b)
-
-          long int info = 0;    // Return-flag of Fortran code
-
           _algLoop->setReal(_zeroVec);
           _algLoop->evaluate();
           _algLoop->getRHS(_f);
@@ -192,13 +223,13 @@ void Newton::solve()
           "error solving nonlinear system (iteration limit: " + to_string(totSteps) + ")");
     }
   }
+  LogSysVec(_algLoop, "y*", _y);
 }
 
 IAlgLoopSolver::ITERATIONSTATUS Newton::getIterationStatus()
 {
   return _iterationStatus;
 }
-
 
 void Newton::calcFunction(const double *y, double *residual)
 {
@@ -214,22 +245,21 @@ void Newton::stepCompleted(double time)
 
 void Newton::calcJacobian()
 {
-  for (int j=0; j<_dimSys; ++j) {
+  for (int j = 0; j < _dimSys; ++j) {
     // Reset variables for every column
-    memcpy(_yHelp,_y,_dimSys*sizeof(double));
-    double stepsize=1.e-6;//+(1.e-6*_yHelp[j]);
+    memcpy(_yHelp, _y, _dimSys*sizeof(double));
+    double stepsize = 1e-6 * _yNominal[j];
 
-
-    // Finitializee difference
+    // Finite differences
     _yHelp[j] += stepsize;
 
-    calcFunction(_yHelp,_fHelp);
+    calcFunction(_yHelp, _fHelp);
 
     // Build Jacobian in Fortran format
-    for (int i=0; i<_dimSys; ++i)
-      _jac[i+j*_dimSys] = (_fHelp[i] - _f[i]) / stepsize;
+    for (int i = 0; i < _dimSys; ++i)
+      _jac[i + j * _dimSys] = (_fHelp[i] - _f[i]) / stepsize;
 
-    _yHelp[j] -=stepsize;
+    _yHelp[j] -= stepsize;
   }
 }
 

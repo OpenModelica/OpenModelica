@@ -74,15 +74,18 @@ class Newton : public IAlgLoopSolver
   bool
     _firstCall;                 ///< Temp        - Denotes the first call to the solver, init() is called
 
+  const char*
+    *_yNames;                  ///< Names of variables
   double
+    *_yNominal,
+    *_yMin,
+    *_yMax,
     *_y,                        ///< Temp        - Unknowns
     *_f,                        ///< Temp        - Residuals
     *_yHelp,                    ///< Temp        - Auxillary variables
     *_fHelp,                    ///< Temp        - Auxillary variables
     *_jac,                      ///< Temp        - Jacobian
-    *_y_old,
-    *_y_new,
-    * _zeroVec;
+    *_zeroVec;
   long int *_iHelp;
 
 };/** @} */ // end of solverNewton

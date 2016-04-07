@@ -80,7 +80,6 @@ public:
 
   ~AlgLoopDefaultImplementation();
 
-
   /// Provide number (dimension) of variables according to data type
   int getDimReal() const;
 
@@ -90,17 +89,16 @@ public:
   /// (Re-) initialize the system of equations
   void initialize();
 
-  /// Provide variables with given index to the system
-    void getReal(double* lambda) ;
+  /// Provide variables of the system
+  void getReal(double* lambda) const;
 
-  /// Set variables with given index to the system
+  /// Set variables of the system
   void setReal(const double* lambda);
 
-  /// Provide the right hand side (according to the index)
-  void getRHS(double* res);
+  /// Provide the right hand side (residuals)
+  void getRHS(double* res) const;
 
   //void getSparseAdata(double* data, int nonzeros);
-
 
   /// Output routine (to be called by the solver after every successful integration step)
   void writeOutput(const OUTPUT command = UNDEF_OUTPUT);
