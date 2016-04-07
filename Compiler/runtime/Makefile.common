@@ -87,9 +87,13 @@ FMI_omc$(OBJEXT) : FMIImpl.c $(BOOTH)
 GraphStreamExt_omc$(OBJEXT) : $(BOOTH) GraphStreamExt_impl.cpp $(RML_COMPAT)
 
 %.boot.o: %.c
-	$(CC) -c -o "$@" "$<" $(CFLAGS) $(CPPFLAGS)
+	$(CC) -c -o "$@" "$<" $(CFLAGS) $(CPPFLAGS) -I../boot/tarball-include/
 %.boot.o: %.cpp
-	$(CXX) -c -o "$@" "$<" $(CXXFLAGS) $(CPPFLAGS)
+	$(CXX) -c -o "$@" "$<" $(CXXFLAGS) $(CPPFLAGS) -I../boot/tarball-include/
+%.o: %.c
+	$(CC) -c -o "$@" "$<" $(CFLAGS) $(CPPFLAGS) -I..
+%.o: %.cpp
+	$(CXX) -c -o "$@" "$<" $(CXXFLAGS) $(CPPFLAGS) -I..
 
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-*
