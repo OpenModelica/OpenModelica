@@ -406,6 +406,7 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
     QDomElement subModel = subModelList.at(i).toElement();
     QDomElement interfaceDataElement = interfaces.firstChildElement();
     while (!interfaceDataElement.isNull()) {
+      subModel = subModelList.at(i).toElement();
       if (subModel.attribute("Name").compare(interfaceDataElement.attribute("model")) == 0
           && !existInterfaceData(subModel.attribute("Name"), interfaceDataElement.attribute("name"))) {
         QDomElement interfacePoint = mXmlDocument.createElement("InterfacePoint");
