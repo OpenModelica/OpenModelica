@@ -1291,6 +1291,16 @@ algorithm
   end matchcontinue;
 end prefixDimensions;
 
+public function isPrefix
+  input Prefix.Prefix prefix;
+  output Boolean isPrefix;
+algorithm
+  isPrefix := match prefix
+    case Prefix.PREFIX() then true;
+    else false;
+  end match;
+end isPrefix;
+
 public function isNoPrefix
   input Prefix.Prefix inPrefix;
   output Boolean outIsEmpty;
