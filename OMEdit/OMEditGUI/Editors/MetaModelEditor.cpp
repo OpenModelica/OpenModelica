@@ -574,8 +574,8 @@ bool MetaModelEditor::getPositionAndRotationVectors(QString interfacePoint,
   QString x_c_r_x_str, x_c_phi_x_str;
   QString cg_x_phi_cg_str, cg_x_r_cg_str;
   QDomElement subModelElement = getSubModelElement(modelName);
-  cg_x_r_cg_str = subModelElement.attribute("Position");
-  cg_x_phi_cg_str = subModelElement.attribute("Angle321");
+  cg_x_r_cg_str = subModelElement.attribute("Position","0,0,0");
+  cg_x_phi_cg_str = subModelElement.attribute("Angle321","0,0,0");
   QDomElement interfaceElement = subModelElement.firstChildElement("InterfacePoint");
   while(!interfaceElement.isNull()) {
     if(interfaceElement.attribute("Name").compare(interfaceName) == 0) {
@@ -691,7 +691,7 @@ void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface
 inline bool MetaModelEditor::fuzzyCompare(double p1, double p2)
 {
   //! @todo What tolerance should be used? This is just a random number that seemed to work for some reason.
-  return (qAbs(p1 - p2) <= 0.00001 * qMin(qAbs(p1), qAbs(p2)));
+  return (qAbs(p1 - p2) <= 0.001 * qMin(qAbs(p1), qAbs(p2)));
 }
 
 
