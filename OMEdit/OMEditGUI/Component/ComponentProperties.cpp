@@ -1473,33 +1473,6 @@ void MetaModelSubModelAttributes::updateSubModelParameters()
   accept();
 }
 
-TLMInterfacePointInfo::TLMInterfacePointInfo(QString name, QString className, QString interfaceName)
-{
-  mName = name;
-  mClassName = className;
-  mInterfaceName = interfaceName;
-}
-
-QString TLMInterfacePointInfo::getName()
-{
-  return mName;
-}
-
-QString TLMInterfacePointInfo::getClassName()
-{
-  return mClassName;
-}
-
-QString TLMInterfacePointInfo::getInterfaceName()
-{
-  return mInterfaceName;
-}
-
-void TLMInterfacePointInfo::setInterfaceName(QString interfacePoint)
-{
-   mInterfaceName = interfacePoint;
-}
-
 /*!
   \class MetaModelConnectionAttributes
   \brief A dialog for displaying MetaModel Connection Attributes

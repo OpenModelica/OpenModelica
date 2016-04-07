@@ -144,6 +144,30 @@ QDomNodeList MetaModelEditor::getSubModels()
 }
 
 /*!
+ * \brief MetaModelEditor::getInterfacePoint
+ * \param subModelName
+ * \param interfaceName
+ * \return
+ */
+QDomElement MetaModelEditor::getInterfacePoint(QString subModelName, QString interfaceName)
+{
+  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
+  for (int i = 0 ; i < subModelList.size() ; i++) {
+    QDomElement subModel = subModelList.at(i).toElement();
+    if (subModel.attribute("Name").compare(subModelName) == 0) {
+      QDomNodeList subModelChildren = subModel.childNodes();
+      for (int j = 0 ; j < subModelChildren.size() ; j++) {
+        QDomElement interfaceElement = subModelChildren.at(j).toElement();
+        if (interfaceElement.tagName().compare("InterfacePoint") == 0 && interfaceElement.attribute("Name").compare(interfaceName) == 0) {
+          return interfaceElement;
+        }
+      }
+    }
+  }
+  return QDomElement();
+}
+
+/*!
  * \brief MetaModelEditor::getConnectionsElement
  * Returns the Connections element tag.
  * \return
@@ -302,6 +326,12 @@ bool MetaModelEditor::createConnection(LineAnnotation *pConnectionLineAnnotation
     connection.appendChild(annotation);
     connections.appendChild(connection);
     setPlainText(mXmlDocument.toString());
+    // check if interfaces are aligned
+    if (interfacesAligned(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName())) {
+      pConnectionLineAnnotation->setLineColor(QColor(Qt::black));
+    } else {
+      pConnectionLineAnnotation->setLineColor(QColor(Qt::red));
+    }
     return true;
   }
   return false;
@@ -406,18 +436,36 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
     QDomElement subModel = subModelList.at(i).toElement();
     QDomElement interfaceDataElement = interfaces.firstChildElement();
     while (!interfaceDataElement.isNull()) {
-      if (subModel.attribute("Name").compare(interfaceDataElement.attribute("model")) == 0
-          && !existInterfaceData(subModel.attribute("Name"), interfaceDataElement.attribute("name"))) {
-        QDomElement interfacePoint = mXmlDocument.createElement("InterfacePoint");
-        interfacePoint.setAttribute("Name",interfaceDataElement.attribute("name"));
-        interfacePoint.setAttribute("Position",interfaceDataElement.attribute("Position"));
-        interfacePoint.setAttribute("Angle321",interfaceDataElement.attribute("Angle321"));
-        subModel.appendChild(interfacePoint);
-        setPlainText(mXmlDocument.toString());
-
-        TLMInterfacePointInfo *pTLMInterfacePointInfo;
-        pTLMInterfacePointInfo = new TLMInterfacePointInfo(subModel.attribute("Name"),"shaft3" , interfaceDataElement.attribute("name"));
-        getModelWidget()->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"))->addInterfacePoint(pTLMInterfacePointInfo);
+      if (subModel.attribute("Name").compare(interfaceDataElement.attribute("model")) == 0) {
+        QDomElement interfacePoint;
+        if (existInterfaceData(subModel.attribute("Name"), interfaceDataElement)) {
+          interfacePoint = getInterfacePoint(subModel.attribute("Name"), interfaceDataElement.attribute("Name"));
+          interfacePoint.setAttribute("Name", interfaceDataElement.attribute("Name"));
+          interfacePoint.setAttribute("Position", interfaceDataElement.attribute("Position"));
+          interfacePoint.setAttribute("Angle321", interfaceDataElement.attribute("Angle321"));
+          setPlainText(mXmlDocument.toString());
+          // check if interface is aligned
+          foreach (LineAnnotation* pConnectionLineAnnotation, mpModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
+            QString interfaceName = QString("%1.%2").arg(subModel.attribute("Name")).arg(interfaceDataElement.attribute("Name"));
+            if (pConnectionLineAnnotation->getStartComponentName().compare(interfaceName) == 0) {
+              alignInterfaces(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName(), false);
+            }
+            if (pConnectionLineAnnotation->getEndComponentName().compare(interfaceName) == 0) {
+              alignInterfaces(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName(), false);
+            }
+          }
+        } else {
+          QDomElement interfacePoint = mXmlDocument.createElement("InterfacePoint");
+          interfacePoint.setAttribute("Name", interfaceDataElement.attribute("Name"));
+          interfacePoint.setAttribute("Position", interfaceDataElement.attribute("Position"));
+          interfacePoint.setAttribute("Angle321", interfaceDataElement.attribute("Angle321"));
+          subModel.appendChild(interfacePoint);
+          setPlainText(mXmlDocument.toString());
+          Component *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
+          if (pComponent) {
+            pComponent->insertInterfacePoint(interfaceDataElement.attribute("Name"));
+          }
+        }
       }
       interfaceDataElement = interfaceDataElement.nextSiblingElement();
     }
@@ -425,27 +473,58 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
 }
 
 /*!
-  Checks whether the interface already exists in MetaModel or not.
-  \param interfaceName - the name for the interface to check.
-  \return true on success.
-  */
-bool MetaModelEditor::existInterfaceData(QString subModelName, QString interfaceName)
+ * \brief MetaModelEditor::interfacesAligned
+ * Checkes whether specified TLM interfaces are aligned
+ * \param interface1 First interface (submodel1.interface1)
+ * \param interface2 Second interface (submodel2.interface2)
+ * \return
+ */
+bool MetaModelEditor::interfacesAligned(QString interface1, QString interface2)
 {
-  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
-  for (int i = 0 ; i < subModelList.size() ; i++) {
-    QDomElement subModel = subModelList.at(i).toElement();
-    if (subModel.attribute("Name").compare(subModelName) == 0) {
-      QDomNodeList subModelChildren = subModel.childNodes();
-      for (int j = 0 ; j < subModelChildren.size() ; j++) {
-        QDomElement interfaceElement = subModelChildren.at(j).toElement();
-        if (interfaceElement.tagName().compare("InterfacePoint") == 0 && interfaceElement.attribute("Name").compare(interfaceName)== 0) {
-           return true;
-        }
+  //Extract rotation and position vectors to Qt matrices
+  QGenericMatrix<3,1,double> CG_X1_PHI_CG;  //Rotation of X1 relative to CG expressed in CG
+  QGenericMatrix<3,1,double> X1_C1_PHI_X1;  //Rotation of C1 relative to X1 expressed in X1
+  QGenericMatrix<3,1,double> CG_X1_R_CG;      //Position of X1 relative to CG expressed in CG
+  QGenericMatrix<3,1,double> X1_C1_R_X1;      //Position of C1 relative to X1 expressed in X1
+  if(!getPositionAndRotationVectors(interface1,CG_X1_PHI_CG, X1_C1_PHI_X1,CG_X1_R_CG,X1_C1_R_X1)) return false;
+
+  QGenericMatrix<3,1,double> CG_X2_PHI_CG;  //Rotation of X2 relative to CG expressed in CG
+  QGenericMatrix<3,1,double> X2_C2_PHI_X2;  //Rotation of C2 relative to X2 expressed in X2
+  QGenericMatrix<3,1,double> CG_X2_R_CG;      //Position of X2 relative to CG expressed in CG
+  QGenericMatrix<3,1,double> X2_C2_R_X2;      //Position of C2 relative to X2 expressed in X2
+  if(!getPositionAndRotationVectors(interface2,CG_X2_PHI_CG, X2_C2_PHI_X2,CG_X2_R_CG,X2_C2_R_X2)) return false;
+
+  QGenericMatrix<3,1,double> CG_C1_R_CG, CG_C1_PHI_CG, CG_C2_R_CG, CG_C2_PHI_CG;
+  QGenericMatrix<3,3,double> R_X1_C1, R_CG_X1, R_CG_C1, R_X2_C2, R_CG_X2, R_CG_C2;
+
+  //Compute rotation matrices for both interfaces relative to CG and make sure they are the same
+  R_X1_C1 = getRotationMatrix(X1_C1_PHI_X1);    //Rotation matrix between X1 and C1
+  R_CG_X1 = getRotationMatrix(CG_X1_PHI_CG);    //Rotation matrix between CG and X1
+  R_CG_C1 = R_X1_C1*R_CG_X1;                       //Rotation matrix between CG and C1
+  R_X2_C2 = getRotationMatrix(X2_C2_PHI_X2);    //Rotation matrix between X2 and C2
+  R_CG_X2 = getRotationMatrix(CG_X2_PHI_CG);    //Rotation matrix between CG and X2
+  R_CG_C2 = R_X2_C2*R_CG_X2;                       //Rotation matrix between CG and C2
+
+  bool success=true;
+  for(int i=0; i<3; ++i) {
+    for(int j=0; j<3; ++j) {
+      if(!fuzzyCompare(R_CG_C1(i,j),R_CG_C2(i,j))) {
+        success=false;
       }
-      break;
     }
   }
-  return false;
+
+  //Compute positions for both interfaces relative to CG and make sure they are the same
+  CG_C1_R_CG = CG_X1_R_CG + X1_C1_R_X1*R_CG_X1;   //Position of C1 relative to CG exressed in CG
+  CG_C2_R_CG = CG_X2_R_CG + X2_C2_R_X2*R_CG_X2;   //Position of C2 relative to CG exressed in CG
+
+  for(int i=0; i<3; ++i) {
+    if(!fuzzyCompare(CG_C1_R_CG(0,i),CG_C2_R_CG(0,i))) {
+      success=false;
+    }
+  }
+
+  return success;
 }
 
 /*!
@@ -491,6 +570,35 @@ bool MetaModelEditor::deleteConnection(QString startSubModelName, QString endSub
         connections.removeChild(connection);
         setPlainText(mXmlDocument.toString());
         return true;
+      }
+      break;
+    }
+  }
+  return false;
+}
+
+/*!
+ * \brief MetaModelEditor::existInterfaceData
+ * Checks whether the interface already exists in MetaModel or not.
+ * \param subModelName
+ * \param interfaceElement
+ * \return
+ */
+bool MetaModelEditor::existInterfaceData(QString subModelName, QDomElement interfaceDataElement)
+{
+  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
+  for (int i = 0 ; i < subModelList.size() ; i++) {
+    QDomElement subModel = subModelList.at(i).toElement();
+    if (subModel.attribute("Name").compare(subModelName) == 0) {
+      QDomNodeList subModelChildren = subModel.childNodes();
+      for (int j = 0 ; j < subModelChildren.size() ; j++) {
+        QDomElement interfaceElement = subModelChildren.at(j).toElement();
+        if (interfaceElement.tagName().compare("InterfacePoint") == 0 &&
+            interfaceElement.attribute("Name").compare(interfaceDataElement.attribute("Name")) == 0 &&
+            interfaceElement.attribute("Position").compare(interfaceDataElement.attribute("Position")) == 0 &&
+            interfaceElement.attribute("Angle321").compare(interfaceDataElement.attribute("Angle321")) == 0) {
+          return true;
+        }
       }
       break;
     }
@@ -629,10 +737,10 @@ bool MetaModelEditor::getPositionAndRotationVectors(QString interfacePoint,
  * Aligns interface C1 in model X1 to interface C2 in model X2
  * \param fromSubModel Full name of first interfae (X1.C1)
  * \param toSubModel Full name of second interface (X2.C2)
+ * \param showError
  */
-void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface)
+void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface, bool showError)
 {
-
   //Extract rotation and position vectors to Qt matrices
   QGenericMatrix<3,1,double> CG_X1_PHI_CG;  //Rotation of X1 relative to CG expressed in CG
   QGenericMatrix<3,1,double> X1_C1_PHI_X1;  //Rotation of C1 relative to X1 expressed in X1
@@ -672,13 +780,30 @@ void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface
   getSubModelElement(fromInterface.split(".").first()).setAttribute("Angle321", cg_x1_phi_cg_str);
   setPlainText(mXmlDocument.toString());
 
+  // get the relevant connection
+  LineAnnotation* pFoundConnectionLineAnnotation = 0;
+  foreach (LineAnnotation* pConnectionLineAnnotation, mpModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
+    if (pConnectionLineAnnotation->getStartComponentName().compare(fromInterface) == 0 &&
+        pConnectionLineAnnotation->getEndComponentName().compare(toInterface) == 0) {
+      pFoundConnectionLineAnnotation = pConnectionLineAnnotation;
+      break;
+    }
+  }
   //Give error message if alignment failed
-  if(!interfacesAligned(fromInterface, toInterface))
-  {
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "",false,0,0,0,0,"Alignment operation failed.",Helper::scriptingKind,Helper::errorLevel));
+  if (!interfacesAligned(fromInterface, toInterface)) {
+    if (showError) {
+      mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
+                                                                   "Alignment operation failed.", Helper::scriptingKind,Helper::errorLevel));
+    }
+    if (pFoundConnectionLineAnnotation) {
+      pFoundConnectionLineAnnotation->setLineColor(QColor(Qt::red));
+    }
+  } else {
+    if (pFoundConnectionLineAnnotation) {
+      pFoundConnectionLineAnnotation->setLineColor(QColor(Qt::black));
+    }
   }
 }
-
 
 /*!
  * \brief MetaModelEditor::fuzzyCompare
@@ -692,63 +817,6 @@ inline bool MetaModelEditor::fuzzyCompare(double p1, double p2)
   //! @todo What tolerance should be used? This is just a random number that seemed to work for some reason.
   return (qAbs(p1 - p2) <= 0.00001 * qMin(qAbs(p1), qAbs(p2)));
 }
-
-
-/*!
- * \brief MetaModelEditor::interfacesAligned
- * Checkes whether specified TLM interfaces are aligned
- * \param interface1 First interface (submodel1.interface1)
- * \param interface2 Second interface (submodel2.interface2)
- * \return
- */
-bool MetaModelEditor::interfacesAligned(QString interface1, QString interface2)
-{
-  //Extract rotation and position vectors to Qt matrices
-  QGenericMatrix<3,1,double> CG_X1_PHI_CG;  //Rotation of X1 relative to CG expressed in CG
-  QGenericMatrix<3,1,double> X1_C1_PHI_X1;  //Rotation of C1 relative to X1 expressed in X1
-  QGenericMatrix<3,1,double> CG_X1_R_CG;      //Position of X1 relative to CG expressed in CG
-  QGenericMatrix<3,1,double> X1_C1_R_X1;      //Position of C1 relative to X1 expressed in X1
-  if(!getPositionAndRotationVectors(interface1,CG_X1_PHI_CG, X1_C1_PHI_X1,CG_X1_R_CG,X1_C1_R_X1)) return false;
-
-  QGenericMatrix<3,1,double> CG_X2_PHI_CG;  //Rotation of X2 relative to CG expressed in CG
-  QGenericMatrix<3,1,double> X2_C2_PHI_X2;  //Rotation of C2 relative to X2 expressed in X2
-  QGenericMatrix<3,1,double> CG_X2_R_CG;      //Position of X2 relative to CG expressed in CG
-  QGenericMatrix<3,1,double> X2_C2_R_X2;      //Position of C2 relative to X2 expressed in X2
-  if(!getPositionAndRotationVectors(interface2,CG_X2_PHI_CG, X2_C2_PHI_X2,CG_X2_R_CG,X2_C2_R_X2)) return false;
-
-  QGenericMatrix<3,1,double> CG_C1_R_CG, CG_C1_PHI_CG, CG_C2_R_CG, CG_C2_PHI_CG;
-  QGenericMatrix<3,3,double> R_X1_C1, R_CG_X1, R_CG_C1, R_X2_C2, R_CG_X2, R_CG_C2;
-
-  //Compute rotation matrices for both interfaces relative to CG and make sure they are the same
-  R_X1_C1 = getRotationMatrix(X1_C1_PHI_X1);    //Rotation matrix between X1 and C1
-  R_CG_X1 = getRotationMatrix(CG_X1_PHI_CG);    //Rotation matrix between CG and X1
-  R_CG_C1 = R_X1_C1*R_CG_X1;                       //Rotation matrix between CG and C1
-  R_X2_C2 = getRotationMatrix(X2_C2_PHI_X2);    //Rotation matrix between X2 and C2
-  R_CG_X2 = getRotationMatrix(CG_X2_PHI_CG);    //Rotation matrix between CG and X2
-  R_CG_C2 = R_X2_C2*R_CG_X2;                       //Rotation matrix between CG and C2
-
-  bool success=true;
-  for(int i=0; i<3; ++i) {
-    for(int j=0; j<3; ++j) {
-      if(!fuzzyCompare(R_CG_C1(i,j),R_CG_C2(i,j))) {
-        success=false;
-      }
-    }
-  }
-
-  //Compute positions for both interfaces relative to CG and make sure they are the same
-  CG_C1_R_CG = CG_X1_R_CG + X1_C1_R_X1*R_CG_X1;   //Position of C1 relative to CG exressed in CG
-  CG_C2_R_CG = CG_X2_R_CG + X2_C2_R_X2*R_CG_X2;   //Position of C2 relative to CG exressed in CG
-
-  for(int i=0; i<3; ++i) {
-    if(!fuzzyCompare(CG_C1_R_CG(0,i),CG_C2_R_CG(0,i))) {
-      success=false;
-    }
-  }
-
-  return success;
-}
-
 
 /*!
  * \brief MetaModelEditor::showContextMenu

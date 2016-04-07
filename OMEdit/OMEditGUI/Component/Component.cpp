@@ -1027,26 +1027,15 @@ void Component::renameComponentInConnections(QString newName)
   }
 }
 
-void Component::addInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo)
+/*!
+ * \brief Component::insertInterfacePoint
+ * Inserts a new interface point.
+ * \param interfaceName
+ */
+void Component::insertInterfacePoint(QString interfaceName)
 {
-  // Add the Interfacepoint to the list.
-  mInterfacePointsList.append(pTLMInterfacePointInfo);
-}
-
-void Component::removeInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo)
-{
-  // remove the Interfacepoint from the list.
-  mInterfacePointsList.removeOne(pTLMInterfacePointInfo);
-}
-
-void Component::renameInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo, QString interfacePoint)
-{
-  // Set the new Interfacepoint.
-  pTLMInterfacePointInfo->setInterfaceName(interfacePoint);
-}
-
-void Component::insertInterfacePoint(ComponentInfo *pComponentInfo)
-{
+  ComponentInfo *pComponentInfo = new ComponentInfo;
+  pComponentInfo->setName(interfaceName);
   mComponentsList.append(new Component(pComponentInfo, this));
 }
 

@@ -59,7 +59,6 @@ class RectangleAnnotation;
 class EllipseAnnotation;
 class TextAnnotation;
 class BitmapAnnotation;
-class TLMInterfacePointInfo;
 
 class ComponentInfo : public QObject
 {
@@ -192,7 +191,6 @@ public:
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
   QList<Component*> getInheritedComponentsList() {return mInheritedComponentsList;}
   QList<Component*> getComponentsList() {return mComponentsList;}
-  QList<TLMInterfacePointInfo*> getInterfacepointsList() {return mInterfacePointsList;}
   void setOldScenePosition(QPointF oldScenePosition) {mOldScenePosition = oldScenePosition;}
   QPointF getOldScenePosition() {return mOldScenePosition;}
   void setOldPosition(QPointF oldPosition) {mOldPosition = oldPosition;}
@@ -219,10 +217,7 @@ public:
   void shapeUpdated();
   void shapeDeleted();
   void renameComponentInConnections(QString newName);
-  void addInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
-  void removeInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
-  void renameInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo, QString interfacePoint);
-  void insertInterfacePoint(ComponentInfo *pComponentInfo);
+  void insertInterfacePoint(QString interfaceName);
 
   Transformation mTransformation;
   Transformation mOldTransformation;
@@ -262,7 +257,6 @@ private:
   QList<ShapeAnnotation*> mShapesList;
   QList<Component*> mComponentsList;
   QPointF mOldScenePosition;
-  QList<TLMInterfacePointInfo*> mInterfacePointsList;
   QPointF mOldPosition;
   void createNonExistingComponent();
   void createDefaultComponent();

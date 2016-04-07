@@ -250,21 +250,6 @@ private slots:
   void updateSubModelParameters();
 };
 
-class Component;
-class TLMInterfacePointInfo
-{
-public:
-  TLMInterfacePointInfo(QString name, QString className, QString interfaceName);
-  QString getName();
-  QString getClassName();
-  QString getInterfaceName();
-  void setInterfaceName(QString interfaceName);
-private:
-  QString mName;
-  QString mClassName;
-  QString mInterfaceName;
-};
-
 class LineAnnotation;
 class MetaModelConnectionAttributes : public QDialog
 {
@@ -278,7 +263,6 @@ private:
   bool mEdit;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
-  QList<TLMInterfacePointInfo*> mInterfacepointsList;
   Label *mpFromLabel;
   Label *mpConnectionStartLabel;
   Label *mpToLabel;

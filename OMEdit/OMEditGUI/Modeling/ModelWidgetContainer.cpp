@@ -3713,6 +3713,12 @@ void ModelWidget::getMetaModelConnections()
     pConnectionLineAnnotation->setZf(connection.attribute("Zf"));
     pConnectionLineAnnotation->setZfr(connection.attribute("Zfr"));
     pConnectionLineAnnotation->setAlpha(connection.attribute("alpha"));
+    // check if interfaces are aligned
+    if (pMetaModelEditor->interfacesAligned(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName())) {
+      pConnectionLineAnnotation->setLineColor(QColor(Qt::black));
+    } else {
+      pConnectionLineAnnotation->setLineColor(QColor(Qt::red));
+    }
     mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
   }
 }
