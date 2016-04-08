@@ -441,14 +441,14 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
         QDomElement interfacePoint;
         // update interface point
         if (existInterfaceData(subModel.attribute("Name"), interfaceDataElement)) {
-          interfacePoint = getInterfacePoint(subModel.attribute("Name"), interfaceDataElement.attribute("Name"));
-          interfacePoint.setAttribute("Name", interfaceDataElement.attribute("Name"));
+          interfacePoint = getInterfacePoint(subModel.attribute("Name"), interfaceDataElement.attribute("name"));
+          interfacePoint.setAttribute("Name", interfaceDataElement.attribute("name"));
           interfacePoint.setAttribute("Position", interfaceDataElement.attribute("Position"));
           interfacePoint.setAttribute("Angle321", interfaceDataElement.attribute("Angle321"));
           setPlainText(mXmlDocument.toString());
           // check if interface is aligned
           foreach (LineAnnotation* pConnectionLineAnnotation, mpModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
-            QString interfaceName = QString("%1.%2").arg(subModel.attribute("Name")).arg(interfaceDataElement.attribute("Name"));
+            QString interfaceName = QString("%1.%2").arg(subModel.attribute("Name")).arg(interfaceDataElement.attribute("name"));
             if (pConnectionLineAnnotation->getStartComponentName().compare(interfaceName) == 0) {
               alignInterfaces(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName(), false);
             }
@@ -458,14 +458,14 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
           }
         } else {  // insert interface point
           QDomElement interfacePoint = mXmlDocument.createElement("InterfacePoint");
-          interfacePoint.setAttribute("Name", interfaceDataElement.attribute("Name"));
+          interfacePoint.setAttribute("Name", interfaceDataElement.attribute("name"));
           interfacePoint.setAttribute("Position", interfaceDataElement.attribute("Position"));
           interfacePoint.setAttribute("Angle321", interfaceDataElement.attribute("Angle321"));
           subModel.appendChild(interfacePoint);
           setPlainText(mXmlDocument.toString());
           Component *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
           if (pComponent) {
-            pComponent->insertInterfacePoint(interfaceDataElement.attribute("Name"));
+            pComponent->insertInterfacePoint(interfaceDataElement.attribute("name"));
           }
         }
       }
