@@ -6629,20 +6629,30 @@ template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, Si
   let nameStr = match var case SIMVAR(name=cref) then
     crefStrForWriteOutput(cref)
 
-  let nominalStr = match var case SIMVAR(nominalValue=SOME(exp)) then
-    let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    '<%expPart%>'
-    else "1.0"
+  let nominalStr = match var
+    case SIMVAR(nominalValue=SOME(exp)) then
+      let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%expPart%>'
+    else
+      '1.0'
 
-  let minStr = match var case SIMVAR(minValue=SOME(exp)) then
-    let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    '<%expPart%>'
-    else "-1e60"
+  let minStr = match var
+    case SIMVAR(varKind=STATE_DER()) then
+      '-HUGE_VAL'
+    case SIMVAR(minValue=SOME(exp)) then
+      let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%expPart%>'
+    else
+      '-HUGE_VAL'
 
-  let maxStr = match var case SIMVAR(maxValue=SOME(exp)) then
-    let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    '<%expPart%>'
-    else "1e60"
+  let maxStr = match var
+    case SIMVAR(varKind=STATE_DER()) then
+      'HUGE_VAL'
+    case SIMVAR(maxValue=SOME(exp)) then
+      let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%expPart%>'
+    else
+      'HUGE_VAL'
 
   '{"<%nameStr%>", <%nominalStr%>, <%minStr%>, <%maxStr%>}'
 end createAlgloopVarAttributes;
