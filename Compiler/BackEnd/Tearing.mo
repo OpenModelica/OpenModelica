@@ -59,6 +59,7 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import Flags;
+protected import Global;
 protected import List;
 protected import Matching;
 protected import MetaModelica.Dangerous;
@@ -95,6 +96,7 @@ algorithm
       String methodString;
       TearingMethod method;
       BackendDAE.BackendDAEType DAEtype;
+      Integer strongComponentIndex = System.tmpTickIndex(Global.strongComponent_index);
 
     // if noTearing is selected, do nothing.
     case(_) equation
@@ -104,6 +106,7 @@ algorithm
 
     // get method function and traverse systems
     case(_) equation
+
       methodString = Config.getTearingMethod();
       BackendDAE.SHARED(backendDAEType=DAEtype) = inDAE.shared;
       false = stringEqual(methodString, "shuffleTearing") and stringEq("simulation",BackendDump.printBackendDAEType2String(DAEtype));
@@ -113,7 +116,8 @@ algorithm
         BackendDump.printBackendDAEType(DAEtype);
         print("!\n" + UNDERLINE + UNDERLINE + "\n");
       end if;
-      (outDAE, _) = BackendDAEUtil.mapEqSystemAndFold(inDAE, tearingSystemWork, method);
+      (outDAE, (_,strongComponentIndex)) = BackendDAEUtil.mapEqSystemAndFold(inDAE, tearingSystemWork, (method, strongComponentIndex));
+      System.tmpTickSetIndex(strongComponentIndex, Global.strongComponent_index);
     then outDAE;
 
     else equation
@@ -184,11 +188,13 @@ end callTearingMethod;
 protected function tearingSystemWork "author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared inShared;
-  input TearingMethod inTearingMethod;
+  input tuple<TearingMethod,Integer> inTearingMethodAndIndex;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared outShared = inShared "unused";
-  output TearingMethod outTearingMethod = inTearingMethod "unused";
+  output tuple<TearingMethod,Integer> outTearingMethodAndIndex;
 protected
+  TearingMethod inTearingMethod = Util.tuple21(inTearingMethodAndIndex);
+  Integer strongComponentIndex = Util.tuple22(inTearingMethodAndIndex);
   BackendDAE.StrongComponents comps;
   Boolean b;
   array<Integer> ass1, ass2;
@@ -197,11 +203,12 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of traverseComponents\n\n");
   end if;
-  (comps, b) := traverseComponents(comps, isyst, inShared, inTearingMethod);
+  (comps, b, strongComponentIndex) := traverseComponents(comps, isyst, inShared, inTearingMethod, strongComponentIndex);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of traverseComponents\n" + BORDER + "\n\n");
   end if;
   osyst := if b then BackendDAEUtil.setEqSystMatching(isyst, BackendDAE.MATCHING(ass1, ass2, comps)) else isyst;
+  outTearingMethodAndIndex := (inTearingMethod,strongComponentIndex);
 end tearingSystemWork;
 
 protected function traverseComponents "author: Frenkel TUD 2012-05"
@@ -209,8 +216,10 @@ protected function traverseComponents "author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input TearingMethod inMethod;
+  input Integer strongComponentIndexIn;
   output BackendDAE.StrongComponents oComps;
   output Boolean outRunMatching = false;
+  output Integer strongComponentIndexOut=strongComponentIndexIn;
 algorithm
   oComps := list(match co
         local
@@ -218,7 +227,7 @@ algorithm
           Boolean b;
         case comp
           equation
-            (comp, b) = traverseComponents1(comp, isyst, ishared, inMethod);
+            (comp, b, strongComponentIndexOut) = traverseComponents1(comp, isyst, ishared, inMethod, strongComponentIndexOut);
             outRunMatching = outRunMatching or b;
           then comp;
         end match for co in inComps);
@@ -229,11 +238,22 @@ protected function traverseComponents1 "author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input TearingMethod inMethod;
+  input Integer strongComponentIndexIn;
   output BackendDAE.StrongComponent oComp;
   output Boolean outRunMatching;
+  output Integer strongComponentIndexOut=strongComponentIndexIn;
 protected
   constant Boolean debug = false;
 algorithm
+  strongComponentIndexOut := match(inComp)
+    case(BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN())) equation
+      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+        print("Handle strong component with index: " + intString(strongComponentIndexOut+1) + "\nTo disable tearing of this component use '--noTearingForComponent=" + intString(strongComponentIndexOut+1) + "'.\n");
+      end if;
+     then (strongComponentIndexOut + 1);
+    else strongComponentIndexOut;
+  end match;
+
   (oComp, outRunMatching) := matchcontinue (inComp, isyst, ishared, inMethod)
     local
       Integer maxSize;
@@ -253,7 +273,7 @@ algorithm
         fail();
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
+        print("\nTearing of LINEAR component\nUse Flag '+d=tearingdumpV' for more details\n\n");
       end if;
       false = Flags.getConfigBool(Flags.DISABLE_LINEAR_TEARING);
       // TODO: Remove when cpp runtime ready for doLinearTearing
@@ -277,7 +297,7 @@ algorithm
         fail();
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\nCase non-linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
+        print("\nTearing of NONLINEAR component\nUse Flag '+d=tearingdumpV' for more details\n\n");
       end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");

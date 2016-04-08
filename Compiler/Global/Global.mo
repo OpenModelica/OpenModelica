@@ -72,6 +72,8 @@ constant Integer backendDAE_jacobianSeq = 21;
 constant Integer fgraph_nextId = 22;
 // csevar name
 constant Integer backendDAE_cseIndex = 23;
+// strong component index
+constant Integer strongComponent_index = 24;
 
 // ----------------------
 
