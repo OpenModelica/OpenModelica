@@ -793,7 +793,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
                          .arg("variableFilter").arg(simulationOptions.getVariableFilter()));
   simulationFlags.append(QString("-r=").append(simulationOptions.getResultFileName()));
   // jacobian
-  simulationFlags.append(QString("-jacobian=").append(mpJacobianComboBox->itemData(mpJacobianComboBox->currentIndex()).toString()));
+  simulationFlags.append(QString("-jacobian=").append(mpJacobianComboBox->currentText()));
   // dassl options
   if (mpDasslOptionsGroupBox->isEnabled()) {
     // dassl root finding
