@@ -441,14 +441,14 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
         QDomElement interfacePoint;
         // update interface point
         if (existInterfaceData(subModel.attribute("Name"), interfaceDataElement)) {
-          interfacePoint = getInterfacePoint(subModel.attribute("Name"), interfaceDataElement.attribute("name"));
-          interfacePoint.setAttribute("Name", interfaceDataElement.attribute("name"));
+          interfacePoint = getInterfacePoint(subModel.attribute("Name"), interfaceDataElement.attribute("Name"));
+          interfacePoint.setAttribute("Name", interfaceDataElement.attribute("Name"));
           interfacePoint.setAttribute("Position", interfaceDataElement.attribute("Position"));
           interfacePoint.setAttribute("Angle321", interfaceDataElement.attribute("Angle321"));
           setPlainText(mXmlDocument.toString());
           // check if interface is aligned
           foreach (LineAnnotation* pConnectionLineAnnotation, mpModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
-            QString interfaceName = QString("%1.%2").arg(subModel.attribute("Name")).arg(interfaceDataElement.attribute("name"));
+            QString interfaceName = QString("%1.%2").arg(subModel.attribute("Name")).arg(interfaceDataElement.attribute("Name"));
             if (pConnectionLineAnnotation->getStartComponentName().compare(interfaceName) == 0) {
               alignInterfaces(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName(), false);
             }
