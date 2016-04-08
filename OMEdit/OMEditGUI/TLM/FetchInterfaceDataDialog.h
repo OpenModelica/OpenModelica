@@ -41,7 +41,6 @@ class FetchInterfaceDataDialog : public QDialog
   Q_OBJECT
 public:
   FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow);
-  void closeEvent(QCloseEvent *event);
   MainWindow* getMainWindow() {return mpMainWindow;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
 private:
@@ -60,6 +59,7 @@ public slots:
   void managerProcessStarted();
   void writeManagerOutput(QString output, StringHandler::SimulationMessageType type);
   void managerProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+  void reject();
 signals:
   void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
 };

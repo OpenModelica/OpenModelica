@@ -68,6 +68,7 @@ public:
   void setXmlDocument(QString content) {mXmlDocument.setContent(content);}
   QDomElement getSubModelsElement();
   QDomNodeList getSubModels();
+  QDomElement getInterfacePoint(QString subModelName, QString interfaceName);
   QDomElement getConnectionsElement();
   QDomNodeList getConnections();
   QDomElement getSubModelElement(QString name);
@@ -83,7 +84,7 @@ public:
   QString getSimulationStartTime();
   QString getSimulationStopTime();
   void addInterfacesData(QDomElement interfaces);
-  bool existInterfaceData(QString subModelName, QString interfaceName);
+  bool interfacesAligned(QString interface1, QString interface2);
   bool deleteSubModel(QString name);
   bool deleteConnection(QString startComponentName, QString endComponentName);
 private:
@@ -91,10 +92,11 @@ private:
   bool mTextChanged;
   bool mForceSetPlainText;
   XMLDocument mXmlDocument;
+
+  bool existInterfaceData(QString subModelName, QDomElement interfaceDataElement);
   QGenericMatrix<3,3,double> getRotationMatrix(QGenericMatrix<3,1,double> rotation);
   bool getPositionAndRotationVectors(QString interfacePoint, QGenericMatrix<3,1,double> &CG_X_PHI_CG, QGenericMatrix<3,1,double> &X_C_PHI_X,
                                      QGenericMatrix<3,1,double> &CG_X_R_CG, QGenericMatrix<3,1,double> &X_C_R_X);
-  bool interfacesAligned(QString interface1, QString interface2);
   bool fuzzyCompare(double p1, double p2);
   QGenericMatrix<3, 1, double> getRotationVector(QGenericMatrix<3, 3, double> R);
 private slots:
@@ -103,7 +105,7 @@ public slots:
   void setPlainText(const QString &text);
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
   virtual void toggleCommentSelection() {}
-  void alignInterfaces(QString fromSubModel, QString toSubModel);
+  void alignInterfaces(QString fromSubModel, QString toSubModel, bool showError = true);
 };
 
 class MetaModelEditorPage;

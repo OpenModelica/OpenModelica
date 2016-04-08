@@ -40,7 +40,7 @@
  * \param pMainWindow
  */
 FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint), mpMainWindow(pMainWindow), mpLibraryTreeItem(pLibraryTreeItem)
+  : QDialog(pMainWindow), mpMainWindow(pMainWindow), mpLibraryTreeItem(pLibraryTreeItem)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Fetch Interface Data")).append(" - ")
                  .append(mpLibraryTreeItem->getNameStructure()));
@@ -81,22 +81,6 @@ FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTree
   connect(mpFetchInterfaceDataThread, SIGNAL(sendManagerFinished(int,QProcess::ExitStatus)),
           SLOT(managerProcessFinished(int,QProcess::ExitStatus)));
   mpFetchInterfaceDataThread->start();
-}
-
-/*!
- * \brief FetchInterfaceDataDialog::closeEvent
- * \param event
- * Reimplentation of QDialog::closeEvent(). Doesn't allow closing the dialog if we are fetching interface data.
- */
-void FetchInterfaceDataDialog::closeEvent(QCloseEvent *event)
-{
-  if (mpFetchInterfaceDataThread->isManagerProcessRunning()) {
-    event->ignore();
-  } else {
-    mpFetchInterfaceDataThread->exit();
-    mpFetchInterfaceDataThread->wait();
-    event->accept();
-  }
 }
 
 /*!
@@ -185,6 +169,18 @@ void FetchInterfaceDataDialog::managerProcessFinished(int exitCode, QProcess::Ex
     mpProgressLabel->setText(tr("Fetched interface data for <b>%1</b>...").arg(mpLibraryTreeItem->getNameStructure()));
     emit readInterfaceData(mpLibraryTreeItem);
   }
+}
+
+/*!
+ * \brief FetchInterfaceDataDialog::reject
+ * Reimplentation of QDialog::reject(). Doesn't allow closing the dialog if we are fetching interface data.
+ */
+void FetchInterfaceDataDialog::reject()
+{
+  if (mpFetchInterfaceDataThread->isManagerProcessRunning()) {
+    return;
+  }
+  QDialog::reject();
 }
 
 /*!
