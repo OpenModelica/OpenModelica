@@ -83,6 +83,9 @@ readFile("modelDescription.tmp.xml");
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
 //     </Outputs>
 //     <Derivatives>
 //     </Derivatives>
