@@ -458,20 +458,76 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
           }
         } else {  // insert interface point
           QDomElement interfacePoint = mXmlDocument.createElement("InterfacePoint");
-          interfacePoint.setAttribute("Name", interfaceDataElement.attribute("name"));
+          interfacePoint.setAttribute("Name", interfaceDataElement.attribute("Name"));
           interfacePoint.setAttribute("Position", interfaceDataElement.attribute("Position"));
           interfacePoint.setAttribute("Angle321", interfaceDataElement.attribute("Angle321"));
           subModel.appendChild(interfacePoint);
-          setPlainText(mXmlDocument.toString());
           Component *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
           if (pComponent) {
-            pComponent->insertInterfacePoint(interfaceDataElement.attribute("name"));
+            pComponent->insertInterfacePoint(interfaceDataElement.attribute("Name"));
           }
         }
       }
       interfaceDataElement = interfaceDataElement.nextSiblingElement();
     }
+
+    //Now remove all elements in sub model that does not exist in fetched interfaces (i.e. has been externally removed)
+    subModel = subModelList.at(i).toElement();
+    QDomElement subModelInterfaceDataElement = subModel.firstChildElement("InterfacePoint");
+    while(!subModelInterfaceDataElement.isNull())
+    {
+      bool interfaceExists=false;
+      interfaceDataElement = interfaces.firstChildElement();
+      while(!interfaceDataElement.isNull()) {
+        if(subModelInterfaceDataElement.attribute("Name") == interfaceDataElement.attribute("Name") &&
+           subModel.attribute("Name") == interfaceDataElement.attribute("model")) {
+          interfaceExists=true;
+        }
+        interfaceDataElement = interfaceDataElement.nextSiblingElement();
+      }
+      if(!interfaceExists) {
+        QDomElement elementToRemove = subModelInterfaceDataElement;
+        subModelInterfaceDataElement = subModelInterfaceDataElement.nextSiblingElement("InterfacePoint");
+        subModel.removeChild(elementToRemove);
+      }
+      else {
+        subModelInterfaceDataElement = subModelInterfaceDataElement.nextSiblingElement("InterfacePoint");
+      }
+    }
   }
+
+  //Remove connections between no longer existing elements
+  QDomNodeList connectionsList = mXmlDocument.elementsByTagName("Connection");
+  for (int i = 0 ; i < connectionsList.size() ; i++) {
+    QDomElement connection = connectionsList.at(i).toElement();
+    QString from = connection.attribute("From");
+    QString to = connection.attribute("To");
+
+    bool fromExists=false;
+    bool toExists=false;
+    for(int i=0; i<subModelList.size(); ++i) {
+      QDomElement subModel = subModelList.at(i).toElement();
+      QDomElement subModelInterfaceDataElement = subModel.firstChildElement("InterfacePoint");
+      while(!subModelInterfaceDataElement.isNull()) {
+        if(subModel.attribute("Name") == from.section(".",0,0) &&
+           subModelInterfaceDataElement.attribute("Name") == from.section(".",1,1)) {
+          fromExists = true;
+        }
+        else if(subModel.attribute("Name") == to.section(".",0,0) &&
+           subModelInterfaceDataElement.attribute("Name") == to.section(".",1,1)) {
+          toExists = true;
+        }
+        subModelInterfaceDataElement = subModelInterfaceDataElement.nextSiblingElement("InterfacePoint");
+      }
+    }
+    if(!fromExists || !toExists)
+    {
+      connection.parentNode().removeChild(connection);
+      --i;
+    }
+  }
+
+  setPlainText(mXmlDocument.toString());
 }
 
 /*!
