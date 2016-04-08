@@ -4918,14 +4918,16 @@ public function addComponentType "
   This function takes a dae element list and a type name and
   inserts the type name into each Var (variable) of the dae.
   This type name is the origin of the variable."
-  input DAE.DAElist inDae;
+  input output DAE.DAElist dae;
   input Absyn.Path newtype;
-  output DAE.DAElist outDae;
 algorithm
-  outDae := match (inDae,newtype)
+  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+    return;
+  end if;
+  dae := match dae
     local
       list<DAE.Element> elts;
-    case (DAE.DAE(elts),_)
+    case DAE.DAE(elts)
       equation
         elts = List.map1(elts,addComponentType2,newtype);
       then DAE.DAE(elts);

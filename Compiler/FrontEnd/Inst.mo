@@ -2089,7 +2089,7 @@ algorithm
         // If we are currently instantiating a connector, add all flow variables
         // in it as inside connectors.
         zero_dims = InstUtil.instDimsHasZeroDims(inst_dims);
-        elementSource = ElementSource.createElementSource(info, FGraph.getScopePath(env3), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        elementSource = ElementSource.createElementSource(info, FGraph.getScopePath(env3), PrefixUtil.prefixToCrefOpt(pre));
         csets1 = ConnectUtil.addConnectorVariablesFromDAE(zero_dims, ci_state1, pre, vars, info, elementSource, csets);
 
         // Reorder the connect equations to have non-expandable connect first:

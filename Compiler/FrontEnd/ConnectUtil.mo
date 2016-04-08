@@ -1876,14 +1876,14 @@ algorithm
   if Config.orderConnections() then
     for e2 in listRest(elements) loop
       src := ElementSource.mergeSources(e1.source, e2.source);
-      src := ElementSource.addElementSourceConnectOpt(src, SOME((e1.name, e2.name)));
+      src := ElementSource.addElementSourceConnect(src, (e1.name, e2.name));
       eql := DAE.EQUEQUATION(e1.name, e2.name, src) :: eql;
     end for;
   else
     for e2 in listRest(elements) loop
       (x, y) := Util.swap(shouldFlipEquEquation(e1.name, e1.source), e1.name, e2.name);
       src := ElementSource.mergeSources(e1.source, e2.source);
-      src := ElementSource.addElementSourceConnectOpt(src, SOME((x, y)));
+      src := ElementSource.addElementSourceConnect(src, (x, y));
       eql := DAE.EQUEQUATION(x, y, src) :: eql;
       e1 := e2;
     end for;
@@ -1906,7 +1906,7 @@ algorithm
     local
       DAE.ComponentRef lhs;
 
-    case DAE.SOURCE(connectEquationOptLst = SOME((lhs, _)) :: _)
+    case DAE.SOURCE(connectEquationOptLst = (lhs, _) :: _)
       then not ComponentReference.crefPrefixOf(lhs, lhsCref);
 
     else false;

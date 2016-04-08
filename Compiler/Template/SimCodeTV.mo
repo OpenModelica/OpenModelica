@@ -2137,7 +2137,7 @@ package DAE
       builtin.SourceInfo info;
       list<Absyn.Within> partOfLst;
       Option<ComponentRef> instanceOpt;
-      list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst;
+      list<tuple<ComponentRef, ComponentRef>> connectEquationOptLst;
       list<Absyn.Path> typeLst;
       list<SymbolicOperation> operations;
     end SOURCE;

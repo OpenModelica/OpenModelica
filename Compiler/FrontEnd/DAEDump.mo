@@ -3616,7 +3616,7 @@ algorithm
       SourceInfo i;
       list<Absyn.Within> po;
       list<Option<DAE.ComponentRef>> iol;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> ceol;
+      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> ceol;
       list<Absyn.Path> tl;
       list<DAE.SymbolicOperation> op;
       list<SCode.Comment> cmt;
@@ -3639,21 +3639,19 @@ algorithm
 end getSourceInformationStr;
 
 protected function connectsStr
-  input list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> inLst;
+  input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> inLst;
   output list<String> outStr;
 algorithm
   outStr := matchcontinue(inLst)
     local
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> rest;
+      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> rest;
       list<String> slst;
       String str;
       DAE.ComponentRef c1, c2;
 
     case ({}) then {};
 
-    case ({NONE()}) then {};
-
-    case ({SOME((c1,c2))})
+    case ({(c1,c2)})
       equation
         str = ComponentReference.printComponentRefStr(c1) + "," +
               ComponentReference.printComponentRefStr(c2);
@@ -3661,7 +3659,7 @@ algorithm
       then
         {str};
 
-    case (SOME((c1,c2))::rest)
+    case ((c1,c2)::rest)
       equation
         str = ComponentReference.printComponentRefStr(c1) + "," +
               ComponentReference.printComponentRefStr(c2);
@@ -3669,12 +3667,6 @@ algorithm
         slst = connectsStr(rest);
       then
         str::slst;
-
-    case (NONE()::rest)
-      equation
-        slst = connectsStr(rest);
-      then
-        slst;
 
   end matchcontinue;
 end connectsStr;

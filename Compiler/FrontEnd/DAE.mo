@@ -103,7 +103,7 @@ uniontype ElementSource "gives information about the origin of the element"
     SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
     list<Absyn.Within> partOfLst "the model(s) this element came from";
     Option<ComponentRef> instanceOpt "the instance(s) this element is part of";
-    list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst "this element came from this connect(s)";
+    list<tuple<ComponentRef, ComponentRef>> connectEquationOptLst "this element came from this connect(s)";
     list<Absyn.Path> typeLst "the classes where the type(s) of the element is defined";
     list<SymbolicOperation> operations "the symbolic operations used to end up with the final state of the element";
     list<SCode.Comment> comment;
@@ -1811,6 +1811,7 @@ end ComponentRef;
 
 public constant ComponentRef crefTime = CREF_IDENT("time", T_REAL_DEFAULT, {});
 public constant ComponentRef crefTimeState = CREF_IDENT("$time", T_REAL_DEFAULT, {});
+public constant ComponentRef emptyCref = CREF_IDENT("", T_UNKNOWN_DEFAULT, {});
 
 public
 uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
