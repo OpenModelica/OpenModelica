@@ -434,6 +434,9 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
     QDomElement subModel = subModelList.at(i).toElement();
+    while(!subModel.firstChildElement("InterfacePoint").isNull()) { //First remove all existing interfaces!
+      subModel.removeChild(subModel.firstChildElement("InterfacePoint"));
+    }
     QDomElement interfaceDataElement = interfaces.firstChildElement();
     while (!interfaceDataElement.isNull()) {
       subModel = subModelList.at(i).toElement();
