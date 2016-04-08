@@ -49,7 +49,7 @@
 #include "Commands.h"
 
 TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint)
+  : QDialog(pMainWindow)
 {
   resize(450, 350);
   mpMainWindow = pMainWindow;
@@ -396,7 +396,7 @@ void TLMCoSimulationDialog::runTLMCoSimulation()
  * \param pGraphicsView
  */
 MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *pGraphicsView)
-  : QDialog(pGraphicsView, Qt::WindowTitleHint)
+  : QDialog(pGraphicsView)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::simulationParams)

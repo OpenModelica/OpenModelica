@@ -192,7 +192,7 @@ void FetchInterfaceDataDialog::reject()
  * \param pModelWidget
  */
 AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget)
-  : QDialog(pModelWidget, Qt::WindowTitleHint), mpModelWidget(pModelWidget)
+  : QDialog(pModelWidget), mpModelWidget(pModelWidget)
 {
   setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::alignInterfaces)
                  .arg(mpModelWidget->getLibraryTreeItem()->getNameStructure()));

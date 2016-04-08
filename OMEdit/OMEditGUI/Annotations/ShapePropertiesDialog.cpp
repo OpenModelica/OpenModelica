@@ -41,7 +41,7 @@
 #include "Commands.h"
 
 ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint)
+  : QDialog(pMainWindow)
 {
   mpShapeAnnotation = pShapeAnnotation;
   mOldAnnotation = "";

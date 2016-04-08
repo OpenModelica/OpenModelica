@@ -1510,7 +1510,7 @@ void FindReplaceWidget::textToFindChanged()
  * An interface to goto a specific line in editor.
  */
 GotoLineDialog::GotoLineDialog(BaseEditor *pBaseEditor)
-  : QDialog(pBaseEditor, Qt::WindowTitleHint)
+  : QDialog(pBaseEditor)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - Go to Line"));
   setWindowIcon(QIcon(":/Resources/icons/modeling.png"));

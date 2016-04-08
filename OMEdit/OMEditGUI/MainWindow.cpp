@@ -1588,7 +1588,7 @@ void MainWindow::showOpenModelicaCommandPrompt()
 void MainWindow::importModelFMU()
 {
   ImportFMUDialog *pImportFMUDialog = new ImportFMUDialog(this);
-  pImportFMUDialog->show();
+  pImportFMUDialog->exec();
 }
 
 //! Exports the current model to OMNotebook.

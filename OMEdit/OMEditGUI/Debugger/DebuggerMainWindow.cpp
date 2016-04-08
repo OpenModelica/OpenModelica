@@ -414,7 +414,7 @@ void DebuggerConfigurationPage::resetDebugConfiguration()
   \param pDebuggerMainWindow - pointer to DebuggerMainWindow
   */
 DebuggerConfigurationsDialog::DebuggerConfigurationsDialog(DebuggerMainWindow *pDebuggerMainWindow)
-  : QDialog(pDebuggerMainWindow, Qt::WindowTitleHint)
+  : QDialog(pDebuggerMainWindow)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::debugConfigurations));
   setAttribute(Qt::WA_DeleteOnClose);

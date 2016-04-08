@@ -28,67 +28,11 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-/*
- *
- * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- * RCS: $Id$
- *
- */
 
 QMainWindow::separator {
   width: 4px; /* when vertical */
   height: 4px; /* when horizontal */
 }
-
-/* Tree Styles */
-/* Don't show custom tree collapse/expand icons. */
-/*QTreeWidget#TreeWithBranches::branch:has-siblings,
-QTreeWidget#TreeWithBranches::branch:open:has-children:has-siblings,
-QTreeView#TreeWithBranches::branch:has-siblings,
-QTreeView#TreeWithBranches::branch:open:has-children:has-siblings {
-  background: url(:/Resources/icons/vline.png);
-  background-repeat: repeat-y;
-  background-position: top;
-}
-QTreeWidget#TreeWithBranches::branch:has-siblings:adjoins-item,
-QTreeView#TreeWithBranches::branch:has-siblings:adjoins-item {
-  image: url(:/Resources/icons/branch-more.png);
-  image-position: top;
-}
-QTreeWidget#TreeWithBranches::branch:!has-siblings:adjoins-item,
-QTreeView#TreeWithBranches::branch:!has-siblings:adjoins-item {
-  background: none;
-  image: url(:/Resources/icons/branch-end.png);
-  image-position: top;
-}
-QTreeWidget#TreeWithBranches::branch:closed:has-children,
-QTreeView#TreeWithBranches::branch:closed:has-children {
-  image: url(:/Resources/icons/branch-closed.png);
-  image-position: top;
-}
-QTreeWidget#TreeWithBranches::branch:open:has-children,
-QTreeView#TreeWithBranches::branch:open:has-children {
-  image: url(:/Resources/icons/branch-open.png);
-  image-position: top;
-}
-QTreeWidget#TreeWithBranches::branch:closed:has-children:!has-siblings:adjoins-item,
-QTreeView#TreeWithBranches::branch:closed:has-children:!has-siblings:adjoins-item {
-  background: url(:/Resources/icons/branch-end.png);
-  background-repeat: no-repeat;
-  background-position: top;
-  image: url(:/Resources/icons/branch-closed.png);
-  image-position: top;
-}
-QTreeWidget#TreeWithBranches::branch:open:has-children:!has-siblings:adjoins-item,
-QTreeView#TreeWithBranches::branch:open:has-children:!has-siblings:adjoins-item {
-  background: url(:/Resources/icons/branch-end.png);
-  background-repeat: no-repeat;
-  background-position: top;
-  image: url(:/Resources/icons/branch-open.png);
-  image-position: top;
-}*/
-/* End of Tree Styles */
 
 QLineEdit {
   border: 1px solid gray;
@@ -114,10 +58,6 @@ QStatusBar#ModelStatusBar::item {
 QStatusBar#ModelStatusBar QLabel {
   margin: 0px;
   padding: 0px 0px 0px 1px;
-}
-
-QToolButton#InteractiveSimulationButtons {
-  padding: 3px;
 }
 
 QListWidget#RecentItemsList::item:hover, QListWidget#LatestNewsList::item:hover{

@@ -46,12 +46,11 @@
   \param pParent - pointer to MainWindow
   */
 ImportFMUDialog::ImportFMUDialog(MainWindow *pParent)
-  : QDialog(pParent, Qt::WindowTitleHint)
+  : QDialog(pParent)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::importFMU));
   setAttribute(Qt::WA_DeleteOnClose);
   setMinimumWidth(550);
-  setModal(true);
   // set parent widget
   mpMainWindow = pParent;
   // set import heading

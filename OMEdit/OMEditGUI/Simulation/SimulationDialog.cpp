@@ -54,7 +54,7 @@
   \param pParent - pointer to MainWindow.
   */
 SimulationDialog::SimulationDialog(MainWindow *pParent)
-  : QDialog(pParent, Qt::WindowTitleHint)
+  : QDialog(pParent)
 {
   mpMainWindow = pParent;
   resize(550, 550);

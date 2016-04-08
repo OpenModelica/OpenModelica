@@ -45,7 +45,7 @@
  * \brief CrashReportDialog::CrashReportDialog
  */
 CrashReportDialog::CrashReportDialog()
-  : QDialog(0, Qt::WindowTitleHint)
+  : QDialog(0)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::crashReport));
   setAttribute(Qt::WA_DeleteOnClose);

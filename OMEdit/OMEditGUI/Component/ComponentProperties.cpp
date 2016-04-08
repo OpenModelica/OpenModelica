@@ -528,7 +528,7 @@ QVBoxLayout *ParametersScrollArea::getLayout()
  * \param pMainWindow - pointer to MainWindow
  */
 ComponentParameters::ComponentParameters(Component *pComponent, MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint)
+  : QDialog(pMainWindow)
 {
   QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Component Parameters")).arg(pComponent->getName())
@@ -1117,7 +1117,7 @@ void ComponentParameters::updateComponentParameters()
  * \param pMainWindow
  */
 ComponentAttributes::ComponentAttributes(Component *pComponent, MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint)
+  : QDialog(pMainWindow)
 {
   QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Component Attributes")).arg(pComponent->getName())
@@ -1354,7 +1354,7 @@ void ComponentAttributes::updateComponentAttributes()
  * \param pMainWindow - pointer to MainWindow
  */
 MetaModelSubModelAttributes::MetaModelSubModelAttributes(Component *pComponent, MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint)
+  : QDialog(pMainWindow)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("SubModel Attributes")));
   setAttribute(Qt::WA_DeleteOnClose);
@@ -1483,7 +1483,7 @@ void MetaModelSubModelAttributes::updateSubModelParameters()
   */
 MetaModelConnectionAttributes::MetaModelConnectionAttributes(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation,
                                                              MainWindow *pMainWindow, bool edit)
-  : QDialog(pMainWindow, Qt::WindowTitleHint), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation),
+  : QDialog(pMainWindow), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation),
     mpMainWindow(pMainWindow), mEdit(edit)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::connectionAttributes));

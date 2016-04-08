@@ -46,7 +46,7 @@
   \param pBreakpointsTreeModel - pointer to BreakpointsTreeModel
   */
 BreakpointDialog::BreakpointDialog(BreakpointTreeItem *pBreakpointTreeItem, BreakpointsTreeModel *pBreakpointsTreeModel)
-  : QDialog(pBreakpointsTreeModel->getBreakpointsTreeView(), Qt::WindowTitleHint)
+  : QDialog(pBreakpointsTreeModel->getBreakpointsTreeView())
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("%1 Breakpoint").arg(pBreakpointTreeItem ? "Edit" : "Add")));

@@ -43,7 +43,7 @@
 #include "Commands.h"
 
 LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, LibraryWidget *pLibraryWidget)
-  : QDialog(0, Qt::WindowTitleHint)
+  : QDialog(0)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(title));
@@ -153,7 +153,7 @@ void LibraryBrowseDialog::useModelicaClass()
   \param pParent - pointer to MainWindow
   */
 ModelicaClassDialog::ModelicaClassDialog(MainWindow *pParent)
-  : QDialog(pParent, Qt::WindowTitleHint)
+  : QDialog(pParent)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::createNewModelicaClass));
@@ -373,7 +373,7 @@ void ModelicaClassDialog::createModelicaClass()
   \param pParent - pointer to MainWindow
   */
 OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
-  : QDialog(pParent, Qt::WindowTitleHint)
+  : QDialog(pParent)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::openConvertModelicaFiles));
@@ -565,7 +565,7 @@ void OpenModelicaFile::convertModelicaFiles()
   \param pParent - pointer to MainWindow
   */
 SaveAsClassDialog::SaveAsClassDialog(ModelWidget *pModelWidget, MainWindow *pParent)
-  : QDialog(pParent, Qt::WindowTitleHint)
+  : QDialog(pParent)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Save As Modelica Class")));
@@ -732,7 +732,7 @@ void SaveAsClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
  * \param pMainWindow
  */
 DuplicateClassDialog::DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint), mpLibraryTreeItem(pLibraryTreeItem), mpMainWindow(pMainWindow)
+  : QDialog(pMainWindow), mpLibraryTreeItem(pLibraryTreeItem), mpMainWindow(pMainWindow)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   mSaveAs = saveAs;
@@ -838,7 +838,7 @@ void DuplicateClassDialog::duplicateClass()
   \param pParent - pointer to MainWindow
   */
 RenameClassDialog::RenameClassDialog(QString name, QString nameStructure, MainWindow *parent)
-  : QDialog(parent, Qt::WindowTitleHint), mName(name), mNameStructure(nameStructure)
+  : QDialog(parent), mName(name), mNameStructure(nameStructure)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - Rename ").append(name));
@@ -971,7 +971,7 @@ void InformationDialog::closeEvent(QCloseEvent *event)
  * \param pGraphicsView - pointer to GraphicsView
  */
 GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
-  : QDialog(pGraphicsView, Qt::WindowTitleHint)
+  : QDialog(pGraphicsView)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::properties).append(" - ")
@@ -1317,7 +1317,7 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
  * \param pMainWindow - pointer to MainWindow
  */
 SaveChangesDialog::SaveChangesDialog(MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint)
+  : QDialog(pMainWindow)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Save Changes")));
@@ -1430,7 +1430,7 @@ int SaveChangesDialog::exec()
   \param pMainWindow - pointer to MainWindow
   */
 ExportFigaroDialog::ExportFigaroDialog(MainWindow *pMainWindow, LibraryTreeItem *ppLibraryTreeItem)
-  : QDialog(pMainWindow, Qt::WindowTitleHint)
+  : QDialog(pMainWindow)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::exportFigaro));

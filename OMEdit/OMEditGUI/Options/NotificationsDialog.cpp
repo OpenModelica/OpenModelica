@@ -52,7 +52,7 @@
   \param pMainWindow - pointer to MainWindow.
   */
 NotificationsDialog::NotificationsDialog(NotificationType notificationType, NotificationIcon notificationIcon, MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint)
+  : QDialog(pMainWindow)
 {
   mpMainWindow = pMainWindow;
   mNotificationType = notificationType;

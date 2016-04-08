@@ -44,7 +44,7 @@
   \param pDebuggerMainWindow - pointer to DebuggerMainWindow
   */
 AttachToProcessDialog::AttachToProcessDialog(DebuggerMainWindow *pDebuggerMainWindow)
-  : QDialog(pDebuggerMainWindow, Qt::WindowTitleHint)
+  : QDialog(pDebuggerMainWindow)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::attachToRunningProcess));
   setAttribute(Qt::WA_DeleteOnClose);

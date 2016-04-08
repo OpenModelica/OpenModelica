@@ -32,11 +32,6 @@
         <file>Resources/icons/zoomReset.svg</file>
         <file>Resources/icons/zoomIn.svg</file>
         <file>Resources/icons/zoomOut.svg</file>
-        <file>Resources/icons/vline.png</file>
-        <file>Resources/icons/branch-closed.png</file>
-        <file>Resources/icons/branch-open.png</file>
-        <file>Resources/icons/branch-end.png</file>
-        <file>Resources/icons/branch-more.png</file>
         <file>Resources/icons/txt.svg</file>
         <file>Resources/icons/model-icon.svg</file>
         <file>Resources/icons/package-icon.svg</file>

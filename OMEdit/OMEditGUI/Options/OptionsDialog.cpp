@@ -44,7 +44,7 @@
 //! Constructor
 //! @param pMainWindow is the pointer to MainWindow
 OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint), mpSettings(OpenModelica::getApplicationSettings())
+  : QDialog(pMainWindow), mpSettings(OpenModelica::getApplicationSettings())
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::options));
   setModal(true);
@@ -1736,7 +1736,7 @@ void LibrariesPage::openEditUserLibrary()
 //! Constructor
 //! @param pLibrariesPage is the pointer to LibrariesPage
 AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pLibrariesPage)
-  : QDialog(pLibrariesPage, Qt::WindowTitleHint), mEditFlag(false)
+  : QDialog(pLibrariesPage), mEditFlag(false)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Add System Library")));
   setAttribute(Qt::WA_DeleteOnClose);
@@ -1846,7 +1846,7 @@ void AddSystemLibraryDialog::addSystemLibrary()
 //! Constructor
 //! @param pLibrariesPage is the pointer to LibrariesPage
 AddUserLibraryDialog::AddUserLibraryDialog(LibrariesPage *pLibrariesPage)
-  : QDialog(pLibrariesPage, Qt::WindowTitleHint), mEditFlag(false)
+  : QDialog(pLibrariesPage), mEditFlag(false)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Add User Library")));
   setAttribute(Qt::WA_DeleteOnClose);

@@ -91,7 +91,7 @@ QString MessageItem::getLocation()
   \param pMainWindow - defines a parent to the new instanced object. pMainWindow is the MainWindow object.
   */
 MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
-  : QWidget(pMainWindow, Qt::WindowTitleHint)
+  : QWidget(pMainWindow)
 {
   mpMainWindow = pMainWindow;
   mMessageNumber = 1;
