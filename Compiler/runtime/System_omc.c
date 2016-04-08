@@ -204,7 +204,7 @@ extern const char* System_basename(const char* str)
 
 extern const char* System_dirname(const char* str)
 {
-  char *cpy = GC_strdup(str);
+  char *cpy = omc_alloc_interface.malloc_strdup(str);
   char *res = NULL;
 #if defined(_MSC_VER)
   char drive[_MAX_DRIVE], dir[_MAX_DIR], filename[_MAX_FNAME], extension[_MAX_EXT];
@@ -318,7 +318,7 @@ extern void* System_strtok(const char *str0, const char *delimit)
 {
   char *s;
   void *res = mmc_mk_nil();
-  char *str = GC_strdup(str0);
+  char *str = omc_alloc_interface.malloc_strdup(str0);
   char *saveptr;
   s=strtok_r(str,delimit,&saveptr);
   if (s == NULL) {
@@ -395,7 +395,7 @@ const char* System_getClassnamesForSimulation()
 
 void System_setClassnamesForSimulation(const char *class_names)
 {
-  class_names_for_simulation = GC_strdup(class_names);
+  class_names_for_simulation = omc_alloc_interface.malloc_strdup(class_names);
 }
 
 extern double System_getVariableValue(double _timeStamp, void* _timeValues, void* _varValues)
@@ -578,7 +578,7 @@ extern void* System_regex(const char* str, const char* re, int maxn, int extende
 #if !defined(_MSC_VER)
   void *matches[maxn];
 #else
-  void **matches = GC_malloc(sizeof(void*)*maxn);
+  void **matches = omc_alloc_interface.malloc(sizeof(void*)*maxn);
 #endif
   *nmatch = OpenModelica_regexImpl(str,re,maxn,extended,sensitive,mmc_mk_scon,(void**)&matches);
   res = mmc_mk_nil();
@@ -687,6 +687,16 @@ extern const char* System_openModelicaPlatform()
   return CONFIG_OPENMODELICA_SPEC_PLATFORM;
 }
 
+extern const char* System_gccDumpMachine()
+{
+  return CONFIG_GCC_DUMPMACHINE;
+}
+
+extern const char* System_gccVersion()
+{
+  return CONFIG_GCC_VERSION;
+}
+
 extern void System_getGCStatus(double *used, double *allocated)
 {
   *allocated = GC_get_heap_size();
@@ -717,7 +727,7 @@ extern const char* System_realpath(const char *path)
   if (realpath(path, buf) == NULL) {
     MMC_THROW();
   }
-  return GC_strdup(buf);
+  return omc_alloc_interface.malloc_strdup(buf);
 }
 
 extern int System_fileIsNewerThan(const char *file1, const char *file2)
@@ -787,10 +797,10 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
   int ids[len];
   pthread_t th[numThreads];
 #else
-  void **commands = (void**) GC_malloc(sizeof(void*)*len);
-  void **status = (void**) GC_malloc(sizeof(void*)*len);
-  int *ids = (int*) GC_malloc_atomic(sizeof(int)*len);
-  pthread_t *th = (pthread_t*) GC_malloc(sizeof(pthread_t)*numThreads);
+  void **commands = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
+  void **status = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
+  int *ids = (int*) omc_alloc_interface.malloc_atomic(sizeof(int)*len);
+  pthread_t *th = (pthread_t*) omc_alloc_interface.malloc(sizeof(pthread_t)*numThreads);
 #endif
   if (len == 0) {
     return mmc_mk_nil();

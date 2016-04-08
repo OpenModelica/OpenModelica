@@ -55,6 +55,7 @@ protected type InstDims = list<list<DAE.Dimension>>;
 
 protected import Ceval;
 protected import ComponentReference;
+protected import ElementSource;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -551,7 +552,7 @@ algorithm
         acr := ComponentReference.unelabCref(inComponentRef);
         aexp1 := Absyn.CREF(acr);
         scode := SCode.EQ_EQUALS(aexp1,aexp2,SCode.noComment,info);
-        source := DAEUtil.addSymbolicTransformation(inSource,DAE.FLATTEN(scode,NONE()));
+        source := ElementSource.addSymbolicTransformation(inSource,DAE.FLATTEN(scode,NONE()));
         dae := InstSection.instEqEquation(lhs, DAE.PROP(inType,DAE.C_VAR()), e, prop2, source, SCode.NON_INITIAL(), inImpl);
       then
         dae;

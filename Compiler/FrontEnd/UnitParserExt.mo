@@ -59,6 +59,11 @@ public function str2unit "Translate a unit string to a unit"
   external "C" UnitParserExt_str2unit(res,noms,denoms,tpnoms,tpdenoms,tpstrs,scaleFactor,offset) annotation(Library = "omcruntime");
 end str2unit;
 
+public function allUnitSymbols
+  output list<String> unitSymbols;
+  external "C" unitSymbols = UnitParserExtImpl__allUnitSymbols() annotation(Library = "omcruntime");
+end allUnitSymbols;
+
 public function addBase "adds a base unit without weight"
   input String name;
   external "C" UnitParserExtImpl__addBase(name) annotation(Library = "omcruntime");

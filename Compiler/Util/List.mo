@@ -98,6 +98,7 @@ encapsulated package List
 protected
 import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
 import MetaModelica.Dangerous;
+import DoubleEndedList;
 
 public function create<T>
   "Creates a list from an element."
@@ -356,17 +357,13 @@ public function consOnBool<T>
   "Adds an element to one of two lists, depending on the given boolean value."
   input Boolean inValue;
   input T inElement;
-  input list<T> inTrueList;
-  input list<T> inFalseList;
-  output list<T> outTrueList;
-  output list<T> outFalseList;
+  input output list<T> trueList;
+  input output list<T> falseList;
 algorithm
   if inValue then
-    outTrueList := inElement :: inTrueList;
-    outFalseList := inFalseList;
+    trueList := inElement :: trueList;
   else
-    outTrueList := inTrueList;
-    outFalseList := inElement :: inFalseList;
+    falseList := inElement :: falseList;
   end if;
 end consOnBool;
 
@@ -375,11 +372,10 @@ public function consN<T>
   n = 5, inElement=1, list={1,2} -> list={1,1,1,1,1,1,2}"
   input Integer size;
   input T inElement;
-  input list<T> inList;
-  output list<T> outList = inList;
+  input output list<T> inList;
 algorithm
   for i in 1:size loop
-    outList := inElement :: outList;
+    inList := inElement :: inList;
   end for;
 end consN;
 
@@ -405,10 +401,9 @@ public function append_reverse<T>
   input list<T> inList2;
   output list<T> outList=inList2;
 algorithm
-  if listEmpty(outList) then
-    outList := listReverse(inList1);
-    return;
-  end if;
+  // Do not optimize the case listEmpty(inList2) and listLength(inList1)==1
+  // since we use listReverseInPlace together with this function.
+  // An alternative would be to keep both (and rename this append_reverse_always_copy)
   for e in inList1 loop
     outList := e::outList;
   end for;
@@ -1889,6 +1884,46 @@ algorithm
   outList := list(inFunc(e) for e in inList);
 end map;
 
+public function mapCheckReferenceEq<TI>
+  "Takes a list and a function, and creates a new list by applying the function
+   to each element of the list."
+  input list<TI> inList;
+  input MapFunc inFunc;
+  output list<TI> outList={};
+
+  partial function MapFunc
+    input TI inElement;
+    output TI outElement;
+  end MapFunc;
+protected
+  Boolean allEq=true;
+  DoubleEndedList<TI> delst;
+  Integer n=0;
+  TI e1;
+algorithm
+  for e in inList loop
+    e1 := inFunc(e);
+    // Preserve reference equality without any allocation if nothing changed
+    if (if allEq then not referenceEq(e, e1) else false) then
+      allEq:=false;
+      delst := DoubleEndedList.empty(e1);
+      for elt in inList loop
+        if n < 1 then
+          break;
+        end if;
+        DoubleEndedList.push_back(delst, elt);
+        n := n-1;
+      end for;
+    end if;
+    if allEq then
+      n := n + 1;
+    else
+      DoubleEndedList.push_back(delst, e1);
+    end if;
+  end for;
+  outList := if allEq then inList else DoubleEndedList.toListAndClear(delst);
+end mapCheckReferenceEq;
+
 public function mapReverse<TI, TO>
   "Takes a list and a function, and creates a new list by applying the function
    to each element of the list. The created list will be reversed compared to
@@ -1925,11 +1960,15 @@ algorithm
   for e in inList loop
     (e1, e2) := inFunc(e);
     outList1 := e1 :: outList1;
-    outList2 := e2 :: outList2;
+    if isPresent(outList2) then
+      outList2 := e2 :: outList2;
+    end if;
   end for;
 
   outList1 := listReverseInPlace(outList1);
-  outList2 := listReverseInPlace(outList2);
+  if isPresent(outList2) then
+    outList2 := listReverseInPlace(outList2);
+  end if;
 end map_2;
 
 public function map_3<TI, TO1, TO2, TO3>
@@ -1955,13 +1994,21 @@ algorithm
   for e in inList loop
     (e1, e2, e3) := inFunc(e);
     outList1 := e1 :: outList1;
-    outList2 := e2 :: outList2;
-    outList3 := e3 :: outList3;
+    if isPresent(outList2) then
+      outList2 := e2 :: outList2;
+    end if;
+    if isPresent(outList3) then
+      outList3 := e3 :: outList3;
+    end if;
   end for;
 
   outList1 := listReverseInPlace(outList1);
-  outList2 := listReverseInPlace(outList2);
-  outList3 := listReverseInPlace(outList3);
+  if isPresent(outList2) then
+    outList2 := listReverseInPlace(outList2);
+  end if;
+  if isPresent(outList3) then
+    outList3 := listReverseInPlace(outList3);
+  end if;
 end map_3;
 
 public function mapOption<TI, TO>
@@ -5726,19 +5773,20 @@ public function replaceAt<T>
 protected
   T e;
   list<T> rest = inList;
+  DoubleEndedList<T> delst;
 algorithm
   true := inPosition >= 1;
+  delst := DoubleEndedList.fromList({});
 
   // Shuffle elements from inList to outList until the position is reached.
   for i in 1:inPosition-1 loop
     e :: rest := rest;
-    outList := e :: outList;
+    DoubleEndedList.push_back(delst, e);
   end for;
 
   // Replace the element at the position and append the remaining elements.
   _ :: rest := rest;
-  rest := inElement :: rest;
-  outList := append_reverse(outList, rest);
+  outList := DoubleEndedList.toListAndClear(delst, prependToList=inElement::rest);
 end replaceAt;
 
 public function replaceOnTrue<T>
@@ -6699,6 +6747,30 @@ algorithm
   fail();
 end mapFirst;
 
+public function isSorted<T>
+  input list<T> inList;
+  input Comp inFunc;
+  output Boolean b=true;
+
+  partial function Comp
+    input T a,b;
+    output Boolean c;
+  end Comp;
+protected
+  Boolean found;
+  T prev;
+algorithm
+  if listEmpty(inList) then
+    return;
+  end if;
+  prev::_ := inList;
+  for e in listRest(inList) loop
+    if not inFunc(prev,e) then
+      b := false;
+      return;
+    end if;
+  end for;
+end isSorted;
 
 annotation(__OpenModelica_Interface="util");
 end List;

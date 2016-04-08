@@ -19,7 +19,7 @@ template dumpSimCodeToC(SimCode code, Boolean withOperations)
   match code
   case sc as SIMCODE(modelInfo=mi as MODELINFO(vars=vars as SIMVARS(__))) then
   let _ = dumpSimCode(code,withOperations)
-  let _ = covertTextFileToCLiteral('<%fileNamePrefix%>_info.xml','<%fileNamePrefix%>_info.c')
+  let _ = covertTextFileToCLiteral('<%fileNamePrefix%>_info.xml', '<%fileNamePrefix%>_info.c', simulationCodeTarget())
   '<%fileNamePrefix%>_info'
 end dumpSimCodeToC;
 

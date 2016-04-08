@@ -1253,6 +1253,7 @@ package System
   function covertTextFileToCLiteral
     input String textFile;
     input String outFile;
+    input String target;
     output Boolean success;
   end covertTextFileToCLiteral;
 
@@ -3255,6 +3256,7 @@ package Flags
   constant DebugFlag USEMPI;
   constant DebugFlag RUNTIME_STATIC_LINKING;
   constant DebugFlag HARDCODED_START_VALUES;
+  constant DebugFlag OMC_RECORD_ALLOC_WORDS;
   constant ConfigFlag NUM_PROC;
   constant ConfigFlag HPCOM_CODE;
   constant ConfigFlag PROFILING_LEVEL;
@@ -3339,11 +3341,14 @@ package Algorithm
   end getStatementSource;
 end Algorithm;
 
-package DAEUtil
+package ElementSource
   function getElementSourceFileInfo
     input DAE.ElementSource source;
     output builtin.SourceInfo info;
   end getElementSourceFileInfo;
+end ElementSource;
+
+package DAEUtil
 
   function statementsContainReturn
     input list<DAE.Statement> stmts;

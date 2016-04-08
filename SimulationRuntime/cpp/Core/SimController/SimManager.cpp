@@ -113,8 +113,6 @@ void SimManager::initialize()
     }
 
     LOGGER_WRITE("SimManager: Start initialization",LC_INIT,LL_DEBUG);
-    // Set flag for endless simulation (if solver returns)
-    _continueSimulation = true;
 
     // Reset debug ID
     _dbgId = 0;
@@ -151,6 +149,9 @@ void SimManager::initialize()
 
     _tStart = _config->getGlobalSettings()->getStartTime();
     _tEnd = _config->getGlobalSettings()->getEndTime();
+    // Set flag for endless simulation (if solver returns)
+    _continueSimulation = _tEnd > _tStart;
+
     // _solver->setTimeOut(_config->getGlobalSettings()->getAlarmTime());
     _dimZeroFunc = _event_system->getDimZeroFunc();
     _solverTask = ISolver::SOLVERCALL(ISolver::FIRST_CALL);

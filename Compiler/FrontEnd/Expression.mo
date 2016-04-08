@@ -65,6 +65,7 @@ protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
+protected import DoubleEndedList;
 protected import FCore;
 protected import FGraph;
 protected import Error;
@@ -100,7 +101,7 @@ algorithm
   outSubscripts := List.map(inIntegers, intSubscript);
 end intSubscripts;
 
-protected function subscriptInt
+public function subscriptInt
   "Tries to convert a subscript to an integer index."
   input DAE.Subscript inSubscript;
   output Integer outInteger = expArrayIndex(subscriptIndexExp(inSubscript));
@@ -2140,7 +2141,7 @@ algorithm
     // count the variables in record
     case DAE.T_COMPLEX(varLst = varLst)
       equation
-        lstInt = List.map(List.map(varLst, varType), sizeOf);
+        lstInt = List.mapMap(varLst, varType, sizeOf);
         nr = List.reduce(lstInt, intAdd);
       then
         nr;
@@ -4880,7 +4881,7 @@ algorithm
     case (e, (s, t))
       equation
       ((e1, _)) = replaceExp(e, s, t);
-      then (e1, (s, t));
+      then (e1, tpl);
 
   end match;
 end replaceExpTpl;
@@ -4955,7 +4956,7 @@ algorithm
     case (DAE.CREF(componentRef=cr),(cr1,target))
       guard ComponentReference.crefEqualNoStringCompare(cr, cr1)
       then
-        (target,(cr1,target));
+        (target,inTpl);
     else (inExp,inTpl);
   end match;
 end replaceCref;
@@ -5454,15 +5455,31 @@ public function traverseExpList<ArgT> "Calls traverseExpBottomUp for each elemen
   end FuncExpType;
 protected
   DAE.Exp e1;
-  Boolean same = true;
+  Boolean allEq=true;
+  DoubleEndedList<DAE.Exp> delst;
+  Integer nEq=0;
 algorithm
   for e in inExpl loop
     (e1, ext_arg) := traverseExpBottomUp(e, rel, ext_arg);
-    expl := e1 :: expl;
-    same := same and referenceEq(e, e1);
+    // Preserve reference equality without any allocation if nothing changed
+    if (if allEq then not referenceEq(e, e1) else false) then
+      allEq:=false;
+      delst := DoubleEndedList.empty(e1);
+      for elt in inExpl loop
+        if nEq < 1 then
+          break;
+        end if;
+        DoubleEndedList.push_back(delst, elt);
+        nEq := nEq-1;
+      end for;
+    end if;
+    if allEq then
+      nEq := nEq + 1;
+    else
+      DoubleEndedList.push_back(delst, e1);
+    end if;
   end for;
-
-  expl := if same then inExpl else listReverse(expl);
+  expl := if allEq then inExpl else DoubleEndedList.toListAndClear(delst);
 end traverseExpList;
 
 public function traverseExpTopDown
@@ -5657,41 +5674,40 @@ algorithm
     case (_,DAE.CREF(cr,tp),rel,ext_arg)
       equation
         (cr_1,ext_arg_1) = traverseExpTopDownCrefHelper(cr,rel,ext_arg);
-        e = if referenceEq(cr,cr_1) then inExp else DAE.CREF(cr_1,tp);
-      then (e,ext_arg_1);
+      then (if referenceEq(cr,cr_1) then inExp else DAE.CREF(cr_1,tp),ext_arg_1);
     // unary
     case (_,DAE.UNARY(operator = op,exp = e1),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
       then
-        (DAE.UNARY(op,e1_1),ext_arg_1);
+        (if referenceEq(e1, e1_1) then inExp else DAE.UNARY(op,e1_1),ext_arg_1);
 
     // binary
     case (_,DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-      then (DAE.BINARY(e1_1,op,e2_1),ext_arg_2);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.BINARY(e1_1,op,e2_1),ext_arg_2);
 
     // logical unary
     case (_,DAE.LUNARY(operator = op,exp = e1),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
-      then (DAE.LUNARY(op,e1_1),ext_arg_1);
+      then (if referenceEq(e1, e1_1) then inExp else DAE.LUNARY(op,e1_1),ext_arg_1);
 
     // logical binary
     case (_,DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-      then (DAE.LBINARY(e1_1,op,e2_1),ext_arg_2);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.LBINARY(e1_1,op,e2_1),ext_arg_2);
 
     // relation
     case (_,DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-      then (DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),ext_arg_2);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),ext_arg_2);
 
     // if expressions
     case (_,(DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),rel,ext_arg)
@@ -5699,7 +5715,7 @@ algorithm
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
         (e3_1,ext_arg_3) = traverseExpTopDown(e3, rel, ext_arg_2);
-      then (DAE.IFEXP(e1_1,e2_1,e3_1),ext_arg_3);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) and referenceEq(e3, e3_1) then inExp else DAE.IFEXP(e1_1,e2_1,e3_1),ext_arg_3);
 
     // call
     case (_,(DAE.CALL(path = fn,expLst = expl,attr = attr)),rel,ext_arg)
@@ -5731,14 +5747,14 @@ algorithm
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-      then (DAE.RANGE(tp,e1_1,NONE(),e2_1),ext_arg_2);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.RANGE(tp,e1_1,NONE(),e2_1),ext_arg_2);
 
     case (_,(DAE.RANGE(ty = tp,start = e1,step = SOME(e2),stop = e3)),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
         (e3_1,ext_arg_3) = traverseExpTopDown(e3, rel, ext_arg_2);
-      then (DAE.RANGE(tp,e1_1,SOME(e2_1),e3_1),ext_arg_3);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) and referenceEq(e3, e3_1) then inExp else DAE.RANGE(tp,e1_1,SOME(e2_1),e3_1),ext_arg_3);
 
     case (_,(DAE.TUPLE(PR = expl)),rel,ext_arg)
       equation
@@ -5778,7 +5794,7 @@ algorithm
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-      then (DAE.SIZE(e1_1,SOME(e2_1)),ext_arg_2);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.SIZE(e1_1,SOME(e2_1)),ext_arg_2);
 
     case (_,DAE.CODE(),_,ext_arg) then (inExp,ext_arg);
 
@@ -5796,7 +5812,7 @@ algorithm
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-      then (DAE.CONS(e1_1,e2_1),ext_arg_2);
+      then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.CONS(e1_1,e2_1),ext_arg_2);
 
     case (_,DAE.LIST(expl),rel,ext_arg)
       equation
@@ -5894,7 +5910,7 @@ end traverseExpMatrixTopDown;
 
 public function traverseExpListTopDown
 " author PA:
- Calls traverseExpBottomUp for each element of list."
+ Calls traverseExpListTopDown for each element of list."
   replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> inExpl;
   input FuncExpType rel;
@@ -6326,7 +6342,7 @@ algorithm
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
       then
-        (inExp,not b,(cr,b));
+        (inExp,not b,if b then (cr,b) else inTpl);
 
     case (_,(_,b)) then (inExp,not b,inTpl);
 
@@ -6346,7 +6362,7 @@ public function anyExpHasCrefName "Returns a true if any exp contains a cref tha
   input String name;
   output Boolean hasCref;
 algorithm
-  hasCref := List.fold(List.map1(inExps, expHasCrefName, name), boolOr, false);
+  hasCref := List.applyAndFold1(inExps, boolOr, expHasCrefName, name, false);
 end anyExpHasCrefName;
 
 public function traversingexpHasName "Returns a true if the exp contains a cref that starts with the given name"
@@ -6364,7 +6380,7 @@ algorithm
     case (DAE.CREF(componentRef = cr), (name,false))
       equation
         b = name == ComponentReference.crefFirstIdent(cr);
-      then (inExp,not b,(name,b));
+      then (inExp,not b,if b then (name,b) else inTpl);
     case (_,(_,b)) then (inExp,not b,inTpl);
   end match;
 end traversingexpHasName;
@@ -6396,12 +6412,12 @@ algorithm
     case (DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr1)}), (cr,false))
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
-      then (inExp,not b,(cr,b));
+      then (inExp,not b,if b then (cr,b) else inTpl);
 
     case (DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr1)}), (cr,false))
       equation
         b = ComponentReference.crefPrefixOf(cr,cr1);
-      then (inExp,not b,(cr,b));
+      then (inExp,not b,if b then (cr,b) else inTpl);
 
     case (_,(_,b)) then (inExp,not b,inTpl);
 
@@ -6434,7 +6450,7 @@ algorithm
 
     //isAlias
     case(DAE.CREF(componentRef = cr), false)
-    guard intEq(System.strncmp(ComponentReference.crefStr(cr),"$DERAlias",9),0)  //BackendDAE.derivativeNamePrefix
+    guard intEq(System.strncmp(ComponentReference.crefFirstIdent(cr),"$DERAlias",9),0)  //BackendDAE.derivativeNamePrefix
      equation
       then (inExp,false,true);
 
@@ -6477,7 +6493,7 @@ algorithm
     case (DAE.CREF(componentRef = cr1), (cr,false))
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
-      then (inExp,not b,(cr,b));
+      then (inExp,not b,if b then (cr,b) else inTpl);
 
 /* Not reachable...
     case (DAE.CREF(componentRef = cr1), (cr,false))
@@ -6550,7 +6566,7 @@ algorithm
     case (DAE.CREF(componentRef = cr1), (cr,false))
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
-      then (inExp,not b,(cr,b));
+      then (inExp,not b,if b then (cr,b) else inTpl);
 
     case (_,(_,b)) then (inExp,not b,inTpl);
 
@@ -6586,7 +6602,7 @@ algorithm
     guard(not isFunCall(e1,"noEvent"))
      equation
        b = expHasCref(e1,cr);
-     then (e1, true,(cr,b));
+     then (e1, true,if b then (cr,b) else inTpl);
 
     case(DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {DAE.ICONST(i),e1}),(cr,false))
     guard(i>1)
@@ -6596,17 +6612,17 @@ algorithm
     guard(isEventTriggeringFunctionExp(inExp))
      equation
      b = expHasCref(inExp, cr);
-     then(inExp, true,(cr,b));
+     then(inExp, true,if b then (cr,b) else inTpl);
 
     case(DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {e1,_,_}),(cr,false))
      equation
        b = expHasCref(e1,cr);
-     then (e1, true,(cr,b));
+     then (e1, true,if b then (cr,b) else inTpl);
 
     case(DAE.CALL(path = Absyn.IDENT(name = "sign"),expLst = {e1}),(cr,false))
      equation
        b = expHasCref(e1,cr);
-     then (e1, not b,(cr,b));
+     then (e1, not b,if b then (cr,b) else inTpl);
 
     case (_, (_,true)) then (inExp,false,inTpl);
     else (inExp, true, inTpl);
@@ -7212,23 +7228,23 @@ algorithm
   (outCref, outArg) := match(inCref, rel, iarg)
     local
       String name;
-      ComponentRef cr;
+      ComponentRef cr, cr_1;
       Type ty;
-      list<DAE.Subscript> subs;
+      list<DAE.Subscript> subs, subs_1;
       Argument arg;
 
     case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _, arg)
       equation
-        (subs,arg) = traverseExpTopDownSubs(subs, rel, arg);
-        (cr, arg) = traverseExpTopDownCrefHelper(cr, rel, arg);
+        (subs_1,arg) = traverseExpTopDownSubs(subs, rel, arg);
+        (cr_1, arg) = traverseExpTopDownCrefHelper(cr, rel, arg);
       then
-        (DAE.CREF_QUAL(name, ty, subs, cr), arg);
+        (if referenceEq(subs,subs_1) and referenceEq(cr,cr_1) then inCref else DAE.CREF_QUAL(name, ty, subs_1, cr_1), arg);
 
     case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _, arg)
       equation
-        (subs,arg) = traverseExpTopDownSubs(subs, rel, arg);
+        (subs_1,arg) = traverseExpTopDownSubs(subs, rel, arg);
       then
-        (DAE.CREF_IDENT(name, ty, subs), arg);
+        (if referenceEq(subs,subs_1) then inCref else DAE.CREF_IDENT(name, ty, subs_1), arg);
 
     case (DAE.WILD(), _, arg) then (inCref, arg);
   end match;
@@ -7284,7 +7300,7 @@ protected function traverseExpTopDownSubs
   input FuncType rel;
   input Argument iarg;
   output list<DAE.Subscript> outSubscript;
-  output Argument outArg;
+  output Argument arg=iarg;
 
   partial function FuncType
     input DAE.Exp inExp;
@@ -7295,41 +7311,48 @@ protected function traverseExpTopDownSubs
   end FuncType;
 
   replaceable type Argument subtypeof Any;
+protected
+  DAE.Exp exp;
+  DAE.Subscript nsub;
+  Boolean allEq=true;
+  DoubleEndedList<DAE.Subscript> delst;
+  Integer nEq=0;
 algorithm
-  (outSubscript, outArg) := match(inSubscript, rel, iarg)
-    local
-      DAE.Exp sub_exp;
-      list<DAE.Subscript> rest;
-      Argument arg;
-
-    case ({}, _, arg) then ({},arg);
-    case (DAE.WHOLEDIM()::rest, _, arg)
-      equation
-        (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
-      then (DAE.WHOLEDIM()::rest, arg);
-
-    case (DAE.SLICE(exp = sub_exp)::rest, _, arg)
-      equation
-        (sub_exp,arg) = traverseExpTopDown(sub_exp, rel, arg);
-        (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
-      then
-        (DAE.SLICE(sub_exp)::rest, arg);
-
-    case (DAE.INDEX(exp = sub_exp)::rest, _, arg)
-      equation
-        (sub_exp,arg) = traverseExpTopDown(sub_exp, rel, arg);
-        (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
-      then
-        (DAE.INDEX(sub_exp)::rest, arg);
-
-    case (DAE.WHOLE_NONEXP(exp = sub_exp)::rest, _, arg)
-      equation
-        (sub_exp,arg) = traverseExpTopDown(sub_exp, rel, arg);
-        (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
-      then
-        (DAE.WHOLE_NONEXP(sub_exp)::rest, arg);
-
-  end match;
+  for sub in inSubscript loop
+    nsub := match sub
+      case DAE.WHOLEDIM() then sub;
+      case DAE.SLICE()
+        algorithm
+          (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
+        then if referenceEq(sub.exp, exp) then sub else DAE.SLICE(exp);
+      case DAE.INDEX()
+        algorithm
+          (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
+        then if referenceEq(sub.exp, exp) then sub else DAE.INDEX(exp);
+      case DAE.WHOLE_NONEXP()
+        algorithm
+          (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
+        then if referenceEq(sub.exp, exp) then sub else DAE.WHOLE_NONEXP(exp);
+    end match;
+    // Preserve reference equality without any allocation if nothing changed
+    if (if allEq then not referenceEq(nsub, sub) else false) then
+      allEq:=false;
+      delst := DoubleEndedList.empty(nsub);
+      for elt in inSubscript loop
+        if nEq < 1 then
+          break;
+        end if;
+        DoubleEndedList.push_back(delst, elt);
+        nEq := nEq-1;
+      end for;
+    end if;
+    if allEq then
+      nEq := nEq + 1;
+    else
+      DoubleEndedList.push_back(delst, nsub);
+    end if;
+  end for;
+  outSubscript := if allEq then inSubscript else DoubleEndedList.toListAndClear(delst);
 end traverseExpTopDownSubs;
 
 /***************************************************/
@@ -10308,7 +10331,7 @@ algorithm
       DAE.ReductionIterator iter;
       DAE.ReductionIterators iters;
 
-    case ({},_,arg) then ({},arg);
+    case ({},_,arg) then (inIters,arg);
     case (iter::iters,_,arg)
       equation
         (iter, arg) = traverseReductionIteratorTopDown(iter, func, arg);
@@ -10350,11 +10373,9 @@ algorithm
 end traverseReductionIterator;
 
 protected function traverseReductionIterators
-  input DAE.ReductionIterators inIters;
+  input output DAE.ReductionIterators iters;
   input FuncExpType func;
-  input Type_a inArg;
-  output DAE.ReductionIterators outIters;
-  output Type_a outArg;
+  input output Type_a arg;
 
   partial function FuncExpType
     input DAE.Exp inExp;
@@ -10364,18 +10385,17 @@ protected function traverseReductionIterators
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outIters,outArg) := match (inIters,func,inArg)
+  (iters,arg) := match iters
     local
       DAE.ReductionIterator iter,iter1;
-      DAE.ReductionIterators iters,iters1;
-      Type_a arg;
+      DAE.ReductionIterators rest,iters1;
 
-    case ({},_,arg) then ({},arg);
-    case (iter::iters,_,arg)
+    case {} then (iters,arg);
+    case iter::rest
       equation
         (iter1, arg) = traverseReductionIterator(iter, func, arg);
-        (iters1, arg) = traverseReductionIterators(iters, func, arg);
-        iters = if referenceEq(iter,iter1) and referenceEq(iters,iters1) then inIters else (iter1::iters1);
+        (iters1, arg) = traverseReductionIterators(rest, func, arg);
+        iters = if referenceEq(iter,iter1) and referenceEq(rest,iters1) then iters else (iter1::iters1);
       then (iters, arg);
   end match;
 end traverseReductionIterators;
@@ -10476,30 +10496,30 @@ algorithm
       then c1+intMax(c2,c3);
     case DAE.CALL(path=Absyn.IDENT(name),expLst=exps,attr=DAE.CALL_ATTR(ty=tp,builtin=true))
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,0);
+        c1 = List.applyAndFold(exps,intAdd,complexity,0);
         c2 = complexityBuiltin(name,tp);
         /* TODO: Cost is based on type and size of inputs. Maybe even name for builtins :) */
       then c1+c2;
     case DAE.CALL(expLst=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,0);
+        c1 = List.applyAndFold(exps,intAdd,complexity,0);
         c2 = listLength(exps);
         /* TODO: Cost is based on type and size of inputs. Maybe even name for builtins :) */
       then c1+c2+25;
     case DAE.RECORD(exps=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,1);
+        c1 = List.applyAndFold(exps,intAdd,complexity,1);
       then c1;
     case DAE.PARTEVALFUNCTION()
       then complexityVeryBig; /* This should not be here anyway :) */
     case DAE.ARRAY(array=exps,ty=tp)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,if isArrayType(tp) then 0 else complexityAlloc);
+        c1 = List.applyAndFold(exps,intAdd,complexity,if isArrayType(tp) then 0 else complexityAlloc);
         c2 = listLength(exps);
       then c1+c2;
     case DAE.MATRIX(matrix=matrix as (exps::_))
       equation
-        c1 = List.fold(List.map(List.flatten(matrix),complexity),intAdd,complexityAlloc);
+        c1 = List.applyAndFold(List.flatten(matrix),intAdd,complexity,complexityAlloc);
         c2 = listLength(exps)*listLength(matrix);
       then c1 + c2;
     case DAE.RANGE(start=e1,stop=e2,step=NONE())
@@ -10508,13 +10528,13 @@ algorithm
       then complexityDimLarge+complexity(e1)+complexity(e2)+complexity(e3); /* TODO: Check type maybe? */
     case DAE.TUPLE(PR=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c1 = List.applyAndFold(exps,intAdd,complexity,complexityAlloc);
         c2 = listLength(exps);
       then c1+c2;
     case DAE.CAST(exp=e,ty=tp) then tpComplexity(tp)+complexity(e);
     case DAE.ASUB(exp=e,sub=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c1 = List.applyAndFold(exps,intAdd,complexity,complexityAlloc);
         c2 = listLength(exps);
         c3 = complexity(e);
       then c1+c2+c3;
@@ -10526,21 +10546,21 @@ algorithm
     case DAE.REDUCTION() then complexityVeryBig; /* TODO: We need a real traversal... */
     case DAE.LIST(valList=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c1 = List.applyAndFold(exps,intAdd,complexity,complexityAlloc);
         c2 = listLength(exps);
       then c1+c2+complexityAlloc;
     case DAE.CONS(car=e1,cdr=e2)
       then complexityAlloc+complexity(e1)+complexity(e2);
     case DAE.META_TUPLE(listExp=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c1 = List.applyAndFold(exps,intAdd,complexity,complexityAlloc);
         c2 = listLength(exps);
       then complexityAlloc+c1+c2;
     case DAE.META_OPTION(exp=NONE()) then 0;
     case DAE.META_OPTION(exp=SOME(e)) then complexity(e)+complexityAlloc;
     case DAE.METARECORDCALL(args=exps)
       equation
-        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c1 = List.applyAndFold(exps,intAdd,complexity,complexityAlloc);
         c2 = listLength(exps);
       then c1+c2+complexityAlloc;
     case DAE.MATCHEXPRESSION() then complexityVeryBig;
@@ -10576,7 +10596,7 @@ algorithm
       list<DAE.Dimension> dims;
     case DAE.T_ARRAY(dims=dims)
       equation
-        i = List.fold(List.map(dims,dimComplexity),intMul,1);
+        i = List.applyAndFold(dims,intMul,dimComplexity,1);
       then i;
     else 0;
   end match;

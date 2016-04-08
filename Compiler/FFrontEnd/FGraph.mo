@@ -680,7 +680,7 @@ public function openScope
 "Opening a new scope in the graph means adding a new node in the current scope."
   input Graph inGraph;
   input SCode.Encapsulated encapsulatedPrefix;
-  input Option<Name> inName;
+  input Name inName;
   input Option<FCore.ScopeType> inScopeType;
   output Graph outGraph;
 algorithm
@@ -693,7 +693,7 @@ algorithm
       Scope sc;
 
     // see if we have it as a class instance
-    case (g, _, SOME(n), _)
+    case (g, _, n, _)
       equation
         p = lastScopeRef(g);
         r = FNode.child(p, n);
@@ -704,7 +704,7 @@ algorithm
         g;
 
     // see if we have a child with the same name!
-    case (g, _, SOME(n), _)
+    case (g, _, n, _)
       equation
         p = lastScopeRef(g);
         r = FNode.child(p, n);
@@ -715,7 +715,7 @@ algorithm
         g;
 
     // else open a new scope!
-    case (g, _, SOME(n), _)
+    case (g, _, n, _)
       equation
         p = lastScopeRef(g);
         (g, no) = node(g, n, {p}, FCore.ND(inScopeType));
@@ -727,7 +727,7 @@ algorithm
 
     else
       equation
-        Error.addCompilerError("FGraph.openScope: failed to open new scope in scope: " + getGraphNameStr(inGraph) + " name: " + Util.stringOption(inName) + "\n");
+        Error.addCompilerError("FGraph.openScope: failed to open new scope in scope: " + getGraphNameStr(inGraph) + " name: " + inName + "\n");
       then
         fail();
 

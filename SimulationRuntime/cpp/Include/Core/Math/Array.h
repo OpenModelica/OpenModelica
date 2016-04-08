@@ -179,13 +179,24 @@ class CStrArray
       _c_str_array[i] = data[i].c_str();
   }
 
-
   /**
    * Convert to c_str array
    */
   operator const char**()
   {
     return &_c_str_array[0];
+  }
+
+  /**
+   * Write back to string array and free c strings if allocated
+   */
+  void writeBack(BaseArray<string>& stringArray)
+  {
+    string *data = stringArray.getData();
+    for(size_t i = 0; i < _c_str_array.size(); i++) {
+      data[i] = _c_str_array[i];
+      _ModelicaFreeStringIfAllocated(_c_str_array[i]);
+    }
   }
 
  private:
@@ -1534,6 +1545,16 @@ class DynArrayDim1 : public DynArray<T, 1>
     std::vector<size_t> dims;
     dims.push_back(size1);
     this->resize(dims);
+  }
+
+  DynArrayDim1(size_t size1, const T *data)
+    :DynArray<T, 1>()
+  {
+    std::vector<size_t> dims;
+    dims.push_back(size1);
+    this->resize(dims);
+    if (size1 > 0)
+      std::copy(data, data + size1, this->_array_data);
   }
 
   virtual ~DynArrayDim1()

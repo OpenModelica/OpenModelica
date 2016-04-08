@@ -1,15 +1,23 @@
+ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
+	EXTRA_LD_FLAGS = -Wl,--stack,16777216,--large-address-aware -L$(OMDEV)/lib/omniORB-4.2.0-mingw32/lib/x86_win32
+else
+	EXTRA_LD_FLAGS = -Wl,--stack,33554432 -L$(OMDEV)/lib/omniORB-4.2.0-mingw64/lib/x86_win32
+endif
+
 CC=gcc
 CXX=g++
-CFLAGS=-g -falign-functions
+override CFLAGS += -fno-ipa-pure-const
 TOP_DIR=../../
 OMHOME=$(OMBUILDDIR)
 LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -lOpenModelicaRuntimeC \
 -lModelicaExternalC -lm \
--lomantlr3 -lmico2313 -lregex -lwsock32 -llpsolve55 -luuid -lole32 $(GSLIB) -lws2_32 \
--lRpcrt4 -llapack-mingw -ltmglib-mingw -lblas-mingw -lf2c -fopenmp -lomcgc \
--lpthread $(FMILIB) -lshlwapi -liconv -lintl -lmetis \
--Wl,--stack,16777216,--large-address-aware,--enable-stdcall-fixup -lstdc++ -static-libgcc
+-lomantlr3 -lregex -lwsock32 -llpsolve55 -luuid -lole32 $(GSLIB) -lws2_32 \
+-lRpcrt4 -lopenblas -fopenmp -lomcgc -lpthread $(FMILIB) -lshlwapi -liconv -lintl -lmetis \
+-Wl,--enable-stdcall-fixup -lstdc++ -static-libgcc \
+-L../../3rdParty/lpsolve/build/lib \
+-lgfortran -ltre -lomniORB420_rt -lomnithread40_rt \
+$(EXTRA_LD_FLAGS)
 
 FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib
 GSLIB = -L$(TOP_DIR)/3rdParty/graphstream/gs-netstream/c++/ -lnetstream

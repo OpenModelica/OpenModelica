@@ -1550,6 +1550,37 @@ algorithm
   unit := UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeParams,units));
 end str2unitWithScaleFactor;
 
+protected function getDerivedUnitsHelper
+  input UnitAbsyn.Unit baseUnit;
+  input String baseUnitStr;
+  input list<String> inUnits;
+  output list<String> outUnits = {};
+protected
+  UnitAbsyn.Unit unit;
+  Boolean b;
+algorithm
+  for unitStr in inUnits loop
+    if boolNot(stringEq(baseUnitStr, unitStr)) then // skip same units
+	    unit := str2unit(unitStr, NONE());
+	    b := valueEq(baseUnit, unit);
+	    if b then
+	      outUnits := unitStr::outUnits;
+	    end if;
+	  end if;
+  end for;
+end getDerivedUnitsHelper;
+
+public function getDerivedUnits
+  input UnitAbsyn.Unit baseUnit;
+  input String baseUnitStr;
+  output list<String> derivedUnits;
+protected
+  list<String> unitSymbols;
+algorithm
+  unitSymbols := UnitParserExt.allUnitSymbols();
+  derivedUnits := getDerivedUnitsHelper(baseUnit, baseUnitStr, unitSymbols);
+end getDerivedUnits;
+
 /* Tests  */
 
 /* Test1:

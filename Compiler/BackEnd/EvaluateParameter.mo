@@ -74,7 +74,7 @@ protected import BaseHashTable;
 protected import BaseHashSet;
 protected import Ceval;
 protected import ComponentReference;
-protected import DAEUtil;
+protected import ElementSource;
 protected import Error;
 protected import EvaluateFunctions;
 protected import Expression;
@@ -586,7 +586,7 @@ algorithm
     case(_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.PEDANTIC);
-        info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+        info = ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
         msg = "Cannot evaluate Variable \"" + BackendDump.varString(var);
         Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);
       then
@@ -783,7 +783,7 @@ algorithm
     case (true,_,_,_,_,_) then e1;
     case (false,_,_,_,_,_)
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         (e2, (_,_,_)) = Expression.traverseExpBottomUp(e1, replaceCrefWithBindStartExp, (knvars,false,HashSet.emptyHashSet()));
         msg = ComponentReference.printComponentRefStr(cr) + " has unevaluateable fixed attribute value \"" + ExpressionDump.printExpStr(e) + "\" use values from start attribute(s) \"" + ExpressionDump.printExpStr(e2) + "\"";
         Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);

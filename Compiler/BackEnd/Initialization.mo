@@ -44,28 +44,30 @@ public import FCore;
 public import HashSet;
 public import Util;
 
-protected import Array;
-protected import BackendDAEEXT;
-protected import BackendDAEOptimize;
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVarTransform;
-protected import BackendVariable;
-protected import BaseHashSet;
-protected import CheckModel;
-protected import ComponentReference;
-protected import DAEUtil;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import Flags;
-protected import List;
-protected import Matching;
-protected import MetaModelica.Dangerous;
-protected import Sorting;
-protected import SimCodeFunctionUtil;
+protected
+import Array;
+import BackendDAEEXT;
+import BackendDAEOptimize;
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVarTransform;
+import BackendVariable;
+import BaseHashSet;
+import CheckModel;
+import ComponentReference;
+import DoubleEndedList;
+import ElementSource;
+import Error;
+import ExecStat.execStat;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import Flags;
+import List;
+import Matching;
+import MetaModelica.Dangerous;
+import Sorting;
 
 // =============================================================================
 // section for all public functions
@@ -110,16 +112,16 @@ algorithm
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpBackendDAE(dae, "inlineWhenForInitialization");
     //end if;
-    SimCodeFunctionUtil.execStat("inlineWhenForInitialization (initialization)");
+    execStat("inlineWhenForInitialization (initialization)");
 
     (initVars, outPrimaryParameters, outAllPrimaryParameters) := selectInitializationVariablesDAE(dae);
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpVariables(initVars, "selected initialization variables");
     //end if;
-    SimCodeFunctionUtil.execStat("selectInitializationVariablesDAE (initialization)");
+    execStat("selectInitializationVariablesDAE (initialization)");
 
     hs := collectPreVariables(dae);
-    SimCodeFunctionUtil.execStat("collectPreVariables (initialization)");
+    execStat("collectPreVariables (initialization)");
 
     // collect vars and eqns for initial system
     vars := BackendVariable.emptyVars();
@@ -133,15 +135,15 @@ algorithm
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpEquationArray(eqns, "initial equations");
     //end if;
-    SimCodeFunctionUtil.execStat("collectInitialEqns (initialization)");
+    execStat("collectInitialEqns (initialization)");
 
     ((vars, fixvars, eqns, reeqns, _, _)) := List.fold(dae.eqs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs, outAllPrimaryParameters)));
     ((eqns, reeqns)) := BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
-    SimCodeFunctionUtil.execStat("collectInitialBindings (initialization)");
+    execStat("collectInitialBindings (initialization)");
 
     // replace initial(), sample(...), delay(...) and homotopy(...)
     useHomotopy := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, simplifyInitialFunctions, false);
-    SimCodeFunctionUtil.execStat("simplifyInitialFunctions (initialization)");
+    execStat("simplifyInitialFunctions (initialization)");
 
     vars := BackendVariable.rehashVariables(vars);
     fixvars := BackendVariable.rehashVariables(fixvars);
@@ -150,13 +152,13 @@ algorithm
     shared := BackendDAEUtil.setSharedKnVars(shared, fixvars);
     shared := BackendDAEUtil.setSharedOptimica(shared, dae.shared.constraints, dae.shared.classAttrs);
     shared := BackendDAEUtil.setSharedFunctionTree(shared, dae.shared.functionTree);
-    SimCodeFunctionUtil.execStat("setup shared object (initialization)");
+    execStat("setup shared object (initialization)");
 
     // generate initial system and pre-balance it
     initsyst := BackendDAEUtil.createEqSystem(vars, eqns);
     initsyst := BackendDAEUtil.setEqSystRemovedEqns(initsyst, reeqns);
     (initsyst, dumpVars) := preBalanceInitialSystem(initsyst);
-    SimCodeFunctionUtil.execStat("preBalanceInitialSystem (initialization)");
+    execStat("preBalanceInitialSystem (initialization)");
 
     // split the initial system into independend subsystems
     initdae := BackendDAE.DAE({initsyst}, shared);
@@ -167,7 +169,7 @@ algorithm
 
     (systs, shared) := BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
     initdae := BackendDAE.DAE(systs, shared);
-    SimCodeFunctionUtil.execStat("partitionIndependentBlocks (initialization)");
+    execStat("partitionIndependentBlocks (initialization)");
 
     if Flags.isSet(Flags.OPT_DAE_DUMP) then
       print(stringAppendList({"\npartitioned initial system:\n\n"}));
@@ -178,7 +180,7 @@ algorithm
     // fix over- and under-constrained subsystems
     (initdae, dumpVars2, removedEqns) := analyzeInitialSystem(initdae, initVars);
     dumpVars := listAppend(dumpVars, dumpVars2);
-    SimCodeFunctionUtil.execStat("analyzeInitialSystem (initialization)");
+    execStat("analyzeInitialSystem (initialization)");
 
     // some debug prints
     if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
@@ -187,7 +189,7 @@ algorithm
 
     // now let's solve the system!
     initdae := BackendDAEUtil.mapEqSystem(initdae, solveInitialSystemEqSystem);
-    SimCodeFunctionUtil.execStat("solveInitialSystemEqSystem (initialization)");
+    execStat("solveInitialSystemEqSystem (initialization)");
 
     // solve system
     initdae := BackendDAEUtil.transformBackendDAE(initdae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
@@ -1113,23 +1115,28 @@ protected
   BackendDAE.BackendDAE dae;
   BackendDAE.EqSystem syst;
   list<BackendDAE.EqSystem> eqs;
+  DoubleEndedList<BackendDAE.Var> dumpVars;
+  DoubleEndedList<BackendDAE.Equation> removedEqns;
 algorithm
   // filter empty systems
   eqs := {};
   outRemovedEqns := {};
+  dumpVars := DoubleEndedList.fromList({});
+  removedEqns := DoubleEndedList.fromList({});
   for syst in inInitDAE.eqs loop
     if BackendDAEUtil.nonEmptySystem(syst) then
       eqs := syst::eqs;
     else
-      outRemovedEqns := List.append_reverse(BackendEquation.equationList(syst.orderedEqs), outRemovedEqns);
-      outRemovedEqns := List.append_reverse(BackendEquation.equationList(syst.removedEqs), outRemovedEqns);
+      DoubleEndedList.push_list_back(removedEqns, BackendEquation.equationList(syst.orderedEqs));
+      DoubleEndedList.push_list_back(removedEqns, BackendEquation.equationList(syst.removedEqs));
     end if;
   end for;
   dae := BackendDAE.DAE(eqs, inInitDAE.shared);
-  outRemovedEqns := Dangerous.listReverseInPlace(outRemovedEqns);
 
-  //SimCodeFunctionUtil.execStat("reset analyzeInitialSystem (initialization)");
-  (outDAE, (_, outDumpVars, outRemovedEqns)) := BackendDAEUtil.mapEqSystemAndFold(dae, fixInitialSystem, (inInitVars, {}, outRemovedEqns));
+  //execStat("reset analyzeInitialSystem (initialization)");
+  outDAE := BackendDAEUtil.mapEqSystemAndFold(dae, function fixInitialSystem(initVars=inInitVars, dumpVars=dumpVars, removedEqns=removedEqns), 0);
+  outRemovedEqns := DoubleEndedList.toListAndClear(removedEqns);
+  outDumpVars := DoubleEndedList.toListAndClear(dumpVars);
 end analyzeInitialSystem;
 
 protected function getInitEqIndex
@@ -1149,15 +1156,16 @@ protected function fixInitialSystem "author: lochel
   This function handles under-, over-, and mixed-determined systems with a given index."
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.Shared inShared;
-  input tuple<BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> inTpl;
   output BackendDAE.EqSystem outEqSystem;
   output BackendDAE.Shared outShared = inShared;
-  output tuple<BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> outTpl;
+  input output Integer dummy;
+  input BackendDAE.Variables initVars;
+  input DoubleEndedList<BackendDAE.Var> dumpVars;
+  input DoubleEndedList<BackendDAE.Equation> removedEqns;
 protected
   BackendDAE.EquationArray eqns2;
-  BackendDAE.Variables initVars;
-  list<BackendDAE.Var> dumpVars, dumpVars2;
-  list<BackendDAE.Equation> removedEqns, removedEqns2;
+  list<BackendDAE.Var> dumpVars2;
+  list<BackendDAE.Equation> removedEqns2;
   Integer nVars, nEqns, nInitEqs, nAddEqs, nAddVars;
   list<Integer> stateIndices, range, initEqsIndices, redundantEqns;
   list<BackendDAE.Var> initVarList;
@@ -1174,8 +1182,6 @@ algorithm
   for index in 0:maxMixedDeterminedIndex loop
     //print("index-" + intString(index) + " start\n");
 
-    ((initVars, dumpVars, removedEqns)) := inTpl;
-
     // nVars = nEqns
     nVars := BackendVariable.varsSize(inEqSystem.orderedVars);
     nEqns := BackendDAEUtil.equationSize(inEqSystem.orderedEqs);
@@ -1190,13 +1196,6 @@ algorithm
     // get state-index list
     stateIndices := BackendVariable.getVarIndexFromVariablesIndexInFirstSet(inEqSystem.orderedVars, initVars);
 
-    // get initial equation-index list
-    //(initEqs, _) := List.extractOnTrue(BackendEquation.equationList(inEqSystem.orderedEqs), BackendEquation.isInitialEquation);
-    //nInitEqs := BackendDAEUtil.equationSize(BackendEquation.listEquation(initEqs));
-    ((_, initEqsIndices)) := List.fold(BackendEquation.equationList(inEqSystem.orderedEqs), getInitEqIndex, (1, {}));
-    nInitEqs := listLength(initEqsIndices);
-    //print("{" + stringDelimitList(List.map(initEqsIndices, intString), ",") + "}\n");
-
     // modify incidence matrix for under-determined systems
     nAddEqs := intMax(nVars-nEqns + index, index);
     //print("nAddEqs: " + intString(nAddEqs) + "\n");
@@ -1205,7 +1204,7 @@ algorithm
     // modify incidence matrix for over-determined systems
     nAddVars := intMax(nEqns-nVars + index, index);
     //print("nAddVars: " + intString(nAddVars) + "\n");
-    m := fixOverDeterminedSystem(m, initEqsIndices, nVars, nAddVars);
+    m := fixOverDeterminedSystem(m, inEqSystem.orderedEqs, nVars, nAddVars);
 
     // match the system (nVars+nAddVars == nEqns+nAddEqs)
     //ass1 := arrayCreate(nVars+nAddVars, -1);
@@ -1239,7 +1238,7 @@ algorithm
         //BackendDump.dumpEquationList(removedEqns2, "removed equations");
         eqns2 := BackendEquation.equationDelete(inEqSystem.orderedEqs, redundantEqns);
         //BackendDump.dumpEquationArray(eqns2, "remaining equations");
-        removedEqns := listAppend(removedEqns, removedEqns2);
+        DoubleEndedList.push_list_back(removedEqns, removedEqns2);
       else
         eqns2 := inEqSystem.orderedEqs;
       end if;
@@ -1254,13 +1253,12 @@ algorithm
         initVarList := List.map1r(range, BackendVariable.getVarAt, inEqSystem.orderedVars);
         (eqns2, dumpVars2) := addStartValueEquations(initVarList, eqns2, {});
         //BackendDump.dumpEquationArray(eqns2, "remaining equations");
-        dumpVars := listAppend(dumpVars, dumpVars2);
+        DoubleEndedList.push_list_back(dumpVars, dumpVars2);
       end if;
 
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
       //print("index-" + intString(index) + " ende\n");
-      outTpl := ((initVars, dumpVars, removedEqns));
-      //SimCodeFunctionUtil.execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
+      //execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
       return;
     end if;
     //print("index-" + intString(index) + " ende\n");
@@ -1304,12 +1302,12 @@ end squareIncidenceMatrix1;
 
 protected function fixOverDeterminedSystem "author: lochel"
   input BackendDAE.IncidenceMatrix inM;
-  input list<Integer> inInitEqnIndices;
+  input BackendDAE.EquationArray orderedEqs;
   input Integer inNVars;
   input Integer inNAddVars;
   output BackendDAE.IncidenceMatrix outM;
 protected
-  list<Integer> newVarIndices;
+  list<Integer> newVarIndices, initEqsIndices;
 algorithm
   if inNAddVars < 0 then
     Error.addInternalError("function fixOverDeterminedSystem failed due to invalid input", sourceInfo());
@@ -1317,8 +1315,9 @@ algorithm
   end if;
 
   if inNAddVars > 0 then
+    (_, initEqsIndices) := List.fold(BackendEquation.equationList(orderedEqs), getInitEqIndex, (1, {})); // TODO: Bad scaling. Can be done better. But only affects overdetermined systems
     newVarIndices := List.intRange2(inNVars+1, inNVars+inNAddVars);
-    outM := List.fold1(inInitEqnIndices, squareIncidenceMatrix2, newVarIndices, inM);
+    outM := List.fold1(initEqsIndices, squareIncidenceMatrix2, newVarIndices, inM);
   else
     outM := inM;
   end if;
@@ -2114,7 +2113,7 @@ algorithm
       var = BackendVariable.setBindExp(var, SOME(startExp));
       var = BackendVariable.setVarFixed(var, true);
 
-      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+      info = ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str}, info);
 
       //vars = BackendVariable.addVar(var, vars);
@@ -2129,7 +2128,7 @@ algorithm
 
       s = ComponentReference.printComponentRefStr(cr);
       str = ExpressionDump.printExpStr(bindExp);
-      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+      info = ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, s, str}, info);
 
       eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
@@ -2151,7 +2150,7 @@ algorithm
 
       s = ComponentReference.printComponentRefStr(cr);
       str = ExpressionDump.printExpStr(bindExp);
-      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+      info = ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING_31, {s, s, str}, info);
 
       vars = BackendVariable.addVar(var, vars);
@@ -2170,7 +2169,7 @@ algorithm
       s = ComponentReference.printComponentRefStr(cr);
       str = ExpressionDump.printExpStr(bindExp);
       sv = ExpressionDump.printExpStr(startExp);
-      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+      info = ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING_AND_START_VALUE_31, {s, sv, s, str}, info);
 
       vars = BackendVariable.addVar(var, vars);

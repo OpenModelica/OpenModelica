@@ -70,12 +70,10 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, dummy), '<%fileNamePrefixTmpDir%>_functions.c')
   let()= textFile(externalFunctionIncludes(sc.externalFunctionIncludes), '<%fileNamePrefixTmpDir%>_includes.h')
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefixTmpDir%>_records.c')
-  let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefixTmpDir%>_model.h')
+  let()= textFile(simulationHeaderFile(simCode), '<%fileNamePrefixTmpDir%>_model.h')
 
-  let _ = generateSimulationFiles(simCode,guid,fileNamePrefixTmpDir,true)
+  let _ = generateSimulationFiles(simCode,guid,fileNamePrefixTmpDir)
 
-  // let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefixTmpDir%>_init.xml')
-  // let x = covertTextFileToCLiteral('<%fileNamePrefixTmpDir%>_init.xml','<%fileNamePrefixTmpDir%>_init.c')
   let()= textFile(simulationInitFunction(simCode,guid), '<%fileNamePrefixTmpDir%>_init_fmu.c')
   let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion), '<%fileNamePrefixTmpDir%>_FMU.c')
   let()= textFile(fmuModelDescriptionFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefix%>.fmutmp/modelDescription.xml')
@@ -85,6 +83,53 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(fmuSourceMakefile(simCode,FMUVersion), '<%fileNamePrefix%>_FMU.makefile')
   "" // Return empty result since result written to files directly
 end translateModel;
+
+/* public */ template generateSimulationFiles(SimCode simCode, String guid, String modelNamePrefix)
+ "Generates code in different C files for the simulation target.
+  To make the compilation faster we split the simulation files into several
+  used in Compiler/Template/CodegenFMU.tpl"
+ ::=
+  match simCode
+    case simCode as SIMCODE(__) then
+     // external objects
+     let()= textFileConvertLines(simulationFile_exo(simCode), '<%modelNamePrefix%>_01exo.c')
+     // non-linear systems
+     let()= textFileConvertLines(simulationFile_nls(simCode), '<%modelNamePrefix%>_02nls.c')
+     // linear systems
+     let()= textFileConvertLines(simulationFile_lsy(simCode), '<%modelNamePrefix%>_03lsy.c')
+     // state set
+     let()= textFileConvertLines(simulationFile_set(simCode), '<%modelNamePrefix%>_04set.c')
+     // events: sample, zero crossings, relations
+     let()= textFileConvertLines(simulationFile_evt(simCode), '<%modelNamePrefix%>_05evt.c')
+     // initialization
+     let()= textFileConvertLines(simulationFile_inz(simCode), '<%modelNamePrefix%>_06inz.c')
+     // delay
+     let()= textFileConvertLines(simulationFile_dly(simCode), '<%modelNamePrefix%>_07dly.c')
+     // update bound start values, update bound parameters
+     let()= textFileConvertLines(simulationFile_bnd(simCode), '<%modelNamePrefix%>_08bnd.c')
+     // algebraic
+     let()= textFileConvertLines(simulationFile_alg(simCode), '<%modelNamePrefix%>_09alg.c')
+     // asserts
+     let()= textFileConvertLines(simulationFile_asr(simCode), '<%modelNamePrefix%>_10asr.c')
+     // mixed systems
+     let &mixheader = buffer ""
+     let()= textFileConvertLines(simulationFile_mix(simCode,&mixheader), '<%modelNamePrefix%>_11mix.c')
+     let()= textFile(&mixheader, '<%modelNamePrefix%>_11mix.h')
+     // jacobians
+     let()= textFileConvertLines(simulationFile_jac(simCode), '<%modelNamePrefix%>_12jac.c')
+     let()= textFile(simulationFile_jac_header(simCode), '<%modelNamePrefix%>_12jac.h')
+     // optimization
+     let()= textFileConvertLines(simulationFile_opt(simCode), '<%modelNamePrefix%>_13opt.c')
+     let()= textFile(simulationFile_opt_header(simCode), '<%modelNamePrefix%>_13opt.h')
+     // linearization
+     let()= textFileConvertLines(simulationFile_lnz(simCode), '<%modelNamePrefix%>_14lnz.c')
+     // synchronous
+     let()= textFileConvertLines(simulationFile_syn(simCode), '<%modelNamePrefix%>_15syn.c')
+     // main file
+     let()= textFileConvertLines(simulationFile(simCode,guid,true), '<%modelNamePrefix%>.c')
+     ""
+  end match
+end generateSimulationFiles;
 
 template fmuModelDescriptionFile(SimCode simCode, String guid, String FMUVersion, String FMUType)
  "Generates code for ModelDescription file for FMU target."
@@ -984,18 +1029,22 @@ template getPlatformString2(String modelNamePrefix, String platform, String file
 ::=
 let fmudirname = '<%fileNamePrefix%>.fmutmp'
 match platform
-  case "win32" then
+  case "win32"
+  case "win64" then
   <<
   <%fileNamePrefix%>_FMU: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES)
-  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(MAINOBJ) $(RUNTIMEFILES) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -Wl,-Bstatic -lf2c -Wl,-Bdynamic -llis -Wl,--kill-at
+  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(MAINOBJ) $(RUNTIMEFILES) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -llis -Wl,--kill-at
   <%\t%>mkdir.exe -p ../binaries/<%platform%>
   <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>$(DLLEXT) --output-lib <%fileNamePrefix%>.lib --kill-at
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>.lib <%fileNamePrefix%>_FMU.libs ../binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/libexpat.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/pthreadGC2.dll ../binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/libgfortran-3.dll ../binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/libsundials_kinsol.dll ../binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/libsundials_nvecserial.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libopenblas.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libquadmath-0.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libwinpthread-1.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libgcc_s_*.dll ../binaries/<%platform%>/
   <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES)
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fileNamePrefix%>.fmu *
 
@@ -1044,7 +1093,7 @@ match getGeneralTarget(target)
 case "msvc" then
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-  let dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
+  let dirExtra = if modelInfo.directory then '/LIBPATH:"<%modelInfo.directory%>"' //else ""
   let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
   let libsPos1 = if not dirExtra then libsStr //else ""
   let libsPos2 = if dirExtra then libsStr // else ""
@@ -1054,7 +1103,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
        case "inline-euler" then "-D_OMC_INLINE_EULER"
        case "inline-rungekutta" then "-D_OMC_INLINE_RK"%>'
   let compilecmds = getPlatformString2(modelNamePrefix(simCode), makefileParams.platform, fileNamePrefix, dirExtra, libsPos1, libsPos2, makefileParams.omhome, FMUVersion)
-  let mkdir = match makefileParams.platform case "win32" then '"mkdir.exe"' else 'mkdir'
+  let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
   <<
   # Makefile generated by OpenModelica
 
@@ -1074,10 +1123,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS=/Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" <%if isFMIVersion20(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL'%>
+  CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" <%if isFMIVersion20(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL'%>
 
   # /ZI enable Edit and Continue debug info
-  CDFLAGS = /ZI
+  CDFLAGS=/ZI
 
   # /MD - link with MSVCRT.LIB
   # /link - [linker options and libraries]
@@ -1162,7 +1211,7 @@ template fmuSourceMakefile(SimCode simCode, String FMUVersion)
   match simCode
   case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
   let includedir = '<%fileNamePrefix%>.fmutmp/sources/include/'
-  let mkdir = match makefileParams.platform case "win32" then '"mkdir.exe"' else 'mkdir'
+  let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
   <<
   # FIXME: before you push into master...
   RUNTIMEDIR=<%makefileParams.omhome%>/include/omc/c/

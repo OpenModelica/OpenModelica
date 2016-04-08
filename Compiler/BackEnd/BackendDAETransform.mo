@@ -51,6 +51,7 @@ protected import BackendVariable;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
+protected import ElementSource;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -252,7 +253,7 @@ algorithm
       var_lst = List.map(var_varindx_lst, Util.tuple21);
       crlst = List.map(var_lst,BackendVariable.varCref);
        // its only an array equation if all the solved variables belong to an array. Otherwise we have to handle it as a non-linear system
-      b1 =  List.fold(List.map(crlst,ComponentReference.isArrayElement),boolAnd,true);
+      b1 =  List.applyAndFold(crlst,boolAnd,ComponentReference.isArrayElement,true);
       if not b1 then
         expLst = List.map(crlst, Expression.crefExp);
         true = List.exist1(inEqnLst,crefsAreArray,expLst);
@@ -379,7 +380,7 @@ algorithm
   if info < 0 then
     // info < 0:  if INFO = -i, the i-th argument had an illegal value
     // this case should never happen
-    varnames := stringDelimitList(List.map(List.map(inVars, BackendVariable.varCref), ComponentReference.printComponentRefStr), " ;\n  ");
+    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReference.printComponentRefStr), " ;\n  ");
     eqns := BackendEquation.listEquation(inEqns);
     vars := BackendVariable.listVar1(inVars);
     funcs := BackendDAEUtil.getFunctions(inShared);
@@ -397,7 +398,7 @@ algorithm
     //            singular, so the solution could not be computed.
     varname := ComponentReference.printComponentRefStr(BackendVariable.varCref(listGet(inVars, info)));
     infoStr := intString(info);
-    varnames := stringDelimitList(List.map(List.map(inVars, BackendVariable.varCref), ComponentReference.printComponentRefStr), " ;\n  ");
+    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReference.printComponentRefStr), " ;\n  ");
     eqns := BackendEquation.listEquation(inEqns);
     vars := BackendVariable.listVar1(inVars);
     funcs := BackendDAEUtil.getFunctions(inShared);
@@ -596,38 +597,38 @@ algorithm
     case BackendDAE.EQUATION(exp = e1, scalar = e2, source = source, attr=eqAttr) equation
       (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
       (e2_1, (ops, ext_arg_2)) = func(e2, (ops, ext_arg_1));
-      source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
+      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.EQUATION(e1_1, e2_1, source, eqAttr), ext_arg_2);
 
     // Array equation
     case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left = e1, right = e2, source = source, attr=eqAttr) equation
       (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
       (e2_1, (ops, ext_arg_2)) = func(e2, (ops, ext_arg_1));
-      source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
+      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.ARRAY_EQUATION(dimSize, e1_1, e2_1, source, eqAttr), ext_arg_2);
 
     case BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2, source=source, attr=eqAttr) equation
       e1 = Expression.crefExp(cr);
       (DAE.CREF(cr1, _), (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
       (e2_1, (ops, _)) = func(e2, (ops, ext_arg_1));
-      source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
+      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.SOLVED_EQUATION(cr1, e2_1, source, eqAttr), ext_arg_1);
 
     case BackendDAE.RESIDUAL_EQUATION(exp = e1, source=source, attr=eqAttr) equation
       (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
-      source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
+      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.RESIDUAL_EQUATION(e1_1, source, eqAttr), ext_arg_1);
 
     // Algorithms
     case BackendDAE.ALGORITHM(size = size, alg=DAE.ALGORITHM_STMTS(statementLst = statementLst), source = source, expand = crefExpand, attr=eqAttr) equation
       (statementLst, (ops, ext_arg_1)) = DAEUtil.traverseDAEEquationsStmts(statementLst, func, ({}, inTypeA));
-      source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
+      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(statementLst), source, crefExpand, eqAttr), ext_arg_1);
 
     case BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart=oelsepart), source = source, attr=eqAttr) equation
       (whenStmtLst, ext_arg_1) = traverseBackendDAEExpsWhenOperatorWithSymbolicOperation(whenStmtLst, func, inTypeA);
       (cond, (ops, ext_arg_2)) = func(cond, ({}, ext_arg_1));
-      source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
+      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
       if isSome(oelsepart) then
         SOME(elsepart) = oelsepart;
         (BackendDAE.WHEN_EQUATION(whenEquation=elsepartRes, source=source), ext_arg_3) = traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(size, elsepart, source, eqAttr), func, ext_arg_2);
@@ -642,12 +643,12 @@ algorithm
     case BackendDAE.COMPLEX_EQUATION(size=size, left = e1, right = e2, source = source, attr=eqAttr) equation
       (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
       (e2_1, (ops, ext_arg_2)) = func(e2, (ops, ext_arg_1));
-      source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
+      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.COMPLEX_EQUATION(size, e1_1, e2_1, source, eqAttr), ext_arg_2);
 
     case BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, attr=eqAttr) equation
       (expl, (ops, ext_arg_1)) = traverseBackendDAEExpsLstEqnWithSymbolicOperation(expl, func, ({}, inTypeA), {});
-      source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
+      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
       (eqnslst, ext_arg_1) = traverseBackendDAEExpsEqnLstLstWithSymbolicOperation(eqnslst, func, ext_arg_1, {});
       (eqns, ext_arg_1) = traverseBackendDAEExpsEqnLstWithSymbolicOperation(eqns, func, ext_arg_1, {});
     then (BackendDAE.IF_EQUATION(expl, eqnslst, eqns, source, eqAttr), ext_arg_1);
@@ -776,23 +777,23 @@ algorithm
       case BackendDAE.ASSIGN(cr, cond, src) equation
         (cond, (ops, outArg)) = func(cond, ({}, inArg));
         (DAE.CREF(componentRef = cr), (ops, outArg)) = func(Expression.crefExp(cr), (ops,outArg));
-        src = List.foldr(ops, DAEUtil.addSymbolicTransformation, src);
+        src = List.foldr(ops, ElementSource.addSymbolicTransformation, src);
       then BackendDAE.ASSIGN(cr, cond, src);
 
       case BackendDAE.REINIT(cr, cond, src) equation
         (cond, (ops, outArg)) = func(cond, ({}, inArg));
         (DAE.CREF(componentRef = cr), (ops, outArg)) = func(Expression.crefExp(cr), (ops,outArg));
-        src = List.foldr(ops, DAEUtil.addSymbolicTransformation, src);
+        src = List.foldr(ops, ElementSource.addSymbolicTransformation, src);
       then BackendDAE.REINIT(cr, cond, src);
 
       case BackendDAE.ASSERT(cond, msg, level, src) equation
         (cond, (ops, outArg)) = func(cond, ({}, inArg));
-        src = List.foldr(ops, DAEUtil.addSymbolicTransformation, src);
+        src = List.foldr(ops, ElementSource.addSymbolicTransformation, src);
       then BackendDAE.ASSERT(cond, msg, level, src);
 
       case BackendDAE.NORETCALL(exp, src) equation
         (exp, (ops, outArg)) = Expression.traverseExpBottomUp(exp, func, ({}, outArg));
-        src = List.foldr(ops, DAEUtil.addSymbolicTransformation, src);
+        src = List.foldr(ops, ElementSource.addSymbolicTransformation, src);
       then BackendDAE.NORETCALL(exp, src);
 
       else rs;

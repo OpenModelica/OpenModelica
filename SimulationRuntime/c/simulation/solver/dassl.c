@@ -53,22 +53,6 @@
 extern "C" {
 #endif
 
-static const char *dasslJacobianMethodStr[DASSL_JAC_MAX] = {"unknown",
-                                                "coloredNumerical",
-                                                "coloredSymbolical",
-                                                "internalNumerical",
-                                                "numerical",
-                                                "symbolical"
-                                                };
-
-static const char *dasslJacobianMethodDescStr[DASSL_JAC_MAX] = {"unknown",
-                                                       "colored numerical jacobian - default.",
-                                                       "colored symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization.",
-                                                       "internal numerical jacobian.",
-                                                       "numerical jacobian.",
-                                                       "symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization."
-                                                      };
-
 /* experimental flag for SKF TLM Master Solver Interface
  *  - it's used with -noEquidistantTimeGrid flag.
  *  - it's set to 1 if the continuous system is evaluated
@@ -159,10 +143,6 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   dasslData->rtol = (double*) malloc(data->modelData->nStates*sizeof(double));
   dasslData->info = (int*) calloc(infoLength, sizeof(int));
   assertStreamPrint(threadData, 0 != dasslData->info,"out of memory");
-  dasslData->dasslStatistics = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
-  assertStreamPrint(threadData, 0 != dasslData->dasslStatistics,"out of memory");
-  dasslData->dasslStatisticsTmp = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
-  assertStreamPrint(threadData, 0 != dasslData->dasslStatisticsTmp,"out of memory");
 
   dasslData->idid = 0;
 
@@ -280,46 +260,46 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
      infoStreamPrint(LOG_SOLVER, 0, "as the output frequency time step control is used: %f", dasslData->dasslStepsTime);
   }
 
-  /* if FLAG_DASSL_JACOBIAN is set, choose dassl jacobian calculation method */
-  if (omc_flag[FLAG_DASSL_JACOBIAN])
+  /* if FLAG_JACOBIAN is set, choose dassl jacobian calculation method */
+  if (omc_flag[FLAG_JACOBIAN])
   {
-    for(i=1; i< DASSL_JAC_MAX;i++)
+    for(i=1; i< JAC_MAX;i++)
     {
-      if(!strcmp((const char*)omc_flagValue[FLAG_DASSL_JACOBIAN], dasslJacobianMethodStr[i])){
+      if(!strcmp((const char*)omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[i])){
         dasslData->dasslJacobian = (int)i;
         break;
       }
     }
-    if(dasslData->dasslJacobian == DASSL_JAC_UNKNOWN)
+    if(dasslData->dasslJacobian == JAC_UNKNOWN)
     {
       if (ACTIVE_WARNING_STREAM(LOG_SOLVER))
       {
-        warningStreamPrint(LOG_SOLVER, 1, "unrecognized jacobian calculation method %s, current options are:", (const char*)omc_flagValue[FLAG_DASSL_JACOBIAN]);
-        for(i=1; i < DASSL_JAC_MAX; ++i)
+        warningStreamPrint(LOG_SOLVER, 1, "unrecognized jacobian calculation method %s, current options are:", (const char*)omc_flagValue[FLAG_JACOBIAN]);
+        for(i=1; i < JAC_MAX; ++i)
         {
-          warningStreamPrint(LOG_SOLVER, 0, "%-15s [%s]", dasslJacobianMethodStr[i], dasslJacobianMethodDescStr[i]);
+          warningStreamPrint(LOG_SOLVER, 0, "%-15s [%s]", JACOBIAN_METHOD[i], JACOBIAN_METHOD_DESC[i]);
         }
         messageClose(LOG_SOLVER);
       }
-      throwStreamPrint(threadData,"unrecognized jacobian calculation method %s", (const char*)omc_flagValue[FLAG_DASSL_JACOBIAN]);
+      throwStreamPrint(threadData,"unrecognized jacobian calculation method %s", (const char*)omc_flagValue[FLAG_JACOBIAN]);
     }
   /* default case colored numerical jacobian */
   }
   else
   {
-    dasslData->dasslJacobian = DASSL_COLOREDNUMJAC;
+    dasslData->dasslJacobian = COLOREDNUMJAC;
   }
 
 
   /* selects the calculation method of the jacobian */
-  if(dasslData->dasslJacobian == DASSL_COLOREDNUMJAC ||
-     dasslData->dasslJacobian == DASSL_COLOREDSYMJAC ||
-     dasslData->dasslJacobian == DASSL_SYMJAC)
+  if(dasslData->dasslJacobian == COLOREDNUMJAC ||
+     dasslData->dasslJacobian == COLOREDSYMJAC ||
+     dasslData->dasslJacobian == SYMJAC)
   {
     if (data->callback->initialAnalyticJacobianA(data, threadData))
     {
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
-      dasslData->dasslJacobian = DASSL_INTERNALNUMJAC;
+      dasslData->dasslJacobian = INTERNALNUMJAC;
     }
   }
   /* default use a user sub-routine for JAC */
@@ -327,31 +307,30 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
 
   /* set up the appropriate function pointer */
   switch (dasslData->dasslJacobian){
-    case DASSL_COLOREDNUMJAC:
+    case COLOREDNUMJAC:
       data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern.maxColors;
       dasslData->jacobianFunction =  JacobianOwnNumColored;
       break;
-    case DASSL_COLOREDSYMJAC:
+    case COLOREDSYMJAC:
       data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern.maxColors;
       dasslData->jacobianFunction =  JacobianSymbolicColored;
       break;
-    case DASSL_SYMJAC:
+    case SYMJAC:
       dasslData->jacobianFunction =  JacobianSymbolic;
       break;
-    case DASSL_NUMJAC:
+    case NUMJAC:
       dasslData->jacobianFunction =  JacobianOwnNum;
       break;
-    case DASSL_INTERNALNUMJAC:
+    case INTERNALNUMJAC:
       dasslData->jacobianFunction =  dummy_Jacobian;
       /* no user sub-routine for JAC */
       dasslData->info[4] = 0;
       break;
     default:
-      throwStreamPrint(threadData,"unrecognized jacobian calculation method %s", (const char*)omc_flagValue[FLAG_DASSL_JACOBIAN]);
+      throwStreamPrint(threadData,"unrecognized jacobian calculation method %s", (const char*)omc_flagValue[FLAG_JACOBIAN]);
       break;
   }
-  infoStreamPrint(LOG_SOLVER, 0, "jacobian is calculated by %s", dasslJacobianMethodDescStr[dasslData->dasslJacobian]);
-
+  infoStreamPrint(LOG_SOLVER, 0, "jacobian is calculated by %s", JACOBIAN_METHOD_DESC[dasslData->dasslJacobian]);
 
   /* if FLAG_DASSL_NO_ROOTFINDING is set, choose dassl with out internal root finding */
   if(omc_flag[FLAG_DASSL_NO_ROOTFINDING])
@@ -407,8 +386,6 @@ int dassl_deinitial(DASSL_DATA *dasslData)
   free(dasslData->delta_hh);
   free(dasslData->newdelta);
   free(dasslData->stateDer);
-  free(dasslData->dasslStatistics);
-  free(dasslData->dasslStatisticsTmp);
 
   free(dasslData);
 
@@ -637,7 +614,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   for(ui = 0; ui < numStatistics; ui++)
   {
     assert(10 + ui < dasslData->liw);
-    dasslData->dasslStatisticsTmp[ui] = dasslData->iwork[10 + ui];
+    solverInfo->solverStatsTmp[ui] = dasslData->iwork[10 + ui];
   }
 
   infoStreamPrint(LOG_DASSL, 0, "Finished DASSL step.");

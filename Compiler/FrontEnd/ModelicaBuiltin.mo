@@ -2037,6 +2037,15 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end convertUnits;
 
+function getDerivedUnits
+  input String baseUnit;
+  output String[:] derivedUnits;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the list of derived units for the specified base unit.</p>
+</html>"));
+end getDerivedUnits;
+
 function listVariables "Lists the names of the active variables in the scripting environment."
   output TypeName variables[:];
 external "builtin";

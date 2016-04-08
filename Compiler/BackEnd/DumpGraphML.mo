@@ -527,7 +527,7 @@ algorithm
         (_,vlst) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         varcomp1 = List.fold1r(vlst,arrayUpdate,iN,varcomp);
         varlst = List.map1r(vlst,BackendVariable.getVarAt,vars);
-        text = intString(iN) + ":" + stringDelimitList(List.map(List.map(varlst,BackendVariable.varCref),ComponentReference.printComponentRefStr),"\n");
+        text = intString(iN) + ":" + stringDelimitList(List.mapMap(varlst,BackendVariable.varCref,ComponentReference.printComponentRefStr),"\n");
         label = GraphML.NODELABEL_INTERNAL(text,NONE(),GraphML.FONTPLAIN());
         (graphInfo,_) = GraphML.addNode("n" + intString(iN),GraphML.COLOR_GREEN,{label},GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
       then

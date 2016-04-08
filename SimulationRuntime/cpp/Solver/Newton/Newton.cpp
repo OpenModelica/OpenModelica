@@ -1,7 +1,8 @@
 /** @addtogroup solverNewton
-*
-*  @{
-*/
+ *
+ *  @{
+ */
+
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 
@@ -10,225 +11,231 @@
 
 #include <Solver/Newton/Newton.h>
 
-#include <Core/Math/ILapack.h>        // needed for solution of linear system with Lapack
-#include <Core/Math/Constants.h>        // definitializeion of constants like uround
+#include <Core/Math/ILapack.h>     // needed for solution of linear system with Lapack
+#include <Core/Math/Constants.h>   // definitializeion of constants like uround
 
+template <typename S, typename T>
+static inline void LogSysVec(IAlgLoop* algLoop, S name, T vec[]) {
+  if (Logger::getInstance()->isOutput(LC_NLS, LL_DEBUG)) {
+    std::stringstream ss;
+    ss << "Newton: eq" << to_string(algLoop->getEquationIndex());
+    ss << ", time " << algLoop->getSimTime() << ": " << name << " = {";
+    for (int i = 0; i < algLoop->getDimReal(); i++)
+      ss <<  (i > 0? ", ": "") << vec[i];
+    ss << "}";
+    Logger::write(ss.str(), LC_NLS, LL_DEBUG);
+  }
+}
 
 Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
-	: _algLoop            (algLoop)
-	, _newtonSettings    ((INonLinSolverSettings*)settings)
-	, _y                (NULL)
-	, _yHelp            (NULL)
-	, _f                (NULL)
-	, _fHelp            (NULL)
-	, _iHelp            (NULL)
-	, _jac              (NULL)
-	, _zeroVec          (NULL)
-	, _dimSys            (0)
-	, _firstCall        (true)
-	, _iterationStatus    (CONTINUE)
+  : _algLoop          (algLoop)
+  , _newtonSettings   ((INonLinSolverSettings*)settings)
+  , _yNames           (NULL)
+  , _yNominal         (NULL)
+  , _yMin             (NULL)
+  , _yMax             (NULL)
+  , _y                (NULL)
+  , _yHelp            (NULL)
+  , _f                (NULL)
+  , _fHelp            (NULL)
+  , _iHelp            (NULL)
+  , _jac              (NULL)
+  , _zeroVec          (NULL)
+  , _dimSys           (0)
+  , _firstCall        (true)
+  , _iterationStatus  (CONTINUE)
 {
 }
 
 Newton::~Newton()
 {
-	if(_y)        delete []    _y;
-	if(_yHelp)    delete []    _yHelp;
-	if(_f)        delete []    _f;
-	if(_fHelp)    delete []    _fHelp;
-	if(_iHelp)    delete []    _iHelp;
-	if(_jac)      delete []    _jac;
-	if(_zeroVec)  delete []   _zeroVec;
-
+  if (_yNames)   delete []    _yNames;
+  if (_yNominal) delete []    _yNominal;
+  if (_yMin)     delete []    _yMin;
+  if (_yMax)     delete []    _yMax;
+  if (_y)        delete []    _y;
+  if (_yHelp)    delete []    _yHelp;
+  if (_f)        delete []    _f;
+  if (_fHelp)    delete []    _fHelp;
+  if (_iHelp)    delete []    _iHelp;
+  if (_jac)      delete []    _jac;
+  if (_zeroVec)  delete []   _zeroVec;
 }
 
 void Newton::initialize()
 {
-	_firstCall = false;
+  _firstCall = false;
 
-	//(Re-) initializeialization of algebraic loop
-	_algLoop->initialize();
+  //(Re-) initializeialization of algebraic loop
+  _algLoop->initialize();
 
-	// Dimension of the system (number of variables)
-	int
-		dimDouble    = _algLoop->getDimReal(),
-		dimInt        = 0,
-		dimBool        = 0;
+  // Dimension of the system (number of variables)
+  int
+    dimDouble    = _algLoop->getDimReal(),
+    dimInt       = 0,
+    dimBool      = 0;
 
-	// Check system dimension
-	if (dimDouble != _dimSys)
-	{
-		_dimSys = dimDouble;
+  // Check system dimension
+  if (dimDouble != _dimSys) {
+    _dimSys = dimDouble;
 
-		if(_dimSys > 0)
-		{
-			// initializeialization of vector of unknowns
-			if(_y)         delete []    _y;
-			if(_f)        delete []    _f;
-			if(_yHelp)    delete []    _yHelp;
-			if(_fHelp)    delete []    _fHelp;
-			if(_iHelp)    delete []    _iHelp;
-			if(_jac)    delete []    _jac;
-			if(_zeroVec)  delete []   _zeroVec;
+    if (_dimSys > 0) {
+      // initialize of vectors of unknowns and residuals
+      if (_yNames)   delete []    _yNames;
+      if (_yNominal) delete []    _yNominal;
+      if (_yMin)     delete []    _yMin;
+      if (_yMax)     delete []    _yMax;
+      if (_y)        delete []    _y;
+      if (_f)        delete []    _f;
+      if (_yHelp)    delete []    _yHelp;
+      if (_fHelp)    delete []    _fHelp;
+      if (_iHelp)    delete []    _iHelp;
+      if (_jac)      delete []    _jac;
+      if (_zeroVec)  delete []    _zeroVec;
 
-			_y            = new double[_dimSys];
-			_f            = new double[_dimSys];
-			_yHelp        = new double[_dimSys];
-			_fHelp        = new double[_dimSys];
-			_iHelp       = new long int[_dimSys];
-			_jac        = new double[_dimSys*_dimSys];
-			_zeroVec        = new double[_dimSys];
+      _yNames       = new const char* [_dimSys];
+      _yNominal     = new double[_dimSys];
+      _yMin         = new double[_dimSys];
+      _yMax         = new double[_dimSys];
+      _y            = new double[_dimSys];
+      _f            = new double[_dimSys];
+      _yHelp        = new double[_dimSys];
+      _fHelp        = new double[_dimSys];
+      _iHelp        = new long int[_dimSys];
+      _jac          = new double[_dimSys*_dimSys];
+      _zeroVec      = new double[_dimSys];
 
-
-			_algLoop->getReal(_y);
-			memset(_f,0,_dimSys*sizeof(double));
-			memset(_yHelp,0,_dimSys*sizeof(double));
-			memset(_fHelp,0,_dimSys*sizeof(double));
-			memset(_jac,0,_dimSys*_dimSys*sizeof(double));
-			memset(_zeroVec,0,_dimSys*sizeof(double));
-		}
-		else
-		{
-			_iterationStatus = SOLVERERROR;
-		}
-	}
-	Logger::write("Newton: initialized",LC_NLS,LL_DEBUG);
+      _algLoop->getNamesReal(_yNames);
+      _algLoop->getNominalReal(_yNominal);
+      _algLoop->getMinReal(_yMin);
+      _algLoop->getMaxReal(_yMax);
+      _algLoop->getReal(_y);
+      memset(_f, 0, _dimSys*sizeof(double));
+      memset(_yHelp, 0, _dimSys*sizeof(double));
+      memset(_fHelp, 0, _dimSys*sizeof(double));
+      memset(_jac, 0, _dimSys*_dimSys*sizeof(double));
+      memset(_zeroVec, 0, _dimSys*sizeof(double));
+    }
+    else {
+      _iterationStatus = SOLVERERROR;
+    }
+  }
+  if (Logger::getInstance()->isOutput(LC_NLS, LL_DEBUG)) {
+    Logger::write("Newton: eq" + to_string(_algLoop->getEquationIndex())
+                  + " initialized", LC_NLS, LL_DEBUG);
+    LogSysVec(_algLoop, "names", _yNames);
+  }
 }
 
 void Newton::solve()
 {
-	long int
-		dimRHS    = 1,                    // Dimension of right hand side of linear system (=b)
-		irtrn    = 0;                    // Retrun-flag of Fortran code
+  long int
+    dimRHS   = 1,        // Dimension of right hand side of linear system (=b)
+    info     = 0;        // Retrun-flag of Fortran code
+  int
+    totSteps = 0;        // Total number of steps taken
+  double
+    atol = _newtonSettings->getAtol(),
+    rtol = _newtonSettings->getRtol();
 
-	int
-		totStps    = 0;                    // Total number of steps
+  // If initialize() was not called yet
+  if (_firstCall)
+    initialize();
 
-	// If initialize() was not called yet
-	if (_firstCall)
-		initialize();
+  // Get current values and residuals from system
+  _algLoop->getReal(_y);
+  _algLoop->evaluate();
+  _algLoop->getRHS(_f);
 
-	// Get initializeial values from system
-	_algLoop->getReal(_y);
-	//_algLoop->evaluate(command);
-	_algLoop->getRHS(_f);
+  // Reset status flag
+  _iterationStatus = CONTINUE;
 
+  while (_iterationStatus == CONTINUE) {
+    // Check stopping criterion
+    if (!_algLoop->isLinear()) {
+      _iterationStatus = DONE;
+      for (int i=0; i<_dimSys; ++i) {
+        if (fabs(_f[i]) > atol + rtol * fabs(_y[i])) {
+          _iterationStatus = CONTINUE;
+          break;
+        }
+      }
+    }
+    if (_iterationStatus == CONTINUE) {
+      if (totSteps < _newtonSettings->getNewtMax()) {
+        // Determination of Jacobian (Fortran-format)
+        if (_algLoop->isLinear() && !_algLoop->isLinearTearing()) {
+          const matrix_t& A = _algLoop->getSystemMatrix();
+          const double* jac = A.data().begin();
+          memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
+          dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
+          memcpy(_y, _f, _dimSys*sizeof(double));
+          _algLoop->setReal(_y);
+          if (info != 0)
+            throw ModelicaSimulationError(ALGLOOP_SOLVER,
+              "error solving linear system (dgesv info: " + to_string(info) + ")");
+          else
+            _iterationStatus = DONE;
+        }
+        else if (_algLoop->isLinearTearing()) {
+          _algLoop->setReal(_zeroVec);
+          _algLoop->evaluate();
+          _algLoop->getRHS(_f);
 
-	// Reset status flag
-	_iterationStatus = CONTINUE;
+          const matrix_t& A_sparse = _algLoop->getSystemMatrix();
+          //m_t A_dense(A_sparse);
+          const double* jac = A_sparse.data().begin();
+          memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
+          dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
+          for (int i = 0; i < _dimSys; i++)
+            _y[i] = -_f[i];
+          _algLoop->setReal(_y);
+          _algLoop->evaluate();
+          if (info != 0)
+            throw ModelicaSimulationError(ALGLOOP_SOLVER,
+              "error solving linear tearing system (dgesv info: " + to_string(info) + ")");
+          else
+            _iterationStatus = DONE;
+        }
+        else {
+          LogSysVec(_algLoop, "y" + to_string(totSteps), _y);
+          calcJacobian();
 
-	while(_iterationStatus == CONTINUE)
-	{
-		_iterationStatus = DONE;
-		// Check stopping criterion
-		calcFunction(_y,_f);
-		if(totStps)
-		{
-			for(int i=0; i<_dimSys; ++i)
-			{
-				if(fabs(_f[i]) > _newtonSettings->getAtol() +_newtonSettings->getRtol() * ( fabs(_f[i])))
-				{
-					_iterationStatus = CONTINUE;
-					break;
-				}
-			}
-		}
-		else
-			_iterationStatus = CONTINUE;
+          // Solve linear System
+          dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
 
-		// New right hand side
-		//calcFunction(_y,_f);
+          if (info != 0)
+            throw ModelicaSimulationError(ALGLOOP_SOLVER,
+              "error solving nonlinear system (iteration: " + to_string(totSteps)
+              + ", dgesv info: " + to_string(info) + ")");
 
-		if(_iterationStatus == CONTINUE)
-		{
-			if(totStps < _newtonSettings->getNewtMax())
-			{
-				// Determination of Jacobian (Fortran-format)
-				if(_algLoop->isLinear()&&!_algLoop->isLinearTearing())
-				{
-					//calcFunction(_yHelp,_fHelp);
-					const matrix_t& A = _algLoop->getSystemMatrix();
-					const double* jac = A.data().begin();
-					memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-					dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_iHelp,_f,&_dimSys,&irtrn);
-					memcpy(_y,_f,_dimSys*sizeof(double));
-					_algLoop->setReal(_y);
-					if(irtrn != 0)
-						throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");
-					else
-						_iterationStatus = DONE;
+          // Increase counter
+          ++ totSteps;
 
-
-				}
-				else if(_algLoop->isLinearTearing())
-				{
-					long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
-
-					long int irtrn  = 0;          // Retrun-flag of Fortran code
-
-					_algLoop->setReal(_zeroVec);
-					_algLoop->evaluate();
-					_algLoop->getRHS(_f);
-
-					const matrix_t& A_sparse = _algLoop->getSystemMatrix();
-					//m_t A_dense(A_sparse);
-
-					const double* jac = A_sparse.data().begin();
-
-					memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-					dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f,&_dimSys,&irtrn);
-					for(int i=0; i<_dimSys; i++)
-						_y[i]=-_f[i];
-					_algLoop->setReal(_y);
-					_algLoop->evaluate();
-					if(irtrn != 0)
-						throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");
-					else
-						_iterationStatus = DONE;
-				}
-				else
-				{
-					calcJacobian();
-
-					// Solve linear System
-					dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_iHelp,_f,&_dimSys,&irtrn);
-
-					if(irtrn!=0)
-					{
-						// TODO: Throw an error message here.
-						_iterationStatus = SOLVERERROR;
-						break;
-					}
-
-					// Increase counter
-					++ totStps;
-
-					// New solution
-					for(int i=0; i<_dimSys; ++i)
-						_y[i] -= _newtonSettings->getDelta() * _f[i];
-				}
-			}
-			else
-            {
-                _iterationStatus = SOLVERERROR;
-                throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving non linear system");
-
-            }
-		}
-	}
+          // New iterate
+          for (int i = 0; i < _dimSys; ++i)
+            _y[i] -= _newtonSettings->getDelta() * _f[i];
+          calcFunction(_y, _f);
+        }
+      }
+      else
+        throw ModelicaSimulationError(ALGLOOP_SOLVER,
+          "error solving nonlinear system (iteration limit: " + to_string(totSteps) + ")");
+    }
+  }
+  LogSysVec(_algLoop, "y*", _y);
 }
 
 IAlgLoopSolver::ITERATIONSTATUS Newton::getIterationStatus()
 {
-	return _iterationStatus;
+  return _iterationStatus;
 }
-
 
 void Newton::calcFunction(const double *y, double *residual)
 {
-	_algLoop->setReal(y);
-	_algLoop->evaluate();
-	_algLoop->getRHS(residual);
+  _algLoop->setReal(y);
+  _algLoop->evaluate();
+  _algLoop->getRHS(residual);
 }
 
 void Newton::stepCompleted(double time)
@@ -236,38 +243,32 @@ void Newton::stepCompleted(double time)
 
 }
 
-
-
 void Newton::calcJacobian()
 {
-	for(int j=0; j<_dimSys; ++j)
-	{
-		// Reset variables for every column
-		memcpy(_yHelp,_y,_dimSys*sizeof(double));
-		double stepsize=1.e-6;//+(1.e-6*_yHelp[j]);
+  for (int j = 0; j < _dimSys; ++j) {
+    // Reset variables for every column
+    memcpy(_yHelp, _y, _dimSys*sizeof(double));
+    double stepsize = 1e-6 * _yNominal[j];
 
+    // Finite differences
+    _yHelp[j] += stepsize;
 
-		// Finitializee difference
-		_yHelp[j] += stepsize;
+    calcFunction(_yHelp, _fHelp);
 
-		calcFunction(_yHelp,_fHelp);
+    // Build Jacobian in Fortran format
+    for (int i = 0; i < _dimSys; ++i)
+      _jac[i + j * _dimSys] = (_fHelp[i] - _f[i]) / stepsize;
 
-		// Build Jacobian in Fortran format
-		for(int i=0; i<_dimSys; ++i)
-			_jac[i+j*_dimSys] = (_fHelp[i] - _f[i]) / stepsize;
-
-		_yHelp[j] -=stepsize;
-	}
+    _yHelp[j] -= stepsize;
+  }
 }
+
 void Newton::restoreOldValues()
 {
-
 }
 
 void Newton::restoreNewValues()
 {
-
 }
-
 
 /** @} */ // end of solverNewton

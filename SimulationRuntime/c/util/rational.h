@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 
-// m/n
+/* m/n */
 typedef struct RATIONAL {
   long m;
   long n;

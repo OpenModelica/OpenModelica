@@ -567,7 +567,7 @@ protected function countSimpleEqnSize
   input HashSet.HashSet ihs;
   output Integer osimpleEqnSize;
 algorithm
-  osimpleEqnSize := List.fold(List.map1(inEqns, countSimpleEqnSizeWork, ihs), intAdd, 0);
+  osimpleEqnSize := List.applyAndFold1(inEqns, intAdd, countSimpleEqnSizeWork, ihs, 0);
 end countSimpleEqnSize;
 
 protected function countSimpleEqnSizeWork

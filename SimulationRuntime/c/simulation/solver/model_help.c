@@ -48,7 +48,9 @@
 #include "epsilon.h"
 #include "meta/meta_modelica.h"
 
-static const int IterationMax = 200;
+int maxEventIterations = 20;
+double linearSparseSolverMaxDensity = 0.2;
+int linearSparseSolverMinSize = 4001;
 const size_t SIZERINGBUFFER = 3;
 
 static double tolZC;
@@ -63,7 +65,7 @@ static double tolZC;
 void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
-  int IterationNum = 0;
+  int numEventIterations = 0;
   int discreteChanged = 0;
   modelica_boolean relationChanged = 0;
   data->simulationInfo->needToIterate = 0;
@@ -99,9 +101,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 
     data->callback->functionDAE(data, threadData);
 
-    IterationNum++;
-    if(IterationNum > IterationMax) {
-      throwStreamPrint(threadData, "ERROR: Too many event iterations. System is inconsistent. Simulation terminate.");
+    numEventIterations++;
+    if(numEventIterations > maxEventIterations) {
+      throwStreamPrint(threadData, "Simulation terminated due to too many, i.e. %d, event iterations.\nThis could either indicate an inconsistent system or an undersized limit of event iterations.\nThe limit of event iterations can be specified using the runtime flag '–%s=<value>'.", maxEventIterations, FLAG_NAME[FLAG_MAX_EVENT_ITERATIONS]);
     }
 
     relationChanged = checkRelations(data);
@@ -909,6 +911,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->nlsMethod = NLS_HOMOTOPY;
 #endif
   data->simulationInfo->lsMethod = LS_LAPACK;
+  data->simulationInfo->lssMethod = LS_UMFPACK;
   data->simulationInfo->mixedMethod = MIXED_SEARCH;
   data->simulationInfo->newtonStrategy = NEWTON_PURE;
   data->simulationInfo->nlsCsvInfomation = 0;
@@ -1203,15 +1206,13 @@ modelica_boolean GreaterEq(double a, double b)
 modelica_integer _event_integer(modelica_real x, modelica_integer index, DATA *data)
 {
   modelica_real value;
-  if(data->simulationInfo->discreteCall == 0 || data->simulationInfo->solveContinuous)
-  {
-    value = data->simulationInfo->mathEventsValuePre[index];
-  }
-  else
+  if(data->simulationInfo->discreteCall && !data->simulationInfo->solveContinuous)
   {
     data->simulationInfo->mathEventsValuePre[index] = (modelica_integer)floor(x);
-    value = data->simulationInfo->mathEventsValuePre[index];
   }
+
+  value = data->simulationInfo->mathEventsValuePre[index];
+
   return value;
 }
 
@@ -1227,13 +1228,13 @@ modelica_integer _event_integer(modelica_real x, modelica_integer index, DATA *d
 modelica_real _event_floor(modelica_real x, modelica_integer index, DATA *data)
 {
   modelica_real value;
-  if(data->simulationInfo->discreteCall == 0 || data->simulationInfo->solveContinuous)
-    value = data->simulationInfo->mathEventsValuePre[index];
-  else
+  if(data->simulationInfo->discreteCall && !data->simulationInfo->solveContinuous)
   {
     data->simulationInfo->mathEventsValuePre[index] = x;
-    value = data->simulationInfo->mathEventsValuePre[index];
   }
+
+  value = data->simulationInfo->mathEventsValuePre[index];
+
   return (modelica_real)floor(value);
 }
 
@@ -1249,14 +1250,50 @@ modelica_real _event_floor(modelica_real x, modelica_integer index, DATA *data)
 modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data)
 {
   modelica_real value;
-  if(data->simulationInfo->discreteCall == 0 || data->simulationInfo->solveContinuous)
-    value = data->simulationInfo->mathEventsValuePre[index];
-  else
+  if(data->simulationInfo->discreteCall && !data->simulationInfo->solveContinuous)
   {
     data->simulationInfo->mathEventsValuePre[index] = x;
-    value = data->simulationInfo->mathEventsValuePre[index];
   }
+
+  value = data->simulationInfo->mathEventsValuePre[index];
+
   return (modelica_real)ceil(value);
+}
+
+/*! \fn _event_mod_integer
+ *
+ *  \param [in]  [x1]
+ *  \param [in]  [x2]
+ *  \param [in]  [index]
+ *  \param [ref] [data]
+ */
+modelica_integer _event_mod_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data, threadData_t *threadData)
+{
+  if(data->simulationInfo->discreteCall && !data->simulationInfo->solveContinuous)
+  {
+    data->simulationInfo->mathEventsValuePre[index] = (modelica_real)x1;
+    data->simulationInfo->mathEventsValuePre[index+1] = (modelica_real)x2;
+  }
+
+  return x1 - (x1 / x2) * x2;
+}
+
+/*! \fn _event_mod_real
+ *
+ *  \param [in]  [x1]
+ *  \param [in]  [x2]
+ *  \param [in]  [index]
+ *  \param [ref] [data]
+ */
+modelica_real _event_mod_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data, threadData_t *threadData)
+{
+  if(data->simulationInfo->discreteCall && !data->simulationInfo->solveContinuous)
+  {
+    data->simulationInfo->mathEventsValuePre[index] = x1;
+    data->simulationInfo->mathEventsValuePre[index+1] = x2;
+  }
+
+  return x1 - floor(x1 / x2) * x2;
 }
 
 /*! \fn _event_div_integer
@@ -1271,18 +1308,15 @@ modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data)
 modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data, threadData_t *threadData)
 {
   modelica_integer value1, value2;
-  if(data->simulationInfo->discreteCall == 0 || data->simulationInfo->solveContinuous)
-  {
-    value1 = (modelica_integer)data->simulationInfo->mathEventsValuePre[index];
-    value2 = (modelica_integer)data->simulationInfo->mathEventsValuePre[index+1];
-  }
-  else
+  if(data->simulationInfo->discreteCall && !data->simulationInfo->solveContinuous)
   {
     data->simulationInfo->mathEventsValuePre[index] = (modelica_real)x1;
     data->simulationInfo->mathEventsValuePre[index+1] = (modelica_real)x2;
-    value1 = (modelica_integer)data->simulationInfo->mathEventsValuePre[index];
-    value2 = (modelica_integer)data->simulationInfo->mathEventsValuePre[index+1];
   }
+
+  value1 = (modelica_integer)data->simulationInfo->mathEventsValuePre[index];
+  value2 = (modelica_integer)data->simulationInfo->mathEventsValuePre[index+1];
+
   assertStreamPrint(threadData, value2 != 0, "event_div_integer failt at time %f because x2 is zero!", data->localData[0]->timeValue);
   return ldiv(value1, value2).quot;
 }
@@ -1299,18 +1333,15 @@ modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, mo
 modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data, threadData_t *threadData)
 {
   modelica_real value1, value2;
-  if(data->simulationInfo->discreteCall == 0 || data->simulationInfo->solveContinuous)
-  {
-    value1 = data->simulationInfo->mathEventsValuePre[index];
-    value2 = data->simulationInfo->mathEventsValuePre[index+1];
-  }
-  else
+  if(data->simulationInfo->discreteCall && !data->simulationInfo->solveContinuous)
   {
     data->simulationInfo->mathEventsValuePre[index] = x1;
     data->simulationInfo->mathEventsValuePre[index+1] = x2;
-    value1 = data->simulationInfo->mathEventsValuePre[index];
-    value2 = data->simulationInfo->mathEventsValuePre[index+1];
   }
+
+  value1 = data->simulationInfo->mathEventsValuePre[index];
+  value2 = data->simulationInfo->mathEventsValuePre[index+1];
+
 #if defined(_MSC_VER)
   {
     modelica_real rtmp = value1/value2;

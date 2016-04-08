@@ -57,6 +57,7 @@ protected import ConnectUtil;
 protected import DAEUtil;
 protected import Debug;
 protected import Dump;
+protected import ElementSource;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -352,7 +353,7 @@ algorithm
 
         // Set the source of this element.
         source := makeEqSource(info, inEnv, inPrefix, inFlattenOp);
-        source := DAEUtil.addCommentToSource(source, SOME(comment));
+        source := ElementSource.addCommentToSource(source, SOME(comment));
 
         // Check that the lhs and rhs get along.
         outDae := instEqEquation(lhs_exp, lhs_prop, rhs_exp, rhs_prop, source, inInitial, inImpl);
@@ -595,9 +596,9 @@ protected function makeEqSource
   input DAE.SymbolicOperation inFlattenOp;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := DAEUtil.createElementSource(inInfo, FGraph.getScopePath(inEnv),
+  outSource := ElementSource.createElementSource(inInfo, FGraph.getScopePath(inEnv),
     PrefixUtil.prefixToCrefOpt(inPrefix), NONE(), NONE());
-  outSource := DAEUtil.addSymbolicTransformation(outSource, inFlattenOp);
+  outSource := ElementSource.addSymbolicTransformation(outSource, inFlattenOp);
 end makeEqSource;
 
 protected function checkIfConditionTypes
@@ -1230,7 +1231,7 @@ algorithm
     Values.ARRAY(valueLst = values) := inValue;
 
     for val in values loop
-      env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName), NONE());
+      env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), FCore.forScopeName, NONE());
       // The iterator is not constant but the range is constant.
       env := FGraph.addForIterator(env, inIdent, inIteratorType,
         DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
@@ -1263,7 +1264,7 @@ protected function addForLoopScope
   input Option<DAE.Const> constOfForIteratorRange;
   output FCore.Graph newEnv;
 algorithm
-  newEnv := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName), NONE());
+  newEnv := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), FCore.forScopeName, NONE());
   newEnv := FGraph.addForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange);
 end addForLoopScope;
 
@@ -1279,7 +1280,7 @@ protected function addParForLoopScope
   input Option<DAE.Const> constOfForIteratorRange;
   output FCore.Graph newEnv;
 algorithm
-  newEnv := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.parForScopeName), NONE());
+  newEnv := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), FCore.parForScopeName, NONE());
   newEnv := FGraph.addForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange);
 end addParForLoopScope;
 
@@ -1399,7 +1400,7 @@ algorithm
         t2_str = Types.unparseTypeNoAttr(t2);
         s1 = stringAppendList({e1_str,"=",e2_str});
         s2 = stringAppendList({t1_str,"=",t2_str});
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         Types.typeErrorSanityCheck(t1_str, t2_str, info);
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, info);
       then fail();
@@ -1473,7 +1474,7 @@ algorithm
     case (DAE.TUPLE(exps1),e2,DAE.T_TUPLE(types = _::_),_,_,initial_)
       equation
         exps1 = List.map(exps1,Expression.emptyToWild);
-        checkNoDuplicateAssignments(exps1, DAEUtil.getElementSourceFileInfo(source));
+        checkNoDuplicateAssignments(exps1, ElementSource.getElementSourceFileInfo(source));
         e1 = DAE.TUPLE(exps1);
         dae = makeDaeEquation(e1, e2, source, initial_);
       then dae;
@@ -1584,12 +1585,12 @@ algorithm
     case (e1,e2,source,SCode.NON_INITIAL())
       equation
         elt = DAE.EQUATION(e1,e2,source);
-        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
+        source = ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
       then DAE.DAE({DAE.EQUATION(e1,e2,source)});
     case (e1,e2,source,SCode.INITIAL())
       equation
         elt = DAE.INITIALEQUATION(e1,e2,source);
-        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
+        source = ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
       then DAE.DAE({DAE.INITIALEQUATION(e1,e2,source)});
   end match;
 end makeDaeEquation;
@@ -1640,7 +1641,7 @@ algorithm
         true = boolOr(b1, b2);
         ds = Types.getDimensions(tp);
         elt = DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source);
-        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
+        source = ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
       then
         DAE.DAE({DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source)});
 
@@ -1652,7 +1653,7 @@ algorithm
         true = boolOr(b1, b2);
         ds = Types.getDimensions(tp);
         elt = DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
-        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
+        source = ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
       then
         DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});
 
@@ -1693,7 +1694,7 @@ algorithm
         ds = Types.getDimensions(tp);
         b = SCode.isInitial(initial_);
         elt = if b then DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source) else DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
-        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
+        source = ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
         elt = if b then DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source) else DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
       then
         DAE.DAE({elt});
@@ -1724,7 +1725,7 @@ algorithm
         // generate an initial array equation of dim 1
         // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
         elt = DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source);
-        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
+        source = ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
       then
         DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)});
 
@@ -1737,7 +1738,7 @@ algorithm
         // generate an array equation of dim 1
         // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
         elt = DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source);
-        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
+        source = ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
       then
         DAE.DAE({DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)});
 
@@ -1750,7 +1751,7 @@ algorithm
         lhs_str = ExpressionDump.printExpStr(lhs);
         rhs_str = ExpressionDump.printExpStr(rhs);
         eq_str = stringAppendList({lhs_str, "=", rhs_str});
-        Error.addSourceMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str}, DAEUtil.getElementSourceFileInfo(inSource));
+        Error.addSourceMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str}, ElementSource.getElementSourceFileInfo(inSource));
       then
         fail();
 
@@ -1925,7 +1926,7 @@ algorithm
   (outCache, outStatements) := instStatements(outCache, env, inIH, inPrefix,
     inState, inBody, inSource, inInitial, inImpl, inUnrollLoops);
 
-  source := DAEUtil.addElementSourceFileInfo(inSource, inInfo);
+  source := ElementSource.addElementSourceFileInfo(inSource, inInfo);
   outStatements :=
     {Algorithm.makeFor(inIterator, range, inRangeProps, outStatements, source)};
 end instForStatement_dispatch;
@@ -1971,7 +1972,7 @@ algorithm
       equation
         false = Types.isRecord(tp);
         s = ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs);
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.ILLEGAL_EQUATION_TYPE, {s}, info);
       then fail();
   end matchcontinue;
@@ -2040,7 +2041,7 @@ algorithm
       equation
         // set the source of this element
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source = DAEUtil.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);
         (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2107,7 +2108,7 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph)
       equation
         // set the source of this element
-        source = DAEUtil.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.INITIAL(), impl, unrollForLoops);
         (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2155,7 +2156,7 @@ algorithm
       equation
         // set the source of this element
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source = DAEUtil.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,constraints_1,_,_) = Static.elabExpList(cache, env, constraints, impl, NONE(), true /*vect*/, pre, Absyn.dummyInfo);
         // (constraints_1,_) = DAEUtil.traverseDAEEquationsStmts(constraints_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
@@ -2292,7 +2293,7 @@ algorithm
           inState, inStatement.elseBranch, inSource, inInitial, inImpl, inUnrollLoops);
 
         // Construct the if-statement.
-        source := DAEUtil.addElementSourceFileInfo(inSource, info);
+        source := ElementSource.addElementSourceFileInfo(inSource, info);
       then
         Algorithm.makeIf(cond_exp, cond_prop, if_branch, else_if_branches, else_branch, source);
 
@@ -2317,7 +2318,7 @@ algorithm
         (outCache, branch) := instStatements(outCache, inEnv, inIH, inPrefix,
           inState, inStatement.whileBody, inSource, inInitial, inImpl, inUnrollLoops);
 
-        source := DAEUtil.addElementSourceFileInfo(inSource, info);
+        source := ElementSource.addElementSourceFileInfo(inSource, info);
       then
         {Algorithm.makeWhile(cond_exp, cond_prop, branch, source)};
 
@@ -2329,7 +2330,7 @@ algorithm
         end if;
 
         checkWhenAlgorithm(inStatement);
-        source := DAEUtil.addElementSourceFileInfo(inSource, info);
+        source := ElementSource.addElementSourceFileInfo(inSource, info);
         when_stmt_opt := NONE();
 
         for b in listReverse(inStatement.branches) loop
@@ -2355,7 +2356,7 @@ algorithm
         (outCache, level_exp, level_prop) := instExp(outCache, inEnv, inIH,
           inPrefix, inStatement.level, inImpl, info);
 
-        source := DAEUtil.addElementSourceFileInfo(inSource, info);
+        source := ElementSource.addElementSourceFileInfo(inSource, info);
       then
         Algorithm.makeAssert(cond_exp, msg_exp, level_exp, cond_prop, msg_prop, level_prop, source);
 
@@ -2363,7 +2364,7 @@ algorithm
       algorithm
         (outCache, msg_exp, msg_prop) := instExp(outCache, inEnv, inIH,
           inPrefix, inStatement.message, inImpl, info);
-        source := DAEUtil.addElementSourceFileInfo(inSource, info);
+        source := ElementSource.addElementSourceFileInfo(inSource, info);
       then
         Algorithm.makeTerminate(msg_exp, msg_prop, source);
 
@@ -2373,7 +2374,7 @@ algorithm
           Absyn.CREF(inStatement.cref), inImpl, info);
         (outCache, exp, prop) := instExp(outCache, inEnv, inIH, inPrefix,
           inStatement.newValue, inImpl, info);
-        source := DAEUtil.addElementSourceFileInfo(inSource, info);
+        source := ElementSource.addElementSourceFileInfo(inSource, info);
       then
         Algorithm.makeReinit(cr_exp, exp, cr_prop, prop, source);
 
@@ -2383,19 +2384,19 @@ algorithm
           inImpl, NONE(), true, inPrefix, info);
         checkValidNoRetcall(exp, info);
         (outCache, exp) := PrefixUtil.prefixExp(outCache, inEnv, inIH, exp, inPrefix);
-        source := DAEUtil.addElementSourceFileInfo(inSource, info);
+        source := ElementSource.addElementSourceFileInfo(inSource, info);
       then
         if Expression.isTuple(exp) then {} else {DAE.STMT_NORETCALL(exp, source)};
 
     case SCode.ALG_BREAK(info = info)
       algorithm
-        source := DAEUtil.addElementSourceFileInfo(inSource, info);
+        source := ElementSource.addElementSourceFileInfo(inSource, info);
       then
         {DAE.STMT_BREAK(source)};
 
     case SCode.ALG_CONTINUE(info = info)
       algorithm
-        source := DAEUtil.addElementSourceFileInfo(inSource, info);
+        source := ElementSource.addElementSourceFileInfo(inSource, info);
       then
         {DAE.STMT_CONTINUE(source)};
 
@@ -2404,7 +2405,7 @@ algorithm
         if not ClassInf.isFunction(inState) then
           Error.addSourceMessageAndFail(Error.RETURN_OUTSIDE_FUNCTION, {}, info);
         end if;
-        source := DAEUtil.addElementSourceFileInfo(inSource, info);
+        source := ElementSource.addElementSourceFileInfo(inSource, info);
       then
         {DAE.STMT_RETURN(source)};
 
@@ -2413,7 +2414,7 @@ algorithm
         true := Config.acceptMetaModelicaGrammar();
         (outCache, branch) := instStatements(outCache, inEnv, inIH, inPrefix,
           inState, inStatement.stmts, inSource, inInitial, inImpl, inUnrollLoops);
-        source := DAEUtil.addElementSourceFileInfo(inSource, info);
+        source := ElementSource.addElementSourceFileInfo(inSource, info);
       then
         {DAE.STMT_FAILURE(branch, source)};
 
@@ -2429,7 +2430,7 @@ algorithm
           inState, inStatement.body, inSource, inInitial, inImpl, inUnrollLoops);
         (outCache, else_branch) := instStatements(outCache, inEnv, inIH, inPrefix,
           inState, inStatement.elseBody, inSource, inInitial, inImpl, inUnrollLoops);
-        source := DAEUtil.addElementSourceFileInfo(inSource, info);
+        source := ElementSource.addElementSourceFileInfo(inSource, info);
 
         cases := {
           DAE.CASE({}, NONE(), {}, if_branch, SOME(DAE.TUPLE({})), info, 0, info),
@@ -2597,7 +2598,7 @@ algorithm
       equation
         dim = dim-1;
         dims = dim::dims;
-        env_1 = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName),NONE());
+        env_1 = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), FCore.forScopeName,NONE());
         // the iterator is not constant but the range is constant
         env_2 = FGraph.addForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/
@@ -2944,6 +2945,7 @@ algorithm
       list<Absyn.Subscript> subs1,subs2;
       list<Absyn.ComponentRef> crefs1,crefs2;
       String s1,s2;
+      Boolean del1, del2;
 
     // adrpo: check for connect(A, A) as we should give a warning and remove it!
     case (cache,env,ih,sets,_,c1,c2,_,graph,_)
@@ -2952,16 +2954,6 @@ algorithm
         s1 = Dump.printComponentRefStr(c1);
         s2 = Dump.printComponentRefStr(c1);
         Error.addSourceMessage(Error.SAME_CONNECT_INSTANCE, {s1, s2}, info);
-      then
-        (cache, env, ih, sets, DAE.emptyDae, graph);
-
-    // Check if either of the components are conditional components with
-    // condition = false, in which case we should not instantiate the connection.
-    case (cache,env,ih,sets,_,c1,c2,_,graph,_)
-      equation
-        c1_1 = ComponentReference.toExpCref(c1);
-        c2_1 = ComponentReference.toExpCref(c2);
-        true = ConnectUtil.connectionContainsDeletedComponents(c1_1, c2_1, sets);
       then
         (cache, env, ih, sets, DAE.emptyDae, graph);
 
@@ -2977,31 +2969,22 @@ algorithm
 
     // handle normal connectors!
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,_)
-      equation
+      algorithm
         ErrorExt.rollBack("expandableConnectors");
-        // Skip collection of dae functions here they can not be present in connector references
-        (cache,DAE.CREF(c1_1,_),_,attr1) = Static.elabCrefNoEval(cache,env, c1, impl, false, pre, info);
-        (cache,DAE.CREF(c2_1,_),_,attr2) = Static.elabCrefNoEval(cache,env, c2, impl, false, pre, info);
+        (cache, c1_2, attr1, ct1, vt1, io1, f1, ty1, del1) :=
+          instConnector(cache, env, ih, c1, impl, pre, info);
+        (cache, c2_2, attr2, _, vt2, io2, f2, ty2, del2) :=
+          instConnector(cache, env, ih, c2, impl, pre, info);
 
-        (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
-        (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,attr1 as DAE.ATTR(ct1,_,vt1,_,io1,_),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,attr2 as DAE.ATTR(_,_,vt2,_,io2,_),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
-        validConnector(ty1, c1_2, info) "Check that the type of the connectors are good." ;
-        validConnector(ty2, c2_2, info);
-        f1 = ConnectUtil.componentFace(env,ih,c1_2);
-        f2 = ConnectUtil.componentFace(env,ih,c2_2);
-
-        ty1 = sortConnectorType(ty1);
-        ty2 = sortConnectorType(ty2);
-
-        checkConnectTypes(c1_2, ty1, f1, attr1, c2_2, ty2, f2, attr2, info);
-        // print("add connect(");print(ComponentReference.printComponentRefStr(c1_2));print(", ");print(ComponentReference.printComponentRefStr(c2_2));
-        // print(") with ");print(Dump.unparseInnerouterStr(io1));print(", ");print(Dump.unparseInnerouterStr(io2));
-        // print("\n");
-        (cache,_,ih,sets,dae,graph) =
-          connectComponents(cache, env, ih, sets, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, ct1, io1, io2, graph, info);
-        sets = ConnectUtil.increaseConnectRefCount(c1_2, c2_2, sets);
+        // If neither connector is a deleted conditional components, create the connection.
+        if not (del1 or del2) then
+          checkConnectTypes(c1_2, ty1, f1, attr1, c2_2, ty2, f2, attr2, info);
+          (cache, _, ih, sets, dae, graph) :=
+            connectComponents(cache, env, ih, sets, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, ct1, io1, io2, graph, info);
+          sets := ConnectUtil.increaseConnectRefCount(c1_2, c2_2, sets);
+        else
+          dae := DAE.emptyDae;
+        end if;
       then
         (cache,env,ih,sets,dae,graph);
 
@@ -3032,6 +3015,46 @@ algorithm
         fail();
   end matchcontinue;
 end instConnect;
+
+protected function instConnector
+  input FCore.Cache inCache;
+  input FCore.Graph env;
+  input InnerOuter.InstHierarchy ih;
+  input Absyn.ComponentRef connectorCref;
+  input Boolean impl;
+  input Prefix.Prefix prefix;
+  input SourceInfo info;
+  output FCore.Cache outCache = inCache;
+  output DAE.ComponentRef outCref;
+  output DAE.Attributes outAttr;
+  output SCode.ConnectorType connectorType;
+  output SCode.Variability variability;
+  output Absyn.InnerOuter innerOuter;
+  output Connect.Face face;
+  output DAE.Type ty;
+  output Boolean deleted;
+protected
+  FCore.Status status;
+algorithm
+  outCref := ComponentReference.toExpCref(connectorCref);
+  (DAE.ATTR(connectorType = connectorType, variability = variability,
+    innerOuter = innerOuter), ty, status) :=
+      Lookup.lookupConnectorVar(env, outCref);
+
+  deleted := FCore.isDeletedComp(status);
+
+  if deleted then
+    face := Connect.NO_FACE();
+    outAttr := DAE.dummyAttrVar;
+  else
+    (outCache, DAE.CREF(componentRef = outCref), DAE.PROP(type_ = ty), outAttr) :=
+      Static.elabCrefNoEval(inCache, env, connectorCref, impl, false, prefix, info);
+    (outCache, outCref) := Static.canonCref(outCache, env, outCref, impl);
+    validConnector(ty, outCref, info);
+    face := ConnectUtil.componentFace(env, outCref);
+    ty := sortConnectorType(ty);
+  end if;
+end instConnector;
 
 protected function sortConnectorType
   input DAE.Type inType;
@@ -3176,8 +3199,8 @@ algorithm
         (cache,SOME((DAE.CREF(c2_1,_),_,attr2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache, env, c2_1, impl);
-        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (attr1,ty1) = Lookup.lookupConnectorVar(env,c1_2);
+        (attr2,ty2) = Lookup.lookupConnectorVar(env,c2_2);
         DAE.ATTR(connectorType = SCode.POTENTIAL()) = attr1;
         DAE.ATTR(connectorType = SCode.POTENTIAL()) = attr2;
         true = isExpandableConnectorType(ty1);
@@ -3253,7 +3276,7 @@ algorithm
 
         // lookup the existing connector
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (attr2,ty2) = Lookup.lookupConnectorVar(env,c2_2);
         // bind the attributes
         DAE.ATTR(ct2,prl2,vt2,_,io2,vis2) = attr2;
 
@@ -3265,7 +3288,7 @@ algorithm
         (cache,SOME((DAE.CREF(c1_1,_),_,_))) = Static.elabCref(cache,env,c1_prefix,impl,false,pre,info);
         // lookup the expandable connector
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
-        (cache,_,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
+        (_,ty1) = Lookup.lookupConnectorVar(env, c1_2);
         // make sure is expandable!
         true = isExpandableConnectorType(ty1);
         // strip last subs to get the full type!
@@ -3341,7 +3364,7 @@ algorithm
 
         // lookup the existing connector
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (attr2,ty2) = Lookup.lookupConnectorVar(env,c2_2);
         // bind the attributes
         DAE.ATTR(ct2,prl2,vt2,_,io2,vis2) = attr2;
 
@@ -3353,7 +3376,7 @@ algorithm
         (cache,SOME((DAE.CREF(c1_1,_),_,_))) = Static.elabCref(cache, env, c1_prefix, impl, false, pre, info);
         // lookup the expandable connector
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
-        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
+        (attr1,ty1) = Lookup.lookupConnectorVar(env, c1_2);
         // make sure is expandable!
         true = isExpandableConnectorType(ty1);
         // strip last subs to get the full type!
@@ -3421,7 +3444,7 @@ algorithm
         // now it should be in the Env, fetch the info!
         (cache,SOME((DAE.CREF(c1_1,_),_,_))) = Static.elabCref(cache, env, c1, impl, false, pre,info);
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
-        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
+        (attr1,ty1) = Lookup.lookupConnectorVar(env,c1_2);
         // bind the attributes
         DAE.ATTR(ct1,prl1,vt1,_,io1,vis1) = attr1;
 
@@ -3432,7 +3455,7 @@ algorithm
         state = ClassInf.CONNECTOR(Absyn.IDENT("expandable connector"), true);
         (cache,c1p) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         (cache,c2p) = PrefixUtil.prefixCref(cache, env, ih, pre, c2_2);
-        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
 
@@ -3462,8 +3485,8 @@ algorithm
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,_,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,_,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (_,ty1) = Lookup.lookupConnectorVar(env,c1_2);
+        (_,ty2) = Lookup.lookupConnectorVar(env,c2_2);
 
         // non-expandable
         false = isExpandableConnectorType(ty1);
@@ -4122,7 +4145,7 @@ algorithm
            PrefixUtil.prefixExp(cache, env, ih, Expression.crefExp(c2), pre);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         // print("CONNECT: " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" +
         //    ComponentReference.printComponentRefStr(c1_1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
@@ -4143,7 +4166,7 @@ algorithm
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         crefExp1 = Expression.crefExp(c1_1);
         crefExp2 = Expression.crefExp(c2_1);
@@ -4171,7 +4194,7 @@ algorithm
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         sets_1 = ConnectUtil.addConnection(sets, c1, f1, c2, f2, inConnectorType, source);
       then
@@ -4253,7 +4276,7 @@ algorithm
         // set the source of this element
         (cache,c1p) = PrefixUtil.prefixCref(cache, env, ih, pre, c1);
         (cache,c2p) = PrefixUtil.prefixCref(cache, env, ih, pre, c2);
-        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
 
         sets_1 = ConnectUtil.addArrayConnection(sets, c1, f1, c2, f2, source, ct);
       then
@@ -4273,7 +4296,7 @@ algorithm
           t2, vt2, ct, io1, io2, ConnectionGraph.NOUPDATE_EMPTY, info);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         // Add an edge to connection graph. The edge contains the
         // dae to be added in the case where the edge is broken.
@@ -4283,7 +4306,7 @@ algorithm
         equalityConstraintFunctionReturnType =
           DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(idim1)},DAE.emptyTypeSource);
 
-        source = DAEUtil.addAdditionalComment(source, " equation generated by overconstrained connection graph breaking");
+        source = ElementSource.addAdditionalComment(source, " equation generated by overconstrained connection graph breaking");
 
         breakDAEElements =
           {DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(idim1)}, zeroVector,
@@ -4319,7 +4342,7 @@ algorithm
           t2, vt2, ct, io1, io2, ConnectionGraph.NOUPDATE_EMPTY, info);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         // Add an edge to connection graph. The edge contains the
         // dae to be added in the case where the edge is broken.
@@ -4329,7 +4352,7 @@ algorithm
         equalityConstraintFunctionReturnType =
           DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(idim1)},DAE.emptyTypeSource);
 
-        source = DAEUtil.addAdditionalComment(source, " equation generated by overconstrained connection graph breaking");
+        source = ElementSource.addAdditionalComment(source, " equation generated by overconstrained connection graph breaking");
 
         breakDAEElements =
           {DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(idim1)}, zeroVector,
@@ -4891,7 +4914,7 @@ algorithm
     case (cache,env,_,pre,SCode.ALG_ASSIGN(assignComponent=var,value=value,info=info),_,_,_,_,_)
       equation
         (cache,e_1,eprop,_) = Static.elabExp(cache,env,value,impl,NONE(),true,pre,info);
-        (cache,stmts) = instAssignment2(cache,env,ih,pre,var,value,e_1,eprop,info,DAEUtil.addAnnotation(source, alg.comment),initial_,impl,unrollForLoops,numError);
+        (cache,stmts) = instAssignment2(cache,env,ih,pre,var,value,e_1,eprop,info,ElementSource.addAnnotation(source, alg.comment),initial_,impl,unrollForLoops,numError);
       then (cache,stmts);
 
     case (cache,env,_,pre,SCode.ALG_ASSIGN(value=value,info=info),_,_,_,_,_)
@@ -4980,7 +5003,7 @@ algorithm
         (cache, rt) = PrefixUtil.prefixExpressionsInType(cache, inEnv, inIH, inPre, rt);
         eprop = Types.setPropType(eprop, rt);
 
-        source = DAEUtil.addElementSourceFileInfo(inSource, info);
+        source = ElementSource.addElementSourceFileInfo(inSource, info);
         stmt = makeAssignment(Expression.makeCrefExp(ce_1,t), cprop, e_2, eprop, attr, initial_, source);
       then
         (cache,{stmt});
@@ -4995,7 +5018,7 @@ algorithm
         (cache,e2_2_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e2_2, inPre);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
-        source = DAEUtil.addElementSourceFileInfo(inSource, info);
+        source = ElementSource.addElementSourceFileInfo(inSource, info);
         stmt = makeAssignment(e2_2_2, cprop, e_2, eprop, attr /*SCode.RW()*/, initial_, source);
       then
         (cache,{stmt});
@@ -5009,7 +5032,7 @@ algorithm
         (cache,cre2) = PrefixUtil.prefixExp(cache, inEnv, inIH, cre, inPre);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
-        source = DAEUtil.addElementSourceFileInfo(inSource, info);
+        source = ElementSource.addElementSourceFileInfo(inSource, info);
         stmt = makeAssignment(cre2, cprop, e_2, eprop, attr, initial_, source);
       then
         (cache,{stmt});
@@ -5025,7 +5048,7 @@ algorithm
         Static.checkAssignmentToInputs(expl, attrs, inEnv, info);
         checkNoDuplicateAssignments(expl_1, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, inEnv, inIH, expl_1, inPre);
-        source = DAEUtil.addElementSourceFileInfo(inSource, info);
+        source = ElementSource.addElementSourceFileInfo(inSource, info);
         stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
       then
         (cache,{stmt});
@@ -5043,7 +5066,7 @@ algorithm
         Static.checkAssignmentToInputs(expl, attrs, inEnv, info);
         checkNoDuplicateAssignments(expl_1, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, inEnv, inIH, expl_1, inPre);
-        source = DAEUtil.addElementSourceFileInfo(inSource, info);
+        source = ElementSource.addElementSourceFileInfo(inSource, info);
         stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
       then
         (cache,{stmt});
@@ -5054,7 +5077,7 @@ algorithm
         ty = Types.getPropType(prop);
         (e_1,ty) = Types.convertTupleToMetaTuple(e_1,ty);
         (cache,pattern) = Patternm.elabPatternCheckDuplicateBindings(cache,inEnv,left,ty,info);
-        source = DAEUtil.addElementSourceFileInfo(inSource, info);
+        source = ElementSource.addElementSourceFileInfo(inSource, info);
         stmt = if Types.isEmptyOrNoRetcall(ty) then DAE.STMT_NORETCALL(e_1,source) else DAE.STMT_ASSIGN(DAE.T_UNKNOWN_DEFAULT,DAE.PATTERN(pattern),e_1,source);
       then (cache,{stmt});
 
@@ -5068,7 +5091,7 @@ algorithm
         checkNoDuplicateAssignments(expl_2, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, inEnv, inIH, expl_2, inPre);
         eprops = Types.propTuplePropList(eprop);
-        source = DAEUtil.addElementSourceFileInfo(inSource, info);
+        source = ElementSource.addElementSourceFileInfo(inSource, info);
         stmts = Algorithm.makeAssignmentsList(expl_2, cprops, expl_1, eprops, /* SCode.RW() */ DAE.dummyAttrVar, initial_, source);
       then
         (cache,stmts);
@@ -5293,7 +5316,7 @@ algorithm
   // checkParallelVariables(cache,env_1,loopPrlVars);
   List.map2_0(loop_prl_vars, isCrefParGlobalOrForIterator, outCache, env);
 
-  source := DAEUtil.addElementSourceFileInfo(inSource, inInfo);
+  source := ElementSource.addElementSourceFileInfo(inSource, inInfo);
   outStatements :=
     {Algorithm.makeParFor(inIterator, range, inRangeProps, outStatements, loop_prl_vars, source)};
 end instParForStatement_dispatch;

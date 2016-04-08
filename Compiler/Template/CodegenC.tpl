@@ -50,7 +50,7 @@ import interface SimCodeBackendTV;
 import CodegenUtil.*;
 import CodegenCFunctions.*;
 
-/* public */ template translateModel(SimCode simCode, String guid)
+/* public */ template translateModel(SimCode simCode)
   "Generates C code and Makefile for compiling and running a simulation of a
   Modelica model.
   used in Compiler/SimCode/SimCodeMain.mo"
@@ -70,11 +70,10 @@ import CodegenCFunctions.*;
 
     let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
 
-    let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
+    let()= textFile(simulationHeaderFile(simCode), '<%fileNamePrefix%>_model.h')
     // adpro: write the main .c file last! Make on windows doesn't seem to realize that
     //        the .c file is newer than the .o file if we have succesive simulate commands
     //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
-    let _ = generateSimulationFiles(simCode,guid,fileNamePrefix,false)
 
     // If ParModelica generate the kernels file too.
     if acceptParModelicaGrammar() then
@@ -93,11 +92,11 @@ end translateModel;
     let _ = if simulationSettingsOpt then //tests the Option<> for SOME()
               textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
     let _ = (if stringEq(Config.simCodeTarget(),"JavaScript") then
-              covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c'))
+              covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c', simulationCodeTarget()))
     ""
 end translateInitFile;
 
-/* public */ template simulationHeaderFile(SimCode simCode, String guid)
+/* public */ template simulationHeaderFile(SimCode simCode)
   "Generates code for main C file for simulation target.
    used in Compiler/Template/CodegenFMU.tpl"
 ::=
@@ -140,6 +139,7 @@ end translateInitFile;
     extern int <%symbolName(modelNamePrefixStr,"functionJacC_column")%>(void* data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(void* data, threadData_t *threadData);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
+    extern const char* <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
     extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short *, short *);
     extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
@@ -156,54 +156,15 @@ end translateInitFile;
   end match
 end simulationHeaderFile;
 
-/* public */ template generateSimulationFiles(SimCode simCode, String guid, String modelNamePrefix, Boolean isModelExchangeFMU)
- "Generates code in different C files for the simulation target.
-  To make the compilation faster we split the simulation files into several
-  used in Compiler/Template/CodegenFMU.tpl"
+template simulationFile_mixAndHeader(SimCode simCode, String modelNamePrefix)
 ::=
-  match simCode
-    case simCode as SIMCODE(__) then
-     // external objects
-     let()= textFileConvertLines(simulationFile_exo(simCode,guid), '<%modelNamePrefix%>_01exo.c')
-     // non-linear systems
-     let()= textFileConvertLines(simulationFile_nls(simCode,guid), '<%modelNamePrefix%>_02nls.c')
-     // linear systems
-     let()= textFileConvertLines(simulationFile_lsy(simCode,guid), '<%modelNamePrefix%>_03lsy.c')
-     // state set
-     let()= textFileConvertLines(simulationFile_set(simCode,guid), '<%modelNamePrefix%>_04set.c')
-     // events: sample, zero crossings, relations
-     let()= textFileConvertLines(simulationFile_evt(simCode,guid), '<%modelNamePrefix%>_05evt.c')
-     // initialization
-     let()= textFileConvertLines(simulationFile_inz(simCode,guid), '<%modelNamePrefix%>_06inz.c')
-     // delay
-     let()= textFileConvertLines(simulationFile_dly(simCode,guid), '<%modelNamePrefix%>_07dly.c')
-     // update bound start values, update bound parameters
-     let()= textFileConvertLines(simulationFile_bnd(simCode,guid), '<%modelNamePrefix%>_08bnd.c')
-     // algebraic
-     let()= textFileConvertLines(simulationFile_alg(simCode,guid), '<%modelNamePrefix%>_09alg.c')
-     // asserts
-     let()= textFileConvertLines(simulationFile_asr(simCode,guid), '<%modelNamePrefix%>_10asr.c')
-     // mixed systems
-     let &mixheader = buffer ""
-     let()= textFileConvertLines(simulationFile_mix(simCode,guid,&mixheader), '<%modelNamePrefix%>_11mix.c')
-     let()= textFile(&mixheader, '<%modelNamePrefix%>_11mix.h')
-     // jacobians
-     let()= textFileConvertLines(simulationFile_jac(simCode,guid), '<%modelNamePrefix%>_12jac.c')
-     let()= textFile(simulationFile_jac_header(simCode,guid), '<%modelNamePrefix%>_12jac.h')
-     // optimization
-     let()= textFileConvertLines(simulationFile_opt(simCode,guid), '<%modelNamePrefix%>_13opt.c')
-     let()= textFile(simulationFile_opt_header(simCode,guid), '<%modelNamePrefix%>_13opt.h')
-     // linearization
-     let()= textFileConvertLines(simulationFile_lnz(simCode,guid), '<%modelNamePrefix%>_14lnz.c')
-     // synchronous
-     let()= textFileConvertLines(simulationFile_syn(simCode,guid), '<%modelNamePrefix%>_15syn.c')
-     // main file
-     let()= textFileConvertLines(simulationFile(simCode,guid,isModelExchangeFMU), '<%modelNamePrefix%>.c')
-     ""
-  end match
-end generateSimulationFiles;
+  let &mixheader = buffer ""
+  let()= textFileConvertLines(simulationFile_mix(simCode,&mixheader), '<%modelNamePrefix%>_11mix.c')
+  let()= textFile(&mixheader, '<%modelNamePrefix%>_11mix.h')
+  ""
+end simulationFile_mixAndHeader;
 
-template simulationFile_syn(SimCode simCode, String guid)
+template simulationFile_syn(SimCode simCode)
 "Synchonous features"
 ::= match simCode
     case simCode as SIMCODE(__) then
@@ -448,7 +409,7 @@ template functionEquationsSynchronous(Integer i, list<tuple<SimCodeVar.SimVar, B
   >>
 end functionEquationsSynchronous;
 
-template simulationFile_exo(SimCode simCode, String guid)
+template simulationFile_exo(SimCode simCode)
 "External Objects"
 ::=
   match simCode
@@ -472,7 +433,7 @@ template simulationFile_exo(SimCode simCode, String guid)
   end match
 end simulationFile_exo;
 
-template simulationFile_nls(SimCode simCode, String guid)
+template simulationFile_nls(SimCode simCode)
 "Non Linear Systems"
 ::=
   match simCode
@@ -503,7 +464,7 @@ template simulationFile_nls(SimCode simCode, String guid)
   end match
 end simulationFile_nls;
 
-template simulationFile_lsy(SimCode simCode, String guid)
+template simulationFile_lsy(SimCode simCode)
 "Linear Systems"
 ::=
   match simCode
@@ -529,7 +490,7 @@ template simulationFile_lsy(SimCode simCode, String guid)
   end match
 end simulationFile_lsy;
 
-template simulationFile_set(SimCode simCode, String guid)
+template simulationFile_set(SimCode simCode)
 "Initial State Set"
 ::=
   match simCode
@@ -553,7 +514,7 @@ template simulationFile_set(SimCode simCode, String guid)
   end match
 end simulationFile_set;
 
-template simulationFile_evt(SimCode simCode, String guid)
+template simulationFile_evt(SimCode simCode)
 "Events: Sample, Zero Crossings, Relations, Discrete Changes"
 ::=
   match simCode
@@ -582,7 +543,7 @@ template simulationFile_evt(SimCode simCode, String guid)
   end match
 end simulationFile_evt;
 
-template simulationFile_inz(SimCode simCode, String guid)
+template simulationFile_inz(SimCode simCode)
 "Initialization"
 ::=
   match simCode
@@ -611,7 +572,7 @@ template simulationFile_inz(SimCode simCode, String guid)
   end match
 end simulationFile_inz;
 
-template simulationFile_dly(SimCode simCode, String guid)
+template simulationFile_dly(SimCode simCode)
 "Delay"
 ::=
   match simCode
@@ -634,7 +595,7 @@ template simulationFile_dly(SimCode simCode, String guid)
   end match
 end simulationFile_dly;
 
-template simulationFile_bnd(SimCode simCode, String guid)
+template simulationFile_bnd(SimCode simCode)
 "update bound parameters and variable attributes (start, nominal, min, max)"
 ::=
   match simCode
@@ -659,7 +620,7 @@ template simulationFile_bnd(SimCode simCode, String guid)
   end match
 end simulationFile_bnd;
 
-template simulationFile_alg(SimCode simCode, String guid)
+template simulationFile_alg(SimCode simCode)
 "Algebraic"
 ::=
   match simCode
@@ -682,7 +643,7 @@ template simulationFile_alg(SimCode simCode, String guid)
   end match
 end simulationFile_alg;
 
-template simulationFile_asr(SimCode simCode, String guid)
+template simulationFile_asr(SimCode simCode)
 "Asserts"
 ::=
   match simCode
@@ -705,7 +666,7 @@ template simulationFile_asr(SimCode simCode, String guid)
   end match
 end simulationFile_asr;
 
-template simulationFile_mix(SimCode simCode, String guid, Text &header)
+template simulationFile_mix(SimCode simCode, Text &header)
 "Mixed Systems"
 ::=
   match simCode
@@ -723,7 +684,7 @@ template simulationFile_mix(SimCode simCode, String guid, Text &header)
   end match
 end simulationFile_mix;
 
-template simulationFile_jac(SimCode simCode, String guid)
+template simulationFile_jac(SimCode simCode)
 "Jacobians"
 ::=
   match simCode
@@ -740,7 +701,7 @@ template simulationFile_jac(SimCode simCode, String guid)
   end match
 end simulationFile_jac;
 
-template simulationFile_jac_header(SimCode simCode, String guid)
+template simulationFile_jac_header(SimCode simCode)
 "Jacobians"
 ::=
   match simCode
@@ -755,7 +716,7 @@ template simulationFile_jac_header(SimCode simCode, String guid)
   end match
 end simulationFile_jac_header;
 
-template simulationFile_opt(SimCode simCode, String guid)
+template simulationFile_opt(SimCode simCode)
 "Optimization"
 ::=
   match simCode
@@ -777,7 +738,7 @@ template simulationFile_opt(SimCode simCode, String guid)
   end match
 end simulationFile_opt;
 
-template simulationFile_opt_header(SimCode simCode, String guid)
+template simulationFile_opt_header(SimCode simCode)
 "Jacobians"
 ::=
   match simCode
@@ -800,7 +761,7 @@ template simulationFile_opt_header(SimCode simCode, String guid)
   end match
 end simulationFile_opt_header;
 
-template simulationFile_lnz(SimCode simCode, String guid)
+template simulationFile_lnz(SimCode simCode)
 "Linearization"
 ::=
   match simCode
@@ -832,17 +793,19 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
                      <<
                      mmc_init_nogc();
                      omc_alloc_interface = omc_alloc_interface_pooled;
+                     omc_alloc_interface.init();
                      >>
                    else if stringEq(Config.simCodeTarget(),"JavaScript") then
                      <<
                      mmc_init_nogc();
                      omc_alloc_interface = omc_alloc_interface_pooled;
+                     omc_alloc_interface.init();
                      >>
                    else
                      <<
-                     MMC_INIT();
+                     MMC_INIT(0);
+                     omc_alloc_interface.init();
                      >>
-    let &mainInit += 'omc_alloc_interface.init();'
     let pminit = if Flags.isSet(Flags.PARMODAUTO) then 'PM_Model_init("<%fileNamePrefix%>", &data, threadData, functionODE_systems);' else ''
     let mainBody =
       <<
@@ -962,6 +925,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"functionJacC_column")%>,
        <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
        <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
+       <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>,
        <%symbolName(modelNamePrefixStr,"mayer")%>,
        <%symbolName(modelNamePrefixStr,"lagrange")%>,
        <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>,
@@ -1096,13 +1060,28 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->initXMLData = NULL;
     data->modelData->modelDataXml.infoXMLData = NULL;
     #else
+    #if defined(_MSC_VER) /* handle joke compilers */
+    {
+    /* for MSVC we encode a string like char x[] = {'a', 'b', 'c', '\0'} */
+    /* because the string constant limit is 65535 bytes */
+    static const char contents_init[] =
+      #include "<%fileNamePrefix%>_init.c"
+      ;
+    static const char contents_info[] =
+      #include "<%fileNamePrefix%>_info.c"
+      ;
+      data->modelData->initXMLData = contents_init;
+      data->modelData->modelDataXml.infoXMLData = contents_info;
+    }
+    #else /* handle real compilers */
     data->modelData->initXMLData =
     #include "<%fileNamePrefix%>_init.c"
-    ;
+      ;
     data->modelData->modelDataXml.infoXMLData =
     #include "<%fileNamePrefix%>_info.c"
-    ;
-    #endif
+      ;
+    #endif /* defined(_MSC_VER) */
+	#endif /* defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME) */
     >>
     %>
 
@@ -3033,7 +3012,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       {
       }
 
-      //using type: <%type%>
+      /* using type: <%type%> */
       void function<%name%>_system<%n%>(DATA *data, threadData_t *threadData)
       {
         <%taskEqs%>
@@ -3046,7 +3025,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       {
       }
 
-      //using type: <%type%>
+      /* using type: <%type%> */
       void function<%name%>_system<%n%>(DATA *data, threadData_t *threadData)
       {
         int fail=0;
@@ -3074,7 +3053,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           {
           }
 
-          //using type: <%type%>
+          /* using type: <%type%> */
           static int initialized = 0;
           void function<%name%>_system<%n%>(DATA *data, threadData_t *threadData)
           {
@@ -3129,7 +3108,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
 
           <%threadFuncs%>
 
-          //using type: <%type%>
+          /* using type: <%type%> */
           static int initialized = 0;
           void function<%name%>_system<%n%>(DATA *data, threadData_t *threadData)
           {
@@ -3190,7 +3169,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
 
           <%threadFuncs%>
 
-          //using type: <%type%>
+          /* using type: <%type%> */
           static int initialized = 0;
           void function<%name%>_system<%n%>(DATA *data, threadData_t *threadData)
           {
@@ -3944,6 +3923,19 @@ template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls, Text &aux
     <%preExp%>
     gout[<%index1%>] = (ceil(<%e1%>) != ceil(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
     >>
+  case CALL(path=IDENT(name="mod"), expLst={exp1, exp2, idx}) then
+    let &preExp = buffer ""
+    let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let e2 = daeExp(exp2, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let tvar1 = tempDecl("modelica_real", &varDecls)
+    let tvar2 = tempDecl("modelica_real", &varDecls)
+    let &preExp += '<%tvar1%> = floor((<%e1%>) / (<%e2%>));<%\n%>'
+    let &preExp += '<%tvar2%> = floor((data->simulationInfo->mathEventsValuePre[<%indx%>]) / (data->simulationInfo->mathEventsValuePre[<%indx%>+1]));<%\n%>'
+    <<
+    <%preExp%>
+    gout[<%index1%>] = <%tvar1%> != <%tvar2%> ? 1 : -1;
+    >>
   case CALL(path=IDENT(name="div"), expLst={exp1, exp2, idx}) then
     let &preExp = buffer ""
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
@@ -4122,9 +4114,12 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
     let matrixB = genMatrix("B", varInfo.numStateVars, varInfo.numInVars)
     let matrixC = genMatrix("C", varInfo.numOutVars, varInfo.numStateVars)
     let matrixD = genMatrix("D", varInfo.numOutVars, varInfo.numInVars)
+    let matrixCz = genMatrix("Cz", varInfo.numAlgVars, varInfo.numStateVars)
+    let matrixDz = genMatrix("Dz", varInfo.numAlgVars, varInfo.numInVars)
     let vectorX = genVector("x", varInfo.numStateVars, 0)
     let vectorU = genVector("u", varInfo.numInVars, 1)
     let vectorY = genVector("y", varInfo.numOutVars, 2)
+    let vectorZ = genVector("z", varInfo.numAlgVars, 2)
     //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0); \n  output Real y[<%varInfo.numOutVars%>]; \n");
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
@@ -4139,8 +4134,27 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%vectorX%>
       <%vectorU%>
       <%vectorY%>
-      "\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%>  <% getVarName(vars.inputVars, "u", varInfo.numInVars) %>  <%getVarName(vars.outputVars, "y", varInfo.numOutVars) %>\n"
+      "\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%><% getVarName(vars.inputVars, "u", varInfo.numInVars) %><%getVarName(vars.outputVars, "y", varInfo.numOutVars) %>\n"
       "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%underscorePath(name)%>;\n";
+    }
+    const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
+    {
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n  parameter Integer nz = <%varInfo.numAlgVars%>; // data recovery variables \n"
+      "  parameter Real x0[<%varInfo.numStateVars%>] = {%s};\n"
+      "  parameter Real u0[<%varInfo.numInVars%>] = {%s};\n"
+      "  parameter Real z0[<%varInfo.numAlgVars%>] = {%s};\n"
+      <%matrixA%>
+      <%matrixB%>
+      <%matrixC%>
+      <%matrixD%>
+      <%matrixCz%>
+      <%matrixDz%>
+      <%vectorX%>
+      <%vectorU%>
+      <%vectorY%>
+      <%vectorZ%>
+      "\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%><% getVarName(vars.inputVars, "u", varInfo.numInVars) %><%getVarName(vars.outputVars, "y", varInfo.numOutVars) %><%getVarName(vars.algVars, "z", varInfo.numAlgVars) %>\n"
+      "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\n  z = Cz * x + Dz * u;\nend linear_<%underscorePath(name)%>;\n";
     }
     >>
   end match
@@ -4265,8 +4279,9 @@ case _ then
         TRACE_PUSH
         DATA* data = ((DATA*)inData);
         int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixname%>;
-
-        int i;
+        const int tmp[<%sizeleadindex%>] = {<%leadindex%>};
+        const int tmpElem[<%sp_size_index%>] = {<%indexElems%>};
+        int i = 0;
 
         data->simulationInfo->analyticJacobians[index].sizeCols = <%index_%>;
         data->simulationInfo->analyticJacobians[index].sizeRows = <%indexColumn%>;
@@ -4281,15 +4296,13 @@ case _ then
         data->simulationInfo->analyticJacobians[index].sparsePattern.maxColors = <%maxColor%>;
         data->simulationInfo->analyticJacobians[index].jacobian = NULL;
 
-        /* write lead index of compressed sparse column*/
-        const int tmp[<%sizeleadindex%>] = {<%leadindex%>};
+        /* write lead index of compressed sparse column */
         memcpy(data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex, tmp, <%sizeleadindex%>*sizeof(int));
 
         for(i=1;i<<%sizeleadindex%>;++i)
             data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[i] += data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[i-1];
 
         /* call sparse index */
-        const int tmpElem[<%sp_size_index%>] = {<%indexElems%>};
         memcpy(data->simulationInfo->analyticJacobians[index].sparsePattern.index, tmpElem, <%sp_size_index%>*sizeof(int));
 
         /* write color array */
@@ -4735,7 +4748,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
   /* check if solution process was successful */
   if (retValue > 0){
     const int indexes[2] = {1,<%ls.index%>};
-    throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving linear system <%ls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_LS.", time);
+    throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving linear system <%ls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_LS.", data->localData[0]->timeValue);
     <%returnval2%>
   }
   /* write solution */
@@ -5221,9 +5234,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS=/Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY /DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME <%if (Flags.isSet(Flags.HPCOM)) then '/openmp'%> <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL' %>
+  CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY /DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME <%if (Flags.isSet(Flags.HPCOM)) then '/openmp'%> <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL' %>
   # /ZI enable Edit and Continue debug info
-  CDFLAGS = /ZI
+  CDFLAGS=/ZI
 
   # /MD - link with MSVCRT.LIB
   # /link - [linker options and libraries]
@@ -5284,7 +5297,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%>
   LDFLAGS=<%dirExtra%> <%
   if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -s TOTAL_MEMORY=805306368 -s OUTLINING_LIMIT=20000 --pre-js $(OMC_EMCC_PRE_JS)>>
-  else <<-L"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<% if stringEq(makefileParams.platform, "win32") then "--stack,16777216,"%>-rpath,"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%ParModelicaAutoLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> >>
+  else <<-L"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<% if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then "--stack,16777216,"%>-rpath,"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%ParModelicaAutoLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> >>
   %>
   MAINFILE=<%fileNamePrefix%>.c
   MAINOBJ=<%fileNamePrefix%>.o

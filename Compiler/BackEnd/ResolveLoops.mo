@@ -117,7 +117,7 @@ algorithm
       eqMapping = List.map1(simpEqLst,List.position,eqLst);
       simpEqs = BackendEquation.listEquation(simpEqLst);
       crefs = BackendEquation.getAllCrefFromEquations(simpEqs);
-      (simpVarLst,varMapping) = BackendVariable.getVarLst(crefs,vars,{},{});
+      (simpVarLst,varMapping) = BackendVariable.getVarLst(crefs,vars);
       simpVars = BackendVariable.listVar1(simpVarLst);
 
       // build the incidence matrix for the linear equations
@@ -1692,11 +1692,9 @@ protected function connectPaths "author:Waurich TUD 2014-02
   output list<list<Integer>> loopsOut;
 protected
   list<Integer> path;
-  Integer last;
 algorithm
-  path := listDelete(pathIn, 1);
-  last := listLength(path);
-  path := listDelete(path, last);
+  _::path := pathIn;
+  path := List.stripLast(path);
   loopsOut := List.map1(closingPaths,listAppend,path);
 end connectPaths;
 
@@ -1915,11 +1913,11 @@ algorithm
   b1 := intEq(listLength(row),2);  // only two variables
   eqLst := List.mapList((List.map1(vars,Array.getIndexFirst,meT)),Util.tuple31);
   numEqs := List.map(eqLst,listLength);
-  b3 := List.fold(List.map1(numEqs,intEq,2),boolOr,false);  // at least one adjacent variable hast only 2 adj equations
+  b3 := List.applyAndFold1(numEqs,boolOr,intEq,2,false);  // at least one adjacent variable hast only 2 adj equations
   eqs := List.flatten(eqLst);
   b2 := intEq(listLength(eqs),listLength(List.unique(eqs))+2);
   b1 := b1 and b2 and b3;
-  chooseThis := b1 and List.fold(List.map(row,isSolvable),boolAnd,true);
+  chooseThis := b1 and List.applyAndFold(row,boolAnd,isSolvable,true);
 end chooseEquation;
 
 protected function getDoublicates

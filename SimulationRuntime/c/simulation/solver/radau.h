@@ -100,7 +100,7 @@
 #endif /* SUNDIALS */
   int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int flag, int N);
   int freeKinOde(DATA* data, SOLVER_INFO* solverInfo, int N);
-  int kinsolOde(void* ode);
+  int kinsolOde(SOLVER_INFO* solverInfo);
 #ifdef __cplusplus
 };
 #endif

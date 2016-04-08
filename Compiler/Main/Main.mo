@@ -73,7 +73,7 @@ import Print;
 import Settings;
 import SimCode;
 import SimCodeMain;
-import SimCodeFunctionUtil;
+import ExecStat.{execStat,execStatReset};
 import Socket;
 import StackOverflow;
 import System;
@@ -465,7 +465,7 @@ algorithm
       equation
         //print("Class to instantiate: " + Config.classToInstantiate() + "\n");
         isEmptyOrFirstIsModelicaFile(libs);
-        SimCodeFunctionUtil.execStatReset();
+        execStatReset();
         // Parse libraries and extra mo-files that might have been given at the command line.
         GlobalScript.SYMBOLTABLE(ast = p) = List.fold(libs, loadLib, GlobalScript.emptySymboltable);
         // Show any errors that occured during parsing.
@@ -480,7 +480,7 @@ algorithm
           DumpGraphviz.dump(p);
         end if;
 
-        SimCodeFunctionUtil.execStat("Parsed file");
+        execStat("Parsed file");
 
         // Instantiate the program.
         (cache, env, d, cname) = instantiate(p);
@@ -490,14 +490,14 @@ algorithm
         funcs = FCore.getFunctionTree(cache);
 
         Print.clearBuf();
-        SimCodeFunctionUtil.execStat("Transformations before Dump");
+        execStat("Transformations before Dump");
         s = DAEDump.dumpStr(d, funcs);
-        SimCodeFunctionUtil.execStat("DAEDump done");
+        execStat("DAEDump done");
         Print.printBuf(s);
         if Flags.isSet(Flags.DAE_DUMP_GRAPHV) then
           DAEDump.dumpGraphviz(d);
         end if;
-        SimCodeFunctionUtil.execStat("Misc Dump");
+        execStat("Misc Dump");
 
         // Do any transformations required before going into code generation, e.g. if-equations to expressions.
         d = if boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)) then DAEUtil.transformationsBeforeBackend(cache,env,d) else  d;
@@ -505,7 +505,7 @@ algorithm
         if not Config.silent() then
           print(Print.getString());
         end if;
-        SimCodeFunctionUtil.execStat("Transformations before backend");
+        execStat("Transformations before backend");
 
         // Run the backend.
         optimizeDae(cache, env, d, p, cname);
@@ -636,7 +636,7 @@ algorithm
     System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
     SimCodeMain.generateModelCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inProgram, inClassName, cname, SOME(sim_settings), Absyn.FUNCTIONARGS({}, {}));
 
-    SimCodeFunctionUtil.execStat("Codegen Done");
+    execStat("Codegen Done");
   end if;
 end simcodegen;
 
@@ -730,57 +730,41 @@ public function setWindowsPaths
 algorithm
   _ := matchcontinue(inOMHome)
     local
-      String oldPath,newPath,omHome,omdevPath;
+      String oldPath, newPath, omHome, omdevPath, mingwDir, binDir, libBinDir, msysBinDir;
+      Boolean hasBinDir, hasLibBinDir;
 
     // check if we have OMDEV set
     case (omHome)
       equation
         System.setEnv("OPENMODELICAHOME",omHome,true);
         omdevPath = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
-        // we have something!
-        false = stringEq(omdevPath, "");
-        // do we have bin?
-        true = System.directoryExists(omdevPath + "\\tools\\mingw\\bin");
-        // do we have the correct libexec stuff?
-        true = System.directoryExists(omdevPath + "\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
-        oldPath = System.readEnv("PATH");
-        newPath = stringAppendList({omHome,"\\bin;",
-                                    omHome,"\\lib;",
-                                    omdevPath,"\\tools\\mingw\\bin;",
-                                    omdevPath,"\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
-                                    oldPath});
-        System.setEnv("PATH",newPath,true);
+        mingwDir = System.openModelicaPlatform();
+        // if we don't have something in OMDEV use OMHOME
+        if stringEq(omdevPath, "") then
+          omdevPath = omHome;
+        end if;
+        msysBinDir = omdevPath + "\\tools\\msys\\usr\\bin";
+        binDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\bin";
+        libBinDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
+        // do we have bin and lib bin?
+        hasBinDir = System.directoryExists(binDir);
+        hasLibBinDir = System.directoryExists(libBinDir);
+        if hasBinDir and hasLibBinDir
+        then
+          oldPath = System.readEnv("PATH");
+          newPath = stringAppendList({omHome, "\\bin;", omHome, "\\lib;", binDir + ";", libBinDir + ";", msysBinDir + ";"});
+          newPath = System.stringReplace(newPath, "/", "\\") + oldPath;
+          // print("Path set: " + newPath + "\n");
+          System.setEnv("PATH",newPath,true);
+        else
+          // do not display anything if +d=disableWindowsPathCheckWarning
+          if not Flags.isSet(Flags.DISABLE_WINDOWS_PATH_CHECK_WARNING) then
+            print("We could not find some needed MINGW paths in $OPENMODELICAHOME or $OMDEV. Searched for paths:\n");
+            print("\t" + binDir + (if hasBinDir then " [found] " else " [not found] ") + "\n");
+            print("\t" + libBinDir + (if hasLibBinDir then " [found] " else " [not found] ") + "\n");
+          end if;
+        end if;
       then ();
-
-    case (omHome)
-      equation
-        System.setEnv("OPENMODELICAHOME",omHome,true);
-        oldPath = System.readEnv("PATH");
-        // do we have bin?
-        true = System.directoryExists(omHome + "\\mingw\\bin");
-        // do we have the correct libexec stuff?
-        true = System.directoryExists(omHome + "\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
-        newPath = stringAppendList({omHome,"\\bin;",
-                                    omHome,"\\lib;",
-                                    omHome,"\\mingw\\bin;",
-                                    omHome,"\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
-                                    oldPath});
-        System.setEnv("PATH",newPath,true);
-      then ();
-
-    // do not display anything if +d=disableWindowsPathCheckWarning
-    case (_)
-      equation
-        true = Flags.isSet(Flags.DISABLE_WINDOWS_PATH_CHECK_WARNING);
-      then ();
-
-    else
-      equation
-        print("We could not find any of:\n");
-        print("\t"+inOMHome+"/MinGW/bin and "+inOMHome+"/MinGW/libexec/gcc/mingw32/4.4.0\n");
-        print("\t$OMDEV/tools/MinGW/bin and $OMDEV/tools/MinGW/libexec/gcc/mingw32/4.4.0\n");
-      then ();
-
   end matchcontinue;
 end setWindowsPaths;
 

@@ -75,6 +75,7 @@ import Debug;
 import Error;
 import Flags;
 import FMI;
+import GC;
 import HpcOmSimCodeMain;
 import HpcOmTaskGraph;
 import SerializeModelInfo;
@@ -84,6 +85,7 @@ import SimCodeUtil;
 import System;
 import Util;
 import BackendDump;
+import ExecStat;
 
 public function createSimulationSettings
   input Real startTime;
@@ -147,7 +149,7 @@ algorithm
   simCode := createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, SOME(simSettings), recordDecls, literals, Absyn.FUNCTIONARGS({},{}), isFMU=true, FMUVersion=FMUVersion);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
-  SimCodeFunctionUtil.execStat("SimCode");
+  ExecStat.execStat("SimCode");
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType);
@@ -192,7 +194,7 @@ algorithm
   (simCode,_) := SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
-  SimCodeFunctionUtil.execStat("SimCode");
+  ExecStat.execStat("SimCode");
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   callTargetTemplatesXML(simCode, Config.simCodeTarget());
@@ -417,12 +419,12 @@ algorithm
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE);
   simCode := createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
-  SimCodeFunctionUtil.execStat("SimCode");
+  ExecStat.execStat("SimCode");
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   callTargetTemplates(simCode, Config.simCodeTarget());
   timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
-  SimCodeFunctionUtil.execStat("Templates");
+  ExecStat.execStat("Templates");
 end generateModelCode;
 
 protected function createSimCode "
@@ -496,10 +498,80 @@ protected function callTargetTemplates "
   Generate target code by passing the SimCode data structure to templates."
   input SimCode.SimCode simCode;
   input String target;
+protected
+  partial function Func
+    input Tpl.Text txt;
+    input SimCode.SimCode a_simCode;
+    output Tpl.Text out_txt;
+  end Func;
+  partial function FuncText
+    input Tpl.Text txt;
+    output Tpl.Text out_txt;
+  end FuncText;
+  partial function BoolFunc
+    input Tpl.Text txt;
+    input SimCode.SimCode a_simCode;
+    output Tpl.Text out_txt;
+  end BoolFunc;
+  Func func;
+  Tpl.Text txt;
+
+  function runTplWriteFile
+    extends PartialRunTpl(res=false);
+    input FuncText func;
+    input String file;
+  algorithm
+    try
+      Tpl.textFileConvertLines(Tpl.tplCallWithFailErrorNoArg(func), file);
+      res := true;
+    else
+    end try;
+  end runTplWriteFile;
+
+  function runTpl
+    extends PartialRunTpl(res=false);
+    input FuncText func;
+  algorithm
+    try
+      Tpl.tplCallWithFailErrorNoArg(func);
+      res := true;
+    else
+    end try;
+  end runTpl;
+
+  function runToStr
+    extends PartialRunTpl(res=false);
+    input Func func;
+    partial function Func
+      output String str;
+    end Func;
+  algorithm
+    try
+      func();
+      res := true;
+    else
+    end try;
+  end runToStr;
+
+  function runCodegenFunc
+    input PartialRunTpl func;
+    output Boolean res;
+  algorithm
+    res := func();
+    if not res then
+      print(System.dladdr(func) + " failed\n");
+    end if;
+  end runCodegenFunc;
+
+  partial function PartialRunTpl
+    output Boolean res;
+  end PartialRunTpl;
 algorithm
   _ := match target
     local
       String str, guid;
+      list<PartialRunTpl> codegenFuncs;
+      Integer numThreads;
 
     case "CSharp" equation
       Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
@@ -517,29 +589,56 @@ algorithm
       Tpl.tplNoret3(CodegenSparseFMI.translateModel, simCode, "2.0", "me");
     then ();
 
-    case "C" equation
-      guid = System.getUUIDStr();
+    case "C"
+      algorithm
+        guid := System.getUUIDStr();
 
-      System.realtimeTick(ClockIndexes.RT_PROFILER0);
-      Tpl.tplNoret2(CodegenC.translateInitFile, simCode, guid);
-      // print("SimCode -> init.xml: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
-      // System.realtimeTick(ClockIndexes.RT_PROFILER0);
-      if Flags.isSet(Flags.MODEL_INFO_JSON) then
-        SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-      else
-        Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-      end if;
-      dumpTaskSystemIfFlag(simCode);
-      // print("SimCode -> info.xml: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
-      // System.realtimeTick(ClockIndexes.RT_PROFILER0);
-      // print("SimCode -> info.json: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
-      Tpl.tplNoret2(CodegenC.translateModel, simCode, guid);
-      // print("SimCode -> C-files: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
-    then ();
+        System.realtimeTick(ClockIndexes.RT_PROFILER0);
+        codegenFuncs := {};
+        dumpTaskSystemIfFlag(simCode);
+        codegenFuncs := (function runTpl(func=function CodegenC.translateModel(in_a_simCode=simCode))) :: codegenFuncs;
+        for f in {
+          // external objects
+          (CodegenC.simulationFile_exo, "_01exo.c"),
+          // non-linear systems
+          (CodegenC.simulationFile_nls, "_02nls.c"),
+          (CodegenC.simulationFile_lsy, "_03lsy.c"),
+          (CodegenC.simulationFile_set, "_04set.c"),
+          (CodegenC.simulationFile_evt, "_05evt.c"),
+          (CodegenC.simulationFile_inz, "_06inz.c"),
+          (CodegenC.simulationFile_dly, "_07dly.c"),
+          (CodegenC.simulationFile_bnd, "_08bnd.c"),
+          (CodegenC.simulationFile_alg, "_09alg.c"),
+          (CodegenC.simulationFile_asr, "_10asr.c"),
+          (CodegenC.simulationFile_jac, "_12jac.c"),
+          (CodegenC.simulationFile_jac_header, "_12jac.h"),
+          (CodegenC.simulationFile_opt, "_13opt.c"),
+          (CodegenC.simulationFile_opt_header, "_13opt.h"),
+          (CodegenC.simulationFile_lnz, "_14lnz.c"),
+          (CodegenC.simulationFile_syn, "_15syn.c")
+        } loop
+          (func,str) := f;
+          codegenFuncs := (function runTplWriteFile(func=function func(a_simCode=simCode), file=simCode.fileNamePrefix + str)) :: codegenFuncs;
+        end for;
+        codegenFuncs := (function runTpl(func=function CodegenC.simulationFile_mixAndHeader(a_simCode=simCode, a_modelNamePrefix=simCode.fileNamePrefix))) :: codegenFuncs;
+        codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=false), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
+        codegenFuncs := (function runTpl(func=function CodegenC.translateInitFile(in_a_simCode=simCode, in_a_guid=guid))) :: codegenFuncs;
+        if Flags.isSet(Flags.MODEL_INFO_JSON) then
+          codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
+        else
+          codegenFuncs := (function runTpl(func=function SimCodeDump.dumpSimCode(in_a_code=simCode, in_a_withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
+        end if;
+        numThreads := max(1, integer(Config.noProc()/2));
+        if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 or (not stringEq(Flags.getConfigString(Flags.RUNNING_TESTSUITE),"")) then
+          true := max(func() for func in codegenFuncs);
+        else
+          true := max(l for l in System.launchParallelTasks(min(2, numThreads) /* Boehm GC does not scale to infinity */, codegenFuncs, runCodegenFunc));
+        end if;
+      then ();
 
     case "JavaScript" equation
       guid = System.getUUIDStr();
-      Tpl.tplNoret2(CodegenC.translateModel, simCode, guid);
+      Tpl.tplNoret(CodegenC.translateModel, simCode);
       Tpl.tplNoret2(CodegenC.translateInitFile, simCode, guid);
       Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
       Tpl.tplNoret(CodegenJS.markdownFile, simCode);
@@ -606,7 +705,7 @@ algorithm
         if Flags.isSet(Flags.MODEL_INFO_JSON) then
           SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
           str := fmutmp + "/sources/" + simCode.fileNamePrefix;
-          true := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", str+"_info.c");
+          true := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", str+"_info.c", Flags.getConfigString(Flags.TARGET));
         else
           Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
         end if;
@@ -678,14 +777,14 @@ algorithm
     case (cache, graph, _, (st as GlobalScript.SYMBOLTABLE(ast=p)), filenameprefix, _, _, _) equation
       // calculate stuff that we need to create SimCode data structure
       System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
-      SimCodeFunctionUtil.execStatReset();
+      ExecStat.execStatReset();
       (cache, graph, dae, st) = CevalScriptBackend.runFrontEnd(cache, graph, className, st, false);
-      SimCodeFunctionUtil.execStat("FrontEnd");
+      ExecStat.execStat("FrontEnd");
       timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
 
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
       dae = DAEUtil.transformationsBeforeBackend(cache, graph, dae);
-      SimCodeFunctionUtil.execStat("Transformations before backend");
+      ExecStat.execStat("Transformations before backend");
       description = DAEUtil.daeDescription(dae);
       dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
       //BackendDump.printBackendDAE(dlow);

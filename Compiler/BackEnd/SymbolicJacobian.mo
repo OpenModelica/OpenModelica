@@ -41,38 +41,39 @@ public import DAE;
 public import FCore;
 public import FGraph;
 
-protected import Array;
-protected import BackendDAEOptimize;
-protected import BackendDAETransform;
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import BackendVarTransform;
-protected import BaseHashSet;
-protected import Ceval;
-protected import ClockIndexes;
-protected import Config;
-protected import ComponentReference;
-protected import DAEUtil;
-protected import Debug;
-protected import Differentiate;
-protected import DynamicOptimization;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import Error;
-protected import Flags;
-protected import Global;
-protected import Graph;
-protected import HashSet;
-protected import IndexReduction;
-protected import List;
-protected import SimCodeFunctionUtil;
-protected import System;
-protected import Util;
-protected import Values;
-protected import ValuesUtil;
+protected
+import Array;
+import BackendDAEOptimize;
+import BackendDAETransform;
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVariable;
+import BackendVarTransform;
+import BaseHashSet;
+import Ceval;
+import ClockIndexes;
+import Config;
+import ComponentReference;
+import Debug;
+import Differentiate;
+import DynamicOptimization;
+import ElementSource;
+import ExecStat.execStat;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import Error;
+import Flags;
+import Global;
+import Graph;
+import HashSet;
+import IndexReduction;
+import List;
+import System;
+import Util;
+import Values;
+import ValuesUtil;
 
 // =============================================================================
 // section for postOptModule >>calculateStateSetsJacobians<<
@@ -141,27 +142,27 @@ protected
 algorithm
   // lochel: This module fails for some models (e.g. #3543)
   try
-    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> start "); end if;
+    if debug then execStat("detectSparsePatternODE -> start "); end if;
     BackendDAE.DAE(eqs = eqs) := inBackendDAE;
 
     // prepare a DAE
     DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
-    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> copy dae "); end if;
+    if debug then execStat("detectSparsePatternODE -> copy dae "); end if;
     DAE := BackendDAEOptimize.collapseIndependentBlocks(DAE);
-    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> collapse blocks "); end if;
+    if debug then execStat("detectSparsePatternODE -> collapse blocks "); end if;
     DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
-    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> transform backend dae "); end if;
+    if debug then execStat("detectSparsePatternODE -> transform backend dae "); end if;
 
     // get states for DAE
     BackendDAE.DAE(eqs = {BackendDAE.EQSYSTEM(orderedVars = v)}, shared=shared) := DAE;
     states := BackendVariable.getAllStateVarFromVariables(v);
-    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> get all vars "); end if;
+    if debug then execStat("detectSparsePatternODE -> get all vars "); end if;
 
     // generate sparse pattern
     (sparsePattern, coloredCols) := generateSparsePattern(DAE, states, states);
-    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> generateSparsePattern "); end if;
+    if debug then execStat("detectSparsePatternODE -> generateSparsePattern "); end if;
     shared := addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
-    if debug then SimCodeFunctionUtil.execStat("detectSparsePatternODE -> addBackendDAESharedJacobianSparsePattern "); end if;
+    if debug then execStat("detectSparsePatternODE -> addBackendDAESharedJacobianSparsePattern "); end if;
 
     outBackendDAE := BackendDAE.DAE(eqs, shared);
   else
@@ -254,7 +255,6 @@ algorithm
     list< .DAE.Constraint> constraints;
   case(_) equation
     true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
-    System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
     (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar(), Flags.isSet(Flags.DIS_SYMJAC_FMI20));
     shared = BackendDAEUtil.setSharedSymJacs(shared, linearModelMatrixes);
@@ -262,7 +262,6 @@ algorithm
     functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
     shared = BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
     outBackendDAE = BackendDAE.DAE(eqs,shared);
-    _  = System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
   then outBackendDAE;
 
   else inBackendDAE;
@@ -862,7 +861,7 @@ algorithm
         (solvedVals, linInfo) = System.dgesv(jacVals, rhsVals);
         names = List.map(var_lst, BackendVariable.varCref);
         checkLinearSystem(linInfo, names, jacVals, rhsVals, eqn_lst);
-        sources = List.map1( sources, DAEUtil.addSymbolicTransformation,
+        sources = List.map1( sources, ElementSource.addSymbolicTransformation,
                              DAE.LINEAR_SOLVED(names, jacVals, rhsVals, solvedVals) );
         (v, eqns, shared) = changeConstantLinearSystemVars( var_lst, solvedVals, sources, var_indxs,
                                                                            syst.orderedVars, syst.orderedEqs, ishared );
@@ -1049,7 +1048,7 @@ algorithm
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           print(" start getting sparsity pattern diff Vars : " + intString(listLength(indiffedVars))  + " diffed vars: " + intString(listLength(indiffVars)) +"\n");
         end if;
-        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> do start "); end if;
+        if debug then execStat("generateSparsePattern -> do start "); end if;
         // prepare crefs
         diffCompRefsLst = List.map(indiffVars, BackendVariable.varCref);
         diffedCompRefsLst = List.map(indiffedVars, BackendVariable.varCref);
@@ -1093,9 +1092,9 @@ algorithm
         usedvar = arrayCreate(adjSizeT, 0);
         usedvar = Array.setRange(adjSizeT-(sizeN-1), adjSizeT, usedvar, 1);
 
-        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> start "); end if;
+        if debug then execStat("generateSparsePattern -> start "); end if;
         eqnSparse = getSparsePattern(comps, eqnSparse, varSparse, mark, usedvar, 1, adjMatrix, adjMatrixT);
-        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> end "); end if;
+        if debug then execStat("generateSparsePattern -> end "); end if;
         // debug dump
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           BackendDump.dumpSparsePatternArray(eqnSparse);
@@ -1107,13 +1106,13 @@ algorithm
         sparsepattern = arrayList(sparseArray);
         sparsepattern = List.map1List(sparsepattern, intSub, adjSizeT-sizeN);
 
-        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> postProcess "); end if;
+        if debug then execStat("generateSparsePattern -> postProcess "); end if;
 
         // transpose the column-based pattern to row-based pattern
         sparseArrayT = arrayCreate(sizeN,{});
         sparseArrayT = transposeSparsePattern(sparsepattern, sparseArrayT, 1);
         sparsepatternT = arrayList(sparseArrayT);
-        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> postProcess2 "); end if;
+        if debug then execStat("generateSparsePattern -> postProcess2 "); end if;
 
         nonZeroElements = List.lengthListElements(sparsepattern);
         if Flags.isSet(Flags.DUMP_SPARSE) then
@@ -1152,9 +1151,9 @@ algorithm
         forbiddenColor = arrayCreate(sizeN,NONE());
         colored = arrayCreate(sizeN,0);
         arraysparseGraph = listArray(sparseGraph);
-        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> coloring start "); end if;
+        if debug then execStat("generateSparsePattern -> coloring start "); end if;
         Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
-        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> coloring end "); end if;
+        if debug then execStat("generateSparsePattern -> coloring end "); end if;
         // get max color used
         maxColor = Array.fold(colored, intMax, 0);
 
@@ -1174,7 +1173,7 @@ algorithm
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           print("analytical Jacobians[SPARSE] -> ready! " + realString(clock()) + "\n");
         end if;
-        if debug then SimCodeFunctionUtil.execStat("generateSparsePattern -> final end "); end if;
+        if debug then execStat("generateSparsePattern -> final end "); end if;
       then ((sparsetupleT, sparsetuple, (diffCompRefsLst, diffedCompRefsLst), nonZeroElements), coloring);
     else
       algorithm
@@ -1239,7 +1238,7 @@ algorithm
     case(BackendDAE.SINGLEARRAY(eqn=eqn,vars=solvedVars)::rest,result,_,_,_,_,_,_)
       equation
         inputVars = arrayGet(inMatrix, eqn);
-        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        inputVars = list(v for v guard not listMember(v, solvedVars) in inputVars);
 
         getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1248,7 +1247,7 @@ algorithm
     case(BackendDAE.SINGLEIFEQUATION(eqn=eqn,vars=solvedVars)::rest,result,_,_,_,_,_,_)
       equation
         inputVars = arrayGet(inMatrixT, eqn);
-        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        inputVars = list(v for v guard not listMember(v, solvedVars) in inputVars);
 
         getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1257,7 +1256,7 @@ algorithm
     case(BackendDAE.SINGLEALGORITHM(eqn=eqn,vars=solvedVars)::rest,result,_,_,_,_,_,_)
       equation
         inputVars = arrayGet(inMatrix, eqn);
-        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        inputVars = list(v for v guard not listMember(v, solvedVars) in inputVars);
 
         getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1266,7 +1265,7 @@ algorithm
     case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqn,vars=solvedVars)::rest,result,_,_,_,_,_,_)
       equation
         inputVars = arrayGet(inMatrix, eqn);
-        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        inputVars = list(v for v guard not listMember(v, solvedVars) in inputVars);
 
         getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1275,7 +1274,7 @@ algorithm
     case(BackendDAE.SINGLEWHENEQUATION(eqn=eqn,vars=solvedVars)::rest,result,_,_,_,_,_,_)
       equation
         inputVars = arrayGet(inMatrix, eqn);
-        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        inputVars = list(v for v guard not listMember(v, solvedVars) in inputVars);
 
         getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1284,7 +1283,7 @@ algorithm
     case(BackendDAE.SINGLEIFEQUATION(eqn=eqn,vars=solvedVars)::rest,result,_,_,_,_,_,_)
       equation
         inputVars = arrayGet(inMatrix, eqn);
-        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        inputVars = list(v for v guard not listMember(v, solvedVars) in inputVars);
 
         getSparsePattern2(inputVars, solvedVars, {eqn}, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1294,7 +1293,7 @@ algorithm
       equation
         inputVarsLst = List.map1(eqns, Array.getIndexFirst, inMatrix);
         inputVars = List.flatten(inputVarsLst);
-        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        inputVars = list(v for v guard not listMember(v, solvedVars) in inputVars);
 
         getSparsePattern2(inputVars, solvedVars, eqns, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1309,7 +1308,7 @@ algorithm
 
         inputVarsLst = List.map1(eqns, Array.getIndexFirst, inMatrix);
         inputVars = List.flatten(inputVarsLst);
-        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
+        inputVars = list(v for v guard not listMember(v, solvedVars) in inputVars);
 
         getSparsePattern2(inputVars, solvedVars, eqns, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
@@ -1686,7 +1685,6 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.Variables  knvars, knvars1;
       list<BackendDAE.Var> diffedVars, diffVarsTmp, seedlst, knvarsTmp;
-      String s,s1;
 
       BackendDAE.SparsePattern sparsepattern;
       BackendDAE.SparseColoring colsColors;
@@ -1697,14 +1695,12 @@ algorithm
       equation
 
         diffedVars = BackendVariable.varList(inDifferentiatedVars);
-        s =  intString(listLength(diffedVars));
         comref_differentiatedVars = List.map(diffedVars, BackendVariable.varCref);
 
         reduceDAE = BackendDAEUtil.reduceEqSystemsInDAE(inBackendDAE, diffedVars);
 
         comref_vars = List.map(inDiffVars, BackendVariable.varCref);
         seedlst = List.map1(comref_vars, createSeedVars, inName);
-        s1 =  intString(listLength(inVars));
 
         // Differentiate the ODE system w.r.t states for jacobian
         (backendDAE as BackendDAE.DAE(shared=shared), funcs) = generateSymbolicJacobian(reduceDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
@@ -1798,9 +1794,9 @@ algorithm
                                                                     "wrapFunctionCalls",
                                                                     "inlineArrayEqn",
                                                                     "constantLinearSystem",
+                                                                    "solveSimpleEquations",
                                                                     "tearingSystem",
                                                                     "calculateStrongComponentJacobians",
-                                                                    "solveSimpleEquations",
                                                                     "removeConstants",
                                                                     "simplifyTimeIndepFuncCalls"});
           _ = Flags.set(Flags.EXEC_STAT, b);
@@ -2230,46 +2226,46 @@ protected
   list<Integer> otherEqnsInts, otherVarsInts;
 algorithm
 try
-	// get iteration vars
-	iterationvars := List.map1r(inIterationvarsInts, BackendVariable.getVarAt, inVars);
-	iterationvars := List.map(iterationvars, BackendVariable.transformXToXd);
-	outDiffVars := BackendVariable.listVar1(iterationvars);
+  // get iteration vars
+  iterationvars := List.map1r(inIterationvarsInts, BackendVariable.getVarAt, inVars);
+  iterationvars := List.map(iterationvars, BackendVariable.transformXToXd);
+  outDiffVars := BackendVariable.listVar1(iterationvars);
 
-	// debug
-	if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-	  print("*** got iteration variables at time: " + realString(clock()) + "\n");
-	  BackendDump.printVarList(iterationvars);
-	end if;
+  // debug
+  if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+    print("*** got iteration variables at time: " + realString(clock()) + "\n");
+    BackendDump.printVarList(iterationvars);
+  end if;
 
-	// get residual eqns
-	reqns := BackendEquation.getEqns(inResidualequations, inEqns);
-	reqns := BackendEquation.replaceDerOpInEquationList(reqns);
-	outResidualEqns := BackendEquation.listEquation(reqns);
-	// create  residual equations
-	reqns := BackendEquation.traverseEquationArray(outResidualEqns, BackendEquation.traverseEquationToScalarResidualForm, {});
-	reqns := listReverse(reqns);
-	(reqns, resVarsLst) := convertResidualsIntoSolvedEquations(reqns);
-	outResidualVars := BackendVariable.listVar1(resVarsLst);
-	outResidualEqns := BackendEquation.listEquation(reqns);
+  // get residual eqns
+  reqns := BackendEquation.getEqns(inResidualequations, inEqns);
+  reqns := BackendEquation.replaceDerOpInEquationList(reqns);
+  outResidualEqns := BackendEquation.listEquation(reqns);
+  // create  residual equations
+  reqns := BackendEquation.traverseEquationArray(outResidualEqns, BackendEquation.traverseEquationToScalarResidualForm, {});
+  reqns := listReverse(reqns);
+  (reqns, resVarsLst) := convertResidualsIntoSolvedEquations(reqns);
+  outResidualVars := BackendVariable.listVar1(resVarsLst);
+  outResidualEqns := BackendEquation.listEquation(reqns);
 
-	// debug
-	if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-	  print("*** got residual equation and created corresponding variables at time: " + realString(clock()) + "\n");
-	  print("Equations:\n");
-	  BackendDump.printEquationList(reqns);
-	end if;
+  // debug
+  if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+    print("*** got residual equation and created corresponding variables at time: " + realString(clock()) + "\n");
+    print("Equations:\n");
+    BackendDump.printEquationList(reqns);
+  end if;
 
-	// get other eqns
-	(otherEqnsInts,otherVarsIntsLst,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-	otherEqnsLst := BackendEquation.getEqns(otherEqnsInts, inEqns);
-	otherEqnsLst := BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
-	outOtherEqns := BackendEquation.listEquation(otherEqnsLst);
+  // get other eqns
+  (otherEqnsInts,otherVarsIntsLst,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+  otherEqnsLst := BackendEquation.getEqns(otherEqnsInts, inEqns);
+  otherEqnsLst := BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
+  outOtherEqns := BackendEquation.listEquation(otherEqnsLst);
 
-	// get other vars
-	otherVarsInts := List.flatten(otherVarsIntsLst);
-	ovarsLst := List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
-	ovarsLst := List.map(ovarsLst, BackendVariable.transformXToXd);
-	outOtherVars := BackendVariable.listVar1(ovarsLst);
+  // get other vars
+  otherVarsInts := List.flatten(otherVarsIntsLst);
+  ovarsLst := List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
+  ovarsLst := List.map(ovarsLst, BackendVariable.transformXToXd);
+  outOtherVars := BackendVariable.listVar1(ovarsLst);
 
   // debug
   if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
@@ -3350,11 +3346,11 @@ algorithm
         (_,_) = BackendVariable.getVar(cr, vars);
       then (e,false,(vars,true));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "pre")),(vars,b))
-      then (e,false,(vars,b));
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "pre")),_)
+      then (e,false,tpl);
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "previous")),(vars,b))
-      then (e,false,(vars,b));
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "previous")),_)
+      then (e,false,tpl);
 
     case (e,(_,b)) then (e,not b,tpl);
   end matchcontinue;

@@ -2,6 +2,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define OPENMODELICA_BOOTSTRAPPING_STAGE_1
+
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef FMI_Info_INFO__desc_added
 #define FMI_Info_INFO__desc_added

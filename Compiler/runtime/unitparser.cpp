@@ -34,6 +34,7 @@
 #include <sstream>
 #include <stack>
 #include "omc_msvc.h" /* For round() */
+#include "meta_modelica.h"
 
 #ifndef NO_LPLIB
 
@@ -286,6 +287,15 @@ UnitParser::~UnitParser() {
 
 void UnitParser::addPrefix(const string symbol, Rational exponent) {
   _prefix[symbol] = exponent;
+}
+
+void* UnitParser::allUnitSymbols()
+{
+  void* res = mmc_mk_nil();
+  for (map<string, Unit>::iterator p = _units.begin(); p != _units.end(); p++) {
+    res = mmc_mk_cons(mmc_mk_scon((*p).second.unitSymbol.c_str()), res);
+  }
+  return res;
 }
 
 void UnitParser::addBase(const string quantityName, const string unitName,
@@ -1105,6 +1115,17 @@ void UnitParser::initSIUnits() {
       true);
   addDerived("catalyctic activity", "katal", "kat", "s-1.mol", Rational(0),
       Rational(1), Rational(0), true);
+
+  // More derived units
+  addDerived("length", "kilometre", "km", "m", Rational(0), Rational(1000), Rational(0), true);
+  addDerived("length", "millimetre", "mm", "m", Rational(0), Rational(1, 1000), Rational(0), true);
+
+  addDerived("electric current", "kiloampere", "kA", "A", Rational(0), Rational(1000), Rational(0), true);
+  addDerived("electric current", "milliampere", "mA", "A", Rational(0), Rational(1, 1000), Rational(0), true);
+
+  addDerived("power, radiant flux", "kilowatt", "kW", "J/s", Rational(0), Rational(1000), Rational(0), true);
+  addDerived("power, radiant flux", "milliwatt", "mW", "J/s", Rational(0), Rational(1, 1000), Rational(0), true);
+  addDerived("power, radiant flux", "megawatt", "MA", "J/s", Rational(0), Rational(1000000), Rational(0), true);
 
   commit();
 }

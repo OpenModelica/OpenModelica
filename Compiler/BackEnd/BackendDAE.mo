@@ -252,6 +252,7 @@ uniontype VarKind "variable kind"
   record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
   record JAC_VAR end JAC_VAR;
   record JAC_DIFF_VAR end JAC_DIFF_VAR;
+  record SEED_VAR end SEED_VAR;
   record OPT_CONSTR end OPT_CONSTR;
   record OPT_FCONSTR end OPT_FCONSTR;
   record OPT_INPUT_WITH_DER end OPT_INPUT_WITH_DER;
@@ -474,6 +475,8 @@ uniontype StateOrder
     HashTableCG.HashTable hashTable "x -> dx";
     HashTable3.HashTable invHashTable "dx -> {x,y,z}";
   end STATEORDER;
+  record NOSTATEORDER "Index reduction disabled; don't need big hashtables"
+  end NOSTATEORDER;
 end StateOrder;
 
 public

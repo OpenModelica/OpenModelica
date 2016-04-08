@@ -149,6 +149,10 @@ IF(MSVC)
 ENDIF(MSVC)
 INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 
+IF(IS_MINGW32 OR IS_MINGW64)
+ SET(USE_CPP_03 ON)
+ENDIF(IS_MINGW32 OR IS_MINGW64)
+
 # Check C++11
 IF(NOT(USE_CPP_03))
   IF(MSVC)
@@ -290,7 +294,18 @@ ENDIF(OMC_BUILD)
 # Handle OMDEV
 #  - On windows boost,blas,lapack and sundial solvers from omdev are used else the installed versions are used
 IF(WIN32)
-  SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
+  MESSAGE(STATUS "MINGW:")
+  MESSAGE(STATUS ${IS_MINGW32})
+  MESSAGE(STATUS ${IS_MINGW64})
+  IF(IS_MINGW32)
+    SET(BOOST_ROOT $ENV{OMDEV}"/tools/mingw32/include")
+  ELSEIF(IS_MINGW64)
+    SET(BOOST_ROOT $ENV{OMDEV}"/tools/mingw64/include")
+  ELSE()
+    SET(BOOST_ROOT $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
+  ENDIF(IS_MINGW32)
+  MESSAGE(STATUS "Boost root:")
+  MESSAGE(STATUS ${BOOST_ROOT})
   SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
   SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
   SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
@@ -438,14 +453,15 @@ FIND_PACKAGE(LAPACK)
 
 IF(MSVC)
   #workaround  because cmake does not find the lapack libraries for Visual Studio 10
-  SET(LAPACK_MSVC_10  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.lib  )
+  SET(LAPACK_MSVC_10  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.lib )
   SET(BLAS_MSVC_10 $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
   SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}   ${BLAS_MSVC_10} )
-
-ELSEIF(MINGW)
-  SET(LAPACK_MINGW  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll  )
-  SET(BLAS_MINGW $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll )
-  SET(LAPACK_LIBRARIES  ${LAPACK_MINGW}   ${BLAS_MINGW} )
+ELSEIF(IS_MINGW32)
+  SET(LAPACK_MINGW  $ENV{OMDEV}/tools/msys/mingw32/bin/libopenblas.dll )
+  SET(LAPACK_LIBRARIES  ${LAPACK_MINGW} )
+ELSEIF(IS_MINGW64)
+  SET(LAPACK_MINGW  $ENV{OMDEV}/tools/msys/mingw64/bin/libopenblas.dll )
+  SET(LAPACK_LIBRARIES  ${LAPACK_MINGW} )
 ENDIF(MSVC)
 
 FIND_LIBRARY(mkl_rt mkl_rt)
@@ -576,6 +592,12 @@ include_directories ("${PROJECT_SOURCE_DIR}")
 include_directories ("${PROJECT_BINARY_DIR}")
 
 message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
+
+if(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
+  # symlink boost includes outside platform specific /usr/include
+  execute_process(COMMAND ln -sf /usr/include/boost ./)
+endif(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
+
 #set (CMAKE_CXX_FLAGS "-Winvalid-pch")
 #build of simulation.core
 include_directories ("Include")
@@ -848,3 +870,8 @@ SET(HS Include/Core/Object/IObject.h
         Include/FMU2/FMU2Wrapper.cpp
         Include/FMU2/FMU2Wrapper.h)
    INSTALL_HEADERS_WITH_DIRECTORY(HS)
+
+if(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
+  # symlink boost includes outside platform specific /usr/include
+  install(CODE "execute_process(COMMAND ln -sf /usr/include/boost \"${CMAKE_INSTALL_PREFIX}/include/omc/cpp/\")")
+endif(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")

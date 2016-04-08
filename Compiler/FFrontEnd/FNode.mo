@@ -339,7 +339,7 @@ protected
   Ref parent;
 algorithm
   FCore.N(n, i, p, c, d) := fromRef(inParentRef);
-  c := RefTree.add(inName, inChildRef, c, RefTree.addConflictReplace);
+  c := RefTree.add(c, inName, inChildRef, RefTree.addConflictReplace);
   parent := updateRef(inParentRef, FCore.N(n, i, p, c, d));
   FGraphStream.edge(inName, fromRef(parent), fromRef(inChildRef));
 end addChildRef;
@@ -1025,9 +1025,9 @@ algorithm
     case (_, _)
       equation
         s = originalScope(toRef(inNode));
-        b1 = List.fold(List.map(s, inFunctionRefIs), boolOr, false);
+        b1 = List.applyAndFold(s, boolOr, inFunctionRefIs, false);
         s = contextualScope(toRef(inNode));
-        b2 = List.fold(List.map(s, inFunctionRefIs), boolOr, false);
+        b2 = List.applyAndFold(s, boolOr, inFunctionRefIs, false);
         b = boolOr(b1, b2);
       then
         b;

@@ -49,27 +49,6 @@ function registerModelicaFormatError
 </html>"),Library = "omcruntime");
 end registerModelicaFormatError;
 
-function updateCurrentComponent
-  input String str;
-  input Boolean writeable;
-  input String fileName;
-  input Integer rowstart;
-  input Integer rowend;
-  input Integer colstart;
-  input Integer colend;
-  external "C" ErrorImpl__updateCurrentComponent(OpenModelica.threadData(),str,writeable,fileName,rowstart,rowend,colstart,colend) annotation(Library = "omcruntime");
-end updateCurrentComponent;
-
-function addMessage
-  input Error.ErrorID id;
-  input Error.MessageType msg_type;
-  input Error.Severity msg_severity;
-  input String msg;
-  input list<String> msg_tokens;
-
-  external "C" Error_addMessage(OpenModelica.threadData(),id,msg_type,msg_severity,msg,msg_tokens) annotation(Library = "omcruntime");
-end addMessage;
-
 function addSourceMessage
   input Error.ErrorID id;
   input Error.MessageType msg_type;

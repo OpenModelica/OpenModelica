@@ -105,16 +105,15 @@ algorithm
   if intLt(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33) then
     smNodeToFlatSMGroup := HashTableCG.emptyHashTableSized(1);
     return;
-  else
-    smNodeToFlatSMGroup := HashTableCG.emptyHashTable();
   end if;
 
   DAE.DAE(elementLst=elementLst) := inDae;
-
   smNodeTable := getSMNodeTable(elementLst);
   nStates := BaseHashTable.hashTableCurrentSize(smNodeTable);
 
   if nStates > 0 then
+    smNodeToFlatSMGroup := HashTableCG.emptyHashTable();
+
     if DEBUG_SMDUMP then print("***** InstStateMachineUtil.createSMNodeToFlatSMGroupTable: START ***** \n"); end if;
     if DEBUG_SMDUMP then print("***** State machine node table: ***** \n"); end if;
     if DEBUG_SMDUMP then BaseHashTable.dumpHashTable(smNodeTable); end if;
@@ -140,6 +139,8 @@ algorithm
     if DEBUG_SMDUMP then BaseHashTable.dumpHashTable(smNodeToFlatSMGroup); end if;
 
     if DEBUG_SMDUMP then print("***** InstStateMachineUtil.createSMNodeToFlatSMGroupTable: END ***** \n"); end if;
+  else
+    smNodeToFlatSMGroup := HashTableCG.emptyHashTableSized(1);
   end if;
 
 end createSMNodeToFlatSMGroupTable;
@@ -422,10 +423,10 @@ algorithm
   outOuterAcc := match inElem
     case DAE.SM_COMP(componentRef=componentRef, dAElist=dAElist)
       algorithm
-			  outerOutputs := List.filterOnTrue(dAElist, isOuterOutput);
-			  outerOutputCrefs := List.map(outerOutputs, DAEUtil.varCref);
-			  outerOutputCrefToSMCompCref := List.map(outerOutputCrefs, function Util.makeTuple(inValue2=componentRef));
-		  then List.fold(outerOutputCrefToSMCompCref, BaseHashTable.addUnique, outOuterAcc);
+        outerOutputs := List.filterOnTrue(dAElist, isOuterOutput);
+        outerOutputCrefs := List.map(outerOutputs, DAEUtil.varCref);
+        outerOutputCrefToSMCompCref := List.map(outerOutputCrefs, function Util.makeTuple(inValue2=componentRef));
+      then List.fold(outerOutputCrefToSMCompCref, BaseHashTable.addUnique, outOuterAcc);
     else then inOuterAcc;
   end match;
 end collectOuterOutputs;
@@ -778,7 +779,11 @@ protected
   list<DAE.Element> elementLst2;
 algorithm
   elementLst2 := list(e for e guard isSMStatement2(e) in elementLst);
-  smNodeTable := List.fold(elementLst2,  extractSMStates2, HashTableSM1.emptyHashTable());
+  if not listEmpty(elementLst2) then
+    smNodeTable := List.fold(elementLst2,  extractSMStates2, HashTableSM1.emptyHashTable());
+  else
+    smNodeTable := HashTableSM1.emptyHashTableSized(1);
+  end if;
 end getSMNodeTable;
 
 protected function isSMStatement "

@@ -453,7 +453,7 @@ algorithm
       print(Absyn.pathString(path));
       print("\n  extends ExternalObject;");
       print("\n origin: ");
-      paths = DAEUtil.getElementSourceTypes(source);
+      paths = ElementSource.getElementSourceTypes(source);
       paths_lst = list(Absyn.pathString(p) for p in paths);
       path_str = stringDelimitList(paths_lst, ", ");
       print(path_str + "\n");
@@ -1360,6 +1360,15 @@ algorithm
   end match;
 end printComponent;
 
+
+public function dumpListList
+  input list<list<Integer>> lstLst;
+  input String heading;
+algorithm
+  print("\n" + heading + ":\n" + UNDERLINE + "\n" + stringDelimitList(List.map(lstLst,intListStr),"\n") + "\n\n");
+end dumpListList;
+
+
 // =============================================================================
 // section for all *String functions
 //
@@ -1974,34 +1983,6 @@ end printCallFunction2StrDIVISION;
 //   end matchcontinue;
 // end printVarsStatistics;
 
-public function dumpTypeStr
-"Dump BackendDAE.Type to a string."
-  input BackendDAE.Type inType;
-  output String outString;
-algorithm
-  outString:=
-  match (inType)
-    local
-      String s1,s2,str;
-      list<String> l;
-    case DAE.T_INTEGER() then "Integer";
-    case DAE.T_REAL() then "Real";
-    case DAE.T_BOOL() then "Boolean";
-    case DAE.T_STRING() then "String";
-    case DAE.T_CLOCK() then "Clock";
-    case DAE.T_ENUMERATION(names = l)
-      equation
-        s1 = stringDelimitList(l, ", ");
-        s2 = stringAppend("enumeration(", s1);
-        str = stringAppend(s2, ")");
-      then
-        str;
-    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)) then "ExternalObject";
-    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)) then "Record";
-    case DAE.T_ARRAY() then "Array";
-  end match;
-end dumpTypeStr;
-
 public function dumpWhenOperatorStr
 "Dumps a WhenOperator into a string, for debugging purposes."
   input BackendDAE.WhenOperator inWhenOperator;
@@ -2329,7 +2310,7 @@ protected
   String unreplaceableStr;
   String dimensions;
 algorithm
-  paths := DAEUtil.getElementSourceTypes(inVar.source);
+  paths := ElementSource.getElementSourceTypes(inVar.source);
   paths_lst := list(Absyn.pathString(p) for p in paths);
   unreplaceableStr := if inVar.unreplaceable then " unreplaceable" else "";
   dimensions := ExpressionDump.dimensionsString(inVar.arryDim);
@@ -2337,7 +2318,7 @@ algorithm
   outStr := DAEDump.dumpDirectionStr(inVar.varDirection) + ComponentReference.printComponentRefStr(inVar.varName) + ":"
             + kindString(inVar.varKind) + "(" + connectorTypeString(inVar.connectorType) + attributesString(inVar.values)
             + ") " + optExpressionString(inVar.bindExp, "") + DAEDump.dumpCommentAnnotationStr(inVar.comment)
-            + stringDelimitList(paths_lst, ", ") + " type: " + dumpTypeStr(inVar.varType) + dimensions + unreplaceableStr;
+            + stringDelimitList(paths_lst, ", ") + " type: " + DAEDump.daeTypeStr(inVar.varType) + dimensions + unreplaceableStr;
 end varString;
 
 public function dumpKind
@@ -3257,7 +3238,7 @@ algorithm
   end matchcontinue;
 end bltdump;
 
-protected function innerEquationString
+public function innerEquationString
   input BackendDAE.InnerEquation innerEquation;
   output String s;
 protected
@@ -3265,7 +3246,7 @@ protected
   list<Integer> v;
 algorithm
   (e,v) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(innerEquation);
-  s := stringDelimitList(List.map(v,intString), ", ");
+  s := stringDelimitList(List.map(v,intString), ",");
   s := "{"+intString(e)+":"+s+"}";
 end innerEquationString;
 
@@ -3359,7 +3340,7 @@ algorithm
   if intGt(teqsys,0) then
     dumpCompTorn(tornTpl,"strict");
   end if;
-  if intGt(teqsys2,0) then
+  if intGt(teqsys2,0) and not stringEqual(Config.dynamicTearing(),"false") then
     dumpCompTorn(tornTpl2,"casual");
   end if;
 end dumpCompShort;
@@ -3731,8 +3712,8 @@ protected
   list<tuple<Boolean,String>> varAtts,eqAtts;
 algorithm
   BackendDAE.DAE(eqs=eqSysts, shared=shared) := dae;
-  eqLst := List.flatten(List.map(List.map(eqSysts,BackendEquation.getEqnsFromEqSystem),BackendEquation.equationList));
-  varLst := List.flatten(List.map(List.map(eqSysts,BackendVariable.daeVars),BackendVariable.varList));
+  eqLst := List.flatten(List.mapMap(eqSysts,BackendEquation.getEqnsFromEqSystem,BackendEquation.equationList));
+  varLst := List.flatten(List.mapMap(eqSysts,BackendVariable.daeVars,BackendVariable.varList));
   vars := BackendVariable.listVar1(varLst);
   eqs := BackendEquation.listEquation(eqLst);
   // build the incidence matrix for the whole System

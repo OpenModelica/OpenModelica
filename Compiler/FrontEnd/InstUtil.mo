@@ -66,6 +66,7 @@ import DAEDump;
 import Types;
 import Debug;
 import PrefixUtil;
+import ElementSource;
 import ExpressionDump;
 import Flags;
 import FGraph;
@@ -4737,41 +4738,67 @@ algorithm
     case SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst = smlst)))))
       then isInlineFunc2(smlst);
 
-    else DAE.NO_INLINE();
+    else DAE.DEFAULT_INLINE();
   end matchcontinue;
 end isInlineFunc;
 
 protected function isInlineFunc2
   input list<SCode.SubMod> inSubModList;
   output DAE.InlineType res;
+protected
+  Boolean stop = false;
 algorithm
-  res := match (inSubModList)
-    local
-      list<SCode.SubMod> cdr;
-    case ({}) then DAE.NO_INLINE();
 
-    case (SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: cdr)
-      equation
-        failure(DAE.AFTER_INDEX_RED_INLINE() = isInlineFunc2(cdr));
-      then DAE.NORM_INLINE();
+  res := DAE.DEFAULT_INLINE();
 
-    case(SCode.NAMEMOD("LateInline",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
-      then DAE.AFTER_INDEX_RED_INLINE();
+  for tp in inSubModList loop
+    stop := match tp
 
-    case(SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
-      then DAE.AFTER_INDEX_RED_INLINE();
+       case SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         equation
+           res = DAE.NORM_INLINE();
+         then true;
 
-    case (SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
-      then DAE.AFTER_INDEX_RED_INLINE();
+       case SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(false))))
+         guard
+           (match res case  DAE.AFTER_INDEX_RED_INLINE() then false; else true; end match)
+         equation
+           res = DAE.NO_INLINE();
+         then false;
 
-    case (SCode.NAMEMOD("InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
-      then DAE.AFTER_INDEX_RED_INLINE();
+       case SCode.NAMEMOD("LateInline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         equation
+          res = DAE.AFTER_INDEX_RED_INLINE();
+         then false;
 
-    case (SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
-      then DAE.EARLY_INLINE();
+       case SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         equation
+          res = DAE.AFTER_INDEX_RED_INLINE();
+         then false;
 
-    case(_ :: cdr) then isInlineFunc2(cdr);
-  end match;
+       case SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         equation
+          res = DAE.AFTER_INDEX_RED_INLINE();
+         then false;
+
+       case SCode.NAMEMOD("InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         equation
+          res = DAE.AFTER_INDEX_RED_INLINE();
+         then false;
+
+       case SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         equation
+          res = DAE.EARLY_INLINE();
+         then true;
+       else false;
+       end match;
+
+     if stop then
+       break;
+     end if;
+
+  end for;
+
 end isInlineFunc2;
 
 public function stripFuncOutputsMod "strips the assignment modification of the component declared as output"
@@ -4881,7 +4908,7 @@ protected
 algorithm
   DAE.VAR(componentRef=cr,source=source) := v;
   str := ComponentReference.printComponentRefStr(cr);
-  Error.addSourceMessage(Error.FUNCTION_UNUSED_INPUT,{str,name},DAEUtil.getElementSourceFileInfo(source));
+  Error.addSourceMessage(Error.FUNCTION_UNUSED_INPUT,{str,name},ElementSource.getElementSourceFileInfo(source));
 end warnUnusedFunctionVar;
 
 protected function checkExternalDeclInputUsed
@@ -4991,7 +5018,7 @@ algorithm
         // Interfacing with LAPACK routines is fun, fun, fun :)
         if not (List.isMemberOnTrue(v,arg::args,extArgCrefEq) or isSome(binding)) then
           str = ComponentReference.printComponentRefStr(cr);
-          Error.addSourceMessage(Error.EXTERNAL_NOT_SINGLE_RESULT,{str,name},DAEUtil.getElementSourceFileInfo(source));
+          Error.addSourceMessage(Error.EXTERNAL_NOT_SINGLE_RESULT,{str,name},ElementSource.getElementSourceFileInfo(source));
           fail();
         end if;
       then ();
@@ -7674,7 +7701,7 @@ algorithm
       equation
         str = Absyn.pathString(path);
         if not Config.acceptMetaModelicaGrammar() then
-          Error.addSourceMessage(Error.FUNCTION_MULTIPLE_ALGORITHM,{str},DAEUtil.getElementSourceFileInfo(source));
+          Error.addSourceMessage(Error.FUNCTION_MULTIPLE_ALGORITHM,{str},ElementSource.getElementSourceFileInfo(source));
         end if;
       then optimizeFunctionCheckForLocals(path,elts,SOME(elt1),elt2::acc,invars,outvars);
     case (_,(elt as DAE.ALGORITHM())::elts,NONE(),_,_,_)
@@ -7820,7 +7847,7 @@ algorithm
         true = Absyn.pathEqual(path1,path2);
         str = "Tail recursion of: " + ExpressionDump.printExpStr(rhs) + " with input vars: " + stringDelimitList(vars,",");
         if Flags.isSet(Flags.TAIL) then
-          Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
+          Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},ElementSource.getElementSourceFileInfo(source));
         end if;
       then (DAE.CALL(path2,es,DAE.CALL_ATTR(tp,b1,b2,b3,b4,i,DAE.TAIL(vars))),true);
     case (_,DAE.IFEXP(e1,e2,e3),_,_)
@@ -8068,13 +8095,13 @@ algorithm
     case (_,_,(true,_,_)) then inUnbound;
     case (_,_,(false,true,_))
       equation
-        info = DAEUtil.getElementSourceFileInfo(DAEUtil.getStatementSource(inStmt));
+        info = ElementSource.getElementSourceFileInfo(ElementSource.getStatementSource(inStmt));
         Error.addSourceMessage(Error.INTERNAL_ERROR,
           {"InstUtil.checkFunctionDefUseStmt failed"}, info);
       then fail();
     case (DAE.STMT_ASSIGN(exp1=lhs,exp=rhs,source=source),_,(_,_,unbound))
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         (_,(unbound,_)) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
         // Traverse subs too! arr[x] := ..., x unbound
         unbound = traverseCrefSubs(lhs,info,unbound);
@@ -8082,7 +8109,7 @@ algorithm
       then ((false,false,unbound));
     case (DAE.STMT_TUPLE_ASSIGN(expExpLst=lhss,exp=rhs,source=source),_,(_,_,unbound))
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         (_,(unbound,_)) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
         // Traverse subs too! arr[x] := ..., x unbound
         unbound = List.fold1(lhss,traverseCrefSubs,info,unbound);
@@ -8090,7 +8117,7 @@ algorithm
       then ((false,false,unbound));
     case (DAE.STMT_ASSIGN_ARR(lhs=lhs,exp=rhs,source=source),_,(_,_,unbound))
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         (_,(unbound,_)) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
         // Traverse subs too! arr[x] := ..., x unbound
         unbound = traverseCrefSubs(lhs,info,unbound);
@@ -8098,26 +8125,26 @@ algorithm
       then ((false,false,unbound));
     case (DAE.STMT_IF(exp,stmts,else_,source),_,(_,_,unbound))
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         ((b1,b2,unbound)) = checkFunctionDefUseElse(DAE.ELSEIF(exp,stmts,else_),unbound,inLoop,info);
       then ((b1,b2,unbound));
     case (DAE.STMT_FOR(iter=iter,range=exp,statementLst=stmts,source=source),_,(_,_,unbound))
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,iter) "TODO: This is not needed if all references are tagged CREF_ITER";
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
     case (DAE.STMT_PARFOR(iter=iter,range=exp,statementLst=stmts,source=source),_,(_,_,unbound))
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,iter) "TODO: This is not needed if all references are tagged CREF_ITER";
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
     case (DAE.STMT_WHILE(exp=exp,statementLst=stmts,source=source),_,(_,_,unbound))
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
@@ -8125,20 +8152,20 @@ algorithm
       then ((true,true,{}));
     case (DAE.STMT_ASSERT(cond=exp1,msg=exp2,source=source),_,(_,_,unbound))
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp1,findUnboundVariableUse,(unbound,info));
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp2,findUnboundVariableUse,(unbound,info));
       then ((false,false,unbound));
     case (DAE.STMT_TERMINATE(msg=exp,source=source),_,(_,_,unbound))
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
       then ((true,true,unbound));
     case (DAE.STMT_NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("fail"),expLst={}),source=source),_,(_,_,unbound))
       then ((true,true,{}));
     case (DAE.STMT_NORETCALL(exp=exp,source=source),_,(_,_,unbound))
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        info = ElementSource.getElementSourceFileInfo(source);
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
       then ((false,false,unbound));
     case (DAE.STMT_BREAK(),_,(_,_,unbound)) then ((true,false,unbound));
@@ -8156,7 +8183,7 @@ algorithm
       equation
         str = DAEDump.ppStatementStr(inStmt);
         str = "InstUtil.checkFunctionDefUseStmt failed: " + str;
-        info = DAEUtil.getElementSourceFileInfo(DAEUtil.getStatementSource(inStmt));
+        info = ElementSource.getElementSourceFileInfo(ElementSource.getStatementSource(inStmt));
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then fail();
   end match;

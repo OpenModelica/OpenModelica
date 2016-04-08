@@ -42,6 +42,8 @@
 #include "util/list.h"
 #include "util/simulation_options.h"
 
+static const unsigned int numStatistics = 5;
+
 typedef struct SOLVER_INFO
 {
   double currentTime;
@@ -66,6 +68,9 @@ typedef struct SOLVER_INFO
   /* stats */
   unsigned long stateEvents;
   unsigned long sampleEvents;
+  /* integrator stats */
+  unsigned int* solverStats;
+  unsigned int* solverStatsTmp;
 
   /* further options */
   int integratorSteps;
@@ -79,7 +84,7 @@ typedef struct SOLVER_INFO
 
 extern int solver_main(DATA* data, threadData_t *threadData, const char* init_initMethod,
     const char* init_file, double init_time, int lambda_steps,
-    int solverID, const char* outputVariablesAtEnd);
+    int solverID, const char* outputVariablesAtEnd, const char *argv_0);
 
 /* Provide solver interface to interactive stuff */
 extern int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);

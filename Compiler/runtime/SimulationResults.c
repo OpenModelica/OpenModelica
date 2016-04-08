@@ -428,9 +428,9 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
     int numUniqueParam = 1;
     int longestName = 0;
     int longestDesc = 0;
-    ModelicaMatVariable_t **mat_var = GC_malloc(numToFilter*sizeof(ModelicaMatVariable_t*));
-    int *indexes = (int*) GC_malloc(simresglob.matReader.nvar*sizeof(int)); /* Need it to be zeros; note that the actual number of indexes is smaller */
-    int *parameter_indexes = (int*) GC_malloc(simresglob.matReader.nparam*sizeof(int)); /* Need it to be zeros; note that the actual number of indexes is smaller */
+    ModelicaMatVariable_t **mat_var = omc_alloc_interface.malloc(numToFilter*sizeof(ModelicaMatVariable_t*));
+    int *indexes = (int*) omc_alloc_interface.malloc(simresglob.matReader.nvar*sizeof(int)); /* Need it to be zeros; note that the actual number of indexes is smaller */
+    int *parameter_indexes = (int*) omc_alloc_interface.malloc(simresglob.matReader.nparam*sizeof(int)); /* Need it to be zeros; note that the actual number of indexes is smaller */
     int *indexesToOutput = NULL;
     int *parameter_indexesToOutput = NULL;
     FILE *fout = NULL;
@@ -441,7 +441,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
     parameter_indexes[0] = 1; /* time */
     omc_matlab4_read_all_vals(&simresglob.matReader);
     if (endsWith(outFile,".csv")) {
-      double **vals = GC_malloc(sizeof(double*)*numToFilter);
+      double **vals = omc_alloc_interface.malloc(sizeof(double*)*numToFilter);
       FILE *fout = NULL;
       for (i=0; i<numToFilter; i++) {
         const char *var = MMC_STRINGDATA(MMC_CAR(vars));
@@ -497,8 +497,8 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       longestDesc = intMax(longestDesc, strlen(mat_var[i]->descr));
     }
     /* Create the list of variable indexes to output */
-    indexesToOutput = GC_malloc_atomic(numUnique * sizeof(int));
-    parameter_indexesToOutput = GC_malloc_atomic(numUniqueParam * sizeof(int));
+    indexesToOutput = omc_alloc_interface.malloc_atomic(numUnique * sizeof(int));
+    parameter_indexesToOutput = omc_alloc_interface.malloc_atomic(numUniqueParam * sizeof(int));
     j=0;
     for (i=0; i<simresglob.matReader.nvar; i++) {
       if (indexes[i]) {
@@ -527,7 +527,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       return failedToWriteToFile(outFile);
     }
 
-    tmp = GC_malloc(numToFilter*longestName);
+    tmp = omc_alloc_interface.malloc(numToFilter*longestName);
     for (i=0; i<numToFilter; i++) {
       int len = strlen(mat_var[i]->name);
       for (j=0; j<len; j++) {
@@ -543,7 +543,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       return failedToWriteToFile(outFile);
     }
 
-    tmp = GC_malloc(numToFilter*longestDesc);
+    tmp = omc_alloc_interface.malloc(numToFilter*longestDesc);
     for (i=0; i<numToFilter; i++) {
       int len = strlen(mat_var[i]->descr);
       for (j=0; j<len; j++) {
@@ -638,7 +638,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       if (numberOfIntervals) {
         omc_matlab4_read_all_vals(&simresglob.matReader);
         nrows = numberOfIntervals+1;
-        vals = GC_malloc_atomic(sizeof(double)*nrows);
+        vals = omc_alloc_interface.malloc_atomic(sizeof(double)*nrows);
         for (j=0; j<=numberOfIntervals; j++) {
           double t = j==numberOfIntervals ? stop : start + (stop-start)*((double)j)/numberOfIntervals;
           ModelicaMatVariable_t var = {0};

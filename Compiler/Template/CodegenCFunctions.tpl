@@ -3158,26 +3158,23 @@ template algStmtWhen(DAE.Statement when, Context context, Text &varDecls, Text &
     case SIMULATION_CONTEXT(__) then
       match when
         case STMT_WHEN(__) then
-          let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
+          let initial_condition = if initialCall then
+              'initial()'
+            else
+              '0'
+          let if_conditions = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
           let statements = (statementLst |> stmt =>
               algStatement(stmt, context, &varDecls, &auxFunction)
             ;separator="\n")
-          let initial_statements = match initialCall
-            case true then '<%statements%>'
-            else '; /* nothing to do */'
-          let else = algStatementWhenElse(elseWhen, &varDecls, &auxFunction)
+          let else_clause = algStatementWhenElse(elseWhen, &varDecls, &auxFunction)
           <<
           if(data->simulationInfo->discreteCall == 1)
           {
-            if(initial())
-            {
-              <%initial_statements%>
-            }
-            else if(0<%helpIf%>)
+            if(<%initial_condition%><%if_conditions%>)
             {
               <%statements%>
             }
-            <%else%>
+            <%else_clause%>
           }
           >>
       end match
@@ -4093,7 +4090,11 @@ end addRootsTempArray;
 
 template modelicaLine(builtin.SourceInfo info)
 ::=
-  if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#modelicaLine <%infoStr(info)%>*/<%\n%>'
+  if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
+    then (if Flags.isSet(OMC_RECORD_ALLOC_WORDS)
+    then '/*#modelicaLine <%infoStr(info)%>*/<%\n%>mmc_set_current_pos("<%infoStr(info)%>");<%\n%>'
+    else '/*#modelicaLine <%infoStr(info)%>*/<%\n%>'
+    )
 end modelicaLine;
 
 template endModelicaLine()
@@ -5554,6 +5555,12 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
 
   /* Begin code generation of event triggering math functions */
 
+  case CALL(path=IDENT(name="mod"), expLst={e1,e2, index}, attr=CALL_ATTR(ty = ty)) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+    let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
+    let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
+    '_event_mod_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data, threadData)'
+
   case CALL(path=IDENT(name="div"), expLst={e1,e2, index}, attr=CALL_ATTR(ty = ty)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
@@ -5580,6 +5587,28 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name="integer"), expLst={inExp}) then
     let exp = daeExp(inExp, context, &preExp, &varDecls, &auxFunction)
     '((modelica_integer)floor(<%exp%>))'
+
+  case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=CALL_ATTR(ty=T_INTEGER(__))) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+    let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
+    let tvar = tempDecl("modelica_integer", &varDecls)
+    let &preExp += '<%tvar%> = <%var2%>;<%\n%>'
+    let &preExp +=
+      if acceptMetaModelicaGrammar()
+        then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
+        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
+    '((<%var1%>) - ((<%var1%>) / <%tvar%>) * <%tvar%>)'
+
+  case CALL(path=IDENT(name="mod"), expLst={e1,e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+    let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
+    let tvar = tempDecl("modelica_real", &varDecls)
+    let &preExp += '<%tvar%> = <%var2%>;<%\n%>'
+    let &preExp +=
+      if acceptMetaModelicaGrammar()
+        then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
+        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
+    '((<%var1%>) - floor((<%var1%>) / (<%tvar%>)) * (<%tvar%>))'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)

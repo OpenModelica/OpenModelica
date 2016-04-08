@@ -932,11 +932,25 @@ end modelicaPlatform;
 
 public function openModelicaPlatform "
   Returns uname -sm (with spaces replaced by dashes and only lower-case letters) on Unix platforms
-  mingw32 is returned for OMDEV
+  mingw32 or mingw64 is returned for OMDev mingw
   "
   output String platform;
   external "C" platform=System_openModelicaPlatform() annotation(Library = "omcruntime");
 end openModelicaPlatform;
+
+public function gccDumpMachine "
+  Returns gcc -dumpmachine
+  "
+  output String machine;
+  external "C" machine=System_gccDumpMachine() annotation(Library = "omcruntime");
+end gccDumpMachine;
+
+public function gccVersion "
+  Returns gcc --version
+  "
+  output String version;
+  external "C" version=System_gccVersion() annotation(Library = "omcruntime");
+end gccVersion;
 
 public function dgesv
  "# dgesv from LAPACK
@@ -1169,8 +1183,9 @@ end alarm;
 public function covertTextFileToCLiteral
   input String textFile;
   input String outFile;
+  input String target "this would be what is set for +target=msvc|gcc";
   output Boolean success;
-external "C" success=SystemImpl__covertTextFileToCLiteral(textFile,outFile);
+external "C" success=SystemImpl__covertTextFileToCLiteral(textFile, outFile, target);
 end covertTextFileToCLiteral;
 
 public function dladdr<T>

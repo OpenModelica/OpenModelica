@@ -46,30 +46,33 @@ void ModelicaVFormatError(const char*string, va_list args)
 
 void ModelicaFormatError(const char* text, ...)
 {
-  std::stringstream ss;
+  char buffer[256];
   va_list args;
   va_start(args, text);
-  ss <<  text;
+  vsnprintf(buffer, 256, text, args);
   va_end(args);
-  ModelicaError(ss.str().c_str());
+  ModelicaError(buffer);
 }
 
 static std::map<const char*, char*> _allocatedStrings;
 
 char* ModelicaAllocateString(size_t len)
 {
-  char *res = new char[len];
+  char *res = new char[len + 1];
   if (!res)
     ModelicaFormatError("%s:%d: ModelicaAllocateString failed", __FILE__, __LINE__);
   _allocatedStrings[res] = res;
+  res[len] = '\0';
   return res;
 }
 
 char* ModelicaAllocateStringWithErrorReturn(size_t len)
 {
-  char *res = new char[len];
-  if (res)
+  char *res = new char[len + 1];
+  if (res) {
     _allocatedStrings[res] = res;
+    res[len] = '\0';
+  }
   return res;
 }
 

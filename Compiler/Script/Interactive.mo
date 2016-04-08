@@ -3997,7 +3997,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(p_1);
         (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, p_class);
-        env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
           Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
@@ -9214,7 +9214,7 @@ algorithm
     /* If that fails, instantiate, which takes more time */
     case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,env)
       equation
-        env2 = FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        env2 = FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
           Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
@@ -9588,7 +9588,7 @@ algorithm
     /* If that fails, instantiate, which takes more time */
     case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,n,env)
       equation
-        env2 = FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        env2 = FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
           Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
@@ -9777,7 +9777,7 @@ algorithm
 
     case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,n,env)
       equation
-        env2 = FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        env2 = FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
           Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
@@ -9878,7 +9878,7 @@ algorithm
         (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
         (cache,env) = Inst.makeEnvFromProgram(p_1);
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath);
-        env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         permissive = Flags.getConfigBool(Flags.PERMISSIVE);
         Flags.setConfigBool(Flags.PERMISSIVE, true);
@@ -18006,7 +18006,7 @@ protected
 algorithm
   (cache, (cl as SCode.CLASS(name = id, encapsulatedPrefix = encflag, restriction = restr)), env) :=
     Lookup.lookupClass(FCore.emptyCache(), inEnv, inClassPath);
-  env := FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+  env := FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
   ci_state := ClassInf.start(restr, FGraph.getGraphName(env));
 
   // First try partial instantiation

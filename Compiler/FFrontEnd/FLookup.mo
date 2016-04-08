@@ -349,8 +349,8 @@ algorithm
       equation
         refs = FNode.extendsRefs(inRef);
         false = listEmpty(refs);
-        refs = List.map(List.map(refs, FNode.fromRef), FNode.target);
-        // print("Searching for: " + inName + " in extends targets:\n\t" + stringDelimitList(List.map(List.map(refs, FNode.fromRef), FNode.toPathStr), "\n\t") + "\n");
+        refs = List.mapMap(refs, FNode.fromRef, FNode.target);
+        // print("Searching for: " + inName + " in extends targets:\n\t" + stringDelimitList(List.mapMap(refs, FNode.fromRef, FNode.toPathStr), "\n\t") + "\n");
         (g, r) = search(g, refs, inName, ignoreParentsAndImports, inMsg);
       then
         (g, r);

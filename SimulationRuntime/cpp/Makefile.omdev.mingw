@@ -29,7 +29,13 @@ ifeq ($(BUILDTYPE),)
 BUILDTYPE=Debug
 endif
 
-
+ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
+	IS_MINGW32 = -DIS_MINGW32=ON
+	IS_MINGW64 = -DIS_MINGW64=OFF
+else
+	IS_MINGW32 = -DIS_MINGW32=OFF
+	IS_MINGW64 = -DIS_MINGW64=ON
+endif
 
 BOOST_STATIC_LINKING="false"
 ifeq ("$(BOOST_STATIC_LINKING)","true")
@@ -124,7 +130,7 @@ runtimeCpp:
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  mkdir -p Build_$(PLATFORM); \
 	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
-	   $(CMAKE) -G "MSYS Makefiles" -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
+	   cmake -G "MSYS Makefiles" -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
 	   make);)
 
 runtimeCPPmsvc: getMSVCversion
@@ -135,7 +141,7 @@ runtimeCPPmsvc: getMSVCversion
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC/build.bat
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="dynamic" $(CMAKE_FLAGS) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="dynamic" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> Build_MSVC/build.bat
@@ -150,7 +156,7 @@ runtimeCPPmsvc: getMSVCversion
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC_static/build.bat
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC_static/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC_static/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC_static/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> Build_MSVC_static/build.bat
@@ -190,6 +196,11 @@ install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  (cd Build_$(PLATFORM); make install);)
 	cp -p $(OMDEV)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.
+ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
+	(cd Build; cp -p $(OMDEV)/tools/msys/mingw32/bin/libboost*.dll $(builddir_bin)/.)
+else
+	(cd Build; cp -p $(OMDEV)/tools/msys/mingw64/bin/libboost*.dll $(builddir_bin)/.)
+endif
 
 
 clean:

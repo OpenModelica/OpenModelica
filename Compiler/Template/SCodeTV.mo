@@ -11,6 +11,18 @@ package builtin
     input Integer y;
     output Boolean outResult;
   end intLt;
+
+  function intEq
+    input Integer x;
+    input Integer y;
+    output Boolean outResult;
+  end intEq;
+
+  function listLength "Return the length of the list"
+    replaceable type TypeVar subtypeof Any;
+    input list<TypeVar> lst;
+    output Integer result;
+  end listLength;
 end builtin;
 
 package Absyn
@@ -841,5 +853,21 @@ package System
     output String escapedString;
   end escapedString;
 end System;
+
+package Util
+  type StatefulBoolean = array<Boolean>;
+  function getStatefulBoolean
+    input StatefulBoolean sb;
+    output Boolean b;
+  end getStatefulBoolean;
+  function setStatefulBoolean
+    input StatefulBoolean sb;
+    input Boolean b;
+  end setStatefulBoolean;
+  function makeStatefulBoolean
+    input Boolean b;
+    output StatefulBoolean sb;
+  end makeStatefulBoolean;
+end Util;
 
 end SCodeTV;

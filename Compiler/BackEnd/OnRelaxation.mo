@@ -1472,7 +1472,7 @@ algorithm
   mt := BackendDAEUtil.transposeMatrix(m, arrayLength(mt));
   comps := Sorting.TarjanTransposed(mt, ass);
   //  BackendDump.dumpComponentsOLD(comps);
-  sortvorphans := List.flatten(listReverse(comps));
+  sortvorphans := List.flattenReverse(comps);
   // map back to global indexes
   sortvorphans := List.map1r(sortvorphans, arrayGet, map);
   //  print("sortvorphans: " + stringDelimitList(List.map(sortvorphans, intString), ", ") + "\n");
@@ -3196,27 +3196,28 @@ algorithm
       array<Integer> vec1, vec2;
       DAE.Exp e1, e2;
       list<Integer> ds;
+      tuple<Integer, array<Integer>, array<Integer>> tpl;
 
     // array equations
-    case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2), _, (id, vec1, vec2))
+    case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2), _, _)
       equation
         size = List.fold(ds, intMul, 1);
-        ((id, vec1, vec2)) = vectorMatching1(e1, e2, size, vars, (id, vec1, vec2));
-      then ((id, vec1, vec2));
-    case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e2, right=e1), _, (id, vec1, vec2))
+        tpl = vectorMatching1(e1, e2, size, vars, inTpl);
+      then tpl;
+    case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e2, right=e1), _, _)
       equation
         size = List.fold(ds, intMul, 1);
-        ((id, vec1, vec2)) = vectorMatching1(e2, e1, size, vars, (id, vec1, vec2));
-      then ((id, vec1, vec2));
+        tpl = vectorMatching1(e2, e1, size, vars, inTpl);
+      then tpl;
     // complex equations
-    case (BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2), _, (id, vec1, vec2))
+    case (BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2), _, _)
       equation
-        ((id, vec1, vec2)) = vectorMatching1(e1, e2, size, vars, (id, vec1, vec2));
-      then ((id, vec1, vec2));
-    case (BackendDAE.COMPLEX_EQUATION(size=size, left=e2, right=e1), _, (id, vec1, vec2))
+        tpl = vectorMatching1(e1, e2, size, vars, inTpl);
+      then tpl;
+    case (BackendDAE.COMPLEX_EQUATION(size=size, left=e2, right=e1), _, _)
       equation
-        ((id, vec1, vec2)) = vectorMatching1(e2, e1, size, vars, (id, vec1, vec2));
-      then ((id, vec1, vec2));
+        tpl = vectorMatching1(e2, e1, size, vars, inTpl);
+      then tpl;
     case (_, _, (id, vec1, vec2))
       equation
         size = BackendEquation.equationSize(eqn);
@@ -3318,7 +3319,7 @@ algorithm
         set = addCrefandParentsToSet(crnosubs, set, NONE());
         set = List.fold(crlst, BaseHashSet.add, set);
         (_, (_, false)) = Expression.traverseExpTopDown(e2, expHasCreftraverser, (set, false));
-        (_, ilst) = BackendVariable.getVarLst(crlst, vars, {}, {});
+        (_, ilst) = BackendVariable.getVarLst(crlst, vars);
         // unassgned
         unassignedLst(ilst, vec1);
         // assign
@@ -3342,7 +3343,7 @@ algorithm
         set = addCrefandParentsToSet(crnosubs, set, NONE());
         set = List.fold(crlst, BaseHashSet.add, set);
         (_, (_, false)) = Expression.traverseExpTopDown(e1, expHasCreftraverser, (set, false));
-        (_, ilst) = BackendVariable.getVarLst(crlst, vars, {}, {});
+        (_, ilst) = BackendVariable.getVarLst(crlst, vars);
         // unassgned
         unassignedLst(ilst, vec1);
         // assign

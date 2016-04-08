@@ -29,17 +29,19 @@ CFLAGS =-g -O2 -falign-functions
 MSGPACK_CFLAGS = -march=i686
 CMAKE = $(OMDEV)/bin/cmake/bin/cmake
 CMAKE_TARGET = "MSYS Makefiles"
-DBUS_INCLUDE_DIR = $(OMDEV)/lib/dbus-1.6.0-win32/include/
-DBUS_INCLUDE_LIB_DIR = $(OMDEV)/lib/dbus-1.6.0-win32/lib/
-DBUS_PATH = $(OMDEV)/lib/dbus-1.6.0-win32/
-BOOST_PATH = $(OMDEV)/lib/3rdParty/boost-1_55/
-PKG_CONFIG_PATH = $(OMDEV)/lib/gtk+-2.24.10/bin/
-OSG_PATH = $(OMDEV)/lib/openscenegraph-2.8.3-mingw/
+
+ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
+BOOST_PATH = $(OMDEV)/tools/msys/mingw32/include
+else # mingw64
+BOOST_PATH = $(OMDEV)/tools/msys/mingw64/include
+endif
+BOOST_PATH_MSVC = $(OMDEV)/lib/3rdParty/boost-1_55/
+
 OPENCL = Yes
 LINK = cp -rl
 AR = ar
 # LIBGC configuration is different for Windows (this file) and Linux (Makefile.in)
-MINGW_EXTRA_LIBS=sundials
+MINGW_EXTRA_LIBS=lpsolve sundials
 LIBGC_EXTRA_CONFIGURATION=--enable-threads=posix --enable-munmap=1 --disable-parallel-mark
 MSL321_CONFIG_EXTRA_FLAGS=--enable-static --disable-shared
 LIBFMILIB=libfmilib.a
@@ -53,7 +55,7 @@ LD_LAPACK=-llapack -lblas
 GRAPHLIB=libmetis.a
 GRAPHINCLUDE=3rdParty/metis-5.1.0/include/ -DUSE_METIS -DUSE_GRAPH
 BOOTSTRAP_FMIL_DEP=fmil
-IDLPYTHON = $(OMDEV)/lib/omniORB-4.1.6-msvc-10/bin/x86_win32/omniidl -bpython -Wbglobal=_OMCIDL -Wbpackage=OMPythonIDL
+IDLPYTHON = $(OMDEV)/lib/omniORB-4.2.0-msvc-10/bin/x86_win32/omniidl -bpython -Wbglobal=_OMCIDL -Wbpackage=OMPythonIDL
 IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/OMPythonIDL/omc_communication_idl.py
 IDLFILE=$(top_builddir)/Compiler/runtime/omc_communication.idl
 LIB_OMC=lib/omc
@@ -159,17 +161,47 @@ testlogwindows:
 
 omdev_extra_dlls: install-openturns
 	echo Copying needed .dlls to the $(OMBUILDDIR)/bin directory
-	(cp -puf $(OMDEV)/tools/mingw/bin/libintl-8.dll $(builddir_bin)/)
-	(cp -puf $(OMDEV)/tools/mingw/bin/libiconv-2.dll $(builddir_bin)/)
-	(cp -puf $(OMDEV)/tools/mingw/bin/libgcc_s_dw2-1.dll $(builddir_bin)/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.1.6-msvc-10/bin/x86_win32/omniORB416_vc10_rt.dll $(builddir_bin)/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.1.6-msvc-10/bin/x86_win32/omnithread34_vc10_rt.dll $(builddir_bin)/)
-	(cp -puf $(OMDEV)/lib/pthread/pthreadGC2.dll $(builddir_bin)/)
-	(cp -puf $(OMDEV)/tools/mingw/bin/libgomp-1.dll $(builddir_bin)/)
-	(cp -puf $(OMDEV)/tools/mingw/bin/libgfortran-3.dll $(builddir_bin)/)
-	(cp -puf $(OMDEV)/tools/mingw/lib/libregex.a $(builddir_lib)/omc)
-	(cp -pf $(OMDEV)/lib/mico-msys-mingw/static/libmico2313.a $(builddir_lib)/omc/)
-	(cp -pf $(OMDEV)/lib/mico-msys-mingw/mico2313.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/bin/x86_win32/omniORB420_vc10_rt.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/bin/x86_win32/omnithread40_vc10_rt.dll $(builddir_bin)/)
+ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
+	(cp -puf $(OMDEV)/tools/msys/mingw32/bin/libgomp-1.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw32/bin/libwinpthread-1.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw32/bin/libtre-5.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw32/bin/libsystre-0.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw32/bin/libstdc++-6.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw32/bin/libquadmath-0.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw32/bin/libgcc_s_dw2-1.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw32/bin/libintl-8.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw32/bin/libiconv-2.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw32/bin/libgfortran-3.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw32/bin/libexpat-1.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw32/bin/libopenblas.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniORB420_rt.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omnithread40_rt.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/lib/3rdParty/Sundials/lib/release/mingw/libsundials_kinsol.a $(builddir_lib)/omc/)
+	(cp -puf $(OMDEV)/lib/3rdParty/Sundials/lib/release/mingw/libsundials_nvecserial.a $(builddir_lib)/omc/)
+	(cp -puf $(OMDEV)/lib/lis/liblis.la $(builddir_lib)/omc/)
+	(cp -puf $(OMDEV)/lib/lis/liblis.a $(builddir_lib)/omc/)
+else # mingw64
+	(cp -puf $(OMDEV)/tools/msys/mingw64/bin/libgomp-1.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw64/bin/libwinpthread-1.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw64/bin/libtre-5.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw64/bin/libsystre-0.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw64/bin/libstdc++-6.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw64/bin/libquadmath-0.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw64/bin/libgcc_s_seh-1.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw64/bin/libintl-8.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw64/bin/libiconv-2.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw64/bin/libgfortran-3.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw64/bin/libexpat-1.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/tools/msys/mingw64/bin/libopenblas.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniORB420_rt.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omnithread40_rt.dll $(builddir_bin)/)
+	(cp -puf $(OMDEV)/lib/3rdParty/Sundials64/lib/release/mingw/libsundials_kinsol.a $(builddir_lib)/omc/)
+	(cp -puf $(OMDEV)/lib/3rdParty/Sundials64/lib/release/mingw/libsundials_nvecserial.a $(builddir_lib)/omc/)
+	(cp -puf $(OMDEV)/lib/lis64/liblis.la $(builddir_lib)/omc/)
+	(cp -puf $(OMDEV)/lib/lis64/liblis.a $(builddir_lib)/omc/)
+endif
 	(cp -pf $(OMDEV)/lib/expat-win32-msvc/libexpat.dll $(builddir_bin)/)
 	(cp -pf $(OMDEV)/lib/lapack-win32-msvc/blas_win32_MT.dll $(builddir_bin)/)
 	(cp -pf $(OMDEV)/lib/lapack-win32-msvc/lapack_win32_MT.dll $(builddir_bin)/)
@@ -365,8 +397,8 @@ sundials_msvc: getMSVCversion 3rdParty/sundials/CMakeLists.txt
 
 runtimeCPPmsvcinstall: mkbuilddirs CMinpack_msvc sundials_msvc copycppheader
 	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
-	cp -p $(BOOST_PATH)/lib/*vc*.dll $(OMBUILDDIR)/bin/
-	cp -p $(BOOST_PATH)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/cpp/msvc
+	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/
+	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/cpp/msvc
 
 simulationruntimecmsvc: mkbuilddirs Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
@@ -431,30 +463,6 @@ omc-bootstrapped:
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/boot CFLAGS="$(CFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
 
-modelica3d:
-	cd 3rdParty/modelica3d && mkdir -p build
-	cd 3rdParty/modelica3d/build && $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 -DDBUS_INCLUDE_DIR=$(DBUS_INCLUDE_DIR) -DDBUS_INCLUDE_LIB_DIR=$(DBUS_INCLUDE_LIB_DIR) -DDBUS_LIBRARY=$(DBUS_PATH) -DBOOST_ROOT=$(BOOST_PATH) -DCMAKE_PREFIX_PATH=$(OSG_PATH) -DCMAKE_PROGRAM_PATH=$(PKG_CONFIG_PATH) -DUSE_OMC=0 .. -G $(CMAKE_TARGET)
-	$(MAKE) -C 3rdParty/modelica3d/build
-	cp -p 3rdParty/modelica3d/build/lib/modcount/libmodcount.a 3rdParty/modelica3d/build/lib/modbus/libmodbus.a $(OMBUILDDIR)/lib/omc/
-	mkdir -p $(OMBUILDDIR)/lib/omlibrary-modelica3d/blender2.59 $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/dbus-python/etc
-	# copy the dbus static lib required during the simulation
-	cp -rp $(OMDEV)/lib/dbus-1.6.0-win32/bin/libdbus-1.a $(OMBUILDDIR)/lib/omc/
-	cp -p 3rdParty/modelica3d/examples/multibody/src/modelica/*.mo $(OMBUILDDIR)/lib/omlibrary-modelica3d/
-	cp -p 3rdParty/modelica3d/backends/blender2.59/dbus-server.py $(OMBUILDDIR)/lib/omlibrary-modelica3d/blender2.59/
-	cp -p 3rdParty/modelica3d/backends/osg-gtk/python/dbus-server.py $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
-	# copy the dbus-python bindings binaries required by osg-gtk python script
-	cp -rp $(OMDEV)/lib/dbus-python-1.1.1/lib/site-packages/* $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/dbus-python/
-	cp -rp $(OMDEV)/lib/dbus-python-1.1.1/bin/* $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/dbus-python/
-	cp -rp $(OMDEV)/lib/dbus-python-1.1.1/etc/* $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/dbus-python/etc
-	# copy the required gtk binaries
-	cp -p -u $(OMDEV)/lib/gtk+-2.24.10/bin/*.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
-	# copy the required modelica3D binaries
-	cp -p 3rdParty/modelica3d/build/backends/osg-gtk/libm3d-osg-gtk.* 3rdParty/modelica3d/build/lib/proc3d/libproc3d.* $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
-	# copy the required osg binaries
-	mkdir -p  $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/osgPlugins-2.8.3
-	cp -p -u $(OMDEV)/lib/openscenegraph-2.8.3-mingw/bin/*.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
-	cp -p -u $(OMDEV)/lib/openscenegraph-2.8.3-mingw/bin/osgPlugins-2.8.3/*.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/osgPlugins-2.8.3/
-
 # Empty; only Unix version uses QT makefiles, etc...
 qtclean:
 
@@ -508,14 +516,14 @@ install-python: $(IDLPYTHONTARGET)
 
 script-files-python: mkbuilddirs-python
 	# copy library files neeeded by OMPython
-	(cp -puf $(OMDEV)/lib/omniORB-4.1.6-msvc-10/lib/x86_win32/_omnipy.pyd $(builddir_lib)/python)
-	(cp -puf $(OMDEV)/lib/omniORB-4.1.6-msvc-10/lib/python/omniORB/__init__.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.1.6-msvc-10/lib/python/omniORB/boxes_idl.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.1.6-msvc-10/lib/python/omniORB/CORBA.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.1.6-msvc-10/lib/python/omniORB/corbaidl_idl.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.1.6-msvc-10/lib/python/omniORB/minorCodes.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.1.6-msvc-10/lib/python/omniORB/PortableServer.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.1.6-msvc-10/lib/python/omniORB/tcInternal.py $(builddir_lib)/python/omniORB/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/x86_win32/_omnipy.pyd $(builddir_lib)/python)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/__init__.py $(builddir_lib)/python/omniORB/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/boxes_idl.py $(builddir_lib)/python/omniORB/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/CORBA.py $(builddir_lib)/python/omniORB/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/corbaidl_idl.py $(builddir_lib)/python/omniORB/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/minorCodes.py $(builddir_lib)/python/omniORB/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/PortableServer.py $(builddir_lib)/python/omniORB/)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/tcInternal.py $(builddir_lib)/python/omniORB/)
 	# copy OMPython files
 	cp -rfp OMPython/setup.py $(builddir_share)/omc/scripts/PythonInterface
 	cp -rfp OMPython/OMPython/* $(builddir_share)/omc/scripts/PythonInterface/OMPython

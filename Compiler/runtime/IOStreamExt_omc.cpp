@@ -138,7 +138,7 @@ extern const char* IOStreamExt_appendReversedList(modelica_metatype lst)
     tmp = MMC_STRINGDATA(MMC_CAR(lst));
     acc += strlen(tmp);
   }
-  res = (char*) GC_malloc(acc+1);
+  res = (char*) omc_alloc_interface.malloc(acc+1);
   res_head = res;
   res += acc;
   res[0] = '\0';
@@ -165,7 +165,7 @@ extern void IOStreamExt_printReversedList(modelica_metatype lst, int whereToPrin
   case 2: f = stderr; break;
   default: MMC_THROW();
   }
-  strs = (const char**) GC_malloc(sizeof(const char*)*lstLen);
+  strs = (const char**) omc_alloc_interface.malloc(sizeof(const char*)*lstLen);
 
   for (i=0; i<lstLen ; i++, lst = MMC_CDR(lst)) {
     strs[i] = MMC_STRINGDATA(MMC_CAR(lst));

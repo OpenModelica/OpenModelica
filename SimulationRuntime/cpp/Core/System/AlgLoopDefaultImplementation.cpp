@@ -34,13 +34,13 @@ AlgLoopDefaultImplementation::~AlgLoopDefaultImplementation()
 int AlgLoopDefaultImplementation::getDimReal() const
 {
   return _dimAEq;
-};
+}
 
 /// Provide number (dimension) of residuals according to data type
 int AlgLoopDefaultImplementation::getDimRHS() const
 {
   return _dimAEq;
-};
+}
 
 /// (Re-) initialize the system of equations
 void AlgLoopDefaultImplementation::initialize()
@@ -70,13 +70,13 @@ void AlgLoopDefaultImplementation::setReal(const double* lambda)
 }
 
 //in algloop default verschieben
-void AlgLoopDefaultImplementation::getReal(double* lambda)
+void AlgLoopDefaultImplementation::getReal(double* lambda) const
 {
   memcpy(lambda, __xd, sizeof(double) * _dimAEq);
 }
 
 //in algloop default verschieben
-void AlgLoopDefaultImplementation::getRHS(double* res)
+void AlgLoopDefaultImplementation::getRHS(double* res) const
 {
   memcpy(res, __xd, sizeof(double) * _dimAEq);
 }

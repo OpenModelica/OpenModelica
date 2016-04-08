@@ -76,7 +76,7 @@ public function translateAbsyn2SCode
 algorithm
   outProgram := match(inProgram)
     local
-      SCode.Program spInitial, spAbsyn, sp;
+      SCode.Program spInitial, sp;
       list<Absyn.Class> inClasses,initialClasses;
 
     case _
@@ -94,8 +94,7 @@ algorithm
         System.setHasStreamConnectors(false);
 
         // translate given absyn to scode.
-        spAbsyn = List.fold(inClasses, translate2, {});
-        sp = listReverse(spAbsyn);
+        sp = list(translateClass(c) for c in inClasses);
 
         // adrpo: note that WE DO NOT NEED to add initial functions to the program
         //        as they are already part of the initialEnv done by Builtin.initialGraph
@@ -103,19 +102,6 @@ algorithm
         sp;
   end match;
 end translateAbsyn2SCode;
-
-public function translate2
-"Folds an Absyn.Program into SCode.Program."
-  input Absyn.Class inClass;
-  input SCode.Program acc;
-  output SCode.Program outAcc;
-protected
-  SCode.Element cl;
-algorithm
-  cl := translateClass(inClass);
-  // print("\n" + SCodeDump.printElementStr(cl) + "\n");
-  outAcc := cl :: acc;
-end translate2;
 
 public function translateClass
   input Absyn.Class inClass;
@@ -1426,33 +1412,18 @@ protected function translateEquations
   input Boolean inIsInitial;
   output list<SCode.Equation> outEquationLst;
 algorithm
-  outEquationLst := match (inAbsynEquationItemLst, inIsInitial)
-    local
-      SCode.EEquation e_1;
-      list<SCode.Equation> es_1;
-      Absyn.Equation e;
-      list<Absyn.EquationItem> es;
-      Option<Absyn.Comment> acom;
-      SCode.Comment com;
-      SourceInfo info;
-
-    case ({}, _) then {};
-
-    case ((Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es), _)
-      equation
-        // fprintln(Flags.TRANSLATE, "translating equation: " + Dump.unparseEquationStr(0, e));
-        (com,info) = translateCommentWithLineInfoChanges(acom,info);
-        e_1 = translateEquation(e,com,info,inIsInitial);
-        es_1 = translateEquations(es, inIsInitial);
-      then
-        (SCode.EQUATION(e_1) :: es_1);
-
-    case ((_ :: es), _)
-      equation
-        es_1 = translateEquations(es, inIsInitial);
-      then
-        es_1;
-  end match;
+  outEquationLst := list(
+    match eq
+      local
+        SCode.Comment com;
+        SourceInfo info;
+      case Absyn.EQUATIONITEM()
+        algorithm
+          (com,info) := translateCommentWithLineInfoChanges(eq.comment, eq.info);
+        then SCode.EQUATION(translateEquation(eq.equation_,com,info,inIsInitial));
+    end match
+    for eq guard match eq case Absyn.EQUATIONITEM() then true; else false; end match in inAbsynEquationItemLst
+  );
 end translateEquations;
 
 

@@ -386,7 +386,10 @@ public uniontype InlineType
   record EARLY_INLINE "Inline even earlier than NORM_INLINE. This will display the inlined code in the flattened model and also works for functions calling other functions that should be inlined."
   end EARLY_INLINE;
 
-  record NO_INLINE "Avoid inline, this is default behaviour but is also possible to set with Inline=false"
+  record DEFAULT_INLINE "no user option, tool can inline this functio if necessary"
+  end DEFAULT_INLINE;
+
+  record NO_INLINE "don't inline this function, set with Inline=false"
   end NO_INLINE;
 
   record AFTER_INDEX_RED_INLINE "Try to inline after index reduction"
@@ -1051,7 +1054,7 @@ partial function EvaluateSingletonTypeFunction
 end EvaluateSingletonTypeFunction;
 
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(DEFAULT_INLINE(),true,false,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
 

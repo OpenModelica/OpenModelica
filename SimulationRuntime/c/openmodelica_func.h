@@ -254,6 +254,7 @@ int (*functionJacD_column)(void* data, threadData_t *threadData);
 /*#endif*/
 
 const char *(*linear_model_frame)(void); /* printf format-string with holes for 6 strings */
+const char *(*linear_model_datarecovery_frame)(void); /* printf format-string with holes for 9 strings */
 
 /*
  * This function is used only for optimization purpose

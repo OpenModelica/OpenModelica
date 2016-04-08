@@ -38,9 +38,9 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_CLOCK */                 "clock",
   /* FLAG_CPU */                   "cpu",
   /* FLAG_CSV_OSTEP */             "csvOstep",
-  /* FLAG_DASSL_JACOBIAN */        "dasslJacobian",
   /* FLAG_DASSL_NO_RESTART */      "dasslnoRestart",
   /* FLAG_DASSL_NO_ROOTFINDING */  "dasslnoRootFinding",
+  /* FLAG_EMBEDDED_SERVER */       "embeddedServer",
   /* FLAG_EMIT_PROTECTED */        "emit_protected",
   /* FLAG_F */                     "f",
   /* FLAG_HELP */                  "help",
@@ -58,11 +58,17 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_IPOPT_JAC*/              "ipopt_jac",
   /* FLAG_IPOPT_MAX_ITER */        "ipopt_max_iter",
   /* FLAG_IPOPT_WARM_START */      "ipopt_warm_start",
+  /* FLAG_JACOBIAN */              "jacobian",
   /* FLAG_L */                     "l",
+  /* FLAG_L_DATA_RECOVERY */       "l_datarec",
   /* FLAG_LOG_FORMAT */            "logFormat",
   /* FLAG_LS */                    "ls",
   /* FLAG_LS_IPOPT */              "ls_ipopt",
+  /* FLAG_LSS */                   "lss",
+  /* FLAG_LSS_MAX_DENSITY */       "lssMaxDensity",
+  /* FLAG_LSS_MIN_SIZE */          "lssMinSize",
   /* FLAG_LV */                    "lv",
+  /* FLAG_MAX_EVENT_ITERATIONS */  "mei",
   /* FLAG_MAX_ORDER */             "maxIntegrationOrder",
   /* FLAG_MAX_STEP_SIZE */         "maxStepSize",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "measureTimePlotFormat",
@@ -82,6 +88,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_OVERRIDE_FILE */         "overrideFile",
   /* FLAG_PORT */                  "port",
   /* FLAG_R */                     "r",
+  /* FLAG_RT */                    "rt",
   /* FLAG_S */                     "s",
   /* FLAG_UP_HESSIAN */            "keepHessian",
   /* FLAG_W */                     "w",
@@ -97,9 +104,9 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU",
   /* FLAG_CPU */                   "dumps the cpu-time into the results-file",
   /* FLAG_CSV_OSTEP */             "value specifies csv-files for debuge values for optimizer step",
-  /* FLAG_DASSL_JACOBIAN */        "selects the type of the jacobians that is used for the dassl solver.\n  dasslJacobian=[coloredNumerical (default) |numerical|internalNumerical|coloredSymbolical|symbolical].",
   /* FLAG_DASSL_NO_RESTART */      "flag deactivates the restart of dassl after an event is performed.",
   /* FLAG_DASSL_NO_ROOTFINDING */  "flag deactivates the internal root finding procedure of dassl.",
+  /* FLAG_EMBEDDED_SERVER */       "enables an embedded server. Valid values: none, opc-da [broken], opc-ua [experimental], or the path to a shared object.",
   /* FLAG_EMIT_PROTECTED */        "emits protected variables to the result-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get detailed information that specifies the command-line flag",
@@ -117,11 +124,17 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IPOPT_JAC */             "value specifies the jacobian for Ipopt",
   /* FLAG_IPOPT_MAX_ITER */        "value specifies the max number of iteration for ipopt",
   /* FLAG_IPOPT_WARM_START */      "value specifies lvl for a warm start in ipopt: 1,2,3,...",
+  /* FLAG_JACOBIAN */              "selects the type of the jacobians that is used for the integrator.\n  jacobian=[coloredNumerical (default) |numerical|internalNumerical|coloredSymbolical|symbolical].",
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
+  /* FLAG_L_DATA_RECOVERY */       "emit data recovery matrices with model linearization",
   /* FLAG_LOG_FORMAT */            "value specifies the log format of the executable. -logFormat=text (default) or -logFormat=xml",
-  /* FLAG_LS */                    "value specifies the linear solver method",
+  /* FLAG_LS */                    "value specifies the linear solver method (default: lapack, totalpivot (fallback))",
   /* FLAG_LS_IPOPT */              "value specifies the linear solver method for ipopt",
+  /* FLAG_LSS */                   "value specifies the linear sparse solver method (default: umfpack)",
+  /* FLAG_LSS_MAX_DENSITY */       "[double (default 0.2)] value specifies the maximum density for using a linear sparse solver",
+  /* FLAG_LSS_MIN_SIZE */          "[int (default 4001)] value specifies the minimum system size for using a linear sparse solver",
   /* FLAG_LV */                    "[string list] value specifies the logging level",
+  /* FLAG_MAX_EVENT_ITERATIONS */  "[int (default 20)] value specifies the maximum number of event iterations",
   /* FLAG_MAX_ORDER */             "value specifies maximum integration order, used by dassl solver",
   /* FLAG_MAX_STEP_SIZE */         "value specifies maximum absolute step size, used by dassl solver",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality",
@@ -141,6 +154,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_OVERRIDE_FILE */         "will override the variables or the simulation settings in the XML setup file with the values from the file",
   /* FLAG_PORT */                  "value specifies the port for simulation status (default disabled)",
   /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
+  /* FLAG_RT */                    "value specifies the scaling factor for real-time synchronization (0 disables)",
   /* FLAG_S */                     "value specifies the solver",
   /* FLAG_UP_HESSIAN */            "value specifies the number of steps, which keep hessian matrix constant",
   /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
@@ -163,17 +177,16 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Dumps the cpu-time into the result-file using the variable named $cpuTime",
   /* FLAG_CSV_OSTEP */
   "value specifies csv-files for debuge values for optimizer step",
-  /* FLAG_DASSL_JACOBIAN */
-  "  Selects the type of the Jacobian that is used for the dassl solver:\n\n"
-  "  * coloredNumerical (colored numerical Jacobian, the default).\n"
-  "  * internalNumerical (internal dassl numerical Jacobian).\n"
-  "  * coloredSymbolical (colored symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.\n"
-  "  * numerical - numerical Jacobian.\n\n"
-  "  * symbolical - symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.",
   /* FLAG_DASSL_NO_RESTART */
   "  Deactivates the restart of dassl after an event is performed.",
   /* FLAG_DASSL_NO_ROOTFINDING */
   "  Deactivates the internal root finding procedure of dassl.",
+  /* FLAG_EMBEDDED_SERVER */
+  "  Enables an embedded server. Valid values:\n"
+  "  * none - default, run without embedded server\n"
+  "  * opc-da - [broken] run with embedded OPC DA server (WIN32 only, uses proprietary OPC SC interface)\n"
+  "  * opc-ua - [experimental] run with embedded OPC UA server (TCP port 4841 for now; will have its own configuration option later)\n"
+  "  * filename - path to a shared object implementing the embedded server interface (requires access to internal OMC data-structures if you want to read or write data)\n",
   /* FLAG_EMIT_PROTECTED */
   "  Emits protected variables to the result-file.",
   /* FLAG_F */
@@ -210,8 +223,17 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the max number of iteration for ipopt.",
   /* FLAG_IPOPT_WARM_START */
   "  Value specifies lvl for a warm start in ipopt: 1,2,3,...",
+  /* FLAG_JACOBIAN */
+  "  Selects the type of the Jacobian that is used for the integrator:\n\n"
+  "  * coloredNumerical (colored numerical Jacobian, the default).\n"
+  "  * internalNumerical (internal dassl numerical Jacobian).\n"
+  "  * coloredSymbolical (colored symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.\n"
+  "  * numerical - numerical Jacobian.\n\n"
+  "  * symbolical - symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.",
   /* FLAG_L */
   "  Value specifies a time where the linearization of the model should be performed.",
+  /* FLAG_L_DATA_RECOVERY */
+  "  Emit data recovery matrices with model linearization.",
   /* FLAG_LOG_FORMAT */
   "  Value specifies the log format of the executable:\n\n"
   "  * text (default)\n"
@@ -221,9 +243,20 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_LS_IPOPT */
   "  Value specifies the linear solver method for Ipopt, default mumps.\n"
   "  Note: Use if you build ipopt with other linear solver like ma27",
+  /* FLAG_LSS */
+  "  Value specifies the linear sparse solver method",
+  /* FLAG_LSS_MAX_DENSITY */
+  "  Value specifies the maximum density for using a linear sparse solver.\n"
+  "  The value is a Double with default value 0.2.",
+  /* FLAG_LSS_MIN_SIZE */
+  "  Value specifies the minimum system size for using a linear sparse solver.\n"
+  "  The value is an Integer with default value 4001.",
   /* FLAG_LV */
   "  Value (a comma-separated String list) specifies which logging levels to\n"
   "  enable. Multiple options can be enabled at the same time.",
+  /* FLAG_MAX_EVENT_ITERATIONS */
+  "  Value specifies the maximum number of event iterations.\n"
+  "  The value is an Integer with default value 20.",
   /* FLAG_MAX_ORDER */
   "  Value specifies maximum integration order, used by dassl solver.",
   /* FLAG_MAX_STEP_SIZE */
@@ -284,6 +317,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the name of the output result file.\n"
   "  The default file-name is based on the model name and output format.\n"
   "  For example: Model_res.mat.",
+  /* FLAG_RT */
+  "  Value specifies the scaling factor for real-time synchronization (0 disables).\n"
+  "  A value > 1 means the simulation takes a longer time to simulate.\n",
   /* FLAG_S */
   "  Value specifies the solver (integration method).",
   /* FLAG_UP_HESSIAN */
@@ -302,9 +338,9 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_CLOCK */                 FLAG_TYPE_OPTION,
   /* FLAG_CPU */                   FLAG_TYPE_FLAG,
   /* FLAG_CSV_OSTEP */             FLAG_TYPE_OPTION,
-  /* FLAG_DASSL_JACOBIAN */        FLAG_TYPE_OPTION,
   /* FLAG_DASSL_NO_RESTART */      FLAG_TYPE_FLAG,
   /* FLAG_DASSL_NO_ROOTFINDING */  FLAG_TYPE_FLAG,
+  /* FLAG_EMBEDDED_SERVER */       FLAG_TYPE_OPTION,
   /* FLAG_EMIT_PROTECTED */        FLAG_TYPE_FLAG,
   /* FLAG_F */                     FLAG_TYPE_OPTION,
   /* FLAG_HELP */                  FLAG_TYPE_OPTION,
@@ -322,11 +358,17 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_IPOPT_JAC */             FLAG_TYPE_OPTION,
   /* FLAG_IPOPT_MAX_ITER */        FLAG_TYPE_OPTION,
   /* FLAG_IPOPT_WARM_START */      FLAG_TYPE_OPTION,
+  /* FLAG_JACOBIAN */              FLAG_TYPE_OPTION,
   /* FLAG_L */                     FLAG_TYPE_OPTION,
+  /* FLAG_L_DATA_RECOVERY */       FLAG_TYPE_FLAG,
   /* FLAG_LOG_FORMAT */            FLAG_TYPE_OPTION,
   /* FLAG_LS */                    FLAG_TYPE_OPTION,
   /* FLAG_LS_IPOPT */              FLAG_TYPE_OPTION,
+  /* FLAG_LSS */                   FLAG_TYPE_OPTION,
+  /* FLAG_LSS_MAX_DENSITY */       FLAG_TYPE_OPTION,
+  /* FLAG_LSS_MIN_SIZE */          FLAG_TYPE_OPTION,
   /* FLAG_LV */                    FLAG_TYPE_OPTION,
+  /* FLAG_MAX_EVENT_ITERATIONS */  FLAG_TYPE_OPTION,
   /* FLAG_MAX_ORDER */             FLAG_TYPE_OPTION,
   /* FLAG_MAX_STEP_SIZE */         FLAG_TYPE_OPTION,
   /* FLAG_MEASURETIMEPLOTFORMAT */ FLAG_TYPE_OPTION,
@@ -346,6 +388,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_OVERRIDE_FILE */         FLAG_TYPE_OPTION,
   /* FLAG_PORT */                  FLAG_TYPE_OPTION,
   /* FLAG_R */                     FLAG_TYPE_OPTION,
+  /* FLAG_RT */                    FLAG_TYPE_OPTION,
   /* FLAG_S */                     FLAG_TYPE_OPTION,
   /* FLAG_UP_HESSIAN */            FLAG_TYPE_OPTION,
   /* FLAG_W */                     FLAG_TYPE_FLAG
@@ -429,6 +472,29 @@ const char *LS_DESC[LS_MAX+1] = {
   "LS_MAX"
 };
 
+const char *LSS_NAME[LS_MAX+1] = {
+  "LS_UNKNOWN",
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* LS_LIS */          "lis",
+#endif
+  /* LS_KLU */          "klu",
+  /* LS_UMFPACK */      "umfpack",
+
+  "LSS_MAX"
+};
+
+const char *LSS_DESC[LS_MAX+1] = {
+  "unknown",
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* LS_LIS */          "method using iterativ solver Lis",
+#endif
+  /* LS_KLU */          "method using klu sparse linear solver",
+  /* LS_UMFPACK */      "method using umfpack sparse linear solver",
+
+  "LSS_MAX"
+};
 
 const char *NLS_NAME[NLS_MAX+1] = {
   "NLS_UNKNOWN",
@@ -483,3 +549,29 @@ const char *NEWTONSTRATEGY_DESC[NEWTON_MAX+1] = {
 
   "NEWTON_MAX"
 };
+
+
+const char *JACOBIAN_METHOD[JAC_MAX+1] = {
+  "unknown",
+
+  "coloredNumerical",
+  "coloredSymbolical",
+  "internalNumerical",
+  "numerical",
+  "symbolical",
+
+  "JAC_MAX"
+};
+
+const char *JACOBIAN_METHOD_DESC[JAC_MAX+1] = {
+  "unknown",
+
+  "colored numerical jacobian - default.",
+  "colored symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization.",
+  "internal numerical jacobian.",
+  "numerical jacobian.",
+  "symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization.",
+
+  "JAC_MAX"
+ };
+

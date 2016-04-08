@@ -846,7 +846,7 @@ algorithm
 
     case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(iterType = iterType, path = path, foldName=foldName, resultName=resultName, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = iterators), impl, stOpt, msg,_)
       equation
-        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName), NONE());
+        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), FCore.forScopeName, NONE());
         (cache, valMatrix, names, dims, tys, stOpt) = cevalReductionIterators(cache, env, iterators, impl, stOpt,msg,numIter+1);
         // print("Before:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") + "\n");
         valMatrix = makeReductionAllCombinations(valMatrix,iterType);

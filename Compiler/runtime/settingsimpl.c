@@ -118,7 +118,7 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
     fprintf(stderr, "proc_pidpath() failed: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
   } else {
-    omhome = GC_strdup(info.dli_fname);
+    omhome = omc_alloc_interface.malloc_strdup(info.dli_fname);
     stripbinpath(omhome);
   }
   init = 1;
@@ -214,7 +214,7 @@ char* Settings_getHomeDir(int runningTestsuite)
   if (homePath == NULL || runningTestsuite) {
     return "";
   }
-  return GC_strdup(homePath);
+  return omc_alloc_interface.malloc_strdup(homePath);
 }
 
 // Do not free the returned variable. It's malloc'ed
@@ -237,7 +237,7 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
 #if !(defined(_MSC_VER) || defined(__MINGW32__))
     } else {
       int lenHome = strlen(homePath);
-      buffer = (char*) GC_malloc_atomic(lenOmhome+lenHome+41);
+      buffer = (char*) omc_alloc_interface.malloc_atomic(lenOmhome+lenHome+41);
       snprintf(buffer,lenOmhome+lenHome+41,"%s/lib/omlibrary:%s/.openmodelica/libraries/",omhome,homePath);
     }
 #endif
@@ -247,11 +247,11 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   /* adrpo: translate this to forward slashes! */
   /* duplicate the path */
-  winLibPath = GC_strdup(path);
+  winLibPath = omc_alloc_interface.malloc_strdup(path);
 
   /* ?? not enough memory for duplication */
   if (!winLibPath)
-    return GC_strdup(path);
+    return omc_alloc_interface.malloc_strdup(path);
 
   /* convert \\ to / */
   while(winLibPath[i] != '\0')
@@ -262,7 +262,7 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   return winLibPath;
 #endif
 
-  return GC_strdup(path);
+  return omc_alloc_interface.malloc_strdup(path);
 }
 
 static const char* SettingsImpl__getCompileCommand(void)

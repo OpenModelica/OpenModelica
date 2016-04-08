@@ -53,14 +53,14 @@ protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BaseHashTable;
 protected import ComponentReference;
-protected import DAEUtil;
 protected import Differentiate;
-protected import FCore;
+protected import ElementSource;
 protected import Error;
 protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import FCore;
 protected import Flags;
 protected import HashTable2;
 protected import HashTable3;
@@ -713,8 +713,8 @@ algorithm
       if Util.isSome(eqTplOpt) then
          outEqnTpl := Util.getOption(eqTplOpt)::outEqnTpl;
       else
-			  outEqnTpl := {};
-			  oShared := inShared;
+        outEqnTpl := {};
+        oShared := inShared;
        return;
       end if;
   end while;
@@ -775,9 +775,9 @@ protected function replaceDifferentiatedEqns
   output list<Integer> outChangedVars;
   output BackendDAE.ConstraintEquations outOrgEqns;
 protected
-	Integer eqIdx;
-	list<Integer> changedVars;
-	BackendDAE.Equation eqOrig, eqDiff;
+  Integer eqIdx;
+  list<Integer> changedVars;
+  BackendDAE.Equation eqOrig, eqDiff;
   tuple<Integer, Option<BackendDAE.Equation>, BackendDAE.Equation> eqTpl;
 algorithm
   outVars := vars;
@@ -791,10 +791,10 @@ algorithm
       (eqDiff, _) := BackendEquation.traverseExpsOfEquation(eqDiff, replaceStateOrderExp, outVars);
       // change the variable types (algebraic -> state, 1.der -> 2.der, ...)
       (eqDiff, (_, (outVars, outEqns, outChangedVars, _, _, _))) := BackendEquation.traverseExpsOfEquation(eqDiff, Expression.traverseSubexpressionsHelper, (changeDerVariablesToStatesFinder, (outVars, outEqns, outChangedVars, eqIdx, imapIncRowEqn, mt)));
-	      if Flags.isSet(Flags.BLT_DUMP) then
-	        print("replaced differentiated eqs:");
-	        debugdifferentiateEqns((eqOrig, eqDiff));
-	      end if;
+        if Flags.isSet(Flags.BLT_DUMP) then
+          print("replaced differentiated eqs:");
+          debugdifferentiateEqns((eqOrig, eqDiff));
+        end if;
       outEqns := BackendEquation.setAtIndex(outEqns, eqIdx, eqDiff);
       //collect original equations
       outOrgEqns := addOrgEqn(eqIdx, eqOrig, outOrgEqns);
@@ -1218,10 +1218,23 @@ protected
   HashTable3.HashTable dht;
   BackendDAE.StateOrder so;
   BackendDAE.EquationArray eqns;
+  Integer count;
 algorithm
-  ht := HashTableCG.emptyHashTable();
-  dht := HashTable3.emptyHashTable();
-  so := BackendDAE.STATEORDER(ht,dht);
+  if Config.getIndexReductionMethod()=="uode" then
+    // Disabled state selection, so do not allocate expensive tables
+    so := BackendDAE.NOSTATEORDER();
+  else
+    // Get a rough count of number of states before allocating the table
+    // TODO: Only allocate the table once and clear it for each new matching. Currently, the same variables are allocated over and over again.
+    count := integer(/* 8/3 determined by scientifically guessing */ (8/3)*BackendVariable.getNumStateVarFromVariables(inSystem.orderedVars));
+    if count==0 then
+      so := BackendDAE.NOSTATEORDER();
+    else
+      ht := HashTableCG.emptyHashTableSized(count);
+      dht := HashTable3.emptyHashTableSized(count);
+      so := BackendDAE.STATEORDER(ht,dht);
+    end if;
+  end if;
   eqns := BackendEquation.getEqnsFromEqSystem(inSystem);
   if Flags.isSet(Flags.BLT_DUMP) then
     dumpStateOrder(so);
@@ -2573,7 +2586,7 @@ protected function forceInlinEqn
   output DAE.FunctionTree funcs;
 algorithm
   funcs := inFuncs;
-  (e,_,_) := Inline.forceInlineExp(inExp,(SOME(funcs),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
+  (e,_,_) := Inline.forceInlineExp(inExp,(SOME(funcs),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
 end forceInlinEqn;
 
 protected function getSetSystem
@@ -2845,13 +2858,13 @@ algorithm
   for e in List.intRange(numEqs) loop
     orgeqns := arrayGet(outOrgEqns,e);
     if not listEmpty(orgeqns) then
-	    (outEqnsLst, orgeqns) := match orgeqns
-	                             local BackendDAE.Equation eqn; list<BackendDAE.Equation> eqns;
-	                             case {eqn} then (eqn :: outEqnsLst, {});
-	                             case eqn::eqns then (eqn :: outEqnsLst, eqns);
-	                             end match;
-	    arrayUpdate(outOrgEqns,e,orgeqns);
-	  end if;
+      (outEqnsLst, orgeqns) := match orgeqns
+                               local BackendDAE.Equation eqn; list<BackendDAE.Equation> eqns;
+                               case {eqn} then (eqn :: outEqnsLst, {});
+                               case eqn::eqns then (eqn :: outEqnsLst, eqns);
+                               end match;
+      arrayUpdate(outOrgEqns,e,orgeqns);
+    end if;
   end for;
 end removeFirstOrgEqns;
 
@@ -3153,58 +3166,6 @@ algorithm
   tp := Expression.typeof(inExp);
   outExp := DAE.CALL(Absyn.IDENT("der"), {inExp}, DAE.CALL_ATTR(tp, false, true, false, false, DAE.NO_INLINE(),DAE.NO_TAIL()));
 end makeder;
-
-protected function generateVar
-"author: Frenkel TUD 2012-08"
-  input DAE.ComponentRef cr;
-  input BackendDAE.VarKind varKind;
-  input DAE.Type varType;
-  input DAE.InstDims subs;
-  input Option<DAE.VariableAttributes> attr;
-  output BackendDAE.Var var;
-algorithm
-  var := BackendDAE.VAR(cr,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),subs,DAE.emptyElementSource,attr,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(),false);
-end generateVar;
-
-protected function generateArrayVar
-"author: Frenkel TUD 2012-08"
-  input DAE.ComponentRef name;
-  input BackendDAE.VarKind varKind;
-  input DAE.Type varType;
-  input Option<DAE.VariableAttributes> attr;
-  output list<BackendDAE.Var> outVars;
-algorithm
-  outVars := match(name,varKind,varType,attr)
-    local
-      list<DAE.ComponentRef> crlst;
-      BackendDAE.Var var;
-      list<BackendDAE.Var> vars;
-      DAE.Dimensions dims;
-      list<Integer> ilst;
-      DAE.InstDims subs;
-      DAE.Type tp;
-    case (_,_,DAE.T_ARRAY(ty=tp,dims=dims),_)
-      equation
-        crlst = ComponentReference.expandCref(name,false);
-        /*
-        TODO: mahge: what is this supposed to do?.
-        Why are even these dims needed separetely in BackendDAE.VAR
-        They are already in the cref */
-        /*
-        ilst = Expression.dimensionsSizes(dims);
-        subs = Expression.intSubscripts(ilst);
-        */
-        // the rest not
-        vars = List.map4(crlst,generateVar,varKind,tp,dims,NONE());
-      then
-        vars;
-    case (_,_,_,_)
-      equation
-        var = BackendDAE.VAR(name,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),{},DAE.emptyElementSource,attr,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
-      then
-        {var};
-  end match;
-end generateArrayVar;
 
 protected function notVarStateSelectAlways
 "author: Frenkel TUD 2012-06
@@ -3570,14 +3531,14 @@ algorithm
       list<BackendDAE.Var> varlst;
       DAE.VarInnerOuter io;
     // state with stateSelect.always, diffed once
-    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
+    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),_)
       guard intEq(diffcount,1)
-      then (var,(vars,so,varlst,ht));
+      then (var,inTpl);
     // state with stateSelect.always, diffed more than once, known derivative
-    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(cr)),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
+    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(cr)),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),_)
       equation
         var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,SOME(cr)));
-      then (var,(vars,so,varlst,ht));
+      then (var,inTpl);
     // state with stateSelect.always, diffed more than once, unknown derivative
     case (var as BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffcount,derName=NONE()),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
       equation
@@ -3593,7 +3554,7 @@ algorithm
         // add replacement for each derivative
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(1,1,name,name,var,vars,so,varlst,ht);
         cr = ComponentReference.crefPrefixDer(name);
-        source = DAEUtil.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
+        source = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
       then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,value,dim,source,attr,ts,comment,ct,io,false),(vars,so,varlst,ht));
     // state replacable without unknown derivative
     case (var as BackendDAE.VAR(name,BackendDAE.STATE(index=diffcount,derName=NONE()),dir,prl,tp,bind,value,dim,source,attr,ts,comment,ct,io),(vars,so,varlst,ht))
@@ -3602,7 +3563,7 @@ algorithm
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(diffcount,1,name,name,var,vars,so,varlst,ht);
         // dummy_der name vor Source information
         cr = ComponentReference.crefPrefixDer(name);
-        source = DAEUtil.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
+        source = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
       then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,value,dim,source,attr,ts,comment,ct,io,false),(vars,so,varlst,ht));
     else (inVar,inTpl);
   end matchcontinue;
@@ -3749,7 +3710,7 @@ algorithm
         dn = intMax(diffindex-level,0);
         // generate names
         (name,dummyderName) = crefPrefixDerN(dn,name);
-        _ = DAEUtil.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(dummyderName,{}));
+        _ = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(dummyderName,{}));
         /* Dummy variables are algebraic variables, hence fixed = false */
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
@@ -4117,7 +4078,7 @@ algorithm
   set := ComponentReference.makeCrefIdent("$STATESET" + intString(index),DAE.T_COMPLEX_DEFAULT,{});
   tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource) else DAE.T_REAL_DEFAULT;
   crstates := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("x",tp,{}));
-  oSetVars := generateArrayVar(crstates,BackendDAE.STATE(1,NONE()),tp,NONE());
+  oSetVars := BackendVariable.generateArrayVar(crstates,BackendDAE.STATE(1,NONE()),tp,NONE());
   oSetVars := List.map1(oSetVars,BackendVariable.setVarFixed,false);
   crset := List.map(oSetVars,BackendVariable.varCref);
   tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource)
@@ -4125,14 +4086,14 @@ algorithm
   realtp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource)
                                 else DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
   ocrA := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("A",tp,{}));
-  oAVars := generateArrayVar(ocrA,BackendDAE.VARIABLE(),tp,NONE());
+  oAVars := BackendVariable.generateArrayVar(ocrA,BackendDAE.VARIABLE(),tp,NONE());
   oAVars := List.map1(oAVars,BackendVariable.setVarFixed,true);
   // add start value A[i,j] = if i==j then 1 else 0 via initial equations
   oAVars := List.map1(oAVars,BackendVariable.setVarStartValue,DAE.ICONST(0));
   oAVars := setSetAStart(oAVars,1,1,setsize,{});
   tp := if intGt(nCEqns,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCEqns)}, DAE.emptyTypeSource) else DAE.T_REAL_DEFAULT;
   ocrJ := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("J",tp,{}));
-  oJVars := generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
+  oJVars := BackendVariable.generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
   oJVars := List.map1(oJVars,BackendVariable.setVarFixed,false);
 end getSetVars;
 

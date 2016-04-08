@@ -67,7 +67,7 @@ static inline double rt_tock(int ix) {return 0.0;}
 #define SIM_PROF_TICK_FN(ix) rt_tick(ix+SIM_TIMER_FIRST_FUNCTION)
 #define SIM_PROF_ACC_FN(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION)
 
-//These functions are used for profileBlocks, not for equations
+/* These functions are used for profileBlocks, not for equations */
 #define SIM_PROF_TICK_EQ(ix) rt_tick(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions)
 #define SIM_PROF_ACC_EQ(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions)
 #define SIM_PROF_ADD_NCALL_EQ(ix,num) rt_add_ncall(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions,num)
@@ -102,6 +102,7 @@ typedef union rtclock_t {
 #endif
 
 int rt_set_clock(enum omc_rt_clock_t clockType); /* non-zero on failure */
+enum omc_rt_clock_t rt_get_clock(); /* non-zero on failure */
 void rt_init(int numTimer);
 
 void rt_tick(int ix);
@@ -129,7 +130,10 @@ void rt_measure_overhead(int ix);
 
 /* tick() ... tock() with external rtclock_t -> returns the number of seconds since the tick */
 void rt_ext_tp_tick(rtclock_t* tick_tp);
+void rt_ext_tp_tick_realtime(rtclock_t* tick_tp);
 double rt_ext_tp_tock(rtclock_t* tick_tp);
+/* sleep nsec nanoseconds since the call to tick_tp. Returns the number of nanoseconds we are late for the deadline. */
+int64_t rt_ext_tp_sync_nanosec(rtclock_t* tick_tp, uint64_t nsec);
 
 #endif
 

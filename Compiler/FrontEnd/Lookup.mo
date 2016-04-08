@@ -206,7 +206,7 @@ algorithm
     // lookup of an enumeration type
     case (cache,env_1,path,c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=r as SCode.R_ENUMERATION()))
       equation
-        env_2 = FGraph.openScope(env_1, encflag, SOME(id), SOME(FCore.CLASS_SCOPE()));
+        env_2 = FGraph.openScope(env_1, encflag, id, SOME(FCore.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, FGraph.getGraphName(env_2));
         // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + Absyn.pathString(path));
         mod = Mod.getClassModifier(env_1, id);
@@ -603,7 +603,7 @@ algorithm
 
     case (cache,env,_,SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr),NONE(),_)
       equation
-        env = FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        env = FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env));
         // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED PARTIALICD: " + FGraph.printGraphPathStr(env) + " path: " + Absyn.pathString(path) + " class: " + SCodeDump.shortElementStr(c));
         mod = Mod.getClassModifier(inEnv, id);
@@ -942,7 +942,7 @@ algorithm
       equation
         env = FGraph.topScope(env);
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, env, path);
-        env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         // fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
         mod = Mod.getClassModifier(env_1, id);
@@ -1004,7 +1004,7 @@ algorithm
         (cache,(c as
                 SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames)
         = lookupClass2(cache,env3,path,prevFrames,Util.makeStatefulBoolean(false),inInfo);
-        env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         // fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
         mod = Mod.getClassModifier(env_1, id);
@@ -1056,48 +1056,85 @@ algorithm
 end lookupRecordConstructorClass;
 
 public function lookupConnectorVar
-"looks up a connector variable, but takes InnerOuter attribute from component if
- inside connector, i.e. for connector reference a.b the innerOuter attribute is
- fetched from a."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
+  "Simplified lookup of connector references. The lookup will stop if it finds a
+   deleted component, so if status is VAR_DELETED() then attr and ty will belong
+   to the deleted component instead of the looked for component."
+  input FCore.Graph env;
   input DAE.ComponentRef cr;
-  output FCore.Cache outCache;
+  input Boolean firstId = true;
   output DAE.Attributes attr;
-  output DAE.Type tp;
+  output DAE.Type ty;
+  output FCore.Status status;
+protected
+  FCore.Graph comp_env;
+  DAE.Attributes parent_attr;
 algorithm
-  (outCache,attr,tp) := match(inCache,inEnv,cr)
-    local
-      DAE.ComponentRef cr1;
-      SCode.ConnectorType ct;
-      SCode.Parallelism prl;
-      SCode.Variability var;
-      Absyn.Direction dir;
-      Absyn.InnerOuter io;
-      DAE.Type ty1;
-      DAE.Attributes attr1;
-      FCore.Cache cache;
-      FCore.Graph env;
-      SCode.Visibility vis;
-
-    // unqualified component reference
-    case(cache,env,DAE.CREF_IDENT())
-      equation
-        (cache,attr1,ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
+  (attr, ty, status) := match cr
+    case DAE.CREF_IDENT()
+      algorithm
+        (DAE.TYPES_VAR(attributes = attr, ty = ty), status, _) :=
+          lookupConnectorVar2(env, cr.ident);
+        ty := checkSubscripts(ty, cr.subscriptLst);
       then
-        (cache,attr1,ty1);
+        (attr, ty, status);
 
-    // qualified component reference
-    case(cache,env,DAE.CREF_QUAL())
-      equation
-        (cache,DAE.ATTR(ct,prl,var,dir,_,vis),ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
-        cr1 = ComponentReference.crefFirstCref(cr);
-        // Find innerOuter attribute from "parent"
-        (cache,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr1);
+    case DAE.CREF_QUAL()
+      algorithm
+        (DAE.TYPES_VAR(attributes = parent_attr, ty = ty), status, comp_env) :=
+          lookupConnectorVar2(env, cr.ident);
+
+        if FCore.isDeletedComp(status) then
+          // Stop if we find a deleted component.
+          attr := parent_attr;
+        else
+          (attr, ty, status) :=
+            lookupConnectorVar(comp_env, cr.componentRef, false);
+
+          // Propagate variability.
+          attr := DAEUtil.setAttrVariability(attr, SCode.variabilityOr(
+            DAEUtil.getAttrVariability(attr), DAEUtil.getAttrVariability(parent_attr)));
+
+          // Use the inner/outer from the first identifier.
+          if firstId then
+            attr := DAEUtil.setAttrInnerOuter(attr, DAEUtil.getAttrInnerOuter(parent_attr));
+          end if;
+        end if;
       then
-        (cache,DAE.ATTR(ct,prl,var,dir,io,vis),ty1);
+        (attr, ty, status);
+
   end match;
 end lookupConnectorVar;
+
+protected function lookupConnectorVar2
+  "Helper function to lookupConnectorVar."
+  input FCore.Graph env;
+  input String name;
+  output DAE.Var var;
+  output FCore.Status status;
+  output FCore.Graph compEnv;
+protected
+  FCore.Scope scope;
+  FCore.Children ht;
+algorithm
+  FCore.G(scope = scope) := env;
+
+  // Connectors are not allowed to be constant, so we don't need to look outside
+  // the local scope. But we do need to check outside implicit scopes, e.g.
+  // for-scopes.
+  for r in scope loop
+    ht := FNode.children(FNode.fromRef(r));
+
+    try
+      (var, _, _, status, compEnv) := lookupVar2(ht, name, env);
+      return;
+    else
+      // Continue to the next scope only if the current scope is implicit.
+      true := FNode.isImplicitRefName(r);
+    end try;
+  end for;
+
+  fail();
+end lookupConnectorVar2;
 
 public function lookupVar
   "LS: when looking up qualified component reference, lookupVar only
@@ -1376,7 +1413,7 @@ algorithm
               then
                 (cache, env5) = Inst.getCachedInstance(cache, env2, id, rr);
               else // not an instance, instantiate it - lookup of constants on form A.B in packages. instantiate package and look inside.
-                env3 = FGraph.openScope(env2, encflag, SOME(n), FGraph.restrictionToScopeType(r));
+                env3 = FGraph.openScope(env2, encflag, n, FGraph.restrictionToScopeType(r));
                 ci_state = ClassInf.start(r, FGraph.getGraphName(env3));
                 // fprintln(Flags.INST_TRACE, "LOOKUP VAR IN PACKAGES ICD: " + FGraph.printGraphPathStr(env3) + " var: " + ComponentReference.printComponentRefStr(cref));
                 mod = Mod.getClassModifier(env2, n);
@@ -1815,7 +1852,7 @@ algorithm
         then
           (cache, env2) = Inst.getCachedInstance(cache, env_1, str, r);
         else
-          env2 = FGraph.openScope(env_1, encflag, SOME(str), FGraph.restrictionToScopeType(restr));
+          env2 = FGraph.openScope(env_1, encflag, str, FGraph.restrictionToScopeType(restr));
           ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
           // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV QUAL ICD: " + FGraph.printGraphPathStr(env2) + "." + str);
           mod = Mod.getClassModifier(env_1, str);
@@ -2215,7 +2252,7 @@ algorithm
     case (cache,env,SCode.CLASS(name = name,info = info),_)
       equation
         (cache,env,_,elts,_,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,true,info);
-        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), SOME(FCore.CLASS_SCOPE()));
+        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, SOME(FCore.CLASS_SCOPE()));
         fpath = FGraph.getGraphName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = InstUtil.splitElts(elts);
         (cache,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, elts, ClassInf.RECORD(fpath), name, true, false);
@@ -3173,7 +3210,7 @@ protected
   list<String> typeVars;
 algorithm
   SCode.CLASS(name=id,restriction=SCode.R_METARECORD(name=utPath,index=index,singleton=singleton,typeVars=typeVars),classDef=SCode.PARTS(elementLst = els)) := cdef;
-  env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(id), SOME(FCore.CLASS_SCOPE()));
+  env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), id, SOME(FCore.CLASS_SCOPE()));
   // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + "\n");
   (cache,utPath) := Inst.makeFullyQualified(inCache,env,utPath);
   path := Absyn.joinPaths(utPath, Absyn.IDENT(id));

@@ -31,14 +31,17 @@
 
 encapsulated partial package BaseAvlTree
 
-replaceable type Key = Integer; // TODO: We should have an Any type
+import BaseAvlSet;
+extends BaseAvlSet;
+
 replaceable type Value = Integer; // TODO: We should have an Any type
 
-uniontype Tree
+redeclare uniontype Tree
   "The binary tree data structure."
 
   record NODE
-    ValueNode value "The value stored in the node.";
+    Key key "The key of the node.";
+    Value value;
     Integer height "Height of tree, used for balancing";
     Tree left "Left subtree.";
     Tree right "Right subtree.";
@@ -47,40 +50,20 @@ uniontype Tree
   record EMPTY end EMPTY;
 end Tree;
 
-uniontype ValueNode
-  "Each node in the binary tree can have a value associated with it."
-
-  record VALUE
-    Key key "Key" ;
-    Value value "Value" ;
-  end VALUE;
-end ValueNode;
-
-replaceable partial function keyStr
-  "Prints a key to a string."
-  input Key inKey;
-  output String outString;
-end keyStr;
-
 replaceable partial function valueStr
   "Prints a Value to a string."
   input Value inValue;
   output String outString;
 end valueStr;
 
-replaceable partial function keyCompare
-  "Compares two keys. It returns -1 if key1 is less than key2, 0 if they are
-   equal, and 1 if key1 is larger than key2."
-  input Key inKey1;
-  input Key inKey2;
-  output Integer outResult;
-end keyCompare;
-
-function new
-  "Return an empty tree"
-  output Tree outTree = EMPTY();
-  annotation(__OpenModelica_EarlyInline = true);
-end new;
+redeclare function printNodeStr
+  input Tree inNode;
+  output String outString;
+algorithm
+  outString := match inNode
+    case NODE() then "(" + keyStr(inNode.key) + ", " + valueStr(inNode.value) + ")";
+  end match;
+end printNodeStr;
 
 function addConflictFail
   "Conflict resolving function for add which fails on conflict."
@@ -105,13 +88,13 @@ function addConflictKeep
   output Value value = oldValue;
 end addConflictKeep;
 
-function add
+redeclare function add
   "Inserts a new node in the tree."
+  input Tree inTree;
   input Key inKey;
   input Value inValue;
-  input Tree inTree;
   input ConflictFunc conflictFunc = addConflictFail "Used to resolve conflicts.";
-  output Tree outTree = inTree;
+  output Tree tree=inTree;
 
   partial function ConflictFunc
     input Value newValue "The value given by the caller.";
@@ -119,7 +102,7 @@ function add
     output Value value "The value that will replace the existing value.";
   end ConflictFunc;
 algorithm
-  outTree := match outTree
+  tree := match tree
     local
       Key key;
       Value value;
@@ -127,35 +110,36 @@ algorithm
 
     // Empty tree.
     case EMPTY()
-      then NODE(VALUE(inKey, inValue), 1, EMPTY(), EMPTY());
+      then NODE(inKey, inValue, 1, EMPTY(), EMPTY());
 
-    case NODE(value = VALUE(key = key))
+    case NODE(key = key)
       algorithm
         key_comp := keyCompare(inKey, key);
 
         if key_comp == -1 then
           // Replace left branch.
-          outTree.left := add(inKey, inValue, outTree.left, conflictFunc);
+          tree.left := add(tree.left, inKey, inValue, conflictFunc);
         elseif key_comp == 1 then
           // Replace right branch.
-          outTree.right := add(inKey, inValue, outTree.right, conflictFunc);
+          tree.right := add(tree.right, inKey, inValue, conflictFunc);
         else
           // Use the given function to resolve the conflict.
-          VALUE(value = value) := outTree.value;
-          outTree.value := VALUE(inKey, conflictFunc(inValue, value));
+          value := conflictFunc(inValue, tree.value);
+          if not referenceEq(tree.value, value) then
+            tree.value := value;
+          end if;
         end if;
       then
-        if key_comp == 0 then outTree else balance(outTree);
+        if key_comp == 0 then tree else balance(tree);
 
   end match;
 end add;
 
-function addList
+redeclare function addList
   "Adds a list of key-value pairs to the tree."
+  input output Tree tree;
   input list<tuple<Key,Value>> inValues;
-  input Tree inTree;
   input ConflictFunc conflictFunc = addConflictFail "Used to resolve conflicts.";
-  output Tree outTree = inTree;
 
   partial function ConflictFunc
     input Value newValue "The value given by the caller.";
@@ -168,7 +152,7 @@ protected
 algorithm
   for t in inValues loop
     (key, value) := t;
-    outTree := add(key, value, outTree, conflictFunc);
+    tree := add(tree, key, value, conflictFunc);
   end for;
 end addList;
 
@@ -182,25 +166,15 @@ protected
   Integer key_comp;
   Tree tree;
 algorithm
-  NODE(value = VALUE(key = key)) := inTree;
+  NODE(key = key) := inTree;
   key_comp := keyCompare(inKey, key);
 
   outValue := match (key_comp, inTree)
-    case ( 0, NODE(value = VALUE(value = outValue))) then outValue;
+    case ( 0, NODE(value = outValue)) then outValue;
     case ( 1, NODE(right = tree)) then get(tree, inKey);
     case (-1, NODE(left = tree)) then get(tree, inKey);
   end match;
 end get;
-
-function isEmpty
-  input Tree tree;
-  output Boolean isEmpty;
-algorithm
-  isEmpty := match tree
-    case EMPTY() then true;
-    else false;
-  end match;
-end isEmpty;
 
 function toList
   "Converts the tree to a flat list of key-value tuples."
@@ -213,7 +187,7 @@ algorithm
       Key key;
       Value value;
 
-    case NODE(value = VALUE(key, value))
+    case NODE(key=key, value=value)
       algorithm
         outList := (key, value) :: inAccum;
         outList := toList(inTree.left, outList);
@@ -236,7 +210,7 @@ algorithm
     local
       Value value;
 
-    case NODE(value = VALUE(value = value))
+    case NODE(value = value)
       algorithm
         values := value :: accum;
         values := listValues(tree.left, values);
@@ -249,14 +223,27 @@ algorithm
   end match;
 end listValues;
 
-function join
+redeclare function join
   "Joins two trees by adding the second one to the first."
-  input Tree inTree1;
-  input Tree inTree2;
-  output Tree outTree;
+  input output Tree tree;
+  input Tree treeToJoin;
+  input ConflictFunc conflictFunc = addConflictFail "Used to resolve conflicts.";
+
+  partial function ConflictFunc
+    input Value newValue "The value given by the caller.";
+    input Value oldValue "The value already in the tree.";
+    output Value value "The value that will replace the existing value.";
+  end ConflictFunc;
 algorithm
-  outTree := addList(toList(inTree2), inTree1);
-end join;
+  tree := match treeToJoin
+    case EMPTY() then tree;
+    case NODE()
+      algorithm
+        tree := add(tree, treeToJoin.key, treeToJoin.value, conflictFunc=conflictFunc);
+        tree := join(tree, treeToJoin.left, conflictFunc=conflictFunc);
+        tree := join(tree, treeToJoin.right, conflictFunc=conflictFunc);
+      then tree;
+  end match;end join;
 
 function map
   "Traverses the tree in depth-first pre-order and applies the given function to
@@ -277,11 +264,11 @@ algorithm
       Value value, new_value;
       Tree branch, new_branch;
 
-    case NODE(value = VALUE(key, value))
+    case NODE(key=key, value=value)
       algorithm
         new_value := inFunc(key, value);
         if not referenceEq(value, new_value) then
-          outTree.value := VALUE(key, new_value);
+          outTree.value := new_value;
         end if;
 
         new_branch := map(outTree.left, inFunc);
@@ -321,7 +308,7 @@ algorithm
       Value value;
       Tree branch;
 
-    case NODE(value = VALUE(key, value))
+    case NODE(key=key, value=value)
       algorithm
         outResult := inFunc(key, value, outResult);
         outResult := fold(inTree.left, inFunc, outResult);
@@ -357,11 +344,11 @@ algorithm
       Value value, new_value;
       Tree branch, new_branch;
 
-    case NODE(value = VALUE(key, value))
+    case NODE(key=key, value=value)
       algorithm
         (new_value, outResult) := inFunc(key, value, outResult);
         if not referenceEq(value, new_value) then
-          outTree.value := VALUE(key, new_value);
+          outTree.value := new_value;
         end if;
 
         (new_branch, outResult) := mapFold(outTree.left, inFunc, outResult);
@@ -379,160 +366,6 @@ algorithm
     else inTree;
   end match;
 end mapFold;
-
-function printTreeStr
-  "Prints the tree to a string using UTF-8 box-drawing characters to construct a
-   graphical view of the tree."
-  input Tree inTree;
-  output String outString;
-protected
-  ValueNode val_node;
-  Tree left, right;
-algorithm
-  NODE(value = val_node, left = left, right = right) := inTree;
-  outString := printTreeStr2(left, true, "") +
-               printNodeStr(val_node) + "\n" +
-               printTreeStr2(right, false, "");
-end printTreeStr;
-
-protected
-
-function balance
-  "Balances a Tree"
-  input Tree inTree;
-  output Tree outTree = inTree;
-algorithm
-  outTree := match outTree
-    local
-      Integer lh, rh, diff;
-      Tree child, balanced_tree;
-
-    case NODE()
-      algorithm
-        lh := height(outTree.left);
-        rh := height(outTree.right);
-        diff := lh - rh;
-
-        if diff < -1 then
-          if calculateBalance(outTree.right) > 0 then
-            outTree.right := rotateRight(outTree.right);
-          end if;
-          balanced_tree := rotateLeft(outTree);
-        elseif diff > 1 then
-          if calculateBalance(outTree.left) < 0 then
-            outTree.left := rotateLeft(outTree.left);
-          end if;
-          balanced_tree := rotateRight(outTree);
-        else
-          outTree.height := max(lh, rh) + 1;
-          balanced_tree := outTree;
-        end if;
-      then
-        balanced_tree;
-
-  end match;
-end balance;
-
-function height
-  input Tree inNode;
-  output Integer outHeight;
-algorithm
-  outHeight := match inNode
-    case NODE() then inNode.height;
-    else 0;
-  end match;
-end height;
-
-function calculateBalance
-  input Tree inNode;
-  output Integer outBalance;
-algorithm
-  outBalance := match inNode
-    case NODE()
-      then height(inNode.left) - height(inNode.right);
-
-    else 0;
-  end match;
-end calculateBalance;
-
-function rotateLeft
-  "Performs an AVL left rotation on the given tree."
-  input Tree inNode;
-  output Tree outNode = inNode;
-algorithm
-  outNode := match outNode
-    local
-      Tree child;
-
-    case NODE(right = child as NODE())
-      algorithm
-        outNode.right := child.left;
-        outNode.height := max(height(outNode.left), height(outNode.right)) + 1;
-        child.left := outNode;
-        child.height := max(height(outNode), height(child.right)) + 1;
-      then
-        child;
-
-    else inNode;
-
-  end match;
-end rotateLeft;
-
-function rotateRight
-  "Performs an AVL right rotation on the given tree."
-  input Tree inNode;
-  output Tree outNode = inNode;
-algorithm
-  outNode := match outNode
-    local
-      Tree child;
-
-    case NODE(left = child as NODE())
-      algorithm
-        outNode.left := child.right;
-        outNode.height := max(height(outNode.left), height(outNode.right)) + 1;
-        child.right := outNode;
-        child.height := max(height(child.left), height(outNode)) + 1;
-      then
-        child;
-
-    else inNode;
-
-  end match;
-end rotateRight;
-
-function printTreeStr2
-  "Helper function to printTreeStr."
-  input Tree inTree;
-  input Boolean isLeft;
-  input String inIndent;
-  output String outString;
-protected
-  Option<ValueNode> val_node;
-  Option<Tree> left, right;
-  String left_str, right_str;
-algorithm
-  outString := match inTree
-    case NODE()
-      then printTreeStr2(inTree.left, true, inIndent + (if isLeft then "     " else " │   ")) +
-           inIndent + (if isLeft then " ┌" else " └") + "────" +
-           printNodeStr(inTree.value) + "\n" +
-           printTreeStr2(inTree.right, false, inIndent + (if isLeft then " │   " else "     "));
-
-    else "";
-  end match;
-end printTreeStr2;
-
-function printNodeStr
-  input ValueNode inNode;
-  output String outString;
-protected
-  Key key;
-  Value value;
-algorithm
-  VALUE(key = key, value = value) := inNode;
-  outString := "(" + keyStr(key) + ", " + valueStr(value) + ")";
-end printNodeStr;
 
 annotation(__OpenModelica_Interface="util", __OpenModelica_isBaseClass=true);
 end BaseAvlTree;

@@ -922,7 +922,7 @@ algorithm
   (tokens, tree) := scanOpt(tokens, tree, TokenId.FINAL);
   (tokens, tree, b) := LA1(tokens, tree, {TokenId.REPLACEABLE});
   if b then
-    (tokens, tree) := element_replaceable(tokens, tree);
+    (tokens, tree, nodeName) := element_replaceable(tokens, tree);
   else
     (tokens, tree, b) := LA1(tokens, tree, First.class_prefixes);
     if b then
@@ -2201,10 +2201,10 @@ algorithm
               addedTree := tree;
               foundAdded := true;
               if foundDeleted then
-                middle := List.flatten(listReverse(acc));
+                middle := List.flattenReverse(acc);
               else
                 addedBeforeDeleted := true;
-                before := List.flatten(listReverse(acc));
+                before := List.flattenReverse(acc);
               end if;
               acc := {};
             end if;
@@ -2223,10 +2223,10 @@ algorithm
               deletedTree := tree;
               foundDeleted := true;
               if foundAdded then
-                middle := List.flatten(listReverse(acc));
+                middle := List.flattenReverse(acc);
               else
                 addedBeforeDeleted := false;
-                before := List.flatten(listReverse(acc));
+                before := List.flattenReverse(acc);
               end if;
               acc := {};
             end if;
@@ -2244,7 +2244,7 @@ algorithm
   end for;
   true := foundAdded;
   true := foundDeleted;
-  after := List.flatten(listReverse(acc));
+  after := List.flattenReverse(acc);
 end extractSingleAddDiffBeforeAndAfter;
 
 function extractAdditionsDeletions
@@ -2267,8 +2267,8 @@ algorithm
       else ();
     end match;
   end for;
-  addedTrees := List.flatten(listReverse(addedTreesAcc));
-  deletedTrees := List.flatten(listReverse(deletedTreesAcc));
+  addedTrees := List.flattenReverse(addedTreesAcc);
+  deletedTrees := List.flattenReverse(deletedTreesAcc);
 end extractAdditionsDeletions;
 
 function countDiffAddDelete

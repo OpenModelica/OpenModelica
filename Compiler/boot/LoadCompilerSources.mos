@@ -23,6 +23,7 @@ if true then /* Suppress output */
     "../FrontEnd/DAE.mo",
     "../FrontEnd/DAEUtil.mo",
     "../FrontEnd/Dump.mo",
+    "../FrontEnd/ElementSource.mo",
     "../FrontEnd/ExpressionDump.mo",
     "../FrontEnd/Expression.mo",
     "../FrontEnd/ExpressionSimplify.mo",
@@ -152,8 +153,9 @@ if true then /* Suppress output */
 
   // "Util";
     "../Util/Array.mo",
-    "../Util/AvlTreeString.mo",
+    "../Util/AvlSetString.mo",
     "../Util/BaseAvlTree.mo",
+    "../Util/BaseAvlSet.mo",
     "../Util/BaseHashTable.mo",
     "../Util/BaseHashSet.mo",
     "../Util/ClockIndexes.mo",
@@ -161,9 +163,11 @@ if true then /* Suppress output */
     "../Util/Corba.mo",
     //"../Util/Database.mo",
     "../Util/Debug.mo",
+    "../Util/DoubleEndedList.mo",
     "../Util/DynLoad.mo",
     "../Util/ErrorExt.mo",
     "../Util/Error.mo",
+    "../Util/ExecStat.mo",
     "../Util/Flags.mo",
     "../Util/GC.mo",
     "../Util/Graph.mo",
@@ -266,6 +270,7 @@ if true then /* Suppress output */
     "../BackEnd/UnitCheck.mo",
     "../BackEnd/Unit.mo",
     "../BackEnd/Vectorization.mo",
+    "../BackEnd/VisualXML.mo",
     "../BackEnd/XMLDump.mo",
 
     "../FFrontEnd/FGraphDump.mo",
@@ -320,9 +325,8 @@ if true then /* Suppress output */
     "../Template/VisualXMLTpl.mo",
 
     "../Util/AvlTree.mo",
-    "../Util/AvlTreeString2.mo",
+    "../Util/AvlTreeString.mo",
 
-    "../Util/DoubleEndedList.mo",
     "../Util/DiffAlgorithm.mo",
     "../Util/FMI.mo",
     "../Util/FMIExt.mo",
@@ -338,8 +342,7 @@ if true then /* Suppress output */
     "../Util/HashTableStringToUnit.mo",
     "../Util/HashTableUnitToString.mo",
     "../Util/SimulationResults.mo",
-    "../Util/TaskGraphResults.mo",
-    "../Util/VisualXML.mo"
+    "../Util/TaskGraphResults.mo"
 
   };
   files := cat(1, alwaysfiles, backendfiles);

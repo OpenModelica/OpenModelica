@@ -394,13 +394,15 @@ modelica_metatype boxptr_stringUpdateStringChar(threadData_t *threadData,metamod
 modelica_metatype listReverse(modelica_metatype lst)
 {
   modelica_metatype res = NULL;
-
+  if (MMC_NILTEST(lst) || MMC_NILTEST(MMC_CDR(lst))) {
+    // 0/1 elements are already reversed
+    return lst;
+  }
   res = mmc_mk_nil();
-  while (!MMC_NILTEST(lst))
-  {
+  do {
     res = mmc_mk_cons(MMC_CAR(lst),res);
     lst = MMC_CDR(lst);
-  }
+  } while (!MMC_NILTEST(lst));
   return res;
 }
 
@@ -507,7 +509,7 @@ modelica_metatype boxptr_listDelete(threadData_t *threadData, modelica_metatype 
     MMC_THROW_INTERNAL();
   }
 
-  tmpArr = (modelica_metatype *) GC_malloc(sizeof(modelica_metatype)*(ix-1)); /* We know the size of the first part of the list */
+  tmpArr = (modelica_metatype *) mmc_alloc_words(ix-1); /* We know the size of the first part of the list */
   if (tmpArr == NULL) {
     fprintf(stderr, "%s:%d: malloc failed", __FILE__, __LINE__);
     EXIT(1);

@@ -300,26 +300,35 @@ public function prefixToPath "Convert a Prefix to a Path"
   input Prefix.Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue (inPrefix)
+  outPath := match inPrefix
+    local
+      Prefix.ComponentPrefix ss;
+    case Prefix.PREFIX(ss,_) then componentPrefixToPath(ss);
+  end match;
+end prefixToPath;
+
+public function identAndPrefixToPath "Convert a Ident/Prefix to a String"
+  input String ident;
+  input Prefix.Prefix inPrefix;
+  output String str;
+algorithm
+  str := Absyn.pathString(PrefixUtil.prefixPath(Absyn.IDENT(ident),inPrefix));
+end identAndPrefixToPath;
+
+protected function componentPrefixToPath "Convert a Prefix to a Path"
+  input Prefix.ComponentPrefix pre;
+  output Absyn.Path path;
+algorithm
+  path := match pre
     local
       String s;
-      Absyn.Path p;
       Prefix.ComponentPrefix ss;
-      Prefix.ClassPrefix cp;
-
-    case Prefix.NOPRE()
-      equation
-        /*Print.printBuf("#-- Error: Cannot convert empty prefix to a path\n");*/
-      then
-        fail();
-    case Prefix.PREFIX(Prefix.PRE(prefix = s,next = Prefix.NOCOMPPRE()),_) then Absyn.IDENT(s);
-    case Prefix.PREFIX(Prefix.PRE(prefix = s,next = ss),cp)
-      equation
-        p = prefixToPath(Prefix.PREFIX(ss,cp));
-      then
-        Absyn.QUALIFIED(s,p);
-  end matchcontinue;
-end prefixToPath;
+    case Prefix.PRE(prefix = s,next = Prefix.NOCOMPPRE())
+      then Absyn.IDENT(s);
+    case Prefix.PRE(prefix = s,next = ss)
+      then Absyn.QUALIFIED(s,componentPrefixToPath(ss));
+  end match;
+end componentPrefixToPath;
 
 public function prefixCref "Prefix a ComponentRef variable by adding the supplied prefix to
   it and returning a new ComponentRef.
@@ -504,7 +513,7 @@ algorithm
       equation
         (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
         cr = ComponentReference.makeCrefIdent(id,tp,subs);
-      then (cache,ComponentReference.implode(listReverse(cr::acc)));
+      then (cache,ComponentReference.implode_reverse(cr::acc));
     case(cache,env,_,_,DAE.CREF_QUAL(id,tp,subs,cr),_)
       equation
         (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
@@ -1281,6 +1290,16 @@ algorithm
         (cache, d::new);
   end matchcontinue;
 end prefixDimensions;
+
+public function isPrefix
+  input Prefix.Prefix prefix;
+  output Boolean isPrefix;
+algorithm
+  isPrefix := match prefix
+    case Prefix.PREFIX() then true;
+    else false;
+  end match;
+end isPrefix;
 
 public function isNoPrefix
   input Prefix.Prefix inPrefix;

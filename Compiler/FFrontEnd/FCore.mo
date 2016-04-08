@@ -293,6 +293,9 @@ and finally instantiated to produce the DAE. These three states are indicated by
                   between typed variables without DAE to know when to skip multiply declared dae elements"
   end VAR_DAE;
 
+  record VAR_DELETED "A conditional variable that was deleted."
+  end VAR_DELETED;
+
   record CLS_UNTYPED "just added to the env"
   end CLS_UNTYPED;
 
@@ -705,6 +708,18 @@ algorithm
     else true;
   end match;
 end isTyped;
+
+public function isDeletedComp
+  "Returns true if the status indicates a deleted conditional component,
+   otherwise false."
+  input Status status;
+  output Boolean isDeleted;
+algorithm
+  isDeleted := match status
+    case VAR_DELETED() then true;
+    else false;
+  end match;
+end isDeletedComp;
 
 public function getCachedInitialGraph "get the initial environment from the cache"
   input Cache cache;
