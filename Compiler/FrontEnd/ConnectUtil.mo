@@ -74,7 +74,6 @@ import PrefixUtil;
 import System;
 import Types;
 import Util;
-import InstSection;
 
 // Import some types from Connect.
 import Connect.Face;
@@ -311,10 +310,10 @@ public function isExpandable
 algorithm
   expandableConnector := match(name)
     case DAE.CREF_IDENT()
-      then InstSection.isExpandableConnectorType(name.identType);
+      then Types.isExpandableConnector(name.identType);
 
     case DAE.CREF_QUAL()
-      then InstSection.isExpandableConnectorType(name.identType) or
+      then Types.isExpandableConnector(name.identType) or
            isExpandable(name.componentRef);
 
     else false;

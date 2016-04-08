@@ -1065,6 +1065,7 @@ public function lookupConnectorVar
   output DAE.Attributes attr;
   output DAE.Type ty;
   output FCore.Status status;
+  output Boolean isExpandable = false;
 protected
   FCore.Graph comp_env;
   DAE.Attributes parent_attr;
@@ -1087,8 +1088,17 @@ algorithm
           // Stop if we find a deleted component.
           attr := parent_attr;
         else
-          (attr, ty, status) :=
-            lookupConnectorVar(comp_env, cr.componentRef, false);
+          try
+            (attr, ty, status, isExpandable) :=
+              lookupConnectorVar(comp_env, cr.componentRef, false);
+          else
+            if Types.isExpandableConnector(ty) then
+              attr := parent_attr;
+              isExpandable := true;
+            else
+              fail();
+            end if;
+          end try;
 
           // Propagate variability.
           attr := DAEUtil.setAttrVariability(attr, SCode.variabilityOr(

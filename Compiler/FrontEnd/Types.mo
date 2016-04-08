@@ -8937,5 +8937,19 @@ algorithm
   end match;
 end setTypeVariables;
 
+public function isExpandableConnector
+"@author: adrpo
+  this function checks if the given type is an expandable connector"
+  input DAE.Type ty;
+  output Boolean isExpandable;
+algorithm
+  isExpandable := match (ty)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_,true))) then true;
+    // TODO! check if subtype is needed here
+    case (DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(_,true))) then true;
+    else false;
+  end match;
+end isExpandableConnector;
+
 annotation(__OpenModelica_Interface="frontend");
 end Types;

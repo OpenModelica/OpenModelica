@@ -2921,7 +2921,7 @@ protected function instConnect "
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inSets,inPrefix,inComponentRefLeft,inComponentRefRight,inImplicit,inGraph,info)
+  matchcontinue (inCache,inEnv,inIH,inSets,inPrefix,inComponentRefLeft,inComponentRefRight,inImplicit,inGraph)
     local
       DAE.ComponentRef c1_1,c2_1,c1_2,c2_2;
       DAE.Type t1,t2;
@@ -2948,7 +2948,7 @@ algorithm
       Boolean del1, del2;
 
     // adrpo: check for connect(A, A) as we should give a warning and remove it!
-    case (cache,env,ih,sets,_,c1,c2,_,graph,_)
+    case (cache,env,ih,sets,_,c1,c2,_,graph)
       equation
         true = Absyn.crefEqual(c1, c2);
         s1 = Dump.printComponentRefStr(c1);
@@ -2957,8 +2957,32 @@ algorithm
       then
         (cache, env, ih, sets, DAE.emptyDae, graph);
 
+    // handle normal connectors!
+    case (cache,env,ih,sets,pre,c1,c2,impl,graph)
+      algorithm
+        (cache, c1_2, attr1, ct1, vt1, io1, f1, ty1, del1) :=
+          instConnector(cache, env, ih, c1, impl, pre, info);
+        (cache, c2_2, attr2, _, vt2, io2, f2, ty2, del2) :=
+          instConnector(cache, env, ih, c2, impl, pre, info);
+
+        if del1 or del2 then
+          // If either connector is a deleted conditional component, discard the connection.
+          dae := DAE.emptyDae;
+        elseif Types.isExpandableConnector(ty1) or Types.isExpandableConnector(ty2) then
+          // If either connector is expandable, fail and use the next case.
+          fail();
+        else
+          // Otherwise it's a normal connection.
+          checkConnectTypes(c1_2, ty1, f1, attr1, c2_2, ty2, f2, attr2, info);
+          (cache, _, ih, sets, dae, graph) :=
+            connectComponents(cache, env, ih, sets, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, ct1, io1, io2, graph, info);
+          sets := ConnectUtil.increaseConnectRefCount(c1_2, c2_2, sets);
+        end if;
+      then
+        (cache,env,ih,sets,dae,graph);
+
     // adrpo: handle expandable connectors!
-    case (cache,env,ih,sets,pre,c1,c2,impl,graph,_)
+    case (cache,env,ih,sets,pre,c1,c2,impl,graph)
       equation
         ErrorExt.setCheckpoint("expandableConnectors");
         true = System.getHasExpandableConnectors();
@@ -2967,30 +2991,10 @@ algorithm
       then
         (cache,env,ih,sets,dae,graph);
 
-    // handle normal connectors!
-    case (cache,env,ih,sets,pre,c1,c2,impl,graph,_)
-      algorithm
-        ErrorExt.rollBack("expandableConnectors");
-        (cache, c1_2, attr1, ct1, vt1, io1, f1, ty1, del1) :=
-          instConnector(cache, env, ih, c1, impl, pre, info);
-        (cache, c2_2, attr2, _, vt2, io2, f2, ty2, del2) :=
-          instConnector(cache, env, ih, c2, impl, pre, info);
-
-        // If neither connector is a deleted conditional components, create the connection.
-        if not (del1 or del2) then
-          checkConnectTypes(c1_2, ty1, f1, attr1, c2_2, ty2, f2, attr2, info);
-          (cache, _, ih, sets, dae, graph) :=
-            connectComponents(cache, env, ih, sets, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, ct1, io1, io2, graph, info);
-          sets := ConnectUtil.increaseConnectRefCount(c1_2, c2_2, sets);
-        else
-          dae := DAE.emptyDae;
-        end if;
-      then
-        (cache,env,ih,sets,dae,graph);
-
     // Case to display error for non constant subscripts in connectors
-    case (cache,env,_,_,pre,c1,c2,_,_,_)
+    case (cache,env,_,_,pre,c1,c2,_,_)
       equation
+        ErrorExt.rollBack("expandableConnectors");
         subs1 = Absyn.getSubsFromCref(c1,true,true);
         crefs1 = Absyn.getCrefsFromSubs(subs1,true,true);
         subs2 = Absyn.getSubsFromCref(c2,true,true);
@@ -3005,7 +3009,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,c1,c2,_,_,_)
+    case (_,_,_,_,_,c1,c2,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstSection.instConnect failed for: connect(" +
@@ -3035,15 +3039,16 @@ protected function instConnector
   output Boolean deleted;
 protected
   FCore.Status status;
+  Boolean is_expandable;
 algorithm
   outCref := ComponentReference.toExpCref(connectorCref);
   (DAE.ATTR(connectorType = connectorType, variability = variability,
-    innerOuter = innerOuter), ty, status) :=
+    innerOuter = innerOuter), ty, status, is_expandable) :=
       Lookup.lookupConnectorVar(env, outCref);
 
   deleted := FCore.isDeletedComp(status);
 
-  if deleted then
+  if deleted or is_expandable then
     face := Connect.NO_FACE();
     outAttr := DAE.dummyAttrVar;
   else
@@ -3203,8 +3208,8 @@ algorithm
         (attr2,ty2) = Lookup.lookupConnectorVar(env,c2_2);
         DAE.ATTR(connectorType = SCode.POTENTIAL()) = attr1;
         DAE.ATTR(connectorType = SCode.POTENTIAL()) = attr2;
-        true = isExpandableConnectorType(ty1);
-        true = isExpandableConnectorType(ty2);
+        true = Types.isExpandableConnector(ty1);
+        true = Types.isExpandableConnector(ty2);
 
         // do the union of the connectors by adding the missing
         // components from one to the other and vice-versa.
@@ -3290,7 +3295,7 @@ algorithm
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (_,ty1) = Lookup.lookupConnectorVar(env, c1_2);
         // make sure is expandable!
-        true = isExpandableConnectorType(ty1);
+        true = Types.isExpandableConnector(ty1);
         // strip last subs to get the full type!
         c1_2 = ComponentReference.crefStripLastSubs(c1_2);
         (_,attr,ty,binding,cnstForRange,_,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
@@ -3378,7 +3383,7 @@ algorithm
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (attr1,ty1) = Lookup.lookupConnectorVar(env, c1_2);
         // make sure is expandable!
-        true = isExpandableConnectorType(ty1);
+        true = Types.isExpandableConnector(ty1);
         // strip last subs to get the full type!
         c1_2 = ComponentReference.crefStripLastSubs(c1_2);
         (_,attr,ty,binding,cnstForRange,_,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
@@ -3489,8 +3494,8 @@ algorithm
         (_,ty2) = Lookup.lookupConnectorVar(env,c2_2);
 
         // non-expandable
-        false = isExpandableConnectorType(ty1);
-        false = isExpandableConnectorType(ty2);
+        false = Types.isExpandableConnector(ty1);
+        false = Types.isExpandableConnector(ty2);
 
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "connect(non-expandable, non-expandable)(" + Dump.printComponentRefStr(c1) + ", " + Dump.printComponentRefStr(c2) + ")");
         // then connect the components normally.
@@ -3745,20 +3750,6 @@ algorithm
         (cache,env,ih,sets,dae,graph);
   end match;
 end connectExpandableVariables;
-
-public function isExpandableConnectorType
-"@author: adrpo
-  this function checks if the given type is an expandable connector"
-  input DAE.Type ty;
-  output Boolean isExpandable;
-algorithm
-  isExpandable := match (ty)
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_,true))) then true;
-    // TODO! check if subtype is needed here
-    case (DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(_,true))) then true;
-    else false;
-  end match;
-end isExpandableConnectorType;
 
 protected function getStateFromType
 "@author: adrpo

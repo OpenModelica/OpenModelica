@@ -6107,13 +6107,15 @@ algorithm
     // connect, both expandable
     case (cache, env, _, _, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, _, eEq, nEq)
       equation
-        (cache,SOME((DAE.CREF(),DAE.PROP(ty1,_),_))) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
-        (cache,SOME((DAE.CREF(),DAE.PROP(ty2,_),_))) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
+        (_, ty1, _) = Lookup.lookupConnectorVar(env, ComponentReference.toExpCref(crefLeft));
+        (_, ty2, _) = Lookup.lookupConnectorVar(env, ComponentReference.toExpCref(crefRight));
+        //(cache,SOME((DAE.CREF(),DAE.PROP(ty1,_),_))) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
+        //(cache,SOME((DAE.CREF(),DAE.PROP(ty2,_),_))) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
 
         // type of left var is an expandable connector!
-        true = InstSection.isExpandableConnectorType(ty1);
+        true = Types.isExpandableConnector(ty1);
         // type of right left var is an expandable connector!
-        true = InstSection.isExpandableConnectorType(ty2);
+        true = Types.isExpandableConnector(ty2);
         (cache, eEq, nEq) = splitConnectEquationsExpandable(cache, env, inIH, inPre, rest, impl, eEq, eq::nEq);
       then
         (cache, eEq, nEq);
