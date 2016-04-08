@@ -787,18 +787,22 @@ algorithm
       ExecStat.execStat("Transformations before backend");
       description = DAEUtil.daeDescription(dae);
       dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
+
+      GC.free(dae);
+      graph = FCore.EG("<EMPTY>");
+
       //BackendDump.printBackendDAE(dlow);
-      (dlow_1, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters) = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
+      (dlow, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters) = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
       timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
       (libs, file_dir, timeSimCode, timeTemplates) =
-        generateModelCode(dlow_1, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters, p, className, filenameprefix, inSimSettingsOpt, args);
+        generateModelCode(dlow, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters, p, className, filenameprefix, inSimSettingsOpt, args);
 
       resultValues = {("timeTemplates", Values.REAL(timeTemplates)),
                       ("timeSimCode", Values.REAL(timeSimCode)),
                       ("timeBackend", Values.REAL(timeBackend)),
                       ("timeFrontend", Values.REAL(timeFrontend))};
-    then (cache, st, dlow_1, libs, file_dir, resultValues);
+    then (cache, st, dlow, libs, file_dir, resultValues);
 
     case (_, _, _, _, _, _, _, _) equation
       true = Flags.isSet(Flags.FAILTRACE);
