@@ -39,8 +39,10 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // ================================================================================
 // Calling Tearing for initialization!
 // ================================================================================
+// Handle strong component with index: 1
+// To disable tearing of this component use '--noTearingForComponent=1'.
 //
-// Case non-linear in traverseComponents
+// Tearing of NONLINEAR component
 // Use Flag '+d=tearingdumpV' for more details
 //
 //
@@ -171,8 +173,10 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // ================================================================================
 // Calling Tearing for simulation!
 // ================================================================================
+// Handle strong component with index: 2
+// To disable tearing of this component use '--noTearingForComponent=2'.
 //
-// Case non-linear in traverseComponents
+// Tearing of NONLINEAR component
 // Use Flag '+d=tearingdumpV' for more details
 //
 //
