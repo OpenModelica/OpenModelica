@@ -1007,7 +1007,7 @@ protected function generateSparsePattern "author: wbraun
   output BackendDAE.SparsePattern outSparsePattern;
   output BackendDAE.SparseColoring outColoredCols;
 protected
-  constant Boolean debug = true;
+  constant Boolean debug = false;
 algorithm
   (outSparsePattern,outColoredCols) := matchcontinue(inBackendDAE,inIndependentVars,inDependentVars)
     local
