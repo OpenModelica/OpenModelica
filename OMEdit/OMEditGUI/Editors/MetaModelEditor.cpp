@@ -820,7 +820,7 @@ void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface
 inline bool MetaModelEditor::fuzzyCompare(double p1, double p2)
 {
   //! @todo What tolerance should be used? This is just a random number that seemed to work for some reason.
-  return (qAbs(p1 - p2) <= 0.001 * qMin(qAbs(p1), qAbs(p2)));
+  return (qAbs(p1 - p2) <= qMax(1e-5 * qMin(qAbs(p1), qAbs(p2)),1e-10));
 }
 
 /*!
