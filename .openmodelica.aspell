@@ -43,3 +43,4 @@ isPresent
 uniontypes
 maxSizeLinearTearing
 maxSizeNonlinearTearing
+noTearingForComponent
