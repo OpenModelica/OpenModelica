@@ -104,6 +104,11 @@ public uniontype FlagData
     Integer data;
   end INT_FLAG;
 
+  record INT_LIST_FLAG
+    "Value of an integer flag that can have multiple values."
+    list<Integer> data;
+  end INT_LIST_FLAG;
+
   record REAL_FLAG
     "Value of a real flag."
     Real data;
@@ -1250,6 +1255,9 @@ constant ConfigFlag MAX_SIZE_LINEAR_TEARING = CONFIG_FLAG(91, "maxSizeLinearTear
 constant ConfigFlag MAX_SIZE_NONLINEAR_TEARING = CONFIG_FLAG(92, "maxSizeNonlinearTearing",
   NONE(), EXTERNAL(), INT_FLAG(10000), NONE(),
   Util.gettext("Sets the maximum system size for tearing of nonlinear systems (default 10000)."));
+constant ConfigFlag NO_TEARING_FOR_COMPONENT = CONFIG_FLAG(93, "noTearingForComponent",
+  NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
+  Util.gettext("Deactivates tearing for the specified components.\nUse '+d=tearingdump' to find out the relevant indexes."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1347,7 +1355,8 @@ constant list<ConfigFlag> allConfigFlags = {
   DEFAULT_CLOCK_PERIOD,
   INST_CACHE_SIZE,
   MAX_SIZE_LINEAR_TEARING,
-  MAX_SIZE_NONLINEAR_TEARING
+  MAX_SIZE_NONLINEAR_TEARING,
+  NO_TEARING_FOR_COMPONENT
 };
 
 public function new
@@ -1916,9 +1925,10 @@ algorithm
     local
       Boolean b;
       Integer i;
+      list<Integer> ilst;
       String s, et, at;
       list<tuple<String, Integer>> enums;
-      list<String> flags;
+      list<String> flags, slst;
       ValidOptions options;
 
     // A boolean value.
@@ -1938,6 +1948,13 @@ algorithm
         true = stringEq(intString(i), s);
       then
         INT_FLAG(i);
+
+    // integer list.
+    case (slst, INT_LIST_FLAG(), _, _)
+      equation
+        ilst = List.map(slst,stringInt);
+      then
+        INT_LIST_FLAG(ilst);
 
     // A real value.
     case ({s}, REAL_FLAG(), _, _)
@@ -2186,6 +2203,14 @@ public function getConfigInt
 algorithm
   INT_FLAG(data = outValue) := getConfigValue(inFlag);
 end getConfigInt;
+
+public function getConfigIntList
+  "Returns the value of an integer configuration flag."
+  input ConfigFlag inFlag;
+  output list<Integer> outValue;
+algorithm
+  INT_LIST_FLAG(data = outValue) := getConfigValue(inFlag);
+end getConfigIntList;
 
 public function getConfigReal
   "Returns the value of a real configuration flag."

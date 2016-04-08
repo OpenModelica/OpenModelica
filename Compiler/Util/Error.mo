@@ -837,7 +837,9 @@ public constant Message EXEC_STAT = MESSAGE(572, TRANSLATION(), NOTIFICATION(),
 public constant Message EXEC_STAT_GC = MESSAGE(573, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Performance of %s: time %s/%s, GC stats:%s"));
 public constant Message MAX_TEARING_SIZE = MESSAGE(574, SYMBOLIC(), NOTIFICATION(),
-  Util.gettext("Tearing is skipped because system size of %s exceeds maximum system size for tearing of %s systems (%s)\nTo adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>\n"));
+  Util.gettext("Tearing is skipped for strong component %s because system size of %s exceeds maximum system size for tearing of %s systems (%s).\nTo adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.\n"));
+public constant Message NO_TEARING_FOR_COMPONENT = MESSAGE(575, SYMBOLIC(), NOTIFICATION(),
+  Util.gettext("Tearing is skipped for strong component %s because of activated compiler flag 'noTearingForComponent=%1'.\n"));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

@@ -106,7 +106,6 @@ algorithm
 
     // get method function and traverse systems
     case(_) equation
-
       methodString = Config.getTearingMethod();
       BackendDAE.SHARED(backendDAEType=DAEtype) = inDAE.shared;
       false = stringEqual(methodString, "shuffleTearing") and stringEq("simulation",BackendDump.printBackendDAEType2String(DAEtype));
@@ -269,7 +268,14 @@ algorithm
       equality(jacType = BackendDAE.JAC_LINEAR());
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
-        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(listLength(vindx)),"linear",intString(maxSize)});
+        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"linear",intString(maxSize)});
+        fail();
+      end if;
+      if listMember(strongComponentIndexOut,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
+        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+          print("\nTearing deactivated by user.\n");
+        end if;
+        Error.addMessage(Error.NO_TEARING_FOR_COMPONENT, {intString(strongComponentIndexOut)});
         fail();
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -293,7 +299,14 @@ algorithm
       failure(equality(jacType = BackendDAE.JAC_LINEAR()));
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
-        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(listLength(vindx)),"nonlinear",intString(maxSize)});
+        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"nonlinear",intString(maxSize)});
+        fail();
+      end if;
+      if listMember(strongComponentIndexOut,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
+        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+          print("\nTearing deactivated by user.\n");
+        end if;
+        Error.addMessage(Error.NO_TEARING_FOR_COMPONENT, {intString(strongComponentIndexOut)});
         fail();
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -4429,26 +4442,6 @@ algorithm
     print("order: " + stringDelimitList(List.map(order,intString),",") + "\n\n");
   end for;
 end dumpMatchingList;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 annotation(__OpenModelica_Interface="backend");
 end Tearing;
