@@ -223,6 +223,8 @@ public:
   bool copyClass(QString className, QString newClassName, QString withIn);
   QStringList getEnumerationLiterals(QString className);
   void getSolverMethods(QStringList *methods, QStringList *descriptions);
+  void getJacobianMethods(QStringList *methods, QStringList *descriptions);
+  QString getJacobianFlagDetailedDescription();
   void getInitializationMethods(QStringList *methods, QStringList *descriptions);
   void getLinearSolvers(QStringList *methods, QStringList *descriptions);
   void getNonLinearSolvers(QStringList *methods, QStringList *descriptions);

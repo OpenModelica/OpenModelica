@@ -100,9 +100,9 @@ private:
   QToolButton *mpMehtodHelpButton;
   Label *mpToleranceLabel;
   QLineEdit *mpToleranceTextBox;
+  Label *mpJacobianLabel;
+  QComboBox *mpJacobianComboBox;
   QGroupBox *mpDasslOptionsGroupBox;
-  Label *mpDasslJacobianLabel;
-  QComboBox *mpDasslJacobianComboBox;
   QCheckBox *mpDasslRootFindingCheckBox;
   QCheckBox *mpDasslRestartCheckBox;
   Label *mpDasslInitialStepSizeLabel;
@@ -200,6 +200,7 @@ public slots:
   void updateMethodToolTip(int index);
   void enableDasslOptions(QString method);
   void showIntegrationHelp();
+  void updateJacobianToolTip(int index);
   void buildOnly(bool checked);
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
