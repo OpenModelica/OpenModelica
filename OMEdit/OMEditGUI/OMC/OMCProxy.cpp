@@ -2453,6 +2453,30 @@ void OMCProxy::getSolverMethods(QStringList *methods, QStringList *descriptions)
 }
 
 /*!
+ * \brief OMCProxy::getJacobianMethods
+ * Returns the list of jacobian methods and their description.
+ * \param methods
+ * \param descriptions
+ */
+void OMCProxy::getJacobianMethods(QStringList *methods, QStringList *descriptions)
+{
+  for (int i = JAC_UNKNOWN + 1 ; i < JAC_MAX ; i++) {
+    *methods << JACOBIAN_METHOD[i];
+    *descriptions << JACOBIAN_METHOD_DESC[i];
+  }
+}
+
+/*!
+ * \brief OMCProxy::getJacobianFlagDetailedDescription
+ * Returns the Jacobian flag detailed description
+ * \return
+ */
+QString OMCProxy::getJacobianFlagDetailedDescription()
+{
+  return FLAG_DETAILED_DESC[FLAG_JACOBIAN];
+}
+
+/*!
  * \brief OMCProxy::getInitializationMethods
  * Returns the list of initialization methods name and their description.
  * \param methods

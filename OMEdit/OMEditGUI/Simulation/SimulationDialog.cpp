@@ -181,21 +181,20 @@ void SimulationDialog::setUpForm()
   // Tolerance
   mpToleranceLabel = new Label(tr("Tolerance:"));
   mpToleranceTextBox = new QLineEdit("1e-6");
+  // jacobian
+  mpJacobianLabel = new Label(tr("Jacobian:"));
+  mpJacobianLabel->setToolTip(mpMainWindow->getOMCProxy()->getJacobianFlagDetailedDescription());
+  QStringList jacobianMethods, jacobianMethodsDesc;
+  mpMainWindow->getOMCProxy()->getJacobianMethods(&jacobianMethods, &jacobianMethodsDesc);
+  mpJacobianComboBox = new QComboBox;
+  mpJacobianComboBox->addItems(jacobianMethods);
+  for (int i = 0 ; i < jacobianMethodsDesc.size() ; i++) {
+    mpJacobianComboBox->setItemData(i, jacobianMethodsDesc.at(i), Qt::ToolTipRole);
+  }
+  connect(mpJacobianComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateJacobianToolTip(int)));
+  updateJacobianToolTip(0);
   // dassl options
   mpDasslOptionsGroupBox = new QGroupBox(tr("DASSL Options"));
-  // dassl jacobian
-  mpDasslJacobianLabel = new Label(tr("Jacobian:"));
-  mpDasslJacobianComboBox = new QComboBox;
-  mpDasslJacobianComboBox->addItem(tr("Colored Numerical"), "coloredNumerical");
-  mpDasslJacobianComboBox->setItemData(0, "colored numerical jacobian", Qt::ToolTipRole);
-  mpDasslJacobianComboBox->addItem(tr("Colored Symbolical"), "coloredSymbolical");
-  mpDasslJacobianComboBox->setItemData(1, "colored symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization", Qt::ToolTipRole);
-  mpDasslJacobianComboBox->addItem(tr("Internal Numerical"), "internalNumerical");
-  mpDasslJacobianComboBox->setItemData(2, "internal numerical jacobian", Qt::ToolTipRole);
-  mpDasslJacobianComboBox->addItem(tr("Symbolical"), "symbolical");
-  mpDasslJacobianComboBox->setItemData(3, "symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization", Qt::ToolTipRole);
-  mpDasslJacobianComboBox->addItem(tr("Numerical"), "numerical");
-  mpDasslJacobianComboBox->setItemData(4, "numerical jacobian", Qt::ToolTipRole);
   // no root finding
   mpDasslRootFindingCheckBox = new QCheckBox(tr("Root Finding"));
   mpDasslRootFindingCheckBox->setToolTip(tr("Activates the internal root finding procedure of dassl"));
@@ -217,16 +216,14 @@ void SimulationDialog::setUpForm()
   // set the layout for DASSL options groupbox
   QGridLayout *pDasslOptionsGridLayout = new QGridLayout;
   pDasslOptionsGridLayout->setColumnStretch(1, 1);
-  pDasslOptionsGridLayout->addWidget(mpDasslJacobianLabel, 0, 0);
-  pDasslOptionsGridLayout->addWidget(mpDasslJacobianComboBox, 0, 1);
-  pDasslOptionsGridLayout->addWidget(mpDasslRootFindingCheckBox, 1, 0, 1, 2);
-  pDasslOptionsGridLayout->addWidget(mpDasslRestartCheckBox, 2, 0, 1, 2);
-  pDasslOptionsGridLayout->addWidget(mpDasslInitialStepSizeLabel, 3, 0);
-  pDasslOptionsGridLayout->addWidget(mpDasslInitialStepSizeTextBox, 3, 1);
-  pDasslOptionsGridLayout->addWidget(mpDasslMaxStepSizeLabel, 4, 0);
-  pDasslOptionsGridLayout->addWidget(mpDasslMaxStepSizeTextBox, 4, 1);
-  pDasslOptionsGridLayout->addWidget(mpDasslMaxIntegrationOrderLabel, 5, 0);
-  pDasslOptionsGridLayout->addWidget(mpDasslMaxIntegrationOrderSpinBox, 5, 1);
+  pDasslOptionsGridLayout->addWidget(mpDasslRootFindingCheckBox, 0, 0, 1, 2);
+  pDasslOptionsGridLayout->addWidget(mpDasslRestartCheckBox, 1, 0, 1, 2);
+  pDasslOptionsGridLayout->addWidget(mpDasslInitialStepSizeLabel, 2, 0);
+  pDasslOptionsGridLayout->addWidget(mpDasslInitialStepSizeTextBox, 2, 1);
+  pDasslOptionsGridLayout->addWidget(mpDasslMaxStepSizeLabel, 3, 0);
+  pDasslOptionsGridLayout->addWidget(mpDasslMaxStepSizeTextBox, 3, 1);
+  pDasslOptionsGridLayout->addWidget(mpDasslMaxIntegrationOrderLabel, 4, 0);
+  pDasslOptionsGridLayout->addWidget(mpDasslMaxIntegrationOrderSpinBox, 4, 1);
   mpDasslOptionsGroupBox->setLayout(pDasslOptionsGridLayout);
   // set the layout for integration groupbox
   QGridLayout *pIntegrationGridLayout = new QGridLayout;
@@ -236,7 +233,9 @@ void SimulationDialog::setUpForm()
   pIntegrationGridLayout->addWidget(mpMehtodHelpButton, 0, 2);
   pIntegrationGridLayout->addWidget(mpToleranceLabel, 1, 0);
   pIntegrationGridLayout->addWidget(mpToleranceTextBox, 1, 1, 1, 2);
-  pIntegrationGridLayout->addWidget(mpDasslOptionsGroupBox, 2, 0, 1, 3);
+  pIntegrationGridLayout->addWidget(mpJacobianLabel, 2, 0);
+  pIntegrationGridLayout->addWidget(mpJacobianComboBox, 2, 1, 1, 2);
+  pIntegrationGridLayout->addWidget(mpDasslOptionsGroupBox, 3, 0, 1, 3);
   mpIntegrationGroupBox->setLayout(pIntegrationGridLayout);
   // Compiler Flags
   mpCflagsLabel = new Label(tr("Compiler Flags (Optional):"));
@@ -589,9 +588,9 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     // Tolerance
     mpToleranceTextBox->setText(simulationOptions.getTolerance());
     // dassl jacobian
-    currentIndex = mpDasslJacobianComboBox->findText(simulationOptions.getDasslJacobian(), Qt::MatchExactly);
+    currentIndex = mpJacobianComboBox->findText(simulationOptions.getJacobian(), Qt::MatchExactly);
     if (currentIndex > -1) {
-      mpDasslJacobianComboBox->setCurrentIndex(currentIndex);
+      mpJacobianComboBox->setCurrentIndex(currentIndex);
     }
     // no root finding
     mpDasslRootFindingCheckBox->setChecked(simulationOptions.getDasslRootFinding());
@@ -726,7 +725,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setStopTime(mpStopTimeTextBox->text());
   simulationOptions.setMethod(mpMethodComboBox->currentText());
   simulationOptions.setTolerance(mpToleranceTextBox->text());
-  simulationOptions.setDasslJacobian(mpDasslJacobianComboBox->itemData(mpDasslJacobianComboBox->currentIndex()).toString());
+  simulationOptions.setJacobian(mpJacobianComboBox->itemData(mpJacobianComboBox->currentIndex()).toString());
   simulationOptions.setDasslRootFinding(mpDasslRootFindingCheckBox->isChecked());
   simulationOptions.setDasslRestart(mpDasslRestartCheckBox->isChecked());
   simulationOptions.setDasslInitialStepSize(mpDasslInitialStepSizeTextBox->text());
@@ -793,10 +792,10 @@ SimulationOptions SimulationDialog::createSimulationOptions()
                          .arg("outputFormat").arg(simulationOptions.getOutputFormat())
                          .arg("variableFilter").arg(simulationOptions.getVariableFilter()));
   simulationFlags.append(QString("-r=").append(simulationOptions.getResultFileName()));
+  // jacobian
+  simulationFlags.append(QString("-jacobian=").append(mpJacobianComboBox->itemData(mpJacobianComboBox->currentIndex()).toString()));
   // dassl options
   if (mpDasslOptionsGroupBox->isEnabled()) {
-    // dassl jacobian
-    simulationFlags.append(QString("-dasslJacobian=").append(mpDasslJacobianComboBox->itemData(mpDasslJacobianComboBox->currentIndex()).toString()));
     // dassl root finding
     if (!mpDasslRootFindingCheckBox->isChecked()) {
       simulationFlags.append("-dasslnoRootFinding");
@@ -1101,6 +1100,16 @@ void SimulationDialog::showIntegrationHelp()
     mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
                                                                  Helper::scriptingKind, Helper::errorLevel));
   }
+}
+
+/*!
+ * \brief SimulationDialog::updateJacobianToolTip
+ * Updates the Jacobian combobox tooltip.
+ * \param index
+ */
+void SimulationDialog::updateJacobianToolTip(int index)
+{
+  mpJacobianComboBox->setToolTip(mpJacobianComboBox->itemData(index, Qt::ToolTipRole).toString());
 }
 
 /*!

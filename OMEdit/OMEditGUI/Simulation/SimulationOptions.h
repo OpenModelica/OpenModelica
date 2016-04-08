@@ -50,7 +50,7 @@ public:
     setStopTime("");
     setMethod("");
     setTolerance("");
-    setDasslJacobian("");
+    setJacobian("");
     setDasslRootFinding(true);
     setDasslRestart(true);
     setDasslInitialStepSize("");
@@ -101,8 +101,8 @@ public:
   QString getMethod() {return mMethod;}
   void setTolerance(QString tolerance) {mTolerance = tolerance;}
   QString getTolerance() {return mTolerance;}
-  void setDasslJacobian(QString dasslJacobian) {mDasslJacobian = dasslJacobian;}
-  QString getDasslJacobian() {return mDasslJacobian;}
+  void setJacobian(QString jacobian) {mJacobian = jacobian;}
+  QString getJacobian() {return mJacobian;}
   void setDasslRootFinding(bool dasslRootFinding) {mDasslRootFinding = dasslRootFinding;}
   bool getDasslRootFinding() {return mDasslRootFinding;}
   void setDasslRestart(bool dasslRestart) {mDasslRestart = dasslRestart;}
@@ -189,7 +189,7 @@ private:
   QString mStopTime;
   QString mMethod;
   QString mTolerance;
-  QString mDasslJacobian;
+  QString mJacobian;
   bool mDasslRootFinding;
   bool mDasslRestart;
   QString mDasslInitialStepSize;
