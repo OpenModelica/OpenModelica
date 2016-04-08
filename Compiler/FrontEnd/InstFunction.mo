@@ -270,7 +270,7 @@ algorithm
         (cache,c,cenv) = Lookup.lookupRecordConstructorClass(cache,env,Absyn.IDENT(n));
         (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,_,_,_,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,c,inst_dims,true);
         // fpath = Absyn.makeFullyQualified(fpath);
-        fun = DAE.RECORD_CONSTRUCTOR(fpath,ty1,source,DAE.VARIABLE());
+        fun = DAE.RECORD_CONSTRUCTOR(fpath,ty1,source);
         cache = InstUtil.addFunctionsToDAE(cache, {fun}, pPrefix);
       then (cache,env,ih);
 
@@ -793,7 +793,7 @@ algorithm
           fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
           fargs = Types.makeFargsList(inputs);
           funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
-          func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource,DAE.VARIABLE());
+          func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
 
           cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
 
@@ -802,7 +802,7 @@ algorithm
           fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
           fargs = Types.makeFargsList(inputs);
           funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
-          func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource,DAE.VARIABLE());
+          func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
 
           cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
 
@@ -862,7 +862,7 @@ algorithm
         fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
         fargs = Types.makeFargsList(inputs);
         funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
-        func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource,DAE.VARIABLE());
+        func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
 
         cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
       then

@@ -518,7 +518,6 @@ algorithm
     BackendDAE.DAE(shared=BackendDAE.SHARED(functionTree=functionTree)) := inBackendDAE;
     // get all the used functions from the function tree
     funcelems := DAEUtil.getFunctionList(functionTree);
-    funcelems := setRecordVariability(funcelems, inBackendDAE);
     funcelems := Inline.inlineCallsInFunctions(funcelems, (NONE(), {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}), {});
     (funcelems, outLiterals as (_, _, lits)) := simulationFindLiterals(inBackendDAE, funcelems);
     (outFunctions, outRecordDecls, outIncludes, outIncludeDirs, outLibs, outLibPaths) := SimCodeFunctionUtil.elaborateFunctions(inProgram, funcelems, {}, lits, {}); // Do we need metarecords here as well?
@@ -6404,116 +6403,6 @@ algorithm
     arrayGet(simVars, Integer(SimVarsIndex.mixedArray))
   );
 end createVars;
-
-protected function setRecordVariability"evaluates if all scalar record values are parameter
-author:Waurich TUD 2014-09"
-  input list<DAE.Function> funcsIn;
-  input BackendDAE.BackendDAE dae;
-  output list<DAE.Function> funcsOut;
-protected
-  BackendDAE.Shared shared;
-  BackendDAE.Variables knVars;
-  DAE.FunctionTree functionTree;
-  list<DAE.Function> funcs, records;
-  list<BackendDAE.Var> recVars, params;
-  list<Absyn.Path> paths;
-algorithm
-  BackendDAE.DAE(shared=shared) := dae;
-  BackendDAE.SHARED(knownVars=knVars) := shared;
-
-  recVars := List.filterOnTrue(BackendVariable.varList(knVars),BackendVariable.isRecordVar);
-  paths := List.map(recVars,getVarRecordPath);
-  funcsOut := setRecordVariability2(funcsIn,recVars,paths,{});  //are all scalars parameters? if so set varKind to PARAM()
-end setRecordVariability;
-
-protected function setRecordVariability2"traverses all DAE.Function and updates the varKind of a RECORD_CONSTRUCTOR for parameter records
-author:Waurich TUD 2014-09"
-  input list<DAE.Function> funcsIn;
-  input list<BackendDAE.Var> recVarsIn;
-  input list<Absyn.Path> pathsIn;
-  input list<DAE.Function> funcFold;
-  output list<DAE.Function> funcOut;
-algorithm
-  funcOut := matchcontinue(funcsIn,recVarsIn,pathsIn,funcFold)
-    local
-      Integer numScalars;
-      list<Boolean> bLst;
-      list<BackendDAE.Var> vars;
-      Absyn.Path path;
-      list<Absyn.Path> paths;
-      DAE.ElementSource source;
-      DAE.Function rec, func;
-      DAE.Type ty;
-      list<DAE.Function> rest;
-      list<DAE.ComponentRef> expandedCrefs;
-      list<DAE.Var> recScalars;
-      list<DAE.FuncArg> args;
-    case({},_,_,_)
-      then listReverse(funcFold);
-    case((rec as DAE.RECORD_CONSTRUCTOR(path=path,type_= ty,source=source))::rest,_,_,_)
-      equation
-       DAE.T_FUNCTION(funcArg=args) = ty;
-       numScalars = List.applyAndFold(args,intAdd,DAEUtil.funcArgDim,0);
-       bLst = List.map1(pathsIn,Absyn.pathEqual,path);
-       (_,vars) = List.filter1OnTrueSync(bLst,boolEq,true,recVarsIn);  // all vars that have the same record path
-       true = intEq(listLength(vars),numScalars);
-       vars = List.filterOnTrue(vars,BackendVariable.isParam);// all record vars that are parameters
-       true = intEq(listLength(vars),numScalars) and intNe(numScalars,0);
-       rec = DAE.RECORD_CONSTRUCTOR(path,ty,source,DAE.PARAM());
-      then setRecordVariability2(rest,recVarsIn,pathsIn,rec::funcFold);
-    else
-      equation
-        func::rest = funcsIn;
-      then setRecordVariability2(rest,recVarsIn,pathsIn,func::funcFold);
-  end matchcontinue;
-end setRecordVariability2;
-
-protected function getVarRecordPath"gets the path for the record, if any of the crefId from the var is a recordtype, otherwise NONE()
-author:Waurich TUD 2014-09"
-  input BackendDAE.Var var;
-  output Absyn.Path path;
-protected
-  list<Boolean> bLst;
-  DAE.ComponentRef cref;
-  DAE.ElementSource source;
-  list<Absyn.Path> paths;
-algorithm
-  BackendDAE.VAR(varName=cref, source=source) := var;
-  _::paths := ElementSource.getElementSourceTypes(source);
-  path := getRecordPathFromCref(cref,paths);
-  bLst := List.map1(paths,Absyn.pathEqual,path);
-  (_,paths) := List.filter1OnTrueSync(bLst,boolEq,true,paths);
-  if listLength(paths)<>1 then
-    print("SimCodeUtil.getVarRecordPath could not found a unique path for the record constructor\n");
-  end if;
-  path := listHead(paths);
-end getVarRecordPath;
-
-protected function getRecordPathFromCref"gets the path if any crefID is a recordtype, otherwise NONE()
-author:Waurich TUD 2014-09"
-  input DAE.ComponentRef crefIn;
-  input list<Absyn.Path> pathsIn;
-  output Absyn.Path pathOut;
-algorithm
-  pathOut := matchcontinue(crefIn,pathsIn)
-    local
-      Absyn.Path path;
-      list<Absyn.Path> rest;
-      DAE.ComponentRef cref;
-    case(DAE.CREF_IDENT(identType=DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))),path::_)
-      then path;
-    case(DAE.CREF_QUAL(identType=DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))),path::_)
-      then path;
-    case(DAE.CREF_QUAL(ident = "$DER", componentRef = cref),_)
-      then getRecordPathFromCref(cref, pathsIn);
-    case(DAE.CREF_QUAL(componentRef=cref),_::rest)
-      then getRecordPathFromCref(cref,rest);
-    else
-      equation
-        print("getRecordPathFromCref failed for "+ComponentReference.debugPrintComponentRefTypeStr(crefIn)+"\n");
-        then fail();
-  end matchcontinue;
-end getRecordPathFromCref;
 
 protected function extractVarsFromList
   input output BackendDAE.Var var;

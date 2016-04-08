@@ -3906,8 +3906,8 @@ algorithm
       then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,visibility,partialPrefix,isImpure,DAE.NO_INLINE(),source,cmt),extraArg);
 
 
-    case(DAE.RECORD_CONSTRUCTOR(path,tp,source,kind),_,extraArg)
-      then (DAE.RECORD_CONSTRUCTOR(path,tp,source,kind),extraArg);
+    case(DAE.RECORD_CONSTRUCTOR(path,tp,source),_,extraArg)
+      then (DAE.RECORD_CONSTRUCTOR(path,tp,source),extraArg);
   end match;
 end traverseDAEFunc;
 

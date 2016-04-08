@@ -372,7 +372,6 @@ public uniontype Function
     Absyn.Path path;
     Type type_;
     ElementSource source "the origin of the component/equation/algorithm" ;
-    VarKind kind;
   end RECORD_CONSTRUCTOR;
 end Function;
 

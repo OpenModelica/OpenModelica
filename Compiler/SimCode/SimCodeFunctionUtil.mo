@@ -774,7 +774,7 @@ algorithm
           rt_1, recordDecls, includes, includeDirs, libs,libPaths);
 
         // Record constructor.
-    case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name))),kind=kind), rt, recordDecls, includes, includeDirs, libs,libPaths)
+    case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), rt, recordDecls, includes, includeDirs, libs,libPaths)
       equation
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
@@ -783,7 +783,7 @@ algorithm
         varDecls = List.map(varlst, typesVar);
         info = ElementSource.getElementSourceFileInfo(source);
       then
-        (SimCode.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info, kind), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
+        (SimCode.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
 
         // failure
     case (_, fn, _, _, _, _, _,_)
