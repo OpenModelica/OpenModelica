@@ -497,6 +497,8 @@ constant DebugFlag TOTAL_TEARING_DUMPVERBOSE = DEBUG_FLAG(161, "totaltearingdump
   Util.gettext("Dumps verbose total tearing information."));
 constant DebugFlag PARALLEL_CODEGEN = DEBUG_FLAG(162, "parallelCodegen", true,
   Util.gettext("Enables code generation in parallel (disable this if compiling a model causes you to run out of RAM)."));
+constant DebugFlag SERIALIZED_SIZE = DEBUG_FLAG(163, "reportSerializedSize", false,
+  Util.gettext("Reports serialized sizes of various data structures used in the compiler."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -665,7 +667,8 @@ constant list<DebugFlag> allDebugFlags = {
   OMC_RECORD_ALLOC_WORDS,
   TOTAL_TEARING_DUMP,
   TOTAL_TEARING_DUMPVERBOSE,
-  PARALLEL_CODEGEN
+  PARALLEL_CODEGEN,
+  SERIALIZED_SIZE
 };
 
 public

@@ -318,7 +318,7 @@ algorithm
 end equalIgnoreSpace;
 
 function bytesToReadableUnit
-  input Integer bytes;
+  input Real bytes;
   input Integer significantDigits=4;
   input Real maxSizeInUnit=500 "If it is 1000, we print up to 1000GB before changing to X TB";
   output String str;
@@ -334,7 +334,7 @@ algorithm
   elseif bytes > maxSizeInUnit then
     str := String(bytes/kB, significantDigits=significantDigits)+" kB";
   else
-    str := String(bytes);
+    str := String(integer(bytes));
   end if;
 end bytesToReadableUnit;
 

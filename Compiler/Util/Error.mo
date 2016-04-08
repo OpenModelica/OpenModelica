@@ -925,6 +925,8 @@ public constant Message UNIONTYPE_MISSING_TYPEVARS = MESSAGE(5044, TRANSLATION()
   Util.gettext("Uniontype %s has type variables, but they were not given in the declaration."));
 public constant Message UNIONTYPE_WRONG_NUM_TYPEVARS = MESSAGE(5045, TRANSLATION(), ERROR(),
   Util.gettext("Uniontype %s has %s type variables, but got %s."));
+public constant Message SERIALIZED_SIZE = MESSAGE(5046, TRANSLATION(), NOTIFICATION(),
+  Util.gettext("%s has serialized size %s."));
 
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   Util.notrans("%s"));

@@ -195,7 +195,6 @@ if true then /* Suppress output */
     "../Util/ModelicaExternalC.mo",
     "../Util/Print.mo",
     "../Util/PriorityQueue.mo",
-    // "../Util/Serializer.mo",
     "../Util/Settings.mo",
     "../Util/StackOverflow.mo",
     "../Util/StringUtil.mo",
@@ -341,7 +340,8 @@ if true then /* Suppress output */
     "../Util/HashTableCrToUnit.mo",
     "../Util/HashTableStringToUnit.mo",
     "../Util/HashTableUnitToString.mo",
-    "../Util/SimulationResults.mo",
+    "../Util/Serializer.mo",
+        "../Util/SimulationResults.mo",
     "../Util/TaskGraphResults.mo"
 
   };

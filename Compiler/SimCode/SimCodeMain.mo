@@ -81,7 +81,9 @@ import HpcOmTaskGraph;
 import SerializeModelInfo;
 import SimCodeDump;
 import TaskSystemDump;
+import Serializer;
 import SimCodeUtil;
+import StringUtil;
 import System;
 import Util;
 import BackendDump;
@@ -420,6 +422,11 @@ algorithm
   simCode := createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
+
+  if Flags.isSet(Flags.SERIALIZED_SIZE) then
+    serializeNotify(simCode, filenamePrefix, "simCode");
+    ExecStat.execStat("Serialize simCode");
+  end if;
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   callTargetTemplates(simCode, Config.simCodeTarget());
@@ -773,6 +780,7 @@ algorithm
       list<BackendDAE.Equation> removedInitialEquationLst;
       list<BackendDAE.Var> primaryParameters "already sorted";
       list<BackendDAE.Var> allPrimaryParameters "already sorted";
+      Real fsize;
 
     case (cache, graph, _, (st as GlobalScript.SYMBOLTABLE(ast=p)), filenameprefix, _, _, _) equation
       // calculate stuff that we need to create SimCode data structure
@@ -780,20 +788,50 @@ algorithm
       ExecStat.execStatReset();
       (cache, graph, dae, st) = CevalScriptBackend.runFrontEnd(cache, graph, className, st, false);
       ExecStat.execStat("FrontEnd");
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dae, filenameprefix, "dae");
+        serializeNotify(graph, filenameprefix, "graph");
+        serializeNotify(cache, filenameprefix, "cache");
+        serializeNotify(st, filenameprefix, "st");
+        ExecStat.execStat("Serialize FrontEnd");
+      end if;
+
       timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
 
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
       dae = DAEUtil.transformationsBeforeBackend(cache, graph, dae);
       ExecStat.execStat("Transformations before backend");
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dae, filenameprefix, "dae2");
+        ExecStat.execStat("Serialize DAE (2)");
+      end if;
+
       description = DAEUtil.daeDescription(dae);
       dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
 
       GC.free(dae);
       graph = FCore.EG("<EMPTY>");
 
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dlow, filenameprefix, "dlow");
+        ExecStat.execStat("Serialize dlow");
+      end if;
+
       //BackendDump.printBackendDAE(dlow);
       (dlow, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters) = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
       timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dlow, filenameprefix, "simDAE");
+        serializeNotify(initDAE, filenameprefix, "initDAE");
+        serializeNotify(initDAE_lambda0, filenameprefix, "initDAE_lambda0");
+        serializeNotify(removedInitialEquationLst, filenameprefix, "removedInitialEquationLst");
+        serializeNotify(primaryParameters, filenameprefix, "primaryParameters");
+        serializeNotify(allPrimaryParameters, filenameprefix, "allPrimaryParameters");
+        ExecStat.execStat("Serialize solved system");
+      end if;
 
       (libs, file_dir, timeSimCode, timeTemplates) =
         generateModelCode(dlow, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters, p, className, filenameprefix, inSimSettingsOpt, args);
@@ -812,6 +850,18 @@ algorithm
     then fail();
   end matchcontinue;
 end translateModel;
+
+protected function serializeNotify<T>
+  input T data;
+  input String prefix;
+  input String name;
+protected
+  Real fsize;
+algorithm
+  Serializer.outputFile(data, prefix + "_"+name+".bin");
+  (,fsize,) := System.stat(prefix + "_"+name+".bin");
+  Error.addMessage(Error.SERIALIZED_SIZE, {name, StringUtil.bytesToReadableUnit(fsize)});
+end serializeNotify;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeMain;
