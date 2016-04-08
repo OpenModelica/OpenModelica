@@ -3717,129 +3717,115 @@ protected function expandDerOperatorWork "
   expands der(expr) using Derive.differentiteExpTime.
   This can not be done in Static, since we need all time-
   dependent variables, which is only available in BackendDAE."
-  input BackendDAE.EqSystem inSyst;
-  input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
+  input output BackendDAE.EqSystem syst;
+  input output BackendDAE.Shared shared;
 algorithm
-  (osyst, oshared) := match (inSyst, inShared)
+  (syst, shared) := match (syst, shared)
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns, remeqns, inieqns;
-      BackendDAE.EqSystem syst;
+      array<BackendDAE.Shared> shared_arr;
 
     case (syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(initialEqs=inieqns))
       algorithm
-        (_, (vars, _)) :=
-            BackendEquation.traverseEquationArray_WithUpdate(eqns, traverserexpandDerEquation, (vars, inShared));
-        (_, (vars, _)) :=
-            BackendEquation.traverseEquationArray_WithUpdate(inieqns, traverserexpandDerEquation, (vars, inShared));
+        shared_arr := arrayCreate(1, shared);
+        (_, vars) := BackendEquation.traverseEquationArray_WithUpdate(eqns, function traverserexpandDerEquation(shared=shared_arr), vars);
+        (_, vars) := BackendEquation.traverseEquationArray_WithUpdate(inieqns, function traverserexpandDerEquation(shared=shared_arr), vars);
         syst.orderedVars := vars;
-      then (syst, inShared);
+      then (syst, arrayGet(shared_arr, 1));
   end match;
 end expandDerOperatorWork;
 
 protected function traverserexpandDerEquation "
   Help function to e.g. traverserexpandDerEquation"
-  input BackendDAE.Equation inEq;
-  input tuple<BackendDAE.Variables, BackendDAE.Shared> tpl;
-  output BackendDAE.Equation outEq;
-  output tuple<BackendDAE.Variables, BackendDAE.Shared> outTpl;
+  input output BackendDAE.Equation eq;
+  input output BackendDAE.Variables vars;
+  input array<BackendDAE.Shared> shared;
 protected
    BackendDAE.Equation e, e1;
    tuple<BackendDAE.Variables, DAE.FunctionTree> ext_arg, ext_art1;
-   BackendDAE.Variables vars;
    DAE.FunctionTree funcs;
    Boolean b;
    list<DAE.SymbolicOperation> ops;
-   BackendDAE.Shared shared;
 algorithm
-  e := inEq;
-  (vars, shared) := tpl;
-  (e1, (vars, shared, ops)) := BackendEquation.traverseExpsOfEquation(e, traverserexpandDerExp, (vars, shared, {}));
-  e1 := List.foldr(ops, BackendEquation.addOperation, e1);
-  outEq := e1;
-  outTpl := (vars, shared);
+  (eq, (vars, ops)) := BackendEquation.traverseExpsOfEquation(eq, function traverserexpandDerExp(shared=shared), (vars, {}));
+  eq := List.foldr(ops, BackendEquation.addOperation, eq);
 end traverserexpandDerEquation;
 
 protected function traverserexpandDerExp "
   Help function to e.g. traverserexpandDerExp"
-  input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, BackendDAE.Shared, list<DAE.SymbolicOperation>> tpl;
-  output DAE.Exp outExp;
-  output tuple<BackendDAE.Variables, BackendDAE.Shared, list<DAE.SymbolicOperation>> outTpl;
+  input output DAE.Exp exp;
+  input output tuple<BackendDAE.Variables, list<DAE.SymbolicOperation>> tpl;
+  input array<BackendDAE.Shared> shared;
 protected
-  DAE.Exp e, e1;
+  DAE.Exp exp_1;
   tuple<BackendDAE.Variables, BackendDAE.Shared, Boolean> ext_arg;
-  BackendDAE.Variables vars;
+  BackendDAE.Variables vars1, vars2;
   list<DAE.SymbolicOperation> ops;
   DAE.FunctionTree funcs;
   Boolean b;
-  BackendDAE.Shared shared;
 algorithm
-  e := inExp;
-  (vars, shared, ops) := tpl;
-  ext_arg := (vars, shared, false);
-  (e1, ext_arg) := Expression.traverseExpBottomUp(e, expandDerExp, ext_arg);
-  (vars, shared, b) := ext_arg;
-  ops := List.consOnTrue(b, DAE.OP_DIFFERENTIATE(DAE.crefTime, e, e1), ops);
-  outExp := e1;
-  outTpl := (vars, shared, ops);
+  (vars1, ops) := tpl;
+  (exp_1, vars2) := Expression.traverseExpBottomUp(exp, function expandDerExp(inShared=shared), vars1);
+  if not (referenceEq(vars1, vars2) and referenceEq(exp, exp_1)) then
+    ops := DAE.OP_DIFFERENTIATE(DAE.crefTime, exp, exp_1)::ops;
+    exp := exp_1;
+    tpl := (vars2, ops);
+  end if;
 end traverserexpandDerExp;
 
 protected function expandDerExp "
   Help function to e.g. expandDerOperatorEqn"
-  input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, BackendDAE.Shared, Boolean> itpl;
-  output DAE.Exp e;
-  output tuple<BackendDAE.Variables, BackendDAE.Shared, Boolean> tpl;
+  input output DAE.Exp exp;
+  input output BackendDAE.Variables vars;
+  input array<BackendDAE.Shared> inShared;
 algorithm
-  (e,tpl) := matchcontinue (inExp,itpl)
+  (exp,vars) := matchcontinue exp
     local
-      BackendDAE.Variables vars;
       DAE.Exp e1, e2;
       DAE.ComponentRef cr;
       String str;
-      BackendDAE.Shared shared;
       list<BackendDAE.Var> varlst;
       BackendDAE.Var v;
       Boolean b;
       DAE.FunctionTree funcs;
-    case (DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)})}), (_, _, _))
+      BackendDAE.Shared shared;
+    case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)})})
       equation
         str = ComponentReference.crefStr(cr);
         str = stringAppendList({"The model includes derivatives of order > 1 for: ", str, ". That is not supported. Real d", str, " = der(", str, ") *might* result in a solvable model"});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
     // case for arrays
-    case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(ty = DAE.T_ARRAY())}), (vars, shared as BackendDAE.SHARED(), b))
+    case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(ty = DAE.T_ARRAY())}))
       equation
         (e2, true) = Expression.extendArrExp(e1, false);
-        (e,tpl) = Expression.traverseExpBottomUp(e2, expandDerExp, itpl);
-      then (e,tpl);
+        (exp,vars) = Expression.traverseExpBottomUp(e2, function expandDerExp(inShared=inShared), vars);
+      then (exp,vars);
     // case for records
-    case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))}), (vars, shared as BackendDAE.SHARED(), b))
+    case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))}))
       equation
         (e2, true) = Expression.extendArrExp(e1, false);
-        (e,tpl) = Expression.traverseExpBottomUp(e2, expandDerExp, itpl);
-      then (e,tpl);
-    case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)}), (vars, shared, _))
+        (exp,vars) = Expression.traverseExpBottomUp(e2, function expandDerExp(inShared=inShared), vars);
+      then (exp,vars);
+    case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)}))
       equation
         ({v}, _) = BackendVariable.getVar(cr, vars);
         (vars, e1) = updateStatesVar(vars, v, e1);
-      then (e1, (vars, shared, true));
-    case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)}), (vars, shared, _))
+      then (e1, vars);
+    case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)}))
       equation
         (varlst, _) = BackendVariable.getVar(cr, vars);
         vars = updateStatesVars(vars, varlst, false);
-      then (e1, (vars, shared, true));
-    case (DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={e1}), (vars, shared, _))
+      then (e1, vars);
+    case (DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={e1}))
       equation
-        (e2, shared) = Differentiate.differentiateExpTime(e1, vars, shared);
+        (e2, shared) = Differentiate.differentiateExpTime(e1, vars, arrayGet(inShared,1));
+        arrayUpdate(inShared, 1, shared);
         (e2, _) = ExpressionSimplify.simplify(e2);
         (_, vars) = Expression.traverseExpBottomUp(e2, derCrefsExp, vars);
-      then (e2, (vars, shared, true));
-    else (inExp,itpl);
+      then (e2, vars);
+    else (exp,vars);
   end matchcontinue;
 end expandDerExp;
 
