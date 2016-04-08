@@ -78,12 +78,12 @@ public
 uniontype Severity "severity of message"
   record INTERNAL "Error because of a failure in the tool" end INTERNAL;
 
-  record ERROR "Error when tool can not succed in translation because of a user error" end ERROR;
+  record ERROR "Error when tool can not succeed in translation because of a user error" end ERROR;
 
-  record WARNING "Warning when tool succeds but with warning" end WARNING;
+  record WARNING "Warning when tool succeeds but with warning" end WARNING;
 
   record NOTIFICATION "Additional information to user, e.g. what
-             actions tool has taken to succed in translation" end NOTIFICATION;
+             actions tool has taken to succeed in translation" end NOTIFICATION;
 end Severity;
 
 public
@@ -842,6 +842,8 @@ public constant Message NO_TEARING_FOR_COMPONENT = MESSAGE(575, SYMBOLIC(), NOTI
   Util.gettext("Tearing is skipped for strong component %s because of activated compiler flag 'noTearingForComponent=%1'.\n"));
 public constant Message WRONG_VALUE_OF_ARG = MESSAGE(576, TRANSLATION(), ERROR(),
   Util.gettext("Wrong value of argument to %s: %s = %s %s."));
+public constant Message USER_DEFINED_TEARING_ERROR = MESSAGE(577, SYMBOLIC(), ERROR(),
+  Util.gettext("Wrong usage of user defined tearing: %s Make sure you use user defined tearing as stated in the flag description."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

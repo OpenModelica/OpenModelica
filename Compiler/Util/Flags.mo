@@ -1280,8 +1280,13 @@ constant ConfigFlag INLINE_METHOD = CONFIG_FLAG(96, "inlineMethod",
   SOME(STRING_OPTION({"replace", "append"})),
   Util.gettext("Sets the inline method to use.\n"+
                "replace : This method inlines by replacing in place all expressions. Might lead to very long expression.\n"+
-               "append  : This method inlines by adding additional variables to the whole system. Might lead to much bigger system.")
-        );
+               "append  : This method inlines by adding additional variables to the whole system. Might lead to much bigger system."));
+constant ConfigFlag SET_TEARING_VARS = CONFIG_FLAG(97, "setTearingVars",
+  NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
+  Util.gettext("Sets the tearing variables by its strong component indexes. Use '+d=tearingdump' to find out the relevant indexes.\nUse following format: '--setTearingVars=(sci,n,t1,...,tn)*', with sci = strong component index, n = number of tearing variables, t1,...tn = tearing variables.\nE.g.: '--setTearingVars=4,2,3,5' would select variables 3 and 5 in strong component 4.\nOnly works in combination with 'setResidualEqns'."));
+constant ConfigFlag SET_RESIDUAL_EQNS = CONFIG_FLAG(98, "setResidualEqns",
+  NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
+  Util.gettext("Sets the residual equations by its strong component indexes. Use '+d=tearingdump' to find out the relevant indexes.\nUse following format: '--setResidualEqns=(sci,n,r1,...,rn)*', with sci = strong component index, n = number of residual equations, r1,...rn = residual equations.\nE.g.: '--setResidualEqns=4,2,3,5' would select equations 3 and 5 in strong component 4.\nOnly works in combination with 'setTearingVars'."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1383,7 +1388,9 @@ constant list<ConfigFlag> allConfigFlags = {
   NO_TEARING_FOR_COMPONENT,
   CT_STATE_MACHINES,
   DAE_MODE,
-  INLINE_METHOD
+  INLINE_METHOD,
+  SET_TEARING_VARS,
+  SET_RESIDUAL_EQNS
 };
 
 public function new
