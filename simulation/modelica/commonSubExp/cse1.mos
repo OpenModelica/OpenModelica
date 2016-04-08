@@ -79,14 +79,14 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Variable List (simulation) ########### (10)
 // ========================================
-// 1: v7:VARIABLE(start = 3.0 ) .Tearing15, .Real type: Real 
-// 2: v6:VARIABLE(start = 50.0 ) .Tearing15, .Real type: Real 
-// 3: v5:VARIABLE(start = 1.0 ) .Tearing15, .Real type: Real 
-// 4: v4:VARIABLE(start = 1.0 ) .Tearing15, .Real type: Real 
-// 5: v3:VARIABLE(start = 1.0 ) .Tearing15, .Real type: Real 
-// 6: v2:VARIABLE(start = 1.0 ) .Tearing15, .Real type: Real 
-// 7: v1:VARIABLE(start = 7.0 ) .Tearing15, .Real type: Real 
-// 8: source:VARIABLE() .Tearing15, .Real type: Real 
+// 1: v7:VARIABLE(start = 3.0 )  type: Real 
+// 2: v6:VARIABLE(start = 50.0 )  type: Real 
+// 3: v5:VARIABLE(start = 1.0 )  type: Real 
+// 4: v4:VARIABLE(start = 1.0 )  type: Real 
+// 5: v3:VARIABLE(start = 1.0 )  type: Real 
+// 6: v2:VARIABLE(start = 1.0 )  type: Real 
+// 7: v1:VARIABLE(start = 7.0 )  type: Real 
+// 8: source:VARIABLE()  type: Real 
 // 9: $cse6:VARIABLE()  type: Real  unreplaceable
 // 10: $cse5:VARIABLE()  type: Real  unreplaceable
 //
@@ -107,14 +107,14 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Variable List ########### (12)
 // ========================================
-// 1: v7:VARIABLE(start = 3.0 ) .Tearing15, .Real type: Real 
-// 2: v6:VARIABLE(start = 50.0 ) .Tearing15, .Real type: Real 
-// 3: v5:VARIABLE(start = 1.0 ) .Tearing15, .Real type: Real 
-// 4: v4:VARIABLE(start = 1.0 ) .Tearing15, .Real type: Real 
-// 5: v3:VARIABLE(start = 1.0 ) .Tearing15, .Real type: Real 
-// 6: v2:VARIABLE(start = 1.0 ) .Tearing15, .Real type: Real 
-// 7: v1:VARIABLE(start = 7.0 ) .Tearing15, .Real type: Real 
-// 8: source:VARIABLE() .Tearing15, .Real type: Real 
+// 1: v7:VARIABLE(start = 3.0 )  type: Real 
+// 2: v6:VARIABLE(start = 50.0 )  type: Real 
+// 3: v5:VARIABLE(start = 1.0 )  type: Real 
+// 4: v4:VARIABLE(start = 1.0 )  type: Real 
+// 5: v3:VARIABLE(start = 1.0 )  type: Real 
+// 6: v2:VARIABLE(start = 1.0 )  type: Real 
+// 7: v1:VARIABLE(start = 7.0 )  type: Real 
+// 8: source:VARIABLE()  type: Real 
 // 9: $cse6:VARIABLE()  type: Real  unreplaceable
 // 10: $cse5:VARIABLE()  type: Real  unreplaceable
 // 11: $cseb17:VARIABLE()  type: Real  unreplaceable

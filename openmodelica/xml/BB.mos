@@ -42,14 +42,6 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // <orderedVariables dimension=\"4\">
 // <variablesList>
 // <variable id=\"1\" name=\"bounce_time\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
-// <classesNames>
-// <element>
-// BB.BouncingBall
-// </element>
-// <element>
-// Real
-// </element>
-// </classesNames>
 // <attributesValues>
 // <initialValue string=\"0.0\">
 // <MathML>
@@ -62,17 +54,6 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </attributesValues>
 // </variable>
 // <variable id=\"2\" name=\"b1.vy\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
-// <classesNames>
-// <element>
-// BB.BouncingBall
-// </element>
-// <element>
-// BB.Ball$b1
-// </element>
-// <element>
-// Real
-// </element>
-// </classesNames>
 // <attributesValues>
 // <initialValue string=\"0.0\">
 // <MathML>
@@ -85,17 +66,6 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </attributesValues>
 // </variable>
 // <variable id=\"3\" name=\"b1.y\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"b1.vy\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
-// <classesNames>
-// <element>
-// BB.BouncingBall
-// </element>
-// <element>
-// BB.Ball$b1
-// </element>
-// <element>
-// Real
-// </element>
-// </classesNames>
 // <attributesValues>
 // <initialValue string=\"5.0\">
 // <MathML>
@@ -135,27 +105,8 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </MathML>
 // </bindExpression>
 // </bindValueExpression>
-// <classesNames>
-// <element>
-// BB.BouncingBall
-// </element>
-// <element>
-// BB.Ball$b1
-// </element>
-// <element>
-// Real
-// </element>
-// </classesNames>
 // </variable>
 // <variable id=\"2\" name=\"e\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
-// <classesNames>
-// <element>
-// BB.BouncingBall
-// </element>
-// <element>
-// Real
-// </element>
-// </classesNames>
 // <attributesValues>
 // <initialValue string=\"0.9\">
 // <MathML>

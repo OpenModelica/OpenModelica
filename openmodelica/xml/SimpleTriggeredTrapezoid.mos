@@ -51,27 +51,8 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <orderedVariables dimension=\"7\">
 // <variablesList>
 // <variable id=\"1\" name=\"b\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
-// <classesNames>
-// <element>
-// SimpleTriggeredTrapezoid
-// </element>
-// <element>
-// Boolean
-// </element>
-// </classesNames>
 // </variable>
 // <variable id=\"2\" name=\"tt.T\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Predicted time of output reaching endValue\">
-// <classesNames>
-// <element>
-// SimpleTriggeredTrapezoid
-// </element>
-// <element>
-// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
-// </element>
-// <element>
-// Modelica.SIunits.Time
-// </element>
-// </classesNames>
 // <attributesValues>
 // <quantity string=\"&quot;Time&quot;\">
 // <MathML>
@@ -92,43 +73,10 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </attributesValues>
 // </variable>
 // <variable id=\"3\" name=\"tt.rate\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Current rising/falling rate\">
-// <classesNames>
-// <element>
-// SimpleTriggeredTrapezoid
-// </element>
-// <element>
-// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
-// </element>
-// <element>
-// Real
-// </element>
-// </classesNames>
 // </variable>
 // <variable id=\"4\" name=\"tt.endValue\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Value of y at time of recent edge\">
-// <classesNames>
-// <element>
-// SimpleTriggeredTrapezoid
-// </element>
-// <element>
-// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
-// </element>
-// <element>
-// Real
-// </element>
-// </classesNames>
 // </variable>
 // <variable id=\"5\" name=\"tt.y\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Connector of Real output signal\">
-// <classesNames>
-// <element>
-// SimpleTriggeredTrapezoid
-// </element>
-// <element>
-// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
-// </element>
-// <element>
-// Modelica.Blocks.Interfaces.RealOutput
-// </element>
-// </classesNames>
 // </variable>
 // <variable id=\"6\" name=\"$whenCondition1\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
 // <attributesValues>
@@ -171,17 +119,6 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // </bindExpression>
 // </bindValueExpression>
-// <classesNames>
-// <element>
-// SimpleTriggeredTrapezoid
-// </element>
-// <element>
-// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
-// </element>
-// <element>
-// Real
-// </element>
-// </classesNames>
 // </variable>
 // <variable id=\"2\" name=\"tt.rising\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Rising duration of trapezoid\">
 // <bindValueExpression>
@@ -194,17 +131,6 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // </bindExpression>
 // </bindValueExpression>
-// <classesNames>
-// <element>
-// SimpleTriggeredTrapezoid
-// </element>
-// <element>
-// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
-// </element>
-// <element>
-// Modelica.SIunits.Time$tt$rising
-// </element>
-// </classesNames>
 // <attributesValues>
 // <quantity string=\"&quot;Time&quot;\">
 // <MathML>
@@ -243,17 +169,6 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // </bindExpression>
 // </bindValueExpression>
-// <classesNames>
-// <element>
-// SimpleTriggeredTrapezoid
-// </element>
-// <element>
-// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
-// </element>
-// <element>
-// Modelica.SIunits.Time$tt$falling
-// </element>
-// </classesNames>
 // <attributesValues>
 // <quantity string=\"&quot;Time&quot;\">
 // <MathML>
@@ -292,17 +207,6 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // </bindExpression>
 // </bindValueExpression>
-// <classesNames>
-// <element>
-// SimpleTriggeredTrapezoid
-// </element>
-// <element>
-// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
-// </element>
-// <element>
-// Real
-// </element>
-// </classesNames>
 // </variable>
 // </variablesList>
 // </knownVariables>
@@ -319,17 +223,6 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // </bindExpression>
 // </bindValueExpression>
-// <classesNames>
-// <element>
-// SimpleTriggeredTrapezoid
-// </element>
-// <element>
-// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
-// </element>
-// <element>
-// Modelica.Blocks.Interfaces.BooleanInput
-// </element>
-// </classesNames>
 // </variable>
 // </variablesList>
 // </aliasVariables>

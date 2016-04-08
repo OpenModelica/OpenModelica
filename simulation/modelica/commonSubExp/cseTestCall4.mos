@@ -28,7 +28,7 @@ simulate(CSE.TestCall4); getErrorString();
 //
 // ########### Updated Variable List (simulation) ########### (2)
 // ========================================
-// 1: y:VARIABLE() .CSE.TestCall4, .Real type: Real 
+// 1: y:VARIABLE()  type: Real 
 // 2: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //

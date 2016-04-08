@@ -55,10 +55,10 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 //
 // Variables (4)
 // ========================================
-// 1: y:VARIABLE() .dynamicTearing3, .Real type: Real 
-// 2: z:VARIABLE() .dynamicTearing3, .Real type: Real 
-// 3: a:VARIABLE() .dynamicTearing3, .Real type: Real 
-// 4: x:VARIABLE() .dynamicTearing3, .Real type: Real 
+// 1: y:VARIABLE()  type: Real 
+// 2: z:VARIABLE()  type: Real 
+// 3: a:VARIABLE()  type: Real 
+// 4: x:VARIABLE()  type: Real 
 //
 //
 // Equations (4, 4)
@@ -189,10 +189,10 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 //
 // Variables (4)
 // ========================================
-// 1: y:VARIABLE() .dynamicTearing3, .Real type: Real 
-// 2: z:VARIABLE() .dynamicTearing3, .Real type: Real 
-// 3: a:VARIABLE() .dynamicTearing3, .Real type: Real 
-// 4: x:VARIABLE() .dynamicTearing3, .Real type: Real 
+// 1: y:VARIABLE()  type: Real 
+// 2: z:VARIABLE()  type: Real 
+// 3: a:VARIABLE()  type: Real 
+// 4: x:VARIABLE()  type: Real 
 //
 //
 // Equations (4, 4)

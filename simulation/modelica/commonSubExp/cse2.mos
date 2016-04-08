@@ -51,21 +51,21 @@ simulate(Tearing3); getErrorString();
 //
 // ########### Updated Variable List ########### (17)
 // ========================================
-// 1: iC:VARIABLE() .Tearing3, .Real type: Real 
-// 2: iL:DUMMY_STATE() .Tearing3, .Real type: Real 
-// 3: i2:STATE(1)(start = 0.0 fixed = true ) .Tearing3, .Real type: Real 
-// 4: i1:DUMMY_STATE() .Tearing3, .Real type: Real 
-// 5: i0:VARIABLE() .Tearing3, .Real type: Real 
-// 6: uC:DUMMY_STATE() .Tearing3, .Real type: Real 
-// 7: uL:DUMMY_STATE() .Tearing3, .Real type: Real 
-// 8: u1:DUMMY_STATE() .Tearing3, .Real type: Real 
-// 9: u0:DUMMY_STATE() .Tearing3, .Real type: Real 
-// 10: $DER.uC:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
-// 11: $DER.iL:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
-// 12: $DER.u0:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
-// 13: $DER.i1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
-// 14: $DER.u1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
-// 15: $DER.uL:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real 
+// 1: iC:VARIABLE()  type: Real 
+// 2: iL:DUMMY_STATE()  type: Real 
+// 3: i2:STATE(1)(start = 0.0 fixed = true )  type: Real 
+// 4: i1:DUMMY_STATE()  type: Real 
+// 5: i0:VARIABLE()  type: Real 
+// 6: uC:DUMMY_STATE()  type: Real 
+// 7: uL:DUMMY_STATE()  type: Real 
+// 8: u1:DUMMY_STATE()  type: Real 
+// 9: u0:DUMMY_STATE()  type: Real 
+// 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
+// 11: $DER.iL:DUMMY_DER(fixed = false )  type: Real 
+// 12: $DER.u0:DUMMY_DER(fixed = false )  type: Real 
+// 13: $DER.i1:DUMMY_DER(fixed = false )  type: Real 
+// 14: $DER.u1:DUMMY_DER(fixed = false )  type: Real 
+// 15: $DER.uL:DUMMY_DER(fixed = false )  type: Real 
 // 16: $cseb10:VARIABLE()  type: Real  unreplaceable
 // 17: $cseb3:VARIABLE()  type: Real  unreplaceable
 //

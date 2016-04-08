@@ -53,11 +53,11 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 //
 // ########### Updated Variable List (simulation) ########### (7)
 // ========================================
-// 1: z.r2:DISCRETE() .CSE.FunctionCallTest4, .CSE.types.R, .Integer type: Integer 
-// 2: z.r1:VARIABLE() .CSE.FunctionCallTest4, .CSE.types.R, .Real type: Real 
-// 3: y.r2:DISCRETE() .CSE.FunctionCallTest4, .CSE.types.R, .Integer type: Integer 
-// 4: y.r1:VARIABLE() .CSE.FunctionCallTest4, .CSE.types.R, .Real type: Real 
-// 5: x:VARIABLE() .CSE.FunctionCallTest4, .Real type: Real 
+// 1: z.r2:DISCRETE()  type: Integer 
+// 2: z.r1:VARIABLE()  type: Real 
+// 3: y.r2:DISCRETE()  type: Integer 
+// 4: y.r1:VARIABLE()  type: Real 
+// 5: x:VARIABLE()  type: Real 
 // 6: $cse1.r2:DISCRETE()  type: Integer  unreplaceable
 // 7: $cse1.r1:VARIABLE()  type: Real  unreplaceable
 //

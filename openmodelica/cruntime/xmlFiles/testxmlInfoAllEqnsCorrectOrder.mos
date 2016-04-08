@@ -103,8 +103,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.der(x)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -112,8 +110,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"der(xd)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -121,8 +117,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.der(xd)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -130,8 +124,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"der(y)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -139,8 +131,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.der(y)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -148,8 +138,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"der(yd)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -157,8 +145,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.der(yd)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -166,8 +152,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"Fo\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -175,8 +159,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"11\" lineEnd=\"11\" colStart=\"3\" colEnd=\"10\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.Fo\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -184,8 +166,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"11\" lineEnd=\"11\" colStart=\"3\" colEnd=\"10\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"s\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -193,8 +173,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"8\" lineEnd=\"8\" colStart=\"3\" colEnd=\"22\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.s\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -202,8 +180,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"8\" lineEnd=\"8\" colStart=\"3\" colEnd=\"22\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"t\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -211,8 +187,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"8\" lineEnd=\"8\" colStart=\"3\" colEnd=\"22\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.t\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -220,8 +194,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"8\" lineEnd=\"8\" colStart=\"3\" colEnd=\"22\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"u\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -229,8 +201,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"9\" lineEnd=\"9\" colStart=\"3\" colEnd=\"22\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.u\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -238,8 +208,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"9\" lineEnd=\"9\" colStart=\"3\" colEnd=\"22\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"v\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -247,8 +215,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"9\" lineEnd=\"9\" colStart=\"3\" colEnd=\"22\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.v\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -256,8 +222,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"9\" lineEnd=\"9\" colStart=\"3\" colEnd=\"22\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"x\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -265,8 +229,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.x\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -274,8 +236,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"xd\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -283,8 +243,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.xd\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -292,8 +250,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"y\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -301,8 +257,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.y\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -310,8 +264,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"yd\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -319,8 +271,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.yd\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
@@ -328,8 +278,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$TMP$VAR$43$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -421,8 +369,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"7\" lineEnd=\"7\" colStart=\"3\" colEnd=\"21\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.L\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
@@ -430,8 +376,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"7\" lineEnd=\"7\" colStart=\"3\" colEnd=\"21\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"a\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
@@ -439,8 +383,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"3\" lineEnd=\"3\" colStart=\"3\" colEnd=\"23\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.a\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
@@ -448,8 +390,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"3\" lineEnd=\"3\" colStart=\"3\" colEnd=\"23\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"b\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
@@ -457,8 +397,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"4\" lineEnd=\"4\" colStart=\"3\" colEnd=\"23\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.b\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
@@ -466,8 +404,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"4\" lineEnd=\"4\" colStart=\"3\" colEnd=\"23\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"g\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
@@ -475,8 +411,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"6\" lineEnd=\"6\" colStart=\"3\" colEnd=\"24\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.g\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
@@ -484,8 +418,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"6\" lineEnd=\"6\" colStart=\"3\" colEnd=\"24\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"m\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
@@ -493,8 +425,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"5\" lineEnd=\"5\" colStart=\"3\" colEnd=\"23\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.m\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
@@ -502,8 +432,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"5\" lineEnd=\"5\" colStart=\"3\" colEnd=\"23\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"der(xd.$pDERNLSJac0.dummyVarNLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
@@ -697,8 +625,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"4\" lineEnd=\"4\" colStart=\"3\" colEnd=\"23\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </equation>
 //   <equation index=\"2\">
@@ -1368,8 +1294,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"9\" lineEnd=\"9\" colStart=\"3\" colEnd=\"22\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </equation>
 //   <equation index=\"54\">
@@ -1382,8 +1306,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"8\" lineEnd=\"8\" colStart=\"3\" colEnd=\"22\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </equation>
 // </start-equations>
@@ -1403,8 +1325,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"4\" lineEnd=\"4\" colStart=\"3\" colEnd=\"23\"/>
 //       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </equation>
 // </parameter-equations>

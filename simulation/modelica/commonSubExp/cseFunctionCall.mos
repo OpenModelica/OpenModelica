@@ -199,9 +199,9 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List (simulation) ########### (4)
 // ========================================
-// 1: z:STATE(1)() .CSE.FunctionCallTest1, .Real type: Real 
-// 2: y:STATE(1)() .CSE.FunctionCallTest1, .Real type: Real 
-// 3: x:VARIABLE() .CSE.FunctionCallTest1, .Real type: Real 
+// 1: z:STATE(1)()  type: Real 
+// 2: y:STATE(1)()  type: Real 
+// 3: x:VARIABLE()  type: Real 
 // 4: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
@@ -222,11 +222,11 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List (simulation) ########### (7)
 // ========================================
-// 1: d:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real 
-// 2: c:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real 
-// 3: b:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real 
-// 4: a:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real 
-// 5: x:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real 
+// 1: d:VARIABLE()  type: Real 
+// 2: c:VARIABLE()  type: Real 
+// 3: b:VARIABLE()  type: Real 
+// 4: a:VARIABLE()  type: Real 
+// 5: x:VARIABLE()  type: Real 
 // 6: $cse2:VARIABLE()  type: Real  unreplaceable
 // 7: $cse1:VARIABLE()  type: Real  unreplaceable
 //
@@ -249,13 +249,13 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List (simulation) ########### (9)
 // ========================================
-// 1: d:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real 
-// 2: c:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real 
-// 3: b:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real 
-// 4: a:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real 
-// 5: z:STATE(1)() .CSE.FunctionCallTest3, .Real type: Real 
-// 6: y:STATE(1)() .CSE.FunctionCallTest3, .Real type: Real 
-// 7: x:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real 
+// 1: d:VARIABLE()  type: Real 
+// 2: c:VARIABLE()  type: Real 
+// 3: b:VARIABLE()  type: Real 
+// 4: a:VARIABLE()  type: Real 
+// 5: z:STATE(1)()  type: Real 
+// 6: y:STATE(1)()  type: Real 
+// 7: x:VARIABLE()  type: Real 
 // 8: $cse2:VARIABLE()  type: Real  unreplaceable
 // 9: $cse1:VARIABLE()  type: Real  unreplaceable
 //
@@ -281,11 +281,11 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List (simulation) ########### (7)
 // ========================================
-// 1: z.r2:DISCRETE() .CSE.FunctionCallTest4, .CSE.types.R, .Integer type: Integer 
-// 2: z.r1:VARIABLE() .CSE.FunctionCallTest4, .CSE.types.R, .Real type: Real 
-// 3: y.r2:DISCRETE() .CSE.FunctionCallTest4, .CSE.types.R, .Integer type: Integer 
-// 4: y.r1:VARIABLE() .CSE.FunctionCallTest4, .CSE.types.R, .Real type: Real 
-// 5: x:VARIABLE() .CSE.FunctionCallTest4, .Real type: Real 
+// 1: z.r2:DISCRETE()  type: Integer 
+// 2: z.r1:VARIABLE()  type: Real 
+// 3: y.r2:DISCRETE()  type: Integer 
+// 4: y.r1:VARIABLE()  type: Real 
+// 5: x:VARIABLE()  type: Real 
 // 6: $cse1.r2:DISCRETE()  type: Integer  unreplaceable
 // 7: $cse1.r1:VARIABLE()  type: Real  unreplaceable
 //
@@ -306,13 +306,13 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List (simulation) ########### (12)
 // ========================================
-// 1: b:VARIABLE() .CSE.FunctionCallTest5, .Real type: Real 
-// 2: a:VARIABLE() .CSE.FunctionCallTest5, .Real type: Real 
-// 3: z.r2:DISCRETE() .CSE.FunctionCallTest5, .CSE.types.R, .Integer type: Integer 
-// 4: z.r1:VARIABLE() .CSE.FunctionCallTest5, .CSE.types.R, .Real type: Real 
-// 5: y.r2:DISCRETE() .CSE.FunctionCallTest5, .CSE.types.R, .Integer type: Integer 
-// 6: y.r1:VARIABLE() .CSE.FunctionCallTest5, .CSE.types.R, .Real type: Real 
-// 7: x:VARIABLE() .CSE.FunctionCallTest5, .Real type: Real 
+// 1: b:VARIABLE()  type: Real 
+// 2: a:VARIABLE()  type: Real 
+// 3: z.r2:DISCRETE()  type: Integer 
+// 4: z.r1:VARIABLE()  type: Real 
+// 5: y.r2:DISCRETE()  type: Integer 
+// 6: y.r1:VARIABLE()  type: Real 
+// 7: x:VARIABLE()  type: Real 
 // 8: $cse3:VARIABLE()  type: Real  unreplaceable
 // 9: $cse2.r2:DISCRETE()  type: Integer  unreplaceable
 // 10: $cse2.r1:VARIABLE()  type: Real  unreplaceable
@@ -339,13 +339,13 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List (simulation) ########### (12)
 // ========================================
-// 1: b[2]:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real  [2]
-// 2: b[1]:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real  [2]
-// 3: a[2]:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real  [2]
-// 4: a[1]:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real  [2]
-// 5: z:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real 
-// 6: y:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real 
-// 7: x:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real 
+// 1: b[2]:VARIABLE()  type: Real  [2]
+// 2: b[1]:VARIABLE()  type: Real  [2]
+// 3: a[2]:VARIABLE()  type: Real  [2]
+// 4: a[1]:VARIABLE()  type: Real  [2]
+// 5: z:VARIABLE()  type: Real 
+// 6: y:VARIABLE()  type: Real 
+// 7: x:VARIABLE()  type: Real 
 // 8: $cse3[2]:VARIABLE()  type: Real  [2] unreplaceable
 // 9: $cse3[1]:VARIABLE()  type: Real  [2] unreplaceable
 // 10: $cse2:VARIABLE()  type: Real  unreplaceable
@@ -372,14 +372,14 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List (simulation) ########### (15)
 // ========================================
-// 1: r.r1:VARIABLE() .CSE.FunctionCallTest7, .CSE.types.R, .Real type: Real 
-// 2: b[2]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real  [2]
-// 3: b[1]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real  [2]
-// 4: a[2]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real  [2]
-// 5: a[1]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real  [2]
-// 6: z:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real 
-// 7: y:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real 
-// 8: x:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real 
+// 1: r.r1:VARIABLE()  type: Real 
+// 2: b[2]:VARIABLE()  type: Real  [2]
+// 3: b[1]:VARIABLE()  type: Real  [2]
+// 4: a[2]:VARIABLE()  type: Real  [2]
+// 5: a[1]:VARIABLE()  type: Real  [2]
+// 6: z:VARIABLE()  type: Real 
+// 7: y:VARIABLE()  type: Real 
+// 8: x:VARIABLE()  type: Real 
 // 9: $cse5[2]:VARIABLE()  type: Real  [2] unreplaceable
 // 10: $cse5[1]:VARIABLE()  type: Real  [2] unreplaceable
 // 11: $cse4:VARIABLE()  type: Real  unreplaceable

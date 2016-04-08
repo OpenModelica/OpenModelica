@@ -6,6 +6,7 @@
 // Tests that < is escaped in Xml dumps
 //
 
+setCommandLineOptions("-d=infoXmlOperations"); // To test that we can still dump classes names
 loadFile("XmlDumpComment.mo");
 instantiateModel(XmlDumpComment);
 "Flat";
@@ -18,6 +19,7 @@ dumpXMLDAE(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum,"optimiser"
 readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 
 // Result:
+// true
 // true
 // "class XmlDumpComment
 //   parameter Real A \"test & in xml\";

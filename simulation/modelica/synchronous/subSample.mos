@@ -55,16 +55,16 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: f:VARIABLE() .test_subSample, .Real type: Real
-// 2: v:STATE(1)(start = 0.0 fixed = true ) .test_subSample, .Real type: Real
-// 3: x:STATE(1)(start = 1.0 fixed = true ) .test_subSample, .Real type: Real
+// 1: f:VARIABLE()  type: Real 
+// 2: v:STATE(1)(start = 0.0 fixed = true )  type: Real 
+// 3: x:STATE(1)(start = 1.0 fixed = true )  type: Real 
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): f = $getPart(u)    [dynamic]
-// 2/2 (1): der(x) = v    [dynamic]
-// 3/3 (1): m * der(v) = f + (-k) * x - d * v    [dynamic]
+// 1/1 (1): f = $getPart(u)   [dynamic]
+// 2/2 (1): der(x) = v   [dynamic]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -83,12 +83,12 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: u3:DISCRETE() .test_subSample, .Real type: Real
+// 1: u3:DISCRETE()  type: Real 
 //
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): u3 = $getPart(u2)    [dynamic]
+// 1/1 (1): u3 = $getPart(u2)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -107,12 +107,12 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: u2:DISCRETE() .test_subSample, .Real type: Real
+// 1: u2:DISCRETE()  type: Real 
 //
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): u2 = $getPart(u)    [dynamic]
+// 1/1 (1): u2 = $getPart(u)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -131,14 +131,14 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: u:DISCRETE(start = 0.0 ) .test_subSample, .Real type: Real
-// 2: vd:DISCRETE() .test_subSample, .Real type: Real
+// 1: u:DISCRETE(start = 0.0 )  type: Real 
+// 2: vd:DISCRETE()  type: Real 
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): vd = $getPart(v)    [dynamic]
-// 2/2 (1): u = K * (vref - vd)    [dynamic]
+// 1/1 (1): vd = $getPart(v)   [dynamic]
+// 2/2 (1): u = K * (vref - vd)   [dynamic]
 //
 //
 // Simple Equations (0, 0)

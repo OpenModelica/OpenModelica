@@ -83,7 +83,7 @@ val(x4,1.0);
 //     messages = ""
 // end SimulationResult;
 // "Warning: Assuming fixed start value for the following 1 variables:
-//          x:VARIABLE() .Alg4, .Real type: Real
+//          x:VARIABLE()  type: Real
 // "
 // record SimulationResult
 //     resultFile = "Alg5_res.mat",
@@ -91,8 +91,8 @@ val(x4,1.0);
 //     messages = ""
 // end SimulationResult;
 // "Warning: Assuming fixed start value for the following 2 variables:
-//          x2:VARIABLE() .Alg5, .Real type: Real
-//          x1:VARIABLE() .Alg5, .Real type: Real
+//          x2:VARIABLE()  type: Real 
+//          x1:VARIABLE()  type: Real
 // "
 // 0.0
 // 0.1224090895290663

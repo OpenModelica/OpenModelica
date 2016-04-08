@@ -50,12 +50,12 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: y:VARIABLE() .SamplingWithClocks, .Real type: Real
+// 1: y:VARIABLE()  type: Real 
 //
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): y = $getPart(time)    [dynamic]
+// 1/1 (1): y = $getPart(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -74,12 +74,12 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: w:VARIABLE() .SamplingWithClocks, .Real type: Real
+// 1: w:VARIABLE()  type: Real 
 //
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): w = $getPart(x)    [dynamic]
+// 1/1 (1): w = $getPart(x)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -98,12 +98,12 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: z:VARIABLE() .SamplingWithClocks, .Real type: Real
+// 1: z:VARIABLE()  type: Real 
 //
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): z = $getPart(x)    [dynamic]
+// 1/1 (1): z = $getPart(x)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -122,12 +122,12 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: x:VARIABLE() .SamplingWithClocks, .Real type: Real
+// 1: x:VARIABLE()  type: Real 
 //
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): x = $getPart(time)    [dynamic]
+// 1/1 (1): x = $getPart(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)

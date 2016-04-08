@@ -41,9 +41,9 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 //
 // ########### Updated Variable List (simulation) ########### (7)
 // ========================================
-// 1: y.r1[3]:VARIABLE() .CSE.FunctionCallTest4, .CSE.R, .Real type: Real  [3]
-// 2: y.r1[2]:VARIABLE() .CSE.FunctionCallTest4, .CSE.R, .Real type: Real  [3]
-// 3: y.r1[1]:VARIABLE() .CSE.FunctionCallTest4, .CSE.R, .Real type: Real  [3]
+// 1: y.r1[3]:VARIABLE()  type: Real  [3]
+// 2: y.r1[2]:VARIABLE()  type: Real  [3]
+// 3: y.r1[1]:VARIABLE()  type: Real  [3]
 // 4: $cse2.r1[1]:VARIABLE()  type: Real  [3] unreplaceable
 // 5: $cse2.r1[2]:VARIABLE()  type: Real  [3] unreplaceable
 // 6: $cse2.r1[3]:VARIABLE()  type: Real  [3] unreplaceable

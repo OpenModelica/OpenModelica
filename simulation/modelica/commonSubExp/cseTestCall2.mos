@@ -38,8 +38,8 @@ simulate(CSE.TestCall2); getErrorString();
 //
 // ########### Updated Variable List (simulation) ########### (2)
 // ========================================
-// 1: f.y:VARIABLE() .CSE.TestCall2, .CSE.TestCall2.foo, .Real type: Real 
-// 2: f.x:VARIABLE() .CSE.TestCall2, .CSE.TestCall2.foo, .Real type: Real 
+// 1: f.y:VARIABLE()  type: Real 
+// 2: f.x:VARIABLE()  type: Real 
 //
 //
 // ########### Updated Equation List (simulation) ########### (2, 2)
