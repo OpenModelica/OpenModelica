@@ -28,6 +28,9 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
 
 QMainWindow::separator {
   width: 4px; /* when vertical */

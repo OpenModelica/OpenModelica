@@ -38,19 +38,19 @@
 #include "NotificationsDialog.h"
 
 /*!
-  \class NotificationsDialog
-  \brief Creates a notification dialog.
+ * \class NotificationsDialog
+ * \brief Creates a notification dialog.
 
-  Define a new notification type if you want to add a new Dialog.\n
-  Also add the notification to NotificationPage class.\n
-  Save the notification in omedit.ini settings file by defining a new key in notifications section.
-  */
-
+ * Define a new notification type if you want to add a new Dialog.\n
+ * Also add the notification to NotificationPage class.\n
+ * Save the notification in omedit.ini settings file by defining a new key in notifications section.
+ */
 /*!
-  \param notificationType - specifies what type of notification dialog should be created.
-  \param notificationIcon - specifies which icon should be used.
-  \param pMainWindow - pointer to MainWindow.
-  */
+ * \brief NotificationsDialog::NotificationsDialog
+ * \param notificationType - specifies what type of notification dialog should be created.
+ * \param notificationIcon - specifies which icon should be used.
+ * \param pMainWindow - pointer to MainWindow.
+ */
 NotificationsDialog::NotificationsDialog(NotificationType notificationType, NotificationIcon notificationIcon, MainWindow *pMainWindow)
   : QDialog(pMainWindow)
 {
@@ -93,26 +93,27 @@ NotificationsDialog::NotificationsDialog(NotificationType notificationType, Noti
 }
 
 /*!
-  Sets the notification dialog message.
-  \param label - the message to set.
-  */
+ * \brief NotificationsDialog::setNotificationLabelString
+ * Sets the notification dialog message.
+ * \param label - the message to set.
+ */
 void NotificationsDialog::setNotificationLabelString(QString label)
 {
   mpNotificationLabel->setText(label);
 }
 
 /*!
-  Returns the notification icon.
-  \param notificationIcon - the notificaiton icon to set.
-  \return the notificaiton icon as QPixmap
-  */
+ * \brief NotificationsDialog::getNotificationIcon
+ * Returns the notification icon.
+ * \param notificationIcon - the notificaiton icon to set.
+ * \return the notificaiton icon as QPixmap
+ */
 QPixmap NotificationsDialog::getNotificationIcon(NotificationsDialog::NotificationIcon notificationIcon)
 {
   QStyle *pStyle = this->style();
   int iconSize = pStyle->pixelMetric(QStyle::PM_MessageBoxIconSize, 0, this);
   QIcon tmpIcon;
-  switch (notificationIcon)
-  {
+  switch (notificationIcon) {
     case NotificationsDialog::InformationIcon:
       tmpIcon = pStyle->standardIcon(QStyle::SP_MessageBoxInformation, 0, this);
       break;
@@ -127,19 +128,20 @@ QPixmap NotificationsDialog::getNotificationIcon(NotificationsDialog::Notificati
     default:
       break;
   }
-  if (!tmpIcon.isNull())
+  if (!tmpIcon.isNull()) {
     return tmpIcon.pixmap(iconSize, iconSize);
+  }
   return QPixmap();
 }
 
 /*!
-  Returns the notification dialog title.
-  \return the title string.
-  */
+ * \brief NotificationsDialog::getNotificationTitleString
+ * Returns the notification dialog title.
+ * \return the title string.
+ */
 QString NotificationsDialog::getNotificationTitleString()
 {
-  switch (mNotificationType)
-  {
+  switch (mNotificationType) {
     case NotificationsDialog::QuitApplication:
       return tr("Confirm Quit");
     case NotificationsDialog::ItemDroppedOnItself:
@@ -154,14 +156,13 @@ QString NotificationsDialog::getNotificationTitleString()
 }
 
 /*!
-  Returns the notification dialog message.
-  \return the message string.
-  */
+ * \brief NotificationsDialog::getNotificationLabelString
+ * Returns the notification dialog message.
+ * \return the message string.
+ */
 QString NotificationsDialog::getNotificationLabelString()
 {
-  QString tmpPath, OMCCommunicationLogFilePath, OMCCommandsLogFilePath, OMCOutputFile, stackTraceFile;
-  switch (mNotificationType)
-  {
+  switch (mNotificationType) {
     case NotificationsDialog::QuitApplication:
       return tr("Are you sure you want to quit?");
     case NotificationsDialog::ItemDroppedOnItself:
@@ -178,22 +179,14 @@ QString NotificationsDialog::getNotificationLabelString()
 }
 
 /*!
-  Returns the notification dialog checkbox.
-  \return the checkbox.
-  */
-QCheckBox* NotificationsDialog::getNotificationCheckBox()
-{
-  return mpNotificationCheckBox;
-}
-
-/*!
-  Returns the notification dialog checkbox message.
-  \return the checkbox message string.
-  */
+ * \brief NotificationsDialog::getNotificationCheckBoxString
+ * Returns the notification dialog checkbox message.
+ * \return the checkbox message string.
+ * \return
+ */
 QString NotificationsDialog::getNotificationCheckBoxString()
 {
-  switch (mNotificationType)
-  {
+  switch (mNotificationType) {
     case NotificationsDialog::QuitApplication:
       return tr("Always quit without prompt");
     case NotificationsDialog::ItemDroppedOnItself:
@@ -208,8 +201,9 @@ QString NotificationsDialog::getNotificationCheckBoxString()
 }
 
 /*!
-  Saves the promptQuitApplication key settings to omedit.ini file.
-  */
+ * \brief NotificationsDialog::saveQuitNotificationSettings
+ * Saves the promptQuitApplication key settings to omedit.ini file.
+ */
 void NotificationsDialog::saveQuitNotificationSettings()
 {
   QSettings *pSettings = OpenModelica::getApplicationSettings();
@@ -217,9 +211,10 @@ void NotificationsDialog::saveQuitNotificationSettings()
 }
 
 /*!
-  Saves the notifications/itemDroppedOnItself key settings to omedit.ini file.\n
-  Sets the notifications/itemDroppedOnItself notification checkbox on the NotificationsPage.
-  */
+ * \brief NotificationsDialog::saveItemDroppedOnItselfNotificationSettings
+ * Saves the notifications/itemDroppedOnItself key settings to omedit.ini file.\n
+ * Sets the notifications/itemDroppedOnItself notification checkbox on the NotificationsPage.
+ */
 void NotificationsDialog::saveItemDroppedOnItselfNotificationSettings()
 {
   QSettings *pSettings = OpenModelica::getApplicationSettings();
@@ -228,9 +223,10 @@ void NotificationsDialog::saveItemDroppedOnItselfNotificationSettings()
 }
 
 /*!
-  Saves the notifications/replaceableIfPartial key settings to omedit.ini file.\n
-  Sets the notifications/replaceableIfPartial notification checkbox on the NotificationsPage.
-  */
+ * \brief NotificationsDialog::saveReplaceableIfPartialNotificationSettings
+ * Saves the notifications/replaceableIfPartial key settings to omedit.ini file.\n
+ * Sets the notifications/replaceableIfPartial notification checkbox on the NotificationsPage.
+ */
 void NotificationsDialog::saveReplaceableIfPartialNotificationSettings()
 {
   QSettings *pSettings = OpenModelica::getApplicationSettings();
@@ -239,9 +235,10 @@ void NotificationsDialog::saveReplaceableIfPartialNotificationSettings()
 }
 
 /*!
-  Saves the notifications/innerModelNameChanged key settings to omedit.ini file.\n
-  Sets the notifications/innerModelNameChanged notification checkbox on the NotificationsPage.
-  */
+ * \brief NotificationsDialog::saveInnerModelNameChangedNotificationSettings
+ * Saves the notifications/innerModelNameChanged key settings to omedit.ini file.\n
+ * Sets the notifications/innerModelNameChanged notification checkbox on the NotificationsPage.
+ */
 void NotificationsDialog::saveInnerModelNameChangedNotificationSettings()
 {
   QSettings *pSettings = OpenModelica::getApplicationSettings();
@@ -250,9 +247,10 @@ void NotificationsDialog::saveInnerModelNameChangedNotificationSettings()
 }
 
 /*!
-  Saves the notifications/saveModelForBitmapInsertion key settings to omedit.ini file.\n
-  Sets the notifications/saveModelForBitmapInsertion notification checkbox on the NotificationsPage.
-  */
+ * \brief NotificationsDialog::saveModelForBitmapInsertionNotificationSettings
+ * Saves the notifications/saveModelForBitmapInsertion key settings to omedit.ini file.\n
+ * Sets the notifications/saveModelForBitmapInsertion notification checkbox on the NotificationsPage.
+ */
 void NotificationsDialog::saveModelForBitmapInsertionNotificationSettings()
 {
   QSettings *pSettings = OpenModelica::getApplicationSettings();
@@ -261,9 +259,10 @@ void NotificationsDialog::saveModelForBitmapInsertionNotificationSettings()
 }
 
 /*!
-  Slot activated when mpOkButton clicked signal is raised.\n
-  Checks the notification type and calls the appropriate method.
-  */
+ * \brief NotificationsDialog::saveNotification
+ * Slot activated when mpOkButton clicked signal is raised.\n
+ * Checks the notification type and calls the appropriate method.
+ */
 void NotificationsDialog::saveNotification()
 {
   if (mpNotificationCheckBox->isChecked()) {

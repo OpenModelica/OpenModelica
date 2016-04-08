@@ -54,7 +54,7 @@ public:
   enum NotificationIcon {NoIcon, QuestionIcon, InformationIcon, WarningIcon, CriticalIcon};
   NotificationsDialog(NotificationType notificationType, NotificationIcon notificationIcon, MainWindow *pMainWindow);
   void setNotificationLabelString(QString label);
-  QCheckBox* getNotificationCheckBox();
+  QCheckBox* getNotificationCheckBox() {mpNotificationCheckBox;}
 private:
   MainWindow *mpMainWindow;
   Label *mpNotificationLabel;
