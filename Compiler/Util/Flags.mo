@@ -499,6 +499,8 @@ constant DebugFlag PARALLEL_CODEGEN = DEBUG_FLAG(162, "parallelCodegen", true,
   Util.gettext("Enables code generation in parallel (disable this if compiling a model causes you to run out of RAM)."));
 constant DebugFlag SERIALIZED_SIZE = DEBUG_FLAG(163, "reportSerializedSize", false,
   Util.gettext("Reports serialized sizes of various data structures used in the compiler."));
+constant DebugFlag BACKEND_KEEP_ENV_GRAPH = DEBUG_FLAG(164, "backendKeepEnv", false,
+  Util.gettext("When enabled, the environment is kept when entering the backend, which enables CevalFunction (function interpretation) to work. This module not essential for the backend to function in most cases, but can improve simulation performance by evaluating functions. The drawback to keeping the environment graph in memory is that it is huge (~80% of the total memory in use when returning the frontend DAE)."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -668,7 +670,8 @@ constant list<DebugFlag> allDebugFlags = {
   TOTAL_TEARING_DUMP,
   TOTAL_TEARING_DUMPVERBOSE,
   PARALLEL_CODEGEN,
-  SERIALIZED_SIZE
+  SERIALIZED_SIZE,
+  BACKEND_KEEP_ENV_GRAPH
 };
 
 public

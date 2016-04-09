@@ -55,6 +55,7 @@ import SimCode;
 // protected imports
 protected
 import BackendDAECreate;
+import Builtin;
 import ClockIndexes;
 import CevalScriptBackend;
 import CodegenC;
@@ -811,6 +812,11 @@ algorithm
       end if;
 
       generateFunctions = Flags.set(Flags.GEN, false);
+      // We should not need to lookup constants and classes in the backend,
+      // so let's free up the old graph and just make it the initial environment.
+      if not Flags.isSet(Flags.BACKEND_KEEP_ENV_GRAPH) then
+        (cache,graph) = Builtin.initialGraph(cache);
+      end if;
 
       description = DAEUtil.daeDescription(dae);
       dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
