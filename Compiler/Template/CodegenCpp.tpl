@@ -9744,12 +9744,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     case CLOCKED_PARTITION(__) then
       let &preExp = buffer "" /*BUFD*/
       let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let interval = match intvl case "0.0" then '1.0' else intvl
+      let warning = match intvl case "0.0" then
+        'ModelicaMessage("Using default Clock(1.0)!");'
       let subClocks = (subPartitions |> subPartition =>
         match subPartition
         case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
           <<
           <%preExp%>
-          _clockInterval[<%i%>] = <%intvl%> * <%fnom%>.0 / <%fres%>.0;
+          _clockInterval[<%i%>] = <%interval%> * <%fnom%>.0 / <%fres%>.0;
           _clockShift[<%i%>] = <%snom%>.0 / <%sres%>.0;
           _clockTime[<%i%>] = _simTime + _clockShift[<%i%>] * _clockInterval[<%i%>];
           <%i%> ++;
@@ -9757,6 +9760,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       ; separator="\n")
       <<
       <%subClocks%>
+      <%warning%>
       >>
     ; separator="\n")%>
   >>

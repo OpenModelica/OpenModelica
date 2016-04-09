@@ -17,16 +17,17 @@ extern "C" {
 
 void ModelicaMessage(const char* string)
 {
-  throw  ModelicaSimulationError(UTILITY,"ModelicaMessage not implemented yet");
+  fprintf(stdout, string);
+  fflush(stdout);
 }
 
-void ModelicaVFormatMessage(const char*string, va_list args)
+void ModelicaVFormatMessage(const char* string, va_list args)
 {
   vfprintf(stdout, string, args);
   fflush(stdout);
 }
 
-void ModelicaFormatMessage(const char* string,...)
+void ModelicaFormatMessage(const char* string, ...)
 {
   va_list args;
   va_start(args, string);
@@ -36,22 +37,22 @@ void ModelicaFormatMessage(const char* string,...)
 
 void ModelicaError(const char* string)
 {
-  throw  ModelicaSimulationError(UTILITY,string);
+  throw  ModelicaSimulationError(UTILITY, string);
 }
 
-void ModelicaVFormatError(const char*string, va_list args)
-{
- throw  ModelicaSimulationError(UTILITY,"ModelicaVFormatError not implemented yet");
-}
-
-void ModelicaFormatError(const char* text, ...)
+void ModelicaVFormatError(const char* string, va_list args)
 {
   char buffer[256];
-  va_list args;
-  va_start(args, text);
-  vsnprintf(buffer, 256, text, args);
-  va_end(args);
+  vsnprintf(buffer, 256, string, args);
   ModelicaError(buffer);
+}
+
+void ModelicaFormatError(const char* string, ...)
+{
+  va_list args;
+  va_start(args, string);
+  ModelicaVFormatError(string, args);
+  va_end(args);
 }
 
 static std::map<const char*, char*> _allocatedStrings;
