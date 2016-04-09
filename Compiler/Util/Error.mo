@@ -833,7 +833,7 @@ public constant Message SUBCLOCK_CONFLICT = MESSAGE(570, TRANSLATION(), ERROR(),
 public constant Message CLOCK_CONFLICT = MESSAGE(571, TRANSLATION(), ERROR(),
   Util.gettext("Partitions have different base clocks."));
 public constant Message EXEC_STAT = MESSAGE(572, TRANSLATION(), NOTIFICATION(),
-  Util.gettext("Performance of %s: time %s/%s, memory: %s / %s"));
+  Util.gettext("Performance of %s: time %s/%s, allocations: %s / %s, free: %s / %s"));
 public constant Message EXEC_STAT_GC = MESSAGE(573, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Performance of %s: time %s/%s, GC stats:%s"));
 public constant Message MAX_TEARING_SIZE = MESSAGE(574, SYMBOLIC(), NOTIFICATION(),
