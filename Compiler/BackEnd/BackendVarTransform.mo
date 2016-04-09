@@ -1138,13 +1138,13 @@ algorithm
         (resolution, c2) = replaceExp(resolution, repl, cond);
         c3 = c1 or c2;
       then
-        (DAE.CLKCONST(DAE.INTEGER_CLOCK(e, resolution)), c3);
+        (if c3 then DAE.CLKCONST(DAE.INTEGER_CLOCK(e, resolution)) else inExp, c3);
     // REAL_CLOCK
     case (DAE.CLKCONST(DAE.REAL_CLOCK(interval=e)), repl, cond)
       equation
         (e, c1) = replaceExp(e, repl, cond);
       then
-        (DAE.CLKCONST(DAE.REAL_CLOCK(e)), c1);
+        (if c1 then DAE.CLKCONST(DAE.REAL_CLOCK(e)) else inExp, c1);
     // BOOLEAN_CLOCK
     case (DAE.CLKCONST(DAE.BOOLEAN_CLOCK(condition=e, startInterval=startInterval)), repl, cond)
       equation
@@ -1152,7 +1152,7 @@ algorithm
         (startInterval, c2) = replaceExp(startInterval, repl, cond);
         c3 = c1 or c2;
       then
-        (DAE.CLKCONST(DAE.BOOLEAN_CLOCK(e, startInterval)), c3);
+        (if c3 then DAE.CLKCONST(DAE.BOOLEAN_CLOCK(e, startInterval)) else inExp, c3);
     // SOLVER_CLOCK
     case (DAE.CLKCONST(DAE.SOLVER_CLOCK(c=e, solverMethod=solverMethod)), repl, cond)
       equation
@@ -1160,7 +1160,7 @@ algorithm
         (solverMethod, c2) = replaceExp(solverMethod, repl, cond);
         c3 = c1 or c2;
       then
-        (DAE.CLKCONST(DAE.SOLVER_CLOCK(e, solverMethod)), c3);
+        (if c3 then DAE.CLKCONST(DAE.SOLVER_CLOCK(e, solverMethod)) else inExp, c3);
 
     case ((e as DAE.PARTEVALFUNCTION(path,expl,tp,t)),repl,cond)
         guard replaceExpCond(cond, e)
@@ -1266,19 +1266,18 @@ author: Waurich TUD 2014-06"
   output DAE.Exp expOut;
   output Boolean changedOut;
 algorithm
-  (expOut,changedOut) := matchcontinue(crefIn,replIn)
+  (expOut,changedOut) := match(crefIn,replIn)
     local
       DAE.Exp exp;
-    case(_,_)
+    case(_,_) guard hasReplacement(replIn,crefIn)
       equation
-        true = hasReplacement(replIn,crefIn);
         expOut = getReplacement(replIn,crefIn);
       then (expOut,true);
     else
     equation
       expOut = DAE.CREF(crefIn,ComponentReference.crefType(crefIn));
       then (expOut,false);
- end matchcontinue;
+ end match;
 end replaceCref;
 
 protected function replaceCrefSubs
@@ -1326,46 +1325,34 @@ protected function replaceCrefSubs2
   input VariableReplacements repl;
   input Option<FuncTypeExp_ExpToBoolean> cond;
   output list<DAE.Subscript> outSubs;
-  output Boolean replacementPerformed;
+  output Boolean replacementPerformed = false;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  (outSubs,replacementPerformed) := match (isubs,repl,cond)
-    local
-      DAE.Exp exp;
-      Boolean c1,c2;
-      list<DAE.Subscript> subs;
-
-    case ({},_,_) then ({},false);
-    case (DAE.WHOLEDIM()::subs, _, _)
-      equation
-        (subs,c1) = replaceCrefSubs2(subs,repl,cond);
-      then (DAE.WHOLEDIM()::subs, c1);
-
-    case (DAE.SLICE(exp = exp)::subs, _, _)
-      equation
-        (exp,c2) = replaceExp(exp, repl, cond);
-        (subs,c1) = replaceCrefSubs2(subs,repl,cond);
-      then
-        (DAE.SLICE(exp)::subs, c1 or c2);
-
-    case (DAE.INDEX(exp = exp)::subs, _, _)
-      equation
-        (exp,c2) = replaceExp(exp, repl, cond);
-        (subs,c1) = replaceCrefSubs2(subs,repl,cond);
-      then
-        (DAE.INDEX(exp)::subs, c1 or c2);
-
-    case (DAE.WHOLE_NONEXP(exp = exp)::subs, _, _)
-      equation
-        (exp,c2) = replaceExp(exp, repl, cond);
-        (subs,c1) = replaceCrefSubs2(subs,repl,cond);
-      then
-        (DAE.WHOLE_NONEXP(exp)::subs, c1 or c2);
-
-  end match;
+  outSubs := list(match sub
+      local
+        DAE.Exp exp;
+        Boolean c1;
+      case DAE.WHOLEDIM()
+        then sub;
+      case DAE.SLICE(exp = exp)
+        equation
+          (exp,c1) = replaceExp(exp, repl, cond);
+          replacementPerformed = replacementPerformed or c1;
+        then if c1 then DAE.SLICE(exp) else sub;
+      case DAE.INDEX(exp = exp)
+        equation
+          (exp,c1) = replaceExp(exp, repl, cond);
+          replacementPerformed = replacementPerformed or c1;
+        then if c1 then DAE.INDEX(exp) else sub;
+      case DAE.WHOLE_NONEXP(exp = exp)
+        equation
+          (exp,c1) = replaceExp(exp, repl, cond);
+          replacementPerformed = replacementPerformed or c1;
+        then if c1 then DAE.WHOLE_NONEXP(exp) else sub;
+    end match for sub in isubs);
 end replaceCrefSubs2;
 
 public function replaceExpList
@@ -1373,23 +1360,25 @@ public function replaceExpList
   input VariableReplacements repl;
   input Option<FuncTypeExp_ExpToBoolean> cond;
   output list<DAE.Exp> outExpl;
-  output Boolean replacementPerformed;
+  output Boolean replacementPerformed = false;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 protected
-  list<DAE.Exp> acc1 = {};
-  Boolean acc2 = false;
+  DAE.Exp exp_;
   Boolean c;
 algorithm
-  for exp in iexpl loop
-    (exp,c) := replaceExp(exp,repl,cond);
-    acc2 := acc2 or c;
-    acc1 := exp::acc1;
-  end for;
-  outExpl := listReverseInPlace(acc1);
-  replacementPerformed := acc2;
+  outExpl := list(match exp
+      case _ algorithm
+        (exp_,c) := replaceExp(exp,repl,cond);
+        if c then
+          replacementPerformed := true;
+        else
+          exp_ := exp;
+        end if;
+        then exp_;
+    end match for exp in iexpl);
 end replaceExpList;
 
 public function replaceExpList1
@@ -1422,17 +1411,15 @@ protected function replaceExpIters
   input VariableReplacements repl;
   input Option<FuncTypeExp_ExpToBoolean> cond;
   output list<DAE.ReductionIterator> outIter;
-  output Boolean replacementPerformed;
+  output Boolean replacementPerformed = false;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 protected
-  Boolean acc2 = false;
-  list<DAE.ReductionIterator> acc1 = {};
+  DAE.ReductionIterator it;
 algorithm
-  for iter in inIters loop
-    _ := match (iter)
+  outIter := list(match (iter)
       local
         String id;
         DAE.Exp exp,gexp;
@@ -1442,31 +1429,25 @@ algorithm
         equation
           (exp,b1) = replaceExp(exp, repl, cond);
           if b1 then
-            acc1 = DAE.REDUCTIONITER(id,exp,NONE(),ty)::acc1;
-            acc2 = true;
+            it = DAE.REDUCTIONITER(id,exp,NONE(),ty);
+            replacementPerformed = true;
           else
-            acc1 = iter::acc1;
+            it = iter;
           end if;
-        then ();
+        then it;
       case (DAE.REDUCTIONITER(id,exp,SOME(gexp),ty))
         equation
           (exp,b1) = replaceExp(exp, repl, cond);
           (gexp,b2) = replaceExp(gexp, repl, cond);
           if b1 or b2 then
-            acc1 = DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::acc1;
-            acc2 = true;
+            it = DAE.REDUCTIONITER(id,exp,SOME(gexp),ty);
+            replacementPerformed = true;
           else
-            acc1 = iter::acc1;
+            it = iter;
           end if;
-        then ();
-      else
-        equation
-          acc1 = iter::acc1;
-        then ();
-    end match;
-  end for;
-  outIter := listReverseInPlace(acc1);
-  replacementPerformed := acc2;
+        then it;
+      else iter;
+    end match for iter in inIters);
 end replaceExpIters;
 
 protected function replaceExpCond "function replaceExpCond(cond,e) => true &
@@ -1501,23 +1482,25 @@ protected function replaceExpMatrix "author: PA
   input VariableReplacements inVariableReplacements;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output list<list<DAE.Exp>> outTplExpExpBooleanLstLst;
-  output Boolean replacementPerformed;
+  output Boolean replacementPerformed = false;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 protected
-  list<list<DAE.Exp>> acc1 = {};
-  Boolean acc2 = false;
+  list<DAE.Exp> exp_;
   Boolean c;
 algorithm
-  for exp in inTplExpExpBooleanLstLst loop
-    (exp,c) := replaceExpList(exp, inVariableReplacements, inFuncTypeExpExpToBooleanOption);
-    acc2 := acc2 or c;
-    acc1 := exp::acc1;
-  end for;
-  outTplExpExpBooleanLstLst := listReverseInPlace(acc1);
-  replacementPerformed := acc2;
+  outTplExpExpBooleanLstLst := list(match exp
+      case _ algorithm
+        (exp_,c) := replaceExpList(exp, inVariableReplacements, inFuncTypeExpExpToBooleanOption);
+        if c then
+          replacementPerformed := true;
+        else
+          exp_ := exp;
+        end if;
+      then exp_;
+    end match for exp in inTplExpExpBooleanLstLst);
 end replaceExpMatrix;
 
 /*********************************************************/

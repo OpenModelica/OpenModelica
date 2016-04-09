@@ -689,7 +689,7 @@ algorithm
     case BackendDAE.EQSYSTEM(partitionKind = BackendDAE.CLOCKED_PARTITION(_)) equation
       (outHT, _) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectClockedVars1, (inHT, clockIndex));
     then (outHT, clockIndex + 1);
-    else (inHT, clockIndex);
+    else inTpl;
   end match;
 end collectClockedVars;
 
@@ -753,6 +753,13 @@ algorithm
   outSubPartitions := inPartition.subPartitions;
 end getSubPartition;
 
+protected type tempVarsIndex = enumeration(
+  algVars,
+  intAlgVars,
+  boolAlgVars,
+  stringAlgVars
+  );
+
 protected function addTempVars
   input list<SimCodeVar.SimVar> tempVars;
   input SimCode.ModelInfo modelInfo;
@@ -760,22 +767,29 @@ protected function addTempVars
 protected
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
+  array<list<SimCodeVar.SimVar>> varsA;
 algorithm
+  // do nothing if list empty
+  if listEmpty(tempVars) then
+    return;
+  end if;
+
   varInfo := omodelInfo.varInfo;
   vars := omodelInfo.vars;
 
-  vars.algVars := listReverse(vars.algVars);
-  vars.intAlgVars := listReverse(vars.intAlgVars);
-  vars.boolAlgVars := listReverse(vars.boolAlgVars);
-  vars.stringAlgVars := listReverse(vars.stringAlgVars);
+  varsA := arrayCreate(size(tempVarsIndex,1), {});
+  varsA[Integer(tempVarsIndex.algVars)] := List.append_reverse(vars.algVars,{});
+  varsA[Integer(tempVarsIndex.intAlgVars)] := List.append_reverse(vars.intAlgVars,{});
+  varsA[Integer(tempVarsIndex.boolAlgVars)] := List.append_reverse(vars.boolAlgVars,{});
+  varsA[Integer(tempVarsIndex.stringAlgVars)] := List.append_reverse(vars.stringAlgVars,{});
   for e in tempVars loop
-    (vars, varInfo) := addTempVars1(e, vars, varInfo);
+    (varsA, varInfo) := addTempVars1(e, varsA, varInfo);
   end for;
 
-  vars.algVars := listReverse(vars.algVars);
-  vars.intAlgVars := listReverse(vars.intAlgVars);
-  vars.boolAlgVars := listReverse(vars.boolAlgVars);
-  vars.stringAlgVars := listReverse(vars.stringAlgVars);
+  vars.algVars := Dangerous.listReverseInPlace(varsA[tempVarsIndex.algVars]);
+  vars.intAlgVars := Dangerous.listReverseInPlace(varsA[tempVarsIndex.intAlgVars]);
+  vars.boolAlgVars := Dangerous.listReverseInPlace(varsA[tempVarsIndex.boolAlgVars]);
+  vars.stringAlgVars := Dangerous.listReverseInPlace(varsA[tempVarsIndex.stringAlgVars]);
 
   omodelInfo.vars := vars;
   omodelInfo.varInfo := varInfo;
@@ -783,7 +797,7 @@ end addTempVars;
 
 protected function addTempVars1
   input SimCodeVar.SimVar inVar;
-  input output SimCodeVar.SimVars vars;
+  input output array<list<SimCodeVar.SimVar>> varsA;
   input output SimCode.VarInfo varInfo;
 protected
   SimCodeVar.SimVar var = inVar;
@@ -793,35 +807,35 @@ algorithm
       equation
         var.index = varInfo.numIntAlgVars;
         varInfo.numIntAlgVars = varInfo.numIntAlgVars+1;
-        vars.intAlgVars = var::vars.intAlgVars;
+        arrayUpdate(varsA, Integer(tempVarsIndex.intAlgVars), var::varsA[tempVarsIndex.intAlgVars]);
         then ();
 
     case DAE.T_ENUMERATION()
       equation
         var.index = varInfo.numIntAlgVars;
         varInfo.numIntAlgVars = varInfo.numIntAlgVars+1;
-        vars.intAlgVars = var::vars.intAlgVars;
+        arrayUpdate(varsA, Integer(tempVarsIndex.intAlgVars), var::varsA[tempVarsIndex.intAlgVars]);
         then ();
 
     case DAE.T_BOOL()
       equation
         var.index = varInfo.numBoolAlgVars;
         varInfo.numBoolAlgVars = varInfo.numBoolAlgVars+1;
-        vars.boolAlgVars = var::vars.boolAlgVars;
+        arrayUpdate(varsA, Integer(tempVarsIndex.boolAlgVars), var::varsA[tempVarsIndex.boolAlgVars]);
       then ();
 
     case DAE.T_STRING()
       equation
         var.index = varInfo.numStringAlgVars;
         varInfo.numStringAlgVars = varInfo.numStringAlgVars+1;
-        vars.stringAlgVars = var::vars.stringAlgVars;
+        arrayUpdate(varsA, Integer(tempVarsIndex.stringAlgVars), var::varsA[tempVarsIndex.stringAlgVars]);
       then ();
 
     else
       equation
         var.index = varInfo.numAlgVars;
         varInfo.numAlgVars = varInfo.numAlgVars+1;
-        vars.algVars = var::vars.algVars;
+        arrayUpdate(varsA, Integer(tempVarsIndex.algVars), var::varsA[tempVarsIndex.algVars]);
       then ();
   end match;
 end addTempVars1;
@@ -7922,7 +7936,7 @@ algorithm
   outSES:=
   matchcontinue (inSES)
     local
-      DAE.Exp e,left;
+      DAE.Exp e,left, e_;
       DAE.ComponentRef cr;
       Boolean partOfMixed,partOfMixed1;
       list<SimCodeVar.SimVar> vars,vars1;
@@ -7951,9 +7965,9 @@ algorithm
         SimCode.SES_RESIDUAL(index, e, source);
     case SimCode.SES_SIMPLE_ASSIGN(index= index, cref = cr, exp = e, source = source)
       equation
-        e = addDivExpErrorMsgtoExp(e, source);
+        e_ = addDivExpErrorMsgtoExp(e, source);
       then
-        SimCode.SES_SIMPLE_ASSIGN(index, cr, e, source);
+        if referenceEq(e,e_) then inSES else SimCode.SES_SIMPLE_ASSIGN(index, cr, e_, source);
     case SimCode.SES_ARRAY_CALL_ASSIGN(index = index, lhs = left, exp = e, source = source)
       equation
         e = addDivExpErrorMsgtoExp(e, source);
