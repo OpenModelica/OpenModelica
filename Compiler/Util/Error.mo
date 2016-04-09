@@ -840,6 +840,8 @@ public constant Message MAX_TEARING_SIZE = MESSAGE(574, SYMBOLIC(), NOTIFICATION
   Util.gettext("Tearing is skipped for strong component %s because system size of %s exceeds maximum system size for tearing of %s systems (%s).\nTo adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.\n"));
 public constant Message NO_TEARING_FOR_COMPONENT = MESSAGE(575, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Tearing is skipped for strong component %s because of activated compiler flag 'noTearingForComponent=%1'.\n"));
+public constant Message WRONG_VALUE_OF_ARG = MESSAGE(576, TRANSLATION(), ERROR(),
+  Util.gettext("Wrong value of argument to %s: %s = %s %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

@@ -4594,6 +4594,7 @@ algorithm
       Integer iIntervalCounter, iResolution;
       DAE.Const variability;
       String strSolverMethod;
+      Values.Value val;
 
     // Inferred clock "Clock()"
     case (cache,_,{},{},_,_,_)
@@ -4619,9 +4620,11 @@ algorithm
         ty2 = Types.arrayElementType(Types.getPropType(prop2));
         (intervalCounter,_) = Types.matchType(intervalCounter,ty1,DAE.T_INTEGER_DEFAULT,true);
         (resolution,_) = Types.matchType(resolution,ty2,DAE.T_INTEGER_DEFAULT,true);
-        // TODO! check if expression resolution is >= 1
-        // iResolution = Expression.expInt(resolution);
-        // true = iResolution >= 1;
+        // evaluate and check if resolution >= 1 (rfranke)
+        (cache, val, _) = Ceval.ceval(cache, env, resolution, false, NONE(), Absyn.MSG(info), 0);
+        Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 1,
+          Error.WRONG_VALUE_OF_ARG, {"Clock", "resolution", ValuesUtil.valString(val), ">= 1"}, info);
+        resolution = ValuesUtil.valueExp(val);
         call = DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter, resolution));
       then (cache, call, prop);
 
@@ -4875,6 +4878,7 @@ algorithm
       Prefix.Prefix pre;
       DAE.Properties prop1,prop2,prop;
       Absyn.Exp au,afactor;
+      Values.Value val;
 
     case (cache,env,{au},{},impl,pre,_)
       equation
@@ -4897,8 +4901,11 @@ algorithm
         (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, factor, prop2, _) = elabExpInExpression(cache,env,afactor,impl,NONE(),true,pre,info);
         (factor,_) = Types.matchType(factor,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        // TODO! FIXME! you cannot do this as it will fail for parameters!
-        // true = Expression.expInt(factor) >= 0;
+        // evaluate and check if factor >= 0 (rfranke)
+        (cache, val, _) = Ceval.ceval(cache, env, factor, false, NONE(), Absyn.MSG(info), 0);
+        Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 0,
+          Error.WRONG_VALUE_OF_ARG, {"subSample", "factor", ValuesUtil.valString(val), ">= 0"}, info);
+        afactor = Absyn.INTEGER(ValuesUtil.valueInteger(val));
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
@@ -4906,7 +4913,7 @@ algorithm
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("subSample"), args, nargs, impl, NONE(), pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("subSample"), {au, afactor}, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinSubSample;
@@ -4935,6 +4942,7 @@ algorithm
       Prefix.Prefix pre;
       DAE.Properties prop1,prop2,prop;
       Absyn.Exp au,afactor;
+      Values.Value val;
 
     case (cache,env,{au},{},impl,pre,_)
       equation
@@ -4957,8 +4965,11 @@ algorithm
         (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, factor, prop2, _) = elabExpInExpression(cache,env,afactor,impl,NONE(),true,pre,info);
         (factor,_) = Types.matchType(factor,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        // TODO! FIXME! you cannot do this as it will fail for parameters!
-        // true = Expression.expInt(factor) >= 0;
+        // evaluate and check if factor >= 0 (rfranke)
+        (cache, val, _) = Ceval.ceval(cache, env, factor, false, NONE(), Absyn.MSG(info), 0);
+        Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 0,
+          Error.WRONG_VALUE_OF_ARG, {"superSample", "factor", ValuesUtil.valString(val), ">= 0"}, info);
+        afactor = Absyn.INTEGER(ValuesUtil.valueInteger(val));
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
@@ -4966,7 +4977,7 @@ algorithm
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("superSample"), args, nargs, impl, NONE(), pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("superSample"), {au, afactor}, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinSuperSample;
@@ -4995,14 +5006,18 @@ algorithm
       Prefix.Prefix pre;
       DAE.Properties prop1,prop2,prop3,prop;
       Absyn.Exp au,ashiftCounter,aresolution;
+      Values.Value val, rval;
 
     case (cache,env,{au,ashiftCounter},{},impl,pre,_)
       equation
         (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, shiftCounter, prop2, _) = elabExpInExpression(cache,env,ashiftCounter,impl,NONE(),true,pre,info);
         (shiftCounter,_) = Types.matchType(shiftCounter,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        // TODO! FIXME! you cannot do this as it will fail for parameters!
-        // true = Expression.expInt(shiftCounter) >= 0;
+        // evaluate and check if shiftCounter >= 0 (rfranke)
+        (cache, val, _) = Ceval.ceval(cache, env, shiftCounter, false, NONE(), Absyn.MSG(info), 0);
+        Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 0,
+          Error.WRONG_VALUE_OF_ARG, {"shiftSample", "shiftCounter", ValuesUtil.valString(val), ">= 0"}, info);
+        ashiftCounter = Absyn.INTEGER(ValuesUtil.valueInteger(val));
         aresolution = Absyn.INTEGER(1);
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
@@ -5013,8 +5028,7 @@ algorithm
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
         // Pretend that shiftSample(u,shiftCounter) was shiftSample(u,shiftCounter,1) (resolution=1 is default value)
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("shiftSample"),
-                listAppend(args,{aresolution}), nargs, impl, NONE(), pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("shiftSample"), {au, ashiftCounter, aresolution}, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
 
     case (cache,env,{au,ashiftCounter,aresolution},{},impl,pre,_)
@@ -5022,12 +5036,18 @@ algorithm
         (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, shiftCounter, prop2, _) = elabExpInExpression(cache,env,ashiftCounter,impl,NONE(),true,pre,info);
         (shiftCounter,_) = Types.matchType(shiftCounter,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        // TODO! FIXME! you cannot do this as it will fail for parameters!
-        // true = Expression.expInt(shiftCounter) >= 0;
+        // evaluate and check if shiftCounter >= 0 (rfranke)
+        (cache, val, _) = Ceval.ceval(cache, env, shiftCounter, false, NONE(), Absyn.MSG(info), 0);
+        Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 0,
+          Error.WRONG_VALUE_OF_ARG, {"shiftSample", "shiftCounter", ValuesUtil.valString(val), ">= 0"}, info);
+        ashiftCounter = Absyn.INTEGER(ValuesUtil.valueInteger(val));
         (cache, resolution, prop3, _) = elabExpInExpression(cache,env,aresolution,impl,NONE(),true,pre,info);
         (resolution,_) = Types.matchType(resolution,Types.getPropType(prop3),DAE.T_INTEGER_DEFAULT,true);
-        // TODO! FIXME! you cannot do this as it will fail for parameters!
-        // true = Expression.expInt(resolution) >= 1;
+        // evaluate and check if resolution >= 1 (rfranke)
+        (cache, rval, _) = Ceval.ceval(cache, env, resolution, false, NONE(), Absyn.MSG(info), 0);
+        Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(rval) >= 1,
+          Error.WRONG_VALUE_OF_ARG, {"shiftSample", "resolution", ValuesUtil.valString(rval), ">= 1"}, info);
+        aresolution = Absyn.INTEGER(ValuesUtil.valueInteger(rval));
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
@@ -5036,9 +5056,8 @@ algorithm
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("shiftSample"), args, nargs, impl, NONE(), pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("shiftSample"), {au, ashiftCounter, aresolution}, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
-
   end match;
 end elabBuiltinShiftSample;
 
@@ -5066,14 +5085,18 @@ algorithm
       Prefix.Prefix pre;
       DAE.Properties prop1,prop2,prop3,prop;
       Absyn.Exp au,abackCounter,aresolution;
+      Values.Value val, rval;
 
     case (cache,env,{au,abackCounter},{},impl,pre,_)
       equation
         (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, backCounter, prop2, _) = elabExpInExpression(cache,env,abackCounter,impl,NONE(),true,pre,info);
         (backCounter,_) = Types.matchType(backCounter,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        // TODO! FIXME! you cannot do this as it will fail for parameters!
-        // true = Expression.expInt(backCounter) >= 0;
+        // evaluate and check if backCounter >= 0 (rfranke)
+        (cache, val, _) = Ceval.ceval(cache, env, backCounter, false, NONE(), Absyn.MSG(info), 0);
+        Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 0,
+          Error.WRONG_VALUE_OF_ARG, {"backSample", "backCounter", ValuesUtil.valString(val), ">= 0"}, info);
+        abackCounter = Absyn.INTEGER(ValuesUtil.valueInteger(val));
         aresolution = Absyn.INTEGER(1);
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
@@ -5084,8 +5107,7 @@ algorithm
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
         // Pretend that backSample(u,backCounter) was backSample(u,backCounter,1) (resolution=1 is default value)
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("backSample"),
-                listAppend(args, {aresolution}), nargs, impl, NONE(), pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("backSample"), {au, abackCounter, aresolution}, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
 
     case (cache,env,{au,abackCounter,aresolution},{},impl,pre,_)
@@ -5093,12 +5115,18 @@ algorithm
         (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, backCounter, prop2, _) = elabExpInExpression(cache,env,abackCounter,impl,NONE(),true,pre,info);
         (backCounter,_) = Types.matchType(backCounter,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        // TODO! FIXME! you cannot do this as it will fail for parameters!
-        // true = Expression.expInt(backCounter) >= 0;
+        // evaluate and check if backCounter >= 0 (rfranke)
+        (cache, val, _) = Ceval.ceval(cache, env, backCounter, false, NONE(), Absyn.MSG(info), 0);
+        Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 0,
+          Error.WRONG_VALUE_OF_ARG, {"backSample", "backCounter", ValuesUtil.valString(val), ">= 0"}, info);
+        abackCounter = Absyn.INTEGER(ValuesUtil.valueInteger(val));
         (cache, resolution, prop3, _) = elabExpInExpression(cache,env,aresolution,impl,NONE(),true,pre,info);
         (resolution,_) = Types.matchType(resolution,Types.getPropType(prop3),DAE.T_INTEGER_DEFAULT,true);
-        // TODO! FIXME! you cannot do this as it will fail for parameters!
-        // true = Expression.expInt(resolution) >= 1;
+        // evaluate and check if resolution >= 1 (rfranke)
+        (cache, rval, _) = Ceval.ceval(cache, env, resolution, false, NONE(), Absyn.MSG(info), 0);
+        Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(rval) >= 1,
+          Error.WRONG_VALUE_OF_ARG, {"backSample", "resolution", ValuesUtil.valString(rval), ">= 1"}, info);
+        aresolution = Absyn.INTEGER(ValuesUtil.valueInteger(rval));
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
@@ -5107,9 +5135,8 @@ algorithm
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("backSample"), args, nargs, impl, NONE(), pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("backSample"), {au, abackCounter, aresolution}, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
-
   end match;
 end elabBuiltinBackSample;
 
