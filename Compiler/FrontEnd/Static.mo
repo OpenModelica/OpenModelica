@@ -9847,8 +9847,8 @@ protected uniontype IsExternalObject
 end IsExternalObject;
 
 protected function evalExternalObjectInput
-  "External Object requires us to construct before initialization for good
-   results. So try to evaluate the inputs."
+  "External Object is constructed once before its first use.
+   Issue a warning if an input is not constant or parameter."
   input IsExternalObject isExternalObject;
   input DAE.Type ty;
   input DAE.Const const;
@@ -9859,7 +9859,7 @@ protected function evalExternalObjectInput
   output FCore.Cache outCache;
   output DAE.Exp outExp;
 algorithm
-  (outCache,outExp) := matchcontinue isExternalObject
+  (outCache,outExp) := match isExternalObject
     local
       String str;
       Values.Value val;
@@ -9868,29 +9868,19 @@ algorithm
       then (inCache,inExp);
 
     case _
-      algorithm
-        true := Types.isParameterOrConstant(const);
-        false := Expression.isConst(inExp);
-        (outCache, val, _) := Ceval.ceval(inCache, inEnv, inExp, false, NONE(), Absyn.MSG(info), 0);
-        outExp := ValuesUtil.valueExp(val);
-      then
-        (outCache,outExp);
-
-    case _
-      algorithm
-        true := Types.isParameterOrConstant(const) or Types.isExternalObject(ty) or Expression.isConst(inExp);
+      guard
+        Types.isParameterOrConstant(const) or Types.isExternalObject(ty) or Expression.isConst(inExp)
       then
         (inCache,inExp);
 
     else
       algorithm
-        false := Types.isParameterOrConstant(const);
         str := ExpressionDump.printExpStr(inExp);
         Error.addSourceMessage(Error.EVAL_EXTERNAL_OBJECT_CONSTRUCTOR, {str}, info);
       then
         (inCache,inExp);
 
-  end matchcontinue;
+  end match;
 end evalExternalObjectInput;
 
 protected function elabPositionalInputArgs
