@@ -26,8 +26,8 @@ model ExtObjStringParam
     end for;
   end dummy;
 
-  parameter String DataFile = "sampledata";
-  parameter String DataExt = "xml";
-  MyData table[100]= fill(MyData(DataFile+"."+DataExt,dummy()),100);
+  parameter String DataFile = "sampledata.xml";
+  parameter Boolean tableOnFile = true;
+  MyData table[100]= fill(MyData(if tableOnFile then DataFile else "NoName", dummy()), 100);
 
 end ExtObjStringParam;
