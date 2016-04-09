@@ -760,6 +760,8 @@ public function translateModel "
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
+protected
+  Boolean generateFunctions = false;
 algorithm
   (outCache, outInteractiveSymbolTable, outBackendDAE, outStringLst, outFileDir, resultValues) :=
   matchcontinue (inCache, inEnv, className, inInteractiveSymbolTable, inFileNamePrefix, addDummy, inSimSettingsOpt, args)
@@ -808,6 +810,8 @@ algorithm
         ExecStat.execStat("Serialize DAE (2)");
       end if;
 
+      generateFunctions = Flags.set(Flags.GEN, false);
+
       description = DAEUtil.daeDescription(dae);
       dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
 
@@ -843,12 +847,18 @@ algorithm
     then (cache, st, dlow, libs, file_dir, resultValues);
 
     case (_, _, _, _, _, _, _, _) equation
+      if generateFunctions then
+        Flags.set(Flags.GEN, true);
+      end if;
       true = Flags.isSet(Flags.FAILTRACE);
       resstr = Absyn.pathStringNoQual(className);
       resstr = stringAppendList({"SimCode: The model ", resstr, " could not be translated"});
       Error.addMessage(Error.INTERNAL_ERROR, {resstr});
     then fail();
   end matchcontinue;
+  if generateFunctions then
+    Flags.set(Flags.GEN, true);
+  end if;
 end translateModel;
 
 protected function serializeNotify<T>
