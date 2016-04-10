@@ -890,15 +890,15 @@ algorithm
       String name;
       SCode.Prefixes prefixes;
       SCode.Partial partialPrefix;
-      Absyn.TypeSpec typeSpec;
-      SCode.Mod modifications;
+      Absyn.TypeSpec typeSpec1, typeSpec2;
+      SCode.Mod modifications1, modifications2;
       SCode.Comment comment;
       Option<Absyn.Exp> condition;
       SourceInfo info;
-      SCode.ClassDef classDef;
+      SCode.ClassDef classDef1,classDef2;
       SCode.Restriction restriction;
       Option<SCode.Annotation> optAnnotation;
-      Absyn.Path extendsPath;
+      Absyn.Path extendsPath1, extendsPath2;
       SCode.Visibility vis;
       Absyn.ArrayDim ad;
       SCode.ConnectorType ct;
@@ -908,81 +908,89 @@ algorithm
       Absyn.IsField isf;
       FCore.Cache cache;
       FCore.Graph env;
-      SCode.Element elt;
+      SCode.Element elt, elt2;
+      SCode.Attributes attr;
 
-    case (env,SCode.COMPONENT(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
-                                    SCode.ATTR(ad, ct, prl, var, dir, isf), typeSpec, modifications, comment, condition, info))
-      equation
+    case (env,elt as SCode.COMPONENT(prefixes=SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))))
+      algorithm
         //fprintln(Flags.DEBUG,"fix comp " + SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
         // lookup as it might have been redeclared!!!
-        (_, _, SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info),
-         _, _, _) = Lookup.lookupIdentLocal(arrayGet(inCache, 1), env, name);
-        modifications = fixModifications(inCache,env,modifications,tree);
-        typeSpec = fixTypeSpec(inCache,env,typeSpec,tree);
-        ad = fixArrayDim(inCache, env, ad, tree);
-      then
-        (SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir, isf), typeSpec, modifications, comment, condition, info));
+        (_,_,elt2 as SCode.COMPONENT(name, prefixes, attr as SCode.ATTR(), typeSpec1, modifications1, comment, condition, info),_,_,_)
+         := Lookup.lookupIdentLocal(arrayGet(inCache, 1), env, elt.name);
+        modifications2 := fixModifications(inCache,env,modifications1,tree);
+        typeSpec2 := fixTypeSpec(inCache,env,typeSpec1,tree);
+        ad := fixArrayDim(inCache, env, attr.arrayDims, tree);
+        if not referenceEq(ad, attr.arrayDims) then
+          attr.arrayDims := ad;
+        end if;
+        if not (referenceEq(ad, attr.arrayDims) and referenceEq(typeSpec1, typeSpec2) and referenceEq(modifications1, modifications2)) then
+          elt2 := SCode.COMPONENT(name, prefixes, attr, typeSpec2, modifications2, comment, condition, info);
+        end if;
+      then elt2;
 
-    // we failed above
-    case (env,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir, isf), typeSpec, modifications, comment, condition, info))
-      equation
-        //fprintln(Flags.DEBUG,"fix comp " + SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
-        modifications = fixModifications(inCache,env,modifications,tree);
-        typeSpec = fixTypeSpec(inCache,env,typeSpec,tree);
-        ad = fixArrayDim(inCache, env, ad, tree);
-      then
-        (SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir, isf), typeSpec, modifications, comment, condition, info));
+    case (env,elt as SCode.COMPONENT(attributes=attr))
+      algorithm
+        modifications2 := fixModifications(inCache,env,elt.modifications,tree);
+        typeSpec2 := fixTypeSpec(inCache,env,elt.typeSpec,tree);
+        ad := fixArrayDim(inCache, env, attr.arrayDims, tree);
+        if not referenceEq(ad, attr.arrayDims) then
+          attr.arrayDims := ad;
+        end if;
+        if not (referenceEq(ad, attr.arrayDims) and referenceEq(elt.typeSpec, typeSpec2) and referenceEq(elt.modifications, modifications2)) then
+          elt := SCode.COMPONENT(elt.name, elt.prefixes, attr, typeSpec2, modifications2, elt.comment, elt.condition, elt.info);
+        end if;
+      then elt;
 
     case (env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
-                                SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info))
+                                SCode.ENCAPSULATED(), partialPrefix, restriction, _, comment, info))
       equation
         //fprintln(Flags.DEBUG,"fixClassdef " + name);
         // lookup as it might have been redeclared!!!
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
-                     cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
+                     cmt = comment, info = info,classDef=classDef1),_) = Lookup.lookupClassLocal(env, name);
         env = FGraph.openScope(env, SCode.ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
-        classDef = fixClassdef(inCache, env,classDef,tree);
+        classDef2 = fixClassdef(inCache, env,classDef1,tree);
       then
-        (SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
+        (if referenceEq(classDef1,classDef2) then inElt else SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef2, comment, info));
 
     // failed above
-    case (env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info))
+    case (env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef1, comment, info))
       equation
         //fprintln(Flags.DEBUG,"fixClassdef " + name);
         env = FGraph.openScope(env, SCode.ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
-        classDef = fixClassdef(inCache, env,classDef,tree);
+        classDef2 = fixClassdef(inCache, env,classDef1,tree);
       then
-        (SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
+        (if referenceEq(classDef1,classDef2) then inElt else SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef2, comment, info));
 
     case (env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
-                                SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info))
+                                SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, _, comment, info))
       equation
         //fprintln(Flags.DEBUG,"fixClassdef " + name + str);
         // lookup as it might have been redeclared!!!
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
-                     cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
+                     cmt = comment, info = info,classDef=classDef1),_) = Lookup.lookupClassLocal(env, name);
 
         env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
-        classDef = fixClassdef(inCache,env,classDef,tree);
+        classDef2 = fixClassdef(inCache,env,classDef1,tree);
       then
-        (SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
+        (if referenceEq(classDef1,classDef2) then inElt else SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef2, comment, info));
 
     // failed above
-    case (env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info))
+    case (env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef1, comment, info))
       equation
         //fprintln(Flags.DEBUG,"fixClassdef " + name + str);
         env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
-        classDef = fixClassdef(inCache,env,classDef,tree);
+        classDef2 = fixClassdef(inCache,env,classDef1,tree);
       then
-        (SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
+        (if referenceEq(classDef1,classDef2) then inElt else SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef2, comment, info));
 
-    case (env,SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info))
+    case (env,SCode.EXTENDS(extendsPath1,vis,modifications1,optAnnotation,info))
       equation
         //fprintln(Flags.DEBUG,"fix extends " + SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
-        extendsPath = fixPath(inCache,env,extendsPath,tree);
-        modifications = fixModifications(inCache,env,modifications,tree);
+        extendsPath2 = fixPath(inCache,env,extendsPath1,tree);
+        modifications2 = fixModifications(inCache,env,modifications1,tree);
       then
-        (SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info));
+        (if referenceEq(extendsPath1,extendsPath2) and referenceEq(modifications1,modifications2) then inElt else SCode.EXTENDS(extendsPath2,vis,modifications2,optAnnotation,info));
 
     case (_,SCode.IMPORT()) then inElt;
 
