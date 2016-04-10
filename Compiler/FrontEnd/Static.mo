@@ -9846,7 +9846,7 @@ protected uniontype IsExternalObject
   record NOT_EXTERNAL_OBJECT_MODEL_SCOPE end NOT_EXTERNAL_OBJECT_MODEL_SCOPE;
 end IsExternalObject;
 
-protected function evalExternalObjectInput
+protected function elabExternalObjectInput
   "External Object is constructed once before its first use and
    before the initialization of bound parameters.
    Keep free parameters and force evaluation of bound parameters.
@@ -9865,32 +9865,31 @@ algorithm
     local
       String str;
       Values.Value val;
-      DAE.ComponentRef cr;
-      DAE.Binding binding;
-      DAE.Exp bindingExp;
+      list<DAE.Exp> arr;
 
     case (NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), _)
       then (inCache,inExp);
 
     // keep free parameter inExp
-    case (_, DAE.CREF(componentRef = cr))
+    case (_, DAE.CREF())
       guard
-        Types.isParameterOrConstant(const)
+        Types.isParameterOrConstant(const) and not Expression.isConst(inExp)
       algorithm
-        (outCache, _, _, binding, _, _, _, _, _) := Lookup.lookupVar(inCache, inEnv, cr);
-        outExp := match binding
-          case DAE.VALBOUND() then
-            inExp;
-          case DAE.EQBOUND(exp = bindingExp)
-            guard
-              Expression.isConst(bindingExp)
-            then
-              inExp;
-          else
-            fail(); // matchcontinue
-        end match;
+        (true, outCache) := isCrefWithConstBinding(inExp, inCache, inEnv);
       then
-        (outCache, outExp);
+        (outCache, inExp);
+
+    // keep array of free parameters inExp
+    case (_, DAE.ARRAY(array = arr))
+      guard
+        Types.isParameterOrConstant(const) and not Expression.isConst(inExp)
+      algorithm
+        outCache := inCache;
+        for exp in arr loop
+          (true, outCache) := isCrefWithConstBinding(exp, outCache, inEnv);
+        end for;
+      then
+        (outCache, inExp);
 
     // evaluate parameter inExp if we are unable to do better
     case (_, _)
@@ -9918,7 +9917,38 @@ algorithm
         (inCache, inExp);
 
   end matchcontinue;
-end evalExternalObjectInput;
+end elabExternalObjectInput;
+
+protected function isCrefWithConstBinding
+ "Checks if exp is a cref with constant binding."
+  input DAE.Exp exp;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  output Boolean isFree;
+  output FCore.Cache outCache;
+algorithm
+  isFree := match exp
+    local
+      DAE.ComponentRef cr;
+      DAE.Binding binding;
+      DAE.Exp bindingExp;
+    case DAE.CREF(componentRef = cr)
+      algorithm
+        (outCache, _, _, binding, _, _, _, _, _) := Lookup.lookupVar(inCache, inEnv, cr);
+      then
+        match binding
+          case DAE.VALBOUND() then
+            true;
+          case DAE.EQBOUND(exp = bindingExp)
+            guard
+              Expression.isConst(bindingExp)
+            then
+              true;
+          else
+            false;
+        end match;
+  end match;
+end isCrefWithConstBinding;
 
 protected function elabPositionalInputArgs
 "This function elaborates the positional input arguments of a function.
@@ -10026,7 +10056,7 @@ algorithm
         t = Types.getPropType(props);
         vt = Types.traverseType(vt, -1, Types.makeExpDimensionsUnknown);
         c1 = Types.propAllConst(props);
-        (cache,e_1) = evalExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
+        (cache,e_1) = elabExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,pre,info) "no vectorized dim" ;
       then
@@ -10039,7 +10069,7 @@ algorithm
         t = Types.getPropType(props);
         vt = Types.traverseType(vt, -1, Types.makeExpDimensionsUnknown);
         c1 = Types.propAllConst(props);
-        (cache,e_1) = evalExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
+        (cache,e_1) = elabExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, FGraph.getGraphPathNoImplicitScope(env));
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, pre,info);
       then
@@ -10051,7 +10081,7 @@ algorithm
         (cache,e_1,props,_) = elabExpInExpression(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
         c1 = Types.propAllConst(props);
-        (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
+        (cache,e_1) = elabExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         /* fill slot with actual type for error message*/
         slots_1 = fillSlot(DAE.FUNCARG(id,t,c1,pr,NONE()), e_1, {}, slots, pre,info);
       then
@@ -10199,7 +10229,7 @@ algorithm
         vt = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, e, impl,st, true,pre,info);
-        (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
+        (cache,e_1) = elabExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
@@ -10210,7 +10240,7 @@ algorithm
         vt = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, e, impl,st, true,pre,info);
-        (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
+        (cache,e_1) = elabExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, FGraph.getGraphPathNoImplicitScope(env));
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
@@ -10221,7 +10251,7 @@ algorithm
         vt = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache,env, e, impl,st,true,pre,info);
-        (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
+        (cache,e_1) = elabExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_1, {}, slots,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
