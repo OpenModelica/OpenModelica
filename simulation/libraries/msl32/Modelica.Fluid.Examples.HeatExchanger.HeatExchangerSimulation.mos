@@ -145,41 +145,41 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.mediums[1].p(nominal = 100000.0)
 // => select value from massFlowRate1.medium.p(nominal = 100000.0) for variable: HEX.pipe_1.mediums[1].p
 // Warning: Alias set with several free start values
-//  * candidate: HEX.pipe_2.mediums[1].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[1].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.port_a.h_outflow(start = 100000.0)
 //  * candidate: HEX.port_a2.h_outflow(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[1].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.statesFM[2].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.flowModel.states[2].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[1].h(start = 100000.0)
-// => select value from HEX.pipe_2.mediums[1].h(start = HEX.pipe_2.h_start) for variable: HEX.pipe_2.mediums[1].h
+// => select value from HEX.pipe_2.mediums[1].h(start = 112665.0434185404) for variable: HEX.pipe_2.mediums[1].h
 // Warning: Alias set with several free start values
-//  * candidate: HEX.pipe_1.mediums[1].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[1].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.port_a.h_outflow(start = 100000.0)
 //  * candidate: HEX.port_a1.h_outflow(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[1].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.statesFM[1].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.flowModel.states[1].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[1].h(start = 100000.0)
-// => select value from HEX.pipe_1.mediums[1].h(start = HEX.pipe_1.h_start) for variable: HEX.pipe_1.mediums[1].h
+// => select value from HEX.pipe_1.mediums[1].h(start = 129386.6306349717) for variable: HEX.pipe_1.mediums[1].h
 // Warning: Alias set with several free start values
-//  * candidate: HEX.pipe_1.mediums[20].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[20].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.port_b.h_outflow(start = 100000.0)
 //  * candidate: HEX.port_b1.h_outflow(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[20].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.statesFM[20].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.flowModel.states[20].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[20].h(start = 100000.0)
-// => select value from HEX.pipe_1.mediums[20].h(start = HEX.pipe_1.h_start) for variable: HEX.pipe_1.mediums[20].h
+// => select value from HEX.pipe_1.mediums[20].h(start = 129386.6306349717) for variable: HEX.pipe_1.mediums[20].h
 // Warning: Alias set with several free start values
-//  * candidate: HEX.pipe_2.mediums[20].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[20].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.port_b.h_outflow(start = 100000.0)
 //  * candidate: HEX.port_b2.h_outflow(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[20].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.statesFM[21].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.flowModel.states[21].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[20].h(start = 100000.0)
-// => select value from HEX.pipe_2.mediums[20].h(start = HEX.pipe_2.h_start) for variable: HEX.pipe_2.mediums[20].h
+// => select value from HEX.pipe_2.mediums[20].h(start = 112665.0434185404) for variable: HEX.pipe_2.mediums[20].h
 // Warning: Alias set with several free start values
 //  * candidate: HEX.pipe_2.mediums[20].T(start = 300.0)
 //  * candidate: HEX.pipe_2.mediums[20].state.T(start = 500.0)
@@ -230,7 +230,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[20].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[19].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[19].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[19].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[19].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[20].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[20].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[20].h
 // Warning: Alias set with several free start values
@@ -268,7 +268,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[19].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[18].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[18].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[18].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[18].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[19].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[19].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[19].h
 // Warning: Alias set with several free start values
@@ -306,7 +306,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[18].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[17].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[17].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[17].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[17].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[18].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[18].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[18].h
 // Warning: Alias set with several free start values
@@ -344,7 +344,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[17].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[16].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[16].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[16].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[16].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[17].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[17].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[17].h
 // Warning: Alias set with several free start values
@@ -382,7 +382,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[16].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[15].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[15].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[15].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[15].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[16].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[16].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[16].h
 // Warning: Alias set with several free start values
@@ -420,7 +420,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[15].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[14].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[14].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[14].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[14].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[15].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[15].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[15].h
 // Warning: Alias set with several free start values
@@ -458,7 +458,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[14].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[13].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[13].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[13].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[13].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[14].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[14].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[14].h
 // Warning: Alias set with several free start values
@@ -496,7 +496,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[13].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[12].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[12].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[12].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[12].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[13].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[13].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[13].h
 // Warning: Alias set with several free start values
@@ -534,7 +534,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[12].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[11].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[11].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[11].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[11].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[12].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[12].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[12].h
 // Warning: Alias set with several free start values
@@ -572,7 +572,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[11].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[10].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[10].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[10].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[10].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[11].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[11].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[11].h
 // Warning: Alias set with several free start values
@@ -610,7 +610,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[10].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[9].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[9].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[9].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[9].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[10].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[10].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[10].h
 // Warning: Alias set with several free start values
@@ -648,7 +648,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[9].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[8].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[8].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[8].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[8].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[9].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[9].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[9].h
 // Warning: Alias set with several free start values
@@ -686,7 +686,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[8].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[7].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[7].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[7].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[7].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[8].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[8].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[8].h
 // Warning: Alias set with several free start values
@@ -724,7 +724,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[7].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[6].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[6].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[6].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[6].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[7].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[7].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[7].h
 // Warning: Alias set with several free start values
@@ -762,7 +762,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[6].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[5].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[5].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[5].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[5].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[6].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[6].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[6].h
 // Warning: Alias set with several free start values
@@ -800,7 +800,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[5].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[4].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[4].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[4].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[4].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[5].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[5].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[5].h
 // Warning: Alias set with several free start values
@@ -838,7 +838,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[4].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[3].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[3].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[3].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[3].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[4].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[4].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[4].h
 // Warning: Alias set with several free start values
@@ -876,7 +876,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_2.statesFM[3].h(start = 100000.0)
 //  * candidate: HEX.pipe_2.mediums[2].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_2.heatTransfer.states[2].h(start = 100000.0)
-//  * candidate: HEX.pipe_2.mediums[2].h(start = HEX.pipe_2.h_start)
+//  * candidate: HEX.pipe_2.mediums[2].h(start = 112665.0434185404)
 //  * candidate: HEX.pipe_2.flowModel.states[3].h(start = 100000.0)
 // => select value from HEX.pipe_2.statesFM[3].h(start = 100000.0) for variable: HEX.pipe_2.statesFM[3].h
 // Warning: Alias set with several free start values
@@ -976,7 +976,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[19].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[19].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[19].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[19].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[19].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[19].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[19].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[19].h
 // Warning: Alias set with several free start values
@@ -1014,7 +1014,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[18].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[18].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[18].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[18].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[18].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[18].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[18].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[18].h
 // Warning: Alias set with several free start values
@@ -1052,7 +1052,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[17].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[17].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[17].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[17].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[17].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[17].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[17].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[17].h
 // Warning: Alias set with several free start values
@@ -1090,7 +1090,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[16].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[16].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[16].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[16].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[16].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[16].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[16].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[16].h
 // Warning: Alias set with several free start values
@@ -1128,7 +1128,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[15].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[15].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[15].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[15].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[15].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[15].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[15].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[15].h
 // Warning: Alias set with several free start values
@@ -1166,7 +1166,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[14].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[14].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[14].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[14].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[14].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[14].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[14].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[14].h
 // Warning: Alias set with several free start values
@@ -1204,7 +1204,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[13].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[13].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[13].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[13].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[13].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[13].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[13].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[13].h
 // Warning: Alias set with several free start values
@@ -1242,7 +1242,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[12].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[12].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[12].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[12].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[12].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[12].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[12].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[12].h
 // Warning: Alias set with several free start values
@@ -1280,7 +1280,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[11].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[11].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[11].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[11].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[11].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[11].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[11].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[11].h
 // Warning: Alias set with several free start values
@@ -1318,7 +1318,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[10].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[10].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[10].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[10].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[10].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[10].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[10].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[10].h
 // Warning: Alias set with several free start values
@@ -1356,7 +1356,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[9].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[9].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[9].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[9].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[9].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[9].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[9].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[9].h
 // Warning: Alias set with several free start values
@@ -1394,7 +1394,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[8].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[8].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[8].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[8].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[8].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[8].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[8].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[8].h
 // Warning: Alias set with several free start values
@@ -1432,7 +1432,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[7].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[7].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[7].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[7].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[7].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[7].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[7].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[7].h
 // Warning: Alias set with several free start values
@@ -1470,7 +1470,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[6].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[6].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[6].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[6].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[6].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[6].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[6].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[6].h
 // Warning: Alias set with several free start values
@@ -1508,7 +1508,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[5].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[5].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[5].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[5].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[5].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[5].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[5].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[5].h
 // Warning: Alias set with several free start values
@@ -1546,7 +1546,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[4].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[4].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[4].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[4].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[4].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[4].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[4].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[4].h
 // Warning: Alias set with several free start values
@@ -1584,7 +1584,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[3].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[3].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[3].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[3].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[3].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[3].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[3].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[3].h
 // Warning: Alias set with several free start values
@@ -1622,7 +1622,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.statesFM[2].h(start = 100000.0)
 //  * candidate: HEX.pipe_1.mediums[2].state.h(start = 100000.0)
 //  * candidate: HEX.pipe_1.heatTransfer.states[2].h(start = 100000.0)
-//  * candidate: HEX.pipe_1.mediums[2].h(start = HEX.pipe_1.h_start)
+//  * candidate: HEX.pipe_1.mediums[2].h(start = 129386.6306349717)
 //  * candidate: HEX.pipe_1.flowModel.states[2].h(start = 100000.0)
 // => select value from HEX.pipe_1.statesFM[2].h(start = 100000.0) for variable: HEX.pipe_1.statesFM[2].h
 // Warning: Alias set with several free start values
@@ -1640,7 +1640,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: HEX.pipe_1.mediums[1].state.T(nominal = 500.0)
 //  * candidate: HEX.pipe_1.mediums[1].T(nominal = 500.0)
 // => select value from HEX.pipe_1.mediums[1].T(nominal = 500.0) for variable: HEX.pipe_1.mediums[1].T
-//
+// 
 // "true
 // "
 // ""
