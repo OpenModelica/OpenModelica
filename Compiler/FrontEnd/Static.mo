@@ -9847,7 +9847,9 @@ protected uniontype IsExternalObject
 end IsExternalObject;
 
 protected function evalExternalObjectInput
-  "External Object is constructed once before its first use.
+  "External Object is constructed once before its first use and
+   before the initialization of bound parameters.
+   Keep free parameters and force evaluation of bound parameters.
    Issue a warning if an input is not constant or parameter."
   input IsExternalObject isExternalObject;
   input DAE.Type ty;
@@ -9859,28 +9861,63 @@ protected function evalExternalObjectInput
   output FCore.Cache outCache;
   output DAE.Exp outExp;
 algorithm
-  (outCache,outExp) := match isExternalObject
+  (outCache, outExp) := matchcontinue (isExternalObject, inExp)
     local
       String str;
       Values.Value val;
+      DAE.ComponentRef cr;
+      DAE.Binding binding;
+      DAE.Exp bindingExp;
 
-    case NOT_EXTERNAL_OBJECT_MODEL_SCOPE()
+    case (NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), _)
       then (inCache,inExp);
 
-    case _
+    // keep free parameter inExp
+    case (_, DAE.CREF(componentRef = cr))
+      guard
+        Types.isParameterOrConstant(const)
+      algorithm
+        (outCache, _, _, binding, _, _, _, _, _) := Lookup.lookupVar(inCache, inEnv, cr);
+        outExp := match binding
+          case DAE.VALBOUND() then
+            inExp;
+          case DAE.EQBOUND(exp = bindingExp)
+            guard
+              Expression.isConst(bindingExp)
+            then
+              inExp;
+          else
+            fail(); // matchcontinue
+        end match;
+      then
+        (outCache, outExp);
+
+    // evaluate parameter inExp if we are unable to do better
+    case (_, _)
+      guard
+        Types.isParameterOrConstant(const) and not Expression.isConst(inExp)
+      algorithm
+        (outCache, val, _) := Ceval.ceval(inCache, inEnv, inExp, false, NONE(), Absyn.MSG(info), 0);
+        outExp := ValuesUtil.valueExp(val);
+      then
+        (outCache, outExp);
+
+    // keep constant inExp
+    case (_, _)
       guard
         Types.isParameterOrConstant(const) or Types.isExternalObject(ty) or Expression.isConst(inExp)
       then
-        (inCache,inExp);
+        (inCache, inExp);
 
+    // keep inExp and notify about possible problem
     else
       algorithm
         str := ExpressionDump.printExpStr(inExp);
         Error.addSourceMessage(Error.EVAL_EXTERNAL_OBJECT_CONSTRUCTOR, {str}, info);
       then
-        (inCache,inExp);
+        (inCache, inExp);
 
-  end match;
+  end matchcontinue;
 end evalExternalObjectInput;
 
 protected function elabPositionalInputArgs
