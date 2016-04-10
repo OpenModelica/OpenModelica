@@ -1628,6 +1628,13 @@ public function intersection1OnTrue<T>
 protected
   Option<T> oe;
 algorithm
+  if listEmpty(inList1) then
+    return;
+  end if;
+  if listEmpty(inList2) then
+    outList1Rest := inList1;
+    return;
+  end if;
   for e in inList1 loop
     if isMemberOnTrue(e, inList2, inCompFunc) then
       outIntersection := e :: outIntersection;
