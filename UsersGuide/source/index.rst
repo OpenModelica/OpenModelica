@@ -14,6 +14,7 @@ OpenModelica User's Guide
 
   introduction
   omedit
+  tlmcosimulation
   plotting
   debugger
   omnotebook
