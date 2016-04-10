@@ -9947,6 +9947,8 @@ algorithm
           else
             false;
         end match;
+    else
+      false;
   end match;
 end isCrefWithConstBinding;
 
