@@ -340,10 +340,19 @@ match baseClock
     >>
   else
     let &preExp = buffer ""
-    let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
+    let intvl = match baseClock
+      case REAL_CLOCK()
+      case INTEGER_CLOCK()
+      case BOOLEAN_CLOCK() then
+        daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
+      else "unspecified"
+      let interval = match intvl case "unspecified" then '1.0' else intvl
+      let warning = match intvl case "unspecified" then
+        'ModelicaMessage("Using default Clock(1.0)!");'
     <<
     <%preExp%>
-    data->simulationInfo->clocksData[i].interval = <%intvl%>;
+    data->simulationInfo->clocksData[i].interval = <%interval%>;
+    <%warning%>
     >>
 end updatePartition;
 
