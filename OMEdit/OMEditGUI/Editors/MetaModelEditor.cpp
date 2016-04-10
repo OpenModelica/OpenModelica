@@ -462,7 +462,6 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
           interfacePoint.setAttribute("Position", interfaceDataElement.attribute("Position"));
           interfacePoint.setAttribute("Angle321", interfaceDataElement.attribute("Angle321"));
           subModel.appendChild(interfacePoint);
-          setPlainText(mXmlDocument.toString());
           Component *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
           if (pComponent) {
             pComponent->insertInterfacePoint(interfaceDataElement.attribute("Name"));
@@ -471,7 +470,64 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
       }
       interfaceDataElement = interfaceDataElement.nextSiblingElement();
     }
+
+    //Now remove all elements in sub model that does not exist in fetched interfaces (i.e. has been externally removed)
+    subModel = subModelList.at(i).toElement();
+    QDomElement subModelInterfaceDataElement = subModel.firstChildElement("InterfacePoint");
+    while(!subModelInterfaceDataElement.isNull())
+    {
+      bool interfaceExists=false;
+      interfaceDataElement = interfaces.firstChildElement();
+      while(!interfaceDataElement.isNull()) {
+        if(subModelInterfaceDataElement.attribute("Name") == interfaceDataElement.attribute("Name") &&
+           subModel.attribute("Name") == interfaceDataElement.attribute("model")) {
+          interfaceExists=true;
+        }
+        interfaceDataElement = interfaceDataElement.nextSiblingElement();
+      }
+      if(!interfaceExists) {
+        QDomElement elementToRemove = subModelInterfaceDataElement;
+        subModelInterfaceDataElement = subModelInterfaceDataElement.nextSiblingElement("InterfacePoint");
+        subModel.removeChild(elementToRemove);
+      }
+      else {
+        subModelInterfaceDataElement = subModelInterfaceDataElement.nextSiblingElement("InterfacePoint");
+      }
+    }
   }
+
+  //Remove connections between no longer existing elements
+  QDomNodeList connectionsList = mXmlDocument.elementsByTagName("Connection");
+  for (int i = 0 ; i < connectionsList.size() ; i++) {
+    QDomElement connection = connectionsList.at(i).toElement();
+    QString from = connection.attribute("From");
+    QString to = connection.attribute("To");
+
+    bool fromExists=false;
+    bool toExists=false;
+    for(int i=0; i<subModelList.size(); ++i) {
+      QDomElement subModel = subModelList.at(i).toElement();
+      QDomElement subModelInterfaceDataElement = subModel.firstChildElement("InterfacePoint");
+      while(!subModelInterfaceDataElement.isNull()) {
+        if(subModel.attribute("Name") == from.section(".",0,0) &&
+           subModelInterfaceDataElement.attribute("Name") == from.section(".",1,1)) {
+          fromExists = true;
+        }
+        else if(subModel.attribute("Name") == to.section(".",0,0) &&
+           subModelInterfaceDataElement.attribute("Name") == to.section(".",1,1)) {
+          toExists = true;
+        }
+        subModelInterfaceDataElement = subModelInterfaceDataElement.nextSiblingElement("InterfacePoint");
+      }
+    }
+    if(!fromExists || !toExists)
+    {
+      connection.parentNode().removeChild(connection);
+      --i;
+    }
+  }
+
+  setPlainText(mXmlDocument.toString());
 }
 
 /*!
@@ -683,8 +739,8 @@ bool MetaModelEditor::getPositionAndRotationVectors(QString interfacePoint,
   QString x_c_r_x_str, x_c_phi_x_str;
   QString cg_x_phi_cg_str, cg_x_r_cg_str;
   QDomElement subModelElement = getSubModelElement(modelName);
-  cg_x_r_cg_str = subModelElement.attribute("Position");
-  cg_x_phi_cg_str = subModelElement.attribute("Angle321");
+  cg_x_r_cg_str = subModelElement.attribute("Position","0,0,0");
+  cg_x_phi_cg_str = subModelElement.attribute("Angle321","0,0,0");
   QDomElement interfaceElement = subModelElement.firstChildElement("InterfacePoint");
   while(!interfaceElement.isNull()) {
     if(interfaceElement.attribute("Name").compare(interfaceName) == 0) {
@@ -817,7 +873,7 @@ void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface
 inline bool MetaModelEditor::fuzzyCompare(double p1, double p2)
 {
   //! @todo What tolerance should be used? This is just a random number that seemed to work for some reason.
-  return (qAbs(p1 - p2) <= 0.00001 * qMin(qAbs(p1), qAbs(p2)));
+  return (qAbs(p1 - p2) <= qMax(1e-5 * qMin(qAbs(p1), qAbs(p2)),1e-10));
 }
 
 /*!
