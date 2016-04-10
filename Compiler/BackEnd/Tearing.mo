@@ -3536,35 +3536,19 @@ end countMultiples3;
 protected function maxListInt
   "function to find maximum Integers in inList and output a list with the indexes.
   author: Waurich TUD 2012-11"
-    input list<Integer> inList;
-    output list<Integer> outList;
-  algorithm
-    ((_,_,outList)):= List.fold(inList,maxListInthelp,(1,0,{}));
-end maxListInt;
-
-
-protected function maxListInthelp  "helper function to maxListInt.
-author: Waurich TUD 2012-10"
-  input Integer value;
-  input tuple<Integer,Integer,list<Integer>> inValue;
-  output tuple<Integer,Integer,list<Integer>> outValue;
+  input list<Integer> inList;
+  output list<Integer> outList={};
+protected
+  Integer maxi, index=1;
 algorithm
-  outValue :=
-    match(value,inValue)
-      local
-        Integer indx;
-        Integer maxValue;
-        list<Integer> ilst;
-      case(_,(indx,maxValue,ilst))
-          then
-            if value < maxValue then
-              ((indx+1,maxValue,ilst))
-            else if intEq(value,maxValue) then
-              ((indx+1,maxValue,indx::ilst))
-            else
-              ((indx+1,value,{indx}));
-    end match;
-  end maxListInthelp;
+  maxi := max(i for i in inList);
+  for i in inList loop
+    if i==maxi then
+      outList := index::outList;
+    end if;
+    index := index+1;
+  end for;
+end maxListInt;
 
 
 protected function selectFromList_rev" selects Ints from inList by indexes given in selList
