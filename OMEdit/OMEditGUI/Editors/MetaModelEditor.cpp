@@ -30,6 +30,7 @@
 
 #include "MetaModelEditor.h"
 #include "ComponentProperties.h"
+#include "Commands.h"
 
 XMLDocument::XMLDocument()
   : QDomDocument()
@@ -300,7 +301,16 @@ void MetaModelEditor::updateSubModelParameters(QString name, QString startComman
       setPlainText(mXmlDocument.toString());
       return;
      }
-   }
+  }
+}
+
+void MetaModelEditor::updateSubModelOrientation(QString name, QGenericMatrix<3,1,double> pos, QGenericMatrix<3,1,double> rot)
+{
+  QString pos_str = QString("%1,%2,%3").arg(pos(0,0)).arg(pos(0,1)).arg(pos(0,2));
+  getSubModelElement(name).setAttribute("Position", pos_str);
+  QString rot_str = QString("%1,%2,%3").arg(rot(0,0)).arg(rot(0,1)).arg(rot(0,2));
+  getSubModelElement(name).setAttribute("Angle321", rot_str);
+  setPlainText(mXmlDocument.toString());
 }
 
 /*!
@@ -826,20 +836,18 @@ void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface
   R_CG_X1 = R_X1_C1.transposed()*R_CG_C2;          //New rotation matrix between CG and X1
 
   //Extract angles from rotation matrix
-  CG_X1_PHI_CG = getRotationVector(R_CG_X1);
+  QGenericMatrix<3,1,double> CG_X1_PHI_CG_new = getRotationVector(R_CG_X1);
 //  CG_X1_PHI_CG(0,0) = atan2(R_CG_X1(2,1),R_CG_X1(2,2));
 //  CG_X1_PHI_CG(0,1) = atan2(-R_CG_X1(2,0),sqrt(R_CG_X1(2,1)*R_CG_X1(2,1) + R_CG_X1(2,2)*R_CG_X1(2,2)));
 //  CG_X1_PHI_CG(0,2) = atan2(R_CG_X1(1,0),R_CG_X1(0,0));
 
   //New position of X1 relative to CG
-  CG_X1_R_CG = CG_X2_R_CG + X2_C2_R_X2*R_CG_X2 - X1_C1_R_X1*R_CG_X1;
+  QGenericMatrix<3,1,double> CG_X1_R_CG_new = CG_X2_R_CG + X2_C2_R_X2*R_CG_X2 - X1_C1_R_X1*R_CG_X1;
 
   //Write back new rotation and position to XML
-  QString cg_x1_r_cg_str = QString("%1,%2,%3").arg(CG_X1_R_CG(0,0)).arg(CG_X1_R_CG(0,1)).arg(CG_X1_R_CG(0,2));
-  getSubModelElement(fromInterface.split(".").first()).setAttribute("Position", cg_x1_r_cg_str);
-  QString cg_x1_phi_cg_str = QString("%1,%2,%3").arg(CG_X1_PHI_CG(0,0)).arg(CG_X1_PHI_CG(0,1)).arg(CG_X1_PHI_CG(0,2));
-  getSubModelElement(fromInterface.split(".").first()).setAttribute("Angle321", cg_x1_phi_cg_str);
-  setPlainText(mXmlDocument.toString());
+  QString modelName = fromInterface.split(".").first();
+  updateSubModelOrientation(modelName, CG_X1_R_CG_new, CG_X1_PHI_CG_new);
+  this->mpModelWidget->getUndoStack()->push(new AlignInterfacesCommand(this, modelName, CG_X1_R_CG, CG_X1_PHI_CG, CG_X1_R_CG_new, CG_X1_PHI_CG_new));
 
   // get the relevant connection
   LineAnnotation* pFoundConnectionLineAnnotation = 0;
