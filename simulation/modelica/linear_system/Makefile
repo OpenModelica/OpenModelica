@@ -5,6 +5,7 @@ MissV.mos \
 linSymSol.mos \
 linSymSolConstA.mos \
 NPendulum.mos \
+NPendulum40.mos \
 problem1.mos \
 problem2.mos \
 problem3.mos \

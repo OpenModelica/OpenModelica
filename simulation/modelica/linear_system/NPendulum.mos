@@ -1,118 +1,82 @@
-// name:      NPendulum
+// name:      NPendulum10
 // keywords:  arrays
 // status:    correct
 //
 
-loadString("
-model NPendulum
-  constant Integer N = 10;
-  parameter Modelica.SIunits.RotationalDampingConstant d = 1 annotation(Evaluate=true);
-  parameter Modelica.SIunits.Length l = 1
-   annotation(Evaluate=true);
+loadFile("NPendulum.mo");
+getErrorString();
 
-  Modelica.SIunits.Angle phi[N] = revolute.phi;
-  Modelica.SIunits.Angle w[N] = revolute.w;
-
-protected
-  Modelica.Mechanics.MultiBody.Joints.Revolute revolute[N](
-    each useAxisFlange=true,
-    each phi(start=0, fixed=true),
-    each w(start=0, fixed=true),
-    each animation=false)
-    annotation (Placement(transformation(extent={{-60,0},{-40,20}})));
-  inner Modelica.Mechanics.MultiBody.World world
-    annotation (Placement(transformation(extent={{-100,0},{-80,20}})));
-  Modelica.Mechanics.MultiBody.Parts.BodyCylinder bodyCylinder[N](each r={l/N,0,0},
-      each diameter=l/20)
-    annotation (Placement(transformation(extent={{-20,0},{0,20}})));
-  Modelica.Mechanics.Rotational.Components.Damper damper[N](each d=d/N)
-    annotation (Placement(transformation(extent={{-60,40},{-40,60}})));
-equation
-  connect(damper.flange_a, revolute.support) annotation (Line(
-      points={{-60,50},{-60,20},{-56,20}},
-      color={0,0,0},
-      smooth=Smooth.None));
-  connect(damper.flange_b, revolute.axis) annotation (Line(
-      points={{-40,50},{-40,20},{-50,20}},
-      color={0,0,0},
-      smooth=Smooth.None));
-  connect(world.frame_b, revolute[1].frame_a) annotation (Line(
-      points={{-80,10},{-60,10}},
-      color={95,95,95},
-      thickness=0.5,
-      smooth=Smooth.None));
-  connect(revolute[1:N].frame_b, bodyCylinder[1:N].frame_a) annotation (Line(
-      points={{-40,10},{-20,10}},
-      color={95,95,95},
-      thickness=0.5,
-      smooth=Smooth.None));
-  connect(bodyCylinder[1:N-1].frame_b, revolute[2:N].frame_a) annotation (Line(
-      points={{0,10},{10,10},{10,-12},{-70,-12},{-70,10},{-60,10}},
-      color={95,95,95},
-      thickness=0.5,
-      smooth=Smooth.None));
-  annotation (uses(Modelica(version=\"3.2.1\")), Diagram(coordinateSystem(
-          preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics),
-    experiment(StopTime=1));
-end NPendulum;
-"); getErrorString();
-
-buildModel(NPendulum); getErrorString();
-system("./NPendulum -ls totalpivot");
-res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
-  "ReferenceFiles/NPendulum_10.mat",
+buildModel(NPendulum.pendulum); getErrorString();
+system("./NPendulum.pendulum -ls totalpivot");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
   "NPendulum_diff.csv",0.01,0.0001,
   {"phi[10]"});
 
-system("./NPendulum -ls lapack");
-res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
-  "ReferenceFiles/NPendulum_10.mat",
+system("./NPendulum.pendulum -ls lapack");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
   "NPendulum_diff.csv",0.01,0.0001,
   {"phi[10]"});
 
-system("./NPendulum -ls umfpack");
-res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
-  "ReferenceFiles/NPendulum_10.mat",
+system("./NPendulum.pendulum -ls umfpack");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
   "NPendulum_diff.csv",0.01,0.0001,
   {"phi[10]"});
+
 /*
 Lis solver doesn't work here
-system("./NPendulum -ls lis");
-res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
-  "ReferenceFiles/NPendulum_10.mat",
+system("./NPendulum.pendulum -ls lis");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
   "NPendulum_diff.csv",0.01,0.0001,
   {"phi[10]"});
 */
-setCommandLineOptions("--disableLinearTearing +d=sortEqnsAndVars");
+system("./NPendulum.pendulum -ls klu");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
+  "NPendulum_diff.csv",0.01,0.0001,
+  {"phi[10]"});
+
+
+setCommandLineOptions("--disableLinearTearing");
 getErrorString();
-buildModel(NPendulum); getErrorString();
-system("./NPendulum -ls totalpivot");
-res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
-  "ReferenceFiles/NPendulum_10.mat",
+buildModel(NPendulum.pendulum); getErrorString();
+
+system("./NPendulum.pendulum -ls totalpivot");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
   "NPendulum_diff.csv",0.01,0.01,
   {"phi[10]"});
 
-system("./NPendulum -ls lapack");
-res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
-  "ReferenceFiles/NPendulum_10.mat",
+system("./NPendulum.pendulum -ls lapack");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
   "NPendulum_diff.csv",0.01,0.01,
   {"phi[10]"});
-system("./NPendulum -ls umfpack");
-res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
-  "ReferenceFiles/NPendulum_10.mat",
+system("./NPendulum.pendulum -ls umfpack");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
   "NPendulum_diff.csv",0.01,0.01,
   {"phi[10]"});
 
-system("./NPendulum -ls lis");
-res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
-  "ReferenceFiles/NPendulum_10.mat",
+system("./NPendulum.pendulum -ls lis");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
+  "NPendulum_diff.csv",0.01,0.01,
+  {"phi[10]"});
+
+system("./NPendulum.pendulum -ls klu");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
   "NPendulum_diff.csv",0.01,0.01,
   {"phi[10]"});
 
 // Result:
 // true
 // ""
-// {"NPendulum","NPendulum_init.xml"}
+// {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
 // "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
@@ -123,11 +87,14 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
 // {"Files Equal!"}
 // 0
 // {"Files Equal!"}
+// 0
+// {"Files Equal!"}
 // true
 // ""
-// {"NPendulum","NPendulum_init.xml"}
-// "Warning: Deprecated debug flag --d=sortEqnsAndVars detected. Use --preOptModules+=sortEqnsVars instead.
-// "
+// {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
+// ""
+// 0
+// {"Files Equal!"}
 // 0
 // {"Files Equal!"}
 // 0
