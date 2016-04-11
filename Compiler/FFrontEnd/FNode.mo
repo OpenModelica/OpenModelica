@@ -2008,5 +2008,21 @@ algorithm
   outName := extendsPrefix + Absyn.pathString(inPath);
 end mkExtendsName;
 
+public function scopeHashWork
+  input Scope scope;
+  input output Integer hash;
+algorithm
+  for r in scope loop
+    hash := 31*hash + stringHashDjb2(FNode.refName(r));
+  end for;
+end scopeHashWork;
+
+public function scopePathEq
+  input Scope scope1,scope2;
+  output Boolean eq;
+algorithm
+  eq := min(FNode.refName(r1)==FNode.refName(r2) threaded for r1 in scope1, r2 in scope2);
+end scopePathEq;
+
 annotation(__OpenModelica_Interface="frontend");
 end FNode;

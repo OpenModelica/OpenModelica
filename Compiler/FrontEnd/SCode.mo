@@ -1205,6 +1205,7 @@ algorithm
     // BTH
     case (R_PREDEFINED_CLOCK(),R_PREDEFINED_CLOCK()) then true;
     case (R_PREDEFINED_ENUMERATION(),R_PREDEFINED_ENUMERATION()) then true;
+    case (R_UNIONTYPE(),R_UNIONTYPE()) then min(t1==t2 threaded for t1 in restr1.typeVars, t2 in restr2.typeVars);
     else false;
    end match;
 end restrictionEqual;

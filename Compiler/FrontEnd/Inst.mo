@@ -867,7 +867,7 @@ public function instClassIn2
         output Option<SCode.Attributes> optDerAttr;
         output DAE.EqualityConstraint equalityConstraint;
 protected
-  Absyn.Path cache_path;
+  Key cache_key;
   InstHashTable inst_hash;
   CachedInstItemInputs inputs;
   CachedInstItemOutputs outputs;
@@ -896,14 +896,14 @@ algorithm
     return;
   end if;
 
-  cache_path := generateCachePath(env, cls, prefix, callingScope);
+  cache_key := generateCacheKey(env, cls, prefix, callingScope);
 
   // See if we have it in the cache.
   if Flags.isSet(Flags.CACHE) then
     inst_hash := getGlobalRoot(Global.instHashIndex);
 
     try
-      {SOME(FUNC_instClassIn(inputs, outputs)), _} := BaseHashTable.get(cache_path, inst_hash);
+      {SOME(FUNC_instClassIn(inputs, outputs)), _} := BaseHashTable.get(cache_key, inst_hash);
       (m, pre, csets, st, e as SCode.CLASS(), dims, impl, scr, cs) := inputs;
 
       // Are the important inputs the same?
@@ -915,7 +915,7 @@ algorithm
       (env, dae, sets, state, vars, ty, optDerAttr, equalityConstraint, cached_graph) := outputs;
       graph := ConnectionGraph.merge(graph, cached_graph);
 
-      showCacheInfo("Full Inst Hit: ", cache_path);
+      showCacheInfo("Full Inst Hit: ", cache_key);
       return;
     else
       // Not found in cache, continue.
@@ -932,8 +932,8 @@ algorithm
 
     outputs := (env, dae, sets, state, vars, ty, optDerAttr, equalityConstraint, graph);
 
-    showCacheInfo("Full Inst Add: ", cache_path);
-    addToInstCache(cache_path, SOME(FUNC_instClassIn(inputs, outputs)), NONE());
+    showCacheInfo("Full Inst Add: ", cache_key);
+    addToInstCache(cache_key, SOME(FUNC_instClassIn(inputs, outputs)), NONE());
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- Inst.instClassIn2 failed on class: " + SCode.elementName(cls) +
@@ -1526,7 +1526,7 @@ public function partialInstClassIn
   input        Integer numIter;
         output list<DAE.Var> vars;
 protected
-  Absyn.Path cache_path;
+  Key cache_key;
   InstHashTable inst_hash;
   CachedPartialInstItemInputs inputs;
   CachedPartialInstItemOutputs outputs;
@@ -1538,14 +1538,14 @@ protected
   InstDims dims;
   Boolean partial_inst;
 algorithm
-  cache_path := generateCachePath(env, cls, prefix, InstTypes.INNER_CALL());
+  cache_key := generateCacheKey(env, cls, prefix, InstTypes.INNER_CALL());
 
   // See if we have it in the cache.
   if Flags.isSet(Flags.CACHE) then
     inst_hash := getGlobalRoot(Global.instHashIndex);
 
     try
-      {_, SOME(FUNC_partialInstClassIn(inputs, outputs))} := BaseHashTable.get(cache_path, inst_hash);
+      {_, SOME(FUNC_partialInstClassIn(inputs, outputs))} := BaseHashTable.get(cache_key, inst_hash);
       (m, pre, st, e as SCode.CLASS(), dims) := inputs;
 
       // Are the important inputs the same?
@@ -1555,7 +1555,7 @@ algorithm
       equality(bbx := bby);
       (env, state, vars) := outputs;
 
-      showCacheInfo("Partial Inst Hit: ", cache_path);
+      showCacheInfo("Partial Inst Hit: ", cache_key);
       return;
     else
       // Not in cache, continue.
@@ -1582,8 +1582,8 @@ algorithm
 
     outputs := (env, state, vars);
 
-    showCacheInfo("Partial Inst Add: ", cache_path);
-    addToInstCache(cache_path, NONE(), SOME(FUNC_partialInstClassIn(inputs, outputs)));
+    showCacheInfo("Partial Inst Add: ", cache_key);
+    addToInstCache(cache_key, NONE(), SOME(FUNC_partialInstClassIn(inputs, outputs)));
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- Inst.partialInstClassIn failed on class: " +
@@ -5138,7 +5138,7 @@ end makeFullyQualified2;
 // *********************************************************************
 
 protected function addToInstCache
-  input Absyn.Path fullEnvPathPlusClass;
+  input Key fullEnvPathPlusClass;
   input Option<CachedInstItem> fullInstOpt;
   input Option<CachedInstItem> partialInstOpt;
 algorithm
@@ -5244,7 +5244,7 @@ end CachedInstItem;
 protected type CachedInstItems = list<Option<CachedInstItem>>;
 
 /* Begin inline HashTable */
-protected type Key = Absyn.Path;
+protected type Key = tuple<InstTypes.CallingScope,SCode.Restriction,Prefix.ComponentPrefix,FCore.Scope>;
 protected type Value = CachedInstItems;
 
 protected type HashTableKeyFunctionsType = tuple<FuncHashKey,FuncKeyEqual,FuncKeyStr,FuncValueStr>;
@@ -5291,8 +5291,12 @@ algorithm
 end initInstHashTable;
 
 public function releaseInstHashTable
+protected
+  InstHashTable ht;
 algorithm
-  setGlobalRoot(Global.instHashIndex, emptyInstHashTableSized(1));
+  ht := getGlobalRoot(Global.instHashIndex);
+  BaseHashTable.clear(ht);
+  setGlobalRoot(Global.instHashIndex, ht);
 end releaseInstHashTable;
 
 protected function emptyInstHashTable
@@ -5307,7 +5311,7 @@ protected function emptyInstHashTableSized
   input Integer size;
   output InstHashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(Absyn.pathHashMod,Absyn.pathEqual,Absyn.pathStringDefault,opaqVal));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(keyHashMod,keyEqual,keyStr,opaqVal));
 end emptyInstHashTableSized;
 
 /* end HashTable */
@@ -5319,7 +5323,7 @@ public function getCachedInstance
   input FCore.Ref ref;
 protected
   InstHashTable inst_hash;
-  Absyn.Path cache_path;
+  Key cache_key;
   SCode.Element cls;
   Prefix.Prefix prefix, prefix2;
   FCore.Graph env2;
@@ -5335,9 +5339,9 @@ algorithm
   env2 := FGraph.openScope(env, enc, name, FGraph.restrictionToScopeType(res));
 
   try
-    cache_path := generateCachePath(env2, cls, prefix, InstTypes.INNER_CALL());
+    cache_key := generateCacheKey(env2, cls, prefix, InstTypes.INNER_CALL());
     {SOME(FUNC_instClassIn(inputs, (env, _, _, _, _, _, _, _, _))), _} :=
-      BaseHashTable.get(cache_path, inst_hash);
+      BaseHashTable.get(cache_key, inst_hash);
     (_, prefix2, _, _, _, _, _, _, _) := inputs;
     true := PrefixUtil.isPrefix(prefix) and PrefixUtil.isPrefix(prefix2);
   else
@@ -5345,38 +5349,94 @@ algorithm
   end try;
 end getCachedInstance;
 
-protected function generateCachePath
+protected function generateCacheKey
   input FCore.Graph env;
   input SCode.Element cls;
   input Prefix.Prefix prefix;
   input InstTypes.CallingScope callScope;
-  output Absyn.Path cachePath;
-protected
-  String name;
+  output Key key;
 algorithm
-  name := InstTypes.callingScopeStr(callScope) + "$" +
-          SCodeDump.restrString(SCode.getClassRestriction(cls)) + "$" +
-          generatePrefixStr(prefix) + "$";
-  cachePath := Absyn.joinPaths(Absyn.IDENT(name), FGraph.getGraphName(env));
-end generateCachePath;
+  key := (callScope, SCode.getClassRestriction(cls), PrefixUtil.componentPrefix(prefix), FGraph.currentScope(env));
+end generateCacheKey;
 
-public function generatePrefixStr
-  input Prefix.Prefix inPrefix;
+protected function generatePrefixStr
+  input Prefix.ComponentPrefix inPrefix;
   output String str;
 algorithm
   try
-    str := Absyn.pathString(PrefixUtil.prefixToPath(inPrefix), "$", usefq=false, reverse=true);
+    str := Absyn.pathString(PrefixUtil.componentPrefixToPath(inPrefix), "$", usefq=false, reverse=true);
   else
     str := "";
   end try;
 end generatePrefixStr;
 
+protected function keyHashMod "Hashes a key."
+  input Key key;
+  input Integer mod;
+  output Integer hash;
+protected
+  InstTypes.CallingScope callingScope;
+  SCode.Restriction re;
+  Prefix.ComponentPrefix prefix;
+  FCore.Scope scope;
+algorithm
+  (callingScope,re,prefix,scope) := key;
+  hash := valueConstructor(callingScope);
+  hash := 31*hash + valueHashMod(re, mod);
+  hash := PrefixUtil.prefixHashWork(prefix, hash);
+  hash := FNode.scopeHashWork(scope, hash);
+  hash := intAbs(intMod(hash,mod));
+end keyHashMod;
+
+protected function keyEqual "Compare two keys."
+  input Key key1,key2;
+  output Boolean eq=false;
+protected
+  InstTypes.CallingScope callingScope1,callingScope2;
+  SCode.Restriction re1,re2;
+  Prefix.ComponentPrefix prefix1,prefix2;
+  FCore.Scope scope1,scope2;
+algorithm
+  (callingScope1,re1,prefix1,scope1) := key1;
+  (callingScope2,re2,prefix2,scope2) := key2;
+
+  if not valueEq(callingScope1,callingScope2) then
+  elseif not SCode.restrictionEqual(re1,re2) then
+  elseif not PrefixUtil.componentPrefixPathEqual(prefix1,prefix2) then
+  elseif not FNode.scopePathEq(scope1, scope2) then
+  else
+    eq := true;
+  end if;
+end keyEqual;
+
+protected function keyStr
+  input Key key;
+  output String str;
+protected
+  InstTypes.CallingScope callingScope;
+  SCode.Restriction re;
+  Prefix.ComponentPrefix prefix;
+  FCore.Scope scope;
+algorithm
+  (callingScope,re,prefix,scope) := key;
+  str := stringAppendList(
+    {
+      "Calling scope: ", InstTypes.callingScopeStr(callingScope), ", Restriction: ",
+      SCodeDump.restrString(re),
+      ", Scope: ", FNode.scopeStr(scope),
+      ", Prefix: ", generatePrefixStr(prefix)
+    }
+  );
+end keyStr;
+
 protected function showCacheInfo
   input String inMsg;
-  input Absyn.Path inPath;
+  input Key key;
 algorithm
   if Flags.isSet(Flags.SHOW_INST_CACHE_INFO) then
-    print(inMsg + Absyn.pathString(inPath) + "\n");
+    print(inMsg);
+    print(keyStr(key));
+    print("\n");
   end if;
 end showCacheInfo;
 
