@@ -11,6 +11,7 @@ problem1-lobatto2.mos \
 problem1-lobatto4.mos \
 problem1-lobatto6.mos \
 problem1-symEuler.mos \
+problem1-ida.mos \
 problem2-dasslsteps.mos \
 problem2-radau1.mos \
 problem2-radau3.mos \
@@ -19,6 +20,7 @@ problem2-lobatto2.mos \
 problem2-lobatto4.mos \
 problem2-lobatto6.mos \
 problem2-symEuler.mos \
+problem2-ida.mos \
 problem3-symEuler.mos \
 
 # test that currently fail. Move up when fixed. 
