@@ -870,6 +870,7 @@ public function instClassIn2
 protected
   Key cache_key;
   InstHashTable inst_hash;
+  CachedInstItems items;
   CachedInstItemInputs inputs;
   CachedInstItemOutputs outputs;
   tuple<InstDims, Boolean, DAE.Mod, Connect.Sets, ClassInf.State, SCode.Element, Option<DAE.ComponentRef>> bbx, bby;
@@ -897,14 +898,13 @@ algorithm
     return;
   end if;
 
-  cache_key := generateCacheKey(env, cls, prefix, callingScope);
-
   // See if we have it in the cache.
   if Flags.isSet(Flags.CACHE) then
     inst_hash := getGlobalRoot(Global.instHashIndex);
-
+    (cache_key, items) := generateCacheKey(env, cls, prefix, callingScope);
+    if not listEmpty(items) then
     try
-      {SOME(FUNC_instClassIn(inputs, outputs)), _} := BaseHashTable.get(cache_key, inst_hash);
+      {SOME(FUNC_instClassIn(inputs, outputs)), _} := items;
       (m, pre, csets, st, e as SCode.CLASS(), dims, impl, scr, cs) := inputs;
 
       // Are the important inputs the same?
@@ -921,6 +921,7 @@ algorithm
     else
       // Not found in cache, continue.
     end try;
+    end if;
   end if;
 
   // If not found in the cache, instantiate the class and add it to the cache.
@@ -933,8 +934,11 @@ algorithm
 
     outputs := (env, dae, sets, state, vars, ty, optDerAttr, equalityConstraint, graph);
 
-    showCacheInfo("Full Inst Add: ", cache_key);
-    addToInstCache(cache_key, SOME(FUNC_instClassIn(inputs, outputs)), NONE());
+    if Flags.isSet(Flags.CACHE) then
+      inst_hash := getGlobalRoot(Global.instHashIndex);
+      showCacheInfo("Full Inst Add: ", cache_key);
+      addToInstCache(cache_key, SOME(FUNC_instClassIn(inputs, outputs)), NONE());
+    end if;
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- Inst.instClassIn2 failed on class: " + SCode.elementName(cls) +
@@ -1538,15 +1542,15 @@ protected
   SCode.Element e;
   InstDims dims;
   Boolean partial_inst;
+  Value items;
 algorithm
-  cache_key := generateCacheKey(env, cls, prefix, InstTypes.INNER_CALL());
-
   // See if we have it in the cache.
   if Flags.isSet(Flags.CACHE) then
     inst_hash := getGlobalRoot(Global.instHashIndex);
-
+    (cache_key, items) := generateCacheKey(env, cls, prefix, InstTypes.INNER_CALL());
+    if not listEmpty(items) then
     try
-      {_, SOME(FUNC_partialInstClassIn(inputs, outputs))} := BaseHashTable.get(cache_key, inst_hash);
+      {_, SOME(FUNC_partialInstClassIn(inputs, outputs))} := items;
       (m, pre, st, e as SCode.CLASS(), dims) := inputs;
 
       // Are the important inputs the same?
@@ -1561,6 +1565,7 @@ algorithm
     else
       // Not in cache, continue.
     end try;
+    end if;
   end if;
 
   // Check that we don't have an instantiation loop.
@@ -5247,7 +5252,7 @@ end CachedInstItem;
 protected type CachedInstItems = list<Option<CachedInstItem>>;
 
 /* Begin inline HashTable */
-protected type Key = tuple<Integer,InstTypes.CallingScope,SCode.Restriction,Prefix.ComponentPrefix,FCore.Scope>;
+protected type Key = tuple<Integer,InstTypes.CallingScope,SCode.Restriction,Prefix.ComponentPrefix,Absyn.Path>;
 protected type Value = CachedInstItems;
 
 protected type HashTableKeyFunctionsType = tuple<FuncHashKey,FuncKeyEqual,FuncKeyStr,FuncValueStr>;
@@ -5342,9 +5347,7 @@ algorithm
   env2 := FGraph.openScope(env, enc, name, FGraph.restrictionToScopeType(res));
 
   try
-    cache_key := generateCacheKey(env2, cls, prefix, InstTypes.INNER_CALL());
-    {SOME(FUNC_instClassIn(inputs, (env, _, _, _, _, _, _, _, _))), _} :=
-      BaseHashTable.get(cache_key, inst_hash);
+    (cache_key,{SOME(FUNC_instClassIn(inputs, (env, _, _, _, _, _, _, _, _))), _}) := generateCacheKey(env2, cls, prefix, InstTypes.INNER_CALL());
     (_, prefix2, _, _, _, _, _, _, _) := inputs;
     true := PrefixUtil.isPrefix(prefix) and PrefixUtil.isPrefix(prefix2);
   else
@@ -5358,12 +5361,37 @@ protected function generateCacheKey
   input Prefix.Prefix prefix;
   input InstTypes.CallingScope callScope;
   output Key key;
+  output Value val;
 protected
   SCode.Restriction re = SCode.getClassRestriction(cls);
   Prefix.ComponentPrefix cp = PrefixUtil.componentPrefix(prefix);
-  FCore.Scope scope = FGraph.currentScope(env);
+  Absyn.Path scope = FGraph.getGraphName(env);
+  InstHashTable inst_hash;
+  Integer hash, hash_mod, ix, bsize;
+  array<list<tuple<Key,Integer>>> hv;
+  array<Option<tuple<Key,Value>>> vals;
+  constant Boolean debug = false;
 algorithm
-  key := (keyHash(callScope, re, cp, scope), callScope, re, cp, scope);
+  inst_hash := getGlobalRoot(Global.instHashIndex);
+  (hv,(_,_,vals),bsize,_) := inst_hash;
+  hash := keyHash(callScope, re, cp, scope);
+  hash_mod := intAbs(intMod(hash,bsize))+1;
+  // Re-use old key when possible
+  for tpl in hv[hash_mod] loop
+    (key,ix) := tpl;
+    if keyEqual2(key, callScope, re, cp, scope) then
+      SOME((key,val)) := arrayGet(vals,ix);
+      if debug and not BaseHashTable.hasKey(key, inst_hash) then
+        Error.addInternalError("generateCacheKey failed (1)", sourceInfo());
+      end if;
+      return;
+    end if;
+  end for;
+  key := (hash_mod-1, callScope, re, cp, scope);
+  val := {};
+  if debug and BaseHashTable.hasKey(key, inst_hash) then
+    Error.addInternalError("generateCacheKey failed (2)", sourceInfo());
+  end if;
 end generateCacheKey;
 
 protected function generatePrefixStr
@@ -5381,11 +5409,6 @@ protected function keyHashMod "Hashes a key."
   input Key key;
   input Integer mod;
   output Integer hash;
-protected
-  InstTypes.CallingScope callingScope;
-  SCode.Restriction re;
-  Prefix.ComponentPrefix prefix;
-  FCore.Scope scope;
 algorithm
   (hash,_,_,_,_) := key;
   hash := intAbs(intMod(hash,mod));
@@ -5395,13 +5418,13 @@ protected function keyHash "Hashes a key."
   input InstTypes.CallingScope callingScope;
   input SCode.Restriction re;
   input Prefix.ComponentPrefix prefix;
-  input FCore.Scope scope;
+  input Absyn.Path scope;
   output Integer hash;
 algorithm
   hash := StringUtil.stringHashDjb2Work(InstTypes.callingScopeStr(callingScope));
   hash := StringUtil.stringHashDjb2Work(SCodeDump.restrString(re), hash);
   hash := PrefixUtil.prefixHashWork(prefix, hash);
-  hash := FNode.scopeHashWork(scope, hash);
+  hash := Absyn.pathHashModWork(scope, hash);
 end keyHash;
 
 protected function keyEqual "Compare two keys."
@@ -5411,19 +5434,39 @@ protected
   InstTypes.CallingScope callingScope1,callingScope2;
   SCode.Restriction re1,re2;
   Prefix.ComponentPrefix prefix1,prefix2;
-  FCore.Scope scope1,scope2;
+  Absyn.Path scope1,scope2;
+algorithm
+  eq := referenceEq(key1,key2); // We tried hard to cache the keys as well
+  if eq then
+    return;
+  end if;
+  (_,callingScope2,re2,prefix2,scope2) := key2;
+  eq := keyEqual2(key1,callingScope2,re2,prefix2,scope2);
+end keyEqual;
+
+protected function keyEqual2 "Compare two keys."
+  input Key key1;
+  input InstTypes.CallingScope callingScope2;
+  input SCode.Restriction re2;
+  input Prefix.ComponentPrefix prefix2;
+  input Absyn.Path scope2;
+  output Boolean eq=false;
+protected
+  InstTypes.CallingScope callingScope1;
+  SCode.Restriction re1;
+  Prefix.ComponentPrefix prefix1;
+  Absyn.Path scope1;
 algorithm
   (_,callingScope1,re1,prefix1,scope1) := key1;
-  (_,callingScope2,re2,prefix2,scope2) := key2;
 
   if valueConstructor(callingScope1)<>valueConstructor(callingScope2) then
   elseif not SCode.restrictionEqual(re1,re2) then
   elseif not PrefixUtil.componentPrefixPathEqual(prefix1,prefix2) then
-  elseif not FNode.scopePathEq(scope1, scope2) then
+  elseif not Absyn.pathEqual(scope1, scope2) then
   else
     eq := true;
   end if;
-end keyEqual;
+end keyEqual2;
 
 protected function keyStr
   input Key key;
@@ -5432,7 +5475,7 @@ protected
   InstTypes.CallingScope callingScope;
   SCode.Restriction re;
   Prefix.ComponentPrefix prefix;
-  FCore.Scope scope;
+  Absyn.Path scope;
 algorithm
   (_,callingScope,re,prefix,scope) := key;
   str := stringAppendList(
@@ -5440,7 +5483,7 @@ algorithm
       InstTypes.callingScopeStr(callingScope), "$",
       SCodeDump.restrString(re), "$",
       generatePrefixStr(prefix),
-      ".", FNode.scopeStr(scope)
+      ".", Absyn.pathString(scope)
     }
   );
 end keyStr;

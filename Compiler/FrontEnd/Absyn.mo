@@ -2796,7 +2796,7 @@ algorithm
   hash := intAbs(intMod(pathHashModWork(path,5381),mod));
 end pathHashMod;
 
-protected function pathHashModWork "Hashes a path."
+public function pathHashModWork "Hashes a path."
   input Path path;
   input Integer acc;
   output Integer hash;
