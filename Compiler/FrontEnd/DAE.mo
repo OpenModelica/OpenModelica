@@ -586,6 +586,8 @@ public
   algorithm
     outResult := Absyn.pathCompareNoQual(inKey1,inKey2);
   end keyCompare;
+
+  redeclare function addConflictDefault = addConflictReplace;
 end AvlTreePathFunction;
 
 /* -- Algorithm.mo -- */

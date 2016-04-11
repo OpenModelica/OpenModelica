@@ -5568,43 +5568,12 @@ algorithm
 end collectFunctionRefVarPaths;
 
 public function addDaeFunction "add functions present in the element list to the function tree"
-  input list<DAE.Function> ifuncs;
-  input DAE.FunctionTree itree;
-  output DAE.FunctionTree outTree;
+  input list<DAE.Function> functions;
+  input output DAE.FunctionTree functionTree;
 algorithm
-  outTree := match (ifuncs,itree)
-    local
-      DAE.Function func, fOld;
-      list<DAE.Function> funcs;
-      DAE.FunctionTree tree;
-      String msg;
-
-    case ({},tree)
-      equation
-        //showCacheFuncs(tree);
-      then
-        tree;
-/*
-    case (func::funcs,tree)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        // print("Add to cache [check] : " + Absyn.pathString(functionName(func)) + "\n");
-        // print("Function added: \n" + DAEDump.dumpFunctionStr(func) + "\n");
-        fOld = Util.getOption(DAE.AvlTreePathFunction.get(tree, functionName(func)));
-        failure(equality(fOld = func));
-        print("Function already in the tree and different (keep the one already in the tree):" +
-          "\nnew:\n" + DAEDump.dumpFunctionStr(func) +
-          "\nold:\n" + DAEDump.dumpFunctionStr(fOld) + "\n");
-      then
-        fail();
-*/
-    case (func::funcs,tree)
-      equation
-        // print("Add to cache: " + Absyn.pathString(functionName(func)) + "\n");
-        tree = DAE.AvlTreePathFunction.add(tree,functionName(func),SOME(func));
-      then addDaeFunction(funcs,tree);
-
-  end match;
+  for f in functions loop
+    functionTree := DAE.AvlTreePathFunction.add(functionTree, functionName(f), SOME(f));
+  end for;
 end addDaeFunction;
 
 public function addFunctionDefinition
