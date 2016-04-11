@@ -75,9 +75,9 @@ algorithm
       equation
         fileName = code.fileNamePrefix + "_info.json";
         File.open(file,fileName,File.Mode.Write);
-        File.write(file, "{\"format\":\"Transformational debugger info\",\"version\":1,\n\"info\":{\"name\":\"");
-        File.writeEscape(file, Absyn.pathStringNoQual(mi.name), escape=File.Escape.JSON);
-        File.write(file, "\",\"description\":\"");
+        File.write(file, "{\"format\":\"Transformational debugger info\",\"version\":1,\n\"info\":{\"name\":");
+        serializePath(file, mi.name);
+        File.write(file, ",\"description\":\"");
         File.writeEscape(file, mi.description, escape=File.Escape.JSON);
         File.write(file, "\"},\n\"variables\":{\n");
         serializeVars(file,vars,withOperations);
@@ -267,13 +267,13 @@ algorithm
         File.write(file, "{\"file\":\"");
         File.writeEscape(file, i.fileName,escape=File.Escape.JSON);
         File.write(file, "\",\"lineStart\":");
-        File.write(file, intString(i.lineNumberStart));
+        File.writeInt(file, i.lineNumberStart);
         File.write(file, ",\"lineEnd\":");
-        File.write(file, intString(i.lineNumberEnd));
+        File.writeInt(file, i.lineNumberEnd);
         File.write(file, ",\"colStart\":");
-        File.write(file, intString(i.columnNumberStart));
+        File.writeInt(file, i.columnNumberStart);
         File.write(file, ",\"colEnd\":");
-        File.write(file, intString(i.columnNumberEnd));
+        File.writeInt(file, i.columnNumberEnd);
         File.write(file, "}");
       then ();
   end match;
@@ -435,10 +435,10 @@ algorithm
 
     case SimCode.SES_RESIDUAL() equation
       File.write(file, "\n{\"eqIndex\":");
-      File.write(file, intString(eq.index));
+      File.writeInt(file, eq.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -453,10 +453,10 @@ algorithm
 
     case SimCode.SES_SIMPLE_ASSIGN() equation
       File.write(file, "\n{\"eqIndex\":");
-      File.write(file, intString(eq.index));
+      File.writeInt(file, eq.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -473,10 +473,10 @@ algorithm
 
     case SimCode.SES_ARRAY_CALL_ASSIGN() equation
       File.write(file, "\n{\"eqIndex\":");
-      File.write(file, intString(eq.index));
+      File.writeInt(file, eq.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -508,10 +508,10 @@ algorithm
         min(serializeEquation(file,e,section,withOperations,parent=lSystem.index) for e in listRest(eqs));
         File.write(file, ",\n{\"eqIndex\":");
       end if;
-      File.write(file, intString(lSystem.index));
+      File.writeInt(file, lSystem.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -523,7 +523,7 @@ algorithm
       File.write(file,intString(i));
       if i <> 0 then
         File.write(file,",\"density\":");
-        File.write(file,realString(j / (i*i)));
+        File.writeReal(file,j / (i*i),format="%.2f");
       end if;
       File.write(file,",\"A\":[");
       serializeList1(file,lSystem.simJac,withOperations,serializeLinearCell);
@@ -550,10 +550,10 @@ algorithm
         min(serializeEquation(file,e,section,withOperations,parent=lSystem.index) for e in listRest(eqs));
         File.write(file, ",\n{\"eqIndex\":");
       end if;
-      File.write(file, intString(lSystem.index));
+      File.writeInt(file, lSystem.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -565,7 +565,7 @@ algorithm
       File.write(file,intString(i));
       if i <> 0 then
         File.write(file,",\"density\":");
-        File.write(file,realString(j / (i*i)));
+        File.writeReal(file,j / (i*i),format="%.2f");
       end if;
       File.write(file,",\"A\":[");
       serializeList1(file,lSystem.simJac,withOperations,serializeLinearCell);
@@ -589,10 +589,10 @@ algorithm
         min(serializeEquation(file,e,section,withOperations,parent=atL.index) for e in listRest(eqs));
         File.write(file, ",\n{\"eqIndex\":");
       end if;
-      File.write(file, intString(atL.index));
+      File.writeInt(file, atL.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -604,7 +604,7 @@ algorithm
       File.write(file,intString(i));
       if i <> 0 then
         File.write(file,",\"density\":");
-        File.write(file,realString(j / (i*i)));
+        File.writeReal(file,j / (i*i),format="%.2f");
       end if;
       File.write(file,",\"A\":[");
       serializeList1(file,atL.simJac,withOperations,serializeLinearCell);
@@ -615,10 +615,10 @@ algorithm
 
     case SimCode.SES_ALGORITHM(statements={stmt as DAE.STMT_ASSIGN()}) equation
       File.write(file, "\n{\"eqIndex\":");
-      File.write(file, intString(eq.index));
+      File.writeInt(file, eq.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -635,10 +635,10 @@ algorithm
 
     case SimCode.SES_ALGORITHM(statements=stmt::_) equation
       File.write(file, "\n{\"eqIndex\":");
-      File.write(file, intString(eq.index));
+      File.writeInt(file, eq.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -651,10 +651,10 @@ algorithm
 
     case SimCode.SES_INVERSE_ALGORITHM(statements=stmt::_) equation
       File.write(file, "\n{\"eqIndex\":");
-      File.write(file, intString(eq.index));
+      File.writeInt(file, eq.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -677,10 +677,10 @@ algorithm
       min(serializeEquation(file,e,section,withOperations) for e in jeqs);
 
       File.write(file, ",\n{\"eqIndex\":");
-      File.write(file, intString(nlSystem.index));
+      File.writeInt(file, nlSystem.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -707,10 +707,10 @@ algorithm
       min(serializeEquation(file,e,section,withOperations) for e in jeqs);
 
       File.write(file, ",\n{\"eqIndex\":");
-      File.write(file, intString(nlSystem.index));
+      File.writeInt(file, nlSystem.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -734,10 +734,10 @@ algorithm
       min(serializeEquation(file,e,section,withOperations) for e in jeqs);
 
       File.write(file, ",\n{\"eqIndex\":");
-      File.write(file, intString(atNL.index));
+      File.writeInt(file, atNL.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -756,10 +756,10 @@ algorithm
       serializeEquation(file,listHead(eqs),section,withOperations,first=true);
       min(serializeEquation(file,e,section,withOperations) for e in List.rest(eqs));
       File.write(file, ",\n{\"eqIndex\":");
-      File.write(file, intString(eq.index));
+      File.writeInt(file, eq.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -775,10 +775,10 @@ algorithm
         serializeEquation(file,eq.cont,section,withOperations,first=true);
         min(serializeEquation(file,e,section,withOperations) for e in eq.discEqs);
         File.write(file, ",\n{\"eqIndex\":");
-        File.write(file, intString(eq.index));
+        File.writeInt(file, eq.index);
         if parent <> 0 then
           File.write(file, ",\"parent\":");
-          File.write(file, intString(parent));
+          File.writeInt(file, parent);
         end if;
         File.write(file, ",\"section\":\"");
         File.write(file, section);
@@ -795,10 +795,10 @@ algorithm
 
     case SimCode.SES_WHEN() algorithm
       File.write(file, "\n{\"eqIndex\":");
-      File.write(file, intString(eq.index));
+      File.writeInt(file, eq.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -869,10 +869,10 @@ algorithm
 
     case SimCode.SES_FOR_LOOP() equation
       File.write(file, "\n{\"eqIndex\":");
-      File.write(file, intString(eq.index));
+      File.writeInt(file, eq.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
+        File.writeInt(file, parent);
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
@@ -1131,9 +1131,26 @@ end serializeString;
 function serializePath
   input File.File file;
   input Absyn.Path path;
+protected
+  Absyn.Path p=path;
+  Boolean b=true;
 algorithm
   File.write(file, "\"");
-  File.writeEscape(file, Absyn.pathStringNoQual(path), escape=File.Escape.JSON);
+  while b loop
+    (p,b) := match p
+      case Absyn.IDENT()
+        algorithm
+          File.writeEscape(file, p.name, escape=File.Escape.JSON);
+        then (p,false);
+      case Absyn.QUALIFIED()
+        algorithm
+          File.writeEscape(file, p.name, escape=File.Escape.JSON);
+          File.write(file, ".");
+        then (p.path,true);
+      case Absyn.FULLYQUALIFIED()
+        then (p.path,true);
+    end match;
+  end while;
   File.write(file, "\"");
 end serializePath;
 
@@ -1141,7 +1158,7 @@ function serializeEquationIndex
   input File.File file;
   input SimCode.SimEqSystem eq;
 algorithm
-  File.write(file, intString(SimCodeUtil.simEqSystemIndex(eq)));
+  File.writeInt(file, SimCodeUtil.simEqSystemIndex(eq));
 end serializeEquationIndex;
 
 function serializeIfBranch
