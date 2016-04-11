@@ -119,5 +119,6 @@ void FetchInterfaceDataThread::managerProcessFinished(int exitCode, QProcess::Ex
     emit sendManagerOutput(mpManagerProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error);
   }
   emit sendManagerFinished(exitCode, exitStatus);
+  quit();
 }
 
