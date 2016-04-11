@@ -9865,7 +9865,6 @@ algorithm
     local
       String str;
       Values.Value val;
-      list<DAE.Exp> arr;
 
     case (NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), _)
       then (inCache,inExp);
@@ -9880,14 +9879,20 @@ algorithm
         (outCache, inExp);
 
     // keep array of free parameters inExp
-    case (_, DAE.ARRAY(array = arr))
+    case (_, DAE.ARRAY())
       guard
         Types.isParameterOrConstant(const) and not Expression.isConst(inExp)
       algorithm
-        outCache := inCache;
-        for exp in arr loop
-          (true, outCache) := isCrefWithConstBinding(exp, outCache, inEnv);
-        end for;
+        (true, outCache) := isCrefWithConstBinding(inExp, inCache, inEnv);
+      then
+        (outCache, inExp);
+
+    // keep matrix of free parameters inExp
+    case (_, DAE.MATRIX())
+      guard
+        Types.isParameterOrConstant(const) and not Expression.isConst(inExp)
+      algorithm
+        (true, outCache) := isCrefWithConstBinding(inExp, inCache, inEnv);
       then
         (outCache, inExp);
 
@@ -9920,7 +9925,7 @@ algorithm
 end elabExternalObjectInput;
 
 protected function isCrefWithConstBinding
- "Checks if exp is a cref with constant binding."
+ "Checks if exp is a cref or array of crefs with constant bindings."
   input DAE.Exp exp;
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -9932,6 +9937,10 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Binding binding;
       DAE.Exp bindingExp;
+      list<DAE.Exp> arr;
+      list<list<DAE.Exp>> mat;
+      Boolean isFreeArr;
+
     case DAE.CREF(componentRef = cr)
       algorithm
         (outCache, _, _, binding, _, _, _, _, _) := Lookup.lookupVar(inCache, inEnv, cr);
@@ -9947,6 +9956,31 @@ algorithm
           else
             false;
         end match;
+
+    case DAE.ARRAY(array = arr)
+      algorithm
+        outCache := inCache;
+        isFree := true;
+        for exp in arr loop
+          (isFreeArr, outCache) := isCrefWithConstBinding(exp, outCache, inEnv);
+          isFree := isFree and isFreeArr;
+        end for;
+      then
+        isFree;
+
+    case DAE.MATRIX(matrix = mat)
+      algorithm
+        outCache := inCache;
+        isFree := true;
+        for row in mat loop
+          for exp in row loop
+            (isFreeArr, outCache) := isCrefWithConstBinding(exp, outCache, inEnv);
+            isFree := isFree and isFreeArr;
+          end for;
+        end for;
+      then
+        isFree;
+
     else
       false;
   end match;
