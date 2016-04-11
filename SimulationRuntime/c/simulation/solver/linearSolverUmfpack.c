@@ -75,6 +75,9 @@ allocateUmfPackData(int n_row, int n_col, int nz, void** voiddata)
   data->Ax = (double*) calloc(nz,sizeof(double));
   data->work = (double*) calloc(n_col,sizeof(double));
 
+  data->Wi = (int*) malloc(n_row * sizeof(int));
+  data->W = (double*) malloc(5*n_row * sizeof(double));
+
   data->numberSolving=0;
   umfpack_di_defaults(data->control);
 
@@ -105,6 +108,9 @@ freeUmfPackData(void **voiddata)
   free(data->Ai);
   free(data->Ax);
   free(data->work);
+
+  free(data->Wi);
+  free(data->W);
 
   if(data->symbolic)
     umfpack_di_free_symbolic (&data->symbolic);
@@ -268,14 +274,15 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
 
   /* compute the LU factorization of A */
   if (0 == status){
+    umfpack_di_free_numeric(&(solverData->numeric));
     status = umfpack_di_numeric(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, &(solverData->numeric), solverData->control, solverData->info);
   }
 
   if (0 == status){
     if (1 == systemData->method){
-      status = umfpack_di_solve(UMFPACK_A, solverData->Ap, solverData->Ai, solverData->Ax, systemData->x, systemData->b, solverData->numeric, solverData->control, solverData->info);
+      status = umfpack_di_wsolve(UMFPACK_A, solverData->Ap, solverData->Ai, solverData->Ax, systemData->x, systemData->b, solverData->numeric, solverData->control, solverData->info, solverData->Wi, solverData->W);
     } else {
-      status = umfpack_di_solve(UMFPACK_Aat, solverData->Ap, solverData->Ai, solverData->Ax, systemData->x, systemData->b, solverData->numeric, solverData->control, solverData->info);
+      status = umfpack_di_wsolve(UMFPACK_Aat, solverData->Ap, solverData->Ai, solverData->Ax, systemData->x, systemData->b, solverData->numeric, solverData->control, solverData->info, solverData->Wi, solverData->W);
     }
   }
 
@@ -403,9 +410,9 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData)
   }
 
   /* solve L * y = P * R * b  <=>  P^T * L * y = R * b */
-  status = umfpack_di_solve(UMFPACK_Pt_L, solverData->Ap, solverData->Ai,
+  status = umfpack_di_wsolve(UMFPACK_Pt_L, solverData->Ap, solverData->Ai,
       solverData->Ax, y, b, solverData->numeric, solverData->control,
-      solverData->info);
+      solverData->info, solverData->Wi, solverData->W);
 
   switch (status)
   {
