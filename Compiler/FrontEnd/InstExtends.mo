@@ -1083,17 +1083,17 @@ protected function fixEquation
 algorithm
   outEq := match inEq
     local
-      SCode.EEquation eeq;
+      SCode.EEquation eeq1,eeq2;
 
-    case SCode.EQUATION(eeq)
+    case SCode.EQUATION(eeq1)
       algorithm
-        eeq := fixEEquation(inCache, inEnv, eeq, tree);
-      then SCode.EQUATION(eeq);
+        eeq2 := fixEEquation(inCache, inEnv, eeq1, tree);
+      then if referenceEq(eeq1,eeq2) then inEq else SCode.EQUATION(eeq2);
 
-    case SCode.EQUATION(eeq)
+    case SCode.EQUATION(eeq1)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.fixEquation failed: " + SCodeDump.equationStr(eeq));
+        Debug.traceln("- Inst.fixEquation failed: " + SCodeDump.equationStr(eeq1));
       then fail();
   end match;
 end fixEquation;
@@ -1362,13 +1362,13 @@ protected function fixSubscript
 algorithm
   outSub := match inSub
     local
-      Absyn.Exp exp;
+      Absyn.Exp exp1, exp2;
 
     case Absyn.NOSUB() then inSub;
-    case Absyn.SUBSCRIPT(exp)
+    case Absyn.SUBSCRIPT(exp1)
       algorithm
-        exp := fixExp(cache, inEnv, exp, tree);
-      then Absyn.SUBSCRIPT(exp);
+        exp2 := fixExp(cache, inEnv, exp1, tree);
+      then if referenceEq(exp1,exp2) then inSub else Absyn.SUBSCRIPT(exp2);
   end match;
 end fixSubscript;
 
@@ -1385,21 +1385,21 @@ protected function fixTypeSpec
 algorithm
   outTs := match inTs
     local
-      Absyn.Path path;
-      Option<Absyn.ArrayDim> arrayDim;
-      list<Absyn.TypeSpec> typeSpecs;
+      Absyn.Path path1, path2;
+      Option<Absyn.ArrayDim> arrayDim1,arrayDim2;
+      list<Absyn.TypeSpec> typeSpecs1, typeSpecs2;
 
-    case Absyn.TPATH(path,arrayDim)
+    case Absyn.TPATH(path1,arrayDim1)
       equation
-        arrayDim = fixOption(cache,inEnv,arrayDim,tree,fixArrayDim);
-        path = fixPath(cache,inEnv,path,tree);
-      then Absyn.TPATH(path,arrayDim);
-    case Absyn.TCOMPLEX(path,typeSpecs,arrayDim)
+        arrayDim2 = fixOption(cache,inEnv,arrayDim1,tree,fixArrayDim);
+        path2 = fixPath(cache,inEnv,path1,tree);
+      then if referenceEq(arrayDim2,arrayDim1) and referenceEq(path1,path2) then inTs else Absyn.TPATH(path2,arrayDim2);
+    case Absyn.TCOMPLEX(path1,typeSpecs1,arrayDim1)
       equation
-        arrayDim = fixOption(cache,inEnv,arrayDim,tree,fixArrayDim);
-        path = fixPath(cache,inEnv,path,tree);
-        typeSpecs = fixList(cache,inEnv,typeSpecs,tree,fixTypeSpec);
-      then Absyn.TCOMPLEX(path,typeSpecs,arrayDim);
+        arrayDim2 = fixOption(cache,inEnv,arrayDim1,tree,fixArrayDim);
+        path2 = fixPath(cache,inEnv,path1,tree);
+        typeSpecs2 = fixList(cache,inEnv,typeSpecs1,tree,fixTypeSpec);
+      then if referenceEq(arrayDim2,arrayDim1) and referenceEq(path1,path2) and referenceEq(typeSpecs1,typeSpecs2) then inTs else Absyn.TCOMPLEX(path2,typeSpecs2,arrayDim2);
   end match;
 end fixTypeSpec;
 
@@ -1557,7 +1557,7 @@ algorithm
   outMod := matchcontinue outMod
     local
       list<SCode.SubMod> subModLst;
-      Absyn.Exp exp;
+      Option<Absyn.Exp> exp;
       SCode.Element e;
       SCode.ClassDef cdef;
 
@@ -1566,26 +1566,31 @@ algorithm
     case SCode.MOD()
       algorithm
         subModLst := fixList(inCache, inEnv, outMod.subModLst, tree, fixSubMod);
-        outMod.subModLst := subModLst;
+        if not referenceEq(outMod.subModLst, subModLst) then
+          outMod.subModLst := subModLst;
+        end if;
 
-        if isSome(outMod.binding) then
-          SOME(exp) := outMod.binding;
-          exp := fixExp(inCache, inEnv, exp, tree);
-          outMod.binding := SOME(exp);
+        exp := fixOption(inCache, inEnv, outMod.binding, tree, fixExp);
+        if not referenceEq(exp, outMod.binding) then
+          outMod.binding := exp;
         end if;
       then outMod;
 
     case SCode.REDECL(element = SCode.COMPONENT())
       algorithm
         e := fixElement(inCache, inEnv, outMod.element, tree);
-        outMod.element := e;
+        if not referenceEq(e, outMod.element) then
+          outMod.element := e;
+        end if;
       then outMod;
 
     case SCode.REDECL(element = e as SCode.CLASS(classDef = cdef))
       algorithm
         cdef := fixClassdef(inCache, inEnv, cdef, tree);
-        e.classDef := cdef;
-        outMod.element := e;
+        if not referenceEq(cdef, e.classDef) then
+          e.classDef := cdef;
+          outMod.element := e;
+        end if;
       then outMod;
 
     else
