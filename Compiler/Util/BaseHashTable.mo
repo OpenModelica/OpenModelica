@@ -173,8 +173,11 @@ algorithm
  local HashVector hvec;
    case((hvec,_,_,_)) equation
       print("index list lengths:\n");
-      print(stringDelimitList(List.mapMap(arrayList(hvec),listLength,intString),","));
+      print(stringDelimitList(list(intString(listLength(l)) for l in hvec),","));
       print("\n");
+      print("non-zero: " + String(sum(1 for l guard not listEmpty(l) in hvec)) + "/" + String(arrayLength(hvec)) +"\n");
+      print("max element: " + String(max(listLength(l) for l in hvec)) + "\n");
+      print("total entries: " + String(sum(listLength(l) for l in hvec)) + "\n");
    then ();
  end match;
 end dumpHashTableStatistics;

@@ -154,6 +154,7 @@ import UnitParserExt;
 import Util;
 import Values;
 import ValuesUtil;
+import StringUtil;
 import System;
 import SCodeDump;
 import UnitAbsynBuilder;
@@ -5244,7 +5245,7 @@ end CachedInstItem;
 protected type CachedInstItems = list<Option<CachedInstItem>>;
 
 /* Begin inline HashTable */
-protected type Key = tuple<InstTypes.CallingScope,SCode.Restriction,Prefix.ComponentPrefix,FCore.Scope>;
+protected type Key = tuple<Integer,InstTypes.CallingScope,SCode.Restriction,Prefix.ComponentPrefix,FCore.Scope>;
 protected type Value = CachedInstItems;
 
 protected type HashTableKeyFunctionsType = tuple<FuncHashKey,FuncKeyEqual,FuncKeyStr,FuncValueStr>;
@@ -5355,8 +5356,12 @@ protected function generateCacheKey
   input Prefix.Prefix prefix;
   input InstTypes.CallingScope callScope;
   output Key key;
+protected
+  SCode.Restriction re = SCode.getClassRestriction(cls);
+  Prefix.ComponentPrefix cp = PrefixUtil.componentPrefix(prefix);
+  FCore.Scope scope = FGraph.currentScope(env);
 algorithm
-  key := (callScope, SCode.getClassRestriction(cls), PrefixUtil.componentPrefix(prefix), FGraph.currentScope(env));
+  key := (keyHash(callScope, re, cp, scope), callScope, re, cp, scope);
 end generateCacheKey;
 
 protected function generatePrefixStr
@@ -5380,13 +5385,22 @@ protected
   Prefix.ComponentPrefix prefix;
   FCore.Scope scope;
 algorithm
-  (callingScope,re,prefix,scope) := key;
-  hash := valueConstructor(callingScope);
-  hash := 31*hash + valueHashMod(re, mod);
-  hash := PrefixUtil.prefixHashWork(prefix, hash);
-  hash := FNode.scopeHashWork(scope, hash);
+  (hash,_,_,_,_) := key;
   hash := intAbs(intMod(hash,mod));
 end keyHashMod;
+
+protected function keyHash "Hashes a key."
+  input InstTypes.CallingScope callingScope;
+  input SCode.Restriction re;
+  input Prefix.ComponentPrefix prefix;
+  input FCore.Scope scope;
+  output Integer hash;
+algorithm
+  hash := StringUtil.stringHashDjb2Work(InstTypes.callingScopeStr(callingScope));
+  hash := StringUtil.stringHashDjb2Work(SCodeDump.restrString(re), hash);
+  hash := PrefixUtil.prefixHashWork(prefix, hash);
+  hash := FNode.scopeHashWork(scope, hash);
+end keyHash;
 
 protected function keyEqual "Compare two keys."
   input Key key1,key2;
@@ -5397,10 +5411,10 @@ protected
   Prefix.ComponentPrefix prefix1,prefix2;
   FCore.Scope scope1,scope2;
 algorithm
-  (callingScope1,re1,prefix1,scope1) := key1;
-  (callingScope2,re2,prefix2,scope2) := key2;
+  (_,callingScope1,re1,prefix1,scope1) := key1;
+  (_,callingScope2,re2,prefix2,scope2) := key2;
 
-  if not valueEq(callingScope1,callingScope2) then
+  if valueConstructor(callingScope1)<>valueConstructor(callingScope2) then
   elseif not SCode.restrictionEqual(re1,re2) then
   elseif not PrefixUtil.componentPrefixPathEqual(prefix1,prefix2) then
   elseif not FNode.scopePathEq(scope1, scope2) then
@@ -5418,13 +5432,13 @@ protected
   Prefix.ComponentPrefix prefix;
   FCore.Scope scope;
 algorithm
-  (callingScope,re,prefix,scope) := key;
+  (_,callingScope,re,prefix,scope) := key;
   str := stringAppendList(
     {
-      "Calling scope: ", InstTypes.callingScopeStr(callingScope), ", Restriction: ",
-      SCodeDump.restrString(re),
-      ", Scope: ", FNode.scopeStr(scope),
-      ", Prefix: ", generatePrefixStr(prefix)
+      InstTypes.callingScopeStr(callingScope), "$",
+      SCodeDump.restrString(re), "$",
+      generatePrefixStr(prefix),
+      ".", FNode.scopeStr(scope)
     }
   );
 end keyStr;
