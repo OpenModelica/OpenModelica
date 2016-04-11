@@ -102,6 +102,7 @@ public:
   QString getAlpha() {return mAlpha;}
   void setShapeFlags(bool enable);
   void updateShape(ShapeAnnotation *pShapeAnnotation);
+  void setAligned(bool aligned);
 private:
   LineType mLineType;
   Component *mpStartComponent;

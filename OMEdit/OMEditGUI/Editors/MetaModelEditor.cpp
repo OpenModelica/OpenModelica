@@ -327,11 +327,8 @@ bool MetaModelEditor::createConnection(LineAnnotation *pConnectionLineAnnotation
     connections.appendChild(connection);
     setPlainText(mXmlDocument.toString());
     // check if interfaces are aligned
-    if (interfacesAligned(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName())) {
-      pConnectionLineAnnotation->setLineColor(QColor(Qt::black));
-    } else {
-      pConnectionLineAnnotation->setLineColor(QColor(Qt::red));
-    }
+    bool aligned = interfacesAligned(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
+    pConnectionLineAnnotation->setAligned(aligned);
     return true;
   }
   return false;
@@ -848,18 +845,15 @@ void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface
     }
   }
   //Give error message if alignment failed
-  if (!interfacesAligned(fromInterface, toInterface)) {
+  bool aligned = interfacesAligned(fromInterface, toInterface);
+  if (!aligned) {
     if (showError) {
       mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
                                                                    "Alignment operation failed.", Helper::scriptingKind,Helper::errorLevel));
     }
-    if (pFoundConnectionLineAnnotation) {
-      pFoundConnectionLineAnnotation->setLineColor(QColor(Qt::red));
-    }
-  } else {
-    if (pFoundConnectionLineAnnotation) {
-      pFoundConnectionLineAnnotation->setLineColor(QColor(Qt::black));
-    }
+  }
+  if (pFoundConnectionLineAnnotation) {
+    pFoundConnectionLineAnnotation->setAligned(aligned);
   }
 }
 

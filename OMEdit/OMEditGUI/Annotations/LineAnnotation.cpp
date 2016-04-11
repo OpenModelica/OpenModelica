@@ -715,6 +715,20 @@ void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 }
 
 /*!
+ * \brief LineAnnotation::setAligned
+ * Marks the connection line as aligned or not aligned.
+ * \param aligned
+ */
+void LineAnnotation::setAligned(bool aligned)
+{
+  if (aligned) {
+    setLineColor(QColor(Qt::black));
+  } else {
+    setLineColor(QColor(Qt::red));
+  }
+}
+
+/*!
  * \brief LineAnnotation::handleComponentMoved
  * If the component associated with the connection is moved then update the connection accordingly.\n
  * If the both start and end components associated with the connection are moved then move whole connection.
