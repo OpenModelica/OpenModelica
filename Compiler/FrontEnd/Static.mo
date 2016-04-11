@@ -9861,43 +9861,25 @@ protected function elabExternalObjectInput
   output FCore.Cache outCache;
   output DAE.Exp outExp;
 algorithm
-  (outCache, outExp) := matchcontinue (isExternalObject, inExp)
+  (outCache, outExp) := matchcontinue isExternalObject
     local
       String str;
       Values.Value val;
 
-    case (NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), _)
+    case NOT_EXTERNAL_OBJECT_MODEL_SCOPE()
       then (inCache,inExp);
 
-    // keep free parameter inExp
-    case (_, DAE.CREF())
+    // keep expressions of free parameters inExp
+    case _
       guard
         Types.isParameterOrConstant(const) and not Expression.isConst(inExp)
       algorithm
-        (true, outCache) := isCrefWithConstBinding(inExp, inCache, inEnv);
-      then
-        (outCache, inExp);
-
-    // keep array of free parameters inExp
-    case (_, DAE.ARRAY())
-      guard
-        Types.isParameterOrConstant(const) and not Expression.isConst(inExp)
-      algorithm
-        (true, outCache) := isCrefWithConstBinding(inExp, inCache, inEnv);
-      then
-        (outCache, inExp);
-
-    // keep matrix of free parameters inExp
-    case (_, DAE.MATRIX())
-      guard
-        Types.isParameterOrConstant(const) and not Expression.isConst(inExp)
-      algorithm
-        (true, outCache) := isCrefWithConstBinding(inExp, inCache, inEnv);
+        (true, outCache) := isFreeParameterExp(inExp, inCache, inEnv);
       then
         (outCache, inExp);
 
     // evaluate parameter inExp if we are unable to do better
-    case (_, _)
+    case _
       guard
         Types.isParameterOrConstant(const) and not Expression.isConst(inExp)
       algorithm
@@ -9907,7 +9889,7 @@ algorithm
         (outCache, outExp);
 
     // keep constant inExp
-    case (_, _)
+    case _
       guard
         Types.isParameterOrConstant(const) or Types.isExternalObject(ty) or Expression.isConst(inExp)
       then
@@ -9924,22 +9906,31 @@ algorithm
   end matchcontinue;
 end elabExternalObjectInput;
 
-protected function isCrefWithConstBinding
- "Checks if exp is a cref or array of crefs with constant bindings."
-  input DAE.Exp exp;
+protected function isFreeParameterExp
+ "Checks if inExp is a an expression of free parameters."
+  input DAE.Exp inExp;
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   output Boolean isFree;
   output FCore.Cache outCache;
 algorithm
-  isFree := match exp
+  outCache := inCache;
+  isFree := match inExp
     local
       DAE.ComponentRef cr;
       DAE.Binding binding;
-      DAE.Exp bindingExp;
-      list<DAE.Exp> arr;
+      DAE.Exp exp1, exp2;
+      list<DAE.Exp> exps;
       list<list<DAE.Exp>> mat;
-      Boolean isFreeArr;
+      Boolean isFree2;
+
+    case DAE.ICONST() then true;
+
+    case DAE.RCONST() then true;
+
+    case DAE.SCONST() then true;
+
+    case DAE.BCONST() then true;
 
     case DAE.CREF(componentRef = cr)
       algorithm
@@ -9948,22 +9939,59 @@ algorithm
         match binding
           case DAE.VALBOUND() then
             true;
-          case DAE.EQBOUND(exp = bindingExp)
+          case DAE.EQBOUND(exp = exp1)
             guard
-              Expression.isConst(bindingExp)
+              Expression.isConst(exp1)
             then
               true;
           else
             false;
         end match;
 
-    case DAE.ARRAY(array = arr)
+    case DAE.BINARY(exp1 = exp1, exp2 = exp2)
+      algorithm
+        (isFree, outCache) := isFreeParameterExp(exp1, inCache, inEnv);
+        (isFree2, outCache) := isFreeParameterExp(exp2, outCache, inEnv);
+      then
+        isFree and isFree2;
+
+    case DAE.UNARY(exp = exp1)
+      algorithm
+        (isFree, outCache) := isFreeParameterExp(exp1, inCache, inEnv);
+      then
+        isFree;
+
+    case DAE.LBINARY(exp1 = exp1, exp2 = exp2)
+      algorithm
+        (isFree, outCache) := isFreeParameterExp(exp1, inCache, inEnv);
+        (isFree2, outCache) := isFreeParameterExp(exp2, outCache, inEnv);
+      then
+        isFree and isFree2;
+
+    case DAE.LUNARY(exp = exp1)
+      algorithm
+        (isFree, outCache) := isFreeParameterExp(exp1, inCache, inEnv);
+      then
+        isFree;
+
+    case DAE.CALL(expLst = exps)
       algorithm
         outCache := inCache;
         isFree := true;
-        for exp in arr loop
-          (isFreeArr, outCache) := isCrefWithConstBinding(exp, outCache, inEnv);
-          isFree := isFree and isFreeArr;
+        for exp in exps loop
+          (isFree2, outCache) := isFreeParameterExp(exp, outCache, inEnv);
+          isFree := isFree and isFree2;
+        end for;
+      then
+        isFree;
+
+    case DAE.ARRAY(array = exps)
+      algorithm
+        outCache := inCache;
+        isFree := true;
+        for exp in exps loop
+          (isFree2, outCache) := isFreeParameterExp(exp, outCache, inEnv);
+          isFree := isFree and isFree2;
         end for;
       then
         isFree;
@@ -9974,17 +10002,23 @@ algorithm
         isFree := true;
         for row in mat loop
           for exp in row loop
-            (isFreeArr, outCache) := isCrefWithConstBinding(exp, outCache, inEnv);
-            isFree := isFree and isFreeArr;
+            (isFree2, outCache) := isFreeParameterExp(exp, outCache, inEnv);
+            isFree := isFree and isFree2;
           end for;
         end for;
+      then
+        isFree;
+
+    case DAE.CAST(exp = exp1)
+      algorithm
+        (isFree, outCache) := isFreeParameterExp(exp1, inCache, inEnv);
       then
         isFree;
 
     else
       false;
   end match;
-end isCrefWithConstBinding;
+end isFreeParameterExp;
 
 protected function elabPositionalInputArgs
 "This function elaborates the positional input arguments of a function.
