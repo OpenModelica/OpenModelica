@@ -1039,6 +1039,17 @@ void Component::insertInterfacePoint(QString interfaceName)
   mComponentsList.append(new Component(pComponentInfo, this));
 }
 
+void Component::removeInterfacePoint(QString interfaceName)
+{
+  foreach (Component *pComponent, mComponentsList) {
+    if (pComponent->getName().compare(interfaceName) == 0) {
+      mComponentsList.removeOne(pComponent);
+      pComponent->deleteLater();
+      break;
+    }
+  }
+}
+
 /*!
  * \brief Component::createNonExistingComponent
  * Creates a non-existing component.

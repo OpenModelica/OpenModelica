@@ -470,21 +470,24 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
 
     //Now remove all elements in sub model that does not exist in fetched interfaces (i.e. has been externally removed)
     subModel = subModelList.at(i).toElement();
+    Component *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
     QDomElement subModelInterfaceDataElement = subModel.firstChildElement("InterfacePoint");
-    while(!subModelInterfaceDataElement.isNull())
-    {
-      bool interfaceExists=false;
+    while (!subModelInterfaceDataElement.isNull()) {
+      bool interfaceExists = false;
       interfaceDataElement = interfaces.firstChildElement();
-      while(!interfaceDataElement.isNull()) {
-        if(subModelInterfaceDataElement.attribute("Name") == interfaceDataElement.attribute("Name") &&
-           subModel.attribute("Name") == interfaceDataElement.attribute("model")) {
-          interfaceExists=true;
+      while (!interfaceDataElement.isNull()) {
+        if (subModelInterfaceDataElement.attribute("Name") == interfaceDataElement.attribute("Name") &&
+            subModel.attribute("Name") == interfaceDataElement.attribute("model")) {
+          interfaceExists = true;
         }
         interfaceDataElement = interfaceDataElement.nextSiblingElement();
       }
-      if(!interfaceExists) {
+      if (!interfaceExists) {
         QDomElement elementToRemove = subModelInterfaceDataElement;
         subModelInterfaceDataElement = subModelInterfaceDataElement.nextSiblingElement("InterfacePoint");
+        if (pComponent) {
+          pComponent->removeInterfacePoint(elementToRemove.attribute("Name"));
+        }
         subModel.removeChild(elementToRemove);
       }
       else {
@@ -500,25 +503,30 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
     QString from = connection.attribute("From");
     QString to = connection.attribute("To");
 
-    bool fromExists=false;
-    bool toExists=false;
-    for(int i=0; i<subModelList.size(); ++i) {
+    bool fromExists = false;
+    bool toExists = false;
+    for(int i = 0 ; i < subModelList.size() ; ++i) {
       QDomElement subModel = subModelList.at(i).toElement();
       QDomElement subModelInterfaceDataElement = subModel.firstChildElement("InterfacePoint");
-      while(!subModelInterfaceDataElement.isNull()) {
-        if(subModel.attribute("Name") == from.section(".",0,0) &&
-           subModelInterfaceDataElement.attribute("Name") == from.section(".",1,1)) {
+      while (!subModelInterfaceDataElement.isNull()) {
+        if (subModel.attribute("Name") == from.section(".",0,0) && subModelInterfaceDataElement.attribute("Name") == from.section(".",1,1)) {
           fromExists = true;
         }
-        else if(subModel.attribute("Name") == to.section(".",0,0) &&
-           subModelInterfaceDataElement.attribute("Name") == to.section(".",1,1)) {
+        else if (subModel.attribute("Name") == to.section(".",0,0) && subModelInterfaceDataElement.attribute("Name") == to.section(".",1,1)) {
           toExists = true;
         }
         subModelInterfaceDataElement = subModelInterfaceDataElement.nextSiblingElement("InterfacePoint");
       }
     }
-    if(!fromExists || !toExists)
-    {
+    if (!fromExists || !toExists) {
+      foreach (LineAnnotation *pConnectionLineAnnotation, mpModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
+        if (pConnectionLineAnnotation->getStartComponentName().compare(from) == 0 ||
+            pConnectionLineAnnotation->getEndComponentName().compare(to) == 0) {
+          mpModelWidget->getDiagramGraphicsView()->deleteConnectionFromList(pConnectionLineAnnotation);
+          mpModelWidget->getDiagramGraphicsView()->removeItem(pConnectionLineAnnotation);
+          pConnectionLineAnnotation->deleteLater();
+        }
+      }
       connection.parentNode().removeChild(connection);
       --i;
     }
@@ -649,9 +657,7 @@ bool MetaModelEditor::existInterfaceData(QString subModelName, QDomElement inter
       for (int j = 0 ; j < subModelChildren.size() ; j++) {
         QDomElement interfaceElement = subModelChildren.at(j).toElement();
         if (interfaceElement.tagName().compare("InterfacePoint") == 0 &&
-            interfaceElement.attribute("Name").compare(interfaceDataElement.attribute("Name")) == 0 &&
-            interfaceElement.attribute("Position").compare(interfaceDataElement.attribute("Position")) == 0 &&
-            interfaceElement.attribute("Angle321").compare(interfaceDataElement.attribute("Angle321")) == 0) {
+            interfaceElement.attribute("Name").compare(interfaceDataElement.attribute("Name")) == 0) {
           return true;
         }
       }

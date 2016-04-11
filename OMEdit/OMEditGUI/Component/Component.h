@@ -218,6 +218,7 @@ public:
   void shapeDeleted();
   void renameComponentInConnections(QString newName);
   void insertInterfacePoint(QString interfaceName);
+  void removeInterfacePoint(QString interfaceName);
 
   Transformation mTransformation;
   Transformation mOldTransformation;
