@@ -1139,3 +1139,45 @@ void UpdateSimulationParamsCommand::undo()
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
   pMetaModelEditor->updateSimulationParams(mOldStartTime, mOldStopTime);
 }
+
+/*!
+ * \brief AlignInterfacesCommand::AlignInterfacesCommand
+ * \param pEditor
+ * \param oldText
+ * \param newText
+ * \param pParent
+ */
+AlignInterfacesCommand::AlignInterfacesCommand(MetaModelEditor *pMetaModelEditor, QString name,
+                                               QGenericMatrix<3,1,double> oldPos, QGenericMatrix<3,1,double> oldRot,
+                                               QGenericMatrix<3,1,double> newPos, QGenericMatrix<3,1,double> newRot,
+                                               QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpMetaModelEditor = pMetaModelEditor;
+  mName = name;
+  mOldPos = oldPos;
+  mOldRot = oldRot;
+  mNewPos = newPos;
+  mNewRot = newRot;
+}
+
+
+/*!
+ * \brief AlignInterfacesCommand::redo
+ * Redo the align interfaces command
+ */
+void AlignInterfacesCommand::redo()
+{
+  mpMetaModelEditor->updateSubModelOrientation(mName, mNewPos, mNewRot);
+}
+
+
+
+/*!
+ * \brief AlignInterfacesCommand::undo
+ * Undo the align interfaces command
+ */
+void AlignInterfacesCommand::undo()
+{
+  mpMetaModelEditor->updateSubModelOrientation(mName, mOldPos, mOldRot);
+}
