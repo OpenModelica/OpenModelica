@@ -5147,6 +5147,8 @@ algorithm
     local
       CachedInstItem fullInst, partialInst;
       InstHashTable instHash;
+      Option<CachedInstItem> opt;
+      list<Option<CachedInstItem>> lst;
 
     // nothing is we have +d=noCache
     case (_, _, _)
@@ -5169,8 +5171,8 @@ algorithm
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
-        {SOME(fullInst),_} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{SOME(fullInst),partialInstOpt}),instHash);
+        {opt,_} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
+        instHash = BaseHashTable.add((fullEnvPathPlusClass,{opt,partialInstOpt}),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
@@ -5191,8 +5193,8 @@ algorithm
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
-        {_,SOME(partialInst)} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,SOME(partialInst)}),instHash);
+        (_::(lst as {SOME(partialInst)})) = BaseHashTable.get(fullEnvPathPlusClass, instHash);
+        instHash = BaseHashTable.add((fullEnvPathPlusClass,fullInstOpt::lst),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
