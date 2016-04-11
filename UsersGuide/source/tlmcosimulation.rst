@@ -43,11 +43,6 @@ to **Shaft2**. Together they build the double pendulum with two **shafts**, one 
 
 To load the double pendulum MetaModel , select **File > Open MetaModel** from the menu and select pendulum.xml.
 
-.. figure :: media/tlm-file-menu.png
-  :name: tlm-file-menu
-
-  File Menu to Create a new MetaModel, Open an Exsisting MetaModel, and Load External Models.
-
 OMEdit starts loading the MetaModel and will be shown in the **Libraries Browser**.
 Double-clicking the MetaModel in the **Library Browser** will display the double pendulum MetaModel
 as shown below in :numref:`tlm-double-pendulum-metamodel-textview`
@@ -101,7 +96,7 @@ When the co-simulation of the MetaModel is completed successful, simulation resu
 in the OMEdit plotting perspective as shown in :numref:`tlm-plotting-cosimulation-results`.
 The **Variables Browser** display variables that can be plotted. Each variable has a checkbox, checking it will plot the variable.
 
-.. figure :: media/tlm-cosimulation-plotting.png
+.. figure :: media/tlm-plotting-cosimulation-results.png
   :name: tlm-plotting-cosimulation-results
 
   TLM Co-Simulation Results Plotting.
@@ -240,11 +235,6 @@ To change a parameter value of a connection, do any of the following methods:
 - Double-click on the connection you want to change its parameter
 - Right click on the connection and choose **Attributes** from the popup menu.
 
-.. figure :: media/tlm-connections-popup.png
-  :name: tlm-connections-popup
-
-  Connections Popup menu.
-
 The parameter dialog of that connection appears (See :numref:`tlm-submodels-connection-dialog`)
 in which you will be able to specify the connections attributes.
 
@@ -261,7 +251,7 @@ To change the co-simulation parameters, do any of the following methods:
 - Right click an empty location in the Diagram View of the  MetaModel Widget and choose **Simulation Parameters**
   from the popup menu(see :numref:`tlm-change-cosimulation-parameters-popup-menu`)
 
-.. figure :: media/tlm-change-cosimulation-parameter-popup-menu.png
+.. figure :: media/tlm-change-cosimulation-parameters-popup-menu.png
   :name: tlm-change-cosimulation-parameters-popup-menu
 
   Changing Co-Simulation Parameters from the Popup Menu.
