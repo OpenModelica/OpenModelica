@@ -190,8 +190,9 @@ void FetchInterfaceDataDialog::reject()
 /*!
  * \brief AlignInterfacesDialog::AlignInterfacesDialog
  * \param pModelWidget
+ * \param pConnectionLineAnnotation
  */
-AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget)
+AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget, LineAnnotation *pConnectionLineAnnotation)
   : QDialog(pModelWidget), mpModelWidget(pModelWidget)
 {
   setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::alignInterfaces)
@@ -204,16 +205,20 @@ AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget)
   mpHorizontalLine = Utilities::getHeadingLine();
   // list of interfaces
   QStringList interfaces;
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pModelWidget->getEditor());
-  if (pMetaModelEditor) {
-    QDomNodeList connections = pMetaModelEditor->getConnections();
-    for (int i = 0; i < connections.size(); i++) {
-      QDomElement connection = connections.at(i).toElement();
-      interfaces << connection.attribute("From")+"  ->  "+connection.attribute("To");
-      interfaces << connection.attribute("To")+"  ->  "+connection.attribute("From");
+  if (pConnectionLineAnnotation) {
+    interfaces << pConnectionLineAnnotation->getStartComponentName() + "  ->  " + pConnectionLineAnnotation->getEndComponentName();
+    interfaces << pConnectionLineAnnotation->getEndComponentName() + "  ->  " + pConnectionLineAnnotation->getStartComponentName();
+  } else {
+    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pModelWidget->getEditor());
+    if (pMetaModelEditor) {
+      QDomNodeList connections = pMetaModelEditor->getConnections();
+      for (int i = 0; i < connections.size(); i++) {
+        QDomElement connection = connections.at(i).toElement();
+        interfaces << connection.attribute("From") + "  ->  " + connection.attribute("To");
+        interfaces << connection.attribute("To") + "  ->  " + connection.attribute("From");
+      }
     }
   }
-
   // interfaces list
   mpInterfaceListWidget = new QListWidget;
   mpInterfaceListWidget->setItemDelegate(new ItemDelegate(mpInterfaceListWidget));

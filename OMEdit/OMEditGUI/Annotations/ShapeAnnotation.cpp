@@ -40,6 +40,7 @@
 #include "ShapePropertiesDialog.h"
 #include "Commands.h"
 #include "ComponentProperties.h"
+#include "FetchInterfaceDataDialog.h"
 
 /*!
  * \brief GraphicItem::setDefaults
@@ -424,6 +425,10 @@ void ShapeAnnotation::createActions()
   mpShapePropertiesAction = new QAction(Helper::properties, mpGraphicsView);
   mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
   connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(showShapeProperties()));
+  // shape attributes
+  mpAlignInterfacesAction = new QAction(QIcon(":/Resources/icons/align-interfaces.svg"), Helper::alignInterfaces, mpGraphicsView);
+  mpAlignInterfacesAction->setStatusTip(Helper::alignInterfacesTip);
+  connect(mpAlignInterfacesAction, SIGNAL(triggered()), SLOT(alignInterfaces()));
   // shape attributes
   mpShapeAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
   mpShapeAttributesAction->setStatusTip(tr("Shows the shape attributes"));
@@ -1471,7 +1476,7 @@ bool ShapeAnnotation::isLineStraight(QPointF point1, QPointF point2)
  */
 void ShapeAnnotation::showShapeProperties()
 {
-  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
+  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
     return;
   }
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
@@ -1490,9 +1495,23 @@ void ShapeAnnotation::showShapeAttributes()
   }
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  MetaModelConnectionAttributes *pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(mpGraphicsView,
-                                                                                                    pConnectionLineAnnotation, pMainWindow, true);
+  MetaModelConnectionAttributes *pMetaModelConnectionAttributes;
+  pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(mpGraphicsView, pConnectionLineAnnotation, pMainWindow, true);
   pMetaModelConnectionAttributes->exec();
+}
+
+/*!
+ * \brief ShapeAnnotation::alignInterfaces
+ * Slot activated when Align Interfaces option is chosen from context menu of the shape.
+ */
+void ShapeAnnotation::alignInterfaces()
+{
+  if (!mpGraphicsView) {
+    return;
+  }
+  LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
+  AlignInterfacesDialog *pAlignInterfacesDialog = new AlignInterfacesDialog(mpGraphicsView->getModelWidget(), pConnectionLineAnnotation);
+  pAlignInterfacesDialog->exec();
 }
 
 /*!
@@ -1515,6 +1534,8 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
   QMenu menu(mpGraphicsView);
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
     menu.addAction(mpShapeAttributesAction);
+    menu.addSeparator();
+    menu.addAction(mpAlignInterfacesAction);
     menu.addSeparator();
     menu.addAction(mpGraphicsView->getDeleteAction());
   } else {

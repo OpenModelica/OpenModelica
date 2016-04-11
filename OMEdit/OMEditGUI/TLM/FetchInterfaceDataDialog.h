@@ -68,7 +68,7 @@ class AlignInterfacesDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AlignInterfacesDialog(ModelWidget *pModelWidget);
+  AlignInterfacesDialog(ModelWidget *pModelWidget, LineAnnotation *pConnectionLineAnnotation = 0);
 private:
   ModelWidget *mpModelWidget;
   Label *mpAlignInterfacesHeading;
