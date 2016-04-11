@@ -68,6 +68,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_LSS_MAX_DENSITY */       "lssMaxDensity",
   /* FLAG_LSS_MIN_SIZE */          "lssMinSize",
   /* FLAG_LV */                    "lv",
+  /* FLAG_MAX_BISECTION_ITERATIONS */  "mbi",
   /* FLAG_MAX_EVENT_ITERATIONS */  "mei",
   /* FLAG_MAX_ORDER */             "maxIntegrationOrder",
   /* FLAG_MAX_STEP_SIZE */         "maxStepSize",
@@ -134,6 +135,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LSS_MAX_DENSITY */       "[double (default 0.2)] value specifies the maximum density for using a linear sparse solver",
   /* FLAG_LSS_MIN_SIZE */          "[int (default 4001)] value specifies the minimum system size for using a linear sparse solver",
   /* FLAG_LV */                    "[string list] value specifies the logging level",
+  /* FLAG_MAX_BISECTION_ITERATIONS */  "[int (default 0)] value specifies the maximum number of bisection iterations for state event detection or zero for default behavior",
   /* FLAG_MAX_EVENT_ITERATIONS */  "[int (default 20)] value specifies the maximum number of event iterations",
   /* FLAG_MAX_ORDER */             "value specifies maximum integration order, used by dassl solver",
   /* FLAG_MAX_STEP_SIZE */         "value specifies maximum absolute step size, used by dassl solver",
@@ -254,6 +256,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_LV */
   "  Value (a comma-separated String list) specifies which logging levels to\n"
   "  enable. Multiple options can be enabled at the same time.",
+  /* FLAG_MAX_BISECTION_ITERATIONS */
+  "  value specifies the maximum number of bisection iterations for state event\n"
+  "  detection or zero for default behavior",
   /* FLAG_MAX_EVENT_ITERATIONS */
   "  Value specifies the maximum number of event iterations.\n"
   "  The value is an Integer with default value 20.",
@@ -368,6 +373,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_LSS_MAX_DENSITY */       FLAG_TYPE_OPTION,
   /* FLAG_LSS_MIN_SIZE */          FLAG_TYPE_OPTION,
   /* FLAG_LV */                    FLAG_TYPE_OPTION,
+  /* FLAG_MAX_BISECTION_ITERATIONS */  FLAG_TYPE_OPTION,
   /* FLAG_MAX_EVENT_ITERATIONS */  FLAG_TYPE_OPTION,
   /* FLAG_MAX_ORDER */             FLAG_TYPE_OPTION,
   /* FLAG_MAX_STEP_SIZE */         FLAG_TYPE_OPTION,

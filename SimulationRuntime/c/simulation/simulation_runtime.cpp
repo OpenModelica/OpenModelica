@@ -76,6 +76,7 @@
 #include "simulation/solver/solver_main.h"
 #include "simulation_info_json.h"
 #include "modelinfo.h"
+#include "simulation/solver/events.h"
 #include "simulation/solver/model_help.h"
 #include "simulation/solver/mixedSystem.h"
 #include "simulation/solver/linearSystem.h"
@@ -524,6 +525,10 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   if(omc_flag[FLAG_ILS]) {
     init_lambda_steps_string = omc_flagValue[FLAG_ILS];
     init_lambda_steps = atoi(init_lambda_steps_string.c_str());
+  }
+  if(omc_flag[FLAG_MAX_BISECTION_ITERATIONS]) {
+    maxBisectionIterations = atoi(omc_flagValue[FLAG_MAX_BISECTION_ITERATIONS]);
+    infoStreamPrint(LOG_STDOUT, 0, "Maximum number of bisection iterations changed to %d", maxBisectionIterations);
   }
   if(omc_flag[FLAG_MAX_EVENT_ITERATIONS]) {
     maxEventIterations = atoi(omc_flagValue[FLAG_MAX_EVENT_ITERATIONS]);

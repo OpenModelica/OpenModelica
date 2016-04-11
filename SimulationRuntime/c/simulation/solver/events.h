@@ -42,6 +42,7 @@
 extern "C" {
 #endif
 
+extern int maxBisectionIterations;
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
 int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_boolean useRootFinding, double *eventTime);
 
