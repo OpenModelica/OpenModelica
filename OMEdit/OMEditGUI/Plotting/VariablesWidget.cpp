@@ -1086,6 +1086,9 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             }
             pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
             pPlotWindow->getPlot()->replot();
+          } else {
+            pPlotCurve->setDisplayUnit(pVariablesTreeItem->getUnit());
+            pPlotCurve->setTitleLocal();
           }
         }
         if (pPlotWindow->getAutoScaleButton()->isChecked()) {

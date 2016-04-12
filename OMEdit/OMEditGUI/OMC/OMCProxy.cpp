@@ -2314,6 +2314,10 @@ OMCInterface::convertUnits_res OMCProxy::convertUnits(QString from, QString to)
   unitConverion.mToUnit = to;
   unitConverion.mConvertUnits = convertUnits_res;
   mUnitConversionList.append(unitConverion);
+  // show error if units are not compatible
+  if (!convertUnits_res.unitsCompatible) {
+    printMessagesStringInternal();
+  }
   return convertUnits_res;
 }
 
