@@ -348,5 +348,27 @@ algorithm
   end for;
 end stringHashDjb2Work;
 
+function stringAppend6
+  input String str1,str2,str3,str4,str5,str6;
+  output String str;
+protected
+  System.StringAllocator sb=System.StringAllocator(stringLength(str1)+stringLength(str2)+stringLength(str3)+stringLength(str4)+stringLength(str5)+stringLength(str6));
+  Integer c=0;
+algorithm
+  System.stringAllocatorStringCopy(sb, str1, c);
+  c := c + stringLength(str1);
+  System.stringAllocatorStringCopy(sb, str2, c);
+  c := c + stringLength(str2);
+  System.stringAllocatorStringCopy(sb, str3, c);
+  c := c + stringLength(str3);
+  System.stringAllocatorStringCopy(sb, str4, c);
+  c := c + stringLength(str4);
+  System.stringAllocatorStringCopy(sb, str5, c);
+  c := c + stringLength(str5);
+  System.stringAllocatorStringCopy(sb, str6, c);
+  c := c + stringLength(str6);
+  str := System.stringAllocatorResult(sb,str1);
+end stringAppend6;
+
 annotation(__OpenModelica_Interface="util");
 end StringUtil;
