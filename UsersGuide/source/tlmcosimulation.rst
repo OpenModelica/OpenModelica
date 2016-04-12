@@ -56,7 +56,8 @@ Co-Simulating the MetaModel
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are two ways to start co-simulation:
-- Click **TLM Co-Simulation setup button** (|tlm-simulate|) from the toolbar (requires a MetaModel to be active in MetaModel Widget)
+
+-  Click **TLM Co-Simulation setup button** (|tlm-simulate|) from the toolbar (requires a MetaModel to be active in MetaModel Widget)
 
 .. |tlm-simulate| image:: media/omedit-icons/tlm-simulate.*
   :alt: MetaModel simulate Icon
@@ -159,7 +160,8 @@ Fetching Submodels Interface Data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To retrieve list of TLM interface data for sub-models, do any of the following methods:
--  Click **fetch interface points button** (|interface-data|) from the toolbar (requires a MetaModel to be active in ModelWidget)
+
+- Click **fetch interface points button** (|interface-data|) from the toolbar (requires a MetaModel to be active in ModelWidget)
 
 .. |interface-data| image:: media/omedit-icons/interface-data.*
   :alt: MetaModel Interface Data Icon
@@ -216,6 +218,7 @@ Changing Parameter Values of Submodels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To change a parameter value of a sub-model, do any of the following methods:
+
 -  Double-click on the sub-model you want to change its parameter
 -  Right click on the sub-model and choose **Attributes** from the popup menu
 
@@ -242,6 +245,7 @@ Changing Co-Simulation Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To change the co-simulation parameters, do any of the following methods:
+
 - Click Simulation Parameters button (|simulation-parameters|) from the toolbar (requires a MetaModel to be active in MetModel Widget)
 
 .. |simulation-parameters| image:: media/omedit-icons/simulation-parameters.*
