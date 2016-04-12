@@ -840,19 +840,26 @@ void GraphicsView::createBitmapShape(QPointF point)
   }
 }
 
-//! Gets the bounding rectangle of all the items added to the view, excluding background and so on
+/*!
+ * \brief GraphicsView::itemsBoundingRect
+ * Gets the bounding rectangle of all the items added to the view, excluding background and so on
+ * \return
+ */
 QRectF GraphicsView::itemsBoundingRect()
 {
   QRectF rect;
-  foreach(QGraphicsItem *item, mComponentsList){
+  foreach (Component *pComponent, mComponentsList) {
+    rect |= pComponent->itemsBoundingRect();
+  }
+  foreach (QGraphicsItem *item, mShapesList) {
     rect |= item->sceneBoundingRect();
   }
-  foreach(QGraphicsItem *item, mShapesList){
+  foreach (QGraphicsItem *item, mConnectionsList) {
     rect |= item->sceneBoundingRect();
   }
-  foreach(QGraphicsItem *item, mConnectionsList){
-    rect |= item->sceneBoundingRect();
-  }
+  qreal x1, y1, x2, y2;
+  rect.getCoords(&x1, &y1, &x2, &y2);
+  rect.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
   return mapFromScene(rect).boundingRect();
 }
 

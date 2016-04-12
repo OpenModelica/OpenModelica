@@ -457,7 +457,7 @@ void MetaModelSimulationParamsDialog::saveSimulationParams()
 {
   if (validateSimulationParams()) {
     // If user has changed the simulation parameters then push the change on the stack.
-    if(!mOldStartTime.compare(mpStartTimeTextBox->text())== 0 || !mOldStopTime.compare(mpStopTimeTextBox->text())== 0) {
+    if (!mOldStartTime.compare(mpStartTimeTextBox->text())== 0 || !mOldStopTime.compare(mpStopTimeTextBox->text())== 0) {
       UpdateSimulationParamsCommand *pUpdateSimulationParamsCommand;
       pUpdateSimulationParamsCommand = new UpdateSimulationParamsCommand(mpLibraryTreeItem, mOldStartTime, mpStartTimeTextBox->text(),
                                                                          mOldStopTime, mpStopTimeTextBox->text());

@@ -601,6 +601,26 @@ QRectF Component::boundingRect() const
   return QRectF(left, bottom, fabs(left - right), fabs(bottom - top));
 }
 
+/*!
+ * \brief Component::itemsBoundingRect
+ * Gets the bounding rectangle of all the items added to the component.
+ * \return
+ */
+QRectF Component::itemsBoundingRect()
+{
+  QRectF rect;
+  foreach (Component *pComponent, mInheritedComponentsList) {
+    rect |= pComponent->itemsBoundingRect();
+  }
+  foreach (Component *pComponent, mComponentsList) {
+    rect |= pComponent->itemsBoundingRect();
+  }
+  foreach (QGraphicsItem *item, mShapesList) {
+    rect |= item->sceneBoundingRect();
+  }
+  return rect;
+}
+
 void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
   Q_UNUSED(painter);

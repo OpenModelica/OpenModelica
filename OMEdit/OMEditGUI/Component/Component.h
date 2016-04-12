@@ -169,6 +169,7 @@ public:
   bool hasShapeAnnotation(Component *pComponent);
   bool hasNonExistingClass();
   QRectF boundingRect() const;
+  QRectF itemsBoundingRect();
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QString getName() {return mpComponentInfo->getName();}

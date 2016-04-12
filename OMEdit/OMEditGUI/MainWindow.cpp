@@ -1697,7 +1697,6 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
         return;
       }
     }
-    bool oldSkipDrawBackground;
     // show the progressbar and set the message in status bar
     mpProgressBar->setRange(0, 0);
     showProgressBar();
@@ -1730,7 +1729,7 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
     }
     painter.setWindow(destinationRect);
     // paint all the items
-    oldSkipDrawBackground = pGraphicsView->mSkipBackground;
+    bool oldSkipDrawBackground = pGraphicsView->mSkipBackground;
     pGraphicsView->mSkipBackground = true;
     pGraphicsView->render(&painter, destinationRect, destinationRect);
     painter.end();
