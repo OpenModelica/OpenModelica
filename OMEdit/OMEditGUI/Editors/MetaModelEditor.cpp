@@ -766,8 +766,9 @@ bool MetaModelEditor::getPositionAndRotationVectors(QString interfacePoint, QGen
 
   //Make sure that all vector strings are found in XML
   if (cg_x_phi_cg_str.isEmpty() || cg_x_r_cg_str.isEmpty() || x_c_r_x_str.isEmpty() || x_c_phi_x_str.isEmpty()) {
-    QString msg = "Interface coordinates does not exist in xml";
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "",false,0,0,0,0,msg,Helper::scriptingKind,Helper::errorLevel));
+    QString msg = tr("Interface coordinates does not exist in xml");
+    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                                 Helper::errorLevel));
     return false;
   }
 
@@ -858,7 +859,8 @@ void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface
   if (!interfacesAligned(fromInterface, toInterface)) {
     if (showError) {
       mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
-                                                                   "Alignment operation failed.", Helper::scriptingKind,Helper::errorLevel));
+                                                                   tr("Alignment operation failed."), Helper::scriptingKind,
+                                                                   Helper::errorLevel));
     }
   }
 }
