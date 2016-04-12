@@ -1127,6 +1127,8 @@ void UnitParser::initSIUnits() {
   addDerived("power, radiant flux", "milliwatt", "mW", "J/s", Rational(0), Rational(1, 1000), Rational(0), true);
   addDerived("power, radiant flux", "megawatt", "MA", "J/s", Rational(0), Rational(1000000), Rational(0), true);
 
+  addDerived("gauge pressure", "bar", "bar", "Pa", Rational(0), Rational(100000), Rational(0), true);
+
   commit();
 }
 
