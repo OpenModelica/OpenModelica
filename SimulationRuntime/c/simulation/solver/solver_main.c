@@ -315,9 +315,10 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
   case S_IDA:
   {
-    /* Allocate Lobatto6 IIIA work arrays */
+    IDA_SOLVER* idaData = NULL;
+	/* Allocate Lobatto6 IIIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing IDA DAE Solver");
-    IDA_SOLVER* idaData = (IDA_SOLVER*) malloc(sizeof(IDA_SOLVER));
+    idaData = (IDA_SOLVER*) malloc(sizeof(IDA_SOLVER));
     retValue = ida_solver_initial(data, threadData, solverInfo, idaData);
     solverInfo->solverData = idaData;
     break;
