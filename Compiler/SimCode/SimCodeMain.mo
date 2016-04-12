@@ -604,6 +604,7 @@ algorithm
 
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};
+        codegenFuncs := (function SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid)) :: codegenFuncs;
         dumpTaskSystemIfFlag(simCode);
         codegenFuncs := (function runTpl(func=function CodegenC.translateModel(in_a_simCode=simCode))) :: codegenFuncs;
         for f in {
@@ -631,7 +632,6 @@ algorithm
         end for;
         codegenFuncs := (function runTpl(func=function CodegenC.simulationFile_mixAndHeader(a_simCode=simCode, a_modelNamePrefix=simCode.fileNamePrefix))) :: codegenFuncs;
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=false), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
-        codegenFuncs := (function SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid)) :: codegenFuncs;
         if Flags.isSet(Flags.MODEL_INFO_JSON) then
           codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
         else

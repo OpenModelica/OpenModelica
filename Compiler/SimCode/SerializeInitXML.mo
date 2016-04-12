@@ -41,13 +41,16 @@ import BackendDAE.VarKind;
 import CR=ComponentReference;
 import CodegenC;
 import CodegenUtil;
+import DAE.{Exp,Type};
 import Dump;
+import ExpressionDump.printExpStr;
 import File.Escape.XML;
 import Settings;
 import SimCode.{SimulationSettings,VarInfo};
 import SimCodeVar.{AliasVariable,Causality,SimVar};
 import SimCodeUtil;
 import Tpl;
+import Types;
 import Util;
 
 public
@@ -382,6 +385,144 @@ algorithm
   File.write(file, "\">\n");
 end scalarVariableAttribute;
 
+function scalarVariableType "Generates code for ScalarVariable Type file for FMU target."
+  input File.File file;
+  input String unit, displayUnit;
+  input Option<Exp> minValue, maxValue, startValue, nominalValue;
+  input Boolean isFixed;
+  input Type t;
+protected
+  Absyn.Path path;
+algorithm
+  _ := match t
+  case Type.T_INTEGER(__)
+    algorithm
+      File.write(file, "<Integer ");
+      scalarVariableTypeUseAttribute(file, startValue, "useStart", "start");
+      scalarVariableTypeFixedAttribute(file, isFixed);
+      scalarVariableTypeAttribute(file, minValue, "min");
+      scalarVariableTypeAttribute(file, maxValue, "max");
+      scalarVariableTypeStringAttribute(file, unit, "unit");
+      scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");
+      File.write(file, " />");
+    then ();
+  case Type.T_REAL(__)
+    algorithm
+      File.write(file, "<Real ");
+      scalarVariableTypeUseAttribute(file, startValue, "useStart", "start");
+      scalarVariableTypeFixedAttribute(file, isFixed);
+      scalarVariableTypeUseAttribute(file, nominalValue, "useNominal", "nominal");
+      scalarVariableTypeAttribute(file, minValue, "min");
+      scalarVariableTypeAttribute(file, maxValue, "max");
+      scalarVariableTypeStringAttribute(file, unit, "unit");
+      scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");
+    then ();
+  case Type.T_BOOL(__)
+    algorithm
+      File.write(file, "<Boolean ");
+      scalarVariableTypeUseAttribute(file, startValue, "useStart", "start");
+      scalarVariableTypeFixedAttribute(file, isFixed);
+      scalarVariableTypeStringAttribute(file, unit, "unit");
+      scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");
+    then ();
+  case Type.T_STRING(__)
+    algorithm
+      File.write(file, "<String ");
+      scalarVariableTypeUseAttribute(file, startValue, "useStart", "start");
+      scalarVariableTypeFixedAttribute(file, isFixed);
+      scalarVariableTypeStringAttribute(file, unit, "unit");
+      scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");
+    then ();
+  case Type.T_ENUMERATION(__)
+    algorithm
+      File.write(file, "<Integer ");
+      scalarVariableTypeUseAttribute(file, startValue, "useStart", "start");
+      scalarVariableTypeFixedAttribute(file, isFixed);
+      scalarVariableTypeStringAttribute(file, unit, "unit");
+      scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");
+    then ();
+  case Type.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=path))
+    algorithm
+      File.write(file, "<ExternalObject path=\"");
+      Dump.writePath(file, path, XML);
+      File.write(file, "\"");
+    then ();
+  else
+    algorithm
+      Error.addInternalError("ScalarVariableType: "+Types.unparseType(t), sourceInfo());
+    then fail();
+  end match;
+  File.write(file, " />");
+end scalarVariableType;
+
+function scalarVariableTypeUseAttribute
+  input File.File file;
+  input Option<Exp> startValue;
+  input String use, name;
+protected
+  Exp exp;
+algorithm
+  File.write(file, use);
+  _ := match startValue
+  case SOME(exp)
+    algorithm
+      File.write(file, "=\"true\" ");
+      File.write(file, name);
+      File.write(file, "=\"");
+      writeExp(file, exp);
+      File.write(file, "\"");
+    then ();
+  else
+    algorithm
+      File.write(file, "=\"false\"");
+    then ();
+  end match;
+end scalarVariableTypeUseAttribute;
+
+function scalarVariableTypeFixedAttribute
+  input File.File file;
+  input Boolean isFixed;
+algorithm
+  File.write(file, " fixed=\"");
+  File.write(file, String(isFixed));
+  File.write(file, "\"");
+end scalarVariableTypeFixedAttribute;
+
+function scalarVariableTypeAttribute
+  input File.File file;
+  input Option<Exp> attr;
+  input String name;
+protected
+  Exp exp;
+algorithm
+  _ := match attr
+  case SOME(exp)
+    algorithm
+      File.write(file, " ");
+      File.write(file, name);
+      File.write(file, "=\"");
+      writeExp(file, exp);
+      File.write(file, "\"");
+    then ();
+  else ();
+  end match;
+end scalarVariableTypeAttribute;
+
+function scalarVariableTypeStringAttribute
+  input File.File file;
+  input String attr;
+  input String name;
+algorithm
+  if attr=="" then
+    return;
+  end if;
+  File.write(file, " ");
+  File.write(file, name);
+  File.write(file, "=\"");
+  File.writeEscape(file, attr, XML);
+  File.write(file, "\"");
+end scalarVariableTypeStringAttribute;
+
 function getCausality "Returns the Causality Attribute of ScalarVariable."
   input Causality c;
   output String str;
@@ -399,10 +540,10 @@ function getVariablity "Returns the variablity Attribute of ScalarVariable."
   output String str;
 algorithm
   str := match varKind
-    case VarKind.DISCRETE(__) then "discrete";
-    case VarKind.PARAM(__) then "parameter";
-    case VarKind.CONST(__) then "constant";
-    else "continuous";
+  case VarKind.DISCRETE(__) then "discrete";
+  case VarKind.PARAM(__) then "parameter";
+  case VarKind.CONST(__) then "constant";
+  else "continuous";
   end match;
 end getVariablity;
 
@@ -411,12 +552,12 @@ function getAliasVar "Returns the alias Attribute of ScalarVariable."
   input AliasVariable aliasvar;
 algorithm
   _ := match aliasvar
-    case AliasVariable.ALIAS()
-      algorithm File.write(file, "\"alias\" aliasVariable=\""); CR.writeCref(file, aliasvar.varName); File.write(file, "\""); then ();
-    case AliasVariable.NEGATEDALIAS()
-      algorithm File.write(file, "\"negatedAlias\" aliasVariable=\""); CR.writeCref(file, aliasvar.varName); File.write(file, "\""); then ();
-    else
-      algorithm File.write(file, "\"noAlias\""); then ();
+  case AliasVariable.ALIAS()
+    algorithm File.write(file, "\"alias\" aliasVariable=\""); CR.writeCref(file, aliasvar.varName); File.write(file, "\""); then ();
+  case AliasVariable.NEGATEDALIAS()
+    algorithm File.write(file, "\"negatedAlias\" aliasVariable=\""); CR.writeCref(file, aliasvar.varName); File.write(file, "\""); then ();
+  else
+    algorithm File.write(file, "\"noAlias\""); then ();
   end match;
 end getAliasVar;
 
@@ -431,6 +572,20 @@ algorithm
   File.writeInt(file, dt.min, ":%02d");
   File.writeInt(file, dt.sec, ":%02dZ");
 end xsdateTime;
+
+function writeExp
+  input File.File file;
+  input Exp exp;
+algorithm
+  _ := match exp
+  case Exp.ICONST(__) algorithm File.writeInt(file, exp.integer); then ();
+  case Exp.RCONST(__) algorithm File.writeReal(file, exp.real); then ();
+  case Exp.SCONST(__) algorithm File.writeEscape(file, exp.string, XML); then ();
+  case Exp.BCONST(__) algorithm File.write(file, String(exp.bool)); then ();
+  case Exp.ENUM_LITERAL(__) algorithm File.writeInt(file, exp.index); then ();
+  else algorithm Error.addInternalError("initial value of unknown type: " + printExpStr(exp), sourceInfo()); then fail();
+  end match;
+end writeExp;
 
 annotation(__OpenModelica_Interface="backend");
 end SerializeInitXML;
