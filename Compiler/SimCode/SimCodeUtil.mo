@@ -9899,7 +9899,7 @@ protected
   list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
   HashTableCrILst.HashTable varIndexMappingHashTable;
   HashTableCrIListArray.HashTable varArrayIndexMappingHashTable;
-  tuple<Integer,Integer,Integer,Integer> currentVarIndices; //current variable index real,int,bool,string
+  array<Integer> currentVarIndices; //current variable index real,int,bool,string
 algorithm
   (oVarToArrayIndexMapping,oVarToIndexMapping) := match(iModelInfo)
     case(SimCode.MODELINFO(vars = SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,discreteAlgVars=discreteAlgVars,
@@ -9909,7 +9909,7 @@ algorithm
       equation
         varArrayIndexMappingHashTable = HashTableCrIListArray.emptyHashTableSized(BaseHashTable.biggerBucketSize);
         varIndexMappingHashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
-        currentVarIndices = (1,1,1,1); //0 is reserved for unused variables
+        currentVarIndices = arrayCreate(4,1); //0 is reserved for unused variables
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(stateVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(derivativeVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
 
@@ -9946,9 +9946,9 @@ public function addVarToArrayIndexMapping "author: marcusw
   given hash table, a new hash table element with size 'a.length' is allocated. The allocated arrays are row-major based."
   input SimCodeVar.SimVar iVar;
   input Integer iVarType; //1 = real ; 2 = int ; 3 = bool ; 4 = string
-  input tuple<tuple<Integer,Integer,Integer,Integer>, HashTableCrIListArray.HashTable, HashTableCrILst.HashTable> iCurrentVarIndicesHashTable;
+  input tuple<array<Integer>, HashTableCrIListArray.HashTable, HashTableCrILst.HashTable> iCurrentVarIndicesHashTable;
   //<current indices, array related mapping, single var related mapping>
-  output tuple<tuple<Integer,Integer,Integer,Integer>, HashTableCrIListArray.HashTable, HashTableCrILst.HashTable> oCurrentVarIndicesHashTable;
+  output tuple<array<Integer>, HashTableCrIListArray.HashTable, HashTableCrILst.HashTable> oCurrentVarIndicesHashTable;
 protected
   DAE.ComponentRef arrayCref, varName, name, arrayName;
   Integer varIdx, arrayIndex;
@@ -9957,7 +9957,7 @@ protected
   list<String> numArrayElement;
   list<DAE.ComponentRef> expandedCrefs;
   list<String> numArrayElement;
-  tuple<Integer,Integer,Integer,Integer> tmpCurrentVarIndices;
+  array<Integer> tmpCurrentVarIndices;
   list<DAE.Subscript> arraySubscripts;
   HashTableCrIListArray.HashTable tmpVarToArrayIndexMapping; // Maps each array variable to a list of variable indices
   HashTableCrILst.HashTable tmpVarToIndexMapping; // Maps each variable to a concrete index
@@ -10023,20 +10023,19 @@ protected function getArrayIdxByVar "author: marcusw
   input SimCodeVar.SimVar iVar;
   input Integer iVarType;
   input HashTableCrILst.HashTable iVarToIndexMapping;
-  input tuple<Integer,Integer,Integer,Integer> iCurrentVarIndices;
-  output tuple<Integer,Integer,Integer,Integer> oCurrentVarIndices;
+  input output array<Integer> iCurrentVarIndices;
   output Integer oVarIndex;
 protected
   DAE.ComponentRef varName, name;
   Integer varIdx;
-  tuple<Integer,Integer,Integer,Integer> tmpCurrentVarIndices;
+  array<Integer> tmpCurrentVarIndices;
 algorithm
-  (oCurrentVarIndices, oVarIndex) := match(iVar, iVarToIndexMapping, iCurrentVarIndices)
+  oVarIndex := match(iVar, iVarToIndexMapping, iCurrentVarIndices)
     case(SimCodeVar.SIMVAR(name=name, aliasvar=SimCodeVar.NOALIAS()),_,tmpCurrentVarIndices)
       equation
         //print("getArrayIdxByVar: Handling common variable\n");
         (varIdx,tmpCurrentVarIndices) = getVarToArrayIndexByType(iVarType, tmpCurrentVarIndices);
-      then (tmpCurrentVarIndices, varIdx);
+      then varIdx;
     case(SimCodeVar.SIMVAR(name=name, aliasvar=SimCodeVar.NEGATEDALIAS(varName)),_,_)
       equation
         //print("getArrayIdxByVar: Handling negated alias variable pointing to " + ComponentReference.printComponentRefStr(varName) + "\n");
@@ -10047,7 +10046,7 @@ algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {"Negated alias to unknown variable given."});
           fail();
         end if;
-      then (iCurrentVarIndices, varIdx);
+      then varIdx;
     case(SimCodeVar.SIMVAR(name=name, aliasvar=SimCodeVar.ALIAS(varName)),_,_)
       equation
         //print("getArrayIdxByVar: Handling alias variable pointing to " + ComponentReference.printComponentRefStr(varName) + "\n");
@@ -10057,33 +10056,23 @@ algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {"Alias to unknown variable given."});
           fail();
         end if;
-      then (iCurrentVarIndices, varIdx);
+      then varIdx;
   end match;
 end getArrayIdxByVar;
 
 protected function getVarToArrayIndexByType "author: marcusw
   Return the the current variable index of the given tuple, regarding the given type. The index-tuple is incremented and returned."
   input Integer iVarType; //1 = real ; 2 = int ; 3 = bool ; 4 = string
-  input tuple<Integer,Integer,Integer,Integer> iCurrentVarIndices;
   output Integer oVarIdx;
-  output tuple<Integer,Integer,Integer,Integer> oCurrentVarIndices;
-protected
-  Integer floatVarIdx, intVarIdx, boolVarIdx, stringVarIdx;
+  input output array<Integer> iCurrentVarIndices;
 algorithm
-  (oCurrentVarIndices, oVarIdx) := match(iVarType, iCurrentVarIndices)
-    case(1,(floatVarIdx, intVarIdx, boolVarIdx, stringVarIdx))
-      then ((floatVarIdx+1, intVarIdx, boolVarIdx, stringVarIdx), floatVarIdx);
-    case(2,(floatVarIdx, intVarIdx, boolVarIdx, stringVarIdx))
-      then ((floatVarIdx, intVarIdx+1, boolVarIdx, stringVarIdx), intVarIdx);
-    case(3,(floatVarIdx, intVarIdx, boolVarIdx, stringVarIdx))
-      then ((floatVarIdx, intVarIdx, boolVarIdx+1, stringVarIdx), boolVarIdx);
-    case(4,(floatVarIdx, intVarIdx, boolVarIdx, stringVarIdx))
-      then ((floatVarIdx, intVarIdx, boolVarIdx, stringVarIdx+1), stringVarIdx);
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"GetVarToArrayIndexByType with unknown type called."});
-      then (iCurrentVarIndices, -1);
-  end match;
+  try
+    oVarIdx := arrayGet(iCurrentVarIndices, iVarType);
+    arrayUpdate(iCurrentVarIndices, iVarType, oVarIdx+1);
+  else
+    Error.addMessage(Error.INTERNAL_ERROR, {"GetVarToArrayIndexByType with unknown type called."});
+    oVarIdx := -1;
+  end try;
 end getVarToArrayIndexByType;
 
 public function getVarIndexListByMapping "author: marcusw

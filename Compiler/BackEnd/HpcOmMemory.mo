@@ -1941,7 +1941,7 @@ import Util;
     list<tuple<Integer, Integer, Integer>> positionMappingList; //<scVarIdx, arrayPosition, arrayIdx>
     array<Integer> varIdxOffsets;
     list<SimCodeVar.SimVar> notOptimizedVarsFloat, notOptimizedVarsInt, notOptimizedVarsBool, notOptimizedVarsString;
-    tuple<Integer,Integer,Integer,Integer> currentVarIndices;
+    array<Integer> currentVarIndices;
   algorithm
     (oVarToArrayIndexMapping,oVarToIndexMapping,oMemoryMap) := match(iCacheMap, iCacheLineSize, iStateVars, iDerivativeVars, iAliasVars, iIntAliasVars, iBoolAliasVars, iStringAliasVars, iVarSizes, iNotOptimizedVars)
       case(CACHEMAP(cacheLineSize=cacheLineSize, cacheVariables=cacheVariables, cacheLinesFloat=cacheLinesFloat, cacheLinesInt=cacheLinesInt, cacheLinesBool=cacheLinesBool),_,_,_,_,_,_,_,(varSizeFloat, varSizeInt, varSizeBool),(notOptimizedVarsFloat,notOptimizedVarsInt,notOptimizedVarsBool,notOptimizedVarsString))
@@ -1954,27 +1954,36 @@ import Util;
           varArrayIndexMappingHashTable = HashTableCrIListArray.emptyHashTable();
           varIndexMappingHashTable = HashTableCrILst.emptyHashTable();
 
-          currentVarIndices = (1,1,1,1);
+          currentVarIndices = arrayCreate(4,1);
           //The first array elements are reserved for state and state derivative variables
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iStateVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iDerivativeVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
 
           stateAndStateDerSize = intAdd(listLength(iStateVars), listLength(iDerivativeVars));
           if(intEq(intMod(stateAndStateDerSize, maxNumElemsFloat), 0)) then
-            currentVarIndices = (stateAndStateDerSize + 1, 1, 1, 1);
+            arrayUpdate(currentVarIndices,1,(stateAndStateDerSize + 1));
+            arrayUpdate(currentVarIndices,2,1);
+            arrayUpdate(currentVarIndices,3,1);
+            arrayUpdate(currentVarIndices,4,1);
           else
-            currentVarIndices = (stateAndStateDerSize + (maxNumElemsFloat - intMod(stateAndStateDerSize, maxNumElemsFloat)) + 1, 1, 1, 1);
+            arrayUpdate(currentVarIndices,1,stateAndStateDerSize + (maxNumElemsFloat - intMod(stateAndStateDerSize, maxNumElemsFloat)) + 1);
+            arrayUpdate(currentVarIndices,2,1);
+            arrayUpdate(currentVarIndices,3,1);
+            arrayUpdate(currentVarIndices,4,1);
           end if;
 
-          //print("convertCacheToVarArrayMapping: The first " + intString(Util.tuple31(currentVarIndices)) + " elements are reserved for states and state derivatives\n");
-          varSizeFloat = Util.tuple41(currentVarIndices);
+          //print("convertCacheToVarArrayMapping: The first " + intString(arrayGet(currentVarIndices,1)) + " elements are reserved for states and state derivatives\n");
+          varSizeFloat = arrayGet(currentVarIndices,1);
 
           varIdxOffsets = arrayCreate(3,1);
-          varIdxOffsets = arrayUpdate(varIdxOffsets, 1, Util.tuple41(currentVarIndices) + 1);
+          varIdxOffsets = arrayUpdate(varIdxOffsets, 1, arrayGet(currentVarIndices,1) + 1);
           allCacheLines = List.sort(getAllCacheLinesOfCacheMap(iCacheMap), compareCacheLineMapByIdx);
           ((varArrayIndexMappingHashTable,varIndexMappingHashTable)) = List.fold(allCacheLines, function addCacheLineMapToVarArrayMapping(iCacheLineSize=cacheLineSize, iVarIdxOffsets=varIdxOffsets, iCacheVariables=cacheVariablesArray), (varArrayIndexMappingHashTable,varIndexMappingHashTable));
 
-          currentVarIndices = (Util.tuple41(currentVarIndices) + intMul(listLength(cacheLinesFloat), maxNumElemsFloat), intMul(listLength(cacheLinesInt), maxNumElemsInt) + 1, intMul(listLength(cacheLinesBool), maxNumElemsBool) + 1, 1);
+          arrayUpdate(currentVarIndices, 1, arrayGet(currentVarIndices,1) + intMul(listLength(cacheLinesFloat), maxNumElemsFloat));
+          arrayUpdate(currentVarIndices, 2, intMul(listLength(cacheLinesInt), maxNumElemsInt) + 1);
+          arrayUpdate(currentVarIndices, 3, intMul(listLength(cacheLinesBool), maxNumElemsBool) + 1);
+          arrayUpdate(currentVarIndices, 4, 1);
 
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(listReverse(notOptimizedVarsFloat), function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(listReverse(notOptimizedVarsInt), function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_INTEGER), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
@@ -2062,7 +2071,7 @@ import Util;
     Integer clIdx, clSize;
     list<tuple<Integer, Integer, Integer>> iPositionMappingList;
     Integer scVarIdx, start, size, arrayPosition, highestIdx, offset, arridx;
-    tuple<Integer,Integer,Integer,Integer> currentVarIndices;
+    array<Integer> currentVarIndices;
   algorithm
     oPositionMapping := match(iCacheLineEntry, iArrayIdx, iClIdxSize, iVarIdxOffsets, iCacheVariables, iPositionMapping)
       case(CACHELINEENTRY(scVarIdx=scVarIdx, start=start, size=size),_,(clIdx, clSize),_,_,(varArrayIndexMappingHashTable, varIndexMappingHashTable))
@@ -2071,7 +2080,7 @@ import Util;
           //arrayPosition = intDiv(start, size) + (clIdx - 1)*intDiv(clSize, size) + offset;
           arrayPosition = intDiv(start, size) + offset;
           //print("convertCacheMapToMemoryMap2: offset=" + intString(offset) + " array-index=" + intString(iArrayIdx) + " array-position=" + intString(arrayPosition) + "\n");
-          currentVarIndices = (arrayPosition, arrayPosition, arrayPosition, arrayPosition);
+          currentVarIndices = arrayCreate(4,arrayPosition);
           //print("convertCacheMapToMemoryMap2: number of variables=" + intString(arrayLength(iCacheVariables)) + " arrayPosition=" + intString(arrayPosition) + "\n");
           (_, varArrayIndexMappingHashTable, varIndexMappingHashTable) = SimCodeUtil.addVarToArrayIndexMapping(arrayGet(iCacheVariables, arrayLength(iCacheVariables) - scVarIdx + 1), iArrayIdx, (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
           //iPositionMappingList = (realScVarIdx,arrayPosition,iArrayIdx)::iPositionMappingList;
