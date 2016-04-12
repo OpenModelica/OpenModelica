@@ -41,6 +41,7 @@ encapsulated package ComponentReference
 // public imports
 public import Absyn;
 public import DAE;
+public import File;
 
 // protected imports
 protected import ClassInf;
@@ -3579,6 +3580,84 @@ algorithm
   s2 := stringDelimitList(List.mapMap(crefSubs(cref),Expression.getSubscriptExp,ExpressionDump.printExpStr),",");
   s := s1+"["+s2+"]";
 end crefAppendedSubs;
+
+public function writeCref
+  input File.File file;
+  input DAE.ComponentRef cref;
+  input File.Escape escape = File.Escape.None;
+protected
+  DAE.ComponentRef c = cref;
+algorithm
+  while true loop
+    c := match c
+      case DAE.CREF_IDENT()
+        algorithm
+          File.writeEscape(file, c.ident, escape);
+          writeSubscripts(file, c.subscriptLst, escape);
+          return;
+        then fail();
+      case DAE.CREF_QUAL(ident="$DER")
+        algorithm
+          File.write(file, "der(");
+          writeCref(file, c.componentRef, escape);
+          File.write(file, ")");
+          return;
+        then fail();
+      case DAE.CREF_QUAL(ident="$CLKPRE")
+        algorithm
+          File.write(file, "previous(");
+          writeCref(file, c.componentRef, escape);
+          File.write(file, ")");
+          return;
+        then fail();
+      case DAE.CREF_QUAL()
+        algorithm
+          File.writeEscape(file, c.ident, escape);
+          writeSubscripts(file, c.subscriptLst, escape);
+          File.write(file, ".");
+        then c.componentRef;
+    end match;
+  end while;
+end writeCref;
+
+public function writeSubscripts
+  input File.File file;
+  input list<DAE.Subscript> subs;
+  input File.Escape escape = File.Escape.None;
+protected
+  Boolean first=true;
+  Integer i;
+  DAE.Exp exp;
+algorithm
+  if listEmpty(subs) then
+    return;
+  end if;
+  File.write(file, "[");
+  for s in subs loop
+    if not first then
+      File.write(file, ",");
+    else
+      first := false;
+    end if;
+    _ := match s
+      case DAE.WHOLEDIM()
+        algorithm File.write(file, ":"); then ();
+      case DAE.SLICE(DAE.ICONST(i))
+        algorithm File.writeInt(file, i); then ();
+      case DAE.INDEX(DAE.ICONST(i))
+        algorithm File.writeInt(file, i); then ();
+      case DAE.WHOLE_NONEXP(DAE.ICONST(i))
+        algorithm File.writeInt(file, i); then ();
+      case DAE.SLICE(exp)
+        algorithm File.write(file, ExpressionDump.printExpStr(exp)); then ();
+      case DAE.INDEX(exp)
+        algorithm File.write(file, ExpressionDump.printExpStr(exp)); then ();
+      case DAE.WHOLE_NONEXP(exp)
+        algorithm File.write(file, ExpressionDump.printExpStr(exp)); then ();
+    end match;
+  end for;
+  File.write(file, "]");
+end writeSubscripts;
 
 annotation(__OpenModelica_Interface="frontend");
 end ComponentReference;

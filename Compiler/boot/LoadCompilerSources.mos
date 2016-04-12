@@ -294,6 +294,7 @@ if true then /* Suppress output */
 
     "../Script/CevalScriptBackend.mo",
     "../SimCode/HpcOmSimCodeMain.mo",
+    "../SimCode/SerializeInitXML.mo",
     "../SimCode/SerializeModelInfo.mo",
     "../SimCode/SimCodeMain.mo",
     "../SimCode/SimCodeUtil.mo",

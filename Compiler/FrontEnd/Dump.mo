@@ -45,6 +45,8 @@ encapsulated package Dump
 
 // public imports
 import Absyn;
+import File;
+import File.Escape;
 
 // protected imports
 protected
@@ -4911,6 +4913,37 @@ algorithm
   Print.printBuf(s);
   Print.printBuf("\"");
 end printStringAsCorbaString;
+
+public function writePath
+  input File.File file;
+  input Absyn.Path path;
+  input Escape escape=Escape.None;
+  input String delimiter=".";
+  input Boolean initialDot=true;
+protected
+  Absyn.Path p=path;
+algorithm
+  while true loop
+    p := match p
+      case Absyn.IDENT()
+        algorithm
+          File.writeEscape(file, p.name, escape);
+          return;
+        then fail();
+      case Absyn.QUALIFIED()
+        algorithm
+          File.writeEscape(file, p.name, escape);
+          File.writeEscape(file, delimiter, escape);
+        then p.path;
+      case Absyn.FULLYQUALIFIED()
+        algorithm
+          if initialDot then
+            File.writeEscape(file, delimiter, escape);
+          end if;
+        then p.path;
+    end match;
+  end while;
+end writePath;
 
 annotation(__OpenModelica_Interface="frontend");
 end Dump;

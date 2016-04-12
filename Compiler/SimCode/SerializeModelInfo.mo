@@ -50,7 +50,8 @@ import DAEDump;
 import Error;
 import Expression;
 import File;
-import crefStr = ComponentReference.printComponentRefStrFixDollarDer;
+import File.Escape.JSON;
+import writeCref = ComponentReference.writeCref;
 import expStr = ExpressionDump.printExpStr;
 import List;
 import SimCodeUtil;
@@ -78,7 +79,7 @@ algorithm
         File.write(file, "{\"format\":\"Transformational debugger info\",\"version\":1,\n\"info\":{\"name\":");
         serializePath(file, mi.name);
         File.write(file, ",\"description\":\"");
-        File.writeEscape(file, mi.description, escape=File.Escape.JSON);
+        File.writeEscape(file, mi.description, escape=JSON);
         File.write(file, "\"},\n\"variables\":{\n");
         serializeVars(file,vars,withOperations);
         File.write(file, "\n},\n\"equations\":[");
@@ -175,17 +176,17 @@ algorithm
     case SimCodeVar.SIMVAR()
       equation
         File.write(file,if first then "\"" else ",\n\"");
-        File.writeEscape(file,crefStr(var.name),escape=File.Escape.JSON);
+        writeCref(file, var.name, escape=JSON);
         File.write(file,"\":{\"comment\":\"");
-        File.writeEscape(file,var.comment,escape=File.Escape.JSON);
+        File.writeEscape(file,var.comment,escape=JSON);
         File.write(file,"\",\"kind\":\"");
         serializeVarKind(file,var.varKind);
         File.write(file,"\"");
         serializeTypeName(file,var.type_);
         File.write(file,",\"unit\":\"");
-        File.writeEscape(file,var.unit,escape=File.Escape.JSON);
+        File.writeEscape(file,var.unit,escape=JSON);
         File.write(file,"\",\"displayUnit\":\"");
-        File.writeEscape(file,var.displayUnit,escape=File.Escape.JSON);
+        File.writeEscape(file,var.displayUnit,escape=JSON);
         File.write(file,"\",\"source\":");
         serializeSource(file,var.source,withOperations);
         File.write(file,"}");
@@ -238,7 +239,7 @@ algorithm
 
   if isSome(iopt) then
     File.write(file,",\"instance\":\"");
-    File.writeEscape(file,crefStr(Util.getOption(iopt)),escape=File.Escape.JSON);
+    writeCref(file,Util.getOption(iopt),escape=JSON);
     File.write(file,"\"");
   end if;
 
@@ -265,7 +266,7 @@ algorithm
     case SOURCEINFO()
       equation
         File.write(file, "{\"file\":\"");
-        File.writeEscape(file, i.fileName,escape=File.Escape.JSON);
+        File.writeEscape(file, i.fileName,escape=JSON);
         File.write(file, "\",\"lineStart\":");
         File.writeInt(file, i.lineNumberStart);
         File.write(file, ",\"lineEnd\":");
@@ -289,15 +290,15 @@ algorithm
     case DAE.FLATTEN(dae=SOME(elt))
       equation
         File.write(file,"{\"op\":\"before-after\",\"display\":\"flattening\",\"data\":[\"");
-        File.writeEscape(file,System.trim(SCodeDump.equationStr(op.scode,SCodeDump.defaultOptions)),escape=File.Escape.JSON);
+        File.writeEscape(file,System.trim(SCodeDump.equationStr(op.scode,SCodeDump.defaultOptions)),escape=JSON);
         File.write(file,"\",\"");
-        File.writeEscape(file,System.trim(DAEDump.dumpEquationStr(elt)),escape=File.Escape.JSON);
+        File.writeEscape(file,System.trim(DAEDump.dumpEquationStr(elt)),escape=JSON);
         File.write(file,"\"]}");
       then ();
     case DAE.FLATTEN()
       equation
         File.write(file,"{\"op\":\"info\",\"display\":\"scode\",\"data\":[\"");
-        File.writeEscape(file,System.trim(SCodeDump.equationStr(op.scode,SCodeDump.defaultOptions)),escape=File.Escape.JSON);
+        File.writeEscape(file,System.trim(SCodeDump.equationStr(op.scode,SCodeDump.defaultOptions)),escape=JSON);
         File.write(file,"\"]}");
       then ();
     case DAE.SIMPLIFY()
@@ -319,65 +320,65 @@ algorithm
     case DAE.SOLVE(assertConds={})
       equation
         File.write(file,"{\"op\":\"before-after\",\"display\":\"solved\",\"data\":[\"");
-        File.writeEscape(file,expStr(op.exp1),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.exp1),escape=JSON);
         File.write(file," = ");
-        File.writeEscape(file,expStr(op.exp2),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.exp2),escape=JSON);
         File.write(file,"\",\"");
-        File.writeEscape(file,crefStr(op.cr),escape=File.Escape.JSON);
+        writeCref(file,op.cr,escape=JSON);
         File.write(file," = ");
-        File.writeEscape(file,expStr(op.res),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.res),escape=JSON);
         File.write(file,"\"]}");
       then ();
     case DAE.SOLVE()
       equation
         File.write(file,"{\"op\":\"before-after-assert\",\"display\":\"solved\",\"data\":[\"");
-        File.writeEscape(file,expStr(op.exp1),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.exp1),escape=JSON);
         File.write(file," = ");
-        File.writeEscape(file,expStr(op.exp2),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.exp2),escape=JSON);
         File.write(file,"\",\"");
-        File.writeEscape(file,crefStr(op.cr),escape=File.Escape.JSON);
+        writeCref(file,op.cr,escape=JSON);
         File.write(file," = ");
-        File.writeEscape(file,expStr(op.res),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.res),escape=JSON);
         File.write(file,"\"");
-        min(match () case () equation File.write(file,",\""); File.writeEscape(file,expStr(e),escape=File.Escape.JSON); File.write(file,"\""); then true; end match
+        min(match () case () equation File.write(file,",\""); File.writeEscape(file,expStr(e),escape=JSON); File.write(file,"\""); then true; end match
             for e in op.assertConds);
         File.write(file,"]}");
       then ();
     case DAE.OP_RESIDUAL()
       equation
         File.write(file,"{\"op\":\"before-after\",\"display\":\"residual\",\"data\":[");
-        File.writeEscape(file,expStr(op.e1),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.e1),escape=JSON);
         File.write(file," = ");
-        File.writeEscape(file,expStr(op.e2),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.e2),escape=JSON);
         File.write(file,",\"0 = ");
-        File.writeEscape(file,expStr(op.e),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.e),escape=JSON);
         File.write(file,"\"]}");
       then ();
     case DAE.SUBSTITUTION()
       equation
         File.write(file,"{\"op\":\"chain\",\"display\":\"substitution\",\"data\":[\"");
-        File.writeEscape(file,expStr(op.source),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.source),escape=JSON);
         File.write(file,"\"");
-        min(match () case () equation File.write(file,",\""); File.writeEscape(file,expStr(e),escape=File.Escape.JSON); File.write(file,"\""); then true; end match
+        min(match () case () equation File.write(file,",\""); File.writeEscape(file,expStr(e),escape=JSON); File.write(file,"\""); then true; end match
             for e in op.substitutions);
         File.write(file,"]}");
       then ();
     case DAE.SOLVED()
       equation
         File.write(file,"{\"op\":\"info\",\"display\":\"solved\",\"data\":[\"");
-        File.writeEscape(file,crefStr(op.cr),escape=File.Escape.JSON);
+        writeCref(file,op.cr,escape=JSON);
         File.write(file," = ");
-        File.writeEscape(file,expStr(op.exp),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.exp),escape=JSON);
         File.write(file,"\"]}");
       then ();
     case DAE.OP_DIFFERENTIATE()
       equation
         File.write(file,"{\"op\":\"before-after\",\"display\":\"differentiate d/d");
-        File.writeEscape(file,crefStr(op.cr),escape=File.Escape.JSON);
+        writeCref(file,op.cr,escape=JSON);
         File.write(file,"\",\"data\":[\"");
-        File.writeEscape(file,expStr(op.before),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.before),escape=JSON);
         File.write(file,"\",\"");
-        File.writeEscape(file,expStr(op.after),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(op.after),escape=JSON);
         File.write(file,"\"]}");
       then ();
 
@@ -397,9 +398,9 @@ algorithm
       equation
         File.write(file,"{\"op\":\"dummy-der\",\"display\":\"dummy derivative");
         File.write(file,"\",\"data\":[\"");
-        File.write(file,crefStr(op.chosen));
+        writeCref(file,op.chosen);
         File.write(file,"\"");
-        min(match () case () equation File.write(file,",\""); File.writeEscape(file,crefStr(cr),escape=File.Escape.JSON); File.write(file,"\""); then true; end match
+        min(match () case () equation File.write(file,",\""); writeCref(file,cr,escape=JSON); File.write(file,"\""); then true; end match
             for cr in op.candidates);
         File.write(file,"]}");
       then ();
@@ -445,7 +446,7 @@ algorithm
       File.write(file, "\",\"tag\":\"residual\",\"uses\":[");
       serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
       File.write(file, "],\"equation\":[\"");
-      File.writeEscape(file,expStr(eq.exp),escape=File.Escape.JSON);
+      File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");
       serializeSource(file,eq.source,withOperations);
       File.write(file, "}");
@@ -461,11 +462,11 @@ algorithm
       File.write(file, ",\"section\":\"");
       File.write(file, section);
       File.write(file, "\",\"tag\":\"assign\",\"defines\":[\"");
-      File.writeEscape(file,crefStr(eq.cref),escape=File.Escape.JSON);
+      writeCref(file,eq.cref,escape=JSON);
       File.write(file, "\"],\"uses\":[");
       serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
       File.write(file, "],\"equation\":[\"");
-      File.writeEscape(file,expStr(eq.exp),escape=File.Escape.JSON);
+      File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");
       serializeSource(file,eq.source,withOperations);
       File.write(file, "}");
@@ -481,11 +482,11 @@ algorithm
       File.write(file, ",\"section\":\"");
       File.write(file, section);
       File.write(file, "\",\"tag\":\"assign\",\"defines\":[\"");
-      File.writeEscape(file,crefStr(Expression.expCref(eq.lhs)),escape=File.Escape.JSON);
+      writeCref(file,Expression.expCref(eq.lhs),escape=JSON);
       File.write(file, "\"],\"uses\":[");
       serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
       File.write(file, "],\"equation\":[\"");
-      File.writeEscape(file,expStr(eq.exp),escape=File.Escape.JSON);
+      File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");
       serializeSource(file,eq.source,withOperations);
       File.write(file, "}");
@@ -623,7 +624,7 @@ algorithm
       File.write(file, ",\"section\":\"");
       File.write(file, section);
       File.write(file, "\",\"tag\":\"algorithm\",\"defines\":[\"");
-      File.writeEscape(file,crefStr(Expression.expCref(stmt.exp1)),escape=File.Escape.JSON);
+      writeCref(file, Expression.expCref(stmt.exp1),escape=JSON);
       File.write(file, "\"],\"uses\":[");
       serializeUses(file,Expression.extractUniqueCrefsFromExp(stmt.exp));
       File.write(file, "],\"equation\":[");
@@ -877,11 +878,11 @@ algorithm
       File.write(file, ",\"section\":\"");
       File.write(file, section);
       File.write(file, "\",\"tag\":\"assign\",\"defines\":[\"");
-      File.writeEscape(file,crefStr(eq.cref),escape=File.Escape.JSON);
+      writeCref(file,eq.cref,escape=JSON);
       File.write(file, "\"],\"uses\":[");
       serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
       File.write(file, "],\"equation\":[\"");
-      File.writeEscape(file,expStr(eq.exp),escape=File.Escape.JSON);
+      File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");
       serializeSource(file,eq.source,withOperations);
       File.write(file, "}");
@@ -909,7 +910,7 @@ algorithm
         File.write(file,",\"column\":");
         File.write(file,intString(j));
         File.write(file,",\"exp\":\"");
-        File.writeEscape(file,expStr(eq.exp),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(eq.exp),escape=JSON);
         File.write(file,"\",\"source\":");
         serializeSource(file,eq.source,withOperations);
         File.write(file,"}");
@@ -1021,13 +1022,13 @@ algorithm
     case {cr}
       equation
         File.write(file, "\"");
-        File.writeEscape(file, crefStr(cr), escape=File.Escape.JSON);
+        writeCref(file, cr, escape=JSON);
         File.write(file, "\"");
       then ();
     case cr::rest
       equation
         File.write(file, "\"");
-        File.writeEscape(file, crefStr(cr), escape=File.Escape.JSON);
+        writeCref(file, cr, escape=JSON);
         File.write(file, "\",");
         serializeUses(file,rest);
       then ();
@@ -1039,7 +1040,7 @@ function serializeStatement
   input DAE.Statement stmt;
 algorithm
   File.write(file,"\"");
-  File.writeEscape(file, System.trim(DAEDump.ppStatementStr(stmt)), escape=File.Escape.JSON);
+  File.writeEscape(file, System.trim(DAEDump.ppStatementStr(stmt)), escape=JSON);
   File.write(file,"\"");
 end serializeStatement;
 
@@ -1106,7 +1107,7 @@ function serializeExp
   input DAE.Exp exp;
 algorithm
   File.write(file, "\"");
-  File.writeEscape(file, expStr(exp), escape=File.Escape.JSON);
+  File.writeEscape(file, expStr(exp), escape=JSON);
   File.write(file, "\"");
 end serializeExp;
 
@@ -1115,7 +1116,7 @@ function serializeCref
   input DAE.ComponentRef cr;
 algorithm
   File.write(file, "\"");
-  File.writeEscape(file, crefStr(cr), escape=File.Escape.JSON);
+  writeCref(file, cr, escape=JSON);
   File.write(file, "\"");
 end serializeCref;
 
@@ -1124,7 +1125,7 @@ function serializeString
   input String string;
 algorithm
   File.write(file, "\"");
-  File.writeEscape(file, string, escape=File.Escape.JSON);
+  File.writeEscape(file, string, escape=JSON);
   File.write(file, "\"");
 end serializeString;
 
@@ -1140,11 +1141,11 @@ algorithm
     (p,b) := match p
       case Absyn.IDENT()
         algorithm
-          File.writeEscape(file, p.name, escape=File.Escape.JSON);
+          File.writeEscape(file, p.name, escape=JSON);
         then (p,false);
       case Absyn.QUALIFIED()
         algorithm
-          File.writeEscape(file, p.name, escape=File.Escape.JSON);
+          File.writeEscape(file, p.name, escape=JSON);
           File.write(file, ".");
         then (p.path,true);
       case Absyn.FULLYQUALIFIED()
@@ -1183,18 +1184,18 @@ algorithm
   _ := match eqExp
     case DAE.PARTIAL_EQUATION()
       equation
-        File.writeEscape(file,expStr(eqExp.exp),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(eqExp.exp),escape=JSON);
       then ();
     case DAE.RESIDUAL_EXP()
       equation
         File.write(file,"0 = ");
-        File.writeEscape(file,expStr(eqExp.exp),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(eqExp.exp),escape=JSON);
       then ();
     case DAE.EQUALITY_EXPS()
       equation
-        File.writeEscape(file,expStr(eqExp.lhs),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(eqExp.lhs),escape=JSON);
         File.write(file," = ");
-        File.writeEscape(file,expStr(eqExp.rhs),escape=File.Escape.JSON);
+        File.writeEscape(file,expStr(eqExp.rhs),escape=JSON);
       then ();
   end match;
 end writeEqExpStr;

@@ -82,6 +82,7 @@ import HpcOmTaskGraph;
 import SerializeModelInfo;
 import SimCodeDump;
 import TaskSystemDump;
+import SerializeInitXML;
 import Serializer;
 import SimCodeUtil;
 import StringUtil;
@@ -630,7 +631,7 @@ algorithm
         end for;
         codegenFuncs := (function runTpl(func=function CodegenC.simulationFile_mixAndHeader(a_simCode=simCode, a_modelNamePrefix=simCode.fileNamePrefix))) :: codegenFuncs;
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=false), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
-        codegenFuncs := (function runTpl(func=function CodegenC.translateInitFile(in_a_simCode=simCode, in_a_guid=guid))) :: codegenFuncs;
+        codegenFuncs := (function SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid)) :: codegenFuncs;
         if Flags.isSet(Flags.MODEL_INFO_JSON) then
           codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
         else
@@ -647,7 +648,8 @@ algorithm
     case "JavaScript" equation
       guid = System.getUUIDStr();
       Tpl.tplNoret(CodegenC.translateModel, simCode);
-      Tpl.tplNoret2(CodegenC.translateInitFile, simCode, guid);
+      SerializeInitXML.simulationInitFile(simCode, guid);
+      System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_init.xml",simCode.fileNamePrefix+"_init.c", Config.simulationCodeTarget());
       Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
       Tpl.tplNoret(CodegenJS.markdownFile, simCode);
     then ();

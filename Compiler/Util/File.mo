@@ -117,18 +117,19 @@ end write;
 function writeInt
   input File file;
   input Integer data;
-external "C" om_file_write_int(file,data) annotation(Include="
+  input String format="%d";
+external "C" om_file_write_int(file,data,format) annotation(Include="
 #ifndef __OMC_FILE_WRITE_INT
 #define __OMC_FILE_WRITE_INT
 #include <stdio.h>
 #include <errno.h>
 #include \"ModelicaUtilities.h\"
-static inline void om_file_write_int(FILE **file,int data)
+static inline void om_file_write_int(FILE **file,int data,const char *format)
 {
   if (!*file) {
     ModelicaError(\"Failed to write to file (not open)\");
   }
-  if (EOF == fprintf(*file,\"%d\",data)) {
+  if (EOF == fprintf(*file,format,data)) {
     ModelicaFormatError(\"Failed to write to file: %s\\n\", strerror(errno));
   }
 }
@@ -139,14 +140,14 @@ end writeInt;
 function writeReal
   input File file;
   input Real data;
-  input String format="%.15f";
+  input String format="%.15g";
 external "C" om_file_write_real(file,data,format) annotation(Include="
 #ifndef __OMC_FILE_WRITE_REAL
 #define __OMC_FILE_WRITE_REAL
 #include <stdio.h>
 #include <errno.h>
 #include \"ModelicaUtilities.h\"
-static inline void om_file_write_real(FILE **file,int data,const char *format)
+static inline void om_file_write_real(FILE **file,double data,const char *format)
 {
   if (!*file) {
     ModelicaError(\"Failed to write to file (not open)\");
@@ -159,7 +160,8 @@ static inline void om_file_write_real(FILE **file,int data,const char *format)
 ");
 end writeReal;
 
-type Escape = enumeration(C "Escapes C strings (minimally): \\n and \"",
+type Escape = enumeration(None "No escape string",
+                          C "Escapes C strings (minimally): \\n and \"",
                           JSON "Escapes JSON strings (quotes and control characters)",
                           XML "Escapes strings to XML text");
 
@@ -174,7 +176,8 @@ external "C" om_file_write_escape(file,data,escape) annotation(Include="
 #include <errno.h>
 #include \"ModelicaUtilities.h\"
 enum escape_t {
-  C=1,
+  None=1,
+  C,
   JSON,
   XML
 };
@@ -185,6 +188,11 @@ static inline void om_file_write_escape(FILE **file,const char *data,enum escape
     ModelicaError(\"Failed to write to file (not open)\\n\");
   }
   switch (escape) {
+  case None:
+    if (EOF == fputs(data, *file)) {
+      ModelicaFormatError(\"Failed to write to file: %s\\n\", strerror(errno));
+    }
+    break;
   case C:
     while (*data) {
       if (*data == '\\n') {
