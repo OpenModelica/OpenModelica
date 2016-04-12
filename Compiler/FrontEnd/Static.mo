@@ -4671,6 +4671,9 @@ algorithm
         ty2 = Types.arrayElementType(Types.getPropType(prop2));
         (c,_) = Types.matchType(c,ty1,DAE.T_CLOCK_DEFAULT,true);
         (solverMethod,_) = Types.matchType(solverMethod,ty2,DAE.T_STRING_DEFAULT,true);
+        // evaluate structural solverMethod (rfranke)
+        (cache, val, _) = Ceval.ceval(cache, env, solverMethod, false, NONE(), Absyn.MSG(info), 0);
+        solverMethod = ValuesUtil.valueExp(val);
         call = DAE.CLKCONST(DAE.SOLVER_CLOCK(c, solverMethod));
       then (cache, call, prop);
 
@@ -4683,6 +4686,9 @@ algorithm
         ty2 = Types.arrayElementType(Types.getPropType(prop2));
         (c,_) = Types.matchType(c,ty1,DAE.T_CLOCK_DEFAULT,true);
         (solverMethod,_) = Types.matchType(solverMethod,ty2,DAE.T_STRING_DEFAULT,true);
+        // evaluate structural solverMethod (rfranke)
+        (cache, val, _) = Ceval.ceval(cache, env, solverMethod, false, NONE(), Absyn.MSG(info), 0);
+        solverMethod = ValuesUtil.valueExp(val);
         call = DAE.CLKCONST(DAE.SOLVER_CLOCK(c, solverMethod));
       then (cache, call, prop);
 
