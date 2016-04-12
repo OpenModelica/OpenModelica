@@ -4876,7 +4876,7 @@ algorithm
   invars := List.select(invars,checkInputUsedAnnotation);
   invars := checkExternalDeclInputUsed(invars,decl);
   invars := List.select1(invars,checkVarBindingsInputUsed,vars);
-  (_,(_,invars)) := DAEUtil.traverseDAE2(algs,Expression.traverseSubexpressionsHelper,(checkExpInputUsed,invars));
+  (_,(_,invars)) := DAEUtil.traverseDAEElementList(algs,Expression.traverseSubexpressionsHelper,(checkExpInputUsed,invars));
   List.map1_0(invars,warnUnusedFunctionVar,name);
 end checkFunctionInputUsed;
 

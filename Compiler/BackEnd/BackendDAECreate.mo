@@ -3298,7 +3298,7 @@ algorithm
        params_new = List.map(crefs_new,Expression.crefExp);
        repl = VarTransform.emptyReplacements();
        repl =  VarTransform.addReplacementLst(repl,crefs,params_new);
-       (body,_) = DAEUtil.traverseDAE2(body,replaceParameters,repl);
+       (body,_) = DAEUtil.traverseDAEElementList(body,replaceParameters,repl);
      then DAE.FUNCTION_DEF(body);
    else
      then funcIn;

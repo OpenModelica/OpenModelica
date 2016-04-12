@@ -1133,7 +1133,7 @@ public function findLiterals
 algorithm
   (ofns, (_, _, literals)) := DAEUtil.traverseDAEFunctions(
     fns, findLiteralsHelper,
-    (0, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize), {}), {});
+    (0, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize), {}));
   literals := listReverse(literals);
 end findLiterals;
 
@@ -2342,8 +2342,8 @@ algorithm
         els = DAEUtil.getFunctionElements(funcelem);
         // SimCode.Function reference variables are filtered out
         varfuncs = List.fold(els, DAEUtil.collectFunctionRefVarPaths, {});
-        (_, (_, varfuncs)) = DAEUtil.traverseDAE2(els, Expression.traverseSubexpressionsHelper, (DAEUtil.collectValueblockFunctionRefVars, varfuncs));
-        (_, (_, (calledfuncs, _))) = DAEUtil.traverseDAE2(els, Expression.traverseSubexpressionsHelper, (matchNonBuiltinCallsAndFnRefPaths, ({}, varfuncs)));
+        (_, (_, varfuncs)) = DAEUtil.traverseDAEElementList(els, Expression.traverseSubexpressionsHelper, (DAEUtil.collectValueblockFunctionRefVars, varfuncs));
+        (_, (_, (calledfuncs, _))) = DAEUtil.traverseDAEElementList(els, Expression.traverseSubexpressionsHelper, (matchNonBuiltinCallsAndFnRefPaths, ({}, varfuncs)));
         ht = BaseHashTable.add((pathstr, path), ht);
         ht = addDestructor(funcelem, ht);
         ht = getCalledFunctionsInFunctions(calledfuncs, ht, funcs);

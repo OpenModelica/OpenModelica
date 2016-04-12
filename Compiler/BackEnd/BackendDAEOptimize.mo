@@ -1548,7 +1548,7 @@ algorithm
 
     if isSome(f) then
       outUsedFunctions := DAE.AvlTreePathFunction.add(outUsedFunctions, inPath, f);
-      (_, outUsedFunctions) := DAEUtil.traverseDAE2(body,
+      (_, outUsedFunctions) := DAEUtil.traverseDAEElementList(body,
         function checkUnusedFunctions(inFunctions = inFunctions), outUsedFunctions);
     end if;
   end try;

@@ -979,7 +979,7 @@ algorithm
         //  BaseHashTable.dumpHashTable(table);
         rooted = setRootDistance(inRoots,table,0,{},HashTable.emptyHashTable());
         //  BaseHashTable.dumpHashTable(rooted);
-        (outDae, _) = DAEUtil.traverseDAE2(inDae, evalConnectionsOperatorsHelper, (rooted,inRoots,graph));
+        (outDae, _) = DAEUtil.traverseDAEElementList(inDae, evalConnectionsOperatorsHelper, (rooted,inRoots,graph));
       then outDae;
 
   end matchcontinue;
