@@ -258,18 +258,20 @@ private:
 class AlignInterfacesCommand : public QUndoCommand
 {
 public:
-  AlignInterfacesCommand(MetaModelEditor *pMetaModelEditor, QString name, QGenericMatrix<3,1,double> oldPos, QGenericMatrix<3,1,double> oldRot,
-                         QGenericMatrix<3,1,double> newPos, QGenericMatrix<3,1,double> newRot,
-                         QUndoCommand *pParent = 0);
+  AlignInterfacesCommand(MetaModelEditor *pMetaModelEditor, QString fromInterface, QString toInterface, QGenericMatrix<3,1,double> oldPos,
+                         QGenericMatrix<3,1,double> oldRot, QGenericMatrix<3,1,double> newPos, QGenericMatrix<3,1,double> newRot,
+                         LineAnnotation *pConnectionLineAnnotation, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   MetaModelEditor *mpMetaModelEditor;
-  QString mName;
+  QString mFromInterface;
+  QString mToInterface;
   QGenericMatrix<3,1,double> mOldPos;
   QGenericMatrix<3,1,double> mOldRot;
   QGenericMatrix<3,1,double> mNewPos;
   QGenericMatrix<3,1,double> mNewRot;
+  LineAnnotation *mpConnectionLineAnnotation;
 };
 
 #endif // COMMANDS_H

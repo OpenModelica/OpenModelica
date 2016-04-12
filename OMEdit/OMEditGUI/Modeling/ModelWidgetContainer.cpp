@@ -2805,6 +2805,8 @@ void ModelWidget::reDrawModelWidget()
   if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
     getMetaModelSubModels();
     getMetaModelConnections();
+    // clear the undo stack
+    mpUndoStack->clear();
   } else {
     // Draw icon view
     mExtendsModifiersLoaded = false;

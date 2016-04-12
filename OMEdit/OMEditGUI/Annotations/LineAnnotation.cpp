@@ -726,6 +726,7 @@ void LineAnnotation::setAligned(bool aligned)
   } else {
     setLineColor(QColor(Qt::red));
   }
+  update();
 }
 
 /*!

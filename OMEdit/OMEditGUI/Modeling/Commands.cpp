@@ -1147,20 +1147,21 @@ void UpdateSimulationParamsCommand::undo()
  * \param newText
  * \param pParent
  */
-AlignInterfacesCommand::AlignInterfacesCommand(MetaModelEditor *pMetaModelEditor, QString name,
+AlignInterfacesCommand::AlignInterfacesCommand(MetaModelEditor *pMetaModelEditor, QString fromInterface, QString toInterface,
                                                QGenericMatrix<3,1,double> oldPos, QGenericMatrix<3,1,double> oldRot,
                                                QGenericMatrix<3,1,double> newPos, QGenericMatrix<3,1,double> newRot,
-                                               QUndoCommand *pParent)
+                                               LineAnnotation *pConnectionLineAnnotation, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpMetaModelEditor = pMetaModelEditor;
-  mName = name;
+  mFromInterface = fromInterface;
+  mToInterface = toInterface;
   mOldPos = oldPos;
   mOldRot = oldRot;
   mNewPos = newPos;
   mNewRot = newRot;
+  mpConnectionLineAnnotation = pConnectionLineAnnotation;
 }
-
 
 /*!
  * \brief AlignInterfacesCommand::redo
@@ -1168,10 +1169,12 @@ AlignInterfacesCommand::AlignInterfacesCommand(MetaModelEditor *pMetaModelEditor
  */
 void AlignInterfacesCommand::redo()
 {
-  mpMetaModelEditor->updateSubModelOrientation(mName, mNewPos, mNewRot);
+  mpMetaModelEditor->updateSubModelOrientation(mFromInterface.split(".").first(), mNewPos, mNewRot);
+  //qDebug() << mpMetaModelEditor->interfacesAligned(mFromInterface, mToInterface);
+  if (mpConnectionLineAnnotation) {
+    mpConnectionLineAnnotation->setAligned(mpMetaModelEditor->interfacesAligned(mFromInterface, mToInterface));
+  }
 }
-
-
 
 /*!
  * \brief AlignInterfacesCommand::undo
@@ -1179,5 +1182,9 @@ void AlignInterfacesCommand::redo()
  */
 void AlignInterfacesCommand::undo()
 {
-  mpMetaModelEditor->updateSubModelOrientation(mName, mOldPos, mOldRot);
+  mpMetaModelEditor->updateSubModelOrientation(mFromInterface.split(".").first(), mOldPos, mOldRot);
+  //qDebug() << mpMetaModelEditor->interfacesAligned(mFromInterface, mToInterface);
+  if (mpConnectionLineAnnotation) {
+    mpConnectionLineAnnotation->setAligned(mpMetaModelEditor->interfacesAligned(mFromInterface, mToInterface));
+  }
 }
