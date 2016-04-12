@@ -2103,14 +2103,14 @@ algorithm
   (outExp,outTpl) := match (inExp,inTpl)
     local
       DAE.Exp exp, crexp, cond, e1, e2;
-      Boolean b;
+      Boolean b1, b2;
     case (DAE.IFEXP(cond, e1, e2), (crexp, exp))
       equation
-        b = Expression.expContains(e1, crexp);
-        e1 = if b then e1 else exp;
-        b = Expression.expContains(e2, crexp);
-        e2 = if b then e2 else exp;
-      then (DAE.IFEXP(cond, e1, e2), inTpl);
+        b1 = Expression.expContains(e1, crexp);
+        e1 = if b1 then e1 else exp;
+        b2 = Expression.expContains(e2, crexp);
+        e2 = if b2 then e2 else exp;
+      then (if b1 and b2 then inExp else DAE.IFEXP(cond, e1, e2), inTpl);
     else (inExp,inTpl);
   end match;
 end replaceIFBrancheswithoutVar;
@@ -3761,7 +3761,7 @@ protected function getFurtherVars
   input BackendDAE.Var v;
   input tuple<list<BackendDAE.Var>, DAE.ComponentRef> inTpl;
   output BackendDAE.Var outVar = v;
-  output tuple<list<BackendDAE.Var>, DAE.ComponentRef> outTpl;
+  output tuple<list<BackendDAE.Var>, DAE.ComponentRef> outTpl = inTpl;
 protected
   DAE.ComponentRef diffCref;
   list<BackendDAE.Var> vars;
@@ -3771,8 +3771,8 @@ algorithm
   b := ComponentReference.crefLastIdentEqual(BackendVariable.varCref(v), diffCref);
   if not b then
     vars := v::vars;
+    outTpl := (vars, diffCref);
   end if;
-  outTpl := (vars, diffCref);
 end getFurtherVars;
 
 protected function createJacobianLinearCode
@@ -6388,33 +6388,33 @@ algorithm
   setVariableIndex(simVars);
 
   outVars := SimCodeVar.SIMVARS(
-    arrayGet(simVars, Integer(SimVarsIndex.state)),
-    arrayGet(simVars, Integer(SimVarsIndex.derivative)),
-    arrayGet(simVars, Integer(SimVarsIndex.alg)),
-    arrayGet(simVars, Integer(SimVarsIndex.discreteAlg)),
-    arrayGet(simVars, Integer(SimVarsIndex.intAlg)),
-    arrayGet(simVars, Integer(SimVarsIndex.boolAlg)),
-    arrayGet(simVars, Integer(SimVarsIndex.inputs)),
-    arrayGet(simVars, Integer(SimVarsIndex.outputs)),
-    arrayGet(simVars, Integer(SimVarsIndex.alias)),
-    arrayGet(simVars, Integer(SimVarsIndex.intAlias)),
-    arrayGet(simVars, Integer(SimVarsIndex.boolAlias)),
-    arrayGet(simVars, Integer(SimVarsIndex.param)),
-    arrayGet(simVars, Integer(SimVarsIndex.intParam)),
-    arrayGet(simVars, Integer(SimVarsIndex.boolParam)),
-    arrayGet(simVars, Integer(SimVarsIndex.stringAlg)),
-    arrayGet(simVars, Integer(SimVarsIndex.stringParam)),
-    arrayGet(simVars, Integer(SimVarsIndex.stringAlias)),
-    arrayGet(simVars, Integer(SimVarsIndex.extObj)),
-    arrayGet(simVars, Integer(SimVarsIndex.const)),
-    arrayGet(simVars, Integer(SimVarsIndex.intConst)),
-    arrayGet(simVars, Integer(SimVarsIndex.boolConst)),
-    arrayGet(simVars, Integer(SimVarsIndex.stringConst)),
-    arrayGet(simVars, Integer(SimVarsIndex.jacobian)),
-    arrayGet(simVars, Integer(SimVarsIndex.seed)),
-    arrayGet(simVars, Integer(SimVarsIndex.realOptimizeConstraints)),
-    arrayGet(simVars, Integer(SimVarsIndex.realOptimizeFinalConstraints)),
-    arrayGet(simVars, Integer(SimVarsIndex.mixedArray))
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.state)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.derivative)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.alg)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.discreteAlg)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.intAlg)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.boolAlg)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.inputs)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.outputs)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.alias)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.intAlias)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.boolAlias)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.param)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.intParam)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.boolParam)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.stringAlg)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.stringParam)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.stringAlias)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.extObj)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.const)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.intConst)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.boolConst)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.stringConst)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.jacobian)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.seed)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeConstraints)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeFinalConstraints)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.mixedArray))
   );
 end createVars;
 
@@ -6566,7 +6566,7 @@ protected function addSimVar
   input SimVarsIndex index;
   input array<list<SimCodeVar.SimVar>> simVars;
 algorithm
-  arrayUpdate(simVars, Integer(index), simVar::arrayGet(simVars, Integer(index)));
+  Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(index), simVar::Dangerous.arrayGetNoBoundsChecking(simVars, Integer(index)));
 end addSimVar;
 
 protected function derVarFromStateVar
@@ -7113,9 +7113,9 @@ protected
   array<Integer> arr;
 algorithm
   for i in SimVarsIndex loop
-    arrayUpdate(simvars, Integer(i), List.sort(arrayGet(simvars, Integer(i)), simVarCompareByCrefSubsAtEndlLexical));
+    Dangerous.arrayUpdateNoBoundsChecking(simvars, Integer(i), List.sort(Dangerous.arrayGetNoBoundsChecking(simvars, Integer(i)), simVarCompareByCrefSubsAtEndlLexical));
   end for;
-  for v in arrayGet(simvars, Integer(SimVarsIndex.inputs)) loop
+  for v in Dangerous.arrayGetNoBoundsChecking(simvars, Integer(SimVarsIndex.inputs)) loop
     // Set input indexes as they appear in the sorted order; is mutable since we need the same index in the other lists of vars...
     i := match v
       case SimCodeVar.SIMVAR(inputIndex=SOME(arr))
@@ -7160,13 +7160,13 @@ algorithm
   set := HashSet.emptyHashSet();
 
   for i in SimVarsIndex loop
-    set := List.fold(arrayGet(simvars, Integer(i)), collectArrayFirstVars, set);
+    set := List.fold(Dangerous.arrayGetNoBoundsChecking(simvars, Integer(i)), collectArrayFirstVars, set);
   end for;
 
   // add array information to incomplete arrays
   for i in SimVarsIndex loop
-    (simVars, set) := List.mapFold(arrayGet(simvars, Integer(i)), setArrayElementnoFirst, set);
-    arrayUpdate(simvars, Integer(i), simVars);
+    (simVars, set) := List.mapFold(Dangerous.arrayGetNoBoundsChecking(simvars, Integer(i)), setArrayElementnoFirst, set);
+    Dangerous.arrayUpdateNoBoundsChecking(simvars, Integer(i), simVars);
   end for;
 end extendIncompleteArray;
 
@@ -7229,7 +7229,7 @@ protected function fixIndex
   input array<list<SimCodeVar.SimVar>> simVars;
 algorithm
   for i in SimVarsIndex.state : SimVarsIndex.stringConst loop // Skip jacobian, seed, mixedArray
-    arrayUpdate(simVars, Integer(i), rewriteIndex(arrayGet(simVars,Integer(i)), 0));
+    Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(i), rewriteIndex(Dangerous.arrayGetNoBoundsChecking(simVars,Integer(i)), 0));
   end for;
 end fixIndex;
 
@@ -7256,8 +7256,8 @@ protected
 algorithm
   //special order for fmi: real => intger => boolean => string => external
   for i in SimVarsIndex.state : SimVarsIndex.stringConst loop
-    (lst, index_) := setVariableIndexHelper(arrayGet(simVars, Integer(i)), index_);
-    arrayUpdate(simVars, Integer(i), lst);
+    (lst, index_) := setVariableIndexHelper(Dangerous.arrayGetNoBoundsChecking(simVars, Integer(i)), index_);
+    Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(i), lst);
   end for;
 end setVariableIndex;
 
@@ -7895,12 +7895,12 @@ algorithm
   outJac := match inJac
     local
       Integer a, b;
-      SimCode.SimEqSystem ses;
+      SimCode.SimEqSystem ses, ses_;
     case ((a, b, ses))
       equation
-        ses = addDivExpErrorMsgtoSimEqSystem(ses);
+        ses_ = addDivExpErrorMsgtoSimEqSystem(ses);
       then
-        ((a, b, ses));
+        (if referenceEq(ses,ses_) then inJac else (a, b, ses_));
   end match;
 end addDivExpErrorMsgtosimJac;
 
