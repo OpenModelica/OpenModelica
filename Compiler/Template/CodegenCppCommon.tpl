@@ -1139,7 +1139,6 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
          "")
        <<
        <%arrIndex%> = 1;
-       /* Note: skip dimensioning of <%res%> because create_array_from_shape does it*/
        <% match typeof(r.expr)
         case T_COMPLEX(complexClassType = record_state) then
           let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
@@ -1147,14 +1146,19 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         case T_ARRAY(__) then
           let dim_vec = tempDecl("std::vector<size_t>",&tmpVarDecls)
           let dimSizes = dims |> dim => match dim
-            case DIM_INTEGER(__) then '<%dim_vec%>.push_back(<%integer%>);'
-            case DIM_BOOLEAN(__) then '<%dim_vec%>.push_back(2);'
-            case DIM_ENUM(__) then '<%dim_vec%>.push_back(<%size%>);'
+            case DIM_INTEGER(__) then '<%dim_vec%>.push_back(<%integer%>)'
+            case DIM_BOOLEAN(__) then '<%dim_vec%>.push_back(2)'
+            case DIM_ENUM(__) then '<%dim_vec%>.push_back(<%size%>)'
+            case DIM_EXP(exp = exp) then
+              let val = daeExp(exp, context, &rangeExpPre, &tmpVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+              '<%dim_vec%>.push_back(<%val%>)'
             else error(sourceInfo(), 'array reduction unable to generate code for element of unknown dimension sizes; type <%unparseType(typeof(r.expr))%>: <%ExpressionDump.printExpStr(r.expr)%>')
-            ; separator = ", "
-          '<%dim_vec%>.push_back(<%length%>);
-           <%dimSizes%>
-           <%res%>.setDims(<%dim_vec%>);'
+            ; separator = "; "
+          <<
+          <%dim_vec%>.push_back(<%length%>);
+          <%dimSizes%>;
+          <%res%>.setDims(<%dim_vec%>);
+          >>
 
         else
           '<%res%>.setDims(<%length%>);'%>
