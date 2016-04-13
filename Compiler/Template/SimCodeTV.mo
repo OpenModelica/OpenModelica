@@ -206,6 +206,8 @@ package SimCodeVar
       list<SimVar> realOptimizeConstraintsVars;
       list<SimVar> realOptimizeFinalConstraintsVars;
       list<SimVar> mixedArrayVars;
+      list<SimVar> residualVars;
+      list<SimVar> algebraicDAEVars;
     end SIMVARS;
   end SimVars;
 
@@ -279,6 +281,7 @@ package SimCode
       list<list<SimEqSystem>> odeEquations;
       list<list<SimEqSystem>> algebraicEquations;
       list<ClockedPartition> clockedPartitions;
+      list<list<SimEqSystem>> daeEquations;
       Boolean useSymbolicInitialization;         // true if a system to solve the initial problem symbolically is generated, otherwise false
       Boolean useHomotopy;                       // true if homotopy(...) is used during initialization
       list<SimEqSystem> initialEquations;
@@ -3269,11 +3272,17 @@ package Flags
   constant ConfigFlag MATRIX_FORMAT;
   constant DebugFlag FMU_EXPERIMENTAL;
   constant DebugFlag MULTIRATE_PARTITION;
+  constant ConfigFlag DAE_MODE;
 
   function isSet
     input DebugFlag inFlag;
     output Boolean outValue;
   end isSet;
+
+  function getConfigBool
+    input ConfigFlag inFlag;
+    output Boolean outValue;
+  end getConfigBool;
 
   function getConfigInt
     input ConfigFlag inFlag;

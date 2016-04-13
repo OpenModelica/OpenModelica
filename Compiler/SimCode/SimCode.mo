@@ -91,6 +91,7 @@ uniontype SimCode
     list<list<SimEqSystem>> odeEquations;
     list<list<SimEqSystem>> algebraicEquations;
     list<ClockedPartition> clockedPartitions;
+    list<list<SimEqSystem>> daeEquations;
     Boolean useHomotopy "true if homotopy(...) is used during initialization";
     list<SimEqSystem> initialEquations;
     list<SimEqSystem> initialEquations_lambda0;

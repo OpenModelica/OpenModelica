@@ -1266,6 +1266,9 @@ constant ConfigFlag NO_TEARING_FOR_COMPONENT = CONFIG_FLAG(93, "noTearingForComp
 constant ConfigFlag CT_STATE_MACHINES = CONFIG_FLAG(94, "ctStateMachines",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental: Enable continuous-time state machine prototype"));
+constant ConfigFlag DAE_MODE = CONFIG_FLAG(95, "daeMode",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Generates additional code for DAE mode, where dynamic equations are not causelized."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1365,7 +1368,8 @@ constant list<ConfigFlag> allConfigFlags = {
   MAX_SIZE_LINEAR_TEARING,
   MAX_SIZE_NONLINEAR_TEARING,
   NO_TEARING_FOR_COMPONENT,
-  CT_STATE_MACHINES
+  CT_STATE_MACHINES,
+  DAE_MODE
 };
 
 public function new
