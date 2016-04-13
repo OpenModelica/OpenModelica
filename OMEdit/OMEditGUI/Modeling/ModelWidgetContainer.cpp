@@ -2871,15 +2871,13 @@ void ModelWidget::reDrawModelWidget()
  */
 bool ModelWidget::validateText(LibraryTreeItem **pLibraryTreeItem)
 {
-  ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(mpEditor);
-  if (pModelicaEditor) {
+  if (ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(mpEditor)) {
     return pModelicaEditor->validateText(pLibraryTreeItem);
-  }
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
-  if (pMetaModelEditor) {
+  } else if (MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor)) {
     return pMetaModelEditor->validateText();
+  } else {
+    return true;
   }
-  return true;
 }
 
 /*!
@@ -3801,12 +3799,11 @@ void ModelWidget::showDiagramView(bool checked)
  */
 void ModelWidget::showTextView(bool checked)
 {
-  QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
-  if (pSubWindow) {
-    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  }
   if (!checked || (checked && mpEditor->isVisible())) {
     return;
+  }
+  if (QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow()) {
+    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeltext.svg"));
   }
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
@@ -3864,11 +3861,11 @@ bool ModelWidget::metaModelEditorTextChanged()
     return false;
   }
   delete pMessageHandler;
-  /* get the model components and connectors */
-  reDrawModelWidget();
   // update the xml document with new accepted text.
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
   pMetaModelEditor->setXmlDocument(mpEditor->getPlainTextEdit()->toPlainText());
+  /* get the model components and connectors */
+  reDrawModelWidget();
   return true;
 }
 
