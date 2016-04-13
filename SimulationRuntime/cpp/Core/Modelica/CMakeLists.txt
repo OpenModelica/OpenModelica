@@ -113,7 +113,12 @@ ENDIF(CMAKE_BUILD_TYPE)
 
 IF(WIN32)
 	SET(Boost_LIBS_ "$(OMHOME)/bin")
-	SET(Boost_INCLUDE_ "$(OMHOME)/include/omc/cpp")
+	IF(MSVC)
+		SET(Boost_INCLUDE_ "$(OMHOME)/include/omc/cpp/3rdParty/boost/msvc/")
+	ELSE(MSVC)
+		SET(Boost_INCLUDE_ "$(OMHOME)/include/omc/cpp/3rdParty/boost/gcc/")
+	ENDIF(MSVC)
+	
 	SET(SUNDIALS_LIBS_ "$(OMHOME)/bin")
 	SET(SUNDIALS_INCLUDE_DIR_ "$(OMHOME)/include/omc/cpp/sundials")
 	SET(LAPACK_LIBS_ "$(OMHOME)/bin")
