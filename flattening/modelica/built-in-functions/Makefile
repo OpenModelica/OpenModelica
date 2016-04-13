@@ -66,6 +66,7 @@ SumScalar.mo \
 SumVar.mo \
 Symmetric.mo \
 Symmetric2.mo \
+Symmetric3.mo \
 Tan.mo \
 Tanh.mo \
 Transpose.mo \

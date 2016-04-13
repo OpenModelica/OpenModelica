@@ -1,4 +1,9 @@
+// name: Symmetric
+// keywords: symmetric
 // status: correct
+//
+// Tests the built-in symmetric function
+//
 
 model Symmetric
   constant Real A[3,3] = [1,2,3;
