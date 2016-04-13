@@ -1167,10 +1167,10 @@ function replaceLiteralArrayExp
   input DAE.Exp inExp;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
   output DAE.Exp outExp;
-  output Boolean cont;
+  output Boolean cont=true;
   output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
 algorithm
-  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,outTpl) := match (inExp,inTpl)
     local
       DAE.Exp exp,exp2;
       tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
@@ -1182,14 +1182,8 @@ algorithm
           cont := false;
         else
           exp2 := inExp;
-          try
-            isLiteralExp(inExp);
-            cont := false;
-          else
-            cont := true;
-          end try;
         end try;
-      then (exp2, cont, tpl);
+      then (exp2, tpl);
     case (exp as DAE.MATRIX(), tpl)
       algorithm
         try
@@ -1198,16 +1192,10 @@ algorithm
           cont := false;
         else
           exp2 := inExp;
-          try
-            isLiteralExp(inExp);
-            cont := false;
-          else
-            cont := true;
-          end try;
         end try;
-      then (exp2, cont, tpl);
-    else (inExp, true, inTpl);
-  end matchcontinue;
+      then (exp2, tpl);
+    else (inExp, inTpl);
+  end match;
 end replaceLiteralArrayExp;
 
 function replaceLiteralExp
