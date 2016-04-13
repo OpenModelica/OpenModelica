@@ -3907,6 +3907,10 @@ algorithm
       list<DAE.Exp> expl, new_expl;
       Option<DAE.Exp> binding, new_binding;
       Option<DAE.VariableAttributes> attr, new_attr;
+      list<DAE.Var> varLst;
+      DAE.Binding daebinding, new_daebinding;
+      Boolean changed;
+      DAE.Type new_ty;
 
     case DAE.VAR(componentRef = cr1, binding = binding,
         variableAttributesOption = attr)
@@ -3928,6 +3932,44 @@ algorithm
                 if referenceEq(e1, new_e1) then d else DAE.DIM_EXP(new_e1);
             else d;
           end match for d in element.dims);
+
+        new_ty := match ty as element.ty
+          case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())
+          algorithm
+            changed := false;
+            varLst := list(
+            match v
+              case DAE.TYPES_VAR(binding=daebinding as DAE.EQBOUND())
+              algorithm
+                (e2,arg) := func(daebinding.exp, arg);
+                if not referenceEq(daebinding.exp, e2) then
+                  daebinding := DAE.EQBOUND(e2,NONE(),daebinding.constant_,daebinding.source);
+                  v.binding := daebinding;
+                  changed := true;
+                end if;
+              then v;
+              case DAE.TYPES_VAR(binding=daebinding as DAE.VALBOUND())
+              algorithm
+                e1 := ValuesUtil.valueExp(daebinding.valBound);
+                (e2,arg) := func(e1, arg);
+                if not referenceEq(e1, e2) then
+                  new_daebinding := DAE.EQBOUND(e2,NONE(),DAE.C_CONST(),daebinding.source);
+                  v.binding := new_daebinding;
+                  changed := true;
+                end if;
+              then v;
+              else v;
+            end match
+            for v in ty.varLst
+            );
+            if not referenceEq(varLst, ty.varLst) then
+              ty.varLst := varLst;
+            end if;
+          then ty;
+          else ty;
+        end match;
+
+        if not referenceEq(element.ty, new_ty) then element.ty := new_ty; end if;
 
         (new_binding, arg) := traverseDAEOptExp(binding, func, arg);
         if not referenceEq(binding, new_binding) then element.binding := new_binding; end if;
