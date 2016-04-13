@@ -5077,18 +5077,15 @@ end equationIfEquationAssign;
   "Generates the content of the C file for literals in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
-  let &preLit = buffer ""
-  let res = literals |> literal hasindex i0 fromindex 0 =>
-    (if typeinfo() then '/* <%Util.escapeModelicaStringToCString(printExpStr(literal))%> */<%\n%>') +
-    literalExpConst(literal,i0, &preLit)
-    ; separator="\n";empty
   <<
   #ifdef __cplusplus
   extern "C" {
   #endif
 
-  <%preLit%>
-  <%res%>
+  <%literals |> literal hasindex i0 fromindex 0 =>
+    (if typeinfo() then '/* <%Util.escapeModelicaStringToCString(printExpStr(literal))%> */<%\n%>') +
+    literalExpConst(literal,i0)
+    ; separator="\n"; empty %>
 
   #ifdef __cplusplus
   }
