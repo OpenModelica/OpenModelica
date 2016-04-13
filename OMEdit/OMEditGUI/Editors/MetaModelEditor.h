@@ -65,7 +65,8 @@ public:
   MetaModelEditor(ModelWidget *pModelWidget);
   QString getLastValidText() {return mLastValidText;}
   bool validateText();
-  void setXmlDocument(QString content) {mXmlDocument.setContent(content);}
+  QString getXmlDocumentContent() {return mXmlDocument.toString();}
+  void setXmlDocumentContent(QString content) {mXmlDocument.setContent(content);}
   QDomElement getSubModelsElement();
   QDomNodeList getSubModels();
   QDomElement getInterfacePoint(QString subModelName, QString interfaceName);

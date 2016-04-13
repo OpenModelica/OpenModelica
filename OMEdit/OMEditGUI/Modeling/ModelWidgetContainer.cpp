@@ -3863,7 +3863,7 @@ bool ModelWidget::metaModelEditorTextChanged()
   delete pMessageHandler;
   // update the xml document with new accepted text.
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
-  pMetaModelEditor->setXmlDocument(mpEditor->getPlainTextEdit()->toPlainText());
+  pMetaModelEditor->setXmlDocumentContent(mpEditor->getPlainTextEdit()->toPlainText());
   /* get the model components and connectors */
   reDrawModelWidget();
   return true;
