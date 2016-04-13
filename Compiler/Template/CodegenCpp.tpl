@@ -9753,7 +9753,7 @@ end eventHandlingInit;
 template clockIntervalsInit(SimCode simCode, Text& varDecls, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
+case SIMCODE(modelInfo = MODELINFO(__), modelStructure = fmims) then
   let i = tempDecl('int', &varDecls)
   <<
   <%i%> = 0;
@@ -9761,11 +9761,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     match partition
     case CLOCKED_PARTITION(__) then
       let &preExp = buffer "" /*BUFD*/
-      let intvl = match baseClock
+      let spec = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      // use default clock, except for FMI clocks that may be inferred
+      let intvl = match fmims case SOME(FmiModelStructure) then spec else
+        match baseClock
         case REAL_CLOCK()
         case INTEGER_CLOCK()
         case BOOLEAN_CLOCK() then
-          daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+          spec
         else "unspecified"
       let interval = match intvl case "unspecified" then '1.0' else intvl
       let warning = match intvl case "unspecified" then
