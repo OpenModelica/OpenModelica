@@ -2530,7 +2530,7 @@ protected
 algorithm
   DAE.DAE(elementLst = daelist) := inDAElist;
   funList := dumpFunctionList(functionTree);
-  fixedDae := List.map(daelist, dumpDAEList);
+  fixedDae := List.map(daelist, DAEUtil.splitComponent);
   outString := Tpl.tplString2(DAEDumpTpl.dumpDAE, fixedDae, funList);
 end dumpStr;
 
@@ -2620,43 +2620,6 @@ algorithm
         str;
   end match;
 end dumpStream;
-
-public function dumpDAEList " returns split  DAE elements(Mainly important for template based DAE unparser) :
-   variables, initial equations, initial algorithms,
-   equations, algorithms, constraints and external objects"
-  input DAE.Element inElement;
-  output compWithSplitElements outCompWSplElem;
-algorithm
-  (outCompWSplElem) := match (inElement)
-    local
-      String n;
-      list<DAE.Element> l;
-      Option<SCode.Comment> c;
-
-      list<DAE.Element> v;
-      list<DAE.Element> ie;
-      list<DAE.Element> ia;
-      list<DAE.Element> e;
-      list<DAE.Element> a;
-      list<DAE.Element> co;
-      list<DAE.Element> o;
-      list<DAE.Element> ca;
-      list<compWithSplitElements> sm;
-      splitElements loc_splelem;
-
-      compWithSplitElements compWSplElem;
-
-
-    case (DAE.COMP(ident = n,dAElist = l,comment = c))
-      equation
-       (v,ie,ia,e,a,ca,co,o,sm) = DAEUtil.splitElements(l);
-        loc_splelem = SPLIT_ELEMENTS(v,ie,ia,e,a,ca,co,o,sm);
-        compWSplElem = COMP_WITH_SPLIT(n, loc_splelem, c);
-      then
-        (compWSplElem);
-
-  end match;
-end dumpDAEList;
 
 public function dumpFunctionList " returns sorted functions and record constructors in alphabetical order
   (mainly important for template based DAE unparser)."
