@@ -1,0 +1,100 @@
+// name: testDAE.p2
+// status: correct
+// teardown_command: rm -f testDAE.p2* output.log
+
+
+loadFile("./testDAEPackage.mo");
+getErrorString();
+
+simulate(testDAE.p2, tolerance = 1e-10);
+getErrorString();
+
+val(v,0.0);
+val(w,0.0);
+val(x,0.0);
+val(y,0.0);
+
+val(v,1.0);
+val(w,1.0);
+val(x,1.0);
+val(y,1.0);
+
+setCommandLineOptions("+daeMode");
+simulate(testDAE.p2, simflags="-daeMode", tolerance = 1e-10);
+getErrorString();
+
+val(v,0.0);
+val(w,0.0);
+val(x,0.0);
+val(y,0.0);
+
+val(v,1.0);
+val(w,1.0);
+val(x,1.0);
+val(y,1.0);
+
+simulate(testDAE.p2, simflags="-daeMode", tolerance = 1e-10, method="ida");
+getErrorString();
+
+val(v,0.0);
+val(w,0.0);
+val(x,0.0);
+val(y,0.0);
+
+val(v,1.0);
+val(w,1.0);
+val(x,1.0);
+val(y,1.0);
+
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testDAE.p2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'testDAE.p2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 0.0
+// 0.0
+// 0.0
+// 1.0
+// 0.3246821983309646
+// 1.48928993244441
+// 0.6009269159221448
+// 0.5377305305249699
+// true
+// record SimulationResult
+//     resultFile = "testDAE.p2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'testDAE.p2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 0.0
+// 0.0
+// 0.0
+// 1.0
+// 0.3246821977551893
+// 1.489289931964678
+// 0.6009269148564909
+// 0.53773053163838
+// record SimulationResult
+//     resultFile = "testDAE.p2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-10, method = 'ida', fileNamePrefix = 'testDAE.p2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 0.0
+// 0.0
+// 0.0
+// 1.0
+// 0.3246821977577873
+// 1.489289931968621
+// 0.6009269148612993
+// 0.5377305316363151
+// endResult

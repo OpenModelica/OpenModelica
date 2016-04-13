@@ -1,0 +1,81 @@
+// name: testDAE.p4
+// status: correct
+// teardown_command: rm -f testDAE.p1* output.log
+
+
+loadFile("./testDAEPackage.mo");
+getErrorString();
+
+simulate(testDAE.p4);
+getErrorString();
+
+val(x,0.0);
+val(y,0.0);
+
+val(x,1.0);
+val(y,1.0);
+
+setCommandLineOptions("+daeMode");
+simulate(testDAE.p4, simflags="-daeMode");
+getErrorString();
+
+val(x,0.0);
+val(y,0.0);
+
+val(x,1.0);
+val(y,1.0);
+
+
+simulate(testDAE.p4, simflags="-daeMode", method="ida");
+getErrorString();
+
+val(x,0.0);
+val(y,0.0);
+
+val(x,1.0);
+val(y,1.0);
+
+
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testDAE.p4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testDAE.p4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
+// 0.9
+// 0.0
+// 2.175844149784232
+// 0.6020771473679437
+// true
+// record SimulationResult
+//     resultFile = "testDAE.p4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testDAE.p4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
+// 0.9
+// 0.0
+// 2.175841416580839
+// 0.602079832485868
+// record SimulationResult
+//     resultFile = "testDAE.p4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
+// 0.9
+// 0.0
+// 2.175841416596108
+// 0.6020798324819945
+// endResult

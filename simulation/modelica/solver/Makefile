@@ -21,12 +21,16 @@ problem2-lobatto4.mos \
 problem2-lobatto6.mos \
 problem2-symEuler.mos \
 problem2-ida.mos \
-problem3-symEuler.mos \
+problem3-symEuler.mos
 
-# test that currently fail. Move up when fixed. 
-# Run make testfailing
-FAILINGTESTFILES=  \
-
+#runonly DAE tests
+DAETESTFILES = \
+testDAEp1.mos \
+testDAEp2.mos \
+testDAEp3.mos \
+testDAEp4.mos \
+testDAEp5.mos \
+testDAEmodeDrumBoiler.mos
 
 
 # Dependency files that are not .mo .mos or Makefile
@@ -47,12 +51,19 @@ test:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	rm -rf externalInput.csv
-	@$(TEST) $(TESTFILES)
-	
+	@$(TEST) $(TESTFILES) $(DAETESTFILES)
+
+testDAE:
+	@echo
+	@echo Running DAE tests...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(TEST) $(DAETESTFILES)
+
 # Cleans all files that are not listed as dependencies 
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
-	@rm -f $(CLEAN)
+	@rm -f $(CLEAN) $(DAETESTFILES)
 
 # Run this if you want to list out the files (dependencies).
 # do it after cleaning and updating the folder
