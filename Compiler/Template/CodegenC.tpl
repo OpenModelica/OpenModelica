@@ -161,6 +161,9 @@ end translateModel;
     extern void <%symbolName(modelNamePrefixStr,"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);
     extern void <%symbolName(modelNamePrefixStr,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"inputNames")%>(DATA* data, char ** names);
+    extern int <%symbolName(modelNamePrefixStr,"evaluateDAEResiduals")%>(DATA *data, threadData_t *threadData);
+    extern int <%symbolName(modelNamePrefixStr,"setAlgebraicDAEVars")%>(DATA *data, threadData_t *threadData, double* algebraics);
+    extern int <%symbolName(modelNamePrefixStr,"getAlgebraicDAEVars")%>(DATA *data, threadData_t *threadData, double* algebraics);
     <%\n%>
     >>
   end match
@@ -801,6 +804,35 @@ template simulationFile_lnz(SimCode simCode)
   end match
 end simulationFile_lnz;
 
+template simulationFile_dae(SimCode simCode)
+"Algebraic"
+::=
+  match simCode
+    case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)), daeEquations=daeEquations) then
+    match modelInfo
+      case MODELINFO(vars=SIMVARS(__)) then
+      <<
+      /* DAE residuals */
+      <%simulationFileHeader(simCode)%>
+
+      #ifdef __cplusplus
+      extern "C" {
+      #endif
+
+
+      <%evaluateDAEResiduals(daeEquations, modelNamePrefix(simCode))%>
+
+      <%algebraicDAEVar(vars.algebraicDAEVars, modelNamePrefix(simCode))%>
+
+      #ifdef __cplusplus
+      }
+      #endif<%\n%>
+      >>
+      /* adrpo: leave a newline at the end of file to get rid of the warning */
+    end match
+  end match
+end simulationFile_dae;
+
 template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU)
   "Generates code for main C file for simulation target."
 ::=
@@ -911,6 +943,9 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"functionODE")%>,
        <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
        <%symbolName(modelNamePrefixStr,"functionDAE")%>,
+       <%symbolName(modelNamePrefixStr,"evaluateDAEResiduals")%>,
+       <%symbolName(modelNamePrefixStr,"setAlgebraicDAEVars")%>,
+       <%symbolName(modelNamePrefixStr,"getAlgebraicDAEVars")%>,
        <%symbolName(modelNamePrefixStr,"input_function")%>,
        <%symbolName(modelNamePrefixStr,"input_function_init")%>,
        <%symbolName(modelNamePrefixStr,"input_function_updateStartValues")%>,
@@ -992,6 +1027,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
       data.modelData = &modelData;
       data.simulationInfo = &simInfo;
       measure_time_flag = <% if profileHtml() then "5" else if profileSome() then "1" else if profileAll() then "2" else "0" /* Would be good if this was not a global variable...*/ %>;
+      compiledInDAEMode = <% if Flags.getConfigBool(Flags.DAE_MODE) then '1' else '0' %>;
       <%mainInit%>
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
 
@@ -1058,7 +1094,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
   "Generates information for data.modelInfo struct."
 ::=
   match modelInfo
-  case MODELINFO(varInfo=VARINFO(__)) then
+  case MODELINFO(varInfo=VARINFO(__),vars=SIMVARS(__)) then
     <<
     data->modelData->modelName = "<%dotPath(name)%>";
     data->modelData->modelFilePrefix = "<%fileNamePrefix%>";
@@ -1139,10 +1175,14 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nOptimizeConstraints = <%varInfo.numOptimizeConstraints%>;
     data->modelData->nOptimizeFinalConstraints = <%varInfo.numOptimizeFinalConstraints%>;
 
-    data->modelData->nDelayExpressions = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
+    data->modelData->nDelayExpressions = <%match delayed case
+     DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
 
     data->modelData->nClocks = <%nClocks%>;
     data->modelData->nSubClocks = <%nSubClocks%>;
+
+    data->modelData->nResidualVars = <%listLength(vars.residualVars)%>;
+    data->modelData->nAlgebraicDAEVars = <%listLength(vars.algebraicDAEVars)%>;
 
     >>
   end match
@@ -1234,6 +1274,11 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
       /* Nonlinear Final Constraints For Dyn. Optimization */
       <%vars.realOptimizeFinalConstraintsVars |> var =>
         globalDataVarDefine(var, "realVars", intAdd(intAdd(intMul(2, numStateVars),numAlgVars), intAdd(numDiscreteReal,numOptimizeConstraints)))
+      ;separator="\n"%>
+
+      /* residual variables of DAE solution method */
+      <%vars.residualVars |> var =>
+        globalDataParDefine(var, "residualVars")
       ;separator="\n"%>
 
       /* Algebraic Parameter */
@@ -3744,6 +3789,79 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   >>
 end functionAlgebraic;
 
+template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String modelNamePrefix)
+  "Generates function in simulation file."
+::=
+  let &eqFuncs = buffer ""
+  let &nrfuncs = buffer ""
+  let &fncalls = buffer ""
+
+  let systems = if Flags.isSet(Flags.PARMODAUTO) then
+                    (functionXXX_systems_arrayFormat(resEquations, "DAERes", &fncalls, &nrfuncs, &eqFuncs, modelNamePrefix))
+                else
+                    (functionXXX_systems(resEquations, "DAERes", &fncalls, &eqFuncs, modelNamePrefix))
+
+  let eqns = (resEquations |> eqLst => (eqLst |> eq hasindex i0 =>
+                    equation_(-1, eq, contextSimulationDiscrete, &eqFuncs, modelNamePrefix)
+                    ;separator="\n");separator="\n")
+
+  <<
+  /*residual equations*/
+  <%eqFuncs%>
+
+  <%systems%>
+  /* for residuals DAE variables */
+  int <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>(DATA *data, threadData_t *threadData)
+  {
+    TRACE_PUSH
+    data->simulationInfo->callStatistics.functionEvalDAE++;
+
+    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAERes(<%nrfuncs%>, data, threadData, functionDAERes_systems);'
+    else '<%fncalls%>' %>
+
+    <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(data, threadData);
+
+    TRACE_POP
+    return 0;
+  }
+  >>
+end evaluateDAEResiduals;
+
+template algebraicDAEVar(list<SimVar> algVars, String modelNamePrefix)
+  "Generates function in simulation file."
+::=
+  let forwardVars = (algVars |> var hasindex i fromindex 0 =>
+    (match var
+    case SIMVAR(__) then
+      '<%cref(name)%> = algebraic[<%i%>];'
+    end match)
+  ;separator="\n")
+  let getVars = (algVars |> var hasindex i fromindex 0 =>
+    (match var
+    case SIMVAR(__) then
+      'algebraic[<%i%>] = <%cref(name)%>;'
+    end match)
+  ;separator="\n")
+  <<
+  /* forward algebraic variables */
+  int <%symbolName(modelNamePrefix,"setAlgebraicDAEVars")%>(DATA *data, threadData_t *threadData, double* algebraic)
+  {
+    TRACE_PUSH
+    <%forwardVars%>
+    TRACE_POP
+    return 0;
+  }
+  /* get algebraic variables */
+  int <%symbolName(modelNamePrefix,"getAlgebraicDAEVars")%>(DATA *data, threadData_t *threadData, double* algebraic)
+  {
+    TRACE_PUSH
+    <%getVars%>
+    TRACE_POP
+    return 0;
+  }
+  >>
+end algebraicDAEVar;
+
 template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePrefix)
   "Generates function in simulation file.
   This is a helper of template simulationFile."
@@ -5241,7 +5359,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c
   OFILES=$(CFILES:.c=.obj)
   GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.h $(FILEPREFIX).makefile $(CFILES)
 
@@ -5292,7 +5410,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c
   OFILES=$(CFILES:.c=.o)
   GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_functions.h $(CFILES)
 

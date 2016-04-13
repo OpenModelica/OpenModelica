@@ -950,6 +950,8 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* buffer for inputs and outputs values */
   data->simulationInfo->inputVars = (modelica_real*) calloc(data->modelData->nInputVars, sizeof(modelica_real));
   data->simulationInfo->outputVars = (modelica_real*) calloc(data->modelData->nOutputVars, sizeof(modelica_real));
+  /* buffer for residual values of DAE solver*/
+  data->simulationInfo->residualVars = (modelica_real*) calloc(data->modelData->nResidualVars, sizeof(modelica_real));
 
   /* buffer for mixed systems */
   data->simulationInfo->mixedSystemData = (MIXED_SYSTEM_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nMixedSystems*sizeof(MIXED_SYSTEM_DATA));
@@ -989,6 +991,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
   /* initial call statistics */
   data->simulationInfo->callStatistics.functionODE = 0;
+  data->simulationInfo->callStatistics.functionEvalDAE = 0;
   data->simulationInfo->callStatistics.updateDiscreteSystem = 0;
   data->simulationInfo->callStatistics.functionZeroCrossingsEquations = 0;
   data->simulationInfo->callStatistics.functionZeroCrossings = 0;

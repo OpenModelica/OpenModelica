@@ -124,6 +124,8 @@ end translateModel;
      let()= textFileConvertLines(simulationFile_lnz(simCode), '<%modelNamePrefix%>_14lnz.c')
      // synchronous
      let()= textFileConvertLines(simulationFile_syn(simCode), '<%modelNamePrefix%>_15syn.c')
+     // residuals
+     let()= textFileConvertLines(simulationFile_dae(simCode), '<%modelNamePrefix%>_16dae.c')
      // main file
      let()= textFileConvertLines(simulationFile(simCode,guid,true), '<%modelNamePrefix%>.c')
      ""
@@ -1075,7 +1077,7 @@ let common =
   CFILES=<%fileNamePrefix%>.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_init_fmu.c
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_init_fmu.c
   OFILES=$(CFILES:.c=.o)
   GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_model.h <%fileNamePrefix%>_includes.h <%fileNamePrefix%>_functions.h  <%fileNamePrefix%>_11mix.h <%fileNamePrefix%>_12jac.h <%fileNamePrefix%>_13opt.h <%fileNamePrefix%>_init_fmu.c <%fileNamePrefix%>_info.c $(CFILES) <%fileNamePrefix%>_FMU.libs
 

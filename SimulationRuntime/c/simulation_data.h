@@ -107,6 +107,7 @@ typedef struct CALL_STATISTICS
   long updateDiscreteSystem;
   long functionZeroCrossingsEquations;
   long functionZeroCrossings;
+  long functionEvalDAE;
 } CALL_STATISTICS;
 
 typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
@@ -474,6 +475,8 @@ typedef struct MODEL_DATA
   long nAliasString;
 
   long nJacobians;
+  long nResidualVars;
+  long nAlgebraicDAEVars;
 }MODEL_DATA;
 
 typedef struct CLOCK_DATA {
@@ -569,6 +572,7 @@ typedef struct SIMULATION_INFO
   modelica_real* inputVars;
   modelica_real* outputVars;
   EXTERNAL_INPUT external_input;
+  modelica_real* residualVars;         /* used by integrators in dae solver mode */
 
   ANALYTIC_JACOBIAN* analyticJacobians;
 

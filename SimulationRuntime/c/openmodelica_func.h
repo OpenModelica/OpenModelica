@@ -107,6 +107,15 @@ int (*functionAlgebraics)(DATA *data, threadData_t*);
    uses in EventHandle  */
 int (*functionDAE)(DATA *data, threadData_t*);
 
+/* function to evaluate dynamic equations for DAE solver*/
+int (*evaluateDAEResiduals)(DATA *data, threadData_t*);
+
+/* function to set algebraic DAE Variable form solver*/
+int (*setAlgebraicDAEVars)(DATA *data, threadData_t*, double *algebraics);
+
+/* function to get algebraic DAE Variable form solver*/
+int (*getAlgebraicDAEVars)(DATA *data, threadData_t*, double *algebraics);
+
 /* functions for input and output */
 int (*input_function)(DATA*, threadData_t*);
 int (*input_function_init)(DATA*, threadData_t*);
