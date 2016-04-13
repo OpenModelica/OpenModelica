@@ -413,9 +413,10 @@ match attr
     let flow_str = if flowPrefix then "flow "
     let stream_str = if streamPrefix then "stream "
     let par_str = dumpParallelism(parallelism)
+    let field_str = dumpIsField(isField)
     let var_str = dumpVariability(variability)
     let dir_str = dumpDirection(direction)
-    '<%flow_str%><%stream_str%><%par_str%><%var_str%><%dir_str%>'
+    '<%flow_str%><%stream_str%><%par_str%><%field_str%><%var_str%><%dir_str%>'
 end dumpElementAttr;
 
 template dumpParallelism(Absyn.Parallelism par)
@@ -425,6 +426,13 @@ match par
   case PARLOCAL() then "parlocal "
   case NON_PARALLEL() then ""
 end dumpParallelism;
+
+template dumpIsField(Absyn.IsField isField)
+::=
+match isField
+  case NONFIELD() then ""
+  case FIELD() then "field "
+end dumpIsField;
 
 template dumpVariability(Absyn.Variability var)
 ::=
@@ -541,6 +549,11 @@ match eq
     let lhs = dumpLhsExp(leftSide)
     let rhs = dumpExp(rightSide)
     '<%lhs%> = <%rhs%>'
+  case EQ_PDE(__) then
+    let lhs = dumpLhsExp(leftSide)
+    let rhs = dumpExp(rightSide)
+    let domain_str = dumpCref(domain)
+    '<%lhs%> = <%rhs%> indomain <%domain_str%>'
   case EQ_CONNECT(__) then
     let c1_str = dumpCref(connector1)
     let c2_str = dumpCref(connector2)
