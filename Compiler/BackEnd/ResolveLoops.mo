@@ -2121,7 +2121,7 @@ algorithm
         true = listLength(var_lst) <= maxSize;
         ({},_) = List.splitOnTrue(var_lst, BackendVariable.isStateVar) "TODO: fix BackendDAEUtil.getEqnSysRhs for x and der(x)";
         (syst,shared, toffset) = solveLinearSystem3(syst,shared,eqn_lst,eindex,var_lst,vindx,jac,offset);
-      then (syst,shared,true, List.appendNoCopy(eindex, ii), toffset);
+      then (syst,shared,true, listAppend(eindex, ii), toffset);
     else (isyst,ishared,false, ii, offset);
   end matchcontinue;
 end solveLinearSystem2;

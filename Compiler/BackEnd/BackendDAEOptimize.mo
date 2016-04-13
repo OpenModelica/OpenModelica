@@ -4358,12 +4358,12 @@ algorithm
     if Expression.isArray(e1) or Expression.isArrayType(Expression.typeof(e1)) then
       lst_e := Expression.getArrayOrRangeContents(e1);
       for e in lst_e loop
-        out_lst_e1 := List.appendNoCopy(simplifyComplexFunction2(e),out_lst_e1);
+        out_lst_e1 := listAppend(simplifyComplexFunction2(e),out_lst_e1);
       end for;
     elseif Expression.isRecord(e1) then
       lst_e := Expression.splitRecord(e1, Expression.typeof(e1));
       for e in lst_e loop
-        out_lst_e1 := List.appendNoCopy(simplifyComplexFunction2(e),out_lst_e1);
+        out_lst_e1 := listAppend(simplifyComplexFunction2(e),out_lst_e1);
       end for;
       out_lst_e1 := {e1};
     else

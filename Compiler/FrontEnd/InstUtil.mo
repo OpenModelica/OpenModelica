@@ -1476,7 +1476,7 @@ algorithm
         (outE, cycles) = Graph.topologicalSort(g, isElementEqual);
         // printGraph(inEnv, g, outE, cycles);
         // append the elements in the cycles as they might not actually be cycles, but they depend on elements not in the list (i.e. package constants, etc)!
-        outE = List.appendNoCopy(outE, List.map(cycles, Util.tuple21));
+        outE = listAppend(outE, List.map(cycles, Util.tuple21));
         checkCyclicalComponents(cycles, inEnv);
       then
         outE;

@@ -379,22 +379,6 @@ algorithm
   end for;
 end consN;
 
-public function appendNoCopy<T>
-  "This function handles special cases such as empty lists so it does not copy
-   if any of the arguments are empty lists.
-
-   TODO: RML-specific. Not needed in bootstrapped OMC"
-  input list<T> inList1;
-  input list<T> inList2;
-  output list<T> outList;
-algorithm
-  outList := match(inList1, inList2)
-    case ({}, _) then inList2;
-    case (_, {}) then inList1;
-    else listAppend(inList1, inList2);
-  end match;
-end appendNoCopy;
-
 public function append_reverse<T>
   "Appends the elements from list1 in reverse order to list2."
   input list<T> inList1;

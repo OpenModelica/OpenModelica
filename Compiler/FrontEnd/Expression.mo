@@ -3115,8 +3115,8 @@ algorithm
         pow_acc2 = expandFactorsWork(e2,{},noFactors,doInverseFactors);
         pow_acc2 = expPowLst(pow_acc2, e3);
 
-        acc = List.appendNoCopy(pow_acc, acc);
-        acc = List.appendNoCopy(pow_acc2, acc);
+        acc = listAppend(pow_acc, acc);
+        acc = listAppend(pow_acc2, acc);
       then acc;
     // (x/y)^n = x^n*y^(-n)
     case (DAE.BINARY(DAE.BINARY(e1,DAE.DIV(),e2), DAE.POW(), e3),acc,_,_)
@@ -3127,8 +3127,8 @@ algorithm
         pow_acc2 = expandFactorsWork(e2,{},noFactors,doInverseFactors);
         pow_acc2 = expPowLst(pow_acc2, negate(e3));
 
-        acc = List.appendNoCopy(pow_acc, acc);
-        acc = List.appendNoCopy(pow_acc2, acc);
+        acc = listAppend(pow_acc, acc);
+        acc = listAppend(pow_acc2, acc);
       then acc;
     // (x^n)^m = x^(n*m)
     case (DAE.BINARY(DAE.BINARY(e1,DAE.POW(),e2), DAE.POW(), e3),acc,_,_)
@@ -3137,7 +3137,7 @@ algorithm
         pow_acc = expandFactorsWork(e1,{},noFactors,doInverseFactors);
         pow_acc = expPowLst(pow_acc, e);
 
-        acc = List.appendNoCopy(pow_acc, acc);
+        acc = listAppend(pow_acc, acc);
       then acc;
     // ToDo
     // exp(x + y) = exp(x)*exp(y)
@@ -3186,7 +3186,7 @@ for elem in inAcc loop
                  case(DAE.UNARY(DAE.UMINUS_ARR(),_))  then expandFactorsWork(elem,{},noFactors,doInverseFactors);
                  else {elem};
                end match;
-  outExpLst := List.appendNoCopy(tmpExpLst, outExpLst);
+  outExpLst := listAppend(tmpExpLst, outExpLst);
 end for;
 
 end expandFactorsWork2;

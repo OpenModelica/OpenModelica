@@ -2101,9 +2101,9 @@ algorithm
         ErrorExt.setCheckpoint("expandableConnectorsOrder");
         (cache, eqs_1, expandableEqs) = InstUtil.splitConnectEquationsExpandable(cache, env5, ih, pre, eqs_1, impl, {}, {});
         // put expandable at the begining
-        eqs_1 = List.appendNoCopy(expandableEqs, eqs_1);
+        eqs_1 = listAppend(expandableEqs, eqs_1);
         // put expandable at the end
-        eqs_1 = List.appendNoCopy(eqs_1, expandableEqs);
+        eqs_1 = listAppend(eqs_1, expandableEqs);
         // duplicate expandable to get the union
         eqs_1 = InstUtil.addExpandable(eqs_1, expandableEqs);
         ErrorExt.rollBack("expandableConnectorsOrder");

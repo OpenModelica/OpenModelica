@@ -4965,7 +4965,7 @@ algorithm
          DAE.DAE(elts2))
       equation
         // t1 = clock();
-        elts = List.appendNoCopy(elts1,elts2);
+        elts = listAppend(elts1,elts2);
         // t2 = clock();
         // ti = t2 -. t1;
         // fprintln(Flags.INNER_OUTER, " joinDAEs: (" + realString(ti) + ") -> " + intString(listLength(elts1)) + " + " +  intString(listLength(elts2)));

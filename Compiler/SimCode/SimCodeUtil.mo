@@ -1997,7 +1997,7 @@ algorithm
         source = ElementSource.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
         (eqSystlst, uniqueEqIndex) = List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
         (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source)}, uniqueEqIndex+1);
-        eqSystlst = List.appendNoCopy(eqSystlst,resEqs);
+        eqSystlst = listAppend(eqSystlst,resEqs);
         tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
       then
         (eqSystlst, uniqueEqIndex,tempvars);

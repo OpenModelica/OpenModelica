@@ -303,8 +303,8 @@ algorithm
                           else fail();
                          end matchcontinue;
 
- eqnForNewVars := List.appendNoCopy(eqnForNewVars, eqnForNewVars1);
- newVarsCrefs := List.appendNoCopy(newVarsCrefs, newVarsCrefs1);
+ eqnForNewVars := listAppend(eqnForNewVars, eqnForNewVars1);
+ newVarsCrefs := listAppend(newVarsCrefs, newVarsCrefs1);
 
 end solveWork;
 
@@ -1743,7 +1743,7 @@ algorithm
           res = DAE.IFEXP(e1,lhs,rhs);
           asserts = listAppend(asserts1,asserts1);
       then
-        (res,asserts,List.appendNoCopy(eqns1,eqns),  List.appendNoCopy(var1, var), depth);
+        (res,asserts,listAppend(eqns1,eqns),  listAppend(var1, var), depth);
       else fail();
    end match;
 

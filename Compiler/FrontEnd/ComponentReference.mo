@@ -1547,7 +1547,7 @@ algorithm
         dims := Types.getDimensions(ty);
         diff := listLength(dims) - listLength(subs);
         newsubs := List.fill(DAE.INDEX(DAE.ICONST(1)), diff);
-        subs := List.appendNoCopy(subs,newsubs);
+        subs := listAppend(subs,newsubs);
       then
         DAE.CREF_IDENT(i, ty, subs);
 
@@ -1556,7 +1556,7 @@ algorithm
         dims := Types.getDimensions(ty);
         diff := listLength(dims) - listLength(subs);
         newsubs := List.fill(DAE.INDEX(DAE.ICONST(1)), diff);
-        subs := List.appendNoCopy(subs,newsubs);
+        subs := listAppend(subs,newsubs);
         cr := crefArrayGetFirstCref(cr);
       then
         DAE.CREF_QUAL(i, ty, subs, cr);

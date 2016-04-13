@@ -906,17 +906,12 @@ algorithm
     BackendDAE.EQSYSTEM(orderedVars = v) := syst;
     varlst := BackendVariable.varList(v);
 
-    opt_varlst := {};
-
     conVarsList := List.select(varlst, BackendVariable.isRealOptimizeConstraintsVars);
     fconVarsList := List.select(varlst, BackendVariable.isRealOptimizeFinalConstraintsVars);
     objMayer := checkObjectIsSet(v,BackendDAE.optimizationMayerTermName);
     objLagrange := checkObjectIsSet(v,BackendDAE.optimizationLagrangeTermName);
 
-    opt_varlst := List.appendNoCopy(opt_varlst, conVarsList);
-    opt_varlst := List.appendNoCopy(opt_varlst, fconVarsList);
-    opt_varlst := List.appendNoCopy(opt_varlst, objMayer);
-    opt_varlst := List.appendNoCopy(opt_varlst, objLagrange);
+    opt_varlst := listAppend(conVarsList, listAppend(fconVarsList, listAppend(objMayer, objLagrange)));
 
     if not listEmpty(opt_varlst) then
       newsyst := BackendDAEUtil.tryReduceEqSystem(syst, shared, opt_varlst) :: newsyst;

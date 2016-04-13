@@ -5434,7 +5434,7 @@ algorithm
         (crefInfoList,_) = List.deleteMemberOnTrue(foundCref,crefInfoList,crefInfoListCrefsEqual);
 
         // Now that the iterator is removed cocatenate the two lists
-        // crefInfoList = List.appendNoCopy(crefInfoList_tmp,crefInfoList);
+        // crefInfoList = listAppend(expandableEqs(crefInfoList_tmp,crefInfoList);
 
         //check the rest
         crefInfoList = collectParallelVariables(crefInfoList,restStmts);

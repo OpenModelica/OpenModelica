@@ -1919,7 +1919,7 @@ public function liftTypeWithDims "
 algorithm
   outType := match inType
     local
-      list<DAE.Dimension> dims;
+      list<DAE.Dimension> dims, dims_;
       DAE.Type ty;
       DAE.TypeSource src;
 
@@ -1930,8 +1930,8 @@ algorithm
 
     case DAE.T_ARRAY(ty, dims, src)
       algorithm
-        dims := List.appendNoCopy(dims, inDims);
-      then DAE.T_ARRAY(ty, dims, src);
+        dims_ := listAppend(dims, inDims);
+      then if referenceEq(dims,dims_) then inType else DAE.T_ARRAY(ty, dims_, src);
 
     else
       DAE.T_ARRAY(inType, inDims, DAE.emptyTypeSource);
