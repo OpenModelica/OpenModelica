@@ -2162,60 +2162,6 @@ algorithm
     end match for component in inComps);
 end calculateJacobiansComponents;
 
-
-protected function convertResidualsIntoSolvedEquations "author: lochel
-  This function converts residuals into solved equations of the following form:
-    e.g.: 0 = a+b -> $res1 = a+b"
-  input list<BackendDAE.Equation> inResidualList;
-  output list<BackendDAE.Equation> outEquationList;
-  output list<BackendDAE.Var> outVariableList;
-algorithm
-  (outEquationList, outVariableList) := convertResidualsIntoSolvedEquations2(inResidualList, 1);
-end convertResidualsIntoSolvedEquations;
-
-protected function convertResidualsIntoSolvedEquations2 "author: lochel"
-  input list<BackendDAE.Equation> inEquationList;
-  input Integer inIndex;
-  output list<BackendDAE.Equation> outEquationList = {};
-  output list<BackendDAE.Var> outVariableList = {};
-protected
-  Integer index = inIndex;
-algorithm
-  for eq in inEquationList loop
-    _ := match eq
-      local
-        DAE.Exp exp;
-        DAE.ElementSource source "origin of equation";
-        BackendDAE.EquationAttributes eqAttr;
-        String varName;
-        DAE.ComponentRef componentRef;
-        DAE.Exp expVarName;
-        BackendDAE.Equation currEquation;
-        BackendDAE.Var currVariable;
-
-      case BackendDAE.RESIDUAL_EQUATION(exp=exp,source=source,attr=eqAttr)
-        equation
-          varName = "$res" + intString(index);
-          componentRef = DAE.CREF_IDENT(varName, DAE.T_REAL_DEFAULT, {});
-          expVarName = DAE.CREF(componentRef, DAE.T_REAL_DEFAULT);
-          currEquation = BackendDAE.EQUATION(expVarName, exp, source, eqAttr);
-
-          currVariable = BackendDAE.VAR(componentRef, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
-          index = index + 1;
-          outEquationList = currEquation::outEquationList;
-          outVariableList = currVariable::outVariableList;
-        then ();
-      else
-        equation
-          true = Flags.isSet(Flags.FAILTRACE);
-          Error.addInternalError("function convertResidualsIntoSolvedEquations2 failed", sourceInfo());
-        then fail();
-    end match;
-  end for;
-  outEquationList := MetaModelica.Dangerous.listReverseInPlace(outEquationList);
-  outVariableList := MetaModelica.Dangerous.listReverseInPlace(outVariableList);
-end convertResidualsIntoSolvedEquations2;
-
 protected function prepareTornStrongComponentData
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqns;
@@ -2252,7 +2198,7 @@ try
   // create  residual equations
   reqns := BackendEquation.traverseEquationArray(outResidualEqns, BackendEquation.traverseEquationToScalarResidualForm, {});
   reqns := listReverse(reqns);
-  (reqns, resVarsLst) := convertResidualsIntoSolvedEquations(reqns);
+  (reqns, resVarsLst) := BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res", BackendVariable.makeVar(DAE.emptyCref), 1);
   outResidualVars := BackendVariable.listVar1(resVarsLst);
   outResidualEqns := BackendEquation.listEquation(reqns);
 
@@ -2333,6 +2279,7 @@ algorithm
       list<Integer> otherEqnsInts, otherVarsInts;
 
       list<BackendDAE.Var> iterationvars, ovarsLst, resVarsLst;
+      BackendDAE.Var tmpVar;
       BackendDAE.Variables diffVars, ovars, resVars;
       list<BackendDAE.Equation> reqns, otherEqnsLst;
       BackendDAE.EquationArray eqns, oeqns;
@@ -2495,7 +2442,7 @@ algorithm
           // create  residual equations
           reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
           reqns = listReverse(reqns);
-          (reqns, resVarsLst) = convertResidualsIntoSolvedEquations(reqns);
+          (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res", BackendVariable.makeVar(DAE.emptyCref), 1);
           resVars = BackendVariable.listVar1(resVarsLst);
           eqns = BackendEquation.listEquation(reqns);
 
