@@ -54,14 +54,15 @@ void FetchInterfaceDataThread::run()
   connect(mpManagerProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(managerProcessFinished(int,QProcess::ExitStatus)));
   QStringList args;
   args << "-r" << fileInfo.absoluteFilePath();
+  TLMPage *pTLMPage = mpFetchInterfaceDataDialog->getMainWindow()->getOptionsDialog()->getTLMPage();
   QProcessEnvironment environment;
 #ifdef WIN32
   environment = StringHandler::simulationProcessEnvironment();
+  environment.insert("PATH", pTLMPage->getTLMPluginPathTextBox()->text() + ";" + environment.value("PATH"));
 #else
   environment = QProcessEnvironment::systemEnvironment();
+  environment.insert("PATH", pTLMPage->getTLMPluginPathTextBox()->text() + ":" + environment.value("PATH"));
 #endif
-  TLMPage *pTLMPage = mpFetchInterfaceDataDialog->getMainWindow()->getOptionsDialog()->getTLMPage();
-  environment.insert("PATH", pTLMPage->getTLMPluginPathTextBox()->text() + ";" + environment.value("PATH"));
   environment.insert("TLMPluginPath", pTLMPage->getTLMPluginPathTextBox()->text());
   mpManagerProcess->setProcessEnvironment(environment);
   mpManagerProcess->start(pTLMPage->getTLMManagerProcessTextBox()->text(), args);

@@ -70,10 +70,11 @@ void TLMCoSimulationThread::runManager()
   QProcessEnvironment environment;
 #ifdef WIN32
   environment = StringHandler::simulationProcessEnvironment();
+  environment.insert("PATH", tlmCoSimulationOptions.getTLMPluginPath() + ";" + environment.value("PATH"));
 #else
   environment = QProcessEnvironment::systemEnvironment();
+  environment.insert("PATH", tlmCoSimulationOptions.getTLMPluginPath() + ":" + environment.value("PATH"));
 #endif
-  environment.insert("PATH", tlmCoSimulationOptions.getTLMPluginPath() + ";" + environment.value("PATH"));
   environment.insert("TLMPluginPath", tlmCoSimulationOptions.getTLMPluginPath());
   mpManagerProcess->setProcessEnvironment(environment);
   // start the executable
@@ -99,10 +100,11 @@ void TLMCoSimulationThread::runMonitor()
   QProcessEnvironment environment;
 #ifdef WIN32
   environment = StringHandler::simulationProcessEnvironment();
+  environment.insert("PATH", tlmCoSimulationOptions.getTLMPluginPath() + ";" + environment.value("PATH"));
 #else
   environment = QProcessEnvironment::systemEnvironment();
+  environment.insert("PATH", tlmCoSimulationOptions.getTLMPluginPath() + ":" + environment.value("PATH"));
 #endif
-  environment.insert("PATH", tlmCoSimulationOptions.getTLMPluginPath() + ";" + environment.value("PATH"));
   environment.insert("TLMPluginPath", tlmCoSimulationOptions.getTLMPluginPath());
   mpMonitorProcess->setProcessEnvironment(environment);
   mpMonitorProcess->start(fileName, args);
