@@ -1174,24 +1174,38 @@ algorithm
     local
       DAE.Exp exp,exp2;
       tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
-    case (DAE.ARRAY(), _)
-      equation
-        isLiteralArrayExp(inExp);
-        (exp2, tpl) = replaceLiteralExp2(inExp, inTpl);
-      then (exp2, false, tpl);
-    case (exp as DAE.ARRAY(), tpl)
-      equation
-        failure(isLiteralArrayExp(exp));
-      then (exp, false, tpl);
-    case (exp as DAE.MATRIX(), _)
-      equation
-        isLiteralArrayExp(exp);
-        (exp2, tpl) = replaceLiteralExp2(inExp, inTpl);
-      then (exp2, false, tpl);
+    case (DAE.ARRAY(), tpl)
+      algorithm
+        try
+          isLiteralArrayExp(inExp);
+          (exp2, tpl) := replaceLiteralExp2(inExp, tpl);
+          cont := false;
+        else
+          exp2 := inExp;
+          try
+            isLiteralExp(inExp);
+            cont := false;
+          else
+            cont := true;
+          end try;
+        end try;
+      then (exp2, cont, tpl);
     case (exp as DAE.MATRIX(), tpl)
-      equation
-        failure(isLiteralArrayExp(exp));
-      then (exp, false, tpl);
+      algorithm
+        try
+          isLiteralArrayExp(inExp);
+          (exp2, tpl) := replaceLiteralExp2(inExp, tpl);
+          cont := false;
+        else
+          exp2 := inExp;
+          try
+            isLiteralExp(inExp);
+            cont := false;
+          else
+            cont := true;
+          end try;
+        end try;
+      then (exp2, cont, tpl);
     else (inExp, true, inTpl);
   end matchcontinue;
 end replaceLiteralArrayExp;
