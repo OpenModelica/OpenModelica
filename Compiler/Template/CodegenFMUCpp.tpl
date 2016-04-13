@@ -774,8 +774,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   BINARIES=<%fileNamePrefix%>$(DLLEXT)
 
   OMCPP_LIBS=-lOMCppSystem_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppFMU_static $(OMCPP_SOLVER_LIBS) -lOMCppExtensionUtilities_static
-  MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables
-  LIBS=$(OMCPP_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB)
+  MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -lOMCppModelicaUtilities_static
+  EXTRA_LIBS=<%dirExtra%> <%libsExtra%>
+  LIBS=$(OMCPP_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(EXTRA_LIBS)
 
   # link with simple dgesv or full lapack
   ifeq ($(USE_DGESV),ON)
