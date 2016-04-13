@@ -501,6 +501,8 @@ constant DebugFlag SERIALIZED_SIZE = DEBUG_FLAG(163, "reportSerializedSize", fal
   Util.gettext("Reports serialized sizes of various data structures used in the compiler."));
 constant DebugFlag BACKEND_KEEP_ENV_GRAPH = DEBUG_FLAG(164, "backendKeepEnv", true,
   Util.gettext("When enabled, the environment is kept when entering the backend, which enables CevalFunction (function interpretation) to work. This module not essential for the backend to function in most cases, but can improve simulation performance by evaluating functions. The drawback to keeping the environment graph in memory is that it is huge (~80% of the total memory in use when returning the frontend DAE)."));
+constant DebugFlag OMC_RELOCATABLE_FUNCTIONS = DEBUG_FLAG(165, "relocatableFunctions", false,
+  Util.gettext("Generates relocatable code: all functions become function pointers and can be replaced at run-time."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -671,7 +673,8 @@ constant list<DebugFlag> allDebugFlags = {
   TOTAL_TEARING_DUMPVERBOSE,
   PARALLEL_CODEGEN,
   SERIALIZED_SIZE,
-  BACKEND_KEEP_ENV_GRAPH
+  BACKEND_KEEP_ENV_GRAPH,
+  OMC_RELOCATABLE_FUNCTIONS
 };
 
 public

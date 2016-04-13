@@ -56,7 +56,11 @@ extern void* DynLoad_executeFunction(threadData_t*  threadData, int _inFuncHandl
   return retarg;
 }
 
+#if !defined(OMC_GENERATE_RELOCATABLE_CODE)
 extern void* omc_Absyn_pathString(threadData_t*,void*,void*,int,int);
+#else
+extern void* (*omc_Absyn_pathString)(threadData_t*,void*,void*,int,int);
+#endif
 
 static const char* path_to_name(void* path, char del)
 {

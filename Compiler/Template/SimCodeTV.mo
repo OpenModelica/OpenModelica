@@ -3257,6 +3257,7 @@ package Flags
   constant DebugFlag RUNTIME_STATIC_LINKING;
   constant DebugFlag HARDCODED_START_VALUES;
   constant DebugFlag OMC_RECORD_ALLOC_WORDS;
+  constant DebugFlag OMC_RELOCATABLE_FUNCTIONS;
   constant ConfigFlag NUM_PROC;
   constant ConfigFlag HPCOM_CODE;
   constant ConfigFlag PROFILING_LEVEL;

@@ -369,7 +369,12 @@ static const char* ErrorImpl__getLastDeletedCheckpoint(threadData_t *threadData)
 }
 
 #if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
-extern void* omc_Error_getCurrentComponent(threadData_t *threadData, modelica_integer *sline, modelica_integer *scol, modelica_integer *eline, modelica_integer *ecol, modelica_integer *read_only, void **filename);
+#if !defined(OMC_GENERATE_RELOCATABLE_CODE)
+extern void* omc_Error_getCurrentComponent
+#else
+extern void* (*omc_Error_getCurrentComponent)
+#endif
+  (threadData_t *threadData, modelica_integer *sline, modelica_integer *scol, modelica_integer *eline, modelica_integer *ecol, modelica_integer *read_only, void **filename);
 #endif
 
 extern void c_add_message(threadData_t *threadData,int errorID, ErrorType type, ErrorLevel severity, const char* message, const char** ctokens, int nTokens)

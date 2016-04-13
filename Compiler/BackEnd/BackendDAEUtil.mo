@@ -6850,21 +6850,16 @@ protected
   BackendDAE.Shared shared;
   list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
   Boolean causalized;
-  constant Boolean debug = false;
 algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
   // reduce index
   (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{},false);
-  if debug then execStat("causalizeDAE -> matching"); end if;
   // do late inline
   outDAE := if dolateinline then BackendInline.lateInlineFunction(BackendDAE.DAE(systs,shared)) else BackendDAE.DAE(systs,shared);
-  if debug and dolateinline then execStat("causalizeDAE -> lateInlineFunction"); end if;
   // do state selection
   BackendDAE.DAE(systs,shared) := stateDeselectionDAE(causalized,outDAE,args,stateDeselection);
-  if debug then execStat("causalizeDAE -> state selection"); end if;
   // sort assigned equations to blt form
   systs := mapSortEqnsDAE(systs,shared,{});
-  if debug then execStat("causalizeDAE -> sort equations"); end if;
   outDAE := BackendDAE.DAE(systs,shared);
 end causalizeDAE;
 

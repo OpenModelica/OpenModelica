@@ -39,7 +39,13 @@ int main(int argc, char **argv)
 
 #include <meta/meta_modelica.h>
 #include <stdio.h>
-extern void <%name%>(threadData_t*,modelica_metatype);
+extern void
+#if defined(OMC_GENERATE_RELOCATABLE_CODE)
+(*<%name%>)
+#else
+<%name%>
+#endif
+(threadData_t*,modelica_metatype);
 
 void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
@@ -237,16 +243,19 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
   DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then " -g"%>
-  CFLAGS= -I"<%makefileParams.omhome%>/include/omc/c" <%makefileParams.includes ; separator=" "%> $(DEBUG_FLAGS) <%makefileParams.cflags%>
+  CFLAGS= $(DEBUG_FLAGS) <%makefileParams.cflags%>
+  CPPFLAGS= -I"<%makefileParams.omhome%>/include/omc/c" <%makefileParams.includes ; separator=" "%><%
+    if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"
+  %>
   LDFLAGS= -L"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/<%getTriple()%>/omc' <%ParModelicaExpLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
   PERL=perl
   MAINFILE=<%name%>.c
 
   .PHONY: <%name%>
   <%name%>: $(MAINFILE) <%name%>.h <%name%>_records.c
-  <%\t%> $(CC) $(CFLAGS) -c -o <%name%>.o $(MAINFILE)
-  <%\t%> $(CC) $(CFLAGS) -c -o <%name%>_records.o <%name%>_records.c
-  <%\t%> $(LINK) -o <%name%>$(DLLEXT) <%name%>.o <%name%>_records.o <%libsStr%> $(CFLAGS) $(LDFLAGS) -lm
+  <%\t%> $(CC) $(CFLAGS) $(CPPFLAGS) -c -o <%name%>.o $(MAINFILE)
+  <%\t%> $(CC) $(CFLAGS) $(CPPFLAGS) -c -o <%name%>_records.o <%name%>_records.c
+  <%\t%> $(LINK) -o <%name%>$(DLLEXT) <%name%>.o <%name%>_records.o <%libsStr%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -lm
   >>
 end functionsMakefile;
 
@@ -343,9 +352,21 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
     case RECORD_CONSTRUCTOR(__) then
       let fname = underscorePath(name)
       let funArgsStr = (funArgs |> var as VARIABLE(__) => ', <%varType(var)%> omc_<%crefStr(name)%>')
+      let vis = (match visibility case PUBLIC() then "DLLExport")
       <<
-      <% match visibility case PUBLIC() then "DLLExport" %>
-      <%fname%> omc_<%fname%>(threadData_t *threadData<%funArgsStr%>); /* record head */
+      <% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS)
+        then
+        <<
+        typedef <%fname%> (*omctd_<%fname%>)(threadData_t *threadData<%funArgsStr%>);
+        <%vis%>
+        omctd_<%fname%> omc_<%fname%>;
+        >>
+        else
+        <<
+        <%vis%>
+        <%fname%> omc_<%fname%> (threadData_t *threadData<%funArgsStr%>);
+        >>
+      %>
 
       <%functionHeaderBoxed(fname, funArgs, boxedRecordOutVars, inFunc, false, visibility, false, isSimulation, staticPrototypes)%>
       >>
@@ -467,7 +488,7 @@ template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> 
 ::=
   let boxvar =
     <<
-    static const MMC_DEFSTRUCTLIT(boxvar_lit_<%fname%>,2,0) {(void*) boxptr_<%fname%>,0}};
+    static const MMC_DEFSTRUCTLIT(boxvar_lit_<%fname%>,2,0) {(void*) <%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then "&"%>boxptr_<%fname%>,0}};
     #define boxvar_<%fname%> MMC_REFSTRUCTLIT(boxvar_lit_<%fname%>)<%\n%>
     >>
   <<
@@ -485,7 +506,8 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
 
   boxed version of the header if boxed = true, otherwise a normal header"
 ::=
-  let prototype = functionPrototype(fname, fargs, outVars, boxed, visibility, isSimulation)
+  let &dummy = buffer ""
+  let prototype = functionPrototype(fname, fargs, outVars, boxed, visibility, isSimulation, true, dummy)
   let inFnStr = if boolAnd(boxed,inFunc) then
     <<
     DLLExport
@@ -505,7 +527,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
       >>
 end functionHeaderImpl;
 
-template functionPrototype(String fname, list<Variable> fargs, list<Variable> outVars, Boolean boxed, SCode.Visibility visibility, Boolean isSimulation)
+template functionPrototype(String fname, list<Variable> fargs, list<Variable> outVars, Boolean boxed, SCode.Visibility visibility, Boolean isSimulation, Boolean isPrototype, Text &afterBody)
  "Generates function header definition for a Modelica/MetaModelica function. Generates a boxed version of the header if boxed = true, otherwise a normal definition"
 ::=
   let static = if isSimulation then "" else (match visibility case PROTECTED(__) then 'PROTECTED_FUNCTION_STATIC ')
@@ -519,13 +541,28 @@ template functionPrototype(String fname, list<Variable> fargs, list<Variable> ou
       case FUNCTION_PTR(__) then "modelica_fnptr")
     else "void")
   let boxPtrStr = if boxed then "boxptr" else "omc"
-  if outVars then
+  let fn_name = '<%boxPtrStr%>_<%fname%>'
+  let fn_name_impl = (if isPrototype then fn_name else '<%boxPtrStr%>impl_<%fname%>')
+  let fn_name_typedef = (if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then '<%boxPtrStr%>td_<%fname%>' else fn_name)
+  let fn_name_ptr_typedef = (if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then (if isPrototype then '(*<%fn_name_typedef%>)' else fn_name_impl) else fn_name)
+  let res = (if outVars then
     let outargs = List.rest(outVars) |> var => ", " + (match var
       case var as VARIABLE(__) then '<%if boxed then varTypeBoxed(var) else varType(var)%> *out<%funArgName(var)%>'
       case FUNCTION_PTR(__) then 'modelica_fnptr *out<%funArgName(var)%>')
-    '<%static%><%outarg%> <%boxPtrStr%>_<%fname%>(threadData_t *threadData<%fargsStr%><%outargs%>)'
+    '<%outarg%> <%fn_name_ptr_typedef%>(threadData_t *threadData<%fargsStr%><%outargs%>)'
   else
-  '<%static%>void <%boxPtrStr%>_<%fname%>(threadData_t *threadData<%fargsStr%>)'
+  'void <%fn_name_ptr_typedef%>(threadData_t *threadData<%fargsStr%>)')
+  (if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then
+    // No static functions for relocatable code...
+    (if isPrototype then
+      <<
+      typedef <%res%>;
+      <%fn_name_typedef%> <%fn_name%>
+      >>
+    else
+      let &afterBody += '<%fn_name_typedef%> <%fn_name%> = <%fn_name_impl%>;'
+      res)
+  else '<%static%><%res%>')
 end functionPrototype;
 
 template functionHeaderKernelFunctionInterface(String fname, list<Variable> fargs, list<Variable> outVars)
@@ -975,10 +1012,12 @@ case FUNCTION(__) then
   let &varDecls += addRootsTempArray()
 
   let boxedFn = if not funcHasParallelInOutArrays(fn) then functionBodyBoxed(fn, isSimulation) else ""
+  let &afterBody = buffer ""
+  let prototype = functionPrototype(fname, functionArguments, outVars, false, visibility, isSimulation, false, afterBody)
   <<
   <%auxFunction%>
   <% match visibility case PUBLIC(__) then "DLLExport" %>
-  <%functionPrototype(fname, functionArguments, outVars, false, visibility, isSimulation)%>
+  <%prototype%>
   {
     <%varDecls%>
     <% if boolNot(isSimulation) then 'MMC_SO();<%\n%>'%>_tailrecursive: OMC_LABEL_UNUSED
@@ -994,6 +1033,7 @@ case FUNCTION(__) then
        else 'return;'
     %>
   }
+  <%afterBody%>
   <% if inFunc then generateInFunc(fname,functionArguments,outVars) %>
   <%boxedFn%>
   >>
@@ -1306,9 +1346,11 @@ case efn as EXTERNAL_FUNCTION(__) then
 
   let &varDecls += addRootsTempArray()
   let boxedFn = functionBodyBoxed(fn, isSimulation)
+  let &afterBody = buffer ""
+  let prototype = functionPrototype(fname, funArgs, outVars, false, visibility, isSimulation, false, afterBody)
   let fnBody = <<
   <%auxFunction%>
-  <%functionPrototype(fname, funArgs, outVars, false, visibility, isSimulation)%>
+  <%prototype%>
   {
     <%varDecls%>
     <%modelicaLine(info)%>
@@ -1321,6 +1363,7 @@ case efn as EXTERNAL_FUNCTION(__) then
        else 'return;'
     %>
   }
+  <%afterBody%>
   >>
   <<
   <% if dynamicLoad then
@@ -1353,13 +1396,14 @@ case RECORD_CONSTRUCTOR(__) then
   let boxedFn = functionBodyBoxed(fn, isSimulation)
   <<
   <%auxFunction%>
-  <%fname%> omc_<%fname%>(threadData_t *threadData<%funArgs |> VARIABLE(__) => ', <%expTypeArrayIf(ty)%> omc_<%crefStr(name)%>'%>)
+  <%fname%> omc<%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then "impl"%>_<%fname%>(threadData_t *threadData<%funArgs |> VARIABLE(__) => ', <%expTypeArrayIf(ty)%> omc_<%crefStr(name)%>'%>)
   {
     <%varDecls%>
     <%varInits%>
     <%funArgs |> VARIABLE(__) => '<%structVar%>._<%crefStr(name)%> = omc_<%crefStr(name)%>;' ;separator="\n"%>
     return <%structVar%>;
   }
+  <%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then 'omctd_<%fname%> omc_<%fname%> = omcimpl_<%fname%>;'%>
 
   <%boxedFn%>
   >>
@@ -1462,7 +1506,8 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
     let arg = funArgName(var)
     funArgBox('*out<%arg%>', arg, 'out<%arg%>', liftArrayListExp(var.ty,var.instDims), &varUnbox, &varDecls)
     ; separator="\n")
-  let prototype = functionPrototype(fname, funargs, outvars, true, visibility, isSimulation)
+  let &afterBody = buffer ""
+  let prototype = functionPrototype(fname, funargs, outvars, true, visibility, isSimulation, false, afterBody)
   <<
   <%auxFunction%>
   <%prototype%>
@@ -1474,6 +1519,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
     <%varUnbox%>
     <%match outvars case v::_ then 'return <%retvar%>;' else "return;"%>
   }
+  <%afterBody%>
   >>
 end functionBodyBoxedImpl;
 
@@ -1491,10 +1537,11 @@ case RECORD_CONSTRUCTOR(__) then
      else error(sourceInfo(),"boxRecordConstructor:Unknown variable"))
   let start = daeExpMetaHelperBoxStart(incrementInt(listLength(funArgs), 1))
   <<
-  <%if isSimulation then "" else match visibility case PROTECTED(__) then "PROTECTED_FUNCTION_STATIC "%>modelica_metatype boxptr_<%fname%>(threadData_t *threadData<%funArgs |> var => (", " + funArgBoxedDefinition(var))%>)
+  <%if isSimulation then "" else match visibility case PROTECTED(__) then "PROTECTED_FUNCTION_STATIC "%>modelica_metatype boxptr<%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then "impl"%>_<%fname%>(threadData_t *threadData<%funArgs |> var => (", " + funArgBoxedDefinition(var))%>)
   {
     return mmc_mk_box<%start%>3, &<%fname%>__desc<%funArgsStr%>);
   }
+  <%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then 'boxptrtd_<%fname%> boxptr_<%fname%> = boxptrimpl_<%fname%>;'%>
   >>
 end boxRecordConstructor;
 
@@ -2159,7 +2206,7 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction)
         if (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%ident%>), 2))) {
           <%generateThrow()%> /* The FFI does not allow closures */
         }
-        <%extVarName(c)%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%ident%>), 1));
+        <%extVarName(c)%> = <%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then '*(void**)' %>MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%ident%>), 1));
         >>
       else
         error(sourceInfo(), 'Got function pointer that is not a CREF_IDENT: <%crefStr(c)%>, <%unparseType(ty)%>'))
@@ -5370,7 +5417,7 @@ template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &va
         %>
       }
       >>
-      '(modelica_fnptr) mmc_mk_box2(0,<%func%>,<%closure%>)'
+      '(modelica_fnptr) mmc_mk_box2(0,<%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then "&"%><%func%>,<%closure%>)'
       // error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDump.printExpStr(exp)%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
     case PARTEVALFUNCTION(__) then
       error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDump.printExpStr(exp)%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
@@ -5923,7 +5970,7 @@ template generateTypeCast(Type ty, list<DAE.Exp> es, Boolean isClosure)
   let inputs = es |> e => ', <%expTypeFromExpArrayIf(e)%>'
   let outputs = match ty
     case T_TUPLE(types=_::tys) then (tys |> t => ', <%expTypeArrayIf(t)%>')
-  '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))'
+  '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))<%if boolAnd(boolNot(isClosure), Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS)) then "*(void**)"%>'
 end generateTypeCast;
 
 template generateTypeCastFromType(Type ty, Boolean isClosure)
@@ -5936,7 +5983,7 @@ template generateTypeCastFromType(Type ty, Boolean isClosure)
       (funcArg |> fa as FUNCARG(__) => ', <%expTypeArrayIf(fa.ty)%>')
   let outputs = match ty
     case T_FUNCTION(funcResultType=T_TUPLE(types=_::tys)) then (tys |> t => ', <%expTypeArrayIf(t)%>')
-  '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))'
+  '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))<%if boolAnd(boolNot(isClosure), Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS)) then "*(void**)"%>'
 end generateTypeCastFromType;
 
 template daeExpTailCall(list<DAE.Exp> es, list<String> vs, Context context, Text &preExp, Text &postExp, Text &varDecls, Text &auxFunction)
