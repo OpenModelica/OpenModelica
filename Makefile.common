@@ -385,7 +385,7 @@ msgpack-clean:
 	rm -f 3rdParty/msgpack-0.5.8/Makefile
 
 graphstream: mkbuilddirs $(OMBUILDDIR)/share/omc/java/org.omc.graphstream.jar
-	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" -C 3rdParty/graphstream/; fi
+	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(CXXFLAGS)" -C 3rdParty/graphstream/; fi
 
 $(OMBUILDDIR)/share/omc/java/org.omc.graphstream.jar: mkbuilddirs
 	if test -f 3rdParty/graphstream/org.omc.graphstream.jar; then cp -p 3rdParty/graphstream/org.omc.graphstream.jar $(OMBUILDDIR)/share/omc/java/.; fi
