@@ -652,11 +652,12 @@ algorithm
         else
           codegenFuncs := (function runTpl(func=function SimCodeDump.dumpSimCode(in_a_code=simCode, in_a_withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
         end if;
-        numThreads := max(1, integer(Config.noProc()/2));
-        if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 or (not stringEq(Flags.getConfigString(Flags.RUNNING_TESTSUITE),"")) then
+        // Test the parallel code generator in the test suite. Should give decent results given that the task is disk-intensive.
+        numThreads := max(1, if Config.getRunningTestsuite() then min(2, System.numProcessors()) else Config.noProc());
+        if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 then
           true := max(func() for func in codegenFuncs);
         else
-          true := max(l for l in System.launchParallelTasks(min(2, numThreads) /* Boehm GC does not scale to infinity */, codegenFuncs, runCodegenFunc));
+          true := max(l for l in System.launchParallelTasks(numThreads, codegenFuncs, runCodegenFunc));
         end if;
       then ();
 
