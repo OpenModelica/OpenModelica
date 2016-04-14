@@ -66,8 +66,8 @@ list(linear_simple__test);
 //   Real x[2](start = x0);
 //   input Real u[0];
 //   output Real y[0];
-//   Real x_Pz1 = x[1];
-//   Real x_Pz2 = x[2];
+//   Real 'x_Pz1' = x[1];
+//   Real 'x_Pz2' = x[2];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
@@ -112,10 +112,10 @@ list(linear_simple__test);
 //   input Real u[0];
 //   output Real y[0];
 //   output Real z[2];
-//   Real x_Pz1 = x[1];
-//   Real x_Pz2 = x[2];
-//   Real z_Pfac = z[1];
-//   Real z_Py = z[2];
+//   Real 'x_Pz1' = x[1];
+//   Real 'x_Pz2' = x[2];
+//   Real 'z_Pfac' = z[1];
+//   Real 'z_Py' = z[2];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
