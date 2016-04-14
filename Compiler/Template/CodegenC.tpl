@@ -58,30 +58,50 @@ import CodegenCFunctions.*;
   match simCode
   case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
     let target  = simulationCodeTarget()
-    let &dummy = buffer ""
     let()= System.tmpTickResetIndex(0,2) /* auxFunction index */
     let()= System.tmpTickResetIndex(0,20)  /*parfor index*/
-    let()= textFile(simulationMakefile(target, simCode), '<%fileNamePrefix%>.makefile') // write the makefile first!
-    let()= textFile(simulationLiteralsFile(fileNamePrefix, literals), '<%fileNamePrefix%>_literals.h')
-    let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
 
-    let()= textFileConvertLines(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, dummy), '<%fileNamePrefix%>_functions.c')
-    let()= textFile(externalFunctionIncludes(sc.externalFunctionIncludes), '<%fileNamePrefix%>_includes.h')
+    // write the makefile first!
+    let &makeFile = buffer ""
+    let &makeFile += redirectToFile('<%fileNamePrefix%>.makefile')
+    let &makeFile += simulationMakefile(target, simCode)
+    let &makeFile += closeFile()
 
-    let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
 
-    let()= textFile(simulationHeaderFile(simCode), '<%fileNamePrefix%>_model.h')
+    let &literalsFile = buffer ""
+    let &literalsFile += redirectToFile('<%fileNamePrefix%>_literals.h')
+    let &literalsFile += simulationLiteralsFile(fileNamePrefix, literals)
+    let &literalsFile += closeFile()
+
+    let &functionsHeader = buffer ""
+    let &functionsHeader += redirectToFile('<%fileNamePrefix%>_functions.h')
+    let &functionsHeader += simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls)
+    let &functionsHeader += closeFile()
+
+    let &includes = buffer ""
+    let &includes += redirectToFile('<%fileNamePrefix%>_includes.h')
+    let &includes += externalFunctionIncludes(sc.externalFunctionIncludes)
+    let &includes += closeFile()
+
+    let &records = buffer ""
+    let &records += redirectToFile('<%fileNamePrefix%>_records.c')
+    let &records += recordsFile(fileNamePrefix, recordDecls)
+    let &records += closeFile()
+
     // adpro: write the main .c file last! Make on windows doesn't seem to realize that
     //        the .c file is newer than the .o file if we have succesive simulate commands
     //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
 
     // If ParModelica generate the kernels file too.
     if acceptParModelicaGrammar() then
-      let()= textFile(simulationParModelicaKernelsFile(fileNamePrefix, modelInfo.functions), '<%fileNamePrefix%>_kernels.cl')
+      let &cl = buffer ""
+      let &cl += redirectToFile('<%fileNamePrefix%>_kernels.cl')
+      let &cl += simulationParModelicaKernelsFile(fileNamePrefix, modelInfo.functions)
+      let &cl += closeFile()
+      ""
 
     //this top-level template always returns an empty result
     //since generated texts are written to files directly
-    ""
   end match
 end translateModel;
 
@@ -5094,7 +5114,7 @@ end equationIfEquationAssign;
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end simulationLiteralsFile;
 
-/* public */ template simulationFunctionsFile(String filePrefix, list<Function> functions, Text &staticPrototypes)
+/* public */ template simulationFunctionsFile(String filePrefix, list<Function> functions)
  "Generates the content of the C file for functions in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
@@ -5115,16 +5135,6 @@ end simulationLiteralsFile;
   extern cl_program omc_ocl_program;
   /* The default OpenCL device. If not set (=0) show the selection option.*/
   unsigned int default_ocl_device = <%getDefaultOpenCLDevice()%>;
-  >>
-  %>
-
-  <%if staticPrototypes then
-  <<
-  /* default, do not make protected functions static */
-  #if !defined(PROTECTED_FUNCTION_STATIC)
-  #define PROTECTED_FUNCTION_STATIC
-  #endif
-  <%staticPrototypes%>
   >>
   %>
 

@@ -941,7 +941,7 @@ public constant Message COMPILER_NOTIFICATION_SCRIPTING = MESSAGE(6002, SCRIPTIN
 public constant Message SUSAN_ERROR = MESSAGE(7000, TRANSLATION(), ERROR(),
   Util.notrans("%s"));
 public constant Message TEMPLATE_ERROR = MESSAGE(7001, TRANSLATION(), ERROR(),
-  Util.gettext("Template error: %s"));
+  Util.gettext("Template error: %s."));
 public constant Message OPERATOR_OVERLOADING_WARNING = MESSAGE(7002, TRANSLATION(), WARNING(),
   Util.gettext("Operator Overloading: %s."));
 public constant Message OPERATOR_OVERLOADING_ERROR = MESSAGE(7003, TRANSLATION(), ERROR(),
@@ -967,6 +967,8 @@ public constant Message SUSAN_NOTIFY = MESSAGE(7012, TRANSLATION(), NOTIFICATION
   Util.notrans("%s"));
 public constant Message PDEModelica_ERROR = MESSAGE(7013, TRANSLATION(), ERROR(),
   Util.gettext("PDEModelica: %s"));
+public constant Message TEMPLATE_ERROR_FUNC = MESSAGE(7014, TRANSLATION(), ERROR(),
+  Util.gettext("Template error: A template call failed (a call with %s parameters: %s). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics)."));
 
 protected import ErrorExt;
 

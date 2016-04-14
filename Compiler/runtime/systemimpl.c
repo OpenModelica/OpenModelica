@@ -2906,7 +2906,7 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
       j = 0;
       /* adrpo: encode each char */
       for (i=0; i<n; i++) {
-	    fputc('\'', fout);
+      fputc('\'', fout);
 
         switch (buffer[i]) {
         case '\n':
@@ -2921,11 +2921,11 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
           fputc('\\', fout);
           fputc('\\', fout);
           break;
-		case '"':
+    case '"':
           fputc('\\', fout);
           fputc('\"', fout);
           break;
-		case '\'':
+    case '\'':
           fputc('\\', fout);
           fputc('\'', fout);
           break;
@@ -2996,12 +2996,13 @@ void SystemImpl__dladdr(void *symbol, const char **file, const char **name)
   *name = "not available on Windows";
 #else
   Dl_info info;
-  if (0 == dladdr((MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(symbol), 1))), &info)) {
+  void *ptr = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(symbol), 1)));
+  if (0 == dladdr(ptr, &info)) {
     *file = "dladdr failed";
     *name = "";
   } else {
-    *file = omc_alloc_interface.malloc_strdup(info.dli_fname);
-    *name = omc_alloc_interface.malloc_strdup(info.dli_sname);
+    *file = info.dli_fname ? omc_alloc_interface.malloc_strdup(info.dli_fname) : "(null)";
+    *name = info.dli_sname ? omc_alloc_interface.malloc_strdup(info.dli_sname) : "(null)";
   }
 #endif
 }

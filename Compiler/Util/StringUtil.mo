@@ -43,6 +43,7 @@ protected import System;
 protected import MetaModelica.Dangerous.{listReverseInPlace, stringGetNoBoundsChecking};
 
 public constant Integer NO_POS = 0;
+protected constant Integer CHAR_NL = 10;
 protected constant Integer CHAR_SPACE = 32;
 protected constant Integer CHAR_DASH = 45;
 
@@ -369,6 +370,13 @@ algorithm
   c := c + stringLength(str6);
   str := System.stringAllocatorResult(sb,str1);
 end stringAppend6;
+
+function endsWithNewline
+  input String str;
+  output Boolean b;
+algorithm
+  b := CHAR_NL == MetaModelica.Dangerous.stringGetNoBoundsChecking(str, stringLength(str));
+end endsWithNewline;
 
 annotation(__OpenModelica_Interface="util");
 end StringUtil;

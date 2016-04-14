@@ -1265,6 +1265,17 @@ end System;
 
 
 package Tpl
+  function redirectToFile
+    input Text inText;
+    input String inFileName;
+    output Text outText;
+  end redirectToFile;
+
+  function closeFile
+    input Text inText;
+    output Text outText;
+  end closeFile;
+
   function textFile
     input Text inText;
     input String inFileName;

@@ -74,6 +74,7 @@ import Config;
 import DAEUtil;
 import Debug;
 import Error;
+import ErrorExt;
 import Flags;
 import FMI;
 import GC;
@@ -529,11 +530,20 @@ protected
     extends PartialRunTpl(res=false);
     input FuncText func;
     input String file;
+  protected
+    Integer nErr;
   algorithm
     try
-      Tpl.textFileConvertLines(Tpl.tplCallWithFailErrorNoArg(func), file);
+      if Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+        Tpl.textFileConvertLines(Tpl.tplCallWithFailErrorNoArg(func), file);
+      else
+        nErr := Error.getNumErrorMessages();
+        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(func,Tpl.redirectToFile(Tpl.emptyTxt, file)));
+        Tpl.failIfTrue(Error.getNumErrorMessages() > nErr);
+      end if;
       res := true;
     else
+      ErrorExt.moveMessagesToParentThread();
     end try;
   end runTplWriteFile;
 
@@ -545,6 +555,7 @@ protected
       Tpl.tplCallWithFailErrorNoArg(func);
       res := true;
     else
+      ErrorExt.moveMessagesToParentThread();
     end try;
   end runTpl;
 
@@ -559,6 +570,7 @@ protected
       func();
       res := true;
     else
+      ErrorExt.moveMessagesToParentThread();
     end try;
   end runToStr;
 
@@ -625,13 +637,16 @@ algorithm
           (CodegenC.simulationFile_opt, "_13opt.c"),
           (CodegenC.simulationFile_opt_header, "_13opt.h"),
           (CodegenC.simulationFile_lnz, "_14lnz.c"),
-          (CodegenC.simulationFile_syn, "_15syn.c")
+          (CodegenC.simulationFile_syn, "_15syn.c"),
+          (CodegenC.simulationHeaderFile, "_model.h")
         } loop
           (func,str) := f;
           codegenFuncs := (function runTplWriteFile(func=function func(a_simCode=simCode), file=simCode.fileNamePrefix + str)) :: codegenFuncs;
         end for;
         codegenFuncs := (function runTpl(func=function CodegenC.simulationFile_mixAndHeader(a_simCode=simCode, a_modelNamePrefix=simCode.fileNamePrefix))) :: codegenFuncs;
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=false), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
+        codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFunctionsFile(a_filePrefix=simCode.fileNamePrefix, a_functions=simCode.modelInfo.functions), file=simCode.fileNamePrefix + "_functions.c")) :: codegenFuncs;
+
         if Flags.isSet(Flags.MODEL_INFO_JSON) then
           codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
         else

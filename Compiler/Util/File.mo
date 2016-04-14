@@ -34,15 +34,24 @@ encapsulated package File
 class File
   extends ExternalObject;
   function constructor
+    input Option<Integer> fromID = NONE() "If we should restore from another pointer. Note: Option<Integer> is an opaque pointer, not an actual Option.";
     output File file;
-  external "C" file=om_file_new() annotation(Include="
+  external "C" file=om_file_new(fromID) annotation(Include="
 #ifndef __OMC_FILE_NEW
 #define __OMC_FILE_NEW
 #include <stdio.h>
 #include <gc.h>
-static inline void* om_file_new()
+static inline void* om_file_new(void *fromID)
 {
-  return GC_malloc(sizeof(FILE*));
+  if (isNone(fromID)) {
+    FILE **res = (FILE**) GC_malloc(sizeof(FILE*));
+    res[0] = NULL;
+    res[1] = 0;
+    return res;
+  } else {
+    ((long**)fromID)[1]++; /* Increase reference count */
+    return fromID;
+  }
 }
 #endif
 ");
@@ -55,10 +64,12 @@ end constructor;
 #include <stdio.h>
 static inline void om_file_free(FILE **file)
 {
-  if (*file) {
-    fclose(*file);
-    *file = 0;
+  if (file[1] /* reference count */) {
+    ((long**)file)[1]--;
+    return;
   }
+  fclose(*file);
+  *file = 0;
   GC_free(file);
 }
 #endif
@@ -274,6 +285,64 @@ static inline int om_file_seek(FILE **file,int offset,enum whence_t whence)
 #endif
 ");
 end seek;
+
+function tell
+  input File file;
+  output Integer pos;
+external "C" pos = om_file_tell(file) annotation(Include="
+#ifndef __OMC_FILE_TELL
+#define __OMC_FILE_TELL
+#include <stdio.h>
+static inline int om_file_tell(FILE **file)
+{
+  if (!*file) {
+    return -1;
+  }
+  return ftell(*file);
+}
+#endif
+");
+end tell;
+
+function getReference
+  input File file;
+  output Option<Integer> reference;
+external "C" reference = om_file_get_reference(file) annotation(Include="
+#ifndef __OMC_FILE_REFERENCE
+#define __OMC_FILE_REFERENCE
+#include <stdio.h>
+static inline void* om_file_get_reference(FILE **file)
+{
+  ((long**)file)[1]++;
+  return file;
+}
+#endif
+");
+end getReference;
+
+function releaseReference
+  input File file;
+external "C" om_file_release_reference(file) annotation(Include="
+#ifndef __OMC_FILE_RELEASE_REFERENCE
+#define __OMC_FILE_RELEASE_REFERENCE
+#include <stdio.h>
+static inline void* om_file_release_reference(FILE **file)
+{
+  ((long**)file)[1]--;
+  return file;
+}
+#endif
+");
+end releaseReference;
+
+function writeSpace
+  input File file;
+  input Integer n;
+algorithm
+  for i in 1:n loop
+    File.write(file, " ");
+  end for;
+end writeSpace;
 
 package Examples
 
