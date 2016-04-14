@@ -430,6 +430,30 @@ void Utilities::highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFo
   pPlainTextEdit->setExtraSelections(selections);
 }
 
+/*!
+ * \brief Utilities::getProcessId
+ * Returns the process id.
+ * \param pProcess
+ * \return
+ */
+qint64 Utilities::getProcessId(QProcess *pProcess)
+{
+  qint64 processId = 0;
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 3, 0))
+  processId = pProcess->processId();
+#else /* Qt4 */
+#ifdef WIN32
+  _PROCESS_INFORMATION *procInfo = pProcess->pid();
+  if (procInfo) {
+    processId = procInfo->dwProcessId;
+  }
+#else
+  processId = pProcess->pid();
+#endif /* WIN32 */
+#endif /* QT_VERSION */
+  return processId;
+}
+
 #ifdef WIN32
 /* adrpo: found this on http://stackoverflow.com/questions/1173342/terminate-a-process-tree-c-for-windows
  * thanks go to: mjmarsh & Firas Assaad

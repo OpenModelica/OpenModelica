@@ -49,6 +49,7 @@
 #include <QDebug>
 #include <QPlainTextEdit>
 #include <QTextEdit>
+#include <QProcess>
 
 #ifdef WIN32
 #include <windows.h>
@@ -344,6 +345,7 @@ namespace Utilities {
   QTextCharFormat getParenthesesMisMatchFormat();
   void highlightCurrentLine(QPlainTextEdit *pPlainTextEdit);
   void highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFormat parenthesesMatchFormat, QTextCharFormat parenthesesMisMatchFormat);
+  qint64 getProcessId(QProcess *pProcess);
 #ifdef WIN32
   void killProcessTreeWindows(DWORD myprocID);
 #endif

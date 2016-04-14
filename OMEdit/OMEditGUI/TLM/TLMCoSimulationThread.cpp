@@ -80,12 +80,7 @@ void TLMCoSimulationThread::runManager()
   mpManagerProcess->setProcessEnvironment(environment);
   // start the executable
   mpManagerProcess->start(fileName, args);
-#ifdef WIN32
-  mManagerProcessId = mpManagerProcess->processId();
-#else
-  mManagerProcessId = mpManagerProcess->pid();
-
-#endif /*  WIN32 */
+  mManagerProcessId = Utilities::getProcessId(mpManagerProcess);
   emit sendManagerOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo);
 }
 
@@ -166,7 +161,7 @@ void TLMCoSimulationThread::managerProcessFinished(int exitCode, QProcess::ExitS
 #ifdef WIN32
   Utilities::killProcessTreeWindows(mManagerProcessId);
 #else
-  // TODO! do similar stuff for Linux!
+  /*! @todo do similar stuff for Linux! */
 #endif /*  WIN32 */
 }
 
