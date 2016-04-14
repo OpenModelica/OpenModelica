@@ -4155,7 +4155,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%vectorU%>
       <%vectorY%>
       <%vectorZ%>
-      "\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%><% getVarName(vars.inputVars, "u", varInfo.numInVars) %><%getVarName(vars.outputVars, "y", varInfo.numOutVars) %><%getVarName(vars.algVars, "z", varInfo.numAlgVars) %>\n"
+      "\n<%getVarName(vars.stateVars, "x", varInfo.numStateVars )%><% getVarName(vars.inputVars, "u", varInfo.numInVars) %><%getVarName(vars.outputVars, "y", varInfo.numOutVars) %><%getVarName(vars.algVars, "z", varInfo.numAlgVars) %>\n"
       "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\n  z = Cz * x + Dz * u;\nend linear_<%underscorePath(name)%>;\n";
     }
     >>
@@ -4168,7 +4168,7 @@ template getVarName(list<SimVar> simVars, String arrayName, Integer arraySize) "
   simVars |> var hasindex arrindex fromindex 1 =>
     (match var
     case SIMVAR(__) then
-      '  Real <%arrayName%>_<%crefM(name)%> = <%arrayName%>[<%arrindex%>];\n'
+      <<  Real '<%arrayName%>_<%crefM(name)%>' = <%arrayName%>[<%arrindex%>];\n>>
     end match)
   ; empty
 end getVarName;
