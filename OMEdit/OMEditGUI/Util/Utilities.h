@@ -50,6 +50,11 @@
 #include <QPlainTextEdit>
 #include <QTextEdit>
 
+#ifdef WIN32
+#include <windows.h>
+#include <tlhelp32.h>
+#endif
+
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
@@ -339,6 +344,9 @@ namespace Utilities {
   QTextCharFormat getParenthesesMisMatchFormat();
   void highlightCurrentLine(QPlainTextEdit *pPlainTextEdit);
   void highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFormat parenthesesMatchFormat, QTextCharFormat parenthesesMisMatchFormat);
+#ifdef WIN32
+  void killProcessTreeWindows(DWORD myprocID);
+#endif
 
 }
 

@@ -40,6 +40,7 @@ TLMCoSimulationThread::TLMCoSimulationThread(TLMCoSimulationOutputWidget *pTLMCo
   : QThread(pTLMCoSimulationOutputWidget), mpTLMCoSimulationOutputWidget(pTLMCoSimulationOutputWidget)
 {
   mpManagerProcess = 0;
+  mManagerProcessId = 0;
   setIsManagerProcessRunning(false);
   mpMonitorProcess = 0;
   setIsMonitorProcessRunning(false);
@@ -79,6 +80,7 @@ void TLMCoSimulationThread::runManager()
   mpManagerProcess->setProcessEnvironment(environment);
   // start the executable
   mpManagerProcess->start(fileName, args);
+  mManagerProcessId = mpManagerProcess->processId();
   emit sendManagerOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo);
 }
 
@@ -156,6 +158,7 @@ void TLMCoSimulationThread::managerProcessFinished(int exitCode, QProcess::ExitS
     emit sendManagerOutput(mpManagerProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error);
   }
   emit sendManagerFinished(exitCode, exitStatus);
+  Utilities::killProcessTreeWindows(mManagerProcessId);
 }
 
 /*!

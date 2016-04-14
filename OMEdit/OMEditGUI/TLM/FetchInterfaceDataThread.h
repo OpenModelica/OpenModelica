@@ -48,6 +48,7 @@ protected:
 private:
   FetchInterfaceDataDialog *mpFetchInterfaceDataDialog;
   QProcess *mpManagerProcess;
+  qint64 mManagerProcessId;
   bool mIsManagerProcessRunning;
 private slots:
   void managerProcessStarted();

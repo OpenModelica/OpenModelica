@@ -58,6 +58,7 @@ private:
   QString mFileName;
   TLMCoSimulationOutputWidget *mpTLMCoSimulationOutputWidget;
   QProcess *mpManagerProcess;
+  qint64 mManagerProcessId;
   bool mIsManagerProcessRunning;
   QProcess *mpMonitorProcess;
   bool mIsMonitorProcessRunning;

@@ -429,3 +429,57 @@ void Utilities::highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFo
   }
   pPlainTextEdit->setExtraSelections(selections);
 }
+
+#ifdef WIN32
+/* adrpo: found this on http://stackoverflow.com/questions/1173342/terminate-a-process-tree-c-for-windows
+ * thanks go to: mjmarsh & Firas Assaad
+ * adapted to recurse on children ids
+ */
+void Utilities::killProcessTreeWindows(DWORD myprocID)
+{
+  PROCESSENTRY32 pe;
+  HANDLE hSnap = NULL, hProc = NULL;
+
+  memset(&pe, 0, sizeof(PROCESSENTRY32));
+  pe.dwSize = sizeof(PROCESSENTRY32);
+
+  hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+  if (Process32First(hSnap, &pe))
+  {
+    BOOL bContinue = TRUE;
+
+    // kill child processes
+    while (bContinue)
+    {
+      // only kill child processes
+      if (pe.th32ParentProcessID == myprocID)
+      {
+        HANDLE hChildProc = NULL;
+
+        // recurse
+        killProcessTreeWindows(pe.th32ProcessID);
+
+        hChildProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe.th32ProcessID);
+
+        if (hChildProc)
+        {
+          TerminateProcess(hChildProc, 1);
+          CloseHandle(hChildProc);
+        }
+      }
+
+      bContinue = Process32Next(hSnap, &pe);
+    }
+
+    // kill the main process
+    hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, myprocID);
+
+    if (hProc)
+    {
+      TerminateProcess(hProc, 1);
+      CloseHandle(hProc);
+    }
+  }
+}
+#endif

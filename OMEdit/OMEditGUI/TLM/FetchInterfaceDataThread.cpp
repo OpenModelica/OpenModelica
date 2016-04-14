@@ -34,6 +34,7 @@ FetchInterfaceDataThread::FetchInterfaceDataThread(FetchInterfaceDataDialog *pFe
   : QThread(pFetchInterfaceDataDialog), mpFetchInterfaceDataDialog(pFetchInterfaceDataDialog)
 {
   mpManagerProcess = 0;
+  mManagerProcessId = 0;
   setIsManagerProcessRunning(false);
 }
 
@@ -66,6 +67,7 @@ void FetchInterfaceDataThread::run()
   environment.insert("TLMPluginPath", pTLMPage->getTLMPluginPathTextBox()->text());
   mpManagerProcess->setProcessEnvironment(environment);
   mpManagerProcess->start(pTLMPage->getTLMManagerProcessTextBox()->text(), args);
+  mManagerProcessId = mpManagerProcess->processId();
   emit sendManagerOutput(QString("%1 %2").arg(pTLMPage->getTLMManagerProcessTextBox()->text()).arg(args.join(" ")), StringHandler::OMEditInfo);
   exec();
 }
@@ -120,6 +122,7 @@ void FetchInterfaceDataThread::managerProcessFinished(int exitCode, QProcess::Ex
     emit sendManagerOutput(mpManagerProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error);
   }
   emit sendManagerFinished(exitCode, exitStatus);
+  Utilities::killProcessTreeWindows(mManagerProcessId);
   quit();
 }
 
