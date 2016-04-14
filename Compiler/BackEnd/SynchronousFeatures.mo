@@ -1626,7 +1626,7 @@ algorithm
     case (Absyn.IDENT("shiftSample"), 3) then true;
     case (Absyn.IDENT("backSample"), 3) then true;
     case (Absyn.IDENT("noClock"), 1) then true;
-    else then false;
+    else false;
   end match;
   (exps, eqs, vars, cnt) :=
       if replace then substExp(inExps, inEqs, inVars, inCnt)

@@ -349,7 +349,7 @@ algorithm
       String xInState, name;
     case (DAE.CALL(path=Absyn.IDENT(name)), (xInState, subsExp, hit)) guard name == xInState
       then (subsExp, (xInState, subsExp, true));
-    else then (inExp, inXSubstHit);
+    else (inExp, inXSubstHit);
   end match;
 end traversingSubsXInState;
 
@@ -593,7 +593,7 @@ algorithm
       algorithm
         substituteRef := ComponentReference.appendStringLastIdent("_previous", cref);
       then (DAE.CREF(substituteRef, ty), (cref, true));
-    else then (inExp, inCrefHit);
+    else (inExp, inCrefHit);
   end match;
 
 end traversingSubsPreviousCref;
@@ -1429,10 +1429,8 @@ Return true if element is a transition, otherwise false"
   output Boolean result;
 algorithm
   result := match (inElement)
-    local
-      DAE.Exp exp;
     case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("transition"))) then true;
-    else then false;
+    else false;
   end match;
 end isTransition;
 
@@ -1443,10 +1441,8 @@ Return true if element is an initialState, otherwise false"
   output Boolean result;
 algorithm
   result := match (inElement)
-    local
-      DAE.Exp exp;
     case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("initialState"))) then true;
-    else then false;
+    else false;
   end match;
 end isInitialState;
 
@@ -1457,10 +1453,8 @@ Return true if element is an EQUATION, otherwise false"
   output Boolean result;
 algorithm
   result := match (inElement)
-    local
-      DAE.Exp exp;
     case DAE.EQUATION() then true;
-    else then false;
+    else false;
   end match;
 end isEquation;
 
@@ -1471,10 +1465,8 @@ Return true if element is an VAR, otherwise false"
   output Boolean result;
 algorithm
   result := match (inElement)
-    local
-      DAE.Exp exp;
     case DAE.VAR() then true;
-    else then false;
+    else false;
   end match;
 end isVar;
 
@@ -1559,7 +1551,6 @@ Substitutes 'previous(x)' by 'pre(x)' "
 algorithm
   (outExp,outHitCount) := match inExp
     local
-      DAE.ComponentRef componentRef;
       list<DAE.Exp> expLst;
       DAE.CallAttributes attr;
     case DAE.CALL(Absyn.IDENT("previous"), expLst, attr)
@@ -1579,7 +1570,6 @@ Substitutes 'sample(x, _)' by 'x' "
 algorithm
   (outExp,outHitCount) := match inExp
     local
-      DAE.ComponentRef componentRef;
       DAE.Exp expX;
       DAE.CallAttributes attr;
     case DAE.CALL(Absyn.IDENT("sample"),

@@ -1673,7 +1673,7 @@ algorithm
     case ("true",_,true,true) then true;
     case ("linear",true,true,true) then true;
     case ("nonlinear",false,true,true) then true;
-    else then false;
+    else false;
   end match;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then

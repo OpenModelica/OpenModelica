@@ -3430,7 +3430,7 @@ import Util;
         then DAE.CREF_IDENT(ident,identType,{});
       case(DAE.CREF_ITER(ident,index,identType,subscriptLst))
         then DAE.CREF_ITER(ident,index,identType,{});
-      else then iCref;
+      else iCref;
     end match;
   end removeSubscripts;
 

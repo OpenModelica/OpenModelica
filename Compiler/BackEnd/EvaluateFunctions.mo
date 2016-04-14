@@ -130,7 +130,7 @@ algorithm
   str := match(var)
     case(CONST())
       then "CONST";
-    else then "VARIABLE";
+    else "VARIABLE";
     end match;
 end VariabilityString;
 

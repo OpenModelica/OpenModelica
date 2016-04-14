@@ -6416,7 +6416,7 @@ algorithm
     case(HpcOmSimCode.DEPTASK()) then "Deptask";
     case(HpcOmSimCode.PREFETCHTASK()) then "Prefetch task";
     case(HpcOmSimCode.TASKEMPTY()) then "Empty task";
-    else then "Unknown";
+    else "Unknown";
   end match;
 end getTaskTypeString;
 
