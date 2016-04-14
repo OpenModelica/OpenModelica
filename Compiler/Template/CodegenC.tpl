@@ -4122,11 +4122,11 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
     let vectorU = genVector("u", varInfo.numInVars, 1)
     let vectorY = genVector("y", varInfo.numOutVars, 2)
     let vectorZ = genVector("z", varInfo.numAlgVars, 2)
-    //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0); \n  output Real y[<%varInfo.numOutVars%>]; \n");
+    //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0);\n  output Real y[<%varInfo.numOutVars%>];\n");
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n"
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states\n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs\n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs\n"
       "  parameter Real x0[<%varInfo.numStateVars%>] = {%s};\n"
       "  parameter Real u0[<%varInfo.numInVars%>] = {%s};\n"
       <%matrixA%>
@@ -4141,7 +4141,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
     {
-      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n  parameter Integer nz = <%varInfo.numAlgVars%>; // data recovery variables \n"
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states\n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs\n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs\n  parameter Integer nz = <%varInfo.numAlgVars%>; // data recovery variables\n"
       "  parameter Real x0[<%varInfo.numStateVars%>] = {%s};\n"
       "  parameter Real u0[<%varInfo.numInVars%>] = {%s};\n"
       "  parameter Real z0[<%varInfo.numAlgVars%>] = {%s};\n"
@@ -4155,7 +4155,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%vectorU%>
       <%vectorY%>
       <%vectorZ%>
-      "\n<%getVarName(vars.stateVars, "x", varInfo.numStateVars )%><% getVarName(vars.inputVars, "u", varInfo.numInVars) %><%getVarName(vars.outputVars, "y", varInfo.numOutVars) %><%getVarName(vars.algVars, "z", varInfo.numAlgVars) %>\n"
+      "\n<%getVarName(vars.stateVars, "x", varInfo.numStateVars)%><% getVarName(vars.inputVars, "u", varInfo.numInVars)%><%getVarName(vars.outputVars, "y", varInfo.numOutVars)%><%getVarName(vars.algVars, "z", varInfo.numAlgVars)%>\n"
       "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\n  z = Cz * x + Dz * u;\nend linear_<%underscorePath(name)%>;\n";
     }
     >>
@@ -4168,7 +4168,7 @@ template getVarName(list<SimVar> simVars, String arrayName, Integer arraySize) "
   simVars |> var hasindex arrindex fromindex 1 =>
     (match var
     case SIMVAR(__) then
-      <<  Real '<%arrayName%>_<%crefM(name)%>' = <%arrayName%>[<%arrindex%>];\n>>
+      <<  Real '<%arrayName%>_<%cref(name)%>' = <%arrayName%>[<%arrindex%>];\n>>
     end match)
   ; empty
 end getVarName;
