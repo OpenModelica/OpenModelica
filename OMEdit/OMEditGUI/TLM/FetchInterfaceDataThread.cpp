@@ -67,7 +67,11 @@ void FetchInterfaceDataThread::run()
   environment.insert("TLMPluginPath", pTLMPage->getTLMPluginPathTextBox()->text());
   mpManagerProcess->setProcessEnvironment(environment);
   mpManagerProcess->start(pTLMPage->getTLMManagerProcessTextBox()->text(), args);
+#ifdef WIN32
   mManagerProcessId = mpManagerProcess->processId();
+#else
+  mManagerProcessId = mpManagerProcess->pid();
+#endif /* WIN32 */
   emit sendManagerOutput(QString("%1 %2").arg(pTLMPage->getTLMManagerProcessTextBox()->text()).arg(args.join(" ")), StringHandler::OMEditInfo);
   exec();
 }
@@ -122,7 +126,11 @@ void FetchInterfaceDataThread::managerProcessFinished(int exitCode, QProcess::Ex
     emit sendManagerOutput(mpManagerProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error);
   }
   emit sendManagerFinished(exitCode, exitStatus);
+#ifdef WIN32
   Utilities::killProcessTreeWindows(mManagerProcessId);
+#else
+  // TODO! do similar stuff for Linux!
+#endif /*  WIN32 */
   quit();
 }
 
