@@ -9,7 +9,7 @@ config.sub
 configure
 install-sh
 .metadata/
-.externalToolBuilders/
+.externalToolBuilders/*.launch
 .project-sample
 .project
 .openmodelica.aspell
