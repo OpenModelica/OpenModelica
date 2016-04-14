@@ -3681,6 +3681,8 @@ match simCode
     let partitionInit = if Flags.isSet(Flags.MULTIRATE_PARTITION) then partitionInfoInit(partitionData.numPartitions, vi.numStateVars, partitionData.stateToActivators) else ""
       <<
       defineConstVals();
+      defineStateVars();
+      defineDerivativeVars();
       defineAlgVars();
       defineDiscreteAlgVars();
       defineIntAlgVars();
@@ -7174,6 +7176,8 @@ match modelInfo
       //Saves all variables before an event is handled, is needed for the pre, edge and change operator
       void saveAll();
 
+      void defineStateVars();
+      void defineDerivativeVars();
       void defineAlgVars();
       void defineDiscreteAlgVars();
       void defineIntAlgVars();
@@ -7887,6 +7891,14 @@ template memberVariableDefine(ModelInfo modelInfo, HashTableCrIListArray.HashTab
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
    <<
+   /*state vars*/
+   <%vars.stateVars |> var =>
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
+   ;separator="\n"%>
+   /*derivative vars*/
+   <%vars.derivativeVars |> var =>
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
+   ;separator="\n"%>
    /*parameter real vars*/
    <%vars.paramVars |> var =>
     memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
@@ -7967,6 +7979,8 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
   match modelInfo
     case MODELINFO(vars=SIMVARS(__),name=name) then
       let classname = lastIdentOfPath(name)
+      let &additionalStateVarFunctionCalls = buffer ""
+      let &additionalDerivativeVarFunctionCalls = buffer ""
       let &additionalAlgVarFunctionCalls = buffer ""
       let &additionalDiscreteAlgVarFunctionCalls = buffer ""
       let &additionalIntAlgVarFunctionCalls = buffer ""
@@ -7984,6 +7998,24 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       let &returnValue = buffer ""
 
       <<
+      //StateVars
+      <%List.partition(vars.stateVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineStateVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", additionalStateVarFunctionCalls, additionalConstructorVariables, additionalFunctionDefinitions) ;separator="\n"%>
+
+      void <%classname%>::defineStateVars()
+      {
+        <%additionalStateVarFunctionCalls%>
+      }
+
+      //DerivativeVars
+      <%List.partition(vars.derivativeVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineDerivativeVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", additionalDerivativeVarFunctionCalls, additionalConstructorVariables, additionalFunctionDefinitions) ;separator="\n"%>
+
+      void <%classname%>::defineDerivativeVars()
+      {
+        <%additionalDerivativeVarFunctionCalls%>
+      }
+
       //AlgVars
       <%List.partition(vars.algVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "defineAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
