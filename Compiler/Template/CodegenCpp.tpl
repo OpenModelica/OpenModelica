@@ -503,6 +503,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects)
    : <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings, simObjects)
+   , _constructedExternalObjects(false)
    {
      InitializeDummyTypeElems();
    }
@@ -515,7 +516,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::~<%lastIdentOfPath(modelInfo.name)%>Initialize()
    {
-     destructExternalObjects();
+     if (_constructedExternalObjects)
+       destructExternalObjects();
    }
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::InitializeDummyTypeElems()
@@ -5823,6 +5825,7 @@ template initExtVarsDecl(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,
 
     void constructExternalObjects();
     void destructExternalObjects();
+    bool _constructedExternalObjects;
     >>
   end match
 end initExtVarsDecl;
@@ -5934,8 +5937,10 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       initializeDerVars();
       >>
       %>
-      /*external objects construction*/
-      constructExternalObjects();
+      /*external objects*/
+      if (_constructedExternalObjects)
+        destructExternalObjects();
+      _constructedExternalObjects = false;
 
    #if defined(__TRICORE__) || defined(__vxworks)
       //init inputs
@@ -5947,6 +5952,11 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    {
       //variable decls
       <%varDecls%>
+
+      //construct external objects once
+      if (!_constructedExternalObjects)
+        constructExternalObjects();
+      _constructedExternalObjects = true;
 
       //bound start values
       <%initFunctions%>
