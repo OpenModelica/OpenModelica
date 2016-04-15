@@ -33,8 +33,8 @@ OMC_OBJ = $(OMC_OBJ_BOOT) Print_omc.o  Settings_omc.o serializer.o \
 
 all: install
 .PHONY: all install
-install: libomcruntime.a
-	cp libomcruntime.a $(builddir_lib)/$(TRIPLE)/omc/
+install: libomcruntime$(SHREXT)
+	cp libomcruntime$(SHREXT) $(builddir_lib)/$(TRIPLE)/omc/
 OBJEXT=.o
 BOOTH=../OpenModelicaBootstrappingHeader.h
 ifeq ($(BOOTSTRAPPING),1)
@@ -42,7 +42,7 @@ ifeq ($(wildcard $(OMC)),)
 OBJEXT=.boot.o
 BOOTH=../boot/tarball-include/OpenModelicaBootstrappingHeader.h
 CPPFLAGS += -I../boot/tarball-include
-install_bootstrapping: libomcruntime-boot.a
+install_bootstrapping: libomcruntime-boot$(SHREXT)
 else
 install_bootstrapping:
 	@echo "Skipping libomcruntime-boot.a since we already have an OMC executable"
@@ -56,6 +56,22 @@ libomcruntime.a : $(OMC_OBJ)
 libomcruntime-boot.a : $(OMC_OBJ)
 	rm -f $@
 	$(AR) -s -r $@ $(OMC_OBJ)
+
+libomcruntime.dylib : $(OMC_OBJ)
+	rm -f $@
+	$(CXX) -shared $(RPATH) -install_name @rpath/$@ -o $@ $(OMC_OBJ) $(LDFLAGS)
+
+libomcruntime-boot.dylib : $(OMC_OBJ)
+	rm -f $@
+	$(CXX) -shared $(RPATH) -install_name @rpath/$@ -o $@ $(OMC_OBJ) $(LDFLAGS)
+
+libomcruntime.so : $(OMC_OBJ)
+	rm -f $@
+	$(CXX) -shared $(RPATH) -o $@ $(OMC_OBJ) $(LDFLAGS)
+
+libomcruntime-boot.so : $(OMC_OBJ)
+	rm -f $@
+	$(CXX) -shared $(RPATH) -o $@ $(OMC_OBJ) $(LDFLAGS)
 
 omc_communication.cc : omc_communication.idl
 	$(IDL) omc_communication.idl

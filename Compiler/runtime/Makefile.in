@@ -33,6 +33,9 @@ IDLPYTHON = @IDLPYTHONCMD@
 CXXFLAGS = $(CFLAGS) @CXXFLAGS@
 CPPFLAGS = @CPPFLAGS@ -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I. $(CORBAINCL) -I$(FMIINCLUDE) -I$(top_builddir)/3rdParty/gc/include -I$(GRAPHSTREAMINCLUDE) -I$(GRAPHINCLUDE) -I$(CJSONINCLUDE)
 TRIPLE=@host_short@
+SHREXT=@SHREXT@
+RPATH=@RPATH@
+LDFLAGS = -L "$(builddir_lib)/$(TRIPLE)/omc/"  -lOpenModelicaRuntimeC
 
 include Makefile.common
 

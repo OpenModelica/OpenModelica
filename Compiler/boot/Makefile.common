@@ -34,12 +34,12 @@ PATCH_SOURCES=$(SED) -i 's/ = omc_assert_function/__attribute__((noreturn)) = om
 PATCHES := $(patsubst %.patch.xz,%.patch,$(wildcard patches/*.patch.xz))
 
 ifeq ($(BOOTSTRAP_STAGE_1),1)
-OMCRUNTIMEAR=../runtime/libomcruntime-boot.a
+OMCRUNTIMEAR=../runtime/libomcruntime-boot$(SHREXT)
 OMPARSEAR=../../Parser/libomparse-boot.a
 LOMPARSE=$(OMPARSEAR)
-LCOMPILERRUNTIME=$(OMCRUNTIMEAR)
+LCOMPILERRUNTIME=$(abspath $(OMCRUNTIMEAR))
 else
-OMCRUNTIMEAR=$(OMHOME)/$(LIB_OMC)/libomcruntime.a
+OMCRUNTIMEAR=$(OMHOME)/$(LIB_OMC)/libomcruntime$(SHREXT)
 OMPARSEAR=$(OMHOME)/$(LIB_OMC)/libomparse.a
 LOMPARSE=-lomparse
 LCOMPILERRUNTIME=-lomcruntime
@@ -177,13 +177,13 @@ $(GEN_DIR)_main_static.o: $(GEN_DIR)_main_static.c
 
 $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMCRUNTIMEAR) $(OMPARSEAR) $(GEN_DIR)_main_omc.o
 	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
-	$(CC) -shared $(RPATH) $(INSTALL_NAME) -o $@ $^ $(LDFLAGS)
+	$(CC) -shared $(RPATH) $(INSTALL_NAME) -o $@ $(ALL_OBJECTS) $(GEN_DIR)_main_omc.o $(LDFLAGS)
 	test ! "$(SHREXT)" = ".dylib" || install_name_tool -id @rpath/libOpenModelicaCompiler.dylib $@
 
 ifeq (${STATIC},)
 #shared
 $(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT): $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT) $(GEN_DIR)_main_omc.o $(GEN_DIR)_main.o
-	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(LDFLAGS) -lOpenModelicaCompiler
+	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(LDFLAGS_SHARED_MAIN) -lOpenModelicaCompiler
 install: $(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT) install-interface
 	cp -a $< $(OMHOME)/bin/
 	test ! "$(SHREXT)" = ".dll" || cp -a $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT) $(OMHOME)/bin/
