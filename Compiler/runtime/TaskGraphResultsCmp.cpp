@@ -31,6 +31,7 @@
 #if !defined(_MSC_VER)
 
 #include "TaskGraphResultsCmp.h"
+#include <sys/stat.h>
 
 Node::Node() : id(""), name(""), calcTime(-1), threadId(""), taskNumber(-1), taskId(-1), simCodeEqs()
 {
@@ -147,8 +148,8 @@ GraphParser::~GraphParser()
 
 bool GraphParser::CheckIfFileExists(const char* fileName)
 {
-  std::ifstream ifile(fileName);
-  return (ifile > 0);
+  struct stat stats;
+  return 0 == stat(fileName, &stats);
 }
 
 GraphMLParser::GraphMLParser() : GraphParser()
