@@ -492,7 +492,7 @@ template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> 
   <%if isBoxed then '#define boxptr_<%fname%> omc_<%fname%><%\n%>' else functionHeaderImpl(fname, fargs, outVars, inFunc, true, visibility, dynLoad, isSimulation, staticPrototypes)%>
   <% match visibility
     case PROTECTED(__) then
-      let &staticPrototypes += (if isSimulation then "" else boxvar)
+      let &staticPrototypes += (if boolOr(isSimulation, Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS)) then "" else boxvar)
       if boolOr(isSimulation, Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS)) then '<%boxvar%> /* boxvar early */' else ""
     else boxvar %>
   >>
