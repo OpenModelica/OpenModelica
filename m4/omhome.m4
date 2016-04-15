@@ -62,6 +62,13 @@ else
     AC_MSG_ERROR(failed)
   fi
 fi
+if echo $host | grep -iq darwin; then
+  true
+elif test "$host" = "i586-pc-mingw32msvc"; then
+  true
+else
+  LDFLAGS="$LDFLAGS -Wl,-rpath-link,$OPENMODELICAHOME/lib/$host_short/omc"
+fi
 ])
 
 define(FIND_LIBOPENMODELICACOMPILER, [
