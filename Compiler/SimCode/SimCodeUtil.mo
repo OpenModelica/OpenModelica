@@ -222,7 +222,6 @@ protected
   list<SimCode.SimEqSystem> removedInitialEquations;    // -->
   list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
   list<SimCode.StateSet> stateSets;
-  list<SimCodeVar.SimVar> mixedArrayVars;
   list<SimCodeVar.SimVar> tempvars, jacobianSimvars, seedVars;
   list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
   list<list<SimCode.SimEqSystem>> odeEquations;         // --> functionODE
@@ -414,8 +413,7 @@ algorithm
     if Flags.isSet(Flags.EXEC_HASH) then
       print("*** SimCode -> generate cref2simVar hashtable: " + realString(clock()) + "\n");
     end if;
-    (crefToSimVarHT, mixedArrayVars) := createCrefToSimVarHT(modelInfo);
-    modelInfo := setMixedArrayVars(mixedArrayVars, modelInfo);
+    crefToSimVarHT := createCrefToSimVarHT(modelInfo);
     if Flags.isSet(Flags.EXEC_HASH) then
       print("*** SimCode -> generate cref2simVar hashtable done!: " + realString(clock()) + "\n");
     end if;
@@ -867,19 +865,6 @@ algorithm
   vars.seedVars := seedVars;
   modelInfo.vars := vars;
 end setSeedVars;
-
-protected function setMixedArrayVars "author: marcusw
-  Set the given mixed array vars in the given model info. The old mixed variables will be replaced."
-  input list<SimCodeVar.SimVar> iMixedArrayVars;
-  input SimCode.ModelInfo iModelInfo;
-  output SimCode.ModelInfo oModelInfo = iModelInfo;
-protected
-  SimCodeVar.SimVars vars;
-algorithm
-  vars := oModelInfo.vars;
-  vars.mixedArrayVars := iMixedArrayVars;
-  oModelInfo.vars := vars;
-end setMixedArrayVars;
 
 protected function addNumEqnsandNumofSystems
   input SimCode.ModelInfo modelInfo;
@@ -6320,7 +6305,6 @@ protected type SimVarsIndex = enumeration(
   boolConst,
   stringConst,
 
-  mixedArray,
   jacobian,
   seed
 );
@@ -6413,8 +6397,7 @@ algorithm
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.jacobian)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.seed)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeConstraints)),
-    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeFinalConstraints)),
-    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.mixedArray))
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeFinalConstraints))
   );
 end createVars;
 
@@ -7228,7 +7211,7 @@ end collectArrayFirstVars;
 protected function fixIndex
   input array<list<SimCodeVar.SimVar>> simVars;
 algorithm
-  for i in SimVarsIndex.state : SimVarsIndex.stringConst loop // Skip jacobian, seed, mixedArray
+  for i in SimVarsIndex.state : SimVarsIndex.stringConst loop // Skip jacobian, seed
     Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(i), rewriteIndex(Dangerous.arrayGetNoBoundsChecking(simVars,Integer(i)), 0));
   end for;
 end fixIndex;
@@ -7280,11 +7263,9 @@ algorithm
 end setVariableIndexHelper2;
 
 public function createCrefToSimVarHT "author: unknown and marcusw
-  create a hash table that maps all variable names (crefs) to the simVar-objects. Additionally, all array names are returned, that
-  contain state or state derivative variables, together with other variables."
+ Create a hash table that maps all variable names (crefs) to the simVar objects."
   input SimCode.ModelInfo modelInfo;
   output SimCode.HashTableCrefToSimVar outHT;
-  output list<SimCodeVar.SimVar> oMixedArrayVars; //all arrays that contain state or state derivative variables, together with other variables
 protected
   Integer size;
   SimCode.VarInfo varInfo;
@@ -7329,8 +7310,6 @@ algorithm
     outHT := List.fold(vars.seedVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.realOptimizeConstraintsVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.realOptimizeFinalConstraintsVars, addSimVarToHashTable, outHT);
-
-    oMixedArrayVars := List.fold(listAppend(vars.stateVars, vars.derivativeVars), function getMixedArrayVars(iArraySimVars=arraySimVars), {});
   else
     Error.addInternalError("function createCrefToSimVarHT failed", sourceInfo());
   end try;
@@ -7396,28 +7375,6 @@ algorithm
       then iArrayMapping;
   end match;
 end getArraySimVars;
-
-protected function getMixedArrayVars "author: marcusw
-  get the names of all arrays, that contain state or state derivative variables, together with other variables."
-  input SimCodeVar.SimVar iSimVar;
-  input HashTableCrILst.HashTable iArraySimVars; //all array variables of non state and non state derivative variables
-  input list<SimCodeVar.SimVar> iMixedArrayVars;
-  output list<SimCodeVar.SimVar> oMixedArrayVars;
-protected
-  DAE.ComponentRef cr;
-  list<SimCodeVar.SimVar> tmpMixedArrayVars;
-algorithm
-  oMixedArrayVars := match(iSimVar, iArraySimVars, iMixedArrayVars)
-    case(SimCodeVar.SIMVAR(arrayCref=SOME(cr)),_,tmpMixedArrayVars)
-      equation
-        if(BaseHashTable.hasKey(cr, iArraySimVars)) then
-          tmpMixedArrayVars = iSimVar::tmpMixedArrayVars;
-        end if;
-      then tmpMixedArrayVars;
-    else
-      then iMixedArrayVars;
-  end match;
-end getMixedArrayVars;
 
 protected function getAliasVar
   input BackendDAE.Var inVar;
@@ -9508,11 +9465,11 @@ algorithm
     local
      list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars,
                    boolAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars,
-                   extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayCrefs;
+                   extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars;
      tpl intpl;
 
     case (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayCrefs), _, intpl)
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars), _, intpl)
          equation
            (stateVars, intpl) = List.mapFoldTuple(stateVars, func, intpl);
            (derivativeVars, intpl) = List.mapFoldTuple(derivativeVars, func, intpl);
@@ -9542,7 +9499,7 @@ algorithm
 
 
          then (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayCrefs), intpl);
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars), intpl);
     case (_, _, _) then fail();
   end match;
 end traveseSimVars;
@@ -11563,7 +11520,7 @@ protected
 algorithm
   try
     //print("Start creating createFMIModelStructure\n");
-    (crefSimVarHT,_) := createCrefToSimVarHT(inModelInfo);
+    crefSimVarHT := createCrefToSimVarHT(inModelInfo);
     // combine the transposed sparse pattern of matrix A and B
     // to obtain dependencies for the derivatives
     SOME((_, (_, spTA, (diffCrefsA, diffedCrefsA),_), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "A");

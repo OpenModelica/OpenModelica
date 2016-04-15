@@ -3692,7 +3692,6 @@ match simCode
       defineParameterIntVars();
       defineParameterBoolVars();
       defineParameterStringVars();
-      defineMixedArrayVars();
       defineAliasRealVars();
       defineAliasIntVars();
       defineAliasBoolVars();
@@ -7191,7 +7190,6 @@ match modelInfo
       void defineAliasIntVars();
       void defineAliasBoolVars();
       void defineAliasStringVars();
-      void defineMixedArrayVars();
 
       void deleteObjects();
 
@@ -7966,10 +7964,6 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.boolAlgVars |> var =>
     memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool", true)
   ;separator="\n"%>
-   /*mixed array variables*/
-   <%vars.mixedArrayVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
-   ;separator="\n"%>
   >>
 end memberVariableDefinePreVariables;
 
@@ -7994,7 +7988,6 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       let &additionalAliasIntVarFunctionCalls = buffer ""
       let &additionalAliasBoolVarFunctionCalls = buffer ""
       let &additionalAliasStringVarFunctionCalls = buffer ""
-      let &additionalMixedArrayVarFunctionCalls = buffer ""
       let &returnValue = buffer ""
 
       <<
@@ -8133,15 +8126,6 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       void <%classname%>::defineAliasStringVars()
       {
         <%additionalAliasStringVarFunctionCalls%>
-      }
-
-      //MixedArrayVars
-      <%List.partition(vars.mixedArrayVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineMixedArrayVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
-                                          additionalMixedArrayVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
-      void <%classname%>::defineMixedArrayVars()
-      {
-        <%additionalMixedArrayVarFunctionCalls%>
       }
       >>
 end memberVariableInitialize;
