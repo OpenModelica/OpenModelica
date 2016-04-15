@@ -1261,5 +1261,16 @@ const char* om_stringAllocatorResult(void *sa) {
 ");
 end stringAllocatorResult;
 
+function relocateFunctions
+  input String fileName "shared object";
+  input list<tuple<String,String>> names "tuple of names to relocate; first is the local name and second is the name in the shared object";
+  output Boolean res;
+external "C" res=SystemImpl__relocateFunctions(fileName, names) annotation(Library = {"omcruntime"},Documentation(info="<html>
+<p>Update symbols in the running program to ones defined in the given shared object.</p>
+<p>This will hot-swap the functions at run-time, enabling a smart build system to do some incremental compilation
+(as long as the function interfaces are the same).</p>
+</html>"));
+end relocateFunctions;
+
 annotation(__OpenModelica_Interface="util");
 end System;
