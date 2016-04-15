@@ -2181,11 +2181,13 @@ extern int SystemImpl_tmpTickMaximum(threadData_t *threadData, int index)
   return data->tmp_tick_max_no[index];
 }
 
+#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
 extern int SystemImpl_tmpTick(threadData_t *threadData)
 {
   int res = SystemImpl_tmpTickIndex(threadData,0);
   return res;
 }
+#endif
 
 extern void SystemImpl_tmpTickReset(threadData_t *threadData, int start)
 {
@@ -2294,14 +2296,6 @@ double SystemImpl__realRand(void)
 {
   seed();
   return tinymt64_generate_double(&system_random_seed);
-}
-
-/* Returns an integer (0,n] (i.e. the highest value is n-1)
- * TODO: Remove once we update the bootstrapping tarball
- */
-int SystemImpl__intRand(int n)
-{
-  return (int) SystemImpl__realRand()*n;
 }
 
 /* Returns an integer [0,n) using the C function rand() */

@@ -635,7 +635,8 @@ end getHasInnerOuterDefinitions;
 public function tmpTick
   "returns a tick that can be reset"
   output Integer tickNo;
-  external "C" tickNo = SystemImpl_tmpTick(OpenModelica.threadData()) annotation(Library = "omcruntime");
+algorithm
+  tickNo := tmpTickIndex(index=0);
 end tmpTick;
 
 public function tmpTickReset
