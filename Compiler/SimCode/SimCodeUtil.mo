@@ -422,7 +422,7 @@ algorithm
     //dumpBackendMapping(backendMapping);
 
     if if isFMU then FMI.isFMIVersion20(FMUVersion) else false then
-      modelStruct := createFMIModelStructure(symJacs, modelInfo);
+      modelStruct := createFMIModelStructure(symJacs, modelInfo, crefToSimVarHT);
     else
       modelStruct := NONE();
     end if;
@@ -11507,20 +11507,19 @@ protected function createFMIModelStructure
   by analyzing the symbolic jacobian matrixes and sparsity pattern"
   input BackendDAE.SymbolicJacobians inSymjacs;
   input SimCode.ModelInfo inModelInfo;
+  input SimCode.HashTableCrefToSimVar crefSimVarHT;
   output Option<SimCode.FmiModelStructure> outFmiModelStructure;
 protected
    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> spTA, spTB;
    list<tuple<Integer, list<Integer>>> sparseInts;
    list<SimCode.FmiUnknown> derivatives, outputs, discreteStates;
    list<SimCodeVar.SimVar> varsA, varsB, clockedStates;
-   SimCode.HashTableCrefToSimVar crefSimVarHT;
    list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
    list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
    DoubleEndedList<SimCodeVar.SimVar> delst;
 algorithm
   try
     //print("Start creating createFMIModelStructure\n");
-    crefSimVarHT := createCrefToSimVarHT(inModelInfo);
     // combine the transposed sparse pattern of matrix A and B
     // to obtain dependencies for the derivatives
     SOME((_, (_, spTA, (diffCrefsA, diffedCrefsA),_), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "A");
