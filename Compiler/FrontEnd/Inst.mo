@@ -909,15 +909,12 @@ algorithm
 
       // Are the important inputs the same?
       InstUtil.prefixEqualUnlessBasicType(prefix, pre, cls);
-      bbx := (dims, impl, m, csets, st, e, scr);
-      bby := (instDims, implicitInst, mod, sets, state, cls, instSingleCref);
-      equality(bbx := bby);
-      true := callingScopeCacheEq(cs, callingScope);
-      (env, dae, sets, state, vars, ty, optDerAttr, equalityConstraint, cached_graph) := outputs;
-      graph := ConnectionGraph.merge(graph, cached_graph);
-
-      showCacheInfo("Full Inst Hit: ", cache_path);
-      return;
+      if (valueEq(dims,instDims) and (impl==implicitInst) and valueEq(m, mod) and valueEq(csets, sets) and valueEq(st, state) and valueEq(e, cls) and valueEq(scr, instSingleCref) and callingScopeCacheEq(cs, callingScope)) then
+        (env, dae, sets, state, vars, ty, optDerAttr, equalityConstraint, cached_graph) := outputs;
+        graph := ConnectionGraph.merge(graph, cached_graph);
+        showCacheInfo("Full Inst Hit: ", cache_path);
+        return;
+      end if;
     else
       // Not found in cache, continue.
     end try;
@@ -1551,13 +1548,11 @@ algorithm
 
       // Are the important inputs the same?
       InstUtil.prefixEqualUnlessBasicType(pre, prefix, cls);
-      bbx := (dims, m, st, e);
-      bby := (instDims, mod, state, cls);
-      equality(bbx := bby);
-      (env, state, vars) := outputs;
-
-      showCacheInfo("Partial Inst Hit: ", cache_path);
-      return;
+      if (valueEq(dims,instDims) and valueEq(m, mod) and valueEq(st, state) and valueEq(e, cls)) then
+        (env, state, vars) := outputs;
+        showCacheInfo("Partial Inst Hit: ", cache_path);
+        return;
+      end if;
     else
       // Not in cache, continue.
     end try;
@@ -2962,6 +2957,7 @@ protected
   array<tuple<SCode.Element, DAE.Mod>> el_arr;
   array<list<DAE.Var>> var_arr;
   array<list<DAE.Element>> dae_arr;
+  Integer length;
 algorithm
   cache := InstUtil.pushStructuralParameters(inCache);
 
@@ -2978,23 +2974,25 @@ algorithm
     // Create arrays so that we can instantiate the elements in the sorted order,
     // while keeping the result in the same order as the elements are declared in.
     el_arr := listArray(inElements);
-    var_arr := arrayCreate(listLength(el), {});
-    dae_arr := arrayCreate(listLength(el), {});
+    length := listLength(el);
+    var_arr := arrayCreate(length, {});
+    dae_arr := arrayCreate(length, {});
 
     // Instantiate the elements.
     for idx in element_order loop
       (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph, fieldDomOpt) :=
         instElement2(cache, outEnv, outIH, outStore, inMod, inPrefix, outState, el_arr[idx],
           inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
-      arrayUpdate(var_arr, idx, vars);
-      arrayUpdate(dae_arr, idx, dae);
+      // Store the elements in reverse order to make the list flattening simpler
+      arrayUpdate(var_arr, length-idx+1, vars);
+      arrayUpdate(dae_arr, length-idx+1, dae);
       if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
         domainFieldsList := InstUtil.optAppendField(domainFieldsList,fieldDomOpt);
       end if;
     end for;
 
-    outVars := List.flatten(arrayList(var_arr));
-    outDae := DAE.DAE(List.flatten(arrayList(dae_arr)));
+    outVars := listAppend(lst for lst in var_arr);
+    outDae := DAE.DAE(listAppend(lst for lst in dae_arr));
   else
     // For functions, use the sorted elements instead, otherwise things break.
     for e in el loop

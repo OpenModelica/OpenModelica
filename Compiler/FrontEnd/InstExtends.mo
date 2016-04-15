@@ -782,9 +782,9 @@ algorithm
     case SCode.CLASS()
       equation
         cmod = Mod.lookupCompModification(inMod, el.name);
-        cmod = if valueEq(cmod, DAE.NOMOD()) then mod else cmod;
+        outComponent = if valueEq(cmod, DAE.NOMOD()) then inComponent else (el,cmod,b);
       then
-        ((el, cmod, b), inMod);
+        (outComponent, inMod);
 
     else
       equation
@@ -1210,11 +1210,11 @@ protected function fixAlgorithm
   input AvlSetString.Tree tree;
   output SCode.AlgorithmSection outAlg;
 protected
-  list<SCode.Statement> stmts;
+  list<SCode.Statement> stmts1,stmts2;
 algorithm
-  SCode.ALGORITHM(stmts) := inAlg;
-  stmts := fixList(inCache, inEnv, stmts, tree, fixStatement);
-  outAlg := SCode.ALGORITHM(stmts);
+  SCode.ALGORITHM(stmts1) := inAlg;
+  stmts2 := fixList(inCache, inEnv, stmts1, tree, fixStatement);
+  outAlg := if referenceEq(stmts1,stmts2) then inAlg else SCode.ALGORITHM(stmts2);
 end fixAlgorithm;
 
 protected function fixConstraint
@@ -1262,7 +1262,7 @@ protected function fixStatement
 algorithm
   outStmt := matchcontinue inStmt
     local
-      Absyn.Exp exp,exp1,exp2;
+      Absyn.Exp exp,exp1,exp2,exp1_1,exp2_1;
       Option<Absyn.Exp> optExp;
       String iter;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> elseifbranch,whenlst;
@@ -1274,9 +1274,9 @@ algorithm
 
     case SCode.ALG_ASSIGN(exp1,exp2,comment,info)
       equation
-        exp1 = fixExp(cache,inEnv,exp1,tree);
-        exp2 = fixExp(cache,inEnv,exp2,tree);
-      then SCode.ALG_ASSIGN(exp1,exp2,comment,info);
+        exp1_1 = fixExp(cache,inEnv,exp1,tree);
+        exp2_1 = fixExp(cache,inEnv,exp2,tree);
+      then if referenceEq(exp1,exp1_1) and referenceEq(exp2,exp2_1) then inStmt else SCode.ALG_ASSIGN(exp1_1,exp2_1,comment,info);
 
     case SCode.ALG_IF(exp,truebranch,elseifbranch,elsebranch,comment,info)
       equation

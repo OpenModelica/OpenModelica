@@ -5057,11 +5057,16 @@ protected
   HashTableExpToIndex.HashTable HTNominalExpToInt;
   list<tuple<DAE.Exp,Integer>> tplExpIndList;
 algorithm
+  if listEmpty(tplCrEqLst) then
+    return;
+  end if;
   try
+  HTStartExpToInt := HashTableExpToIndex.emptyHashTableSized(100);
+  HTNominalExpToInt := HashTableExpToIndex.emptyHashTableSized(100);
   for tpl in tplCrEqLst loop
     (cr1,cr_eq_lst) := tpl;
-    HTStartExpToInt := HashTableExpToIndex.emptyHashTableSized(100);
-    HTNominalExpToInt := HashTableExpToIndex.emptyHashTableSized(100);
+    BaseHashTable.clear(HTStartExpToInt);
+    BaseHashTable.clear(HTNominalExpToInt);
     ({v},{i}) := BackendVariable.getVar(cr1,outVars);
     if BackendVariable.varHasStartValue(v) then
       e := BackendVariable.varStartValue(v);
