@@ -409,8 +409,8 @@ static inline omc_opc_ua_state* addAliasVars(omc_opc_ua_state *state, var_kind_t
         continue; /* Because we did not add discrete reals, etc. yet */
       }
       inputIndex = booleanVarsData[index].info.inputIndex;
-      nameStr = (char*) booleanVarsData[index].info.name;
-      commentStr = (char*) booleanVarsData[index].info.comment;
+      nameStr = (char*) aliases[i].info.name;
+      commentStr = (char*) aliases[i].info.comment;
       dataSource = (UA_DataSource) {.handle = state, .read = readBoolean, .write = inputIndex >= 0 ? writeBoolean : NULL};
       break;
     }
