@@ -3210,11 +3210,19 @@ template algStmtWhen(DAE.Statement when, Context context, Text &varDecls, Text &
           let statements = (statementLst |> stmt =>
               algStatement(stmt, context, &varDecls, &auxFunction)
             ;separator="\n")
+          let initial_statements = if initialCall then
+              '<%statements%>'
+            else
+              '/* nothing to do */'
           let else_clause = algStatementWhenElse(elseWhen, &varDecls, &auxFunction)
           <<
           if(data->simulationInfo->discreteCall == 1)
           {
-            if(<%initial_condition%><%if_conditions%>)
+            if(initial())
+            {
+              <%initial_statements%>
+            }
+            else if(0<%if_conditions%>)
             {
               <%statements%>
             }
