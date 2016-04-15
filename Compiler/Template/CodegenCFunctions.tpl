@@ -493,7 +493,7 @@ template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> 
   <% match visibility
     case PROTECTED(__) then
       let &staticPrototypes += (if isSimulation then "" else boxvar)
-      if isSimulation then '<%boxvar%> /* boxvar early */' else ""
+      if boolOr(isSimulation, Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS)) then '<%boxvar%> /* boxvar early */' else ""
     else boxvar %>
   >>
 end functionHeaderBoxed;
@@ -512,7 +512,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     >>
   match visibility
     case PROTECTED(__) then
-      if isSimulation then
+      if boolOr(isSimulation, Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS)) then
         if dynamicLoad then "" else '<%prototype%>;<%\n%>'
       else
         let &staticPrototypes += if dynamicLoad then "" else '<%prototype%>;<%\n%>'
