@@ -1263,6 +1263,9 @@ constant ConfigFlag MAX_SIZE_NONLINEAR_TEARING = CONFIG_FLAG(92, "maxSizeNonline
 constant ConfigFlag NO_TEARING_FOR_COMPONENT = CONFIG_FLAG(93, "noTearingForComponent",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
   Util.gettext("Deactivates tearing for the specified components.\nUse '+d=tearingdump' to find out the relevant indexes."));
+constant ConfigFlag CT_STATE_MACHINES = CONFIG_FLAG(94, "ctStateMachines",
+  NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Experimental: Enable continuous-time state machine prototype"));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1361,7 +1364,8 @@ constant list<ConfigFlag> allConfigFlags = {
   INST_CACHE_SIZE,
   MAX_SIZE_LINEAR_TEARING,
   MAX_SIZE_NONLINEAR_TEARING,
-  NO_TEARING_FOR_COMPONENT
+  NO_TEARING_FOR_COMPONENT,
+  CT_STATE_MACHINES
 };
 
 public function new

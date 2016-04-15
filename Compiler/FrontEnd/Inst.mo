@@ -1447,7 +1447,13 @@ algorithm
 
     case(_,_,_,_,_,expectedTp,DAE.PROP(bindTp,c))
       equation
-        false = valueEq(c,DAE.C_VAR());
+        if Flags.getConfigBool(Flags.CT_STATE_MACHINES) then
+          // BTH Hack to allow variable modification of "start" attribute for ct SM re-initialization
+          // This is is forbidden in standard Modelica! Standard Modelica is the "else" branch!
+          true = valueEq(c,DAE.C_VAR());
+        else
+          false = valueEq(c,DAE.C_VAR());
+        end if;
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
       then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
         DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
