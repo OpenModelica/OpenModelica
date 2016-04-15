@@ -34,6 +34,7 @@
 #include <string.h>
 #include <assert.h>
 #include "omc_config.h"
+#include "OpenModelicaBootstrappingHeader.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #else
@@ -59,7 +60,7 @@ extern char* _replace(char* source_str,char* search_str,char* replace_str); //De
 
 static char* winPath = NULL;
 
-#if defined(linux) || defined(__APPLE_CC__)
+#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1) && (defined(linux) || defined(__APPLE_CC__))
 /* Helper function to strip /bin/... or /lib/... from the executable path of omc */
 static void stripbinpath(char *omhome)
 {
@@ -73,7 +74,11 @@ static void stripbinpath(char *omhome)
 #endif
 
 /* Do not free or modify the returned variable of getInstallationDirectoryPath. It's part of the environment! */
-#if defined(linux)
+#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
+const char* SettingsImpl__getInstallationDirectoryPath(void) {
+  return CONFIG_DEFAULT_OPENMODELICAHOME;
+}
+#elif defined(linux)
 #include <sys/stat.h>
 #include <linux/limits.h>
 #include <unistd.h>

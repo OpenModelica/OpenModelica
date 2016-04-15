@@ -35,7 +35,7 @@ CPPFLAGS = @CPPFLAGS@ -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/Si
 TRIPLE=@host_short@
 SHREXT=@SHREXT@
 RPATH=@RPATH@
-LDFLAGS = -L "$(builddir_lib)/$(TRIPLE)/omc/"  -lOpenModelicaRuntimeC
+LDFLAGS = -L "$(builddir_lib)/$(TRIPLE)/omc/" -lOpenModelicaRuntimeC @OMCRUNTIME_SHARED_LDFLAGS@
 
 include Makefile.common
 
