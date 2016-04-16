@@ -3293,7 +3293,7 @@ algorithm
         if SCode.finalBool(final_prefix) then
           m = InstUtil.traverseModAddFinal(m);
         end if;
-        comp = SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
+        comp = if referenceEq(el.modifications, m) then el else SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
 
         // Fails if multiple decls not identical
         already_declared = InstUtil.checkMultiplyDeclared(cache, env, mods, pre, ci_state, (comp, cmod), inst_dims, impl);
@@ -4125,9 +4125,6 @@ algorithm
 
     // If first part of ident is a class, e.g StateSelect.None, nothing to update
     case (cache,env,ih,_,_,_,_,_,_,_)
-      equation
-        _ = Absyn.crefFirstIdent(cref);
-        // (cache,_,_) = Lookup.lookupClass(cache,env, Absyn.IDENT(id));
       then
         (cache,env,ih,inUpdatedComps);
     // report an error!

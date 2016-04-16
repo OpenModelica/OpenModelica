@@ -1533,7 +1533,7 @@ algorithm
       equation
         id = Absyn.crefFirstIdent(cref);
         //print("Try lookupC " + id + "\n");
-        (_,c,denv) = Lookup.lookupClass(arrayGet(cache,1),env,Absyn.IDENT(id));
+        (_,c,denv) = Lookup.lookupClassIdent(arrayGet(cache,1),env,id);
         // isOutside = FGraph.graphPrefixOf(denv, env);
         // id might come from named import, make sure you use the actual class name!
         id = SCode.getElementName(c);

@@ -425,6 +425,18 @@ algorithm
   // print("Lookup C2: " + " outenv: " + FGraph.printGraphPathStr(outEnv) + "\n");
 end lookupClass;
 
+public function lookupClassIdent "Like lookupClass, but takes a String as ident for input (avoids Absyn.IDENT() creation)"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv "Where to look";
+  input String ident;
+  input Option<SourceInfo> inInfo = NONE();
+  output FCore.Cache outCache;
+  output SCode.Element outClass;
+  output FCore.Graph outEnv;
+algorithm
+  (outCache,outClass,outEnv) := lookupClassInEnv(inCache, inEnv, ident, {}, Util.makeStatefulBoolean(false), inInfo);
+end lookupClassIdent;
+
 protected function lookupClass1 "help function to lookupClass, does all the work."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -547,7 +559,7 @@ algorithm
     // Qualified names in package and non-package
     case (cache,env,_,_,NONE(),_)
       equation
-        (cache,c,env,prevFrames) = lookupClass2(cache,env,Absyn.IDENT(id),{},inState,inInfo);
+        (cache,c,env,prevFrames) = lookupClassInEnv(cache,env,id,{},inState,inInfo);
         (optFrame,prevFrames) = lookupPrevFrames(id,prevFrames);
         (cache,c,env,prevFrames) = lookupClassQualified2(cache,env,path,c,optFrame,prevFrames,inState,inInfo);
       then
@@ -870,7 +882,7 @@ algorithm
         Util.setStatefulBoolean(inState,true);
         r::prevFrames = listReverse(FGraph.currentScope(env));
         env = FGraph.setScope(env, {r});
-        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,Absyn.IDENT(id),prevFrames,Util.makeStatefulBoolean(false),inInfo);
+        (cache,c,env_1,prevFrames) = lookupClassInEnv(cache,env,id,prevFrames,Util.makeStatefulBoolean(false),inInfo);
       then
         (cache,c,env_1,prevFrames);
 
@@ -1012,7 +1024,7 @@ algorithm
         Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
           mod, Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         // Restrict import to the imported scope only, not its parents, thus {f} below
-        (cache,c_1,env2,prevFrames) = lookupClass2(cache,env2,Absyn.IDENT(ident),prevFrames,Util.makeStatefulBoolean(true),inInfo) "Restrict import to the imported scope only, not its parents..." ;
+        (cache,c_1,env2,prevFrames) = lookupClassInEnv(cache,env2,ident,prevFrames,Util.makeStatefulBoolean(true),inInfo) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache, rest, env, ident);
         unique = boolNot(more);
       then
@@ -1410,9 +1422,9 @@ algorithm
           case (NONE())
             equation
               (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env2,prevFrames) =
-                lookupClass2(cache,
+                lookupClassInEnv(cache,
                              env,
-                             Absyn.IDENT(id),
+                             id,
                              prevFrames,
                              Util.makeStatefulBoolean(true), // In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon!
                              NONE());

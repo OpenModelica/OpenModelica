@@ -3560,7 +3560,7 @@ algorithm
         false = FGraph.isTopScope(inNewEnv);
         id = FNode.refName(FGraph.lastScopeRef(inNewEnv));
         (rest, _) = FGraph.stripLastScopeRef(inNewEnv);
-        (_, cls, _) = Lookup.lookupClass(inCache, rest, Absyn.IDENT(id));
+        (_, cls, _) = Lookup.lookupClassIdent(inCache, rest, id);
         ci_state = ClassInf.start(SCode.getClassRestriction(cls), FGraph.getGraphName(inNewEnv));
       then
         ci_state;
@@ -6618,30 +6618,29 @@ end extractCorrectClassMod2;
 
 public function traverseModAddFinal
 "Helper function for traverseModAddFinal"
-  input SCode.Mod mod;
-  output SCode.Mod mod2;
+  input output SCode.Mod mod;
 algorithm
-  mod2 := matchcontinue(mod)
+  mod := matchcontinue(mod)
     local
-      SCode.Element element;
+      SCode.Element element1,element2;
       SCode.Each each_;
-      list<SCode.SubMod> subs;
+      list<SCode.SubMod> subs1,subs2;
       Option<Absyn.Exp> eq;
       SourceInfo info;
+      SCode.Final f;
 
-    case(SCode.NOMOD()) then SCode.NOMOD();
+    case SCode.NOMOD() then mod;
 
-    case(SCode.REDECL(eachPrefix = each_, element = element))
+    case SCode.REDECL(eachPrefix = each_, element = element1)
       equation
-        element = traverseModAddFinal3(element);
-      then
-        SCode.REDECL(SCode.FINAL(),each_,element);
+        element2 = traverseModAddFinal3(element1);
+      then if referenceEq(element1,element2) then mod else SCode.REDECL(SCode.FINAL(),each_,element2);
 
-    case(SCode.MOD(_,each_,subs,eq,info))
+    case(SCode.MOD(f,each_,subs1,eq,info))
       equation
-        subs = traverseModAddFinal4(subs);
+        subs2 = List.mapCheckReferenceEq(subs1, traverseModAddFinal4);
       then
-        SCode.MOD(SCode.FINAL(),each_,subs,eq,info);
+        if valueEq(SCode.FINAL(),f) and referenceEq(subs1, subs2) then mod else SCode.MOD(SCode.FINAL(),each_,subs2,eq,info);
 
     else
       equation
@@ -6674,15 +6673,15 @@ algorithm
       equation
         mod = traverseModAddFinal(oldmod);
       then
-        SCode.COMPONENT(name,prefixes,attr,tySpec,mod,cmt,cond,info);
+        if referenceEq(oldmod,mod) then inElement else SCode.COMPONENT(name,prefixes,attr,tySpec,mod,cmt,cond,info);
 
     case SCode.IMPORT() then inElement;
     case SCode.CLASS() then inElement;
 
-    case SCode.EXTENDS(p,vis,mod,ann,info)
+    case SCode.EXTENDS(p,vis,oldmod,ann,info)
       equation
-        mod = traverseModAddFinal(mod);
-      then SCode.EXTENDS(p,vis,mod,ann,info);
+        mod = traverseModAddFinal(oldmod);
+      then if referenceEq(oldmod,mod) then inElement else SCode.EXTENDS(p,vis,mod,ann,info);
 
     else
       equation
@@ -6695,25 +6694,14 @@ end traverseModAddFinal3;
 
 protected function traverseModAddFinal4
 "Helper function for traverseModAddFinal2"
-  input list<SCode.SubMod> subs;
-  output list<SCode.SubMod> osubs;
-algorithm osubs:= matchcontinue(subs)
-  local
-    String ident;
-    SCode.Mod mod;
-    list<Absyn.Subscript> intList;
-    list<SCode.SubMod> rest;
-  case({}) then {};
-  case((SCode.NAMEMOD(ident,mod))::rest )
-    equation
-      rest = traverseModAddFinal4(rest);
-      mod = traverseModAddFinal(mod);
-    then
-      SCode.NAMEMOD(ident,mod)::rest;
-  else
-    equation print(" we failed with traverseModAddFinal4\n");
-    then fail();
-end matchcontinue;
+  input output SCode.SubMod sub;
+protected
+  SCode.Mod mod;
+algorithm
+  mod := traverseModAddFinal(sub.mod);
+  if not referenceEq(sub.mod, mod) then
+    sub.mod := mod;
+  end if;
 end traverseModAddFinal4;
 
 public function traverseModAddDims

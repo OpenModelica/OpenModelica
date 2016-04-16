@@ -7508,7 +7508,7 @@ algorithm
     case (cache,env,fn,args,nargs,impl,_,st,pre,_,_)
       equation
         (cache,cl as SCode.CLASS(restriction = SCode.R_PACKAGE()),_) =
-           Lookup.lookupClass(cache, env, Absyn.IDENT("GraphicalAnnotationsProgram____"));
+           Lookup.lookupClassIdent(cache, env, "GraphicalAnnotationsProgram____");
         (cache,cl as SCode.CLASS( restriction = SCode.R_RECORD(_)),env_1) = Lookup.lookupClass(cache, env, fn);
         (cache,cl,env_2) = Lookup.lookupRecordConstructorClass(cache, env_1 /* env */, fn);
         (_,_::names) = SCode.getClassComponents(cl); // remove the fist one as it is the result!
@@ -12680,7 +12680,7 @@ algorithm
 
           case () // not a class or OpenModelica, continue
             equation
-              failure((_,_,_) = Lookup.lookupClass(cache, env, Absyn.IDENT(id)));
+              failure((_,_,_) = Lookup.lookupClassIdent(cache, env, id));
               (_,dexp,prop,_) = elabExpInExpression(cache,env,exp,false,st,false,Prefix.NOPRE(),info);
             then
               ();
