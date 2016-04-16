@@ -3226,7 +3226,7 @@ algorithm
       SCode.Element cls, comp, comp2, el;
       SCode.Final final_prefix;
       SCode.ConnectorType ct;
-      SCode.Mod m;
+      SCode.Mod m,oldmod;
       SCode.Prefixes prefixes;
       SCode.Variability vt;
       SCode.Visibility vis;
@@ -3294,6 +3294,7 @@ algorithm
           m = InstUtil.traverseModAddFinal(m);
         end if;
         comp = if referenceEq(el.modifications, m) then el else SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
+        oldmod = m;
 
         // Fails if multiple decls not identical
         already_declared = InstUtil.checkMultiplyDeclared(cache, env, mods, pre, ci_state, (comp, cmod), inst_dims, impl);
@@ -3304,8 +3305,8 @@ algorithm
         // update the component modification to redeclare X = Y
         m = InstUtil.chainRedeclares(mods, m);
         m = SCodeUtil.expandEnumerationMod(m);
-        m = InstUtil.traverseModAddDims(cache, env, pre, m, inst_dims, ad);
-        comp = SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
+        m = InstUtil.traverseModAddDims(cache, env, pre, m, inst_dims);
+        comp = if referenceEq(oldmod,m) then comp else SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(name));
         cref = ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
         (cache,_) = PrefixUtil.prefixCref(cache, env, ih, pre, cref); /*mahge: todo: remove me*/
@@ -3435,8 +3436,8 @@ algorithm
           else
             isInSM = false;
           end if;
-          else
-            isInSM = false;
+        else
+          isInSM = false;
         end if;
 
         (cache, comp_env, ih, store, dae, csets, ty, graph_new) = InstVar.instVar(cache,

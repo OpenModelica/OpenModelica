@@ -2366,7 +2366,7 @@ algorithm
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
         // adrpo 2009-11-23 -> solved by selecting the full modifier if the component modifier is empty!
-        compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
+        compMod = Mod.lookupCompModification(mod_1,id);
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
         (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
@@ -2394,7 +2394,7 @@ algorithm
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
         // adrpo 2009-11-23 -> solved by selecting the full modifier if the component modifier is empty!
-        compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
+        compMod = Mod.lookupCompModification(mod_1,id);
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
         (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
@@ -2421,7 +2421,7 @@ algorithm
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
         // adrpo 2009-11-23 -> solved by selecting the full modifier if the component modifier is empty!
-        compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
+        compMod = Mod.lookupCompModification(mod_1,id);
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
         (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
@@ -2448,7 +2448,7 @@ algorithm
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
         // adrpo 2009-11-23 -> solved by selecting the full modifier if the component modifier is empty!
-        compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
+        compMod = Mod.lookupCompModification(mod_1,id);
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
         (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);

@@ -2500,6 +2500,8 @@ public function chainRedeclares "
   input DAE.Mod inModOuter "the outer mod which should overwrite the inner mod";
   input SCode.Mod inModInner "the inner mod";
   output SCode.Mod outMod;
+protected
+  Boolean b;
 algorithm
   outMod := match(inModOuter,inModInner)
       /*
@@ -2513,8 +2515,8 @@ algorithm
       */
       case(_, _)
         equation
-          outMod = chainRedeclare_dispatch(inModOuter,inModInner);
-        then outMod;
+          (outMod,b) = chainRedeclare_dispatch(inModOuter,inModInner);
+        then if b then outMod else inModInner;
   end match;
 end chainRedeclares;
 
@@ -2525,8 +2527,9 @@ public function chainRedeclare_dispatch "
   input DAE.Mod inModOuter "the outer mod which should overwrite the inner mod";
   input SCode.Mod inModInner "the inner mod";
   output SCode.Mod outMod;
+  output Boolean change;
 algorithm
-  outMod := matchcontinue (inModOuter,inModInner)
+  (outMod,change) := matchcontinue (inModOuter,inModInner)
     local
       SCode.Final f;
       SCode.Each  e;
@@ -2542,36 +2545,32 @@ algorithm
     case (_,SCode.REDECL(f, e, SCode.CLASS(name = nInner, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(nDerivedInner))))))
       equation
         // lookup the class mod in the outer
-        DAE.REDECL(element = cls) = Mod.lookupModificationP(inModOuter, Absyn.IDENT(nDerivedInner));
+        DAE.REDECL(element = cls) = Mod.lookupCompModification(inModOuter, nDerivedInner);
         cls = SCode.setClassName(nInner, cls);
-      then
-        SCode.REDECL(f, e, cls);
+      then (SCode.REDECL(f, e, cls),true);
 
     // outer B(redeclare X = Y), inner B(redeclare X = Z) -> B(redeclare X = Z)
     case (_,SCode.REDECL(f, e, SCode.CLASS(name = nInner, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(_))))))
       equation
         // lookup the class mod in the outer
-        DAE.REDECL(element = cls) = Mod.lookupModificationP(inModOuter, Absyn.IDENT(nInner));
-      then
-        SCode.REDECL(f, e, cls);
+        DAE.REDECL(element = cls) = Mod.lookupCompModification(inModOuter, nInner);
+      then (SCode.REDECL(f, e, cls),true);
 
     // a mod with a name mod
     case (_, SCode.MOD(f, e, SCode.NAMEMOD(name, m as SCode.REDECL())::rest, b, info))
       equation
         // lookup the class mod in the outer
         m2 = chainRedeclare_dispatch(inModOuter, m);
-        SCode.MOD(subModLst = subs) = chainRedeclare_dispatch(inModOuter, SCode.MOD(f, e, rest, b, info));
-      then
-        SCode.MOD(f, e, SCode.NAMEMOD(name, m2)::subs, b, info);
+        (SCode.MOD(subModLst = subs),_) = chainRedeclare_dispatch(inModOuter, SCode.MOD(f, e, rest, b, info));
+      then (SCode.MOD(f, e, SCode.NAMEMOD(name, m2)::subs, b, info), true);
 
     // something else, move along!
     case (_, SCode.MOD(f, e, sm::rest, b, info))
       equation
-        SCode.MOD(subModLst = subs) = chainRedeclare_dispatch(inModOuter, SCode.MOD(f, e, rest, b, info));
-      then
-        SCode.MOD(f, e, sm::subs, b, info);
+        (SCode.MOD(subModLst = subs), change) = chainRedeclare_dispatch(inModOuter, SCode.MOD(f, e, rest, b, info));
+      then (SCode.MOD(f, e, sm::subs, b, info), change);
 
-    else inModInner;
+    else (inModInner, false);
 
   end matchcontinue;
 end chainRedeclare_dispatch;
@@ -6711,10 +6710,9 @@ public function traverseModAddDims
   input Prefix.Prefix inPrefix;
   input SCode.Mod inMod;
   input list<list<DAE.Dimension>> inInstDims;
-  input list<Absyn.Subscript> inDecDims;
   output SCode.Mod outMod;
 algorithm
-  outMod := matchcontinue(inCache,inEnv,inPrefix,inMod,inInstDims,inDecDims)
+  outMod := matchcontinue(inCache,inEnv,inPrefix,inMod,inInstDims)
   local
     FCore.Cache cache;
     FCore.Graph env;
@@ -6726,27 +6724,17 @@ algorithm
     list<list<Absyn.Exp>> aexps;
     list<Option<Absyn.Exp>> adims;
 
-  case (_,_,_,mod,_,_) //If arrays are expanded, no action is needed
+  case (_,_,_,mod,_) //If arrays are expanded, no action is needed
     equation
       true = Config.splitArrays();
     then
       mod;
-/*  case (_,_,_,mod,inst_dims,decDims)
-    equation
-      subs = List.flatten(inst_dims);
-      exps = List.map(subs,Expression.subscriptNonExpandedExp);
-      aexps = List.map(exps, Expression.unelabExp);
-      adims = List.map(decDims, Absyn.subscriptExpOpt);
-      mod2 = traverseModAddDims2(mod, aexps, adims, true);
-
-    then
-      mod2;*/
-  case (cache,env,pre,mod,inst_dims,decDims)
+  case (_,_,_,_,{}) then inMod;
+  case (cache,env,pre,mod,inst_dims)
     equation
       exps = List.map1(inst_dims,Expression.dimensionsToExps,{});
       aexps = List.mapList(exps, Expression.unelabExp);
-      adims = List.map(decDims, Absyn.subscriptExpOpt);
-      mod2 = traverseModAddDims4(cache,env,pre,mod, aexps, adims, true);
+      mod2 = traverseModAddDims4(cache,env,pre,mod, aexps, true);
 
     then
       mod2;
@@ -6760,11 +6748,10 @@ protected function traverseModAddDims4
   input Prefix.Prefix inPrefix;
   input SCode.Mod inMod;
   input list<list<Absyn.Exp>> inExps;
-  input list<Option<Absyn.Exp>> inExpOpts;
   input Boolean inIsTop;
   output SCode.Mod outMod;
 algorithm
-  outMod := match(inCache,inEnv,inPrefix,inMod,inExps,inExpOpts,inIsTop)
+  outMod := match(inCache,inEnv,inPrefix,inMod,inExps,inIsTop)
   local
     FCore.Cache cache;
     FCore.Graph env;
@@ -6777,11 +6764,11 @@ algorithm
     list<Option<Absyn.Exp>> expOpts;
     SourceInfo info;
 
-    case (_,_,_,SCode.NOMOD(),_,_,_) then SCode.NOMOD();
-    case (_,_,_,mod as SCode.REDECL(),_,_,_) then mod;  // Though redeclarations may need some processing as well
-    case (cache,env,pre,SCode.MOD(f, SCode.NOT_EACH(),submods, binding, info),exps,expOpts,_)
+    case (_,_,_,SCode.NOMOD(),_,_) then inMod;
+    case (_,_,_,SCode.REDECL(),_,_) then inMod;  // Though redeclarations may need some processing as well
+    case (cache,env,pre,SCode.MOD(f, SCode.NOT_EACH(),submods, binding, info),exps,_)
       equation
-        submods2 = traverseModAddDims5(cache,env,pre,submods,exps,expOpts);
+        submods2 = traverseModAddDims5(cache,env,pre,submods,exps);
         binding = insertSubsInBinding(binding, exps);
       then
         SCode.MOD(f, SCode.NOT_EACH(),submods2, binding, info);
@@ -6795,10 +6782,9 @@ protected function traverseModAddDims5
   input Prefix.Prefix inPrefix;
   input list<SCode.SubMod> inMods;
   input list<list<Absyn.Exp>> inExps;
-  input list<Option<Absyn.Exp>> inExpOpts;
   output list<SCode.SubMod> outMods;
 algorithm
-  outMods := match(inCache,inEnv,inPrefix,inMods,inExps,inExpOpts)
+  outMods := match(inCache,inEnv,inPrefix,inMods,inExps)
   local
     FCore.Cache cache;
     FCore.Graph env;
@@ -6806,11 +6792,11 @@ algorithm
     SCode.Mod mod,mod2;
     list<SCode.SubMod> smods,smods2;
     Ident n;
-    case (_,_,_,{},_,_) then {};
-    case (cache,env,pre,SCode.NAMEMOD(n,mod)::smods,_,_)
+    case (_,_,_,{},_) then {};
+    case (cache,env,pre,SCode.NAMEMOD(n,mod)::smods,_)
       equation
-        mod2 = traverseModAddDims4(cache,env,pre,mod,inExps,inExpOpts,false);
-        smods2 = traverseModAddDims5(cache,env,pre,smods,inExps,inExpOpts);
+        mod2 = traverseModAddDims4(cache,env,pre,mod,inExps,false);
+        smods2 = traverseModAddDims5(cache,env,pre,smods,inExps);
       then
         SCode.NAMEMOD(n,mod2)::smods2;
   end match;
