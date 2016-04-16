@@ -514,22 +514,32 @@ public function variableIsBuiltin
  "Returns true if cref is a builtin variable.
   Currently only 'time' is a builtin variable."
   input DAE.ComponentRef cref;
-  input Boolean useOptimica;
   output Boolean b;
 algorithm
-  b := match (cref, useOptimica)
-    case(DAE.CREF_IDENT(ident="time"),_) then true;
-    case(_,false) then false;
-
-    //If accepting Optimica then these variabels are also builtin
-    case(DAE.CREF_IDENT(ident="startTime"),true) then true;
-    case(DAE.CREF_IDENT(ident="finalTime"),true) then true;
-    case(DAE.CREF_IDENT(ident="objective"),true) then true;
-    case(DAE.CREF_IDENT(ident="objectiveIntegrand"),true) then true;
-
+  b := match cref
+    local
+      String id;
+    case DAE.CREF_IDENT(ident=id) then variableNameIsBuiltin(id);
     else false;
   end match;
 end variableIsBuiltin;
+
+public function variableNameIsBuiltin
+ "Returns true if cref is a builtin variable.
+  Currently only 'time' is a builtin variable."
+  input String name;
+  output Boolean b;
+algorithm
+  b := match name
+    case "time" then true;
+    //If accepting Optimica then these variabels are also builtin
+    case "startTime" then Config.acceptOptimicaGrammar();
+    case "finalTime" then Config.acceptOptimicaGrammar();
+    case "objective" then Config.acceptOptimicaGrammar();
+    case "objectiveIntegrand" then Config.acceptOptimicaGrammar();
+    else false;
+  end match;
+end variableNameIsBuiltin;
 
 public function isDer
   input Absyn.Path inPath;

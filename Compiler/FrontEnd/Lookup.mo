@@ -402,7 +402,7 @@ algorithm
     case (_,_,Absyn.QUALIFIED(name, id))
       equation
         ErrorExt.setCheckpoint("functionViaComponentRef2");
-        (outCache,_,_,_,_,_,_,cenv,_) = lookupVar(inCache, inEnv, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
+        (outCache,_,_,_,_,_,_,cenv,_) = lookupVarIdent(inCache, inEnv, name, {});
         (outCache, outClass, outEnv) = lookupClass(outCache, cenv, id);
         ErrorExt.rollBack("functionViaComponentRef2");
       then
@@ -1240,6 +1240,54 @@ algorithm
   end matchcontinue;
 end lookupVar;
 
+public function lookupVarIdent "Like lookupVar, but takes only an ident+subscript."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input String ident;
+  input list<DAE.Subscript> ss={};
+  output FCore.Cache outCache;
+  output DAE.Attributes outAttributes;
+  output DAE.Type outType;
+  output DAE.Binding outBinding;
+  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
+  output InstTypes.SplicedExpData outSplicedExpData;
+  output FCore.Graph outClassEnv "only used for package constants";
+  output FCore.Graph outComponentEnv "only used for package constants";
+  output String name "so the FQ path can be constructed";
+algorithm
+  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,outSplicedExpData,outClassEnv,outComponentEnv,name) :=
+  matchcontinue (inCache,inEnv)
+    local
+      DAE.Attributes attr;
+      DAE.Type ty;
+      DAE.Binding binding;
+      FCore.Graph env, componentEnv, classEnv;
+      DAE.ComponentRef cref;
+      FCore.Cache cache;
+      InstTypes.SplicedExpData splicedExpData;
+      Option<DAE.Const> cnstForRange;
+
+    // try the old lookupVarInternal
+    case (cache,env)
+      equation
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVarInternalIdent(cache, env, ident, ss, InstTypes.SEARCH_ALSO_BUILTIN());
+      then
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name);
+
+    // then look in classes (implicitly instantiated packages)
+    case (cache,env)
+      equation
+        // TODO: Skip makeCrefIdent by rewriting lookupVarInPackages
+        cref = ComponentReference.makeCrefIdent(ident, DAE.T_UNKNOWN_DEFAULT, ss);
+        (cache,classEnv,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env,cref,{},Util.makeStatefulBoolean(false));
+        checkPackageVariableConstant(env,classEnv,componentEnv,attr,ty,cref);
+        // optional Expression.exp to return
+      then
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name);
+
+  end matchcontinue;
+end lookupVarIdent;
+
 protected function checkPackageVariableConstant "
 Variables in packages must be constant. This function produces an error message and fails
 if variable is not constant."
@@ -1329,7 +1377,7 @@ algorithm
     // If not in top scope, look in top scope for builtin variables, e.g. time.
     case (cache, FCore.G(scope = _::_::_), ref, InstTypes.SEARCH_ALSO_BUILTIN())
       equation
-        true = Builtin.variableIsBuiltin(ref, Config.acceptOptimicaGrammar());
+        true = Builtin.variableIsBuiltin(ref);
         env = FGraph.topScope(inEnv);
         ht = FNode.children(FNode.fromRef(FGraph.lastScopeRef(env)));
         (cache,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarF(cache, ht, ref, env);
@@ -1338,6 +1386,67 @@ algorithm
 
   end matchcontinue;
 end lookupVarInternal;
+
+public function lookupVarInternalIdent "Helper function to lookupVar. Searches the frames for variables."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input String ident;
+  input list<DAE.Subscript> ss={};
+  input InstTypes.SearchStrategy searchStrategy = InstTypes.SEARCH_LOCAL_ONLY() "if SEARCH_LOCAL_ONLY it won't search in the builtin scope";
+  output FCore.Cache outCache;
+  output DAE.Attributes outAttributes;
+  output DAE.Type outType;
+  output DAE.Binding outBinding;
+  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
+  output InstTypes.SplicedExpData splicedExpData;
+  output FCore.Graph outClassEnv "the environment of the variable, typically the same as input, but e.g. for loop scopes can be 'stripped'";
+  output FCore.Graph outComponentEnv "the component environment of the variable";
+  output String name;
+algorithm
+  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outClassEnv,outComponentEnv,name) :=
+  matchcontinue (inCache,inEnv,searchStrategy)
+    local
+      DAE.Attributes attr;
+      DAE.Type ty;
+      DAE.Binding binding;
+      Option<String> sid;
+      FCore.Children ht;
+      DAE.ComponentRef ref;
+      FCore.Cache cache;
+      Option<DAE.Const> cnstForRange;
+      FCore.Graph env,componentEnv;
+      FCore.Ref r;
+      FCore.Scope rs;
+
+    // look into the current frame
+    case (cache, FCore.G(scope = r :: _), _)
+      equation
+        ht = FNode.children(FNode.fromRef(r));
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarFIdent(cache, ht, ident, ss, inEnv);
+      then
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,inEnv,componentEnv,name);
+
+    // look in the next frame, only if current frame is a for loop scope.
+    case (cache, FCore.G(scope = r :: _), _)
+      equation
+        true = FNode.isImplicitRefName(r);
+        (env, _) = FGraph.stripLastScopeRef(inEnv);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env,componentEnv,name) = lookupVarInternalIdent(cache, env, ident, ss, searchStrategy);
+      then
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env,componentEnv,name);
+
+    // If not in top scope, look in top scope for builtin variables, e.g. time.
+    case (cache, FCore.G(scope = _::_::_), InstTypes.SEARCH_ALSO_BUILTIN())
+      equation
+        true = Builtin.variableNameIsBuiltin(ident);
+        env = FGraph.topScope(inEnv);
+        ht = FNode.children(FNode.fromRef(FGraph.lastScopeRef(env)));
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarFIdent(cache, ht, ident, ss, env);
+      then
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env,componentEnv,name);
+
+  end matchcontinue;
+end lookupVarInternalIdent;
 
 protected function frameIsImplAddedScope
 "returns true if the frame is a for-loop scope or a valueblock scope.
@@ -1698,7 +1807,7 @@ algorithm
     case (cache,env,Absyn.QUALIFIED(name, id),info)
       equation
         ErrorExt.setCheckpoint("functionViaComponentRef");
-        (cache,_,_,_,_,_,_,cenv,_) = lookupVar(cache, env, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
+        (cache,_,_,_,_,_,_,cenv,_) = lookupVarIdent(cache, env, name, {});
         (cache, res) = lookupFunctionsInEnv(cache, cenv, id, info);
         ErrorExt.rollBack("functionViaComponentRef");
       then
@@ -2854,16 +2963,9 @@ algorithm
 
     // Simple identifier
     case (cache,ht,DAE.CREF_IDENT(ident = id,subscriptLst = ss),_)
-      equation
-        (DAE.TYPES_VAR(name,attr,ty,bind,cnstForRange),_,_,_,componentEnv) = lookupVar2(ht, id, inEnv);
-        ty_1 = checkSubscripts(ty, ss);
-        tty = Types.simplifyType(ty);
-        ss = addArrayDimensions(tty,ss);
-        cref_ = ComponentReference.makeCrefIdent(id,tty, ss);
-        splicedExp = Expression.makeCrefExp(cref_,tty);
-        //print("splicedExp ="+ExpressionDump.dumpExpStr(splicedExp,0)+"\n");
-      then
-        (cache,attr,ty_1,bind,cnstForRange,InstTypes.SPLICEDEXPDATA(SOME(splicedExp),ty),componentEnv,name);
+      algorithm
+        (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv,name) := lookupVarFIdent(inCache,inBinTree,id,ss,inEnv);
+      then (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv,name);
 
     // Qualified variables looked up through component environment with or without spliced exp
     case (cache,ht,DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids), _)
@@ -2915,6 +3017,37 @@ algorithm
 
   end match;
 end lookupVarF;
+
+protected function lookupVarFIdent
+"This function looks in a frame to find a declared variable.  If
+  the name being looked up is qualified, the first part of the name
+  is looked up, and lookupVar2 is used to for further lookup in
+  the result of that lookup.
+  2007-05-29 If we can construct a expression, we do after expanding the
+  subscript with dimensions to fill the Cref."
+  input output FCore.Cache cache;
+  input FCore.Children ht;
+  input String ident;
+  input list<DAE.Subscript> ss;
+  input FCore.Graph inEnv;
+  output DAE.Attributes attr;
+  output DAE.Type ty_1;
+  output DAE.Binding bind;
+  output Option<DAE.Const> cnstForRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
+  output InstTypes.SplicedExpData splicedExpData;
+  output FCore.Graph componentEnv;
+  output String name;
+protected
+  DAE.Type tty, ty;
+  list<DAE.Subscript> ss_1;
+algorithm
+  (DAE.TYPES_VAR(name,attr,ty,bind,cnstForRange),_,_,_,componentEnv) := lookupVar2(ht, ident, inEnv);
+  ty_1 := checkSubscripts(ty, ss);
+  tty := Types.simplifyType(ty);
+  ss_1 := addArrayDimensions(tty,ss);
+  splicedExpData := InstTypes.SPLICEDEXPDATA(SOME(Expression.makeCrefExp(ComponentReference.makeCrefIdent(ident,tty,ss_1),tty)),ty);
+end lookupVarFIdent;
+
 
 protected function lookupVarFMetaModelica
   input FCore.Cache inCache;
@@ -3310,7 +3443,7 @@ algorithm
     case (_, _, Absyn.QUALIFIED(name, _))
       equation
         ErrorExt.setCheckpoint("functionViaComponentRef10");
-        (_,_,_,_,_,_,_,_,_) = lookupVar(inCache, inEnv, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
+        (_,_,_,_,_,_,_,_,_) = lookupVarIdent(inCache, inEnv, name, {});
         ErrorExt.rollBack("functionViaComponentRef10");
       then
         true;

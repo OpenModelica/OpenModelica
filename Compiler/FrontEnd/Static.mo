@@ -12487,7 +12487,7 @@ algorithm
     // an unqualified component reference
     case (cache,env,DAE.CREF_IDENT(ident = n,subscriptLst = ss),impl) /* impl */
       equation
-        (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(n,DAE.T_UNKNOWN_DEFAULT,{}));
+        (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVarIdent(cache, env, n);
         sl = Types.getDimensionSizes(t);
         (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Absyn.NO_MSG(),0);
         ty2 = Types.simplifyType(t);
@@ -12497,7 +12497,7 @@ algorithm
     // a qualified component reference
     case (cache,env,DAE.CREF_QUAL(ident = n,subscriptLst = ss,componentRef = c),impl)
       equation
-        (cache,_,t,_,_,_,_,componentEnv,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(n,DAE.T_UNKNOWN_DEFAULT,{}));
+        (cache,_,t,_,_,_,_,componentEnv,_) = Lookup.lookupVarIdent(cache, env, n);
         ty2 = Types.simplifyType(t);
         sl = Types.getDimensionSizes(t);
         (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Absyn.NO_MSG(),0);

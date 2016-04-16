@@ -2592,7 +2592,7 @@ algorithm
   SCode.COMPONENT(name=name, info=info) := elt;
   (cache,_) := inTpl;
   try
-    (cache,DAE.ATTR(variability=var),_,_,_,_,_,_,_) := Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{}));
+    (cache,DAE.ATTR(variability=var),_,_,_,_,_,_,_) := Lookup.lookupVarInternalIdent(cache,env,name);
     b := match var
       // Allow shadowing constants. Should be safe since they become values pretty much straight away.
       case SCode.CONST() then true;
