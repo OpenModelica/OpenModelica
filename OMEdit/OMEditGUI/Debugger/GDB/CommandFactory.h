@@ -51,13 +51,7 @@ public:
   };
   CommandFactory() {}
   /* Setup Commands */
-  static QByteArray setConfirm(bool On);
-  static QByteArray setPrintObject(bool On);
-  static QByteArray setBreakpointPending(bool On);
-  static QByteArray setWidth(int width);
-  static QByteArray setHeight(int height);
-  static QByteArray setPrintElements(int numberOfElements);
-  static QByteArray setArgs(QStringList arguments);
+  static QByteArray GDBSet(QString command);
   static QByteArray attach(QString processID);
   static QByteArray changeStdStreamBuffer();
   /* Breakpoint Commands */

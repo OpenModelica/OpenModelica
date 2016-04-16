@@ -278,16 +278,22 @@ void GDBAdapter::launch(QString program, QString workingDirectory, QStringList a
   setGDBKilled(false);
 #ifdef WIN32
   /* Set the environment for GDB process */
-  QFileInfo fileInfo(simulationOptions.getFileName());
   QProcessEnvironment processEnvironment = StringHandler::simulationProcessEnvironment();
-  processEnvironment.insert("PATH", fileInfo.absoluteDir().absolutePath() + ";" + processEnvironment.value("PATH"));
+  if (!simulationOptions.getFileName().isEmpty()) {
+    QFileInfo fileInfo(simulationOptions.getFileName());
+    processEnvironment.insert("PATH", fileInfo.absoluteDir().absolutePath() + ";" + processEnvironment.value("PATH"));
+  }
   mpGDBProcess->setProcessEnvironment(processEnvironment);
 #endif
   mpGDBProcess->setWorkingDirectory(workingDirectory);
   connect(mpGDBProcess, SIGNAL(started()), SLOT(handleGDBProcessStarted()));
   connect(mpGDBProcess, SIGNAL(readyReadStandardOutput()), SLOT(readGDBStandardOutput()));
   connect(mpGDBProcess, SIGNAL(readyReadStandardError()), SLOT(readGDBErrorOutput()));
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  connect(mpGDBProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(handleGDBProcessError(QProcess::ProcessError)));
+#else
   connect(mpGDBProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(handleGDBProcessError(QProcess::ProcessError)));
+#endif
   connect(mpGDBProcess, SIGNAL(finished(int)), SLOT(handleGDBProcessFinished(int)));
   connect(mpGDBProcess, SIGNAL(finished(int)), mpGDBProcess, SLOT(deleteLater()));
   mSimulationOptions = simulationOptions;
@@ -385,8 +391,7 @@ void GDBAdapter::postCommand(QByteArray command, GDBCommandFlags flags, GDBComma
   */
 void GDBAdapter::postCommand(QByteArray command, GDBCommandFlags flags, QObject *pCallbackObject, GDBCommandCallback callback)
 {
-  if (isGDBRunning())
-  {
+  if (isGDBRunning()) {
     int token = currentToken() + 1;
     setCurrentToken(token);
     GDBMICommand cmd;
@@ -395,13 +400,15 @@ void GDBAdapter::postCommand(QByteArray command, GDBCommandFlags flags, QObject 
     cmd.mpCallbackObject = pCallbackObject;
     cmd.mGDBCommandCallback = callback;
     mGDBMICommandsHash[token] = cmd;
-    if (cmd.mFlags & GDBAdapter::ConsoleCommand)
+    if (cmd.mFlags & GDBAdapter::ConsoleCommand) {
       cmd.mCommand = "-interpreter-exec console \"" + cmd.mCommand + '"';
+    }
     cmd.mCommand = QByteArray::number(token) + cmd.mCommand;
     mpGDBProcess->write(cmd.mCommand + "\r\n");
     mGDBCommandTimer.setInterval(commandTimeoutTime());
-    if (!cmd.mCommand.endsWith("-gdb-exit"))
+    if (!cmd.mCommand.endsWith("-gdb-exit")) {
       mGDBCommandTimer.start();
+    }
     writeDebuggerCommandLog(cmd.mCommand);
     mpDebuggerMainWindow->getGDBLoggerWidget()->logDebuggerCommand(QString(cmd.mCommand));
   }
@@ -918,16 +925,30 @@ void GDBAdapter::handleGDBProcessStartedHelper()
     mDebuggerLogFileTextStream.setGenerateByteOrderMark(false);
   }
   emit GDBProcessStarted();
-  /* set the GDB environment before starting the actual debugging */
-  postCommand(CommandFactory::setConfirm(false), GDBAdapter::ConsoleCommand | GDBAdapter::NonCriticalResponse);
-  postCommand(CommandFactory::setPrintObject(true), GDBAdapter::ConsoleCommand | GDBAdapter::NonCriticalResponse);
-  postCommand(CommandFactory::setBreakpointPending(true), GDBAdapter::ConsoleCommand | GDBAdapter::NonCriticalResponse);
-  postCommand(CommandFactory::setWidth(0), GDBAdapter::ConsoleCommand | GDBAdapter::NonCriticalResponse);
-  postCommand(CommandFactory::setHeight(0), GDBAdapter::ConsoleCommand | GDBAdapter::NonCriticalResponse);
+  // set the GDB environment before starting the actual debugging
+  // sets the confirm on/off. Off disables confirmation requests. On Enables confirmation requests.
+  postCommand(CommandFactory::GDBSet("confirm off"), GDBAdapter::NonCriticalResponse);
+  /* When displaying a pointer to an object, identify the actual (derived) type of the object rather than the declared type,
+   * using the virtual function table.
+   */
+  postCommand(CommandFactory::GDBSet("print object on"), GDBAdapter::NonCriticalResponse);
+  // This indicates that an unrecognized breakpoint location should automatically result in a pending breakpoint being created.
+  postCommand(CommandFactory::GDBSet("breakpoint pending on"), GDBAdapter::NonCriticalResponse);
+  // This command sets the width of the screen to num characters wide.
+  postCommand(CommandFactory::GDBSet("width 0"), GDBAdapter::NonCriticalResponse);
+  // This command sets the height of the screen to num lines high.
+  postCommand(CommandFactory::GDBSet("height 0"), GDBAdapter::NonCriticalResponse);
+  /* Set a limit on how many elements of an array GDB will print.\n
+   * If GDB is printing a large array, it stops printing after it has printed the number of elements set by the set print elements command.\n
+   * This limit also applies to the display of strings. When GDB starts, this limit is set to 200.\n
+   * Setting number-of-elements to zero means that the printing is unlimited.
+   */
   int numberOfElements = mpDebuggerMainWindow->getMainWindow()->getOptionsDialog()->getDebuggerPage()->getGDBOutputLimitSpinBox()->value();
-  postCommand(CommandFactory::setPrintElements(numberOfElements), GDBAdapter::ConsoleCommand | GDBAdapter::NonCriticalResponse);
-  /* set the inferior arguments */
-  postCommand(CommandFactory::setArgs(mInferiorArguments), GDBAdapter::ConsoleCommand | GDBAdapter::NonCriticalResponse);
+  postCommand(CommandFactory::GDBSet(QString("print elements %1").arg(QString::number(numberOfElements))), GDBAdapter::NonCriticalResponse);
+  /* set the inferior arguments
+   * GDB change the program arguments if we pass them through --args e.g -override=variableFilter=.*
+   */
+  postCommand(CommandFactory::GDBSet(QString("args %1").arg(mInferiorArguments.join(" "))), GDBAdapter::NonCriticalResponse);
   /* Insert breakpoints */
   insertCatchOMCBreakpoint();
   insertBreakpoints();

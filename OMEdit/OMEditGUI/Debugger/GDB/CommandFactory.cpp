@@ -38,83 +38,13 @@
 #include "CommandFactory.h"
 
 /*!
-  Creates the set confirm command.\n
-  \param On - sets the confirm on/off. Off disables confirmation requests. On Enables confirmation requests.
-  \return the command.
-  */
-QByteArray CommandFactory::setConfirm(bool On)
+ * \brief CommandFactory::GDBSet
+ * \param command
+ * \return
+ */
+QByteArray CommandFactory::GDBSet(QString command)
 {
-  return QByteArray("set confirm ").append(On ? "on" : "off");
-}
-
-/*!
-  Creates the set print object command.\n
-  When displaying a pointer to an object, identify the actual (derived) type of the object rather than the declared type,
-  using the virtual function table.
-  \param On - sets the print object on/off.
-  \return the command.
-  */
-QByteArray CommandFactory::setPrintObject(bool On)
-{
-  return QByteArray("set print object ").append(On ? "on" : "off");
-}
-
-/*!
-  Creates the set breakpoint pending command.\n
-  This indicates that an unrecognized breakpoint location should automatically result in a pending breakpoint being created.
-  \param On - sets the breakpoint pending on/off.
-  \return the command.
-  */
-QByteArray CommandFactory::setBreakpointPending(bool On)
-{
-  return QByteArray("set breakpoint pending ").append(On ? "on" : "off");
-}
-
-/*!
-  Creates the set width command.\n
-  This command sets the width of the screen to num characters wide.
-  \param width - sets the width of the screen.
-  \return the command.
-  */
-QByteArray CommandFactory::setWidth(int width)
-{
-  return QByteArray("set width ").append(QString::number(width));
-}
-
-/*!
-  Creates the set height command.\n
-  This command sets the height of the screen to num lines high.
-  \param width - sets the height of the screen.
-  \return the command.
-  */
-QByteArray CommandFactory::setHeight(int height)
-{
-  return QByteArray("set height ").append(QString::number(height));
-}
-
-/*!
-  Creates the set print elements command.\n
-  Set a limit on how many elements of an array GDB will print.\n
-  If GDB is printing a large array, it stops printing after it has printed the number of elements set by the set print elements command.\n
-  This limit also applies to the display of strings. When GDB starts, this limit is set to 200.\n
-  Setting number-of-elements to zero means that the printing is unlimited.
-  \param numberOfElements - number of elements to print.
-  \return the command.
-  */
-QByteArray CommandFactory::setPrintElements(int numberOfElements)
-{
-  return QByteArray("set print elements ").append(QString::number(numberOfElements));
-}
-
-/*!
-  Sets the inferior program arguments.\n
-  GDB change the program arguments if we pass them through --args e.g -override=variableFilter=.*
-  \param width - sets the height of the screen.
-  \return the command.
-  */
-QByteArray CommandFactory::setArgs(QStringList arguments)
-{
-  return QByteArray("set args ").append(arguments.join(" "));
+  return QByteArray("-gdb-set ").append(command);
 }
 
 /*!

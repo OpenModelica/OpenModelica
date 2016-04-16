@@ -48,7 +48,6 @@ DebuggerMainWindow::DebuggerMainWindow(MainWindow *pMainWindow)
   mpStackFramesWidget = new StackFramesWidget(this);
   // Create stack frames dock widget
   mpStackFramesDockWidget = new QDockWidget(tr("Stack Frames Browser"), this);
-  mpStackFramesDockWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
   mpStackFramesDockWidget->setObjectName("StackFrames");
   mpStackFramesDockWidget->setWidget(mpStackFramesWidget);
   addDockWidget(Qt::TopDockWidgetArea, mpStackFramesDockWidget);
@@ -56,7 +55,6 @@ DebuggerMainWindow::DebuggerMainWindow(MainWindow *pMainWindow)
   mpBreakpointsWidget = new BreakpointsWidget(this);
   // Create breakpoints dock widget
   mpBreakpointsDockWidget = new QDockWidget(tr("BreakPoints Browser"), this);
-  mpBreakpointsDockWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
   mpBreakpointsDockWidget->setObjectName("BreakPoints");
   mpBreakpointsDockWidget->setWidget(mpBreakpointsWidget);
   addDockWidget(Qt::TopDockWidgetArea, mpBreakpointsDockWidget);
