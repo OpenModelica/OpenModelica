@@ -831,15 +831,16 @@ algorithm
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
       Option<DAE.Exp> so;
+      Option<DAE.Exp> min,max;
 
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,_,_,i,f,n,ss,unc,distOpt,eb,ip,fn,so)), _, _)
-      then SOME(DAE.VAR_ATTR_REAL(q,u,du,inMin,inMax,i,f,n,ss,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,distOpt,eb,ip,fn,so)), _, _)
+      then if referenceEq(min,inMin) and referenceEq(max,inMax) then inAttr else SOME(DAE.VAR_ATTR_REAL(q,u,du,inMin,inMax,i,f,n,ss,unc,distOpt,eb,ip,fn,so));
 
-    case (SOME(DAE.VAR_ATTR_INT(q,_,_,i,f,unc,distOpt,eb,ip,fn,so)), _, _)
-      then SOME(DAE.VAR_ATTR_INT(q,inMin,inMax,i,f,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,ip,fn,so)), _, _)
+      then if referenceEq(min,inMin) and referenceEq(max,inMax) then inAttr else SOME(DAE.VAR_ATTR_INT(q,inMin,inMax,i,f,unc,distOpt,eb,ip,fn,so));
 
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,_,_,u,du,eb,ip,fn,so)), _, _)
-      then SOME(DAE.VAR_ATTR_ENUMERATION(q,inMin,inMax,u,du,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,ip,fn,so)), _, _)
+      then if referenceEq(min,inMin) and referenceEq(max,inMax) then inAttr else SOME(DAE.VAR_ATTR_ENUMERATION(q,inMin,inMax,u,du,eb,ip,fn,so));
 
     case (NONE(), _, _)
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),inMin,inMax,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
@@ -970,26 +971,52 @@ algorithm
   outAttr := match attr
     local
       DAE.VariableAttributes va;
+      Option<DAE.VariableAttributes> at;
     case SOME(va as DAE.VAR_ATTR_REAL())
       algorithm
-        va.start := start;
-      then SOME(va);
+        if valueEq(va.start, start) then
+          at := attr;
+        else
+          va.start := start;
+          at := SOME(va);
+        end if;
+      then at;
     case SOME(va as DAE.VAR_ATTR_INT())
       algorithm
-        va.start := start;
-      then SOME(va);
+        if valueEq(va.start, start) then
+          at := attr;
+        else
+          va.start := start;
+          at := SOME(va);
+        end if;
+      then at;
     case SOME(va as DAE.VAR_ATTR_BOOL())
       algorithm
-        va.start := start;
-      then SOME(va);
+        if valueEq(va.start, start) then
+          at := attr;
+        else
+          va.start := start;
+          at := SOME(va);
+        end if;
+      then at;
     case SOME(va as DAE.VAR_ATTR_STRING())
       algorithm
-        va.start := start;
-      then SOME(va);
+        if valueEq(va.start, start) then
+          at := attr;
+        else
+          va.start := start;
+          at := SOME(va);
+        end if;
+      then at;
     case SOME(va as DAE.VAR_ATTR_ENUMERATION())
       algorithm
-        va.start := start;
-      then SOME(va);
+        if valueEq(va.start, start) then
+          at := attr;
+        else
+          va.start := start;
+          at := SOME(va);
+        end if;
+      then at;
     case NONE()
       then if isNone(start) then NONE() else SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),start,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
