@@ -34,12 +34,12 @@ PATCH_SOURCES=$(SED) -i 's/ = omc_assert_function/__attribute__((noreturn)) = om
 PATCHES := $(patsubst %.patch.xz,%.patch,$(wildcard patches/*.patch.xz))
 
 ifeq ($(BOOTSTRAP_STAGE_1),1)
-OMCRUNTIMEAR=../runtime/libomcruntime-boot$(SHREXT)
+OMCRUNTIMEAR=$(OMCRUNTIMEAR1)
 OMPARSEAR=../../Parser/libomparse-boot.a
 LOMPARSE=$(OMPARSEAR)
 LCOMPILERRUNTIME=$(abspath $(OMCRUNTIMEAR))
 else
-OMCRUNTIMEAR=$(OMHOME)/$(LIB_OMC)/libomcruntime$(SHREXT)
+OMCRUNTIMEAR=$(OMCRUNTIMEAR2)
 OMPARSEAR=$(OMHOME)/$(LIB_OMC)/libomparse.a
 LOMPARSE=-lomparse
 LCOMPILERRUNTIME=-lomcruntime

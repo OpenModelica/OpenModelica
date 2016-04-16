@@ -74,7 +74,7 @@ static void stripbinpath(char *omhome)
 #endif
 
 /* Do not free or modify the returned variable of getInstallationDirectoryPath. It's part of the environment! */
-#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
+#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1) && !(defined(_MSC_VER) || defined(__MINGW32__))
 const char* SettingsImpl__getInstallationDirectoryPath(void) {
   return CONFIG_DEFAULT_OPENMODELICAHOME;
 }

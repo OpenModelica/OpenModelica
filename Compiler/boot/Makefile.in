@@ -28,6 +28,8 @@ RPATH=@RPATH@
 STATIC=@BOOTSTRAP_STATIC@
 BOOTSTRAP_OMC=@OMBUILDDIR@/bin/omc
 defaultMakefileTarget=Makefile
+OMCRUNTIMEAR1=../runtime/libomcruntime-boot$(SHREXT)
+OMCRUNTIMEAR2=$(OMHOME)/$(LIB_OMC)/libomcruntime$(SHREXT)
 
 
 default: all

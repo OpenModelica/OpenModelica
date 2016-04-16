@@ -73,6 +73,10 @@ libomcruntime-boot.so : $(OMC_OBJ)
 	rm -f $@
 	$(CXX) -shared $(RPATH) -o $@ $(OMC_OBJ) $(LDFLAGS)
 
+libomcruntime-boot.dll : $(OMC_OBJ)
+	rm -f $@
+	$(CXX) -shared $(RPATH) -o $@ $(OMC_OBJ) $(LDFLAGS)
+
 omc_communication.cc : omc_communication.idl
 	$(IDL) omc_communication.idl
 omc_communication.h: omc_communication.cc

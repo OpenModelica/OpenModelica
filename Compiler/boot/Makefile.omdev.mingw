@@ -31,6 +31,9 @@ RPATH=
 BOOTSTRAP_OMC=$(OMBUILDDIR)/bin/omc.exe
 defaultMakefileTarget=Makefile.omdev.mingw
 LIB_OMC=lib/omc
+OMCRUNTIMEAR1=../runtime/libomcruntime-boot.a
+OMCRUNTIMEAR2=$(OMHOME)/$(LIB_OMC)/libomcruntime.a
+LDFLAGS_SHARED_MAIN=-L"$(OMHOME)/$(LIB_OMC)" $(EXTRA_LD_FLAGS)
 
 default: all
 
