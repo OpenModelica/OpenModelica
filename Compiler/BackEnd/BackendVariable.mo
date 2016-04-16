@@ -2130,6 +2130,18 @@ algorithm
   outVariables := List.fold(inVarLst,addVar,emptyVarsSized(size));
 end listVar1;
 
+public function listVar2 "author: Frenkel TUD 2012-05
+  ToDo: replace all listVar calls with this function, tailrecursive implementation
+  Takes BackendDAE.Var list and creates a BackendDAE.Variables structure, see also var_list."
+  input list<BackendDAE.Var> inVarLst1,inVarLst2;
+  output BackendDAE.Variables outVariables;
+protected
+  Integer size;
+algorithm
+  size := listLength(inVarLst1)+listLength(inVarLst2);
+  outVariables := List.fold(inVarLst2,addVar,List.fold(inVarLst1,addVar,emptyVarsSized(size)));
+end listVar2;
+
 public function equationSystemsVarsLst
   input BackendDAE.EqSystems systs;
   output list<BackendDAE.Var> outVars = {};
@@ -3006,6 +3018,7 @@ public function mergeVariables
    precedence over the second set."
   input BackendDAE.Variables inVariables1;
   input BackendDAE.Variables inVariables2;
+  input Boolean copy=true;
   output BackendDAE.Variables outVariables;
 protected
   Integer num_vars;
@@ -3015,8 +3028,10 @@ algorithm
   if varsLoadFactor(inVariables1, num_vars) > 1 then
     outVariables := emptyVarsSized(varsSize(inVariables1) + num_vars);
     outVariables := addVariables(inVariables1, outVariables);
-  else
+  elseif copy then
     outVariables := copyVariables(inVariables1);
+  else
+    outVariables := inVariables1;
   end if;
 
   outVariables := addVariables(inVariables2, outVariables);

@@ -2555,7 +2555,7 @@ algorithm
 
       BackendDAE.Variables emptyVars, dependentVars, independentVars, knvars, allvars;
       BackendDAE.EquationArray emptyEqns, eqns;
-      list<BackendDAE.Var> knvarLst, independentVarsLst, dependentVarsLst,  otherVarsLst;
+      list<BackendDAE.Var> knvarLst1, knvarLst2, independentVarsLst, dependentVarsLst,  otherVarsLst;
       list<BackendDAE.Equation> residual_eqnlst;
       list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs,  otherVarsLstComRefs;
 
@@ -2591,12 +2591,6 @@ algorithm
         otherVarsLst = BackendVariable.varList(inotherVars);
         otherVarsLstComRefs = List.map(otherVarsLst, BackendVariable.varCref);
 
-        // all vars since the inVars are inputs for the jacobian
-        allvars = BackendVariable.copyVariables(inAllVars);
-        allvars = BackendVariable.removeCrefs(independentComRefs, allvars);
-        allvars = BackendVariable.removeCrefs(otherVarsLstComRefs, allvars);
-        knvars = BackendVariable.mergeVariables(knvars, allvars);
-
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("\n---+++ known variables +++---\n");
           BackendDump.printVariables(knvars);
@@ -2615,8 +2609,13 @@ algorithm
         end if;
 
         // create known variables
-        knvarLst = BackendEquation.equationsVars(eqns, knvars);
-        knvars = BackendVariable.listVar1(knvarLst);
+        knvarLst1 = BackendEquation.equationsVars(eqns, knvars);
+        knvarLst2 = BackendEquation.equationsVars(eqns, inAllVars);
+        // Create a list of known variables true *only* for this shared system
+        knvars = BackendVariable.listVar2(knvarLst1,knvarLst2);
+        // Remove inputs for the jacobian
+        knvars = BackendVariable.removeCrefs(independentComRefs, knvars);
+        knvars = BackendVariable.removeCrefs(otherVarsLstComRefs, knvars);
 
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("\n---+++ known variables +++---\n");
