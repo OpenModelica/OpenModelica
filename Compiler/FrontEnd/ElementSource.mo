@@ -456,27 +456,27 @@ function addElementSourcePartOf
   input output DAE.ElementSource source;
   input Absyn.Within withinPath;
 algorithm
+  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+    return;
+  end if;
   source.partOfLst := withinPath::source.partOfLst;
 end addElementSourcePartOf;
 
 function addElementSourcePartOfOpt
-  input DAE.ElementSource inSource;
+  input output DAE.ElementSource source;
   input Option<Absyn.Path> classPathOpt;
-  output DAE.ElementSource outSource;
 algorithm
-  outSource := match(inSource, classPathOpt)
+  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+    return;
+  end if;
+  source := match(source, classPathOpt)
     local
       Absyn.Path classPath;
-      DAE.ElementSource src;
     // a top level
     case (_, NONE())
-      equation
-        _ = addElementSourcePartOf(inSource, Absyn.TOP());
-      then inSource;
+      then source;
     case (_, SOME(classPath))
-      equation
-        src = addElementSourcePartOf(inSource, Absyn.WITHIN(classPath));
-      then src;
+      then addElementSourcePartOf(source, Absyn.WITHIN(classPath));
   end match;
 end addElementSourcePartOfOpt;
 
