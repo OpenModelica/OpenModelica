@@ -349,11 +349,11 @@ algorithm
   end for;
 end stringHashDjb2Work;
 
-function stringAppend6
-  input String str1,str2,str3,str4,str5,str6;
+function stringAppend9
+  input String str1,str2,str3,str4="",str5="",str6="",str7="",str8="",str9="";
   output String str;
 protected
-  System.StringAllocator sb=System.StringAllocator(stringLength(str1)+stringLength(str2)+stringLength(str3)+stringLength(str4)+stringLength(str5)+stringLength(str6));
+  System.StringAllocator sb=System.StringAllocator(stringLength(str1)+stringLength(str2)+stringLength(str3)+stringLength(str4)+stringLength(str5)+stringLength(str6)+stringLength(str7)+stringLength(str8)+stringLength(str9));
   Integer c=0;
 algorithm
   System.stringAllocatorStringCopy(sb, str1, c);
@@ -368,8 +368,14 @@ algorithm
   c := c + stringLength(str5);
   System.stringAllocatorStringCopy(sb, str6, c);
   c := c + stringLength(str6);
+  System.stringAllocatorStringCopy(sb, str7, c);
+  c := c + stringLength(str7);
+  System.stringAllocatorStringCopy(sb, str8, c);
+  c := c + stringLength(str8);
+  System.stringAllocatorStringCopy(sb, str9, c);
+  c := c + stringLength(str9);
   str := System.stringAllocatorResult(sb,str1);
-end stringAppend6;
+end stringAppend9;
 
 function endsWithNewline
   input String str;

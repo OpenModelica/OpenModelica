@@ -5353,7 +5353,7 @@ protected function generateCachePath
 protected
   String name;
 algorithm
-  name := StringUtil.stringAppend6(InstTypes.callingScopeStr(callScope), "$",
+  name := StringUtil.stringAppend9(InstTypes.callingScopeStr(callScope), "$",
           SCodeDump.restrString(SCode.getClassRestriction(cls)), "$",
           generatePrefixStr(prefix), "$");
   cachePath := Absyn.joinPaths(Absyn.IDENT(name), FGraph.getGraphName(env));

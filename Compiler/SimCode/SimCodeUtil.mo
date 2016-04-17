@@ -8032,25 +8032,33 @@ protected function extractVarUnit "author: asodja, 2010-03-11
 algorithm
   (unitStr, displayUnitStr) := matchcontinue(var_attr)
     local
-      DAE.Exp uexp, duexp;
-    case ( SOME(DAE.VAR_ATTR_REAL(unit = SOME(uexp), displayUnit = SOME(duexp) )) )
+      Option<DAE.Exp> uexp, duexp;
+    case SOME(DAE.VAR_ATTR_REAL(unit = uexp, displayUnit=duexp))
       equation
-        unitStr = ExpressionDump.printExpStr(uexp);
-        unitStr = System.stringReplace(unitStr, "\"", "");
-        unitStr = System.stringReplace(unitStr, "\\", "\\\\");
-        displayUnitStr = ExpressionDump.printExpStr(duexp);
-        displayUnitStr = System.stringReplace(displayUnitStr, "\"", "");
-        displayUnitStr = System.stringReplace(displayUnitStr, "\\", "\\\\");
+        unitStr = extractVarUnitStr(uexp);
+        displayUnitStr = extractVarUnitStr(duexp);
       then (unitStr, displayUnitStr);
-    case ( SOME(DAE.VAR_ATTR_REAL(unit = SOME(uexp), displayUnit = NONE())) )
-      equation
-        unitStr = ExpressionDump.printExpStr(uexp);
-        unitStr = System.stringReplace(unitStr, "\"", "");
-        unitStr = System.stringReplace(unitStr, "\\", "\\\\");
-      then (unitStr, unitStr);
     else ("", "");
   end matchcontinue;
 end extractVarUnit;
+
+protected function extractVarUnitStr "author: asodja, 2010-03-11
+  Extract variable's unit and displayUnit as strings from
+  DAE.VariablesAttributes structures."
+  input Option<DAE.Exp> exp;
+  output String str;
+algorithm
+  str := match exp
+    local
+      DAE.Exp e;
+    case SOME(DAE.SCONST(str)) then str;
+    case NONE() then "";
+    case SOME(e)
+      algorithm
+        Error.addInternalError("Unexpected expression (should have been handled earlier, probably in the front-end. Unit/displayUnit expression is not a string literal: " + ExpressionDump.printExpStr(e), sourceInfo());
+      then "";
+  end match;
+end extractVarUnitStr;
 
 protected function getMinMaxValues "extract min/max values from BackendDAE.Variable"
   input BackendDAE.Var inDAELowVar;

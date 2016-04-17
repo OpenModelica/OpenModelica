@@ -60,6 +60,7 @@ protected import Global;
 protected import HashSet;
 protected import List;
 protected import MetaModelica.Dangerous;
+protected import StringUtil;
 protected import System;
 protected import Util;
 protected import Types;
@@ -1733,8 +1734,8 @@ algorithm
   outAsserts := matchcontinue(inVar)
     local
       DAE.Exp e, cond, msg;
-      list<Option<DAE.Exp>> minmax;
-      String str, format;
+      Option<DAE.Exp> min, max;
+      String str, varStr, format;
       DAE.Type tp;
       DAE.ComponentRef name;
       Option<DAE.VariableAttributes> attr;
@@ -1745,17 +1746,20 @@ algorithm
     then inAsserts;
 
     case BackendDAE.VAR(varName=name, values=attr, varType=varType, source=source) equation
-      minmax = DAEUtil.getMinMax(attr);
+      (min, max) = DAEUtil.getMinMaxValues(attr);
+      if isNone(min) and isNone(max) then
+        fail();
+      end if;
       e = Expression.crefExp(name);
+      varStr = ComponentReference.printComponentRefStr(name);
       tp = BackendDAEUtil.makeExpType(varType);
 
       // do not add if const true
-      cond = getMinMaxAsserts1(minmax, e, tp);
+      cond = getMinMaxAsserts1(min, max, e, tp);
       (cond, _) = ExpressionSimplify.simplify(cond);
       false = Expression.isConstTrue(cond);
+      str = getMinMaxAsserts1Str(min, max, ComponentReference.printComponentRefStr(name));
 
-      str = "Variable " + ComponentReference.printComponentRefStr(name) + " out of [min, max] interval: ";
-      str = str + ExpressionDump.printExpStr(cond) + " has value: ";
       // if is real use %g otherwise use %d (ints and enums)
       format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
       msg = DAE.BINARY(DAE.SCONST(str), DAE.ADD(DAE.T_STRING_DEFAULT), DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString));
@@ -1767,25 +1771,48 @@ algorithm
 end getMinMaxAsserts;
 
 protected function getMinMaxAsserts1 "author: Frenkel TUD 2011-03"
-  input list<Option<DAE.Exp>> ominmax;
+  input Option<DAE.Exp> omin,omax;
   input DAE.Exp e;
   input DAE.Type tp;
   output DAE.Exp cond;
 algorithm
-  cond := match ominmax
+  cond := match (omin,omax)
     local
       DAE.Exp min, max;
 
-    case SOME(min)::(SOME(max)::{})
+    case (SOME(min),SOME(max))
     then DAE.LBINARY(DAE.RELATION(e, DAE.GREATEREQ(tp), min, -1, NONE()), DAE.AND(DAE.T_BOOL_DEFAULT), DAE.RELATION(e, DAE.LESSEQ(tp), max, -1, NONE()));
 
-    case SOME(min)::(NONE()::{})
+    case (SOME(min),NONE())
     then DAE.RELATION(e, DAE.GREATEREQ(tp), min, -1, NONE());
 
-    case NONE()::(SOME(max)::{})
+    case (NONE(),SOME(max))
     then DAE.RELATION(e, DAE.LESSEQ(tp), max, -1, NONE());
   end match;
 end getMinMaxAsserts1;
+
+protected function getMinMaxAsserts1Str "author: Frenkel TUD 2011-03"
+  input Option<DAE.Exp> omin,omax;
+  input String varStr;
+  input Boolean nominal=false;
+  output String msg;
+protected
+  String vstr = if nominal then "Nominal variable " else "Variable ";
+algorithm
+  msg := match (omin,omax)
+    local
+      DAE.Exp min, max;
+
+    case (SOME(min),SOME(max))
+    then StringUtil.stringAppend9(vstr,"violating min/max constraint: ",ExpressionDump.printExpStr(min)," <= ",varStr," <= ",ExpressionDump.printExpStr(max),", has value: ");
+
+    case (SOME(min),NONE())
+    then StringUtil.stringAppend9(vstr,"violating min constraint: ",ExpressionDump.printExpStr(min)," <= ",varStr,", has value: ");
+
+    case (NONE(),SOME(max))
+    then StringUtil.stringAppend9(vstr,"violating max constraint: ",varStr," <= ",ExpressionDump.printExpStr(max),", has value: ");
+  end match;
+end getMinMaxAsserts1Str;
 
 public function getNominalAssert "author: Frenkel TUD 2011-03"
   input BackendDAE.Var inVar;
@@ -1796,8 +1823,8 @@ algorithm
   outAsserts := matchcontinue(inVar)
     local
       DAE.Exp e, cond, msg;
-      list<Option<DAE.Exp>> minmax;
-      String str, format;
+      Option<DAE.Exp> min, max;
+      String str, varStr, format;
       DAE.Type tp;
       DAE.ComponentRef name;
       Option<DAE.VariableAttributes> attr;
@@ -1808,16 +1835,15 @@ algorithm
     then inAsserts;
 
     case BackendDAE.VAR(varName=name, values=attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))), varType=varType, source=source) equation
-      minmax = DAEUtil.getMinMax(attr);
+      (min, max) = DAEUtil.getMinMaxValues(attr);
       tp = BackendDAEUtil.makeExpType(varType);
 
       // do not add if const true
-      cond = getMinMaxAsserts1(minmax, e, tp);
+      cond = getMinMaxAsserts1(min, max, e, tp);
       (cond, _) = ExpressionSimplify.simplify(cond);
       false = Expression.isConstTrue(cond);
-
-      str = "Nominal " + ComponentReference.printComponentRefStr(name) + " out of [min, max] interval: ";
-      str = str + ExpressionDump.printExpStr(cond) + " has value: ";
+      varStr = ComponentReference.printComponentRefStr(name);
+      str = getMinMaxAsserts1Str(min, max, ComponentReference.printComponentRefStr(name), nominal=true);
       // if is real use %g otherwise use %d (ints and enums)
       format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
       msg = DAE.BINARY(DAE.SCONST(str), DAE.ADD(DAE.T_STRING_DEFAULT), DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString));
