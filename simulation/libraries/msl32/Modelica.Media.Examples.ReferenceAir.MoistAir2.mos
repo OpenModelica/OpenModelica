@@ -39,16 +39,16 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Media.Examples.ReferenceAir.MoistAir2_res.mat
 // Messages: assert            | warning | The following assertion has been violated at time 0.002020
 // |                 | |       | volume.medium.X_liquid >= 0.0 and volume.medium.X_liquid <= 1.0
-// assert            | warning | Variable volume.medium.X_liquid out of [min, max] interval: volume.medium.X_liquid >= 0.0 and volume.medium.X_liquid <= 1.0 has value: -0.0163519
+// assert            | warning | Variable violating min/max constraint: 0.0 <= volume.medium.X_liquid <= 1.0, has value: -0.0163519
 // assert            | warning | The following assertion has been violated at time 0.002020
 // |                 | |       | fixedMassFlowRate.medium.X_liquid >= 0.0 and fixedMassFlowRate.medium.X_liquid <= 1.0
-// assert            | warning | Variable fixedMassFlowRate.medium.X_liquid out of [min, max] interval: fixedMassFlowRate.medium.X_liquid >= 0.0 and fixedMassFlowRate.medium.X_liquid <= 1.0 has value: -0.484032
+// assert            | warning | Variable violating min/max constraint: 0.0 <= fixedMassFlowRate.medium.X_liquid <= 1.0, has value: -0.484032
 // assert            | warning | The following assertion has been violated at time 0.002020
 // |                 | |       | volume1.medium.X_liquid >= 0.0 and volume1.medium.X_liquid <= 1.0
-// assert            | warning | Variable volume1.medium.X_liquid out of [min, max] interval: volume1.medium.X_liquid >= 0.0 and volume1.medium.X_liquid <= 1.0 has value: -0.0125642
+// assert            | warning | Variable violating min/max constraint: 0.0 <= volume1.medium.X_liquid <= 1.0, has value: -0.0125642
 // assert            | warning | The following assertion has been violated at time 0.002020
 // |                 | |       | ambient.medium.X_liquid >= 0.0 and ambient.medium.X_liquid <= 1.0
-// assert            | warning | Variable ambient.medium.X_liquid out of [min, max] interval: ambient.medium.X_liquid >= 0.0 and ambient.medium.X_liquid <= 1.0 has value: -0.0122993
+// assert            | warning | Variable violating min/max constraint: 0.0 <= ambient.medium.X_liquid <= 1.0, has value: -0.0122993
 //
 // Files Equal!
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.

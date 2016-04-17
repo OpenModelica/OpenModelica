@@ -21,7 +21,7 @@ val(slidingMass1.s,3.9540);
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Inittest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "assert            | warning | The following assertion has been violated at time 0.200000
 // |                 | |       | springDamper1.s_rel >= 0.0
-// assert            | warning | Variable springDamper1.s_rel out of [min, max] interval: springDamper1.s_rel >= 0.0 has value: -0.000923562
+// assert            | warning | Variable violating min constraint: 0.0 <= springDamper1.s_rel, has value: -0.000923562
 // "
 // end SimulationResult;
 // 0.0

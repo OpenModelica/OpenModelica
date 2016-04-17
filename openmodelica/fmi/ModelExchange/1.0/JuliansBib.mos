@@ -49,24 +49,24 @@ val(s, 1);
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'JuliansBib.Connector_Hebelarm_einfach', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "assert            | warning | The following assertion has been violated at time 0.002000
 // |                 | |       | lever_arm_simple_2D1.ausleger1.actuatedPrismatic1.s >= 0.0
-// assert            | warning | Variable lever_arm_simple_2D1.ausleger1.actuatedPrismatic1.s out of [min, max] interval: lever_arm_simple_2D1.ausleger1.actuatedPrismatic1.s >= 0.0 has value: -3.60059e-06
+// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.actuatedPrismatic1.s, has value: -3.60059e-06
 // assert            | warning | The following assertion has been violated at time 0.002000
 // |                 | |       | lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1] >= 0.0
-// assert            | warning | Variable lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1] out of [min, max] interval: lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1] >= 0.0 has value: -1.41144
+// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1], has value: -1.41144
 // assert            | warning | The following assertion has been violated at time 0.002000
 // |                 | |       | lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2] >= 0.0
-// assert            | warning | Variable lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2] out of [min, max] interval: lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2] >= 0.0 has value: -0.0885635
+// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2], has value: -0.0885635
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
 // 127.2093118472222
-// -1.473684912697271
+// -1.473673372208095
 // 12720.93118472221
-// -2.525917895004182
+// -2.525849023136861
 // 0.0
-// -0.5326873127416378
+// -0.5326917977046294
 // "SimCode: The model JuliansBib.Connector_Hebelarm_einfach has been translated to FMU"
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
@@ -80,10 +80,10 @@ val(s, 1);
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'JuliansBib_Connector_Hebelarm_einfach_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// 127.2093118472221
-// -1.473673659944408
+// 127.2093118472222
+// -1.473681007759564
 // 12720.93118472221
-// -2.525771278314903
+// -2.52587518528955
 // 0.0
-// -0.5326903687801198
+// -0.5326885425116029
 // endResult

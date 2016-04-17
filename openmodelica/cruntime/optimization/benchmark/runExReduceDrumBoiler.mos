@@ -29,13 +29,13 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'init', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "assert            | warning | The following assertion has been violated at time 7.200000
 // |                 | |       | der_evaporator_p >= 0.0 and der_evaporator_p <= 32000.0
-// assert            | warning | Variable der_evaporator_p out of [min, max] interval: der_evaporator_p >= 0.0 and der_evaporator_p <= 32000.0 has value: -3.42937
+// assert            | warning | Variable violating min/max constraint: 0.0 <= der_evaporator_p <= 32000.0, has value: -3.42937
 // assert            | warning | The following assertion has been violated at time 849.600000
 // |                 | |       | conSigma.con >= conSigma.MinValue and conSigma.con <= conSigma.MaxValue
-// assert            | warning | Variable conSigma.con out of [min, max] interval: conSigma.con >= conSigma.MinValue and conSigma.con <= conSigma.MaxValue has value: -150.308
+// assert            | warning | Variable violating min/max constraint: conSigma.MinValue <= conSigma.con <= conSigma.MaxValue, has value: -150.308
 // assert            | warning | The following assertion has been violated at time 1252.800000
 // |                 | |       | der_V_v >= -0.02 and der_V_v <= 0.025
-// assert            | warning | Variable der_V_v out of [min, max] interval: der_V_v >= -0.02 and der_V_v <= 0.025 has value: 0.0252797
+// assert            | warning | Variable violating min/max constraint: -0.02 <= der_V_v <= 0.025, has value: 0.0252797
 // "
 // end SimulationResult;
 // true
@@ -126,14 +126,14 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 61.2227 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 15.3174 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 3.83254 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.958954 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.958957 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.240159 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.060028 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.0149908 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.0037337 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000922331 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000216782 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 4.53796e-05 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0600255 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.014993 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00373604 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000922696 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000214121 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 4.54588e-05 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // "
 // end SimulationResult;
 // ""

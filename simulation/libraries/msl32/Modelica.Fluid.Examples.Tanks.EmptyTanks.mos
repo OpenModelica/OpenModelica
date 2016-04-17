@@ -43,10 +43,10 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Fluid.Examples.Tanks.EmptyTanks_res.mat
 // Messages: assert            | warning | The following assertion has been violated at time 35.406941
 // |                 | |       | tank1.m >= 0.0
-// assert            | warning | Variable tank1.m out of [min, max] interval: tank1.m >= 0.0 has value: -9.95587e-08
+// assert            | warning | Variable violating min constraint: 0.0 <= tank1.m, has value: -9.95586e-08
 // assert            | warning | The following assertion has been violated at time 35.406941
 // |                 | |       | tank1.level >= 0.0
-// assert            | warning | Variable tank1.level out of [min, max] interval: tank1.level >= 0.0 has value: -1e-10
+// assert            | warning | Variable violating min constraint: 0.0 <= tank1.level, has value: -1e-10
 //
 // Files Equal!
 // "true

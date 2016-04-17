@@ -19,7 +19,7 @@ simulate(Modelica.Media.Examples.MoistAir);
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.MoistAir', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "assert            | warning | The following assertion has been violated at time 0.952000
 // |                 | |       | medium.x_sat >= 0.0 and medium.x_sat <= 1.0
-// assert            | warning | Variable medium.x_sat out of [min, max] interval: medium.x_sat >= 0.0 and medium.x_sat <= 1.0 has value: 1.00448
+// assert            | warning | Variable violating min/max constraint: 0.0 <= medium.x_sat <= 1.0, has value: 1.00448
 // "
 // end SimulationResult;
 // endResult

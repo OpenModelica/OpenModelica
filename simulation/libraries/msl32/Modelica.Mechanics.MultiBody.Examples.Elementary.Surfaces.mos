@@ -29,7 +29,7 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces_res.mat
 // Messages: assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | wheel.ri >= 0.0
-// assert            | warning | Variable wheel.ri out of [min, max] interval: wheel.ri >= 0.0 has value: -0.05
+// assert            | warning | Variable violating min constraint: 0.0 <= wheel.ri, has value: -0.05
 //
 // Files Equal!
 // "true

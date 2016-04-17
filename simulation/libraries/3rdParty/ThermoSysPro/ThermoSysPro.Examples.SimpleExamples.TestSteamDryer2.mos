@@ -33,7 +33,7 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 //     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestSteamDryer2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "assert            | warning | The following assertion has been violated at time 2.000000
 // |                 | |       | sinkP.P >= 0.0
-// assert            | warning | Variable sinkP.P out of [min, max] interval: sinkP.P >= 0.0 has value: -9.74572e+06
+// assert            | warning | Variable violating min constraint: 0.0 <= sinkP.P, has value: -9.74572e+06
 // "
 // end SimulationResult;
 // "[ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
