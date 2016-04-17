@@ -7275,6 +7275,7 @@ end selectMatchingAlgorithm;
 protected function allPreOptimizationModules
   "This list contains all back end pre-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
+    (BackendInline.normalInlineFunction, "normalInlineFunction"),
     (UnitCheck.unitChecking, "unitChecking"),
     (EvaluateParameter.evaluateAllParameters, "evaluateAllParameters"),
     (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters"),

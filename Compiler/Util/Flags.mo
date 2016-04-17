@@ -730,6 +730,7 @@ constant Util.TranslatableContent removeSimpleEquationDesc = Util.gettext("Perfo
 public
 constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
+    "normalInlineFunction",
     "evaluateReplaceProtectedFinalEvaluateParameters",
     "simplifyIfEquations",
     "expandDerOperator",
@@ -761,6 +762,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("expandDerOperator", Util.notrans("Expands der(expr) using Derive.differentiteExpTime.")),
     ("findStateOrder", Util.notrans("Sets derivative information to states.")),
     ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")),
+    ("normalInlineFunction", Util.gettext("Perform function inlining for function with annotation Inline=true.")),
     ("inputDerivativesForDynOpt", Util.gettext("Allowed derivatives of inputs in dyn. optimization.")),
     ("introduceDerAlias", Util.notrans("Adds for every der-call an alias equation e.g. dx = der(x).")),
     ("removeEqualFunctionCalls", Util.notrans("Detects equal function calls of the form a=f(b) and c=f(b) and substitutes them to get speed up.")),
