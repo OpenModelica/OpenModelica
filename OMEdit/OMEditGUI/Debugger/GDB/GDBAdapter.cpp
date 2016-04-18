@@ -1005,7 +1005,7 @@ void GDBAdapter::startDebugger()
   setInferiorTerminated(false);
   setInferiorRunning(true);
   postCommand(CommandFactory::execRun());
-  postCommand(CommandFactory::changeStdStreamBuffer(), GDBAdapter::NonCriticalResponse | GDBAdapter::SilentCommand);
+  postCommand(CommandFactory::changeStdStreamBuffer(), GDBAdapter::NonCriticalResponse);
   emit inferiorResumed();
 }
 
