@@ -501,25 +501,32 @@ void SimulationDialog::setUpForm()
   mpIntervalTextBox->setValidator(pDoubleValidator);
   mpToleranceTextBox->setValidator(pDoubleValidator);
   // Create the buttons
+  mpSaveButton = new QPushButton(Helper::save);
+  mpSaveButton->setAutoDefault(false);
+  mpSaveButton->setToolTip(tr("Save simulation settings inside model"));
+  connect(mpSaveButton, SIGNAL(clicked()), this, SLOT(save()));
+  mpSaveAndSimulateButton = new QPushButton(tr("Save && Simulate"));
+  mpSaveAndSimulateButton->setAutoDefault(false);
+  mpSaveAndSimulateButton->setToolTip(tr("Save simulation settings inside model & simulate"));
+  connect(mpSaveAndSimulateButton, SIGNAL(clicked()), this, SLOT(saveAndSimulate()));
   mpSimulateButton = new QPushButton(Helper::simulate);
   mpSimulateButton->setAutoDefault(true);
   connect(mpSimulateButton, SIGNAL(clicked()), this, SLOT(simulate()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
-  // save simulations options
-  mpSaveSimulationCheckbox = new QCheckBox(tr("Save simulation settings inside model"));
   // adds buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpSaveButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpSaveAndSimulateButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpSimulateButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Create a layout
   QGridLayout *pMainLayout = new QGridLayout;
-  pMainLayout->addWidget(mpSimulationHeading, 0, 0, 1, 2);
-  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
-  pMainLayout->addWidget(mpSimulationTabWidget, 2, 0, 1, 2);
-  pMainLayout->addWidget(mpSaveSimulationCheckbox, 3, 0);
-  pMainLayout->addWidget(mpButtonBox, 3, 1);
+  pMainLayout->addWidget(mpSimulationHeading, 0, 0);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0);
+  pMainLayout->addWidget(mpSimulationTabWidget, 2, 0);
+  pMainLayout->addWidget(mpButtonBox, 3, 0);
   setLayout(pMainLayout);
 }
 
@@ -569,7 +576,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     }
     mpCflagsTextBox->setEnabled(true);
     mpFileNameTextBox->setEnabled(true);
-    mpSaveSimulationCheckbox->setEnabled(true);
+    mpSaveButton->setEnabled(true);
+    mpSaveAndSimulateButton->setEnabled(true);
     mpSimulateButton->setText(Helper::simulate);
   } else {
     mIsReSimulate = true;
@@ -685,8 +693,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     }
     mpAdditionalSimulationFlagsTextBox->setText(simulationOptions.getAdditionalSimulationFlags());
     // save simulation settings
-    mpSaveSimulationCheckbox->setChecked(false);
-    mpSaveSimulationCheckbox->setDisabled(true);
+    mpSaveButton->setEnabled(false);
+    mpSaveAndSimulateButton->setEnabled(false);
     mpSimulateButton->setText(Helper::reSimulate);
   }
 }
@@ -921,12 +929,14 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
 }
 
 /*!
-  Saves the simulation options in the model.
-  */
-void SimulationDialog::saveSimulationOptions()
+ * \brief SimulationDialog::saveSimulationSettings
+ * Saves the simulation settings in the model.
+ */
+void SimulationDialog::saveSimulationSettings()
 {
-  if (mIsReSimulate || !mpSaveSimulationCheckbox->isChecked())
+  if (mIsReSimulate) {
     return;
+  }
 
   QString oldExperimentAnnotation = "annotate=experiment(";
   // if the class has experiment annotation then read it.
@@ -1178,6 +1188,32 @@ void SimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem)
 }
 
 /*!
+ * \brief SimulationDialog::save
+ * Slot activated when mpSaveButton clicked signal is raised.\n
+ * Saves the simulation settings in the model.
+ */
+void SimulationDialog::save()
+{
+  if (validate()) {
+    saveSimulationSettings();
+    accept();
+  }
+}
+
+/*!
+ * \brief SimulationDialog::saveAndSimulate
+ * Slot activated when mpSaveAndSimulateButton clicked signal is raised.\n
+ * Saves the simulation settings in the model and simulate the model.
+ */
+void SimulationDialog::saveAndSimulate()
+{
+  if (validate()) {
+    saveSimulationSettings();
+    simulate();
+  }
+}
+
+/*!
  * \brief SimulationDialog::simulate
  * Slot activated when mpSimulateButton clicked signal is raised.\n
  * Reads the simulation options set by the user and sends them to OMC by calling buildModel.
@@ -1218,8 +1254,6 @@ void SimulationDialog::simulate()
     }
     mpMainWindow->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
     simulationOptions = createSimulationOptions();
-    // before simulating save the simulation options.
-    saveSimulationOptions();
     // show the progress bar
     mpMainWindow->getStatusBar()->showMessage(tr("Translating %1.").arg(mClassName));
     mpMainWindow->getProgressBar()->setRange(0, 0);

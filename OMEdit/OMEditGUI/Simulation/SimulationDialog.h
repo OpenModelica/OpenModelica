@@ -111,7 +111,6 @@ private:
   QLineEdit *mpDasslMaxStepSizeTextBox;
   Label *mpDasslMaxIntegrationOrderLabel;
   QSpinBox *mpDasslMaxIntegrationOrderSpinBox;
-  QCheckBox *mpSaveSimulationCheckbox;
   Label *mpCflagsLabel;
   QLineEdit *mpCflagsTextBox;
   Label *mpNumberOfProcessorsLabel;
@@ -173,8 +172,10 @@ private:
   QWidget *mpArchivedSimulationsTab;
   QTreeWidget *mpArchivedSimulationsTreeWidget;
   // buttons
-  QPushButton *mpCancelButton;
+  QPushButton *mpSaveButton;
+  QPushButton *mpSaveAndSimulateButton;
   QPushButton *mpSimulateButton;
+  QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
   QList<SimulationOutputWidget*> mSimulationOutputWidgetsList;
   LibraryTreeItem *mpLibraryTreeItem;
@@ -189,7 +190,7 @@ private:
   SimulationOptions createSimulationOptions();
   void createAndShowSimulationOutputWidget(SimulationOptions simulationOptions);
   void showSimulationOutputWidget(SimulationOutputWidget *pSimulationOutputWidget);
-  void saveSimulationOptions();
+  void saveSimulationSettings();
 public:
   void reSimulate(SimulationOptions simulationOptions);
   void showAlgorithmicDebugger(SimulationOptions simulationOptions);
@@ -206,6 +207,8 @@ public slots:
   void browseEquationSystemInitializationFile();
   void showSimulationFlagsHelp();
   void showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem);
+  void save();
+  void saveAndSimulate();
   void simulate();
 private slots:
   void resultFileNameChanged(QString text);
