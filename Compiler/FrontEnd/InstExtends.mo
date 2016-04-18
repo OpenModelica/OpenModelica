@@ -915,7 +915,7 @@ algorithm
       algorithm
         //fprintln(Flags.DEBUG,"fix comp " + SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
         // lookup as it might have been redeclared!!!
-        (_,_,elt2 as SCode.COMPONENT(name, prefixes, attr as SCode.ATTR(), typeSpec1, modifications1, comment, condition, info),_,_,_)
+        (_,_,elt2 as SCode.COMPONENT(name, prefixes, attr as SCode.ATTR(), typeSpec1, modifications1, comment, condition, info),_,_,env)
          := Lookup.lookupIdentLocal(arrayGet(inCache, 1), env, elt.name);
         modifications2 := fixModifications(inCache,env,modifications1,tree);
         typeSpec2 := fixTypeSpec(inCache,env,typeSpec1,tree);
@@ -926,6 +926,7 @@ algorithm
         if not (referenceEq(ad, attr.arrayDims) and referenceEq(typeSpec1, typeSpec2) and referenceEq(modifications1, modifications2)) then
           elt2 := SCode.COMPONENT(name, prefixes, attr, typeSpec2, modifications2, comment, condition, info);
         end if;
+        //print("fixElement -1\n");
       then elt2;
 
     case (env,elt as SCode.COMPONENT(attributes=attr))
@@ -939,6 +940,7 @@ algorithm
         if not (referenceEq(ad, attr.arrayDims) and referenceEq(elt.typeSpec, typeSpec2) and referenceEq(elt.modifications, modifications2)) then
           elt := SCode.COMPONENT(elt.name, elt.prefixes, attr, typeSpec2, modifications2, elt.comment, elt.condition, elt.info);
         end if;
+        //print("fixElement 0\n");
       then elt;
 
     case (env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
@@ -947,9 +949,10 @@ algorithm
         //fprintln(Flags.DEBUG,"fixClassdef " + name);
         // lookup as it might have been redeclared!!!
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
-                     cmt = comment, info = info,classDef=classDef1),_) = Lookup.lookupClassLocal(env, name);
+                     cmt = comment, info = info,classDef=classDef1),env) = Lookup.lookupClassLocal(env, name);
         env = FGraph.openScope(env, SCode.ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
         classDef2 = fixClassdef(inCache, env,classDef1,tree);
+        //print("fixElement 1\n");
       then
         (if referenceEq(classDef1,classDef2) then inElt else SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef2, comment, info));
 
@@ -959,6 +962,7 @@ algorithm
         //fprintln(Flags.DEBUG,"fixClassdef " + name);
         env = FGraph.openScope(env, SCode.ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
         classDef2 = fixClassdef(inCache, env,classDef1,tree);
+        //print("fixElement 2\n");
       then
         (if referenceEq(classDef1,classDef2) then inElt else SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef2, comment, info));
 
@@ -968,10 +972,11 @@ algorithm
         //fprintln(Flags.DEBUG,"fixClassdef " + name + str);
         // lookup as it might have been redeclared!!!
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
-                     cmt = comment, info = info,classDef=classDef1),_) = Lookup.lookupClassLocal(env, name);
+                     cmt = comment, info = info,classDef=classDef1),env) = Lookup.lookupClassLocal(env, name);
 
         env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
         classDef2 = fixClassdef(inCache,env,classDef1,tree);
+        //print("fixElement 3\n");
       then
         (if referenceEq(classDef1,classDef2) then inElt else SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef2, comment, info));
 
@@ -981,6 +986,7 @@ algorithm
         //fprintln(Flags.DEBUG,"fixClassdef " + name + str);
         env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
         classDef2 = fixClassdef(inCache,env,classDef1,tree);
+        //print("fixElement 4\n");
       then
         (if referenceEq(classDef1,classDef2) then inElt else SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef2, comment, info));
 
@@ -989,6 +995,7 @@ algorithm
         //fprintln(Flags.DEBUG,"fix extends " + SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
         extendsPath2 = fixPath(inCache,env,extendsPath1,tree);
         modifications2 = fixModifications(inCache,env,modifications1,tree);
+        //print("fixElement 5\n");
       then
         (if referenceEq(extendsPath1,extendsPath2) and referenceEq(modifications1,modifications2) then inElt else SCode.EXTENDS(extendsPath2,vis,modifications2,optAnnotation,info));
 
@@ -1435,7 +1442,6 @@ algorithm
         id = Absyn.pathFirstIdent(inPath);
         true = AvlSetString.hasKey(tree, id);
         path2 = FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
-        //fprintln(Flags.DEBUG, "Replacing: " + Absyn.pathString(inPath) + " with " + Absyn.pathString(path2) + " s:" + FGraph.printGraphPathStr(inEnv));
       then path2;
 
     // first indent is local in the inEnv, DO NOT QUALIFY!
@@ -1470,13 +1476,13 @@ end fixPath;
 protected function lookupVarNoErrorMessage
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input DAE.ComponentRef inComponentRef;
+  input String ident;
   output FCore.Graph outEnv;
   output String id;
 algorithm
   try
     ErrorExt.setCheckpoint("InstExtends.lookupVarNoErrorMessage");
-    (_,_,_,_,_,_,outEnv,_,id) := Lookup.lookupVar(inCache, inEnv, inComponentRef);
+    (_,_,_,_,_,_,outEnv,_,id) := Lookup.lookupVarIdent(inCache, inEnv, ident);
     ErrorExt.rollBack("InstExtends.lookupVarNoErrorMessage");
   else
     ErrorExt.rollBack("InstExtends.lookupVarNoErrorMessage");
@@ -1505,20 +1511,19 @@ algorithm
       Boolean isOutside;
 
     case (env,cref)
-      equation
-        id = Absyn.crefFirstIdent(cref);
-        true = AvlSetString.hasKey(tree, id);
-        cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
-        cref = if Absyn.crefEqual(cref, inCref) then inCref else cref;
+      algorithm
+        id := Absyn.crefFirstIdent(cref);
+        true := AvlSetString.hasKey(tree, id);
+        cref := FGraph.crefStripGraphScopePrefix(cref, env, false);
+        cref := if Absyn.crefEqual(cref, inCref) then inCref else cref;
       then cref;
 
     // try lookup var (constant in a package?)
     case (env,cref)
       equation
         id = Absyn.crefFirstIdent(cref);
-        cref_ = ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{});
         //fprintln(Flags.DEBUG,"Try lookupV " + id);
-        (denv,id) = lookupVarNoErrorMessage(arrayGet(cache,1),env,cref_);
+        (denv,id) = lookupVarNoErrorMessage(arrayGet(cache,1),env,id);
         //fprintln(Flags.DEBUG,"Got env " + intString(listLength(env)));
         // isOutside = FGraph.graphPrefixOf(denv, env);
         denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),id,NONE());
@@ -1651,6 +1656,8 @@ protected function fixExpTraverse
 "
   input output Absyn.Exp exp;
   input output tuple<array<FCore.Cache>,FCore.Graph,AvlSetString.Tree> tpl;
+protected
+  Absyn.Exp inExp=exp;
 algorithm
   exp := match (exp,tpl)
     local
@@ -1729,7 +1736,7 @@ protected function fixList<Type_A>
   end FixAFn;
 algorithm
   if listEmpty(inA) then
-    outA := {};
+    outA := inA;
     return;
   end if;
   outA := List.mapCheckReferenceEq(inA, function fixA(inCache=inCache, inEnv=inEnv, tree=tree));

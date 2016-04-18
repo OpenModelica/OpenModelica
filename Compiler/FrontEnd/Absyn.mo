@@ -1522,7 +1522,7 @@ public function traverseExpListBidir
   end FuncType;
   replaceable type Argument subtypeof Any;
 algorithm
-  (outExpl, outArg) := List.map2Fold(inExpl, traverseExpBidir, enterFunc, exitFunc, inArg);
+  (outExpl, outArg) := List.map2FoldCheckReferenceEq(inExpl, traverseExpBidir, enterFunc, exitFunc, inArg);
 end traverseExpListBidir;
 
 public function traverseExpBidir
@@ -1576,14 +1576,14 @@ public function traverseExpOptBidir
 algorithm
   (outExp, arg) := match(inExp, enterFunc, exitFunc, inArg)
     local
-      Exp e;
+      Exp e1,e2;
       tuple<FuncType, FuncType, Argument> tup;
 
-    case (SOME(e), _, _, _)
+    case (SOME(e1), _, _, _)
       equation
-        (e, arg) = traverseExpBidir(e, enterFunc, exitFunc, inArg);
+        (e2, arg) = traverseExpBidir(e1, enterFunc, exitFunc, inArg);
       then
-        (SOME(e), arg);
+        (if referenceEq(e1,e2) then inExp else SOME(e2), arg);
 
     else (inExp, inArg);
   end match;
@@ -1615,10 +1615,10 @@ algorithm
       tuple<FuncType, FuncType, Argument> tup;
       Operator op;
       ComponentRef cref, crefm;
-      list<tuple<Exp, Exp>> else_ifs;
-      list<Exp> expl;
+      list<tuple<Exp, Exp>> else_ifs1,else_ifs2;
+      list<Exp> expl1,expl2;
       list<list<Exp>> mat_expl;
-      FunctionArgs fargs;
+      FunctionArgs fargs1,fargs2;
       String error_msg;
       Ident id, enterName, exitName;
       MatchType match_ty;
@@ -1671,36 +1671,36 @@ algorithm
         (if referenceEq(e1,e1m) and referenceEq(e2,e2m) then inExp else RELATION(e1m, op, e2m), arg);
 
     case (IFEXP(ifExp = e1, trueBranch = e2, elseBranch = e3,
-        elseIfBranch = else_ifs), _, _, arg)
+        elseIfBranch = else_ifs1), _, _, arg)
       equation
-        (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
-        (e2, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
-        (e3, arg) = traverseExpBidir(e3, enterFunc, exitFunc, arg);
-        (else_ifs, arg) = List.map2Fold(else_ifs, traverseExpBidirElseIf, enterFunc, exitFunc, arg);
+        (e1m, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
+        (e2m, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
+        (e3m, arg) = traverseExpBidir(e3, enterFunc, exitFunc, arg);
+        (else_ifs2, arg) = List.map2FoldCheckReferenceEq(else_ifs1, traverseExpBidirElseIf, enterFunc, exitFunc, arg);
       then
-        (IFEXP(e1, e2, e3, else_ifs), arg);
+        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) and referenceEq(e3,e3m) and referenceEq(else_ifs1,else_ifs2) then inExp else IFEXP(e1m, e2m, e3m, else_ifs2), arg);
 
-    case (CALL(function_ = cref, functionArgs = fargs), _, _, arg)
+    case (CALL(function_ = cref, functionArgs = fargs1), _, _, arg)
       equation
-        (fargs, arg) = traverseExpBidirFunctionArgs(fargs, enterFunc, exitFunc, arg);
+        (fargs2, arg) = traverseExpBidirFunctionArgs(fargs1, enterFunc, exitFunc, arg);
       then
-        (CALL(cref, fargs), arg);
+        (if referenceEq(fargs1,fargs2) then inExp else CALL(cref, fargs2), arg);
 
-    case (PARTEVALFUNCTION(function_ = cref, functionArgs = fargs), _, _, arg)
+    case (PARTEVALFUNCTION(function_ = cref, functionArgs = fargs1), _, _, arg)
       equation
-        (fargs, arg) = traverseExpBidirFunctionArgs(fargs, enterFunc, exitFunc, arg);
+        (fargs2, arg) = traverseExpBidirFunctionArgs(fargs1, enterFunc, exitFunc, arg);
       then
-        (PARTEVALFUNCTION(cref, fargs), arg);
+        (if referenceEq(fargs1,fargs2) then inExp else PARTEVALFUNCTION(cref, fargs2), arg);
 
-    case (ARRAY(arrayExp = expl), _, _, arg)
+    case (ARRAY(arrayExp = expl1), _, _, arg)
       equation
-        (expl, arg) = traverseExpListBidir(expl, enterFunc, exitFunc, arg);
+        (expl2, arg) = traverseExpListBidir(expl1, enterFunc, exitFunc, arg);
       then
-        (ARRAY(expl), arg);
+        (if referenceEq(expl1,expl2) then inExp else ARRAY(expl2), arg);
 
     case (MATRIX(matrix = mat_expl), _, _, arg)
       equation
-        (mat_expl, arg) = List.map2Fold(mat_expl, traverseExpListBidir, enterFunc, exitFunc, arg);
+        (mat_expl, arg) = List.map2FoldCheckReferenceEq(mat_expl, traverseExpListBidir, enterFunc, exitFunc, arg);
       then
         (MATRIX(mat_expl), arg);
 
@@ -1714,11 +1714,11 @@ algorithm
 
     case (END(), _, _, _) then (inExp, inArg);
 
-    case (TUPLE(expressions = expl), _, _, arg)
+    case (TUPLE(expressions = expl1), _, _, arg)
       equation
-        (expl, arg) = traverseExpListBidir(expl, enterFunc, exitFunc, arg);
+        (expl2, arg) = traverseExpListBidir(expl1, enterFunc, exitFunc, arg);
       then
-        (TUPLE(expl), arg);
+        (if referenceEq(expl1,expl2) then inExp else TUPLE(expl2), arg);
 
     case (AS(id = id, exp = e1), _, _, arg)
       equation
@@ -1737,15 +1737,15 @@ algorithm
         cases = match_cases, comment = cmt), _, _, arg)
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
-        (match_cases, arg) = List.map2Fold(match_cases, traverseMatchCase, enterFunc, exitFunc, arg);
+        (match_cases, arg) = List.map2FoldCheckReferenceEq(match_cases, traverseMatchCase, enterFunc, exitFunc, arg);
       then
         (MATCHEXP(match_ty, e1, match_decls, match_cases, cmt), arg);
 
-    case (LIST(exps = expl), _, _, arg)
+    case (LIST(exps = expl1), _, _, arg)
       equation
-        (expl, arg) = traverseExpListBidir(expl, enterFunc, exitFunc, arg);
+        (expl2, arg) = traverseExpListBidir(expl1, enterFunc, exitFunc, arg);
       then
-        (LIST(expl), arg);
+        (if referenceEq(expl1,expl2) then inExp else LIST(expl2), arg);
 
     case (CODE(), _, _, _)
       then (inExp, inArg);
@@ -1792,28 +1792,28 @@ algorithm
   (outCref, arg) := match(inCref, enterFunc, exitFunc, inArg)
     local
       Ident name;
-      ComponentRef cr;
-      list<Subscript> subs;
+      ComponentRef cr1,cr2;
+      list<Subscript> subs1,subs2;
       tuple<FuncType, FuncType, Argument> tup;
 
-    case (CREF_FULLYQUALIFIED(componentRef = cr), _, _, arg)
+    case (CREF_FULLYQUALIFIED(componentRef = cr1), _, _, arg)
       equation
-        (cr, arg) = traverseExpBidirCref(cr, enterFunc, exitFunc, arg);
+        (cr2, arg) = traverseExpBidirCref(cr1, enterFunc, exitFunc, arg);
       then
-        (crefMakeFullyQualified(cr), arg);
+        (if referenceEq(cr1,cr2) then inCref else crefMakeFullyQualified(cr2), arg);
 
-    case (CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _, _, arg)
+    case (CREF_QUAL(name = name, subscripts = subs1, componentRef = cr1), _, _, arg)
       equation
-        (subs, arg) = List.map2Fold(subs, traverseExpBidirSubs, enterFunc, exitFunc, arg);
-        (cr, arg) = traverseExpBidirCref(cr, enterFunc, exitFunc, arg);
+        (subs2, arg) = List.map2FoldCheckReferenceEq(subs1, traverseExpBidirSubs, enterFunc, exitFunc, arg);
+        (cr2, arg) = traverseExpBidirCref(cr1, enterFunc, exitFunc, arg);
       then
-        (CREF_QUAL(name, subs, cr), arg);
+        (if referenceEq(cr1,cr2) and referenceEq(subs1,subs2) then inCref else CREF_QUAL(name, subs2, cr2), arg);
 
-    case (CREF_IDENT(name = name, subscripts = subs), _, _, arg)
+    case (CREF_IDENT(name = name, subscripts = subs1), _, _, arg)
       equation
-        (subs, arg) = List.map2Fold(subs, traverseExpBidirSubs, enterFunc, exitFunc, arg);
+        (subs2, arg) = List.map2FoldCheckReferenceEq(subs1, traverseExpBidirSubs, enterFunc, exitFunc, arg);
       then
-        (CREF_IDENT(name, subs), arg);
+        (if referenceEq(subs1,subs2) then inCref else CREF_IDENT(name, subs2), arg);
 
     case (ALLWILD(), _, _, _) then (inCref, inArg);
     case (WILD(), _, _, _) then (inCref, inArg);
@@ -1842,13 +1842,13 @@ public function traverseExpBidirSubs
 algorithm
   (outSubscript, arg) := match(inSubscript, enterFunc, exitFunc, inArg)
     local
-      Exp sub_exp;
+      Exp e1,e2;
 
-    case (SUBSCRIPT(subscript = sub_exp), _, _, arg)
+    case (SUBSCRIPT(subscript = e1), _, _, arg)
       equation
-        (sub_exp, arg) = traverseExpBidir(sub_exp, enterFunc, exitFunc, inArg);
+        (e2, arg) = traverseExpBidir(e1, enterFunc, exitFunc, inArg);
       then
-        (SUBSCRIPT(sub_exp), arg);
+        (if referenceEq(e1,e2) then inSubscript else SUBSCRIPT(e2), arg);
 
     case (NOSUB(), _, _, _) then (inSubscript, inArg);
   end match;
@@ -1904,26 +1904,26 @@ public function traverseExpBidirFunctionArgs
 algorithm
   (outArgs, outArg) := match(inArgs, enterFunc, exitFunc, inArg)
     local
-      Exp e;
-      list<Exp> expl;
-      list<NamedArg> named_args;
-      ForIterators iters;
+      Exp e1,e2;
+      list<Exp> expl1,expl2;
+      list<NamedArg> named_args1,named_args2;
+      ForIterators iters1,iters2;
       Argument arg;
       ReductionIterType iterType;
 
-    case (FUNCTIONARGS(args = expl, argNames = named_args), _, _, arg)
+    case (FUNCTIONARGS(args = expl1, argNames = named_args1), _, _, arg)
       equation
-        (expl, arg) = traverseExpListBidir(expl, enterFunc, exitFunc, arg);
-        (named_args, arg) = List.map2Fold(named_args, traverseExpBidirNamedArg, enterFunc, exitFunc, arg);
+        (expl2, arg) = traverseExpListBidir(expl1, enterFunc, exitFunc, arg);
+        (named_args2, arg) = List.map2FoldCheckReferenceEq(named_args1, traverseExpBidirNamedArg, enterFunc, exitFunc, arg);
       then
-        (FUNCTIONARGS(expl, named_args), arg);
+        (if referenceEq(expl1,expl2) and referenceEq(named_args1,named_args2) then inArgs else FUNCTIONARGS(expl2, named_args2), arg);
 
-    case (FOR_ITER_FARG(e, iterType, iters), _, _, arg)
+    case (FOR_ITER_FARG(e1, iterType, iters1), _, _, arg)
       equation
-        (e, arg) = traverseExpBidir(e, enterFunc, exitFunc, arg);
-        (iters, arg) = List.map2Fold(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
+        (e2, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
+        (iters2, arg) = List.map2FoldCheckReferenceEq(iters1, traverseExpBidirIterator, enterFunc, exitFunc, arg);
       then
-        (FOR_ITER_FARG(e, iterType, iters), arg);
+        (if referenceEq(e1,e2) and referenceEq(iters1,iters2) then inArgs else FOR_ITER_FARG(e2, iterType, iters2), arg);
   end match;
 end traverseExpBidirFunctionArgs;
 
@@ -1948,11 +1948,11 @@ public function traverseExpBidirNamedArg
 
 protected
   Ident name;
-  Exp value;
+  Exp value1,value2;
 algorithm
-  NAMEDARG(name, value) := inArg;
-  (value, outExtra) := traverseExpBidir(value, enterFunc, exitFunc, inExtra);
-  outArg := NAMEDARG(name, value);
+  NAMEDARG(name, value1) := inArg;
+  (value2, outExtra) := traverseExpBidir(value1, enterFunc, exitFunc, inExtra);
+  outArg := if referenceEq(value1,value2) then inArg else NAMEDARG(name, value2);
 end traverseExpBidirNamedArg;
 
 public function traverseExpBidirIterator
@@ -1976,12 +1976,12 @@ public function traverseExpBidirIterator
 
 protected
   Ident name;
-  Option<Exp> guardExp,range;
+  Option<Exp> guardExp1,guardExp2,range1,range2;
 algorithm
-  ITERATOR(name=name, guardExp=guardExp, range=range) := inIterator;
-  (guardExp, outArg) := traverseExpOptBidir(guardExp, enterFunc, exitFunc, inArg);
-  (range, outArg) := traverseExpOptBidir(range, enterFunc, exitFunc, outArg);
-  outIterator := ITERATOR(name, guardExp, range);
+  ITERATOR(name=name, guardExp=guardExp1, range=range1) := inIterator;
+  (guardExp2, outArg) := traverseExpOptBidir(guardExp1, enterFunc, exitFunc, inArg);
+  (range2, outArg) := traverseExpOptBidir(range1, enterFunc, exitFunc, outArg);
+  outIterator := if referenceEq(guardExp1,guardExp2) and referenceEq(range1,range2) then inIterator else ITERATOR(name, guardExp2, range2);
 end traverseExpBidirIterator;
 
 public function traverseMatchCase
@@ -2055,11 +2055,11 @@ algorithm
       Argument arg;
     case (ALGORITHMS(algs),_,_,arg)
       equation
-        (algs, arg) = List.map2Fold(algs, traverseAlgorithmItemBidir, enterFunc, exitFunc, arg);
+        (algs, arg) = List.map2FoldCheckReferenceEq(algs, traverseAlgorithmItemBidir, enterFunc, exitFunc, arg);
       then (ALGORITHMS(algs),arg);
     case (EQUATIONS(eqs),_,_,arg)
       equation
-        (eqs, arg) = List.map2Fold(eqs, traverseEquationItemBidir, enterFunc, exitFunc, arg);
+        (eqs, arg) = List.map2FoldCheckReferenceEq(eqs, traverseEquationItemBidir, enterFunc, exitFunc, arg);
       then (EQUATIONS(eqs),arg);
   end match;
 end traverseClassPartBidir;
@@ -2081,7 +2081,7 @@ protected function traverseEquationItemListBidir
 
   replaceable type Argument subtypeof Any;
 algorithm
-  (outEquationItems, outArg) := List.map2Fold(inEquationItems, traverseEquationItemBidir, enterFunc, exitFunc, inArg);
+  (outEquationItems, outArg) := List.map2FoldCheckReferenceEq(inEquationItems, traverseEquationItemBidir, enterFunc, exitFunc, inArg);
 end traverseEquationItemListBidir;
 
 protected function traverseAlgorithmItemListBidir
@@ -2101,7 +2101,7 @@ protected function traverseAlgorithmItemListBidir
 
   replaceable type Argument subtypeof Any;
 algorithm
-  (outAlgs, outArg) := List.map2Fold(inAlgs, traverseAlgorithmItemBidir, enterFunc, exitFunc, inArg);
+  (outAlgs, outArg) := List.map2FoldCheckReferenceEq(inAlgs, traverseAlgorithmItemBidir, enterFunc, exitFunc, inArg);
 end traverseAlgorithmItemListBidir;
 
 protected function traverseAlgorithmItemBidir
@@ -2204,7 +2204,7 @@ algorithm
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (eqil1, arg) = traverseEquationItemListBidir(eqil1, enterFunc, exitFunc, arg);
-        (else_branch,arg) = List.map2Fold(else_branch, traverseEquationBidirElse, enterFunc, exitFunc, arg);
+        (else_branch,arg) = List.map2FoldCheckReferenceEq(else_branch, traverseEquationBidirElse, enterFunc, exitFunc, arg);
         (eqil2,arg) = traverseEquationItemListBidir(eqil2, enterFunc, exitFunc, arg);
       then
         (EQ_IF(e1, eqil1, else_branch, eqil2), arg);
@@ -2232,7 +2232,7 @@ algorithm
 
     case (EQ_FOR(iterators = iters, forEquations = eqil1), _, _, arg)
       equation
-        (iters, arg) = List.map2Fold(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
+        (iters, arg) = List.map2FoldCheckReferenceEq(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
         (eqil1, arg) = traverseEquationItemListBidir(eqil1, enterFunc, exitFunc, arg);
       then
         (EQ_FOR(iters, eqil1), arg);
@@ -2241,7 +2241,7 @@ algorithm
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (eqil1, arg) = traverseEquationItemListBidir(eqil1, enterFunc, exitFunc, arg);
-        (else_branch, arg) = List.map2Fold(else_branch, traverseEquationBidirElse, enterFunc, exitFunc, arg);
+        (else_branch, arg) = List.map2FoldCheckReferenceEq(else_branch, traverseEquationBidirElse, enterFunc, exitFunc, arg);
       then
         (EQ_WHEN_E(e1, eqil1, else_branch), arg);
 
@@ -2352,19 +2352,19 @@ algorithm
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
-        (else_branch, arg) = List.map2Fold(else_branch, traverseAlgorithmBidirElse, enterFunc, exitFunc, arg);
+        (else_branch, arg) = List.map2FoldCheckReferenceEq(else_branch, traverseAlgorithmBidirElse, enterFunc, exitFunc, arg);
         (algs2, arg) = traverseAlgorithmItemListBidir(algs2, enterFunc, exitFunc, arg);
       then (ALG_IF(e1, algs1, else_branch, algs2), arg);
 
     case (ALG_FOR(iters, algs1), _, _, arg)
       equation
-        (iters, arg) = List.map2Fold(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
+        (iters, arg) = List.map2FoldCheckReferenceEq(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
         (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
       then (ALG_FOR(iters, algs1), arg);
 
     case (ALG_PARFOR(iters, algs1), _, _, arg)
       equation
-        (iters, arg) = List.map2Fold(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
+        (iters, arg) = List.map2FoldCheckReferenceEq(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
         (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
       then (ALG_PARFOR(iters, algs1), arg);
 
@@ -2378,7 +2378,7 @@ algorithm
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
-        (else_branch, arg) = List.map2Fold(else_branch, traverseAlgorithmBidirElse, enterFunc, exitFunc, arg);
+        (else_branch, arg) = List.map2FoldCheckReferenceEq(else_branch, traverseAlgorithmBidirElse, enterFunc, exitFunc, arg);
       then (ALG_WHEN_A(e1, algs1, else_branch), arg);
 
     case (ALG_NORETCALL(cref1, func_args), _, _, arg)
