@@ -36,8 +36,10 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
   , _yMax             (NULL)
   , _y                (NULL)
   , _yHelp            (NULL)
+  , _yTest            (NULL)
   , _f                (NULL)
   , _fHelp            (NULL)
+  , _fTest            (NULL)
   , _iHelp            (NULL)
   , _jac              (NULL)
   , _zeroVec          (NULL)
@@ -55,8 +57,10 @@ Newton::~Newton()
   if (_yMax)     delete []    _yMax;
   if (_y)        delete []    _y;
   if (_yHelp)    delete []    _yHelp;
+  if (_yTest)    delete []    _yTest;
   if (_f)        delete []    _f;
   if (_fHelp)    delete []    _fHelp;
+  if (_fTest)    delete []    _fTest;
   if (_iHelp)    delete []    _iHelp;
   if (_jac)      delete []    _jac;
   if (_zeroVec)  delete []   _zeroVec;
@@ -88,7 +92,9 @@ void Newton::initialize()
       if (_y)        delete []    _y;
       if (_f)        delete []    _f;
       if (_yHelp)    delete []    _yHelp;
+      if (_yTest)    delete []    _yTest;
       if (_fHelp)    delete []    _fHelp;
+      if (_fTest)    delete []    _fTest;
       if (_iHelp)    delete []    _iHelp;
       if (_jac)      delete []    _jac;
       if (_zeroVec)  delete []    _zeroVec;
@@ -100,7 +106,9 @@ void Newton::initialize()
       _y            = new double[_dimSys];
       _f            = new double[_dimSys];
       _yHelp        = new double[_dimSys];
+      _yTest        = new double[_dimSys];
       _fHelp        = new double[_dimSys];
+      _fTest        = new double[_dimSys];
       _iHelp        = new long int[_dimSys];
       _jac          = new double[_dimSys*_dimSys];
       _zeroVec      = new double[_dimSys];
@@ -109,11 +117,6 @@ void Newton::initialize()
       _algLoop->getNominalReal(_yNominal);
       _algLoop->getMinReal(_yMin);
       _algLoop->getMaxReal(_yMax);
-      _algLoop->getReal(_y);
-      memset(_f, 0, _dimSys*sizeof(double));
-      memset(_yHelp, 0, _dimSys*sizeof(double));
-      memset(_fHelp, 0, _dimSys*sizeof(double));
-      memset(_jac, 0, _dimSys*_dimSys*sizeof(double));
       memset(_zeroVec, 0, _dimSys*sizeof(double));
     }
     else {
@@ -154,8 +157,8 @@ void Newton::solve()
     // Check stopping criterion
     if (!_algLoop->isLinear()) {
       _iterationStatus = DONE;
-      for (int i=0; i<_dimSys; ++i) {
-        if (fabs(_f[i]) > atol + rtol * fabs(_y[i])) {
+      for (int i = 0; i < _dimSys; ++i) {
+        if (std::abs(_f[i]) > atol + rtol * std::abs(_y[i])) {
           _iterationStatus = CONTINUE;
           break;
         }
@@ -199,6 +202,11 @@ void Newton::solve()
         }
         else {
           LogSysVec(_algLoop, "y" + to_string(totSteps), _y);
+          LogSysVec(_algLoop, "f" + to_string(totSteps), _f);
+          double phi = 0.0; // line search function
+          for (int i = 0; i < _dimSys; ++i) {
+            phi += _f[i] * _f[i];
+          }
           calcJacobian();
 
           // Solve linear System
@@ -213,9 +221,100 @@ void Newton::solve()
           ++ totSteps;
 
           // New iterate
-          for (int i = 0; i < _dimSys; ++i)
-            _y[i] -= _newtonSettings->getDelta() * _f[i];
-          calcFunction(_y, _f);
+          double lambda = 1.0; // step size
+          double alpha = 1e-4; // guard for sufficient decrease
+          // first find a feasible step
+          while (true) {
+            for (int i = 0; i < _dimSys; i++) {
+              _yHelp[i] = _y[i] - lambda * _f[i];
+              _yHelp[i] = std::min(_yMax[i], std::max(_yMin[i], _yHelp[i]));
+            }
+            // evaluate function
+            try {
+              calcFunction(_yHelp, _fHelp);
+            }
+            catch (ModelicaSimulationError& ex) {
+              if (lambda < 1e-10)
+                throw ex;
+              // reduce step size
+              lambda *= 0.5;
+              continue;
+            }
+            break;
+          }
+          // check for solution, e.g. if a linear system is treated here
+          _iterationStatus = DONE;
+          for (int i = 0; i < _dimSys; i++) {
+            if (std::abs(_fHelp[i]) > atol + rtol * std::abs(_yHelp[i])) {
+              _iterationStatus = CONTINUE;
+              break;
+            }
+          }
+          // second do line search with quadratic approximation of phi(lambda)
+          double phiHelp = 0.0;
+          for (int i = 0; i < _dimSys; i++)
+            phiHelp += _fHelp[i] * _fHelp[i];
+          while (_iterationStatus == CONTINUE) {
+            // test half step
+            double lambdaTest = 0.5*lambda;
+            for (int i = 0; i < _dimSys; i++) {
+              _yTest[i] = _y[i] - lambdaTest * _f[i];
+              _yTest[i] = std::min(_yMax[i], std::max(_yMin[i], _yTest[i]));
+            }
+            calcFunction(_yTest, _fTest);
+            double phiTest = 0.0;
+            for (int i = 0; i < _dimSys; i++)
+              phiTest += _fTest[i] * _fTest[i];
+            // check for sufficient decrease of phiHelp
+            // and no further decrease with phiTest
+            // otherwise minimize quadratic approximation of phi(lambda)
+            if (phiHelp > (1.0 - alpha * lambda) * phi ||
+                phiTest < (1.0 - alpha * lambda) * phiHelp) {
+              long int n = 3;
+              long int ipiv[3];
+              double bx[] = {phi, phiTest, phiHelp};
+              double A[] = {1.0, 1.0, 1.0,
+                            0.0, lambdaTest, lambda,
+                            0.0, lambdaTest*lambdaTest, lambda*lambda};
+              dgesv_(&n, &dimRHS, A, &n, ipiv, bx, &n, &info);
+              lambda = std::min(0.5*lambda, std::max(0.1*lambda, -0.5*bx[1]/bx[2]));
+              if (lambda < 1e-10)
+                throw ModelicaSimulationError(ALGLOOP_SOLVER,
+                  "Can't get sufficient decrease of solution");
+              if (lambda == lambdaTest) {
+                // upper bound 0.5*lambda
+                std::copy(_yTest, _yTest + _dimSys, _yHelp);
+                std::copy(_fTest, _fTest + _dimSys, _fHelp);
+                phiHelp = phiTest;
+              }
+              else {
+                for (int i = 0; i < _dimSys; i++) {
+                  _yHelp[i] = _y[i] - lambda * _f[i];
+                  _yHelp[i] = std::min(_yMax[i], std::max(_yMin[i], _yHelp[i]));
+                }
+                calcFunction(_yHelp, _fHelp);
+                phiHelp = 0.0;
+                for (int i = 0; i < _dimSys; i++) {
+                  phiHelp += _fHelp[i] * _fHelp[i];
+                }
+              }
+              if (Logger::getInstance()->isOutput(LC_NLS, LL_DEBUG)) {
+                std::stringstream ss;
+                ss << "Newton: eq" << to_string(_algLoop->getEquationIndex());
+                ss << ", time " << _algLoop->getSimTime();
+                ss << ": lambda = " << lambda;
+                ss << ", phi = " << phi << " --> " << phiHelp;
+                Logger::write(ss.str(), LC_NLS, LL_DEBUG);
+              }
+            }
+            // check for sufficient decrease
+            if (phiHelp <= (1.0 - alpha * lambda) * phi)
+              break;
+          }
+          // take iterate
+          std::copy(_yHelp, _yHelp + _dimSys, _y);
+          std::copy(_fHelp, _fHelp + _dimSys, _f);
+          phi = phiHelp;
         }
       }
       else
