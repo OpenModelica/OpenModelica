@@ -599,7 +599,7 @@ algorithm
         (cache,env_3,ih,store,dae1,csets,ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph)
           = instClassIn(cache, env_1, ih, store, mod, pre, ci_state, c, SCode.PUBLIC(), inst_dims, impl, callscope, graph, csets, NONE());
         csets = ConnectUtil.addSet(inSets, csets);
-        (cache,fq_class) = makeFullyQualified(cache, env, Absyn.IDENT(n));
+        (cache,fq_class) = makeFullyQualifiedIdent(cache, env, n);
 
         // is top level?
         callscope_1 = InstUtil.isTopCall(callscope);
@@ -700,7 +700,7 @@ algorithm
         c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
         (cache,env_3,ih,store,dae1,csets,ci_state_1,tys,bc_ty,_,_,_)
         = instClassIn(cache, env_1, ih, store, mod, pre, ci_state, c_1, SCode.PUBLIC(), inst_dims, impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, inSets, NONE());
-        (cache,fq_class) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
+        (cache,fq_class) = makeFullyQualifiedIdent(cache,env_3, n);
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         dae = dae1_1;
         ty = InstUtil.mktypeWithArrays(fq_class, ci_state_1, tys, bc_ty, c);
@@ -1081,7 +1081,7 @@ algorithm
           instElementList(cache,env_1,ih,store, /* DAE.NOMOD() */ mods, pre,
             ci_state_1, comp, inst_dims, impl,callscope,graph, inSets, true);
 
-        (cache,fq_class) = makeFullyQualified(cache,env_2, Absyn.IDENT(n));
+        (cache,fq_class) = makeFullyQualifiedIdent(cache,env_2, n);
         eqConstraint = InstUtil.equalityConstraint(env_2, els, info);
         // DAEUtil.addComponentType(dae1, fq_class);
         ty2 = DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys, {fq_class});
@@ -2427,7 +2427,7 @@ algorithm
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         false = listMember(Absyn.pathString(cn), {"tuple","Tuple","array","Array","Option","list","List"});
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r as SCode.R_UNIONTYPE(typeVars=typeVars),classDef=classDef)),cenv) = Lookup.lookupClass(cache, env, cn, SOME(info));
-        (cache,fq_class) = makeFullyQualified(cache,cenv,Absyn.IDENT(cn2));
+        (cache,fq_class) = makeFullyQualifiedIdent(cache,cenv,cn2);
         new_ci_state = ClassInf.META_UNIONTYPE(fq_class, typeVars);
         (cache,SOME(ty as DAE.T_METAUNIONTYPE())) = MetaUtil.fixUniontype(cache, env, new_ci_state, classDef);
         (cache,_,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{}, inSets,info);
@@ -4331,13 +4331,86 @@ public function makeFullyQualified
   Transforms a class name to its fully qualified name by investigating the environment.
   For instance, the model Resistor in Modelica.Electrical.Analog.Basic will given the
   correct environment have the fully qualified name: Modelica.Electrical.Analog.Basic.Resistor"
+  input output FCore.Cache cache;
+  input FCore.Graph inEnv;
+  input output Absyn.Path path;
+algorithm
+  (cache,path) := match path
+
+    // Special cases: assert and reinit can not be handled by builtin.mo, since they do not have return type
+    case Absyn.IDENT()
+      algorithm
+        (cache,path) := makeFullyQualifiedIdent(cache,inEnv,path.name,path);
+      then (cache,path);
+
+    // do NOT fully quallify again a fully qualified path!
+    case Absyn.FULLYQUALIFIED() then (cache, path);
+
+    // To make a class fully qualified, the class path is looked up in the environment.
+    // The FQ path consist of the simple class name appended to the environment path of the looked up class.
+    case Absyn.QUALIFIED()
+      algorithm
+        (cache,path) := makeFullyQualifiedFromQual(cache,inEnv,path);
+      then (cache,path);
+  end match;
+end makeFullyQualified;
+
+protected function makeFullyQualifiedFromQual
+  input output FCore.Cache cache;
+  input FCore.Graph inEnv;
+  input output Absyn.Path path;
+algorithm
+  (cache,path) := matchcontinue path
+    local
+      FCore.Graph env,env_1;
+      Absyn.Path path_2,path3;
+      String s;
+      SCode.Element cl;
+      DAE.ComponentRef crPath;
+      FCore.Graph fs;
+      Absyn.Ident name, ename;
+      FCore.Ref r;
+    case _
+      algorithm
+        (cache,SCode.CLASS(name = name),env_1) := Lookup.lookupClass(cache, inEnv, path);
+        path_2 := makeFullyQualified2(env_1,name);
+      then (cache,Absyn.makeFullyQualified(path_2));
+    case _
+      algorithm
+        crPath := ComponentReference.pathToCref(path);
+        (cache,_,_,_,_,_,env,_,name) := Lookup.lookupVarInternal(cache, inEnv, crPath, InstTypes.SEARCH_ALSO_BUILTIN());
+        path3 := makeFullyQualified2(env,name);
+      then (cache,Absyn.makeFullyQualified(path3));
+    case _
+      algorithm
+        crPath := ComponentReference.pathToCref(path);
+        (cache,env,_,_,_,_,_,_,name) := Lookup.lookupVarInPackages(cache, inEnv, crPath, {}, Util.makeStatefulBoolean(false));
+        path3 := makeFullyQualified2(env,name);
+      then (cache,Absyn.makeFullyQualified(path3));
+    else (cache,path);
+  end matchcontinue;
+end makeFullyQualifiedFromQual;
+
+public function makeFullyQualifiedIdent
+"author: PA
+  Transforms a class name to its fully qualified name by investigating the environment.
+  For instance, the model Resistor in Modelica.Electrical.Analog.Basic will given the
+  correct environment have the fully qualified name: Modelica.Electrical.Analog.Basic.Resistor"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Absyn.Path inPath;
+  input String ident;
+  input Absyn.Path inPath=Absyn.IDENT("");
   output FCore.Cache outCache;
   output Absyn.Path outPath;
+protected
+  Boolean isKnownBuiltin;
 algorithm
-  (outCache,outPath) := matchcontinue (inCache,inEnv,inPath)
+  (outPath,isKnownBuiltin) := makeFullyQualifiedIdentCheckBuiltin(ident);
+  if isKnownBuiltin then
+    outCache := inCache;
+    return;
+  end if;
+  (outCache,outPath) := matchcontinue (inCache,inEnv,ident)
     local
       FCore.Graph env,env_1;
       Absyn.Path path,path_2,path3;
@@ -4349,35 +4422,17 @@ algorithm
       Absyn.Ident name, ename;
       FCore.Ref r;
 
-    // Special cases: assert and reinit can not be handled by builtin.mo, since they do not have return type
-    case(cache,_,path as Absyn.IDENT("assert")) then (cache,path);
-    case(cache,_,path as Absyn.IDENT("reinit")) then (cache,path);
-
-    // Other functions that can not be represented in env due to e.g. applicable to any record
-    case(cache,_,path as Absyn.IDENT("smooth")) then (cache,path);
-
-    // MetaModelica extensions
-    case (cache,_,path as Absyn.IDENT("list"))        equation true = Config.acceptMetaModelicaGrammar(); then (cache,path);
-    case (cache,_,path as Absyn.IDENT("Option"))      equation true = Config.acceptMetaModelicaGrammar(); then (cache,path);
-    case (cache,_,path as Absyn.IDENT("tuple"))       equation true = Config.acceptMetaModelicaGrammar(); then (cache,path);
-    case (cache,_,path as Absyn.IDENT("polymorphic")) equation true = Config.acceptMetaModelicaGrammar(); then (cache,path);
-    case (cache,_,path as Absyn.IDENT("array"))       equation true = Config.acceptMetaModelicaGrammar(); then (cache,path);
-    // -------------------------
-
-    // do NOT fully quallify again a fully qualified path!
-    case (cache,_,Absyn.FULLYQUALIFIED(_)) then (cache, inPath);
-
     // To make a class fully qualified, the class path is looked up in the environment.
     // The FQ path consist of the simple class name appended to the environment path of the looked up class.
-    case (cache,env,path)
+    case (cache,env,_)
       equation
-        (cache,SCode.CLASS(name = name),env_1) = Lookup.lookupClass(cache, env, path);
-        path_2 = makeFullyQualified2(env_1,Absyn.IDENT(name));
+        (cache,SCode.CLASS(name = name),env_1) = Lookup.lookupClassIdent(cache, env, ident);
+        path_2 = makeFullyQualified2(env_1,name);
       then
         (cache,Absyn.makeFullyQualified(path_2));
 
     // Needed to make external objects fully-qualified
-    case (cache,env,Absyn.IDENT(s))
+    case (cache,env,s)
       equation
         r = FGraph.lastScopeRef(env);
         false = FNode.isRefTop(r);
@@ -4388,43 +4443,63 @@ algorithm
         (cache,Absyn.makeFullyQualified(path_2));
 
     // A type can exist without a class (i.e. builtin functions)
-    case (cache,env,path as Absyn.IDENT(s))
+    case (cache,env,s)
       equation
-         (cache,_,env_1) = Lookup.lookupType(cache,env, Absyn.IDENT(s), NONE());
-         path_2 = makeFullyQualified2(env_1,path);
+         (cache,_,env_1) = Lookup.lookupTypeIdent(cache,env, s, NONE());
+         path_2 = makeFullyQualified2(env_1,s,inPath);
       then
         (cache,Absyn.makeFullyQualified(path_2));
 
      // A package constant, first try to look it up local (top frame)
-    case (cache,env,path)
+    case (cache,env,_)
       equation
-        crPath = ComponentReference.pathToCref(path);
-        (cache,_,_,_,_,_,env,_,name) = Lookup.lookupVarInternal(cache, env, crPath, InstTypes.SEARCH_ALSO_BUILTIN());
-        path3 = makeFullyQualified2(env,Absyn.IDENT(name));
+        (cache,_,_,_,_,_,env,_,name) = Lookup.lookupVarInternalIdent(cache, env, ident, {}, InstTypes.SEARCH_ALSO_BUILTIN());
+        path3 = makeFullyQualified2(env,name);
       then
         (cache,Absyn.makeFullyQualified(path3));
 
     // TODO! FIXME! what do we do here??!!
-    case (cache,env,path)
+    case (cache,env,_)
       equation
-          crPath = ComponentReference.pathToCref(path);
-         (cache,env,_,_,_,_,_,_,name) = Lookup.lookupVarInPackages(cache, env, crPath, {}, Util.makeStatefulBoolean(false));
-          path3 = makeFullyQualified2(env,Absyn.IDENT(name));
+        (cache,env,_,_,_,_,_,_,name) = Lookup.lookupVarInPackagesIdent(cache, env, ident, {}, {}, Util.makeStatefulBoolean(false));
+        path3 = makeFullyQualified2(env,name);
       then
         (cache,Absyn.makeFullyQualified(path3));
 
     // If it fails, leave name unchanged.
-    case (cache,_,path)
-      equation
-        /*true = Flags.isSet(Flags.FAILTRACE);
-        print(Absyn.pathString(path));print(" failed to make FQ in env:");
-        print("\n");
-        print(FGraph.printGraphPathStr(env));
-        print("\n");*/
-      then
-        (cache,path);
+    else (inCache,match inPath case Absyn.IDENT("") then Absyn.IDENT(ident); else inPath; end match);
   end matchcontinue;
-end makeFullyQualified;
+end makeFullyQualifiedIdent;
+
+protected function makeFullyQualifiedIdentCheckBuiltin
+  input String ident;
+  output Absyn.Path path;
+  output Boolean isKnownBuiltin=true;
+algorithm
+  path := match ident
+    case "Boolean" then Absyn.FULLYQUALIFIED(Absyn.IDENT("Boolean"));
+    case "Integer" then Absyn.FULLYQUALIFIED(Absyn.IDENT("Integer"));
+    case "Real" then Absyn.FULLYQUALIFIED(Absyn.IDENT("Real"));
+    case "String" then Absyn.FULLYQUALIFIED(Absyn.IDENT("String"));
+    case "EnumType" then Absyn.FULLYQUALIFIED(Absyn.IDENT("EnumType"));
+
+    // Builtin functions are handled after lookup of class (in case it is shadowed)
+
+    case "assert" then Absyn.IDENT("assert");
+    case "reinit" then Absyn.IDENT("reinit");
+
+    // Other functions that can not be represented in env due to e.g. applicable to any record
+    case "smooth" then Absyn.IDENT("smooth");
+
+    // MetaModelica extensions
+    case "list" algorithm isKnownBuiltin:=Config.acceptMetaModelicaGrammar(); then Absyn.IDENT("list");
+    case "Option" algorithm isKnownBuiltin:=Config.acceptMetaModelicaGrammar(); then Absyn.IDENT("Option");
+    case "tuple" algorithm isKnownBuiltin:=Config.acceptMetaModelicaGrammar(); then Absyn.IDENT("tuple");
+    case "polymorphic" algorithm isKnownBuiltin:=Config.acceptMetaModelicaGrammar(); then Absyn.IDENT("polymorphic");
+    case "array" algorithm isKnownBuiltin:=Config.acceptMetaModelicaGrammar(); then Absyn.IDENT("array");
+    else algorithm isKnownBuiltin:=false; then Absyn.IDENT("");
+  end match;
+end makeFullyQualifiedIdentCheckBuiltin;
 
 public function instList
 "This is a utility used to do instantiation of list
@@ -5107,28 +5182,109 @@ end updateComponentsInEnv2;
 protected function makeFullyQualified2
 "help function to makeFullyQualified"
   input FCore.Graph env;
-  input Absyn.Path restPath;
-output Absyn.Path path;
+  input String name;
+  input Absyn.Path cachedPath=Absyn.IDENT("");
+  output Absyn.Path path;
+protected
+  Absyn.Path scope;
+  Option<Absyn.Path> oscope;
 algorithm
-  path := match(env,restPath)
-    local
-      Absyn.Path scope;
-      Option<Absyn.Path> oscope;
-    case(_,_)
-      equation
-        oscope = FGraph.getScopePath(env);
-        if valueEq(oscope, NONE())
-        then
-          path = restPath;
-        else
-          SOME(scope) = oscope;
-          path = Absyn.joinPaths(scope, restPath);
-        end if;
-      then
-        path;
-  end match;
+  oscope := FGraph.getScopePath(env);
+  if isNone(oscope) then
+    path := makeFullyQualified2Builtin(name, cachedPath);
+  else
+    SOME(scope) := oscope;
+    path := Absyn.joinPaths(scope, match cachedPath case Absyn.IDENT("") then Absyn.IDENT(name); else cachedPath; end match);
+  end if;
 end makeFullyQualified2;
 
+protected function makeFullyQualified2Builtin "Lookup table to avoid memory allocation of common built-in function calls"
+  input String ident;
+  input Absyn.Path cachedPath;
+  output Absyn.Path path;
+algorithm
+  // TODO: Have annotation asserting that this is a switch-statement
+  path := match ident
+    case "abs" then Absyn.FULLYQUALIFIED(Absyn.IDENT("abs"));
+    case "acos" then Absyn.FULLYQUALIFIED(Absyn.IDENT("acos"));
+    case "activeState" then Absyn.FULLYQUALIFIED(Absyn.IDENT("activeState"));
+    case "actualStream" then Absyn.FULLYQUALIFIED(Absyn.IDENT("actualStream"));
+    case "asin" then Absyn.FULLYQUALIFIED(Absyn.IDENT("asin"));
+    case "atan" then Absyn.FULLYQUALIFIED(Absyn.IDENT("atan"));
+    case "atan2" then Absyn.FULLYQUALIFIED(Absyn.IDENT("atan2"));
+    case "backSample" then Absyn.FULLYQUALIFIED(Absyn.IDENT("backSample"));
+    case "cardinality" then Absyn.FULLYQUALIFIED(Absyn.IDENT("cardinality"));
+    case "cat" then Absyn.FULLYQUALIFIED(Absyn.IDENT("cat"));
+    case "ceil" then Absyn.FULLYQUALIFIED(Absyn.IDENT("ceil"));
+    case "change" then Absyn.FULLYQUALIFIED(Absyn.IDENT("change"));
+    case "classDirectory" then Absyn.FULLYQUALIFIED(Absyn.IDENT("classDirectory"));
+    case "constrain" then Absyn.FULLYQUALIFIED(Absyn.IDENT("constrain"));
+    case "cos" then Absyn.FULLYQUALIFIED(Absyn.IDENT("cos"));
+    case "cosh" then Absyn.FULLYQUALIFIED(Absyn.IDENT("cosh"));
+    case "cross" then Absyn.FULLYQUALIFIED(Absyn.IDENT("cross"));
+    case "delay" then Absyn.FULLYQUALIFIED(Absyn.IDENT("delay"));
+    case "der" then Absyn.FULLYQUALIFIED(Absyn.IDENT("der"));
+    case "diagonal" then Absyn.FULLYQUALIFIED(Absyn.IDENT("diagonal"));
+    case "div" then Absyn.FULLYQUALIFIED(Absyn.IDENT("div"));
+    case "edge" then Absyn.FULLYQUALIFIED(Absyn.IDENT("edge"));
+    case "exp" then Absyn.FULLYQUALIFIED(Absyn.IDENT("exp"));
+    case "fill" then Absyn.FULLYQUALIFIED(Absyn.IDENT("fill"));
+    case "floor" then Absyn.FULLYQUALIFIED(Absyn.IDENT("floor"));
+    case "getInstanceName" then Absyn.FULLYQUALIFIED(Absyn.IDENT("getInstanceName"));
+    case "hold" then Absyn.FULLYQUALIFIED(Absyn.IDENT("hold"));
+    case "homotopy" then Absyn.FULLYQUALIFIED(Absyn.IDENT("homotopy"));
+    case "identity" then Absyn.FULLYQUALIFIED(Absyn.IDENT("identity"));
+    case "inStream" then Absyn.FULLYQUALIFIED(Absyn.IDENT("inStream"));
+    case "initial" then Absyn.FULLYQUALIFIED(Absyn.IDENT("initial"));
+    case "initialState" then Absyn.FULLYQUALIFIED(Absyn.IDENT("initialState"));
+    case "integer" then Absyn.FULLYQUALIFIED(Absyn.IDENT("integer"));
+    case "interval" then Absyn.FULLYQUALIFIED(Absyn.IDENT("interval"));
+    case "intAbs" then Absyn.FULLYQUALIFIED(Absyn.IDENT("intAbs"));
+    case "linspace" then Absyn.FULLYQUALIFIED(Absyn.IDENT("linspace"));
+    case "log" then Absyn.FULLYQUALIFIED(Absyn.IDENT("log"));
+    case "log10" then Absyn.FULLYQUALIFIED(Absyn.IDENT("log10"));
+    case "matrix" then Absyn.FULLYQUALIFIED(Absyn.IDENT("matrix"));
+    case "max" then Absyn.FULLYQUALIFIED(Absyn.IDENT("max"));
+    case "min" then Absyn.FULLYQUALIFIED(Absyn.IDENT("min"));
+    case "mod" then Absyn.FULLYQUALIFIED(Absyn.IDENT("mod"));
+    case "ndims" then Absyn.FULLYQUALIFIED(Absyn.IDENT("ndims"));
+    case "noClock" then Absyn.FULLYQUALIFIED(Absyn.IDENT("noClock"));
+    case "noEvent" then Absyn.FULLYQUALIFIED(Absyn.IDENT("noEvent"));
+    case "ones" then Absyn.FULLYQUALIFIED(Absyn.IDENT("ones"));
+    case "outerProduct" then Absyn.FULLYQUALIFIED(Absyn.IDENT("outerProduct"));
+    case "pre" then Absyn.FULLYQUALIFIED(Absyn.IDENT("pre"));
+    case "previous" then Absyn.FULLYQUALIFIED(Absyn.IDENT("previous"));
+    case "print" then Absyn.FULLYQUALIFIED(Absyn.IDENT("print"));
+    case "product" then Absyn.FULLYQUALIFIED(Absyn.IDENT("product"));
+    case "realAbs" then Absyn.FULLYQUALIFIED(Absyn.IDENT("realAbs"));
+    case "rem" then Absyn.FULLYQUALIFIED(Absyn.IDENT("rem"));
+    case "rooted" then Absyn.FULLYQUALIFIED(Absyn.IDENT("rooted"));
+    case "sample" then Absyn.FULLYQUALIFIED(Absyn.IDENT("sample"));
+    case "scalar" then Absyn.FULLYQUALIFIED(Absyn.IDENT("scalar"));
+    case "semilinear" then Absyn.FULLYQUALIFIED(Absyn.IDENT("semilinear"));
+    case "shiftSample" then Absyn.FULLYQUALIFIED(Absyn.IDENT("shiftSample"));
+    case "sign" then Absyn.FULLYQUALIFIED(Absyn.IDENT("sign"));
+    case "sin" then Absyn.FULLYQUALIFIED(Absyn.IDENT("sin"));
+    case "sinh" then Absyn.FULLYQUALIFIED(Absyn.IDENT("sinh"));
+    case "size" then Absyn.FULLYQUALIFIED(Absyn.IDENT("size"));
+    case "skew" then Absyn.FULLYQUALIFIED(Absyn.IDENT("skew"));
+    case "smooth" then Absyn.FULLYQUALIFIED(Absyn.IDENT("smooth"));
+    case "spatialDistribution" then Absyn.FULLYQUALIFIED(Absyn.IDENT("spatialDistribution"));
+    case "sqrt" then Absyn.FULLYQUALIFIED(Absyn.IDENT("sqrt"));
+    case "subSample" then Absyn.FULLYQUALIFIED(Absyn.IDENT("subSample"));
+    case "symmetric" then Absyn.FULLYQUALIFIED(Absyn.IDENT("symmetric"));
+    case "tan" then Absyn.FULLYQUALIFIED(Absyn.IDENT("tan"));
+    case "tanh" then Absyn.FULLYQUALIFIED(Absyn.IDENT("tanh"));
+    case "terminal" then Absyn.FULLYQUALIFIED(Absyn.IDENT("terminal"));
+    case "ticksInState" then Absyn.FULLYQUALIFIED(Absyn.IDENT("ticksInState"));
+    case "timeInState" then Absyn.FULLYQUALIFIED(Absyn.IDENT("timeInState"));
+    case "transition" then Absyn.FULLYQUALIFIED(Absyn.IDENT("transition"));
+    case "transpose" then Absyn.FULLYQUALIFIED(Absyn.IDENT("transpose"));
+    case "vector" then Absyn.FULLYQUALIFIED(Absyn.IDENT("vector"));
+    case "zeros" then Absyn.FULLYQUALIFIED(Absyn.IDENT("zeros"));
+    else match cachedPath case Absyn.IDENT("") then Absyn.IDENT(ident); else cachedPath; end match;
+  end match;
+end makeFullyQualified2Builtin;
 
 // *********************************************************************
 //    hash table implementation for cashing instantiation results

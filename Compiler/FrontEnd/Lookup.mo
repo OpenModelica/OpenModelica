@@ -100,6 +100,33 @@ public function lookupType
   input FCore.Graph inEnv "environment to search in";
   input Absyn.Path inPath "type to look for";
   input Option<SourceInfo> msg "Messaage flag, SOME() outputs lookup error messages";
+  output FCore.Cache cache;
+  output DAE.Type t "the found type";
+  output FCore.Graph env "The environment the type was found in";
+algorithm
+  (cache,t,env) := match inPath
+
+    case Absyn.IDENT()
+      equation
+        (cache, t, env) = lookupTypeIdent(inCache,inEnv,inPath.name,msg);
+      then (cache, t, env);
+
+    else
+      equation
+        (cache, t, env) = lookupTypeQual(inCache,inEnv,inPath,msg);
+      then (cache, t, env);
+  end match;
+end lookupType;
+
+protected function lookupTypeQual
+" This function finds a specified type in the environment.
+  If it finds a function instead, this will be implicitly instantiated
+  and lookup will start over.
+"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv "environment to search in";
+  input Absyn.Path inPath "type to look for";
+  input Option<SourceInfo> msg "Messaage flag, SOME() outputs lookup error messages";
   output FCore.Cache outCache;
   output DAE.Type outType "the found type";
   output FCore.Graph outEnv "The environment the type was found in";
@@ -122,13 +149,6 @@ algorithm
       then
         (cache, t, env);
 
-    // Special handling for MultiBody 3.x rooted() operator
-    case (cache,env,Absyn.IDENT("rooted"),_)
-      equation
-        t = DAE.T_FUNCTION({DAE.FUNCARG("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
-      then
-        (cache, t, env);
-
     // Special handling for Connections.uniqueRootIndices
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")),_)
       equation
@@ -141,18 +161,11 @@ algorithm
       then
         (cache, t, env);
 
-    // For simple names
-    case (cache,env,(path as Absyn.IDENT()),_)
-      equation
-        (cache,t,env_1) = lookupTypeInEnv(cache,env,path);
-      then
-        (cache,t,env_1);
-
     // Special classes (function, record, metarecord, external object)
     case (cache,env,path,_)
       equation
         (cache,c,env_1) = lookupClass(cache,env,path);
-        (cache,t,env_2) = lookupType2(cache,env_1,path,c);
+        (cache,t,env_2) = lookupType2(cache,env_1,c);
       then
         (cache,t,env_2);
 
@@ -166,7 +179,64 @@ algorithm
       then
         fail();
   end matchcontinue;
-end lookupType;
+end lookupTypeQual;
+
+public function lookupTypeIdent
+" This function finds a specified type in the environment.
+  If it finds a function instead, this will be implicitly instantiated
+  and lookup will start over.
+"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv "environment to search in";
+  input String ident "type to look for";
+  input Option<SourceInfo> msg "Messaage flag, SOME() outputs lookup error messages";
+  output FCore.Cache outCache;
+  output DAE.Type outType "the found type";
+  output FCore.Graph outEnv "The environment the type was found in";
+algorithm
+  (outCache,outType,outEnv):=
+  matchcontinue (inCache,inEnv,ident,msg)
+    local
+      DAE.Type t;
+      FCore.Graph env_1,env,env_2;
+      Absyn.Path path;
+      SCode.Element c;
+      String classname,scope;
+      FCore.Cache cache;
+      SourceInfo info;
+
+    // Special handling for MultiBody 3.x rooted() operator
+    case (cache,env,"rooted",_)
+      equation
+        t = DAE.T_FUNCTION({DAE.FUNCARG("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
+      then
+        (cache, t, env);
+
+    // For simple names
+    case (cache,env,_,_)
+      equation
+        (cache,t,env_1) = lookupTypeInEnv(cache,env,ident);
+      then
+        (cache,t,env_1);
+
+    // Special classes (function, record, metarecord, external object)
+    case (cache,env,_,_)
+      equation
+        (cache,c,env_1) = lookupClassIdent(cache,env,ident);
+        (cache,t,env_2) = lookupType2(cache,env_1,c);
+      then
+        (cache,t,env_2);
+
+    // Error for type not found
+    case (_,env,_,SOME(info))
+      equation
+        classname = stringAppend(ident," (its type) ");
+        scope = FGraph.printGraphPathStr(env);
+        Error.addSourceMessage(Error.LOOKUP_ERROR, {classname,scope}, info);
+      then
+        fail();
+  end matchcontinue;
+end lookupTypeIdent;
 
 protected function lookupType2
 " This function handles the case when we looked up a class, but need to
@@ -174,13 +244,12 @@ check if it is function, record, metarecord, etc.
 "
   input FCore.Cache inCache;
   input FCore.Graph inEnv "environment to search in";
-  input Absyn.Path inPath "type to look for";
   input SCode.Element inClass "the class lookupType found";
   output FCore.Cache outCache;
   output DAE.Type outType "the found type";
   output FCore.Graph outEnv "The environment the type was found in";
 algorithm
-  (outCache,outType,outEnv) := matchcontinue (inCache,inEnv,inPath,inClass)
+  (outCache,outType,outEnv) := matchcontinue (inCache,inEnv,inClass)
     local
       DAE.Type t;
       FCore.Graph env_1,env_2,env_3;
@@ -197,14 +266,14 @@ algorithm
       DAE.Mod mod;
 
     // Record constructors
-    case (cache,env_1,_,c as SCode.CLASS(restriction=SCode.R_RECORD(_)))
+    case (cache,env_1,c as SCode.CLASS(restriction=SCode.R_RECORD(_)))
       equation
         (cache,env_1,t) = buildRecordType(cache,env_1,c);
       then
         (cache,t,env_1);
 
     // lookup of an enumeration type
-    case (cache,env_1,path,c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=r as SCode.R_ENUMERATION()))
+    case (cache,env_1,c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=r as SCode.R_ENUMERATION()))
       equation
         env_2 = FGraph.openScope(env_1, encflag, id, SOME(FCore.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, FGraph.getGraphName(env_2));
@@ -228,42 +297,42 @@ algorithm
         (cache,t,env_3);
 
     // Real Type
-    case (cache,env_1,_,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Real")))))
+    case (cache,env_1,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Real")))))
       equation
         t = DAE.T_REAL({}, DAE.emptyTypeSource);
       then
         (cache,t,env_1);
 
     // Integer Type
-    case (cache,env_1,_,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Integer")))))
+    case (cache,env_1,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Integer")))))
       equation
         t = DAE.T_INTEGER({}, DAE.emptyTypeSource);
       then
         (cache,t,env_1);
 
     // Boolean Type
-    case (cache,env_1,_,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Boolean")))))
+    case (cache,env_1,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Boolean")))))
       equation
         t = DAE.T_BOOL({}, DAE.emptyTypeSource);
       then
         (cache,t,env_1);
 
     // String Type
-    case (cache,env_1,_,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="String")))))
+    case (cache,env_1,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="String")))))
       equation
         t = DAE.T_STRING({}, DAE.emptyTypeSource);
       then
         (cache,t,env_1);
 
     // Metamodelica extension, Uniontypes
-    case (cache,env_1,_,c as SCode.CLASS(restriction=SCode.R_METARECORD()))
+    case (cache,env_1,c as SCode.CLASS(restriction=SCode.R_METARECORD()))
       equation
         (cache,env_2,t) = buildMetaRecordType(cache,env_1,c);
       then
         (cache,t,env_2);
 
     // Classes that are external objects. Implicitly instantiate to get type
-    case (cache,env_1,_,c)
+    case (cache,env_1,c)
       equation
         // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + Absyn.pathString(path));
         true = SCode.classIsExternalObject(c);
@@ -273,19 +342,19 @@ algorithm
           {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         SCode.CLASS(name=id) = c;
         (env_1, _) = FGraph.stripLastScopeRef(env_1);
-        (cache,t,env_2) = lookupTypeInEnv(cache,env_1,Absyn.IDENT(id));
+        (cache,t,env_2) = lookupTypeInEnv(cache,env_1,id);
       then
         (cache,t,env_2);
 
     // If we find a class definition that is a function or external function
     // with the same name then we implicitly instantiate that function, look
     // up the type.
-    case (cache,env_1,_,c as SCode.CLASS(name = id,restriction=SCode.R_FUNCTION(_)))
+    case (cache,env_1,c as SCode.CLASS(name = id,restriction=SCode.R_FUNCTION(_)))
       equation
         // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + Absyn.pathString(path));
         (cache,env_2,_) =
         InstFunction.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy,c);
-        (cache,t,env_3) = lookupTypeInEnv(cache,env_2,Absyn.IDENT(id));
+        (cache,t,env_3) = lookupTypeInEnv(cache,env_2,id);
       then
         (cache,t,env_3);
   end matchcontinue;
@@ -1566,21 +1635,108 @@ algorithm
     // BZ: This is due to recursive call when it might become DAE.CREF_IDENT calls.
     case (cache,env,(cr as DAE.CREF_IDENT()),_,_)
       equation
-        (cache,attr,ty,bind,cnstForRange,splicedExpData,_,componentEnv,name) = lookupVarLocal(cache, env, cr);
-        Util.setStatefulBoolean(inState,true);
+        (cache,env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackagesIdent(cache, env, cr.ident, cr.subscriptLst, inPrevFrames, inState);
       then
         (cache,env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
     // Lookup where the first identifier is a component.
-    case (cache, env, cr, _, _)
+    case (cache, env, cr as DAE.CREF_QUAL(), _, _)
       equation
         ht = FNode.children(FNode.fromRef(FGraph.lastScopeRef(env)));
         (cache, attr, ty, bind, cnstForRange, splicedExpData, componentEnv, name) = lookupVarF(cache, ht, cr, env);
       then
         (cache, env, attr, ty, bind, cnstForRange, splicedExpData, componentEnv, name);
 
+     // Search parent scopes
+    case (cache,FCore.G(scope = f::fs),cr as DAE.CREF_QUAL(),prevFrames,_)
+      equation
+        false = Util.getStatefulBoolean(inState);
+        env = FGraph.setScope(inEnv, fs);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env,cr,f::prevFrames,inState);
+      then
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
+
+    else
+      equation
+        //true = Flags.isSet(Flags.FAILTRACE);
+        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" + ComponentReference.printComponentRefStr(cr) + " in scope: " + FGraph.printGraphPathStr(env));
+      then
+        fail();
+  end matchcontinue;
+end lookupVarInPackages;
+
+public function lookupVarInPackagesIdent "This function is called when a lookup of a variable with qualified names
+  does not have the first element as a component, e.g. A.B.C is looked up
+  where A is not a component. This implies that A is a class, and this
+  class should be temporary instantiated, and the lookup should
+  be performed within that class. I.e. the function performs lookup of
+  variables in the class hierarchy.
+
+  Note: the splicedExpData is currently not relevant, since constants are always evaluated to a value.
+        However, this might change in the future since it makes more sense to calculate the constants
+        during setup in runtime (to gain precision and postpone choice of precision to runtime)."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input String id;
+  input list<DAE.Subscript> ss;
+  input FCore.Scope inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
+  input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in a lower scope.";
+  output FCore.Cache outCache;
+  output FCore.Graph outClassEnv;
+  output DAE.Attributes outAttributes;
+  output DAE.Type outType;
+  output DAE.Binding outBinding;
+  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
+  output InstTypes.SplicedExpData splicedExpData "currently not relevant for constants, but might be used in the future";
+  output FCore.Graph outComponentEnv;
+  output String name "We only return the environment the component was found in; not its FQ name.";
+algorithm
+  (outCache,outClassEnv,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv,name) :=
+  matchcontinue (inCache,inEnv,inPrevFrames,inState)
+    local
+      SCode.Element c;
+      String n;
+      SCode.Encapsulated encflag;
+      SCode.Restriction r;
+      FCore.Graph env2,env3,env5,env,p_env,classEnv, componentEnv;
+      FCore.Scope prevFrames, fs;
+      FCore.Node node;
+      ClassInf.State ci_state;
+      DAE.Attributes attr;
+      DAE.Type ty;
+      DAE.Binding bind;
+      DAE.ComponentRef cref,cr;
+      list<DAE.Subscript> sb;
+      Option<String> sid;
+      FCore.Ref f, rr;
+      Option<FCore.Ref> of;
+      FCore.Cache cache;
+      Option<DAE.Const> cnstForRange;
+      Absyn.Path path,scope;
+      Boolean unique;
+      FCore.Children ht;
+      list<Absyn.Import> qimports, uqimports;
+      DAE.Mod mod;
+
+    // Why is this done? It is already done done in lookupVar!
+    // BZ: This is due to recursive call when it might become DAE.CREF_IDENT calls.
+    case (cache,env,_,_)
+      equation
+        (cache,attr,ty,bind,cnstForRange,splicedExpData,_,componentEnv,name) = lookupVarInternalIdent(cache, env, id, ss);
+        Util.setStatefulBoolean(inState,true);
+      then
+        (cache,env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
+
+    // Lookup where the first identifier is a component.
+    case (cache, env, _, _)
+      equation
+        ht = FNode.children(FNode.fromRef(FGraph.lastScopeRef(env)));
+        (cache, attr, ty, bind, cnstForRange, splicedExpData, componentEnv, name) = lookupVarFIdent(cache, ht, id, ss, env);
+      then
+        (cache, env, attr, ty, bind, cnstForRange, splicedExpData, componentEnv, name);
+
     // Search among imports
-    case (cache,env,DAE.CREF_IDENT(ident = id),prevFrames,_)
+    case (cache,env,prevFrames,_)
       equation
         node = FNode.fromRef(FGraph.lastScopeRef(env));
         (qimports, uqimports) = FNode.imports(node);
@@ -1606,11 +1762,11 @@ algorithm
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
      // Search parent scopes
-    case (cache,FCore.G(scope = f::fs),cr,prevFrames,_)
+    case (cache,FCore.G(scope = f::fs),prevFrames,_)
       equation
         false = Util.getStatefulBoolean(inState);
         env = FGraph.setScope(inEnv, fs);
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env,cr,f::prevFrames,inState);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackagesIdent(cache,env,id,ss,f::prevFrames,inState);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
@@ -1621,7 +1777,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end lookupVarInPackages;
+end lookupVarInPackagesIdent;
 
 public function lookupVarLocal
 "This function is very similar to `lookup_var\', but it only looks
@@ -2052,25 +2208,24 @@ protected function lookupTypeInEnv
 "function: lookupTypeInEnv"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Absyn.Path inPath;
+  input String id;
   output FCore.Cache outCache;
   output DAE.Type outType;
   output FCore.Graph outEnv;
 algorithm
   (outCache,outType,outEnv):=
-  matchcontinue (inCache,inEnv,inPath)
+  matchcontinue (inCache,inEnv)
     local
       DAE.Type c;
       FCore.Graph env_1,env,fs;
       Option<String> sid;
       FCore.Children httypes;
       FCore.Children ht;
-      String id;
       FCore.Cache cache;
       Absyn.Path path;
       FCore.Ref r;
 
-    case (cache, env as FCore.G(scope = r::_), Absyn.IDENT(name = id))
+    case (cache, env as FCore.G(scope = r::_))
       equation
         ht = FNode.children(FNode.fromRef(r));
         httypes = getHtTypes(r);
@@ -2078,10 +2233,10 @@ algorithm
       then
         (cache,c,env_1);
 
-    case (cache,env as FCore.G(scope = r::_),path)
+    case (cache,env as FCore.G(scope = r::_))
       equation
         (env, _) = FGraph.stripLastScopeRef(env);
-        (cache,c,env_1) = lookupTypeInEnv(cache,env,path);
+        (cache,c,env_1) = lookupTypeInEnv(cache,env,id);
         env_1 = FGraph.pushScopeRef(env_1, r);
       then
         (cache,c,env_1);
@@ -2193,7 +2348,7 @@ algorithm
           cache,cenv,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), cdef, {});
 
-        (cache,ty,env_3) = lookupTypeInEnv(cache, env_1, Absyn.IDENT(id));
+        (cache,ty,env_3) = lookupTypeInEnv(cache, env_1, id);
       then
         (cache,ty,env_3);
 
@@ -2270,7 +2425,7 @@ algorithm
             InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore, DAE.NOMOD(),
             Prefix.NOPRE(), cl, {}, false, InstTypes.TOP_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet);
-          (cache, ty) := lookupTypeInEnv(cache, env, Absyn.IDENT(inFuncName));
+          (cache, ty) := lookupTypeInEnv(cache, env, inFuncName);
         then
           (cache, {ty});
 
@@ -2319,7 +2474,7 @@ algorithm
   // fprintln(Flags.INST_TRACE", "LOOKUP BUILD RECORD TY ICD: " + FGraph.printGraphPathStr(env) + "." + name);
   (outCache,outEnv,_) := InstFunction.implicitFunctionTypeInstantiation(
      outCache,env,InnerOuter.emptyInstHierarchy, cdef);
-  (outCache,ftype,_) := lookupTypeInEnv(outCache,outEnv,Absyn.IDENT(name));
+  (outCache,ftype,_) := lookupTypeInEnv(outCache,outEnv,name);
 end buildRecordType;
 
 protected function buildRecordConstructorClass

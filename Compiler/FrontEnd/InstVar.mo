@@ -198,7 +198,7 @@ algorithm
 
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         fullName = ComponentReference.printComponentRefStr(cref);
-        (cache, typePath) = Inst.makeFullyQualified(cache, env, Absyn.IDENT(typeName));
+        (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
 
         // also all the components in the environment should be updated to be outer!
         // switch components from inner to outer in the component env.
@@ -352,7 +352,7 @@ algorithm
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         typeName = SCode.className(cl);
-        (cache, typePath) = Inst.makeFullyQualified(cache, env, Absyn.IDENT(typeName));
+        (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
         // print(if_(impl, "impl crap\n", "no impl\n"));
         if not (impl and listMember(pre, {Prefix.NOPRE()})) then
@@ -386,7 +386,7 @@ algorithm
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         typeName = SCode.className(cl);
-        (cache, typePath) = Inst.makeFullyQualified(cache, env, Absyn.IDENT(typeName));
+        (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
         // print(if_(impl, "impl crap\n", "no impl\n"));
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
         if not (impl and listMember(pre, {Prefix.NOPRE()})) then
@@ -421,7 +421,7 @@ algorithm
         // add it to the instance hierarchy
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         fullName = ComponentReference.printComponentRefStr(cref);
-        (cache, typePath) = Inst.makeFullyQualified(cache, env, Absyn.IDENT(typeName));
+        (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
 
         // also all the components in the environment should be updated to be outer!
         // switch components from inner to outer in the component env.
@@ -465,7 +465,7 @@ algorithm
         // add it to the instance hierarchy
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         fullName = ComponentReference.printComponentRefStr(cref);
-        (cache, typePath) = Inst.makeFullyQualified(cache, env, Absyn.IDENT(typeName));
+        (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
 
         // also all the components in the environment should be updated to be outer!
         // switch components from inner to outer in the component env.

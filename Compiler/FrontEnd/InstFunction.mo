@@ -358,7 +358,7 @@ algorithm
         List.map2_0(daeElts,InstUtil.checkFunctionElement,false,info);
         // do not add the stripped class to the env, is already there, not stripped!
         env_1 = env; // Env.extendFrameC(env,c);
-        (cache,fpath) = Inst.makeFullyQualified(cache, env_1, Absyn.IDENT(n));
+        (cache,fpath) = Inst.makeFullyQualifiedIdent(cache, env_1, n);
         //print("2 Prefix: " + PrefixUtil.printPrefixStr(pre) + " path: " + Absyn.pathString(fpath) + "\n");
         cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt, info);
         derFuncs = InstUtil.getDeriveAnnotation(cd, cmt,fpath,cache,cenv,ih,pre,info);
@@ -393,7 +393,7 @@ algorithm
         List.map2_0(daeElts,InstUtil.checkFunctionElement,true,info);
         //env_11 = FGraph.mkClassNode(cenv,pre,mod,c);
         // Only created to be able to get FQ path.
-        (cache,fpath) = Inst.makeFullyQualified(cache,env,Absyn.IDENT(n));
+        (cache,fpath) = Inst.makeFullyQualifiedIdent(cache,env,n);
 
         cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt, c.info);
         derFuncs = InstUtil.getDeriveAnnotation(cd,cmt,fpath,cache,env,ih,pre,info);
@@ -424,7 +424,7 @@ algorithm
           classDef = SCode.OVERLOAD(pathLst = funcnames),cmt=cmt)),_,_)
       equation
         (cache,env,ih,resfns) = instOverloadedFunctions(cache,env,ih,pre,funcnames,inClass.info) "Overloaded functions" ;
-        (cache,fpath) = Inst.makeFullyQualified(cache,env,Absyn.IDENT(n));
+        (cache,fpath) = Inst.makeFullyQualifiedIdent(cache,env,n);
         resfns = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF({})},DAE.T_UNKNOWN_DEFAULT,visibility,true,isImpure,DAE.NO_INLINE(),DAE.emptyElementSource,SOME(cmt))::resfns;
       then
         (cache,env,ih,resfns);
@@ -593,7 +593,7 @@ algorithm
             Prefix.NOPRE(), c, {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
         env_1 = env; // why would you want to do this: FGraph.mkClassNode(env,c); ?????
-        (cache,fpath) = Inst.makeFullyQualified(cache,env_1, Absyn.IDENT(id));
+        (cache,fpath) = Inst.makeFullyQualifiedIdent(cache,env_1,id);
         ty1 = InstUtil.setFullyQualifiedTypename(ty,fpath);
         env_1 = FGraph.mkTypeNode(env_1, id, ty1);
         // (cache,env_1,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
