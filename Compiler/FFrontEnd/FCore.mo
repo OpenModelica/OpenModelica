@@ -380,12 +380,8 @@ end Extra;
 uniontype Graph "graph"
 
   record G "graph"
-    Name name "name of the graph";
-    Ref top "the top node";
+    Top top "the top node";
     Scope scope "current scope";
-    Visited visited "visited structure";
-    Extra extra "extra information";
-    Next next "next node id for this graph";
   end G;
 
   record EG "empty graph"
@@ -393,6 +389,15 @@ uniontype Graph "graph"
   end EG;
 
 end Graph;
+
+uniontype Top
+  record GTOP
+    array<Graph> graph;
+    Name name "name of the graph";
+    Ref node "the top node";
+    Extra extra "extra information";
+  end GTOP;
+end Top;
 
 public constant Id firstId = 0;
 

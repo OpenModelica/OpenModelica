@@ -46,7 +46,6 @@ import Prefix;
 import ClassInf;
 import FCore;
 import FNode;
-import FVisit;
 import InnerOuter;
 
 protected
@@ -61,6 +60,7 @@ import Config;
 import PrefixUtil;
 import Flags;
 import SCodeDump;
+import MetaModelica.Dangerous;
 import Mod;
 import Error;
 import ComponentReference;
@@ -80,6 +80,7 @@ type RefTree = FCore.RefTree;
 type Children = FCore.Children;
 type Parents = FCore.Parents;
 type Scope = FCore.Scope;
+type Top = FCore.Top;
 type Graph = FCore.Graph;
 type Extra = FCore.Extra;
 type Visited = FCore.Visited;
@@ -92,7 +93,9 @@ public function top
   input Graph inGraph;
   output Ref outRef;
 algorithm
-  FCore.G(top = outRef) := inGraph;
+  outRef := match inGraph
+    case FCore.G() then inGraph.top.node;
+  end match;
 end top;
 
 public function extra
@@ -100,7 +103,9 @@ public function extra
   input Graph inGraph;
   output Extra outExtra;
 algorithm
-  FCore.G(extra = outExtra) := inGraph;
+  outExtra := match inGraph
+    case FCore.G() then inGraph.top.extra;
+  end match;
 end extra;
 
 public function currentScope
@@ -144,17 +149,12 @@ public function stripLastScopeRef
   output Graph outGraph;
   output Ref outRef;
 protected
-  Ref t;
+  Top t;
   Scope s;
-  Name gn;
-  Visited v;
-  Extra e;
-  Next next;
 algorithm
-  FCore.G(gn, t, s, v, e, next) := inGraph;
+  FCore.G(t, outRef::s) := inGraph;
   // strip the last scope ref
-  outRef::s := s;
-  outGraph := FCore.G(gn, t, s, v, e, next);
+  outGraph := FCore.G(t, s);
 end stripLastScopeRef;
 
 public function topScope
@@ -169,19 +169,11 @@ protected
   Extra e;
   Next next;
 algorithm
-  FCore.G(gn, t, s, v, e, next) := inGraph;
   // leave only the top scope
-  s := {t};
-  outGraph := FCore.G(gn, t, s, v, e, next);
+  outGraph := match inGraph
+    case FCore.G() then arrayGet(inGraph.top.graph, 1);
+  end match;
 end topScope;
-
-public function visited
-"get the visited info from the graph"
-  input Graph inGraph;
-  output Visited outVisited;
-algorithm
-  FCore.G(visited = outVisited) := inGraph;
-end visited;
 
 public function empty
 "make an empty graph"
@@ -202,63 +194,20 @@ protected
   Ref nr;
   Next next;
   Id id;
+  array<Graph> ag;
+  Top top;
 algorithm
   id := System.tmpTickIndex(Global.fgraph_nextId);
   n := FNode.new(FNode.topNodeName, id, {}, FCore.TOP());
   nr := FNode.toRef(n);
-  v := FVisit.new();
-  next := FCore.next(id);
   s := {nr};
-  outGraph := FCore.G(inGraphName,nr,s,v,FCore.EXTRA(inPath),next);
+  ag := Dangerous.arrayCreateNoInit(1, emptyGraph);
+  top := FCore.GTOP(ag,inGraphName,nr,FCore.EXTRA(inPath));
+  outGraph := FCore.G(top,s);
+  // Creates a cycle, but faster to get the initial environment
+  arrayUpdate(ag, 1, FCore.G(top, {nr}));
   FGraphStream.node(n);
 end new;
-
-public function visit
-"@autor: adrpo
- add the node to visited"
-  input Graph inGraph;
-  input Ref inRef;
-  output Graph outGraph;
-protected
-  Ref t;
-  Scope s;
-  Name gn;
-  Visited v;
-  Extra e;
-  Next next;
-algorithm
-  FCore.G(gn, t, s, v, e, next) := inGraph;
-  v := FVisit.visit(v, inRef);
-  outGraph := FCore.G(gn, t, s, v, e, next);
-end visit;
-
-public function nextId
-"@author:adrpo
- return the current FCore.G.next and then increments it"
-  input Graph inGraph;
-  output Graph outGraph;
-  output Id id;
-protected
-  Ref top;
-  Scope scope;
-  Name name;
-  Visited visited;
-  Extra extra;
-  Next next;
-algorithm
-  FCore.G(name = name, top = top, scope = scope, visited = visited, extra = extra, next = next) := inGraph;
-  id := next;
-  next := FCore.next(next);
-  outGraph := FCore.G(name, top, scope, visited, extra, next);
-end nextId;
-
-public function lastId
-"get the last id from the graph"
-  input Graph graph;
-  output Next next;
-algorithm
-  FCore.G(next = next) := graph;
-end lastId;
 
 public function node
 "make a new node in the graph"
@@ -279,7 +228,6 @@ algorithm
 
     case (g, _, _, _)
       equation
-        (g,_) = nextId(g);
         i = System.tmpTickIndex(Global.fgraph_nextId);
         n = FNode.new(inName, i, inParents, inData);
         FGraphStream.node(n);
@@ -304,27 +252,30 @@ algorithm
   outGraph := match(inGraph)
     local
       Graph g;
-      Ref t, nt;
+      Top t;
+      Ref nt;
       Name gn;
       Scope s;
       Visited v;
       Extra e;
       Next n "next node id for this graph";
+      array<Graph> ag;
 
-    case (FCore.G(gn, t, s, v, e, n))
+    case FCore.G(t, s)
       equation
         // make a new top
-        nt = FNode.toRef(FNode.fromRef(t));
-        v = FVisit.new();
+        nt = FNode.toRef(FNode.fromRef(t.node));
         // make new graph
-        g = FCore.G(gn, nt, s, v, e, n);
+        // g = FCore.G(t, s);
         // deep copy the top, clone the entire subtree, update references
-        (g, t) = FNode.copyRef(t, g);
+        (g, nt) = FNode.copyRef(nt, inGraph);
         // update scope references
-        s = List.map1r(s, FNode.lookupRefFromRef, t);
-        g = FCore.G(gn, t, s, v, e, n);
-      then
-        g;
+        s = List.map1r(s, FNode.lookupRefFromRef, nt);
+        ag = arrayCreate(1, emptyGraph);
+        t = FCore.GTOP(ag, t.name, nt, t.extra);
+        g = FCore.G(t, s);
+        arrayUpdate(ag, 1, g);
+      then g;
 
   end match;
 end clone;
@@ -841,56 +792,43 @@ end getGraphNameNoImplicitScopes;
 public function pushScopeRef
 "@author:adrpo
  push the given ref as first element in the graph scope list"
-  input Graph inGraph;
+  input output Graph graph;
   input Ref inRef;
-  output Graph outGraph;
-protected
-  Ref top;
-  Scope scope;
-  Name name;
-  Visited visited;
-  Extra extra;
-  Next next;
 algorithm
-  FCore.G(name = name, top = top, scope = scope, visited = visited, extra = extra, next = next) := inGraph;
-  outGraph := FCore.G(name, top, inRef::scope, visited, extra, next);
+  _ := match graph
+    case FCore.G()
+    algorithm
+      graph.scope := inRef::graph.scope;
+    then ();
+  end match;
 end pushScopeRef;
 
 public function pushScope
 "@author:adrpo
  put the given scope in the graph scope at the begining (listAppend(inScope, currentScope(graph)))"
-  input Graph inGraph;
+  input output Graph graph;
   input Scope inScope;
-  output Graph outGraph;
-protected
-  Ref top;
-  Scope scope;
-  Name name;
-  Visited visited;
-  Extra extra;
-  Next next;
 algorithm
-  FCore.G(name = name, top = top, scope = scope, visited = visited, extra = extra, next = next) := inGraph;
-  scope := listAppend(inScope, scope);
-  outGraph := FCore.G(name, top, scope, visited, extra, next);
+  _ := match graph
+    case FCore.G()
+    algorithm
+      graph.scope := listAppend(inScope, graph.scope);
+    then ();
+  end match;
 end pushScope;
 
 public function setScope
 "@author:adrpo
  replaces the graph scope with the given scope"
-  input Graph inGraph;
+  input output Graph graph;
   input Scope inScope;
-  output Graph outGraph;
-protected
-  Ref top;
-  Scope scope;
-  Name name;
-  Visited visited;
-  Extra extra;
-  Next next;
 algorithm
-  FCore.G(name = name, top = top, visited = visited, extra = extra, next = next) := inGraph;
-  outGraph := FCore.G(name, top, inScope, visited, extra, next);
+  _ := match graph
+    case FCore.G()
+    algorithm
+      graph.scope := inScope;
+    then ();
+  end match;
 end setScope;
 
 public function restrictionToScopeType

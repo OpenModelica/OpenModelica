@@ -181,7 +181,7 @@ algorithm
         lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("FExpand.path:   " + realString(listHead(lst)) + "\n");
 
-        print("FGraph nodes:   " + intString(FGraph.lastId(g)) + "\n");
+        // print("FGraph nodes:   " + intString(FGraph.lastId(g)) + "\n");
         print("Total time:     " + realString(List.fold(lst, realAdd, 0.0)) + "\n");
 
         FGraphDump.dumpGraph(g, "F:\\dev\\" + Absyn.pathString(inPath) + ".graph.graphml");
