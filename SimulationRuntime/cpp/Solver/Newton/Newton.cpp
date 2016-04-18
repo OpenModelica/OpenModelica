@@ -170,9 +170,9 @@ void Newton::solve()
         if (_algLoop->isLinear() && !_algLoop->isLinearTearing()) {
           const matrix_t& A = _algLoop->getSystemMatrix();
           const double* jac = A.data().begin();
-          memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
+          std::copy(jac, jac + _dimSys*_dimSys, _jac);
           dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
-          memcpy(_y, _f, _dimSys*sizeof(double));
+          std::copy(_f, _f + _dimSys, _y);
           _algLoop->setReal(_y);
           if (info != 0)
             throw ModelicaSimulationError(ALGLOOP_SOLVER,
@@ -188,7 +188,7 @@ void Newton::solve()
           const matrix_t& A_sparse = _algLoop->getSystemMatrix();
           //m_t A_dense(A_sparse);
           const double* jac = A_sparse.data().begin();
-          memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
+          std::copy(jac, jac + _dimSys*_dimSys, _jac);
           dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
           for (int i = 0; i < _dimSys; i++)
             _y[i] = -_f[i];
@@ -251,11 +251,13 @@ void Newton::solve()
             }
           }
           // second do line search with quadratic approximation of phi(lambda)
+          // C.T.Kelley: Solving Nonlinear Equations with Newton's Method,
+          // no 1 in Fundamentals of Algorithms, SIAM 2003. ISBN 0-89871-546-6.
           double phiHelp = 0.0;
           for (int i = 0; i < _dimSys; i++)
             phiHelp += _fHelp[i] * _fHelp[i];
           while (_iterationStatus == CONTINUE) {
-            // test half step
+            // test half step that also serves as max bound for step reduction
             double lambdaTest = 0.5*lambda;
             for (int i = 0; i < _dimSys; i++) {
               _yTest[i] = _y[i] - lambdaTest * _f[i];
@@ -277,12 +279,13 @@ void Newton::solve()
                             0.0, lambdaTest, lambda,
                             0.0, lambdaTest*lambdaTest, lambda*lambda};
               dgesv_(&n, &dimRHS, A, &n, ipiv, bx, &n, &info);
-              lambda = std::min(0.5*lambda, std::max(0.1*lambda, -0.5*bx[1]/bx[2]));
-              if (lambda < 1e-10)
+              lambda = std::max(0.1*lambda, -0.5*bx[1]/bx[2]);
+              if (!(lambda >= 1e-10))
                 throw ModelicaSimulationError(ALGLOOP_SOLVER,
                   "Can't get sufficient decrease of solution");
-              if (lambda == lambdaTest) {
+              if (lambda >= lambdaTest) {
                 // upper bound 0.5*lambda
+                lambda = lambdaTest;
                 std::copy(_yTest, _yTest + _dimSys, _yHelp);
                 std::copy(_fTest, _fTest + _dimSys, _fHelp);
                 phiHelp = phiTest;
@@ -346,7 +349,7 @@ void Newton::calcJacobian()
 {
   for (int j = 0; j < _dimSys; ++j) {
     // Reset variables for every column
-    memcpy(_yHelp, _y, _dimSys*sizeof(double));
+    std::copy(_y, _y + _dimSys, _yHelp);
     double stepsize = 1e-6 * _yNominal[j];
 
     // Finite differences
