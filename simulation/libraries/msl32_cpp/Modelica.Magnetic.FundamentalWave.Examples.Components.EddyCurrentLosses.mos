@@ -29,9 +29,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses
 // {"converter_e.singlePhaseElectroMagneticConverter[3].Phi.re","converter_e.singlePhaseElectroMagneticConverter[3].Phi.im","loss_m.Phi.re","loss_m.Phi.im"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 40.0, numberOfIntervals = 4000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses_res.mat
 // Files Equal!

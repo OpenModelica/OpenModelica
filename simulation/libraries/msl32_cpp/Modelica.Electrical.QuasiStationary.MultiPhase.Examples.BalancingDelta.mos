@@ -28,9 +28,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta
 // {"voltageSource.plug_p.reference.gamma","voltageSource.voltageSource[2].pin_p.reference.gamma","voltageSource.voltageSource[3].pin_p.reference.gamma"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta_res.mat
 // Files Equal!

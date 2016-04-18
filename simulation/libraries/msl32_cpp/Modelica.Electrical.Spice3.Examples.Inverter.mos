@@ -31,7 +31,4 @@ runScript(modelTesting);getErrorString();
 // {"mp.Dinternal","mp.Sinternal","mn.Dinternal","mn.Sinternal"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Compilation succeeded
-// "true
-// "
-// ""
 // endResult

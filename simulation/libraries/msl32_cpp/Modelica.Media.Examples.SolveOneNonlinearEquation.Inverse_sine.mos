@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine);
 compareVars :=
 {
@@ -23,10 +23,20 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Instantiation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine
 // {"x_zero"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Frontend succeeded
-// The model now translates (generates code). Please update the test.
+// Simulation options: startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine_res.mat
+// Messages: x_zero = 0.523599, y_zero = 0.500000, A*sin(w*x_zero) = 0.500000
+// x_zero = 0.523599, y_zero = 0.500000, A*sin(w*x_zero) = 0.500000
+// x_zero = 0.523599, y_zero = 0.500000, A*sin(w*x_zero) = 0.500000
+// x_zero = 0.523599, y_zero = 0.500000, A*sin(w*x_zero) = 0.500000
+// x_zero = 0.523599, y_zero = 0.500000, A*sin(w*x_zero) = 0.500000
+//
+// Files Equal!
+// "true
+// "
+// ""
 // endResult

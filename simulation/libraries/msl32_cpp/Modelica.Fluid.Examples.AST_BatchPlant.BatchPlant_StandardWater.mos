@@ -386,9 +386,9 @@ runScript(modelTesting);getErrorString();
 //  * candidate: V22.m_flow(start = V22.m_flow_start)
 // => select value from V22.m_flow(start = V22.m_flow_start) for variable: pipePump1B1.m_flows[1]
 // Warning: Alias set with several free start values
-//  * candidate: P1.port_a.m_flow(start = P1.m_flow_start)
 //  * candidate: V23.m_flow(start = V23.m_flow_start)
-// => select value from P1.port_a.m_flow(start = P1.m_flow_start) for variable: P1.m_flow
+//  * candidate: P1.port_a.m_flow(start = P1.m_flow_start)
+// => select value from V23.m_flow(start = V23.m_flow_start) for variable: V23.m_flow
 // Warning: Alias set with several free start values
 //  * candidate: volume4.medium.h(start = volume4.h_start)
 //  * candidate: volume4.port_3.h_outflow(start = 100000.0)

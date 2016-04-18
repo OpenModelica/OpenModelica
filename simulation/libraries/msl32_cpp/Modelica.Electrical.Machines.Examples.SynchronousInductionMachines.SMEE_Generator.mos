@@ -30,9 +30,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator
 // {"constantSpeed.phi","smee.idq_dr[1]","smee.idq_rr[2]","smee.idq_sr[1]","smee.idq_sr[2]"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 30.0, numberOfIntervals = 6000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator_res.mat
 // Files Equal!

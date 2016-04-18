@@ -32,20 +32,12 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling
 // {"dcpm.la.i","loadInertia.phi","loadInertia.w","cooling.T","armature.T","core.T","volumeFlow.T"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 25.0, numberOfIntervals = 25000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling_res.mat
 // Files Equal!
-// [Modelica 3.2.1/Electrical/Machines.mo:13518:7-13522:42:writable] Error: Variable dcpm.coreParameters: Duplicate modification of element final  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 on component m.
-// [Modelica 3.2.1/Electrical/Machines.mo:13518:7-13522:42:writable] Error: Variable dcpm.coreParameters: Duplicate modification of element  = (typed)dcpm.ViNominal, type:
-// DAE.PROP(Real(quantity = "ElectricPotential", unit = "V"), C_PARAM) and  = (typed)95.0 DAE.PROP(Real(min = 1e-60, quantity = "ElectricPotential", unit = "V"), C_CONST), value: 95.0 on component VRef.
-// [Modelica 3.2.1/Electrical/Machines.mo:13518:7-13522:42:writable] Error: Variable dcpm.coreParameters: Duplicate modification of element final  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 on component m.
-// Error: Duplicate modification of element  = (typed)dcpm.ViNominal, type:
-// DAE.PROP(Real(quantity = "ElectricPotential", unit = "V"), C_PARAM) and  = (typed)95.0 DAE.PROP(Real(min = 1e-60, quantity = "ElectricPotential", unit = "V"), C_CONST), value: 95.0 on component VRef.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// 
+//
 // "true
 // "
 // ""

@@ -48,7 +48,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: medium1.state.p(nominal = 1000000.0)
 //  * candidate: medium1.p(nominal = 100000.0)
 // => select value from medium1.p(nominal = 100000.0) for variable: medium1.p
-// 
+//
 // "true
 // "
 // ""

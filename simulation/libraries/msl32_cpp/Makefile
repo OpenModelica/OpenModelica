@@ -178,6 +178,7 @@ Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem.mos \
 Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass.mos \
 Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces.mos \
 Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings.mos \
+Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField.mos \
 Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a.mos \
 Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b.mos \
 Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic.mos \
@@ -224,6 +225,7 @@ Modelica.Media.Examples.ReferenceAir.DryAir1.mos \
 Modelica.Media.Examples.ReferenceAir.DryAir2.mos \
 Modelica.Media.Examples.ReferenceAir.Inverse_sh_T.mos \
 Modelica.Media.Examples.ReferenceAir.Inverse_sh_TX.mos \
+Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine.mos \
 Modelica.Media.Examples.ReferenceAir.MoistAir.mos \
 Modelica.Media.Examples.ReferenceAir.MoistAir1.mos \
 Modelica.Media.Examples.ReferenceAir.MoistAir2.mos \
@@ -237,6 +239,8 @@ Modelica.Media.Examples.TestOnly.IdealGasN2Mix.mos \
 Modelica.Media.Examples.TestOnly.MixIdealGasAir.mos \
 Modelica.Media.Examples.Tests.MediaTestModels.Air.DryAirNasa.mos \
 Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir.mos \
+Modelica.Media.Examples.R134a.R134a1.mos \
+Modelica.Media.Examples.R134a.R134a2.mos \
 Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir.mos \
 Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air.mos \
 Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen.mos \
@@ -276,17 +280,11 @@ Modelica.Utilities.Examples.readRealParameterModel.mos
 
 # Run make failingtest
 FAILINGTESTFILES=  \
-Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField.mos \
-Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine.mos \
-Modelica.Media.Examples.R134a.R134a1.mos \
-Modelica.Media.Examples.R134a.R134a2.mos \
+
 
 DISABLED_TOO_SLOW = \
-Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.FOURBIT.mos \
 Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.mos \
-Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.NAND.mos \
-Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.ONEBIT.mos \
-Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.TWOBIT.mos \
+
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -317,7 +315,7 @@ test:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
-	
+
 # Cleans all files that are not listed as dependencies 
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
@@ -335,7 +333,7 @@ getdeps:
 	@echo $(CLEAN) | sed -r 's/deps.txt|deps.tmp//g' | sed 's/ / \\\n/g' > deps.txt	
 	@echo Dependency list saved in deps.txt.
 	@echo Copy the list from deps.txt and add it to the Makefile @DEPENDENCIES
-	
+
 failingtest :
 	@echo
 	@echo Running failing tests...

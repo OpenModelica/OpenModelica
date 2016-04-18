@@ -29,9 +29,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Media.Examples.ReferenceAir.MoistAir
 // {"medium.p","medium.T","der_p","der_T"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.ReferenceAir.MoistAir', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Media.Examples.ReferenceAir.MoistAir_res.mat
 // Files Equal!
@@ -39,7 +37,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: medium.Xi[1](start = 0.01)
 //  * candidate: medium.X[1](start = 0.95)
 // => select value from medium.Xi[1](start = 0.01) for variable: medium.Xi[1]
-// 
+//
 // "true
 // "
 // ""

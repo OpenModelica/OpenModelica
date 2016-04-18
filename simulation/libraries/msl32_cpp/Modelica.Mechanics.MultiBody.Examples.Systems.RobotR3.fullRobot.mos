@@ -67,9 +67,9 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot_res.mat
 // Messages: Model terminate() at 1.85605
 // Message: ... End condition reached
-// 
+//
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// 
+//
 // "true
 // "
 // ""

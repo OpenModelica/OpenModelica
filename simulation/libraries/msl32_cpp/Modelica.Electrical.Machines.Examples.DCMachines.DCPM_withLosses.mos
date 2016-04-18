@@ -36,7 +36,7 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses_res.mat
 // Files Equal!
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// 
+//
 // "true
 // "
 // ""

@@ -31,5 +31,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 50000.0, numberOfIntervals = 50000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ChuaCircuit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Analog.Examples.ChuaCircuit_res.mat
-// Note: There were no messages so you do not need to suppress them any longer, Please update the test.
+// "true
+// "
+// ""
 // endResult

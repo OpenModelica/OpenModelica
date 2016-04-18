@@ -31,7 +31,7 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate_res.mat
 // Files Equal!
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// 
+//
 // "true
 // "
 // ""

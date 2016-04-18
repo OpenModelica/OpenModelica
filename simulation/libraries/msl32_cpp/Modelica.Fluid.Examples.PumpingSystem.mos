@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.PumpingSystem);
 compareVars :=
 {
@@ -26,11 +26,12 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Compilation
+// OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Fluid.Examples.PumpingSystem
 // {"PT1.y","pumps.medium.T","reservoir.level","reservoir.medium.T"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Compilation succeeded
+// Simulation options: startTime = 0.0, stopTime = 2000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.PumpingSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Fluid.Examples.PumpingSystem_res.mat
 // Warning: Alias set with several free start values
 //  * candidate: pumps.medium.p(start = pumps.p_start)
 //  * candidate: pumps.port_b.p(start = pumps.p_b_start)
@@ -98,6 +99,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: pumps.medium.T(nominal = 500.0)
 // => select value from pumps.medium.T(nominal = 500.0) for variable: pumps.medium.T
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+//
 // "true
 // "
 // ""

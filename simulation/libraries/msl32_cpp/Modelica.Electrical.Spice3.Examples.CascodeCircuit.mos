@@ -29,14 +29,12 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Spice3.Examples.CascodeCircuit
 // {"J1.vGD","J1.vGS","J2.vGD","J2.vGS"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 0.2, numberOfIntervals = 1000, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.CascodeCircuit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Spice3.Examples.CascodeCircuit_res.mat
 // Files Equal!
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// 
+//
 // "true
 // "
 // ""

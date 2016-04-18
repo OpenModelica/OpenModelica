@@ -43,52 +43,59 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter_MultiPhase', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter_MultiPhase_res.mat
 // Messages: 
-// [CVODES WARNING]  CVode
-//   Internal t = 1.25931 and h = 2.32081e-020 are such that t + h = t on the next step. The solver will continue anyway.
-// 
-// 
-// [CVODES WARNING]  CVode
-//   Internal t = 1.25931 and h = 2.32081e-020 are such that t + h = t on the next step. The solver will continue anyway.
-// 
-// 
-// [CVODES WARNING]  CVode
-//   Internal t = 1.37965 and h = 1.52981e-020 are such that t + h = t on the next step. The solver will continue anyway.
-// 
-// 
-// [CVODES WARNING]  CVode
-//   Internal t = 1.37965 and h = 1.52981e-020 are such that t + h = t on the next step. The solver will continue anyway.
-// 
-// 
-// [CVODES WARNING]  CVode
-//   Internal t = 1.38804 and h = 1.11005e-020 are such that t + h = t on the next step. The solver will continue anyway.
-// 
-// 
-// [CVODES WARNING]  CVode
-//   Internal t = 1.38804 and h = 1.11005e-020 are such that t + h = t on the next step. The solver will continue anyway.
-// 
-// 
-// [CVODES WARNING]  CVode
-//   Internal t = 1.38804 and h = 2.23733e-020 are such that t + h = t on the next step. The solver will continue anyway.
-// 
-// 
-// [CVODES WARNING]  CVode
-//   Internal t = 1.38804 and h = 2.23733e-020 are such that t + h = t on the next step. The solver will continue anyway.
-// 
-// 
-// [CVODES WARNING]  CVode
-//   Internal t = 1.38804 and h = 2.23733e-020 are such that t + h = t on the next step. The solver will continue anyway.
-// 
-// 
-// [CVODES WARNING]  CVode
-//   Internal t = 1.38804 and h = 2.23733e-020 are such that t + h = t on the next step. The solver will continue anyway.
-// 
-// 
-// [CVODES WARNING]  CVode
+// [CVODE WARNING]  CVode
+//   Internal t = 1 and h = 9.95817e-17 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 1 and h = 9.95817e-17 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 1 and h = 6.07334e-17 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 1 and h = 6.07334e-17 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 1 and h = 6.07334e-17 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 1 and h = 7.06318e-17 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 1 and h = 7.06318e-17 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 1 and h = 7.06318e-17 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 1 and h = 7.06318e-17 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 1 and h = 7.06318e-17 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
 //   The above warning has been issued mxhnil times and will not be issued again for this problem.
-// 
-// 
+//
+//
+// [CVODE ERROR]  CVode
+//   At t = 1 and h = 7.76091e-25, the error test failed repeatedly or with |h| = hmin.
+//
+//
+// SUNDIALS_ERROR: CVode() failed with flag = -3
+//
+//
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// 
+//
 // "true
 // "
 // ""

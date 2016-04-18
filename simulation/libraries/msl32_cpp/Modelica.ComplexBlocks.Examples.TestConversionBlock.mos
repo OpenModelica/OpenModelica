@@ -29,10 +29,8 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.ComplexBlocks.Examples.TestConversionBlock
 // {"polarToComplex.y.re","polarToComplex.y.im","complexToReal.re","complexToReal.im"}
-// "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// "
-// ""
-// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 1010, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.ComplexBlocks.Examples.TestConversionBlock', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 1010, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.ComplexBlocks.Examples.TestConversionBlock', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.ComplexBlocks.Examples.TestConversionBlock_res.mat
 // Files Equal!
 // "true

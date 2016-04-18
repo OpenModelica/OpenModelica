@@ -181,11 +181,11 @@ runScript(modelTesting);getErrorString();
 //  * candidate: heater.flowModel.m_flows[1](start = 0.0)
 // => select value from pump.port_b.m_flow(start = pump.m_flow_start) for variable: m_flow
 // Warning: Alias set with several free start values
+//  * candidate: pipe.m_flows[3](start = 0.0)
 //  * candidate: radiator.m_flows[1](start = 0.0)
 //  * candidate: radiator.flowModel.m_flows[1](start = 0.0)
-//  * candidate: pipe.m_flows[3](start = 0.0)
 //  * candidate: valve.m_flow(start = valve.m_flow_start)
-// => select value from valve.m_flow(start = valve.m_flow_start) for variable: radiator.m_flows[1]
+// => select value from valve.m_flow(start = valve.m_flow_start) for variable: pipe.m_flows[3]
 // Warning: Alias set with several free start values
 //  * candidate: tank.heatTransfer.states[1].T(start = 500.0)
 //  * candidate: tank.medium.state.T(start = 500.0)

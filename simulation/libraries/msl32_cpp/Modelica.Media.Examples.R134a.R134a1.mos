@@ -10,7 +10,7 @@ runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 setDebugFlags("scodeInstShortcut");
 
-modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Media.Examples.R134a.R134a1);
 compareVars :=
 {
@@ -29,11 +29,13 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // false
-// OpenModelicaModelTesting.Kind.Translation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Media.Examples.R134a.R134a1
 // {"volume.medium.h","volume.medium.p","fixedMassFlowRate.port.p","ambient.port.m_flow"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Translation succeeded
+// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.R134a.R134a1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Media.Examples.R134a.R134a1_res.mat
+// Files Equal!
 // Warning: Alias set with several free start values
 //  * candidate: volume.port.p(start = 101325.0)
 //  * candidate: fixedMassFlowRate.port.p(start = 101325.0)
@@ -54,5 +56,8 @@ runScript(modelTesting);getErrorString();
 //  * candidate: volume.port.p(nominal = 1000000.0)
 //  * candidate: volume.medium.p(nominal = 100000.0)
 // => select value from volume.medium.p(nominal = 100000.0) for variable: volume.medium.p
-// The model now compiles. Please update the test.
+//
+// "true
+// "
+// ""
 // endResult
