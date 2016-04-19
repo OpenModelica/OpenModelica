@@ -1,6 +1,7 @@
 TEST=../../../rtest -v
 
 TESTFILES=\
+Bug3649.mos \
 Connect1.mo \
 Connect2.mo \
 Connect4.mo \
