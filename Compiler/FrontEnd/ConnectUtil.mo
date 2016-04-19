@@ -1813,7 +1813,9 @@ protected function equationsDispatch
   output DAE.DAElist DAE = DAE.emptyDae;
 protected
   list<ConnectorElement> eql;
+  list<list<ConnectorElement>> eqll;
   Real flowThreshold = Flags.getConfigReal(Flags.FLOW_THRESHOLD);
+  DAE.DAElist dae;
 algorithm
   for set in sets loop
     DAE := match set
@@ -1823,9 +1825,12 @@ algorithm
       case Set.SET(ty = ConnectorType.EQU())
         algorithm
           // Here we do some overconstrained connection breaking.
-          eql := ConnectionGraph.removeBrokenConnects(set.elements, connected, broken);
+          eqll := ConnectionGraph.removeBrokenConnects(set.elements, connected, broken);
+          for eql in eqll loop
+            DAE := DAEUtil.joinDaes(generateEquEquations(eql), DAE);
+          end for;
         then
-          DAEUtil.joinDaes(generateEquEquations(eql), DAE);
+          DAE;
 
       case Set.SET(ty = ConnectorType.FLOW(), elements = eql)
         then DAEUtil.joinDaes(generateFlowEquations(set.elements), DAE);
@@ -3061,7 +3066,7 @@ algorithm
   end match;
 end printLeafElementStr;
 
-protected function printElementStr
+public function printElementStr
   "Prints a connector element to a String."
   input ConnectorElement element;
   output String string;
