@@ -78,6 +78,16 @@ end stripAddresses;
 
 public
 
+function generateReadableMessage
+  input Integer numFrames=1000;
+  input Integer numSkip=4;
+  input String delimiter="\n";
+  output String str;
+algorithm
+  StackOverflow.setStacktraceMessages(numSkip, numFrames);
+  str := stringDelimitList(StackOverflow.readableStacktraceMessages(),delimiter);
+end generateReadableMessage;
+
 function readableStacktraceMessages
   output list<String> symbols = {};
 protected

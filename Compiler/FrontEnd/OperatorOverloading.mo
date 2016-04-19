@@ -53,6 +53,7 @@ import ExpressionDump;
 import ExpressionSimplify;
 import FGraph;
 import Flags;
+import Global;
 import Inline;
 import List;
 import Lookup;
@@ -325,6 +326,12 @@ algorithm
         ((arg_1 :: args_1),(atype_1 :: atypes_1));
   end match;
 end elabArglist;
+
+function initCache
+algorithm
+  setGlobalRoot(Global.operatorOverloadingCache, (AvlTreePathPathEnv.Tree.EMPTY(),AvlTreePathOperatorTypes.Tree.EMPTY()));
+end initCache;
+
 
 protected
 
@@ -1287,23 +1294,7 @@ algorithm
       list<DAE.Type> rest;
     case (cache,_,ty::rest,_,_,_)
       equation
-        // prepare the call path for the operator.
-        // if *   => recordPath.'*'  , !!also if .*   => recordPath.'*'
-        scalarType = Types.arrayElementType(ty);
-        path = getRecordPath(scalarType);
-        path = Absyn.makeFullyQualified(path);
-        (cache,operatorCl,recordEnv) = Lookup.lookupClass(cache,env,path);
-        (cache,path,recordEnv) = lookupOperatorBaseClass(cache,recordEnv,operatorCl);
-        opNamePath = Absyn.IDENT(opName);
-        path = Absyn.joinPaths(path, opNamePath);
-        // check if the operator is defined. i.e overloaded
-        (cache,operatorCl,operEnv) = Lookup.lookupClass(cache,recordEnv,path);
-        true = SCode.isOperator(operatorCl);
-        // get the list of functions in the operator. !! there can be multiple options
-        paths = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache,funcs) = Lookup.lookupFunctionsListInEnv(cache, operEnv, paths, info, {});
-        funcs = List.select2(funcs, if opName=="'constructor'" or opName=="'0'" then checkOperatorFunctionOutput else checkOperatorFunctionOneOutput,
-          scalarType,info);
+        (cache,funcs) = getOperatorFuncsOrEmptySingleTy(inCache,env,ty,opName,info);
         (cache,funcs) = getOperatorFuncsOrEmpty(cache,env,rest,opName,info,listAppend(funcs,acc));
       then (cache,funcs);
     case (_,_,_::rest,_,_,_)
@@ -1317,6 +1308,92 @@ algorithm
       then (cache,funcs);
   end matchcontinue;
 end getOperatorFuncsOrEmpty;
+
+package AvlTreePathPathEnv "AvlTree Path -> Path"
+  extends BaseAvlTree;
+  redeclare type Key = Absyn.Path;
+  redeclare type Value = Absyn.Path;
+  redeclare function extends keyStr
+  algorithm
+    outString := Absyn.pathString(inKey);
+  end keyStr;
+  redeclare function extends valueStr
+  algorithm
+    outString := Absyn.pathString(inValue);
+  end valueStr;
+  redeclare function extends keyCompare
+  algorithm
+    outResult := Absyn.pathCompareNoQual(inKey1,inKey2);
+  end keyCompare;
+  redeclare function addConflictDefault = addConflictKeep;
+annotation(__OpenModelica_Interface="util");
+end AvlTreePathPathEnv;
+
+package AvlTreePathOperatorTypes "AvlTree Path -> list<Type>"
+  extends BaseAvlTree;
+  redeclare type Key = Absyn.Path;
+  redeclare type Value = list<DAE.Type>;
+  redeclare function extends keyStr
+  algorithm
+    outString := Absyn.pathString(inKey);
+  end keyStr;
+  redeclare function extends valueStr
+  algorithm
+    outString := Types.unparseType(DAE.T_METATUPLE(inValue,{}));
+  end valueStr;
+  redeclare function extends keyCompare
+  algorithm
+    outResult := Absyn.pathCompareNoQual(inKey1,inKey2);
+  end keyCompare;
+  redeclare function addConflictDefault = addConflictKeep;
+annotation(__OpenModelica_Interface="util");
+end AvlTreePathOperatorTypes;
+
+function getOperatorFuncsOrEmptySingleTy
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input DAE.Type ty;
+  input String opName;
+  input SourceInfo info;
+  output list<DAE.Type> funcs;
+protected
+  Absyn.Path path,pathIn,opNamePath;
+  SCode.Element operatorCl;
+  FCore.Graph recordEnv,operEnv;
+  list<Absyn.Path> paths;
+  DAE.Type scalarType;
+  AvlTreePathPathEnv.Tree tree1;
+  AvlTreePathOperatorTypes.Tree tree2;
+  tuple<AvlTreePathPathEnv.Tree,AvlTreePathOperatorTypes.Tree> trees;
+algorithm
+  scalarType := Types.arrayElementType(ty);
+  pathIn := Absyn.makeFullyQualified(getRecordPath(scalarType));
+  trees := getGlobalRoot(Global.operatorOverloadingCache);
+  (tree1,tree2) := trees;
+  try
+    path := AvlTreePathPathEnv.get(tree1, pathIn);
+  else
+    (cache,operatorCl,recordEnv) := Lookup.lookupClass(cache,env,pathIn);
+    (cache,path,recordEnv) := lookupOperatorBaseClass(cache,recordEnv,operatorCl);
+    tree1 := AvlTreePathPathEnv.add(tree1, pathIn, path);
+    setGlobalRoot(Global.operatorOverloadingCache, (tree1,tree2));
+  end try;
+  opNamePath := Absyn.IDENT(opName);
+  path := Absyn.makeFullyQualified(Absyn.joinPaths(path, opNamePath));
+  try
+    funcs := AvlTreePathOperatorTypes.get(tree2, path);
+  else
+    // check if the operator is defined. i.e overloaded
+    (cache,operatorCl,operEnv) := Lookup.lookupClass(cache,env,path);
+    true := SCode.isOperator(operatorCl);
+    // get the list of functions in the operator. !! there can be multiple options
+    paths := SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+    (cache,funcs) := Lookup.lookupFunctionsListInEnv(cache, operEnv, paths, info, {});
+    funcs := List.select2(funcs, if opName=="'constructor'" or opName=="'0'" then checkOperatorFunctionOutput else checkOperatorFunctionOneOutput, scalarType,info);
+    tree2 := AvlTreePathOperatorTypes.add(tree2, path, funcs);
+    setGlobalRoot(Global.operatorOverloadingCache, (tree1,tree2));
+  end try;
+end getOperatorFuncsOrEmptySingleTy;
 
 function lookupOperatorBaseClass "From a derived class, we find the parent.
 This is required because we take the union of functions from lhs and rhs.

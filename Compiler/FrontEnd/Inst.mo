@@ -146,6 +146,7 @@ import InstExtends;
 import List;
 import Lookup;
 import MetaUtil;
+import OperatorOverloading;
 import PrefixUtil;
 import SCodeUtil;
 import StringUtil;
@@ -5448,6 +5449,7 @@ end initInstHashTable;
 public function releaseInstHashTable
 algorithm
   setGlobalRoot(Global.instHashIndex, emptyInstHashTableSized(1));
+  OperatorOverloading.initCache();
 end releaseInstHashTable;
 
 protected function emptyInstHashTable
@@ -5455,6 +5457,7 @@ protected function emptyInstHashTable
   output InstHashTable hashTable;
 algorithm
   hashTable := emptyInstHashTableSized(Flags.getConfigInt(Flags.INST_CACHE_SIZE));
+  OperatorOverloading.initCache();
 end emptyInstHashTable;
 
 protected function emptyInstHashTableSized
