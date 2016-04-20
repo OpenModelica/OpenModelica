@@ -12178,7 +12178,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
   int <%lastIdentOfPath(modelInfo.name)%>::getDimZeroFunc()
   {
-    return _dimZeroFunc;
+    return _dimZeroFunc  + _dimClock;;
   }
   >>
 end dimZeroFunc;
