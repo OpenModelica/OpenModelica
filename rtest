@@ -285,7 +285,9 @@ sub dofile
         s/[ \t]+/ /;
         if (/^\/\/ /) {
           print OUT substr($_,3);
-        } elsif (/^\/\/$/) {
+        } elsif (/^\/\/$/) { # on msys2 perl the $ does not match so we use . below
+          print OUT substr($_,2);
+        } elsif (/^\/\/./) { # on msys2 perl the $ does not match, use .
           print OUT substr($_,2);
         } elsif ($tc_err == 0)  {
             print "Error in testcase: $f\n";
