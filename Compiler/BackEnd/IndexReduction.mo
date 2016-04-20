@@ -829,20 +829,20 @@ algorithm
       //if der(x) = y, replace all der(x) with y
      case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
-        ({BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr)))},_) = BackendVariable.getVar(cr,vars);
+        (BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr))),_) = BackendVariable.getVarSingle(cr,vars);
         e = Expression.crefExp(dcr);
       then
         (e,false,vars);
      case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr),DAE.ICONST(index)},attr=attr),vars)
       equation
         true = intEq(index,2);
-        ({BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr)))},_) = BackendVariable.getVar(cr,vars);
+        (BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr))),_) = BackendVariable.getVarSingle(cr,vars);
         e = Expression.crefExp(dcr);
       then
         (DAE.CALL(Absyn.IDENT("der"),{e},attr),false,vars);
      case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})},attr=attr),vars)
       equation
-        ({BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr)))},_) = BackendVariable.getVar(cr,vars);
+        (BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr))),_) = BackendVariable.getVarSingle(cr,vars);
         e = Expression.crefExp(dcr);
       then
         (DAE.CALL(Absyn.IDENT("der"),{e},attr),false,vars);
@@ -1515,7 +1515,7 @@ protected function getVar
   input BackendDAE.Variables vars;
   output BackendDAE.Var v;
 algorithm
-  ({v},_) := BackendVariable.getVar(cr,vars);
+  (v,_) := BackendVariable.getVarSingle(cr,vars);
 end getVar;
 
 protected type StateSets = list<tuple<Integer,Integer,Integer,Integer,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> "Level,nStates,nStateCandidates,nUnassignedEquations,StateCandidates,ConstraintEqns,OtherVars,OtherEqns";
@@ -2255,7 +2255,7 @@ algorithm
       Option<DAE.ComponentRef> derName;
     case (BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE()),(stateindexs,invmap,indx,nv,hov,derstatesindexs))
       equation
-        (_::_,{s}) = BackendVariable.getVar(cr, hov);
+        (_,s) = BackendVariable.getVarSingle(cr, hov);
         newindx = nv+s;
         arrayUpdate(stateindexs,indx,newindx);
         arrayUpdate(invmap,s,indx);
@@ -3029,7 +3029,7 @@ algorithm
       Boolean b;
     case(BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(cr))),_)
       equation
-        ({v},_) = BackendVariable.getVar(cr, vars);
+        (v,_) = BackendVariable.getVarSingle(cr, vars);
         b = BackendVariable.isDummyStateVar(v);
         prio = if b then 0.0 else 0.55;
       then prio;

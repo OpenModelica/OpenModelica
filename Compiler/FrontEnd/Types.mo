@@ -968,6 +968,31 @@ algorithm
   end matchcontinue;
 end getDimensionSizes;
 
+public function getDimensionProduct "Return the dimension sizes of a Type."
+  input DAE.Type inType;
+  output Integer sz;
+algorithm
+  sz := match (inType)
+    local
+      list<Integer> res;
+      DAE.Dimensions dims;
+      Integer i;
+      Type tp;
+      DAE.TypeSource ts;
+
+    case (DAE.T_ARRAY(dims = dims,ty = tp, source = ts))
+      then product(Expression.dimensionSize(d) for d in dims) * getDimensionProduct(tp);
+
+    case (DAE.T_SUBTYPE_BASIC(complexType=tp))
+      then getDimensionProduct(tp);
+
+    else
+      equation
+        false = arrayType(inType);
+      then 1;
+  end match;
+end getDimensionProduct;
+
 public function getDimensions
 "Returns the dimensions of a Type."
   input DAE.Type inType;

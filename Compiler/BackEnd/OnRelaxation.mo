@@ -2264,7 +2264,7 @@ algorithm
         vlst;
     case(cr::rest, _, _, _, _, _)
       equation
-        (v::{}, i::{}) = BackendVariable.getVar(cr, vars);
+        (v, i) = BackendVariable.getVarSingle(cr, vars);
         p = List.position(i, vindxs);
         ilst = listDelete(vindxs, p);
         vlst = listDelete(inVarLst, p);
@@ -3367,8 +3367,8 @@ algorithm
     case (BackendDAE.EQUATION(exp = DAE.CREF(componentRef=cr1), scalar=DAE.CREF(componentRef=cr2)), _, (id, vec1, vec2))
       equation
         false = intGt(vec2[id], 0);
-        (_, i1::{}) = BackendVariable.getVar(cr1, vars);
-        (_, i2::{}) = BackendVariable.getVar(cr2, vars);
+        (_, i1) = BackendVariable.getVarSingle(cr1, vars);
+        (_, i2) = BackendVariable.getVarSingle(cr2, vars);
         i = aliasMatching1(i1, i2, intGt(vec1[i1], 0), intGt(vec1[i2], 0));
         vec1 = arrayUpdate(vec1, i, id);
         vec2 = arrayUpdate(vec2, id, i);

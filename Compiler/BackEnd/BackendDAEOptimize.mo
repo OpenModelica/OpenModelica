@@ -172,17 +172,17 @@ algorithm
       Boolean negate;
 
     case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (knvars, aliasvars, _)) equation
-      (var::{}, _) = BackendVariable.getVar(cr, knvars);
+      (var, _) = BackendVariable.getVarSingle(cr, knvars);
       false = BackendVariable.isVarOnTopLevelAndInput(var);
       (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
     then (zero, (knvars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.CREF(componentRef=cr)}), (knvars, aliasvars, _)) equation
-      (_::{}, _) = BackendVariable.getVar(cr, knvars);
+      (_, _) = BackendVariable.getVarSingle(cr, knvars);
     then(e, (knvars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.CREF(componentRef=cr)}), (knvars, aliasvars, _)) equation
-      (_::{}, _) = BackendVariable.getVar(cr, knvars);
+      (_, _) = BackendVariable.getVarSingle(cr, knvars);
     then(e, (knvars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (knvars, aliasvars, _))
@@ -198,7 +198,7 @@ algorithm
     then (e, (knvars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
-      (var::{}, _) = BackendVariable.getVar(cr, aliasvars);
+      (var, _) = BackendVariable.getVarSingle(cr, aliasvars);
       (cr, negate) = BackendVariable.getAlias(var);
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
@@ -207,7 +207,7 @@ algorithm
     then (e, (knvars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
-      (var::{}, _) = BackendVariable.getVar(cr, aliasvars);
+      (var, _) = BackendVariable.getVarSingle(cr, aliasvars);
       (cr, negate) = BackendVariable.getAlias(var);
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
@@ -229,7 +229,7 @@ algorithm
     then (DAE.BCONST(false), (knvars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
-      (var::{}, _) = BackendVariable.getVar(cr, aliasvars);
+      (var, _) = BackendVariable.getVarSingle(cr, aliasvars);
       (cr, negate) = BackendVariable.getAlias(var);
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
@@ -238,7 +238,7 @@ algorithm
     then (e, (knvars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (knvars, aliasvars, _)) equation
-      (_::{}, _) = BackendVariable.getVar(cr, knvars);
+      (_, _) = BackendVariable.getVarSingle(cr, knvars);
       zero = Expression.arrayFill(Expression.arrayDimension(tp), DAE.BCONST(false));
     then (zero, (knvars, aliasvars, true));
 
@@ -246,7 +246,7 @@ algorithm
     then (DAE.BCONST(false), (knvars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
-      (var::{}, _) = BackendVariable.getVar(cr, aliasvars);
+      (var, _) = BackendVariable.getVarSingle(cr, aliasvars);
       (cr, negate) = BackendVariable.getAlias(var);
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
@@ -2323,7 +2323,7 @@ algorithm
       DAE.Exp e;
     case (DAE.CREF(componentRef = cr),(knvars,_))
       equation
-        (v::{},_::{}) = BackendVariable.getVar(cr,knvars);
+        (v,_) = BackendVariable.getVarSingle(cr,knvars);
         true = BackendVariable.isFinalVar(v);
         e = BackendVariable.varBindExpStartValue(v);
       then (e,(knvars,true));
@@ -3810,7 +3810,7 @@ algorithm
       then (exp,vars);
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)}))
       equation
-        ({v}, _) = BackendVariable.getVar(cr, vars);
+        (v, _) = BackendVariable.getVarSingle(cr, vars);
         (vars, e1) = updateStatesVar(vars, v, e1);
       then (e1, vars);
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)}))
@@ -3844,7 +3844,7 @@ algorithm
     DAE.Exp e;
     case (e as DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}), vars)
     equation
-      ({v}, _) = BackendVariable.getVar(cr, vars);
+      (v, _) = BackendVariable.getVarSingle(cr, vars);
       (vars, e) = updateStatesVar(vars, v, e);
       then (e, vars);
     case (e as DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}), vars)
@@ -5268,7 +5268,7 @@ algorithm
       String str;
 
     case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=ty)}), (vars, eqnLst, shared, addVar, _)) equation
-      ({v}, _) = BackendVariable.getVar(cr, vars);
+      (v, _) = BackendVariable.getVarSingle(cr, vars);
       cref = BackendVariable.varCref(v);
       v1 = BackendVariable.createAliasDerVar(cref);
       v1 = BackendVariable.mergeNominalAttribute(v, v1, false);

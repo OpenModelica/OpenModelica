@@ -2375,9 +2375,9 @@ algorithm
 
     case(_,e1 as DAE.CREF(componentRef = cr)) algorithm
       try
-        ({v}, _) := BackendVariable.getVar(cr, inVars);
+        (v, _) := BackendVariable.getVarSingle(cr, inVars);
       else
-        ({v}, _) := BackendVariable.getVar(cr, knvars);
+        (v, _) := BackendVariable.getVarSingle(cr, knvars);
       end try;
 
       lhs := ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});

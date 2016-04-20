@@ -752,7 +752,7 @@ algorithm
       equation
         // check for cyclic bindings in start value
         false = BaseHashSet.has(cr, hs);
-        ({v}, _) = BackendVariable.getVar(cr, vars);
+        (v, _) = BackendVariable.getVarSingle(cr, vars);
         e = BackendVariable.varStartValueType(v);
         hs = BaseHashSet.add(cr,hs);
         (e, (_,b,hs)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindStartExp, (vars,b,hs));

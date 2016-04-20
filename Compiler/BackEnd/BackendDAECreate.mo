@@ -2673,17 +2673,17 @@ algorithm
       Integer i;
     case(_, _, _, _)
       equation
-        (v::{}, i::{}) = BackendVariable.getVar(cr, iVars);
+        (v, i) = BackendVariable.getVarSingle(cr, iVars);
       then
         (v, i, 1);
     case(_, _, _, _)
       equation
-        (v::{}, i::{}) = BackendVariable.getVar(cr, iKnVars);
+        (v, i) = BackendVariable.getVarSingle(cr, iKnVars);
       then
         (v, i, 2);
     case(_, _, _, _)
       equation
-        (v::{}, i::{}) = BackendVariable.getVar(cr, iExtVars);
+        (v, i) = BackendVariable.getVarSingle(cr, iExtVars);
       then
         (v, i, 3);
   end matchcontinue;

@@ -473,7 +473,7 @@ algorithm
 
     case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(vars,lst,lst1,varLst))
       equation
-        (var::{},_) = BackendVariable.getVar(cr, vars);
+        (var,_) = BackendVariable.getVarSingle(cr, vars);
         true = BackendVariable.isVarOnTopLevelAndInput(var);
         cr1 = ComponentReference.prependStringCref("$TMP$DER$P", cr);
         //cr1 = ComponentReference.crefPrefixDer(cr);
@@ -834,11 +834,11 @@ algorithm
                 vars := BackendVariable.setVarAt(vars, vindx, var_con);
 
                 try
-                  (_,{vindx}) := BackendVariable.getVar(cr, vars);
+                  (_,vindx) := BackendVariable.getVarSingle(cr, vars);
                   vars := BackendVariable.setVarAt(vars, vindx, var_);
                   //print("var" +  BackendDump.varString(var_));
                 else
-                  (_,{vindx}) := BackendVariable.getVar(cr, knownVars);
+                  (_,vindx) := BackendVariable.getVarSingle(cr, knownVars);
                   knownVars := BackendVariable.setVarAt(knownVars, vindx, var_);
                   //print("var" +  BackendDump.varString(var_));
                 end try;

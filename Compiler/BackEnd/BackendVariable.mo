@@ -773,7 +773,7 @@ public function isDiscrete
 protected
   BackendDAE.Var v;
 algorithm
-  ({v},_) := getVar(cr,vars);
+  (v,_) := getVarSingle(cr,vars);
   outBoolean := isVarDiscrete(v);
 end isDiscrete;
 
@@ -2722,11 +2722,16 @@ algorithm
       equation
         (v,indx) = getVar2(cr, inVariables) "if scalar found, return it";
       then
-        ({v},{indx});
+        ({v},if isPresent(outIntegerLst) then {indx} else {});
     case (_,_) /* check if array or record */
       equation
         crlst = ComponentReference.expandCref(cr,true);
-        (vLst as _::_,indxs) = getVarLst(crlst,inVariables);
+        if isPresent(outIntegerLst) then
+          (vLst as _::_,indxs) = getVarLst(crlst,inVariables);
+        else
+          (vLst as _::_,_) = getVarLst(crlst,inVariables);
+          indxs = {};
+        end if;
       then
         (vLst,indxs);
     // try again check if variable indexes used
@@ -2735,7 +2740,12 @@ algorithm
         // replace variables with WHOLEDIM()
         (cr1,true) = replaceVarWithWholeDim(cr, false);
         crlst = ComponentReference.expandCref(cr1,true);
-        (vLst as _::_,indxs) = getVarLst(crlst,inVariables);
+        if isPresent(outIntegerLst) then
+          (vLst as _::_,indxs) = getVarLst(crlst,inVariables);
+        else
+          (vLst as _::_,_) = getVarLst(crlst,inVariables);
+          indxs = {};
+        end if;
       then
         (vLst,indxs);
     /* failure
@@ -2747,6 +2757,66 @@ algorithm
      */
   end matchcontinue;
 end getVar;
+
+public function getVarSingle
+" Return a variable and its index in the vector.
+  The indexes is enumerated from 1..n
+  Normally a variable has only one index, but in case of an array variable
+  it may have several indexes and several scalar variables,
+  therefore a list of variables and a list of  indexes is returned.
+
+  This function fails if there are more than a single returned value"
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Var outVar;
+  output Integer outInteger;
+algorithm
+  (outVar,outInteger) := matchcontinue (cr,inVariables)
+    local
+      BackendDAE.Var v;
+      Integer indx;
+      list<Integer> indxs;
+      list<BackendDAE.Var> vLst;
+      list<DAE.ComponentRef> crlst;
+      DAE.ComponentRef cr1;
+    case (_,_)
+      equation
+        (v,indx) = getVar2(cr, inVariables) "if scalar found, return it";
+      then (v,indx);
+    case (_,_) /* check if array or record */
+      equation
+        // TODO: Don't expand if > length 1
+        crlst = ComponentReference.expandCref(cr,true);
+        if isPresent(outInteger) then
+          ({v},{indx}) = getVarLst(crlst,inVariables);
+        else
+          ({v},_) = getVarLst(crlst,inVariables);
+          indx = 0;
+        end if;
+      then (v,indx);
+    // try again check if variable indexes used
+    case (_,_)
+      equation
+        // TODO: Don't expand if > length 1
+        // replace variables with WHOLEDIM()
+        (cr1,true) = replaceVarWithWholeDim(cr, false);
+        crlst = ComponentReference.expandCref(cr1,true);
+        if isPresent(outInteger) then
+          ({v},{indx}) = getVarLst(crlst,inVariables);
+        else
+          ({v},_) = getVarLst(crlst,inVariables);
+          indx = 0;
+        end if;
+      then (v,indx);
+    /* failure
+    case (_,_)
+      equation
+        fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " + ComponentReference.printComponentRefStr(cr));
+      then
+        fail();
+     */
+  end matchcontinue;
+end getVarSingle;
 
 protected function replaceVarWithWholeDim
   "Helper function to traverseExp. Traverses any expressions in a
@@ -2862,15 +2932,26 @@ protected
   BackendDAE.Var v;
   Integer indx;
 algorithm
-  for cr in inComponentRefLst loop
-    try
-      (v,indx) := getVar2(cr, inVariables);
-      outVarLst := v::outVarLst;
-      outIntegerLst := indx::outIntegerLst;
-    else
-      // skip this element
-    end try;
-  end for;
+  if isPresent(outIntegerLst) then
+    for cr in inComponentRefLst loop
+      try
+        (v,indx) := getVar2(cr, inVariables);
+        outVarLst := v::outVarLst;
+        outIntegerLst := indx::outIntegerLst;
+      else
+        // skip this element
+      end try;
+    end for;
+  else
+    for cr in inComponentRefLst loop
+      try
+        (v,indx) := getVar2(cr, inVariables);
+        outVarLst := v::outVarLst;
+      else
+        // skip this element
+      end try;
+    end for;
+  end if;
 end getVarLst;
 
 public function getVar2
@@ -3550,7 +3631,7 @@ algorithm
       equation
         // check for cyclic bindings in start value
         false = BaseHashSet.has(cr, hs);
-        ({BackendDAE.VAR(bindExp = SOME(e))}, _) = getVar(cr, vars);
+        (BackendDAE.VAR(bindExp = SOME(e)), _) = getVarSingle(cr, vars);
         hs = BaseHashSet.add(cr,hs);
         (e, (_,_,hs)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (vars,false,hs));
       then (e, (vars,true,hs));

@@ -4044,7 +4044,7 @@ protected
 algorithm
   ((var, (vars, varLst))) := inTuple;
   SimCodeVar.SIMVAR(name=cref) := var;
-  ({v},_) := BackendVariable.getVar(cref, vars);
+  (v,_) := BackendVariable.getVarSingle(cref, vars);
   outTuple := ((var, (vars, v::varLst)));
 end sortBackVarWithSimVarsOrder;
 
@@ -4076,7 +4076,7 @@ algorithm
        createAllDiffedSimVars(restVar, cref, inAllVars, inIndex, inMatrixName, iVars);
 
      case(BackendDAE.VAR(varName=currVar, varKind=BackendDAE.STATE(), values = dae_var_attr)::restVar, cref, _, _, _, _) equation
-      ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
+      BackendVariable.getVarSingle(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
       isProtected = getProtected(dae_var_attr);
@@ -4085,7 +4085,7 @@ algorithm
       createAllDiffedSimVars(restVar, cref, inAllVars, inIndex+1, inMatrixName, r1::iVars);
 
     case(BackendDAE.VAR(varName=currVar, values = dae_var_attr)::restVar, cref, _, _, _, _) equation
-      ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
+      BackendVariable.getVarSingle(currVar, inAllVars);
       derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
       isProtected = getProtected(dae_var_attr);
       r1 = SimCodeVar.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "", "", "", inIndex, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected, hideResult, NONE());
@@ -6127,7 +6127,7 @@ algorithm
 
    case(DAE.CREF(componentRef=cref),_)
      equation
-       ({var},_) = BackendVariable.getVar(cref,varsIn);
+       (var,_) = BackendVariable.getVarSingle(cref,varsIn);
        true =  not artificialVarKind(BackendVariable.varKind(var));// if its not of kind variable(), it is something artificial (DUMMY_DER,...) and the start value is not model based in that case
       // print("VAR: "+BackendDump.varString(var)+" -->");
        if BackendVariable.varHasBindExp(var) /*and Expression.isConst(BackendVariable.varBindExp(var))*/ then
@@ -11796,7 +11796,7 @@ algorithm
     _ := matchcontinue state
       case BackendDAE.VAR(varKind=BackendDAE.STATE(index=index /* TODO: Do we need the number of times it was differentiated? */, derName = SOME(derCref)))
         algorithm
-          ({var},{pos}) := BackendVariable.getVar(derCref, allStates);
+          (var,pos) := BackendVariable.getVarSingle(derCref, allStates);
           if not BackendVariable.varEqual(state, var) then
             arrayUpdate(ders, curIndex, pos);
           else

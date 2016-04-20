@@ -331,12 +331,12 @@ algorithm
       list<DAE.Exp> explst;
     case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)})}),(vars,explst))
       equation
-        (var::{},_) = BackendVariable.getVar(cr, vars);
+        (var,_) = BackendVariable.getVarSingle(cr, vars);
         true = BackendVariable.isVarOnTopLevelAndInput(var);
       then (e,false,(vars,e::explst));
     case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(vars,explst))
       equation
-        (var::{},_) = BackendVariable.getVar(cr, vars);
+        (var,_) = BackendVariable.getVarSingle(cr, vars);
         true = BackendVariable.isVarOnTopLevelAndInput(var);
       then (e,false,(vars,e::explst));
     else (inExp,true,tpl);
@@ -1973,7 +1973,7 @@ algorithm
        createAllDiffedVars(restVar,cref,inAllVars,inIndex, inMatrixName,iVars);
 
      case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,_,_, _, _) equation
-      ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
+      (_, _) = BackendVariable.getVarSingle(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
@@ -1981,7 +1981,7 @@ algorithm
       createAllDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars);
 
     case(BackendDAE.VAR(varName=currVar)::restVar,cref,_,_, _, _) equation
-      ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
+      (_, _) = BackendVariable.getVarSingle(currVar, inAllVars);
       derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then
@@ -2792,7 +2792,7 @@ protected function markSetStates
 protected
   Integer index;
 algorithm
-  (_, {index}) := BackendVariable.getVar(inCr, iVars);
+  (_, index) := BackendVariable.getVarSingle(inCr, iVars);
   oMark := arrayUpdate(iMark, index, true);
 end markSetStates;
 
