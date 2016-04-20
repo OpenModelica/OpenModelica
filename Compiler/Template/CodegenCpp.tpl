@@ -7218,7 +7218,9 @@ template generateClockedFuncDecls(list<SubPartition> subPartitions, Text method)
       <<
       /// Clocked partition <%i%>
       void evaluateClocked<%i%>(const UPDATETYPE command);
-      <%generateEquationMemberFuncDecls(listAppend(equations, removedEquations), method)%>
+      void evaluateClockedAssignPrevious<%i%>(const UPDATETYPE command);
+
+      <%generateEquationMemberFuncDecls(listAppend(listAppend(previousAssignments,equations), removedEquations), method)%>
       >>
       ; separator="\n")
   '<%decls%>'
@@ -12657,7 +12659,7 @@ template clockedFunctions(list<ClockedPartition> clockedPartitions, SimCode simC
       let subClocks = (subPartitions |> subPartition hasindex j fromindex 1 =>
         match subPartition
         case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
-          clockedPartFunctions(intMul(i,j), listAppend(equations, removedEquations), clock,subClock,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextSimulationDiscrete, stateDerVectorName, useFlatArrayNotation, enableMeasureTime)
+          clockedPartFunctions(intMul(i,j),previousAssignments, listAppend(equations, removedEquations), clock,subClock,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextSimulationDiscrete, stateDerVectorName, useFlatArrayNotation, enableMeasureTime)
       ; separator="\n")
       <<
       <%subClocks%>
@@ -12689,7 +12691,7 @@ template clockedFunctions(list<ClockedPartition> clockedPartitions, SimCode simC
   >>
 end clockedFunctions;
 
-template clockedPartFunctions(Integer i, list<SimEqSystem> equations,DAE.ClockKind baseClock,BackendDAE.SubClock subClock,SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean enableMeasureTime)
+template clockedPartFunctions(Integer i, list<SimEqSystem> previousAssignments, list<SimEqSystem> equations,DAE.ClockKind baseClock,BackendDAE.SubClock subClock,SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean enableMeasureTime)
  "Evaluate functions that belong to a clocked partition"
 ::=
   let className = lastIdentOfPathFromSimCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
@@ -12706,13 +12708,20 @@ template clockedPartFunctions(Integer i, list<SimEqSystem> equations,DAE.ClockKi
           _clockTime[<%idx%>] = _simTime + _clockShift[<%idx%>] * _clockInterval[<%idx%>];
 		>>
 
-  let funcs = equations |> eq =>
+  let funcs = listAppend(previousAssignments,equations) |> eq =>
     equation_function_create_single_func(eq, context/*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "evaluate", "", stateDerVectorName, useFlatArrayNotation, enableMeasureTime, false, false, 'const int clockIndex = <%i%>;<%\n%>')
     ; separator="\n"
+
+  let funcNamePrev = 'evaluateClockedAssignPrevious<%i%>'
+  let funcCallsPrev = (List.partition(previousAssignments, 100) |> eqs hasindex i0 =>
+                   createEvaluateWithSplit(i0, context, eqs, funcNamePrev, className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+                   ; separator="\n")
+
   let funcName = 'evaluateClocked<%i%>'
   let funcCalls = (List.partition(equations, 100) |> eqs hasindex i0 =>
                    createEvaluateWithSplit(i0, context, eqs, funcName, className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
                    ; separator="\n")
+
   let idx = intAdd(i, -1)
   <<
   <%funcs%>
@@ -12721,11 +12730,16 @@ template clockedPartFunctions(Integer i, list<SimEqSystem> equations,DAE.ClockKi
   {
     <%varDecls%>
 	<%preExp%>
+  //evaluate clock partition equations
 	<%funcCalls%>
+
+  //compute new clock tick
     if ((_simTime > _clockTime[<%idx%>])||_clockStart) {
       <%clockvals%>
 	  _clockStart = false;
     }
+    //assign the previous-vars since the step is completed
+    <%funcCallsPrev%>
   }
   >>
 end clockedPartFunctions;

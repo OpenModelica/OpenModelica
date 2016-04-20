@@ -333,6 +333,7 @@ package SimCode
   uniontype SubPartition
     record SUBPARTITION
       list<tuple<SimCodeVar.SimVar, Boolean>> vars;
+      list<SimEqSystem> previousAssignments;
       list<SimEqSystem> equations;
       list<SimEqSystem> removedEquations;
       BackendDAE.SubClock subClock;
