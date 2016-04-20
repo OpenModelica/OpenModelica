@@ -757,7 +757,7 @@ public constant Message MISSING_INNER_CLASS = MESSAGE(532, TRANSLATION(), WARNIN
 public constant Message RECURSION_DEPTH_WARNING = MESSAGE(533, TRANSLATION(), ERROR(),
   Util.gettext("The maximum recursion depth of %s was reached when evaluating expression %s in scope %s. Translation may still succeed but you are recommended to fix the problem."));
 public constant Message RECURSION_DEPTH_DERIVED = MESSAGE(534, TRANSLATION(), ERROR(),
-  Util.gettext("The maximum recursion depth of %s was reached when instantiating a derived class. Current class %s in scope %s."));
+  Util.gettext("The maximum recursion depth of was reached when instantiating a derived class. Current class %s in scope %s."));
 public constant Message EVAL_EXTERNAL_OBJECT_CONSTRUCTOR = MESSAGE(535, TRANSLATION(), WARNING(),
   Util.gettext("OpenModelica requires that all external objects input arguments are possible to evaluate before initialization in order to avoid odd run-time failures, but %s is a variable."));
 public constant Message CLASS_ANNOTATION_DOES_NOT_EXIST = MESSAGE(536, SCRIPTING(), ERROR(),

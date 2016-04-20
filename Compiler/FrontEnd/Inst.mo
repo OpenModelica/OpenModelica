@@ -1857,7 +1857,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,comment,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts,compelts_2_elem;
-      FCore.Graph env1,env2,env3,env,env5,cenv,cenv_2,env_2,parentEnv;
+      FCore.Graph env1,env2,env3,env,env5,cenv,cenv_2,env_2,parentEnv,parentClassEnv;
       list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,extcomps,compelts_1,compelts_2, comp_cond, derivedClassesWithConstantMods;
       Connect.Sets csets,csets1,csets2,csets3,csets4,csets5,csets_1;
       DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae6,dae7,dae;
@@ -1880,7 +1880,7 @@ algorithm
       list<DAE.Subscript> inst_dims2;
       String cn2,cns,scope_str,s,str;
       SCode.Element c;
-      SCode.ClassDef classDef;
+      SCode.ClassDef classDef, classDefParent;
       Option<DAE.EqMod> eq;
       DAE.Dimensions dims;
       Absyn.Path cn, fq_class;
@@ -2271,26 +2271,57 @@ algorithm
         false = SCode.isConnector(re);
         // check empty array dimensions
         true = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
-        (cache,SCode.CLASS(name=cn2,restriction=r),_) = Lookup.lookupClass(cache, env, cn, SOME(info));
+        (cache,SCode.CLASS(name=cn2,restriction=r,classDef=classDefParent),parentClassEnv) = Lookup.lookupClass(cache, env, cn, SOME(info));
 
         false = InstUtil.checkDerivedRestriction(re, r, cn2);
-        // chain the redeclares
-        mod = InstUtil.chainRedeclares(mods, mod);
 
-        // elab the modifiers in the parent environment!!
-        (parentEnv,_) = FGraph.stripLastScopeRef(env);
-        // adrpo: as we do this IN THE SAME ENVIRONMENT (no open scope), clone it before doing changes
-        // env = FGraph.pushScopeRef(parentEnv, FNode.copyRefNoUpdate(lastRef));
-        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
-        // print("mods: " + Absyn.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
-        mods_1 = Mod.merge(mods, mod_1, className);
+        if match r
+            case SCode.Restriction.R_PACKAGE() then false;
+            else Mod.isInvariantMod(mod);
+          end match then
+          // Is a very simple modification on an operator record; we do not need to handle it by adding SCode.EXTENDS
+          // print("Short-circuit: " + SCodeDump.restrString(r)+" "+SCodeDump.restrString(re)+" : "+SCodeDump.printModStr(mod)+"\n");
 
-        (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) =
-        instClassdef2(cache, env, ih, store, mods_1, pre, ci_state, className,
-           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},{},NONE()),
-           re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
-           callscope, graph, inSets, instSingleCref,comment,info,stopInst);
-        oDA = SCode.mergeAttributes(DA,oDA);
+          // TODO: Is this safe in more cases?
+
+          // chain the redeclares
+          mod = InstUtil.chainRedeclares(mods, mod);
+
+          // elab the modifiers in the parent environment!!
+          (parentEnv,_) = FGraph.stripLastScopeRef(env);
+          // adrpo: as we do this IN THE SAME ENVIRONMENT (no open scope), clone it before doing changes
+          // env = FGraph.pushScopeRef(parentEnv, FNode.copyRefNoUpdate(lastRef));
+          (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
+          // print("mods: " + Absyn.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
+          mods_1 = Mod.merge(mods, mod_1, className);
+
+          (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) =
+          instClassdef2(cache, parentClassEnv, ih, store, mods_1, pre, ci_state, className, classDefParent,
+             re,
+             vis, partialPrefix, encapsulatedPrefix, // TODO: Do we need to merge these?
+             inst_dims, impl,
+             callscope, graph, inSets, instSingleCref,comment,info,stopInst);
+          oDA = SCode.mergeAttributes(DA,oDA);
+
+        else
+          // chain the redeclares
+          mod = InstUtil.chainRedeclares(mods, mod);
+
+          // elab the modifiers in the parent environment!!
+          (parentEnv,_) = FGraph.stripLastScopeRef(env);
+          // adrpo: as we do this IN THE SAME ENVIRONMENT (no open scope), clone it before doing changes
+          // env = FGraph.pushScopeRef(parentEnv, FNode.copyRefNoUpdate(lastRef));
+          (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
+          // print("mods: " + Absyn.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
+          mods_1 = Mod.merge(mods, mod_1, className);
+
+          (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) =
+          instClassdef2(cache, env, ih, store, mods_1, pre, ci_state, className,
+             SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},{},NONE()),
+             re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
+             callscope, graph, inSets, instSingleCref,comment,info,stopInst);
+          oDA = SCode.mergeAttributes(DA,oDA);
+        end if;
       then
         (cache,env,ih,store,dae,csets,ci_state,vars,bc,oDA,eqConstraint,graph);
 
