@@ -4154,7 +4154,7 @@ template modelicaLine(builtin.SourceInfo info)
 ::=
   if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
     then (if Flags.isSet(OMC_RECORD_ALLOC_WORDS)
-    then '/*#modelicaLine <%infoStr(info)%>*/<%\n%>mmc_set_current_pos("<%infoStr(info)%>");<%\n%>'
+    then '/*#modelicaLine <%infoStr(info)%>*/<%\n%><% if intEq(-1, stringFind(infoStr(info),".interface.mo")) then 'mmc_set_current_pos("<%infoStr(info)%>");<%\n%>' %>'
     else '/*#modelicaLine <%infoStr(info)%>*/<%\n%>'
     )
 end modelicaLine;
