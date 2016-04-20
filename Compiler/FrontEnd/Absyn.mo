@@ -6470,7 +6470,10 @@ public function elementArgName
   output Path outName;
 algorithm
   outName := match(inArg)
+    local
+      ElementSpec e;
     case MODIFICATION(path = outName) then outName;
+    case REDECLARATION(elementSpec = e) then makeIdentPathFromString(elementSpecName(e));
   end match;
 end elementArgName;
 

@@ -4940,6 +4940,7 @@ public function removeExtendsModifiers
   input Absyn.Path inClassPath;
   input Absyn.Path inBaseClassPath;
   input Absyn.Program inProgram;
+  input Boolean keepRedeclares;
   output Absyn.Program outProgram;
   output Boolean outResult;
 algorithm
@@ -4956,7 +4957,7 @@ algorithm
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         env = getClassEnv(p, p_class);
-        cdef_1 = removeExtendsModifiersInClass(cdef, inherit_class, env);
+        cdef_1 = removeExtendsModifiersInClass(cdef, inherit_class, env, keepRedeclares);
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (newp, true);
@@ -4968,6 +4969,7 @@ protected function removeExtendsModifiersInClass
   input Absyn.Class inClass;
   input Absyn.Path inPath;
   input FCore.Graph inEnv;
+  input Boolean keepRedeclares = false;
   output Absyn.Class outClass;
 algorithm
   outClass:=
@@ -4990,7 +4992,7 @@ algorithm
                       body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),info = file_info),
           inherit_name,env)
       equation
-        parts_1 = removeExtendsModifiersInClassparts(parts, inherit_name, env);
+        parts_1 = removeExtendsModifiersInClassparts(parts, inherit_name, env, keepRedeclares);
       then
         Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,cmt),file_info);
     /* adrpo: handle also model extends M end M; */
@@ -4998,7 +5000,7 @@ algorithm
                       body = Absyn.CLASS_EXTENDS(baseClassName=bcname,parts = parts,modifications=modif,ann=ann,comment = cmt),info = file_info),
           inherit_name,env)
       equation
-        parts_1 = removeExtendsModifiersInClassparts(parts, inherit_name, env);
+        parts_1 = removeExtendsModifiersInClassparts(parts, inherit_name, env, keepRedeclares);
       then
         Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts_1,ann),file_info);
   end match;
@@ -5008,10 +5010,11 @@ protected function removeExtendsModifiersInClassparts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Absyn.Path inPath;
   input FCore.Graph inEnv;
+  input Boolean keepRedeclares;
   output list<Absyn.ClassPart> outAbsynClassPartLst;
 algorithm
   outAbsynClassPartLst:=
-  matchcontinue (inAbsynClassPartLst,inPath,inEnv)
+  matchcontinue (inAbsynClassPartLst,inPath,inEnv, keepRedeclares)
     local
       list<Absyn.ClassPart> res,rest;
       list<Absyn.ElementItem> elts_1,elts;
@@ -5019,25 +5022,25 @@ algorithm
       FCore.Graph env;
       Absyn.ClassPart elt;
 
-    case ({},_,_) then {};
+    case ({},_,_,_) then {};
 
-    case ((Absyn.PUBLIC(contents = elts) :: rest),inherit,env)
+    case ((Absyn.PUBLIC(contents = elts) :: rest),inherit,env,_)
       equation
-        res = removeExtendsModifiersInClassparts(rest, inherit, env);
-        elts_1 = removeExtendsModifiersInElementitems(elts, inherit, env);
+        res = removeExtendsModifiersInClassparts(rest, inherit, env, keepRedeclares);
+        elts_1 = removeExtendsModifiersInElementitems(elts, inherit, env, keepRedeclares);
       then
         (Absyn.PUBLIC(elts_1) :: res);
 
-    case ((Absyn.PROTECTED(contents = elts) :: rest),inherit,env)
+    case ((Absyn.PROTECTED(contents = elts) :: rest),inherit,env,_)
       equation
-        res = removeExtendsModifiersInClassparts(rest, inherit, env);
-        elts_1 = removeExtendsModifiersInElementitems(elts, inherit, env);
+        res = removeExtendsModifiersInClassparts(rest, inherit, env, keepRedeclares);
+        elts_1 = removeExtendsModifiersInElementitems(elts, inherit, env, keepRedeclares);
       then
         (Absyn.PROTECTED(elts_1) :: res);
 
-    case ((elt :: rest),inherit,env)
+    case ((elt :: rest),inherit,env,_)
       equation
-        res = removeExtendsModifiersInClassparts(rest, inherit, env);
+        res = removeExtendsModifiersInClassparts(rest, inherit, env,  keepRedeclares);
       then
         (elt :: res);
 
@@ -5048,26 +5051,30 @@ protected function removeExtendsModifiersInElementitems
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.Path inPath;
   input FCore.Graph inEnv;
+  input Boolean keepRedeclares;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
 algorithm
   outAbsynElementItemLst:=
-  matchcontinue (inAbsynElementItemLst,inPath,inEnv)
+  matchcontinue (inAbsynElementItemLst,inPath,inEnv,keepRedeclares)
     local
       list<Absyn.ElementItem> res,rest;
       Absyn.Element elt_1,elt;
       Absyn.Path inherit;
       FCore.Graph env;
       Absyn.ElementItem elitem;
-    case ({},_,_) then {};
-    case ((Absyn.ELEMENTITEM(element = elt) :: rest),inherit,env)
+
+    case ({},_,_,_) then {};
+
+    case ((Absyn.ELEMENTITEM(element = elt) :: rest),inherit,env,_)
       equation
-        res = removeExtendsModifiersInElementitems(rest, inherit, env);
-        elt_1 = removeExtendsModifiersInElement(elt, inherit, env);
+        res = removeExtendsModifiersInElementitems(rest, inherit, env, keepRedeclares);
+        elt_1 = removeExtendsModifiersInElement(elt, inherit, env, keepRedeclares);
       then
         (Absyn.ELEMENTITEM(elt_1) :: res);
-    case ((elitem :: rest),inherit,env)
+
+    case ((elitem :: rest),inherit,env,_)
       equation
-        res = removeExtendsModifiersInElementitems(rest, inherit, env);
+        res = removeExtendsModifiersInElementitems(rest, inherit, env, keepRedeclares);
       then
         (elitem :: res);
   end matchcontinue;
@@ -5077,6 +5084,7 @@ protected function removeExtendsModifiersInElement
   input Absyn.Element inElement;
   input Absyn.Path inPath;
   input FCore.Graph inEnv;
+  input Boolean keepRedeclares;
   output Absyn.Element outElement;
 algorithm
   outElement:=
@@ -5099,8 +5107,9 @@ algorithm
       equation
         (_,path_1) = Inst.makeFullyQualified(FCore.emptyCache(),env, path);
         true = Absyn.pathEqual(inherit, path_1);
+        eargs = if not keepRedeclares then {} else list(e for e guard(match e case Absyn.REDECLARATION() then true; else false; end match) in eargs);
       then
-        Absyn.ELEMENT(f,r,i,Absyn.EXTENDS(path,{},annOpt),info,constr);
+        Absyn.ELEMENT(f,r,i,Absyn.EXTENDS(path,eargs,annOpt),info,constr);
     else inElement;
   end matchcontinue;
 end removeExtendsModifiersInElement;
@@ -5680,6 +5689,7 @@ public function removeComponentModifiers
   input Absyn.Path path;
   input String inComponentName;
   input Absyn.Program inProgram;
+  input Boolean keepRedeclares;
   output Absyn.Program outProgram;
   output Boolean outResult;
 protected
@@ -5689,7 +5699,7 @@ algorithm
   try
     within_ := buildWithin(path);
     cls := getPathedClassInProgram(path, inProgram);
-    cls := clearComponentModifiersInClass(cls, inComponentName);
+    cls := clearComponentModifiersInClass(cls, inComponentName, keepRedeclares);
     outProgram := updateProgram(Absyn.PROGRAM({cls}, within_), inProgram);
     outResult := true;
   else
@@ -5701,11 +5711,12 @@ end removeComponentModifiers;
 protected function clearComponentModifiersInClass
   input Absyn.Class inClass;
   input String inComponentName;
+  input Boolean keepRedeclares;
   output Absyn.Class outClass = inClass;
 algorithm
   (outClass, true) := Absyn.traverseClassComponents(inClass,
     function clearComponentModifiersInCompitems(inComponentName =
-      inComponentName), false);
+      inComponentName, keepRedeclares = keepRedeclares), false);
 end clearComponentModifiersInClass;
 
 protected function clearComponentModifiersInCompitems
@@ -5713,6 +5724,7 @@ protected function clearComponentModifiersInCompitems
   input list<Absyn.ComponentItem> inComponents;
   input Boolean inFound;
   input String inComponentName;
+  input Boolean keepRedeclares = false;
   output list<Absyn.ComponentItem> outComponents = {};
   output Boolean outFound;
   output Boolean outContinue;
@@ -5732,7 +5744,7 @@ algorithm
       _ := match item
         case Absyn.COMPONENTITEM(component = comp as Absyn.COMPONENT())
           algorithm
-            comp.modification := NONE();
+            comp.modification := if not keepRedeclares then NONE() else stripModifiersKeepRedeclares(comp.modification);
             item.component := comp;
           then
             ();
@@ -5752,6 +5764,25 @@ algorithm
   outFound := false;
   outContinue := true;
 end clearComponentModifiersInCompitems;
+
+protected function stripModifiersKeepRedeclares
+  input Option<Absyn.Modification> inMod;
+  output Option<Absyn.Modification> outMod;
+algorithm
+  outMod := match(inMod)
+    local
+      Absyn.Modification m;
+      list<Absyn.ElementArg> ea;
+      Absyn.EqMod em;
+    case NONE() then NONE();
+    case SOME(Absyn.CLASSMOD(ea, em))
+      algorithm
+        ea := list(e for e guard(match e case Absyn.REDECLARATION() then true; else false; end match) in ea);
+        m := Absyn.CLASSMOD(ea, Absyn.NOMOD());
+      then
+        SOME(m);
+  end match;
+end stripModifiersKeepRedeclares;
 
 protected function setComponentModifier
   "Sets a submodifier of a component."

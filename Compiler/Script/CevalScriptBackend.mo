@@ -715,7 +715,7 @@ algorithm
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       GlobalScript.Statements istmts;
       list<GlobalScript.Statements> istmtss;
-      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors, sanityCheckFailed;
+      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, keepRedeclares;
       FCore.Cache cache;
       list<GlobalScript.LoadedFile> lf;
       Absyn.ComponentRef  crefCName;
@@ -2067,18 +2067,22 @@ algorithm
       then
         (cache,v,st);
 
-    case (cache,_,"removeComponentModifiers",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+    case (cache,_,"removeComponentModifiers",
+	      Values.CODE(Absyn.C_TYPENAME(path))::
+		  Values.STRING(str1)::
+		  Values.BOOL(keepRedeclares)::_,(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
-        (p,b) = Interactive.removeComponentModifiers(path, str1, p);
+        (p,b) = Interactive.removeComponentModifiers(path, str1, p, keepRedeclares);
         st = GlobalScriptUtil.setSymbolTableAST(st, p);
       then
         (cache,Values.BOOL(b),st);
 
     case (cache,_,"removeExtendsModifiers",
-          {Values.CODE(Absyn.C_TYPENAME(classpath)),
-           Values.CODE(Absyn.C_TYPENAME(baseClassPath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+          Values.CODE(Absyn.C_TYPENAME(classpath))::
+          Values.CODE(Absyn.C_TYPENAME(baseClassPath))::
+		  Values.BOOL(keepRedeclares)::_,st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
-        (p,b) = Interactive.removeExtendsModifiers(classpath, baseClassPath, p);
+        (p,b) = Interactive.removeExtendsModifiers(classpath, baseClassPath, p, keepRedeclares);
         st = GlobalScriptUtil.setSymbolTableAST(st, p);
       then
         (cache,Values.BOOL(b),st);
