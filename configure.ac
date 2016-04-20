@@ -37,6 +37,7 @@ AC_SUBST(OMCRUNTIME_SHARED_LDFLAGS)
 AC_SUBST(SUNDIALS_LDFLAGS)
 AC_SUBST(IPOPT_LDFLAGS)
 AC_SUBST(IPOPT_CFLAGS)
+AC_SUBST(IPOPT_TARGET)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(SOURCE_REVISION)
@@ -595,6 +596,17 @@ AS_IF([test "x$with_UMFPACK" = xyes],
   UMFPACK_TARGET="";
   WITH_UMFPACK="/* Without UMFPACK */"
   UMFPACK_LDFLAGS=""
+])
+
+# check for ipopt
+AC_ARG_WITH(ipopt, [  --without-ipopt              Disable compilation with IPOPT (only for bootstrapping; required for simulations)],
+[],[with_ipopt=yes])
+
+AS_IF([test "x$with_ipopt" = xyes],
+[
+  IPOPT_TARGET="ipopt";
+],[
+  IPOPT_TARGET=""
 ])
 
 m4_include([common/m4/corba.m4])
