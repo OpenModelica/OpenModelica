@@ -34,11 +34,14 @@ sortFiles:=true;
 ulimitOmc:="660"; // 11 minutes to generate the C-code
 ulimitExe:="480"; // 8 additional minutes to initialize and run the simulation
 ulimitMemory:="16000000";  // ~16GB memory at most
+extraSimFlags:=""; // no extra sim flags
 javascript := false;
-simFlags := "-abortSlowSimulation -alarm=" + ulimitExe;
 customLibrary := false;
 
 runScript("CustomCommands.mos");
+
+simFlags:="-abortSlowSimulation -alarm=" + ulimitExe;
+simFlags:=simFlags + " " + extraSimFlags;
 
 customCommandsStr := if regularFileExists("CustomCommands.mos") then ("Flags: <pre>" + escapeXML(readFile("CustomCommands.mos")) + "</pre>") else "";
 
