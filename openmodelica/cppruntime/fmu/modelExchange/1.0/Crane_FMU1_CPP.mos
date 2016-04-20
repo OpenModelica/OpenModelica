@@ -3,7 +3,7 @@
 // status:   correct
 // Real variables, Real input variable, continuous-time states, state events, event iteration
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.1"}); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 loadFile("cranes.mo"); getErrorString();
 translateModelFMU(cranes.crane, version="1.0"); getErrorString();

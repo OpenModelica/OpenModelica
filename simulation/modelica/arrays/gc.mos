@@ -6,7 +6,7 @@
 //  test issues with GC
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.1"}); getErrorString();
 loadFile("gc.mo"); getErrorString();
 
 // use DLL loading!

@@ -1,7 +1,7 @@
 // name: Bug3417.mos [BUG: #3417]
 // status: correct
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.1"}); getErrorString();
 getClassNames(Modelica.Electrical); getErrorString();
 getClassInformation(Modelica.Electrical);
 loadString("within Modelica;

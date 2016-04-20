@@ -4,7 +4,7 @@
 // teardown_command: rm -rf Modelica.Utilities.Examples.readRealParameterModel*
 // 
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.1"}); getErrorString();
 setCommandLineOptions("+d=nogen,initialization,backenddaeinfo,discreteinfo,stateselection"); getErrorString();
 buildModel(Modelica.Utilities.Examples.readRealParameterModel); getErrorString();
 

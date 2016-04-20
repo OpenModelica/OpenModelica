@@ -6,7 +6,7 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.1"});
 translateModelFMU(Modelica.Blocks.Sources.BooleanPulse, version="1.0");
 getErrorString();
 

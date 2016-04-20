@@ -3,7 +3,7 @@
 // status: correct
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.1"}); getErrorString();
 loadFile("getDialogAnnotation.mo"); getErrorString();
 list(GetDialogAnnotation); getErrorString();
 getComponentAnnotations(GetDialogAnnotation); getErrorString();

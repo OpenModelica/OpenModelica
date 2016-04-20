@@ -12,14 +12,12 @@ simulate(ServoSystem1.Aufgabe3_3);  getErrorString();
 // true
 // ""
 // true
-// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
+// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
 // "
 // record SimulationResult
 //     resultFile = "ServoSystem1.Aufgabe3_3_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ServoSystem1.Aufgabe3_3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "[Modelica 3.2.1/Electrical/Machines.mo:12803:7-12804:76:writable] Warning: Parameter servo1.motor.DCPM.Js has no value, and is fixed during initialization (fixed=true), using available start value (start=servo1.motor.DCPM.Jr) as default value.
-// [Modelica 3.2.1/Electrical/Machines.mo:12803:7-12804:76:writable] Warning: Parameter servo2.motor.DCPM.Js has no value, and is fixed during initialization (fixed=true), using available start value (start=servo2.motor.DCPM.Jr) as default value.
-// "
+// ""
 // endResult

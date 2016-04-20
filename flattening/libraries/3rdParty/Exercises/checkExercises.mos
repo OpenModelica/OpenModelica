@@ -3,7 +3,7 @@
 // provided by Martin Otter 
 //
 
-loadModel(Modelica, {"3.2"}); getErrorString();
+loadModel(Modelica, {"3.2.1"}); getErrorString();
 
 loadFile("1/Aufgabe1_1.mo"); getErrorString();
 checkModel(Aufgabe1_1); getErrorString();

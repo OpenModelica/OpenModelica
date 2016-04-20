@@ -14,7 +14,7 @@ dumpXMLDAE(XmlDumpComment,"flat");
 readFile("XmlDumpComment.xml");
 
 "Optimiser";
-loadModel(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum); getErrorString();
+loadModel(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, {"3.2.1"}); getErrorString();
 dumpXMLDAE(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum,"optimiser",true,true);
 readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 

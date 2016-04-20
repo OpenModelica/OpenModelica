@@ -118,7 +118,7 @@ getMessagesStringInternal();
 
 clear();
 // adrpo: test unique messages
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.1"});
 getMessagesStringInternal(); // unique
 loadModel(ThermoSysPro);
 getMessagesStringInternal(); // unique
@@ -694,7 +694,7 @@ getMessagesStringInternal(unique = false); // not unique
 // end OpenModelica.Scripting.ErrorMessage;}
 // Evaluating: clear()
 // true
-// Evaluating: loadModel(Modelica)
+// Evaluating: loadModel(Modelica, {"3.2.1"})
 // true
 // Evaluating: getMessagesStringInternal()
 // {}

@@ -5,7 +5,7 @@
 // Checks that the intial environment is cloned when returned (as the env now has destructive updates)
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.1"}); getErrorString();
 
 existClass(Modelica.Fluid.Vessels.OpenTank);
 getClassRestriction(Modelica.Fluid.Pipes.StaticPipe);

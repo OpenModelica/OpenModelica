@@ -6,7 +6,7 @@
 
 setCommandLineOptions({"+d=dumprepl,dumpindxdae"}); getErrorString();
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.1"}); getErrorString();
 loadFile("asmaFlow.mo"); getErrorString();
 simulate(asmaFlow); getErrorString();
 val(aimc.flange.tau, 0);
