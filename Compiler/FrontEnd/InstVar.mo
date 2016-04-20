@@ -269,9 +269,10 @@ algorithm
 
 
         // the outer must be in an instance that is part of a State Machine
-        cref = PrefixUtil.prefixToCref(inPrefix);
         topInstance = listHead(ih);
         InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
+        true = BaseHashSet.currentSize(sm) > 0;
+        cref = PrefixUtil.prefixToCref(inPrefix);
         true = BaseHashSet.has(cref, sm);
 
         (cache,compenv,ih,store,dae,csets,ty,graph) =
@@ -410,9 +411,10 @@ algorithm
         true = Absyn.isInnerOuter(io);
 
         // the inner outer must be in an instance that is part of a State Machine
-        cref = PrefixUtil.prefixToCref(inPrefix);
         topInstance = listHead(ih);
         InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
+        true = BaseHashSet.currentSize(sm) > 0;
+        cref = PrefixUtil.prefixToCref(inPrefix);
         true = BaseHashSet.has(cref, sm);
 
         (cache,innerCompEnv,ih,store,dae,csetsInner,ty,graph) =
@@ -1221,9 +1223,10 @@ algorithm
     // Component with input/output that is part of a state machine
     case (_, _, _)
       equation
-        cref = PrefixUtil.prefixToCref(inPrefix);
         topInstance = listHead(ih);
         InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
+        true = BaseHashSet.currentSize(sm) > 0;
+        cref = PrefixUtil.prefixToCref(inPrefix);
         true = BaseHashSet.has(cref, sm);
       then inAttributes;
     // Everything else, strip the input/output prefix.
