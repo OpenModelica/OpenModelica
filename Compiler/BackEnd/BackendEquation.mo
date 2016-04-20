@@ -1888,6 +1888,52 @@ algorithm
   end matchcontinue;
 end traverseEquationToScalarResidualForm;
 
+public function convertResidualsIntoSolvedEquations
+"This function converts residuals into solved equations of the following form:
+    e.g.: 0 = a+b -> $res1 = a+b"
+  input list<BackendDAE.Equation> inResidualList;
+  input String inName;
+  input BackendDAE.Var inTemplateVar;
+  input Integer inIndex;
+  output list<BackendDAE.Equation> outEquationList = {};
+  output list<BackendDAE.Var> outVariableList = {};
+protected
+  Integer index = inIndex;
+algorithm
+  for eq in inResidualList loop
+    _ := match eq
+      local
+        DAE.Exp exp;
+        DAE.ElementSource source "origin of equation";
+        BackendDAE.EquationAttributes eqAttr;
+        String varName;
+        DAE.ComponentRef componentRef;
+        DAE.Exp expVarName;
+        BackendDAE.Equation currEquation;
+        BackendDAE.Var currVariable;
+
+      case BackendDAE.RESIDUAL_EQUATION(exp=exp,source=source,attr=eqAttr)
+        equation
+          varName = inName + intString(index);
+          componentRef = DAE.CREF_IDENT(varName, DAE.T_REAL_DEFAULT, {});
+          currEquation = BackendDAE.SOLVED_EQUATION(componentRef, exp, source, eqAttr);
+          currVariable = BackendVariable.copyVarNewName(componentRef, inTemplateVar);
+
+          index = index + 1;
+          outEquationList = currEquation::outEquationList;
+          outVariableList = currVariable::outVariableList;
+        then ();
+      else
+        equation
+          true = Flags.isSet(Flags.FAILTRACE);
+          Error.addInternalError("function convertResidualsIntoSolvedEquations failed", sourceInfo());
+        then fail();
+    end match;
+  end for;
+  outEquationList := MetaModelica.Dangerous.listReverseInPlace(outEquationList);
+  outVariableList := MetaModelica.Dangerous.listReverseInPlace(outVariableList);
+end convertResidualsIntoSolvedEquations;
+
 public function equationInfo "
   Retrieve the line number information from a BackendDAE.BackendDAEequation"
   input BackendDAE.Equation eq;

@@ -2530,7 +2530,7 @@ protected
 algorithm
   DAE.DAE(elementLst = daelist) := inDAElist;
   funList := dumpFunctionList(functionTree);
-  fixedDae := List.map(daelist, dumpDAEList);
+  fixedDae := List.map(daelist, DAEUtil.splitComponent);
   outString := Tpl.tplString2(DAEDumpTpl.dumpDAE, fixedDae, funList);
 end dumpStr;
 
@@ -2620,43 +2620,6 @@ algorithm
         str;
   end match;
 end dumpStream;
-
-public function dumpDAEList " returns split  DAE elements(Mainly important for template based DAE unparser) :
-   variables, initial equations, initial algorithms,
-   equations, algorithms, constraints and external objects"
-  input DAE.Element inElement;
-  output compWithSplitElements outCompWSplElem;
-algorithm
-  (outCompWSplElem) := match (inElement)
-    local
-      String n;
-      list<DAE.Element> l;
-      Option<SCode.Comment> c;
-
-      list<DAE.Element> v;
-      list<DAE.Element> ie;
-      list<DAE.Element> ia;
-      list<DAE.Element> e;
-      list<DAE.Element> a;
-      list<DAE.Element> co;
-      list<DAE.Element> o;
-      list<DAE.Element> ca;
-      list<compWithSplitElements> sm;
-      splitElements loc_splelem;
-
-      compWithSplitElements compWSplElem;
-
-
-    case (DAE.COMP(ident = n,dAElist = l,comment = c))
-      equation
-       (v,ie,ia,e,a,ca,co,o,sm) = DAEUtil.splitElements(l);
-        loc_splelem = SPLIT_ELEMENTS(v,ie,ia,e,a,ca,co,o,sm);
-        compWSplElem = COMP_WITH_SPLIT(n, loc_splelem, c);
-      then
-        (compWSplElem);
-
-  end match;
-end dumpDAEList;
 
 public function dumpFunctionList " returns sorted functions and record constructors in alphabetical order
   (mainly important for template based DAE unparser)."
@@ -3616,7 +3579,7 @@ algorithm
       SourceInfo i;
       list<Absyn.Within> po;
       list<Option<DAE.ComponentRef>> iol;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> ceol;
+      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> ceol;
       list<Absyn.Path> tl;
       list<DAE.SymbolicOperation> op;
       list<SCode.Comment> cmt;
@@ -3639,21 +3602,19 @@ algorithm
 end getSourceInformationStr;
 
 protected function connectsStr
-  input list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> inLst;
+  input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> inLst;
   output list<String> outStr;
 algorithm
   outStr := matchcontinue(inLst)
     local
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> rest;
+      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> rest;
       list<String> slst;
       String str;
       DAE.ComponentRef c1, c2;
 
     case ({}) then {};
 
-    case ({NONE()}) then {};
-
-    case ({SOME((c1,c2))})
+    case ({(c1,c2)})
       equation
         str = ComponentReference.printComponentRefStr(c1) + "," +
               ComponentReference.printComponentRefStr(c2);
@@ -3661,7 +3622,7 @@ algorithm
       then
         {str};
 
-    case (SOME((c1,c2))::rest)
+    case ((c1,c2)::rest)
       equation
         str = ComponentReference.printComponentRefStr(c1) + "," +
               ComponentReference.printComponentRefStr(c2);
@@ -3669,12 +3630,6 @@ algorithm
         slst = connectsStr(rest);
       then
         str::slst;
-
-    case (NONE()::rest)
-      equation
-        slst = connectsStr(rest);
-      then
-        slst;
 
   end matchcontinue;
 end connectsStr;

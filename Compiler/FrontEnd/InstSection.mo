@@ -237,7 +237,7 @@ algorithm
         (outCache, outEnv, outIH, outDae, outSets, outState, outGraph) :=
           instEquationCommonWork(inCache, inEnv, inIH, inPrefix, inSets, state,
             inEEquation, inInitial, inImpl, inGraph, DAE.FLATTEN(inEEquation,NONE()));
-        outDae := DAEUtil.traverseDAE(outDae, DAE.emptyFuncTree,
+        outDae := DAEUtil.traverseDAE(outDae, DAE.AvlTreePathFunction.Tree.EMPTY(),
           Expression.traverseSubexpressionsHelper,
           (ExpressionSimplify.simplifyWork, ExpressionSimplifyTypes.optionSimplifyOnly));
       then
@@ -596,8 +596,7 @@ protected function makeEqSource
   input DAE.SymbolicOperation inFlattenOp;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := ElementSource.createElementSource(inInfo, FGraph.getScopePath(inEnv),
-    PrefixUtil.prefixToCrefOpt(inPrefix), NONE(), NONE());
+  outSource := ElementSource.createElementSource(inInfo, FGraph.getScopePath(inEnv), PrefixUtil.prefixToCrefOpt(inPrefix));
   outSource := ElementSource.addSymbolicTransformation(outSource, inFlattenOp);
 end makeEqSource;
 
@@ -2041,7 +2040,7 @@ algorithm
       equation
         // set the source of this element
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre));
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);
         (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2108,7 +2107,7 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph)
       equation
         // set the source of this element
-        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre));
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.INITIAL(), impl, unrollForLoops);
         (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2156,7 +2155,7 @@ algorithm
       equation
         // set the source of this element
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre));
 
         (cache,constraints_1,_,_) = Static.elabExpList(cache, env, constraints, impl, NONE(), true /*vect*/, pre, Absyn.dummyInfo);
         // (constraints_1,_) = DAEUtil.traverseDAEEquationsStmts(constraints_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
@@ -2921,7 +2920,7 @@ protected function instConnect "
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inSets,inPrefix,inComponentRefLeft,inComponentRefRight,inImplicit,inGraph,info)
+  matchcontinue (inCache,inEnv,inIH,inSets,inPrefix,inComponentRefLeft,inComponentRefRight,inImplicit,inGraph)
     local
       DAE.ComponentRef c1_1,c2_1,c1_2,c2_2;
       DAE.Type t1,t2;
@@ -2948,7 +2947,7 @@ algorithm
       Boolean del1, del2;
 
     // adrpo: check for connect(A, A) as we should give a warning and remove it!
-    case (cache,env,ih,sets,_,c1,c2,_,graph,_)
+    case (cache,env,ih,sets,_,c1,c2,_,graph)
       equation
         true = Absyn.crefEqual(c1, c2);
         s1 = Dump.printComponentRefStr(c1);
@@ -2957,8 +2956,32 @@ algorithm
       then
         (cache, env, ih, sets, DAE.emptyDae, graph);
 
+    // handle normal connectors!
+    case (cache,env,ih,sets,pre,c1,c2,impl,graph)
+      algorithm
+        (cache, c1_2, attr1, ct1, vt1, io1, f1, ty1, del1) :=
+          instConnector(cache, env, ih, c1, impl, pre, info);
+        (cache, c2_2, attr2, _, vt2, io2, f2, ty2, del2) :=
+          instConnector(cache, env, ih, c2, impl, pre, info);
+
+        if del1 or del2 then
+          // If either connector is a deleted conditional component, discard the connection.
+          dae := DAE.emptyDae;
+        elseif Types.isExpandableConnector(ty1) or Types.isExpandableConnector(ty2) then
+          // If either connector is expandable, fail and use the next case.
+          fail();
+        else
+          // Otherwise it's a normal connection.
+          checkConnectTypes(c1_2, ty1, f1, attr1, c2_2, ty2, f2, attr2, info);
+          (cache, _, ih, sets, dae, graph) :=
+            connectComponents(cache, env, ih, sets, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, ct1, io1, io2, graph, info);
+          sets := ConnectUtil.increaseConnectRefCount(c1_2, c2_2, sets);
+        end if;
+      then
+        (cache,env,ih,sets,dae,graph);
+
     // adrpo: handle expandable connectors!
-    case (cache,env,ih,sets,pre,c1,c2,impl,graph,_)
+    case (cache,env,ih,sets,pre,c1,c2,impl,graph)
       equation
         ErrorExt.setCheckpoint("expandableConnectors");
         true = System.getHasExpandableConnectors();
@@ -2967,30 +2990,10 @@ algorithm
       then
         (cache,env,ih,sets,dae,graph);
 
-    // handle normal connectors!
-    case (cache,env,ih,sets,pre,c1,c2,impl,graph,_)
-      algorithm
-        ErrorExt.rollBack("expandableConnectors");
-        (cache, c1_2, attr1, ct1, vt1, io1, f1, ty1, del1) :=
-          instConnector(cache, env, ih, c1, impl, pre, info);
-        (cache, c2_2, attr2, _, vt2, io2, f2, ty2, del2) :=
-          instConnector(cache, env, ih, c2, impl, pre, info);
-
-        // If neither connector is a deleted conditional components, create the connection.
-        if not (del1 or del2) then
-          checkConnectTypes(c1_2, ty1, f1, attr1, c2_2, ty2, f2, attr2, info);
-          (cache, _, ih, sets, dae, graph) :=
-            connectComponents(cache, env, ih, sets, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, ct1, io1, io2, graph, info);
-          sets := ConnectUtil.increaseConnectRefCount(c1_2, c2_2, sets);
-        else
-          dae := DAE.emptyDae;
-        end if;
-      then
-        (cache,env,ih,sets,dae,graph);
-
     // Case to display error for non constant subscripts in connectors
-    case (cache,env,_,_,pre,c1,c2,_,_,_)
+    case (cache,env,_,_,pre,c1,c2,_,_)
       equation
+        ErrorExt.rollBack("expandableConnectors");
         subs1 = Absyn.getSubsFromCref(c1,true,true);
         crefs1 = Absyn.getCrefsFromSubs(subs1,true,true);
         subs2 = Absyn.getSubsFromCref(c2,true,true);
@@ -3005,7 +3008,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,c1,c2,_,_,_)
+    case (_,_,_,_,_,c1,c2,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstSection.instConnect failed for: connect(" +
@@ -3035,15 +3038,16 @@ protected function instConnector
   output Boolean deleted;
 protected
   FCore.Status status;
+  Boolean is_expandable;
 algorithm
   outCref := ComponentReference.toExpCref(connectorCref);
   (DAE.ATTR(connectorType = connectorType, variability = variability,
-    innerOuter = innerOuter), ty, status) :=
+    innerOuter = innerOuter), ty, status, is_expandable) :=
       Lookup.lookupConnectorVar(env, outCref);
 
   deleted := FCore.isDeletedComp(status);
 
-  if deleted then
+  if deleted or is_expandable then
     face := Connect.NO_FACE();
     outAttr := DAE.dummyAttrVar;
   else
@@ -3203,8 +3207,8 @@ algorithm
         (attr2,ty2) = Lookup.lookupConnectorVar(env,c2_2);
         DAE.ATTR(connectorType = SCode.POTENTIAL()) = attr1;
         DAE.ATTR(connectorType = SCode.POTENTIAL()) = attr2;
-        true = isExpandableConnectorType(ty1);
-        true = isExpandableConnectorType(ty2);
+        true = Types.isExpandableConnector(ty1);
+        true = Types.isExpandableConnector(ty2);
 
         // do the union of the connectors by adding the missing
         // components from one to the other and vice-versa.
@@ -3290,7 +3294,7 @@ algorithm
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (_,ty1) = Lookup.lookupConnectorVar(env, c1_2);
         // make sure is expandable!
-        true = isExpandableConnectorType(ty1);
+        true = Types.isExpandableConnector(ty1);
         // strip last subs to get the full type!
         c1_2 = ComponentReference.crefStripLastSubs(c1_2);
         (_,attr,ty,binding,cnstForRange,_,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
@@ -3378,7 +3382,7 @@ algorithm
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (attr1,ty1) = Lookup.lookupConnectorVar(env, c1_2);
         // make sure is expandable!
-        true = isExpandableConnectorType(ty1);
+        true = Types.isExpandableConnector(ty1);
         // strip last subs to get the full type!
         c1_2 = ComponentReference.crefStripLastSubs(c1_2);
         (_,attr,ty,binding,cnstForRange,_,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
@@ -3455,7 +3459,7 @@ algorithm
         state = ClassInf.CONNECTOR(Absyn.IDENT("expandable connector"), true);
         (cache,c1p) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         (cache,c2p) = PrefixUtil.prefixCref(cache, env, ih, pre, c2_2);
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1p,c2p));
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
 
@@ -3472,7 +3476,7 @@ algorithm
           source);
 
         dae = DAEUtil.joinDaes(dae, daeExpandable);
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "<<<< connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")"); // \nDAE:" + DAEDump.dumpStr(daeExpandable, DAE.emptyFuncTree));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "<<<< connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")"); // \nDAE:" + DAEDump.dumpStr(daeExpandable, DAE.AvlTreePathFunction.Tree.EMPTY()));
       then
         (cache,env,ih,sets,dae,graph);
 
@@ -3489,8 +3493,8 @@ algorithm
         (_,ty2) = Lookup.lookupConnectorVar(env,c2_2);
 
         // non-expandable
-        false = isExpandableConnectorType(ty1);
-        false = isExpandableConnectorType(ty2);
+        false = Types.isExpandableConnector(ty1);
+        false = Types.isExpandableConnector(ty2);
 
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "connect(non-expandable, non-expandable)(" + Dump.printComponentRefStr(c1) + ", " + Dump.printComponentRefStr(c2) + ")");
         // then connect the components normally.
@@ -3745,20 +3749,6 @@ algorithm
         (cache,env,ih,sets,dae,graph);
   end match;
 end connectExpandableVariables;
-
-public function isExpandableConnectorType
-"@author: adrpo
-  this function checks if the given type is an expandable connector"
-  input DAE.Type ty;
-  output Boolean isExpandable;
-algorithm
-  isExpandable := match (ty)
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_,true))) then true;
-    // TODO! check if subtype is needed here
-    case (DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(_,true))) then true;
-    else false;
-  end match;
-end isExpandableConnectorType;
 
 protected function getStateFromType
 "@author: adrpo
@@ -4145,7 +4135,7 @@ algorithm
            PrefixUtil.prefixExp(cache, env, ih, Expression.crefExp(c2), pre);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1_1,c2_1));
 
         // print("CONNECT: " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" +
         //    ComponentReference.printComponentRefStr(c1_1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
@@ -4166,7 +4156,7 @@ algorithm
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1_1,c2_1));
 
         crefExp1 = Expression.crefExp(c1_1);
         crefExp2 = Expression.crefExp(c2_1);
@@ -4194,7 +4184,7 @@ algorithm
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1_1,c2_1));
 
         sets_1 = ConnectUtil.addConnection(sets, c1, f1, c2, f2, inConnectorType, source);
       then
@@ -4276,7 +4266,7 @@ algorithm
         // set the source of this element
         (cache,c1p) = PrefixUtil.prefixCref(cache, env, ih, pre, c1);
         (cache,c2p) = PrefixUtil.prefixCref(cache, env, ih, pre, c2);
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1p,c2p));
 
         sets_1 = ConnectUtil.addArrayConnection(sets, c1, f1, c2, f2, source, ct);
       then
@@ -4296,7 +4286,7 @@ algorithm
           t2, vt2, ct, io1, io2, ConnectionGraph.NOUPDATE_EMPTY, info);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1_1,c2_1));
 
         // Add an edge to connection graph. The edge contains the
         // dae to be added in the case where the edge is broken.
@@ -4342,7 +4332,7 @@ algorithm
           t2, vt2, ct, io1, io2, ConnectionGraph.NOUPDATE_EMPTY, info);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1_1,c2_1));
 
         // Add an edge to connection graph. The edge contains the
         // dae to be added in the case where the edge is broken.
@@ -5444,7 +5434,7 @@ algorithm
         (crefInfoList,_) = List.deleteMemberOnTrue(foundCref,crefInfoList,crefInfoListCrefsEqual);
 
         // Now that the iterator is removed cocatenate the two lists
-        // crefInfoList = List.appendNoCopy(crefInfoList_tmp,crefInfoList);
+        // crefInfoList = listAppend(expandableEqs(crefInfoList_tmp,crefInfoList);
 
         //check the rest
         crefInfoList = collectParallelVariables(crefInfoList,restStmts);

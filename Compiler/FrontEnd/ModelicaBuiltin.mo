@@ -3691,6 +3691,24 @@ annotation(
 </html>"), preferredView="text");
 end generateScriptingAPI;
 
+package Experimental
+
+function relocateFunctions
+  input String fileName;
+  input String names[:,2];
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p><strong>Highly experimental, requires OMC be compiled with special flags to use</strong>.</p>
+<p>Update symbols in the running program to ones defined in the given shared object.</p>
+<p>This will hot-swap the functions at run-time, enabling a smart build system to do some incremental compilation
+(as long as the function interfaces are the same).</p>
+</html>"), preferredView="text");
+end relocateFunctions;
+
+end Experimental;
+
 end Scripting;
 
 package UsersGuide

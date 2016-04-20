@@ -81,7 +81,7 @@ IF(CMAKE_BUILD_TYPE)
 				IF(${f} MATCHES "optimized")
 					SET(SKIP_ENTRY ON)
 				ELSEIF(${f} MATCHES "debug")
-				
+
 				ELSE(${f} MATCHES "optimized")
 					LIST(APPEND Boost_LIBRARIES_NEW ${f})
 				ENDIF(${f} MATCHES "optimized")
@@ -97,7 +97,7 @@ IF(CMAKE_BUILD_TYPE)
 				IF(${f} MATCHES "debug")
 					SET(SKIP_ENTRY ON)
 				ELSEIF(${f} MATCHES "optimized")
-				
+
 				ELSE(${f} MATCHES "debug")
 					LIST(APPEND Boost_LIBRARIES_NEW ${f})
 				ENDIF(${f} MATCHES "debug")
@@ -113,7 +113,12 @@ ENDIF(CMAKE_BUILD_TYPE)
 
 IF(WIN32)
 	SET(Boost_LIBS_ "$(OMHOME)/bin")
-	SET(Boost_INCLUDE_ "$(OMHOME)/include/omc/cpp")
+	IF(MSVC)
+		SET(Boost_INCLUDE_ "$(OMHOME)/include/omc/cpp/3rdParty/boost/msvc/")
+	ELSE(MSVC)
+		SET(Boost_INCLUDE_ "$(OMHOME)/include/omc/cpp/3rdParty/boost/gcc/")
+	ENDIF(MSVC)
+
 	SET(SUNDIALS_LIBS_ "$(OMHOME)/bin")
 	SET(SUNDIALS_INCLUDE_DIR_ "$(OMHOME)/include/omc/cpp/sundials")
 	SET(LAPACK_LIBS_ "$(OMHOME)/bin")
@@ -250,7 +255,7 @@ configure_file (
   )
 install (FILES
 				${PROJECT_BINARY_DIR}/ModelicaConfig_gcc.inc
-				DESTINATION include/omc/cpp)  
+				DESTINATION include/omc/cpp)
 
   configure_file (
    "ModelicaLibraryConfig_gcc.inc.in"
@@ -262,8 +267,8 @@ install (FILES
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 
-              
-                
+
+
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/Modelica.h ${CMAKE_SOURCE_DIR}/Include/Core/ModelicaDefine.h DESTINATION include/omc/cpp/Core)
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Policies/TextfileWriter.h DESTINATION include/omc/cpp/Core/DataExchange/Policies)
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Policies/MatfileWriter.h DESTINATION include/omc/cpp/Core/DataExchange/Policies)

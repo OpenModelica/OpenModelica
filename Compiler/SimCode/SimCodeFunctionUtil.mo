@@ -774,7 +774,7 @@ algorithm
           rt_1, recordDecls, includes, includeDirs, libs,libPaths);
 
         // Record constructor.
-    case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name))),kind=kind), rt, recordDecls, includes, includeDirs, libs,libPaths)
+    case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), rt, recordDecls, includes, includeDirs, libs,libPaths)
       equation
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
@@ -783,7 +783,7 @@ algorithm
         varDecls = List.map(varlst, typesVar);
         info = ElementSource.getElementSourceFileInfo(source);
       then
-        (SimCode.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info, kind), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
+        (SimCode.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
 
         // failure
     case (_, fn, _, _, _, _, _,_)
@@ -1133,7 +1133,7 @@ public function findLiterals
 algorithm
   (ofns, (_, _, literals)) := DAEUtil.traverseDAEFunctions(
     fns, findLiteralsHelper,
-    (0, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize), {}), {});
+    (0, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize), {}));
   literals := listReverse(literals);
 end findLiterals;
 
@@ -1167,33 +1167,35 @@ function replaceLiteralArrayExp
   input DAE.Exp inExp;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
   output DAE.Exp outExp;
-  output Boolean cont;
+  output Boolean cont=true;
   output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
 algorithm
-  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,outTpl) := match (inExp,inTpl)
     local
       DAE.Exp exp,exp2;
       tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
-    case (DAE.ARRAY(), _)
-      equation
-        isLiteralArrayExp(inExp);
-        (exp2, tpl) = replaceLiteralExp2(inExp, inTpl);
-      then (exp2, false, tpl);
-    case (exp as DAE.ARRAY(), tpl)
-      equation
-        failure(isLiteralArrayExp(exp));
-      then (exp, false, tpl);
-    case (exp as DAE.MATRIX(), _)
-      equation
-        isLiteralArrayExp(exp);
-        (exp2, tpl) = replaceLiteralExp2(inExp, inTpl);
-      then (exp2, false, tpl);
+    case (DAE.ARRAY(), tpl)
+      algorithm
+        try
+          isLiteralArrayExp(inExp);
+          (exp2, tpl) := replaceLiteralExp2(inExp, tpl);
+          cont := false;
+        else
+          exp2 := inExp;
+        end try;
+      then (exp2, tpl);
     case (exp as DAE.MATRIX(), tpl)
-      equation
-        failure(isLiteralArrayExp(exp));
-      then (exp, false, tpl);
-    else (inExp, true, inTpl);
-  end matchcontinue;
+      algorithm
+        try
+          isLiteralArrayExp(inExp);
+          (exp2, tpl) := replaceLiteralExp2(inExp, tpl);
+          cont := false;
+        else
+          exp2 := inExp;
+        end try;
+      then (exp2, tpl);
+    else (inExp, inTpl);
+  end match;
 end replaceLiteralArrayExp;
 
 function replaceLiteralExp
@@ -2342,8 +2344,8 @@ algorithm
         els = DAEUtil.getFunctionElements(funcelem);
         // SimCode.Function reference variables are filtered out
         varfuncs = List.fold(els, DAEUtil.collectFunctionRefVarPaths, {});
-        (_, (_, varfuncs)) = DAEUtil.traverseDAE2(els, Expression.traverseSubexpressionsHelper, (DAEUtil.collectValueblockFunctionRefVars, varfuncs));
-        (_, (_, (calledfuncs, _))) = DAEUtil.traverseDAE2(els, Expression.traverseSubexpressionsHelper, (matchNonBuiltinCallsAndFnRefPaths, ({}, varfuncs)));
+        (_, (_, varfuncs)) = DAEUtil.traverseDAEElementList(els, Expression.traverseSubexpressionsHelper, (DAEUtil.collectValueblockFunctionRefVars, varfuncs));
+        (_, (_, (calledfuncs, _))) = DAEUtil.traverseDAEElementList(els, Expression.traverseSubexpressionsHelper, (matchNonBuiltinCallsAndFnRefPaths, ({}, varfuncs)));
         ht = BaseHashTable.add((pathstr, path), ht);
         ht = addDestructor(funcelem, ht);
         ht = getCalledFunctionsInFunctions(calledfuncs, ht, funcs);

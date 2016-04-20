@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2016, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,30 +28,65 @@
  *
  */
 
-/*! \file events.h
+ /*! \file ida_solver.h
  */
 
-#ifndef _EVENTS_H_
-#define _EVENTS_H_
+#ifndef OMC_IDA_SOLVER_H
+#define OMC_IDA_SOLVER_H
 
+#include "openmodelica.h"
 #include "simulation_data.h"
+#include "util/simulation_options.h"
 #include "simulation/solver/solver_main.h"
-#include "util/list.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifdef WITH_SUNDIALS
 
-extern int maxBisectionIterations;
-void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_boolean useRootFinding, double *eventTime);
+#include <sundials/sundials_nvector.h>
+#include <nvector/nvector_serial.h>
+#include <ida/ida.h>
+#include <ida/ida_dense.h>
 
-void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
+typedef struct IDA_USERDATA
+{
+  DATA* data;
+  threadData_t* threadData;
+}IDA_USERDATA;
 
-double findRoot(DATA *data, threadData_t *threadData, LIST *eventList);
+typedef struct IDA_SOLVER
+{
+  /* ### configuration  ### */
+  int setInitialSolution;
+  int jacobianMethod;            /* specifices the method to calculate the jacobian matrix */
 
-#ifdef __cplusplus
-}
+  /* ### work arrays ### */
+  N_Vector y;
+  N_Vector yp;
+
+  /* ### work array used in jacobian calculation */
+  double sqrteps;
+  double *ysave;
+  double *delta_hh;
+  N_Vector errwgt;
+  N_Vector newdelta;
+
+  /* ### ida internal data */
+  void* ida_mem;
+  IDA_USERDATA* simData;
+
+}IDA_SOLVER;
+
+/* initial main ida Data */
+int
+ida_solver_initial(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo, IDA_SOLVER *idaData);
+
+/* deinitial main ida Data */
+int
+ida_solver_deinitial(IDA_SOLVER *idaData);
+
+/* main ida function to make a step */
+int
+ida_solver_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);
+
 #endif
 
 #endif

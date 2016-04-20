@@ -2088,7 +2088,7 @@ algorithm
         cache := instantiateDaeFunctions(cache, env, paths);
         funcs := FCore.getFunctionTree(cache);
         d := List.map2(paths, DAEUtil.getNamedFunctionWithError, funcs, info);
-        (_,(_,dependencies)) := DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}),{});
+        (_,(_,dependencies)) := DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}));
         // print(name + " has dependencies: " + stringDelimitList(dependencies,",") + "\n");
         dependencies := List.sort(dependencies,Util.strcmpBool);
         dependencies := List.map1(dependencies,stringAppend,".h");

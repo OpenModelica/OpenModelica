@@ -30,11 +30,11 @@ function execStat
 protected
   Real t, total;
   String timeStr, totalTimeStr, gcStr;
-  Integer memory, oldMemory, since, before;
+  Integer memory, oldMemory, heapsize_full, free_bytes_full, since, before;
   GC.ProfStats stats, oldStats;
 algorithm
   if Flags.isSet(Flags.EXEC_STAT) then
-    (stats as GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before)) := GC.getProfStats();
+    (stats as GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before, heapsize_full=heapsize_full, free_bytes_full=free_bytes_full)) := GC.getProfStats();
     memory := since+before;
     oldStats := getGlobalRoot(Global.gcProfilingIndex);
     (oldStats as GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before)) := oldStats;
@@ -49,7 +49,9 @@ algorithm
     else
       Error.addMessage(Error.EXEC_STAT, {name, timeStr, totalTimeStr,
           StringUtil.bytesToReadableUnit(memory-oldMemory, maxSizeInUnit=500, significantDigits=4),
-          StringUtil.bytesToReadableUnit(memory, maxSizeInUnit=500, significantDigits=4)
+          StringUtil.bytesToReadableUnit(memory, maxSizeInUnit=500, significantDigits=4),
+          StringUtil.bytesToReadableUnit(free_bytes_full, maxSizeInUnit=500, significantDigits=4),
+          StringUtil.bytesToReadableUnit(heapsize_full, maxSizeInUnit=500, significantDigits=4)
       });
     end if;
     System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);

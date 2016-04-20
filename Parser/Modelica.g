@@ -103,6 +103,11 @@ goto rule ## func ## Ex; }}
     int offset1;
     int offset2;
   } fileinfo;
+  #if !defined(OMC_GENERATE_RELOCATABLE_CODE) || defined(OMC_BOOTSTRAPPING)
+  modelica_boolean omc_Absyn_isDerCref(threadData_t* threadData, void* exp);
+  #else
+  modelica_boolean (*omc_Absyn_isDerCref)(threadData_t* threadData, void* exp);
+  #endif
 }
 
 @members

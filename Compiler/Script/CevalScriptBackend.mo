@@ -747,6 +747,7 @@ algorithm
       String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description,prefix;
       list<String> interfaceType;
       list<tuple<String,list<String>>> interfaceTypeAssoc;
+      list<tuple<String,String>> relocatableFunctionsTuple;
       SCode.Encapsulated encflag;
       SCode.Restriction restr;
       list<list<Values.Value>> valsLst;
@@ -2352,6 +2353,19 @@ algorithm
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"Unknown input to solveLinearSystem scripting function"});
       then (cache,Values.TUPLE({v,Values.INTEGER(-1)}),st);
+
+    case (cache,_,"relocateFunctions",{Values.STRING(str), v as Values.ARRAY()},st,_)
+      algorithm
+        relocatableFunctionsTuple := {};
+        for varr in v.valueLst loop
+          Values.ARRAY(valueLst={Values.STRING(s1),Values.STRING(s2)}) := varr;
+          relocatableFunctionsTuple := (s1,s2)::relocatableFunctionsTuple;
+        end for;
+        b := System.relocateFunctions(str, relocatableFunctionsTuple);
+      then (cache,Values.BOOL(b),st);
+
+    case (cache,_,"relocateFunctions",_,st,_)
+      then (cache,Values.BOOL(false),st);
 
  end matchcontinue;
 end cevalInteractiveFunctions3;

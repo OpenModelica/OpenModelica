@@ -58,43 +58,52 @@ import CodegenCFunctions.*;
   match simCode
   case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
     let target  = simulationCodeTarget()
-    let &dummy = buffer ""
     let()= System.tmpTickResetIndex(0,2) /* auxFunction index */
     let()= System.tmpTickResetIndex(0,20)  /*parfor index*/
-    let()= textFile(simulationMakefile(target, simCode), '<%fileNamePrefix%>.makefile') // write the makefile first!
-    let()= textFile(simulationLiteralsFile(fileNamePrefix, literals), '<%fileNamePrefix%>_literals.h')
-    let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
 
-    let()= textFileConvertLines(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, dummy), '<%fileNamePrefix%>_functions.c')
-    let()= textFile(externalFunctionIncludes(sc.externalFunctionIncludes), '<%fileNamePrefix%>_includes.h')
+    // write the makefile first!
+    let &makeFile = buffer ""
+    let &makeFile += redirectToFile('<%fileNamePrefix%>.makefile')
+    let &makeFile += simulationMakefile(target, simCode)
+    let &makeFile += closeFile()
 
-    let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
 
-    let()= textFile(simulationHeaderFile(simCode), '<%fileNamePrefix%>_model.h')
+    let &literalsFile = buffer ""
+    let &literalsFile += redirectToFile('<%fileNamePrefix%>_literals.h')
+    let &literalsFile += simulationLiteralsFile(fileNamePrefix, literals)
+    let &literalsFile += closeFile()
+
+    let &functionsHeader = buffer ""
+    let &functionsHeader += redirectToFile('<%fileNamePrefix%>_functions.h')
+    let &functionsHeader += simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls)
+    let &functionsHeader += closeFile()
+
+    let &includes = buffer ""
+    let &includes += redirectToFile('<%fileNamePrefix%>_includes.h')
+    let &includes += externalFunctionIncludes(sc.externalFunctionIncludes)
+    let &includes += closeFile()
+
+    let &records = buffer ""
+    let &records += redirectToFile('<%fileNamePrefix%>_records.c')
+    let &records += recordsFile(fileNamePrefix, recordDecls)
+    let &records += closeFile()
+
     // adpro: write the main .c file last! Make on windows doesn't seem to realize that
     //        the .c file is newer than the .o file if we have succesive simulate commands
     //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
 
     // If ParModelica generate the kernels file too.
     if acceptParModelicaGrammar() then
-      let()= textFile(simulationParModelicaKernelsFile(fileNamePrefix, modelInfo.functions), '<%fileNamePrefix%>_kernels.cl')
+      let &cl = buffer ""
+      let &cl += redirectToFile('<%fileNamePrefix%>_kernels.cl')
+      let &cl += simulationParModelicaKernelsFile(fileNamePrefix, modelInfo.functions)
+      let &cl += closeFile()
+      ""
 
     //this top-level template always returns an empty result
     //since generated texts are written to files directly
-    ""
   end match
 end translateModel;
-
-/* public */ template translateInitFile(SimCode simCode, String guid) "used in Compiler/SimCode/SimCodeMain.mo"
-::=
-  match simCode
-  case sc as SIMCODE(__) then
-    let _ = if simulationSettingsOpt then //tests the Option<> for SOME()
-              textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
-    let _ = (if stringEq(Config.simCodeTarget(),"JavaScript") then
-              covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c', simulationCodeTarget()))
-    ""
-end translateInitFile;
 
 /* public */ template simulationHeaderFile(SimCode simCode)
   "Generates code for main C file for simulation target.
@@ -340,10 +349,19 @@ match baseClock
     >>
   else
     let &preExp = buffer ""
-    let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
+    let intvl = match baseClock
+      case REAL_CLOCK()
+      case INTEGER_CLOCK()
+      case BOOLEAN_CLOCK() then
+        daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
+      else "unspecified"
+      let interval = match intvl case "unspecified" then '1.0' else intvl
+      let warning = match intvl case "unspecified" then
+        'ModelicaMessage("Using default Clock(1.0)!");'
     <<
     <%preExp%>
-    data->simulationInfo->clocksData[i].interval = <%intvl%>;
+    data->simulationInfo->clocksData[i].interval = <%interval%>;
+    <%warning%>
     >>
 end updatePartition;
 
@@ -388,9 +406,8 @@ end functionSystemsSynchronous;
 
 template functionEquationsSynchronous(Integer i, list<tuple<SimCodeVar.SimVar, Boolean>> vars, list<SimEqSystem> equations, String modelNamePrefix)
 ::=
-  let &varDecls = buffer ""
   let &eqfuncs = buffer ""
-  let fncalls = equations |> eq => equation_(i, eq, contextOther, &varDecls, &eqfuncs, modelNamePrefix); separator="\n"
+  let fncalls = equations |> eq => equation_(i, eq, contextOther, &eqfuncs, modelNamePrefix); separator="\n"
   <<
   <%&eqfuncs%>
 
@@ -1081,7 +1098,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     #include "<%fileNamePrefix%>_info.c"
       ;
     #endif /* defined(_MSC_VER) */
-	#endif /* defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME) */
+    #endif /* defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME) */
     >>
     %>
 
@@ -1994,7 +2011,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
          let &tmp = buffer ""
          let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var))%> = xloc[<%i0%>];' ;separator="\n")
          let prebody = (ls.residual |> eq2 =>
-               functionExtraResidualsPreBody(eq2, &varDeclsRes /*BUFD*/, &tmp, modelNamePrefix)
+               functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
           ;separator="\n")
          let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
@@ -2099,7 +2116,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
          let &tmp = buffer ""
          let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var))%> = xloc[<%i0%>];' ;separator="\n")
          let prebody = (ls.residual |> eq2 =>
-               functionExtraResidualsPreBody(eq2, &varDeclsRes /*BUFD*/, &tmp, modelNamePrefix)
+               functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
           ;separator="\n")
          let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
@@ -2123,7 +2140,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
          let &tmp2 = buffer ""
          let xlocs2 = (at.vars |> var hasindex i0 => '<%cref(varName(var))%> = xloc[<%i0%>];' ;separator="\n")
          let prebody2 = (at.residual |> eq2 =>
-               functionExtraResidualsPreBody(eq2, &varDeclsRes2 /*BUFD*/, &tmp2, modelNamePrefix)
+               functionExtraResidualsPreBody(eq2, &tmp2, modelNamePrefix)
           ;separator="\n")
          let body2 = (at.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp2 = buffer "" /*BUFD*/
@@ -2395,14 +2412,14 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, Str
    ;separator="\n\n")
 end functionInitialNonLinearSystemsTemp;
 
-template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls, Text &eqs, String modelNamePrefixStr)
+template functionExtraResidualsPreBody(SimEqSystem eq, Text &eqs, String modelNamePrefixStr)
  "Generates an equation."
 ::=
   match eq
   case e as SES_RESIDUAL(__)
   then ""
   else
-  equation_(-1, eq, contextSimulationDiscrete, &varDecls, &eqs, modelNamePrefixStr)
+  equation_(-1, eq, contextSimulationDiscrete, &eqs, modelNamePrefixStr)
   end match
 end functionExtraResidualsPreBody;
 
@@ -2443,7 +2460,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
         >>
       ;separator="\n")
       let prebody = (nls.eqs |> eq2 =>
-        functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
+        functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
       ;separator="\n")
       let body = match nls.eqs
         case (alg as SES_INVERSE_ALGORITHM(__))::{} then
@@ -2505,7 +2522,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
         >>
       ;separator="\n")
       let prebody = (nls.eqs |> eq2 =>
-        functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
+        functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
       ;separator="\n")
       let body = (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
         let &preExp = buffer ""
@@ -2531,7 +2548,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
         >>
       ;separator="\n")
       let prebody2 = (at.eqs |> eq2 =>
-        functionExtraResidualsPreBody(eq2, &varDecls2, &tmp2, modelNamePrefix)
+        functionExtraResidualsPreBody(eq2, &tmp2, modelNamePrefix)
       ;separator="\n")
       let body2 = (at.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
         let &preExp2 = buffer ""
@@ -2659,19 +2676,18 @@ end functionInitialStateSets;
 template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquations, list<SimEqSystem> nominalValueEquations, list<SimEqSystem> minValueEquations, list<SimEqSystem> maxValueEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
-  let &varDecls = buffer ""
   let &tmp = buffer ""
   let startEqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(-1, eq, contextOther, &varDecls, &tmp, modelNamePrefix)
+      equation_(-1, eq, contextOther, &tmp, modelNamePrefix)
     ;separator="\n")
   let nominalEqPart = (nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(-1, eq, contextOther, &varDecls, &tmp, modelNamePrefix)
+      equation_(-1, eq, contextOther, &tmp, modelNamePrefix)
     ;separator="\n")
   let minEqPart = (minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(-1, eq, contextOther, &varDecls, &tmp, modelNamePrefix)
+      equation_(-1, eq, contextOther, &tmp, modelNamePrefix)
     ;separator="\n")
   let maxEqPart = (maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(-1, eq, contextOther, &varDecls, &tmp, modelNamePrefix)
+      equation_(-1, eq, contextOther, &tmp, modelNamePrefix)
     ;separator="\n")
 
   <<
@@ -2679,8 +2695,6 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
   int <%symbolName(modelNamePrefix,"updateBoundVariableAttributes")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    <%varDecls%>
-
     /* min ******************************************************** */
     <%minEqPart%>
 
@@ -2743,10 +2757,9 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, Str
   "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
-  let &varDecls = buffer ""
   let &tmp = buffer ""
   let body = (parameterEquations |> eq  =>
-    '<%equation_(-1, eq, contextSimulationDiscrete, &varDecls, &tmp, modelNamePrefix)%>'
+    '<%equation_(-1, eq, contextSimulationDiscrete, &tmp, modelNamePrefix)%>'
     ;separator="\n")
 
   <<
@@ -2754,7 +2767,6 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, Str
   int <%symbolName(modelNamePrefix,"updateBoundParameters")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    <%varDecls%>
     <%body%>
 
     TRACE_POP
@@ -2767,17 +2779,16 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, String mode
   "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
-  let &varDecls = buffer ""
   let nrfuncs = listLength(initalEquations)
   let &eqfuncs = buffer ""
   let &eqArray = buffer ""
   let fncalls = if Flags.isSet(Flags.PARMODAUTO) then
                 (initalEquations |> eq hasindex i0 =>
-                    equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &varDecls, &eqArray, &eqfuncs, modelNamePrefix)
+                    equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
               else
                 (initalEquations |> eq hasindex i0 =>
-                    equation_(-1, eq, contextSimulationDiscrete, &varDecls, &eqfuncs, modelNamePrefix)
+                    equation_(-1, eq, contextSimulationDiscrete, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
 
   let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
@@ -2797,7 +2808,6 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, String mode
   int <%symbolName(modelNamePrefix,"functionInitialEquations")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    <%varDecls%>
 
     data->simulationInfo->discreteCall = 1;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations(<%nrfuncs%>, data, threadData, functionInitialEquations_systems);'
@@ -2814,17 +2824,16 @@ template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lamb
   "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
-  let &varDecls = buffer ""
   let nrfuncs = listLength(initalEquations_lambda0)
   let &eqfuncs = buffer ""
   let &eqArray = buffer ""
   let fncalls = if Flags.isSet(Flags.PARMODAUTO) then
                 (initalEquations_lambda0 |> eq hasindex i0 =>
-                    equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &varDecls, &eqArray, &eqfuncs, modelNamePrefix)
+                    equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
               else
                 (initalEquations_lambda0 |> eq hasindex i0 =>
-                    equation_(-1, eq, contextSimulationDiscrete, &varDecls, &eqfuncs, modelNamePrefix)
+                    equation_(-1, eq, contextSimulationDiscrete, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
 
   let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
@@ -2844,7 +2853,6 @@ template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lamb
   int <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    <%varDecls%>
 
     data->simulationInfo->discreteCall = 1;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations_lambda0(<%nrfuncs%>, data, threadData, functionInitialEquations_lambda0_systems);'
@@ -2880,7 +2888,7 @@ template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Tex
       >>
     end match
   else
-  equation_(-1, eq, contextSimulationDiscrete, &varDecls, &eqs, modelNamePrefix)
+  equation_(-1, eq, contextSimulationDiscrete, &eqs, modelNamePrefix)
   end match
 end functionRemovedInitialEquationsBody;
 
@@ -3740,17 +3748,16 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
   This is a helper of template simulationFile."
 ::=
   let &auxFunction = buffer ""
-  let &varDecls = buffer ""
   let nrfuncs = listLength(allEquationsPlusWhen)
   let &eqfuncs = buffer ""
   let &eqArray = buffer ""
   let fncalls = if Flags.isSet(Flags.PARMODAUTO) then
                 (allEquationsPlusWhen |> eq hasindex i0 =>
-                    equation_arrayFormat(eq, "DAE", contextSimulationDiscrete, i0, &varDecls, &eqArray, &eqfuncs, modelNamePrefix)
+                    equation_arrayFormat(eq, "DAE", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
               else
                 (allEquationsPlusWhen |> eq hasindex i0 =>
-                    equation_(-1, eq, contextSimulationDiscrete, &varDecls, &eqfuncs, modelNamePrefix)
+                    equation_(-1, eq, contextSimulationDiscrete, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
 
   let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
@@ -3774,7 +3781,6 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
     TRACE_PUSH
     int equationIndexes[1] = {0};<%/*reinits may use equation indexes, even though it has no equation...*/%>
     <%addRootsTempArray()%>
-    <%varDecls%>
 
     data->simulationInfo->needToIterate = 0;
     data->simulationInfo->discreteCall = 1;
@@ -3793,11 +3799,10 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   Generates function for ZeroCrossings in simulation file.
   This is a helper of template simulationFile."
 ::=
-  let &varDecls = buffer ""
   let &tmp = buffer ""
   let &auxFunction = buffer ""
   let eqs = (equationsForZeroCrossings |> eq =>
-       equation_(-1, eq, contextSimulationNonDiscrete, &varDecls, &tmp, modelNamePrefix)
+       equation_(-1, eq, contextSimulationNonDiscrete, &tmp, modelNamePrefix)
       ;separator="\n")
   let forwardEqs = equationsForZeroCrossings |> eq => equationForward_(eq,contextSimulationNonDiscrete,modelNamePrefix); separator="\n"
 
@@ -3838,7 +3843,6 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   int <%symbolName(modelNamePrefix,"function_ZeroCrossingsEquations")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    <%varDecls%>
 
     data->simulationInfo->callStatistics.functionZeroCrossingsEquations++;
 
@@ -4083,10 +4087,9 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
   Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
-  let &varDecls = buffer ""
   let &tmp = buffer ""
   let algAndEqAssertsPart = (algAndEqAssertsEquations |> eq =>
-    equation_(-1, eq, contextSimulationDiscrete, &varDecls, &tmp, modelNamePrefix)
+    equation_(-1, eq, contextSimulationDiscrete, &tmp, modelNamePrefix)
     ;separator="\n")
 
   <<
@@ -4095,7 +4098,6 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
   int <%symbolName(modelNamePrefix,"checkForAsserts")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    <%varDecls%>
 
     <%algAndEqAssertsPart%>
 
@@ -4120,11 +4122,11 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
     let vectorU = genVector("u", varInfo.numInVars, 1)
     let vectorY = genVector("y", varInfo.numOutVars, 2)
     let vectorZ = genVector("z", varInfo.numAlgVars, 2)
-    //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0); \n  output Real y[<%varInfo.numOutVars%>]; \n");
+    //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0);\n  output Real y[<%varInfo.numOutVars%>];\n");
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n"
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states\n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs\n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs\n"
       "  parameter Real x0[<%varInfo.numStateVars%>] = {%s};\n"
       "  parameter Real u0[<%varInfo.numInVars%>] = {%s};\n"
       <%matrixA%>
@@ -4139,7 +4141,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
     {
-      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n  parameter Integer nz = <%varInfo.numAlgVars%>; // data recovery variables \n"
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states\n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs\n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs\n  parameter Integer nz = <%varInfo.numAlgVars%>; // data recovery variables\n"
       "  parameter Real x0[<%varInfo.numStateVars%>] = {%s};\n"
       "  parameter Real u0[<%varInfo.numInVars%>] = {%s};\n"
       "  parameter Real z0[<%varInfo.numAlgVars%>] = {%s};\n"
@@ -4153,7 +4155,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%vectorU%>
       <%vectorY%>
       <%vectorZ%>
-      "\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%><% getVarName(vars.inputVars, "u", varInfo.numInVars) %><%getVarName(vars.outputVars, "y", varInfo.numOutVars) %><%getVarName(vars.algVars, "z", varInfo.numAlgVars) %>\n"
+      "\n<%getVarName(vars.stateVars, "x", varInfo.numStateVars)%><% getVarName(vars.inputVars, "u", varInfo.numInVars)%><%getVarName(vars.outputVars, "y", varInfo.numOutVars)%><%getVarName(vars.algVars, "z", varInfo.numAlgVars)%>\n"
       "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\n  z = Cz * x + Dz * u;\nend linear_<%underscorePath(name)%>;\n";
     }
     >>
@@ -4166,7 +4168,7 @@ template getVarName(list<SimVar> simVars, String arrayName, Integer arraySize) "
   simVars |> var hasindex arrindex fromindex 1 =>
     (match var
     case SIMVAR(__) then
-      '  Real <%arrayName%>_<%crefM(name)%> = <%arrayName%>[<%arrindex%>];\n'
+      <<  Real '<%arrayName%>_<%cref(name)%>' = <%arrayName%>[<%arrindex%>];\n>>
     end match)
   ; empty
 end getVarName;
@@ -4359,10 +4361,9 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   This template generates functions for each column of a single jacobian.
   This is a helper of generateMatrix."
 ::=
-  let &varDecls = buffer ""
   let &tmp = buffer ""
   let eqns_ = (jacEquations |> eq =>
-    equation_(-1, eq, contextSimulationNonDiscrete, &varDecls, &tmp, modelNamePrefix); separator="\n")
+    equation_(-1, eq, contextSimulationNonDiscrete, &tmp, modelNamePrefix); separator="\n")
 
   <<
   <%&tmp%>
@@ -4372,7 +4373,6 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
 
     DATA* data = ((DATA*)inData);
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixName%>;
-    <%varDecls%>
     <%eqns_%>
 
     TRACE_POP
@@ -4381,7 +4381,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   >>
 end functionJac;
 
-template equation_arrayFormat(SimEqSystem eq, String name, Context context, Integer arrayIndex, Text &varDecls, Text &eqArray, Text &eqfuncs, String modelNamePrefix)
+template equation_arrayFormat(SimEqSystem eq, String name, Context context, Integer arrayIndex, Text &eqArray, Text &eqfuncs, String modelNamePrefix)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
@@ -4415,19 +4415,19 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   // no dynamic tearing
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
     let &tempeqns += (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*,threadData_t*);' ; separator = "\n")
-    equationNonlinear(e, context, &varD, modelNamePrefix)
+    equationNonlinear(e, context, modelNamePrefix)
   // dynamic tearing
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
     let &tempeqns += (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*,threadData_t*);' ; separator = "\n")
     let &tempeqns += '<%\n%>'
     let &tempeqns += (at.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*,threadData_t*);' ; separator = "\n")
-    equationNonlinear(e, context, &varD, modelNamePrefix)
+    equationNonlinear(e, context, modelNamePrefix)
   case e as SES_WHEN(__)
     then equationWhen(e, context, &varD, &tempeqns)
   case e as SES_RESIDUAL(__)
     then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
   case e as SES_MIXED(__)
-    then equationMixed(e, context, &varD, &eqfuncs, modelNamePrefix)
+    then equationMixed(e, context, &eqfuncs, modelNamePrefix)
   else
     "NOT IMPLEMENTED EQUATION equation_"
 
@@ -4456,7 +4456,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   )
 end equation_arrayFormat;
 
-template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &varDecls, Text &eqs, String modelNamePrefix)
+template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &eqs, String modelNamePrefix)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
@@ -4496,13 +4496,13 @@ template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &va
     then equationLinear(e, context, &varD)
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
     let &tempeqns += (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*,threadData_t*);' ; separator = "\n")
-    equationNonlinear(e, context, &varD, modelNamePrefix)
+    equationNonlinear(e, context, modelNamePrefix)
   case e as SES_WHEN(__)
     then equationWhen(e, context, &varD, &tempeqns)
   case e as SES_RESIDUAL(__)
     then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
   case e as SES_MIXED(__)
-    then equationMixed(e, context, &varD, &eqs, modelNamePrefix)
+    then equationMixed(e, context, &eqs, modelNamePrefix)
   case e as SES_FOR_LOOP(__)
     then equationForLoop(e, context, &varD, &tempeqns)
   else
@@ -4512,7 +4512,7 @@ template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &va
     equationLinearAlternativeTearing(e, context, &varD)
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
     let &tempeqns2 += (at.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*,threadData_t*);' ; separator = "\n")
-    equationNonlinearAlternativeTearing(e, context, &varD, modelNamePrefix)
+    equationNonlinearAlternativeTearing(e, context, modelNamePrefix)
   else
     ""
 
@@ -4785,12 +4785,12 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(a
 end equationLinearAlternativeTearing;
 
 
-template equationMixed(SimEqSystem eq, Context context, Text &varDecls, Text &tmp, String modelNamePrefixStr)
+template equationMixed(SimEqSystem eq, Context context, Text &tmp, String modelNamePrefixStr)
  "Generates a mixed equation system."
 ::=
 match eq
 case eqn as SES_MIXED(__) then
-  let contEqs = equation_(-1, cont, context, &varDecls, &tmp, modelNamePrefixStr)
+  let contEqs = equation_(-1, cont, context, &tmp, modelNamePrefixStr)
   let numDiscVarsStr = listLength(discVars)
   <<
   /* Continuous equation part in <%contEqs%> */
@@ -4803,7 +4803,7 @@ case eqn as SES_MIXED(__) then
 end equationMixed;
 
 
-template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, String modelNamePrefix)
+template equationNonlinear(SimEqSystem eq, Context context, String modelNamePrefix)
  "Generates a non linear equation system."
 ::=
   match eq
@@ -4811,7 +4811,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
       let size = listLength(nls.crefs)
       let &tmp = buffer ""
       let innerBody = (nls.eqs |> eq2 =>
-         functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
+         functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
        ;separator="\n")
       let nonlinindx = nls.indexNonLinearSystem
       let returnval = match at case at as SOME(__) then 'return 1;' case at as NONE() then ''
@@ -4852,7 +4852,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
       >>
 end equationNonlinear;
 
-template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, Text &varDecls, String modelNamePrefix)
+template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, String modelNamePrefix)
  "Generates a non linear equation system for the alternative tearing set."
 ::=
   match eq
@@ -4860,7 +4860,7 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, Te
       let size = listLength(at.crefs)
       let &tmp = buffer ""
       let innerBody = (at.eqs |> eq2 =>
-         functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
+         functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
        ;separator="\n")
       let nonlinindx = at.indexNonLinearSystem
       <<
@@ -5046,7 +5046,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   let IfEquation = (ifbranches |> (e, eqns) hasindex index0 =>
     let condition = daeExp(e, context, &preExp, &varDecls, &eqnsDecls)
     let ifequations = ( eqns |> eqn =>
-       let eqnStr = equation_(-1, eqn, context, &varDecls, &eqnsDecls, modelNamePrefixStr)
+       let eqnStr = equation_(-1, eqn, context, &eqnsDecls, modelNamePrefixStr)
        <<
        <%eqnStr%>
        >>
@@ -5061,7 +5061,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
     >>
     ;separator="\n")
   let elseequations = ( elsebranch |> eqn =>
-     let eqnStr = equation_(-1, eqn, context, &varDecls, &eqnsDecls /*EQNBUF*/, modelNamePrefixStr)
+     let eqnStr = equation_(-1, eqn, context, &eqnsDecls /*EQNBUF*/, modelNamePrefixStr)
        <<
        <%eqnStr%>
        >>
@@ -5079,18 +5079,15 @@ end equationIfEquationAssign;
   "Generates the content of the C file for literals in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
-  let &preLit = buffer ""
-  let res = literals |> literal hasindex i0 fromindex 0 =>
-    (if typeinfo() then '/* <%Util.escapeModelicaStringToCString(printExpStr(literal))%> */<%\n%>') +
-    literalExpConst(literal,i0, &preLit)
-    ; separator="\n";empty
   <<
   #ifdef __cplusplus
   extern "C" {
   #endif
 
-  <%preLit%>
-  <%res%>
+  <%literals |> literal hasindex i0 fromindex 0 =>
+    (if typeinfo() then '/* <%Util.escapeModelicaStringToCString(printExpStr(literal))%> */<%\n%>') +
+    literalExpConst(literal,i0)
+    ; separator="\n"; empty %>
 
   #ifdef __cplusplus
   }
@@ -5099,7 +5096,7 @@ end equationIfEquationAssign;
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end simulationLiteralsFile;
 
-/* public */ template simulationFunctionsFile(String filePrefix, list<Function> functions, Text &staticPrototypes)
+/* public */ template simulationFunctionsFile(String filePrefix, list<Function> functions)
  "Generates the content of the C file for functions in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
@@ -5120,16 +5117,6 @@ end simulationLiteralsFile;
   extern cl_program omc_ocl_program;
   /* The default OpenCL device. If not set (=0) show the selection option.*/
   unsigned int default_ocl_device = <%getDefaultOpenCLDevice()%>;
-  >>
-  %>
-
-  <%if staticPrototypes then
-  <<
-  /* default, do not make protected functions static */
-  #if !defined(PROTECTED_FUNCTION_STATIC)
-  #define PROTECTED_FUNCTION_STATIC
-  #endif
-  <%staticPrototypes%>
   >>
   %>
 
@@ -5294,7 +5281,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "-O0 -g"%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%> <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '-DFMU_EXPERIMENTAL' %>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/emcc/pre.js<%\n%>'
-  %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%>
+  %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%><% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%>
   LDFLAGS=<%dirExtra%> <%
   if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -s TOTAL_MEMORY=805306368 -s OUTLINING_LIMIT=20000 --pre-js $(OMC_EMCC_PRE_JS)>>
   else <<-L"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<% if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then "--stack,16777216,"%>-rpath,"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%ParModelicaAutoLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> >>
@@ -5314,7 +5301,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   .PHONY: $(CFILES)
 
   omc_main_target: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES)
-  <%\t%>$(CC) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS)
+  <%\t%>$(CC) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>rm -f <%fileNamePrefix%>'%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>ln -s <%fileNamePrefix%>_node.js <%fileNamePrefix%>'%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>chmod +x <%fileNamePrefix%>_node.js'%>
@@ -5329,87 +5316,6 @@ else
   error(sourceInfo(), 'Target <%target%> is not handled!')
 end simulationMakefile;
 
-template xsdateTime(DateTime dt)
- "YYYY-MM-DDThh:mm:ssZ"
-::=
-  match dt
-  case DATETIME(__) then '<%year%>-<%twodigit(mon)%>-<%twodigit(mday)%>T<%twodigit(hour)%>:<%twodigit(min)%>:<%twodigit(sec)%>Z'
-end xsdateTime;
-
-/* public */ template simulationInitFile(SimCode simCode, String guid)
- "Generates the contents of the makefile for the simulation case.
-  used in Compiler/Template/CodegenFMU.tpl"
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__)),
-             simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__)), makefileParams = makefileParams as MAKEFILE_PARAMS(__))
-  then
-  <<
-  <?xml version = "1.0" encoding="UTF-8"?>
-
-  <!-- description of the model interface using an extention of the FMI standard -->
-  <fmiModelDescription
-    fmiVersion                          = "1.0"
-
-    modelName                           = "<%Util.escapeModelicaStringToXmlString(dotPath(modelInfo.name))%>"
-    modelIdentifier                     = "<%Util.escapeModelicaStringToXmlString(underscorePath(modelInfo.name))%>"
-
-    OPENMODELICAHOME                    = "<%makefileParams.omhome%>"
-
-    guid                                = "{<%guid%>}"
-
-    description                         = "<%Util.escapeModelicaStringToXmlString(modelInfo.description)%>"
-    generationTool                      = "OpenModelica Compiler <%getVersionNr()%>"
-    generationDateAndTime               = "<%xsdateTime(getCurrentDateTime())%>"
-
-    variableNamingConvention            = "structured"
-
-    numberOfEventIndicators             = "<%vi.numZeroCrossings%>"  cmt_numberOfEventIndicators             = "NG:       number of zero crossings,                           FMI"
-    numberOfTimeEvents                  = "<%vi.numTimeEvents%>"  cmt_numberOfTimeEvents                  = "NG_SAM:   number of zero crossings that are samples,          OMC"
-
-    numberOfInputVariables              = "<%vi.numInVars%>"  cmt_numberOfInputVariables              = "NI:       number of inputvar on topmodel,                     OMC"
-    numberOfOutputVariables             = "<%vi.numOutVars%>"  cmt_numberOfOutputVariables             = "NO:       number of outputvar on topmodel,                    OMC"
-
-    numberOfExternalObjects             = "<%vi.numExternalObjects%>"  cmt_numberOfExternalObjects             = "NEXT:     number of external objects,                         OMC"
-    numberOfFunctions                   = "<%listLength(functions)%>"  cmt_numberOfFunctions                   = "NFUNC:    number of functions used by the simulation,         OMC"
-
-    numberOfContinuousStates            = "<%vi.numStateVars%>"  cmt_numberOfContinuousStates            = "NX:       number of states,                                   FMI"
-    numberOfRealAlgebraicVariables      = "<%intAdd(vi.numAlgVars,intAdd(vi.numDiscreteReal,intAdd(vi.numOptimizeConstraints, vi.numOptimizeFinalConstraints)))%>"  cmt_numberOfRealAlgebraicVariables      = "NY:       number of real variables,                           OMC"
-    numberOfRealAlgebraicAliasVariables = "<%vi.numAlgAliasVars%>"  cmt_numberOfRealAlgebraicAliasVariables = "NA:       number of alias variables,                          OMC"
-    numberOfRealParameters              = "<%vi.numParams%>"  cmt_numberOfRealParameters              = "NP:       number of parameters,                               OMC"
-
-    numberOfIntegerAlgebraicVariables   = "<%vi.numIntAlgVars%>"  cmt_numberOfIntegerAlgebraicVariables   = "NYINT:    number of alg. int variables,                       OMC"
-    numberOfIntegerAliasVariables       = "<%vi.numIntAliasVars%>"  cmt_numberOfIntegerAliasVariables       = "NAINT:    number of alias int variables,                      OMC"
-    numberOfIntegerParameters           = "<%vi.numIntParams%>"  cmt_numberOfIntegerParameters           = "NPINT:    number of int parameters,                           OMC"
-
-    numberOfStringAlgebraicVariables    = "<%vi.numStringAlgVars%>"  cmt_numberOfStringAlgebraicVariables    = "NYSTR:    number of alg. string variables,                    OMC"
-    numberOfStringAliasVariables        = "<%vi.numStringAliasVars%>"  cmt_numberOfStringAliasVariables        = "NASTR:    number of alias string variables,                   OMC"
-    numberOfStringParameters            = "<%vi.numStringParamVars%>"  cmt_numberOfStringParameters            = "NPSTR:    number of string parameters,                        OMC"
-
-    numberOfBooleanAlgebraicVariables   = "<%vi.numBoolAlgVars%>"  cmt_numberOfBooleanAlgebraicVariables   = "NYBOOL:   number of alg. bool variables,                      OMC"
-    numberOfBooleanAliasVariables       = "<%vi.numBoolAliasVars%>"  cmt_numberOfBooleanAliasVariables       = "NABOOL:   number of alias bool variables,                     OMC"
-    numberOfBooleanParameters           = "<%vi.numBoolParams%>"  cmt_numberOfBooleanParameters           = "NPBOOL:   number of bool parameters,                          OMC" >
-
-
-    <!-- startTime, stopTime, tolerance are FMI specific, all others are OMC specific -->
-    <DefaultExperiment
-      startTime      = "<%s.startTime%>"
-      stopTime       = "<%s.stopTime%>"
-      stepSize       = "<%s.stepSize%>"
-      tolerance      = "<%s.tolerance%>"
-      solver         = "<%s.method%>"
-      outputFormat   = "<%s.outputFormat%>"
-      variableFilter = "<%s.variableFilter%>" />
-
-    <!-- variables in the model -->
-    <%ModelVariables(modelInfo)%>
-
-
-  </fmiModelDescription>
-
-  >>
-end simulationInitFile;
-
 template crefM(ComponentRef cr)
  "Generates Modelica equivalent name for component reference."
 ::=
@@ -5418,208 +5324,6 @@ template crefM(ComponentRef cr)
   case CREF_IDENT(ident = "time") then "time"
   else "P" + crefToMStr(cr)
 end crefM;
-
-template equationInfo1(SimEqSystem eq, Text &preBuf, Text &eqnsDefines, Text &reverseProf)
-::=
-  match eq
-    case SES_RESIDUAL(__) then
-      '{<%index%>,"SES_RESIDUAL <%index%>",0,NULL}'
-    case SES_SIMPLE_ASSIGN(__) then
-      let var = '<%cref(cref)%>__varInfo'
-      let &preBuf += 'const VAR_INFO** equationInfo_cref<%index%> = (const VAR_INFO**)calloc(1,sizeof(VAR_INFO*));<%\n%>'
-      let &preBuf += 'equationInfo_cref<%index%>[0] = &<%var%>;<%\n%>'
-      '{<%index%>,"SES_SIMPLE_ASSIGN <%index%>",1,equationInfo_cref<%index%>}'
-    case SES_ARRAY_CALL_ASSIGN(__) then
-      '{<%index%>,"SES_ARRAY_CALL_ASSIGN <%index%>",0,NULL}'
-    case SES_IFEQUATION(__) then
-      let branches = ifbranches |> (_,eqs) => (eqs |> eq => equationInfo1(eq,preBuf,eqnsDefines,reverseProf) + ',<%\n%>')
-      let elsebr = (elsebranch |> eq => equationInfo1(eq,preBuf,eqnsDefines,reverseProf) + ',<%\n%>')
-      '<%branches%><%elsebr%>{<%index%>,"SES_IFEQUATION <%index%>",0,NULL}'
-    case SES_ALGORITHM(__) then
-      '{<%index%>,"SES_ALGORITHM <%index%>", 0, NULL}'
-    case SES_WHEN(__) then
-      '{<%index%>,"SES_WHEN <%index%>", 0, NULL}'
-    // no dynamic tearing
-    case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing=NONE()) then
-      let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
-      let &preBuf += 'const VAR_INFO** equationInfo_crefs<%ls.index%> = (const VAR_INFO**)malloc(<%listLength(ls.vars)%>*sizeof(VAR_INFO*));<%\n%>'
-      let &preBuf += '<%ls.vars|>var hasindex i0 => 'equationInfo_crefs<%ls.index%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
-      '{<%ls.index%>,"linear system <%ls.index%> (size <%listLength(ls.vars)%>)", <%listLength(ls.vars)%>, equationInfo_crefs<%ls.index%>}'
-    case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
-      let residuals = SimCodeUtil.sortEqSystems(nls.eqs) |> e => (equationInfo1(e,preBuf,eqnsDefines,reverseProf) + ',<%\n%>')
-      let jac = match nls.jacobianMatrix case SOME(mat) then equationInfoMatrix(mat,preBuf,eqnsDefines,reverseProf)
-      let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
-      let &preBuf += 'const VAR_INFO** equationInfo_crefs<%nls.index%> = (const VAR_INFO**)malloc(<%listLength(nls.crefs)%>*sizeof(VAR_INFO*));<%\n%>'
-      let &preBuf += '<%nls.crefs|>cr hasindex i0 => 'equationInfo_crefs<%nls.index%>[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
-      '<%residuals%>{<%nls.index%>,"residualFunc<%nls.index%> (size <%listLength(nls.crefs)%>)", <%listLength(nls.crefs)%>, equationInfo_crefs<%nls.index%>}<%if jac then ',<%\n%><%jac%>'%>'
-    // dynamic tearing
-    case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
-      // for strict tearing set
-      let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
-      let &preBuf += 'const VAR_INFO** equationInfo_crefs<%ls.index%> = (const VAR_INFO**)malloc(<%listLength(ls.vars)%>*sizeof(VAR_INFO*));<%\n%>'
-      let &preBuf += '<%ls.vars|>var hasindex i0 => 'equationInfo_crefs<%ls.index%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
-      let &preBuf += 'const VAR_INFO** equationInfo_crefs<%at.index%> = (const VAR_INFO**)malloc(<%listLength(at.vars)%>*sizeof(VAR_INFO*));<%\n%>'
-      let &preBuf += '<%at.vars|>var hasindex i0 => 'equationInfo_crefs<%at.index%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
-      <<
-        {<%ls.index%>,"linear system <%ls.index%> (size <%listLength(ls.vars)%>)", <%listLength(ls.vars)%>, equationInfo_crefs<%ls.index%>}
-        {<%at.index%>,"linear system <%at.index%> (size <%listLength(at.vars)%>)", <%listLength(at.vars)%>, equationInfo_crefs<%at.index%>}
-      >>
-    case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
-      // for strict tearing set
-      let residuals = SimCodeUtil.sortEqSystems(nls.eqs) |> e => (equationInfo1(e,preBuf,eqnsDefines,reverseProf) + ',<%\n%>')
-      let jac = match nls.jacobianMatrix case SOME(mat) then equationInfoMatrix(mat,preBuf,eqnsDefines,reverseProf)
-      let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
-      let &preBuf += 'const VAR_INFO** equationInfo_crefs<%nls.index%> = (const VAR_INFO**)malloc(<%listLength(nls.crefs)%>*sizeof(VAR_INFO*));<%\n%>'
-      let &preBuf += '<%nls.crefs|>cr hasindex i0 => 'equationInfo_crefs<%nls.index%>[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
-      // for casual tearing set
-      let residuals2 = SimCodeUtil.sortEqSystems(at.eqs) |> e => (equationInfo1(e,preBuf,eqnsDefines,reverseProf) + ',<%\n%>')
-      let jac2 = match at.jacobianMatrix case SOME(mat) then equationInfoMatrix(mat,preBuf,eqnsDefines,reverseProf)
-      // let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
-      let &preBuf += 'const VAR_INFO** equationInfo_crefs<%at.index%> = (const VAR_INFO**)malloc(<%listLength(at.crefs)%>*sizeof(VAR_INFO*));<%\n%>'
-      let &preBuf += '<%at.crefs|>cr hasindex i0 => 'equationInfo_crefs<%at.index%>[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
-      <<
-        <%residuals%>{<%nls.index%>,"residualFunc<%nls.index%> (size <%listLength(nls.crefs)%>)", <%listLength(nls.crefs)%>, equationInfo_crefs<%nls.index%>}<%if jac then ',<%\n%><%jac%>'%>
-        <%residuals2%>{<%at.index%>,"residualFunc<%at.index%> (size <%listLength(at.crefs)%>)", <%listLength(at.crefs)%>, equationInfo_crefs<%at.index%>}<%if jac2 then ',<%\n%><%jac2%>'%>
-      >>
-    case SES_MIXED(__) then
-      let conEqn = equationInfo1(cont,preBuf,eqnsDefines,reverseProf)
-      let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
-      let &preBuf += '<%\n%>const VAR_INFO** equationInfo_crefs<%index%> = (const VAR_INFO**)malloc(<%listLength(discVars)%>*sizeof(VAR_INFO*));<%\n%>'
-      let &preBuf += '<%discVars|>var hasindex i0 => 'equationInfo_crefs<%index%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
-      '<%conEqn%>,<%\n%>{<%index%>,"MIXED<%index%>", <%listLength(discVars)%>, equationInfo_crefs<%index%>}'
-    else '<%error(sourceInfo(), 'Unkown Equation Type in equationInfo1')%>'
-end equationInfo1;
-
-template equationInfoMatrix(JacobianMatrix jacobianMatrix, Text &preBuf, Text &eqnsDefines, Text &reverseProf)
-::=
-  match jacobianMatrix case (cols,_,_,_,_,_,_) then (cols |> (eqs,_,_) => (eqs |> eq => equationInfo1(eq,preBuf,eqnsDefines,reverseProf) ; separator = ',<%\n%>') ; separator = ',<%\n%>')
-end equationInfoMatrix;
-
-template equationInfo(list<SimEqSystem> eqs, list<StateSet> stateSets, Text &eqnsDefines, Text &reverseProf, Integer numEquations)
-::=
-  let() = System.tmpTickReset(0)
-  match eqs
-    case {} then "const struct EQUATION_INFO equation_info[1] = {{0, NULL}};"
-    else
-      let &preBuf = buffer ""
-      let res =
-        <<
-        const struct EQUATION_INFO equationInfo[<%numEquations%>] = {
-          {0, "Dummy Equation so we can index from 1", 0, NULL},
-          <% listReverse(stateSets) |> st as SES_STATESET(__) =>
-            '{<%index%>,"SES_STATESET <%index%>",0,NULL},<%\n%><%equationInfoMatrix(jacobianMatrix,preBuf,eqnsDefines,reverseProf)%>,<%\n%>'
-          %>
-          <% eqs |> eq => equationInfo1(eq,preBuf,eqnsDefines,reverseProf) ; separator=",\n"%>
-        };
-        /* Verify the data in the array to make sure certain assumptions hold */
-        int i;
-        for (i=0; i<<%numEquations%>; i++) {
-          if (equationInfo[i].id != i) {
-            fprintf(stderr, "equationInfo[i].id=%d, i=%d\n", equationInfo[i].id, i);
-            assert(equationInfo[i].id == i);
-          }
-        }
-        >>
-      <<
-      <%preBuf%>
-      <%res%>
-      >>
-end equationInfo;
-
-template ModelVariables(ModelInfo modelInfo)
- "Generates code for ModelVariables file for FMU target."
-::=
-  match modelInfo
-    case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgVars= numAlgVars, numDiscreteReal = numDiscreteReal, numOptimizeConstraints = numOptimizeConstraints)) then
-      <<
-      <ModelVariables>
-      <%System.tmpTickReset(1000)%>
-
-      <%vars.stateVars       |> var hasindex i0 => ScalarVariable(var,i0,"rSta") ;separator="\n";empty%>
-      <%vars.derivativeVars  |> var hasindex i0 => ScalarVariable(var,i0,"rDer") ;separator="\n";empty%>
-      <%vars.algVars         |> var hasindex i0 => ScalarVariable(var,i0,"rAlg") ;separator="\n";empty%>
-      <%vars.discreteAlgVars |> var hasindex i0 => ScalarVariable(var,intAdd(i0,numAlgVars),"rAlg") ;separator="\n";empty%>
-      <%vars.realOptimizeConstraintsVars
-                             |> var hasindex i0 => ScalarVariable(var,intAdd(i0,intAdd(numAlgVars,numDiscreteReal)),"rAlg") ;separator="\n";empty%>
-      <%vars.realOptimizeFinalConstraintsVars
-                             |> var hasindex i0 => ScalarVariable(var,intAdd(i0,intAdd(intAdd(numAlgVars,numOptimizeConstraints),numDiscreteReal)),"rAlg") ;separator="\n";empty%>
-      <%vars.paramVars       |> var hasindex i0 => ScalarVariable(var,i0,"rPar") ;separator="\n";empty%>
-      <%vars.aliasVars       |> var hasindex i0 => ScalarVariable(var,i0,"rAli") ;separator="\n";empty%>
-
-      <%vars.intAlgVars      |> var hasindex i0 => ScalarVariable(var,i0,"iAlg") ;separator="\n";empty%>
-      <%vars.intParamVars    |> var hasindex i0 => ScalarVariable(var,i0,"iPar") ;separator="\n";empty%>
-      <%vars.intAliasVars    |> var hasindex i0 => ScalarVariable(var,i0,"iAli") ;separator="\n";empty%>
-
-      <%vars.boolAlgVars     |> var hasindex i0 => ScalarVariable(var,i0,"bAlg") ;separator="\n";empty%>
-      <%vars.boolParamVars   |> var hasindex i0 => ScalarVariable(var,i0,"bPar") ;separator="\n";empty%>
-      <%vars.boolAliasVars   |> var hasindex i0 => ScalarVariable(var,i0,"bAli") ;separator="\n";empty%>
-
-      <%vars.stringAlgVars   |> var hasindex i0 => ScalarVariable(var,i0,"sAlg") ;separator="\n";empty%>
-      <%vars.stringParamVars |> var hasindex i0 => ScalarVariable(var,i0,"sPar") ;separator="\n";empty%>
-      <%vars.stringAliasVars |> var hasindex i0 => ScalarVariable(var,i0,"sAli") ;separator="\n";empty%>
-      </ModelVariables>
-      >>
-end ModelVariables;
-
-template ScalarVariable(SimVar simVar, Integer classIndex, String classType)
- "Generates code for ScalarVariable file for FMU target."
-::=
-  match simVar
-    case SIMVAR(__) then
-      <<
-      <ScalarVariable
-      <%ScalarVariableAttribute(simVar, classIndex, classType)%>>
-      <%ScalarVariableType(unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
-      </ScalarVariable>
-      >>
-end ScalarVariable;
-
-template ScalarVariableAttribute(SimVar simVar, Integer classIndex, String classType)
- "Generates code for ScalarVariable Attribute file for FMU target."
-::=
-  match simVar
-    case SIMVAR(source=SOURCE(info=info)) then
-      let valueReference = '<%System.tmpTick()%>'
-      let variability = getVariablity(varKind)
-      let description = if comment then 'description = "<%Util.escapeModelicaStringToXmlString(comment)%>"'
-      let alias = getAliasVar(aliasvar)
-      let caus = getCausality(causality)
-      let inputIndex = getInputIndexXml(simVar)
-      <<
-      name = "<%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(name))%>"
-      valueReference = "<%valueReference%>"
-      <%description%>
-      variability = "<%variability%>" isDiscrete = "<%isDiscrete%>"
-      causality = "<%caus%>"<%inputIndex%> isValueChangeable = "<%isValueChangeable%>"
-      alias = <%alias%>
-      classIndex = "<%classIndex%>" classType = "<%classType%>"
-      isProtected = "<%isProtected%>" hideResult = "<%hideResult%>"
-      <%getInfoArgs(info)%>
-      >>
-end ScalarVariableAttribute;
-
-template getInputIndexXml(SimVar simVar)
-::=
-  match SimCodeUtil.getInputIndex(simVar)
-    case -1 then ""
-    case ix then ' inputIndex="<%ix%>"'
-end getInputIndexXml;
-
-template getInfoArgs(builtin.SourceInfo info)
-::=
-  match info
-    case SOURCEINFO(__) then 'fileName = "<%Util.escapeModelicaStringToXmlString(fileName)%>" startLine = "<%lineNumberStart%>" startColumn = "<%columnNumberStart%>" endLine = "<%lineNumberEnd%>" endColumn = "<%columnNumberEnd%>" fileWritable = "<%if isReadOnly then false else true%>"'
-end getInfoArgs;
-
-template getCausality(Causality c)
- "Returns the Causality Attribute of ScalarVariable."
-::=
-  match c
-    case NONECAUS(__) then "none"
-    case INTERNAL(__) then "internal"
-    case OUTPUT(__) then "output"
-    case INPUT(__) then "input"
-end getCausality;
 
 /*****************************************************************************
  *         SECTION: GENERATE OPTIMIZATION IN SIMULATION FILE

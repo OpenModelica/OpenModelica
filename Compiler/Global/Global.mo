@@ -46,8 +46,6 @@ constant Integer instOnlyForcedFunctions = 0;
 constant Integer codegenTryThrowIndex = 1;
 // Global roots start at index=9
 constant Integer instHashIndex = 9;
-constant Integer typesIndex = 10;
-constant Integer crefIndex = 11;
 constant Integer builtinIndex = 12;
 constant Integer builtinEnvIndex = 13;
 constant Integer profilerTime1Index = 14;
@@ -59,6 +57,7 @@ constant Integer stackoverFlowIndex = 19;
 constant Integer gcProfilingIndex = 20;
 constant Integer inlineHashTable = 21; // TODO: Should be a local root?
 constant Integer currentInstVar = 22;
+constant Integer operatorOverloadingCache = 23;
 
 // indexes in System.tick
 // ----------------------
@@ -72,6 +71,8 @@ constant Integer backendDAE_jacobianSeq = 21;
 constant Integer fgraph_nextId = 22;
 // csevar name
 constant Integer backendDAE_cseIndex = 23;
+// strong component index
+constant Integer strongComponent_index = 24;
 
 // ----------------------
 

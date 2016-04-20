@@ -43,6 +43,7 @@ protected import System;
 protected import MetaModelica.Dangerous.{listReverseInPlace, stringGetNoBoundsChecking};
 
 public constant Integer NO_POS = 0;
+protected constant Integer CHAR_NL = 10;
 protected constant Integer CHAR_SPACE = 32;
 protected constant Integer CHAR_DASH = 45;
 
@@ -318,7 +319,7 @@ algorithm
 end equalIgnoreSpace;
 
 function bytesToReadableUnit
-  input Integer bytes;
+  input Real bytes;
   input Integer significantDigits=4;
   input Real maxSizeInUnit=500 "If it is 1000, we print up to 1000GB before changing to X TB";
   output String str;
@@ -334,9 +335,54 @@ algorithm
   elseif bytes > maxSizeInUnit then
     str := String(bytes/kB, significantDigits=significantDigits)+" kB";
   else
-    str := String(bytes);
+    str := String(integer(bytes));
   end if;
 end bytesToReadableUnit;
+
+function stringHashDjb2Work
+  input String str;
+  input Integer hash=5381;
+  output Integer ohash=hash;
+algorithm
+  for i in 1:stringLength(str) loop
+    ohash := ohash*31 + MetaModelica.Dangerous.stringGetNoBoundsChecking(str, i);
+  end for;
+end stringHashDjb2Work;
+
+function stringAppend9
+  input String str1,str2,str3,str4="",str5="",str6="",str7="",str8="",str9="";
+  output String str;
+protected
+  System.StringAllocator sb=System.StringAllocator(stringLength(str1)+stringLength(str2)+stringLength(str3)+stringLength(str4)+stringLength(str5)+stringLength(str6)+stringLength(str7)+stringLength(str8)+stringLength(str9));
+  Integer c=0;
+algorithm
+  System.stringAllocatorStringCopy(sb, str1, c);
+  c := c + stringLength(str1);
+  System.stringAllocatorStringCopy(sb, str2, c);
+  c := c + stringLength(str2);
+  System.stringAllocatorStringCopy(sb, str3, c);
+  c := c + stringLength(str3);
+  System.stringAllocatorStringCopy(sb, str4, c);
+  c := c + stringLength(str4);
+  System.stringAllocatorStringCopy(sb, str5, c);
+  c := c + stringLength(str5);
+  System.stringAllocatorStringCopy(sb, str6, c);
+  c := c + stringLength(str6);
+  System.stringAllocatorStringCopy(sb, str7, c);
+  c := c + stringLength(str7);
+  System.stringAllocatorStringCopy(sb, str8, c);
+  c := c + stringLength(str8);
+  System.stringAllocatorStringCopy(sb, str9, c);
+  c := c + stringLength(str9);
+  str := System.stringAllocatorResult(sb,str1);
+end stringAppend9;
+
+function endsWithNewline
+  input String str;
+  output Boolean b;
+algorithm
+  b := CHAR_NL == MetaModelica.Dangerous.stringGetNoBoundsChecking(str, stringLength(str));
+end endsWithNewline;
 
 annotation(__OpenModelica_Interface="util");
 end StringUtil;

@@ -11567,7 +11567,7 @@ algorithm
     // adrpo: handle the case for model extends baseClassName end baseClassName;
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName, _, _, parts = parts)),env)
       equation
-        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, Absyn.IDENT(baseClassName), SOME(inClass.info));
+        (_,_,cenv) = Lookup.lookupClassIdent(FCore.emptyCache(), env, baseClassName, SOME(inClass.info));
         SOME(envpath) = FGraph.getScopePath(cenv);
         p1 = Absyn.joinPaths(envpath, Absyn.IDENT(baseClassName));
         cref = Absyn.pathToCref(p1);
@@ -12922,7 +12922,7 @@ algorithm
         algorithm
           (cache, env, _, outCache) := buildEnvForGraphicProgram(outCache, mod);
 
-          (cache, c, env2) := Lookup.lookupClass(cache, inEnv, Absyn.IDENT(ann_name));
+          (cache, c, env2) := Lookup.lookupClassIdent(cache, inEnv, ann_name);
           smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,
             Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
           (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(),
@@ -12946,7 +12946,7 @@ algorithm
         algorithm
           (cache, _, _, outCache) := buildEnvForGraphicProgram(outCache, {});
 
-          (cache, c, env) := Lookup.lookupClass(cache, inEnv, Absyn.IDENT(ann_name));
+          (cache, c, env) := Lookup.lookupClassIdent(cache, inEnv, ann_name);
           c := SCode.classSetPartial(c, SCode.NOT_PARTIAL());
           (_, _, _, _, dae) := Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy,
             UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(), c, {}, false,

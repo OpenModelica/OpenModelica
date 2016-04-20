@@ -40,6 +40,7 @@
 #include "nonlinearSystem.h"
 #include "newtonIteration.h"
 #include "dassl.h"
+#include "ida_solver.h"
 #include "delay.h"
 #include "events.h"
 #include "external_input.h"
@@ -135,6 +136,10 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   case S_LOBATTO4:
   case S_LOBATTO6:
     retVal = radau_lobatto_step(data, solverInfo);
+    TRACE_POP
+    return retVal;
+  case S_IDA:
+    retVal = ida_solver_step(data, threadData, solverInfo);
     TRACE_POP
     return retVal;
 #endif
@@ -308,6 +313,16 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 1);
     break;
   }
+  case S_IDA:
+  {
+    IDA_SOLVER* idaData = NULL;
+	/* Allocate Lobatto6 IIIA work arrays */
+    infoStreamPrint(LOG_SOLVER, 0, "Initializing IDA DAE Solver");
+    idaData = (IDA_SOLVER*) malloc(sizeof(IDA_SOLVER));
+    retValue = ida_solver_initial(data, threadData, solverInfo, idaData);
+    solverInfo->solverData = idaData;
+    break;
+  }
 #endif
   default:
     errorStreamPrint(LOG_SOLVER, 0, "Solver %s disabled on this configuration", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
@@ -396,6 +411,11 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   {
     /* free  work arrays */
     freeKinOde(data, solverInfo, 1);
+  }
+  else if(solverInfo->solverMethod == S_IDA)
+  {
+    /* free  work arrays */
+    ida_solver_deinitial(solverInfo->solverData);
   }
 #endif
   {

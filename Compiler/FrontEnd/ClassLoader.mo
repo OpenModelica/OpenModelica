@@ -447,7 +447,7 @@ algorithm
 
           po2 = List.map(differences, makeClassLoad);
 
-          po = List.appendNoCopy(po2, po1);
+          po = listAppend(po2, po1);
         else // file not found
           mofiles = List.map(System.moFiles(mp), Util.removeLast3Char) "Here .mo files in same directory as package.mo should be loaded as sub-packages";
           subdirs = System.subDirectories(mp);
@@ -698,4 +698,3 @@ end getProgramFromStrategy;
 
 annotation(__OpenModelica_Interface="frontend");
 end ClassLoader;
-

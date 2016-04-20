@@ -1266,6 +1266,17 @@ end System;
 
 
 package Tpl
+  function redirectToFile
+    input Text inText;
+    input String inFileName;
+    output Text outText;
+  end redirectToFile;
+
+  function closeFile
+    input Text inText;
+    output Text outText;
+  end closeFile;
+
   function textFile
     input Text inText;
     input String inFileName;
@@ -2138,7 +2149,7 @@ package DAE
       builtin.SourceInfo info;
       list<Absyn.Within> partOfLst;
       Option<ComponentRef> instanceOpt;
-      list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst;
+      list<tuple<ComponentRef, ComponentRef>> connectEquationOptLst;
       list<Absyn.Path> typeLst;
       list<SymbolicOperation> operations;
     end SOURCE;
@@ -3258,6 +3269,7 @@ package Flags
   constant DebugFlag RUNTIME_STATIC_LINKING;
   constant DebugFlag HARDCODED_START_VALUES;
   constant DebugFlag OMC_RECORD_ALLOC_WORDS;
+  constant DebugFlag OMC_RELOCATABLE_FUNCTIONS;
   constant ConfigFlag NUM_PROC;
   constant ConfigFlag HPCOM_CODE;
   constant ConfigFlag PROFILING_LEVEL;

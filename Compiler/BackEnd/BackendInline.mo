@@ -63,6 +63,17 @@ algorithm
 end lateInlineFunction;
 
 // =============================================================================
+// normal inline functions stuff
+//
+// =============================================================================
+public function normalInlineFunction
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := inlineCalls({DAE.NORM_INLINE()}, inDAE);
+end normalInlineFunction;
+
+// =============================================================================
 // inline calls stuff
 //
 // =============================================================================

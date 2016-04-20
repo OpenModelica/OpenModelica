@@ -104,6 +104,11 @@ public uniontype FlagData
     Integer data;
   end INT_FLAG;
 
+  record INT_LIST_FLAG
+    "Value of an integer flag that can have multiple values."
+    list<Integer> data;
+  end INT_LIST_FLAG;
+
   record REAL_FLAG
     "Value of a real flag."
     Real data;
@@ -492,6 +497,12 @@ constant DebugFlag TOTAL_TEARING_DUMPVERBOSE = DEBUG_FLAG(161, "totaltearingdump
   Util.gettext("Dumps verbose total tearing information."));
 constant DebugFlag PARALLEL_CODEGEN = DEBUG_FLAG(162, "parallelCodegen", true,
   Util.gettext("Enables code generation in parallel (disable this if compiling a model causes you to run out of RAM)."));
+constant DebugFlag SERIALIZED_SIZE = DEBUG_FLAG(163, "reportSerializedSize", false,
+  Util.gettext("Reports serialized sizes of various data structures used in the compiler."));
+constant DebugFlag BACKEND_KEEP_ENV_GRAPH = DEBUG_FLAG(164, "backendKeepEnv", true,
+  Util.gettext("When enabled, the environment is kept when entering the backend, which enables CevalFunction (function interpretation) to work. This module not essential for the backend to function in most cases, but can improve simulation performance by evaluating functions. The drawback to keeping the environment graph in memory is that it is huge (~80% of the total memory in use when returning the frontend DAE)."));
+constant DebugFlag OMC_RELOCATABLE_FUNCTIONS = DEBUG_FLAG(165, "relocatableFunctions", false,
+  Util.gettext("Generates relocatable code: all functions become function pointers and can be replaced at run-time."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -660,7 +671,10 @@ constant list<DebugFlag> allDebugFlags = {
   OMC_RECORD_ALLOC_WORDS,
   TOTAL_TEARING_DUMP,
   TOTAL_TEARING_DUMPVERBOSE,
-  PARALLEL_CODEGEN
+  PARALLEL_CODEGEN,
+  SERIALIZED_SIZE,
+  BACKEND_KEEP_ENV_GRAPH,
+  OMC_RELOCATABLE_FUNCTIONS
 };
 
 public
@@ -716,6 +730,7 @@ constant Util.TranslatableContent removeSimpleEquationDesc = Util.gettext("Perfo
 public
 constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
+    "normalInlineFunction",
     "evaluateReplaceProtectedFinalEvaluateParameters",
     "simplifyIfEquations",
     "expandDerOperator",
@@ -747,6 +762,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("expandDerOperator", Util.notrans("Expands der(expr) using Derive.differentiteExpTime.")),
     ("findStateOrder", Util.notrans("Sets derivative information to states.")),
     ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")),
+    ("normalInlineFunction", Util.gettext("Perform function inlining for function with annotation Inline=true.")),
     ("inputDerivativesForDynOpt", Util.gettext("Allowed derivatives of inputs in dyn. optimization.")),
     ("introduceDerAlias", Util.notrans("Adds for every der-call an alias equation e.g. dx = der(x).")),
     ("removeEqualFunctionCalls", Util.notrans("Detects equal function calls of the form a=f(b) and c=f(b) and substitutes them to get speed up.")),
@@ -1250,6 +1266,9 @@ constant ConfigFlag MAX_SIZE_LINEAR_TEARING = CONFIG_FLAG(91, "maxSizeLinearTear
 constant ConfigFlag MAX_SIZE_NONLINEAR_TEARING = CONFIG_FLAG(92, "maxSizeNonlinearTearing",
   NONE(), EXTERNAL(), INT_FLAG(10000), NONE(),
   Util.gettext("Sets the maximum system size for tearing of nonlinear systems (default 10000)."));
+constant ConfigFlag NO_TEARING_FOR_COMPONENT = CONFIG_FLAG(93, "noTearingForComponent",
+  NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
+  Util.gettext("Deactivates tearing for the specified components.\nUse '+d=tearingdump' to find out the relevant indexes."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1347,7 +1366,8 @@ constant list<ConfigFlag> allConfigFlags = {
   DEFAULT_CLOCK_PERIOD,
   INST_CACHE_SIZE,
   MAX_SIZE_LINEAR_TEARING,
-  MAX_SIZE_NONLINEAR_TEARING
+  MAX_SIZE_NONLINEAR_TEARING,
+  NO_TEARING_FOR_COMPONENT
 };
 
 public function new
@@ -1916,9 +1936,10 @@ algorithm
     local
       Boolean b;
       Integer i;
+      list<Integer> ilst;
       String s, et, at;
       list<tuple<String, Integer>> enums;
-      list<String> flags;
+      list<String> flags, slst;
       ValidOptions options;
 
     // A boolean value.
@@ -1938,6 +1959,13 @@ algorithm
         true = stringEq(intString(i), s);
       then
         INT_FLAG(i);
+
+    // integer list.
+    case (slst, INT_LIST_FLAG(), _, _)
+      equation
+        ilst = List.map(slst,stringInt);
+      then
+        INT_LIST_FLAG(ilst);
 
     // A real value.
     case ({s}, REAL_FLAG(), _, _)
@@ -2186,6 +2214,14 @@ public function getConfigInt
 algorithm
   INT_FLAG(data = outValue) := getConfigValue(inFlag);
 end getConfigInt;
+
+public function getConfigIntList
+  "Returns the value of an integer configuration flag."
+  input ConfigFlag inFlag;
+  output list<Integer> outValue;
+algorithm
+  INT_LIST_FLAG(data = outValue) := getConfigValue(inFlag);
+end getConfigIntList;
 
 public function getConfigReal
   "Returns the value of a real configuration flag."

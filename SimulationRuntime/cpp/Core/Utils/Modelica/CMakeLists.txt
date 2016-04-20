@@ -13,7 +13,9 @@ add_precompiled_header(${ModelicaUtilitiesName} Include/Core/Modelica.h )
 
 install(TARGETS ${ModelicaUtilitiesName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/Core/Utils/Modelica/ModelicaUtilities.h
   ${CMAKE_SOURCE_DIR}/Include/Core/Utils/Modelica/FactoryExport.h
   ${CMAKE_SOURCE_DIR}/Include/Core/Utils/Modelica/ModelicaSimulationError.h
   DESTINATION include/omc/cpp/Core/Utils/Modelica)
+install(FILES
+  ${CMAKE_SOURCE_DIR}/Include/ModelicaUtilities.h
+  DESTINATION include/omc/cpp)

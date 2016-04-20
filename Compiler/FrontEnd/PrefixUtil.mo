@@ -315,7 +315,7 @@ algorithm
   str := Absyn.pathString(PrefixUtil.prefixPath(Absyn.IDENT(ident),inPrefix));
 end identAndPrefixToPath;
 
-protected function componentPrefixToPath "Convert a Prefix to a Path"
+public function componentPrefixToPath "Convert a Prefix to a Path"
   input Prefix.ComponentPrefix pre;
   output Absyn.Path path;
 algorithm
@@ -1376,6 +1376,38 @@ algorithm
     else Absyn.dummyInfo;
   end match;
 end getPrefixInfo;
+
+public function prefixHashWork
+  input Prefix.ComponentPrefix inPrefix;
+  input output Integer hash;
+algorithm
+  hash := match inPrefix
+    case Prefix.PRE() then prefixHashWork(inPrefix.next, 31*hash + stringHashDjb2(inPrefix.prefix));
+    else hash;
+  end match;
+end prefixHashWork;
+
+public function componentPrefixPathEqual
+  input Prefix.ComponentPrefix pre1,pre2;
+  output Boolean eq;
+algorithm
+  eq := match (pre1,pre2)
+    case (Prefix.PRE(),Prefix.PRE())
+      then if pre1.prefix==pre2.prefix then componentPrefixPathEqual(pre1.next, pre2.next) else false;
+    case (Prefix.NOCOMPPRE(),Prefix.NOCOMPPRE()) then true;
+    else false;
+  end match;
+end componentPrefixPathEqual;
+
+public function componentPrefix
+  input Prefix.Prefix inPrefix;
+  output Prefix.ComponentPrefix outPrefix;
+algorithm
+  outPrefix := match inPrefix
+    case Prefix.PREFIX() then inPrefix.compPre;
+    else Prefix.NOCOMPPRE();
+  end match;
+end componentPrefix;
 
 annotation(__OpenModelica_Interface="frontend");
 end PrefixUtil;

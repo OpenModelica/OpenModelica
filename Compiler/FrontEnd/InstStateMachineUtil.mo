@@ -220,7 +220,7 @@ algorithm
   //print("InstStateMachineUtil.mergeVariableDefinitions: innerCrefToOuterOutputCrefs:\n"); BaseHashTable.dumpHashTable(innerCrefToOuterOutputCrefs);
 
   // Substitute occurrences of previous(outerCref) by previous(innerCref)
-  emptyTree := DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
+  emptyTree := DAE.AvlTreePathFunction.Tree.EMPTY();
   (DAE.DAE(dAElist), _, _) := DAEUtil.traverseDAE(DAE.DAE(dAElist), emptyTree, traverserHelperSubsOuterByInnerExp, outerOutputCrefToInnerCref);
 
   // FIXME add support for outers that don't have "inner outer" or "inner" at closest instance level (requires to introduce a fresh intermediate variable)
@@ -427,7 +427,7 @@ algorithm
         outerOutputCrefs := List.map(outerOutputs, DAEUtil.varCref);
         outerOutputCrefToSMCompCref := List.map(outerOutputCrefs, function Util.makeTuple(inValue2=componentRef));
       then List.fold(outerOutputCrefToSMCompCref, BaseHashTable.addUnique, outOuterAcc);
-    else then inOuterAcc;
+    else inOuterAcc;
   end match;
 end collectOuterOutputs;
 
@@ -504,9 +504,6 @@ Check if element is a SM_COMP.
   output Boolean outResult;
 algorithm
   outResult := match (inElement)
-    local
-      DAE.ComponentRef componentRef;
-      list<DAE.Element> dAElist "a component with subelements";
     case DAE.SM_COMP(_,_) then true;
     else false;
   end match;
@@ -927,8 +924,7 @@ output Absyn.ComponentRef outElement;
 algorithm
   outElement := match (inElement)
     local
-      Absyn.ComponentRef cref1, cref2;
-      list<Absyn.Exp> args;
+      Absyn.ComponentRef cref1;
     case SCode.EQUATION(eEquation=SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=
       Absyn.CREF_IDENT(name="initialState"),
       functionArgs = Absyn.FUNCTIONARGS(args =
@@ -949,7 +945,6 @@ algorithm
   outElement := match (inElement)
     local
       Absyn.ComponentRef cref1, cref2;
-      list<Absyn.Exp> args;
     case SCode.EQUATION(eEquation=SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=
       Absyn.CREF_IDENT(name="transition"),
       functionArgs = Absyn.FUNCTIONARGS(args =

@@ -65,6 +65,9 @@ algorithm
   end match;
 end printNodeStr;
 
+replaceable function addConflictDefault = addConflictFail
+  "Default conflict resolving function for add.";
+
 function addConflictFail
   "Conflict resolving function for add which fails on conflict."
   input Value newValue;
@@ -93,7 +96,7 @@ redeclare function add
   input Tree inTree;
   input Key inKey;
   input Value inValue;
-  input ConflictFunc conflictFunc = addConflictFail "Used to resolve conflicts.";
+  input ConflictFunc conflictFunc = addConflictDefault "Used to resolve conflicts.";
   output Tree tree=inTree;
 
   partial function ConflictFunc
@@ -139,7 +142,7 @@ redeclare function addList
   "Adds a list of key-value pairs to the tree."
   input output Tree tree;
   input list<tuple<Key,Value>> inValues;
-  input ConflictFunc conflictFunc = addConflictFail "Used to resolve conflicts.";
+  input ConflictFunc conflictFunc = addConflictDefault "Used to resolve conflicts.";
 
   partial function ConflictFunc
     input Value newValue "The value given by the caller.";
@@ -227,7 +230,7 @@ redeclare function join
   "Joins two trees by adding the second one to the first."
   input output Tree tree;
   input Tree treeToJoin;
-  input ConflictFunc conflictFunc = addConflictFail "Used to resolve conflicts.";
+  input ConflictFunc conflictFunc = addConflictDefault "Used to resolve conflicts.";
 
   partial function ConflictFunc
     input Value newValue "The value given by the caller.";

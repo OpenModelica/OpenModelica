@@ -49,7 +49,22 @@ end disable;
 
 function free<T>
   input T data;
-external "C" GC_free(data) annotation(Library = {"omcgc"});
+external "C" omc_GC_free_ext(data) annotation(Include="
+void omc_GC_free_ext(void *data)
+{
+  /*  */
+  GC_free(MMC_UNTAGPTR(data));
+}
+",
+  Library = {"omcgc"}, Documentation(info="<html>
+<p>GC_free requires \"a pointer to the base of an object\".</p>
+<p>So the object passed to free must not be allocated by any of the list
+routines that allocate multiple elements with a single malloc call.</p>
+<p>Calling GC.free is very dangerous. You might be better off trying to
+set variables to a constant value if you want to GC them. Use this if
+you are concerned about temporary variables, etc remaining on the stack
+and not cleared for a long time.</p>
+</html>"));
 end free;
 
 function expandHeap

@@ -503,6 +503,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects)
    : <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings, simObjects)
+   , _constructedExternalObjects(false)
    {
      InitializeDummyTypeElems();
    }
@@ -515,6 +516,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::~<%lastIdentOfPath(modelInfo.name)%>Initialize()
    {
+     if (_constructedExternalObjects)
+       destructExternalObjects();
    }
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::InitializeDummyTypeElems()
@@ -3678,6 +3681,8 @@ match simCode
     let partitionInit = if Flags.isSet(Flags.MULTIRATE_PARTITION) then partitionInfoInit(partitionData.numPartitions, vi.numStateVars, partitionData.stateToActivators) else ""
       <<
       defineConstVals();
+      defineStateVars();
+      defineDerivativeVars();
       defineAlgVars();
       defineDiscreteAlgVars();
       defineIntAlgVars();
@@ -3687,7 +3692,6 @@ match simCode
       defineParameterIntVars();
       defineParameterBoolVars();
       defineParameterStringVars();
-      defineMixedArrayVars();
       defineAliasRealVars();
       defineAliasIntVars();
       defineAliasBoolVars();
@@ -5800,28 +5804,31 @@ end funStatement;
 
 template initExtVars(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(__))  then
-    let externalvarfuncs = functionCallExternalObjectConstructors('<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeExternalVar', extObjInfo, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let externalvarsfunccalls = functionCallExternalObjectConstructorsCall('<%lastIdentOfPath(modelInfo.name)%>Initialize','initializeExternalVar', extObjInfo, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__))  then
+    let externalvarfuncs = functionCallExternalObjectsConstruct('<%lastIdentOfPath(modelInfo.name)%>Initialize', extObjInfo, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let externalvarsfunccalls = functionCallExternalObjectsCall('<%lastIdentOfPath(modelInfo.name)%>Initialize', extObjInfo, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)
     <<
-     <%externalvarfuncs%>
-     <%externalvarsfunccalls%>
-     <%extraFuncs%>
+    <%externalvarfuncs%>
+    <%externalvarsfunccalls%>
+    <%extraFuncs%>
     >>
- end match
+  end match
 end initExtVars;
 
 template initExtVarsDecl(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(__))  then
-  let externalvarsdecl = functionCallExternalObjectConstructorsDecl('initializeExternalVar',extObjInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)
-   <<
-    <%externalvarsdecl%>
-    void initializeExternalVar();
-   >>
- end match
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__))  then
+    let externalobjsdecl = functionCallExternalObjectsDecl(extObjInfo, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)
+    <<
+    <%externalobjsdecl%>
+
+    void constructExternalObjects();
+    void destructExternalObjects();
+    bool _constructedExternalObjects;
+    >>
+  end match
 end initExtVarsDecl;
 
 
@@ -5931,8 +5938,10 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       initializeDerVars();
       >>
       %>
-       /*external vars decls*/
-      initializeExternalVar();
+      /*external objects*/
+      if (_constructedExternalObjects)
+        destructExternalObjects();
+      _constructedExternalObjects = false;
 
    #if defined(__TRICORE__) || defined(__vxworks)
       //init inputs
@@ -5944,6 +5953,11 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    {
       //variable decls
       <%varDecls%>
+
+      //construct external objects once
+      if (!_constructedExternalObjects)
+        constructExternalObjects();
+      _constructedExternalObjects = true;
 
       //bound start values
       <%initFunctions%>
@@ -6018,72 +6032,87 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
 end init2;
 
 
-template functionCallExternalObjectConstructors(Text funcNamePrefix, ExtObjInfo extObjInfo, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template functionCallExternalObjectsConstruct(Text className, ExtObjInfo extObjInfo, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
   "Generates function in simulation file."
 ::=
   match extObjInfo
   case EXTOBJINFO(__) then
+    let tors = (vars |> var as SIMVAR(initialValue=SOME(exp)) hasindex idx =>
+      let &preExp = buffer "" /*BUFD*/
+      let &varDecls = buffer "" /*BUFD*/
+      let arg = daeExp(exp, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      <<
+      void <%className%>::constructExternalObject_<%idx%>()
+      {
+        <%varDecls%>
+        <%preExp%>
+        <%cref(var.name, useFlatArrayNotation)%> = <%arg%>;
+      }
 
-
-    let ctorCalls = (vars |> var as SIMVAR(initialValue=SOME(exp))  hasindex idx=>
-        let &preExp = buffer "" /*BUFD*/
-        let &varDecls = buffer "" /*BUFD*/
-        let arg = daeExp(exp, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-        /* Restore the memory state after each object has been initialized. Then we can
-         * initalize a really large number of external objects that play with strings :)
-         */
-        <<
-         void <%funcNamePrefix%>_<%idx%>()
-         {
-           <%varDecls%>
-           <%preExp%>
-           <%cref(var.name,useFlatArrayNotation)%> = <%arg%>;
-         }
-        >>
-        ;separator="")
-   ctorCalls
-  end match
-end functionCallExternalObjectConstructors;
-
-
-template functionCallExternalObjectConstructorsCall(Text classname,Text funcNamePrefix,ExtObjInfo extObjInfo,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Boolean useFlatArrayNotation)
-  "Generates function in simulation file."
-::=
-  match extObjInfo
-  case EXTOBJINFO(__) then
-    let &funDecls = buffer "" /*BUFD*/
-    let &varDecls = buffer "" /*BUFD*/
-    let ctorCalls = (vars |> var as SIMVAR(initialValue=SOME(exp))  hasindex idx=>
-        <<
-         <%funcNamePrefix%>_<%idx%>();
-        >>
+      >>
       ;separator="")
-   <<
-    void <%classname%>::<%funcNamePrefix%>()
-    {
-       <%ctorCalls%>
-       <%aliases |> (var1, var2) => '<%cref(var1,useFlatArrayNotation)%> = <%cref(var2,useFlatArrayNotation)%>;' ;separator="\n"%>
-    }
-   >>
+    tors
   end match
-end functionCallExternalObjectConstructorsCall;
+end functionCallExternalObjectsConstruct;
 
 
-template functionCallExternalObjectConstructorsDecl(Text funcNamePrefix,ExtObjInfo extObjInfo,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Boolean useFlatArrayNotation)
+template functionCallExternalObjectsCall(Text className, ExtObjInfo extObjInfo, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
   "Generates function in simulation file."
 ::=
   match extObjInfo
   case EXTOBJINFO(__) then
     let &funDecls = buffer "" /*BUFD*/
     let &varDecls = buffer "" /*BUFD*/
-    let ctorCallsDecl = (vars |> var as SIMVAR(initialValue=SOME(exp))  hasindex idx=>
-        <<
-         void <%funcNamePrefix%>_<%idx%>();
-        >>
+    let ctorCalls = (vars |> var as SIMVAR(initialValue=SOME(exp)) hasindex idx =>
+      <<
+      constructExternalObject_<%idx%>();
+      >>
       ;separator="\n")
-   ctorCallsDecl
+    let dtorCalls = (vars |> var as SIMVAR(varKind=ext as EXTOBJ(), initialValue=SOME(exp)) hasindex idx =>
+      <<
+      _functions-><%underscorePath(ext.fullClassName)%>_destructor(<%cref(var.name, useFlatArrayNotation)%>);
+      >>
+      ;separator="\n")
+    <<
+    void <%className%>::constructExternalObjects()
+    {
+      <%ctorCalls%>
+      <%aliases |> (var1, var2) => '<%cref(var1,useFlatArrayNotation)%> = <%cref(var2,useFlatArrayNotation)%>;' ;separator="\n"%>
+    }
+
+    void <%className%>::destructExternalObjects()
+    {
+      <%dtorCalls%>
+    }
+
+    >>
   end match
-end functionCallExternalObjectConstructorsDecl;
+end functionCallExternalObjectsCall;
+
+
+template functionCallExternalObjectsDecl(ExtObjInfo extObjInfo, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+  "Generates function in simulation file."
+::=
+  match extObjInfo
+  case EXTOBJINFO(__) then
+    let &funDecls = buffer "" /*BUFD*/
+    let &varDecls = buffer "" /*BUFD*/
+    let ctorCallsDecl = (vars |> var as SIMVAR(initialValue=SOME(exp)) hasindex idx =>
+      <<
+      void constructExternalObject_<%idx%>();
+      >>
+      ;separator="\n")
+    let dtorCallsDecl = (vars |> var as SIMVAR(initialValue=SOME(exp)) hasindex idx =>
+      <<
+      void destructExternalObject_<%idx%>();
+      >>
+      ;separator="\n")
+  <<
+  <%ctorCallsDecl%>
+  <%dtorCallsDecl%>
+  >>
+  end match
+end functionCallExternalObjectsDecl;
 
 
 template functionInitialEquations(list<SimEqSystem> initalEquations, Text methodName, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean createMeasureTime, Boolean assignToStartValues, Boolean overwriteOldStartValues)
@@ -6629,20 +6658,30 @@ template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, Si
   let nameStr = match var case SIMVAR(name=cref) then
     crefStrForWriteOutput(cref)
 
-  let nominalStr = match var case SIMVAR(nominalValue=SOME(exp)) then
-    let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    '<%expPart%>'
-    else "1.0"
+  let nominalStr = match var
+    case SIMVAR(nominalValue=SOME(exp)) then
+      let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%expPart%>'
+    else
+      '1.0'
 
-  let minStr = match var case SIMVAR(minValue=SOME(exp)) then
-    let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    '<%expPart%>'
-    else "-1e60"
+  let minStr = match var
+    case SIMVAR(varKind=STATE_DER()) then
+      '-HUGE_VAL'
+    case SIMVAR(minValue=SOME(exp)) then
+      let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%expPart%>'
+    else
+      '-HUGE_VAL'
 
-  let maxStr = match var case SIMVAR(maxValue=SOME(exp)) then
-    let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    '<%expPart%>'
-    else "1e60"
+  let maxStr = match var
+    case SIMVAR(varKind=STATE_DER()) then
+      'HUGE_VAL'
+    case SIMVAR(maxValue=SOME(exp)) then
+      let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%expPart%>'
+    else
+      'HUGE_VAL'
 
   '{"<%nameStr%>", <%nominalStr%>, <%minStr%>, <%maxStr%>}'
 end createAlgloopVarAttributes;
@@ -7136,6 +7175,8 @@ match modelInfo
       //Saves all variables before an event is handled, is needed for the pre, edge and change operator
       void saveAll();
 
+      void defineStateVars();
+      void defineDerivativeVars();
       void defineAlgVars();
       void defineDiscreteAlgVars();
       void defineIntAlgVars();
@@ -7149,7 +7190,6 @@ match modelInfo
       void defineAliasIntVars();
       void defineAliasBoolVars();
       void defineAliasStringVars();
-      void defineMixedArrayVars();
 
       void deleteObjects();
 
@@ -7850,7 +7890,15 @@ template memberVariableDefine(ModelInfo modelInfo, HashTableCrIListArray.HashTab
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
-  <<
+   <<
+   /*state vars*/
+   <%vars.stateVars |> var =>
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
+   ;separator="\n"%>
+   /*derivative vars*/
+   <%vars.derivativeVars |> var =>
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
+   ;separator="\n"%>
    /*parameter real vars*/
    <%vars.paramVars |> var =>
     memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
@@ -7858,15 +7906,15 @@ case MODELINFO(vars=SIMVARS(__)) then
    /*parameter int vars*/
    <%vars.intParamVars |> var =>
     memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int", true)
-  ;separator="\n"%>
+   ;separator="\n"%>
    /*parameter bool vars*/
    <%vars.boolParamVars |> var =>
     memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool", true)
-  ;separator="\n"%>
-  /*string parameter variables*/
+   ;separator="\n"%>
+   /*string parameter variables*/
    <%vars.stringParamVars |> var =>
     memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String", true)
-  ;separator="\n"%>
+   ;separator="\n"%>
    /*string alias variables*/
    <%vars.stringAliasVars |> var =>
     memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String", true)
@@ -7883,15 +7931,15 @@ case MODELINFO(vars=SIMVARS(__)) then
    <%vars.intAliasVars |> var =>
     memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int", true)
    ;separator="\n"%>
-    /*alias bool vars*/
+   /*alias bool vars*/
    <%vars.boolAliasVars |> var =>
     memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool", true)
    ;separator="\n"%>
    /*string algvars*/
    <%vars.stringAlgVars |> var =>
     memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String", true)
-  ;separator="\n"%>
- >>
+   ;separator="\n"%>
+   >>
 end memberVariableDefine;
 
 template memberVariableDefinePreVariables(ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferencesReal, Text indexForUndefinedReferencesInt,
@@ -7918,10 +7966,6 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.boolAlgVars |> var =>
     memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool", true)
   ;separator="\n"%>
-   /*mixed array variables*/
-   <%vars.mixedArrayVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
-   ;separator="\n"%>
   >>
 end memberVariableDefinePreVariables;
 
@@ -7931,6 +7975,8 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
   match modelInfo
     case MODELINFO(vars=SIMVARS(__),name=name) then
       let classname = lastIdentOfPath(name)
+      let &additionalStateVarFunctionCalls = buffer ""
+      let &additionalDerivativeVarFunctionCalls = buffer ""
       let &additionalAlgVarFunctionCalls = buffer ""
       let &additionalDiscreteAlgVarFunctionCalls = buffer ""
       let &additionalIntAlgVarFunctionCalls = buffer ""
@@ -7944,10 +7990,27 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       let &additionalAliasIntVarFunctionCalls = buffer ""
       let &additionalAliasBoolVarFunctionCalls = buffer ""
       let &additionalAliasStringVarFunctionCalls = buffer ""
-      let &additionalMixedArrayVarFunctionCalls = buffer ""
       let &returnValue = buffer ""
 
       <<
+      //StateVars
+      <%List.partition(vars.stateVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineStateVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", additionalStateVarFunctionCalls, additionalConstructorVariables, additionalFunctionDefinitions) ;separator="\n"%>
+
+      void <%classname%>::defineStateVars()
+      {
+        <%additionalStateVarFunctionCalls%>
+      }
+
+      //DerivativeVars
+      <%List.partition(vars.derivativeVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineDerivativeVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", additionalDerivativeVarFunctionCalls, additionalConstructorVariables, additionalFunctionDefinitions) ;separator="\n"%>
+
+      void <%classname%>::defineDerivativeVars()
+      {
+        <%additionalDerivativeVarFunctionCalls%>
+      }
+
       //AlgVars
       <%List.partition(vars.algVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "defineAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
@@ -8065,15 +8128,6 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       void <%classname%>::defineAliasStringVars()
       {
         <%additionalAliasStringVarFunctionCalls%>
-      }
-
-      //MixedArrayVars
-      <%List.partition(vars.mixedArrayVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineMixedArrayVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
-                                          additionalMixedArrayVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
-      void <%classname%>::defineMixedArrayVars()
-      {
-        <%additionalMixedArrayVarFunctionCalls%>
       }
       >>
 end memberVariableInitialize;
@@ -8390,7 +8444,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
       else
         if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
           <<
-          StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>, true> <%arrayName%>;
+          StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>, <%createRefVar%>> <%arrayName%>;
           >>
         else
           <<
@@ -9727,7 +9781,7 @@ end eventHandlingInit;
 template clockIntervalsInit(SimCode simCode, Text& varDecls, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
+case SIMCODE(modelInfo = MODELINFO(__), modelStructure = fmims) then
   let i = tempDecl('int', &varDecls)
   <<
   <%i%> = 0;
@@ -9735,13 +9789,24 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     match partition
     case CLOCKED_PARTITION(__) then
       let &preExp = buffer "" /*BUFD*/
-      let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let spec = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      // use default clock, except for FMI clocks that may be inferred
+      let intvl = match fmims case SOME(FmiModelStructure) then spec else
+        match baseClock
+        case REAL_CLOCK()
+        case INTEGER_CLOCK()
+        case BOOLEAN_CLOCK() then
+          spec
+        else "unspecified"
+      let interval = match intvl case "unspecified" then '1.0' else intvl
+      let warning = match intvl case "unspecified" then
+        'ModelicaMessage("Using default Clock(1.0)!");'
       let subClocks = (subPartitions |> subPartition =>
         match subPartition
         case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
           <<
           <%preExp%>
-          _clockInterval[<%i%>] = <%intvl%> * <%fnom%>.0 / <%fres%>.0;
+          _clockInterval[<%i%>] = <%interval%> * <%fnom%>.0 / <%fres%>.0;
           _clockShift[<%i%>] = 0.0;/*<%snom%>.0 / <%sres%>.0;*/
           _clockTime[<%i%>] = _simTime; /*+ _clockShift[<%i%>] * _clockInterval[<%i%>];*/
           <%i%> ++;
@@ -9749,6 +9814,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       ; separator="\n")
       <<
       <%subClocks%>
+      <%warning%>
       >>
     ; separator="\n")%>
   >>
@@ -12112,7 +12178,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
   int <%lastIdentOfPath(modelInfo.name)%>::getDimZeroFunc()
   {
-    return _dimZeroFunc + _dimClock;
+    return _dimZeroFunc;
   }
   >>
 end dimZeroFunc;

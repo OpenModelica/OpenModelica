@@ -1205,6 +1205,7 @@ algorithm
     // BTH
     case (R_PREDEFINED_CLOCK(),R_PREDEFINED_CLOCK()) then true;
     case (R_PREDEFINED_ENUMERATION(),R_PREDEFINED_ENUMERATION()) then true;
+    case (R_UNIONTYPE(),R_UNIONTYPE()) then min(t1==t2 threaded for t1 in restr1.typeVars, t2 in restr2.typeVars);
     else false;
    end match;
 end restrictionEqual;
@@ -5259,16 +5260,22 @@ algorithm
       SourceInfo i1, i2;
       Mod m;
 
-    case (NOMOD(), _) then inOldMod;
     case (_, NOMOD()) then inNewMod;
+    case (NOMOD(), _) then inOldMod;
     case (REDECL(), _) then inNewMod;
 
     case (MOD(f1, e1, sl1, b1, i1),
-          MOD(_, _, sl2, b2, _))
+          MOD(f2, e2, sl2, b2, _))
       equation
         b = mergeBindings(b1, b2);
         sl = mergeSubMods(sl1, sl2);
-        m = MOD(f1, e1, sl, b, i1);
+        if referenceEq(b, b1) and referenceEq(sl, sl1) then
+          m = inNewMod;
+        elseif referenceEq(b, b2) and referenceEq(sl, sl2) and valueEq(f1, f2) and valueEq(e1, e2) then
+          m = inOldMod;
+        else
+          m = MOD(f1, e1, sl, b, i1);
+        end if;
       then
         m;
 
@@ -5323,7 +5330,7 @@ algorithm
       list<Subscript> idxs1, idxs2;
       SubMod s;
 
-    case (_, {}) then {};
+    case (_, {}) then inOld;
 
     case (NAMEMOD(ident = id1), NAMEMOD(ident = id2)::rest)
       equation

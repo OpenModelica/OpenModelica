@@ -58,6 +58,9 @@ typedef struct DATA_UMFPACK
 
   double* work;
 
+  int* Wi;
+  double* W;
+
   rtclock_t timeClock;             /* time clock */
   int numberSolving;
 

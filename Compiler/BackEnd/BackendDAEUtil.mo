@@ -1720,7 +1720,7 @@ algorithm
         (_, statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
         indx_lst_v := BackendVariable.getVarIndexFromVariables(iVars, v);
 
-        indx_lst_v := List.appendNoCopy(indx_lst_v, statevarindx_lst) "overestimate";
+        indx_lst_v := listAppend(indx_lst_v, statevarindx_lst) "overestimate";
         indx_lst_e := List.map1r(indx_lst_v, arrayGet, ass1);
 
         indx_arr := arrayCreate(equationArraySizeDAE(iSyst), 0);
@@ -3460,7 +3460,7 @@ algorithm
       equation
         m1 = arrayCopy(m);
       then SOME(m1);
-    else then NONE();
+    else NONE();
    end match;
 end copyIncidenceMatrix;
 
@@ -4871,7 +4871,7 @@ algorithm
     case BackendDAE.SOLVABILITY_CONST(b=false) then BackendDAE.SOLVABILITY_CONST(false);
     case BackendDAE.SOLVABILITY_PARAMETER(b=false) then BackendDAE.SOLVABILITY_PARAMETER(false);
     case BackendDAE.SOLVABILITY_LINEAR(b=false) then BackendDAE.SOLVABILITY_LINEAR(false);
-    else then BackendDAE.SOLVABILITY_SOLVABLE();
+    else BackendDAE.SOLVABILITY_SOLVABLE();
   end match;
 end transformSolvabilityForCasualTearingSet;
 
@@ -6850,21 +6850,16 @@ protected
   BackendDAE.Shared shared;
   list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
   Boolean causalized;
-  constant Boolean debug = false;
 algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
   // reduce index
   (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{},false);
-  if debug then execStat("causalizeDAE -> matching"); end if;
   // do late inline
   outDAE := if dolateinline then BackendInline.lateInlineFunction(BackendDAE.DAE(systs,shared)) else BackendDAE.DAE(systs,shared);
-  if debug and dolateinline then execStat("causalizeDAE -> lateInlineFunction"); end if;
   // do state selection
   BackendDAE.DAE(systs,shared) := stateDeselectionDAE(causalized,outDAE,args,stateDeselection);
-  if debug then execStat("causalizeDAE -> state selection"); end if;
   // sort assigned equations to blt form
   systs := mapSortEqnsDAE(systs,shared,{});
-  if debug then execStat("causalizeDAE -> sort equations"); end if;
   outDAE := BackendDAE.DAE(systs,shared);
 end causalizeDAE;
 
@@ -7280,6 +7275,7 @@ end selectMatchingAlgorithm;
 protected function allPreOptimizationModules
   "This list contains all back end pre-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
+    (BackendInline.normalInlineFunction, "normalInlineFunction"),
     (UnitCheck.unitChecking, "unitChecking"),
     (EvaluateParameter.evaluateAllParameters, "evaluateAllParameters"),
     (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters"),
@@ -8260,10 +8256,10 @@ public function createEmptyShared
 protected
   BackendDAE.Variables emptyVars = BackendVariable.emptyVars();
   BackendDAE.EquationArray emptyEqs = BackendEquation.emptyEqns();
-  DAE.FunctionTree functions = DAEUtil.avlTreeNew();
+  DAE.FunctionTree functions = DAE.AvlTreePathFunction.new();
 algorithm
   shared := BackendDAE.SHARED( emptyVars, emptyVars, emptyVars, emptyEqs, emptyEqs, {}, {}, cache, graph,
-                               DAEUtil.avlTreeNew(), emptyEventInfo(), {}, backendDAEType, {}, ei,
+                               DAE.AvlTreePathFunction.new(), emptyEventInfo(), {}, backendDAEType, {}, ei,
                                emptyPartitionsInfo() );
 end createEmptyShared;
 
@@ -8795,7 +8791,7 @@ algorithm
       DAE.Function func;
     case (DAE.CALL(path=path),_)
       equation
-        SOME(func) = DAEUtil.avlTreeGet(funcsIn,path);
+        SOME(func) = DAE.AvlTreePathFunction.get(funcsIn,path);
          then listEmpty(DAEUtil.getFunctionElements(func));
     else true;
   end matchcontinue;

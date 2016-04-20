@@ -258,7 +258,20 @@ solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
 
   /* compute the LU factorization of A */
   if (0 == solverData->common.status){
-    solverData->numeric = klu_factor(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, &solverData->common);
+    if(solverData->numeric){
+      /* Just refactor using the same pivots, but check that the refactor is still accurate */
+      klu_refactor(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, solverData->numeric, &solverData->common);
+      klu_rgrowth(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, solverData->numeric, &solverData->common);
+      infoStreamPrint(LOG_LS_V, 0, "Klu rgrowth after refactor: %f", solverData->common.rgrowth);
+      /* If rgrowth is small then do a whole factorization with new pivots (What should this tolerance be?) */
+      if (solverData->common.rgrowth < 1e-3){
+        klu_free_numeric(&solverData->numeric, &solverData->common);
+        solverData->numeric = klu_factor(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, &solverData->common);
+        infoStreamPrint(LOG_LS_V, 0, "Klu new factorization performed.");
+      }
+    } else {
+      solverData->numeric = klu_factor(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, &solverData->common);
+    }
   }
 
   if (0 == solverData->common.status){

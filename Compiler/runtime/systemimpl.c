@@ -2181,11 +2181,13 @@ extern int SystemImpl_tmpTickMaximum(threadData_t *threadData, int index)
   return data->tmp_tick_max_no[index];
 }
 
+#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
 extern int SystemImpl_tmpTick(threadData_t *threadData)
 {
   int res = SystemImpl_tmpTickIndex(threadData,0);
   return res;
 }
+#endif
 
 extern void SystemImpl_tmpTickReset(threadData_t *threadData, int start)
 {
@@ -2296,14 +2298,6 @@ double SystemImpl__realRand(void)
   return tinymt64_generate_double(&system_random_seed);
 }
 
-/* Returns an integer (0,n] (i.e. the highest value is n-1)
- * TODO: Remove once we update the bootstrapping tarball
- */
-int SystemImpl__intRand(int n)
-{
-  return (int) SystemImpl__realRand()*n;
-}
-
 /* Returns an integer [0,n) using the C function rand() */
 int SystemImpl__intRandom(int n)
 {
@@ -2360,7 +2354,7 @@ void SystemImpl__gettextInit(const char *locale)
     fprintf(stderr, gettext("Warning: Failed to set locale: '%s'\n"), locale);
   }
   if (!setlocale(LC_NUMERIC, "C")) {
-    fprintf(stderr, gettext("Warning: Failed to set LC_NUMERIC to C locale\n"), locale);
+    fputs(gettext("Warning: Failed to set LC_NUMERIC to C locale\n"), stderr);
   }
   clocale = setlocale(LC_CTYPE, NULL);
   int have_utf8 = strcmp(nl_langinfo(CODESET), "UTF-8") == 0;
@@ -2906,7 +2900,7 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
       j = 0;
       /* adrpo: encode each char */
       for (i=0; i<n; i++) {
-	    fputc('\'', fout);
+      fputc('\'', fout);
 
         switch (buffer[i]) {
         case '\n':
@@ -2921,11 +2915,11 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
           fputc('\\', fout);
           fputc('\\', fout);
           break;
-		case '"':
+    case '"':
           fputc('\\', fout);
           fputc('\"', fout);
           break;
-		case '\'':
+    case '\'':
           fputc('\\', fout);
           fputc('\'', fout);
           break;
@@ -2996,12 +2990,13 @@ void SystemImpl__dladdr(void *symbol, const char **file, const char **name)
   *name = "not available on Windows";
 #else
   Dl_info info;
-  if (0 == dladdr((MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(symbol), 1))), &info)) {
+  void *ptr = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(symbol), 1)));
+  if (0 == dladdr(ptr, &info)) {
     *file = "dladdr failed";
     *name = "";
   } else {
-    *file = omc_alloc_interface.malloc_strdup(info.dli_fname);
-    *name = omc_alloc_interface.malloc_strdup(info.dli_sname);
+    *file = info.dli_fname ? omc_alloc_interface.malloc_strdup(info.dli_fname) : "(null)";
+    *name = info.dli_sname ? omc_alloc_interface.malloc_strdup(info.dli_sname) : "(null)";
   }
 #endif
 }
@@ -3030,6 +3025,70 @@ const char* System_getTriple()
 {
   return DEFAULT_TRIPLE;
 }
+
+#if defined(OMC_GENERATE_RELOCATABLE_CODE)
+static void addDLError(const char *msg, const char *fileName)
+{
+  const char *err[2] = {dlerror(),fileName};
+  c_add_message(NULL, 85,
+  ErrorType_scripting,
+  ErrorLevel_error,
+  msg,
+  err,
+  2
+  );
+}
+
+int SystemImpl__relocateFunctions(const char *fileName, void *names)
+{
+  void *localHandle,*remoteHandle;
+  remoteHandle = dlopen(fileName, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+  if (!remoteHandle) {
+    addDLError(gettext("Error opening library %s: %s."), fileName);
+    return 0;
+  }
+  localHandle = dlopen(NULL, RTLD_NOW);
+  if (!localHandle) {
+    addDLError(gettext("Error opening library %s: %s."), fileName);
+    return 0;
+  }
+  int length = listLength(names);
+  void **localSyms[length], *remoteSyms[length];
+  for (int i=0; i<length; i++) {
+    void *tpl = MMC_CAR(names);
+    const char *local = MMC_STRINGDATA(MMC_CAR(tpl));
+    const char *remote = MMC_STRINGDATA(MMC_CDR(tpl));
+
+    remoteSyms[i] = dlsym(remoteHandle, remote);
+    if (remoteSyms[i]==0) {
+      addDLError(gettext("Error opening library %s: %s."), fileName);
+    }
+    localSyms[i] = (void**) dlsym(localHandle, local);
+    if (localSyms[i]==0) {
+      addDLError(gettext("Error opening library %s: %s."), fileName);
+    }
+
+    names = MMC_CDR(names);
+  }
+  /* All loaded fine. Now relocate all the symbols. */
+  for (int i=0; i<length; i++) {
+    *localSyms[i] = remoteSyms[i];
+  }
+  return 1;
+}
+#else
+int SystemImpl__relocateFunctions(const char *fileName, void *names)
+{
+  c_add_message(NULL, 85,
+  ErrorType_scripting,
+  ErrorLevel_error,
+  gettext("OMC not compiled with support for relocatable functions."),
+  NULL,
+  0
+  );
+  return 0;
+}
+#endif
 
 #ifdef __cplusplus
 }

@@ -82,7 +82,7 @@ algorithm
   outDae := match(dae,repl,condExpFunc)
   local list<DAE.Element> elts;
     DAE.FunctionTree funcs;
-    list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
+    list<tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value>> funcLst;
     case(DAE.DAE(elementLst=elts),_,_)
       equation
         elts = applyReplacementsDAEElts(elts,repl,condExpFunc);

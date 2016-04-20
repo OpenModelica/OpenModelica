@@ -39,6 +39,12 @@ void omc_real_time_sync_init(threadData_t *threadData, DATA *data)
 {
   data->real_time_sync.maxLate = INT64_MIN;
 
+  omc_real_time_sync_update(data, data->real_time_sync.scaling);
+
+  if (data->real_time_sync.enabled == 0) {
+    return;
+  }
+
 #if defined(__linux__)
   if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1) {
     warningStreamPrint(LOG_RT, 0, __FILE__ ": mlockall failed (recommended to run as root to lock memory into RAM while doing real-time simulation): %s\n", strerror(errno));
@@ -48,12 +54,6 @@ void omc_real_time_sync_init(threadData_t *threadData, DATA *data)
     warningStreamPrint(LOG_RT, 0, __FILE__ ": sched_setscheduler failed: %s\n", strerror(errno));
   }
 #endif
-
-  omc_real_time_sync_update(data, data->real_time_sync.scaling);
-
-  if (data->real_time_sync.enabled == 0) {
-    return;
-  }
 }
 
 void omc_real_time_sync_update(DATA *data, double scaling)

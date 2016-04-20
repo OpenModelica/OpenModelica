@@ -34,15 +34,24 @@ encapsulated package File
 class File
   extends ExternalObject;
   function constructor
+    input Option<Integer> fromID = NONE() "If we should restore from another pointer. Note: Option<Integer> is an opaque pointer, not an actual Option.";
     output File file;
-  external "C" file=om_file_new() annotation(Include="
+  external "C" file=om_file_new(fromID) annotation(Include="
 #ifndef __OMC_FILE_NEW
 #define __OMC_FILE_NEW
 #include <stdio.h>
 #include <gc.h>
-static inline void* om_file_new()
+static inline void* om_file_new(void *fromID)
 {
-  return GC_malloc(sizeof(FILE*));
+  if (isNone(fromID)) {
+    FILE **res = (FILE**) GC_malloc(sizeof(FILE*));
+    res[0] = NULL;
+    res[1] = 0;
+    return res;
+  } else {
+    ((long**)fromID)[1]++; /* Increase reference count */
+    return fromID;
+  }
 }
 #endif
 ");
@@ -55,10 +64,12 @@ end constructor;
 #include <stdio.h>
 static inline void om_file_free(FILE **file)
 {
-  if (*file) {
-    fclose(*file);
-    *file = 0;
+  if (file[1] /* reference count */) {
+    ((long**)file)[1]--;
+    return;
   }
+  fclose(*file);
+  *file = 0;
   GC_free(file);
 }
 #endif
@@ -114,7 +125,54 @@ static inline void om_file_write(FILE **file,const char *data)
 ");
 end write;
 
-type Escape = enumeration(C "Escapes C strings (minimally): \\n and \"",
+function writeInt
+  input File file;
+  input Integer data;
+  input String format="%d";
+external "C" om_file_write_int(file,data,format) annotation(Include="
+#ifndef __OMC_FILE_WRITE_INT
+#define __OMC_FILE_WRITE_INT
+#include <stdio.h>
+#include <errno.h>
+#include \"ModelicaUtilities.h\"
+static inline void om_file_write_int(FILE **file,int data,const char *format)
+{
+  if (!*file) {
+    ModelicaError(\"Failed to write to file (not open)\");
+  }
+  if (EOF == fprintf(*file,format,data)) {
+    ModelicaFormatError(\"Failed to write to file: %s\\n\", strerror(errno));
+  }
+}
+#endif
+");
+end writeInt;
+
+function writeReal
+  input File file;
+  input Real data;
+  input String format="%.15g";
+external "C" om_file_write_real(file,data,format) annotation(Include="
+#ifndef __OMC_FILE_WRITE_REAL
+#define __OMC_FILE_WRITE_REAL
+#include <stdio.h>
+#include <errno.h>
+#include \"ModelicaUtilities.h\"
+static inline void om_file_write_real(FILE **file,double data,const char *format)
+{
+  if (!*file) {
+    ModelicaError(\"Failed to write to file (not open)\");
+  }
+  if (EOF == fprintf(*file,format,data)) {
+    ModelicaFormatError(\"Failed to write to file: %s\\n\", strerror(errno));
+  }
+}
+#endif
+");
+end writeReal;
+
+type Escape = enumeration(None "No escape string",
+                          C "Escapes C strings (minimally): \\n and \"",
                           JSON "Escapes JSON strings (quotes and control characters)",
                           XML "Escapes strings to XML text");
 
@@ -129,7 +187,8 @@ external "C" om_file_write_escape(file,data,escape) annotation(Include="
 #include <errno.h>
 #include \"ModelicaUtilities.h\"
 enum escape_t {
-  C=1,
+  None=1,
+  C,
   JSON,
   XML
 };
@@ -140,6 +199,11 @@ static inline void om_file_write_escape(FILE **file,const char *data,enum escape
     ModelicaError(\"Failed to write to file (not open)\\n\");
   }
   switch (escape) {
+  case None:
+    if (EOF == fputs(data, *file)) {
+      ModelicaFormatError(\"Failed to write to file: %s\\n\", strerror(errno));
+    }
+    break;
   case C:
     while (*data) {
       if (*data == '\\n') {
@@ -221,6 +285,64 @@ static inline int om_file_seek(FILE **file,int offset,enum whence_t whence)
 #endif
 ");
 end seek;
+
+function tell
+  input File file;
+  output Integer pos;
+external "C" pos = om_file_tell(file) annotation(Include="
+#ifndef __OMC_FILE_TELL
+#define __OMC_FILE_TELL
+#include <stdio.h>
+static inline int om_file_tell(FILE **file)
+{
+  if (!*file) {
+    return -1;
+  }
+  return ftell(*file);
+}
+#endif
+");
+end tell;
+
+function getReference
+  input File file;
+  output Option<Integer> reference;
+external "C" reference = om_file_get_reference(file) annotation(Include="
+#ifndef __OMC_FILE_REFERENCE
+#define __OMC_FILE_REFERENCE
+#include <stdio.h>
+static inline void* om_file_get_reference(FILE **file)
+{
+  ((long**)file)[1]++;
+  return file;
+}
+#endif
+");
+end getReference;
+
+function releaseReference
+  input File file;
+external "C" om_file_release_reference(file) annotation(Include="
+#ifndef __OMC_FILE_RELEASE_REFERENCE
+#define __OMC_FILE_RELEASE_REFERENCE
+#include <stdio.h>
+static inline void* om_file_release_reference(FILE **file)
+{
+  ((long**)file)[1]--;
+  return file;
+}
+#endif
+");
+end releaseReference;
+
+function writeSpace
+  input File file;
+  input Integer n;
+algorithm
+  for i in 1:n loop
+    File.write(file, " ");
+  end for;
+end writeSpace;
 
 package Examples
 

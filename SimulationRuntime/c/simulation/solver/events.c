@@ -50,6 +50,7 @@
 extern "C" {
 #endif
 
+int maxBisectionIterations = 0;
 double bisection(DATA* data, threadData_t *threadData, double*, double*, double*, double*, LIST*, LIST*);
 int checkZeroCrossings(DATA *data, LIST *list, LIST*);
 void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
@@ -416,7 +417,7 @@ double bisection(DATA* data, threadData_t *threadData, double* a, double* b, dou
   double c;
   long i=0;
   /* n >= log(2)/log(2) + log(|b-a|/TOL)/log(2)*/
-  unsigned int n = 1 + ceil(log(fabs(*b - *a)/TTOL)/log(2));
+  unsigned int n = maxBisectionIterations > 0 ? maxBisectionIterations : 1 + ceil(log(fabs(*b - *a)/TTOL)/log(2));
 
   memcpy(data->simulationInfo->zeroCrossingsBackup, data->simulationInfo->zeroCrossings, data->modelData->nZeroCrossings * sizeof(modelica_real));
 

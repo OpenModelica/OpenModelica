@@ -41,10 +41,14 @@ encapsulated package DAE
   functions."
 
 // public imports
-public import Absyn;
-public import ClassInf;
-public import SCode;
-public import Values;
+import Absyn;
+import BaseAvlTree;
+import ClassInf;
+import SCode;
+import Values;
+
+protected
+import DAEDump;
 
 public type Ident = String;
 
@@ -103,7 +107,7 @@ uniontype ElementSource "gives information about the origin of the element"
     SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
     list<Absyn.Within> partOfLst "the model(s) this element came from";
     Option<ComponentRef> instanceOpt "the instance(s) this element is part of";
-    list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst "this element came from this connect(s)";
+    list<tuple<ComponentRef, ComponentRef>> connectEquationOptLst "this element came from this connect(s)";
     list<Absyn.Path> typeLst "the classes where the type(s) of the element is defined";
     list<SymbolicOperation> operations "the symbolic operations used to end up with the final state of the element";
     list<SCode.Comment> comment;
@@ -372,7 +376,6 @@ public uniontype Function
     Absyn.Path path;
     Type type_;
     ElementSource source "the origin of the component/equation/algorithm" ;
-    VarKind kind;
   end RECORD_CONSTRUCTOR;
 end Function;
 
@@ -557,32 +560,35 @@ public uniontype DAElist "A DAElist is a list of Elements. Variables, equations,
 end DAElist;
 
 /* AVLTree for functions */
-public type AvlKey = Absyn.Path;
+public type FunctionTree = AvlTreePathFunction.Tree;
 
-public type AvlValue = Option<Function>;
-
-public type FunctionTree = AvlTree;
-
+package AvlTreePathFunction "AvlTree for Path to Function"
+protected
+  import DAEDump;
 public
-uniontype AvlTree "The binary tree data structure
- "
-  record AVLTREENODE
-    Option<AvlTreeValue> value "Value" ;
-    Integer height "heigth of tree, used for balancing";
-    Option<AvlTree> left "left subtree" ;
-    Option<AvlTree> right "right subtree" ;
-  end AVLTREENODE;
+  extends BaseAvlTree;
+  redeclare type Key = Absyn.Path;
+  redeclare type Value = Option<Function>;
+  redeclare function extends keyStr
+  algorithm
+    outString := Absyn.pathString(inKey);
+  end keyStr;
+  redeclare function extends valueStr
+  algorithm
+    outString := match inValue
+      local
+        Function f;
+      case SOME(f) then DAEDump.dumpFunctionStr(f);
+      else "<NO_FUNCTION>";
+    end match;
+  end valueStr;
+  redeclare function extends keyCompare
+  algorithm
+    outResult := Absyn.pathCompareNoQual(inKey1,inKey2);
+  end keyCompare;
 
-end AvlTree;
-
-public
-uniontype AvlTreeValue "Each node in the binary tree can have a value associated with it."
-  record AVLTREEVALUE
-    AvlKey key "Key" ;
-    AvlValue value "Value" ;
-  end AVLTREEVALUE;
-
-end AvlTreeValue;
+  redeclare function addConflictDefault = addConflictReplace;
+end AvlTreePathFunction;
 
 /* -- Algorithm.mo -- */
 public
@@ -1812,6 +1818,7 @@ end ComponentRef;
 
 public constant ComponentRef crefTime = CREF_IDENT("time", T_REAL_DEFAULT, {});
 public constant ComponentRef crefTimeState = CREF_IDENT("$time", T_REAL_DEFAULT, {});
+public constant ComponentRef emptyCref = CREF_IDENT("", T_UNKNOWN_DEFAULT, {});
 
 public
 uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
@@ -1840,7 +1847,6 @@ uniontype Expand "array cref expansion strategy"
   record NOT_EXPAND "not expand crefs" end NOT_EXPAND;
 end Expand;
 
-public constant AvlTree emptyFuncTree = AVLTREENODE(NONE(),0,NONE(),NONE());
 public constant DAElist emptyDae = DAE({});
 
 annotation(__OpenModelica_Interface="frontend");

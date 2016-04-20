@@ -55,6 +55,7 @@ import SimCode;
 // protected imports
 protected
 import BackendDAECreate;
+import Builtin;
 import ClockIndexes;
 import CevalScriptBackend;
 import CodegenC;
@@ -73,6 +74,7 @@ import Config;
 import DAEUtil;
 import Debug;
 import Error;
+import ErrorExt;
 import Flags;
 import FMI;
 import GC;
@@ -81,7 +83,10 @@ import HpcOmTaskGraph;
 import SerializeModelInfo;
 import SimCodeDump;
 import TaskSystemDump;
+import SerializeInitXML;
+import Serializer;
 import SimCodeUtil;
+import StringUtil;
 import System;
 import Util;
 import BackendDump;
@@ -421,6 +426,11 @@ algorithm
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
+  if Flags.isSet(Flags.SERIALIZED_SIZE) then
+    serializeNotify(simCode, filenamePrefix, "simCode");
+    ExecStat.execStat("Serialize simCode");
+  end if;
+
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   callTargetTemplates(simCode, Config.simCodeTarget());
   timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
@@ -520,11 +530,20 @@ protected
     extends PartialRunTpl(res=false);
     input FuncText func;
     input String file;
+  protected
+    Integer nErr;
   algorithm
     try
-      Tpl.textFileConvertLines(Tpl.tplCallWithFailErrorNoArg(func), file);
+      if Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+        Tpl.textFileConvertLines(Tpl.tplCallWithFailErrorNoArg(func), file);
+      else
+        nErr := Error.getNumErrorMessages();
+        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(func,Tpl.redirectToFile(Tpl.emptyTxt, file)));
+        Tpl.failIfTrue(Error.getNumErrorMessages() > nErr);
+      end if;
       res := true;
     else
+      ErrorExt.moveMessagesToParentThread();
     end try;
   end runTplWriteFile;
 
@@ -536,6 +555,7 @@ protected
       Tpl.tplCallWithFailErrorNoArg(func);
       res := true;
     else
+      ErrorExt.moveMessagesToParentThread();
     end try;
   end runTpl;
 
@@ -550,6 +570,7 @@ protected
       func();
       res := true;
     else
+      ErrorExt.moveMessagesToParentThread();
     end try;
   end runToStr;
 
@@ -595,6 +616,7 @@ algorithm
 
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};
+        codegenFuncs := (function SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid)) :: codegenFuncs;
         dumpTaskSystemIfFlag(simCode);
         codegenFuncs := (function runTpl(func=function CodegenC.translateModel(in_a_simCode=simCode))) :: codegenFuncs;
         for f in {
@@ -615,31 +637,35 @@ algorithm
           (CodegenC.simulationFile_opt, "_13opt.c"),
           (CodegenC.simulationFile_opt_header, "_13opt.h"),
           (CodegenC.simulationFile_lnz, "_14lnz.c"),
-          (CodegenC.simulationFile_syn, "_15syn.c")
+          (CodegenC.simulationFile_syn, "_15syn.c"),
+          (CodegenC.simulationHeaderFile, "_model.h")
         } loop
           (func,str) := f;
           codegenFuncs := (function runTplWriteFile(func=function func(a_simCode=simCode), file=simCode.fileNamePrefix + str)) :: codegenFuncs;
         end for;
         codegenFuncs := (function runTpl(func=function CodegenC.simulationFile_mixAndHeader(a_simCode=simCode, a_modelNamePrefix=simCode.fileNamePrefix))) :: codegenFuncs;
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=false), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
-        codegenFuncs := (function runTpl(func=function CodegenC.translateInitFile(in_a_simCode=simCode, in_a_guid=guid))) :: codegenFuncs;
+        codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFunctionsFile(a_filePrefix=simCode.fileNamePrefix, a_functions=simCode.modelInfo.functions), file=simCode.fileNamePrefix + "_functions.c")) :: codegenFuncs;
+
         if Flags.isSet(Flags.MODEL_INFO_JSON) then
           codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
         else
           codegenFuncs := (function runTpl(func=function SimCodeDump.dumpSimCode(in_a_code=simCode, in_a_withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
         end if;
-        numThreads := max(1, integer(Config.noProc()/2));
-        if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 or (not stringEq(Flags.getConfigString(Flags.RUNNING_TESTSUITE),"")) then
+        // Test the parallel code generator in the test suite. Should give decent results given that the task is disk-intensive.
+        numThreads := max(1, if Config.getRunningTestsuite() then min(2, System.numProcessors()) else Config.noProc());
+        if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 then
           true := max(func() for func in codegenFuncs);
         else
-          true := max(l for l in System.launchParallelTasks(min(2, numThreads) /* Boehm GC does not scale to infinity */, codegenFuncs, runCodegenFunc));
+          true := max(l for l in System.launchParallelTasks(numThreads, codegenFuncs, runCodegenFunc));
         end if;
       then ();
 
     case "JavaScript" equation
       guid = System.getUUIDStr();
       Tpl.tplNoret(CodegenC.translateModel, simCode);
-      Tpl.tplNoret2(CodegenC.translateInitFile, simCode, guid);
+      SerializeInitXML.simulationInitFile(simCode, guid);
+      System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_init.xml",simCode.fileNamePrefix+"_init.c", Config.simulationCodeTarget());
       Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
       Tpl.tplNoret(CodegenJS.markdownFile, simCode);
     then ();
@@ -753,6 +779,8 @@ public function translateModel "
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
+protected
+  Boolean generateFunctions = false;
 algorithm
   (outCache, outInteractiveSymbolTable, outBackendDAE, outStringLst, outFileDir, resultValues) :=
   matchcontinue (inCache, inEnv, className, inInteractiveSymbolTable, inFileNamePrefix, addDummy, inSimSettingsOpt, args)
@@ -773,6 +801,7 @@ algorithm
       list<BackendDAE.Equation> removedInitialEquationLst;
       list<BackendDAE.Var> primaryParameters "already sorted";
       list<BackendDAE.Var> allPrimaryParameters "already sorted";
+      Real fsize;
 
     case (cache, graph, _, (st as GlobalScript.SYMBOLTABLE(ast=p)), filenameprefix, _, _, _) equation
       // calculate stuff that we need to create SimCode data structure
@@ -780,34 +809,93 @@ algorithm
       ExecStat.execStatReset();
       (cache, graph, dae, st) = CevalScriptBackend.runFrontEnd(cache, graph, className, st, false);
       ExecStat.execStat("FrontEnd");
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dae, filenameprefix, "dae");
+        serializeNotify(graph, filenameprefix, "graph");
+        serializeNotify(cache, filenameprefix, "cache");
+        serializeNotify(st, filenameprefix, "st");
+        ExecStat.execStat("Serialize FrontEnd");
+      end if;
+
       timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
 
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
       dae = DAEUtil.transformationsBeforeBackend(cache, graph, dae);
       ExecStat.execStat("Transformations before backend");
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dae, filenameprefix, "dae2");
+        ExecStat.execStat("Serialize DAE (2)");
+      end if;
+
+      generateFunctions = Flags.set(Flags.GEN, false);
+      // We should not need to lookup constants and classes in the backend,
+      // so let's free up the old graph and just make it the initial environment.
+      if not Flags.isSet(Flags.BACKEND_KEEP_ENV_GRAPH) then
+        (cache,graph) = Builtin.initialGraph(cache);
+      end if;
+
       description = DAEUtil.daeDescription(dae);
       dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
+
+      GC.free(dae);
+      graph = FCore.EG("<EMPTY>");
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dlow, filenameprefix, "dlow");
+        ExecStat.execStat("Serialize dlow");
+      end if;
+
       //BackendDump.printBackendDAE(dlow);
-      (dlow_1, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters) = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
+      (dlow, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters) = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
       timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dlow, filenameprefix, "simDAE");
+        serializeNotify(initDAE, filenameprefix, "initDAE");
+        serializeNotify(initDAE_lambda0, filenameprefix, "initDAE_lambda0");
+        serializeNotify(removedInitialEquationLst, filenameprefix, "removedInitialEquationLst");
+        serializeNotify(primaryParameters, filenameprefix, "primaryParameters");
+        serializeNotify(allPrimaryParameters, filenameprefix, "allPrimaryParameters");
+        ExecStat.execStat("Serialize solved system");
+      end if;
+
       (libs, file_dir, timeSimCode, timeTemplates) =
-        generateModelCode(dlow_1, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters, p, className, filenameprefix, inSimSettingsOpt, args);
+        generateModelCode(dlow, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters, p, className, filenameprefix, inSimSettingsOpt, args);
 
       resultValues = {("timeTemplates", Values.REAL(timeTemplates)),
                       ("timeSimCode", Values.REAL(timeSimCode)),
                       ("timeBackend", Values.REAL(timeBackend)),
                       ("timeFrontend", Values.REAL(timeFrontend))};
-    then (cache, st, dlow_1, libs, file_dir, resultValues);
+    then (cache, st, dlow, libs, file_dir, resultValues);
 
     case (_, _, _, _, _, _, _, _) equation
+      if generateFunctions then
+        Flags.set(Flags.GEN, true);
+      end if;
       true = Flags.isSet(Flags.FAILTRACE);
       resstr = Absyn.pathStringNoQual(className);
       resstr = stringAppendList({"SimCode: The model ", resstr, " could not be translated"});
       Error.addMessage(Error.INTERNAL_ERROR, {resstr});
     then fail();
   end matchcontinue;
+  if generateFunctions then
+    Flags.set(Flags.GEN, true);
+  end if;
 end translateModel;
+
+protected function serializeNotify<T>
+  input T data;
+  input String prefix;
+  input String name;
+protected
+  Real fsize;
+algorithm
+  Serializer.outputFile(data, prefix + "_"+name+".bin");
+  (,fsize,) := System.stat(prefix + "_"+name+".bin");
+  Error.addMessage(Error.SERIALIZED_SIZE, {name, StringUtil.bytesToReadableUnit(fsize)});
+end serializeNotify;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeMain;

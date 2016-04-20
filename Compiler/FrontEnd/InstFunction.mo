@@ -270,7 +270,7 @@ algorithm
         (cache,c,cenv) = Lookup.lookupRecordConstructorClass(cache,env,Absyn.IDENT(n));
         (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,_,_,_,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,c,inst_dims,true);
         // fpath = Absyn.makeFullyQualified(fpath);
-        fun = DAE.RECORD_CONSTRUCTOR(fpath,ty1,source,DAE.VARIABLE());
+        fun = DAE.RECORD_CONSTRUCTOR(fpath,ty1,source);
         cache = InstUtil.addFunctionsToDAE(cache, {fun}, pPrefix);
       then (cache,env,ih);
 
@@ -358,7 +358,7 @@ algorithm
         List.map2_0(daeElts,InstUtil.checkFunctionElement,false,info);
         // do not add the stripped class to the env, is already there, not stripped!
         env_1 = env; // Env.extendFrameC(env,c);
-        (cache,fpath) = Inst.makeFullyQualified(cache, env_1, Absyn.IDENT(n));
+        (cache,fpath) = Inst.makeFullyQualifiedIdent(cache, env_1, n);
         //print("2 Prefix: " + PrefixUtil.printPrefixStr(pre) + " path: " + Absyn.pathString(fpath) + "\n");
         cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt, info);
         derFuncs = InstUtil.getDeriveAnnotation(cd, cmt,fpath,cache,cenv,ih,pre,info);
@@ -370,7 +370,7 @@ algorithm
         env_1 = FGraph.mkTypeNode(env_1, n, ty1);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre));
         inlineType = InstUtil.isInlineFunc(c);
         partialPrefixBool = SCode.partialBool(partialPrefix);
 
@@ -393,7 +393,7 @@ algorithm
         List.map2_0(daeElts,InstUtil.checkFunctionElement,true,info);
         //env_11 = FGraph.mkClassNode(cenv,pre,mod,c);
         // Only created to be able to get FQ path.
-        (cache,fpath) = Inst.makeFullyQualified(cache,env,Absyn.IDENT(n));
+        (cache,fpath) = Inst.makeFullyQualifiedIdent(cache,env,n);
 
         cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt, c.info);
         derFuncs = InstUtil.getDeriveAnnotation(cd,cmt,fpath,cache,env,ih,pre,info);
@@ -413,7 +413,7 @@ algorithm
         (cache,ih,extdecl) = instExtDecl(cache, tempenv,ih, n, parts, true, pre,info) "impl" ;
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre));
         partialPrefixBool = SCode.partialBool(partialPrefix);
         InstUtil.checkExternalFunction(daeElts,extdecl,Absyn.pathString(fpath));
       then
@@ -424,7 +424,7 @@ algorithm
           classDef = SCode.OVERLOAD(pathLst = funcnames),cmt=cmt)),_,_)
       equation
         (cache,env,ih,resfns) = instOverloadedFunctions(cache,env,ih,pre,funcnames,inClass.info) "Overloaded functions" ;
-        (cache,fpath) = Inst.makeFullyQualified(cache,env,Absyn.IDENT(n));
+        (cache,fpath) = Inst.makeFullyQualifiedIdent(cache,env,n);
         resfns = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF({})},DAE.T_UNKNOWN_DEFAULT,visibility,true,isImpure,DAE.NO_INLINE(),DAE.emptyElementSource,SOME(cmt))::resfns;
       then
         (cache,env,ih,resfns);
@@ -593,7 +593,7 @@ algorithm
             Prefix.NOPRE(), c, {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
         env_1 = env; // why would you want to do this: FGraph.mkClassNode(env,c); ?????
-        (cache,fpath) = Inst.makeFullyQualified(cache,env_1, Absyn.IDENT(id));
+        (cache,fpath) = Inst.makeFullyQualifiedIdent(cache,env_1,id);
         ty1 = InstUtil.setFullyQualifiedTypename(ty,fpath);
         env_1 = FGraph.mkTypeNode(env_1, id, ty1);
         // (cache,env_1,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
@@ -793,7 +793,7 @@ algorithm
           fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
           fargs = Types.makeFargsList(inputs);
           funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
-          func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource,DAE.VARIABLE());
+          func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
 
           cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
 
@@ -802,7 +802,7 @@ algorithm
           fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
           fargs = Types.makeFargsList(inputs);
           funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
-          func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource,DAE.VARIABLE());
+          func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
 
           cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
 
@@ -862,7 +862,7 @@ algorithm
         fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
         fargs = Types.makeFargsList(inputs);
         funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
-        func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource,DAE.VARIABLE());
+        func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
 
         cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
       then

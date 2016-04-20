@@ -379,22 +379,6 @@ algorithm
   end for;
 end consN;
 
-public function appendNoCopy<T>
-  "This function handles special cases such as empty lists so it does not copy
-   if any of the arguments are empty lists.
-
-   TODO: RML-specific. Not needed in bootstrapped OMC"
-  input list<T> inList1;
-  input list<T> inList2;
-  output list<T> outList;
-algorithm
-  outList := match(inList1, inList2)
-    case ({}, _) then inList2;
-    case (_, {}) then inList1;
-    else listAppend(inList1, inList2);
-  end match;
-end appendNoCopy;
-
 public function append_reverse<T>
   "Appends the elements from list1 in reverse order to list2."
   input list<T> inList1;
@@ -1628,6 +1612,13 @@ public function intersection1OnTrue<T>
 protected
   Option<T> oe;
 algorithm
+  if listEmpty(inList1) then
+    return;
+  end if;
+  if listEmpty(inList2) then
+    outList1Rest := inList1;
+    return;
+  end if;
   for e in inList1 loop
     if isMemberOnTrue(e, inList2, inCompFunc) then
       outIntersection := e :: outIntersection;
@@ -3776,6 +3767,54 @@ algorithm
   end for;
   outList := listReverseInPlace(outList);
 end map2Fold;
+
+public function map2FoldCheckReferenceEq<TIO, FT, ArgT1, ArgT2>
+  "Takes a list, two extra constant arguments, an extra argument, and a function.
+  The function will be applied to each element in the list, and the extra
+  argument will be passed to the function and updated."
+  input list<TIO> inList;
+  input FuncType inFunc;
+  input ArgT1 inConstArg;
+  input ArgT2 inConstArg2;
+  input FT inArg;
+  output list<TIO> outList;
+  output FT outArg = inArg;
+
+  partial function FuncType
+    input TIO inElem;
+    input ArgT1 inConstArg;
+    input ArgT2 inConstArg2;
+    input FT inArg;
+    output TIO outResult;
+    output FT outArg;
+  end FuncType;
+protected
+  TIO res;
+  Boolean allEq=true;
+  DoubleEndedList<TIO> delst;
+  Integer n=0;
+algorithm
+  for e in inList loop
+    (res, outArg) := inFunc(e, inConstArg, inConstArg2, outArg);
+    if (if allEq then not referenceEq(e, res) else false) then
+      allEq:=false;
+      delst := DoubleEndedList.empty(res);
+      for elt in inList loop
+        if n < 1 then
+          break;
+        end if;
+        DoubleEndedList.push_back(delst, elt);
+        n := n-1;
+      end for;
+    end if;
+    if allEq then
+      n := n + 1;
+    else
+      DoubleEndedList.push_back(delst, res);
+    end if;
+  end for;
+  outList := if allEq then inList else DoubleEndedList.toListAndClear(delst);
+end map2FoldCheckReferenceEq;
 
 public function map3Fold<TI, TO, FT, ArgT1, ArgT2, ArgT3>
   "Takes a list, three extra constant arguments, an extra argument, and a function.

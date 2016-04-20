@@ -74,7 +74,6 @@ import PrefixUtil;
 import System;
 import Types;
 import Util;
-import InstSection;
 
 // Import some types from Connect.
 import Connect.Face;
@@ -311,10 +310,10 @@ public function isExpandable
 algorithm
   expandableConnector := match(name)
     case DAE.CREF_IDENT()
-      then InstSection.isExpandableConnectorType(name.identType);
+      then Types.isExpandableConnector(name.identType);
 
     case DAE.CREF_QUAL()
-      then InstSection.isExpandableConnectorType(name.identType) or
+      then Types.isExpandableConnector(name.identType) or
            isExpandable(name.componentRef);
 
     else false;
@@ -1814,7 +1813,9 @@ protected function equationsDispatch
   output DAE.DAElist DAE = DAE.emptyDae;
 protected
   list<ConnectorElement> eql;
+  list<list<ConnectorElement>> eqll;
   Real flowThreshold = Flags.getConfigReal(Flags.FLOW_THRESHOLD);
+  DAE.DAElist dae;
 algorithm
   for set in sets loop
     DAE := match set
@@ -1824,9 +1825,12 @@ algorithm
       case Set.SET(ty = ConnectorType.EQU())
         algorithm
           // Here we do some overconstrained connection breaking.
-          eql := ConnectionGraph.removeBrokenConnects(set.elements, connected, broken);
+          eqll := ConnectionGraph.removeBrokenConnects(set.elements, connected, broken);
+          for eql in eqll loop
+            DAE := DAEUtil.joinDaes(generateEquEquations(eql), DAE);
+          end for;
         then
-          DAEUtil.joinDaes(generateEquEquations(eql), DAE);
+          DAE;
 
       case Set.SET(ty = ConnectorType.FLOW(), elements = eql)
         then DAEUtil.joinDaes(generateFlowEquations(set.elements), DAE);
@@ -1877,14 +1881,14 @@ algorithm
   if Config.orderConnections() then
     for e2 in listRest(elements) loop
       src := ElementSource.mergeSources(e1.source, e2.source);
-      src := ElementSource.addElementSourceConnectOpt(src, SOME((e1.name, e2.name)));
+      src := ElementSource.addElementSourceConnect(src, (e1.name, e2.name));
       eql := DAE.EQUEQUATION(e1.name, e2.name, src) :: eql;
     end for;
   else
     for e2 in listRest(elements) loop
       (x, y) := Util.swap(shouldFlipEquEquation(e1.name, e1.source), e1.name, e2.name);
       src := ElementSource.mergeSources(e1.source, e2.source);
-      src := ElementSource.addElementSourceConnectOpt(src, SOME((x, y)));
+      src := ElementSource.addElementSourceConnect(src, (x, y));
       eql := DAE.EQUEQUATION(x, y, src) :: eql;
       e1 := e2;
     end for;
@@ -1907,7 +1911,7 @@ algorithm
     local
       DAE.ComponentRef lhs;
 
-    case DAE.SOURCE(connectEquationOptLst = SOME((lhs, _)) :: _)
+    case DAE.SOURCE(connectEquationOptLst = (lhs, _) :: _)
       then not ComponentReference.crefPrefixOf(lhs, lhsCref);
 
     else false;
@@ -2338,7 +2342,7 @@ algorithm
   // Only do this phase if we have any connection operators.
   if System.getHasStreamConnectors() or has_cardinality then
     flow_threshold := Flags.getConfigReal(Flags.FLOW_THRESHOLD);
-    DAE := DAEUtil.traverseDAE(DAE, DAE.emptyFuncTree,
+    DAE := DAEUtil.traverseDAE(DAE, DAE.AvlTreePathFunction.Tree.EMPTY(),
       function evaluateConnectionOperators2(
         hasCardinality = has_cardinality,
         setArray = setArray,
@@ -3062,7 +3066,7 @@ algorithm
   end match;
 end printLeafElementStr;
 
-protected function printElementStr
+public function printElementStr
   "Prints a connector element to a String."
   input ConnectorElement element;
   output String string;

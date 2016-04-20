@@ -84,6 +84,8 @@ class Newton : public IAlgLoopSolver
     *_f,                        ///< Temp        - Residuals
     *_yHelp,                    ///< Temp        - Auxillary variables
     *_fHelp,                    ///< Temp        - Auxillary variables
+    *_yTest,                    ///< Temp        - Auxillary variables
+    *_fTest,                    ///< Temp        - Auxillary variables
     *_jac,                      ///< Temp        - Jacobian
     *_zeroVec;
   long int *_iHelp;

@@ -1919,7 +1919,7 @@ public function liftTypeWithDims "
 algorithm
   outType := match inType
     local
-      list<DAE.Dimension> dims;
+      list<DAE.Dimension> dims, dims_;
       DAE.Type ty;
       DAE.TypeSource src;
 
@@ -1930,8 +1930,8 @@ algorithm
 
     case DAE.T_ARRAY(ty, dims, src)
       algorithm
-        dims := List.appendNoCopy(dims, inDims);
-      then DAE.T_ARRAY(ty, dims, src);
+        dims_ := listAppend(dims, inDims);
+      then if referenceEq(dims,dims_) then inType else DAE.T_ARRAY(ty, dims_, src);
 
     else
       DAE.T_ARRAY(inType, inDims, DAE.emptyTypeSource);
@@ -8936,6 +8936,20 @@ algorithm
     else ty;
   end match;
 end setTypeVariables;
+
+public function isExpandableConnector
+"@author: adrpo
+  this function checks if the given type is an expandable connector"
+  input DAE.Type ty;
+  output Boolean isExpandable;
+algorithm
+  isExpandable := match (ty)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_,true))) then true;
+    // TODO! check if subtype is needed here
+    case (DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(_,true))) then true;
+    else false;
+  end match;
+end isExpandableConnector;
 
 annotation(__OpenModelica_Interface="frontend");
 end Types;

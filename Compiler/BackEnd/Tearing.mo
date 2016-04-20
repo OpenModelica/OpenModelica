@@ -59,6 +59,7 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import Flags;
+protected import Global;
 protected import List;
 protected import Matching;
 protected import MetaModelica.Dangerous;
@@ -95,6 +96,7 @@ algorithm
       String methodString;
       TearingMethod method;
       BackendDAE.BackendDAEType DAEtype;
+      Integer strongComponentIndex = System.tmpTickIndex(Global.strongComponent_index);
 
     // if noTearing is selected, do nothing.
     case(_) equation
@@ -113,7 +115,8 @@ algorithm
         BackendDump.printBackendDAEType(DAEtype);
         print("!\n" + UNDERLINE + UNDERLINE + "\n");
       end if;
-      (outDAE, _) = BackendDAEUtil.mapEqSystemAndFold(inDAE, tearingSystemWork, method);
+      (outDAE, (_,strongComponentIndex)) = BackendDAEUtil.mapEqSystemAndFold(inDAE, tearingSystemWork, (method, strongComponentIndex));
+      System.tmpTickSetIndex(strongComponentIndex, Global.strongComponent_index);
     then outDAE;
 
     else equation
@@ -184,11 +187,13 @@ end callTearingMethod;
 protected function tearingSystemWork "author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared inShared;
-  input TearingMethod inTearingMethod;
+  input tuple<TearingMethod,Integer> inTearingMethodAndIndex;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared outShared = inShared "unused";
-  output TearingMethod outTearingMethod = inTearingMethod "unused";
+  output tuple<TearingMethod,Integer> outTearingMethodAndIndex;
 protected
+  TearingMethod inTearingMethod = Util.tuple21(inTearingMethodAndIndex);
+  Integer strongComponentIndex = Util.tuple22(inTearingMethodAndIndex);
   BackendDAE.StrongComponents comps;
   Boolean b;
   array<Integer> ass1, ass2;
@@ -197,11 +202,12 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of traverseComponents\n\n");
   end if;
-  (comps, b) := traverseComponents(comps, isyst, inShared, inTearingMethod);
+  (comps, b, strongComponentIndex) := traverseComponents(comps, isyst, inShared, inTearingMethod, strongComponentIndex);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of traverseComponents\n" + BORDER + "\n\n");
   end if;
   osyst := if b then BackendDAEUtil.setEqSystMatching(isyst, BackendDAE.MATCHING(ass1, ass2, comps)) else isyst;
+  outTearingMethodAndIndex := (inTearingMethod,strongComponentIndex);
 end tearingSystemWork;
 
 protected function traverseComponents "author: Frenkel TUD 2012-05"
@@ -209,8 +215,10 @@ protected function traverseComponents "author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input TearingMethod inMethod;
+  input Integer strongComponentIndexIn;
   output BackendDAE.StrongComponents oComps;
   output Boolean outRunMatching = false;
+  output Integer strongComponentIndexOut=strongComponentIndexIn;
 algorithm
   oComps := list(match co
         local
@@ -218,7 +226,7 @@ algorithm
           Boolean b;
         case comp
           equation
-            (comp, b) = traverseComponents1(comp, isyst, ishared, inMethod);
+            (comp, b, strongComponentIndexOut) = traverseComponents1(comp, isyst, ishared, inMethod, strongComponentIndexOut);
             outRunMatching = outRunMatching or b;
           then comp;
         end match for co in inComps);
@@ -229,11 +237,22 @@ protected function traverseComponents1 "author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input TearingMethod inMethod;
+  input Integer strongComponentIndexIn;
   output BackendDAE.StrongComponent oComp;
   output Boolean outRunMatching;
+  output Integer strongComponentIndexOut=strongComponentIndexIn;
 protected
   constant Boolean debug = false;
 algorithm
+  strongComponentIndexOut := match(inComp)
+    case(BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN())) equation
+      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+        print("Handle strong component with index: " + intString(strongComponentIndexOut+1) + "\nTo disable tearing of this component use '--noTearingForComponent=" + intString(strongComponentIndexOut+1) + "'.\n");
+      end if;
+     then (strongComponentIndexOut + 1);
+    else strongComponentIndexOut;
+  end match;
+
   (oComp, outRunMatching) := matchcontinue (inComp, isyst, ishared, inMethod)
     local
       Integer maxSize;
@@ -249,11 +268,18 @@ algorithm
       equality(jacType = BackendDAE.JAC_LINEAR());
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
-        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(listLength(vindx)),"linear",intString(maxSize)});
+        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"linear",intString(maxSize)});
+        fail();
+      end if;
+      if listMember(strongComponentIndexOut,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
+        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+          print("\nTearing deactivated by user.\n");
+        end if;
+        Error.addMessage(Error.NO_TEARING_FOR_COMPONENT, {intString(strongComponentIndexOut)});
         fail();
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
+        print("\nTearing of LINEAR component\nUse Flag '+d=tearingdumpV' for more details\n\n");
       end if;
       false = Flags.getConfigBool(Flags.DISABLE_LINEAR_TEARING);
       // TODO: Remove when cpp runtime ready for doLinearTearing
@@ -273,11 +299,18 @@ algorithm
       failure(equality(jacType = BackendDAE.JAC_LINEAR()));
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
-        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(listLength(vindx)),"nonlinear",intString(maxSize)});
+        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"nonlinear",intString(maxSize)});
+        fail();
+      end if;
+      if listMember(strongComponentIndexOut,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
+        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+          print("\nTearing deactivated by user.\n");
+        end if;
+        Error.addMessage(Error.NO_TEARING_FOR_COMPONENT, {intString(strongComponentIndexOut)});
         fail();
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\nCase non-linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
+        print("\nTearing of NONLINEAR component\nUse Flag '+d=tearingdumpV' for more details\n\n");
       end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
@@ -1640,7 +1673,7 @@ algorithm
     case ("true",_,true,true) then true;
     case ("linear",true,true,true) then true;
     case ("nonlinear",false,true,true) then true;
-    else then false;
+    else false;
   end match;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -3503,35 +3536,19 @@ end countMultiples3;
 protected function maxListInt
   "function to find maximum Integers in inList and output a list with the indexes.
   author: Waurich TUD 2012-11"
-    input list<Integer> inList;
-    output list<Integer> outList;
-  algorithm
-    ((_,_,outList)):= List.fold(inList,maxListInthelp,(1,0,{}));
-end maxListInt;
-
-
-protected function maxListInthelp  "helper function to maxListInt.
-author: Waurich TUD 2012-10"
-  input Integer value;
-  input tuple<Integer,Integer,list<Integer>> inValue;
-  output tuple<Integer,Integer,list<Integer>> outValue;
+  input list<Integer> inList;
+  output list<Integer> outList={};
+protected
+  Integer maxi, index=1;
 algorithm
-  outValue :=
-    match(value,inValue)
-      local
-        Integer indx;
-        Integer maxValue;
-        list<Integer> ilst;
-      case(_,(indx,maxValue,ilst))
-          then
-            if value < maxValue then
-              ((indx+1,maxValue,ilst))
-            else if intEq(value,maxValue) then
-              ((indx+1,maxValue,indx::ilst))
-            else
-              ((indx+1,value,{indx}));
-    end match;
-  end maxListInthelp;
+  maxi := max(i for i in inList);
+  for i in inList loop
+    if i==maxi then
+      outList := index::outList;
+    end if;
+    index := index+1;
+  end for;
+end maxListInt;
 
 
 protected function selectFromList_rev" selects Ints from inList by indexes given in selList
@@ -4409,26 +4426,6 @@ algorithm
     print("order: " + stringDelimitList(List.map(order,intString),",") + "\n\n");
   end for;
 end dumpMatchingList;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 annotation(__OpenModelica_Interface="backend");
 end Tearing;

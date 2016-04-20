@@ -68,12 +68,11 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
     list<SimVar> seedVars;
     list<SimVar> realOptimizeConstraintsVars;
     list<SimVar> realOptimizeFinalConstraintsVars;
-    list<SimVar> mixedArrayVars; //all arrays that contain state or state derivative variables, together with other variables
   end SIMVARS;
 end SimVars;
 
 public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {},
-  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
+  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
 public uniontype SimVar "Information about a variable in a Modelica model."
   record SIMVAR

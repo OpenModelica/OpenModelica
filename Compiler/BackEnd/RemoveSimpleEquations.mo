@@ -70,7 +70,6 @@ protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import Flags;
 protected import HashSet;
-protected import Inline;
 protected import List;
 protected import Types;
 protected import Util;
@@ -1640,7 +1639,7 @@ algorithm
   outTpl := match (vlst, ilst, lhs, rhs, eqnAttributes, inTpl)
     local
       DAE.ComponentRef cr;
-      DAE.Exp cre, es, lhs1, rhs1;
+      DAE.Exp cre, es;
       BackendDAE.Var v;
       Integer i, size;
       DAE.FunctionTree functionTree;
@@ -1661,11 +1660,8 @@ algorithm
         // size of equation have to be equal with number of vars
         size = Expression.sizeOf(Expression.typeof(lhs));
         true = intEq(size, listLength(vlst));
-        // force inline
-        (lhs1, source, _) = Inline.forceInlineExp(lhs, (SOME(functionTree), {DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}), source);
-        (rhs1, source, _) = Inline.forceInlineExp(rhs, (SOME(functionTree), {DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}), source);
-      then
-        solveTimeIndependentAcausal1(vlst, ilst, lhs1, rhs1, (source, eqAttr), inTpl);
+     then
+        solveTimeIndependentAcausal1(vlst, ilst, lhs, rhs, (source, eqAttr), inTpl);
   end match;
 end solveTimeIndependentAcausal;
 
@@ -5057,11 +5053,16 @@ protected
   HashTableExpToIndex.HashTable HTNominalExpToInt;
   list<tuple<DAE.Exp,Integer>> tplExpIndList;
 algorithm
+  if listEmpty(tplCrEqLst) then
+    return;
+  end if;
   try
+  HTStartExpToInt := HashTableExpToIndex.emptyHashTableSized(100);
+  HTNominalExpToInt := HashTableExpToIndex.emptyHashTableSized(100);
   for tpl in tplCrEqLst loop
     (cr1,cr_eq_lst) := tpl;
-    HTStartExpToInt := HashTableExpToIndex.emptyHashTableSized(100);
-    HTNominalExpToInt := HashTableExpToIndex.emptyHashTableSized(100);
+    BaseHashTable.clear(HTStartExpToInt);
+    BaseHashTable.clear(HTNominalExpToInt);
     ({v},{i}) := BackendVariable.getVar(cr1,outVars);
     if BackendVariable.varHasStartValue(v) then
       e := BackendVariable.varStartValue(v);

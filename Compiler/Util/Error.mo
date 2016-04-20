@@ -833,11 +833,15 @@ public constant Message SUBCLOCK_CONFLICT = MESSAGE(570, TRANSLATION(), ERROR(),
 public constant Message CLOCK_CONFLICT = MESSAGE(571, TRANSLATION(), ERROR(),
   Util.gettext("Partitions have different base clocks."));
 public constant Message EXEC_STAT = MESSAGE(572, TRANSLATION(), NOTIFICATION(),
-  Util.gettext("Performance of %s: time %s/%s, memory: %s / %s"));
+  Util.gettext("Performance of %s: time %s/%s, allocations: %s / %s, free: %s / %s"));
 public constant Message EXEC_STAT_GC = MESSAGE(573, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Performance of %s: time %s/%s, GC stats:%s"));
 public constant Message MAX_TEARING_SIZE = MESSAGE(574, SYMBOLIC(), NOTIFICATION(),
-  Util.gettext("Tearing is skipped because system size of %s exceeds maximum system size for tearing of %s systems (%s)\nTo adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>\n"));
+  Util.gettext("Tearing is skipped for strong component %s because system size of %s exceeds maximum system size for tearing of %s systems (%s).\nTo adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.\n"));
+public constant Message NO_TEARING_FOR_COMPONENT = MESSAGE(575, SYMBOLIC(), NOTIFICATION(),
+  Util.gettext("Tearing is skipped for strong component %s because of activated compiler flag 'noTearingForComponent=%1'.\n"));
+public constant Message WRONG_VALUE_OF_ARG = MESSAGE(576, TRANSLATION(), ERROR(),
+  Util.gettext("Wrong value of argument to %s: %s = %s %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
@@ -923,6 +927,8 @@ public constant Message UNIONTYPE_MISSING_TYPEVARS = MESSAGE(5044, TRANSLATION()
   Util.gettext("Uniontype %s has type variables, but they were not given in the declaration."));
 public constant Message UNIONTYPE_WRONG_NUM_TYPEVARS = MESSAGE(5045, TRANSLATION(), ERROR(),
   Util.gettext("Uniontype %s has %s type variables, but got %s."));
+public constant Message SERIALIZED_SIZE = MESSAGE(5046, TRANSLATION(), NOTIFICATION(),
+  Util.gettext("%s has serialized size %s."));
 
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   Util.notrans("%s"));
@@ -935,7 +941,7 @@ public constant Message COMPILER_NOTIFICATION_SCRIPTING = MESSAGE(6002, SCRIPTIN
 public constant Message SUSAN_ERROR = MESSAGE(7000, TRANSLATION(), ERROR(),
   Util.notrans("%s"));
 public constant Message TEMPLATE_ERROR = MESSAGE(7001, TRANSLATION(), ERROR(),
-  Util.gettext("Template error: %s"));
+  Util.gettext("Template error: %s."));
 public constant Message OPERATOR_OVERLOADING_WARNING = MESSAGE(7002, TRANSLATION(), WARNING(),
   Util.gettext("Operator Overloading: %s."));
 public constant Message OPERATOR_OVERLOADING_ERROR = MESSAGE(7003, TRANSLATION(), ERROR(),
@@ -961,6 +967,8 @@ public constant Message SUSAN_NOTIFY = MESSAGE(7012, TRANSLATION(), NOTIFICATION
   Util.notrans("%s"));
 public constant Message PDEModelica_ERROR = MESSAGE(7013, TRANSLATION(), ERROR(),
   Util.gettext("PDEModelica: %s"));
+public constant Message TEMPLATE_ERROR_FUNC = MESSAGE(7014, TRANSLATION(), ERROR(),
+  Util.gettext("Template error: A template call failed (a call with %s parameters: %s). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics)."));
 
 protected import ErrorExt;
 

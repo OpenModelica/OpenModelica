@@ -461,10 +461,16 @@ package Absyn
       Boolean streamPrefix;
       Parallelism parallelism;
       Variability variability;
+      IsField isField;
       Direction direction;
       ArrayDim arrayDim;
     end ATTR;
   end ElementAttributes;
+
+  uniontype IsField "Is field"
+    record NONFIELD "variable is not a field"  end NONFIELD;
+    record FIELD "variable is a field"         end FIELD;
+  end IsField;
 
   uniontype Parallelism
     record PARGLOBAL end PARGLOBAL;

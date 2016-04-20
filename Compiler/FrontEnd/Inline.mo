@@ -1328,7 +1328,7 @@ algorithm
       Option<SCode.Comment> comment;
     case(_,(SOME(ftree),_))
       equation
-        SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_,comment=comment)) = DAEUtil.avlTreeGet(ftree,p);
+        SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_,comment=comment)) = DAE.AvlTreePathFunction.get(ftree,p);
       then (body,comment);
     else
       equation

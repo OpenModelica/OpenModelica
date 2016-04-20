@@ -317,7 +317,6 @@ uniontype Function
     list<Variable> locals;
     SCode.Visibility visibility;
     SourceInfo info;
-    DAE.VarKind kind;
   end RECORD_CONSTRUCTOR;
 end Function;
 

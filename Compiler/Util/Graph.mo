@@ -133,7 +133,7 @@ algorithm
   match(inStartNodes, inRestNodes, inAccumNodes, inEqualFunc)
     local
       NodeType node1;
-      list<tuple<NodeType, list<NodeType>>> rest_start, rest_rest, new_start;
+      list<tuple<NodeType, list<NodeType>>> rest_start, rest_start_, rest_rest, new_start;
       list<NodeType> result;
 
     // No more nodes to sort, reverse the accumulated nodes (because of
@@ -161,10 +161,10 @@ algorithm
         (rest_rest, new_start) =
           List.splitOnTrue(rest_rest, hasOutgoingEdges);
         // Append those nodes to the list of start nodes.
-        rest_start = List.appendNoCopy(rest_start, new_start);
+        rest_start_ = listAppend(rest_start, new_start);
         // Add the first node to the list of sorted nodes and continue with the
         // rest of the nodes.
-        (result, rest_rest) = topologicalSort2(rest_start,  rest_rest,
+        (result, rest_rest) = topologicalSort2(rest_start_,  rest_rest,
           node1 :: inAccumNodes, inEqualFunc);
       then
         (result, rest_rest);

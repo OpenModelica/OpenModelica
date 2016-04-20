@@ -1425,7 +1425,7 @@ protected
   list<DAE.Function> funcelems;
 algorithm
   funcelems := DAEUtil.getFunctionList(inFunctions);
-  outFunctions := List.fold(funcelems,copyRecordConstructorAndExternalObjConstructorDestructorFold,DAE.emptyFuncTree);
+  outFunctions := List.fold(funcelems,copyRecordConstructorAndExternalObjConstructorDestructorFold,DAE.AvlTreePathFunction.Tree.EMPTY());
 end copyRecordConstructorAndExternalObjConstructorDestructor;
 
 protected function copyRecordConstructorAndExternalObjConstructorDestructorFold
@@ -1442,7 +1442,7 @@ algorithm
     // copy record constructors
     case (f as DAE.RECORD_CONSTRUCTOR(path=path),funcs)
       equation
-         funcs1 = DAEUtil.avlTreeAdd(funcs, path, SOME(f));
+         funcs1 = DAE.AvlTreePathFunction.add(funcs, path, SOME(f));
        then
         funcs1;
     // copy external objects constructors/destructors
@@ -1451,7 +1451,7 @@ algorithm
          true = boolOr(
                   stringEq(Absyn.pathLastIdent(path), "constructor"),
                   stringEq(Absyn.pathLastIdent(path), "destructor"));
-         funcs1 = DAEUtil.avlTreeAdd(funcs, path, SOME(f));
+         funcs1 = DAE.AvlTreePathFunction.add(funcs, path, SOME(f));
        then
         funcs1;
     case (_,funcs) then funcs;
@@ -1475,7 +1475,7 @@ algorithm
           bdae = BackendDAEUtil.setFunctionTree(bdae, inFunctions);
           BackendDAE.DAE(shared = BackendDAE.SHARED(functionTree = usedfuncs)) =
             removeUnusedFunctions(bdae);
-          outUsedFunctions = DAEUtil.joinAvlTrees(outUsedFunctions, usedfuncs);
+          outUsedFunctions = DAE.AvlTreePathFunction.join(outUsedFunctions, usedfuncs);
         then
           ();
 
@@ -1542,13 +1542,13 @@ protected
   list<DAE.Element> body;
 algorithm
   try // Check if the function has already been added.
-    _ := DAEUtil.avlTreeGet(inUsedFunctions, inPath);
+    _ := DAE.AvlTreePathFunction.get(inUsedFunctions, inPath);
   else // Otherwise, try to add it.
     (f, body) := getFunctionAndBody(inPath, inFunctions);
 
     if isSome(f) then
-      outUsedFunctions := DAEUtil.avlTreeAdd(outUsedFunctions, inPath, f);
-      (_, outUsedFunctions) := DAEUtil.traverseDAE2(body,
+      outUsedFunctions := DAE.AvlTreePathFunction.add(outUsedFunctions, inPath, f);
+      (_, outUsedFunctions) := DAEUtil.traverseDAEElementList(body,
         function checkUnusedFunctions(inFunctions = inFunctions), outUsedFunctions);
     end if;
   end try;
@@ -1564,7 +1564,7 @@ protected
   DAE.Function fn;
 algorithm
   try
-    outFn as SOME(fn) := DAEUtil.avlTreeGet(fns, inPath);
+    outFn as SOME(fn) := DAE.AvlTreePathFunction.get(fns, inPath);
     outFnBody := DAEUtil.getFunctionElements(fn);
   else
     outFn := NONE();
@@ -4358,12 +4358,12 @@ algorithm
     if Expression.isArray(e1) or Expression.isArrayType(Expression.typeof(e1)) then
       lst_e := Expression.getArrayOrRangeContents(e1);
       for e in lst_e loop
-        out_lst_e1 := List.appendNoCopy(simplifyComplexFunction2(e),out_lst_e1);
+        out_lst_e1 := listAppend(simplifyComplexFunction2(e),out_lst_e1);
       end for;
     elseif Expression.isRecord(e1) then
       lst_e := Expression.splitRecord(e1, Expression.typeof(e1));
       for e in lst_e loop
-        out_lst_e1 := List.appendNoCopy(simplifyComplexFunction2(e),out_lst_e1);
+        out_lst_e1 := listAppend(simplifyComplexFunction2(e),out_lst_e1);
       end for;
       out_lst_e1 := {e1};
     else
