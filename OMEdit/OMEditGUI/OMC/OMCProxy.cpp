@@ -1014,7 +1014,7 @@ bool OMCProxy::setComponentModifierValue(QString className, QString modifierName
  */
 bool OMCProxy::removeComponentModifiers(QString className, QString name)
 {
-  return mpOMCInterface->removeComponentModifiers(className, name);
+  return mpOMCInterface->removeComponentModifiers(className, name, true);
 }
 
 QStringList OMCProxy::getExtendsModifierNames(QString className, QString extendsClassName)
@@ -1079,7 +1079,7 @@ bool OMCProxy::isExtendsModifierFinal(QString className, QString extendsClassNam
  */
 bool OMCProxy::removeExtendsModifiers(QString className, QString extendsClassName)
 {
-  return mpOMCInterface->removeExtendsModifiers(className, extendsClassName);
+  return mpOMCInterface->removeExtendsModifiers(className, extendsClassName, true);
 }
 
 /*!
