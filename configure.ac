@@ -182,10 +182,12 @@ fi
 
 dnl Disables the default CFLAGS="-g -O2"
 LDFLAGS_BEFORE="$LDFLAGS"
+LIBS_BEFORE="$LIBS"
 LDFLAGS="$LDFLAGS -Wl,--no-undefined"
 AC_MSG_CHECKING([looking for --no-undefined])
 AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes]);LD_NOUNDEFINED=" -Wl,--no-undefined"], [AC_MSG_RESULT([no])])
 LDFLAGS="$LDFLAGS_BEFORE"
+LIBS="$LIBS_BEFORE"
 
 TRY_FLAGS="-fno-stack-protector"
 
@@ -456,8 +458,7 @@ if test "$WANT_STATIC_LPSOLVE" = "no"; then
   LIBDL="$LIBS"
   AC_SEARCH_LIBS(sqrt,m)
   AC_SEARCH_LIBS(colamd,colamd)
-  AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[],[MINGW_EXTRA_LIBS="$MINGW_EXTRA_LIBS lpsolve"; AC_MSG_RESULT([lpsolve linking failed using $LIBS])])
-  LIBLPSOLVE55=$LIBS
+  AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[LIBLPSOLVE55=$LIBS],[MINGW_EXTRA_LIBS="$MINGW_EXTRA_LIBS lpsolve"; AC_MSG_RESULT([lpsolve linking failed using $LIBS])])
   LIBS=""
 else
   if test "$WANT_STATIC_LPSOLVE" = "yes"; then
