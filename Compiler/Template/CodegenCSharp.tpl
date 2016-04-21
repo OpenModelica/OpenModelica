@@ -3,6 +3,7 @@
 package CodegenCSharp
 
 import interface SimCodeTV;
+import ExpressionDumpTpl;
 
 // SECTION: SIMULATION TARGET, ROOT TEMPLATE
 
@@ -180,7 +181,7 @@ template literalExpConst(Exp lit, Integer index, SimCode simCode)
     <<
     static <%arrType%> <%name%> = new <%arrType%>(<%dims%>,-1, new <%sty%>[] { <%data%> });
     >>
-  else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
+  else error(sourceInfo(), 'literalExpConst failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConst;
 
 //should be identical to call daeExp()
@@ -193,7 +194,7 @@ template literalExpConstArrayVal(Exp lit)
     case RCONST(__) then real
     case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
     case SHARED_LITERAL(__) then '_OMC_LIT<%index%>'
-    else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>')
+    else error(sourceInfo(), 'literalExpConstArrayVal failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConstArrayVal;
 
 template simulationFunctionsBody(SimCode simCode) ::=
@@ -869,7 +870,7 @@ public override void FunZeroCrossings(double time, double[] gout) //TODO:??time 
      let &preExp = buffer ""
      let zc = zeroCrossing(relation_, &preExp, simCode)
      <<
-     //ZC for: <%ExpressionDump.printExpStr(relation_)%>
+     //ZC for: <%ExpressionDumpTpl.dumpExp(relation_,"\"")%>
      <%preExp%>
      gout[<%i0%>] = <%zc%>;
      >>
@@ -941,7 +942,7 @@ template zeroCrossing(Exp zcExp, Text &preExp, SimCode simCode) ::=
 **/
 
   else
-    error(sourceInfo(), 'Unexpected zero crossing expression: <%ExpressionDump.printExpStr(zcExp)%>')
+    error(sourceInfo(), 'Unexpected zero crossing expression: <%ExpressionDumpTpl.dumpExp(zcExp,"\"")%>')
 
 end zeroCrossing;
 
@@ -995,13 +996,13 @@ template relationTpl(Integer index1, Exp relationExp, Context context, SimCode s
     let e1 = daeExp(exp1, context, &preExp, simCode)
     let e2 = daeExp(exp2, context, &preExp, simCode)
     <<
-    //relation[<%index%>]: <%ExpressionDump.printExpStr(relationExp)%>
+    //relation[<%index%>]: <%ExpressionDumpTpl.dumpExp(relationExp,"\"")%>
     <%preExp%>
     <%relationWithZeroCrossing(relationExp, e1, e2)%>
     >>
   else
     <<
-    // UNKNOWN Relation[<%index1%>]:  <%ExpressionDump.printExpStr(relationExp)%>
+    // UNKNOWN Relation[<%index1%>]:  <%ExpressionDumpTpl.dumpExp(relationExp,"\"")%>
     >>
 end relationTpl;
 
@@ -2356,7 +2357,7 @@ end zeroCrossingRelationOperator;
 template relationWithZeroCrossing(Exp inRelationExp, Text e1, Text e2) ::=
  match inRelationExp
  case RELATION(__) then
-   //relation <%ExpressionDump.printExpStr(inRelationExp)%>
+   //relation <%ExpressionDumpTpl.dumpExp(inRelationExp,"\"")%>
    <<
    relsZC[<%index%>] = <%zeroCrossingValue(inRelationExp, e1, e2)%>;
    rels[<%index%>] = relsZC[<%index%>]<%zeroCrossingRelationOperator(inRelationExp)%>0.0;
@@ -2373,7 +2374,7 @@ then
   case rel as RELATION(__) then
      let &preExp +=
         <<
-        //relation[<%rel.index%>]:  <%ExpressionDump.printExpStr(inRelationExp)%><%\n%>
+        //relation[<%rel.index%>]:  <%ExpressionDumpTpl.dumpExp(inRelationExp,"\"")%><%\n%>
         >>
      match rel.index
        case -1 then
@@ -2616,7 +2617,7 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
          //else
          '<%var1%> / <%var2%>'
     case _ then
-         let msg = Util.escapeModelicaStringToCString(printExpStr(e2))
+         let msg = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(e2,"\""))
          let &tmpVar2 = buffer ""
          let &preExp +=
             '<%tempDecl("var", &tmpVar2)%> = <%var2%>; if (<%tmpVar2%> == 0.0) throw new DivideByZeroException("<%msg%>");<%\n%>'
@@ -2712,7 +2713,7 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
   /* Begin code generation of event triggering math functions */
 
   case CALL(path=IDENT(name="integer"), expLst={valExp,index}) then
-    let &preExp += '//event trigger function: <%ExpressionDump.printExpStr(inExp)%><%\n%>'
+    let &preExp += '//event trigger function: <%ExpressionDumpTpl.dumpExp(inExp,"\"")%><%\n%>'
     let constIndex = daeExp(index, context, &preExp, simCode)
     match context
     case SIMULATION_CONTEXT(genDiscrete=true)
@@ -2738,10 +2739,10 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
         }<%\n%>
         >>
       res
-    else error(sourceInfo(), 'Unexpected context for: <%ExpressionDump.printExpStr(inExp)%>')
+    else error(sourceInfo(), 'Unexpected context for: <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>')
 
   case CALL(path=IDENT(name="floor"), expLst={valExp,index}, attr=CALL_ATTR(__)) then
-    let &preExp += '//event trigger function: <%ExpressionDump.printExpStr(inExp)%><%\n%>'
+    let &preExp += '//event trigger function: <%ExpressionDumpTpl.dumpExp(inExp,"\"")%><%\n%>'
     let constIndex = daeExp(index, context, &preExp, simCode)
     let retType =
       match attr.ty
@@ -2773,11 +2774,11 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
             }<%\n%>
             >>
           res
-        else error(sourceInfo(), 'Unexpected context for: <%ExpressionDump.printExpStr(inExp)%>')
+        else error(sourceInfo(), 'Unexpected context for: <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>')
       )
 
   case CALL(path=IDENT(name="ceil"), expLst={valExp,index}, attr=CALL_ATTR(__)) then
-    let &preExp += '//event trigger function: <%ExpressionDump.printExpStr(inExp)%><%\n%>'
+    let &preExp += '//event trigger function: <%ExpressionDumpTpl.dumpExp(inExp,"\"")%><%\n%>'
     let constIndex = daeExp(index, context, &preExp, simCode)
     let retType =
       match attr.ty
@@ -2809,11 +2810,11 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
             }<%\n%>
             >>
           res
-        else error(sourceInfo(), 'Unexpected context for: <%ExpressionDump.printExpStr(inExp)%>')
+        else error(sourceInfo(), 'Unexpected context for: <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>')
       )
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2, index}, attr=CALL_ATTR(__)) then
-    let &preExp += '//event trigger function: <%ExpressionDump.printExpStr(inExp)%><%\n%>'
+    let &preExp += '//event trigger function: <%ExpressionDumpTpl.dumpExp(inExp,"\"")%><%\n%>'
     let constIndex = daeExp(index, context, &preExp, simCode)
     let stype = expTypeShort(attr.ty)
     match context
@@ -2855,7 +2856,7 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
         }<%\n%>
         >>
       res
-    else error(sourceInfo(), 'Unexpected context for: <%ExpressionDump.printExpStr(inExp)%>')
+    else error(sourceInfo(), 'Unexpected context for: <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>')
 
   /* end codegeneration of event triggering math functions */
 

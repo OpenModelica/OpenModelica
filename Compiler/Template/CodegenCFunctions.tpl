@@ -12,6 +12,7 @@ package CodegenCFunctions
 
 import interface SimCodeTV;
 import CodegenUtil.*;
+import ExpressionDumpTpl;
 
 /* public */ template generateEntryPoint(Path entryPoint, String url) "used in Compiler/Script/CevalScript.mo"
 ::=
@@ -833,7 +834,7 @@ template extReturnType(SimExtArg extArg)
   match extArg
   case ex as SIMEXTARG(__)    then extType(type_,true /*Treat this as an input (pass by value)*/,false)
   case SIMNOEXTARG(__)  then "void"
-  case SIMEXTARGEXP(__) then error(sourceInfo(), 'Expression types are unsupported as return arguments <%printExpStr(exp)%>')
+  case SIMEXTARGEXP(__) then error(sourceInfo(), 'Expression types are unsupported as return arguments <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
   else error(sourceInfo(), "Unsupported return argument")
 end extReturnType;
 
@@ -2503,7 +2504,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, Text
     >>
 
   case STMT_ASSIGN(exp1=RSUB(__)) then
-    error(sourceInfo(), 'Code generation not implemented for lhs assignment <%printExpStr(exp1)%>')
+    error(sourceInfo(), 'Code generation not implemented for lhs assignment <%ExpressionDumpTpl.dumpExp(exp1,"\"")%>')
 
   case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_VAR(__)))
   case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_FUNC(__))) then
@@ -2633,7 +2634,7 @@ match lhsexp
     %>
     >>
   else
-    error(sourceInfo(), 'algStmtAssignWithRhsExpStr: Unhandled lhs expression. <%ExpressionDump.printExpStr(lhsexp)%>')
+    error(sourceInfo(), 'algStmtAssignWithRhsExpStr: Unhandled lhs expression. <%ExpressionDumpTpl.dumpExp(lhsexp,"\"")%>')
 end algStmtAssignWithRhsExpStr;
 
 template algStmtAssignRecordWithRhsExpStr(DAE.Exp lhsexp, Text &rhsExpStr, Context context,
@@ -2748,7 +2749,6 @@ match stmt
     let call = daeExpCallTuple(exp, lhsCrefs2, context, &preExp, &varDecls, &auxFunction)
     let callassign = algStmtAssignWithRhsExpStr(firstexp, call, context, &preExp, &postExp, &varDecls, &auxFunction)
     <<
-    /* tuple assignment <%expExpLst |> e => escapeCComments(printExpStr(e)) ; separator=", "%>*/
     <%preExp%>
     <%callassign%>
     <%postExp%>
@@ -2826,7 +2826,7 @@ template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, 
       '&<%res%>'
     else '&<%res%>'
   else
-    error(sourceInfo(), 'tupleReturnVariableUpdates: Unhandled expression. <%ExpressionDump.printExpStr(inExp)%>')
+    error(sourceInfo(), 'tupleReturnVariableUpdates: Unhandled expression. <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>')
 end tupleReturnVariableUpdates;
 
 template algStmtIf(DAE.Statement stmt, Context context, Text &varDecls, Text &auxFunction)
@@ -3445,7 +3445,7 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
     %>static const MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp hasindex i0 => literalExpConstBoxedVal(exp,litindex+"_"+i0); separator=","%>}};
     #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
-  else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
+  else error(sourceInfo(), 'literalExpConst failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConst;
 
 template literalExpConstBoxedVal(Exp lit, Text index)
@@ -3466,7 +3466,7 @@ template literalExpConstBoxedVal(Exp lit, Text index)
     >>
   case lit as BOX(__) then literalExpConstBoxedVal(lit.exp, index)
   case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
-  else error(sourceInfo(), 'literalExpConstBoxedVal failed: <%printExpStr(lit)%>')
+  else error(sourceInfo(), 'literalExpConstBoxedVal failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConstBoxedVal;
 
 template literalExpConstBoxedValPreLit(Exp lit, Text index)
@@ -3490,7 +3490,7 @@ template literalExpConstArrayVal(Exp lit)
     case RCONST(__) then real
     case ENUM_LITERAL(__) then index
     case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
-    else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>')
+    else error(sourceInfo(), 'literalExpConstArrayVal failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConstArrayVal;
 
 
@@ -3729,7 +3729,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
   case c as SHARED_LITERAL(__) then expTypeFromExpFlag(c.exp, flag)
-  else error(sourceInfo(), 'expTypeFromExpFlag(flag=<%flag%>):<%printExpStr(exp)%>')
+  else error(sourceInfo(), 'expTypeFromExpFlag(flag=<%flag%>):<%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end expTypeFromExpFlag;
 
 
@@ -3793,7 +3793,7 @@ template dimensionExp(DAE.Exp dimExp)
 ::=
   match dimExp
   case DAE.CREF(componentRef = cr) then cref(cr)
-  else error(sourceInfo(), 'dimensionExp: INVALID_DIMENSION <%printExpStr(dimExp)%>')
+  else error(sourceInfo(), 'dimensionExp: INVALID_DIMENSION <%ExpressionDumpTpl.dumpExp(dimExp,"\"")%>')
 end dimensionExp;
 
 template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecls, Text &auxFunction)
@@ -3828,7 +3828,7 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
         <%res%><%assignments1%><%matchPhase%><%assignments%>
         >>
   case s as STMT_ASSIGN(exp1=lhs as PATTERN(pattern=PAT_WILD(__))) then
-    error(sourceInfo(),'Improve simplifcation, got pattern assignment _ = <%printExpStr(exp)%>, expected NORETCALL')
+    error(sourceInfo(),'Improve simplifcation, got pattern assignment _ = <%ExpressionDumpTpl.dumpExp(exp,"\"")%>, expected NORETCALL')
   case s as STMT_ASSIGN(exp1=lhs as PATTERN(__)) then
     let &preExp = buffer ""
     let &assignments = buffer ""
@@ -3867,7 +3867,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
         case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         case c as ENUM_LITERAL() then 'if (<%c.index%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
         case c as SHARED_LITERAL() then 'if (!valueEq(_OMC_LIT<%c.index%>, <%urhs%>)) <%onPatternFail%>;<%\n%>'
-        else error(sourceInfo(), 'UNKNOWN_CONSTANT_PATTERN <%printExpStr(p.exp)%>')
+        else error(sourceInfo(), 'UNKNOWN_CONSTANT_PATTERN <%ExpressionDumpTpl.dumpExp(p.exp,"\"")%>')
       %>>>
   case p as PAT_SOME(__) then
     let tvar = tempDecl("modelica_metatype", &varDecls)
@@ -3966,7 +3966,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let addInfoTextContext = match context
             case FUNCTION_CONTEXT(__)
             case PARALLEL_FUNCTION_CONTEXT(__) then ''
-            else '<%\n%>omc_assert_warning(info, "The following assertion has been violated %sat time %f\n<%Util.escapeModelicaStringToCString(printExpStr(condition))%>", initial() ? "during initialization " : "", data->localData[0]->timeValue);'
+            else '<%\n%>omc_assert_warning(info, "The following assertion has been violated %sat time %f\n<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))%>", initial() ? "during initialization " : "", data->localData[0]->timeValue);'
   let omcAssertFunc = match level case ENUM_LITERAL(index=2) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
   let warningTriggered = tempDeclZero("static int", &varDecls)
   let TriggerIf = match level case ENUM_LITERAL(index=2) then 'if(!<%warningTriggered%>)<%\n%>' else ''
@@ -4086,7 +4086,7 @@ template subscriptToCStr(Subscript subscript)
 ::=
   match subscript
   case SLICE(exp=ICONST(integer=i)) then i
-  case SLICE(__) then error(sourceInfo(), "Unknown slice " + printExpStr(exp))
+  case SLICE(__) then error(sourceInfo(), "Unknown slice " + ExpressionDumpTpl.dumpExp(exp,"\""))
   case WHOLEDIM(__) then "WHOLEDIM"
   case INDEX(__) then
    match exp
@@ -4312,8 +4312,8 @@ end getTempDeclMatchOutputName;
   case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp, &varDecls, &auxFunction)
   case e as SHARED_LITERAL(__)  then daeExpSharedLiteral(e)
   case e as SUM(__)             then daeExpSum(e, context, &preExp, &varDecls, &auxFunction)
-  case e as CLKCONST(__)        then '#error "<%ExpressionDump.printExpStr(e)%>"'
-  else error(sourceInfo(), 'Unknown expression: <%ExpressionDump.printExpStr(exp)%>')
+  case e as CLKCONST(__)        then '#error "<%ExpressionDumpTpl.dumpExp(e,"\"")%>"'
+  else error(sourceInfo(), 'Unknown expression: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExp;
 
 
@@ -4500,7 +4500,7 @@ template subscriptToMStr(Subscript subscript)
 ::=
   match subscript
   case SLICE(exp=ICONST(integer=i)) then i
-  case SLICE(__) then error(sourceInfo(), "Unknown slice " + printExpStr(exp))
+  case SLICE(__) then error(sourceInfo(), "Unknown slice " + ExpressionDumpTpl.dumpExp(exp,"\""))
   case WHOLEDIM(__) then "WHOLEDIM"
   case INDEX(__) then
    match exp
@@ -4593,7 +4593,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
                           case T_ENUMERATION(__) then "(modelica_integer)" //else ""
         '<%cast%><%nosubname%>_index(<%substring%>)'
     else
-      error(sourceInfo(),'daeExpCrefRhsSimContext: UNHANDLED CREF: <%ExpressionDump.printExpStr(ecr)%>')
+      error(sourceInfo(),'daeExpCrefRhsSimContext: UNHANDLED CREF: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhsSimContext;
 
 template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
@@ -4638,13 +4638,13 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
                 (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
                 >>
               else
-                error(sourceInfo(),'This should have been handled in the new daeExpCrefRhsSimContext function. <%printExpStr(ecr)%>')
+                error(sourceInfo(),'This should have been handled in the new daeExpCrefRhsSimContext function. <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
       else
         match context
         case FUNCTION_CONTEXT(__)
         case PARALLEL_FUNCTION_CONTEXT(__) then
           // The array subscript denotes a slice
-          // let &preExp += '/* daeExpCrefRhsFunContext SLICE(<%ExpressionDump.printExpStr(ecr)%>) preExp  */<%\n%>'
+          // let &preExp += '/* daeExpCrefRhsFunContext SLICE(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) preExp  */<%\n%>'
           let arrName = contextArrayCref(cr, context)
           let arrayType = expTypeArray(ty)
           let tmp = tempDecl(arrayType, &varDecls)
@@ -4652,9 +4652,9 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
           let &preExp += 'index_alloc_<%arrayType%>(&<%arrName%>, &<%spec1%>, &<%tmp%>);<%\n%>'
           tmp
         else
-          error(sourceInfo(),'daeExpCrefRhsFunContext: Slice in simulation context: <%ExpressionDump.printExpStr(ecr)%>')
+          error(sourceInfo(),'daeExpCrefRhsFunContext: Slice in simulation context: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
   case ecr then
-    error(sourceInfo(),'daeExpCrefRhsFunContext: UNHANDLED EXPRESSION: <%ExpressionDump.printExpStr(ecr)%>')
+    error(sourceInfo(),'daeExpCrefRhsFunContext: UNHANDLED EXPRESSION: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhsFunContext;
 
 // TODO: Optimize as in Codegen
@@ -4729,7 +4729,7 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
       let &preExp += '<%type%>_array_create(&<%wrapperArray%>, ((modelica_<%type%>*)&(<%nosubname%>_index(<%substring%>))), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
     wrapperArray
     else
-        error(sourceInfo(),'daeExpCrefLhsSimContext: This should have been handled in indexed assign and should not have gotten here <%ExpressionDump.printExpStr(ecr)%>')
+        error(sourceInfo(),'daeExpCrefLhsSimContext: This should have been handled in indexed assign and should not have gotten here <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 
 
   case ecr as CREF(componentRef=cr, ty=ty) then
@@ -4742,7 +4742,7 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
                  ;separator=", ")
         '<%nosubname%>_index(<%substring%>)'
     else
-      error(sourceInfo(),'daeExpCrefLhsSimContext: UNHANDLED CREF: <%ExpressionDump.printExpStr(ecr)%>')
+      error(sourceInfo(),'daeExpCrefLhsSimContext: UNHANDLED CREF: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefLhsSimContext;
 
 template daeExpCrefLhsFunContext(Exp ecr, Context context, Text &preExp,
@@ -4772,13 +4772,13 @@ template daeExpCrefLhsFunContext(Exp ecr, Context context, Text &preExp,
                (*<%arrayType%>_element_addr<%if intLt(listLength(crefSubs(cr)),3) then dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
                >>
            else
-             error(sourceInfo(),'This should have been handled in the new daeExpCrefLhsSimContext function. <%printExpStr(ecr)%>')
+             error(sourceInfo(),'This should have been handled in the new daeExpCrefLhsSimContext function. <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 
       else
-        error(sourceInfo(),'This should have been handled in indexed assign and should not have gotten here. <%printExpStr(ecr)%>')
+        error(sourceInfo(),'This should have been handled in indexed assign and should not have gotten here. <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 
   case ecr then
-    error(sourceInfo(), 'SimCodeC.tpl template: daeExpCrefLhsFunContext: UNHANDLED EXPRESSION:  <%ExpressionDump.printExpStr(ecr)%>')
+    error(sourceInfo(), 'SimCodeC.tpl template: daeExpCrefLhsFunContext: UNHANDLED EXPRESSION:  <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefLhsFunContext;
 
 template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
@@ -4833,15 +4833,16 @@ case BINARY(__) then
     let &preExp +=
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(exp))%>");}<%\n%>'
+        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>");}<%\n%>'
     '(<%e1%>) / <%tvar%>'
   case POW(__) then
     if isHalf(exp2) then
       let tmp = tempDecl(expTypeFromExpModelica(exp1),&varDecls)
+      let cstr = ExpressionDumpTpl.dumpExp(exp1,"\"")
       let &preExp +=
         <<
         <%tmp%> = <%e1%>;
-        <%assertCommonVar('<%tmp%> >= 0.0', '"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(printExpStr(exp1))%>) was %g should be >= 0", <%tmp%>', context, &varDecls, dummyInfo)%>
+        <%assertCommonVar('<%tmp%> >= 0.0', '"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(cstr)%>) was %g should be >= 0", <%tmp%>', context, &varDecls, dummyInfo)%>
         >>
       'sqrt(<%tmp%>)'
     else match realExpIntLit(exp2)
@@ -4960,7 +4961,7 @@ case BINARY(__) then
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     'add_alloc_scalar_<%type%>(<% if isArrayType(typeof(exp1)) then '<%e2%>, &<%e1%>' else '<%e1%>, &<%e2%>' %>)'
-  case SUB_SCALAR_ARRAY(__) then error(sourceInfo(),'Code generation does not support SUB_SCALAR_ARRAY <%printExpStr(exp)%>')
+  case SUB_SCALAR_ARRAY(__) then error(sourceInfo(),'Code generation does not support SUB_SCALAR_ARRAY <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
   case MUL_SCALAR_PRODUCT(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_scalar"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_scalar"
@@ -5120,7 +5121,7 @@ case rel as RELATION(__) then
     case NEQUAL(ty = T_REAL(__))           then '(<%e1%> != <%e2%>)'
     case NEQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
 
-    else error(sourceInfo(), 'daeExpRelation <%printExpStr(exp)%>')
+    else error(sourceInfo(), 'daeExpRelation <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpRelation;
 
 
@@ -5335,12 +5336,12 @@ template daeExpSum(Exp exp, Context context, Text &preExp,
 ::=
 match exp
 case SUM(__) then
-  let start = printExpStr(startIt)
+  let start = ExpressionDumpTpl.dumpExp(startIt,"\"")
   let &anotherPre = buffer ""
-  let stop = printExpStr(endIt)
+  let stop = ExpressionDumpTpl.dumpExp(endIt,"\"")
   let bodyStr = daeExpIteratedCref(body)
   let summationVar = <<sum>>
-  let iterVar = printExpStr(iterator)
+  let iterVar = ExpressionDumpTpl.dumpExp(iterator,"\"")
   let &preExp +=<<
 
   modelica_integer  $P<%iterVar%> = 0; // the iterator
@@ -5433,9 +5434,9 @@ template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &va
       }
       >>
       '(modelica_fnptr) mmc_mk_box2(0,<%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then "&"%><%func%>,<%closure%>)'
-      // error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDump.printExpStr(exp)%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
+      // error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
     case PARTEVALFUNCTION(__) then
-      error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDump.printExpStr(exp)%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
+      error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
 end daeExpPartEvalFunction;
 
 template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
@@ -5453,7 +5454,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
             expLst={e1, e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
-    let var3 = Util.escapeModelicaStringToCString(printExpStr(e2))
+    let var3 = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(e2,"\""))
     (match context
       case FUNCTION_CONTEXT(__)
       case PARALLEL_FUNCTION_CONTEXT(__) then
@@ -5470,16 +5471,16 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
                         else "real_array"
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
-    let var3 = Util.escapeModelicaStringToCString(printExpStr(e2))
+    let var3 = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(e2,"\""))
     'division_alloc_<%type%>_scalar(threadData,<%var1%>,<%var2%>,"<%var3%>")'
 
   case exp as CALL(attr=CALL_ATTR(ty=ty), path=IDENT(name="DIVISION_ARRAY_SCALAR")) then
-    error(sourceInfo(),'Code generation does not support <%printExpStr(exp)%>')
+    error(sourceInfo(),'Code generation does not support <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     '$P$DER<%cref(arg.componentRef)%>'
   case CALL(path=IDENT(name="der"), expLst={exp}) then
-    error(sourceInfo(), 'Code generation does not support der(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support der(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPre(arg, context, preExp, varDecls, &auxFunction)
   case CALL(path=IDENT(name="interval")) then
@@ -5516,13 +5517,13 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name="edge"), expLst={LUNARY(exp = arg as CREF(__))}) then
     '(!<%cref(arg.componentRef)%> && $P$PRE<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="edge"), expLst={exp}) then
-    error(sourceInfo(), 'Code generation does not support edge(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support edge(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
   case CALL(path=IDENT(name="change"), expLst={arg as CREF(__)}) then
     '(<%cref(arg.componentRef)%> != $P$PRE<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="change"), expLst={exp}) then
-    error(sourceInfo(), 'Code generation does not support change(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support change(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
   case CALL(path=IDENT(name="cardinality"), expLst={exp}) then
-    error(sourceInfo(), 'Code generation does not support cardinality(<%printExpStr(exp)%>). It should have been handled somewhere else in the compiler.')
+    error(sourceInfo(), 'Code generation does not support cardinality(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>). It should have been handled somewhere else in the compiler.')
 
   case CALL(path=IDENT(name="print"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
@@ -5568,50 +5569,55 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
         'sqrt(<%argStr%>)'
       else
         let tmp = tempDecl(expTypeFromExpModelica(e1), &varDecls)
+        let cstr = ExpressionDumpTpl.dumpExp(e1,"\"")
         let &preExp +=
           <<
           <%tmp%> = <%argStr%>;
-          <%assertCommonVar('<%tmp%> >= 0.0', '"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be >= 0", <%tmp%>', context, &varDecls, dummyInfo)%>
+          <%assertCommonVar('<%tmp%> >= 0.0', '"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(cstr)%>) was %g should be >= 0", <%tmp%>', context, &varDecls, dummyInfo)%>
           >>
        'sqrt(<%tmp%>)')
 
   case CALL(path=IDENT(name="log"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let tmp = tempDecl(expTypeFromExpModelica(e1),&varDecls)
+    let cstr = ExpressionDumpTpl.dumpExp(e1,"\"")
     let &preExp +=
       <<
       <%tmp%> = <%argStr%>;
-      <%assertCommonVar('<%tmp%> > 0.0', '"Model error: Argument of log(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be > 0", <%tmp%>', context, &varDecls, dummyInfo)%>
+      <%assertCommonVar('<%tmp%> > 0.0', '"Model error: Argument of log(<%Util.escapeModelicaStringToCString(cstr)%>) was %g should be > 0", <%tmp%>', context, &varDecls, dummyInfo)%>
       >>
     'log(<%tmp%>)'
 
   case CALL(path=IDENT(name="log10"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let tmp = tempDecl(expTypeFromExpModelica(e1),&varDecls)
+    let cstr = ExpressionDumpTpl.dumpExp(e1,"\"")
     let &preExp +=
       <<
       <%tmp%> = <%argStr%>;
-      <%assertCommonVar('<%tmp%> > 0.0','"Model error: Argument of log10(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be > 0", <%tmp%>', context, &varDecls, dummyInfo)%>
+      <%assertCommonVar('<%tmp%> > 0.0','"Model error: Argument of log10(<%Util.escapeModelicaStringToCString(cstr)%>) was %g should be > 0", <%tmp%>', context, &varDecls, dummyInfo)%>
       >>
     'log10(<%tmp%>)'
 
   case CALL(path=IDENT(name="acos"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let tmp = tempDecl("modelica_real",&varDecls)
+    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
     let &preExp +=
       <<
       <%tmp%> = <%argStr%>;
-      <%assertCommonVar('<%tmp%> >= -1.0 && <%tmp%> <= 1.0', '"Model error: Argument of <%Util.escapeModelicaStringToCString(printExpStr(call))%> outside the domain -1.0 <= %g <= 1.0", <%tmp%>', context, &varDecls, dummyInfo)%>
+      <%assertCommonVar('<%tmp%> >= -1.0 && <%tmp%> <= 1.0', '"Model error: Argument of <%Util.escapeModelicaStringToCString(cstr)%> outside the domain -1.0 <= %g <= 1.0", <%tmp%>', context, &varDecls, dummyInfo)%>
       >>
     'acos(<%tmp%>)'
 
   case CALL(path=IDENT(name="asin"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let tmp = tempDecl("modelica_real",&varDecls)
+    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
     let &preExp +=
       <<
       <%tmp%> = <%argStr%>;
-      <%assertCommonVar('<%tmp%> >= -1.0 && <%tmp%> <= 1.0', '"Model error: Argument of <%Util.escapeModelicaStringToCString(printExpStr(call))%> outside the domain -1.0 <= %g <= 1.0", <%tmp%>', context, &varDecls, dummyInfo)%>
+      <%assertCommonVar('<%tmp%> >= -1.0 && <%tmp%> <= 1.0', '"Model error: Argument of <%Util.escapeModelicaStringToCString(cstr)%> outside the domain -1.0 <= %g <= 1.0", <%tmp%>', context, &varDecls, dummyInfo)%>
       >>
     'asin(<%tmp%>)'
 
@@ -5654,33 +5660,36 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
     let tvar = tempDecl("modelica_integer", &varDecls)
+    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
     let &preExp += '<%tvar%> = <%var2%>;<%\n%>'
     let &preExp +=
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
+        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>");}<%\n%>'
     '((<%var1%>) - ((<%var1%>) / <%tvar%>) * <%tvar%>)'
 
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
     let tvar = tempDecl("modelica_real", &varDecls)
+    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
     let &preExp += '<%tvar%> = <%var2%>;<%\n%>'
     let &preExp +=
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
+        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>");}<%\n%>'
     '((<%var1%>) - floor((<%var1%>) / (<%tvar%>)) * (<%tvar%>))'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
     let tvar = tempDecl("modelica_integer", &varDecls)
+    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
     let &preExp += '<%tvar%> = <%var2%>;<%\n%>'
     let &preExp +=
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
+        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>");}<%\n%>'
       /*ldiv not available in opencl c*/
     if isParallelFunctionContext(context) then '(modelica_integer)((<%var1%>) / <%tvar%>)'
     else 'ldiv(<%var1%>,<%tvar%>).quot'
@@ -5688,12 +5697,13 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name="div"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
+    let cstr = ExpressionDumpTpl.dumpExp(call,"\"")
     let tvar = tempDecl("modelica_real", &varDecls)
     let &preExp += '<%tvar%> = <%var2%>;<%\n%>'
     let &preExp +=
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0.0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0.0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
+        else 'if (<%tvar%> == 0.0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>");}<%\n%>'
     'trunc((<%var1%>) / <%tvar%>)'
 
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=CALL_ATTR(ty = ty)) then
@@ -5743,7 +5753,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let &preExp += // Why doesn't Susan allow me to use <<< here?
 '<%tvarc%>=0;
 <%dims%>if (<%tvarc%> > 1) {
-  throwStreamPrint(threadData, "Called vector with >1 dimensions with size >1: <%Util.escapeModelicaStringToCString(printExpStr(exp))%>");
+  throwStreamPrint(threadData, "Called vector with >1 dimensions with size >1: <%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>");
 }
 <%nElts%> = base_array_nr_of_elements(<%val%>);
 <%tvardata%> = omc_alloc_interface.malloc(<%szElt%>*<%nElts%>);
@@ -6198,7 +6208,7 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp,
     let &preExp += '<%res%>;<%\n%>'
     v
   case TSUB(__) then
-    error(sourceInfo(), '<%printExpStr(inExp)%>: TSUB only makes sense if the subscripted expression is a function call of tuple type')
+    error(sourceInfo(), '<%ExpressionDumpTpl.dumpExp(inExp,"\"")%>: TSUB only makes sense if the subscripted expression is a function call of tuple type')
 end daeExpTsub;
 
 template daeExpRsub(Exp inExp, Context context, Text &preExp,
@@ -6211,7 +6221,7 @@ template daeExpRsub(Exp inExp, Context context, Text &preExp,
     let offset = intAdd(ix,1) // 1-based
     '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%res%>), <%offset%>)))'
   case RSUB(__) then
-    error(sourceInfo(), '<%printExpStr(inExp)%>: failed')
+    error(sourceInfo(), '<%ExpressionDumpTpl.dumpExp(inExp,"\"")%>: failed')
 end daeExpRsub;
 
 template daeExpAsub(Exp inExp, Context context, Text &preExp,
@@ -6229,7 +6239,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
   else
   match inExp
   case ASUB(exp=ASUB(__)) then
-    error(sourceInfo(),'Nested array subscripting *should* have been handled by the routine creating the asub, but for some reason it was not: <%printExpStr(exp)%>')
+    error(sourceInfo(),'Nested array subscripting *should* have been handled by the routine creating the asub, but for some reason it was not: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
@@ -6253,7 +6263,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     { /* ASUB */
     <%expl%>
     default:
-      throwStreamPrint(threadData, "Index %ld out of bounds [1..<%listLength(exp.array)%>] for array <%Util.escapeModelicaStringToCString(printExpStr(exp))%>", (long) <%idx1%>);
+      throwStreamPrint(threadData, "Index %ld out of bounds [1..<%listLength(exp.array)%>] for array <%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>", (long) <%idx1%>);
     }
     <%\n%>
     >>
@@ -6267,13 +6277,13 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     let &preExp += <<
     <%res%> = <%idx1%> + <%start%> - 1;
     if (<%res%> > <%stop%>) {
-      throwStreamPrint(threadData, "Value %ld out of bounds for range <%Util.escapeModelicaStringToCString(printExpStr(range))%>", (long) <%res%>);
+      throwStreamPrint(threadData, "Value %ld out of bounds for range <%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(range,"\""))%>", (long) <%res%>);
     }
     >>
     res
 
   case ASUB(exp=RANGE(ty=t), sub={idx}) then
-    error(sourceInfo(),'ASUB_EASY_CASE type:<%unparseType(t)%> range:<%printExpStr(exp)%> index:<%printExpStr(idx)%>')
+    error(sourceInfo(),'ASUB_EASY_CASE type:<%unparseType(t)%> range:<%ExpressionDumpTpl.dumpExp(exp,"\"")%> index:<%ExpressionDumpTpl.dumpExp(idx,"\"")%>')
 
   case ASUB(exp=ecr as CREF(__), sub=subs) then
     let arrName = daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context,
@@ -6291,13 +6301,13 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     let typeShort = expTypeFromExpShort(e)
     match Expression.typeof(inExp)
     case T_ARRAY(__) then
-      error(sourceInfo(),'ASUB non-scalar <%printExpStr(inExp)%>. The inner exp has type: <%unparseType(Expression.typeof(e))%>. After ASUB it is still an array: <%unparseType(Expression.typeof(inExp))%>.')
+      error(sourceInfo(),'ASUB non-scalar <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>. The inner exp has type: <%unparseType(Expression.typeof(e))%>. After ASUB it is still an array: <%unparseType(Expression.typeof(inExp))%>.')
     else
       let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
       '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'
 
   else
-    error(sourceInfo(),'OTHER_ASUB <%printExpStr(inExp)%>')
+    error(sourceInfo(),'OTHER_ASUB <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>')
 end daeExpAsub;
 
 template daeExpASubIndex(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
@@ -6319,7 +6329,7 @@ template daeExpCallPre(Exp exp, Context context, Text &preExp, Text &varDecls, T
   case cr as CREF(__) then
     '$P$PRE<%daeExpCrefLhs(exp, context, &preExp, &varDecls, &auxFunction)%>'
   else
-    error(sourceInfo(), 'Code generation does not support pre(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support pre(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
 end daeExpCallPre;
 
 template daeExpCallStart(Exp exp, Context context, Text &preExp,
@@ -6334,7 +6344,7 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp,
     let cref = cref(cr.componentRef)
     '*(&$P$ATTRIBUTE<%cref(cr.componentRef)%>.start + <%offset%>)'
   else
-    error(sourceInfo(), 'Code generation does not support start(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support start(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
 end daeExpCallStart;
 
 
@@ -6359,7 +6369,7 @@ template daeExpSize(Exp exp, Context context, Text &preExp,
     let resVar = tempDecl("modelica_integer", &varDecls)
     let &preExp += '<%resVar%> = 0;<%\n%>'
     resVar
-  else error(sourceInfo(), printExpStr(exp) + " not implemented")
+  else error(sourceInfo(), ExpressionDumpTpl.dumpExp(exp,"\"") + " not implemented")
 end daeExpSize;
 
 
@@ -6509,7 +6519,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
             case DIM_BOOLEAN(__) then ", 2"
             case DIM_ENUM(__) then ', <%size%>'
             case DAE.DIM_EXP(exp=e) then ', <%daeExp(e,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%>'
-            else error(sourceInfo(), 'array reduction unable to generate code for element of unknown dimension sizes; type <%unparseType(typeof(r.expr))%>: <%ExpressionDump.printExpStr(r.expr)%>')
+            else error(sourceInfo(), 'array reduction unable to generate code for element of unknown dimension sizes; type <%unparseType(typeof(r.expr))%>: <%ExpressionDumpTpl.dumpExp(r.expr,"\"")%>')
             ; separator = ", "
           'alloc_<%arrayTypeResult%>(&<%res%>, <%intAdd(1,listLength(dims))%>, <%length%><%dimSizes%>);'
         else
@@ -6555,7 +6565,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   }<%\n%>
   >>
   resTmp)
-  else error(sourceInfo(), 'Code generation does not support multiple iterators: <%printExpStr(exp)%>')
+  else error(sourceInfo(), 'Code generation does not support multiple iterators: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpReduction;
 
 template daeExpMatch(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
@@ -6564,8 +6574,8 @@ template daeExpMatch(Exp exp, Context context, Text &preExp, Text &varDecls, Tex
 match exp
 case exp as MATCHEXPRESSION(__) then
   let res = match et
-    case T_NORETCALL(__) then error(sourceInfo(), 'match expression not returning anything should be caught in a noretcall statement and not reach this code: <%printExpStr(exp)%>')
-    case T_TUPLE(types={}) then error(sourceInfo(), 'match expression returning an empty tuple should be caught in a noretcall statement and not reach this code: <%printExpStr(exp)%>')
+    case T_NORETCALL(__) then error(sourceInfo(), 'match expression not returning anything should be caught in a noretcall statement and not reach this code: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
+    case T_TUPLE(types={}) then error(sourceInfo(), 'match expression returning an empty tuple should be caught in a noretcall statement and not reach this code: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
     else tempDeclZero(expTypeModelica(et), &varDecls)
   let startIndexOutputs = "ERROR_INDEX"
   daeExpMatch2(exp,listExpLength1,res,startIndexOutputs,context,&preExp,&varDecls,&auxFunction)
@@ -6611,7 +6621,7 @@ case exp as MATCHEXPRESSION(__) then
       let matchInputVar = getTempDeclMatchInputName(exp.inputs, prefix, startIndexInputs, switchIndex)
       '<%matchInputVar%>'
     case MATCH(switch=SOME(_)) then
-      error(sourceInfo(), 'Unknown switch: <%printExpStr(exp)%>')
+      error(sourceInfo(), 'Unknown switch: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
     else tempDecl('volatile mmc_switch_type', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
   let &preExp +=

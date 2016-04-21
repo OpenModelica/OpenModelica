@@ -4,6 +4,7 @@ import interface SimCodeTV;
 import CodegenUtil.*;
 import DAEDumpTpl.*;
 import SCodeDumpTpl.*;
+import ExpressionDumpTpl;
 
 template dumpTaskSystem(SimCode code, Boolean withOperations)
 ::=
@@ -424,7 +425,7 @@ end dumpInfo;
 
 template printExpStrEscaped(Exp exp)
 ::=
-  escapeModelicaStringToXmlString(printExpStr(exp))
+  escapeModelicaStringToXmlString(ExpressionDumpTpl.dumpExp(exp,"\""))
 end printExpStrEscaped;
 
 template printEquationExpStrEscaped(EquationExp eq)

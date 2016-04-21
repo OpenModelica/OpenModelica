@@ -3182,14 +3182,6 @@ package Expression
 end Expression;
 
 package ExpressionDump
-  function printExpStr
-    input DAE.Exp e;
-    output String s;
-  end printExpStr;
-  function printCrefsFromExpStr
-    input DAE.Exp e;
-    output String s;
-  end printCrefsFromExpStr;
   function binopSymbol
     input DAE.Operator inOperator;
     output String outString;

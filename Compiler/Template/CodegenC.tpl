@@ -49,6 +49,7 @@ import interface SimCodeTV;
 import interface SimCodeBackendTV;
 import CodegenUtil.*;
 import CodegenCFunctions.*;
+import ExpressionDumpTpl.*;
 
 /* public */ template translateModel(SimCode simCode)
   "Generates C code and Makefile for compiling and running a simulation of a
@@ -2882,7 +2883,7 @@ template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Tex
       <% if profileAll() then 'SIM_PROF_ACC_EQ(<%e.index%>);' %>
       if(fabs(res) > 1e-5)
       {
-        errorStreamPrint(LOG_INIT, 0, "The initialization problem is inconsistent due to the following equation: 0 != %g = <%ExpressionDump.printExpStr(exp)%>", res);
+        errorStreamPrint(LOG_INIT, 0, "The initialization problem is inconsistent due to the following equation: 0 != %g = <%dumpExp(exp,"\"")%>", res);
         return 1;
       }
       >>
@@ -3809,7 +3810,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   let &varDecls2 = buffer ""
   let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls2, &auxFunction)
 
-  let resDesc = (zeroCrossings |> ZERO_CROSSING(__) => '"<%Util.escapeModelicaStringToCString(ExpressionDump.printExpStr(relation_))%>"'
+  let resDesc = (zeroCrossings |> ZERO_CROSSING(__) => '"<%Util.escapeModelicaStringToCString(dumpExp(relation_,"\""))%>"'
     ;separator=",\n")
 
   let desc = match zeroCrossings
@@ -3962,7 +3963,7 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
   let relationsCode = relationsTpl(relations, contextZeroCross, &varDecls, &auxFunction)
   let relationsCodeElse = relationsTpl(relations, contextOther, &varDecls, &auxFunction)
 
-  let resDesc = (relations |> ZERO_CROSSING(__) => '"<%ExpressionDump.printExpStr(relation_)%>"'
+  let resDesc = (relations |> ZERO_CROSSING(__) => '"<%dumpExp(relation_,"\"")%>"'
     ;separator=",\n")
 
   let desc = match relations
@@ -4660,14 +4661,14 @@ case SES_FOR_LOOP(__) then
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
   let crefPart = daeExp(crefExp(cref), context, &preExp, &varDecls, &auxFunction)
   //let bodyStr = daeExpIteratedCref(body)
-  let start = printExpStr(startIt)
-  let stop = printExpStr(endIt)
+  let start = dumpExp(startIt,"\"")
+  let stop = dumpExp(endIt,"\"")
   let iterVar = daeExp(iter, context, &preExp, &varDecls, &auxFunction)
   <<
   <%modelicaLine(eqInfo(eq))%>
-  modelica_integer  $P<%printExpStr(iter)%> = 0; // the iterator
+  modelica_integer  $P<%dumpExp(iter,"\"")%> = 0; // the iterator
   // the for-equation
-  for($P<%printExpStr(iter)%> = <%start%>; $P<%printExpStr(iter)%> != <%stop%>+1; $P<%printExpStr(iter)%>++)
+  for($P<%dumpExp(iter,"\"")%> = <%start%>; $P<%dumpExp(iter,"\"")%> != <%stop%>+1; $P<%dumpExp(iter,"\"")%>++)
   {
     <%crefPart%> += <%expPart%>;
   }
@@ -4709,7 +4710,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
     <%preExp%>
     copy_string_array_data(<%expPart%>, &<%lhsstr%>);
     >>
-  else error(sourceInfo(), 'No runtime support for this sort of array call: <%printExpStr(eqn.exp)%>')
+  else error(sourceInfo(), 'No runtime support for this sort of array call: <%dumpExp(eqn.exp,"\"")%>')
 %>
 <%endModelicaLine()%>
 >>
@@ -5026,7 +5027,7 @@ match ty
       copy_string_array_data_mem(<%expPart%>, &<%cref(left)%>);
       >>
     else
-      error(sourceInfo(), 'No runtime support for this sort of array call: <%cref(left)%> = <%printExpStr(right)%>')
+      error(sourceInfo(), 'No runtime support for this sort of array call: <%cref(left)%> = <%dumpExp(right,"\"")%>')
     end match
   else
     let &preExp = buffer ""
@@ -5085,7 +5086,7 @@ end equationIfEquationAssign;
   #endif
 
   <%literals |> literal hasindex i0 fromindex 0 =>
-    (if typeinfo() then '/* <%Util.escapeModelicaStringToCString(printExpStr(literal))%> */<%\n%>') +
+    (if typeinfo() then '/* <%Util.escapeModelicaStringToCString(dumpExp(literal,"\""))%> */<%\n%>') +
     literalExpConst(literal,i0)
     ; separator="\n"; empty %>
 

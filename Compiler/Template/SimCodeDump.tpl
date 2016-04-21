@@ -4,6 +4,7 @@ import interface SimCodeTV;
 import CodegenUtil.*;
 import DAEDumpTpl.*;
 import SCodeDumpTpl.*;
+import ExpressionDumpTpl;
 
 template dumpVarsShort(list<SimVar> vars)
 ::=
@@ -27,7 +28,7 @@ end dumpAlias;
 
 template printExpStrEscaped(Exp exp)
 ::=
-  escapeModelicaStringToXmlString(printExpStr(exp))
+  escapeModelicaStringToXmlString(ExpressionDumpTpl.dumpExp(exp,"\""))
 end printExpStrEscaped;
 
 annotation(__OpenModelica_Interface="backend");

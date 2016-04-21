@@ -45,6 +45,7 @@
 
 package CodegenUtil
 
+import ExpressionDumpTpl.*;
 import interface SimCodeTV;
 
 /* public */ template symbolName(String modelNamePrefix, String symbolName)
@@ -179,7 +180,7 @@ template initValXml(Exp exp)
   case SCONST(__) then '<%Util.escapeModelicaStringToXmlString(string)%>'
   case BCONST(__) then if bool then "true" else "false"
   case ENUM_LITERAL(__) then '<%index%>'
-  else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(exp)%>')
+  else error(sourceInfo(), 'initial value of unknown type: <%dumpExp(exp,"\"")%>')
 end initValXml;
 
 /*********************************************************************
@@ -375,20 +376,20 @@ template dumpEqs(list<SimEqSystem> eqs)
       equation index: <%equationIndex(eq)%>
       type: RESIDUAL
 
-      <%escapeCComments(printExpStr(e.exp))%>
+      <%escapeCComments(dumpExp(e.exp,"\""))%>
       >>
     case e as SES_SIMPLE_ASSIGN(__) then
       <<
       equation index: <%equationIndex(eq)%>
       type: SIMPLE_ASSIGN
-      <%crefStr(e.cref)%> = <%escapeCComments(printExpStr(e.exp))%>
+      <%crefStr(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
       >>
     case e as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
       <<
       equation index: <%equationIndex(eq)%>
       type: ARRAY_CALL_ASSIGN
 
-      <%crefStr(lhs.componentRef)%> = <%escapeCComments(printExpStr(e.exp))%>
+      <%crefStr(lhs.componentRef)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
       >>
     case e as SES_ALGORITHM(statements={}) then
       <<
@@ -415,7 +416,7 @@ template dumpEqs(list<SimEqSystem> eqs)
 
       <%ls.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
       <row>
-        <%ls.beqs |> exp => '<cell><%escapeCComments(printExpStr(exp))%></cell>' ; separator = "\n" %><%\n%>
+        <%ls.beqs |> exp => '<cell><%escapeCComments(dumpExp(exp,"\""))%></cell>' ; separator = "\n" %><%\n%>
       </row>
       <matrix>
         <%ls.simJac |> (i1,i2,eq) =>
@@ -423,7 +424,7 @@ template dumpEqs(list<SimEqSystem> eqs)
         <cell row="<%i1%>" col="<%i2%>">
           <%match eq case e as SES_RESIDUAL(__) then
             <<
-            <residual><%escapeCComments(printExpStr(e.exp))%></residual>
+            <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
             >>
            %>
         </cell>
@@ -476,10 +477,10 @@ template dumpEqs(list<SimEqSystem> eqs)
       >>
     case e as SES_FOR_LOOP(__) then
       let &forstatement = buffer ""
-      let &forstatement += 'for(size_t ' + escapeCComments(printExpStr(e.iter)) + ' = ' + escapeCComments(printExpStr(e.startIt)) + '; '
-      let &forstatement += escapeCComments(printExpStr(e.iter)) + ' != ' + escapeCComments(printExpStr(e.endIt)) + '+1; '
-      let &forstatement += escapeCComments(printExpStr(e.iter)) + '++) {<%\n%>'
-      let &forstatement += '  <%crefStr(e.cref)%> = <%escapeCComments(printExpStr(e.exp))%><%\n%>'
+      let &forstatement += 'for(size_t ' + escapeCComments(dumpExp(e.iter,"\"")) + ' = ' + escapeCComments(dumpExp(e.startIt,"\"")) + '; '
+      let &forstatement += escapeCComments(dumpExp(e.iter,"\"")) + ' != ' + escapeCComments(dumpExp(e.endIt,"\"")) + '+1; '
+      let &forstatement += escapeCComments(dumpExp(e.iter,"\"")) + '++) {<%\n%>'
+      let &forstatement += '  <%crefStr(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%><%\n%>'
       let &forstatement += '}'
       <<
       equation index: <%equationIndex(e)%>
@@ -499,31 +500,31 @@ template dumpWhenOps(list<BackendDAE.WhenOperator> whenOps)
   case ((e as BackendDAE.ASSIGN(__))::rest) then
     let restbody = dumpWhenOps(rest)
     <<
-    <%crefStr(e.left)%> = <%escapeCComments(printExpStr(e.right))%>;
+    <%crefStr(e.left)%> = <%escapeCComments(dumpExp(e.right,"\""))%>;
     <%restbody%>
     >>
   case ((e as BackendDAE.REINIT(__))::rest) then
     let restbody = dumpWhenOps(rest)
     <<
-    reinit(<%crefStr(e.stateVar)%>,  <%escapeCComments(printExpStr(e.value))%>);
+    reinit(<%crefStr(e.stateVar)%>,  <%escapeCComments(dumpExp(e.value,"\""))%>);
     <%restbody%>
     >>
   case ((e as BackendDAE.ASSERT(__))::rest) then
     let restbody = dumpWhenOps(rest)
     <<
-    assert(<%escapeCComments(printExpStr(e.condition))%>, <%escapeCComments(printExpStr(e.message))%>, <%escapeCComments(printExpStr(e.level))%>);
+    assert(<%escapeCComments(dumpExp(e.condition,"\""))%>, <%escapeCComments(dumpExp(e.message,"\""))%>, <%escapeCComments(dumpExp(e.level,"\""))%>);
     <%restbody%>
     >>
   case ((e as BackendDAE.TERMINATE(__))::rest) then
     let restbody = dumpWhenOps(rest)
     <<
-    terminate(<%escapeCComments(printExpStr(e.message))%>)%>);
+    terminate(<%escapeCComments(dumpExp(e.message,"\""))%>)%>);
     <%restbody%>
     >>
   case ((e as BackendDAE.NORETCALL(__))::rest) then
     let restbody = dumpWhenOps(rest)
     <<
-    noReturnCall(<%escapeCComments(printExpStr(e.exp))%>)%>);
+    noReturnCall(<%escapeCComments(dumpExp(e.exp,"\""))%>)%>);
     <%restbody%>
     >>
   else error(sourceInfo(),"dumpEqs: Unknown equation")
@@ -539,7 +540,7 @@ template dumpEqsAlternativeTearing(list<SimEqSystem> eqs)
 
       <%at.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
       <row>
-        <%at.beqs |> exp => '<cell><%escapeCComments(printExpStr(exp))%></cell>' ; separator = "\n" %><%\n%>
+        <%at.beqs |> exp => '<cell><%escapeCComments(dumpExp(exp,"\""))%></cell>' ; separator = "\n" %><%\n%>
       </row>
       <matrix>
         <%at.simJac |> (i1,i2,eq) =>
@@ -547,7 +548,7 @@ template dumpEqsAlternativeTearing(list<SimEqSystem> eqs)
         <cell row="<%i1%>" col="<%i2%>">
           <%match eq case e as SES_RESIDUAL(__) then
             <<
-            <residual><%escapeCComments(printExpStr(e.exp))%></residual>
+            <residual><%escapeCComments(dumpExp(e.exp,"\""))%></residual>
             >>
            %>
         </cell>
