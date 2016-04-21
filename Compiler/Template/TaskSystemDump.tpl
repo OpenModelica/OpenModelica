@@ -314,26 +314,6 @@ template dumpWithin(Within w)
     case WITHIN(__) then 'within <%dotPath(path)%>;'
 end dumpWithin;
 
-template dumpElementSource(ElementSource source, Boolean withOperations)
-::=
-  match source
-    case s as SOURCE(info=info as SOURCEINFO(__)) then
-      <<
-      <source>
-        <%dumpInfo(info)%>
-        <%s.partOfLst |> w => '<part-of><%dumpWithin(w)%></part-of>' %>
-        <%match s.instanceOpt case SOME(cr) then '<instance><%crefStrNoUnderscore(cr)%></instance>' %>
-        <%s.connectEquationOptLst |> p => "<connect-equation />"%>
-        <%s.typeLst |> p => '<type><%escapeModelicaStringToXmlString(dotPath(p))%></type>' ; separator = "\n" %>
-      </source>
-      <% if withOperations then <<
-      <operations>
-        <%s.operations |> op => dumpOperation(op,s.info) ; separator="\n" %>
-      </operations>
-      >> %>
-      >>
-end dumpElementSource;
-
 template dumpOperation(SymbolicOperation op, builtin.SourceInfo info)
 ::=
   match op

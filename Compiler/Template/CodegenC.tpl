@@ -1125,7 +1125,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nRelations = <%varInfo.numRelations%>;
     data->modelData->nMathEvents = <%varInfo.numMathEventFunctions%>;
     data->modelData->nExtObjs = <%varInfo.numExternalObjects%>;
-    data->modelData->modelDataXml.fileName = "<%fileNamePrefix%>_info.<%if Flags.isSet(Flags.MODEL_INFO_JSON) then "json" else "xml"%>";
+    data->modelData->modelDataXml.fileName = "<%fileNamePrefix%>_info.json";
     data->modelData->modelDataXml.modelInfoXmlLength = 0;
     data->modelData->modelDataXml.nFunctions = <%listLength(functions)%>;
     data->modelData->modelDataXml.nProfileBlocks = 0;

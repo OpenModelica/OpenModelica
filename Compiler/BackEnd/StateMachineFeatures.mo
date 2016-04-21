@@ -52,6 +52,7 @@ protected import HashSet;
 protected import BaseHashSet;
 protected import HashTableSM;
 protected import Array;
+protected import PrefixUtil;
 protected import ExpressionDump;
 protected import ValuesUtil;
 protected import DAEDump;
@@ -1518,6 +1519,7 @@ protected
   Mode mode;
   DAE.ComponentRef cref;
   DAE.ElementSource source "origin of variable";
+  Prefix.ComponentPrefix instance;
 algorithm
   try
     (SOME(var), mt) := inVarModeTable;
@@ -1530,7 +1532,8 @@ algorithm
     end match;
 
     BackendDAE.VAR(source=source) := var;
-    DAE.SOURCE(instanceOpt=SOME(cref)) := source;
+    DAE.SOURCE(instance=instance) := source;
+    cref := PrefixUtil.prefixToCref(Prefix.PREFIX(instance,Prefix.CLASSPRE(SCode.PARAM())));
     mode := BaseHashTable.get(cref, mt);
     mode := match mode
       case MODE()
@@ -1572,13 +1575,15 @@ protected
   Option<SCode.Comment> comment "this contains the comment and annotation from Absyn";
   DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
   DAE.VarInnerOuter io;
+  Prefix.ComponentPrefix instance;
 algorithm
   try
     (SOME(var), mt) := inVarModeTable;
     BackendDAE.VAR(varName, varKind, DAE.OUTPUT(), varParallelism, varType, bindExp,
       bindValue, arryDim, source, values, tearingSelectOption, comment, connectorType, DAE.OUTER()) := var;
 
-    DAE.SOURCE(instanceOpt=SOME(cref)) := source;
+    DAE.SOURCE(instance=instance as Prefix.PRE()) := source;
+    cref := PrefixUtil.prefixToCref(Prefix.PREFIX(instance,Prefix.CLASSPRE(SCode.PARAM())));
     mode := BaseHashTable.get(cref, mt);
     mode := match mode
       case MODE()
@@ -1607,6 +1612,7 @@ protected
   Option<BackendDAE.Equation> eqOpt;
   ModeTable modeTable;
   Option<DAE.ElementSource> sourceOpt "origin of equation";
+  Prefix.ComponentPrefix instance;
   Option<DAE.ComponentRef> instanceOpt "the instance(s) this element is part of";
   Option<tuple<DAE.ComponentRef,TransitionType>> transitionOpt "transition statement";
   Option<Mode> optMode;
@@ -1662,7 +1668,7 @@ algorithm
       Option<DAE.ComponentRef> crefOpt;
       DAE.ComponentRef cref;
     case (_, SOME((cref,_))) then SOME(cref);
-    case (SOME(DAE.SOURCE(instanceOpt=crefOpt)), NONE()) then crefOpt;
+    case (SOME(DAE.SOURCE(instance=instance)), NONE()) then SOME(PrefixUtil.prefixToCref(Prefix.PREFIX(instance,Prefix.CLASSPRE(SCode.PARAM()))));
     else NONE();
   end match;
 
@@ -2639,9 +2645,7 @@ algorithm
    sBindExp := Util.getOptionOrDefault(s1, "");
    s2 := Util.applyOption(bindValue, ValuesUtil.valString);
    sBindValue := Util.getOptionOrDefault(s2, "");
-   DAE.SOURCE(instanceOpt=crefOpt) := source;
-   s3 := Util.applyOption(crefOpt, ComponentReference.crefStr);
-   sInstanceOpt := Util.getOptionOrDefault(s3, "NONE()");
+   sInstanceOpt := PrefixUtil.printComponentPrefixStr(source.instance);
    sIo := match io
      case DAE.INNER() then "inner";
      case DAE.OUTER() then "outer";

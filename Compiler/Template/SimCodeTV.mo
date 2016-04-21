@@ -2147,7 +2147,7 @@ package DAE
     record SOURCE
       builtin.SourceInfo info;
       list<Absyn.Within> partOfLst;
-      Option<ComponentRef> instanceOpt;
+      ComponentPrefix instance;
       list<tuple<ComponentRef, ComponentRef>> connectEquationOptLst;
       list<Absyn.Path> typeLst;
       list<SymbolicOperation> operations;
@@ -3455,5 +3455,22 @@ package HashTableCrIListArray
     output String res;
   end FuncExpStr;
 end HashTableCrIListArray;
+
+package Prefix
+  uniontype ComponentPrefix
+  "Prefix for component name, e.g. a.b[2].c.
+   NOTE: Component prefixes are stored in inverse order c.b[2].a!"
+    record PRE
+      String prefix "prefix name" ;
+      list<DAE.Dimension> dimensions "dimensions" ;
+      list<DAE.Subscript> subscripts "subscripts" ;
+      ComponentPrefix next "next prefix" ;
+      ClassInf.State ci_state "to be able to at least partially fill in type information properly for DAE.VAR";
+      SourceInfo info;
+    end PRE;
+
+    record NOCOMPPRE end NOCOMPPRE;
+  end ComponentPrefix;
+end Prefix;
 
 end SimCodeTV;

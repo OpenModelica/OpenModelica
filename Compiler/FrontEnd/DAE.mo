@@ -45,6 +45,7 @@ import Absyn;
 import BaseAvlTree;
 import ClassInf;
 import SCode;
+import Prefix;
 import Values;
 
 protected
@@ -106,7 +107,7 @@ uniontype ElementSource "gives information about the origin of the element"
   record SOURCE
     SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
     list<Absyn.Within> partOfLst "the model(s) this element came from";
-    Option<ComponentRef> instanceOpt "the instance(s) this element is part of";
+    Prefix.ComponentPrefix instance "the instance(s) this element is part of";
     list<tuple<ComponentRef, ComponentRef>> connectEquationOptLst "this element came from this connect(s)";
     list<Absyn.Path> typeLst "the classes where the type(s) of the element is defined";
     list<SymbolicOperation> operations "the symbolic operations used to end up with the final state of the element";
@@ -114,7 +115,7 @@ uniontype ElementSource "gives information about the origin of the element"
   end SOURCE;
 end ElementSource;
 
-public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},NONE(),{},{},{},{});
+public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},Prefix.NOCOMPPRE(),{},{},{},{});
 
 public uniontype SymbolicOperation
   record FLATTEN "From one equation/statement to an element"

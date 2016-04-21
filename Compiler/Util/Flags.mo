@@ -408,8 +408,8 @@ constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(118, "showExpandableInfo", 
   Util.gettext("Show information about expandable connector handling."));
 constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(119, "dumpHomotopy", false,
   Util.gettext("Dumps the results of the postOptModule optimizeHomotopyCalls."));
-constant DebugFlag MODEL_INFO_JSON = DEBUG_FLAG(120, "modelInfoJson", true,
-  Util.gettext("Experimental: Generates a file with suffix _info.json instead of _info.xml."));
+constant DebugFlag OMC_RELOCATABLE_FUNCTIONS = DEBUG_FLAG(120, "relocatableFunctions", false,
+  Util.gettext("Generates relocatable code: all functions become function pointers and can be replaced at run-time."));
 constant DebugFlag GRAPHML = DEBUG_FLAG(121, "graphml", false,
   Util.gettext("Dumps .graphml files for the bipartite graph after Index Reduction and a task graph for the SCCs. Can be displayed with yEd. "));
 constant DebugFlag USEMPI = DEBUG_FLAG(122, "useMPI", false,
@@ -501,8 +501,6 @@ constant DebugFlag SERIALIZED_SIZE = DEBUG_FLAG(163, "reportSerializedSize", fal
   Util.gettext("Reports serialized sizes of various data structures used in the compiler."));
 constant DebugFlag BACKEND_KEEP_ENV_GRAPH = DEBUG_FLAG(164, "backendKeepEnv", true,
   Util.gettext("When enabled, the environment is kept when entering the backend, which enables CevalFunction (function interpretation) to work. This module not essential for the backend to function in most cases, but can improve simulation performance by evaluating functions. The drawback to keeping the environment graph in memory is that it is huge (~80% of the total memory in use when returning the frontend DAE)."));
-constant DebugFlag OMC_RELOCATABLE_FUNCTIONS = DEBUG_FLAG(165, "relocatableFunctions", false,
-  Util.gettext("Generates relocatable code: all functions become function pointers and can be replaced at run-time."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -629,7 +627,7 @@ constant list<DebugFlag> allDebugFlags = {
   RESHUFFLE_POST,
   SHOW_EXPANDABLE_INFO,
   DUMP_HOMOTOPY,
-  MODEL_INFO_JSON,
+  OMC_RELOCATABLE_FUNCTIONS,
   GRAPHML,
   USEMPI,
   DUMP_CSE,
@@ -673,8 +671,7 @@ constant list<DebugFlag> allDebugFlags = {
   TOTAL_TEARING_DUMPVERBOSE,
   PARALLEL_CODEGEN,
   SERIALIZED_SIZE,
-  BACKEND_KEEP_ENV_GRAPH,
-  OMC_RELOCATABLE_FUNCTIONS
+  BACKEND_KEEP_ENV_GRAPH
 };
 
 public
