@@ -316,7 +316,7 @@ int64_t rt_ext_tp_sync_nanosec(rtclock_t* tick_tp, uint64_t nsec)
     if (d < 0) {
       break;
     } if (d >= 2e-3) {
-      Sleep((int)d*1e3);
+      Sleep((int)(d*1e3));
     } else {
       Sleep(0);
     }
