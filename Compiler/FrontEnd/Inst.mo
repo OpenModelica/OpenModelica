@@ -2277,7 +2277,7 @@ algorithm
 
         if match r
             case SCode.Restriction.R_PACKAGE() then false;
-            else Mod.isInvariantMod(mod);
+            else if SCode.restrictionEqual(r,re) then Mod.isInvariantMod(mod) else false;
           end match then
           // Is a very simple modification on an operator record; we do not need to handle it by adding SCode.EXTENDS
           // print("Short-circuit: " + SCodeDump.restrString(r)+" "+SCodeDump.restrString(re)+" : "+SCodeDump.printModStr(mod)+"\n");
@@ -2297,7 +2297,7 @@ algorithm
 
           (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) =
           instClassdef2(cache, parentClassEnv, ih, store, mods_1, pre, ci_state, className, classDefParent,
-             re,
+             re /* = r */,
              vis, partialPrefix, encapsulatedPrefix, // TODO: Do we need to merge these?
              inst_dims, impl,
              callscope, graph, inSets, instSingleCref,comment,info,stopInst);
