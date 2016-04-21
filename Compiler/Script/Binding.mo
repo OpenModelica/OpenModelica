@@ -144,11 +144,11 @@ algorithm
     case SCode.CLASS(n, _, _, _, _, SCode.PARTS(elist, _,_,_,_,_,_,_), _, _)
       equation
         (true) = isOfType(elist, typeName);
-      
+
       then {el};
     case _
     equation print("noName\n");
-     // print(SCodeDump.unparseElementStr(el)); 
+     // print(SCodeDump.unparseElementStr(el));
       then {};
    end matchcontinue;
 end getAllElementsOfType2;
@@ -168,7 +168,7 @@ output Boolean result;
      String name;
     case {} then (false);
     case SCode.EXTENDS(Absyn.IDENT(name), _, mod, _, _)::rest
-      equation 
+      equation
         true = (name == typeName);
         then (true);
     case el::rest
@@ -227,15 +227,15 @@ output Absyn.Class out_vmodel;
           new_exp = parseAggregator(exp, Absyn.FUNCTIONARGS({Absyn.LIST(toExpList(out_es, {}))}, {}));
           // print("new TEMPLATE : " + Dump.dumpExpStr(new_exp) + "\n");
          out_class = updateClass(vmodel, typeSpec, {(new_exp, "")}, iname, env, false, {}, "");
-         end if;        
+         end if;
         then  out_class;
-          
+
     case CLIENT_E(components, typeSpec, def, iname, predecessors,
       MEDIATOR(mType, template, clients, providers, preferred)::_) /* preferred bindings indicated */
       equation
         out_es = getProviders(providers, vmodel, env, {});
         out_class = updateClass(vmodel, typeSpec, out_es, iname, env, true, preferred, "");
-                 
+
         then  out_class;
     case NO_PRED()
       equation
@@ -254,7 +254,7 @@ output list<Absyn.Exp>  out_es;
      list<tuple<Absyn.Exp, String>> rest;
      Absyn.Exp exp;
     case {} then in_es;
-    case (exp, _)::rest 
+    case (exp, _)::rest
         then toExpList(rest, exp::in_es);
    end matchcontinue;
 end toExpList;
@@ -420,13 +420,13 @@ algorithm
          // print(Dump.unparseTypeSpec(typeSpec));
          // print("      +        ");
          // print(Dump.unparseTypeSpec(tSpec));
-         // print ("... \n"); 
+         // print ("... \n");
           //if Interactive.isPrimitive(Absyn.pathToCref(path), defs) then fail(); end if;
 
           if (Absyn.typeSpecPathString(typeSpec) == Absyn.typeSpecPathString(tSpec)) then
           print("Found provider \n");
           if(hasPreferred) then // handle preferred bindings
-          e_list := applyModifiersPreferred(components, exp, instance_name,  pathInClass, finalPrefix, redeclareKeywords ,innerOuter, info , constrainClass, attributes,tSpec, preferred);         
+          e_list := applyModifiersPreferred(components, exp, instance_name,  pathInClass, finalPrefix, redeclareKeywords ,innerOuter, info , constrainClass, attributes,tSpec, preferred);
           else
           e_list := applyModifiers(components, exp, instance_name, 0, finalPrefix, redeclareKeywords ,innerOuter, info , constrainClass, attributes,tSpec);
           end if;
@@ -434,7 +434,7 @@ algorithm
            print("NOT Found provider \n");
           e_list := { Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords ,innerOuter, Absyn.COMPONENTS(attributes,tSpec, components), info , constrainClass))};
 
-          end if;          
+          end if;
       then listAppend(e_list, parseElems(rest, defs, typeSpec, exp, instance_name, hasPreferred, preferred,  pathInClass));
     case (e_item::rest)
         then e_item::parseElems(rest, defs, typeSpec, exp, instance_name, hasPreferred, preferred,  pathInClass);
@@ -474,7 +474,7 @@ protected function applyModifiersPreferred
         client_pref = getPreferredBinding(ename, preferred);
         cnew = applyModifierPreferred(comps, e, client_pref, instance_name, ename);
         enew = Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords ,innerOuter, Absyn.COMPONENTS(attributes,tSpec, cnew), info , constrainClass));
-        
+
         then enew::applyModifiersPreferred(comps, rest, instance_name, typeSp, finalPrefix,redeclareKeywords ,innerOuter, info , constrainClass, attributes,tSpec, preferred);
     case _::rest
         then applyModifiersPreferred(comps, rest, instance_name, typeSp, finalPrefix, redeclareKeywords ,innerOuter, info , constrainClass, attributes,tSpec, preferred);
@@ -561,7 +561,7 @@ protected function applyModifiers
       equation
         cnew = applyModifier(comps, e, instance_name, counter);
         enew = Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords ,innerOuter, Absyn.COMPONENTS(attributes,tSpec, cnew), info , constrainClass));
-        
+
         then enew::applyModifiers(comps, rest, instance_name, counter+1, finalPrefix,redeclareKeywords ,innerOuter, info , constrainClass, attributes,tSpec);
     case _::rest
         then applyModifiers(comps, rest, instance_name, counter, finalPrefix,redeclareKeywords ,innerOuter, info , constrainClass, attributes,tSpec);
@@ -582,7 +582,7 @@ protected function applyModifier
     Option<Absyn.ComponentCondition> condition "condition" ;
     Option<Absyn.Comment> comment "comment" ;
      Absyn.Ident name, new_name ;
-     
+
     Absyn.ArrayDim arrayDim "Array dimensions, if any" ;
     Option<Absyn.Modification> modification "Optional modification" ;
     case {} then {};
@@ -708,7 +708,7 @@ protected function applyTemplate
      Absyn.Ident name;
      list<tuple<Absyn.Exp, String>> new_es;
      String pathInClass;
-    case {} 
+    case {}
        equation
       then in_es;
     case (clist, pathInClass)::rest
@@ -732,12 +732,12 @@ protected function applyTemplate2
    local
      list<Absyn.ComponentItem> rest;
      Absyn.Ident name, newName;
-    case {} 
+    case {}
        equation
         //print("EMPTY COMPONENT MATCH\n");
       then in_es;
     case Absyn.COMPONENTITEM(Absyn.COMPONENT(name, _, _), _, _)::rest
-      equation       
+      equation
         newName = if(pathInClass == "") then name else pathInClass + "." + name;
        // print("Applying template to" + newName + "\n");
         then applyTemplate2(exp, rest, (parseExpression(exp, newName), newName)::in_es, pathInClass);
@@ -861,7 +861,7 @@ algorithm
           path := Absyn.typeSpecPath(typeSpec);
          // print ("TESTING PROVIDERS ... ");
          // print(Dump.unparseTypeSpec(typeSpec));
-         // print ("... \n"); 
+         // print ("... \n");
           //if Interactive.isPrimitive(Absyn.pathToCref(path), env) then fail(); end if;
           def := Interactive.getPathedClassInProgram(path,env); // load the element
           if (Absyn.typeSpecPathString(typeSpec) == className) then
@@ -903,8 +903,8 @@ algorithm
     Option<Absyn.Modification> modification "Optional modification" ;
     case {} then in_components;
     case Absyn.COMPONENTITEM(Absyn.COMPONENT(name, arrayDim, modification), condition, comment)::rest
-      equation       
-        newName = if(pathInClass == "") then name else pathInClass + "." + name;        
+      equation
+        newName = if(pathInClass == "") then name else pathInClass + "." + name;
         tmp = getAllProviderInstances(className, template, e_items, env,  in_components, newName);
         then parseComponents(className, template, e_items, env, rest, tmp, pathInClass);
     case _::rest
@@ -962,7 +962,7 @@ algorithm
           path := Absyn.typeSpecPath(typeSpec);
          // print ("TESTING in parseElementList ... ");
         //  print(Dump.unparseTypeSpec(typeSpec));
-         // print ("... \n"); 
+         // print ("... \n");
          // if Interactive.isPrimitive(Absyn.pathToCref(path), env) then fail(); end if;
          // print("HERE\n");
           def := Interactive.getPathedClassInProgram(path,env); // load the element
@@ -978,7 +978,7 @@ algorithm
            l1 := buildInstList(def, env, new_predecessors,  mediators, l2);
       then parseElementInstList(rest, env, predecessors, mediators, l1);
     case (_::rest)
-      equation 
+      equation
         //print("parseElementInstList unmatched pattern\n");
         then parseElementInstList(rest, env, predecessors, mediators, in_client_list);
   end matchcontinue;
@@ -1081,7 +1081,7 @@ algorithm
     case SCode.CLASS(n, _, _, _, SCode.R_RECORD(_), SCode.PARTS(elist, _,_,_,_,_,_,_), _, _)
       equation
         (true, SOME(mod)) = isMediator(elist);
-        Absyn.STRING(template) = getValue(mod, "template", "string");      
+        Absyn.STRING(template) = getValue(mod, "template", "string");
          str1 = System.stringReplace(template, "%", "");
          str2 = System.stringReplace(str1, ":", "all");
         Absyn.STRING(mType) = getValue(mod, "mType", "string");
@@ -1092,15 +1092,15 @@ algorithm
       // build providers
         Absyn.ARRAY(pMod) =  getValue(mod, "providers", "array");
         prvs = getProviderList(pMod, {});
-        
+
       // build preferred
          Absyn.ARRAY(prMod) =  getValue(mod, "preferred", "array");
          pref = getPreferredList(prMod, {});
-      
+
       then {MEDIATOR(mType,str2, cls, prvs, pref)};
     case _
     equation print("noName\n");
-     // print(SCodeDump.unparseElementStr(el)); 
+     // print(SCodeDump.unparseElementStr(el));
       then {};
    end matchcontinue;
 end getMediatorDefsElement;
@@ -1173,7 +1173,7 @@ output  list<Provider> n_val;
      list<Absyn.NamedArg> argNames;
      list<Absyn.Exp> rest;
      String className, providerTemplate, instance;
-     
+
     case {}
         then val;
     case Absyn.CALL(_, Absyn.FUNCTIONARGS(_, argNames))::rest
@@ -1262,9 +1262,9 @@ output Absyn.Exp val;
    case ({}, "bool")
        then Absyn.BOOL(false); // client not mandatory by default
    case ({}, "array")
-       then Absyn.ARRAY({}); 
+       then Absyn.ARRAY({});
    case ({}, "string")
-       then Absyn.STRING(""); 
+       then Absyn.STRING("");
    case (SCode.NAMEMOD(n, SCode.MOD(_,_,_, SOME((eval)), _))::rest, _)
         equation
           if(n <> name) then fail(); end if;
@@ -1273,7 +1273,6 @@ output Absyn.Exp val;
         then getValueR(rest, name, retype);
    end matchcontinue;
 end getValueR;
-
 
 annotation(__OpenModelica_Interface="backend");
 end Binding;

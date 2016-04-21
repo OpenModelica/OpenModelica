@@ -133,7 +133,7 @@ algorithm
       Ident fb;
       String ft;
       SCode.Element program, cdef;
-      list<SCode.Element> e; 
+      list<SCode.Element> e;
       Ident cn;
       Path bcp;
       SCode.Mod m;
@@ -149,10 +149,9 @@ algorithm
       then fcAddFigaroClass(ft, program, cn, tn, e);
     case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
       equation
-        print("TEST " + getLastIdent(bcp) + "\n"); 
         cdef = SCodeUtil.getElementWithPathCheckBuiltin(e, bcp);
         tn = fcMod1(m);
-      then fcAddFigaroClass(ft, program, cn, tn, e); 
+      then fcAddFigaroClass(ft, program, cn, tn, e);
     // Nested class of some sort.
     case (fb, ft, program, _, SCode.CLASS(name = n, classDef = cd), e)
       then fcClassDef(fb, ft, program, n, cd, e);
@@ -192,7 +191,7 @@ algorithm
       String ft;
       SCode.Element program;
       Ident cn;
-      list<SCode.Element> e;       
+      list<SCode.Element> e;
       list<SCode.Element> el;
       TypeSpec ts;
       SCode.Mod m;
@@ -225,7 +224,7 @@ algorithm
       String ft;
       SCode.Element program;
       Option<Ident> cn;
-      list<SCode.Element> e;      
+      list<SCode.Element> e;
       SCode.Element first;
       list<SCode.Element> rest;
       list<FigaroClass> rf, rr;
