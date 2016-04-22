@@ -184,11 +184,11 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_DASSL_NO_ROOTFINDING */
   "  Deactivates the internal root finding procedure of dassl.",
   /* FLAG_EMBEDDED_SERVER */
-  "  Enables an embedded server. Valid values:\n"
+  "  Enables an embedded server. Valid values:\n\n"
   "  * none - default, run without embedded server\n"
   "  * opc-da - [broken] run with embedded OPC DA server (WIN32 only, uses proprietary OPC SC interface)\n"
   "  * opc-ua - [experimental] run with embedded OPC UA server (TCP port 4841 for now; will have its own configuration option later)\n"
-  "  * filename - path to a shared object implementing the embedded server interface (requires access to internal OMC data-structures if you want to read or write data)\n",
+  "  * filename - path to a shared object implementing the embedded server interface (requires access to internal OMC data-structures if you want to read or write data)",
   /* FLAG_EMIT_PROTECTED */
   "  Emits protected variables to the result-file.",
   /* FLAG_F */
