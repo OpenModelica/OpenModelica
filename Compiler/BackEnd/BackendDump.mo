@@ -358,17 +358,21 @@ algorithm
   List.map_0(stateSets, printStateSet);
 end printStateSets;
 
-protected function printStateSet "author: Frenkel TUD"
-  input BackendDAE.StateSet statSet;
-protected
-  Integer rang;
-  list<BackendDAE.Var> states;
-  list<DAE.ComponentRef> crstates;
+protected function printStateSet "author: lochel"
+  input BackendDAE.StateSet inStateSet;
 algorithm
-  BackendDAE.STATESET(rang=rang,statescandidates=states) := statSet;
-  crstates := List.map(states,BackendVariable.varCref);
-  print("StateSet: select " + intString(rang) + " from\n");
-  debuglst(crstates,ComponentReference.printComponentRefStr,"\n","\n");
+  print("StateSet \"" + ComponentReference.printComponentRefStr(ComponentReference.crefFirstCref(inStateSet.crA)) + "\" (rang " + intString(inStateSet.rang) + ")\n");
+
+  dumpVarList(inStateSet.statescandidates, "state candidates");
+  dumpEquationList(inStateSet.eqns, "eqns");
+
+  dumpVarList(inStateSet.ovars, "ovars");
+  dumpEquationList(inStateSet.oeqns, "oeqns");
+
+  dumpVarList(inStateSet.varA, "varA");
+  dumpVarList(inStateSet.varJ, "varJ");
+
+  //print(jacobianString(inStateSet.jacobian));
 end printStateSet;
 
 public function printVar
