@@ -149,7 +149,14 @@ else # mingw64
 endif
 
 clean-qtclients:
-
+	rm -f $(OMBUILDDIR)/bin/OMPlot.exe $(OMBUILDDIR)/bin/OMEdit.exe $(OMBUILDDIR)/bin/OMNotebook.exe $(OMBUILDDIR)/bin/OMShell.exe $(OMBUILDDIR)/bin/OMOptim.exe
+	rm -f $(OMBUILDDIR)/lib/libOMPlot.a $(OMBUILDDIR)/lib/libOMOptimBasis.a $(OMBUILDDIR)/lib/libOMOptim.a
+	rm -rf $(OMBUILDDIR)/share/omedit* $(OMBUILDDIR)/share/omnotebook* $(OMBUILDDIR)/share/omshell*
+	$(MAKE) -C OMPlot -f Makefile.omdev.mingw clean
+	$(MAKE) -C OMEdit -f Makefile.omdev.mingw clean
+	$(MAKE) -C OMNotebook/OMNotebook/OMNotebookGUI -f Makefile.omdev.mingw clean
+	$(MAKE) -C OMShell/OMShell/OMShellGUI -f Makefile.omdev.mingw clean
+	$(MAKE) -C OMOptim -f Makefile.omdev.mingw clean
 
 simulationruntimecmsvc:
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) simulationruntimecmsvc
