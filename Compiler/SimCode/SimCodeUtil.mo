@@ -108,6 +108,8 @@ import Util;
 import ValuesUtil;
 import VisualXML;
 
+protected constant String UNDERLINE = "========================================";
+
 public function appendLists
   input list<SimCode.SimEqSystem> inEqn1;
   input list<SimCode.SimEqSystem> inEqn2;
@@ -360,17 +362,6 @@ algorithm
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
     (allEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacsTemp) := countandIndexAlgebraicLoops(allEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {});
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-
-    if Flags.isSet(Flags.DYNAMIC_TEARING_INFO) then
-      print("\n\n*********************\n* SimCode Equations *\n*********************\n\ninitialEquations:\n=================\n");
-      dumpSimEqSystemLst(initialEquations,"\n");
-      print("\n\ninitialEquations (lambda=0):\n===================\n");
-      dumpSimEqSystemLst(initialEquations_lambda0,"\n");
-      print("\n\nparameterEquations:\n===================\n");
-      dumpSimEqSystemLst(parameterEquations,"\n");
-      print("\n\nallEquations:\n=============\n");
-      dumpSimEqSystemLst(allEquations,"\n");
-    end if;
 
     // collect symbolic jacobians from state selection
     (stateSets, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians) := indexStateSets(stateSets, {}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {}, {});
@@ -7034,45 +7025,46 @@ public function dumpSimCodeDebug"prints the simcode debug output to std out."
 protected
   list<Option<SimCode.JacobianMatrix>> jacObs;
 algorithm
-  print("allEquations: \n-----------------------\n");
+  print("\n\n*********************\n* SimCode Equations *\n*********************\n\n");
+  print("\nallEquations: \n" + UNDERLINE + "\n\n");
   dumpSimEqSystemLst(simCode.allEquations,"\n");
-  print("\n--------------\n");
-  print("odeEquations ("+intString(listLength(simCode.odeEquations))+" systems): \n-----------------------\n");
+  print(UNDERLINE + "\n\n\n");
+  print("\nodeEquations ("+intString(listLength(simCode.odeEquations))+" systems): \n" + UNDERLINE + "\n");
   List.map1_0(simCode.odeEquations,dumpSimEqSystemLst,"\n");
-  print("\n--------------\n");
-  print("algebraicEquations ("+intString(listLength(simCode.algebraicEquations))+" systems): \n-----------------------\n");
+  print(UNDERLINE + "\n\n\n");
+  print("\nalgebraicEquations ("+intString(listLength(simCode.algebraicEquations))+" systems): \n" + UNDERLINE + "\n");
   List.map1_0(simCode.algebraicEquations,dumpSimEqSystemLst,"\n");
-  print("\n--------------\n");
-  print("initialEquations: ("+intString(listLength(simCode.initialEquations))+")\n-----------------------\n");
+  print(UNDERLINE + "\n\n\n");
+  print("\ninitialEquations: ("+intString(listLength(simCode.initialEquations))+")\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.initialEquations,"\n");
-  print("\n--------------\n");
-  print("initialEquations_lambda0: ("+intString(listLength(simCode.initialEquations_lambda0))+")\n-----------------------\n");
+  print(UNDERLINE + "\n\n\n");
+  print("\ninitialEquations_lambda0: ("+intString(listLength(simCode.initialEquations_lambda0))+")\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.initialEquations_lambda0,"\n");
-  print("removedInitialEquations: \n-----------------------\n");
+  print("\nremovedInitialEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.removedInitialEquations,"\n");
-  print("startValueEquations: \n-----------------------\n");
+  print("\nstartValueEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.startValueEquations,"\n");
-  print("nominalValueEquations: \n-----------------------\n");
+  print("\nnominalValueEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.nominalValueEquations,"\n");
-  print("minValueEquations: \n-----------------------\n");
+  print("\nminValueEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.minValueEquations,"\n");
-  print("maxValueEquations: \n-----------------------\n");
+  print("\nmaxValueEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.maxValueEquations,"\n");
-  print("parameterEquations: \n-----------------------\n");
+  print("\nparameterEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.parameterEquations,"\n");
-  print("removedEquations: \n-----------------------\n");
+  print("\nremovedEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.removedEquations,"\n");
-  print("algorithmAndEquationAsserts: \n-----------------------\n");
+  print("\nalgorithmAndEquationAsserts: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.algorithmAndEquationAsserts,"\n");
-  print("equationsForZeroCrossings: \n-----------------------\n");
+  print("\nequationsForZeroCrossings: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.equationsForZeroCrossings,"\n");
-  print("jacobianEquations: \n-----------------------\n");
+  print("\njacobianEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.jacobianEquations,"\n");
   extObjInfoString(simCode.extObjInfo);
-  print("jacobianMatrixes: \n-----------------------\n");
+  print("\njacobianMatrices: \n" + UNDERLINE + "\n");
   jacObs := List.map(simCode.jacobianMatrixes,Util.makeOption);
   List.map_0(jacObs,dumpJacobianMatrix);
-  print("modelInfo: \n-----------------------\n");
+  print("\nmodelInfo: \n" + UNDERLINE + "\n");
   dumpModelInfo(simCode.modelInfo);
 end dumpSimCodeDebug;
 
