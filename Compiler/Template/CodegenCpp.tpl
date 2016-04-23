@@ -6247,17 +6247,34 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    let &preExp= buffer ""
 
   match eq
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(jacobianMatrix = SOME(jac))) then
+    let jacIndex = match jac
+      case (_, _, _, _, _, _, index) then index else "getSystemMatrix:ERROR"
+  <<
+
+  const matrix_t& <%modelname%>Algloop<%nls.index%>::getSystemMatrix()
+  {
+    return static_cast<<%modelname%>Mixed*>(_system)->getJacobian(<%jacIndex%>);
+  }
+
+  const sparsematrix_t& <%modelname%>Algloop<%nls.index%>::getSystemSparseMatrix()
+  {
+    throw ModelicaSimulationError(MATH_FUNCTION, "Sparse symbolic Jacobians not suported yet");
+  }
+  >>
   case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
 
   const matrix_t& <%modelname%>Algloop<%nls.index%>::getSystemMatrix()
   {
-    throw ModelicaSimulationError(MATH_FUNCTION,"Symbolic jacobians is not suported yet");
+    // return empty matrix to indicate that no symbolic Jacobian is available
+    static matrix_t empty(0, 0);
+    return empty;
   }
 
   const sparsematrix_t& <%modelname%>Algloop<%nls.index%>::getSystemSparseMatrix()
   {
-    throw ModelicaSimulationError(MATH_FUNCTION,"Symbolic jacobians is not suported yet");
+    throw ModelicaSimulationError(MATH_FUNCTION, "Sparse symbolic Jacobians not suported yet");
   }
   >>
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then

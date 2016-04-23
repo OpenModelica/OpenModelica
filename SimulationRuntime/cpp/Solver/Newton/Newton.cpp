@@ -347,6 +347,15 @@ void Newton::stepCompleted(double time)
 
 void Newton::calcJacobian()
 {
+  // Use analytic Jacobian if available
+  matrix_t A = _algLoop->getSystemMatrix();
+  if (A.size1() == _dimSys && A.size2() == _dimSys) {
+    const double* jac = A.data().begin();
+    std::copy(jac, jac + _dimSys*_dimSys, _jac);
+    return;
+  }
+
+  // Alternatively apply finite differences
   for (int j = 0; j < _dimSys; ++j) {
     // Reset variables for every column
     std::copy(_y, _y + _dimSys, _yHelp);
