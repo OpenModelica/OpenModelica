@@ -6238,115 +6238,100 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 end initAlgloopTemplate;
 
 
-template getAMatrixCode(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eq)
+template getAMatrixCode(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eq)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
-  let modelname = lastIdentOfPath(modelInfo.name)
-   let &varDecls = buffer ""
-   let &preExp= buffer ""
+  let modelName = lastIdentOfPath(modelInfo.name)
 
   match eq
-  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(jacobianMatrix = SOME(jac))) then
-    let jacIndex = match jac
-      case (_, _, _, _, _, _, index) then index else "getSystemMatrix:ERROR"
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(jacobianMatrix = SOME((_,_,_,_,_,_,index)))) then
   <<
 
-  const matrix_t& <%modelname%>Algloop<%nls.index%>::getSystemMatrix()
+  const matrix_t& <%modelName%>Algloop<%nls.index%>::getSystemMatrix()
   {
-    return static_cast<<%modelname%>Mixed*>(_system)->getJacobian(<%jacIndex%>);
+    return static_cast<<%modelName%>Mixed*>(_system)->getJacobian(<%index%>);
   }
 
-  const sparsematrix_t& <%modelname%>Algloop<%nls.index%>::getSystemSparseMatrix()
+  const sparsematrix_t& <%modelName%>Algloop<%nls.index%>::getSystemSparseMatrix()
   {
-    throw ModelicaSimulationError(MATH_FUNCTION, "Sparse symbolic Jacobians not suported yet");
+    throw ModelicaSimulationError(MATH_FUNCTION, "Sparse symbolic Jacobian is not suported yet");
   }
   >>
+
   case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
 
-  const matrix_t& <%modelname%>Algloop<%nls.index%>::getSystemMatrix()
+  const matrix_t& <%modelName%>Algloop<%nls.index%>::getSystemMatrix()
   {
     // return empty matrix to indicate that no symbolic Jacobian is available
     static matrix_t empty(0, 0);
     return empty;
   }
 
-  const sparsematrix_t& <%modelname%>Algloop<%nls.index%>::getSystemSparseMatrix()
+  const sparsematrix_t& <%modelName%>Algloop<%nls.index%>::getSystemSparseMatrix()
   {
-    throw ModelicaSimulationError(MATH_FUNCTION, "Sparse symbolic Jacobians not suported yet");
+    throw ModelicaSimulationError(MATH_FUNCTION, "Sparse symbolic Jacobian is not suported yet");
   }
   >>
- case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
-  match ls.jacobianMatrix
-     case SOME((_,_,_,_,_,_,index)) then
-      let type = getConfigString(MATRIX_FORMAT)
-      let getDenseMatrix =  match type
-          case ("dense") then
-            <<
-            if(IMixedSystem* jacobian_system = dynamic_cast<IMixedSystem*>( _system))
-            {
-                return jacobian_system->getJacobian(<%index%>);
-                // cout << "A Matrix for system " << <%index%> << A_matrix << std::endl;
-            }
-            else
-              throw ModelicaSimulationError(MATH_FUNCTION, "System matrix not available");
-            >>
-          case ("sparse") then
-            'throw ModelicaSimulationError(MATH_FUNCTION,"Dense matrix is not activated");'
-          else "A matrix type is not supported"
-          end match
-      let getSparseMatrix =  match type
-          case ("dense") then
-            'throw ModelicaSimulationError(MATH_FUNCTION,"Sparse matrix is not activated");'
-          case ("sparse") then
-            <<
-            if(IMixedSystem* jacobian_system = dynamic_cast<IMixedSystem*>( _system))
-            {
-                return jacobian_system->getSparseJacobian(<%index%>);
 
-            }
-            >>
-          else "A matrix type is not supported"
-          end match
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+    match ls.jacobianMatrix
+    case SOME((_,_,_,_,_,_,index)) then
+      let type = getConfigString(MATRIX_FORMAT)
+      let getDenseMatrix = match type
+        case ("dense") then
+          'return static_cast<<%modelName%>Mixed*>(_system)->getJacobian(<%index%>);'
+        case ("sparse") then
+          'throw ModelicaSimulationError(MATH_FUNCTION, "Dense matrix is not activated");'
+        else "A matrix type is not supported"
+        end match
+      let getSparseMatrix =  match type
+        case ("dense") then
+          'throw ModelicaSimulationError(MATH_FUNCTION, "Sparse matrix is not activated");'
+        case ("sparse") then
+          'return static_cast<<%modelName%>Mixed*>(_system)->getSparseJacobian(<%index%>);'
+        else "A matrix type is not supported"
+        end match
     <<
-    const matrix_t& <%modelname%>Algloop<%ls.index%>::getSystemMatrix( )
+
+    const matrix_t& <%modelName%>Algloop<%ls.index%>::getSystemMatrix()
     {
       <%getDenseMatrix%>
     }
-    const sparsematrix_t& <%modelname%>Algloop<%ls.index%>::getSystemSparseMatrix( )
+
+    const sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix( )
     {
       <%getSparseMatrix%>
     }
     >>
-   else
+
+  else
     let type = getConfigString(MATRIX_FORMAT)
-      let getDenseMatrix =  match type
-          case ("dense") then
-            <<
-            return __A;
-            >>
-          case ("sparse") then
-            'throw ModelicaSimulationError(MATH_FUNCTION,"Dense matrix is not activated");'
-          else "A matrix type is not supported"
-          end match
-      let getSparseMatrix =  match type
-          case ("dense") then
-            'throw ModelicaSimulationError(MATH_FUNCTION,"Sparse matrix is not activated");'
-          case ("sparse") then
-            <<
-            return __A;
-            >>
-          else "A matrix type is not supported"
-          end match
+    let getDenseMatrix = match type
+      case ("dense") then
+        'return __A;'
+      case ("sparse") then
+        'throw ModelicaSimulationError(MATH_FUNCTION, "Dense matrix is not activated");'
+      else "A matrix type is not supported"
+      end match
+    let getSparseMatrix = match type
+      case ("dense") then
+        'throw ModelicaSimulationError(MATH_FUNCTION, "Sparse matrix is not activated");'
+      case ("sparse") then
+        'return __A;'
+      else "A matrix type is not supported"
+      end match
      <<
-     const matrix_t& <%modelname%>Algloop<%ls.index%>::getSystemMatrix( )
+
+     const matrix_t& <%modelName%>Algloop<%ls.index%>::getSystemMatrix()
      {
-        <%getDenseMatrix%>
+       <%getDenseMatrix%>
      }
-     const sparsematrix_t& <%modelname%>Algloop<%ls.index%>::getSystemSparseMatrix( )
+
+     const sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix()
      {
-        <%getSparseMatrix%>
+       <%getSparseMatrix%>
      }
      >>
 
