@@ -1149,11 +1149,7 @@ extern double SystemImpl__getCurrentTime(void)
 
 #if !defined(__MINGW32__) && !defined(_MSC_VER)
 
-#ifdef __APPLE_CC__
-typedef struct dirent* direntry;
-#else
 typedef const struct dirent* direntry;
-#endif
 
 static int file_select_mo(direntry entry)
 {
