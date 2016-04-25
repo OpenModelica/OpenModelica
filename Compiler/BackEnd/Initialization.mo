@@ -118,9 +118,10 @@ algorithm
     execStat("inlineWhenForInitialization (initialization)");
 
     (dae, initVars, outPrimaryParameters, outAllPrimaryParameters) := selectInitializationVariablesDAE(dae);
-    //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
-    //  BackendDump.dumpVariables(initVars, "selected initialization variables");
-    //end if;
+    // if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
+      // BackendDump.dumpVarList(outPrimaryParameters, "selected primary parameters");
+      // BackendDump.dumpVarList(outAllPrimaryParameters, "selected all primary parameters");
+    // end if;
     execStat("selectInitializationVariablesDAE (initialization)");
 
     hs := collectPreVariables(dae);
@@ -128,7 +129,16 @@ algorithm
 
     // collect vars and eqns for initial system
     vars := BackendVariable.emptyVars();
-    fixvars := BackendVariable.emptyVars();
+
+    // If Cpp runtime is used set fixvars to emptyVars because otherwise Cpp testcases fail
+    // This is wrong and leads to bigger initialization tearing sets than necessary!!!
+    // To-Do: Fix the problems with the Cpp runtime
+    if stringEq(Config.simCodeTarget(), "Cpp") then
+      fixvars := BackendVariable.emptyVars();
+    else
+      fixvars := BackendVariable.listVar(outAllPrimaryParameters);
+    end if;
+
     eqns := BackendEquation.emptyEqns();
     reeqns := BackendEquation.emptyEqns();
 
@@ -224,6 +234,11 @@ algorithm
       initdae := BackendDAEUtil.setFunctionTree(initdae, BackendDAEUtil.getFunctions(initdae0.shared));
     else
       outInitDAE_lambda0 := NONE();
+    end if;
+
+    // Remove the globalKnownVars for the initialization set again
+    if not stringEq(Config.simCodeTarget(), "Cpp") then
+      initdae.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae.shared, BackendVariable.emptyVars());
     end if;
 
     // warn about selected default initial conditions
