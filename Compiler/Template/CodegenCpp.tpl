@@ -4,6 +4,7 @@ import interface SimCodeTV;
 import CodegenCppCommon.*;
 import CodegenUtil.*;
 import CodegenCppInit.*;
+import ExpressionDumpTpl;
 
 //
 //  Generates Modelica system class with the fowling inheritance structure
@@ -769,7 +770,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       if(getGlobalSettings()->getOutputPointType()!= OPT_NONE)
       {
         _writeOutput = getSimObjects()->LoadWriter(<%numAlgvars(modelInfo)%> + <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>).lock();
-		_writeOutput->init();
+    _writeOutput->init();
         _writeOutput->clear();
       }
    }
@@ -1528,7 +1529,7 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
     let solver    = settings.method
     let moLib     =  makefileParams.compileDir
     let home      = makefileParams.omhome
-	let outputformat = settings.outputFormat
+  let outputformat = settings.outputFormat
     let execParameters = '-S <%start%> -E <%end%> -H <%stepsize%> -G <%intervals%> -P <%outputformat%> -T <%tol%> -I <%solver%> -R <%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> -M <%moLib%> -r <%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
     let outputParameter = if (stringEq(settings.outputFormat, "empty")) then "-O none" else ""
     let fileNamePrefixx = fileNamePrefix
@@ -4033,7 +4034,7 @@ let &help = buffer ""
  let Amatrix=
     (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 fromindex 0=>
       let &preExp = buffer "" /*BUFD*/
-	  let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       match eq.exp
       case e as RCONST(__) then match type case "sparse" then
       let &help +=
@@ -4044,28 +4045,28 @@ let &help = buffer ""
       >>
       <<
       <%preExp%>
-	  /*comment out again!*///__A(<%row%>,<%col%>)=<%expPart%>;
+      /*comment out again!*///__A(<%row%>,<%col%>)=<%expPart%>;
       //_AData[_indexValue[<%i0%>]] = <%expPart%>;
-	  >>
-	  else
-	  <<
-	  <%preExp%>
-      /*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
       >>
-	  end match
+    else
+    <<
+    <%preExp%>
+    /*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
+    >>
+    end match
       else match type case "sparse" then
-      <<
-	  <%preExp%>
-	  /*comment out again!*///__A(<%row%>,<%col%>)=<%expPart%>;
-	  //_Ax[<%i0%>] = <%expPart%>;// to be commented in lateron
-	  _AData[_indexValue[<%i0%>]] = <%expPart%>;
-	  >>
-	  else
-	  <<
-	  <%preExp%>
-	  __A(<%row%>,<%col%>)=<%expPart%>;
-	  >>
-	  end match
+    <<
+    <%preExp%>
+    /*comment out again!*///__A(<%row%>,<%col%>)=<%expPart%>;
+    //_Ax[<%i0%>] = <%expPart%>;// to be commented in lateron
+    _AData[_indexValue[<%i0%>]] = <%expPart%>;
+    >>
+    else
+    <<
+    <%preExp%>
+    __A(<%row%>,<%col%>)=<%expPart%>;
+    >>
+    end match
 
   ;separator="\n")
 
@@ -4073,14 +4074,14 @@ let &help = buffer ""
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      match exp
-	 case e as RCONST(__) then
-	 let &help +=  '/*comment out again!*/<%preExp%>__b(<%i0%>)=<%expPart%>; <%\n%>'
-	 <<
-	 //<%preExp%>__b(<%i0%>)=<%expPart%>;
-	 >>
-	 else
+   case e as RCONST(__) then
+   let &help +=  '/*comment out again!*/<%preExp%>__b(<%i0%>)=<%expPart%>; <%\n%>'
+   <<
+   //<%preExp%>__b(<%i0%>)=<%expPart%>;
+   >>
+   else
 
-	'<%preExp%>__b(<%i0%>)=<%expPart%>;'
+  '<%preExp%>__b(<%i0%>)=<%expPart%>;'
   ;separator="\n")
 
   <<
@@ -4511,7 +4512,7 @@ template extReturnType(SimExtArg extArg)
   match extArg
   case ex as SIMEXTARG(__)    then extType2(type_,true /*Treat this as an input (pass by value)*/,false)
   case SIMNOEXTARG(__)  then "void"
-  case SIMEXTARGEXP(__) then error(sourceInfo(), 'Expression types are unsupported as return arguments <%printExpStr(exp)%>')
+  case SIMEXTARGEXP(__) then error(sourceInfo(), 'Expression types are unsupported as return arguments <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
   else error(sourceInfo(), "Unsupported return argument")
 end extReturnType;
 
@@ -6237,98 +6238,100 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 end initAlgloopTemplate;
 
 
-template getAMatrixCode(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eq)
+template getAMatrixCode(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eq)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
-  let modelname = lastIdentOfPath(modelInfo.name)
-   let &varDecls = buffer ""
-   let &preExp= buffer ""
+  let modelName = lastIdentOfPath(modelInfo.name)
 
   match eq
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(jacobianMatrix = SOME((_,_,_,_,_,_,index)))) then
+  <<
+
+  const matrix_t& <%modelName%>Algloop<%nls.index%>::getSystemMatrix()
+  {
+    return static_cast<<%modelName%>Mixed*>(_system)->getJacobian(<%index%>);
+  }
+
+  const sparsematrix_t& <%modelName%>Algloop<%nls.index%>::getSystemSparseMatrix()
+  {
+    throw ModelicaSimulationError(MATH_FUNCTION, "Sparse symbolic Jacobian is not suported yet");
+  }
+  >>
+
   case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
 
-  const matrix_t& <%modelname%>Algloop<%nls.index%>::getSystemMatrix()
+  const matrix_t& <%modelName%>Algloop<%nls.index%>::getSystemMatrix()
   {
-    throw ModelicaSimulationError(MATH_FUNCTION,"Symbolic jacobians is not suported yet");
+    // return empty matrix to indicate that no symbolic Jacobian is available
+    static matrix_t empty(0, 0);
+    return empty;
   }
 
-  const sparsematrix_t& <%modelname%>Algloop<%nls.index%>::getSystemSparseMatrix()
+  const sparsematrix_t& <%modelName%>Algloop<%nls.index%>::getSystemSparseMatrix()
   {
-    throw ModelicaSimulationError(MATH_FUNCTION,"Symbolic jacobians is not suported yet");
+    throw ModelicaSimulationError(MATH_FUNCTION, "Sparse symbolic Jacobian is not suported yet");
   }
   >>
- case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
-  match ls.jacobianMatrix
-     case SOME((_,_,_,_,_,_,index)) then
-      let type = getConfigString(MATRIX_FORMAT)
-      let getDenseMatrix =  match type
-          case ("dense") then
-            <<
-            if(IMixedSystem* jacobian_system = dynamic_cast<IMixedSystem*>( _system))
-            {
-                return jacobian_system->getJacobian(<%index%>);
-                // cout << "A Matrix for system " << <%index%> << A_matrix << std::endl;
-            }
-            else
-              throw ModelicaSimulationError(MATH_FUNCTION, "System matrix not available");
-            >>
-          case ("sparse") then
-            'throw ModelicaSimulationError(MATH_FUNCTION,"Dense matrix is not activated");'
-          else "A matrix type is not supported"
-          end match
-      let getSparseMatrix =  match type
-          case ("dense") then
-            'throw ModelicaSimulationError(MATH_FUNCTION,"Sparse matrix is not activated");'
-          case ("sparse") then
-            <<
-            if(IMixedSystem* jacobian_system = dynamic_cast<IMixedSystem*>( _system))
-            {
-                return jacobian_system->getSparseJacobian(<%index%>);
 
-            }
-            >>
-          else "A matrix type is not supported"
-          end match
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+    match ls.jacobianMatrix
+    case SOME((_,_,_,_,_,_,index)) then
+      let type = getConfigString(MATRIX_FORMAT)
+      let getDenseMatrix = match type
+        case ("dense") then
+          'return static_cast<<%modelName%>Mixed*>(_system)->getJacobian(<%index%>);'
+        case ("sparse") then
+          'throw ModelicaSimulationError(MATH_FUNCTION, "Dense matrix is not activated");'
+        else "A matrix type is not supported"
+        end match
+      let getSparseMatrix =  match type
+        case ("dense") then
+          'throw ModelicaSimulationError(MATH_FUNCTION, "Sparse matrix is not activated");'
+        case ("sparse") then
+          'return static_cast<<%modelName%>Mixed*>(_system)->getSparseJacobian(<%index%>);'
+        else "A matrix type is not supported"
+        end match
     <<
-    const matrix_t& <%modelname%>Algloop<%ls.index%>::getSystemMatrix( )
+
+    const matrix_t& <%modelName%>Algloop<%ls.index%>::getSystemMatrix()
     {
       <%getDenseMatrix%>
     }
-    const sparsematrix_t& <%modelname%>Algloop<%ls.index%>::getSystemSparseMatrix( )
+
+    const sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix( )
     {
       <%getSparseMatrix%>
     }
     >>
-   else
+
+  else
     let type = getConfigString(MATRIX_FORMAT)
-      let getDenseMatrix =  match type
-          case ("dense") then
-            <<
-            return __A;
-            >>
-          case ("sparse") then
-            'throw ModelicaSimulationError(MATH_FUNCTION,"Dense matrix is not activated");'
-          else "A matrix type is not supported"
-          end match
-      let getSparseMatrix =  match type
-          case ("dense") then
-            'throw ModelicaSimulationError(MATH_FUNCTION,"Sparse matrix is not activated");'
-          case ("sparse") then
-            <<
-            return __A;
-            >>
-          else "A matrix type is not supported"
-          end match
+    let getDenseMatrix = match type
+      case ("dense") then
+        'return __A;'
+      case ("sparse") then
+        'throw ModelicaSimulationError(MATH_FUNCTION, "Dense matrix is not activated");'
+      else "A matrix type is not supported"
+      end match
+    let getSparseMatrix = match type
+      case ("dense") then
+        'throw ModelicaSimulationError(MATH_FUNCTION, "Sparse matrix is not activated");'
+      case ("sparse") then
+        'return __A;'
+      else "A matrix type is not supported"
+      end match
      <<
-     const matrix_t& <%modelname%>Algloop<%ls.index%>::getSystemMatrix( )
+
+     const matrix_t& <%modelName%>Algloop<%ls.index%>::getSystemMatrix()
      {
-        <%getDenseMatrix%>
+       <%getDenseMatrix%>
      }
-     const sparsematrix_t& <%modelname%>Algloop<%ls.index%>::getSystemSparseMatrix( )
+
+     const sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix()
      {
-        <%getSparseMatrix%>
+       <%getSparseMatrix%>
      }
      >>
 
@@ -11563,7 +11566,7 @@ case SES_SIMPLE_ASSIGN(__) then
     <<
     //<%cref(componentRef, useFlatArrayNotation)%> = <%expPart%>;
     //_discrete_events->save( <%cref(componentRef, useFlatArrayNotation)%>);
-	_discrete_events->pre(<%cref(componentRef, useFlatArrayNotation)%>)=<%expPart%>;
+    _discrete_events->pre(<%cref(componentRef, useFlatArrayNotation)%>)=<%expPart%>;
     >>
   else
    match exp
@@ -12271,7 +12274,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     <<
     double <%name%>;
     >>
-  else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
+  else error(sourceInfo(), 'literalExpConst failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConst;
 
 template literalExpConstArrayVal(Exp lit)
@@ -12282,7 +12285,7 @@ template literalExpConstArrayVal(Exp lit)
   case RCONST(__) then real
   case ENUM_LITERAL(__) then index
   case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
-  else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>')
+  else error(sourceInfo(), 'literalExpConstArrayVal failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConstArrayVal;
 
 template literalExpConstImpl(Exp lit, Integer index) "These should all be declared static X const"
@@ -12325,7 +12328,7 @@ template literalExpConstImpl(Exp lit, Integer index) "These should all be declar
     <<
     <%name%> = <%exp.real%>;
     >>
-  else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
+  else error(sourceInfo(), 'literalExpConst failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConstImpl;
 
 template handleEvent(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
@@ -12583,7 +12586,7 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
     else
         <<
         f[<%index1%>] = -1;
-        /*error(sourceInfo(), 'Unknown relation: <%printExpStr(rel)%> for <%index1%>')*/
+        /*error(sourceInfo(), 'Unknown relation: <%ExpressionDumpTpl.dumpExp(rel,"\"")%> for <%index1%>')*/
         >>
       end match
   case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then
@@ -12809,9 +12812,9 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations, SimCode simCode ,T
   let equation_ode_func_calls = if not Flags.isSet(Flags.MULTIRATE_PARTITION) then (List.partition(List.flatten(odeEquations), 100) |> eqs hasindex i0 =>
                                  createEvaluateWithSplit(i0, context, eqs, "evaluateODE", className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
                                  ;separator="\n")
-								else ( List.intRange(partitionData.numPartitions) |> partIdx =>
-								createEvaluatePartitions(partIdx, context, List.flatten(odeEquations), listGet(partitions, partIdx),
-								listGet(activatorsForPartitions,partIdx), className,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace) ;separator="\n")
+                else ( List.intRange(partitionData.numPartitions) |> partIdx =>
+                createEvaluatePartitions(partIdx, context, List.flatten(odeEquations), listGet(partitions, partIdx),
+                listGet(activatorsForPartitions,partIdx), className,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace) ;separator="\n")
   <<
   void <%className%>::evaluateODE(const UPDATETYPE command)
   {

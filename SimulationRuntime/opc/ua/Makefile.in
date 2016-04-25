@@ -5,6 +5,7 @@ DLLEXT=@DLLEXT@
 LDFLAGS=-lpthread
 OMBUILDDIR=@OMBUILDDIR@
 builddir_lib=$(OMBUILDDIR)/lib/@host_short@/omc
+builddir_bin=$(OMBUILDDIR)/bin
 top_builddir=@top_builddir@
 
 include Makefile.common

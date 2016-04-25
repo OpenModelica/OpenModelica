@@ -597,7 +597,7 @@ algorithm
         cls, attr, inPrefixes, dims, inIndices, inInstDims, inImpl, inComment,
         inInfo, inGraph, inSets);
 
-    source := ElementSource.createElementSource(inInfo, FGraph.getScopePath(inEnv), PrefixUtil.prefixToCrefOpt(inPrefix));
+    source := ElementSource.createElementSource(inInfo, FGraph.getScopePath(inEnv), inPrefix);
     (outCache, outDae) := addArrayVarEquation(outCache, inEnv, outIH, inState,
       outDae, outType, mod, NFInstUtil.toConst(SCode.attrVariability(attr)),
       inPrefix, inName, source);
@@ -872,7 +872,7 @@ algorithm
         (cache, DAE.EQBOUND(e,_,_,_/*source*/)) = InstBinding.makeBinding(cache,env,attr,mod,ty_2,pre,n,info);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre));
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
 
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
@@ -910,7 +910,7 @@ algorithm
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,ty_2,{}));
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre));
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
 
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
@@ -935,7 +935,7 @@ algorithm
         (cache,dae_var_attr) = InstBinding.instDaeVariableAttributes(cache,env, mod, ty, {});
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre));
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
         dae = InstDAE.daeDeclare(cache, env, env_1, cr, ci_state, ty, attr,vis,NONE(), {dims},NONE(), dae_var_attr, SOME(comment),io,fin,source,true);
@@ -1155,7 +1155,7 @@ algorithm
           vt, io, inImpl, inInfo);
 
         // Set the source of this element.
-        source = ElementSource.createElementSource(inInfo, FGraph.getScopePath(env_1), PrefixUtil.prefixToCrefOpt(inPrefix));
+        source = ElementSource.createElementSource(inInfo, FGraph.getScopePath(env_1), inPrefix);
 
         // Instantiate the components binding.
         mod = if not listEmpty(inSubscripts) and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
@@ -1568,7 +1568,7 @@ algorithm
         (rhs,_) = Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre));
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
 
         lhs = Expression.makeCrefExp(cr,ty_1);
 

@@ -2,21 +2,30 @@ OBJS=omc_opc_ua.o open62541.o
 .PHONY: test
 
 all: default
+
 default: libomopcua$(DLLEXT)
 	@test ! -z "$(OMBUILDDIR)" || (echo OMBUILDDIR not set; false)
 	cp libomopcua$(DLLEXT) "$(builddir_lib)"
+	test ! "$(DLLEXT)" = ".dll" || cp libomopcua$(DLLEXT) "$(builddir_bin)"
+
 omc_opc_ua.o: omc_opc_ua.c omc_opc_ua.h open62541.h
+
 open62541.o: open62541.c open62541.h
+
 open62541.c: $(top_builddir)/3rdParty/open62541/open62541.c
 	cp "$<" "$@"
+
 open62541.h: $(top_builddir)/3rdParty/open62541/open62541.h
 	cp "$<" "$@"
+
 libomopcua$(DLLEXT): $(OBJS)
 	$(CC) -o "$@" $(CFLAGS) -shared $(OBJS) $(LDFLAGS)
+
 test: test.c libomopcua.so
 	rm -f test
 	$(CC) -o test $(CFLAGS) test.c -ldl
 	./test
+
 client: client.o libomopcua$(DLLEXT)
 	rm -f test
 	$(CC) -o client $(CFLAGS) client.o $(OBJS) $(LDFLAGS)

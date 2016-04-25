@@ -513,80 +513,8 @@ omc-bootstrapped:
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/boot CFLAGS="$(CFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
 
-# Empty; only Unix version uses QT makefiles, etc...
-qtclean:
-
-qwt:
-	$(MAKE) -C 3rdParty/qwt -f Makefile.omdev.mingw
-	test -f $(builddir_inc)/qwt/qwt_global.h || ($(MAKE) -C 3rdParty/qwt -f Makefile.omdev.mingw install && cp -a 3rdParty/qwt/build/include/*.h $(builddir_inc)/qwt)
-
-omplot: qwt
-	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.omdev.mingw
-
-omedit: omplot qjson
-	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.omdev.mingw
-
-omnotebook: omplot
-	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.omdev.mingw
-
-omshell:
-	$(MAKE) -C OMShell/OMShellGUI -f Makefile.omdev.mingw
-
-omvisualize:
-	$(MAKE) -C OMVisualize/OMVisualizeGUI -f Makefile.omdev.mingw
-
-omoptimbasis: omplot
-	$(MAKE) -C OMOptimBasis/build -f Makefile.omdev.mingw
-
-omoptim: omoptimbasis
-	$(MAKE) -C OMOptim/build -f Makefile.omdev.mingw
-
-qtclients: omplot omedit omshell omvisualize omoptim omnotebook
-
-clean-qtclients:
-	$(MAKE) -C 3rdParty/qwt -f Makefile.omdev.mingw clean
-	rm -f $(OMBUILDDIR)/bin/OMPlot.exe $(OMBUILDDIR)/bin/OMVisualize.exe $(OMBUILDDIR)/bin/OMEdit.exe $(OMBUILDDIR)/bin/OMNotebook.exe $(OMBUILDDIR)/bin/OMShell.exe $(OMBUILDDIR)/bin/OMOptim.exe
-	rm -f $(OMBUILDDIR)/lib/libOMPlot.a $(OMBUILDDIR)/lib/libOMVisualize.a $(OMBUILDDIR)/lib/libOMOptimBasis.a $(OMBUILDDIR)/lib/libOMOptim.a
-	rm -rf $(OMBUILDDIR)/share/omedit* $(OMBUILDDIR)/share/omnotebook* $(OMBUILDDIR)/share/omshell*
-	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.omdev.mingw clean
-	$(MAKE) -C OMVisualize/OMVisualizeGUI -f Makefile.omdev.mingw clean
-	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.omdev.mingw clean
-	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.omdev.mingw clean
-	$(MAKE) -C OMShell/OMShellGUI -f Makefile.omdev.mingw clean
-	$(MAKE) -C OMOptimBasis/build -f Makefile.omdev.mingw clean
-	$(MAKE) -C OMOptim/build -f Makefile.omdev.mingw clean
-
 lis:
 
 lis-clean:
-
-install-python: $(IDLPYTHONTARGET)
-
-.PHONY: script-files-python
-
-script-files-python: mkbuilddirs-python
-	# copy library files neeeded by OMPython
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/x86_win32/_omnipy.pyd $(builddir_lib)/python)
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/__init__.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/boxes_idl.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/CORBA.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/corbaidl_idl.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/minorCodes.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/PortableServer.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-msvc-10/lib/python/omniORB/tcInternal.py $(builddir_lib)/python/omniORB/)
-	# copy OMPython files
-	cp -rfp OMPython/setup.py $(builddir_share)/omc/scripts/PythonInterface
-	cp -rfp OMPython/OMPython/* $(builddir_share)/omc/scripts/PythonInterface/OMPython
-
-$(IDLPYTHONTARGET) : $(IDLFILE) script-files-python
-	$(IDLPYTHON) -C$(builddir_share)/omc/scripts/PythonInterface $(IDLFILE)
-
-mkbuilddirs-python:
-	# create directories
-	mkdir -p $(builddir_lib)/python/omniORB
-	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/OMPython/OMParser
-
-clean-python:
-	rm -rf OMPython/build/ OMPython/OMPythonIDL/ OMPython/OMPython/_GlobalID* OMPython/OMPython/omc_communication_idl.py
 
 .PRECIOUS: Makefile.omdev.mingw

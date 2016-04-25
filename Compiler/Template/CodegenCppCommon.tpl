@@ -1,6 +1,7 @@
 package CodegenCppCommon
 import interface SimCodeTV;
 import CodegenUtil.*;
+import ExpressionDumpTpl;
 
 /**
 * Basic template functions for cpp template
@@ -933,7 +934,7 @@ template dimensionExp(DAE.Exp dimExp,Context context,Boolean useFlatArrayNotatio
    match context
     case FUNCTION_CONTEXT(__) then System.unquoteIdentifier(crefStr(cr))
    else '<%cref(cr, useFlatArrayNotation)%>'
-  else '/* fehler dimensionExp: INVALID_DIMENSION <%printExpStr(dimExp)%>*/' //error(sourceInfo(), 'dimensionExp: INVALID_DIMENSION <%printExpStr(dimExp)%>')
+  else '/* fehler dimensionExp: INVALID_DIMENSION <%ExpressionDumpTpl.dumpExp(dimExp,"\"")%>*/' //error(sourceInfo(), 'dimensionExp: INVALID_DIMENSION <%ExpressionDumpTpl.dumpExp(dimExp,"\"")%>')
 end dimensionExp;
 
 template daeDimensionExp(Exp exp)
@@ -979,7 +980,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as BOX(__)             then daeExpBox(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
-  else error(sourceInfo(), 'Unknown exp:<%printExpStr(exp)%>')
+  else error(sourceInfo(), 'Unknown exp:<%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExp;
 
 
@@ -1152,7 +1153,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
             case DIM_EXP(exp = exp) then
               let val = daeExp(exp, context, &rangeExpPre, &tmpVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
               '<%dim_vec%>.push_back(<%val%>)'
-            else error(sourceInfo(), 'array reduction unable to generate code for element of unknown dimension sizes; type <%unparseType(typeof(r.expr))%>: <%ExpressionDump.printExpStr(r.expr)%>')
+            else error(sourceInfo(), 'array reduction unable to generate code for element of unknown dimension sizes; type <%unparseType(typeof(r.expr))%>: <%ExpressionDumpTpl.dumpExp(r.expr,"\"")%>')
             ; separator = "; "
           <<
           <%dim_vec%>.push_back(<%length%>);
@@ -1204,7 +1205,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   }<%\n%>
   >>
   resTmp)
-  else error(sourceInfo(), 'Code generation does not support multiple iterators: <%printExpStr(exp)%>')
+  else error(sourceInfo(), 'Code generation does not support multiple iterators: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpReduction;
 
 
@@ -1547,7 +1548,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
   match inExp
 
   case ASUB(exp=ASUB(__)) then
-    error(sourceInfo(),'Nested array subscripting *should* have been handled by the routine creating the asub, but for some reason it was not: <%printExpStr(exp)%>')
+    error(sourceInfo(),'Nested array subscripting *should* have been handled by the routine creating the asub, but for some reason it was not: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
@@ -1576,7 +1577,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
    '<%res%>'
 
   case ASUB(exp=RANGE(ty=t), sub={idx}) then
-    error(sourceInfo(),'ASUB_EASY_CASE <%printExpStr(exp)%>')
+    error(sourceInfo(),'ASUB_EASY_CASE <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 
  case ASUB(exp=ecr as CREF(__), sub=subs) then
     let arrName =  daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -1591,7 +1592,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
    //'<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(&<%exp%>, <%expIndexes%>)'
   '(<%exp%>)(<%expIndexes%>)'
   case exp then
-    error(sourceInfo(),'OTHER_ASUB <%printExpStr(exp)%>')
+    error(sourceInfo(),'OTHER_ASUB <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpAsub;
 
 
@@ -1736,7 +1737,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
             expLst={e1, e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let var3 = Util.escapeModelicaStringToCString(printExpStr(e2))
+    let var3 = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(e2,"\""))
     'division(<%var1%>,<%var2%>,"<%var3%>")'
 
    case CALL(path=IDENT(name="sign"),
@@ -1754,7 +1755,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var = tempDecl('multi_array<<%type%>,<%listLength(dims)%>>', &varDecls /*BUFD*/)
     let var1 = daeExp(e1, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let var3 = Util.escapeModelicaStringToCString(printExpStr(e2))
+    let var3 = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(e2,"\""))
     let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%var1%>, <%var2%>));<%\n%>'
     //let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, "<%var3%>");<%\n%>'
     '<%var%>'
@@ -2156,7 +2157,7 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
     let cref = cref1(cr.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)
     '*(&$P$ATTRIBUTE<%cref(cr.componentRef, useFlatArrayNotation)%>.start + <%offset%>)'
   else
-    error(sourceInfo(), 'Code generation does not support start(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support start(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
 end daeExpCallStart;
 
 template daeExpLunary(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
@@ -2222,7 +2223,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
   case c as SHARED_LITERAL(__) then expTypeFromExpFlag(c.exp, flag)
-  else 'ERROR:expTypeFromExpFlag <%printExpStr(exp)%> '
+  else 'ERROR:expTypeFromExpFlag <%ExpressionDumpTpl.dumpExp(exp,"\"")%> '
 end expTypeFromExpFlag;
 
 template expTypeFromOpFlag(Operator op, Integer flag)
@@ -2339,7 +2340,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case EQUAL(__) then "daeExpBinary:ERR EQUAL not supported"
   case NEQUAL(__) then "daeExpBinary:ERR NEQUAL not supported"
   case USERDEFINED(__) then "daeExpBinary:ERR POW_ARR not supported"
-  case _   then 'daeExpBinary:ERR <%printExpStr(exp1)%> <%binopSymbol(it)%> <%printExpStr(exp2)%>'
+  case _   then 'daeExpBinary:ERR <%ExpressionDumpTpl.dumpExp(exp1,"\"")%> <%binopSymbol(it)%> <%ExpressionDumpTpl.dumpExp(exp2,"\"")%>'
 end daeExpBinary;
 
 
@@ -2677,8 +2678,8 @@ template algStmtTupleAssign(DAE.Statement stmt, Context context, Text &varDecls,
 match stmt
 case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
   let &preExp = buffer "" /*BUFD*/
-  let crefs = (expExpLst |> e => ExpressionDump.printExpStr(e) ;separator=", ")
-  let marker = '(<%crefs%>) = <%ExpressionDump.printExpStr(exp)%>'
+  let crefs = (expExpLst |> e => ExpressionDumpTpl.dumpExp(e,"\"") ;separator=", ")
+  let marker = '(<%crefs%>) = <%ExpressionDumpTpl.dumpExp(exp,"\"")%>'
   let retStruct = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   //previous multi_array let rhsStr = 'get<<%i1%>>(<%retStruct%>.data)'
 
@@ -2801,9 +2802,9 @@ case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
   <%body%>
   >>
 case ASUB(__) then
-  error(sourceInfo(), 'writeLhsCref UNHANDLED ASUB (should never be part of a lhs expression): <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>')
+  error(sourceInfo(), 'writeLhsCref UNHANDLED ASUB (should never be part of a lhs expression): <%ExpressionDumpTpl.dumpExp(exp,"\"")%> = <%rhsStr%>')
 else
-  error(sourceInfo(), 'writeLhsCref UNHANDLED: <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>')
+  error(sourceInfo(), 'writeLhsCref UNHANDLED: <%ExpressionDumpTpl.dumpExp(exp,"\"")%> = <%rhsStr%>')
 
 end writeLhsCref;
 
@@ -2894,7 +2895,7 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp,
     'get<<%intAdd(-1,ix)%>>(<%retVar%>.data)'
 
   case TSUB(__) then
-    error(sourceInfo(), '<%printExpStr(inExp)%>: TSUB only makes sense if the subscripted expression is a function call of tuple type')
+    error(sourceInfo(), '<%ExpressionDumpTpl.dumpExp(inExp,"\"")%>: TSUB only makes sense if the subscripted expression is a function call of tuple type')
 end daeExpTsub;
 
 template daeExpCallTuple(Exp call , Text additionalOutputs/* arguments 2..N */, Context context, Text &preExp, Text &varDecls,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -2957,12 +2958,12 @@ template daeExpSum(Exp exp, Context context, Text &preExp, Text &varDecls, SimCo
     >>
 
   //C-Codegen:
-  //let start = printExpStr(startIt)
+  //let start = ExpressionDumpTpl.dumpExp(startIt,"\"")
   //let &anotherPre = buffer ""
-  //let stop = printExpStr(endIt)
+  //let stop = ExpressionDumpTpl.dumpExp(endIt,"\"")
   //let bodyStr = daeExpIteratedCref(body)
   //let summationVar = <<sum>>
-  //let iterVar = printExpStr(iterator)
+  //let iterVar = ExpressionDumpTpl.dumpExp(iterator,"\"")
   //let &preExp +=<<
 
   //modelica_integer  $P<%iterVar%> = 0; // the iterator
@@ -2982,7 +2983,7 @@ template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &va
     let closureArgs = (expList |> e => ', <%daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>')
     functionClosure(funcName, closureArgs, t, t_orig, context, &extraFuncsDecl)
   case PARTEVALFUNCTION(__) then
-    error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDump.printExpStr(exp)%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
+    error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
 end daeExpPartEvalFunction;
 
 template functionClosure(String funcName, String closureArgs, Type t, Type t_orig, Context context, Text& extraFuncsDecl)

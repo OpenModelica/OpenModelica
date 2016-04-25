@@ -4346,7 +4346,7 @@ algorithm
       if listEmpty(unassigned) then
         // save current full matching
         if isNewMatching(matchingListOut,ass1Copy) then
-          matchingListOut := (ass1Copy,ass2Copy,order) :: matchingListOut;
+          matchingListOut := (ass1Copy,ass2Copy,listReverse(order)) :: matchingListOut;
         end if;
       end if;
     else

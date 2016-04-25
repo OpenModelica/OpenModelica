@@ -49,6 +49,7 @@ import interface SimCodeTV;
 import CodegenUtil.*;
 import CodegenFMU.*;
 import CodegenC.*;
+import ExpressionDumpTpl;
 
 template translateModel(SimCode simCode, String FMUVersion, String FMUType)
  "Generates C code and Makefile for compiling a FMU of a
@@ -1675,7 +1676,7 @@ template extReturnType(SimExtArg extArg)
   match extArg
   case ex as SIMEXTARG(__)    then extType(type_,true /*Treat this as an input (pass by value)*/,false)
   case SIMNOEXTARG(__)  then "void"
-  case SIMEXTARGEXP(__) then error(sourceInfo(), 'Expression types are unsupported as return arguments <%printExpStr(exp)%>')
+  case SIMEXTARGEXP(__) then error(sourceInfo(), 'Expression types are unsupported as return arguments <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
   else error(sourceInfo(), "Unsupported return argument")
 end extReturnType;
 
@@ -3175,7 +3176,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as BOX(__)             then daeExpBox(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as SHARED_LITERAL(__)  then daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  else error(sourceInfo(), 'Unknown expression: <%ExpressionDump.printExpStr(exp)%>')
+  else error(sourceInfo(), 'Unknown expression: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExp;
 
 
@@ -3672,17 +3673,17 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     '_DER<%cref(arg.componentRef)%>'
   case CALL(path=IDENT(name="der"), expLst={exp}) then
-    error(sourceInfo(), 'Code generation does not support der(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support der(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPre(arg, context, preExp, varDecls)
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
     '(<%cref(arg.componentRef)%> && !_PRE<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="edge"), expLst={exp}) then
-    error(sourceInfo(), 'Code generation does not support edge(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support edge(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
   case CALL(path=IDENT(name="change"), expLst={arg as CREF(__)}) then
     '(<%cref(arg.componentRef)%> != _PRE<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="change"), expLst={exp}) then
-    error(sourceInfo(), 'Code generation does not support change(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support change(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
 
   case CALL(path=IDENT(name="print"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
@@ -4170,7 +4171,7 @@ template daeExpCallPre(Exp exp, Context context, Text &preExp /*BUFP*/,
     let cref = cref(cr.componentRef)
     '*(&_PRE<%cref%> + <%offset%>)'
   else
-    error(sourceInfo(), 'Code generation does not support pre(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support pre(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
 end daeExpCallPre;
 
 template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
@@ -4307,7 +4308,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   }<%\n%>
   >>
   resTmp
-  else error(sourceInfo(), 'Code generation does not support multiple iterators: <%printExpStr(exp)%>')
+  else error(sourceInfo(), 'Code generation does not support multiple iterators: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpReduction;
 
 template daeExpMatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
@@ -4352,7 +4353,7 @@ case exp as MATCHEXPRESSION(__) then
 
       '<%prefix%>_in<%switchIndex%>'
     case MATCH(switch=SOME(_)) then
-      error(sourceInfo(), 'Unknown switch: <%printExpStr(exp)%>')
+      error(sourceInfo(), 'Unknown switch: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
     else tempDecl('int', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
   let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW()" case MATCH(__) then "break"
@@ -4855,7 +4856,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
   case c as SHARED_LITERAL(__) then expTypeFromExpFlag(c.exp, flag)
-  else error(sourceInfo(), 'expTypeFromExpFlag:<%printExpStr(exp)%>')
+  else error(sourceInfo(), 'expTypeFromExpFlag:<%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end expTypeFromExpFlag;
 
 
@@ -5088,7 +5089,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     static const MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp => literalExpConstBoxedVal(exp); separator="_"%>}};
     #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
-  else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
+  else error(sourceInfo(), 'literalExpConst failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConst;
 
 template literalExpConstBoxedVal(Exp lit)
@@ -5106,7 +5107,7 @@ template literalExpConstBoxedVal(Exp lit)
     >>
   case BOX(__) then literalExpConstBoxedVal(exp)
   case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
-  else error(sourceInfo(), 'literalExpConstBoxedVal failed: <%printExpStr(lit)%>')
+  else error(sourceInfo(), 'literalExpConstBoxedVal failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConstBoxedVal;
 
 template error(builtin.SourceInfo srcInfo, String errMessage)
