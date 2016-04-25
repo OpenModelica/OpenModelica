@@ -66,14 +66,14 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // x[2]
 // ------------
 // update eqn[2]
-// x[1] = b * (x[2] ^ 2.0 + x[3] + cos(time))--old--
-// => b * (cos(time) + x[2] ^ 2.0 + x[3]) - x[1] = 0.0--new--
+// x[1] = b * (x[2] ^ 2.0 + x[3] + $cse5)--old--
+// => b * ($cse5 + x[2] ^ 2.0 + x[3]) - x[1] = 0.0--new--
 // update eqn[3]
 // x[2] ^ 2.0 = b + x[1] / b + a - a * x[2] ^ 2.0--old--
 // => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = ((-b) - a) * b--new--
 // update eqn[4]
-// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(1.0 + time) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b--old--
-// => (a ^ 2.0 + b ^ 2.0) * x[2] + ((-a ^ 2.0) - b ^ 2.0) * x[1] - x[3] = -1.0 + a ^ 2.0 + (b - log(1.0 + time)) * a--new--
+// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + $cse6 + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b--old--
+// => (a ^ 2.0 + b ^ 2.0) * x[2] + ((-a ^ 2.0) - b ^ 2.0) * x[1] - x[3] = -1.0 + a ^ 2.0 + (b - $cse6) * a--new--
 // END: simplifyLoops
 // record SimulationResult
 //     resultFile = "nonlinear_system.problem11_res.mat",
@@ -114,19 +114,18 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // x[2]
 // ------------
 // update eqn[2]
-// x[1] = b * (x[2] ^ 2.0 + x[3] + cos(time))--old--
-// __OMC__14$LOOPT = cos(time) -- new eqn--
-// => b * (__OMC__14$LOOPT + x[2] ^ 2.0 + x[3]) - x[1] = 0.0--new--
+// x[1] = b * (x[2] ^ 2.0 + x[3] + $cse5)--old--
+// => b * ($cse5 + x[2] ^ 2.0 + x[3]) - x[1] = 0.0--new--
 // update eqn[3]
 // x[2] ^ 2.0 = b + x[1] / b + a - a * x[2] ^ 2.0--old--
 // __OMC__17$LOOPT = ((-b) - a) * b -- new eqn--
 // => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = __OMC__17$LOOPT--new--
 // update eqn[4]
-// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(1.0 + time) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b--old--
-// __OMC__22$LOOPT = -1.0 + a ^ 2.0 + (b - log(1.0 + time)) * a -- new eqn--
-// __OMC__4$LOOPF = (-a ^ 2.0) - b ^ 2.0 -- new eqn--
-// __OMC__5$LOOPF = a ^ 2.0 + b ^ 2.0 -- new eqn--
-// => __OMC__5$LOOPF * x[2] + __OMC__4$LOOPF * x[1] - x[3] = __OMC__22$LOOPT--new--
+// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + $cse6 + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b--old--
+// __OMC__22$LOOPT = -1.0 + a ^ 2.0 + (b - $cse6) * a -- new eqn--
+// __OMC__3$LOOPF = (-a ^ 2.0) - b ^ 2.0 -- new eqn--
+// __OMC__4$LOOPF = a ^ 2.0 + b ^ 2.0 -- new eqn--
+// => __OMC__4$LOOPF * x[2] + __OMC__3$LOOPF * x[1] - x[3] = __OMC__22$LOOPT--new--
 // END: simplifyLoops
 // record SimulationResult
 //     resultFile = "nonlinear_system.problem11_res.mat",

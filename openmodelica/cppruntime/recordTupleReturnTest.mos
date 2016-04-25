@@ -2,8 +2,8 @@
 // keywords: return tuple record array
 // status: correct
 // teardown_command: rm -f *RecordTupleReturn*
-
-setCommandLineOptions("+simCodeTarget=Cpp");
+//wrapFunctionCalls is disabled, Ticket: 3711
+setCommandLineOptions("+simCodeTarget=Cpp --postOptModules-=wrapFunctionCalls");
 
 loadModel(Modelica);
 loadString("

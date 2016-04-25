@@ -43,6 +43,9 @@ val(x, 0.0); getErrorString();
 // |                 | |       | | | [4] Real der(a) = 0 (pre: 0)
 // |                 | |       | | | [5] Real der(b) = 1 (pre: 0)
 // |                 | |       | | | [6] Real der(x) = 1 (pre: 0)
+// |                 | |       | | other real variables
+// |                 | |       | | | [7] Real $cse1(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [8] Real $cse2(start=0, nominal=1) = 0 (pre: 0)
 // "
 // end SimulationResult;
 // ""
