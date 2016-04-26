@@ -144,7 +144,7 @@ algorithm
     // Element is an extends clause.
     case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
       equation
-        
+
         true = fb == getLastIdent(bcp);
         tn = fcMod1(m);
       then fcAddFigaroClass(ft, program, cn, tn, e);
