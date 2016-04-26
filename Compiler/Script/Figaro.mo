@@ -144,12 +144,14 @@ algorithm
     // Element is an extends clause.
     case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
       equation
+        
         true = fb == getLastIdent(bcp);
         tn = fcMod1(m);
       then fcAddFigaroClass(ft, program, cn, tn, e);
     case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
       equation
         cdef = SCodeUtil.getElementWithPathCheckBuiltin(e, bcp);
+        true = fcExtends(fb, ft, program, SOME(cn), cdef, e);
         tn = fcMod1(m);
       then fcAddFigaroClass(ft, program, cn, tn, e);
     // Nested class of some sort.
@@ -157,6 +159,77 @@ algorithm
       then fcClassDef(fb, ft, program, n, cd, e);
   end matchcontinue;
 end fcElement;
+
+protected function fcExtends
+  input Ident inFigaroBase;
+  input String inFigaroType;
+  input SCode.Element inProgram;
+  input Option<Ident> inClassName;
+
+  input SCode.Element inElement;
+  input list<SCode.Element>  env;
+  output Boolean doExtend;
+algorithm
+  doExtend := matchcontinue (inFigaroBase, inFigaroType, inProgram, inClassName, inElement, env)
+    local
+      Ident fb;
+      String ft;
+      SCode.Element program, cdef;
+      list<SCode.Element> e, el;
+      Ident cn;
+      Path bcp;
+      SCode.Mod m;
+      String tn;
+      Ident n;
+      SCode.ClassDef cd;
+      Path p;
+    // Element is an extends clause.
+    case (fb, ft, program, _, SCode.CLASS(name = n, classDef = SCode.PARTS(elementLst = el)), e)
+      equation
+      then fcElementListExt(fb, ft, program, SOME(n), el, e);
+    case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
+      equation
+        true = fb == getLastIdent(bcp);
+      then true;
+    case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
+      equation
+        cdef = SCodeUtil.getElementWithPathCheckBuiltin(e, bcp);
+      then fcExtends(fb, ft, program, SOME(cn), cdef, e);
+    // Nested class of some sort.
+    case (fb, ft, program, _, _, e)
+      then false;
+  end matchcontinue;
+end fcExtends;
+
+protected function fcElementListExt
+  input Ident inFigaroBase;
+  input String inFigaroType;
+  input SCode.Element inProgram;
+  input Option<Ident> inClassName;
+  input list<SCode.Element> inElementList;
+  input list<SCode.Element> env;
+  output Boolean res;
+algorithm
+  res := matchcontinue (inFigaroBase, inFigaroType, inProgram, inClassName, inElementList, env)
+    local
+      Ident fb;
+      String ft;
+      SCode.Element program;
+      Option<Ident> cn;
+      list<SCode.Element> e;
+      SCode.Element first;
+      list<SCode.Element> rest;
+      list<FigaroClass> rf, rr;
+    case (_, _, _, _, {}, _)
+      then false;
+    case (fb, ft, program, cn, first :: rest, e)
+      equation
+        true = fcExtends(fb, ft, program, cn, first, e);
+      then true;
+    case (fb, ft, program, cn, _ :: rest, e)
+      then fcElementListExt(fb, ft, program, cn, rest, e);
+  end matchcontinue;
+end fcElementListExt;
 
 protected function fcAddFigaroClass "Adds Figaro class. Finds classes inherited from that class."
   input String inFigaroType;
