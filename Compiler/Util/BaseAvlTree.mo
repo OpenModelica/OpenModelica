@@ -47,6 +47,11 @@ redeclare uniontype Tree
     Tree right "Right subtree.";
   end NODE;
 
+  record LEAF
+    Key key "The key of the node.";
+    Value value;
+  end LEAF;
+
   record EMPTY end EMPTY;
 end Tree;
 
@@ -62,6 +67,7 @@ redeclare function printNodeStr
 algorithm
   outString := match inNode
     case NODE() then "(" + keyStr(inNode.key) + ", " + valueStr(inNode.value) + ")";
+    case LEAF() then "(" + keyStr(inNode.key) + ", " + valueStr(inNode.value) + ")";
   end match;
 end printNodeStr;
 
@@ -110,10 +116,11 @@ algorithm
       Key key;
       Value value;
       Integer key_comp;
+      Tree outTree;
 
     // Empty tree.
     case EMPTY()
-      then NODE(inKey, inValue, 1, EMPTY(), EMPTY());
+      then LEAF(inKey, inValue);
 
     case NODE(key = key)
       algorithm
@@ -134,6 +141,27 @@ algorithm
         end if;
       then
         if key_comp == 0 then tree else balance(tree);
+
+    case LEAF(key = key)
+      algorithm
+        key_comp := keyCompare(inKey, key);
+
+        if key_comp == -1 then
+          // Replace left branch.
+          outTree := NODE(tree.key, tree.value, 2, LEAF(inKey,inValue), EMPTY());
+        elseif key_comp == 1 then
+          // Replace right branch.
+          outTree := NODE(tree.key, tree.value, 2, EMPTY(), LEAF(inKey,inValue));
+        else
+          // Use the given function to resolve the conflict.
+          value := conflictFunc(inValue, tree.value);
+          if not referenceEq(tree.value, value) then
+            tree.value := value;
+          end if;
+          outTree := tree;
+        end if;
+      then
+        if key_comp == 0 then outTree else balance(outTree);
 
   end match;
 end add;
@@ -169,11 +197,15 @@ protected
   Integer key_comp;
   Tree tree;
 algorithm
-  NODE(key = key) := inTree;
+  key := match inTree
+    case NODE() then inTree.key;
+    case LEAF() then inTree.key;
+  end match;
   key_comp := keyCompare(inKey, key);
 
   outValue := match (key_comp, inTree)
-    case ( 0, NODE(value = outValue)) then outValue;
+    case ( 0, LEAF()) then inTree.value;
+    case ( 0, NODE()) then inTree.value;
     case ( 1, NODE(right = tree)) then get(tree, inKey);
     case (-1, NODE(left = tree)) then get(tree, inKey);
   end match;
@@ -182,23 +214,24 @@ end get;
 function toList
   "Converts the tree to a flat list of key-value tuples."
   input Tree inTree;
-  input list<tuple<Key, Value>> inAccum = {};
-  output list<tuple<Key, Value>> outList;
+  input output list<tuple<Key, Value>> lst = {};
 algorithm
-  outList := match inTree
+  lst := match inTree
     local
       Key key;
       Value value;
 
     case NODE(key=key, value=value)
       algorithm
-        outList := (key, value) :: inAccum;
-        outList := toList(inTree.left, outList);
-        outList := toList(inTree.right, outList);
-      then
-        outList;
+        lst := (key, value) :: lst; // TODO: Move me to middle
+        lst := toList(inTree.left, lst);
+        lst := toList(inTree.right, lst);
+      then lst;
 
-    else inAccum;
+    case LEAF(key=key, value=value)
+      then (key, value) :: lst;
+
+    else lst;
 
   end match;
 end toList;
@@ -206,22 +239,22 @@ end toList;
 function listValues
   "Constructs a list of all the values in the tree."
   input Tree tree;
-  input list<Value> accum = {};
-  output list<Value> values;
+  input output list<Value> lst = {};
 algorithm
-  values := match tree
+  lst := match tree
     local
       Value value;
 
     case NODE(value = value)
       algorithm
-        values := value :: accum;
-        values := listValues(tree.left, values);
-        values := listValues(tree.right, values);
-      then
-        values;
+        lst := value :: lst; // TODO: Move me to middle
+        lst := listValues(tree.left, lst);
+        lst := listValues(tree.right, lst);
+      then lst;
 
-    else accum;
+    case LEAF(value = value) then value :: lst;
+
+    else lst;
 
   end match;
 end listValues;
@@ -246,7 +279,9 @@ algorithm
         tree := join(tree, treeToJoin.left, conflictFunc=conflictFunc);
         tree := join(tree, treeToJoin.right, conflictFunc=conflictFunc);
       then tree;
-  end match;end join;
+    case LEAF() then add(tree, treeToJoin.key, treeToJoin.value, conflictFunc=conflictFunc);
+  end match;
+end join;
 
 function map
   "Traverses the tree in depth-first pre-order and applies the given function to
@@ -269,14 +304,14 @@ algorithm
 
     case NODE(key=key, value=value)
       algorithm
-        new_value := inFunc(key, value);
-        if not referenceEq(value, new_value) then
-          outTree.value := new_value;
-        end if;
-
         new_branch := map(outTree.left, inFunc);
         if not referenceEq(new_branch, outTree.left) then
           outTree.left := new_branch;
+        end if;
+
+        new_value := inFunc(key, value);
+        if not referenceEq(value, new_value) then
+          outTree.value := new_value;
         end if;
 
         new_branch := map(outTree.right, inFunc);
@@ -285,6 +320,14 @@ algorithm
         end if;
       then
         outTree;
+
+    case LEAF(key=key, value=value)
+      algorithm
+        new_value := inFunc(key, value);
+        if not referenceEq(value, new_value) then
+          outTree.value := new_value;
+        end if;
+      then outTree;
 
     else inTree;
   end match;
@@ -313,11 +356,16 @@ algorithm
 
     case NODE(key=key, value=value)
       algorithm
-        outResult := inFunc(key, value, outResult);
         outResult := fold(inTree.left, inFunc, outResult);
+        outResult := inFunc(key, value, outResult);
         outResult := fold(inTree.right, inFunc, outResult);
       then
         outResult;
+
+    case LEAF(key=key, value=value)
+      algorithm
+        outResult := inFunc(key, value, outResult);
+      then outResult;
 
     else outResult;
   end match;
@@ -349,26 +397,47 @@ algorithm
 
     case NODE(key=key, value=value)
       algorithm
-        (new_value, outResult) := inFunc(key, value, outResult);
-        if not referenceEq(value, new_value) then
-          outTree.value := new_value;
-        end if;
-
         (new_branch, outResult) := mapFold(outTree.left, inFunc, outResult);
         if not referenceEq(new_branch, outTree.left) then
           outTree.left := new_branch;
+        end if;
+
+        (new_value, outResult) := inFunc(key, value, outResult);
+        if not referenceEq(value, new_value) then
+          outTree.value := new_value;
         end if;
 
         (new_branch, outResult) := mapFold(outTree.right, inFunc, outResult);
         if not referenceEq(new_branch, outTree.right) then
           outTree.right := new_branch;
         end if;
-      then
-        outTree;
+      then outTree;
+
+    case LEAF(key=key, value=value)
+      algorithm
+        (new_value, outResult) := inFunc(key, value, outResult);
+        if not referenceEq(value, new_value) then
+          outTree.value := new_value;
+        end if;
+      then outTree;
 
     else inTree;
   end match;
 end mapFold;
 
+redeclare function setTreeLeftRight
+  input Tree orig, left=EMPTY(), right=EMPTY();
+  output Tree res;
+algorithm
+  res := match (orig,left,right)
+    case (NODE(),EMPTY(),EMPTY()) then LEAF(orig.key, orig.value);
+    case (LEAF(),EMPTY(),EMPTY()) then orig;
+    case (NODE(),_,_) then
+      if referenceEqOrEmpty(orig.left, left) and referenceEqOrEmpty(orig.right, right)
+      then orig
+      else NODE(orig.key, orig.value, max(height(left),height(right))+1, left, right);
+    case (LEAF(),_,_) then NODE(orig.key, orig.value, max(height(left),height(right))+1, left, right);
+  end match;
+end setTreeLeftRight;
 annotation(__OpenModelica_Interface="util", __OpenModelica_isBaseClass=true);
 end BaseAvlTree;

@@ -43,6 +43,10 @@ replaceable uniontype Tree
     Tree right "Right subtree.";
   end NODE;
 
+  record LEAF
+    Key key "The key of the node.";
+  end LEAF;
+
   record EMPTY end EMPTY;
 end Tree;
 
@@ -68,6 +72,7 @@ replaceable function printNodeStr
 algorithm
   outString := match inNode
     case NODE() then keyStr(inNode.key);
+    case LEAF() then keyStr(inNode.key);
   end match;
 end printNodeStr;
 
@@ -87,10 +92,11 @@ algorithm
     local
       Key key;
       Integer key_comp;
+      Tree outTree;
 
     // Empty tree.
     case EMPTY()
-      then NODE(inKey, 1, EMPTY(), EMPTY());
+      then LEAF(inKey);
 
     case NODE(key = key)
       algorithm
@@ -107,6 +113,22 @@ algorithm
         end if;
       then
         if key_comp == 0 then tree else balance(tree);
+
+    case LEAF(key = key)
+      algorithm
+        key_comp := keyCompare(inKey, key);
+
+        if key_comp == -1 then
+          // Replace left branch.
+          outTree := NODE(tree.key, 2, LEAF(inKey), EMPTY());
+        elseif key_comp == 1 then
+          // Replace right branch.
+          outTree := NODE(tree.key, 2, EMPTY(), LEAF(inKey));
+        else
+          tree.key := inKey;
+          outTree := tree;
+        end if;
+      then outTree; // No need to balance addition in a leaf
 
   end match;
 end add;
@@ -132,8 +154,9 @@ protected
   Tree tree;
 algorithm
   key := match inTree
-    case EMPTY() algorithm return; then fail();
     case NODE() then inTree.key;
+    case LEAF() then inTree.key;
+    case EMPTY() algorithm return; then fail();
   end match;
   key_comp := keyCompare(inKey, key);
 
@@ -141,6 +164,7 @@ algorithm
     case ( 0, _) then true;
     case ( 1, NODE(right = tree)) then hasKey(tree, inKey);
     case (-1, NODE(left = tree)) then hasKey(tree, inKey);
+    else false;
   end match;
 end hasKey;
 
@@ -160,6 +184,7 @@ function listKeys
   input output list<Key> lst={};
 algorithm
   lst := match inTree
+    case LEAF() then inTree.key::lst;
     case NODE()
       algorithm
         lst := listKeys(inTree.right, lst);
@@ -185,6 +210,7 @@ algorithm
         tree := join(tree, treeToJoin.left);
         tree := join(tree, treeToJoin.right);
       then tree;
+    case LEAF() then add(tree, treeToJoin.key);
   end match;
 end join;
 
@@ -202,7 +228,32 @@ algorithm
                printTreeStr2(right, false, "");
 end printTreeStr;
 
+replaceable function setTreeLeftRight
+  input Tree orig, left=EMPTY(), right=EMPTY();
+  output Tree res;
+algorithm
+  res := match (orig,left,right)
+    case (NODE(),EMPTY(),EMPTY()) then LEAF(orig.key);
+    case (LEAF(),EMPTY(),EMPTY()) then orig;
+    case (NODE(),_,_) then
+      if referenceEqOrEmpty(orig.left, left) and referenceEqOrEmpty(orig.right, right)
+      then orig
+      else NODE(orig.key, max(height(left),height(right))+1, left, right);
+    case (LEAF(),_,_) then NODE(orig.key, max(height(left),height(right))+1, left, right);
+  end match;
+end setTreeLeftRight;
+
 protected
+
+function referenceEqOrEmpty
+  input Tree t1,t2;
+  output Boolean b;
+algorithm
+  b := match (t1,t2)
+    case (EMPTY(),EMPTY()) then true;
+    else referenceEq(t1,t2);
+  end match;
+end referenceEqOrEmpty;
 
 function balance
   "Balances a Tree"
@@ -214,6 +265,8 @@ algorithm
       Integer lh, rh, diff;
       Tree child, balanced_tree;
 
+    case LEAF() then inTree;
+
     case NODE()
       algorithm
         lh := height(outTree.left);
@@ -221,17 +274,18 @@ algorithm
         diff := lh - rh;
 
         if diff < -1 then
-          if calculateBalance(outTree.right) > 0 then
-            outTree.right := rotateRight(outTree.right);
-          end if;
-          balanced_tree := rotateLeft(outTree);
+
+          balanced_tree := if calculateBalance(outTree.right) > 0
+            then rotateLeft(setTreeLeftRight(outTree, left=outTree.left, right=rotateRight(outTree.right)))
+            else rotateLeft(outTree);
         elseif diff > 1 then
-          if calculateBalance(outTree.left) < 0 then
-            outTree.left := rotateLeft(outTree.left);
-          end if;
-          balanced_tree := rotateRight(outTree);
-        else
+          balanced_tree := if calculateBalance(outTree.left) < 0
+            then rotateRight(setTreeLeftRight(outTree, left=rotateLeft(outTree.left), right=outTree.right))
+            else rotateRight(outTree);
+        elseif outTree.height <> max(lh, rh) + 1 then
           outTree.height := max(lh, rh) + 1;
+          balanced_tree := outTree;
+        else
           balanced_tree := outTree;
         end if;
       then
@@ -246,6 +300,7 @@ function height
 algorithm
   outHeight := match inNode
     case NODE() then inNode.height;
+    case LEAF() then 1;
     else 0;
   end match;
 end height;
@@ -257,7 +312,7 @@ algorithm
   outBalance := match inNode
     case NODE()
       then height(inNode.left) - height(inNode.right);
-
+    case LEAF() then 0;
     else 0;
   end match;
 end calculateBalance;
@@ -269,19 +324,19 @@ function rotateLeft
 algorithm
   outNode := match outNode
     local
-      Tree child;
+      Tree node, child;
 
     case NODE(right = child as NODE())
       algorithm
-        outNode.right := child.left;
-        outNode.height := max(height(outNode.left), height(outNode.right)) + 1;
-        child.left := outNode;
-        child.height := max(height(outNode), height(child.right)) + 1;
-      then
-        child;
+        node := setTreeLeftRight(outNode, left=outNode.left, right=child.left);
+      then setTreeLeftRight(child, left=node, right=child.right);
+
+    case NODE(right = child as LEAF())
+      algorithm
+        node := setTreeLeftRight(outNode, left=outNode.left, right=EMPTY());
+      then setTreeLeftRight(child, left=node, right=EMPTY());
 
     else inNode;
-
   end match;
 end rotateLeft;
 
@@ -292,19 +347,19 @@ function rotateRight
 algorithm
   outNode := match outNode
     local
-      Tree child;
+      Tree node, child;
 
     case NODE(left = child as NODE())
       algorithm
-        outNode.left := child.right;
-        outNode.height := max(height(outNode.left), height(outNode.right)) + 1;
-        child.right := outNode;
-        child.height := max(height(child.left), height(outNode)) + 1;
-      then
-        child;
+        node := setTreeLeftRight(outNode, left=child.right, right=outNode.right);
+      then setTreeLeftRight(child, right=node, left=child.left);
+
+    case NODE(left = child as LEAF())
+      algorithm
+        node := setTreeLeftRight(outNode, left=EMPTY(), right=outNode.right);
+      then setTreeLeftRight(child, right=node, left=EMPTY());
 
     else inNode;
-
   end match;
 end rotateRight;
 
