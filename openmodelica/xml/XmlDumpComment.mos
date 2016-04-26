@@ -26655,304 +26655,60 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </equation>
 // </equations>
 // <functions>
-// <function name=\"Modelica.Mechanics.MultiBody.World$world.gravityAcceleration\">
-// <ModelicaImplementation>function(r :: array(Real(String quantity PARAM DAE.EQBOUND(&quot;Length&quot;, SOME(&quot;Length&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;m&quot;, SOME(&quot;m&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Position)[3] origin: .Modelica.SIunits.Position * gravityType :: Enumeration(Enumeration origin: .Modelica.Mechanics.MultiBody.Types.GravityTypes NoGravity CONST UNBOUND, Enumeration origin: .Modelica.Mechanics.MultiBody.Types.GravityTypes UniformGravity CONST UNBOUND, Enumeration origin: .Modelica.Mechanics.MultiBody.Types.GravityTypes PointGravity CONST UNBOUND) origin: .Modelica.Mechanics.MultiBody.Types.GravityTypes * g :: array(Real(String quantity PARAM DAE.EQBOUND(&quot;Acceleration&quot;, SOME(&quot;Acceleration&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;m/s2&quot;, SOME(&quot;m/s2&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Acceleration)[3] origin: .Modelica.SIunits.Acceleration * mue :: Real origin: .Real) =&gt; array(Real(String quantity PARAM DAE.EQBOUND(&quot;Acceleration&quot;, SOME(&quot;Acceleration&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;m/s2&quot;, SOME(&quot;m/s2&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Acceleration)[3] origin: .Modelica.SIunits.Acceleration origin: .Modelica.Mechanics.MultiBody.World$world.gravityAccelerationfunction Modelica.Mechanics.MultiBody.World$world.gravityAcceleration&quot;Inline if necessary&quot; &quot;Standard gravity fields (no/parallel/point field)&quot;
-//   input Real[3] r(quantity = &quot;Length&quot;, unit = &quot;m&quot;) &quot;Position vector from world frame to actual point, resolved in world frame&quot;;
-//   output Real[3] gravity(quantity = &quot;Acceleration&quot;, unit = &quot;m/s2&quot;) &quot;Gravity acceleration at position r, resolved in world frame&quot;;
-//   input enumeration(NoGravity, UniformGravity, PointGravity) gravityType = gravityType &quot;Type of gravity field&quot;;
-//   input Real[3] g(quantity = &quot;Acceleration&quot;, unit = &quot;m/s2&quot;) = {0.0, -g, 0.0} &quot;Constant gravity acceleration, resolved in world frame, if gravityType=UniformGravity&quot;;
-//   input Real mue(unit = &quot;m3/s2&quot;) = mue &quot;Field constant of point gravity field, if gravityType=PointGravity&quot;;
+// <function name=\"Modelica.Math.Vectors.length\">
+// <ModelicaImplementation>function(v :: array(Real origin: .Real)[:] origin: .Real) =&gt; Real origin: .Real origin: .Modelica.Math.Vectors.lengthfunction Modelica.Math.Vectors.length &quot;Inline before index reduction&quot; &quot;Return length of a vector (better as norm(), if further symbolic processing is performed)&quot;
+//   input Real[:] v &quot;Vector&quot;;
+//   output Real result &quot;Length of vector v&quot;;
 // algorithm
-//   gravity := if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity then {g[1], g[2], g[3]} else if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.PointGravity then {(-mue) * r[1] / (Modelica.Math.Vectors.length({r[1], r[2], r[3]}) * (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0)), (-mue) * r[2] / (Modelica.Math.Vectors.length({r[1], r[2], r[3]}) * (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0)), (-mue) * r[3] / (Modelica.Math.Vectors.length({r[1], r[2], r[3]}) * (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0))} else {0.0, 0.0, 0.0};
-// end Modelica.Mechanics.MultiBody.World$world.gravityAcceleration;
+//   result := sqrt(v * v);
+// end Modelica.Math.Vectors.length;
 //
 //
 // </ModelicaImplementation>
 // </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2\">
-// <ModelicaImplementation>function(T :: array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real * v1 :: array(Real origin: .Real)[3] origin: .Real) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2 &quot;Inline before index reduction&quot; &quot;Transform vector from frame 1 to frame 2&quot;
-//   input Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   input Real[3] v1 &quot;Vector in frame 1&quot;;
-//   output Real[3] v2 &quot;Vector in frame 2&quot;;
+// <function name=\"Modelica.Math.Vectors.normalize\">
+// <ModelicaImplementation>function(v :: array(Real origin: .Real)[:] origin: .Real * eps :: Real origin: .Real) =&gt; array(Real origin: .Real)[size(v, 1)] origin: .Real origin: .Modelica.Math.Vectors.normalizefunction Modelica.Math.Vectors.normalize &quot;Inline before index reduction&quot; &quot;Return normalized vector such that length = 1 and prevent zero-division for zero vector&quot;
+//   input Real[:] v &quot;Vector&quot;;
+//   input Real eps(min = 0.0) = 1e-13 &quot;if |v| &lt; eps then result = v/eps&quot;;
+//   output Real[size(v, 1)] result &quot;Input vector v normalized to length=1&quot;;
 // algorithm
-//   v2 := {T[1,1] * v1[1] + T[1,2] * v1[2] + T[1,3] * v1[3], T[2,1] * v1[1] + T[2,2] * v1[2] + T[2,3] * v1[3], T[3,1] * v1[1] + T[3,2] * v1[2] + T[3,3] * v1[3]};
-// end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2;
+//   result := smooth(0, if noEvent(Modelica.Math.Vectors.length(v) &gt;= eps) then v / Modelica.Math.Vectors.length(v) else v / eps);
+// end Modelica.Math.Vectors.normalize;
 //
 //
 // </ModelicaImplementation>
 // </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotation\">
-// <ModelicaImplementation>function(e :: array(Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[3] origin: .Real * angle :: Real(String quantity PARAM DAE.EQBOUND(&quot;Angle&quot;, SOME(&quot;Angle&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad&quot;, SOME(&quot;rad&quot;), C_PARAM, [DEFAULT VALUE]), String displayUnit PARAM DAE.EQBOUND(&quot;deg&quot;, SOME(&quot;deg&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Angle) =&gt; array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotationfunction Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotation &quot;Inline before index reduction&quot; &quot;Return orientation object of a planar rotation&quot;
-//   input Real[3] e(unit = &quot;1&quot;) &quot;Normalized axis of rotation (must have length=1)&quot;;
-//   input Real angle(quantity = &quot;Angle&quot;, unit = &quot;rad&quot;, displayUnit = &quot;deg&quot;) &quot;Rotation angle to rotate frame 1 into frame 2 along axis e&quot;;
-//   output Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+// <function name=\"Modelica.Math.Vectors.normalizeWithAssert\">
+// <ModelicaImplementation>function(v :: array(Real origin: .Real)[:] origin: .Real) =&gt; array(Real origin: .Real)[size(v, 1)] origin: .Real origin: .Modelica.Math.Vectors.normalizeWithAssertfunction Modelica.Math.Vectors.normalizeWithAssert &quot;Inline before index reduction&quot; &quot;Return normalized vector such that length = 1 (trigger an assert for zero vector)&quot;
+//   input Real[:] v &quot;Vector&quot;;
+//   output Real[size(v, 1)] result &quot;Input vector v normalized to length=1&quot;;
 // algorithm
-//   T := {{e[1] ^ 2.0 + (1.0 - e[1] ^ 2.0) * cos(angle), (e[1] - e[1] * cos(angle)) * e[2] + e[3] * sin(angle), (e[1] - e[1] * cos(angle)) * e[3] - e[2] * sin(angle)}, {(e[2] - e[2] * cos(angle)) * e[1] - e[3] * sin(angle), e[2] ^ 2.0 + (1.0 - e[2] ^ 2.0) * cos(angle), (e[2] - e[2] * cos(angle)) * e[3] + e[1] * sin(angle)}, {(e[3] - e[3] * cos(angle)) * e[1] + e[2] * sin(angle), (e[3] - e[3] * cos(angle)) * e[2] - e[1] * sin(angle), e[3] ^ 2.0 + (1.0 - e[3] ^ 2.0) * cos(angle)}};
-// end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotation;
+//   assert(Modelica.Math.Vectors.length(v) &gt; 0.0, &quot;Vector v={0,0,0} shall be normalized (= v/sqrt(v*v)), but this results in a division by zero.
+// Provide a non-zero vector!&quot;);
+//   result := v / Modelica.Math.Vectors.length(v);
+// end Modelica.Math.Vectors.normalizeWithAssert;
 //
 //
 // </ModelicaImplementation>
 // </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxy\">
-// <ModelicaImplementation>function(n_x :: array(Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[3] origin: .Real * n_y :: array(Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[3] origin: .Real) =&gt; array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxyfunction Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxy&quot;Inline if necessary&quot; &quot;Return orientation object from n_x and n_y vectors&quot;
-//   input Real[3] n_x(unit = &quot;1&quot;) &quot;Vector in direction of x-axis of frame 2, resolved in frame 1&quot;;
-//   input Real[3] n_y(unit = &quot;1&quot;) &quot;Vector in direction of y-axis of frame 2, resolved in frame 1&quot;;
-//   output Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   protected Real abs_n_x = sqrt(n_x[1] ^ 2.0 + n_x[2] ^ 2.0 + n_x[3] ^ 2.0);
-//   protected Real[3] e_x(unit = &quot;1&quot;) = if abs_n_x &lt; 1e-10 then {1.0, 0.0, 0.0} else {n_x[1] / abs_n_x, n_x[2] / abs_n_x, n_x[3] / abs_n_x};
-//   protected Real[3] n_z_aux(unit = &quot;1&quot;) = {e_x[2] * n_y[3] - e_x[3] * n_y[2], e_x[3] * n_y[1] - e_x[1] * n_y[3], e_x[1] * n_y[2] - e_x[2] * n_y[1]};
-//   protected Real[3] n_y_aux(unit = &quot;1&quot;) = if n_z_aux[1] ^ 2.0 + n_z_aux[2] ^ 2.0 + n_z_aux[3] ^ 2.0 &gt; 1e-06 then {n_y[1], n_y[2], n_y[3]} else if abs(e_x[1]) &gt; 1e-06 then {0.0, 1.0, 0.0} else {1.0, 0.0, 0.0};
-//   protected Real[3] e_z_aux(unit = &quot;1&quot;) = {e_x[2] * n_y_aux[3] - e_x[3] * n_y_aux[2], e_x[3] * n_y_aux[1] - e_x[1] * n_y_aux[3], e_x[1] * n_y_aux[2] - e_x[2] * n_y_aux[1]};
-//   protected Real[3] e_z(unit = &quot;1&quot;) = {e_z_aux[1] / sqrt(e_z_aux[1] ^ 2.0 + e_z_aux[2] ^ 2.0 + e_z_aux[3] ^ 2.0), e_z_aux[2] / sqrt(e_z_aux[1] ^ 2.0 + e_z_aux[2] ^ 2.0 + e_z_aux[3] ^ 2.0), e_z_aux[3] / sqrt(e_z_aux[1] ^ 2.0 + e_z_aux[2] ^ 2.0 + e_z_aux[3] ^ 2.0)};
-// algorithm
-//   T := {{e_x[1], e_x[2], e_x[3]}, {e_z[2] * e_x[3] - e_z[3] * e_x[2], e_z[3] * e_x[1] - e_z[1] * e_x[3], e_z[1] * e_x[2] - e_z[2] * e_x[1]}, {e_z[1], e_z[2], e_z[3]}};
-// end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxy;
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.Orientation\">
+// <ModelicaImplementation>function Modelica.Mechanics.MultiBody.Frames.Orientation &quot;Automatically generated record constructor for Modelica.Mechanics.MultiBody.Frames.Orientation&quot;
+//   input Real[3, 3] T;
+//   input Real[3] w(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;);
+//   output Orientation res;
+// end Modelica.Mechanics.MultiBody.Frames.Orientation;
 //
 //
 // </ModelicaImplementation>
 // </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1\">
-// <ModelicaImplementation>function(T :: array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real * v2 :: array(Real origin: .Real)[3] origin: .Real) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1 &quot;Inline before index reduction&quot; &quot;Transform vector from frame 2 to frame 1&quot;
-//   input Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   input Real[3] v2 &quot;Vector in frame 2&quot;;
-//   output Real[3] v1 &quot;Vector in frame 1&quot;;
-// algorithm
-//   v1 := {T[1,1] * v2[1] + T[2,1] * v2[2] + T[3,1] * v2[3], T[1,2] * v2[1] + T[2,2] * v2[2] + T[3,2] * v2[3], T[1,3] * v2[1] + T[2,3] * v2[2] + T[3,3] * v2[3]};
-// end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.SIunits.Conversions.to_unit1\">
-// <ModelicaImplementation>function(r :: Real origin: .Real) =&gt; Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real origin: .Modelica.SIunits.Conversions.to_unit1function Modelica.SIunits.Conversions.to_unit1 &quot;Inline before index reduction&quot; &quot;Change the unit of a Real number to unit=\\&quot;1\\&quot;&quot;
-//   input Real r &quot;Real number&quot;;
-//   output Real result(unit = &quot;1&quot;) &quot;Real number r with unit=\\&quot;1\\&quot;&quot;;
-// algorithm
-//   result := r;
-// end Modelica.SIunits.Conversions.to_unit1;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint\">
-// <ModelicaImplementation>function(Q :: array(Real origin: .Real)[4] origin: .Real) =&gt; array(Real origin: .Real)[1] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraintfunction Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint &quot;Inline before index reduction&quot; &quot;Return residues of orientation constraints (shall be zero)&quot;
-//   input Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
-//   output Real[1] residue &quot;Residue constraint (shall be zero)&quot;;
-// algorithm
-//   residue := {-1.0 + Q[1] ^ 2.0 + Q[2] ^ 2.0 + Q[3] ^ 2.0 + Q[4] ^ 2.0};
-// end Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation\">
-// <ModelicaImplementation>function(T1 :: array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real * T_rel :: array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real) =&gt; array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotationfunction Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation &quot;Inline before index reduction&quot; &quot;Return absolute orientation object from another absolute and a relative orientation object&quot;
-//   input Real[3, 3] T1 &quot;Orientation object to rotate frame 0 into frame 1&quot;;
-//   input Real[3, 3] T_rel &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   output Real[3, 3] T2 &quot;Orientation object to rotate frame 0 into frame 2&quot;;
-// algorithm
-//   T2 := {{T_rel[1,1] * T1[1,1] + T_rel[1,2] * T1[2,1] + T_rel[1,3] * T1[3,1], T_rel[1,1] * T1[1,2] + T_rel[1,2] * T1[2,2] + T_rel[1,3] * T1[3,2], T_rel[1,1] * T1[1,3] + T_rel[1,2] * T1[2,3] + T_rel[1,3] * T1[3,3]}, {T_rel[2,1] * T1[1,1] + T_rel[2,2] * T1[2,1] + T_rel[2,3] * T1[3,1], T_rel[2,1] * T1[1,2] + T_rel[2,2] * T1[2,2] + T_rel[2,3] * T1[3,2], T_rel[2,1] * T1[1,3] + T_rel[2,2] * T1[2,3] + T_rel[2,3] * T1[3,3]}, {T_rel[3,1] * T1[1,1] + T_rel[3,2] * T1[2,1] + T_rel[3,3] * T1[3,1], T_rel[3,1] * T1[1,2] + T_rel[3,2] * T1[2,2] + T_rel[3,3] * T1[3,2], T_rel[3,1] * T1[1,3] + T_rel[3,2] * T1[2,3] + T_rel[3,3] * T1[3,3]}};
-// end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T\">
-// <ModelicaImplementation>function(T :: array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real * Q_guess :: array(Real origin: .Real)[4] origin: .Real) =&gt; array(Real origin: .Real)[4] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.Quaternions.from_Tfunction Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T&quot;Inline if necessary&quot; &quot;Return quaternion orientation object Q from transformation matrix T&quot;
-//   input Real[3, 3] T &quot;Transformation matrix to transform vector from frame 1 to frame 2 (v2=T*v1)&quot;;
-//   input Real[4] Q_guess = {0.0, 0.0, 0.0, 1.0} &quot;Guess value for Q (there are 2 solutions; the one close to Q_guess is used&quot;;
-//   output Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2 (Q and -Q have same transformation matrix)&quot;;
-//   protected Real paux;
-//   protected Real paux4;
-//   protected Real c1;
-//   protected Real c2;
-//   protected Real c3;
-//   protected Real c4;
-//   protected constant Real p4limit = 0.1;
-//   protected constant Real c4limit = 0.04000000000000001;
-// algorithm
-//   c1 := 1.0 + T[1,1] + (-T[2,2]) - T[3,3];
-//   c2 := 1.0 + T[2,2] + (-T[1,1]) - T[3,3];
-//   c3 := 1.0 + T[3,3] + (-T[1,1]) - T[2,2];
-//   c4 := 1.0 + T[1,1] + T[2,2] + T[3,3];
-//   if c4 &gt; 0.04000000000000001 or c4 &gt; c1 and c4 &gt; c2 and c4 &gt; c3 then
-//     paux := 0.5 * sqrt(c4);
-//     paux4 := 4.0 * paux;
-//     Q := {(T[2,3] - T[3,2]) / paux4, (T[3,1] - T[1,3]) / paux4, (T[1,2] - T[2,1]) / paux4, paux};
-//   elseif c1 &gt; c2 and c1 &gt; c3 and c1 &gt; c4 then
-//     paux := 0.5 * sqrt(c1);
-//     paux4 := 4.0 * paux;
-//     Q := {paux, (T[1,2] + T[2,1]) / paux4, (T[1,3] + T[3,1]) / paux4, (T[2,3] - T[3,2]) / paux4};
-//   elseif c2 &gt; c1 and c2 &gt; c3 and c2 &gt; c4 then
-//     paux := 0.5 * sqrt(c2);
-//     paux4 := 4.0 * paux;
-//     Q := {(T[1,2] + T[2,1]) / paux4, paux, (T[2,3] + T[3,2]) / paux4, (T[3,1] - T[1,3]) / paux4};
-//   else
-//     paux := 0.5 * sqrt(c3);
-//     paux4 := 4.0 * paux;
-//     Q := {(T[1,3] + T[3,1]) / paux4, (T[2,3] + T[3,2]) / paux4, paux, (T[1,2] - T[2,1]) / paux4};
-//   end if;
-//   if Q[1] * Q_guess[1] + Q[2] * Q_guess[2] + Q[3] * Q_guess[3] + Q[4] * Q_guess[4] &lt; 0.0 then
-//     Q := {-Q[1], -Q[2], -Q[3], -Q[4]};
-//   end if;
-// end Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraint\">
-// <ModelicaImplementation>function(R1 :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * R2 :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraintfunction Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraint &quot;Inline before index reduction&quot; &quot;Return the constraint residues to express that two frames have the same orientation&quot;
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.absoluteRotation\">
+// <ModelicaImplementation>function(R1 :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * R_rel :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation) =&gt; composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation origin: .Modelica.Mechanics.MultiBody.Frames.absoluteRotationfunction Modelica.Mechanics.MultiBody.Frames.absoluteRotation &quot;Inline before index reduction&quot; &quot;Return absolute orientation object from another absolute and a relative orientation object&quot;
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R1 &quot;Orientation object to rotate frame 0 into frame 1&quot;;
-//   input Modelica.Mechanics.MultiBody.Frames.Orientation R2 &quot;Orientation object to rotate frame 0 into frame 2&quot;;
-//   output Real[3] residue &quot;The rotation angles around x-, y-, and z-axis of frame 1 to rotate frame 1 into frame 2 for a small rotation (should be zero)&quot;;
+//   input Modelica.Mechanics.MultiBody.Frames.Orientation R_rel &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+//   output Modelica.Mechanics.MultiBody.Frames.Orientation R2 &quot;Orientation object to rotate frame 0 into frame 2&quot;;
 // algorithm
-//   residue := {atan2((R1.T[1,2] * R1.T[2,3] - R1.T[1,3] * R1.T[2,2]) * R2.T[2,1] + (R1.T[1,3] * R1.T[2,1] - R1.T[1,1] * R1.T[2,3]) * R2.T[2,2] + (R1.T[1,1] * R1.T[2,2] - R1.T[1,2] * R1.T[2,1]) * R2.T[2,3], R1.T[1,1] * R2.T[1,1] + R1.T[1,2] * R2.T[1,2] + R1.T[1,3] * R2.T[1,3]), atan2((R1.T[1,1] * R1.T[2,3] - R1.T[1,3] * R1.T[2,1]) * R2.T[1,2] - (R1.T[1,1] * R1.T[2,2] - R1.T[1,2] * R1.T[2,1]) * R2.T[1,3] - (R1.T[1,2] * R1.T[2,3] - R1.T[1,3] * R1.T[2,2]) * R2.T[1,1], R1.T[2,1] * R2.T[2,1] + R1.T[2,2] * R2.T[2,2] + R1.T[2,3] * R2.T[2,3]), atan2(R1.T[2,1] * R2.T[1,1] + R1.T[2,2] * R2.T[1,2] + R1.T[2,3] * R2.T[1,3], R1.T[3,1] * R2.T[3,1] + R1.T[3,2] * R2.T[3,2] + R1.T[3,3] * R2.T[3,3])};
-// end Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraint;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.angularVelocity2\">
-// <ModelicaImplementation>function(Q :: array(Real origin: .Real)[4] origin: .Real * der_Q :: array(Real(String unit PARAM DAE.EQBOUND(&quot;1/s&quot;, SOME(&quot;1/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[4] origin: .Real) =&gt; array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] origin: .Modelica.SIunits.AngularVelocity origin: .Modelica.Mechanics.MultiBody.Frames.Quaternions.angularVelocity2function Modelica.Mechanics.MultiBody.Frames.Quaternions.angularVelocity2 &quot;Inline before index reduction&quot; &quot;Compute angular velocity resolved in frame 2 from quaternions orientation object and its derivative&quot;
-//   input Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
-//   input Real[4] der_Q(unit = &quot;1/s&quot;) &quot;Derivative of Q&quot;;
-//   output Real[3] w(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;) &quot;Angular velocity of frame 2 with respect to frame 1 resolved in frame 2&quot;;
-// algorithm
-//   w := {(Q[4] * der_Q[1] + Q[3] * der_Q[2] - Q[2] * der_Q[3] - Q[1] * der_Q[4]) * 2.0, (Q[4] * der_Q[2] - Q[3] * der_Q[1] + Q[1] * der_Q[3] - Q[2] * der_Q[4]) * 2.0, (Q[2] * der_Q[1] - Q[1] * der_Q[2] + Q[4] * der_Q[3] - Q[3] * der_Q[4]) * 2.0};
-// end Modelica.Mechanics.MultiBody.Frames.Quaternions.angularVelocity2;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotation\">
-// <ModelicaImplementation>function() =&gt; array(Real origin: .Real)[4] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotationfunction Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotation &quot;Inline before index reduction&quot; &quot;Return quaternion orientation object that does not rotate a frame&quot;
-//   output Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
-// algorithm
-//   Q := {0.0, 0.0, 0.0, 1.0};
-// end Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotation;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.to_Q\">
-// <ModelicaImplementation>function(R :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * Q_guess :: array(Real origin: .Real)[4] origin: .Real) =&gt; array(Real origin: .Real)[4] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.to_Qfunction Modelica.Mechanics.MultiBody.Frames.to_Q &quot;Inline before index reduction&quot; &quot;Return quaternion orientation object Q from orientation object R&quot;
-//   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   input Real[4] Q_guess = {0.0, 0.0, 0.0, 1.0} &quot;Guess value for output Q (there are 2 solutions; the one closer to Q_guess is used&quot;;
-//   output Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
-// algorithm
-//   Q := Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T({{R.T[1,1], R.T[1,2], R.T[1,3]}, {R.T[2,1], R.T[2,2], R.T[2,3]}, {R.T[3,1], R.T[3,2], R.T[3,3]}}, {Q_guess[1], Q_guess[2], Q_guess[3], Q_guess[4]});
-// end Modelica.Mechanics.MultiBody.Frames.to_Q;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der\">
-// <ModelicaImplementation>function(R :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * v2 :: array(Real origin: .Real)[3] origin: .Real * v2_der :: array(Real origin: .Real)[3] origin: .Real) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_derfunction Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der &quot;Inline before index reduction&quot; &quot;Derivative of function Frames.resolve1(..)&quot;
-//   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   input Real[3] v2 &quot;Vector resolved in frame 2&quot;;
-//   input Real[3] v2_der &quot;= der(v2)&quot;;
-//   output Real[3] v1_der &quot;Derivative of vector v resolved in frame 1&quot;;
-// algorithm
-//   v1_der := Modelica.Mechanics.MultiBody.Frames.resolve1(R, {v2_der[1] + R.w[2] * v2[3] - R.w[3] * v2[2], v2_der[2] + R.w[3] * v2[1] - R.w[1] * v2[3], v2_der[3] + R.w[1] * v2[2] - R.w[2] * v2[1]});
-// end Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.resolve1\">
-// <ModelicaImplementation>function(R :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * v2 :: array(Real origin: .Real)[3] origin: .Real) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.resolve1function Modelica.Mechanics.MultiBody.Frames.resolve1 &quot;Inline after index reduction&quot; &quot;Transform vector from frame 2 to frame 1&quot;
-//   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   input Real[3] v2 &quot;Vector in frame 2&quot;;
-//   output Real[3] v1 &quot;Vector in frame 1&quot;;
-// algorithm
-//   v1 := {R.T[1,1] * v2[1] + R.T[2,1] * v2[2] + R.T[3,1] * v2[3], R.T[1,2] * v2[1] + R.T[2,2] * v2[2] + R.T[3,2] * v2[3], R.T[1,3] * v2[1] + R.T[2,3] * v2[2] + R.T[3,3] * v2[3]};
-// end Modelica.Mechanics.MultiBody.Frames.resolve1;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.planarRotation\">
-// <ModelicaImplementation>function(e :: array(Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[3] origin: .Real * angle :: Real(String quantity PARAM DAE.EQBOUND(&quot;Angle&quot;, SOME(&quot;Angle&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad&quot;, SOME(&quot;rad&quot;), C_PARAM, [DEFAULT VALUE]), String displayUnit PARAM DAE.EQBOUND(&quot;deg&quot;, SOME(&quot;deg&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Angle * der_angle :: Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity) =&gt; composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation origin: .Modelica.Mechanics.MultiBody.Frames.planarRotationfunction Modelica.Mechanics.MultiBody.Frames.planarRotation &quot;Inline before index reduction&quot; &quot;Return orientation object of a planar rotation&quot;
-//   input Real[3] e(unit = &quot;1&quot;) &quot;Normalized axis of rotation (must have length=1)&quot;;
-//   input Real angle(quantity = &quot;Angle&quot;, unit = &quot;rad&quot;, displayUnit = &quot;deg&quot;) &quot;Rotation angle to rotate frame 1 into frame 2 along axis e&quot;;
-//   input Real der_angle(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;) &quot;= der(angle)&quot;;
-//   output Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-// algorithm
-//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{e[1] ^ 2.0 + (1.0 - e[1] ^ 2.0) * cos(angle), (e[1] - e[1] * cos(angle)) * e[2] + e[3] * sin(angle), (e[1] - e[1] * cos(angle)) * e[3] - e[2] * sin(angle)}, {(e[2] - e[2] * cos(angle)) * e[1] - e[3] * sin(angle), e[2] ^ 2.0 + (1.0 - e[2] ^ 2.0) * cos(angle), (e[2] - e[2] * cos(angle)) * e[3] + e[1] * sin(angle)}, {(e[3] - e[3] * cos(angle)) * e[1] + e[2] * sin(angle), (e[3] - e[3] * cos(angle)) * e[2] - e[1] * sin(angle), e[3] ^ 2.0 + (1.0 - e[3] ^ 2.0) * cos(angle)}}, {e[1] * der_angle, e[2] * der_angle, e[3] * der_angle});
-// end Modelica.Mechanics.MultiBody.Frames.planarRotation;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.planarRotationAngle\">
-// <ModelicaImplementation>function(e :: array(Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[3] origin: .Real * v1 :: array(Real origin: .Real)[3] origin: .Real * v2 :: array(Real origin: .Real)[3] origin: .Real) =&gt; Real(String quantity PARAM DAE.EQBOUND(&quot;Angle&quot;, SOME(&quot;Angle&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad&quot;, SOME(&quot;rad&quot;), C_PARAM, [DEFAULT VALUE]), String displayUnit PARAM DAE.EQBOUND(&quot;deg&quot;, SOME(&quot;deg&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Angle origin: .Modelica.Mechanics.MultiBody.Frames.planarRotationAnglefunction Modelica.Mechanics.MultiBody.Frames.planarRotationAngle &quot;Inline before index reduction&quot; &quot;Return angle of a planar rotation, given the rotation axis and the representations of a vector in frame 1 and frame 2&quot;
-//   input Real[3] e(unit = &quot;1&quot;) &quot;Normalized axis of rotation to rotate frame 1 around e into frame 2 (must have length=1)&quot;;
-//   input Real[3] v1 &quot;A vector v resolved in frame 1 (shall not be parallel to e)&quot;;
-//   input Real[3] v2 &quot;Vector v resolved in frame 2, i.e., v2 = resolve2(planarRotation(e,angle),v1)&quot;;
-//   output Real angle(quantity = &quot;Angle&quot;, unit = &quot;rad&quot;, displayUnit = &quot;deg&quot;) &quot;Rotation angle to rotate frame 1 into frame 2 along axis e in the range: -pi &lt;= angle &lt;= pi&quot;;
-// algorithm
-//   angle := atan2((e[1] * v1[3] - e[3] * v1[1]) * v2[2] - (e[1] * v1[2] - e[2] * v1[1]) * v2[3] - (e[2] * v1[3] - e[3] * v1[2]) * v2[1], v1[1] * v2[1] + v1[2] * v2[2] + v1[3] * v2[3] + ((-e[2]) * v1[2] - e[3] * v1[3] - e[1] * v1[1]) * (e[1] * v2[1] + e[2] * v2[2] + e[3] * v2[3]));
-// end Modelica.Mechanics.MultiBody.Frames.planarRotationAngle;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.resolve2\">
-// <ModelicaImplementation>function(R :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * v1 :: array(Real origin: .Real)[3] origin: .Real) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.resolve2function Modelica.Mechanics.MultiBody.Frames.resolve2 &quot;Inline after index reduction&quot; &quot;Transform vector from frame 1 to frame 2&quot;
-//   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   input Real[3] v1 &quot;Vector in frame 1&quot;;
-//   output Real[3] v2 &quot;Vector in frame 2&quot;;
-// algorithm
-//   v2 := {R.T[1,1] * v1[1] + R.T[1,2] * v1[2] + R.T[1,3] * v1[3], R.T[2,1] * v1[1] + R.T[2,2] * v1[2] + R.T[2,3] * v1[3], R.T[3,1] * v1[1] + R.T[3,2] * v1[2] + R.T[3,3] * v1[3]};
-// end Modelica.Mechanics.MultiBody.Frames.resolve2;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der\">
-// <ModelicaImplementation>function(R :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * v1 :: array(Real origin: .Real)[3] origin: .Real * v1_der :: array(Real origin: .Real)[3] origin: .Real) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_derfunction Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der &quot;Inline before index reduction&quot; &quot;Derivative of function Frames.resolve2(..)&quot;
-//   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   input Real[3] v1 &quot;Vector resolved in frame 1&quot;;
-//   input Real[3] v1_der &quot;= der(v1)&quot;;
-//   output Real[3] v2_der &quot;Derivative of vector v resolved in frame 2&quot;;
-// algorithm
-//   v2_der := Modelica.Mechanics.MultiBody.Frames.resolve2(R, {v1_der[1], v1_der[2], v1_der[3]}) - cross({R.w[1], R.w[2], R.w[3]}, Modelica.Mechanics.MultiBody.Frames.resolve2(R, {v1[1], v1[2], v1[3]}));
-// end Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation\">
-// <ModelicaImplementation>function(axis :: Integer(Integer min PARAM DAE.EQBOUND(1, SOME(1), C_PARAM, [DEFAULT VALUE]), Integer max PARAM DAE.EQBOUND(3, SOME(3), C_PARAM, [DEFAULT VALUE])) origin: .Integer * angle :: Real(String quantity PARAM DAE.EQBOUND(&quot;Angle&quot;, SOME(&quot;Angle&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad&quot;, SOME(&quot;rad&quot;), C_PARAM, [DEFAULT VALUE]), String displayUnit PARAM DAE.EQBOUND(&quot;deg&quot;, SOME(&quot;deg&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Angle) =&gt; array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotationfunction Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation &quot;Inline before index reduction&quot; &quot;Return rotation object to rotate around one frame axis&quot;
-//   input Integer axis(min = 1, max = 3) &quot;Rotate around 'axis' of frame 1&quot;;
-//   input Real angle(quantity = &quot;Angle&quot;, unit = &quot;rad&quot;, displayUnit = &quot;deg&quot;) &quot;Rotation angle to rotate frame 1 into frame 2 along 'axis' of frame 1&quot;;
-//   output Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-// algorithm
-//   T := if axis == 1 then {{1.0, 0.0, 0.0}, {0.0, cos(angle), sin(angle)}, {0.0, -sin(angle), cos(angle)}} else if axis == 2 then {{cos(angle), 0.0, -sin(angle)}, {0.0, 1.0, 0.0}, {sin(angle), 0.0, cos(angle)}} else {{cos(angle), sin(angle), 0.0}, {-sin(angle), cos(angle), 0.0}, {0.0, 0.0, 1.0}};
-// end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.from_Q\">
-// <ModelicaImplementation>function(Q :: array(Real origin: .Real)[4] origin: .Real * w :: array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] origin: .Modelica.SIunits.AngularVelocity) =&gt; composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation origin: .Modelica.Mechanics.MultiBody.Frames.from_Qfunction Modelica.Mechanics.MultiBody.Frames.from_Q &quot;Inline before index reduction&quot; &quot;Return orientation object R from quaternion orientation object Q&quot;
-//   input Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
-//   input Real[3] w(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;) &quot;Angular velocity from frame 2 with respect to frame 1, resolved in frame 2&quot;;
-//   output Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-// algorithm
-//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{-1.0 + 2.0 * (Q[1] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[1] * Q[2] + Q[3] * Q[4]), 2.0 * (Q[1] * Q[3] - Q[2] * Q[4])}, {2.0 * (Q[2] * Q[1] - Q[3] * Q[4]), -1.0 + 2.0 * (Q[2] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[2] * Q[3] + Q[1] * Q[4])}, {2.0 * (Q[3] * Q[1] + Q[2] * Q[4]), 2.0 * (Q[3] * Q[2] - Q[1] * Q[4]), -1.0 + 2.0 * (Q[3] ^ 2.0 + Q[4] ^ 2.0)}}, {w[1], w[2], w[3]});
-// end Modelica.Mechanics.MultiBody.Frames.from_Q;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.axis\">
-// <ModelicaImplementation>function(axis :: Integer(Integer min PARAM DAE.EQBOUND(1, SOME(1), C_PARAM, [DEFAULT VALUE]), Integer max PARAM DAE.EQBOUND(3, SOME(3), C_PARAM, [DEFAULT VALUE])) origin: .Integer) =&gt; array(Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.axisfunction Modelica.Mechanics.MultiBody.Frames.axis &quot;Inline before index reduction&quot; &quot;Return unit vector for x-, y-, or z-axis&quot;
-//   input Integer axis(min = 1, max = 3) &quot;Axis vector to be returned&quot;;
-//   output Real[3] e(unit = &quot;1&quot;) &quot;Unit axis vector&quot;;
-// algorithm
-//   e := if axis == 1 then {1.0, 0.0, 0.0} else if axis == 2 then {0.0, 1.0, 0.0} else {0.0, 0.0, 1.0};
-// end Modelica.Mechanics.MultiBody.Frames.axis;
+//   R2 := Modelica.Mechanics.MultiBody.Frames.Orientation({{R_rel.T[1,1] * R1.T[1,1] + R_rel.T[1,2] * R1.T[2,1] + R_rel.T[1,3] * R1.T[3,1], R_rel.T[1,1] * R1.T[1,2] + R_rel.T[1,2] * R1.T[2,2] + R_rel.T[1,3] * R1.T[3,2], R_rel.T[1,1] * R1.T[1,3] + R_rel.T[1,2] * R1.T[2,3] + R_rel.T[1,3] * R1.T[3,3]}, {R_rel.T[2,1] * R1.T[1,1] + R_rel.T[2,2] * R1.T[2,1] + R_rel.T[2,3] * R1.T[3,1], R_rel.T[2,1] * R1.T[1,2] + R_rel.T[2,2] * R1.T[2,2] + R_rel.T[2,3] * R1.T[3,2], R_rel.T[2,1] * R1.T[1,3] + R_rel.T[2,2] * R1.T[2,3] + R_rel.T[2,3] * R1.T[3,3]}, {R_rel.T[3,1] * R1.T[1,1] + R_rel.T[3,2] * R1.T[2,1] + R_rel.T[3,3] * R1.T[3,1], R_rel.T[3,1] * R1.T[1,2] + R_rel.T[3,2] * R1.T[2,2] + R_rel.T[3,3] * R1.T[3,2], R_rel.T[3,1] * R1.T[1,3] + R_rel.T[3,2] * R1.T[2,3] + R_rel.T[3,3] * R1.T[3,3]}}, Modelica.Mechanics.MultiBody.Frames.resolve2(R_rel, {R1.w[1], R1.w[2], R1.w[3]}) + {R_rel.w[1], R_rel.w[2], R_rel.w[3]});
+// end Modelica.Mechanics.MultiBody.Frames.absoluteRotation;
 //
 //
 // </ModelicaImplementation>
@@ -27019,60 +26775,25 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //
 // </ModelicaImplementation>
 // </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.Orientation\">
-// <ModelicaImplementation>function Modelica.Mechanics.MultiBody.Frames.Orientation &quot;Automatically generated record constructor for Modelica.Mechanics.MultiBody.Frames.Orientation&quot;
-//   input Real[3, 3] T;
-//   input Real[3] w(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;);
-//   output Orientation res;
-// end Modelica.Mechanics.MultiBody.Frames.Orientation;
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.axis\">
+// <ModelicaImplementation>function(axis :: Integer(Integer min PARAM DAE.EQBOUND(1, SOME(1), C_PARAM, [DEFAULT VALUE]), Integer max PARAM DAE.EQBOUND(3, SOME(3), C_PARAM, [DEFAULT VALUE])) origin: .Integer) =&gt; array(Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.axisfunction Modelica.Mechanics.MultiBody.Frames.axis &quot;Inline before index reduction&quot; &quot;Return unit vector for x-, y-, or z-axis&quot;
+//   input Integer axis(min = 1, max = 3) &quot;Axis vector to be returned&quot;;
+//   output Real[3] e(unit = &quot;1&quot;) &quot;Unit axis vector&quot;;
+// algorithm
+//   e := if axis == 1 then {1.0, 0.0, 0.0} else if axis == 2 then {0.0, 1.0, 0.0} else {0.0, 0.0, 1.0};
+// end Modelica.Mechanics.MultiBody.Frames.axis;
 //
 //
 // </ModelicaImplementation>
 // </function>
-// <function name=\"Modelica.Math.Vectors.normalize\">
-// <ModelicaImplementation>function(v :: array(Real origin: .Real)[:] origin: .Real * eps :: Real origin: .Real) =&gt; array(Real origin: .Real)[size(v, 1)] origin: .Real origin: .Modelica.Math.Vectors.normalizefunction Modelica.Math.Vectors.normalize &quot;Inline before index reduction&quot; &quot;Return normalized vector such that length = 1 and prevent zero-division for zero vector&quot;
-//   input Real[:] v &quot;Vector&quot;;
-//   input Real eps(min = 0.0) = 1e-13 &quot;if |v| &lt; eps then result = v/eps&quot;;
-//   output Real[size(v, 1)] result &quot;Input vector v normalized to length=1&quot;;
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.from_Q\">
+// <ModelicaImplementation>function(Q :: array(Real origin: .Real)[4] origin: .Real * w :: array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] origin: .Modelica.SIunits.AngularVelocity) =&gt; composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation origin: .Modelica.Mechanics.MultiBody.Frames.from_Qfunction Modelica.Mechanics.MultiBody.Frames.from_Q &quot;Inline before index reduction&quot; &quot;Return orientation object R from quaternion orientation object Q&quot;
+//   input Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
+//   input Real[3] w(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;) &quot;Angular velocity from frame 2 with respect to frame 1, resolved in frame 2&quot;;
+//   output Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 // algorithm
-//   result := smooth(0, if noEvent(Modelica.Math.Vectors.length(v) &gt;= eps) then v / Modelica.Math.Vectors.length(v) else v / eps);
-// end Modelica.Math.Vectors.normalize;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Math.Vectors.normalizeWithAssert\">
-// <ModelicaImplementation>function(v :: array(Real origin: .Real)[:] origin: .Real) =&gt; array(Real origin: .Real)[size(v, 1)] origin: .Real origin: .Modelica.Math.Vectors.normalizeWithAssertfunction Modelica.Math.Vectors.normalizeWithAssert &quot;Inline before index reduction&quot; &quot;Return normalized vector such that length = 1 (trigger an assert for zero vector)&quot;
-//   input Real[:] v &quot;Vector&quot;;
-//   output Real[size(v, 1)] result &quot;Input vector v normalized to length=1&quot;;
-// algorithm
-//   assert(Modelica.Math.Vectors.length(v) &gt; 0.0, &quot;Vector v={0,0,0} shall be normalized (= v/sqrt(v*v)), but this results in a division by zero.
-// Provide a non-zero vector!&quot;);
-//   result := v / Modelica.Math.Vectors.length(v);
-// end Modelica.Math.Vectors.normalizeWithAssert;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Mechanics.MultiBody.Frames.absoluteRotation\">
-// <ModelicaImplementation>function(R1 :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * R_rel :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation) =&gt; composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation origin: .Modelica.Mechanics.MultiBody.Frames.absoluteRotationfunction Modelica.Mechanics.MultiBody.Frames.absoluteRotation &quot;Inline before index reduction&quot; &quot;Return absolute orientation object from another absolute and a relative orientation object&quot;
-//   input Modelica.Mechanics.MultiBody.Frames.Orientation R1 &quot;Orientation object to rotate frame 0 into frame 1&quot;;
-//   input Modelica.Mechanics.MultiBody.Frames.Orientation R_rel &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   output Modelica.Mechanics.MultiBody.Frames.Orientation R2 &quot;Orientation object to rotate frame 0 into frame 2&quot;;
-// algorithm
-//   R2 := Modelica.Mechanics.MultiBody.Frames.Orientation({{R_rel.T[1,1] * R1.T[1,1] + R_rel.T[1,2] * R1.T[2,1] + R_rel.T[1,3] * R1.T[3,1], R_rel.T[1,1] * R1.T[1,2] + R_rel.T[1,2] * R1.T[2,2] + R_rel.T[1,3] * R1.T[3,2], R_rel.T[1,1] * R1.T[1,3] + R_rel.T[1,2] * R1.T[2,3] + R_rel.T[1,3] * R1.T[3,3]}, {R_rel.T[2,1] * R1.T[1,1] + R_rel.T[2,2] * R1.T[2,1] + R_rel.T[2,3] * R1.T[3,1], R_rel.T[2,1] * R1.T[1,2] + R_rel.T[2,2] * R1.T[2,2] + R_rel.T[2,3] * R1.T[3,2], R_rel.T[2,1] * R1.T[1,3] + R_rel.T[2,2] * R1.T[2,3] + R_rel.T[2,3] * R1.T[3,3]}, {R_rel.T[3,1] * R1.T[1,1] + R_rel.T[3,2] * R1.T[2,1] + R_rel.T[3,3] * R1.T[3,1], R_rel.T[3,1] * R1.T[1,2] + R_rel.T[3,2] * R1.T[2,2] + R_rel.T[3,3] * R1.T[3,2], R_rel.T[3,1] * R1.T[1,3] + R_rel.T[3,2] * R1.T[2,3] + R_rel.T[3,3] * R1.T[3,3]}}, Modelica.Mechanics.MultiBody.Frames.resolve2(R_rel, {R1.w[1], R1.w[2], R1.w[3]}) + {R_rel.w[1], R_rel.w[2], R_rel.w[3]});
-// end Modelica.Mechanics.MultiBody.Frames.absoluteRotation;
-//
-//
-// </ModelicaImplementation>
-// </function>
-// <function name=\"Modelica.Math.Vectors.length\">
-// <ModelicaImplementation>function(v :: array(Real origin: .Real)[:] origin: .Real) =&gt; Real origin: .Real origin: .Modelica.Math.Vectors.lengthfunction Modelica.Math.Vectors.length &quot;Inline before index reduction&quot; &quot;Return length of a vector (better as norm(), if further symbolic processing is performed)&quot;
-//   input Real[:] v &quot;Vector&quot;;
-//   output Real result &quot;Length of vector v&quot;;
-// algorithm
-//   result := sqrt(v * v);
-// end Modelica.Math.Vectors.length;
+//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{-1.0 + 2.0 * (Q[1] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[1] * Q[2] + Q[3] * Q[4]), 2.0 * (Q[1] * Q[3] - Q[2] * Q[4])}, {2.0 * (Q[2] * Q[1] - Q[3] * Q[4]), -1.0 + 2.0 * (Q[2] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[2] * Q[3] + Q[1] * Q[4])}, {2.0 * (Q[3] * Q[1] + Q[2] * Q[4]), 2.0 * (Q[3] * Q[2] - Q[1] * Q[4]), -1.0 + 2.0 * (Q[3] ^ 2.0 + Q[4] ^ 2.0)}}, {w[1], w[2], w[3]});
+// end Modelica.Mechanics.MultiBody.Frames.from_Q;
 //
 //
 // </ModelicaImplementation>
@@ -27083,6 +26804,285 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}, {0.0, 0.0, 0.0});
 // end Modelica.Mechanics.MultiBody.Frames.nullRotation;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.planarRotation\">
+// <ModelicaImplementation>function(e :: array(Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[3] origin: .Real * angle :: Real(String quantity PARAM DAE.EQBOUND(&quot;Angle&quot;, SOME(&quot;Angle&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad&quot;, SOME(&quot;rad&quot;), C_PARAM, [DEFAULT VALUE]), String displayUnit PARAM DAE.EQBOUND(&quot;deg&quot;, SOME(&quot;deg&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Angle * der_angle :: Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity) =&gt; composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation origin: .Modelica.Mechanics.MultiBody.Frames.planarRotationfunction Modelica.Mechanics.MultiBody.Frames.planarRotation &quot;Inline before index reduction&quot; &quot;Return orientation object of a planar rotation&quot;
+//   input Real[3] e(unit = &quot;1&quot;) &quot;Normalized axis of rotation (must have length=1)&quot;;
+//   input Real angle(quantity = &quot;Angle&quot;, unit = &quot;rad&quot;, displayUnit = &quot;deg&quot;) &quot;Rotation angle to rotate frame 1 into frame 2 along axis e&quot;;
+//   input Real der_angle(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;) &quot;= der(angle)&quot;;
+//   output Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+// algorithm
+//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{e[1] ^ 2.0 + (1.0 - e[1] ^ 2.0) * cos(angle), (e[1] - e[1] * cos(angle)) * e[2] + e[3] * sin(angle), (e[1] - e[1] * cos(angle)) * e[3] - e[2] * sin(angle)}, {(e[2] - e[2] * cos(angle)) * e[1] - e[3] * sin(angle), e[2] ^ 2.0 + (1.0 - e[2] ^ 2.0) * cos(angle), (e[2] - e[2] * cos(angle)) * e[3] + e[1] * sin(angle)}, {(e[3] - e[3] * cos(angle)) * e[1] + e[2] * sin(angle), (e[3] - e[3] * cos(angle)) * e[2] - e[1] * sin(angle), e[3] ^ 2.0 + (1.0 - e[3] ^ 2.0) * cos(angle)}}, {e[1] * der_angle, e[2] * der_angle, e[3] * der_angle});
+// end Modelica.Mechanics.MultiBody.Frames.planarRotation;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.planarRotationAngle\">
+// <ModelicaImplementation>function(e :: array(Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[3] origin: .Real * v1 :: array(Real origin: .Real)[3] origin: .Real * v2 :: array(Real origin: .Real)[3] origin: .Real) =&gt; Real(String quantity PARAM DAE.EQBOUND(&quot;Angle&quot;, SOME(&quot;Angle&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad&quot;, SOME(&quot;rad&quot;), C_PARAM, [DEFAULT VALUE]), String displayUnit PARAM DAE.EQBOUND(&quot;deg&quot;, SOME(&quot;deg&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Angle origin: .Modelica.Mechanics.MultiBody.Frames.planarRotationAnglefunction Modelica.Mechanics.MultiBody.Frames.planarRotationAngle &quot;Inline before index reduction&quot; &quot;Return angle of a planar rotation, given the rotation axis and the representations of a vector in frame 1 and frame 2&quot;
+//   input Real[3] e(unit = &quot;1&quot;) &quot;Normalized axis of rotation to rotate frame 1 around e into frame 2 (must have length=1)&quot;;
+//   input Real[3] v1 &quot;A vector v resolved in frame 1 (shall not be parallel to e)&quot;;
+//   input Real[3] v2 &quot;Vector v resolved in frame 2, i.e., v2 = resolve2(planarRotation(e,angle),v1)&quot;;
+//   output Real angle(quantity = &quot;Angle&quot;, unit = &quot;rad&quot;, displayUnit = &quot;deg&quot;) &quot;Rotation angle to rotate frame 1 into frame 2 along axis e in the range: -pi &lt;= angle &lt;= pi&quot;;
+// algorithm
+//   angle := atan2((e[1] * v1[3] - e[3] * v1[1]) * v2[2] - (e[1] * v1[2] - e[2] * v1[1]) * v2[3] - (e[2] * v1[3] - e[3] * v1[2]) * v2[1], v1[1] * v2[1] + v1[2] * v2[2] + v1[3] * v2[3] + ((-e[2]) * v1[2] - e[3] * v1[3] - e[1] * v1[1]) * (e[1] * v2[1] + e[2] * v2[2] + e[3] * v2[3]));
+// end Modelica.Mechanics.MultiBody.Frames.planarRotationAngle;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.resolve1\">
+// <ModelicaImplementation>function(R :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * v2 :: array(Real origin: .Real)[3] origin: .Real) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.resolve1function Modelica.Mechanics.MultiBody.Frames.resolve1 &quot;Inline after index reduction&quot; &quot;Transform vector from frame 2 to frame 1&quot;
+//   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+//   input Real[3] v2 &quot;Vector in frame 2&quot;;
+//   output Real[3] v1 &quot;Vector in frame 1&quot;;
+// algorithm
+//   v1 := {R.T[1,1] * v2[1] + R.T[2,1] * v2[2] + R.T[3,1] * v2[3], R.T[1,2] * v2[1] + R.T[2,2] * v2[2] + R.T[3,2] * v2[3], R.T[1,3] * v2[1] + R.T[2,3] * v2[2] + R.T[3,3] * v2[3]};
+// end Modelica.Mechanics.MultiBody.Frames.resolve1;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.resolve2\">
+// <ModelicaImplementation>function(R :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * v1 :: array(Real origin: .Real)[3] origin: .Real) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.resolve2function Modelica.Mechanics.MultiBody.Frames.resolve2 &quot;Inline after index reduction&quot; &quot;Transform vector from frame 1 to frame 2&quot;
+//   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+//   input Real[3] v1 &quot;Vector in frame 1&quot;;
+//   output Real[3] v2 &quot;Vector in frame 2&quot;;
+// algorithm
+//   v2 := {R.T[1,1] * v1[1] + R.T[1,2] * v1[2] + R.T[1,3] * v1[3], R.T[2,1] * v1[1] + R.T[2,2] * v1[2] + R.T[2,3] * v1[3], R.T[3,1] * v1[1] + R.T[3,2] * v1[2] + R.T[3,3] * v1[3]};
+// end Modelica.Mechanics.MultiBody.Frames.resolve2;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.to_Q\">
+// <ModelicaImplementation>function(R :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * Q_guess :: array(Real origin: .Real)[4] origin: .Real) =&gt; array(Real origin: .Real)[4] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.to_Qfunction Modelica.Mechanics.MultiBody.Frames.to_Q &quot;Inline before index reduction&quot; &quot;Return quaternion orientation object Q from orientation object R&quot;
+//   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+//   input Real[4] Q_guess = {0.0, 0.0, 0.0, 1.0} &quot;Guess value for output Q (there are 2 solutions; the one closer to Q_guess is used&quot;;
+//   output Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
+// algorithm
+//   Q := Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T({{R.T[1,1], R.T[1,2], R.T[1,3]}, {R.T[2,1], R.T[2,2], R.T[2,3]}, {R.T[3,1], R.T[3,2], R.T[3,3]}}, {Q_guess[1], Q_guess[2], Q_guess[3], Q_guess[4]});
+// end Modelica.Mechanics.MultiBody.Frames.to_Q;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der\">
+// <ModelicaImplementation>function(R :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * v2 :: array(Real origin: .Real)[3] origin: .Real * v2_der :: array(Real origin: .Real)[3] origin: .Real) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_derfunction Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der &quot;Inline before index reduction&quot; &quot;Derivative of function Frames.resolve1(..)&quot;
+//   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+//   input Real[3] v2 &quot;Vector resolved in frame 2&quot;;
+//   input Real[3] v2_der &quot;= der(v2)&quot;;
+//   output Real[3] v1_der &quot;Derivative of vector v resolved in frame 1&quot;;
+// algorithm
+//   v1_der := Modelica.Mechanics.MultiBody.Frames.resolve1(R, {v2_der[1] + R.w[2] * v2[3] - R.w[3] * v2[2], v2_der[2] + R.w[3] * v2[1] - R.w[1] * v2[3], v2_der[3] + R.w[1] * v2[2] - R.w[2] * v2[1]});
+// end Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der\">
+// <ModelicaImplementation>function(R :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * v1 :: array(Real origin: .Real)[3] origin: .Real * v1_der :: array(Real origin: .Real)[3] origin: .Real) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_derfunction Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der &quot;Inline before index reduction&quot; &quot;Derivative of function Frames.resolve2(..)&quot;
+//   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+//   input Real[3] v1 &quot;Vector resolved in frame 1&quot;;
+//   input Real[3] v1_der &quot;= der(v1)&quot;;
+//   output Real[3] v2_der &quot;Derivative of vector v resolved in frame 2&quot;;
+// algorithm
+//   v2_der := Modelica.Mechanics.MultiBody.Frames.resolve2(R, {v1_der[1], v1_der[2], v1_der[3]}) - cross({R.w[1], R.w[2], R.w[3]}, Modelica.Mechanics.MultiBody.Frames.resolve2(R, {v1[1], v1[2], v1[3]}));
+// end Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraint\">
+// <ModelicaImplementation>function(R1 :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation * R2 :: composite(record{array(array(Real origin: .Real)[3])[3] T VAR UNBOUND, array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] w VAR UNBOUND}) origin: .Modelica.Mechanics.MultiBody.Frames.Orientation) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraintfunction Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraint &quot;Inline before index reduction&quot; &quot;Return the constraint residues to express that two frames have the same orientation&quot;
+//   input Modelica.Mechanics.MultiBody.Frames.Orientation R1 &quot;Orientation object to rotate frame 0 into frame 1&quot;;
+//   input Modelica.Mechanics.MultiBody.Frames.Orientation R2 &quot;Orientation object to rotate frame 0 into frame 2&quot;;
+//   output Real[3] residue &quot;The rotation angles around x-, y-, and z-axis of frame 1 to rotate frame 1 into frame 2 for a small rotation (should be zero)&quot;;
+// algorithm
+//   residue := {atan2((R1.T[1,2] * R1.T[2,3] - R1.T[1,3] * R1.T[2,2]) * R2.T[2,1] + (R1.T[1,3] * R1.T[2,1] - R1.T[1,1] * R1.T[2,3]) * R2.T[2,2] + (R1.T[1,1] * R1.T[2,2] - R1.T[1,2] * R1.T[2,1]) * R2.T[2,3], R1.T[1,1] * R2.T[1,1] + R1.T[1,2] * R2.T[1,2] + R1.T[1,3] * R2.T[1,3]), atan2((R1.T[1,1] * R1.T[2,3] - R1.T[1,3] * R1.T[2,1]) * R2.T[1,2] - (R1.T[1,1] * R1.T[2,2] - R1.T[1,2] * R1.T[2,1]) * R2.T[1,3] - (R1.T[1,2] * R1.T[2,3] - R1.T[1,3] * R1.T[2,2]) * R2.T[1,1], R1.T[2,1] * R2.T[2,1] + R1.T[2,2] * R2.T[2,2] + R1.T[2,3] * R2.T[2,3]), atan2(R1.T[2,1] * R2.T[1,1] + R1.T[2,2] * R2.T[1,2] + R1.T[2,3] * R2.T[1,3], R1.T[3,1] * R2.T[3,1] + R1.T[3,2] * R2.T[3,2] + R1.T[3,3] * R2.T[3,3])};
+// end Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraint;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.angularVelocity2\">
+// <ModelicaImplementation>function(Q :: array(Real origin: .Real)[4] origin: .Real * der_Q :: array(Real(String unit PARAM DAE.EQBOUND(&quot;1/s&quot;, SOME(&quot;1/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[4] origin: .Real) =&gt; array(Real(String quantity PARAM DAE.EQBOUND(&quot;AngularVelocity&quot;, SOME(&quot;AngularVelocity&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad/s&quot;, SOME(&quot;rad/s&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.AngularVelocity)[3] origin: .Modelica.SIunits.AngularVelocity origin: .Modelica.Mechanics.MultiBody.Frames.Quaternions.angularVelocity2function Modelica.Mechanics.MultiBody.Frames.Quaternions.angularVelocity2 &quot;Inline before index reduction&quot; &quot;Compute angular velocity resolved in frame 2 from quaternions orientation object and its derivative&quot;
+//   input Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
+//   input Real[4] der_Q(unit = &quot;1/s&quot;) &quot;Derivative of Q&quot;;
+//   output Real[3] w(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;) &quot;Angular velocity of frame 2 with respect to frame 1 resolved in frame 2&quot;;
+// algorithm
+//   w := {(Q[4] * der_Q[1] + Q[3] * der_Q[2] - Q[2] * der_Q[3] - Q[1] * der_Q[4]) * 2.0, (Q[4] * der_Q[2] - Q[3] * der_Q[1] + Q[1] * der_Q[3] - Q[2] * der_Q[4]) * 2.0, (Q[2] * der_Q[1] - Q[1] * der_Q[2] + Q[4] * der_Q[3] - Q[3] * der_Q[4]) * 2.0};
+// end Modelica.Mechanics.MultiBody.Frames.Quaternions.angularVelocity2;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T\">
+// <ModelicaImplementation>function(T :: array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real * Q_guess :: array(Real origin: .Real)[4] origin: .Real) =&gt; array(Real origin: .Real)[4] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.Quaternions.from_Tfunction Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T&quot;Inline if necessary&quot; &quot;Return quaternion orientation object Q from transformation matrix T&quot;
+//   input Real[3, 3] T &quot;Transformation matrix to transform vector from frame 1 to frame 2 (v2=T*v1)&quot;;
+//   input Real[4] Q_guess = {0.0, 0.0, 0.0, 1.0} &quot;Guess value for Q (there are 2 solutions; the one close to Q_guess is used&quot;;
+//   output Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2 (Q and -Q have same transformation matrix)&quot;;
+//   protected Real paux;
+//   protected Real paux4;
+//   protected Real c1;
+//   protected Real c2;
+//   protected Real c3;
+//   protected Real c4;
+//   protected constant Real p4limit = 0.1;
+//   protected constant Real c4limit = 0.04000000000000001;
+// algorithm
+//   c1 := 1.0 + T[1,1] + (-T[2,2]) - T[3,3];
+//   c2 := 1.0 + T[2,2] + (-T[1,1]) - T[3,3];
+//   c3 := 1.0 + T[3,3] + (-T[1,1]) - T[2,2];
+//   c4 := 1.0 + T[1,1] + T[2,2] + T[3,3];
+//   if c4 &gt; 0.04000000000000001 or c4 &gt; c1 and c4 &gt; c2 and c4 &gt; c3 then
+//     paux := 0.5 * sqrt(c4);
+//     paux4 := 4.0 * paux;
+//     Q := {(T[2,3] - T[3,2]) / paux4, (T[3,1] - T[1,3]) / paux4, (T[1,2] - T[2,1]) / paux4, paux};
+//   elseif c1 &gt; c2 and c1 &gt; c3 and c1 &gt; c4 then
+//     paux := 0.5 * sqrt(c1);
+//     paux4 := 4.0 * paux;
+//     Q := {paux, (T[1,2] + T[2,1]) / paux4, (T[1,3] + T[3,1]) / paux4, (T[2,3] - T[3,2]) / paux4};
+//   elseif c2 &gt; c1 and c2 &gt; c3 and c2 &gt; c4 then
+//     paux := 0.5 * sqrt(c2);
+//     paux4 := 4.0 * paux;
+//     Q := {(T[1,2] + T[2,1]) / paux4, paux, (T[2,3] + T[3,2]) / paux4, (T[3,1] - T[1,3]) / paux4};
+//   else
+//     paux := 0.5 * sqrt(c3);
+//     paux4 := 4.0 * paux;
+//     Q := {(T[1,3] + T[3,1]) / paux4, (T[2,3] + T[3,2]) / paux4, paux, (T[1,2] - T[2,1]) / paux4};
+//   end if;
+//   if Q[1] * Q_guess[1] + Q[2] * Q_guess[2] + Q[3] * Q_guess[3] + Q[4] * Q_guess[4] &lt; 0.0 then
+//     Q := {-Q[1], -Q[2], -Q[3], -Q[4]};
+//   end if;
+// end Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotation\">
+// <ModelicaImplementation>function() =&gt; array(Real origin: .Real)[4] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotationfunction Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotation &quot;Inline before index reduction&quot; &quot;Return quaternion orientation object that does not rotate a frame&quot;
+//   output Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
+// algorithm
+//   Q := {0.0, 0.0, 0.0, 1.0};
+// end Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotation;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint\">
+// <ModelicaImplementation>function(Q :: array(Real origin: .Real)[4] origin: .Real) =&gt; array(Real origin: .Real)[1] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraintfunction Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint &quot;Inline before index reduction&quot; &quot;Return residues of orientation constraints (shall be zero)&quot;
+//   input Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
+//   output Real[1] residue &quot;Residue constraint (shall be zero)&quot;;
+// algorithm
+//   residue := {-1.0 + Q[1] ^ 2.0 + Q[2] ^ 2.0 + Q[3] ^ 2.0 + Q[4] ^ 2.0};
+// end Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation\">
+// <ModelicaImplementation>function(T1 :: array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real * T_rel :: array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real) =&gt; array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotationfunction Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation &quot;Inline before index reduction&quot; &quot;Return absolute orientation object from another absolute and a relative orientation object&quot;
+//   input Real[3, 3] T1 &quot;Orientation object to rotate frame 0 into frame 1&quot;;
+//   input Real[3, 3] T_rel &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+//   output Real[3, 3] T2 &quot;Orientation object to rotate frame 0 into frame 2&quot;;
+// algorithm
+//   T2 := {{T_rel[1,1] * T1[1,1] + T_rel[1,2] * T1[2,1] + T_rel[1,3] * T1[3,1], T_rel[1,1] * T1[1,2] + T_rel[1,2] * T1[2,2] + T_rel[1,3] * T1[3,2], T_rel[1,1] * T1[1,3] + T_rel[1,2] * T1[2,3] + T_rel[1,3] * T1[3,3]}, {T_rel[2,1] * T1[1,1] + T_rel[2,2] * T1[2,1] + T_rel[2,3] * T1[3,1], T_rel[2,1] * T1[1,2] + T_rel[2,2] * T1[2,2] + T_rel[2,3] * T1[3,2], T_rel[2,1] * T1[1,3] + T_rel[2,2] * T1[2,3] + T_rel[2,3] * T1[3,3]}, {T_rel[3,1] * T1[1,1] + T_rel[3,2] * T1[2,1] + T_rel[3,3] * T1[3,1], T_rel[3,1] * T1[1,2] + T_rel[3,2] * T1[2,2] + T_rel[3,3] * T1[3,2], T_rel[3,1] * T1[1,3] + T_rel[3,2] * T1[2,3] + T_rel[3,3] * T1[3,3]}};
+// end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation\">
+// <ModelicaImplementation>function(axis :: Integer(Integer min PARAM DAE.EQBOUND(1, SOME(1), C_PARAM, [DEFAULT VALUE]), Integer max PARAM DAE.EQBOUND(3, SOME(3), C_PARAM, [DEFAULT VALUE])) origin: .Integer * angle :: Real(String quantity PARAM DAE.EQBOUND(&quot;Angle&quot;, SOME(&quot;Angle&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad&quot;, SOME(&quot;rad&quot;), C_PARAM, [DEFAULT VALUE]), String displayUnit PARAM DAE.EQBOUND(&quot;deg&quot;, SOME(&quot;deg&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Angle) =&gt; array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotationfunction Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation &quot;Inline before index reduction&quot; &quot;Return rotation object to rotate around one frame axis&quot;
+//   input Integer axis(min = 1, max = 3) &quot;Rotate around 'axis' of frame 1&quot;;
+//   input Real angle(quantity = &quot;Angle&quot;, unit = &quot;rad&quot;, displayUnit = &quot;deg&quot;) &quot;Rotation angle to rotate frame 1 into frame 2 along 'axis' of frame 1&quot;;
+//   output Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+// algorithm
+//   T := if axis == 1 then {{1.0, 0.0, 0.0}, {0.0, cos(angle), sin(angle)}, {0.0, -sin(angle), cos(angle)}} else if axis == 2 then {{cos(angle), 0.0, -sin(angle)}, {0.0, 1.0, 0.0}, {sin(angle), 0.0, cos(angle)}} else {{cos(angle), sin(angle), 0.0}, {-sin(angle), cos(angle), 0.0}, {0.0, 0.0, 1.0}};
+// end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxy\">
+// <ModelicaImplementation>function(n_x :: array(Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[3] origin: .Real * n_y :: array(Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[3] origin: .Real) =&gt; array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxyfunction Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxy&quot;Inline if necessary&quot; &quot;Return orientation object from n_x and n_y vectors&quot;
+//   input Real[3] n_x(unit = &quot;1&quot;) &quot;Vector in direction of x-axis of frame 2, resolved in frame 1&quot;;
+//   input Real[3] n_y(unit = &quot;1&quot;) &quot;Vector in direction of y-axis of frame 2, resolved in frame 1&quot;;
+//   output Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+//   protected Real abs_n_x = sqrt(n_x[1] ^ 2.0 + n_x[2] ^ 2.0 + n_x[3] ^ 2.0);
+//   protected Real[3] e_x(unit = &quot;1&quot;) = if abs_n_x &lt; 1e-10 then {1.0, 0.0, 0.0} else {n_x[1] / abs_n_x, n_x[2] / abs_n_x, n_x[3] / abs_n_x};
+//   protected Real[3] n_z_aux(unit = &quot;1&quot;) = {e_x[2] * n_y[3] - e_x[3] * n_y[2], e_x[3] * n_y[1] - e_x[1] * n_y[3], e_x[1] * n_y[2] - e_x[2] * n_y[1]};
+//   protected Real[3] n_y_aux(unit = &quot;1&quot;) = if n_z_aux[1] ^ 2.0 + n_z_aux[2] ^ 2.0 + n_z_aux[3] ^ 2.0 &gt; 1e-06 then {n_y[1], n_y[2], n_y[3]} else if abs(e_x[1]) &gt; 1e-06 then {0.0, 1.0, 0.0} else {1.0, 0.0, 0.0};
+//   protected Real[3] e_z_aux(unit = &quot;1&quot;) = {e_x[2] * n_y_aux[3] - e_x[3] * n_y_aux[2], e_x[3] * n_y_aux[1] - e_x[1] * n_y_aux[3], e_x[1] * n_y_aux[2] - e_x[2] * n_y_aux[1]};
+//   protected Real[3] e_z(unit = &quot;1&quot;) = {e_z_aux[1] / sqrt(e_z_aux[1] ^ 2.0 + e_z_aux[2] ^ 2.0 + e_z_aux[3] ^ 2.0), e_z_aux[2] / sqrt(e_z_aux[1] ^ 2.0 + e_z_aux[2] ^ 2.0 + e_z_aux[3] ^ 2.0), e_z_aux[3] / sqrt(e_z_aux[1] ^ 2.0 + e_z_aux[2] ^ 2.0 + e_z_aux[3] ^ 2.0)};
+// algorithm
+//   T := {{e_x[1], e_x[2], e_x[3]}, {e_z[2] * e_x[3] - e_z[3] * e_x[2], e_z[3] * e_x[1] - e_z[1] * e_x[3], e_z[1] * e_x[2] - e_z[2] * e_x[1]}, {e_z[1], e_z[2], e_z[3]}};
+// end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxy;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotation\">
+// <ModelicaImplementation>function(e :: array(Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real)[3] origin: .Real * angle :: Real(String quantity PARAM DAE.EQBOUND(&quot;Angle&quot;, SOME(&quot;Angle&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;rad&quot;, SOME(&quot;rad&quot;), C_PARAM, [DEFAULT VALUE]), String displayUnit PARAM DAE.EQBOUND(&quot;deg&quot;, SOME(&quot;deg&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Angle) =&gt; array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotationfunction Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotation &quot;Inline before index reduction&quot; &quot;Return orientation object of a planar rotation&quot;
+//   input Real[3] e(unit = &quot;1&quot;) &quot;Normalized axis of rotation (must have length=1)&quot;;
+//   input Real angle(quantity = &quot;Angle&quot;, unit = &quot;rad&quot;, displayUnit = &quot;deg&quot;) &quot;Rotation angle to rotate frame 1 into frame 2 along axis e&quot;;
+//   output Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+// algorithm
+//   T := {{e[1] ^ 2.0 + (1.0 - e[1] ^ 2.0) * cos(angle), (e[1] - e[1] * cos(angle)) * e[2] + e[3] * sin(angle), (e[1] - e[1] * cos(angle)) * e[3] - e[2] * sin(angle)}, {(e[2] - e[2] * cos(angle)) * e[1] - e[3] * sin(angle), e[2] ^ 2.0 + (1.0 - e[2] ^ 2.0) * cos(angle), (e[2] - e[2] * cos(angle)) * e[3] + e[1] * sin(angle)}, {(e[3] - e[3] * cos(angle)) * e[1] + e[2] * sin(angle), (e[3] - e[3] * cos(angle)) * e[2] - e[1] * sin(angle), e[3] ^ 2.0 + (1.0 - e[3] ^ 2.0) * cos(angle)}};
+// end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotation;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1\">
+// <ModelicaImplementation>function(T :: array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real * v2 :: array(Real origin: .Real)[3] origin: .Real) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1 &quot;Inline before index reduction&quot; &quot;Transform vector from frame 2 to frame 1&quot;
+//   input Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+//   input Real[3] v2 &quot;Vector in frame 2&quot;;
+//   output Real[3] v1 &quot;Vector in frame 1&quot;;
+// algorithm
+//   v1 := {T[1,1] * v2[1] + T[2,1] * v2[2] + T[3,1] * v2[3], T[1,2] * v2[1] + T[2,2] * v2[2] + T[3,2] * v2[3], T[1,3] * v2[1] + T[2,3] * v2[2] + T[3,3] * v2[3]};
+// end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2\">
+// <ModelicaImplementation>function(T :: array(array(Real origin: .Real)[3] origin: .Real)[3] origin: .Real * v1 :: array(Real origin: .Real)[3] origin: .Real) =&gt; array(Real origin: .Real)[3] origin: .Real origin: .Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2 &quot;Inline before index reduction&quot; &quot;Transform vector from frame 1 to frame 2&quot;
+//   input Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
+//   input Real[3] v1 &quot;Vector in frame 1&quot;;
+//   output Real[3] v2 &quot;Vector in frame 2&quot;;
+// algorithm
+//   v2 := {T[1,1] * v1[1] + T[1,2] * v1[2] + T[1,3] * v1[3], T[2,1] * v1[1] + T[2,2] * v1[2] + T[2,3] * v1[3], T[3,1] * v1[1] + T[3,2] * v1[2] + T[3,3] * v1[3]};
+// end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.Mechanics.MultiBody.World$world.gravityAcceleration\">
+// <ModelicaImplementation>function(r :: array(Real(String quantity PARAM DAE.EQBOUND(&quot;Length&quot;, SOME(&quot;Length&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;m&quot;, SOME(&quot;m&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Position)[3] origin: .Modelica.SIunits.Position * gravityType :: Enumeration(Enumeration origin: .Modelica.Mechanics.MultiBody.Types.GravityTypes NoGravity CONST UNBOUND, Enumeration origin: .Modelica.Mechanics.MultiBody.Types.GravityTypes UniformGravity CONST UNBOUND, Enumeration origin: .Modelica.Mechanics.MultiBody.Types.GravityTypes PointGravity CONST UNBOUND) origin: .Modelica.Mechanics.MultiBody.Types.GravityTypes * g :: array(Real(String quantity PARAM DAE.EQBOUND(&quot;Acceleration&quot;, SOME(&quot;Acceleration&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;m/s2&quot;, SOME(&quot;m/s2&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Acceleration)[3] origin: .Modelica.SIunits.Acceleration * mue :: Real origin: .Real) =&gt; array(Real(String quantity PARAM DAE.EQBOUND(&quot;Acceleration&quot;, SOME(&quot;Acceleration&quot;), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND(&quot;m/s2&quot;, SOME(&quot;m/s2&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Modelica.SIunits.Acceleration)[3] origin: .Modelica.SIunits.Acceleration origin: .Modelica.Mechanics.MultiBody.World$world.gravityAccelerationfunction Modelica.Mechanics.MultiBody.World$world.gravityAcceleration&quot;Inline if necessary&quot; &quot;Standard gravity fields (no/parallel/point field)&quot;
+//   input Real[3] r(quantity = &quot;Length&quot;, unit = &quot;m&quot;) &quot;Position vector from world frame to actual point, resolved in world frame&quot;;
+//   output Real[3] gravity(quantity = &quot;Acceleration&quot;, unit = &quot;m/s2&quot;) &quot;Gravity acceleration at position r, resolved in world frame&quot;;
+//   input enumeration(NoGravity, UniformGravity, PointGravity) gravityType = gravityType &quot;Type of gravity field&quot;;
+//   input Real[3] g(quantity = &quot;Acceleration&quot;, unit = &quot;m/s2&quot;) = {0.0, -g, 0.0} &quot;Constant gravity acceleration, resolved in world frame, if gravityType=UniformGravity&quot;;
+//   input Real mue(unit = &quot;m3/s2&quot;) = mue &quot;Field constant of point gravity field, if gravityType=PointGravity&quot;;
+// algorithm
+//   gravity := if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity then {g[1], g[2], g[3]} else if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.PointGravity then {(-mue) * r[1] / (Modelica.Math.Vectors.length({r[1], r[2], r[3]}) * (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0)), (-mue) * r[2] / (Modelica.Math.Vectors.length({r[1], r[2], r[3]}) * (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0)), (-mue) * r[3] / (Modelica.Math.Vectors.length({r[1], r[2], r[3]}) * (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0))} else {0.0, 0.0, 0.0};
+// end Modelica.Mechanics.MultiBody.World$world.gravityAcceleration;
+//
+//
+// </ModelicaImplementation>
+// </function>
+// <function name=\"Modelica.SIunits.Conversions.to_unit1\">
+// <ModelicaImplementation>function(r :: Real origin: .Real) =&gt; Real(String unit PARAM DAE.EQBOUND(&quot;1&quot;, SOME(&quot;1&quot;), C_PARAM, [DEFAULT VALUE])) origin: .Real origin: .Modelica.SIunits.Conversions.to_unit1function Modelica.SIunits.Conversions.to_unit1 &quot;Inline before index reduction&quot; &quot;Change the unit of a Real number to unit=\\&quot;1\\&quot;&quot;
+//   input Real r &quot;Real number&quot;;
+//   output Real result(unit = &quot;1&quot;) &quot;Real number r with unit=\\&quot;1\\&quot;&quot;;
+// algorithm
+//   result := r;
+// end Modelica.SIunits.Conversions.to_unit1;
 //
 //
 // </ModelicaImplementation>
