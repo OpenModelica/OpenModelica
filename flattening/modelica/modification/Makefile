@@ -3,6 +3,7 @@ TEST=../../../rtest -v
 TESTFILES=\
 ArrayModif.mo \
 ArrayModTypeError.mo \
+Bug3817.mos \
 DisturbedResistance1.mo \
 DisturbedResistance3.mo \
 DisturbedResistance4.mo \
