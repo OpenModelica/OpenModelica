@@ -223,9 +223,9 @@ algorithm
 
     case NODE(key=key, value=value)
       algorithm
-        lst := (key, value) :: lst; // TODO: Move me to middle
-        lst := toList(inTree.left, lst);
         lst := toList(inTree.right, lst);
+        lst := (key, value) :: lst;
+        lst := toList(inTree.left, lst);
       then lst;
 
     case LEAF(key=key, value=value)
@@ -247,9 +247,9 @@ algorithm
 
     case NODE(value = value)
       algorithm
-        lst := value :: lst; // TODO: Move me to middle
-        lst := listValues(tree.left, lst);
         lst := listValues(tree.right, lst);
+        lst := value :: lst;
+        lst := listValues(tree.left, lst);
       then lst;
 
     case LEAF(value = value) then value :: lst;
