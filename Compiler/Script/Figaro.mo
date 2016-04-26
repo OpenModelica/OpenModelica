@@ -35,7 +35,7 @@ algorithm
   program := SCodeUtil.getElementWithPathCheckBuiltin(inProgram, inPath);
 
   // Code for the Figaro objects.
-  figaro := makeFigaro(inProgram, program);
+  figaro := makeFigaro(inProgram, program, inProgram);
 
   if figaro == ""
     then fail();
@@ -90,14 +90,15 @@ public function makeFigaro "Translates a program to Figaro. First finds all rele
 finds all instances of those classes."
   input list<SCode.Element> inProgram;
   input SCode.Element inModel;
+  input list<SCode.Element>  env;
   output String outCode;
 protected
   list<FigaroClass> fcl;
   list<FigaroObject> fol;
 algorithm
   fcl := listAppend(
-    fcElementList("Figaro_Object", "", inModel, NONE(), inProgram),
-    fcElementList("Figaro_Object_connector", "", inModel, NONE(), inProgram)
+    fcElementList("Figaro_Object", "", inModel, NONE(), inProgram, env),
+    fcElementList("Figaro_Object_connector", "", inModel, NONE(), inProgram, env)
   );
 
   // Debug.
@@ -124,13 +125,15 @@ protected function fcElement
   input Option<Ident> inClassName;
 
   input SCode.Element inElement;
+  input list<SCode.Element>  env;
   output list<FigaroClass> outFigaroClassList;
 algorithm
-  outFigaroClassList := match (inFigaroBase, inFigaroType, inProgram, inClassName, inElement)
+  outFigaroClassList := matchcontinue (inFigaroBase, inFigaroType, inProgram, inClassName, inElement, env)
     local
       Ident fb;
       String ft;
-      SCode.Element program;
+      SCode.Element program, cdef;
+      list<SCode.Element> e;
       Ident cn;
       Path bcp;
       SCode.Mod m;
@@ -139,16 +142,94 @@ algorithm
       SCode.ClassDef cd;
       Path p;
     // Element is an extends clause.
-    case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m))
+    case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
       equation
+
         true = fb == getLastIdent(bcp);
         tn = fcMod1(m);
-      then fcAddFigaroClass(ft, program, cn, tn);
+      then fcAddFigaroClass(ft, program, cn, tn, e);
+    case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
+      equation
+        cdef = SCodeUtil.getElementWithPathCheckBuiltin(e, bcp);
+        true = fcExtends(fb, ft, program, SOME(cn), cdef, e);
+        tn = fcMod1(m);
+      then fcAddFigaroClass(ft, program, cn, tn, e);
     // Nested class of some sort.
-    case (fb, ft, program, _, SCode.CLASS(name = n, classDef = cd))
-      then fcClassDef(fb, ft, program, n, cd);
-  end match;
+    case (fb, ft, program, _, SCode.CLASS(name = n, classDef = cd), e)
+      then fcClassDef(fb, ft, program, n, cd, e);
+  end matchcontinue;
 end fcElement;
+
+protected function fcExtends
+  input Ident inFigaroBase;
+  input String inFigaroType;
+  input SCode.Element inProgram;
+  input Option<Ident> inClassName;
+
+  input SCode.Element inElement;
+  input list<SCode.Element>  env;
+  output Boolean doExtend;
+algorithm
+  doExtend := matchcontinue (inFigaroBase, inFigaroType, inProgram, inClassName, inElement, env)
+    local
+      Ident fb;
+      String ft;
+      SCode.Element program, cdef;
+      list<SCode.Element> e, el;
+      Ident cn;
+      Path bcp;
+      SCode.Mod m;
+      String tn;
+      Ident n;
+      SCode.ClassDef cd;
+      Path p;
+    // Element is an extends clause.
+    case (fb, ft, program, _, SCode.CLASS(name = n, classDef = SCode.PARTS(elementLst = el)), e)
+      equation
+      then fcElementListExt(fb, ft, program, SOME(n), el, e);
+    case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
+      equation
+        true = fb == getLastIdent(bcp);
+      then true;
+    case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
+      equation
+        cdef = SCodeUtil.getElementWithPathCheckBuiltin(e, bcp);
+      then fcExtends(fb, ft, program, SOME(cn), cdef, e);
+    // Nested class of some sort.
+    case (fb, ft, program, _, _, e)
+      then false;
+  end matchcontinue;
+end fcExtends;
+
+protected function fcElementListExt
+  input Ident inFigaroBase;
+  input String inFigaroType;
+  input SCode.Element inProgram;
+  input Option<Ident> inClassName;
+  input list<SCode.Element> inElementList;
+  input list<SCode.Element> env;
+  output Boolean res;
+algorithm
+  res := matchcontinue (inFigaroBase, inFigaroType, inProgram, inClassName, inElementList, env)
+    local
+      Ident fb;
+      String ft;
+      SCode.Element program;
+      Option<Ident> cn;
+      list<SCode.Element> e;
+      SCode.Element first;
+      list<SCode.Element> rest;
+      list<FigaroClass> rf, rr;
+    case (_, _, _, _, {}, _)
+      then false;
+    case (fb, ft, program, cn, first :: rest, e)
+      equation
+        true = fcExtends(fb, ft, program, cn, first, e);
+      then true;
+    case (fb, ft, program, cn, _ :: rest, e)
+      then fcElementListExt(fb, ft, program, cn, rest, e);
+  end matchcontinue;
+end fcElementListExt;
 
 protected function fcAddFigaroClass "Adds Figaro class. Finds classes inherited from that class."
   input String inFigaroType;
@@ -156,6 +237,7 @@ protected function fcAddFigaroClass "Adds Figaro class. Finds classes inherited 
   input Ident inClassName;
 
   input String inTypeName;
+   input list<SCode.Element>  env;
   output list<FigaroClass> outFigaroClassList;
 protected
   String tn;
@@ -163,7 +245,7 @@ protected
 algorithm
   tn := if inTypeName == "" then inFigaroType else inTypeName;
   fc := FIGAROCLASS(inClassName, tn);
-  outFigaroClassList := fc :: fcElement(inClassName, tn, inProgram, NONE(), inProgram);
+  outFigaroClassList := fc :: fcElement(inClassName, tn, inProgram, NONE(), inProgram, env);
 end fcAddFigaroClass;
 
 protected function fcClassDef
@@ -173,29 +255,30 @@ protected function fcClassDef
 
   input Ident inClassName;
   input SCode.ClassDef inClassDef;
+  input list<SCode.Element>  env;
   output list<FigaroClass> outFigaroClassList;
 algorithm
-  outFigaroClassList := match (inFigaroBase, inFigaroType, inProgram, inClassName, inClassDef)
+  outFigaroClassList := match (inFigaroBase, inFigaroType, inProgram, inClassName, inClassDef, env)
     local
       Ident fb;
       String ft;
       SCode.Element program;
       Ident cn;
-
+      list<SCode.Element> e;
       list<SCode.Element> el;
       TypeSpec ts;
       SCode.Mod m;
       Path p;
       String tn;
-    case (fb, ft, program, cn, SCode.PARTS(elementLst = el))
-      then fcElementList(fb, ft, program, SOME(cn), el);
+    case (fb, ft, program, cn, SCode.PARTS(elementLst = el), e)
+      then fcElementList(fb, ft, program, SOME(cn), el, e);
     // Short class definitions.
-    case (fb, ft, program, cn, SCode.DERIVED(typeSpec = ts, modifications = m))
+    case (fb, ft, program, cn, SCode.DERIVED(typeSpec = ts, modifications = m), e)
       equation
         p = Absyn.typeSpecPath(ts);
         true = fb == getLastIdent(p);
         tn = fcMod1(m);
-      then fcAddFigaroClass(ft, program, cn, tn);
+      then fcAddFigaroClass(ft, program, cn, tn, e);
   end match;
 end fcClassDef;
 
@@ -204,29 +287,29 @@ protected function fcElementList
   input String inFigaroType;
   input SCode.Element inProgram;
   input Option<Ident> inClassName;
-
   input list<SCode.Element> inElementList;
+  input list<SCode.Element> env;
   output list<FigaroClass> outFigaroClassList;
 algorithm
-  outFigaroClassList := matchcontinue (inFigaroBase, inFigaroType, inProgram, inClassName, inElementList)
+  outFigaroClassList := matchcontinue (inFigaroBase, inFigaroType, inProgram, inClassName, inElementList, env)
     local
       Ident fb;
       String ft;
       SCode.Element program;
       Option<Ident> cn;
-
+      list<SCode.Element> e;
       SCode.Element first;
       list<SCode.Element> rest;
       list<FigaroClass> rf, rr;
-    case (_, _, _, _, {})
+    case (_, _, _, _, {}, _)
       then {};
-    case (fb, ft, program, cn, first :: rest)
+    case (fb, ft, program, cn, first :: rest, e)
       equation
-        rf = fcElement(fb, ft, program, cn, first);
-        rr = fcElementList(fb, ft, program, cn, rest);
+        rf = fcElement(fb, ft, program, cn, first, e);
+        rr = fcElementList(fb, ft, program, cn, rest, e);
       then listAppend(rf, rr);
-    case (fb, ft, program, cn, _ :: rest)
-      then fcElementList(fb, ft, program, cn, rest);
+    case (fb, ft, program, cn, _ :: rest, e)
+      then fcElementList(fb, ft, program, cn, rest, e);
   end matchcontinue;
 end fcElementList;
 
@@ -321,15 +404,17 @@ algorithm
       TypeSpec ts;
       SCode.Mod m;
       String tn;
-      String c;
+      String c, tmp;
       FigaroObject fo;
     case (fcl, SCode.CLASS(classDef = cd))
       then foClassDef(fcl, cd);
     case (fcl, SCode.COMPONENT(name = n, typeSpec = ts, modifications = m))
       equation
         p = Absyn.typeSpecPath(ts);
-        tn = findFigaroTypeName(p, fcl);
-        c = foMod1(m);
+        //tn = findFigaroTypeName(p, fcl);
+        tmp = foMod1(m, "fullClassName");
+        tn = if tmp == "" then findFigaroTypeName(p, fcl) else tmp;
+        c = foMod1(m, "codeInstanceFigaro");
         fo = FIGAROOBJECT(n, tn, c);
       then {fo};
   end match;
@@ -417,13 +502,14 @@ end getFigaroTypeName;
 
 protected function foMod1
   input SCode.Mod inMod;
+  input String name;
   output String outCode;
 algorithm
   outCode := match inMod
     local
       list<SCode.SubMod> sml;
     case SCode.MOD(subModLst = sml)
-      then foSubModList(sml);
+      then foSubModList(sml, name);
     case SCode.NOMOD()
       then "";
   end match;
@@ -431,6 +517,7 @@ end foMod1;
 
 protected function foSubModList
   input list<SCode.SubMod> inSubModList;
+  input String name;
   output String outCode;
 algorithm
   outCode := matchcontinue inSubModList
@@ -440,14 +527,15 @@ algorithm
     case {}
       then "";
     case first :: _
-      then foSubMod(first);
+      then foSubMod(first, name);
     case _ :: rest
-      then foSubModList(rest);
+      then foSubModList(rest, name);
   end matchcontinue;
 end foSubModList;
 
 protected function foSubMod
   input SCode.SubMod inSubMod;
+  input String name;
   output String outCode;
 algorithm
   outCode := match inSubMod
@@ -456,7 +544,7 @@ algorithm
       SCode.Mod m;
     case SCode.NAMEMOD(ident = n, mod = m)
       equation
-        true = n == "codeInstanceFigaro";
+        true = n == name;
       then foMod2(m);
   end match;
 end foSubMod;

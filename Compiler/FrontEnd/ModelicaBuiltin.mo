@@ -2868,6 +2868,7 @@ end getComponentModifierNames;
 function removeComponentModifiers
   input TypeName class_;
   input String componentName;
+  input Boolean keepRedeclares = false;
   output Boolean success;
 external "builtin";
 annotation(
@@ -2880,6 +2881,7 @@ end removeComponentModifiers;
 function removeExtendsModifiers
   input TypeName className;
   input TypeName baseClassName;
+  input Boolean keepRedeclares = false;
   output Boolean success;
 external "builtin";
 annotation(

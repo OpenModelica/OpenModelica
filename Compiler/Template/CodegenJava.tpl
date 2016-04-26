@@ -1,7 +1,7 @@
 package CodegenJava
 
 import interface SimCodeTV;
-
+import ExpressionDumpTpl;
 
 template translateModel(SimCode simCode)
  "Generates Java code and Makefile for compiling and running a simulation of a
@@ -1044,7 +1044,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case e as RELATION(__) then expTypeFromOpFlag(e.operator, flag)
   case IFEXP(__)         then expTypeFromExpFlag(expThen, flag)
   case CALL(attr=CALL_ATTR(__)) then expTypeFlag(attr.ty, flag) // alachew case CALL(__)          then expTypeFlag(ty, flag)
-  else '#error "expTypeFromExpFlag:<%printExpStr(exp)%>"'
+  else '#error "expTypeFromExpFlag:<%ExpressionDumpTpl.dumpExp(exp,"\"")%>"'
 end expTypeFromExpFlag;
 
 template expTypeShort(DAE.Type type)

@@ -596,7 +596,7 @@ protected function makeEqSource
   input DAE.SymbolicOperation inFlattenOp;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := ElementSource.createElementSource(inInfo, FGraph.getScopePath(inEnv), PrefixUtil.prefixToCrefOpt(inPrefix));
+  outSource := ElementSource.createElementSource(inInfo, FGraph.getScopePath(inEnv), inPrefix);
   outSource := ElementSource.addSymbolicTransformation(outSource, inFlattenOp);
 end makeEqSource;
 
@@ -2040,7 +2040,7 @@ algorithm
       equation
         // set the source of this element
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre));
+        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);
         (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2107,7 +2107,7 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph)
       equation
         // set the source of this element
-        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre));
+        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.INITIAL(), impl, unrollForLoops);
         (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2155,7 +2155,7 @@ algorithm
       equation
         // set the source of this element
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre));
+        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
 
         (cache,constraints_1,_,_) = Static.elabExpList(cache, env, constraints, impl, NONE(), true /*vect*/, pre, Absyn.dummyInfo);
         // (constraints_1,_) = DAEUtil.traverseDAEEquationsStmts(constraints_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
@@ -3459,7 +3459,7 @@ algorithm
         state = ClassInf.CONNECTOR(Absyn.IDENT("expandable connector"), true);
         (cache,c1p) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         (cache,c2p) = PrefixUtil.prefixCref(cache, env, ih, pre, c2_2);
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1p,c2p));
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre, (c1p,c2p));
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
 
@@ -4135,7 +4135,7 @@ algorithm
            PrefixUtil.prefixExp(cache, env, ih, Expression.crefExp(c2), pre);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1_1,c2_1));
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre, (c1_1,c2_1));
 
         // print("CONNECT: " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" +
         //    ComponentReference.printComponentRefStr(c1_1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
@@ -4156,7 +4156,7 @@ algorithm
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1_1,c2_1));
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre, (c1_1,c2_1));
 
         crefExp1 = Expression.crefExp(c1_1);
         crefExp2 = Expression.crefExp(c2_1);
@@ -4184,7 +4184,7 @@ algorithm
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1_1,c2_1));
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre, (c1_1,c2_1));
 
         sets_1 = ConnectUtil.addConnection(sets, c1, f1, c2, f2, inConnectorType, source);
       then
@@ -4266,7 +4266,7 @@ algorithm
         // set the source of this element
         (cache,c1p) = PrefixUtil.prefixCref(cache, env, ih, pre, c1);
         (cache,c2p) = PrefixUtil.prefixCref(cache, env, ih, pre, c2);
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1p,c2p));
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre, (c1p,c2p));
 
         sets_1 = ConnectUtil.addArrayConnection(sets, c1, f1, c2, f2, source, ct);
       then
@@ -4286,7 +4286,7 @@ algorithm
           t2, vt2, ct, io1, io2, ConnectionGraph.NOUPDATE_EMPTY, info);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1_1,c2_1));
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre, (c1_1,c2_1));
 
         // Add an edge to connection graph. The edge contains the
         // dae to be added in the case where the edge is broken.
@@ -4332,7 +4332,7 @@ algorithm
           t2, vt2, ct, io1, io2, ConnectionGraph.NOUPDATE_EMPTY, info);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), (c1_1,c2_1));
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre, (c1_1,c2_1));
 
         // Add an edge to connection graph. The edge contains the
         // dae to be added in the case where the edge is broken.

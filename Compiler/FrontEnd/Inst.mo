@@ -1447,7 +1447,13 @@ algorithm
 
     case(_,_,_,_,_,expectedTp,DAE.PROP(bindTp,c))
       equation
-        false = valueEq(c,DAE.C_VAR());
+        if Flags.getConfigBool(Flags.CT_STATE_MACHINES) then
+          // BTH Hack to allow variable modification of "start" attribute for ct SM re-initialization
+          // This is is forbidden in standard Modelica! Standard Modelica is the "else" branch!
+          true = valueEq(c,DAE.C_VAR());
+        else
+          false = valueEq(c,DAE.C_VAR());
+        end if;
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
       then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
         DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
@@ -1857,7 +1863,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,comment,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts,compelts_2_elem;
-      FCore.Graph env1,env2,env3,env,env5,cenv,cenv_2,env_2,parentEnv;
+      FCore.Graph env1,env2,env3,env,env5,cenv,cenv_2,env_2,parentEnv,parentClassEnv;
       list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,extcomps,compelts_1,compelts_2, comp_cond, derivedClassesWithConstantMods;
       Connect.Sets csets,csets1,csets2,csets3,csets4,csets5,csets_1;
       DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae6,dae7,dae;
@@ -1866,7 +1872,7 @@ algorithm
       Option<DAE.Type> bc;
       DAE.Mod mods,emods,mod_1,mods_1,checkMods;
       Prefix.Prefix pre;
-      list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1,expandableEqs;
+      list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1;
       list<SCode.AlgorithmSection> alg,initalg,alg2,initalg2,alg_1,initalg_1;
       list<SCode.ConstraintSection> constrs;
       list<Absyn.NamedArg> clsattrs;
@@ -1880,7 +1886,7 @@ algorithm
       list<DAE.Subscript> inst_dims2;
       String cn2,cns,scope_str,s,str;
       SCode.Element c;
-      SCode.ClassDef classDef;
+      SCode.ClassDef classDef, classDefParent;
       Option<DAE.EqMod> eq;
       DAE.Dimensions dims;
       Absyn.Path cn, fq_class;
@@ -2086,23 +2092,10 @@ algorithm
         // If we are currently instantiating a connector, add all flow variables
         // in it as inside connectors.
         zero_dims = InstUtil.instDimsHasZeroDims(inst_dims);
-        elementSource = ElementSource.createElementSource(info, FGraph.getScopePath(env3), PrefixUtil.prefixToCrefOpt(pre));
+        elementSource = ElementSource.createElementSource(info, FGraph.getScopePath(env3), pre);
         csets1 = ConnectUtil.addConnectorVariablesFromDAE(zero_dims, ci_state1, pre, vars, info, elementSource, csets);
 
-        // Reorder the connect equations to have non-expandable connect first:
-        //   connect(non_expandable, non_expandable);
-        //   connect(non_expandable, expandable);
-        //   connect(expandable, non_expandable);
-        //   connect(expandable, expandable);
-        ErrorExt.setCheckpoint("expandableConnectorsOrder");
-        (cache, eqs_1, expandableEqs) = InstUtil.splitConnectEquationsExpandable(cache, env5, ih, pre, eqs_1, impl, {}, {});
-        // put expandable at the begining
-        eqs_1 = listAppend(expandableEqs, eqs_1);
-        // put expandable at the end
-        eqs_1 = listAppend(eqs_1, expandableEqs);
-        // duplicate expandable to get the union
-        eqs_1 = InstUtil.addExpandable(eqs_1, expandableEqs);
-        ErrorExt.rollBack("expandableConnectorsOrder");
+        (cache, eqs_1) = InstUtil.reorderConnectEquationsExpandable(cache, env5, eqs_1);
 
         //Discretization of PDEs:
         if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
@@ -2271,26 +2264,57 @@ algorithm
         false = SCode.isConnector(re);
         // check empty array dimensions
         true = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
-        (cache,SCode.CLASS(name=cn2,restriction=r),_) = Lookup.lookupClass(cache, env, cn, SOME(info));
+        (cache,SCode.CLASS(name=cn2,restriction=r,classDef=classDefParent),parentClassEnv) = Lookup.lookupClass(cache, env, cn, SOME(info));
 
         false = InstUtil.checkDerivedRestriction(re, r, cn2);
-        // chain the redeclares
-        mod = InstUtil.chainRedeclares(mods, mod);
 
-        // elab the modifiers in the parent environment!!
-        (parentEnv,_) = FGraph.stripLastScopeRef(env);
-        // adrpo: as we do this IN THE SAME ENVIRONMENT (no open scope), clone it before doing changes
-        // env = FGraph.pushScopeRef(parentEnv, FNode.copyRefNoUpdate(lastRef));
-        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
-        // print("mods: " + Absyn.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
-        mods_1 = Mod.merge(mods, mod_1, className);
+        if match r
+            case SCode.Restriction.R_PACKAGE() then false;
+            else if SCode.restrictionEqual(r,re) then Mod.isInvariantMod(mod) else false;
+          end match then
+          // Is a very simple modification on an operator record; we do not need to handle it by adding SCode.EXTENDS
+          // print("Short-circuit: " + SCodeDump.restrString(r)+" "+SCodeDump.restrString(re)+" : "+SCodeDump.printModStr(mod)+"\n");
 
-        (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) =
-        instClassdef2(cache, env, ih, store, mods_1, pre, ci_state, className,
-           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},{},NONE()),
-           re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
-           callscope, graph, inSets, instSingleCref,comment,info,stopInst);
-        oDA = SCode.mergeAttributes(DA,oDA);
+          // TODO: Is this safe in more cases?
+
+          // chain the redeclares
+          mod = InstUtil.chainRedeclares(mods, mod);
+
+          // elab the modifiers in the parent environment!!
+          (parentEnv,_) = FGraph.stripLastScopeRef(env);
+          // adrpo: as we do this IN THE SAME ENVIRONMENT (no open scope), clone it before doing changes
+          // env = FGraph.pushScopeRef(parentEnv, FNode.copyRefNoUpdate(lastRef));
+          (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
+          // print("mods: " + Absyn.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
+          mods_1 = Mod.merge(mods, mod_1, className);
+
+          (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) =
+          instClassdef2(cache, parentClassEnv, ih, store, mods_1, pre, ci_state, className, classDefParent,
+             re /* = r */,
+             vis, partialPrefix, encapsulatedPrefix, // TODO: Do we need to merge these?
+             inst_dims, impl,
+             callscope, graph, inSets, instSingleCref,comment,info,stopInst);
+          oDA = SCode.mergeAttributes(DA,oDA);
+
+        else
+          // chain the redeclares
+          mod = InstUtil.chainRedeclares(mods, mod);
+
+          // elab the modifiers in the parent environment!!
+          (parentEnv,_) = FGraph.stripLastScopeRef(env);
+          // adrpo: as we do this IN THE SAME ENVIRONMENT (no open scope), clone it before doing changes
+          // env = FGraph.pushScopeRef(parentEnv, FNode.copyRefNoUpdate(lastRef));
+          (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
+          // print("mods: " + Absyn.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
+          mods_1 = Mod.merge(mods, mod_1, className);
+
+          (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) =
+          instClassdef2(cache, env, ih, store, mods_1, pre, ci_state, className,
+             SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},{},NONE()),
+             re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
+             callscope, graph, inSets, instSingleCref,comment,info,stopInst);
+          oDA = SCode.mergeAttributes(DA,oDA);
+        end if;
       then
         (cache,env,ih,store,dae,csets,ci_state,vars,bc,oDA,eqConstraint,graph);
 

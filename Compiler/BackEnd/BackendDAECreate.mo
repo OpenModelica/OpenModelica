@@ -2394,7 +2394,6 @@ algorithm
 
     case DAE.ALGORITHM(algorithm_=alg, source=source) equation
       // calculate the size of the algorithm by collecting the left hand sites of the statemens
-      (alg, _) = Inline.inlineAlgorithm(alg, (SOME(functionTree), {DAE.NORM_INLINE()}));
       crefLst = CheckModel.checkAndGetAlgorithmOutputs(alg, source, inCrefExpansion);
       size = listLength(crefLst);
       (eqns, reqns) = List.consOnBool(intGt(size, 0), BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), inEquations, inREquations);
@@ -2402,7 +2401,6 @@ algorithm
 
     case DAE.INITIALALGORITHM(algorithm_=alg, source=source) equation
       // calculate the size of the algorithm by collecting the left hand sites of the statemens
-      (alg, _) = Inline.inlineAlgorithm(alg, (SOME(functionTree), {DAE.NORM_INLINE()}));
       crefLst = CheckModel.checkAndGetAlgorithmOutputs(alg, source, inCrefExpansion);
       size = listLength(crefLst);
     then (inEquations, inREquations, BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_INITIAL)::inIEquations);
@@ -2412,9 +2410,6 @@ algorithm
     then (inEquations, inREquations, inIEquations);
 
     case DAE.ASSERT(condition=cond, message=msg, level=level, source=source) equation
-      (cond, source, _,_) = Inline.inlineExp(cond, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-      (msg, source, _,_) = Inline.inlineExp(msg, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-      (level, source, _,_) = Inline.inlineExp(level, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
       BackendDAEUtil.checkAssertCondition(cond, msg, level, ElementSource.getElementSourceFileInfo(source));
       alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, level, source)});
     then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
@@ -2423,12 +2418,10 @@ algorithm
     then (inEquations, BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg, source)}), source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
 
     case DAE.NORETCALL(exp=e, source=source) equation
-      (e, source, _, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
       alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(e, source)});
     then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
 
     case DAE.INITIAL_NORETCALL(exp=e, source=source) equation
-      (e, source, _, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
       alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(e, source)});
     then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_INITIAL)::inREquations, inIEquations);
 
@@ -2680,17 +2673,17 @@ algorithm
       Integer i;
     case(_, _, _, _)
       equation
-        (v::{}, i::{}) = BackendVariable.getVar(cr, iVars);
+        (v, i) = BackendVariable.getVarSingle(cr, iVars);
       then
         (v, i, 1);
     case(_, _, _, _)
       equation
-        (v::{}, i::{}) = BackendVariable.getVar(cr, iKnVars);
+        (v, i) = BackendVariable.getVarSingle(cr, iKnVars);
       then
         (v, i, 2);
     case(_, _, _, _)
       equation
-        (v::{}, i::{}) = BackendVariable.getVar(cr, iExtVars);
+        (v, i) = BackendVariable.getVarSingle(cr, iExtVars);
       then
         (v, i, 3);
   end matchcontinue;

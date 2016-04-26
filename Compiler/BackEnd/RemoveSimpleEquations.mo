@@ -3276,7 +3276,7 @@ algorithm
       equation
         // check for cyclic bindings in start value
         false = BaseHashSet.has(cr, hs);
-        ({BackendDAE.VAR(bindExp = SOME(e))}, _) = BackendVariable.getVar(cr, vars);
+        (BackendDAE.VAR(bindExp = SOME(e)), _) = BackendVariable.getVarSingle(cr, vars);
         hs = BaseHashSet.add(cr, hs);
         (e, (_, _, hs)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (vars, false, hs));
       then
@@ -3586,7 +3586,7 @@ algorithm
     case (_, _, _)
       equation
         cr::_ = Expression.extractCrefsFromExp(iExp);
-        (BackendDAE.VAR(bindExp=SOME(e))::{}, _) = BackendVariable.getVar(cr, iAVars);
+        (BackendDAE.VAR(bindExp=SOME(e)), _) = BackendVariable.getVarSingle(cr, iAVars);
       then
         fixAliasConstBindings1(cr, e, iAVars);
     else
@@ -3767,11 +3767,11 @@ algorithm
       equation
         cr = BackendVariable.varCref(var);
         false = BaseHashSet.has(cr, hs);
-        ({var}, _) = BackendVariable.getVar(cr, aliasVars);
+        (var, _) = BackendVariable.getVarSingle(cr, aliasVars);
         exp = BackendVariable.varBindExp(var);
         cr::{} = Expression.extractCrefsFromExp(exp);
         b = BaseHashSet.has(cr, hs);
-        ({var}, _) = BackendVariable.getVar(cr, vars);
+        (var, _) = BackendVariable.getVarSingle(cr, vars);
         varlst = List.consOnTrue(not b, var, iAcc);
       then
         replaceOtherStateSetVars(varlst, vars, aliasVars, hs, varlst);
@@ -4466,7 +4466,7 @@ algorithm
   for cr_exp in cr_exp_lst loop
     (cr,e) := cr_exp;
     try
-      ({v},{i}) := BackendVariable.getVar(cr,outVars);
+      (v,i) := BackendVariable.getVarSingle(cr,outVars);
       // add bindExp
       v := BackendVariable.setBindExp(v, SOME(e));
       // Update this to given source information!!!!
@@ -5063,7 +5063,7 @@ algorithm
     (cr1,cr_eq_lst) := tpl;
     BaseHashTable.clear(HTStartExpToInt);
     BaseHashTable.clear(HTNominalExpToInt);
-    ({v},{i}) := BackendVariable.getVar(cr1,outVars);
+    (v,i) := BackendVariable.getVarSingle(cr1,outVars);
     if BackendVariable.varHasStartValue(v) then
       e := BackendVariable.varStartValue(v);
       if Expression.isZero(e) then
@@ -5140,7 +5140,7 @@ algorithm
 
     case ({}) then (outHTStartExpToInt,outHTNominalExpToInt);
     case (cr1,eq)::cr_eq_rest equation
-      ({v},_) = BackendVariable.getVar(cr1,inAliasVars);
+      (v,_) = BackendVariable.getVarSingle(cr1,inAliasVars);
       e = BackendVariable.varBindExp(v);
       if BackendVariable.varHasStartValue(v) then
         res = BackendVariable.varStartValue(v);

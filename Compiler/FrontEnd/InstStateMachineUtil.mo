@@ -194,10 +194,15 @@ protected
   HashTableCG.HashTable outerOutputCrefToSMCompCref "Table to map outer outputs to corresponding state";
   HashTableCG.HashTable outerOutputCrefToInnerCref "Table to map outer output to corresponding inners";
   HashTable3.HashTable innerCrefToOuterOutputCrefs "Kind of \"inverse\" of  outerOutputCrefToInnerCref";
-  List<tuple<DAE.ComponentRef, DAE.ComponentRef>> hashEntries;
-  List<DAE.ComponentRef> uniqueHashValues;
+  List<tuple<DAE.ComponentRef, DAE.ComponentRef>> hashEntries_outerOutputCrefToInnerCref;
+  List<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> innerCrefToOuterOutputCrefs_der = {} "Extracted part in which at least one of the output crefs appears in a der(..)";
+  List<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> innerCrefToOuterOutputCrefs_nonDer = {} "The non-der(..) rest";
+  List<DAE.ComponentRef> uniqueHashValues, crefs, derCrefsAcc = {}, outerOutputCrefs;
+  HashSet.HashSet derCrefsSet;
   DAE.FunctionTree emptyTree;
-  list<DAE.Element> dAElistNew, mergeEqns;
+  list<DAE.Element> dAElistNew, mergeEqns, mergeEqns_der, aliasEqns_der;
+  Integer nOfHits;
+  Boolean hasDer;
   // FLAT_SM
   DAE.Ident ident;
   list<DAE.Element> dAElist "The states/modes within the the flat state machine";
@@ -206,49 +211,195 @@ algorithm
 
   // Create table that maps outer outputs to corresponding state
   outerOutputCrefToSMCompCref := List.fold(dAElist, collectOuterOutputs, HashTableCG.emptyHashTable());
-  //print("InstStateMachineUtil.mergeVariableDefinitions OuterToSTATE:\n"); BaseHashTable.dumpHashTable(outerOutputCrefToSMCompCref);
+  // print("InstStateMachineUtil.mergeVariableDefinitions OuterToSTATE:\n"); BaseHashTable.dumpHashTable(outerOutputCrefToSMCompCref);
 
   // Create table that maps outer outputs crefs to corresponding inner crefs
   outerOutputCrefToInnerCref := List.fold1(BaseHashTable.hashTableKeyList(outerOutputCrefToSMCompCref), matchOuterWithInner, inIH, HashTableCG.emptyHashTable());
-  //print("InstStateMachineUtil.mergeVariableDefinitions OuterToINNER:\n"); BaseHashTable.dumpHashTable(outerOutputCrefToInnerCref);
+  // print("InstStateMachineUtil.mergeVariableDefinitions OuterToINNER:\n"); BaseHashTable.dumpHashTable(outerOutputCrefToInnerCref);
 
   // Create table that maps inner crefs from above to a list of corresponding outer crefs
-  hashEntries := BaseHashTable.hashTableList(outerOutputCrefToInnerCref);
+  hashEntries_outerOutputCrefToInnerCref := BaseHashTable.hashTableList(outerOutputCrefToInnerCref);
   uniqueHashValues := List.unique(BaseHashTable.hashTableValueList(outerOutputCrefToInnerCref));
-  //print("InstStateMachineUtil.mergeVariableDefinitions uniqueHashValues: (" + stringDelimitList(List.map(uniqueHashValues, ComponentReference.crefStr), ",") + ")\n");
-  innerCrefToOuterOutputCrefs := List.fold1(uniqueHashValues, collectCorrespondingKeys, hashEntries, HashTable3.emptyHashTable());
-  //print("InstStateMachineUtil.mergeVariableDefinitions: innerCrefToOuterOutputCrefs:\n"); BaseHashTable.dumpHashTable(innerCrefToOuterOutputCrefs);
+  // print("InstStateMachineUtil.mergeVariableDefinitions uniqueHashValues: (" + stringDelimitList(List.map(uniqueHashValues, ComponentReference.crefStr), ",") + ")\n");
+  innerCrefToOuterOutputCrefs := List.fold1(uniqueHashValues, collectCorrespondingKeys, hashEntries_outerOutputCrefToInnerCref, HashTable3.emptyHashTable());
+  // print("InstStateMachineUtil.mergeVariableDefinitions: innerCrefToOuterOutputCrefs:\n"); BaseHashTable.dumpHashTable(innerCrefToOuterOutputCrefs);
 
   // Substitute occurrences of previous(outerCref) by previous(innerCref)
   emptyTree := DAE.AvlTreePathFunction.Tree.EMPTY();
   (DAE.DAE(dAElist), _, _) := DAEUtil.traverseDAE(DAE.DAE(dAElist), emptyTree, traverserHelperSubsOuterByInnerExp, outerOutputCrefToInnerCref);
 
-  // FIXME add support for outers that don't have "inner outer" or "inner" at closest instance level (requires to introduce a fresh intermediate variable)
-  mergeEqns := List.map1(BaseHashTable.hashTableKeyList(innerCrefToOuterOutputCrefs), freshMergingEqn, innerCrefToOuterOutputCrefs);
+  if Flags.getConfigBool(Flags.CT_STATE_MACHINES) then
+	  // == HACK Let's deal with continuous-time ==
+	  crefs := BaseHashTable.hashTableKeyList(outerOutputCrefToSMCompCref);
+	  for cref in crefs loop
+	    nOfHits := 0;
+	    // traverse dae expressions and search for der(cref) occurances
+	    (_, _, (_,(_, nOfHits))) := DAEUtil.traverseDAE(DAE.DAE(dAElist), emptyTree, Expression.traverseSubexpressionsHelper, (traversingCountDer, (cref, 0)));
+	    if nOfHits > 0 then
+	      derCrefsAcc := cref :: derCrefsAcc;
+	    end if;
+	  end for;
+    // print("InstStateMachineUtil.mergeVariableDefinitions derCrefsAcc:\n" + stringDelimitList(List.map(derCrefsAcc, ComponentReference.crefStr), ", ") + "\n");
+	  derCrefsSet := HashSet.emptyHashSetSized(listLength(derCrefsAcc));
+	  derCrefsSet := List.fold(derCrefsAcc, BaseHashSet.add, derCrefsSet);
+	  // Split the mapping from inner crefs to outer output crefs in a "continuous" part and the rest
+	  for hashEntry in BaseHashTable.hashTableList(innerCrefToOuterOutputCrefs) loop
+	    (_, outerOutputCrefs) := hashEntry;
+	    hasDer := List.exist(outerOutputCrefs, function BaseHashSet.has(hashSet=derCrefsSet));
+	    if hasDer then
+	      innerCrefToOuterOutputCrefs_der := hashEntry :: innerCrefToOuterOutputCrefs_der;
+	    else
+	      innerCrefToOuterOutputCrefs_nonDer := hashEntry :: innerCrefToOuterOutputCrefs_nonDer;
+	    end if;
+	  end for;
+	  // Create aliases between inner and outer of 'der' entries, e.g., a tuple (x -> {a.x, b.x}) will be transformed to alias equations {x = a.x, x = b.x}
+	  aliasEqns_der := List.flatten( List.map(innerCrefToOuterOutputCrefs_der, freshAliasEqn_der) );
+	  // Create merging equations for 'der' entries
+	  mergeEqns_der := listAppend(List.map(innerCrefToOuterOutputCrefs_der, freshMergingEqn_der), aliasEqns_der);
+    // Create merging equations for 'nonDer' entries
+	  mergeEqns := listAppend(List.map(innerCrefToOuterOutputCrefs_nonDer, freshMergingEqn), mergeEqns_der);
+  else
+    // FIXME add support for outers that don't have "inner outer" or "inner" at closest instance level (requires to introduce a fresh intermediate variable)
+    mergeEqns := List.map(BaseHashTable.hashTableList(innerCrefToOuterOutputCrefs), freshMergingEqn);
+  end if;
 
   // add processed flat state machine and corresponding merging equations to the dae element list
   //outElementLst := listAppend(outElementLst, {DAE.FLAT_SM(ident=ident, dAElist=listAppend(dAElist, mergeEqns))}); // put merge equations in FLAT_SM element
   outElementLst := listAppend(inStartElementLst, DAE.FLAT_SM(ident=ident, dAElist=dAElist) :: mergeEqns); // put equations after FLAT_SM element
 end mergeVariableDefinitions;
 
+protected function freshAliasEqn_der "
+Author: BTH
+Helper function to mergeVariableDefinition.
+Create a fresh alias equation between inners and their corresponding outer output variable defintions
+"
+  input tuple<DAE.ComponentRef, list<DAE.ComponentRef>> inInnerCrefToOuterOutputCrefs "tuple relating the inner cref to respective outer crefs";
+  output list<DAE.Element> outEqns;
+protected
+  DAE.ComponentRef innerCref;
+  List<DAE.ComponentRef> outerCrefs;
+  DAE.Type ty;
+algorithm
+  (innerCref, outerCrefs) := inInnerCrefToOuterOutputCrefs;
+  // FIXME use instead 'ty := ComponentReference.crefTypeConsiderSubs(innerCref);'?
+  ty := ComponentReference.crefLastType(innerCref);
+  // Alias equations
+  outEqns := list(DAE.EQUATION(DAE.CREF(innerCref, ty), DAE.CREF(outerCref, ty),  DAE.emptyElementSource) for outerCref in outerCrefs);
+end freshAliasEqn_der;
+
+protected function freshMergingEqn_der "
+Author: BTH
+Helper function to mergeVariableDefinition.
+Create a fresh equation for merging outer output variable defintions of equations involving der(..)
+"
+  input tuple<DAE.ComponentRef, list<DAE.ComponentRef>> inInnerCrefToOuterOutputCrefs "tuple relating the inner cref to respective outer crefs";
+  output DAE.Element outEqn;
+protected
+  DAE.ComponentRef innerCref;
+  List<DAE.ComponentRef> outerCrefs, outerCrefsStripped, outerCrefDers;
+  DAE.Type ty;
+  DAE.Exp exp;
+algorithm
+  (innerCref, outerCrefs) := inInnerCrefToOuterOutputCrefs;
+
+  // FIXME use instead 'ty := ComponentReference.crefTypeConsiderSubs(innerCref);'?
+  ty := ComponentReference.crefLastType(innerCref);
+  outerCrefsStripped := List.map(outerCrefs, ComponentReference.crefStripLastIdent);
+
+  // FIXME this variables are generated in StateMachineFlatten.addStateActivationAndReset(..) which is UGLY
+  outerCrefDers := List.map(outerCrefs, function ComponentReference.appendStringLastIdent(inString = "_der$"));
+
+  // der(x)
+  exp := DAE.CALL(Absyn.IDENT("der"), {DAE.CREF(innerCref, ty)}, DAE.callAttrBuiltinReal);
+  // der(x) = ...
+  outEqn := DAE.EQUATION(exp, mergingRhs_der(outerCrefDers, innerCref, ty), DAE.emptyElementSource);
+end freshMergingEqn_der;
+
+protected function mergingRhs_der "
+Author: BTH
+Helper function to freshMergingEqn_der.
+Create RHS expression of merging equation.
+"
+  input List<DAE.ComponentRef> inOuterCrefs "List of the crefs of the outer variables";
+  input DAE.ComponentRef inInnerCref;
+  input DAE.Type ty "type of inner cref (inner cref type expected to the same as outer crefs type)";
+  output DAE.Exp res;
+protected
+  DAE.CallAttributes callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+algorithm
+  res := match (inOuterCrefs)
+    local
+      DAE.ComponentRef outerCref, crefState;
+      List<DAE.ComponentRef> rest;
+      DAE.Exp outerCrefExp, innerCrefExp, crefStateExp, ifExp, expCond, expElse;
+    case (outerCref::{})
+      equation
+        outerCrefExp = DAE.CREF(outerCref, ty);
+        innerCrefExp = DAE.CREF(inInnerCref, ty);
+        crefState = ComponentReference.crefStripLastIdent(outerCref);
+        crefStateExp = DAE.CREF(crefState, ty);
+        expCond = DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
+        expElse = DAE.RCONST(0);
+        ifExp = DAE.IFEXP(expCond, outerCrefExp, expElse);
+      then ifExp;
+    case (outerCref::rest)
+      equation
+        outerCrefExp = DAE.CREF(outerCref, ty);
+        crefState = ComponentReference.crefStripLastIdent(outerCref);
+        crefStateExp = DAE.CREF(crefState, ty);
+        expCond = DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
+        expElse = mergingRhs_der(rest, inInnerCref, ty);
+        ifExp = DAE.IFEXP(expCond, outerCrefExp, expElse);
+      then ifExp;
+  end match;
+
+end mergingRhs_der;
+
+protected function traversingCountDer "
+Author: BTH
+Helper function to traverse subexpressions
+Counts occurances of 'der(cref)'
+"
+  input DAE.Exp inExp;
+  input tuple<DAE.ComponentRef, Integer> inCref_HitCount "tuple of x and counter for hits of der(x)";
+  output DAE.Exp outExp;
+  output tuple<DAE.ComponentRef, Integer> outCref_HitCount;
+protected
+  DAE.ComponentRef cref;
+  Integer hitCount;
+algorithm
+  (cref, hitCount) := inCref_HitCount;
+  (outExp,outCref_HitCount) := match inExp
+    local
+      DAE.ComponentRef componentRef;
+      list<DAE.Exp> expLst;
+      DAE.CallAttributes attr;
+    case DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.CREF(componentRef=componentRef)})
+      guard ComponentReference.crefEqual(componentRef, cref)
+        then (inExp, (cref, hitCount + 1));
+    else (inExp,inCref_HitCount);
+  end match;
+end traversingCountDer;
+
 protected function freshMergingEqn "
 Author: BTH
 Helper function to mergeVariableDefinition.
 Create a fresh equation for merging outer output variable defintions
 "
-  input DAE.ComponentRef inInnerCref;
-  input HashTable3.HashTable inInnerCrefToOuterOutputCrefs;
+  input tuple<DAE.ComponentRef, list<DAE.ComponentRef>> inInnerCrefToOuterOutputCrefs "tuple relating the inner cref to respective outer crefs";
   output DAE.Element outEqn;
 protected
+  DAE.ComponentRef innerCref;
   List<DAE.ComponentRef> outerCrefs, outerCrefsStripped;
   DAE.Type ty;
 algorithm
-  ty := ComponentReference.crefLastType(inInnerCref);
-  // FIXME use instead 'ty := ComponentReference.crefTypeConsiderSubs(inInnerCref);'?
-  outerCrefs := BaseHashTable.get(inInnerCref, inInnerCrefToOuterOutputCrefs);
+  (innerCref, outerCrefs) := inInnerCrefToOuterOutputCrefs;
+
+  // FIXME BTH use instead 'ty := ComponentReference.crefTypeConsiderSubs(innerCref);'?
+  ty := ComponentReference.crefLastType(innerCref);
   outerCrefsStripped := List.map(outerCrefs, ComponentReference.crefStripLastIdent);
 
-  outEqn := DAE.EQUATION(DAE.CREF(inInnerCref, ty), mergingRhs(outerCrefs, inInnerCref, ty), DAE.emptyElementSource);
+  outEqn := DAE.EQUATION(DAE.CREF(innerCref, ty), mergingRhs(outerCrefs, innerCref, ty), DAE.emptyElementSource);
 end freshMergingEqn;
 
 protected function mergingRhs "

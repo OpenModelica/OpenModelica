@@ -10,5 +10,6 @@ configure.ac text eol=native
 Makefile* text eol=native
 *.pro text eol=native
 *.mo eol=lf
+*.tpl eol=lf
 *.po eol=lf
 *.g text eol=lf

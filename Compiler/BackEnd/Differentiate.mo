@@ -1110,7 +1110,7 @@ algorithm
     case ((DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), _, _)
       equation
         //print("\nExp-Cref\n known vars: " + ExpressionDump.printExpStr(e));
-        (var::{},_) = BackendVariable.getVar(cr, knvars);
+        (var,_) = BackendVariable.getVarSingle(cr, knvars);
         false = BackendVariable.isVarOnTopLevelAndInput(var);
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
 
@@ -1121,7 +1121,7 @@ algorithm
     // d(discrete)/d(x) = 0
     case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(allVars=SOME(timevars)), _, _)
       equation
-        ({BackendDAE.VAR(varKind = kind)},_) = BackendVariable.getVar(cr, timevars);
+        (BackendDAE.VAR(varKind = kind),_) = BackendVariable.getVarSingle(cr, timevars);
         //print("\nExp-Cref\n known vars: " + ComponentReference.printComponentRefStr(cr));
         true = listMember(kind,{BackendDAE.DISCRETE()}) or not Types.isReal(tp);
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
@@ -1139,7 +1139,7 @@ algorithm
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\nDUMMY_STATE: " + se1);
 
-        ({var},_) = BackendVariable.getVar(cr, timevars);
+        (var,_) = BackendVariable.getVarSingle(cr, timevars);
         true = BackendVariable.isDummyStateVar(var);
         cr = ComponentReference.crefPrefixDer(cr);
         res = Expression.makeCrefExp(cr, tp);
@@ -1156,7 +1156,7 @@ algorithm
         //print("\nExp-Cref\n all other vars: " + se1);
 
         //({BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))},_) = BackendVariable.getVar(cr, timevars);
-        ({_},_) = BackendVariable.getVar(cr, timevars);
+        (_,_) = BackendVariable.getVarSingle(cr, timevars);
         res = DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
         //se1 = ExpressionDump.printExpStr(res);

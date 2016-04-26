@@ -68,6 +68,25 @@ protected import System;
 protected import Types;
 protected import MetaModelica.Dangerous;
 
+public function printComponentPrefixStr "Prints a Prefix to a string. Rather slow..."
+  input Prefix.ComponentPrefix pre;
+  output String outString;
+algorithm
+  outString :=  match pre
+    local
+      String str,s,rest_1,s_1,s_2;
+      Prefix.ComponentPrefix rest;
+      Prefix.ClassPrefix cp;
+      list<DAE.Subscript> ss;
+
+    case Prefix.NOCOMPPRE() then "<Prefix.NOCOMPPRE()>";
+    case Prefix.PRE(next=Prefix.NOCOMPPRE(), subscripts={}) then pre.prefix;
+    case Prefix.PRE(next=Prefix.NOCOMPPRE()) then pre.prefix + "[" + ExpressionDump.printSubscriptLstStr(pre.subscripts) + "]";
+    case Prefix.PRE(subscripts={}) then printComponentPrefixStr(pre.next)+"."+pre.prefix;
+    case Prefix.PRE() then printComponentPrefixStr(pre.next)+"."+pre.prefix + "[" + ExpressionDump.printSubscriptLstStr(pre.subscripts) + "]";
+  end match;
+end printComponentPrefixStr;
+
 public function printPrefixStr "Prints a Prefix to a string."
   input Prefix.Prefix inPrefix;
   output String outString;
@@ -1408,6 +1427,39 @@ algorithm
     else Prefix.NOCOMPPRE();
   end match;
 end componentPrefix;
+
+public function writeComponentPrefix
+  input File.File file;
+  input Prefix.ComponentPrefix pre;
+  input File.Escape escape=File.Escape.None;
+algorithm
+  _ := match pre
+    case Prefix.PRE(next=Prefix.NOCOMPPRE())
+    algorithm
+      File.writeEscape(file, pre.prefix, escape);
+      ComponentReference.writeSubscripts(file, pre.subscripts, escape);
+    then ();
+    case Prefix.PRE()
+    algorithm
+      writeComponentPrefix(file, pre.next); // Stored in reverse order...
+      File.writeEscape(file, pre.prefix, escape);
+      ComponentReference.writeSubscripts(file, pre.subscripts, escape);
+    then ();
+    else ();
+  end match;
+end writeComponentPrefix;
+
+public function haveSubs "Function: crefHaveSubs
+  Checks whether Prefix has any subscripts, recursive "
+  input Prefix.ComponentPrefix pre;
+  output Boolean ob;
+algorithm
+  ob := match pre
+    case Prefix.PRE(subscripts = {}) then haveSubs(pre.next);
+    case Prefix.PRE() then true;
+    else false;
+  end match;
+end haveSubs;
 
 annotation(__OpenModelica_Interface="frontend");
 end PrefixUtil;

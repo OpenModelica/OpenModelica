@@ -108,6 +108,8 @@ import Util;
 import ValuesUtil;
 import VisualXML;
 
+protected constant String UNDERLINE = "========================================";
+
 public function appendLists
   input list<SimCode.SimEqSystem> inEqn1;
   input list<SimCode.SimEqSystem> inEqn2;
@@ -360,17 +362,6 @@ algorithm
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
     (allEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacsTemp) := countandIndexAlgebraicLoops(allEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {});
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-
-    if Flags.isSet(Flags.DYNAMIC_TEARING_INFO) then
-      print("\n\n*********************\n* SimCode Equations *\n*********************\n\ninitialEquations:\n=================\n");
-      dumpSimEqSystemLst(initialEquations,"\n");
-      print("\n\ninitialEquations (lambda=0):\n===================\n");
-      dumpSimEqSystemLst(initialEquations_lambda0,"\n");
-      print("\n\nparameterEquations:\n===================\n");
-      dumpSimEqSystemLst(parameterEquations,"\n");
-      print("\n\nallEquations:\n=============\n");
-      dumpSimEqSystemLst(allEquations,"\n");
-    end if;
 
     // collect symbolic jacobians from state selection
     (stateSets, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians) := indexStateSets(stateSets, {}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {}, {});
@@ -4045,7 +4036,7 @@ protected
 algorithm
   ((var, (vars, varLst))) := inTuple;
   SimCodeVar.SIMVAR(name=cref) := var;
-  ({v},_) := BackendVariable.getVar(cref, vars);
+  (v,_) := BackendVariable.getVarSingle(cref, vars);
   outTuple := ((var, (vars, v::varLst)));
 end sortBackVarWithSimVarsOrder;
 
@@ -4077,7 +4068,7 @@ algorithm
        createAllDiffedSimVars(restVar, cref, inAllVars, inIndex, inMatrixName, iVars);
 
      case(BackendDAE.VAR(varName=currVar, varKind=BackendDAE.STATE(), values = dae_var_attr)::restVar, cref, _, _, _, _) equation
-      ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
+      BackendVariable.getVarSingle(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
       isProtected = getProtected(dae_var_attr);
@@ -4086,7 +4077,7 @@ algorithm
       createAllDiffedSimVars(restVar, cref, inAllVars, inIndex+1, inMatrixName, r1::iVars);
 
     case(BackendDAE.VAR(varName=currVar, values = dae_var_attr)::restVar, cref, _, _, _, _) equation
-      ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
+      BackendVariable.getVarSingle(currVar, inAllVars);
       derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
       isProtected = getProtected(dae_var_attr);
       r1 = SimCodeVar.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "", "", "", inIndex, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected, hideResult, NONE());
@@ -6128,7 +6119,7 @@ algorithm
 
    case(DAE.CREF(componentRef=cref),_)
      equation
-       ({var},_) = BackendVariable.getVar(cref,varsIn);
+       (var,_) = BackendVariable.getVarSingle(cref,varsIn);
        true =  not artificialVarKind(BackendVariable.varKind(var));// if its not of kind variable(), it is something artificial (DUMMY_DER,...) and the start value is not model based in that case
       // print("VAR: "+BackendDump.varString(var)+" -->");
        if BackendVariable.varHasBindExp(var) /*and Expression.isConst(BackendVariable.varBindExp(var))*/ then
@@ -7035,45 +7026,46 @@ public function dumpSimCodeDebug"prints the simcode debug output to std out."
 protected
   list<Option<SimCode.JacobianMatrix>> jacObs;
 algorithm
-  print("allEquations: \n-----------------------\n");
+  print("\n\n*********************\n* SimCode Equations *\n*********************\n\n");
+  print("\nallEquations: \n" + UNDERLINE + "\n\n");
   dumpSimEqSystemLst(simCode.allEquations,"\n");
-  print("\n--------------\n");
-  print("odeEquations ("+intString(listLength(simCode.odeEquations))+" systems): \n-----------------------\n");
+  print(UNDERLINE + "\n\n\n");
+  print("\nodeEquations ("+intString(listLength(simCode.odeEquations))+" systems): \n" + UNDERLINE + "\n");
   List.map1_0(simCode.odeEquations,dumpSimEqSystemLst,"\n");
-  print("\n--------------\n");
-  print("algebraicEquations ("+intString(listLength(simCode.algebraicEquations))+" systems): \n-----------------------\n");
+  print(UNDERLINE + "\n\n\n");
+  print("\nalgebraicEquations ("+intString(listLength(simCode.algebraicEquations))+" systems): \n" + UNDERLINE + "\n");
   List.map1_0(simCode.algebraicEquations,dumpSimEqSystemLst,"\n");
-  print("\n--------------\n");
-  print("initialEquations: ("+intString(listLength(simCode.initialEquations))+")\n-----------------------\n");
+  print(UNDERLINE + "\n\n\n");
+  print("\ninitialEquations: ("+intString(listLength(simCode.initialEquations))+")\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.initialEquations,"\n");
-  print("\n--------------\n");
-  print("initialEquations_lambda0: ("+intString(listLength(simCode.initialEquations_lambda0))+")\n-----------------------\n");
+  print(UNDERLINE + "\n\n\n");
+  print("\ninitialEquations_lambda0: ("+intString(listLength(simCode.initialEquations_lambda0))+")\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.initialEquations_lambda0,"\n");
-  print("removedInitialEquations: \n-----------------------\n");
+  print("\nremovedInitialEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.removedInitialEquations,"\n");
-  print("startValueEquations: \n-----------------------\n");
+  print("\nstartValueEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.startValueEquations,"\n");
-  print("nominalValueEquations: \n-----------------------\n");
+  print("\nnominalValueEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.nominalValueEquations,"\n");
-  print("minValueEquations: \n-----------------------\n");
+  print("\nminValueEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.minValueEquations,"\n");
-  print("maxValueEquations: \n-----------------------\n");
+  print("\nmaxValueEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.maxValueEquations,"\n");
-  print("parameterEquations: \n-----------------------\n");
+  print("\nparameterEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.parameterEquations,"\n");
-  print("removedEquations: \n-----------------------\n");
+  print("\nremovedEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.removedEquations,"\n");
-  print("algorithmAndEquationAsserts: \n-----------------------\n");
+  print("\nalgorithmAndEquationAsserts: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.algorithmAndEquationAsserts,"\n");
-  print("equationsForZeroCrossings: \n-----------------------\n");
+  print("\nequationsForZeroCrossings: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.equationsForZeroCrossings,"\n");
-  print("jacobianEquations: \n-----------------------\n");
+  print("\njacobianEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.jacobianEquations,"\n");
   extObjInfoString(simCode.extObjInfo);
-  print("jacobianMatrixes: \n-----------------------\n");
+  print("\njacobianMatrices: \n" + UNDERLINE + "\n");
   jacObs := List.map(simCode.jacobianMatrixes,Util.makeOption);
   List.map_0(jacObs,dumpJacobianMatrix);
-  print("modelInfo: \n-----------------------\n");
+  print("\nmodelInfo: \n" + UNDERLINE + "\n");
   dumpModelInfo(simCode.modelInfo);
 end dumpSimCodeDebug;
 
@@ -11797,7 +11789,7 @@ algorithm
     _ := matchcontinue state
       case BackendDAE.VAR(varKind=BackendDAE.STATE(index=index /* TODO: Do we need the number of times it was differentiated? */, derName = SOME(derCref)))
         algorithm
-          ({var},{pos}) := BackendVariable.getVar(derCref, allStates);
+          (var,pos) := BackendVariable.getVarSingle(derCref, allStates);
           if not BackendVariable.varEqual(state, var) then
             arrayUpdate(ders, curIndex, pos);
           else

@@ -203,6 +203,41 @@ algorithm
   end match;
 end elabMod;
 
+public function isInvariantMod "Is the modification one that does not depend on the scope it is evaluated in?"
+  input SCode.Mod mod;
+  output Boolean b;
+protected
+  Absyn.Exp e;
+  SCode.Mod mods;
+algorithm
+  b := match mod
+    case SCode.NOMOD() then true;
+    case SCode.MOD(binding=NONE())
+      algorithm
+        b := match mod.binding
+          case SOME(e)
+            algorithm
+              (_, b) := Absyn.traverseExp(e, Absyn.isInvariantExpNoTraverse, true);
+            then b;
+          else true;
+        end match;
+        if not b then
+          return;
+        end if;
+        for sm in mod.subModLst loop
+          if not isInvariantMod(sm.mod) then
+            b := false;
+            return;
+          end if;
+        end for;
+      then true;
+    // operator record ComplexCurrent = Complex(redeclare Modelica.SIunits.Current re, redeclare Modelica.SIunits.Current im)
+    case SCode.Mod.REDECL(element=SCode.Element.COMPONENT(modifications=mods,typeSpec=Absyn.TypeSpec.TPATH(path=Absyn.Path.FULLYQUALIFIED(),arrayDim=NONE())))
+      then isInvariantMod(mods);
+    else false; // Redeclarations, etc
+  end match;
+end isInvariantMod;
+
 public function elabModForBasicType "
   Same as elabMod, but if a named Mod is not part of a basic type, fail instead."
   input FCore.Cache inCache;

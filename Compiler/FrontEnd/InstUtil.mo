@@ -54,6 +54,7 @@ import HashTable;
 import HashTable5;
 
 protected
+import DoubleEndedList;
 import List;
 import BaseHashTable;
 import Expression;
@@ -919,21 +920,6 @@ algorithm
   // basically if child or parent is a type or basic type or parent is a connector and child is a type
   b := boolOr(b1, boolOr(b2, boolOr(b3, boolAnd(boolOr(b1,b2), b4))));
 end checkDerivedRestriction;
-
-public function addExpandable
-  input list<SCode.Equation> inEqs;
-  input list<SCode.Equation> inExpandable;
-  output list<SCode.Equation> outEqs;
-algorithm
-  outEqs := match(inEqs, inExpandable)
-    // nothing
-    case (_, {}) then inEqs;
-    // if is only one, don't append!
-    case (_, {_}) then inEqs;
-    // if is more than one, append
-    else listAppend(inEqs, inExpandable);
-  end match;
-end addExpandable;
 
 public function matchModificationToComponents "
 Author: BZ, 2009-05
@@ -6063,70 +6049,71 @@ algorithm
   end match;
 end extractCurrentName;
 
-public function splitConnectEquationsExpandable
+public function reorderConnectEquationsExpandable
 "@author: adrpo
   Reorder the connect equations to have non-expandable connect first:
     connect(non_expandable, non_expandable);
     connect(non_expandable, expandable);
     connect(expandable, non_expandable);
     connect(expandable, expandable);"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPre;
+  input output FCore.Cache cache;
+  input FCore.Graph env;
   input list<SCode.Equation> inEquations;
-  input Boolean impl;
-  input list<SCode.Equation> inAccumulatorNonExpandable;
-  input list<SCode.Equation> inAccumulatorExpandable;
-  output FCore.Cache outCache;
   output list<SCode.Equation> outEquations;
-  output list<SCode.Equation> outExpandableEquations;
+protected
+  DoubleEndedList<SCode.Equation> delst;
+  list<SCode.Equation> expandableEqs;
+  Absyn.ComponentRef crefLeft, crefRight;
+  DAE.Type ty1,ty2;
 algorithm
-  (outCache,outEquations,outExpandableEquations) := matchcontinue(inCache, inEnv, inIH, inPre, inEquations, impl, inAccumulatorNonExpandable, inAccumulatorExpandable)
-    local
-      list<SCode.Equation>  rest, eEq, nEq;
-      SCode.Equation eq;
-      Absyn.ComponentRef crefLeft, crefRight;
-      FCore.Cache cache;
-      FCore.Graph env;
-      SourceInfo info;
-      DAE.Type ty1,ty2;
-      DAE.ComponentRef c1_1,c2_1;
+  if if listEmpty(inEquations) then true else (not System.getHasExpandableConnectors()) then
+    outEquations := inEquations;
+    return;
+  end if;
+  ErrorExt.setCheckpoint("expandableConnectorsOrder");
+  delst := DoubleEndedList.fromList({});
+  expandableEqs := list(
+    eq
+    for eq
+    guard matchcontinue eq
+    case SCode.EQUATION(SCode.EQ_CONNECT(crefLeft=crefLeft, crefRight=crefRight))
+    algorithm
+      (_, ty1, _) := Lookup.lookupConnectorVar(env, ComponentReference.toExpCref(crefLeft));
+      // type of left var is an expandable connector!
+      true := Types.isExpandableConnector(ty1);
+      (_, ty2, _) := Lookup.lookupConnectorVar(env, ComponentReference.toExpCref(crefRight));
+      // type of right left var is an expandable connector!
+      true := Types.isExpandableConnector(ty2);
+    then true;
+    else algorithm DoubleEndedList.push_back(delst, eq); then false;
+    end matchcontinue in inEquations
+  );
 
-    // if we have no expandable connectors, return the same
-    case (cache, _, _, _, _::_, _, _, _)
-      equation
-        false = System.getHasExpandableConnectors();
-      then
-        (cache, inEquations, {});
+  if listEmpty(expandableEqs) then
+    ErrorExt.delCheckpoint("expandableConnectorsOrder");
+    outEquations := inEquations; // Just to preserve referenceEq; does not really matter
+    return;
+  end if;
+  ErrorExt.rollBack("expandableConnectorsOrder");
 
-    // handle empty case
-    case (cache, _, _, _, {}, _, eEq, nEq) then (cache, listReverse(eEq), listReverse(nEq));
+  // Reorder the connect equations to have non-expandable connect first:
+  //   connect(non_expandable, non_expandable);
+  //   connect(non_expandable, expandable);
+  //   connect(expandable, non_expandable);
+  //   connect(expandable, expandable);
 
-    // connect, both expandable
-    case (cache, env, _, _, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, _, eEq, nEq)
-      equation
-        (_, ty1, _) = Lookup.lookupConnectorVar(env, ComponentReference.toExpCref(crefLeft));
-        (_, ty2, _) = Lookup.lookupConnectorVar(env, ComponentReference.toExpCref(crefRight));
-        //(cache,SOME((DAE.CREF(),DAE.PROP(ty1,_),_))) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
-        //(cache,SOME((DAE.CREF(),DAE.PROP(ty2,_),_))) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
+  // put expandable at the begining
+  DoubleEndedList.push_list_front(delst, expandableEqs);
+  // put expandable at the end
+  DoubleEndedList.push_list_back(delst, expandableEqs);
+  // duplicate expandable to get the union
+  _ := match expandableEqs
+  case _::_::_ algorithm DoubleEndedList.push_list_back(delst, expandableEqs); then (); // > length 1
+  else ();
+  end match;
 
-        // type of left var is an expandable connector!
-        true = Types.isExpandableConnector(ty1);
-        // type of right left var is an expandable connector!
-        true = Types.isExpandableConnector(ty2);
-        (cache, eEq, nEq) = splitConnectEquationsExpandable(cache, env, inIH, inPre, rest, impl, eEq, eq::nEq);
-      then
-        (cache, eEq, nEq);
-
-    // anything else, put at the begining (keep the order)
-    case (cache, _, _, _, eq::rest, _, eEq, nEq)
-      equation
-        (cache, eEq, nEq) = splitConnectEquationsExpandable(cache, inEnv, inIH, inPre, rest, impl, eq::eEq, nEq);
-      then
-        (cache, eEq, nEq);
-  end matchcontinue;
-end splitConnectEquationsExpandable;
+  outEquations := DoubleEndedList.toListAndClear(delst);
+end reorderConnectEquationsExpandable;
 
 public function sortInnerFirstTplLstElementMod
 "@author: adrpo

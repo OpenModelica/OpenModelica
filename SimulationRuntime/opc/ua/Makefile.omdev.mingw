@@ -4,6 +4,7 @@ CPPFLAGS=-I../../c
 LDFLAGS=-lpthread -lwsock32
 DLLEXT=.dll
 builddir_lib=$(OMBUILDDIR)/lib/omc
+builddir_bin=$(OMBUILDDIR)/bin
 top_builddir=../../../
 
 include Makefile.common

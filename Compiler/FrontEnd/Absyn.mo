@@ -6470,7 +6470,10 @@ public function elementArgName
   output Path outName;
 algorithm
   outName := match(inArg)
+    local
+      ElementSpec e;
     case MODIFICATION(path = outName) then outName;
+    case REDECLARATION(elementSpec = e) then makeIdentPathFromString(elementSpecName(e));
   end match;
 end elementArgName;
 
@@ -6762,6 +6765,36 @@ algorithm
     else false;
   end match;
 end isEmptyClassPart;
+
+public function isInvariantExpNoTraverse "For use with traverseExp"
+  input output Absyn.Exp e;
+  input output Boolean b;
+algorithm
+  if not b then
+    return;
+  end if;
+  b := match e
+    case INTEGER() then true;
+    case REAL() then true;
+    case STRING() then true;
+    case BOOL() then true;
+    case BINARY() then true;
+    case UNARY() then true;
+    case LBINARY() then true;
+    case LUNARY() then true;
+    case RELATION() then true;
+    case IFEXP() then true;
+    // case CREF(CREF_FULLYQUALIFIED()) then true;
+    case CALL(function_=CREF_FULLYQUALIFIED()) then true;
+    case PARTEVALFUNCTION(function_=CREF_FULLYQUALIFIED()) then true;
+    case ARRAY() then true;
+    case MATRIX() then true;
+    case RANGE() then true;
+    case CONS() then true;
+    case LIST() then true;
+    else false;
+  end match;
+end isInvariantExpNoTraverse;
 
 annotation(__OpenModelica_Interface="frontend");
 end Absyn;

@@ -608,14 +608,6 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     throwStreamPrint(threadData, "unsupported option -iim");
   }
 
-  /* do pivoting for dynamic state selection if selection changed try again */
-  if(stateSelection(data, threadData, 0, 1) == 1) {
-    if(stateSelection(data, threadData, 1, 1) == 1) {
-      /* report a warning about strange start values */
-      warningStreamPrint(LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
-    }
-  }
-
   /* check for unsolved (nonlinear|linear|mixed) systems
    * This is a workaround and should be removed as soon as possible.
    */
@@ -635,6 +627,14 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   storePreValues(data);                 /* save pre-values */
   updateDiscreteSystem(data, threadData);           /* evaluate discrete variables (event iteration) */
   saveZeroCrossings(data, threadData);
+
+  /* do pivoting for dynamic state selection if selection changed try again */
+  if(stateSelection(data, threadData, 0, 1) == 1) {
+    if(stateSelection(data, threadData, 1, 1) == 1) {
+      /* report a warning about strange start values */
+      warningStreamPrint(LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
+    }
+  }
 
   data->simulationInfo->initial = 0;
   /* initialization is done */

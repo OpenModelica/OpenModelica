@@ -50,6 +50,7 @@ protected import Expression;
 protected import Flags;
 protected import HashSet;
 protected import List;
+protected import PrefixUtil;
 protected import Util;
 protected import Error;
 
@@ -297,13 +298,13 @@ algorithm
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crefLst;
 
-    case (_, DAE.SOURCE(instanceOpt = NONE()), _)
+    case (_, DAE.SOURCE(instance = Prefix.NOCOMPPRE()), _)
       then algorithmOutputs(inAlgorithm, inCrefExpansionRule);
 
     // the algorithm came from a component that is member of an array or not
-    case (_, DAE.SOURCE(instanceOpt = SOME(cr)), _)
+    case (_, DAE.SOURCE(), _)
       then
-        if ComponentReference.crefHaveSubs(cr)
+        if PrefixUtil.haveSubs(inSource.instance)
         then algorithmOutputs(inAlgorithm, DAE.NOT_EXPAND())
         else algorithmOutputs(inAlgorithm, inCrefExpansionRule);
 

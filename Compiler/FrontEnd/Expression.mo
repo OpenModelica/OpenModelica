@@ -6459,6 +6459,58 @@ algorithm
   end match;
 end traversingexpHasDer;
 
+public function expHasPre "
+ Returns true if the expression contains the operator pre"
+  input DAE.Exp inExp;
+  output Boolean hasPre;
+algorithm
+  (_, hasPre) := traverseExpTopDown(inExp, traversingexpHasPre, false);
+end expHasPre;
+
+protected function traversingexpHasPre "
+Returns true if the exp is pre(..)"
+  input DAE.Exp inExp;
+  input Boolean inHasIt;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output Boolean outHasIt;
+algorithm
+  (outExp,cont,outHasIt) := match(inExp,inHasIt)
+    local
+      Boolean b;
+      ComponentRef cr;
+    case (DAE.CALL(path= Absyn.IDENT("pre")), false)
+      then (inExp,false,true);
+    case (_,b) then (inExp, not b, inHasIt);
+  end match;
+end traversingexpHasPre;
+
+public function expHasPrevious "
+Returns true if the expression contains the operator previous"
+  input DAE.Exp inExp;
+  output Boolean hasPre;
+algorithm
+  (_, hasPre) := traverseExpTopDown(inExp, traversingexpHasPrevious, false);
+end expHasPrevious;
+
+protected function traversingexpHasPrevious "
+Returns true if the exp is pre(..)"
+  input DAE.Exp inExp;
+  input Boolean inHasIt;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output Boolean outHasIt;
+algorithm
+  (outExp,cont,outHasIt) := match(inExp,inHasIt)
+    local
+      Boolean b;
+      ComponentRef cr;
+    case (DAE.CALL(path= Absyn.IDENT("previous")), false)
+      then (inExp,false,true);
+    case (_,b) then (inExp, not b, inHasIt);
+  end match;
+end traversingexpHasPrevious;
+
 
 public function expHasCrefNoPreorDer "
 @author: Frenkel TUD 2011-04

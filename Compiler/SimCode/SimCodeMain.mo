@@ -81,7 +81,6 @@ import GC;
 import HpcOmSimCodeMain;
 import HpcOmTaskGraph;
 import SerializeModelInfo;
-import SimCodeDump;
 import TaskSystemDump;
 import SerializeInitXML;
 import Serializer;
@@ -647,11 +646,7 @@ algorithm
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=false), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFunctionsFile(a_filePrefix=simCode.fileNamePrefix, a_functions=simCode.modelInfo.functions), file=simCode.fileNamePrefix + "_functions.c")) :: codegenFuncs;
 
-        if Flags.isSet(Flags.MODEL_INFO_JSON) then
-          codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
-        else
-          codegenFuncs := (function runTpl(func=function SimCodeDump.dumpSimCode(in_a_code=simCode, in_a_withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
-        end if;
+        codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
         // Test the parallel code generator in the test suite. Should give decent results given that the task is disk-intensive.
         numThreads := max(1, if Config.getRunningTestsuite() then min(2, System.numProcessors()) else Config.noProc());
         if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 then
@@ -666,7 +661,7 @@ algorithm
       Tpl.tplNoret(CodegenC.translateModel, simCode);
       SerializeInitXML.simulationInitFile(simCode, guid);
       System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_init.xml",simCode.fileNamePrefix+"_init.c", Config.simulationCodeTarget());
-      Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
+      SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
       Tpl.tplNoret(CodegenJS.markdownFile, simCode);
     then ();
 
@@ -728,13 +723,9 @@ algorithm
           end if;
         end if;
         Util.createDirectoryTree(fmutmp + "/sources/include/");
-        if Flags.isSet(Flags.MODEL_INFO_JSON) then
-          SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-          str := fmutmp + "/sources/" + simCode.fileNamePrefix;
-          true := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", str+"_info.c", Flags.getConfigString(Flags.TARGET));
-        else
-          Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
-        end if;
+        SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+        str := fmutmp + "/sources/" + simCode.fileNamePrefix;
+        true := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", str+"_info.c", Flags.getConfigString(Flags.TARGET));
         Tpl.tplNoret3(CodegenFMU.translateModel, simCode, FMUVersion, FMUType);
       then ();
     case (_,"Cpp")

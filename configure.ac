@@ -37,6 +37,7 @@ AC_SUBST(OMCRUNTIME_SHARED_LDFLAGS)
 AC_SUBST(SUNDIALS_LDFLAGS)
 AC_SUBST(IPOPT_LDFLAGS)
 AC_SUBST(IPOPT_CFLAGS)
+AC_SUBST(IPOPT_TARGET)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(SOURCE_REVISION)
@@ -181,10 +182,12 @@ fi
 
 dnl Disables the default CFLAGS="-g -O2"
 LDFLAGS_BEFORE="$LDFLAGS"
+LIBS_BEFORE="$LIBS"
 LDFLAGS="$LDFLAGS -Wl,--no-undefined"
 AC_MSG_CHECKING([looking for --no-undefined])
 AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes]);LD_NOUNDEFINED=" -Wl,--no-undefined"], [AC_MSG_RESULT([no])])
 LDFLAGS="$LDFLAGS_BEFORE"
+LIBS="$LIBS_BEFORE"
 
 TRY_FLAGS="-fno-stack-protector"
 
@@ -455,8 +458,7 @@ if test "$WANT_STATIC_LPSOLVE" = "no"; then
   LIBDL="$LIBS"
   AC_SEARCH_LIBS(sqrt,m)
   AC_SEARCH_LIBS(colamd,colamd)
-  AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[],[MINGW_EXTRA_LIBS="$MINGW_EXTRA_LIBS lpsolve"; AC_MSG_RESULT([lpsolve linking failed using $LIBS])])
-  LIBLPSOLVE55=$LIBS
+  AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[LIBLPSOLVE55=$LIBS],[MINGW_EXTRA_LIBS="$MINGW_EXTRA_LIBS lpsolve"; AC_MSG_RESULT([lpsolve linking failed using $LIBS])])
   LIBS=""
 else
   if test "$WANT_STATIC_LPSOLVE" = "yes"; then
@@ -597,6 +599,17 @@ AS_IF([test "x$with_UMFPACK" = xyes],
   UMFPACK_LDFLAGS=""
 ])
 
+# check for ipopt
+AC_ARG_WITH(ipopt, [  --without-ipopt              Disable compilation with IPOPT (only for bootstrapping; required for simulations)],
+[],[with_ipopt=yes])
+
+AS_IF([test "x$with_ipopt" = xyes],
+[
+  IPOPT_TARGET="ipopt";
+],[
+  IPOPT_TARGET=""
+])
+
 m4_include([common/m4/corba.m4])
 
 AC_MSG_CHECKING([for OpenCL])
@@ -631,7 +644,7 @@ if test "$DARWIN" = "1"; then
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm$LD_NOUNDEFINED"
   RT_LDFLAGS_SHARED=
-  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup"
+  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup $LIBLPSOLVE55"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/$host_short/omc/'"
   RPATH_QMAKE="-Wl,-rpath,'@loader_path/../../../../lib/$host_short/omc',-rpath,'@loader_path/../../../../lib/',-rpath,'$PREFIX/lib/$host_short/omc',-rpath,'$PREFIX/lib/'"
@@ -703,6 +716,7 @@ else
   LINK="cp -frl"
   LDFLAGS="$LDFLAGS -Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   RT_LDFLAGS_SHARED="-Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
+  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup $LIBLPSOLVE55"
   RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
   RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
   OS_TARGET="linux"

@@ -5,6 +5,7 @@
 package CodegenXML
 
 import interface SimCodeTV;
+import ExpressionDumpTpl;
 
 
 /*********************************************************************
@@ -790,7 +791,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
     <%crefXml(lhs.componentRef)%>
     <%expPart%>
     >>
-  else error(sourceInfo(), 'No runtime support for this sort of array call: <%printExpStr(eqn.exp)%>')
+  else error(sourceInfo(), 'No runtime support for this sort of array call: <%ExpressionDumpTpl.dumpExp(eqn.exp,"\"")%>')
 %>
 >>
 end equationArrayCallAssignXml;
@@ -1656,8 +1657,8 @@ match stmt
 case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
   let &preExp = buffer "" /*BUFD*/
   let &afterExp = buffer "" /*BUFD*/
-  let crefs = (expExpLst |> e => ExpressionDump.printExpStr(e) ;separator=", ")
-  let marker = '(<%crefs%>) = <%ExpressionDump.printExpStr(exp)%>'
+  let crefs = (expExpLst |> e => ExpressionDumpTpl.dumpExp(e,"\"") ;separator=", ")
+  let marker = '(<%crefs%>) = <%ExpressionDumpTpl.dumpExp(exp,"\"")%>'
   let &preExp += '/* algStmtTupleAssign: preExp buffer created for <%marker%> */<%\n%>'
   let &afterExp += '/* algStmtTupleAssign: afterExp buffer created for <%marker%> */<%\n%>'
   let retStruct = daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -1744,7 +1745,7 @@ case UNARY(exp = e as CREF(__)) then
 case _ then
   <<
   /* SimCodeC.tpl template: writeLhsCref: UNHANDLED LHS
-   * <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>
+   * <%ExpressionDumpTpl.dumpExp(exp,"\"")%> = <%rhsStr%>
    */
   >>
 end writeLhsCrefXml;
@@ -2072,7 +2073,7 @@ template daeExpXml(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDec
   case e as BOX(__)             then daeExpBoxXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as UNBOX(__)           then daeExpUnboxXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as SHARED_LITERAL(__)  then daeExpSharedLiteralXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  else error(sourceInfo(), 'Unknown expression: <%ExpressionDump.printExpStr(exp)%>')
+  else error(sourceInfo(), 'Unknown expression: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpXml;
 
 template daeExpValueXml(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
@@ -2139,7 +2140,7 @@ template daeExpCrefRhs2Xml(Exp ecr, Context context, Text &preExp /*BUFP*/,
 ::=
   match ecr
   case ecr as CREF(componentRef=cr, ty=ty) then
-    // let &preExp += '/* daeExpCrefRhs2 begin preExp (<%ExpressionDump.printExpStr(ecr)%>) */<%\n%>'
+    // let &preExp += '/* daeExpCrefRhs2 begin preExp (<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) */<%\n%>'
     let box = daeExpCrefRhsArrayBoxXml(ecr, context, &preExp, &varDecls)
     if box then
       box
@@ -2154,7 +2155,7 @@ template daeExpCrefRhs2Xml(Exp ecr, Context context, Text &preExp /*BUFP*/,
         if crefSubIsScalar(cr)
         then
           // The array subscript results in a scalar
-          // let &preExp += '/* daeExpCrefRhs2 SCALAR(<%ExpressionDump.printExpStr(ecr)%>) preExp  */<%\n%>'
+          // let &preExp += '/* daeExpCrefRhs2 SCALAR(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) preExp  */<%\n%>'
           let arrName = contextCrefXml(crefStripLastSubs(cr), context)
           let arrayType = expTypeArrayXml(ty)
           let dimsLenStr = listLength(crefSubs(cr))
@@ -2187,10 +2188,10 @@ template daeExpCrefRhs2Xml(Exp ecr, Context context, Text &preExp /*BUFP*/,
                 <<
                 (&<%arrName%>)[<%threadDimSubListXml(et.dims,crefSubs(cr),context,&preExp,&varDecls)%>]
                 >>
-                else error(sourceInfo(),'Indexing non-array <%printExpStr(ecr)%>')
+                else error(sourceInfo(),'Indexing non-array <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
         else
           // The array subscript denotes a slice
-          // let &preExp += '/* daeExpCrefRhs2 SLICE(<%ExpressionDump.printExpStr(ecr)%>) preExp  */<%\n%>'
+          // let &preExp += '/* daeExpCrefRhs2 SLICE(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) preExp  */<%\n%>'
           let arrName = contextArrayCrefXml(cr, context)
           let arrayType = expTypeArrayXml(ty)
           let tmp = tempDeclXml(arrayType, &varDecls /*BUFD*/)
@@ -2203,8 +2204,8 @@ template daeExpCrefRhs2Xml(Exp ecr, Context context, Text &preExp /*BUFP*/,
           tmp
 
   case ecr then
-    // let &preExp += '/* daeExpCrefRhs2 UNHANDLED(<%ExpressionDump.printExpStr(ecr)%>) preExp */<%\n%>'
-    error(sourceInfo(),'daeExpCrefRhs2: UNHANDLED EXPRESSION: <%ExpressionDump.printExpStr(ecr)%>')
+    // let &preExp += '/* daeExpCrefRhs2 UNHANDLED(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) preExp */<%\n%>'
+    error(sourceInfo(),'daeExpCrefRhs2: UNHANDLED EXPRESSION: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhs2Xml;
 
 template threadDimSubListXml(list<Dimension> dims, list<Subscript> subs, Context context, Text &preExp, Text &varDecls)
@@ -2336,7 +2337,7 @@ template daeExpCrefLhs2Xml(Exp ecr, Context context, Text &afterExp /*BUFP*/,
 ::=
   match ecr
   case ecr as CREF(componentRef=cr, ty=ty) then
-    let &afterExp += '/* daeExpCrefLhs2 begin afterExp (<%ExpressionDump.printExpStr(ecr)%>) */<%\n%>'
+    let &afterExp += '/* daeExpCrefLhs2 begin afterExp (<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) */<%\n%>'
     let box = daeExpCrefLhsArrayBoxXml(ecr, context, &afterExp, &varDecls)
     if box then
       box
@@ -2351,7 +2352,7 @@ template daeExpCrefLhs2Xml(Exp ecr, Context context, Text &afterExp /*BUFP*/,
         if crefSubIsScalar(cr)
         then
           // The array subscript results in a scalar
-          let &afterExp += '/* daeExpCrefLhs2 SCALAR(<%ExpressionDump.printExpStr(ecr)%>) afterExp  */<%\n%>'
+          let &afterExp += '/* daeExpCrefLhs2 SCALAR(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) afterExp  */<%\n%>'
           let arrName = contextCrefXml(crefStripLastSubs(cr), context)
           let arrayType = expTypeArrayXml(ty)
           let dimsLenStr = listLength(crefSubs(cr))
@@ -2375,7 +2376,7 @@ template daeExpCrefLhs2Xml(Exp ecr, Context context, Text &afterExp /*BUFP*/,
               >>
         else
           // The array subscript denotes a slice
-          let &afterExp += '/* daeExpCrefLhs2 SLICE(<%ExpressionDump.printExpStr(ecr)%>) afterExp  */<%\n%>'
+          let &afterExp += '/* daeExpCrefLhs2 SLICE(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) afterExp  */<%\n%>'
           let arrName = contextArrayCrefXml(cr, context)
           let arrayType = expTypeArrayXml(ty)
           let tmp = tempDeclXml(arrayType, &varDecls /*BUFD*/)
@@ -2384,10 +2385,10 @@ template daeExpCrefLhs2Xml(Exp ecr, Context context, Text &afterExp /*BUFP*/,
           tmp
 
   case ecr then
-    let &afterExp += '/* daeExpCrefLhs2 UNHANDLED(<%ExpressionDump.printExpStr(ecr)%>) afterExp */<%\n%>'
+    let &afterExp += '/* daeExpCrefLhs2 UNHANDLED(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) afterExp */<%\n%>'
     <<
     /* SimCodeC.tpl template: daeExpCrefLhs2: UNHANDLED EXPRESSION:
-     * <%ExpressionDump.printExpStr(ecr)%>
+     * <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>
      */
     >>
 end daeExpCrefLhs2Xml;
@@ -3018,7 +3019,7 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%var%>'
 
   case exp as CALL(path=IDENT(name="DIVISION_ARRAY_SCALAR")) then
-    error(sourceInfo(), 'Code generation does not support <%printExpStr(exp)%>')
+    error(sourceInfo(), 'Code generation does not support <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     <<
@@ -3027,7 +3028,7 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
     </exp:Der>
     >>
   case CALL(path=IDENT(name="der"), expLst={exp}) then
-    error(sourceInfo(), 'Code generation does not support der(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support der(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPreXml(arg, context, preExp, varDecls)
 // a $_start is used to get get start value of a variable
@@ -3038,13 +3039,13 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
     <%crefXml(arg.componentRef)%>
     >>
   case CALL(path=IDENT(name="edge"), expLst={exp}) then
-    error(sourceInfo(), 'Code generation does not support edge(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support edge(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
   case CALL(path=IDENT(name="change"), expLst={arg as CREF(__)}) then
     <<
     <%crefXml(arg.componentRef)%>
     >>
   case CALL(path=IDENT(name="change"), expLst={exp}) then
-    error(sourceInfo(), 'Code generation does not support change(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support change(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
 
   case CALL(path=IDENT(name="print"), expLst={e1}) then
     let var1 = daeExpXml(e1, context, &preExp, &varDecls)
@@ -3169,7 +3170,7 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%tvar%>'
 
   case call as CALL(path=IDENT(name="vector")) then
-    error(sourceInfo(),'vector() call does not have a C implementation <%printExpStr(call)%>')
+    error(sourceInfo(),'vector() call does not have a C implementation <%ExpressionDumpTpl.dumpExp(call,"\"")%>')
 
   case CALL(path=IDENT(name="cat"), expLst=dim::arrays, attr=CALL_ATTR(ty = ty)) then
     let dim_exp = daeExpXml(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -3284,7 +3285,7 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
 
   case exp as CALL(attr=attr as CALL_ATTR(tailCall=tail as TAIL(__))) then
     let res = <<
-    /* Tail recursive call <%printExpStr(exp)%> */
+    /* Tail recursive call <%ExpressionDumpTpl.dumpExp(exp,"\"")%> */
     <%daeExpTailCallXml(expLst,tail.vars,context,&preExp,&varDecls)%>goto _tailrecursive;
     /* TODO: Make sure any eventual dead code below is never generated */
     >>
@@ -3505,7 +3506,7 @@ template daeExpAsubXml(Exp inExp, Context context, Text &preExp /*BUFP*/,
   match inExp
 
   case ASUB(exp=ASUB(__)) then
-    error(sourceInfo(),'Nested array subscripting *should* have been handled by the routine creating the asub, but for some reason it was not: <%printExpStr(exp)%>')
+    error(sourceInfo(),'Nested array subscripting *should* have been handled by the routine creating the asub, but for some reason it was not: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
@@ -3534,7 +3535,7 @@ template daeExpAsubXml(Exp inExp, Context context, Text &preExp /*BUFP*/,
     res
 
   case ASUB(exp=RANGE(ty=t), sub={idx}) then
-    error(sourceInfo(),'ASUB_EASY_CASE <%printExpStr(exp)%>')
+    error(sourceInfo(),'ASUB_EASY_CASE <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 
   case ASUB(exp=ecr as CREF(__), sub=subs) then
     let arrName = daeExpCrefRhsXml(buildCrefExpFromAsub(ecr, subs), context,
@@ -3549,7 +3550,7 @@ template daeExpAsubXml(Exp inExp, Context context, Text &preExp /*BUFP*/,
     '<%exp%>'
 
   case exp then
-    error(sourceInfo(),'OTHER_ASUB <%printExpStr(exp)%>')
+    error(sourceInfo(),'OTHER_ASUB <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpAsubXml;
 
 template daeExpASubIndexXml(Exp exp, Context context, Text &preExp, Text &varDecls)
@@ -3576,7 +3577,7 @@ template daeExpCallPreXml(Exp exp, Context context, Text &preExp /*BUFP*/,
    "case ASUB(exp = cr as CREF(__), sub = {sub_exp}) is not yet implemented"
   >>
   else
-    error(sourceInfo(), 'Code generation does not support pre(<%printExpStr(exp)%>)')
+    error(sourceInfo(), 'Code generation does not support pre(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
 end daeExpCallPreXml;
 
 template daeExpSizeXml(Exp exp, Context context, Text &preExp /*BUFP*/,
@@ -3877,7 +3878,7 @@ template expTypeFromExpFlagXml(Exp exp, Integer flag)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlagXml(c.ty, flag)
   case c as SHARED_LITERAL(__) then expTypeFromExpFlagXml(c.exp, flag)
-  else error(sourceInfo(), 'expTypeFromExpFlag:<%printExpStr(exp)%>')
+  else error(sourceInfo(), 'expTypeFromExpFlag:<%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end expTypeFromExpFlagXml;
 
 template expTypeFromOpFlagXml(Operator op, Integer flag)

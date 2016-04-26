@@ -54,6 +54,7 @@ import File.Escape.JSON;
 import writeCref = ComponentReference.writeCref;
 import expStr = ExpressionDump.printExpStr;
 import List;
+import PrefixUtil;
 import SimCodeUtil;
 import SimCodeFunctionUtil;
 import SCodeDump;
@@ -220,11 +221,11 @@ protected
   SourceInfo info;
   list<Absyn.Path> paths,typeLst;
   list<Absyn.Within> partOfLst;
-  Option<DAE.ComponentRef> iopt;
+  Prefix.ComponentPrefix instance;
   Integer i;
   list<DAE.SymbolicOperation> operations;
 algorithm
-  DAE.SOURCE(typeLst=typeLst,info=info,instanceOpt=iopt,partOfLst=partOfLst,operations=operations) := source;
+  DAE.SOURCE(typeLst=typeLst,info=info,instance=instance,partOfLst=partOfLst,operations=operations) := source;
   File.write(file,"{\"info\":");
   serializeInfo(file,info);
 
@@ -237,11 +238,15 @@ algorithm
     File.write(file,"]");
   end if;
 
-  if isSome(iopt) then
+  _ := match instance
+  case Prefix.NOCOMPPRE() then ();
+  case Prefix.PRE()
+  algorithm
     File.write(file,",\"instance\":\"");
-    writeCref(file,Util.getOption(iopt),escape=JSON);
+    PrefixUtil.writeComponentPrefix(file,instance,escape=JSON);
     File.write(file,"\"");
-  end if;
+  then ();
+  end match;
 
   if not listEmpty(typeLst) then
     File.write(file,",\"typeLst\":[");
