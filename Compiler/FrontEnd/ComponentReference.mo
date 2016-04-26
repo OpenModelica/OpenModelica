@@ -918,6 +918,33 @@ algorithm
   end match;
 end crefPrefixOf;
 
+public function crefPrefixOfIgnoreSubscripts
+"author: PA
+  Returns true if prefixCref is a prefix of fullCref
+  For example, a.b is a prefix of a.b.c.
+  This function ignores the subscripts"
+  input DAE.ComponentRef prefixCref;
+  input DAE.ComponentRef fullCref;
+  output Boolean outPrefixOf;
+algorithm
+  outPrefixOf := match (prefixCref,fullCref)
+    // both are qualified, dive into
+    case (DAE.CREF_QUAL(), DAE.CREF_QUAL())
+      then prefixCref.ident == fullCref.ident and
+           crefPrefixOfIgnoreSubscripts(prefixCref.componentRef, fullCref.componentRef);
+
+    // first is an ID, second is qualified, see if one is prefix of the other
+    case (DAE.CREF_IDENT(), DAE.CREF_QUAL())
+      then prefixCref.ident == fullCref.ident;
+
+    case (DAE.CREF_IDENT(), DAE.CREF_IDENT())
+      then prefixCref.ident == fullCref.ident;
+
+    // they are not a prefix of one-another
+    else false;
+  end match;
+end crefPrefixOfIgnoreSubscripts;
+
 public function crefNotPrefixOf "negation of crefPrefixOf"
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;

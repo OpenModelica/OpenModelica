@@ -1547,7 +1547,7 @@ algorithm
         // create an empty table and add the crefs to it.
         ht = emptyInstHierarchyHashTable();
         sm = HashSet.emptyHashSet();
-        tih = TOP_INSTANCE(NONE(), ht, {OUTER(inOuterComponentRef, inInnerComponentRef)}, sm);
+        tih = TOP_INSTANCE(NONE(), ht, {OUTER(ComponentReference.crefStripSubs(inOuterComponentRef), inInnerComponentRef)}, sm);
         ih = {tih};
       then
         ih;
@@ -1558,7 +1558,7 @@ algorithm
         // fprintln(Flags.INNER_OUTER, "InnerOuter.addOuterPrefix adding: outer cref: " +
         //   ComponentReference.printComponentRefStr(inOuterComponentRef) + " refers to inner cref: " +
         //   ComponentReference.printComponentRefStr(inInnerComponentRef) + " to IH");
-        outerPrefixes = List.unionElt(OUTER(inOuterComponentRef,inInnerComponentRef), outerPrefixes);
+        outerPrefixes = List.unionElt(OUTER(ComponentReference.crefStripSubs(inOuterComponentRef), inInnerComponentRef), outerPrefixes);
       then
         TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH;
 
@@ -1677,14 +1677,15 @@ protected
   DAE.ComponentRef cr, id;
   Boolean b1 = false, b2 = false;
 algorithm
+  // print("L:" + intString(listLength(outerPrefixes)) + "\n");
   for op in outerPrefixes loop
     OUTER(outerComponentRef = outerCrefPrefix) := op;
-    b1 := ComponentReference.crefPrefixOf(outerCrefPrefix, fullCref);
+    b1 := ComponentReference.crefPrefixOfIgnoreSubscripts(outerCrefPrefix, fullCref);
     if not b1
     then
       cr := ComponentReference.crefStripLastIdent(outerCrefPrefix);
       b2 := ComponentReference.crefLastIdent(outerCrefPrefix) == ComponentReference.crefFirstIdent(inOuterCref)
-            and ComponentReference.crefPrefixOf(cr, fullCref);
+            and ComponentReference.crefPrefixOfIgnoreSubscripts(cr, fullCref);
     end if;
 
     if b1 or b2
