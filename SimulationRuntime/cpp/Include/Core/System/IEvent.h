@@ -26,11 +26,13 @@ public:
 
     /// Provide number (dimension) of zero functions
     virtual int getDimZeroFunc() = 0;
+     virtual int getDimClock() = 0;
     /// Provides current values of root/zero functions
     virtual void getZeroFunc(double* f) = 0;
 
-    virtual void  setConditions(bool* c) = 0;
+    virtual void setConditions(bool* c) = 0;
     virtual void getConditions(bool* c) = 0;
+    virtual void getClockConditions(bool* c) = 0;
     //Deactivated: virtual void saveDiscreteVars() = 0;
      //Saves all variables before an event is handled, is needed for the pre, edge and change operator
     virtual void saveAll() = 0;

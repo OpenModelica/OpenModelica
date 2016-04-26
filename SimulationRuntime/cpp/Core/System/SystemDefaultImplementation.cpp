@@ -314,11 +314,6 @@ double *SystemDefaultImplementation::clockShift()
 void SystemDefaultImplementation::getContinuousStates(double* z)
 {
   std::copy(__z ,__z + _dimContinuousStates, z);
-  /*for(int i=0; i< _dimContinuousStates; ++i)
-  {
-  z[i] = __z[i];
-  }*/
-
 }
 
 IGlobalSettings* SystemDefaultImplementation::getGlobalSettings()
@@ -375,7 +370,10 @@ void SystemDefaultImplementation::getConditions(bool* c)
 {
   memcpy(c,_conditions,_dimZeroFunc*sizeof(bool));
 }
-
+void SystemDefaultImplementation::getClockConditions(bool* c)
+{
+  memcpy(c,_clockCondition,_dimClock*sizeof(bool));
+}
 /// setter for variables of different types
 
 void SystemDefaultImplementation::setBoolean(const bool* z)

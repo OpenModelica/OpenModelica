@@ -96,6 +96,7 @@ public:
 
   virtual void  setConditions(bool* c);
   virtual void getConditions(bool* c);
+  virtual void getClockConditions(bool* c);
   /// Provide boolean variables
   virtual void setBoolean(const bool* z);
 

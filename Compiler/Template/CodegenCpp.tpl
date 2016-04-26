@@ -7750,10 +7750,13 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
 
     //Provide number (dimension) of zero functions
     virtual int getDimZeroFunc();
+    //Provide number (dimension) of zero functions
+    virtual int getDimClock();
     //Provides current values of root/zero functions
     virtual void getZeroFunc(double* f);
     virtual void setConditions(bool* c);
     virtual void getConditions(bool* c);
+    virtual void getClockConditions(bool* c);
 
     //Called to handle an event
     virtual void handleEvent(const bool* events);
@@ -12178,7 +12181,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
   int <%lastIdentOfPath(modelInfo.name)%>::getDimZeroFunc()
   {
-    return _dimZeroFunc  + _dimClock;;
+    return _dimZeroFunc  + _dimClock;
+  }
+  int <%lastIdentOfPath(modelInfo.name)%>::getDimClock()
+  {
+    return _dimClock;
   }
   >>
 end dimZeroFunc;
@@ -12499,9 +12506,9 @@ template giveZeroFunc1(list<ZeroCrossing> zeroCrossings,SimCode simCode ,Text& e
    {
 	double nextClockTime =  _clockTime[i]+_clockInterval[i];
 	if(_simTime < nextClockTime)
-		f[i]= (_simTime - nextClockTime)- 1e-9;
+		f[i+_dimZeroFunc]= (_simTime - nextClockTime)- 1e-9;
 	else
-		f[i]=1.0;
+		f[i+_dimZeroFunc]=1.0;
    }
 
  }
@@ -12528,6 +12535,10 @@ template getConditions(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Te
  void <%lastIdentOfPath(modelInfo.name)%>::getConditions(bool* c)
  {
      SystemDefaultImplementation::getConditions(c);
+ }
+ void <%lastIdentOfPath(modelInfo.name)%>::getClockConditions(bool* c)
+ {
+     SystemDefaultImplementation::getClockConditions(c);
  }
  >>
 end getConditions;

@@ -24,5 +24,7 @@ private:
   IMixedSystem* _mixed_system; //just a cast of _event_system -> required in IterateEventQueue
   bool* _conditions0;
   bool* _conditions1;
+  bool* _clockconditions0;
+  bool* _clockconditions1;
 };
 /** @} */ // end of coreSystem
