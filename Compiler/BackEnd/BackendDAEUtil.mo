@@ -3813,7 +3813,7 @@ algorithm
          arrT = arrayCreate(numberofVars, {});
         // create the array to mark if a variable is allready found in the equation
         rowmark = arrayCreate(numberofVars, 0);
-        (arr,arrT,mapEqnIncRow,mapIncRowEqn,varsSolvedInWhenEqnsTupleList) = adjacencyMatrixDispatchEnhancedScalar(vars, eqns, {},arrT, 0, numberOfEqs, intLt(0, numberOfEqs),rowmark,kvars ,0,{},{},trytosolve,{});
+        (arr,arrT,mapEqnIncRow,mapIncRowEqn,varsSolvedInWhenEqnsTupleList) = adjacencyMatrixDispatchEnhancedScalar(vars, eqns,arrT, numberOfEqs, rowmark,kvars ,trytosolve);
       then
         (arr,arrT,mapEqnIncRow,mapIncRowEqn);
 
@@ -3888,59 +3888,42 @@ protected function adjacencyMatrixDispatchEnhancedScalar
   adjacency matrix."
   input BackendDAE.Variables vars;
   input BackendDAE.EquationArray eqArr;
-  input list<BackendDAE.AdjacencyMatrixElementEnhanced> inIncidenceArray;
-  input BackendDAE.AdjacencyMatrixTEnhanced inIncidenceArrayT;
-  input Integer index;
+  output BackendDAE.AdjacencyMatrixEnhanced outIncidenceArray;
+  input output BackendDAE.AdjacencyMatrixTEnhanced incidenceArrayT;
   input Integer numberOfEqs;
-  input Boolean stop;
   input array<Integer> rowmark;
   input BackendDAE.Variables kvars;
-  input Integer inRowSize;
-  input list<list<Integer>> imapEqnIncRow;
-  input list<Integer> imapIncRowEqn;
   input Boolean trytosolve;
-  input list<list<tuple<Integer,list<Integer>>>> varsSolvedInWhenEqnsTupleListIn;
-  output BackendDAE.AdjacencyMatrixEnhanced outIncidenceArray;
-  output BackendDAE.AdjacencyMatrixTEnhanced outIncidenceArrayT;
   output array<list<Integer>> omapEqnIncRow;
   output array<Integer> omapIncRowEqn;
-  output list<list<tuple<Integer,list<Integer>>>> varsSolvedInWhenEqnsTupleListOut = varsSolvedInWhenEqnsTupleListIn;
+  output list<list<tuple<Integer,list<Integer>>>> varsSolvedInWhenEqnsTupleListOut = {};
+protected
+  list<BackendDAE.AdjacencyMatrixElementEnhanced> inIncidenceArray = {};
+  list<list<Integer>> mapEqnIncRow = {};
+  list<Integer> imapIncRowEqn = {};
+  BackendDAE.Equation e;
+  BackendDAE.AdjacencyMatrixElementEnhanced row;
+  Integer size, rowSize = 0;
+  list<tuple<Integer,list<Integer>>> varsSolvedInWhenEqnsTuple;
+  list<Integer> rowindxs;
 algorithm
-  (outIncidenceArray,outIncidenceArrayT,omapEqnIncRow,omapIncRowEqn) :=
-    match (vars, eqArr, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, rowmark, kvars, inRowSize, imapEqnIncRow, imapIncRowEqn)
-    local
-      BackendDAE.AdjacencyMatrixElementEnhanced row;
-      BackendDAE.Equation e;
-      list<BackendDAE.AdjacencyMatrixElementEnhanced> iArr;
-      BackendDAE.AdjacencyMatrixTEnhanced iArrT;
-      Integer i1,rowSize,size;
-      list<Integer> mapIncRowEqn,rowindxs;
-      list<tuple<Integer,list<Integer>>> varsSolvedInWhenEqnsTuple;
-
-    // index = numberOfEqs (we reach the end)
-    case (_, _, _, _, _, _,  false, _, _, _, _, _)
-      then
-        (List.listArrayReverse(inIncidenceArray),inIncidenceArrayT,List.listArrayReverse(imapEqnIncRow),List.listArrayReverse(imapIncRowEqn));
-
-    // index < numberOfEqs
-    case (_, _, iArr, _, _, _, true, _, _, _, _ , _)
-      equation
-        i1 = index+1;
-
-        // get the equation
-        e = BackendEquation.equationNth1(eqArr, i1);
-        // compute the row
-        (row,size,varsSolvedInWhenEqnsTuple) = adjacencyRowEnhanced(vars, e, i1, rowmark, kvars, trytosolve);
-        rowSize = inRowSize + size;
-        rowindxs = List.intRange2(inRowSize+1, rowSize);
-        mapIncRowEqn = List.consN(size,i1,imapIncRowEqn);
-        // put it in the arrays
-        iArr = List.consN(size,row,iArr);
-        iArrT = fillincAdjacencyMatrixTEnhanced(row,rowindxs,inIncidenceArrayT);
-        (outIncidenceArray,iArrT,omapEqnIncRow,omapIncRowEqn,varsSolvedInWhenEqnsTupleListOut) = adjacencyMatrixDispatchEnhancedScalar(vars, eqArr, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), rowmark, kvars, rowSize, rowindxs::imapEqnIncRow, mapIncRowEqn,trytosolve,varsSolvedInWhenEqnsTuple :: varsSolvedInWhenEqnsTupleListOut);
-      then
-        (outIncidenceArray,iArrT,omapEqnIncRow,omapIncRowEqn);
-  end match;
+  for i1 in 1:numberOfEqs loop
+    // get the equation
+    e := BackendEquation.equationNth1(eqArr, i1);
+    // compute the row
+    (row,size,varsSolvedInWhenEqnsTuple) := adjacencyRowEnhanced(vars, e, i1, rowmark, kvars, trytosolve);
+    rowindxs := List.intRange2(rowSize+1, rowSize+size);
+    rowSize := rowSize + size;
+    imapIncRowEqn := List.consN(size,i1,imapIncRowEqn);
+    // put it in the arrays
+    inIncidenceArray := List.consN(size,row,inIncidenceArray);
+    incidenceArrayT := fillincAdjacencyMatrixTEnhanced(row,rowindxs,incidenceArrayT);
+    varsSolvedInWhenEqnsTupleListOut := varsSolvedInWhenEqnsTuple :: varsSolvedInWhenEqnsTupleListOut;
+    mapEqnIncRow := rowindxs::mapEqnIncRow;
+  end for;
+  outIncidenceArray := List.listArrayReverse(inIncidenceArray);
+  omapEqnIncRow := List.listArrayReverse(mapEqnIncRow);
+  omapIncRowEqn := List.listArrayReverse(imapIncRowEqn);
 end adjacencyMatrixDispatchEnhancedScalar;
 
 

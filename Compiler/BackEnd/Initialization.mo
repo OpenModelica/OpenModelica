@@ -1618,30 +1618,14 @@ protected function downCompsMarker
   input array<Integer> vecVarToEq;
   input BackendDAE.IncidenceMatrix m;
   input list<Integer> flatComps;
-  input list<Integer> inMarkedEqns;
+  input output list<Integer> inMarkedEqns;
   input list<Integer> inLoopListComps;
-  output list<Integer> outMarkedEqns;
 algorithm
-  outMarkedEqns := matchcontinue (unassignedEqns)
-    local
-      list<Integer> unassignedEqns2, var_list;
-      Integer indexUnassigned, marker;
-      list<Integer> markedEqns;
-
-    case {}
-    then inMarkedEqns;
-
-    case indexUnassigned::unassignedEqns2 equation
-      true = listMember(indexUnassigned, inMarkedEqns);
-      var_list = m[indexUnassigned];
-      markedEqns = compsMarker2(var_list, vecVarToEq, m, flatComps, inMarkedEqns, inLoopListComps);
-      markedEqns = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, markedEqns, inLoopListComps);
-    then markedEqns;
-
-    case _::unassignedEqns2 equation
-      markedEqns = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, inMarkedEqns, inLoopListComps);
-    then markedEqns;
-  end matchcontinue;
+  for indexUnassigned in unassignedEqns loop
+    if listMember(indexUnassigned, inMarkedEqns) then
+      inMarkedEqns := compsMarker2(m[indexUnassigned], vecVarToEq, m, flatComps, inMarkedEqns, inLoopListComps);
+    end if;
+  end for;
 end downCompsMarker;
 
 protected function setupVarReplacements
