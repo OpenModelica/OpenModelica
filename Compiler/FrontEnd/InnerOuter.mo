@@ -1598,7 +1598,7 @@ algorithm
         (_,fullCref) = PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, inPrefix, inOuterComponentRef);
 
         // this will fail if we don't find it so prefixing can happen in the calling function
-        (outerCrefPrefix, innerCrefPrefix) = searchForInnerPrefix(fullCref, outerPrefixes);
+        (outerCrefPrefix, innerCrefPrefix) = searchForInnerPrefix(fullCref, inOuterComponentRef, outerPrefixes);
 
         innerCref = changeOuterReferenceToInnerReference(fullCref, outerCrefPrefix, innerCrefPrefix);
 
@@ -1669,14 +1669,26 @@ protected function searchForInnerPrefix
 "@author: adrpo
   search in the outer prefixes and retrieve the outer/inner crefs"
   input DAE.ComponentRef fullCref;
+  input DAE.ComponentRef inOuterCref;
   input OuterPrefixes outerPrefixes;
   output DAE.ComponentRef outerCrefPrefix;
   output DAE.ComponentRef innerCrefPrefix;
+protected
+  DAE.ComponentRef cr, id;
+  Boolean b1 = false, b2 = false;
 algorithm
   for op in outerPrefixes loop
     OUTER(outerComponentRef = outerCrefPrefix) := op;
+    b1 := ComponentReference.crefPrefixOf(outerCrefPrefix, fullCref);
+    if not b1
+    then
+      cr := ComponentReference.crefStripLastIdent(outerCrefPrefix);
+      b2 := ComponentReference.crefLastIdent(outerCrefPrefix) == ComponentReference.crefFirstIdent(inOuterCref)
+            and ComponentReference.crefPrefixOf(cr, fullCref);
+    end if;
 
-    if ComponentReference.crefPrefixOf(outerCrefPrefix, fullCref) then
+    if b1 or b2
+    then
       OUTER(innerComponentRef = innerCrefPrefix) := op;
       return;
     end if;
