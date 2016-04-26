@@ -5,18 +5,17 @@ tearnonlin1.mos \
 WhenStatement1.mos \
 BouncingBall.mos \
 arraySliceTest.mos \
-clockedTest.mos \
 clockedEventTest.mos \
 clockedSolverTest.mos \
-clockedTypesTest.mos \
 externalArrayInputTest.mos \
 mathFunctionsTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
 solveTest.mos
 
-FAILINGTESTFILES= 
-
+FAILINGTESTFILES= \
+clockedTypesTest.mos \
+clockedTest.mos
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \

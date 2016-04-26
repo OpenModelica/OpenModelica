@@ -26,9 +26,9 @@ simulate(ClockedTypes);
 val(firstTick, 0.0);
 val(firstTick, 1.0);
 val(pulse, 0.0);
-val(pulse, 1.0);
+val(pulse, 0.75);
 val(counter, 0.0);
-val(counter, 1.0);
+val(counter, 0.75);
 //val(text, 1.0); // not supported in results file?
 getErrorString();
 
@@ -44,8 +44,8 @@ getErrorString();
 // 0.0
 // 0.0
 // 1.0
+// 0.0
 // 1.0
-// 1.0
-// 3.0
+// 2.0
 // ""
 // endResult
