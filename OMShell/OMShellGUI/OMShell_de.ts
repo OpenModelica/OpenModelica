@@ -152,8 +152,8 @@ Um Hilfe zur Benutzung von OMShell und OpenModelica zu bekommen, tippen Sie &quo
         <location filename="oms.cpp" line="818"/>
         <source>OK to quit running OpenModelica Compiler process at exit?
 (Answer No if other OMShell/OMNotebook/Graphic editor is still running)</source>
-        <translation>OK zum Beenden des OpenModelica Compiler Prozesses beim Verlassen?
-(Wählen Sie Neine, wenn andere OMShell/OMNotebook Instanzen noch laufen)</translation>
+        <translation>OK zum Beenden des OpenModelica Compiler Prozesses beim Verlassen.
+(Wählen Sie Nein, wenn noch andere OMShell/OMNotebook Instanzen laufen.)</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="865"/>
