@@ -87,7 +87,7 @@ classNames := getClassNames(builtin=genBuiltin,sort=true);
 loadString("
 function filename \"Replace characters that mess with filesystems and shell expansions\"
   input String str;
-  output String ostr :=
+  output String ostr =
         OpenModelica.Scripting.stringReplace(
           OpenModelica.Scripting.stringReplace(str,\"/\",\"Division\"),
           \"*\",\"Multiplication\")
@@ -104,19 +104,19 @@ end uriEncode;
 
 function notLast
   input String str[:];
-  output String ostr[:] := str[1:end];
+  output String ostr[:] = str[1:end];
 end notLast;
 
 function last
   input String str[:];
-  output String ostr := str[end];
+  output String ostr = str[end];
 end last;
 
 function preSuffixIfNotEmpty
   input String prefix;
   input String str;
   input String suffix;
-  output String out := if str <> \"\" then prefix + str + suffix else \"\";
+  output String out = if str <> \"\" then prefix + str + suffix else \"\";
 end preSuffixIfNotEmpty;
 
 function svgIcon
@@ -142,7 +142,7 @@ function head
   input Boolean rmSymlinks;
   output String head;
 protected
-  String compound := \"\", file;
+  String compound = \"\", file;
 algorithm
   head :=
 \"<head>
