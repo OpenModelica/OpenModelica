@@ -45,6 +45,9 @@ void ContinuousEvents::initialize(IEvent* system)
 {
   // _dimH=dim;
   _event_system=system;
+    unsigned int dimZero = _event_system->getDimZeroFunc();
+  unsigned int dimClock = _event_system->getDimClock();
+
   _countinous_system = dynamic_cast<IContinuous*>(_event_system);
   _mixed_system= dynamic_cast<IMixedSystem*>(_event_system);
 
@@ -59,10 +62,16 @@ void ContinuousEvents::initialize(IEvent* system)
   if(_clockconditions1)
     delete[] _clockconditions1;
 
-  _conditions0 = new bool[_event_system->getDimZeroFunc()];
-  _conditions1 = new bool[_event_system->getDimZeroFunc()];
-  _clockconditions0 = new bool[_event_system->getDimClock()];
-  _clockconditions1 = new bool[_event_system->getDimClock()];
+   if(dimZero> 0)
+  {
+	_conditions0 = new bool[_event_system->getDimZeroFunc()];
+	_conditions1 = new bool[_event_system->getDimZeroFunc()];
+  }
+  if(dimClock > 0)
+  {
+	_clockconditions0 = new bool[_event_system->getDimClock()];
+	_clockconditions1 = new bool[_event_system->getDimClock()];
+  }
 }
 
 
@@ -79,7 +88,7 @@ bool ContinuousEvents::startEventIteration(bool& state_vars_reinitialized)
   unsigned int dimClock = _event_system->getDimClock();
 
   _event_system->getConditions(_conditions0);
-  _event_system->getConditions(_clockconditions0);
+  _event_system->getClockConditions(_clockconditions0);
 
   //Handle all events
 
@@ -91,11 +100,15 @@ bool ContinuousEvents::startEventIteration(bool& state_vars_reinitialized)
 
 
   _event_system->getConditions(_conditions1);
-  _event_system->getConditions(_clockconditions1);
+  _event_system->getClockConditions(_clockconditions1);
 
   bool crestart = !std::equal (_conditions1, _conditions1+dim,_conditions0);
   //check for event clocks
-  bool eventclocksrestart = !std::equal (_clockconditions1, _clockconditions1+dimClock,_clockconditions0);
+  bool eventclocksrestart =  false;
+  if(dimClock>0)
+  {
+    eventclocksrestart = !std::equal (_clockconditions1, _clockconditions1+dimClock,_clockconditions0);
+  }
 
   return((drestart||crestart||eventclocksrestart)); //returns true if new events occurred
 }
