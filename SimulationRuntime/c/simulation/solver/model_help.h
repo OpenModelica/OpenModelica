@@ -78,6 +78,7 @@ extern int maxEventIterations;
 extern double linearSparseSolverMaxDensity;
 extern int linearSparseSolverMinSize;
 extern const size_t SIZERINGBUFFER;
+extern int compiledInDAEMode;
 
 void initializeDataStruc(DATA *data, threadData_t *threadData);
 

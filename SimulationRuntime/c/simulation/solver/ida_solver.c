@@ -49,6 +49,7 @@
 #include "simulation/solver/model_help.h"
 #include "simulation/solver/external_input.h"
 #include "simulation/solver/epsilon.h"
+#include "simulation/solver/omc_math.h"
 #include "simulation/solver/ida_solver.h"
 
 #ifdef WITH_SUNDIALS
@@ -69,6 +70,9 @@ static int jacobianOwnNumIDA(long int Neq, realtype tt, realtype cj,
     N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, void *user_data,
     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
 
+static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData);
+static int residualFunctionIDADAEmode(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData);
+int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* userData);
 
 int checkIDAflag(int flag)
 {
@@ -99,112 +103,6 @@ void errOutputIDA(int error_code, const char *module, const char *function,
   TRACE_POP
 }
 
-
-int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData)
-{
-  TRACE_PUSH
-  DATA* data = (DATA*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->simData)->data);
-  threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->simData)->threadData);
-
-  double timeBackup;
-  long i;
-  int saveJumpState;
-  int success = 0, retVal = 0;
-
-  if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
-  {
-    setContext(data, &time, CONTEXT_ODE);
-  }
-
-  timeBackup = data->localData[0]->timeValue;
-  data->localData[0]->timeValue = time;
-
-  saveJumpState = threadData->currentErrorStage;
-  threadData->currentErrorStage = ERROR_INTEGRATOR;
-
-  /* try */
-#if !defined(OMC_EMCC)
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-
-  /* read input vars */
-  externalInputUpdate(data);
-  data->callback->input_function(data, threadData);
-
-  /* eval input vars */
-  data->callback->functionODE(data, threadData);
-
-  /* get the difference between the temp_xd(=localData->statesDerivatives)
-     and xd(=statesDerivativesBackup) */
-  for(i=0; i < data->modelData->nStates; i++)
-  {
-
-    NV_Ith_S(res, i) = data->localData[0]->realVars[data->modelData->nStates + i] - NV_Ith_S(yp, i);
-  }
-  success = 1;
-#if !defined(OMC_EMCC)
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
-
-  if (!success) {
-    retVal = -1;
-  }
-
-  threadData->currentErrorStage = saveJumpState;
-
-  data->localData[0]->timeValue = timeBackup;
-
-  if (data->simulationInfo->currentContext == CONTEXT_ODE){
-    unsetContext(data);
-  }
-  messageClose(LOG_SOLVER);
-
-  TRACE_POP
-  return retVal;
-}
-
-int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* userData)
-{
-  TRACE_PUSH
-  DATA* data = (DATA*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->simData)->data);
-  threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->simData)->threadData);
-
-  double timeBackup;
-  int saveJumpState;
-
-  if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
-  {
-    setContext(data, &time, CONTEXT_EVENTS);
-  }
-
-  saveJumpState = threadData->currentErrorStage;
-  threadData->currentErrorStage = ERROR_EVENTSEARCH;
-
-  timeBackup = data->localData[0]->timeValue;
-  data->localData[0]->timeValue = time;
-
-  /* read input vars */
-  externalInputUpdate(data);
-  data->callback->input_function(data, threadData);
-  /* eval needed equations*/
-  data->callback->function_ZeroCrossingsEquations(data, threadData);
-
-  data->callback->function_ZeroCrossings(data, threadData, gout);
-
-  threadData->currentErrorStage = saveJumpState;
-  data->localData[0]->timeValue = timeBackup;
-
-
-  if (data->simulationInfo->currentContext == CONTEXT_EVENTS){
-    unsetContext(data);
-  }
-
-
-  TRACE_POP
-  return 0;
-}
-
-
 /* initial main ida data */
 int
 ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, IDA_SOLVER *idaData){
@@ -212,7 +110,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   TRACE_PUSH
 
   int flag;
-  long i;
+  long int i;
   double* tmp;
 
   /* sim data */
@@ -229,21 +127,62 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     throwStreamPrint(threadData, "##IDA## Initialization of IDA solver failed!");
   }
 
-  idaData->y = N_VMake_Serial(data->modelData->nStates, data->localData[0]->realVars);
-  idaData->yp = N_VMake_Serial(data->modelData->nStates, data->localData[0]->realVars + data->modelData->nStates);
+  idaData->daeMode = 0;
+  idaData->residualFunction = residualFunctionIDA;
+  idaData->N = (long int)data->modelData->nStates;
+
+  /* change parameter for DAE mode */
+  if (omc_flag[FLAG_DAE_MODE])
+  {
+    if (compiledInDAEMode)
+    {
+      idaData->daeMode = 1;
+      idaData->residualFunction = residualFunctionIDADAEmode;
+      idaData->N = data->modelData->nStates + data->modelData->nAlgebraicDAEVars;
+    }
+    else
+    {
+      warningStreamPrint(LOG_STDOUT, 0, "-daeMode flag is used, the model is not compiled in DAE mode. See compiler flag: +daeMode. Continue as usual.");
+    }
+  }
+
+  /* initialize states and der(states) */
+  if (idaData->daeMode)
+  {
+    idaData->states = (double*) malloc(idaData->N*sizeof(double));
+    idaData->statesDer = (double*) calloc(idaData->N,sizeof(double));
+
+    memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
+    // and  also algebraic vars
+    data->callback->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+    memcpy(idaData->statesDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
+
+    idaData->y = N_VMake_Serial(idaData->N, idaData->states);
+    idaData->yp = N_VMake_Serial(idaData->N, idaData->statesDer);
+  }
+  else
+  {
+    idaData->y = N_VMake_Serial(idaData->N, data->localData[0]->realVars);
+    idaData->yp = N_VMake_Serial(idaData->N, data->localData[0]->realVars + data->modelData->nStates);
+  }
+
 
   flag = IDAInit(idaData->ida_mem,
-                 residualFunctionIDA,
+                 idaData->residualFunction,
                  data->simulationInfo->startTime,
                  idaData->y,
                  idaData->yp);
 
   /* allocate memory for jacobians calculation */
   idaData->sqrteps = sqrt(DBL_EPSILON);
-  idaData->ysave = (double*) malloc(data->modelData->nStates*sizeof(double));
-  idaData->delta_hh = (double*) malloc(data->modelData->nStates*sizeof(double));
-  idaData->errwgt = N_VNew_Serial(data->modelData->nStates);
-  idaData->newdelta = N_VNew_Serial(data->modelData->nStates);
+  idaData->ysave = (double*) malloc(idaData->N*sizeof(double));
+  idaData->ypsave = (double*) malloc(idaData->N*sizeof(double));
+  idaData->delta_hh = (double*) malloc(idaData->N*sizeof(double));
+  idaData->errwgt = N_VNew_Serial(idaData->N);
+  idaData->newdelta = N_VNew_Serial(idaData->N);
+
+  /* allocate memory for initialization process */
+  tmp = (double*) malloc(idaData->N*sizeof(double));
 
   if (checkIDAflag(flag)){
       throwStreamPrint(threadData, "##IDA## Something goes wrong while initialize IDA solver!");
@@ -261,22 +200,22 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
 
   /* set nominal values of the states for absolute tolerances */
   infoStreamPrint(LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
-  tmp = (double*) malloc(data->modelData->nStates*sizeof(double));
-  for(i=0; i<data->modelData->nStates; ++i)
+
+  for(i=0; i<idaData->N; ++i)
   {
     tmp[i] = data->simulationInfo->tolerance * fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
-    infoStreamPrint(LOG_SOLVER, 0, "##IDA## %ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, tmp[i]);
+    infoStreamPrint(LOG_SOLVER, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, tmp[i]);
   }
   messageClose(LOG_SOLVER);
   flag = IDASVtolerances(idaData->ida_mem,
                         data->simulationInfo->tolerance,
-                        N_VMake_Serial(data->modelData->nStates,tmp));
+                        N_VMake_Serial(idaData->N,tmp));
   if (checkIDAflag(flag)){
     throwStreamPrint(threadData, "##IDA## Setting tolerances fails while initialize IDA solver!");
   }
 
   /* set linear solver */
-  flag = IDADense(idaData->ida_mem, data->modelData->nStates);
+  flag = IDADense(idaData->ida_mem, idaData->N);
   if (checkIDAflag(flag)){
     throwStreamPrint(threadData, "##IDA## Setting linear solver fails while initialize IDA solver!");
   }
@@ -315,7 +254,16 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   }
   else
   {
-    idaData->jacobianMethod = COLOREDNUMJAC;
+    /* in dae mode use for now internal Jacobian calculation */
+    if (idaData->daeMode)
+    {
+      idaData->jacobianMethod = NUMJAC;
+      warningStreamPrint(LOG_SOLVER, 0, "Running in DAE mode so currently no colored jacobian available, yet!");
+    }
+    else
+    {
+      idaData->jacobianMethod = COLOREDNUMJAC;
+    }
   }
 
   /* selects the calculation method of the jacobian */
@@ -358,7 +306,27 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   }
   infoStreamPrint(LOG_SOLVER, 0, "jacobian is calculated by %s", JACOBIAN_METHOD_DESC[idaData->jacobianMethod]);
 
+  /* configure algebraic variables as such */
+  if (idaData->daeMode)
+  {
+    flag = IDASetSuppressAlg(idaData->ida_mem, TRUE);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## Suppress algebraic variables in the local error test failed");
+    }
 
+    for(i=0; i<idaData->N; ++i)
+    {
+      tmp[i] = (i<data->modelData->nStates)? 1.0: 0.0;
+    }
+
+    flag = IDASetId(idaData->ida_mem, N_VMake_Serial(idaData->N,tmp));
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## Mark algebraic variables as such failed!");
+    }
+  }
+
+
+  free(tmp);
   TRACE_POP
   return 0;
 }
@@ -368,9 +336,17 @@ int
 ida_solver_deinitial(IDA_SOLVER *idaData){
   TRACE_PUSH
 
+
   free(idaData->simData);
   free(idaData->ysave);
+  free(idaData->ypsave);
   free(idaData->delta_hh);
+
+  if (idaData->daeMode)
+  {
+    free(idaData->states);
+    free(idaData->statesDer);
+  }
 
   N_VDestroy_Serial(idaData->errwgt);
   N_VDestroy_Serial(idaData->newdelta);
@@ -400,8 +376,11 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
 
   /* alloc all work arrays */
-  N_VSetArrayPointer(data->localData[0]->realVars, idaData->y);
-  N_VSetArrayPointer(data->localData[1]->realVars + data->modelData->nStates, idaData->yp);
+  if (!idaData->daeMode)
+  {
+    N_VSetArrayPointer(data->localData[0]->realVars, idaData->y);
+    N_VSetArrayPointer(data->localData[1]->realVars + data->modelData->nStates, idaData->yp);
+  }
 
   if (solverInfo->didEventStep)
   {
@@ -411,6 +390,15 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   /* reinit solver */
   if (!idaData->setInitialSolution)
   {
+    /* initialize states and der(states) */
+    if (idaData->daeMode)
+    {
+      memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
+      // and  also algebraic vars
+      data->callback->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+      memcpy(idaData->statesDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
+    }
+
     flag = IDAReInit(idaData->ida_mem,
                      solverInfo->currentTime,
                      idaData->y,
@@ -443,9 +431,9 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     infoStreamPrint(LOG_SOLVER, 0, "Interpolate linear");
 
     /* linear extrapolation */
-    for(i = 0; i < data->modelData->nStates; i++)
+    for(i = 0; i < idaData->N; i++)
     {
-      sData->realVars[i] = sDataOld->realVars[i] + sDataOld->realVars[data->modelData->nStates+i] * solverInfo->currentStepSize;
+      idaData->states[i] = idaData->states[i] + idaData->statesDer[i] * solverInfo->currentStepSize;
     }
     sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
     data->callback->functionODE(data, threadData);
@@ -513,6 +501,15 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     data->simulationInfo->sampleActivated = 0;
   }
 
+  /* initialize states and der(states) */
+  if (idaData->daeMode)
+  {
+    memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
+    // and  also algebraic vars
+    data->callback->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+    memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+  }
+
   /* save stats */
   /* steps */
   tmp = 0;
@@ -561,12 +558,215 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 }
 
 
+int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData)
+{
+  TRACE_PUSH
+  DATA* data = (DATA*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->simData)->data);
+  threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->simData)->threadData);
+
+  double timeBackup;
+  long int i;
+  int saveJumpState;
+  int success = 0, retVal = 0;
+  double *states = N_VGetArrayPointer(yy);
+  double *statesDer = N_VGetArrayPointer(yp);
+  double *delta  = N_VGetArrayPointer(res);
+
+
+  if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
+  {
+    setContext(data, &time, CONTEXT_ODE);
+  }
+  printCurrentStatesVector(LOG_DASSL_STATES, states, data, time);
+  printVector(LOG_DASSL_STATES, "yd", statesDer, data->modelData->nStates, time);
+
+
+  timeBackup = data->localData[0]->timeValue;
+  data->localData[0]->timeValue = time;
+
+  saveJumpState = threadData->currentErrorStage;
+  threadData->currentErrorStage = ERROR_INTEGRATOR;
+
+  /* try */
+#if !defined(OMC_EMCC)
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+
+  /* read input vars */
+  externalInputUpdate(data);
+  data->callback->input_function(data, threadData);
+
+  /* eval input vars */
+  data->callback->functionODE(data, threadData);
+
+  /* get the difference between the temp_xd(=localData->statesDerivatives)
+     and xd(=statesDerivativesBackup) */
+  for(i=0; i < data->modelData->nStates; i++)
+  {
+
+    NV_Ith_S(res, i) = data->localData[0]->realVars[data->modelData->nStates + i] - NV_Ith_S(yp, i);
+  }
+  printVector(LOG_DASSL_STATES, "dd", delta, data->modelData->nStates, time);
+  success = 1;
+#if !defined(OMC_EMCC)
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+
+  if (!success) {
+    retVal = -1;
+  }
+
+  threadData->currentErrorStage = saveJumpState;
+
+  data->localData[0]->timeValue = timeBackup;
+
+  if (data->simulationInfo->currentContext == CONTEXT_ODE){
+    unsetContext(data);
+  }
+  messageClose(LOG_SOLVER);
+
+  TRACE_POP
+  return retVal;
+}
+
+
+int residualFunctionIDADAEmode(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData)
+{
+  TRACE_PUSH
+  IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
+  DATA* data = (DATA*)(((IDA_USERDATA*)idaData->simData)->data);
+  threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->simData)->threadData);
+
+  double timeBackup;
+  long int i;
+  int saveJumpState;
+  int success = 0, retVal = 0;
+  double *states = N_VGetArrayPointer(yy);
+  double *statesDer = N_VGetArrayPointer(yp);
+  double *delta  = N_VGetArrayPointer(res);
+
+  /* context */
+  if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
+  {
+    setContext(data, &time, CONTEXT_ODE);
+  }
+
+  /* debug */
+  if (ACTIVE_STREAM(LOG_DASSL_STATES)){
+    printCurrentStatesVector(LOG_DASSL_STATES, states, data, time);
+    printVector(LOG_DASSL_STATES, "yprime", statesDer, data->modelData->nStates, time);
+  }
+
+  /* set time */
+  timeBackup = data->localData[0]->timeValue;
+  data->localData[0]->timeValue = time;
+
+  /* set state, state derivative and dynamic algebraic
+   * variables for evaluateDAEResiduals evaluation
+   */
+  memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
+  memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+  data->callback->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+
+  saveJumpState = threadData->currentErrorStage;
+  threadData->currentErrorStage = ERROR_INTEGRATOR;
+
+  /* try */
+#if !defined(OMC_EMCC)
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+
+  /* read input vars */
+  externalInputUpdate(data);
+  data->callback->input_function(data, threadData);
+
+  /* eval residual vars */
+  data->callback->evaluateDAEResiduals(data, threadData);
+
+  /* get data->simulationInfo->residualVars  */
+  for(i=0; i < data->modelData->nResidualVars; i++)
+  {
+    NV_Ith_S(res, i) = data->simulationInfo->residualVars[i];
+  }
+  printVector(LOG_DASSL_STATES, "residual", delta, data->modelData->nResidualVars, time);
+  success = 1;
+#if !defined(OMC_EMCC)
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+
+  if (!success) {
+    retVal = -1;
+  }
+
+  threadData->currentErrorStage = saveJumpState;
+
+  data->localData[0]->timeValue = timeBackup;
+
+  if (data->simulationInfo->currentContext == CONTEXT_ODE){
+    unsetContext(data);
+  }
+  messageClose(LOG_SOLVER);
+
+  TRACE_POP
+  return retVal;
+}
+
+int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* userData)
+{
+  TRACE_PUSH
+  IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
+  DATA* data = (DATA*)(((IDA_USERDATA*)idaData->simData)->data);
+  threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->simData)->threadData);
+
+  double timeBackup;
+  int saveJumpState;
+
+  if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
+  {
+    setContext(data, &time, CONTEXT_EVENTS);
+  }
+
+  saveJumpState = threadData->currentErrorStage;
+  threadData->currentErrorStage = ERROR_EVENTSEARCH;
+
+  timeBackup = data->localData[0]->timeValue;
+  data->localData[0]->timeValue = time;
+
+  if (idaData->daeMode)
+  {
+    memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
+    data->callback->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+    memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+  }
+
+  /* read input vars */
+  externalInputUpdate(data);
+  data->callback->input_function(data, threadData);
+  /* eval needed equations*/
+  data->callback->function_ZeroCrossingsEquations(data, threadData);
+
+  data->callback->function_ZeroCrossings(data, threadData, gout);
+
+  threadData->currentErrorStage = saveJumpState;
+  data->localData[0]->timeValue = timeBackup;
+
+
+  if (data->simulationInfo->currentContext == CONTEXT_EVENTS){
+    unsetContext(data);
+  }
+
+
+  TRACE_POP
+  return 0;
+}
+
+
 /*
  *  function calculates a jacobian matrix by
  *  numerical method finite differences
  */
 static
-int jacOwnNumColoredIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, void *userData)
+int jacOwnNumColoredIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, double cj, void *userData)
 {
   TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
@@ -583,10 +783,11 @@ int jacOwnNumColoredIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat
 
   double *delta_hh = idaData->delta_hh;
   double *ysave = idaData->ysave;
+  double *ypsave = idaData->ypsave;
 
   double delta_h = idaData->sqrteps;
   double delta_hhh;
-  unsigned int i,j,l,ii;
+  long int i,j,l,ii;
 
   double currentStep;
 
@@ -610,11 +811,16 @@ int jacOwnNumColoredIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat
         ysave[ii] = states[ii];
         states[ii] += delta_hh[ii];
 
+        if (idaData->daeMode){
+          ypsave[ii] = yprime[ii];
+          yprime[ii] += cj * delta_hh[ii];
+        }
+
         delta_hh[ii] = 1. / delta_hh[ii];
       }
     }
 
-    residualFunctionIDA(tt, yy, yp, idaData->newdelta, userData);
+    (*idaData->residualFunction)(tt, yy, yp, idaData->newdelta, userData);
 
     increaseJacContext(data);
 
@@ -633,6 +839,10 @@ int jacOwnNumColoredIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat
           j++;
         };
         states[ii] = ysave[ii];
+        if (idaData->daeMode)
+        {
+          yprime[ii] = ypsave[ii];
+        }
       }
     }
   }
@@ -651,10 +861,11 @@ static int jacobianOwnNumColoredIDA(long int Neq, double tt, double cj,
     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {
   TRACE_PUSH
-  int i;
+
+  IDA_SOLVER* idaData = (IDA_SOLVER*)user_data;
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)user_data)->simData)->threadData);
 
-  if(jacOwnNumColoredIDA(tt, yy, yp, rr, Jac, user_data))
+  if(jacOwnNumColoredIDA(tt, yy, yp, rr, Jac, cj, user_data))
   {
     throwStreamPrint(threadData, "Error, can not get Matrix A ");
     TRACE_POP
@@ -663,13 +874,18 @@ static int jacobianOwnNumColoredIDA(long int Neq, double tt, double cj,
 
   /* debug */
   if (ACTIVE_STREAM(LOG_JAC)){
+    infoStreamPrint(LOG_JAC, 0, "##IDA## Matrix A.");
     PrintMat(Jac);
   }
 
   /* add cj to diagonal elements and store in Jac */
-  for(i = 0; i < Neq; i++)
+  if (!idaData->daeMode)
   {
-    DENSE_ELEM(Jac, i, i) -= (double) cj;
+    long int i;
+    for(i = 0; i < Neq; i++)
+    {
+      DENSE_ELEM(Jac, i, i) -= (double) cj;
+    }
   }
 
   TRACE_POP
@@ -681,7 +897,7 @@ static int jacobianOwnNumColoredIDA(long int Neq, double tt, double cj,
  *  numerical method finite differences
  */
 static
-int jacOwnNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, void *userData)
+int jacOwnNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, double cj, void *userData)
 {
   TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
@@ -695,13 +911,13 @@ int jacOwnNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, v
   double *newdelta = N_VGetArrayPointer(idaData->newdelta);
   double *errwgt = N_VGetArrayPointer(idaData->errwgt);
 
-  double ysave;
+  double ysave, ypsave;
 
   double delta_h = idaData->sqrteps;
   double delta_hh;
   double delta_hhh;
   double deltaInv;
-  unsigned int i,j;
+  long int i,j;
 
   double currentStep;
 
@@ -711,27 +927,32 @@ int jacOwnNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, v
 
   setContext(data, &tt, CONTEXT_JACOBIAN);
 
-  for(i = 0; i < data->modelData->nStates; i++)
+  for(i = 0; i < idaData->N; i++)
   {
     delta_hhh = currentStep * yprime[i];
     delta_hh = delta_h * fmax(fmax(fabs(states[i]),fabs(delta_hhh)),fabs(1./errwgt[i]));
     delta_hh = (delta_hhh >= 0 ? delta_hh : -delta_hh);
     delta_hh = (states[i] + delta_hh) - states[i];
-
+    deltaInv = 1. / delta_hh;
     ysave = states[i];
     states[i] += delta_hh;
+    if (idaData->daeMode){
+      ypsave = yprime[i];
+      yprime[i] += cj * delta_hh;
+    }
 
-    deltaInv = 1. / delta_hh;
-
-    residualFunctionIDA(tt, yy, yp, idaData->newdelta, userData);
+    (*idaData->residualFunction)(tt, yy, yp, idaData->newdelta, userData);
 
     increaseJacContext(data);
 
-    for(j = 0; j < data->modelData->nStates; j++)
+    for(j = 0; j < idaData->N; j++)
     {
       DENSE_ELEM(Jac, j, i) = (newdelta[j] - delta[j]) * deltaInv;
     }
     states[i] = ysave;
+    if (idaData->daeMode){
+      yprime[i] = ypsave;
+    }
   }
   unsetContext(data);
 
@@ -748,10 +969,10 @@ static int jacobianOwnNumIDA(long int Neq, double tt, double cj,
     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {
   TRACE_PUSH
-  int i;
+  IDA_SOLVER* idaData = (IDA_SOLVER*)user_data;
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)user_data)->simData)->threadData);
 
-  if(jacOwnNumIDA(tt, yy, yp, rr, Jac, user_data))
+  if(jacOwnNumIDA(tt, yy, yp, rr, Jac, cj, user_data))
   {
     throwStreamPrint(threadData, "Error, can not get Matrix A ");
     TRACE_POP
@@ -760,13 +981,19 @@ static int jacobianOwnNumIDA(long int Neq, double tt, double cj,
 
   /* debug */
   if (ACTIVE_STREAM(LOG_JAC)){
-    PrintMat(Jac);
+    _omc_matrix* dumpJac = _omc_createMatrix(idaData->N, idaData->N, Jac->data);
+    _omc_printMatrix(dumpJac, "IDA-Solver: Matrix A", LOG_JAC);
+    _omc_destroyMatrix(dumpJac);
   }
 
   /* add cj to diagonal elements and store in Jac */
-  for(i = 0; i < Neq; i++)
+  if (!idaData->daeMode)
   {
-    DENSE_ELEM(Jac, i, i) -= (double) cj;
+    long int i;
+    for(i = 0; i < Neq; i++)
+    {
+      DENSE_ELEM(Jac, i, i) -= (double) cj;
+    }
   }
 
   TRACE_POP

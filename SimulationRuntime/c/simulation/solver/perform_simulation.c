@@ -67,7 +67,8 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
 
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
-  data->callback->functionODE(data, threadData);
+  if (!omc_flag[FLAG_DAE_MODE])
+    data->callback->functionODE(data, threadData);
   data->callback->functionAlgebraics(data, threadData);
   data->callback->output_function(data, threadData);
   data->callback->function_storeDelayed(data, threadData);

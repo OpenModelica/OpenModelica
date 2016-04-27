@@ -65,6 +65,7 @@ typedef struct IDA_SOLVER
   /* ### work array used in jacobian calculation */
   double sqrteps;
   double *ysave;
+  double *ypsave;
   double *delta_hh;
   N_Vector errwgt;
   N_Vector newdelta;
@@ -72,6 +73,13 @@ typedef struct IDA_SOLVER
   /* ### ida internal data */
   void* ida_mem;
   IDA_USERDATA* simData;
+
+  /* ### daeMode ### */
+  int daeMode;                  /* if TRUE then solve dae more with a reals residual function */
+  long int N;
+  double *states;
+  double *statesDer;
+  int (*residualFunction)(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData);
 
 }IDA_SOLVER;
 

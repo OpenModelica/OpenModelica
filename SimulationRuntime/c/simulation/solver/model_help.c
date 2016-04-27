@@ -52,6 +52,7 @@ int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = 0.2;
 int linearSparseSolverMinSize = 4001;
 const size_t SIZERINGBUFFER = 3;
+int compiledInDAEMode = 0;
 
 static double tolZC;
 
