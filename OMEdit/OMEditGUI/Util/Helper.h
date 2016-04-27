@@ -130,6 +130,7 @@ public:
   static QString browse;
   static QString ok;
   static QString cancel;
+  static QString reset;
   static QString close;
   static QString error;
   static QString chooseFile;

@@ -3478,22 +3478,28 @@ FigaroPage::FigaroPage(OptionsDialog *pOptionsDialog)
   connect(mpBrowseFigaroOptionsFileButton, SIGNAL(clicked()), SLOT(browseFigaroOptionsFile()));
   // figaro process
   mpFigaroProcessLabel = new Label(tr("Figaro Processor:"));
-  mpFigaroProcessTextBox = new QLineEdit(QString(Helper::OpenModelicaHome).append("/share/jEdit4.5_VisualFigaro/VisualFigaro/figp.exe"));
+  mFigaroProcessPath = QString(Helper::OpenModelicaHome).append("/share/jEdit4.5_VisualFigaro/VisualFigaro/figp.exe");
+  mpFigaroProcessTextBox = new QLineEdit(mFigaroProcessPath);
   mpBrowseFigaroProcessButton = new QPushButton(Helper::browse);
   mpBrowseFigaroProcessButton->setAutoDefault(false);
   connect(mpBrowseFigaroProcessButton, SIGNAL(clicked()), SLOT(browseFigaroProcessFile()));
+  mpResetFigaroProcessButton = new QPushButton(Helper::reset);
+  mpResetFigaroProcessButton->setToolTip(tr("Resets to default Figaro Processor path"));
+  mpResetFigaroProcessButton->setAutoDefault(false);
+  connect(mpResetFigaroProcessButton, SIGNAL(clicked()), SLOT(resetFigaroProcessPath()));
   // set the layout
   QGridLayout *pFigaroLayout = new QGridLayout;
   pFigaroLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pFigaroLayout->addWidget(mpFigaroDatabaseFileLabel, 0, 0);
-  pFigaroLayout->addWidget(mpFigaroDatabaseFileTextBox, 0, 1);
-  pFigaroLayout->addWidget(mpBrowseFigaroDatabaseFileButton, 0, 2);
+  pFigaroLayout->addWidget(mpFigaroDatabaseFileTextBox, 0, 1, 1, 2);
+  pFigaroLayout->addWidget(mpBrowseFigaroDatabaseFileButton, 0, 3);
   pFigaroLayout->addWidget(mpFigaroOptionsFileLabel, 1, 0);
-  pFigaroLayout->addWidget(mpFigaroOptionsFileTextBox, 1, 1);
-  pFigaroLayout->addWidget(mpBrowseFigaroOptionsFileButton, 1, 2);
+  pFigaroLayout->addWidget(mpFigaroOptionsFileTextBox, 1, 1, 1, 2);
+  pFigaroLayout->addWidget(mpBrowseFigaroOptionsFileButton, 1, 3);
   pFigaroLayout->addWidget(mpFigaroProcessLabel, 2, 0);
   pFigaroLayout->addWidget(mpFigaroProcessTextBox, 2, 1);
   pFigaroLayout->addWidget(mpBrowseFigaroProcessButton, 2, 2);
+  pFigaroLayout->addWidget(mpResetFigaroProcessButton, 2, 3);
   mpFigaroGroupBox->setLayout(pFigaroLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
@@ -3518,6 +3524,15 @@ void FigaroPage::browseFigaroProcessFile()
 {
   mpFigaroProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
                                                                  NULL, Helper::exeFileTypes, NULL));
+}
+
+/*!
+ * \brief FigaroPage::resetFigaroProcessPath
+ * Resets the figaro process path to default.
+ */
+void FigaroPage::resetFigaroProcessPath()
+{
+  mpFigaroProcessTextBox->setText(mFigaroProcessPath);
 }
 
 /*!

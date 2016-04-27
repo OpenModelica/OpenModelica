@@ -695,12 +695,15 @@ private:
   QLineEdit *mpFigaroOptionsFileTextBox;
   QPushButton *mpBrowseFigaroOptionsFileButton;
   Label *mpFigaroProcessLabel;
+  QString mFigaroProcessPath;
   QLineEdit *mpFigaroProcessTextBox;
   QPushButton *mpBrowseFigaroProcessButton;
+  QPushButton *mpResetFigaroProcessButton;
 private slots:
   void browseFigaroLibraryFile();
   void browseFigaroOptionsFile();
   void browseFigaroProcessFile();
+  void resetFigaroProcessPath();
 };
 
 class DebuggerPage : public QWidget

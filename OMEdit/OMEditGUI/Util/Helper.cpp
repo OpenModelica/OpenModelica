@@ -123,6 +123,7 @@ QString Helper::file;
 QString Helper::browse;
 QString Helper::ok;
 QString Helper::cancel;
+QString Helper::reset;
 QString Helper::close;
 QString Helper::error;
 QString Helper::chooseFile;
@@ -324,6 +325,7 @@ void Helper::initHelperVariables()
   Helper::browse = tr("Browse...");
   Helper::ok = tr("OK");
   Helper::cancel = tr("Cancel");
+  Helper::reset = tr("Reset");
   Helper::close = tr("Close");
   Helper::error = tr("Error");
   Helper::chooseFile = tr("Choose File");

@@ -276,7 +276,7 @@ DebuggerConfigurationPage::DebuggerConfigurationPage(DebuggerConfiguration debug
   mpApplyButton = new QPushButton(Helper::apply);
   mpApplyButton->setToolTip(tr("Saves the debug configuration"));
   connect(mpApplyButton, SIGNAL(clicked()), SLOT(saveDebugConfiguration()));
-  mpResetButton = new QPushButton(tr("Reset"));
+  mpResetButton = new QPushButton(Helper::reset);
   mpResetButton->setToolTip(tr("Resets the debug configuration"));
   connect(mpResetButton, SIGNAL(clicked()), SLOT(resetDebugConfiguration()));
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
