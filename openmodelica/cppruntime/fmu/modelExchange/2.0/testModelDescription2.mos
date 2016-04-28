@@ -1339,7 +1339,7 @@ readFile("modelDescription.tmp.xml");
 //   <!-- Index of variable = \"123\" -->
 //   <ScalarVariable
 //     name=\"SteamValve.port_b.m_flow\"
-//     valueReference=\"122\"
+//     valueReference=\"56\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     variability=\"continuous\"
 //     causality=\"local\"
@@ -1489,7 +1489,7 @@ readFile("modelDescription.tmp.xml");
 //   <!-- Index of variable = \"138\" -->
 //   <ScalarVariable
 //     name=\"evaporator.port_b.m_flow\"
-//     valueReference=\"137\"
+//     valueReference=\"56\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     variability=\"continuous\"
 //     causality=\"local\"
@@ -1509,7 +1509,7 @@ readFile("modelDescription.tmp.xml");
 //   <!-- Index of variable = \"140\" -->
 //   <ScalarVariable
 //     name=\"evaporator.qm_S\"
-//     valueReference=\"139\"
+//     valueReference=\"56\"
 //     description=\"steam mass flow rate\"
 //     variability=\"continuous\"
 //     causality=\"local\"
@@ -1585,7 +1585,7 @@ readFile("modelDescription.tmp.xml");
 //   <!-- Index of variable = \"148\" -->
 //   <ScalarVariable
 //     name=\"furnace.port.Q_flow\"
-//     valueReference=\"147\"
+//     valueReference=\"37\"
 //     description=\"Heat flow rate (positive if flowing from outside into the component)\"
 //     variability=\"continuous\"
 //     causality=\"local\"
@@ -1675,7 +1675,7 @@ readFile("modelDescription.tmp.xml");
 //   <!-- Index of variable = \"157\" -->
 //   <ScalarVariable
 //     name=\"massFlowRate.port_b.m_flow\"
-//     valueReference=\"156\"
+//     valueReference=\"56\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     variability=\"continuous\"
 //     causality=\"local\"
@@ -1815,7 +1815,7 @@ readFile("modelDescription.tmp.xml");
 //   <!-- Index of variable = \"171\" -->
 //   <ScalarVariable
 //     name=\"pump.ports[1].m_flow\"
-//     valueReference=\"170\"
+//     valueReference=\"40\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     variability=\"continuous\"
 //     causality=\"local\"
