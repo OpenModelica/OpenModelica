@@ -469,7 +469,7 @@ double rt_tock() {
 }
 
 int test_dump_xml_reader() {
-  QFile file("Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum_info.xml");
+  QFile file("Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum_info.json");
   rt_tick();
   MyHandler handler(file);
   qDebug() << QString("streaming done in: %1 ms\n").arg(rt_tock() *1e3);

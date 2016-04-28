@@ -157,7 +157,7 @@ class TransformationsWidget : public QWidget
 {
   Q_OBJECT
 public:
-  TransformationsWidget(QString infoXMLFullFileName, MainWindow *pMainWindow);
+  TransformationsWidget(QString infoJSONFullFileName, MainWindow *pMainWindow);
   MainWindow* getMainWindow() {return mpMainWindow;}
   MyHandler* getInfoXMLFileHandler() {return mpInfoXMLFileHandler;}
   QTreeWidget* getEquationsTreeWidget() {return mpEquationsTreeWidget;}
@@ -184,7 +184,7 @@ public:
   void clearTreeWidgetItems(QTreeWidget *pTreeWidget);
 private:
   MainWindow *mpMainWindow;
-  QString mInfoXMLFullFileName, mProfJSONFullFileName, mProfilingDataRealFileName;
+  QString mInfoJSONFullFileName, mProfJSONFullFileName, mProfilingDataRealFileName;
   int profilingNumSteps;
   MyHandler *mpInfoXMLFileHandler;
   TreeSearchFilters *mpTreeSearchFilters;

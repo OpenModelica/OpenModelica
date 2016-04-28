@@ -437,9 +437,9 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
 }
 
 TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWindow *pMainWindow)
-  : mpMainWindow(pMainWindow), mInfoXMLFullFileName(infoXMLFullFileName)
+  : mpMainWindow(pMainWindow), mInfoJSONFullFileName(infoXMLFullFileName)
 {
-  if (!mInfoXMLFullFileName.endsWith("_info.json")) {
+  if (!mInfoJSONFullFileName.endsWith("_info.json")) {
     mProfJSONFullFileName = "";
     mProfilingDataRealFileName = "";
   } else {
@@ -454,7 +454,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   pReloadToolButton->setIcon(QIcon(":/Resources/icons/refresh.svg"));
   connect(pReloadToolButton, SIGNAL(clicked()), SLOT(reloadTransformations()));
   /* info xml file path label */
-  Label *pInfoXMLFilePathLabel = new Label(mInfoXMLFullFileName, this);
+  Label *pInfoXMLFilePathLabel = new Label(mInfoJSONFullFileName, this);
   pInfoXMLFilePathLabel->setElideMode(Qt::ElideMiddle);
   /* create status bar */
   QStatusBar *pStatusBar = new QStatusBar;
@@ -795,17 +795,17 @@ static OMEquation* getOMEquation(QList<OMEquation*> equations, int index)
 
 void TransformationsWidget::loadTransformations()
 {
-  QFile file(mInfoXMLFullFileName);
+  QFile file(mInfoJSONFullFileName);
   mEquations.clear();
   mVariables.clear();
   hasOperationsEnabled = false;
-  if (mInfoXMLFullFileName.endsWith(".json")) {
+  if (mInfoJSONFullFileName.endsWith(".json")) {
     QJson::Parser parser;
     bool ok;
     QVariantMap result;
     result = parser.parse(&file, &ok).toMap();
     if (!ok) {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::parsingFailedJson), Helper::parsingFailedJson + ": " + mInfoXMLFullFileName, Helper::ok);
+      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::parsingFailedJson), Helper::parsingFailedJson + ": " + mInfoJSONFullFileName, Helper::ok);
       return;
     }
     QVariantMap vars = result["variables"].toMap();
