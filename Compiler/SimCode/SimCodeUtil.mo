@@ -342,9 +342,8 @@ algorithm
     if debug then execStat("simCode: createStateSets"); end if;
 
     // create model info
-    modelInfo := createModelInfo(inClassName, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts));
-    if debug then execStat("simCode: createModelInfo"); end if;
-    modelInfo := addTempVars(tempvars, modelInfo);
+    modelInfo := createModelInfo(inClassName, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts), tempvars);
+    if debug then execStat("simCode: createModelInfo and variables"); end if;
     // add residuals vars from DAE creation
     if Flags.getConfigBool(Flags.DAE_MODE) then
       residualVars := rewriteIndex(residualVars, 0);
@@ -354,7 +353,6 @@ algorithm
       tmpSimVars.algebraicDAEVars := algebraicVars;
       modelInfo.vars := tmpSimVars;
     end if;
-    execStat("simCode: created modelInfo and variables");
 
     // external objects
     extObjInfo := createExtObjInfo(shared);
@@ -769,92 +767,23 @@ algorithm
   outSubPartitions := inPartition.subPartitions;
 end getSubPartition;
 
-protected type tempVarsIndex = enumeration(
-  algVars,
-  intAlgVars,
-  boolAlgVars,
-  stringAlgVars
-  );
-
 protected function addTempVars
+  input array<list<SimCodeVar.SimVar>> simVars;
   input list<SimCodeVar.SimVar> tempVars;
-  input SimCode.ModelInfo modelInfo;
-  output SimCode.ModelInfo omodelInfo = modelInfo;
 protected
-  SimCode.VarInfo varInfo;
-  SimCodeVar.SimVars vars;
-  array<list<SimCodeVar.SimVar>> varsA;
+  Integer ix;
 algorithm
-  // do nothing if list empty
-  if listEmpty(tempVars) then
-    return;
-  end if;
-
-  varInfo := omodelInfo.varInfo;
-  vars := omodelInfo.vars;
-
-  varsA := arrayCreate(size(tempVarsIndex,1), {});
-  varsA[Integer(tempVarsIndex.algVars)] := List.append_reverse(vars.algVars,{});
-  varsA[Integer(tempVarsIndex.intAlgVars)] := List.append_reverse(vars.intAlgVars,{});
-  varsA[Integer(tempVarsIndex.boolAlgVars)] := List.append_reverse(vars.boolAlgVars,{});
-  varsA[Integer(tempVarsIndex.stringAlgVars)] := List.append_reverse(vars.stringAlgVars,{});
   for e in tempVars loop
-    (varsA, varInfo) := addTempVars1(e, varsA, varInfo);
+    ix := match e.type_
+    case DAE.T_INTEGER() then Integer(SimVarsIndex.intAlg);
+    case DAE.T_ENUMERATION() then Integer(SimVarsIndex.intAlg);
+    case DAE.T_BOOL() then Integer(SimVarsIndex.boolAlg);
+    case DAE.T_STRING() then Integer(SimVarsIndex.stringAlg);
+    else Integer(SimVarsIndex.alg);
+    end match;
+    arrayUpdate(simVars, ix, e::simVars[ix]);
   end for;
-
-  vars.algVars := Dangerous.listReverseInPlace(varsA[tempVarsIndex.algVars]);
-  vars.intAlgVars := Dangerous.listReverseInPlace(varsA[tempVarsIndex.intAlgVars]);
-  vars.boolAlgVars := Dangerous.listReverseInPlace(varsA[tempVarsIndex.boolAlgVars]);
-  vars.stringAlgVars := Dangerous.listReverseInPlace(varsA[tempVarsIndex.stringAlgVars]);
-
-  omodelInfo.vars := vars;
-  omodelInfo.varInfo := varInfo;
 end addTempVars;
-
-protected function addTempVars1
-  input SimCodeVar.SimVar inVar;
-  input output array<list<SimCodeVar.SimVar>> varsA;
-  input output SimCode.VarInfo varInfo;
-protected
-  SimCodeVar.SimVar var = inVar;
-algorithm
-  _ := match inVar.type_
-    case DAE.T_INTEGER()
-      equation
-        var.index = varInfo.numIntAlgVars;
-        varInfo.numIntAlgVars = varInfo.numIntAlgVars+1;
-        arrayUpdate(varsA, Integer(tempVarsIndex.intAlgVars), var::varsA[tempVarsIndex.intAlgVars]);
-        then ();
-
-    case DAE.T_ENUMERATION()
-      equation
-        var.index = varInfo.numIntAlgVars;
-        varInfo.numIntAlgVars = varInfo.numIntAlgVars+1;
-        arrayUpdate(varsA, Integer(tempVarsIndex.intAlgVars), var::varsA[tempVarsIndex.intAlgVars]);
-        then ();
-
-    case DAE.T_BOOL()
-      equation
-        var.index = varInfo.numBoolAlgVars;
-        varInfo.numBoolAlgVars = varInfo.numBoolAlgVars+1;
-        arrayUpdate(varsA, Integer(tempVarsIndex.boolAlgVars), var::varsA[tempVarsIndex.boolAlgVars]);
-      then ();
-
-    case DAE.T_STRING()
-      equation
-        var.index = varInfo.numStringAlgVars;
-        varInfo.numStringAlgVars = varInfo.numStringAlgVars+1;
-        arrayUpdate(varsA, Integer(tempVarsIndex.stringAlgVars), var::varsA[tempVarsIndex.stringAlgVars]);
-      then ();
-
-    else
-      equation
-        var.index = varInfo.numAlgVars;
-        varInfo.numAlgVars = varInfo.numAlgVars+1;
-        arrayUpdate(varsA, Integer(tempVarsIndex.algVars), var::varsA[tempVarsIndex.algVars]);
-      then ();
-  end match;
-end addTempVars1;
 
 protected function setJacobianVars "author: unknown
   Set the given jacobian vars in the given model info. The old jacobian variables will be replaced."
@@ -6033,6 +5962,7 @@ public function createModelInfo
   input Integer numStateSets;
   input String fileDir;
   input Integer nSubClock;
+  input list<SimCodeVar.SimVar> tempVars;
   output SimCode.ModelInfo modelInfo;
 protected
   String description, directory;
@@ -6048,7 +5978,7 @@ algorithm
   try
     // name = Absyn.pathStringNoQual(class_);
     directory := System.trim(fileDir, "\"");
-    vars := createVars(dlow, inInitDAE);
+    vars := createVars(dlow, inInitDAE, tempVars);
     if debug then execStat("simCode: createVars"); end if;
     BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) := dlow;
     nx := listLength(vars.stateVars);
@@ -6536,6 +6466,7 @@ protected type SimVarsIndex = enumeration(
 protected function createVars
   input BackendDAE.BackendDAE inSimDAE "simulation";
   input BackendDAE.BackendDAE inInitDAE "initialization";
+  input list<SimCodeVar.SimVar> tempvars;
   output SimCodeVar.SimVars outVars;
 protected
   BackendDAE.Variables knvars1, knvars2;
@@ -6582,6 +6513,8 @@ algorithm
   // Extract from external object list
   simVars := BackendVariable.traverseBackendDAEVars(extvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=knvars2, hs=hs), simVars);
 
+
+  addTempVars(simVars, tempvars);
   //BaseHashSet.printHashSet(hs);
 
   // sort variables on index
@@ -7445,10 +7378,8 @@ end fixIndex;
 
 protected function rewriteIndex
   input list<SimCodeVar.SimVar> inVars;
-  input Integer iindex;
   output list<SimCodeVar.SimVar> outVars = {};
-protected
-  Integer index = iindex;
+  input output Integer index;
 algorithm
   for var in inVars loop
     var.index := index;
@@ -11954,25 +11885,21 @@ public function getValueReference
   input SimCodeVar.SimVar inSimVar;
   input SimCode.SimCode inSimCode;
   input Boolean inElimNegAliases;
-  output String outValueReference;
+  output String valueReference;
 protected
-  String valueReference;
+  DAE.ComponentRef cref;
 algorithm
-  outValueReference := match (inSimVar, inElimNegAliases, Config.simCodeTarget())
-    local
-      DAE.ComponentRef cref;
-    case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.NEGATEDALIAS(_)), false, _) then
-      getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
-    case (_, _, "Cpp") equation
-      valueReference = getVarIndexByMapping(inSimCode.varToArrayIndexMapping, inSimVar.name, false, "-1");
-      if stringEqual(valueReference, "-1") then
-        Error.addInternalError("invalid return value from getVarIndexByMapping for "+simVarString(inSimVar), sourceInfo());
-      end if;
-      then valueReference;
-    case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.ALIAS(varName = cref)), _, _) then
-      getDefaultValueReference(SimCodeFunctionUtil.cref2simvar(cref, inSimCode), inSimCode.modelInfo.varInfo);
-    else
-      getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
+  if Config.simCodeTarget()=="Cpp" then
+    valueReference := getVarIndexByMapping(inSimCode.varToArrayIndexMapping, inSimVar.name, false, "-1");
+    if stringEqual(valueReference, "-1") then
+      Error.addInternalError("invalid return value from getVarIndexByMapping for "+simVarString(inSimVar), sourceInfo());
+    end if;
+    return;
+  end if;
+  valueReference := match inSimVar
+    case SimCodeVar.SIMVAR(aliasvar = SimCodeVar.ALIAS(varName = cref))
+      then getDefaultValueReference(SimCodeFunctionUtil.cref2simvar(cref, inSimCode), inSimCode.modelInfo.varInfo);
+    else getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
   end match;
 end getValueReference;
 
