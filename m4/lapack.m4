@@ -73,8 +73,20 @@ AC_DEFUN([OMC_AC_LAPACK], [
       fi
     elif test ! -z "$LD_LAPACK"; then
       LIBS="$LD_LAPACK"
-      AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[],[AC_MSG_RESULT([dgesv (LAPACK) linking failed using $LD_LAPACK]); LD_LAPACK=""])
-      AC_LINK_IFELSE([AC_LANG_CALL([], [dswap_])],[AC_MSG_RESULT([$LD_LAPACK])],[AC_MSG_RESULT([dswap (BLAS) linking failed using $LD_LAPACK]); LD_LAPACK=""])
+      AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[],[
+        if test "$1" = "RequireFound"; then
+          AC_MSG_ERROR([dgesv (LAPACK) linking failed using $LD_LAPACK])
+        else
+          AC_MSG_RESULT([dgesv (LAPACK) linking failed using $LD_LAPACK]); LD_LAPACK=""
+        fi
+      ])
+      AC_LINK_IFELSE([AC_LANG_CALL([], [dswap_])],[AC_MSG_RESULT([$LD_LAPACK])],[
+        if test "$1" = "RequireFound"; then
+          AC_MSG_ERROR([dgesv (BLAS) linking failed using $LD_LAPACK])
+        else
+          AC_MSG_RESULT([dgesv (BLAS) linking failed using $LD_LAPACK]); LD_LAPACK=""
+        fi
+      ])
     fi
     LIBS="$OLDLIBS"
     AC_LANG_POP([C])
