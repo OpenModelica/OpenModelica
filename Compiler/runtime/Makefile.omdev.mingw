@@ -16,8 +16,10 @@ ifndef OMDEV
 	ABORT
 endif
 
+OMDEVMSYS=$(shell cygpath $$OMDEV)
+
 USE_METIS = -DUSE_METIS
-CORBAHOME = $(OMDEV)
+CORBAHOME = $(OMDEVMSYS)
 FMIINCLUDE = ../../3rdParty/FMIL/install/include
 GRAPHINCLUDE=../../3rdParty/metis-5.1.0/include
 GRAPHSTREAMINCLUDE = ../../3rdParty/graphstream/gs-netstream/c++/src/
@@ -33,11 +35,11 @@ OMPCC = gcc -fopenmp
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 USE_CORBA = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4
 CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw32/include
-IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
+IDL	= $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
 else # 64 bit
 USE_CORBA = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4 -D_WIN64 -DMS_WIN64
 CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw64/include
-IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
+IDL	= $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
 endif
 OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
 

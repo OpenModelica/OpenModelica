@@ -17,9 +17,11 @@ VSVERSION = 2010
 endif
 VSCOMNTOOLS = $(VS140COMNTOOLS)
 
+OMDEVMSYS=$(shell cygpath $$OMDEV)
+
 #use this call to use precompiled headers
 #use this call if you want to debug the cpp runtime
-CMAKE = $(OMDEV)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
+CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
 
 ifeq ($(BUILDTYPE),)
 	BUILDTYPE=Debug
@@ -195,11 +197,11 @@ endif
 install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  (cd Build_$(PLATFORM); make install);)
-	cp -p $(OMDEV)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.
+	cp -p $(OMDEVMSYS)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	(cd Build; cp -p $(OMDEV)/tools/msys/mingw32/bin/libboost*.dll $(builddir_bin)/.)
+	(cd Build; cp -p $(OMDEVMSYS)/tools/msys/mingw32/bin/libboost*.dll $(builddir_bin)/.)
 else
-	(cd Build; cp -p $(OMDEV)/tools/msys/mingw64/bin/libboost*.dll $(builddir_bin)/.)
+	(cd Build; cp -p $(OMDEVMSYS)/tools/msys/mingw64/bin/libboost*.dll $(builddir_bin)/.)
 endif
 
 
