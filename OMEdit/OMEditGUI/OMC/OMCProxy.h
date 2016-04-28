@@ -83,6 +83,7 @@ private:
   QTextStream mCommunicationLogFileTextStream;
   QFile mCommandsMosFile;
   QTextStream mCommandsLogFileTextStream;
+  double mTotalOMCCallsTime;
   QList<UnitConverion> mUnitConversionList;
   QMap<QString, QList<QString> > mDerivedUnitsMap;
   OMCInterface *mpOMCInterface;

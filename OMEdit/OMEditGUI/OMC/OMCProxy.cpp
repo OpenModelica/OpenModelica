@@ -68,7 +68,7 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
   \param pMainWindow - pointer to MainWindow
   */
 OMCProxy::OMCProxy(MainWindow *pMainWindow)
-  : QObject(pMainWindow), mHasInitialized(false), mResult("")
+  : QObject(pMainWindow), mHasInitialized(false), mResult(""), mTotalOMCCallsTime(0.0)
 {
   mpMainWindow = pMainWindow;
   mCurrentCommandIndex = -1;
@@ -394,10 +394,10 @@ void OMCProxy::logResponse(QString response, QTime *responseTime)
   mpOMCLoggerTextBox->setTextCursor(textCursor);
   // write the log to communication log file
   if (mCommunicationLogFileTextStream.device()) {
-    mCommunicationLogFileTextStream << response << " " << responseTime->currentTime().toString("hh:mm:ss:zzz");
-    mCommunicationLogFileTextStream << "\n";
-    mCommunicationLogFileTextStream << "Elapsed Time :: " << QString::number((double)responseTime->elapsed() / 1000).append(" secs");
-    mCommunicationLogFileTextStream << "\n\n";
+    mCommunicationLogFileTextStream << response << " " << responseTime->currentTime().toString("hh:mm:ss:zzz") << "\n";
+    mCommunicationLogFileTextStream << "Elapsed Time :: " << QString::number((double)responseTime->elapsed() / 1000).append(" secs") << "\n";
+    mTotalOMCCallsTime += (double)responseTime->elapsed() / 1000;
+    mCommunicationLogFileTextStream << "Total Calls Time :: " << QString::number(mTotalOMCCallsTime).append(" secs") << "\n\n";
     mCommunicationLogFileTextStream.flush();
   }
 }
