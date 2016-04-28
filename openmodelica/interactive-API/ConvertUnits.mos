@@ -9,7 +9,7 @@ getDerivedUnits("W");getErrorString();
 getDerivedUnits("n");getErrorString();
 
 // Result:
-// (false,1e-06,0.0)
+// (false,1e-006,0.0)
 // ""
 // (true,1.0,-273.15)
 // ""
@@ -18,7 +18,7 @@ getDerivedUnits("n");getErrorString();
 // "
 // {"degC"}
 // ""
-// {"MA","kW","mW"}
+// {"MW","kW","mW"}
 // ""
 // {}
 // "Error: error parsing unit n
