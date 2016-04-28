@@ -2856,7 +2856,7 @@ protected
 algorithm
   try
     DAE.ARRAY(array = expl) := inExp;
-    expl := ExpressionSimplify.simplifyList(expl, {});
+    expl := ExpressionSimplify.simplifyList(expl);
     expl := list(Expression.matrixToArray(e) for e in expl);
     outExp := elabMatrixCatTwo(expl);
   else

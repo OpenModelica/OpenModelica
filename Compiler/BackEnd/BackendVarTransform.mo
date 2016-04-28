@@ -1772,7 +1772,7 @@ algorithm
         (expl1,blst) = replaceExpList1(expl, repl, inFuncTypeExpExpToBooleanOption);
         b1 = Util.boolOrList(blst);
         source = ElementSource.addSymbolicTransformationSubstitutionLst(blst,source,expl,expl1);
-        (expl2,blst) = ExpressionSimplify.condsimplifyList1(blst,expl1,{},{});
+        (expl2,blst) = ExpressionSimplify.condsimplifyList1(blst,expl1);
         source = ElementSource.addSymbolicTransformationSimplifyLst(blst,source,expl1,expl2);
         (eqnslst,b2) = List.map3Fold(eqnslst,replaceEquations2,repl,inFuncTypeExpExpToBooleanOption,{},false);
         (eqns,b3) = replaceEquations2(eqns,repl,inFuncTypeExpExpToBooleanOption,{},false);

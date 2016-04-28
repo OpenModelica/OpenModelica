@@ -1930,7 +1930,7 @@ protected function makeProductLstSort2
 protected
   list<DAE.Exp> rest;
 algorithm
-  rest := ExpressionSimplify.simplifyList(inExpLst, {});
+  rest := ExpressionSimplify.simplifyList(inExpLst);
   for elem in rest loop
     if not Expression.isOne(elem) then
     outExp := match(elem)

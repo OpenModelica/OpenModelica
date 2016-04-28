@@ -2273,7 +2273,7 @@ algorithm
       equation
         // check conditions
         (explst,_) = Expression.traverseExpList(explst, simplifyEvaluatedParamter, (knvars,false));
-        explst = ExpressionSimplify.simplifyList(explst, {});
+        explst = ExpressionSimplify.simplifyList(explst);
         // simplify if equation
         (acc,asserts1) = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,knvars,acc,attr);
         asserts = listAppend(asserts,asserts1);

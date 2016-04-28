@@ -1746,7 +1746,7 @@ algorithm
       subslst = Expression.dimensionSizesSubscripts(ds);
       subslst = Expression.rangesToSubscripts(subslst);
       explst = List.map1r(subslst, Expression.applyExpSubscripts, exp);
-      explst = ExpressionSimplify.simplifyList(explst, {});
+      explst = ExpressionSimplify.simplifyList(explst);
       eqns = List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
     then eqns;
 

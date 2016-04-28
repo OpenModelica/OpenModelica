@@ -504,18 +504,11 @@ public function realToIntIfPossible
   input Real inVal;
   output DAE.Exp outVal;
 algorithm
-  outVal := matchcontinue(inVal)
-    local
-      Integer i;
-
-    case  _
-      equation
-        i = realInt(inVal);
-      then
-        DAE.ICONST(i);
-
-    else DAE.RCONST(inVal);
-  end matchcontinue;
+  try
+    outVal := DAE.ICONST(realInt(inVal));
+  else
+    outVal := DAE.RCONST(inVal);
+  end try;
 end realToIntIfPossible;
 
 public function liftArrayR "
@@ -843,13 +836,13 @@ traversal function for addNoEventToEventTriggeringFunctions"
   input DAE.Exp e;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue e
+  outExp := match e
     case DAE.CALL()
-      equation
-        true = isEventTriggeringFunctionExp(e);
+      guard
+        isEventTriggeringFunctionExp(e)
       then makeNoEvent(e);
     else e;
-  end matchcontinue;
+  end match;
 end addNoEventToEventTriggeringFunctionsExp;
 
 public function expStripLastSubs
@@ -948,27 +941,16 @@ expressions given the original expression and then simplify them.
 Note: The subscripts must be INDEX
 
 alternative names: subsriptExp (but already taken), subscriptToAsub"
-  input DAE.Exp inExp;
+  input output DAE.Exp exp;
   input list<DAE.Subscript> inSubs;
-  output DAE.Exp res;
+protected
+  DAE.Exp s;
 algorithm
-  res := match(inExp,inSubs)
-    local
-      DAE.Exp s,e;
-      DAE.Subscript sub;
-      list<DAE.Subscript> subs;
-
-    case(e,{}) then e;
-
-    case(e,sub::subs)
-      equation
-        // Apply one subscript at a time, so simplify works fine on it.
-        s = subscriptIndexExp(sub);
-        (e,_) = ExpressionSimplify.simplify(makeASUB(e,{s}));
-        res = applyExpSubscripts(e,subs);
-      then
-        res;
-  end match;
+  for sub in inSubs loop
+    // Apply one subscript at a time, so simplify works fine on it.
+    s := subscriptIndexExp(sub);
+    (exp,_) := ExpressionSimplify.simplify(makeASUB(exp,{s}));
+  end for;
 end applyExpSubscripts;
 
 
@@ -10095,14 +10077,14 @@ algorithm
 
     // slices as heads, compare the slice exps and then compare the rest
     case ((DAE.SLICE(exp = e1) :: xs1),(DAE.SLICE(exp = e2) :: xs2))
-      then expEqual(e1, e2) and subscriptEqual(xs1, xs2);
+      then if expEqual(e1, e2) then subscriptEqual(xs1, xs2) else false;
 
     // indexes as heads, compare the index exps and then compare the rest
     case ((DAE.INDEX(exp = e1) :: xs1),(DAE.INDEX(exp = e2) :: xs2))
-      then expEqual(e1, e2) and subscriptEqual(xs1, xs2);
+      then if expEqual(e1, e2) then subscriptEqual(xs1, xs2) else false;
 
     case ((DAE.WHOLE_NONEXP(exp = e1) :: xs1),(DAE.WHOLE_NONEXP(exp = e2) :: xs2))
-      then expEqual(e1, e2) and subscriptEqual(xs1, xs2);
+      then if expEqual(e1, e2) then subscriptEqual(xs1, xs2) else false;
 
     // subscripts are not equal, return false
     else false;
@@ -12631,10 +12613,10 @@ protected
   DAE.Type tp = typeof(iExp);
 algorithm
   T := terms(iExp);
-  T := ExpressionSimplify.simplifyList(T, {});
+  T := ExpressionSimplify.simplifyList(T);
   (N,D) := moveDivToMul(T, {}, {});
-  N := ExpressionSimplify.simplifyList(N, {});
-  D := ExpressionSimplify.simplifyList(D, {});
+  N := ExpressionSimplify.simplifyList(N);
+  D := ExpressionSimplify.simplifyList(D);
   n := makeSum1(N);
   d := makeProductLst(D);
   (n,_) := ExpressionSimplify.simplify1(n);
@@ -12658,7 +12640,7 @@ algorithm
       equation
          acc = List.map1(iExpLstAcc, Expression.expMul, e2);
          rest = List.map1(rest, Expression.expMul, e2);
-         rest = ExpressionSimplify.simplifyList(rest, {});
+         rest = ExpressionSimplify.simplifyList(rest);
         (elst, elst1) = moveDivToMul(rest, negate(e1)::acc, e2::iExpMuls);
       then
         (elst, elst1);
@@ -12666,7 +12648,7 @@ algorithm
       equation
          acc = List.map1(iExpLstAcc, Expression.expMul, e2);
          rest = List.map1(rest, Expression.expMul, e2);
-         rest = ExpressionSimplify.simplifyList(rest, {});
+         rest = ExpressionSimplify.simplifyList(rest);
         (elst, elst1) = moveDivToMul(rest, negate(e1)::acc, e2::iExpMuls);
       then
         (elst, elst1);
@@ -12675,7 +12657,7 @@ algorithm
       equation
          acc = List.map1(iExpLstAcc, Expression.expMul, e2);
          rest = List.map1(rest, Expression.expMul, e2);
-         rest = ExpressionSimplify.simplifyList(rest, {});
+         rest = ExpressionSimplify.simplifyList(rest);
         (elst, elst1) = moveDivToMul(rest, e1::acc, e2::iExpMuls);
       then
         (elst, elst1);
@@ -12683,7 +12665,7 @@ algorithm
       equation
          acc = List.map1(iExpLstAcc, Expression.expMul, e2);
          rest = List.map1(rest, Expression.expMul, e2);
-         rest = ExpressionSimplify.simplifyList(rest, {});
+         rest = ExpressionSimplify.simplifyList(rest);
         (elst, elst1) = moveDivToMul(rest, e1::acc, e2::iExpMuls);
       then
         (elst, elst1);

@@ -64,6 +64,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
 protected import List;
+protected import MetaModelica.Dangerous;
 protected import Prefix;
 protected import Static;
 protected import Types;
@@ -83,20 +84,12 @@ end simplify;
 
 public function condsimplify "Simplifies expressions on condition"
   input Boolean cond;
-  input DAE.Exp inExp;
-  output DAE.Exp outExp;
-  output Boolean hasChanged;
+  input output DAE.Exp ioExp;
+  output Boolean hasChanged = false;
 algorithm
-  (outExp,hasChanged) := match(cond,inExp)
-    local DAE.Exp e;
-    case(true,_)
-      equation
-        (outExp,hasChanged) = simplifyWithOptions(inExp,optionSimplifyOnly);
-      then
-        (outExp,hasChanged);
-    case(false,e)
-      then (e,false);
-  end match;
+  if cond then
+    (ioExp,hasChanged) := simplifyWithOptions(ioExp,optionSimplifyOnly);
+  end if;
 end condsimplify;
 
 public function simplifyBinaryExp
@@ -364,10 +357,9 @@ algorithm
 
     // homotopy(e, e) => e
     case DAE.CALL(path=Absyn.IDENT("homotopy"),expLst={e1,e2})
-      equation
-        true = Expression.expEqual(e1,e2);
-      then
-        e1;
+      guard
+        Expression.expEqual(e1,e2)
+      then e1;
 
     // noEvent propagated to relations and event triggering functions
     case DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e})
@@ -431,8 +423,8 @@ algorithm
 
     // normal (pure) call
     case DAE.CALL(path=Absyn.IDENT(idn),expLst=expl, attr=DAE.CALL_ATTR(isImpure=false))
-      equation
-        true = Expression.isConstWorkList(expl);
+      guard
+        Expression.isConstWorkList(expl)
       then simplifyBuiltinConstantCalls(idn,inExp);
 
     // simplify some builtin calls, like cross, etc
@@ -466,15 +458,12 @@ algorithm
       then e;
     // modulo for real values
     case (DAE.CALL(path=Absyn.IDENT("mod"),expLst={DAE.RCONST(r1),DAE.RCONST(r2)}))
-      equation
       then DAE.RCONST(r1-floor(r1/r2)*r2);
     // modulo for integer values
     case (DAE.CALL(path=Absyn.IDENT("mod"),expLst={DAE.ICONST(i1),DAE.ICONST(i2)}))
-      equation
       then DAE.ICONST(realInt(intReal(i1)-floor(intReal(i1)/intReal(i2))*intReal(i2)));
     // integer call
     case (DAE.CALL(path=Absyn.IDENT("integer"),expLst={DAE.RCONST(r1)}))
-      equation
       then DAE.ICONST(realInt(r1));
     // sin(acos(e)) = sqrt(1-e^2)
     case (DAE.CALL(path=Absyn.IDENT("sin"),expLst={DAE.CALL(path=Absyn.IDENT("acos"),expLst={e})}))
@@ -490,16 +479,15 @@ algorithm
       then DAE.BINARY(DAE.RCONST(1),DAE.DIV(DAE.T_REAL_DEFAULT),Expression.makePureBuiltinCall("sqrt",{DAE.BINARY(DAE.RCONST(1),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e))},DAE.T_REAL_DEFAULT));
     // atan2(y,0) = sign(y)*pi/2
     case (DAE.CALL(path=Absyn.IDENT("atan2"),expLst={e1,e2}))
-     equation
-      true = Expression.isZero(e2);
-      e = Expression.makePureBuiltinCall("sign", {e1}, DAE.T_REAL_DEFAULT);
-     then DAE.BINARY(DAE.RCONST(1.570796326794896619231321691639751442),DAE.MUL(DAE.T_REAL_DEFAULT),e);
+      guard
+        Expression.isZero(e2)
+      equation
+        e = Expression.makePureBuiltinCall("sign", {e1}, DAE.T_REAL_DEFAULT);
+      then DAE.BINARY(DAE.RCONST(1.570796326794896619231321691639751442),DAE.MUL(DAE.T_REAL_DEFAULT),e);
     // atan2(0,x) = 0
     case (DAE.CALL(path=Absyn.IDENT("atan2"),expLst={e1 as DAE.RCONST(0.0),_}))
-      equation
       then e1;
     case (DAE.CALL(path=Absyn.IDENT("atan2"), expLst={DAE.RCONST(r1),DAE.RCONST(r2)}))
-      equation
       then DAE.RCONST(atan2(r1,r2));
     // abs(-x) = abs(x)
     case(DAE.CALL(path=Absyn.IDENT("abs"),expLst={DAE.UNARY(operator = DAE.UMINUS(ty = tp),exp = e1)}))
@@ -509,8 +497,8 @@ algorithm
 
     // MetaModelica builtin operators are calls
     case _
-      equation
-        true = Config.acceptMetaModelicaGrammar();
+      guard
+        Config.acceptMetaModelicaGrammar()
       then simplifyMetaModelicaCalls(inExp);
     else inExp;
   end matchcontinue;
@@ -5572,65 +5560,47 @@ end hasZeroLengthIterator;
 
 public function simplifyList
   input list<DAE.Exp> expl;
-  input list<DAE.Exp> acc;
   output list<DAE.Exp> outExpl;
 algorithm
-  outExpl := match (expl,acc)
-    local
-      DAE.Exp exp;
-      list<DAE.Exp> rest_expl;
-    case ({},_) then listReverse(acc);
-    case (exp::rest_expl,_)
-      equation
-        (exp,_) = simplify1(exp);
-      then simplifyList(rest_expl,exp::acc);
-  end match;
+  outExpl := list(simplify1(exp) for exp in expl);
 end simplifyList;
 
 public function simplifyList1
   input list<DAE.Exp> expl;
-  input list<DAE.Exp> acc;
-  input list<Boolean> accb;
   output list<DAE.Exp> outExpl;
-  output list<Boolean> outBool;
+  output list<Boolean> outBool = {};
 algorithm
-  (outExpl,outBool) := match (expl,acc,accb)
+  outExpl := list(match exp
     local
-      DAE.Exp exp;
-      Boolean b;
-      list<DAE.Exp> rest_expl;
-    case ({},_,_) then (listReverse(acc),listReverse(accb));
-    case (exp::rest_expl,_,_)
+      DAE.Exp e;
+      Boolean b2;
+    case _
       equation
-        (exp,b) = simplify1(exp);
-        (outExpl,outBool) = simplifyList1(rest_expl,exp::acc,b::accb);
-      then
-        (outExpl,outBool);
-  end match;
+        (e,b2) = simplify(exp);
+        outBool = b2::outBool;
+      then e;
+    end match for exp in expl);
+  outBool := Dangerous.listReverseInPlace(outBool);
 end simplifyList1;
 
 public function condsimplifyList1
   input list<Boolean> blst;
   input list<DAE.Exp> expl;
-  input list<DAE.Exp> acc;
-  input list<Boolean> accb;
-  output list<DAE.Exp> outExpl;
-  output list<Boolean> outBool;
+  output list<DAE.Exp> outExpl = {};
+  output list<Boolean> outBool = {};
+protected
+  list<DAE.Exp> rest_expl = expl;
+  DAE.Exp exp;
+  Boolean b2;
 algorithm
-  (outExpl,outBool) := match (blst,expl,acc,accb)
-    local
-      DAE.Exp exp;
-      Boolean b;
-      list<Boolean> rest_blst;
-      list<DAE.Exp> rest_expl;
-    case ({},_,_,_) then (listReverse(acc),listReverse(accb));
-    case (b::rest_blst,exp::rest_expl,_,_)
-      equation
-        (exp,b) = condsimplify(b,exp);
-        (outExpl,outBool) = condsimplifyList1(rest_blst,rest_expl,exp::acc,b::accb);
-      then
-        (outExpl,outBool);
-  end match;
+  for b in blst loop
+    exp::rest_expl := rest_expl;
+    (exp,b2) := condsimplify(b,exp);
+    outExpl := exp::outExpl;
+    outBool := b2::outBool;
+  end for;
+  outExpl := Dangerous.listReverseInPlace(outExpl);
+  outBool := Dangerous.listReverseInPlace(outBool);
 end condsimplifyList1;
 
 protected function checkZeroLengthArrayOp
@@ -5692,18 +5662,12 @@ end simplifyAddSymbolicOperation;
 
 public function condSimplifyAddSymbolicOperation
   input Boolean cond;
-  input DAE.EquationExp exp;
-  input DAE.ElementSource source;
-  output DAE.EquationExp outExp;
-  output DAE.ElementSource outSource;
+  input output DAE.EquationExp exp;
+  input output DAE.ElementSource source;
 algorithm
-  (outExp,outSource) := match (cond,exp,source)
-    case (true,_,_)
-      equation
-        (outExp,outSource) = simplifyAddSymbolicOperation(exp,source);
-      then (outExp,outSource);
-    else (exp,source);
-  end match;
+  if cond then
+    (exp,source) := simplifyAddSymbolicOperation(exp,source);
+  end if;
 end condSimplifyAddSymbolicOperation;
 
 protected function simplifySize

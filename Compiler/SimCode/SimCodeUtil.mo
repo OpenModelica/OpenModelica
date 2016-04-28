@@ -3438,9 +3438,9 @@ algorithm
         subslst = Expression.dimensionSizesSubscripts(ds);
         subslst = Expression.rangesToSubscripts(subslst);
         explst1 = List.map1r(subslst, Expression.applyExpSubscripts, e1);
-        explst1 = ExpressionSimplify.simplifyList(explst1, {});
+        explst1 = ExpressionSimplify.simplifyList(explst1);
         explst2 = List.map1r(subslst, Expression.applyExpSubscripts, e2);
-        explst2 = ExpressionSimplify.simplifyList(explst2, {});
+        explst2 = ExpressionSimplify.simplifyList(explst2);
         repl = solveInnerEquations1(explst1, explst2, varlst, inVars, ishared, inRepl);
       then
         solveInnerEquations(rest, inEqns, inVars, ishared, repl);
@@ -3465,9 +3465,9 @@ algorithm
         subslst = Expression.dimensionSizesSubscripts(ds);
         subslst = Expression.rangesToSubscripts(subslst);
         explst1 = List.map1r(subslst, Expression.applyExpSubscripts, e1);
-        explst1 = ExpressionSimplify.simplifyList(explst1, {});
+        explst1 = ExpressionSimplify.simplifyList(explst1);
         explst2 = List.map1r(subslst, Expression.applyExpSubscripts, e2);
-        explst2 = ExpressionSimplify.simplifyList(explst2, {});
+        explst2 = ExpressionSimplify.simplifyList(explst2);
         repl = solveInnerEquations1(explst1, explst2, varlst, inVars, ishared, inRepl);
       then
         solveInnerEquations(rest, inEqns, inVars, ishared, repl);

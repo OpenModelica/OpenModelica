@@ -1169,7 +1169,7 @@ algorithm
         // simplified, e.g. cref[3+4] => cref[7], otherwise some subscripts
         // might be counted twice, such as cref[3+4] and cref[2+5], even though
         // they reference the same element.
-        subExprsSimplified = ExpressionSimplify.simplifyList(subExprs, {});
+        subExprsSimplified = ExpressionSimplify.simplifyList(subExprs);
         subscripts = List.map(subExprsSimplified, Expression.makeIndexSubscript);
         cref_ = ComponentReference.makeCrefIdent(varIdent, arrayType, subscripts);
         newCrefExp = Expression.makeCrefExp(cref_, varType);
@@ -2682,7 +2682,7 @@ algorithm
 
     case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub=explst), (vars, pa, ofunctionTree))
       algorithm
-        {e1 as DAE.RANGE()} := ExpressionSimplify.simplifyList(explst, {});
+        {e1 as DAE.RANGE()} := ExpressionSimplify.simplifyList(explst);
         subs := list(DAE.INDEX(e) for e in extendRange(e1, vars));
         crlst := list(ComponentReference.subscriptCref(cr, {s}) for s in subs);
         (varslst, p) := BackendVariable.getVarLst(crlst, vars);
@@ -5568,7 +5568,7 @@ algorithm
         explst1 = List.map1r(subslst,Expression.applyExpSubscripts,new_exp);
         explst1 = List.map3(explst1,getEqnsysRhsExp,v,funcs,SOME(repl));
         explst1 = List.map(explst1,Expression.negate);
-        explst1 = ExpressionSimplify.simplifyList(explst1, {});
+        explst1 = ExpressionSimplify.simplifyList(explst1);
         explst = List.append_reverse(explst1,explst);
         sources = List.consN(BackendEquation.equationSize(eqn), source, sources);
       then (eqn,(v,explst,sources,funcs,repl));
