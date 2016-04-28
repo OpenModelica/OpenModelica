@@ -395,9 +395,9 @@ void OMCProxy::logResponse(QString response, QTime *responseTime)
   // write the log to communication log file
   if (mCommunicationLogFileTextStream.device()) {
     mCommunicationLogFileTextStream << response << " " << responseTime->currentTime().toString("hh:mm:ss:zzz") << "\n";
-    mCommunicationLogFileTextStream << "Elapsed Time :: " << QString::number((double)responseTime->elapsed() / 1000).append(" secs") << "\n";
     mTotalOMCCallsTime += (double)responseTime->elapsed() / 1000;
-    mCommunicationLogFileTextStream << "Total Calls Time :: " << QString::number(mTotalOMCCallsTime).append(" secs") << "\n\n";
+    mCommunicationLogFileTextStream << QString::number((double)responseTime->elapsed() / 1000).append(" secs")
+                                    << " (" << QString::number(mTotalOMCCallsTime).append(" secs)") << "\n\n";
     mCommunicationLogFileTextStream.flush();
   }
 }
