@@ -309,7 +309,6 @@ LibraryTreeItem::LibraryTreeItem()
   setClassTextAfter("");
   setExpanded(false);
   setNonExisting(true);
-  setHasBOM(false);
 }
 
 /*!
@@ -339,7 +338,6 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
     setReadOnly(!StringHandler::isFileWritAble(fileName));
   }
   setIsSaved(isSaved);
-  detectBOM();
   if (isFilePathValid()) {
     QFileInfo fileInfo(getFileName());
     // if item has file name as package.mo and is top level then its save folder structure
@@ -713,31 +711,6 @@ void LibraryTreeItem::emitComponentAdded(Component *pComponent)
 {
   emit componentAdded(pComponent);
   emit componentAddedForComponent();
-}
-
-/*!
- * \brief LibraryTreeItem::detectBOM
- * Detects if the file has byte order mark (BOM) or not.
- */
-void LibraryTreeItem::detectBOM()
-{
-  if (isFilePathValid()) {
-    QFile file(getFileName());
-    if (file.open(QIODevice::ReadOnly)) {
-      QByteArray data = file.readAll();
-      const int bytesRead = data.size();
-      const unsigned char *buf = reinterpret_cast<const unsigned char *>(data.constData());
-      // code taken from qtextstream
-      if (bytesRead >= 3 && ((buf[0] == 0xef && buf[1] == 0xbb) && buf[2] == 0xbf)) {
-        setHasBOM(true);
-      } else {
-        setHasBOM(false);
-      }
-      file.close();
-    }
-  } else {
-    setHasBOM(false);
-  }
 }
 
 /*!
@@ -3131,37 +3104,33 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
  * Saves the file with contents.
  * \param fileName
  * \param contents
- * \param pLibraryTreeItem
  * \return
  */
-bool LibraryWidget::saveFile(QString fileName, QString contents, LibraryTreeItem *pLibraryTreeItem)
+bool LibraryWidget::saveFile(QString fileName, QString contents)
 {
+  // set the BOM settings
+  QComboBox *pBOMComboBox = mpMainWindow->getOptionsDialog()->getTextEditorPage()->getBOMComboBox();
+  Utilities::BomMode bomMode = (Utilities::BomMode)pBOMComboBox->itemData(pBOMComboBox->currentIndex()).toInt();
+  bool bom = false;
+  switch (bomMode) {
+    case Utilities::AlwaysAddBom:
+      bom = true;
+      break;
+    case Utilities::KeepBom:
+      bom = Utilities::detectBOM(fileName);
+      break;
+    case Utilities::AlwaysDeleteBom:
+    default:
+      bom = false;
+      break;
+  }
+  // open the file for writing
   QFile file(fileName);
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream textStream(&file);
     // set to UTF-8
     textStream.setCodec(Helper::utf8.toStdString().data());
-    // set the BOM settings
-    QComboBox *pBOMComboBox = mpMainWindow->getOptionsDialog()->getTextEditorPage()->getBOMComboBox();
-    Utilities::BomMode bomMode = (Utilities::BomMode)pBOMComboBox->itemData(pBOMComboBox->currentIndex()).toInt();
-    switch (bomMode) {
-      case Utilities::AlwaysAddBom:
-        textStream.setGenerateByteOrderMark(true);
-        if (pLibraryTreeItem) {
-          pLibraryTreeItem->setHasBOM(true);
-        }
-        break;
-      case Utilities::KeepBom:
-        textStream.setGenerateByteOrderMark(pLibraryTreeItem ? pLibraryTreeItem->hasBOM() : false);
-        break;
-      case Utilities::AlwaysDeleteBom:
-      default:
-        textStream.setGenerateByteOrderMark(false);
-        if (pLibraryTreeItem) {
-          pLibraryTreeItem->setHasBOM(false);
-        }
-        break;
-    }
+    textStream.setGenerateByteOrderMark(bom);
     // set the line ending format
     QComboBox *pLineEndingComboBox = mpMainWindow->getOptionsDialog()->getTextEditorPage()->getLineEndingComboBox();
     Utilities::LineEndingMode lineEndingMode = (Utilities::LineEndingMode)pLineEndingComboBox->itemData(pLineEndingComboBox->currentIndex()).toInt();
@@ -3365,7 +3334,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
   } else {
     contents = pLibraryTreeItem->getClassText(mpLibraryTreeModel);
   }
-  if (saveFile(fileName, contents, pLibraryTreeItem)) {
+  if (saveFile(fileName, contents)) {
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileName);
@@ -3460,7 +3429,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
     } else {
       contents = pLibraryTreeItem->getClassText(mpLibraryTreeModel);
     }
-    if (saveFile(fileName, contents, pLibraryTreeItem)) {
+    if (saveFile(fileName, contents)) {
       /* mark the file as saved and update the labels. */
       pLibraryTreeItem->setIsSaved(true);
       pLibraryTreeItem->setFileName(fileName);
@@ -3507,7 +3476,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
     contents.append(pLibraryTreeItem->child(i)->getName()).append("\n");
   }
   // create a new package.order file
-  saveFile(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()), contents, pLibraryTreeItem);
+  saveFile(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()), contents);
   return true;
 }
 
@@ -3531,7 +3500,7 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     fileName = pLibraryTreeItem->getFileName();
   }
 
-  if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText(), pLibraryTreeItem)) {
+  if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText())) {
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileName);
@@ -3586,7 +3555,7 @@ bool LibraryWidget::saveAsMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTree
  */
 bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName)
 {
-  if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText(), pLibraryTreeItem)) {
+  if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText())) {
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
     QString oldMetaModelFile = pLibraryTreeItem->getFileName();

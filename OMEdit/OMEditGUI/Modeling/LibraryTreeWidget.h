@@ -127,8 +127,6 @@ public:
   bool isExpanded() const {return mExpanded;}
   void setNonExisting(bool nonExisting) {mNonExisting = nonExisting;}
   bool isNonExisting() const {return mNonExisting;}
-  void setHasBOM(bool hasBOM) {mHasBOM = hasBOM;}
-  bool hasBOM() const {return mHasBOM;}
   void updateAttributes();
   QIcon getLibraryTreeItemIcon();
   bool inRange(int lineNumber) {return (lineNumber >= mClassInformation.lineNumberStart) && (lineNumber <= mClassInformation.lineNumberEnd);}
@@ -177,9 +175,6 @@ private:
   QString mClassTextAfter;
   bool mExpanded;
   bool mNonExisting;
-  bool mHasBOM;
-
-  void detectBOM();
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
   void loadedForComponent();
@@ -366,7 +361,7 @@ public:
   void openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
   bool parseMetaModelFile(QFileInfo fileInfo);
   void parseAndLoadModelicaText(QString modelText);
-  bool saveFile(QString fileName, QString contents, LibraryTreeItem *pLibraryTreeItem = 0);
+  bool saveFile(QString fileName, QString contents);
   bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);

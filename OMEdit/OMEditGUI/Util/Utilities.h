@@ -341,6 +341,7 @@ namespace Utilities {
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
   Label* getHeadingLabel(QString heading);
   QFrame* getHeadingLine();
+  bool detectBOM(QString fileName);
   QTextCharFormat getParenthesesMatchFormat();
   QTextCharFormat getParenthesesMisMatchFormat();
   void highlightCurrentLine(QPlainTextEdit *pPlainTextEdit);

@@ -338,6 +338,32 @@ QFrame* Utilities::getHeadingLine()
   return pHeadingLine;
 }
 
+/*!
+ * \brief Utilities::detectBOM
+ * Detects if the file has byte order mark (BOM) or not.
+ * \param fileName
+ * \return
+ */
+bool Utilities::detectBOM(QString fileName)
+{
+  QFile file(fileName);
+  if (file.open(QIODevice::ReadOnly)) {
+    QByteArray data = file.readAll();
+    const int bytesRead = data.size();
+    const unsigned char *buf = reinterpret_cast<const unsigned char *>(data.constData());
+    // code taken from qtextstream
+    if (bytesRead >= 3 && ((buf[0] == 0xef && buf[1] == 0xbb) && buf[2] == 0xbf)) {
+      return true;
+    } else {
+      return false;
+    }
+    file.close();
+  } else {
+    qDebug() << QString("Failed to detect byte order mark. Unable to open file %1.").arg(fileName);
+  }
+  return false;
+}
+
 QTextCharFormat Utilities::getParenthesesMatchFormat()
 {
   QTextCharFormat parenthesesMatchFormat;
