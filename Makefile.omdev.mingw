@@ -5,13 +5,15 @@ endif
 buildbin=$(OMBUILDDIR)/bin
 buildlib=$(OMBUILDDIR)/lib/omc
 
+OMDEVMSYS=$(shell cygpath $$OMDEV)
+
 all: omedit
 
 CC = gcc
 CXX = g++
 CFLAGS = -O2 -falign-functions -fstack-protector-all
 AR = ar
-CMAKE = $(OMDEV)/bin/cmake/bin/cmake
+CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake
 CMAKE_TARGET = "MSYS Makefiles"
 SHREXT=.dll
 
