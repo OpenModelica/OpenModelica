@@ -1137,6 +1137,7 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
   if (!libs.isEmpty()) {
     libs.removeFirst();
   }
+  LibraryTreeItem *pParentLibraryTreeItem = 0;
   foreach (QString lib, libs) {
     /* $Code is a special OpenModelica keyword. No API command will work if we use it. */
     if (lib.contains("$Code")) {
@@ -1144,7 +1145,9 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
     }
     QString name = StringHandler::getLastWordAfterDot(lib);
     QString parentName = StringHandler::removeLastWordAfterDot(lib);
-    LibraryTreeItem *pParentLibraryTreeItem = findLibraryTreeItem(parentName, pLibraryTreeItem);
+    if (!(pParentLibraryTreeItem && pParentLibraryTreeItem->getNameStructure().compare(parentName) == 0)) {
+      pParentLibraryTreeItem = findLibraryTreeItem(parentName, pLibraryTreeItem);
+    }
     if (pParentLibraryTreeItem) {
       createLibraryTreeItem(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false);
     }
