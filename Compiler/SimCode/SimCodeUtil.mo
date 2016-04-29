@@ -1839,45 +1839,45 @@ protected
   list<BackendDAE.Equation> eqnlst, alglst;
   list<BackendDAE.Var> varlst, algVarlst, tmpVarsLst;
 algorithm
-	try
-	  (stateeqnsmark, syst, shared) := inArg;
-	  (daeEquations, resVars, algVars, uniqueEqIndex, tempvars) := inFold;
-	  emptyVars := BackendVariable.emptyVars();
-	  (varlst,varNums,eqnlst,eqnNums) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp, syst.orderedVars, syst.orderedEqs);
-	  skip := false;
+  try
+    (stateeqnsmark, syst, shared) := inArg;
+    (daeEquations, resVars, algVars, uniqueEqIndex, tempvars) := inFold;
+    emptyVars := BackendVariable.emptyVars();
+    (varlst,varNums,eqnlst,eqnNums) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp, syst.orderedVars, syst.orderedEqs);
+    skip := false;
 
-	  if debug then
-	    print("Proceed component: " + BackendDump.strongComponentString(comp) + "\n");
-	    BackendDump.dumpEquationList(eqnlst,"Equations:");
-	    BackendDump.dumpVarList(varlst,"Variables:");
-	  end if;
+    if debug then
+      print("Proceed component: " + BackendDump.strongComponentString(comp) + "\n");
+      BackendDump.dumpEquationList(eqnlst,"Equations:");
+      BackendDump.dumpVarList(varlst,"Variables:");
+    end if;
 
     // skip is when equations
     skip := Util.boolAndList(List.map(eqnlst, BackendEquation.isWhenEquation));
     // skip is discrete
     skip := Util.boolAndList(List.map(varlst, BackendVariable.isVarDiscrete)) or skip;
 
-	  // convert only dynamic block here
-	  if BackendDAEUtil.blockIsDynamic(eqnNums, stateeqnsmark) and not skip  then
+    // convert only dynamic block here
+    if BackendDAEUtil.blockIsDynamic(eqnNums, stateeqnsmark) and not skip  then
 
-	    // make residual equations => 0 = f(x,xd,y)
+      // make residual equations => 0 = f(x,xd,y)
       eqnlst := List.flattenReverse(List.map(eqnlst, BackendEquation.equationToScalarResidualForm));
 
-	    // add residual var => $DAEres = f(x,xd,y)
-	    (eqnlst, tmpVarsLst) := BackendEquation.convertResidualsIntoSolvedEquations(eqnlst, "$DAEres", BackendVariable.makeVar(DAE.emptyCref), uniqueEqIndex);
+      // add residual var => $DAEres = f(x,xd,y)
+      (eqnlst, tmpVarsLst) := BackendEquation.convertResidualsIntoSolvedEquations(eqnlst, "$DAEres", BackendVariable.makeVar(DAE.emptyCref), uniqueEqIndex);
 
-	    // generate corresponding SimCode equations
-	    (daeEquationsTmp, uniqueEqIndex) := List.mapFold(eqnlst, makeSolved_SES_SIMPLE_ASSIGN, uniqueEqIndex);
+      // generate corresponding SimCode equations
+      (daeEquationsTmp, uniqueEqIndex) := List.mapFold(eqnlst, makeSolved_SES_SIMPLE_ASSIGN, uniqueEqIndex);
 
-	    // generate SimCode vars from $DAEres
-	    ((resVarsTmp, _)) :=  BackendVariable.traverseBackendDAEVars(BackendVariable.listVar1(tmpVarsLst), traversingdlowvarToSimvar, ({}, emptyVars));
+      // generate SimCode vars from $DAEres
+      ((resVarsTmp, _)) :=  BackendVariable.traverseBackendDAEVars(BackendVariable.listVar1(tmpVarsLst), traversingdlowvarToSimvar, ({}, emptyVars));
 
-	    // collect algebraic variables
-	    algVarlst := List.filterOnFalse(varlst, BackendVariable.isStateVar);
-	    ((algVarsTmp, _)) :=  BackendVariable.traverseBackendDAEVars(BackendVariable.listVar1(algVarlst), traversingdlowvarToSimvar, ({}, emptyVars));
+      // collect algebraic variables
+      algVarlst := List.filterOnFalse(varlst, BackendVariable.isStateVar);
+      ((algVarsTmp, _)) :=  BackendVariable.traverseBackendDAEVars(BackendVariable.listVar1(algVarlst), traversingdlowvarToSimvar, ({}, emptyVars));
 
-	    // result --> resVarsTmp, algVarsTmp, daeEquationsTmp
-		end if;
+      // result --> resVarsTmp, algVarsTmp, daeEquationsTmp
+    end if;
 
     if debug then
       print("Result residual variables\n");
@@ -1886,16 +1886,16 @@ algorithm
       print(Tpl.tplString(SimCodeDump.dumpVarsShort, algVarsTmp));
     end if;
 
-	  daeEquations := daeEquationsTmp::daeEquations;
-	  resVars := listAppend(resVarsTmp, resVars);
-	  algVars := listAppend(algVarsTmp, algVars);
+    daeEquations := daeEquationsTmp::daeEquations;
+    resVars := listAppend(resVarsTmp, resVars);
+    algVars := listAppend(algVarsTmp, algVars);
 
-	  outFold := (daeEquations, resVars, algVars, uniqueEqIndex, tempvars);
-	else
-	  message := "function createDAEEquationForComp failed for component " + BackendDump.strongComponentString(comp);
-	  Error.addInternalError(message, sourceInfo());
-	  fail();
-	end try;
+    outFold := (daeEquations, resVars, algVars, uniqueEqIndex, tempvars);
+  else
+    message := "function createDAEEquationForComp failed for component " + BackendDump.strongComponentString(comp);
+    Error.addInternalError(message, sourceInfo());
+    fail();
+  end try;
 end createDAEEquationForComp;
 
 // =============================================================================
