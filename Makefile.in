@@ -46,6 +46,7 @@ OPENBLAS_EXTRA_ARGS=@OPENBLAS_EXTRA_ARGS@
 IPOPT_TARGET=@IPOPT_TARGET@
 UMFPACK_TARGET=@UMFPACK_TARGET@
 UMFPACK_SHARED=@UMFPACK_SHARED@
+SUNDIALS_TARGET=@SUNDIALS_TARGET@
 # We don't want the shared version, but symbols are not exported if we use the static version
 # This compiles the shared and static versions, but we only copy the static version...
 FMILIB_SHARED = @FMILIB_SHARED@

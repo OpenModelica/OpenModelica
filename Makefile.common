@@ -73,7 +73,7 @@ interactive-common: .testvariables mkbuilddirs boehm-gc idl ModelicaExternalC
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs $(IPOPT_TARGET) $(UMFPACK_TARGET) $(MINGW_EXTRA_LIBS)
+interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs $(SUNDIALS_TARGET) $(IPOPT_TARGET) $(UMFPACK_TARGET) $(MINGW_EXTRA_LIBS)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 opc: .testvariables mkbuilddirs
@@ -408,9 +408,9 @@ sqlite3: 3rdParty/sqlite3/Makefile
 clean-sqlite3:
 	rm -rf 3rdParty/sqlite3/build
 # build sundials
-sundials: 3rdParty/sundials/CMakeLists.txt
+sundials: 3rdParty/sundials/CMakeLists.txt umfpack
 	mkdir -p 3rdParty/sundials/build
-	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX=`pwd`
+	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX=`pwd` -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="../SuiteSparse/build/" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" -DKLU_LIBRARY="libklu$(SHREXT)" -DAMD_LIBRARY="libamd$(SHREXT)" -DCOLAMD_LIBRARY="libcolamd$(SHREXT)" -DBTF_LIBRARY="libbtf$(SHREXT)" -DCMAKE_C_FLAGS="-lm" -DSUITESPARSECONFIG_LIBRARY=""
 	$(MAKE) -C 3rdParty/sundials/build install
 	# adrpo: do not copy the headers as they are not needed!
 	mkdir -p $(OMBUILDDIR)/include/omc/c/sundials
@@ -418,7 +418,7 @@ sundials: 3rdParty/sundials/CMakeLists.txt
 	# copy the libs to the build/lib/omc directory
 	(cp -puf 3rdParty/sundials/build/lib/* $(builddir_lib_omc))
 	# copy the dlls to the build bin directory
-	(cp -puf 3rdParty/sundials/build/lib/*.dll $(builddir_bin))
+	(cp -puf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
 clean-sundials:
 	if test -d 3rdParty/sundials/build ; then cd 3rdParty/sundials/build && make clean ; fi
 	rm -rf $(OMBUILDDIR)/include/omc/cpp/sundials
