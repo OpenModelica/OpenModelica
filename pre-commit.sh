@@ -36,12 +36,22 @@ for line in `git diff --check --cached | sed '/^[+-]/d'` ; do
   # remove trailing whitespace in $file (modified lines only)
   if [ "$platform" = "win" ]; then
     # in windows, `sed -i` adds ready-only attribute to $file (I don't kown why), so we use temp file instead
-    sed "${line_number}s/[[:space:]]*$//" "$file" > "${file}.bak"
+    if grep -q "[.]mo$" "$file"; then
+      sed  -e "${line_number}s/[[:space:]]*$//" -e "${line_number}s/$(printf '\t')/  /" "$file" > "${file}.bak"
+    else
+      sed  -e "${line_number}s/[[:space:]]*$//" "$file" > "${file}.bak"
+    fi
     mv -f "${file}.bak" "$file"
   elif [ "$platform" = "mac" ]; then
     sed -i "" "${line_number}s/[[:space:]]*$//" "$file"
+    if grep -q "[.]mo$" "$file"; then
+      sed -i "" "${line_number}s/$(printf '\t')/  /" "$file"
+    fi
   else
     sed -i "${line_number}s/[[:space:]]*$//" "$file"
+    if grep -q "[.]mo$" "$file"; then
+      sed -i "${line_number}s/$(printf '\t')/  /" "$file"
+    fi
   fi
   git add "$file" # to index, so our whitespace changes will be committed
 
