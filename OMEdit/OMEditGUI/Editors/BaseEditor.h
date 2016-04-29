@@ -191,6 +191,8 @@ public:
   FindReplaceWidget* getFindReplaceWidget() {return mpFindReplaceWidget;}
   void setCanHaveBreakpoints(bool canHaveBreakpoints);
   bool canHaveBreakpoints() {return mCanHaveBreakpoints;}
+  void setCanHaveFoldings(bool canHaveFoldings) {mCanHaveFoldings = canHaveFoldings;}
+  bool canHaveFoldings() {return mCanHaveFoldings;}
   QAction *getToggleBreakpointAction() {return mpToggleBreakpointAction;}
   DocumentMarker* getDocumentMarker() {return mpDocumentMarker;}
   void goToLineNumber(int lineNumber);
@@ -203,6 +205,7 @@ protected:
   PlainTextEdit *mpPlainTextEdit;
   FindReplaceWidget *mpFindReplaceWidget;
   bool mCanHaveBreakpoints;
+  bool mCanHaveFoldings;
   QAction *mpFindReplaceAction;
   QAction *mpClearFindReplaceTextsAction;
   QAction *mpGotoLineNumberAction;
