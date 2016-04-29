@@ -607,37 +607,37 @@ void VariablesTreeModel::plotAllVariables(VariablesTreeItem *pVariablesTreeItem,
   }
 }
 
+/*!
+ * \brief VariablesTreeModel::getVariableInformation
+ * Returns the variable information like value, unit, displayunit and description.
+ * \param pMatReader
+ * \param variableToFind
+ * \param value
+ * \param changeAble
+ * \param unit
+ * \param displayUnit
+ * \param description
+ */
 void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble,
                                                 QString *unit, QString *displayUnit, QString *description)
 {
   QHash<QString, QString> hash = mScalarVariablesList.value(variableToFind);
-  if (hash["name"].compare(variableToFind) == 0)
-  {
+  if (hash["name"].compare(variableToFind) == 0) {
     *changeAble = (hash["isValueChangeable"].compare("true") == 0) ? true : false;
-    if (*changeAble)
-    {
+    if (*changeAble) {
       *value = hash["start"];
-    }
-    /* if the variable is not a tunable parameter then read the final value of the variable. Only mat result files are supported. */
-    else
-    {
-      if ((pMatReader->file != NULL) && strcmp(pMatReader->fileName, ""))
-      {
+    } else { /* if the variable is not a tunable parameter then read the final value of the variable. Only mat result files are supported. */
+      if ((pMatReader->file != NULL) && strcmp(pMatReader->fileName, "")) {
         *value = "";
-        if (variableToFind.compare("time") == 0)
-        {
+        if (variableToFind.compare("time") == 0) {
           *value = QString::number(omc_matlab4_stopTime(pMatReader));
-        }
-        else
-        {
+        } else {
           ModelicaMatVariable_t *var;
-          if (0 == (var = omc_matlab4_find_var(pMatReader, variableToFind.toStdString().c_str())))
-          {
+          if (0 == (var = omc_matlab4_find_var(pMatReader, variableToFind.toStdString().c_str()))) {
             qDebug() << QString("%1 not found in %2").arg(variableToFind).arg(pMatReader->fileName);
           }
           double res;
-          if (var && !omc_matlab4_val(&res, pMatReader, var, omc_matlab4_stopTime(pMatReader)))
-          {
+          if (var && !omc_matlab4_val(&res, pMatReader, var, omc_matlab4_stopTime(pMatReader))) {
             *value = QString::number(res);
           }
         }
@@ -646,10 +646,15 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
     *unit = hash["unit"];
     *displayUnit = hash["displayUnit"];
     *description = hash["description"];
-  }
-  else if ((variableToFind.compare("time") == 0) && (pMatReader->file != NULL) && strcmp(pMatReader->fileName, ""))
-  {
+    return;
+  } else if ((variableToFind.compare("time") == 0) && (pMatReader->file != NULL) && strcmp(pMatReader->fileName, "")) {
     *value = QString::number(omc_matlab4_stopTime(pMatReader));
+  }
+  // set unit, displayunit & description for time variable
+  if (variableToFind.compare("time") == 0) {
+    *unit = "s";
+    *displayUnit = "s";
+    *description = "Simulation time";
   }
 }
 
