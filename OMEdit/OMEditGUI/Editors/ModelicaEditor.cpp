@@ -129,6 +129,7 @@ ModelicaEditor::ModelicaEditor(ModelWidget *pParent)
   : BaseEditor(pParent), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
 {
   setCanHaveBreakpoints(true);
+  setCanHaveFoldings(true);
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
 }

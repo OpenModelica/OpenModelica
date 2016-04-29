@@ -427,6 +427,12 @@ TextBlockUserData* BaseEditorDocumentLayout::userData(const QTextBlock &block)
   return data;
 }
 
+static int foldBoxWidth(const QFontMetrics &fm)
+{
+  const int lineSpacing = fm.lineSpacing();
+  return lineSpacing + lineSpacing % 2 + 1;
+}
+
 /*!
  * \class BaseEditor::PlainTextEdit
  * Internal QPlainTextEdit for Editor.
@@ -474,9 +480,13 @@ int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
     max /= 10;
     ++digits;
   }
-  int space = 10 + fontMetrics().width(QLatin1Char('9')) * digits;
+  const QFontMetrics fm(document()->defaultFont());
+  int space = fm.width(QLatin1Char('9')) * digits;
   if (mpBaseEditor->canHaveBreakpoints()) {
-    space += 16;  /* the breakpoint enable/disable svg is 16*16. */
+    space += fm.lineSpacing() + 2;
+  }
+  if (mpBaseEditor->canHaveFoldings()) {
+    space += foldBoxWidth(fm);
   }
   return space;
 }
@@ -496,10 +506,22 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
   int blockNumber = block.blockNumber();
   int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
   int bottom = top + (int) blockBoundingRect(block).height();
-  const QFontMetrics fm(mpLineNumberArea->font());
+  const QFontMetrics fm(document()->defaultFont());
   int fmLineSpacing = fm.lineSpacing();
 
   while (block.isValid() && top <= event->rect().bottom()) {
+    /* paint breakpoints */
+    TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData*>(block.userData());
+    if (pTextBlockUserData && mpBaseEditor->canHaveBreakpoints()) {
+      int xoffset = 0;
+      foreach (ITextMark *mk, pTextBlockUserData->marks()) {
+        int x = 0;
+        int radius = fmLineSpacing;
+        QRect r(x + xoffset, top, radius, radius);
+        mk->icon().paint(&painter, r, Qt::AlignCenter);
+        xoffset += 2;
+      }
+    }
     /* paint line numbers */
     if (block.isVisible() && bottom >= event->rect().top()) {
       QString number;
@@ -516,20 +538,8 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
         painter.setPen(Qt::gray);
       }
       painter.setFont(document()->defaultFont());
-      QFontMetrics fontMetrics (document()->defaultFont());
-      painter.drawText(0, top, mpLineNumberArea->width() - 5, fontMetrics.height(), Qt::AlignRight, number);
-    }
-    /* paint breakpoints */
-    TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData*>(block.userData());
-    if (pTextBlockUserData && mpBaseEditor->canHaveBreakpoints()) {
-      int xoffset = 0;
-      foreach (ITextMark *mk, pTextBlockUserData->marks()) {
-        int x = 0;
-        int radius = fmLineSpacing + 2;
-        QRect r(x + xoffset, top, radius, radius);
-        mk->icon().paint(&painter, r, Qt::AlignCenter);
-        xoffset += 2;
-      }
+      const int collapseColumnWidth = mpBaseEditor->canHaveFoldings() ? foldBoxWidth(fm): 0;
+      painter.drawText(0, top, mpLineNumberArea->width() - collapseColumnWidth - 5, fm.height(), Qt::AlignRight, number);
     }
     block = block.next();
     top = bottom;
@@ -991,13 +1001,13 @@ void BaseEditor::PlainTextEdit::focusOutEvent(QFocusEvent *event)
  * \param pMainWindow
  */
 BaseEditor::BaseEditor(MainWindow *pMainWindow)
-  : QWidget(pMainWindow), mpModelWidget(0), mpMainWindow(pMainWindow), mCanHaveBreakpoints(false)
+  : QWidget(pMainWindow), mpModelWidget(0), mpMainWindow(pMainWindow), mCanHaveBreakpoints(false), mCanHaveFoldings(false)
 {
   initialize();
 }
 
 BaseEditor::BaseEditor(ModelWidget *pModelWidget)
-  : QWidget(pModelWidget), mpModelWidget(pModelWidget), mCanHaveBreakpoints(false)
+  : QWidget(pModelWidget), mpModelWidget(pModelWidget), mCanHaveBreakpoints(false), mCanHaveFoldings(false)
 {
   mpMainWindow = pModelWidget->getModelWidgetContainer()->getMainWindow();
   initialize();
