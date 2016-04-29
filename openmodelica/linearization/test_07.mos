@@ -97,27 +97,25 @@ list(linear_simple__test);
 //   // top-level inputs
 //   parameter Integer l = 0;
 //   // top-level outputs
-//   parameter Integer nz = 4;
+//   parameter Integer nz = 2;
 //   // data recovery variables
 //   parameter Real x0[2] = {1, 1};
 //   parameter Real u0[0] = {i for i in 1:0};
-//   parameter Real z0[4] = {1.708333333333333, 24, 24, 1.708333333333333};
+//   parameter Real z0[2] = {24, 1.708333333333333};
 //   parameter Real A[2, 2] = [0, 2.666666830213917; 0, 0];
 //   parameter Real B[2, 0] = zeros(2, 0);
 //   parameter Real C[0, 2] = zeros(0, 2);
 //   parameter Real D[0, 0] = zeros(0, 0);
-//   parameter Real Cz[4, 2] = [0, 2.666666830213917; 0, 0; 0, 0; 0, 2.666666830213917];
-//   parameter Real Dz[4, 0] = zeros(4, 0);
+//   parameter Real Cz[2, 2] = [0, 0; 0, 2.666666830213917];
+//   parameter Real Dz[2, 0] = zeros(2, 0);
 //   Real x[2](start = x0);
 //   input Real u[0];
 //   output Real y[0];
-//   output Real z[4];
+//   output Real z[2];
 //   Real 'x_$Pz1' = x[1];
 //   Real 'x_$Pz2' = x[2];
-//   Real 'z_$P$cse1' = z[1];
-//   Real 'z_$P$cse2' = z[2];
-//   Real 'z_$Pfac' = z[3];
-//   Real 'z_$Py' = z[4];
+//   Real 'z_$Pfac' = z[1];
+//   Real 'z_$Py' = z[2];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;

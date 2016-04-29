@@ -7,7 +7,7 @@
 //
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
-setCommandLineOptions("--postOptModules-=wrapFunctionCalls"); getErrorString(); //wrapFunctionCalls is disabled Ticket:3874
+
 modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.Tanks.TanksWithOverflow);
 compareVars :=
@@ -23,8 +23,6 @@ runScript(modelTesting);getErrorString();
 // Result:
 // "true
 // "
-// ""
-// true
 // ""
 // OpenModelicaModelTesting.Kind.SuppressedSimulation
 // Modelica.Fluid.Examples.Tanks.TanksWithOverflow

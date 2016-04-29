@@ -21,14 +21,11 @@ equation
 end ModelTestSolve17;
 "); getErrorString();
 
-setCommandLineOptions("--postOptModules-=wrapFunctionCalls"); getErrorString();
 simulate(ModelTestSolve17, simflags="-lv LOG_NLS_V -s euler", stopTime=0.1); getErrorString();
 val(res,0.1);
 val(res,0.0);
 
 // Result:
-// true
-// ""
 // true
 // ""
 // record SimulationResult

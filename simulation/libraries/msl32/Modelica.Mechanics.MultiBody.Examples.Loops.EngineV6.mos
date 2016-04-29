@@ -90,8 +90,8 @@ runScript(modelTesting);getErrorString();
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1659):
-//  * Single equations (assignments): 1634
+// Notification: Strong component statistics for simulation (1653):
+//  * Single equations (assignments): 1628
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -107,7 +107,7 @@ runScript(modelTesting);getErrorString();
 //  * Without analytic Jacobian: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 7 {(31,13.2%) 373,(1,100.0%) 3,(1,100.0%) 3,(1,100.0%) 3,(1,100.0%) 3,(1,100.0%) 3,(1,100.0%) 3}
-//  * Non-linear torn systems: 6 {1 12,1 12,1 12,1 12,1 12,1 12}
+//  * Non-linear torn systems: 6 {1 13,1 13,1 13,1 13,1 13,1 13}
 //
 // "true
 // "

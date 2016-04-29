@@ -382,7 +382,6 @@ end noNls;
 
 "); getErrorString();
 
-setCommandLineOptions("--postOptModules-=wrapFunctionCalls"); getErrorString();
 simulate(noNls, simflags ="-lv LOG_NLS -s euler"); getErrorString();
 val(m1.x,0.0);
 val(m2.x,0.0);
@@ -471,8 +470,6 @@ val(v, {0, 0.1, 0.2, 0.5, 0.8, 0.9, 1.0});
 // Result:
 // true
 // ""
-// true
-// ""
 // record SimulationResult
 //     resultFile = "noNls_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'noNls', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_NLS -s euler'",
@@ -545,7 +542,7 @@ val(v, {0, 0.1, 0.2, 0.5, 0.8, 0.9, 1.0});
 // {0.0,0.226706998195829}
 // {1.0,1.0,1.0,1.0,0.9999999999929149}
 // {-4e-12,-4.000000000498514e-12,-4.000000000553903e-12,-4.000000055772649e-12,-1.006458451495744e-11}
-// 1.053502619337251e-17
+// 0.0
 // -3.827439653464492e-16
 // 0.7641190432599388
 // -0.9628851536063517
@@ -557,7 +554,7 @@ val(v, {0, 0.1, 0.2, 0.5, 0.8, 0.9, 1.0});
 // -0.9628851536063517
 // 0.9258043882484928
 // 0.9258043882484928
-// 2.008214126488889e-26
+// 2.008214144007162e-26
 // 1.272019649514069
 // 7.362092778534041
 // 0.0

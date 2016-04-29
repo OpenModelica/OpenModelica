@@ -1,7 +1,7 @@
 // name: testAlgLoop6
 // status: correct
 
-setCommandLineOptions("+gDynOpt +d=advanceTearing +loop2con=all --postOptModules-=wrapFunctionCalls"); //wrapFunctionCalls is disabled, Ticket: 3710
+setCommandLineOptions("+gDynOpt +d=advanceTearing +loop2con=all");
 //setCommandLineOptions("+gDynOpt");
 getErrorString();
 

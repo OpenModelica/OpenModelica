@@ -65,25 +65,23 @@ readFile("linear_extfunction.log"); // Check that output log is empty
 //   // top-level inputs
 //   parameter Integer l = 0;
 //   // top-level outputs
-//   parameter Integer nz = 2;
+//   parameter Integer nz = 0;
 //   // data recovery variables
 //   parameter Real x0[2] = {1, -1};
 //   parameter Real u0[0] = {i for i in 1:0};
-//   parameter Real z0[2] = {0.5403023058681398, 0.5403023058681398};
+//   parameter Real z0[0] = {i for i in 1:0};
 //   parameter Real A[2, 2] = [0.5403023054793894, 0.8414709479039962; 0.8414710212080169, 0.5403023054793894];
 //   parameter Real B[2, 0] = zeros(2, 0);
 //   parameter Real C[0, 2] = zeros(0, 2);
 //   parameter Real D[0, 0] = zeros(0, 0);
-//   parameter Real Cz[2, 2] = [0, 0.8414709479039962; -0.8414710212080169, 0];
-//   parameter Real Dz[2, 0] = zeros(2, 0);
+//   parameter Real Cz[0, 2] = zeros(0, 2);
+//   parameter Real Dz[0, 0] = zeros(0, 0);
 //   Real x[2](start = x0);
 //   input Real u[0];
 //   output Real y[0];
-//   output Real z[2];
+//   output Real z[0];
 //   Real 'x_$Px' = x[1];
 //   Real 'x_$Py' = x[2];
-//   Real 'z_$P$cse1' = z[1];
-//   Real 'z_$P$cse2' = z[2];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
@@ -114,25 +112,23 @@ readFile("linear_extfunction.log"); // Check that output log is empty
 //   // top-level inputs
 //   parameter Integer l = 0;
 //   // top-level outputs
-//   parameter Integer nz = 2;
+//   parameter Integer nz = 0;
 //   // data recovery variables
 //   parameter Real x0[2] = {1.398992320427181, -1.398992320427181};
 //   parameter Real u0[0] = {i for i in 1:0};
-//   parameter Real z0[2] = {0.1709600740012847, 0.1709600740012847};
+//   parameter Real z0[0] = {i for i in 1:0};
 //   parameter Real A[2, 2] = [0.170960074125255, 1.378396277040127; 1.378396314888112, 0.1709600739516404];
 //   parameter Real B[2, 0] = zeros(2, 0);
 //   parameter Real C[0, 2] = zeros(0, 2);
 //   parameter Real D[0, 0] = zeros(0, 0);
-//   parameter Real Cz[2, 2] = [0, 0.9852779439009732; -0.9852779709848525, 0];
-//   parameter Real Dz[2, 0] = zeros(2, 0);
+//   parameter Real Cz[0, 2] = zeros(0, 2);
+//   parameter Real Dz[0, 0] = zeros(0, 0);
 //   Real x[2](start = x0);
 //   input Real u[0];
 //   output Real y[0];
-//   output Real z[2];
+//   output Real z[0];
 //   Real 'x_$Px' = x[1];
 //   Real 'x_$Py' = x[2];
-//   Real 'z_$P$cse1' = z[1];
-//   Real 'z_$P$cse2' = z[2];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;

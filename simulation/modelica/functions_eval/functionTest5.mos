@@ -20,42 +20,22 @@ getErrorString();
 //
 // indxdae: eqns in order
 // ========================================
-// SingleEquation: 1
-// 1: $cse1.z:VARIABLE()  type: Real  unreplaceable
-// 1/1 (1): $cse1.z = 3.0   [binding]
-//
-// SingleEquation: 1
-// 1: $cse1.x:VARIABLE()  type: Real  unreplaceable
-// 1/1 (1): $cse1.x = 2.0   [binding]
-//
-// SingleEquation: 1
-// 1: $cse1.y:VARIABLE()  type: Real  unreplaceable
-// 1/1 (1): $cse1.y = time   [dynamic]
+// SingleEquation: 4
+// 1: a:VARIABLE()  type: Real 
+// 1/1 (1): a = time   [dynamic]
 //
 // ComplexEquation:
-// 1: $cse2:VARIABLE()  type: Real  unreplaceable
-// 2: $cse3:VARIABLE()  type: Real  unreplaceable
-// 1/1 (2): ($cse2, $cse3) = PartEvalFunc.recfunc2_eval1($cse1, $cse1.y)   [binding]
+// 1: r2.z:VARIABLE()  type: Real 
+// 2: r2.y:VARIABLE()  type: Real 
+// 1/1 (2): (r2.y, r2.z) = PartEvalFunc.recfunc2_eval1(PartEvalFunc.record2(2.0, a, 3.0), a)   [dynamic]
 //
-// SingleEquation: 6
-// 1: r2.y:VARIABLE(fixed = false )  type: Real 
-// 1/1 (1): r2.y = $cse2   [binding]
-//
-// SingleEquation: 7
-// 1: r2.z:VARIABLE(fixed = false )  type: Real 
-// 1/1 (1): r2.z = $cse3   [binding]
-//
-// SingleEquation: 3
+// SingleEquation: 2
 // 1: c:VARIABLE()  type: Real 
-// 1/1 (1): c = $cse2 + $cse1.y   [dynamic]
+// 1/1 (1): c = r2.y + a   [dynamic]
 //
-// SingleEquation: 4
+// SingleEquation: 1
 // 1: d:STATE(1,c)(start = 0.0 fixed = true )  type: Real 
 // 1/1 (1): der(d) = c   [dynamic]
-//
-// SingleEquation: 5
-// 1: a:VARIABLE(fixed = false )  type: Real 
-// 1/1 (1): a = $cse1.y   [binding]
 //
 //
 // record SimulationResult

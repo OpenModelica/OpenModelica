@@ -23,7 +23,6 @@ equation
 end ModelTestSolve16;
 "); getErrorString();
 
-setCommandLineOptions("--postOptModules-=wrapFunctionCalls"); getErrorString();
 simulate(ModelTestSolve16, simflags="-lv LOG_NLS_V"); getErrorString();
 val(x,0.5);
 val(y,0.5);
@@ -32,8 +31,6 @@ val(w,0.5);
 val(v,0.5);
 
 // Result:
-// true
-// ""
 // true
 // ""
 // record SimulationResult

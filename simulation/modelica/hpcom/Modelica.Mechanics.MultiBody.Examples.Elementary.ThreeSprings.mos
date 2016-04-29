@@ -43,6 +43,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Multi
 // Using list Scheduler for the DAE system
 // Using list Scheduler for the ODE system
 // Using list Scheduler for the ZeroFunc system
+// There is no parallel potential in the ODE system model!
 // HpcOm is still under construction.
 // record SimulationResult
 //     resultFile = "Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_res.mat",
