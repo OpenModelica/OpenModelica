@@ -492,6 +492,14 @@ algorithm
   outSystem := BackendDAE.EQSYSTEM(vars, eqns, m, mt, matching, inSystem.stateSets, inSystem.partitionKind, removedEqs);
 end copyEqSystem;
 
+public function mergeEqSystems
+  input BackendDAE.EqSystem System1;
+  input output BackendDAE.EqSystem System2;
+algorithm
+  System2.orderedEqs := BackendEquation.mergeEquationArray(System1.orderedEqs,System2.orderedEqs);
+  System2.orderedVars := BackendVariable.mergeVariables(System1.orderedVars,System2.orderedVars);
+end mergeEqSystems;
+
 public function copyBackendDAEShared
 "  author: Frenkel TUD, wbraun
   Copy the shared part of an BackendDAE to avoid changes in
