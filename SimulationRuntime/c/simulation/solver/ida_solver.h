@@ -45,6 +45,7 @@
 #include <nvector/nvector_serial.h>
 #include <ida/ida.h>
 #include <ida/ida_dense.h>
+#include <ida/ida_sparse.h>
 
 typedef struct IDA_USERDATA
 {
@@ -57,6 +58,7 @@ typedef struct IDA_SOLVER
   /* ### configuration  ### */
   int setInitialSolution;
   int jacobianMethod;            /* specifices the method to calculate the jacobian matrix */
+  int linearSolverMethod;        /* specifices the method to solve the linear problem */
 
   /* ### work arrays ### */
   N_Vector y;
@@ -73,6 +75,8 @@ typedef struct IDA_SOLVER
   /* ### ida internal data */
   void* ida_mem;
   IDA_USERDATA* simData;
+  SlsMat tmpJac;
+  DlsMat denseJac;
 
   /* ### daeMode ### */
   int daeMode;                  /* if TRUE then solve dae more with a reals residual function */

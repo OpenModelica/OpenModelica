@@ -45,6 +45,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_EMIT_PROTECTED */        "emit_protected",
   /* FLAG_F */                     "f",
   /* FLAG_HELP */                  "help",
+  /* FLAG_IDA_LS */                "idaLS",
   /* FLAG_IGNORE_HIDERESULT */     "ignoreHideResult",
   /* FLAG_IIF */                   "iif",
   /* FLAG_IIM */                   "iim",
@@ -113,6 +114,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_EMIT_PROTECTED */        "emits protected variables to the result-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get detailed information that specifies the command-line flag",
+  /* FLAG_IDA_LS */                "selects the linear solver used by ida",
   /* FLAG_IGNORE_HIDERESULT */     "ignore HideResult=true annotation",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
   /* FLAG_IIM */                   "value specifies the initialization method",
@@ -200,6 +202,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_HELP */
   "  Get detailed information that specifies the command-line flag\n"
   "  For example, -help=f prints detailed information for command-line flag f.",
+  /* FLAG_IDA_LS */
+  "  Value specifies the IDA solver linear solver.",
   /* FLAG_IGNORE_HIDERESULT */
   "  Emits also variables with HideResult=true annotation.",
   /* FLAG_IIF */
@@ -354,6 +358,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_EMIT_PROTECTED */        FLAG_TYPE_FLAG,
   /* FLAG_F */                     FLAG_TYPE_OPTION,
   /* FLAG_HELP */                  FLAG_TYPE_OPTION,
+  /* FLAG_IDA_LS */                FLAG_TYPE_OPTION,
   /* FLAG_IGNORE_HIDERESULT */     FLAG_TYPE_FLAG,
   /* FLAG_IIF */                   FLAG_TYPE_OPTION,
   /* FLAG_IIM */                   FLAG_TYPE_OPTION,
@@ -572,6 +577,8 @@ const char *JACOBIAN_METHOD[JAC_MAX+1] = {
   "internalNumerical",
   "numerical",
   "symbolical",
+  "kluSparse",
+  "kluColored",
 
   "JAC_MAX"
 };
@@ -584,7 +591,34 @@ const char *JACOBIAN_METHOD_DESC[JAC_MAX+1] = {
   "internal numerical jacobian.",
   "numerical jacobian.",
   "symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization.",
+  "sparse jacobian for KLU",
+  "colored jacobian for KLU",
 
   "JAC_MAX"
  };
+
+const char *IDA_LS_METHOD[IDA_LS_MAX+1] = {
+  "unknown",
+
+  "dense",
+  "klu",
+  "spgmr",
+  "spbcg",
+  "sptfqmr",
+
+  "IDA_LS_MAX"
+};
+
+const char *IDA_LS_METHOD_DESC[IDA_LS_MAX+1] = {
+  "unknown",
+
+  "ida internal dense method",
+  "ida use sparse direct solver KLU",
+  "ida generalized minimal residual method. Iterativ method",
+  "ida Bi-CGStab. Iterativ method",
+  "ida TFQMR. Iterativ method",
+
+  "IDA_LS_MAX"
+};
+
 

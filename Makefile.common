@@ -145,8 +145,11 @@ umfpack-clean:
 	if test -d 3rdParty/SuiteSparse/build ; then cd 3rdParty/SuiteSparse/build && make clean ; fi
 	rm -rf 3rdParty/SuiteSparse/build
 	rm -rf $(OMBUILDDIR)/include/omc/c/suitesparse
-	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libumfpack.a
-	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libamd.a
+	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT)
+	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libamd$(SHREXT)
+	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libklu$(SHREXT)
+	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libbtf$(SHREXT)
+	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libcolamd$(SHREXT)
 
 $(OMBUILDDIR)/$(LIB_OMC)/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 CC="$(CC)" CXX="$(CXX)" FC="$(FC)" USE_THREAD=0 NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica $(OPENBLAS_EXTRA_ARGS)
