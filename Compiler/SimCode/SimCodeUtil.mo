@@ -6942,6 +6942,142 @@ algorithm
   end for;
 end dumpSimEqSystemLst;
 
+
+protected function simEqSystemString
+"outputs a string representation of the given SimEqSystem.
+author:Waurich TUD 2016-04"
+  input SimCode.SimEqSystem eqSysIn;
+  output String str;
+algorithm
+  str := matchcontinue(eqSysIn)
+    local
+      Boolean partMixed,lin,initCall;
+      Integer idx,idxLS,idxNLS,idx2,idxLS2,idxNLS2,idxMS;
+      String s,s1,s2,s3,s4,s5,s6;
+      list<String> sLst;
+      DAE.Exp exp,right,lhs,iterator,startIt,endIt;
+      DAE.ElementSource source;
+      DAE.ComponentRef cref,left;
+      SimCode.SimEqSystem cont;
+      list<DAE.ComponentRef> crefs,crefs2,conds;
+      list<DAE.Statement> stmts;
+      list<SimCode.SimEqSystem> elsebranch,discEqs,eqs,eqs2,residual,residual2;
+      list<SimCodeVar.SimVar> vars,vars2,discVars;
+      list<DAE.Exp> beqs;
+      list<tuple<DAE.Exp,list<SimCode.SimEqSystem>>> ifbranches;
+      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac,simJac2;
+      Option<SimCode.JacobianMatrix> jac,jac2;
+      Option<SimCode.SimEqSystem> elseWhen;
+      list<BackendDAE.WhenOperator> whenStmtLst;
+
+    case(SimCode.SES_RESIDUAL(index=idx,exp=exp))
+      equation
+        s = intString(idx) +": "+ ExpressionDump.printExpStr(exp)+" (RESIDUAL)";
+    then s;
+
+    case(SimCode.SES_SIMPLE_ASSIGN(index=idx,cref=cref,exp=exp))
+      equation
+        s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
+      then s;
+
+    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,lhs=lhs,exp=exp))
+      equation
+        s = intString(idx) +": "+ ExpressionDump.printExpStr(lhs) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
+    then s;
+
+      case(SimCode.SES_IFEQUATION(index=idx))
+      equation
+        s = intString(idx) +": "+ " (IF)";
+    then s;
+
+    case(SimCode.SES_ALGORITHM(index=idx,statements=stmts))
+      equation
+        sLst = List.map(stmts,DAEDump.ppStatementStr);
+        sLst = List.map1(sLst, stringAppend, "\t");
+        s = intString(idx) +": "+ List.fold(sLst,stringAppend,"");
+    then s;
+
+    case(SimCode.SES_INVERSE_ALGORITHM(index=idx,statements=stmts)) equation
+      sLst = List.map(stmts, DAEDump.ppStatementStr);
+      sLst = List.map1(sLst, stringAppend, "\t");
+      s = intString(idx) +": "+ List.fold(sLst, stringAppend, "");
+    then s;
+
+    // no dynamic tearing
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac, simJac=simJac), NONE()))
+      equation
+        s = intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s = s+"\tvariables:\n"+stringDelimitList(List.map(vars,simVarString),"\n");
+        s = s+"\n\tb-vector:\n"+stringDelimitList(List.map(beqs,ExpressionDump.printExpStr),"\n");
+        s = s+ "\t";
+        s = s+stringDelimitList(List.map(residual,simEqSystemString),"\n\t");
+        s = s+"\n";
+    then s;
+
+    // dynamic tearing
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac, simJac=simJac), SOME(SimCode.LINEARSYSTEM(index=idx2,indexLinearSystem=idxLS2, residual=residual2, jacobianMatrix=jac2, simJac=simJac2))))
+      equation
+        s = "strict set:\n"+intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s = s+"\tvariables:\n\t"+stringDelimitList(List.map(vars,simVarString),"\t\n");
+        s = s+"\n\tb-vector:\n"+stringDelimitList(List.map(beqs,ExpressionDump.printExpStr),"\t\n");
+        s = s+ "\t";
+        s = s+stringDelimitList(List.map(residual,simEqSystemString),"\n\t");
+        s = s+"\n";
+    then s;
+
+    // no dynamic tearing
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), NONE()))
+      equation
+        s = intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s = s+"crefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr)," , ")+"\n";
+        s = s+"\t";
+        s = s+stringDelimitList(List.map(eqs,simEqSystemString),"\n\t");
+        s = s+"\n";
+    then s;
+
+    // dynamic tearing
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), SOME(SimCode.NONLINEARSYSTEM(index=idx2,indexNonLinearSystem=idxNLS2,jacobianMatrix=jac2,eqs=eqs2, crefs=crefs2))))
+      equation
+        s = "strict set: \n"+intString(idx) +": "+ " (LINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s = s+"crefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr)," , ")+"\n";
+        s = s+"\t";
+        s = s+stringDelimitList(List.map(eqs,simEqSystemString),"\n\t");
+        s = s+"\n";
+    then s;
+
+    case(SimCode.SES_MIXED(index=idx,indexMixedSystem=idxMS, cont=cont, discEqs=eqs))
+      equation
+        s = intString(idx) +": "+ " (MIXED) index:"+intString(idxMS)+"\n";
+        s = s + simEqSystemString(cont);
+        s = s+stringDelimitList(List.map(eqs,simEqSystemString),"\n\t");
+    then s;
+
+    case(SimCode.SES_WHEN(index=idx, conditions=crefs, whenStmtLst = whenStmtLst, elseWhen=elseWhen))
+      equation
+        s = intString(idx) +": "+ " WHEN:( ";
+        s = s+ stringDelimitList(List.map(crefs,ComponentReference.crefStr),", ") + " ) then: ";
+        s = s +dumpWhenOps(whenStmtLst);
+        if isSome(elseWhen) then
+          s = s + " ELSEWHEN: ";
+          dumpSimEqSystem(Util.getOption(elseWhen));
+          s = s + simEqSystemString(Util.getOption(elseWhen));
+        end if;
+      then s;
+
+    case(SimCode.SES_FOR_LOOP(index=idx,iter=iterator, startIt=startIt, endIt=endIt, cref=cref, exp=exp, source=source))
+      equation
+        s = intString(idx) +" FOR-LOOP: "+" for "+ExpressionDump.printExpStr(iterator)+" in ("+ExpressionDump.printExpStr(startIt)+":"+ExpressionDump.printExpStr(endIt)+") loop\n";
+        s = s+ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]\n";
+        s = s+"end for;";
+    then s;
+
+    else
+      then
+        "SOMETHING DIFFERENT\n";
+  end matchcontinue;
+end simEqSystemString;
+
+
 public function dumpSimEqSystem "dumps the given SimEqSystem.
 author:Waurich TUD 2013-11"
   input SimCode.SimEqSystem eqSysIn;
@@ -6967,54 +7103,10 @@ algorithm
       Option<SimCode.SimEqSystem> elseWhen;
       list<BackendDAE.WhenOperator> whenStmtLst;
 
-    case(SimCode.SES_RESIDUAL(index=idx,exp=exp))
-      equation
-        s = intString(idx) +": "+ ExpressionDump.printExpStr(exp)+" (RESIDUAL)";
-        print(s);
-    then ();
-
-    case(SimCode.SES_SIMPLE_ASSIGN(index=idx,cref=cref,exp=exp))
-      equation
-        s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
-        print(s);
-      then ();
-
-    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,lhs=lhs,exp=exp))
-      equation
-        s = intString(idx) +": "+ ExpressionDump.printExpStr(lhs) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
-        print(s);
-    then ();
-
-      case(SimCode.SES_IFEQUATION(index=idx))
-      equation
-        s = intString(idx) +": "+ " (IF)";
-        print(s);
-    then ();
-
-    case(SimCode.SES_ALGORITHM(index=idx,statements=stmts))
-      equation
-        sLst = List.map(stmts,DAEDump.ppStatementStr);
-        sLst = List.map1(sLst, stringAppend, "\t");
-        s = intString(idx) +": "+ List.fold(sLst,stringAppend,"");
-        print(s);
-    then ();
-
-    case(SimCode.SES_INVERSE_ALGORITHM(index=idx,statements=stmts)) equation
-      sLst = List.map(stmts, DAEDump.ppStatementStr);
-      sLst = List.map1(sLst, stringAppend, "\t");
-      s = intString(idx) +": "+ List.fold(sLst, stringAppend, "");
-      print(s);
-    then ();
-
     // no dynamic tearing
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac, simJac=simJac), NONE()))
       equation
-        print(intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n");
-        dumpVarLst(vars,"\tvariables:");
-        print("\tb-vector:\n"+stringDelimitList(List.map(beqs,ExpressionDump.printExpStr),"\n"));
-        print("\t");
-        dumpSimEqSystemLst(residual,"\n\t");
-        print("\n");
+        print(simEqSystemString(eqSysIn));
         dumpJacobianMatrix(jac);
         print("\tsimJac:\n");
         dumpSimJac(simJac);
@@ -7023,12 +7115,7 @@ algorithm
     // dynamic tearing
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac, simJac=simJac), SOME(SimCode.LINEARSYSTEM(index=idx2,indexLinearSystem=idxLS2, residual=residual2, jacobianMatrix=jac2, simJac=simJac2))))
       equation
-        print("strict set:\n" + intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n");
-        dumpVarLst(vars,"\tvariables:");
-        print("\tb-vector:\n"+stringDelimitList(List.map(beqs,ExpressionDump.printExpStr),"\n"));
-        print("\t");
-        dumpSimEqSystemLst(residual,"\n\t");
-        print("\n");
+        print(simEqSystemString(eqSysIn));
         print("\n\tsimJac:\n");
         dumpSimJac(simJac);
         dumpJacobianMatrix(jac);
@@ -7043,22 +7130,14 @@ algorithm
     // no dynamic tearing
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), NONE()))
       equation
-        print(intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n");
-        print("\t\tcrefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr)," , ")+"\n");
-        print("\t");
-        dumpSimEqSystemLst(eqs,"\n\t");
-        print("\n");
+        print(simEqSystemString(eqSysIn));
         dumpJacobianMatrix(jac);
     then ();
 
     // dynamic tearing
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), SOME(SimCode.NONLINEARSYSTEM(index=idx2,indexNonLinearSystem=idxNLS2,jacobianMatrix=jac2,eqs=eqs2, crefs=crefs2))))
       equation
-        print("strict set:\n" + intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n");
-        print("\t\tcrefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr)," , ")+"\n");
-        print("\t");
-        dumpSimEqSystemLst(eqs,"\n\t");
-        print("\n");
+        print(simEqSystemString(eqSysIn));
         dumpJacobianMatrix(jac);
         print("\ncasual set:\n" + intString(idx2) +": "+ " (NONLINEAR) index:"+intString(idxNLS2)+" jacobian: "+boolString(Util.isSome(jac2))+"\n");
         print("\t\tcrefs: "+stringDelimitList(List.map(crefs2,ComponentReference.printComponentRefStr)," , ")+"\n");
@@ -7068,35 +7147,9 @@ algorithm
         dumpJacobianMatrix(jac2);
     then ();
 
-    case(SimCode.SES_MIXED(index=idx,indexMixedSystem=idxMS, cont=cont, discEqs=eqs))
-      equation
-        print(intString(idx) +": "+ " (MIXED) index:"+intString(idxMS)+"\n\t");
-        dumpSimEqSystem(cont);
-        print("\t");
-        dumpSimEqSystemLst(eqs,"\n\t");
-    then ();
-
-    case(SimCode.SES_WHEN(index=idx, conditions=crefs, whenStmtLst = whenStmtLst, elseWhen=elseWhen))
-      equation
-        print(intString(idx) +": "+ " WHEN:( ");
-        print(stringDelimitList(List.map(crefs,ComponentReference.crefStr),", ") + " ) then: ");
-        print(dumpWhenOps(whenStmtLst));
-        if isSome(elseWhen) then
-          print(" ELSEWHEN: ");
-          dumpSimEqSystem(Util.getOption(elseWhen));
-        end if;
-      then ();
-
-    case(SimCode.SES_FOR_LOOP(index=idx,iter=iterator, startIt=startIt, endIt=endIt, cref=cref, exp=exp, source=source))
-      equation
-        print(intString(idx) +" FOR-LOOP: "+" for "+ExpressionDump.printExpStr(iterator)+" in ("+ExpressionDump.printExpStr(startIt)+":"+ExpressionDump.printExpStr(endIt)+") loop\n");
-        print(ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]\n");
-        print("end for;");
-    then ();
-
     else
       equation
-        print("SOMETHING DIFFERENT\n");
+        print(simEqSystemString(eqSysIn));
     then ();
   end matchcontinue;
 end dumpSimEqSystem;
@@ -7188,6 +7241,47 @@ algorithm
     dumpVarLst(vars,"external object info\n-----------------------\n");
 end extObjInfoString;
 
+protected function dumpClockPartition
+  input SimCode.ClockedPartition clockPart;
+algorithm
+  print("BaseClock:\n"+UNDERLINE+"\n"+ExpressionDump.clockKindString(clockPart.baseClock)+"\n");
+  print(stringDelimitList(List.map(clockPart.subPartitions,subPartitionString),"\n\n")+"\n");
+  print(UNDERLINE+"\n");
+end dumpClockPartition;
+
+protected function previousString"outputs a string representation if the boolean says the var is a previous var"
+  input Boolean isPreviousVar;
+  output String s;
+algorithm
+  if isPreviousVar then
+    s := " (PREVIOUS)";
+  else
+    s := " ";
+  end if;
+end previousString;
+
+protected function subPartitionString"outputs a string representation of a SimCode.SubPartition"
+  input SimCode.SubPartition subPart;
+  output String str;
+protected
+  list<SimCodeVar.SimVar> simVars;
+  list<Boolean> arePrevious;
+  list<String> simVarStrings;
+  String s;
+algorithm
+  simVars := List.map(subPart.vars,Util.tuple21);
+  arePrevious := List.map(subPart.vars,Util.tuple22);
+  simVarStrings := List.threadMap(List.map(simVars,simVarString), List.map(arePrevious,previousString),stringAppend);
+  str := "SubPartition Vars:\n"+UNDERLINE+"\n";
+  str := str + stringDelimitList(simVarStrings,"\n")+"\n";
+  str := str + "partition equations:\n"+UNDERLINE+"\n";
+  str := str + stringDelimitList(List.map(subPart.equations,simEqSystemString),"\n");
+  str := str + "removedEquations equations:\n"+UNDERLINE+"\n";
+  str := str + stringDelimitList(List.map(subPart.removedEquations,simEqSystemString),"\n")+"\n";
+  str := str + "SubClock:\n"+ BackendDump.subClockString(subPart.subClock);
+  str := str + "Hold Events: "+boolString(subPart.holdEvents);
+end subPartitionString;
+
 public function dumpSimCodeDebug"prints the simcode debug output to std out."
   input SimCode.SimCode simCode;
 protected
@@ -7203,7 +7297,10 @@ algorithm
   print("\nalgebraicEquations ("+intString(listLength(simCode.algebraicEquations))+" systems): \n" + UNDERLINE + "\n");
   List.map1_0(simCode.algebraicEquations,dumpSimEqSystemLst,"\n");
   print(UNDERLINE + "\n\n\n");
-  print("\ninitialEquations: ("+intString(listLength(simCode.initialEquations))+")\n" + UNDERLINE + "\n");
+  print("clockPartitions ("+intString(listLength(simCode.clockedPartitions))+" systems):\n\n");
+  List.map_0(simCode.clockedPartitions,dumpClockPartition);
+  print(UNDERLINE + "\n\n\n");
+  print("\ninitialEquations: ("+intString(listLength(simCode.initialEquations))+")\n"+ UNDERLINE+"\n");
   dumpSimEqSystemLst(simCode.initialEquations,"\n");
   print(UNDERLINE + "\n\n\n");
   print("\ninitialEquations_lambda0: ("+intString(listLength(simCode.initialEquations_lambda0))+")\n" + UNDERLINE + "\n");
