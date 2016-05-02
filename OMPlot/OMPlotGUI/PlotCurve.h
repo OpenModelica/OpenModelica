@@ -72,6 +72,7 @@ public:
   int getCurveStyle() {return mStyle;}
   void setXAxisVector(QVector<double> vector);
   void addXAxisValue(double value);
+  void updateXAxisValue(int index, double value);
   const double* getXAxisVector() const;
   QVector<double> getXAxisData();
   void clearXAxisVector() {mXAxisVector.clear();}

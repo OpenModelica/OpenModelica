@@ -79,6 +79,7 @@ private:
   QString mGridType;
   QString mUnit;
   QString mDisplayUnit;
+  QString mTimeUnit;
   QString mXRangeMin;
   QString mXRangeMax;
   QString mYRangeMin;
@@ -110,6 +111,8 @@ public:
   QString getUnit() {return mUnit;}
   void setDisplayUnit(QString displayUnit) {mDisplayUnit = displayUnit;}
   QString getDisplayUnit() {return mDisplayUnit;}
+  void setTimeUnit(QString timeUnit) {mTimeUnit = timeUnit;}
+  QString getTimeUnit() {return mTimeUnit;}
   void setXRange(double min, double max);
   QString getXRangeMin();
   QString getXRangeMax();

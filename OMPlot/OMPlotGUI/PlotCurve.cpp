@@ -134,6 +134,11 @@ void PlotCurve::addXAxisValue(double value)
   mXAxisVector.push_back(value);
 }
 
+void PlotCurve::updateXAxisValue(int index, double value)
+{
+  mXAxisVector.replace(index, value);
+}
+
 const double* PlotCurve::getXAxisVector() const
 {
   return mXAxisVector.data();
