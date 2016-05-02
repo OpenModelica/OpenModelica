@@ -1,6 +1,7 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
+ClockInterval.mos \
 tearnonlin1.mos \
 WhenStatement1.mos \
 BouncingBall.mos \
@@ -12,6 +13,7 @@ mathFunctionsTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
 solveTest.mos
+
 
 FAILINGTESTFILES= \
 clockedTypesTest.mos \
