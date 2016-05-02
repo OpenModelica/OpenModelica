@@ -130,6 +130,8 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(mpMainWindow->getOptionsDialog()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    pPlotWindow->setTimeUnit(mpMainWindow->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
+    pPlotWindow->setXLabel(QString("time [%1]").arg(pPlotWindow->getTimeUnit()));
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/plot-window.svg"));

@@ -243,9 +243,15 @@ QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelInd
 }
 
 /*!
-  Shows a Qt::PointingHandCursor for simulation output links.\n
-  If the link is clicked then calls the SimulationOutputWidget::openTransformationBrowser(QUrl).
-  */
+ * \brief ItemDelegate::editorEvent
+ * Shows a Qt::PointingHandCursor for simulation output links.\n
+ * If the link is clicked then calls the SimulationOutputWidget::openTransformationBrowser(QUrl).
+ * \param event
+ * \param model
+ * \param option
+ * \param index
+ * \return
+ */
 bool ItemDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
 {
   if (mDrawRichText && parent() && qobject_cast<SimulationOutputTree*>(parent()) &&
@@ -274,6 +280,65 @@ bool ItemDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const Q
     }
   } else {
     return QItemDelegate::editorEvent(event, model, option, index);
+  }
+}
+
+/*!
+ * \brief ItemDelegate::createEditor
+ * Creates the editor for display units in VariablesTreeView.
+ * \param pParent
+ * \param option
+ * \param index
+ * \return
+ */
+QWidget* ItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+  if (parent() && qobject_cast<VariablesTreeView*>(parent()) && index.column() == 3) {
+    VariablesTreeView *pVariablesTreeView = qobject_cast<VariablesTreeView*>(parent());
+    VariableTreeProxyModel *pVariableTreeProxyModel = pVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel();
+    QModelIndex sourceIndex = pVariableTreeProxyModel->mapToSource(index);
+    VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(sourceIndex.internalPointer());
+    // create the display units combobox
+    QComboBox *pComboBox = new QComboBox(pParent);
+    pComboBox->setEnabled(!pVariablesTreeItem->getDisplayUnits().isEmpty());
+    pComboBox->addItems(pVariablesTreeItem->getDisplayUnits());
+    connect(pComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(unitComboBoxChanged(QString)));
+    return pComboBox;
+  } else {
+    return QItemDelegate::createEditor(pParent, option, index);
+  }
+}
+
+/*!
+ * \brief ItemDelegate::setEditorData
+ * Sets the value for display unit in VariablesTreeView.
+ * \param editor
+ * \param index
+ */
+void ItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+{
+  if (parent() && qobject_cast<VariablesTreeView*>(parent()) && index.column() == 3) {
+    QString value = index.model()->data(index, Qt::DisplayRole).toString();
+    QComboBox* comboBox = static_cast<QComboBox*>(editor);
+    //set the index of the combo box
+    comboBox->setCurrentIndex(comboBox->findText(value, Qt::MatchExactly));
+  } else {
+    QItemDelegate::setEditorData(editor, index);
+  }
+}
+
+/*!
+ * \brief ItemDelegate::unitComboBoxChanged
+ * Handles the case when display unit is changed in the VariablesTreeView.
+ * \param text
+ */
+void ItemDelegate::unitComboBoxChanged(QString text)
+{
+  Q_UNUSED(text);
+  QComboBox *pComboBox = qobject_cast<QComboBox*>(sender());
+  if (pComboBox) {
+    commitData(pComboBox);
+    closeEditor(pComboBox);
   }
 }
 

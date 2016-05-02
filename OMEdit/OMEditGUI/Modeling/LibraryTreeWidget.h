@@ -60,6 +60,10 @@ public:
   void drawHover(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
   virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
   virtual bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index);
+  virtual QWidget* createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+  virtual void setEditorData(QWidget *editor, const QModelIndex &index) const;
+public slots:
+  void unitComboBoxChanged(QString text);
 };
 
 class ModelWidget;

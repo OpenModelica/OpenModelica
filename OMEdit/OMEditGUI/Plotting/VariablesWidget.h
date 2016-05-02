@@ -57,6 +57,8 @@ public:
   bool isValueChanged() {return mValueChanged;}
   QString getUnit() {return mUnit;}
   QString getDisplayUnit() {return mDisplayUnit;}
+  QString getPreviousUnit() {return mPreviousUnit;}
+  QStringList getDisplayUnits() {return mDisplayUnits;}
   bool isChecked() const {return mChecked;}
   void setChecked(bool set) {mChecked = set;}
   bool isEditable() const {return mEditable;}
@@ -86,6 +88,8 @@ private:
   bool mValueChanged;
   QString mUnit;
   QString mDisplayUnit;
+  QString mPreviousUnit;
+  QStringList mDisplayUnits;
   QString mDescription;
   QString mToolTip;
   bool mChecked;
@@ -126,6 +130,7 @@ private:
                               QString *displayUnit, QString *description);
 signals:
   void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle);
+  void unitChanged(const QModelIndex &index);
   void variableTreeItemRemoved(QString variable);
 public slots:
   void removeVariableTreeItem();
@@ -160,6 +165,7 @@ class VariablesWidget : public QWidget
 public:
   VariablesWidget(MainWindow *pMainWindow);
   MainWindow* getMainWindow() {return mpMainWindow;}
+  QComboBox* getSimulationTimeComboBox() {return mpSimulationTimeComboBox;}
   VariableTreeProxyModel* getVariableTreeProxyModel() {return mpVariableTreeProxyModel;}
   VariablesTreeModel* getVariablesTreeModel() {return mpVariablesTreeModel;}
   VariablesTreeView* getVariablesTreeView() {return mpVariablesTreeView;}
@@ -174,6 +180,8 @@ public:
 private:
   MainWindow *mpMainWindow;
   TreeSearchFilters *mpTreeSearchFilters;
+  Label *mpSimulationTimeLabel;
+  QComboBox *mpSimulationTimeComboBox;
   VariableTreeProxyModel *mpVariableTreeProxyModel;
   VariablesTreeModel *mpVariablesTreeModel;
   VariablesTreeView *mpVariablesTreeView;
@@ -183,6 +191,8 @@ private:
 public slots:
   void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, OMPlot::PlotCurve *pPlotCurve = 0,
                      OMPlot::PlotWindow *pPlotWindow = 0);
+  void unitChanged(const QModelIndex &index);
+  void timeUnitChanged(QString unit);
   void updateVariablesTree(QMdiSubWindow *pSubWindow);
   void showContextMenu(QPoint point);
   void findVariables();
