@@ -21,6 +21,7 @@ problem2-lobatto4.mos \
 problem2-lobatto6.mos \
 problem2-symEuler.mos \
 problem2-ida.mos \
+problem2-idaLinearSolver.mos \
 problem3-symEuler.mos
 
 #runonly DAE tests
