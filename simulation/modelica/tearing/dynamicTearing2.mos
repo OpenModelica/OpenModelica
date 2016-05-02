@@ -49,10 +49,9 @@ simulate(dynamicTearing2); getErrorString();
 // strict set:
 // 39:  (LINEAR) index:1 jacobian: true
 // 	variables:
-// ----------------------
-// index: -1: x6 (no alias)  initial: 	no arrCref index:() [] 
-// index: -1: x7 (no alias)  initial: 	no arrCref index:() [] 
-// index: -1: x4 (no alias)  initial: 	no arrCref index:() [] 
+// 	index: -1: x6 (no alias)  initial: 	no arrCref index:() [] 	
+// index: -1: x7 (no alias)  initial: 	no arrCref index:() [] 	
+// index: -1: x4 (no alias)  initial: 	no arrCref index:() [] 	
 // index: -1: x2 (no alias)  initial: 	no arrCref index:() [] 
 // 	b-vector:
 // 	21: x1=(-x2) - sin(time)[Real ]
@@ -63,7 +62,6 @@ simulate(dynamicTearing2); getErrorString();
 // 	27: 5.0 * x5 - x6 + sin(time) * x4 (RESIDUAL)
 // 	26: x7 - x8 + cos(time) * x6 (RESIDUAL)
 // 	25: -2.0 * x4 - cos(time) * x5 + x3 (RESIDUAL)
-// 	
 //
 // 	simJac:
 //
@@ -121,10 +119,9 @@ simulate(dynamicTearing2); getErrorString();
 // strict set:
 // 39:  (LINEAR) index:1 jacobian: true
 // 	variables:
-// ----------------------
-// index: -1: x6 (no alias)  initial: 	no arrCref index:() [] 
-// index: -1: x7 (no alias)  initial: 	no arrCref index:() [] 
-// index: -1: x4 (no alias)  initial: 	no arrCref index:() [] 
+// 	index: -1: x6 (no alias)  initial: 	no arrCref index:() [] 	
+// index: -1: x7 (no alias)  initial: 	no arrCref index:() [] 	
+// index: -1: x4 (no alias)  initial: 	no arrCref index:() [] 	
 // index: -1: x2 (no alias)  initial: 	no arrCref index:() [] 
 // 	b-vector:
 // 	21: x1=(-x2) - sin(time)[Real ]
@@ -135,7 +132,6 @@ simulate(dynamicTearing2); getErrorString();
 // 	27: 5.0 * x5 - x6 + sin(time) * x4 (RESIDUAL)
 // 	26: x7 - x8 + cos(time) * x6 (RESIDUAL)
 // 	25: -2.0 * x4 - cos(time) * x5 + x3 (RESIDUAL)
-// 	
 //
 // 	simJac:
 //
@@ -181,12 +177,16 @@ simulate(dynamicTearing2); getErrorString();
 // ========================================
 //
 //
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
 //
 // initialEquations: (1)
 // ========================================
 // 20:  (LINEAR) index:0 jacobian: true
 // 	variables:
-// ----------------------
 // index: -1: x2 (no alias)  initial: 	no arrCref index:() [] 
 // index: -1: x4 (no alias)  initial: 	no arrCref index:() [] 
 // index: -1: x6 (no alias)  initial: 	no arrCref index:() [] 
@@ -200,7 +200,6 @@ simulate(dynamicTearing2); getErrorString();
 // 	7: 4.0 * x4 + -2.0 * x3 + cos(time) * x2 (RESIDUAL)
 // 	6: sin(time) + x2 + x1 (RESIDUAL)
 // 	5: x7 - x8 + cos(time) * x6 (RESIDUAL)
-// 	
 // 	Jacobian idx: 0
 // 	9: $cse1=cos(time)[Real ]
 // 	10: $cse2=sin(time)[Real ]
