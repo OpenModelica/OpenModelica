@@ -12449,16 +12449,21 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings, SimCode simCode ,T
 
     bool restart = true;
     bool state_vars_reinitialized = false;
+    bool clock_event_detected = false;
+
     int iter = 0;
     for(int i =0;i< _dimClock;i++)
 	{
 		if(events[_dimZeroFunc+i])
 		{
 			_clockCondition[i]=true;
+			clock_event_detected = true;
 			 evaluateAll();
-			return false; // no event iteration after clock tick handling
 		}
 	}
+
+	if (clock_event_detected) return false;// no event iteration after clock tick handling
+
     while(restart && !(iter++ > 100))
     {
         bool st_vars_reinit = false;
