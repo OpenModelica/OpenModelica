@@ -863,7 +863,7 @@ algorithm
       (Unit.MASTER(lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       ut = unitMul(inUt, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
-      s1 = unit2String(inUt, HtU2S);
+      s1 = unit2String(ut, HtU2S);
       HtS2U = addUnit2HtS2U((s1, ut), HtS2U);
       HtU2S = addUnit2HtU2S((s1, ut), HtU2S);
     then (inUt, (HtCr2U, HtS2U, HtU2S), expListList);
