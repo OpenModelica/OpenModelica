@@ -1,14 +1,14 @@
 package Modelica_Synchronous  "Modelica_Synchronous (version 0.92.1) - Basic synchronous input/output control blocks
-that are triggered by clocks" 
+that are triggered by clocks"
   extends Modelica.Icons.Package;
 
-  package Examples  "Library of examples to demonstrate the usage of package Modelica_Synchronous" 
+  package Examples  "Library of examples to demonstrate the usage of package Modelica_Synchronous"
     extends Modelica.Icons.ExamplesPackage;
 
-    package Systems  "Examples of complete systems" 
+    package Systems  "Examples of complete systems"
       extends Modelica.Icons.ExamplesPackage;
 
-      model ControlledMixingUnit  "Simple example of a mixing unit where a (discretized) nonlinear inverse plant model is used as feedforward controller" 
+      model ControlledMixingUnit  "Simple example of a mixing unit where a (discretized) nonlinear inverse plant model is used as feedforward controller"
         extends Modelica.Icons.Example;
         parameter .Modelica.SIunits.Frequency freq = 1 / 300 "Critical frequency of filter";
         parameter Real c0(unit = "mol/l") = 0.848 "Nominal concentration";
@@ -61,16 +61,16 @@ that are triggered by clocks"
         connect(sample2.u, step.y);
         connect(filter.u, sample2.y);
         connect(periodicClock1.y, sample2.clock);
-        annotation(experiment(StopTime = 300)); 
+        annotation(experiment(StopTime = 300));
       end ControlledMixingUnit;
 
-      package Utilities  
+      package Utilities
         extends Modelica.Icons.Package;
 
-        package ComponentsMixingUnit  
+        package ComponentsMixingUnit
           extends Modelica.Icons.Package;
 
-          model MixingUnit  "Mixing unit demo from Foellinger, Nichtlineare Regelungen II, p. 280" 
+          model MixingUnit  "Mixing unit demo from Foellinger, Nichtlineare Regelungen II, p. 280"
             Modelica.Blocks.Interfaces.RealInput T_c(unit = "K") "Cooling temperature";
             Modelica.Blocks.Interfaces.RealOutput c(unit = "mol/l") "Concentration";
             Modelica.Blocks.Interfaces.RealOutput T(unit = "K") "Temperature in mixing unit";
@@ -100,7 +100,7 @@ that are triggered by clocks"
             der(T) = (-wa21 * T) + wa22 * gamma + wa23 + wb * T_c;
           end MixingUnit;
 
-          block CriticalDamping  "Output the input signal filtered with an n-th order filter with critical damping" 
+          block CriticalDamping  "Output the input signal filtered with an n-th order filter with critical damping"
             extends Modelica.Blocks.Interfaces.SISO;
             parameter Integer n = 2 "Order of filter";
             parameter Modelica.SIunits.Frequency f(start = 1) "Cut-off frequency";
@@ -121,13 +121,13 @@ that are triggered by clocks"
     end Systems;
   end Examples;
 
-  package ClockSignals  "Library of blocks for clocked signals" 
+  package ClockSignals  "Library of blocks for clocked signals"
     extends Modelica.Icons.Package;
 
-    package Clocks  "Library of blocks that generate clocks" 
+    package Clocks  "Library of blocks that generate clocks"
       extends Modelica.Icons.SourcesPackage;
 
-      block PeriodicRealClock  "Generates a periodic clock signal with a period defined by a Real number" 
+      block PeriodicRealClock  "Generates a periodic clock signal with a period defined by a Real number"
         parameter Modelica.SIunits.Time period "Period of clock (defined as Real number)" annotation(Evaluate = true);
         extends Modelica_Synchronous.ClockSignals.Interfaces.PartialPeriodicClock;
       equation
@@ -139,28 +139,28 @@ that are triggered by clocks"
       end PeriodicRealClock;
     end Clocks;
 
-    package Interfaces  "Library of connectors and partial blocks with clock signals" 
+    package Interfaces  "Library of connectors and partial blocks with clock signals"
       extends Modelica.Icons.InterfacesPackage;
       connector ClockInput = input Clock "'input Clock' as connector";
       connector ClockOutput = output Clock "'output Clock' as connector";
 
-      partial block PartialClock  "Icon, connector, and solver method of a block that generates a clock" 
+      partial block PartialClock  "Icon, connector, and solver method of a block that generates a clock"
         parameter Boolean useSolver = false "= true, if solverMethod shall be explicitely defined" annotation(Evaluate = true);
         parameter Modelica_Synchronous.Types.SolverMethod solverMethod = "ExplicitEuler" "Integration method used for discretized continuous-time partitions";
         Modelica_Synchronous.ClockSignals.Interfaces.ClockOutput y;
       end PartialClock;
 
-      partial block PartialPeriodicClock  "Icon, connector, and solver method of a block that generates a periodic clock" 
+      partial block PartialPeriodicClock  "Icon, connector, and solver method of a block that generates a periodic clock"
         extends Modelica_Synchronous.ClockSignals.Interfaces.PartialClock;
       end PartialPeriodicClock;
     end Interfaces;
   end ClockSignals;
 
-  package RealSignals  "Library of clocked blocks for Real signals" 
+  package RealSignals  "Library of clocked blocks for Real signals"
     extends Modelica.Icons.Package;
 
-    package Sampler  "Library of sampler and hold blocks for Real signals" 
-      block Sample  "Sample the continuous-time, Real input signal and provide it as clocked output signal (clock is infered)" 
+    package Sampler  "Library of sampler and hold blocks for Real signals"
+      block Sample  "Sample the continuous-time, Real input signal and provide it as clocked output signal (clock is infered)"
         extends Modelica_Synchronous.RealSignals.Interfaces.PartialSISOSampler;
       equation
         y = sample(u);
@@ -168,7 +168,7 @@ that are triggered by clocks"
 
       extends Modelica.Icons.Package;
 
-      block SampleClocked  "Sample the continuous-time, Real input signal and provide it as clocked output signal. The clock is provided as input signal" 
+      block SampleClocked  "Sample the continuous-time, Real input signal and provide it as clocked output signal. The clock is provided as input signal"
         extends Modelica_Synchronous.RealSignals.Interfaces.SamplerIcon;
         Modelica.Blocks.Interfaces.RealInput u "Connector of continuous-time, Real input signal";
         Modelica.Blocks.Interfaces.RealOutput y "Connector of clocked, Real output signal";
@@ -177,25 +177,25 @@ that are triggered by clocks"
         y = sample(u, clock);
       end SampleClocked;
 
-      block Hold  "Hold the clocked, Real input signal and provide it as continuous-time output signal (zero order hold)" 
+      block Hold  "Hold the clocked, Real input signal and provide it as continuous-time output signal (zero order hold)"
         extends Modelica_Synchronous.RealSignals.Interfaces.PartialSISOHold;
       equation
         y = hold(u);
       end Hold;
     end Sampler;
 
-    package Interfaces  "Library of partial blocks for components with clocked Real signals" 
+    package Interfaces  "Library of partial blocks for components with clocked Real signals"
       extends Modelica.Icons.InterfacesPackage;
 
       partial block SamplerIcon  "Basic graphical layout of block used for sampling of Real signals" end SamplerIcon;
 
-      partial block PartialSISOSampler  "Basic block used for sampling of Real signals" 
+      partial block PartialSISOSampler  "Basic block used for sampling of Real signals"
         extends Modelica_Synchronous.RealSignals.Interfaces.SamplerIcon;
         Modelica.Blocks.Interfaces.RealInput u "Connector of continuous-time, Real input signal";
         Modelica.Blocks.Interfaces.RealOutput y "Connector of clocked, Real output signal";
       end PartialSISOSampler;
 
-      partial block PartialSISOHold  "Basic block used for zero order hold of Real signals" 
+      partial block PartialSISOHold  "Basic block used for zero order hold of Real signals"
         parameter Real y_start = 0.0 "Value of output y before the first tick of the clock associated to input u";
         Modelica.Blocks.Interfaces.RealInput u(final start = y_start) "Connector of clocked, Real input signal";
         Modelica.Blocks.Interfaces.RealOutput y "Connector of continuous-time, Real output signal";
@@ -203,66 +203,66 @@ that are triggered by clocks"
     end Interfaces;
   end RealSignals;
 
-  package Types  "Library of types with choices, especially to build menus" 
+  package Types  "Library of types with choices, especially to build menus"
     extends Modelica.Icons.Package;
     type SolverMethod = String "Enumeration defining the integration method to solve differential equations in a clocked discretized continuous-time partition";
   end Types;
-  annotation(version = "0.92.1", versionBuild = 0, versionDate = "2016-03-11", dateModified = "2016-03-03 18:16:00Z"); 
+  annotation(version = "0.92.1", versionBuild = 0, versionDate = "2016-03-11", dateModified = "2016-03-03 18:16:00Z");
 end Modelica_Synchronous;
 
-package ModelicaServices  "ModelicaServices (OpenModelica implementation) - Models and functions used in the Modelica Standard Library requiring a tool specific implementation" 
+package ModelicaServices  "ModelicaServices (OpenModelica implementation) - Models and functions used in the Modelica Standard Library requiring a tool specific implementation"
   extends Modelica.Icons.Package;
 
-  package Machine  
+  package Machine
     extends Modelica.Icons.Package;
     final constant Real eps = 1.e-15 "Biggest number such that 1.0 + eps = 1.0";
     final constant Real small = 1.e-60 "Smallest number such that small and -small are representable on the machine";
     final constant Real inf = 1.e+60 "Biggest Real number such that inf and -inf are representable on the machine";
     final constant Integer Integer_inf = OpenModelica.Internal.Architecture.integerMax() "Biggest Integer number such that Integer_inf and -Integer_inf are representable on the machine";
   end Machine;
-  annotation(Protection(access = Access.hide), version = "3.2.2", versionBuild = 0, versionDate = "2016-01-15", dateModified = "2016-01-15 08:44:41Z"); 
+  annotation(Protection(access = Access.hide), version = "3.2.2", versionBuild = 0, versionDate = "2016-01-15", dateModified = "2016-01-15 08:44:41Z");
 end ModelicaServices;
 
-package Modelica  "Modelica Standard Library - Version 3.2.2" 
+package Modelica  "Modelica Standard Library - Version 3.2.2"
   extends Modelica.Icons.Package;
 
-  package Blocks  "Library of basic input/output control blocks (continuous, discrete, logical, table blocks)" 
+  package Blocks  "Library of basic input/output control blocks (continuous, discrete, logical, table blocks)"
     extends Modelica.Icons.Package;
 
-    package Interfaces  "Library of connectors and partial models for input/output blocks" 
+    package Interfaces  "Library of connectors and partial models for input/output blocks"
       extends Modelica.Icons.InterfacesPackage;
       connector RealInput = input Real "'input Real' as connector";
       connector RealOutput = output Real "'output Real' as connector";
 
-      partial block SO  "Single Output continuous control block" 
+      partial block SO  "Single Output continuous control block"
         extends Modelica.Blocks.Icons.Block;
         RealOutput y "Connector of Real output signal";
       end SO;
 
-      partial block SISO  "Single Input Single Output continuous control block" 
+      partial block SISO  "Single Input Single Output continuous control block"
         extends Modelica.Blocks.Icons.Block;
         RealInput u "Connector of Real input signal";
         RealOutput y "Connector of Real output signal";
       end SISO;
 
-      partial block SI2SO  "2 Single Input / 1 Single Output continuous control block" 
+      partial block SI2SO  "2 Single Input / 1 Single Output continuous control block"
         extends Modelica.Blocks.Icons.Block;
         RealInput u1 "Connector of Real input signal 1";
         RealInput u2 "Connector of Real input signal 2";
         RealOutput y "Connector of Real output signal";
       end SI2SO;
 
-      partial block SignalSource  "Base class for continuous signal source" 
+      partial block SignalSource  "Base class for continuous signal source"
         extends SO;
         parameter Real offset = 0 "Offset of output signal y";
         parameter .Modelica.SIunits.Time startTime = 0 "Output y = offset for time < startTime";
       end SignalSource;
     end Interfaces;
 
-    package Math  "Library of Real mathematical functions as input/output blocks" 
+    package Math  "Library of Real mathematical functions as input/output blocks"
       extends Modelica.Icons.Package;
 
-      block InverseBlockConstraints  "Construct inverse model by requiring that two inputs and two outputs are identical" 
+      block InverseBlockConstraints  "Construct inverse model by requiring that two inputs and two outputs are identical"
         Modelica.Blocks.Interfaces.RealInput u1 "Input signal 1 (u1 = u2)";
         Modelica.Blocks.Interfaces.RealInput u2 "Input signal 2 (u1 = u2)";
         Modelica.Blocks.Interfaces.RealOutput y1 "Output signal 1 (y1 = y2)";
@@ -270,10 +270,10 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
       equation
         u1 = u2;
         y1 = y2;
-        annotation(defaultConnectionStructurallyInconsistent = true); 
+        annotation(defaultConnectionStructurallyInconsistent = true);
       end InverseBlockConstraints;
 
-      block Gain  "Output the product of a gain value with the input signal" 
+      block Gain  "Output the product of a gain value with the input signal"
         parameter Real k(start = 1, unit = "1") "Gain value multiplied with input signal";
         .Modelica.Blocks.Interfaces.RealInput u "Input signal connector";
         .Modelica.Blocks.Interfaces.RealOutput y "Output signal connector";
@@ -281,7 +281,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
         y = k * u;
       end Gain;
 
-      block Feedback  "Output difference between commanded and feedback input" 
+      block Feedback  "Output difference between commanded and feedback input"
         .Modelica.Blocks.Interfaces.RealInput u1;
         .Modelica.Blocks.Interfaces.RealInput u2;
         .Modelica.Blocks.Interfaces.RealOutput y;
@@ -289,7 +289,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
         y = u1 - u2;
       end Feedback;
 
-      block Add  "Output the sum of the two inputs" 
+      block Add  "Output the sum of the two inputs"
         extends .Modelica.Blocks.Interfaces.SI2SO;
         parameter Real k1 = +1 "Gain of upper input";
         parameter Real k2 = +1 "Gain of lower input";
@@ -298,10 +298,10 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
       end Add;
     end Math;
 
-    package Sources  "Library of signal source blocks generating Real and Boolean signals" 
+    package Sources  "Library of signal source blocks generating Real and Boolean signals"
       extends Modelica.Icons.SourcesPackage;
 
-      block Step  "Generate step signal of type Real" 
+      block Step  "Generate step signal of type Real"
         parameter Real height = 1 "Height of step";
         extends .Modelica.Blocks.Interfaces.SignalSource;
       equation
@@ -309,30 +309,30 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
       end Step;
     end Sources;
 
-    package Icons  "Icons for Blocks" 
+    package Icons  "Icons for Blocks"
       extends Modelica.Icons.IconsPackage;
 
       partial block Block  "Basic graphical layout of input/output block" end Block;
     end Icons;
   end Blocks;
 
-  package Math  "Library of mathematical functions (e.g., sin, cos) and of functions operating on vectors and matrices" 
+  package Math  "Library of mathematical functions (e.g., sin, cos) and of functions operating on vectors and matrices"
     extends Modelica.Icons.Package;
 
-    package Icons  "Icons for Math" 
+    package Icons  "Icons for Math"
       extends Modelica.Icons.IconsPackage;
 
       partial function AxisCenter  "Basic icon for mathematical function with y-axis in the center" end AxisCenter;
     end Icons;
 
-    function asin  "Inverse sine (-1 <= u <= 1)" 
+    function asin  "Inverse sine (-1 <= u <= 1)"
       extends Modelica.Math.Icons.AxisCenter;
       input Real u;
       output .Modelica.SIunits.Angle y;
       external "builtin" y = asin(u);
     end asin;
 
-    function exp  "Exponential, base e" 
+    function exp  "Exponential, base e"
       extends Modelica.Math.Icons.AxisCenter;
       input Real u;
       output Real y;
@@ -340,17 +340,17 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
     end exp;
   end Math;
 
-  package Constants  "Library of mathematical constants and constants of nature (e.g., pi, eps, R, sigma)" 
+  package Constants  "Library of mathematical constants and constants of nature (e.g., pi, eps, R, sigma)"
     extends Modelica.Icons.Package;
     final constant Real pi = 2 * Math.asin(1.0);
     final constant .Modelica.SIunits.Velocity c = 299792458 "Speed of light in vacuum";
     final constant Real mue_0(final unit = "N/A2") = 4 * pi * 1.e-7 "Magnetic constant";
   end Constants;
 
-  package Icons  "Library of icons" 
+  package Icons  "Library of icons"
     extends Icons.Package;
 
-    partial package ExamplesPackage  "Icon for packages containing runnable examples" 
+    partial package ExamplesPackage  "Icon for packages containing runnable examples"
       extends Modelica.Icons.Package;
     end ExamplesPackage;
 
@@ -358,26 +358,26 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
 
     partial package Package  "Icon for standard packages" end Package;
 
-    partial package InterfacesPackage  "Icon for packages containing interfaces" 
+    partial package InterfacesPackage  "Icon for packages containing interfaces"
       extends Modelica.Icons.Package;
     end InterfacesPackage;
 
-    partial package SourcesPackage  "Icon for packages containing sources" 
+    partial package SourcesPackage  "Icon for packages containing sources"
       extends Modelica.Icons.Package;
     end SourcesPackage;
 
-    partial package IconsPackage  "Icon for packages containing icons" 
+    partial package IconsPackage  "Icon for packages containing icons"
       extends Modelica.Icons.Package;
     end IconsPackage;
   end Icons;
 
-  package SIunits  "Library of type and unit definitions based on SI units according to ISO 31-1992" 
+  package SIunits  "Library of type and unit definitions based on SI units according to ISO 31-1992"
     extends Modelica.Icons.Package;
 
-    package Conversions  "Conversion functions to/from non SI units and type definitions of non SI units" 
+    package Conversions  "Conversion functions to/from non SI units and type definitions of non SI units"
       extends Modelica.Icons.Package;
 
-      package NonSIunits  "Type definitions of non SI units" 
+      package NonSIunits  "Type definitions of non SI units"
         extends Modelica.Icons.Package;
         type Temperature_degC = Real(final quantity = "ThermodynamicTemperature", final unit = "degC") "Absolute temperature in degree Celsius (for relative temperature use SIunits.TemperatureDifference)" annotation(absoluteValue = true);
       end NonSIunits;
@@ -392,7 +392,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
     type Temperature = ThermodynamicTemperature;
     type FaradayConstant = Real(final quantity = "FaradayConstant", final unit = "C/mol");
   end SIunits;
-  annotation(version = "3.2.2", versionBuild = 3, versionDate = "2016-04-03", dateModified = "2016-04-03 08:44:41Z"); 
+  annotation(version = "3.2.2", versionBuild = 3, versionDate = "2016-04-03", dateModified = "2016-04-03 08:44:41Z");
 end Modelica;
 
 model ControlledMixingUnit_total  "Simple example of a mixing unit where a (discretized) nonlinear inverse plant model is used as feedforward controller"
