@@ -65,6 +65,8 @@ LIBMODELICAZLIB=@OMBUILDDIR@/lib/@host_short@/omc/libzlib@SHREXT@
 LIBMODELICAIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaIO@SHREXT@
 LIBMODELICAMATIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaMatIO@SHREXT@
 
+SUITESPARSE_LIBS = -DKLU_LIBRARY="libklu$(SHREXT)" -DAMD_LIBRARY="libamd$(SHREXT)" -DCOLAMD_LIBRARY="libcolamd$(SHREXT)" -DBTF_LIBRARY="libbtf$(SHREXT)"
+
 include Makefile.common
 
 # We don't need OMDEV hacks, but using the same Makefile sure is nice!

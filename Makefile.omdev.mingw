@@ -35,8 +35,12 @@ CMAKE_TARGET = "MSYS Makefiles"
 
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 BOOST_PATH = $(OMDEVMSYS)/tools/msys/mingw32/include
+IS_MINGW32 = -DIS_MINGW32=ON
+IS_MINGW64 = -DIS_MINGW64=OFF
 else # mingw64
 BOOST_PATH = $(OMDEVMSYS)/tools/msys/mingw64/include
+IS_MINGW32 = -DIS_MINGW32=OFF
+IS_MINGW64 = -DIS_MINGW64=ON
 endif
 BOOST_PATH_MSVC = $(OMDEVMSYS)/lib/3rdParty/boost-1_55/
 
@@ -64,6 +68,7 @@ IDLFILE=$(top_builddir)/Compiler/runtime/omc_communication.idl
 LIB_OMC=lib/omc
 LIBMODELICAEXTERNALC=$(OMBUILDDIR)/lib/omc/libModelicaExternalC.a
 LIBMODELICASTANDARDTABLES=$(OMBUILDDIR)/lib/omc/libModelicaStandardTables.a
+SUITESPARSE_LIBS=
 
 defaultMakefileTarget = Makefile.omdev.mingw
 MAKEFILE_BOOT = LinkMain.makefile.mingw
