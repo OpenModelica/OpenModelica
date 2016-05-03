@@ -6718,6 +6718,8 @@ algorithm
   deriv.arrayCref := Util.applyOption(deriv.arrayCref, ComponentReference.crefPrefixDer);
   deriv.name := ComponentReference.crefPrefixDer(deriv.name);
   deriv.varKind := BackendDAE.STATE_DER();
+  deriv.unit := "";
+  deriv.displayUnit := "";
   deriv.initialValue := NONE();
   deriv.aliasvar := SimCodeVar.NOALIAS();
   deriv.causality := SimCodeVar.INTERNAL();
