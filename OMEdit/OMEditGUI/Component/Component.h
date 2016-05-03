@@ -70,6 +70,7 @@ public:
   void parseComponentInfoString(QString value);
   void fetchModifiers(OMCProxy *pOMCProxy, QString className);
   void fetchParameterValue(OMCProxy *pOMCProxy, QString className);
+  void applyDefaultPrefixes(QString defaultPrefixes);
   void setClassName(QString className) {mClassName = className;}
   QString getClassName() const {return mClassName;}
   void setName(QString name) {mName = name;}

@@ -249,6 +249,33 @@ void ComponentInfo::fetchParameterValue(OMCProxy *pOMCProxy, QString className)
 }
 
 /*!
+ * \brief ComponentInfo::applyDefaultPrefixes
+ * Applies the default prefixes.
+ * \param defaultPrefixes
+ */
+void ComponentInfo::applyDefaultPrefixes(QString defaultPrefixes)
+{
+  if (defaultPrefixes.contains("inner")) {
+    mIsInner = true;
+  }
+  if (defaultPrefixes.contains("outer")) {
+    mIsOuter = true;
+  }
+  if (defaultPrefixes.contains("replaceable")) {
+    mIsReplaceable = true;
+  }
+  if (defaultPrefixes.contains("constant")) {
+    mVariability = "constant";
+  }
+  if (defaultPrefixes.contains("parameter")) {
+    mVariability = "parameter";
+  }
+  if (defaultPrefixes.contains("discrete")) {
+    mVariability = "discrete";
+  }
+}
+
+/*!
  * \brief ComponentInfo::setArrayIndex
  * Sets the array index
  * \param arrayIndex

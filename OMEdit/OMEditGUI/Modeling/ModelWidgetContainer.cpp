@@ -308,12 +308,14 @@ bool GraphicsView::addComponent(QString className, QPointF position)
           }
         }
       }
+      ComponentInfo *pComponentInfo = new ComponentInfo;
+      pComponentInfo->applyDefaultPrefixes(defaultPrefix);
       // if dropping an item on the diagram layer
       if (mViewType == StringHandler::Diagram) {
         // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
         if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
             (type == StringHandler::ExpandableConnector) || (type == StringHandler::Connector) || (type == StringHandler::Record)) {
-          addComponentToView(name, pLibraryTreeItem, "", position, dialogAnnotation, new ComponentInfo());
+          addComponentToView(name, pLibraryTreeItem, "", position, dialogAnnotation, pComponentInfo);
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -324,7 +326,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
         // if item is a connector. then we can drop it to the graphicsview
         if (type == StringHandler::Connector || type == StringHandler::ExpandableConnector) {
-          addComponentToView(name, pLibraryTreeItem, "", position, dialogAnnotation, new ComponentInfo());
+          addComponentToView(name, pLibraryTreeItem, "", position, dialogAnnotation, pComponentInfo);
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
