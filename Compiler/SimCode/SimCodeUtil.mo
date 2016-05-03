@@ -6428,6 +6428,9 @@ protected type SimVarsIndex = enumeration(
   derivative,
   alg,
   discreteAlg,
+  realOptimizeConstraints,
+  realOptimizeFinalConstraints,
+
   param,
   alias,
 
@@ -6447,9 +6450,6 @@ protected type SimVarsIndex = enumeration(
 
   inputs,
   outputs,
-
-  realOptimizeConstraints,
-  realOptimizeFinalConstraints,
 
   const,
   intConst,
@@ -7469,8 +7469,19 @@ end collectArrayFirstVars;
 
 protected function fixIndex
   input array<list<SimCodeVar.SimVar>> simVars;
+protected
+  Integer ix=0;
+  list<SimCodeVar.SimVar> lst;
+  Boolean isCpp = Config.simCodeTarget() == "Cpp";
 algorithm
-  for i in SimVarsIndex.state : SimVarsIndex.algebraicDAE loop // Skip jacobian, seed
+  for i in SimVarsIndex.state : SimVarsIndex.realOptimizeFinalConstraints loop
+    lst := Dangerous.arrayGetNoBoundsChecking(simVars,Integer(i));
+    Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(i), rewriteIndex(lst, ix));
+    if not isCpp then
+      ix := ix + listLength(lst);
+    end if;
+  end for;
+  for i in SimVarsIndex.param : SimVarsIndex.algebraicDAE loop // Skip jacobian, seed
     Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(i), rewriteIndex(Dangerous.arrayGetNoBoundsChecking(simVars,Integer(i)), 0));
   end for;
 end fixIndex;
@@ -11960,7 +11971,7 @@ public function getStateSimVarIndexFromIndex
 protected
   SimCodeVar.SimVar stateVar;
 algorithm
-  stateVar := listGet(inStateVars, inIndex + 1 /* SimVar indexes start from zero */);
+  stateVar := listGet(inStateVars, inIndex + 1 - (if Config.simCodeTarget()=="Cpp" then 0 else listLength(inStateVars)) /* SimVar indexes start from zero */);
   outVariableIndex := getVariableIndex(stateVar);
 end getStateSimVarIndexFromIndex;
 

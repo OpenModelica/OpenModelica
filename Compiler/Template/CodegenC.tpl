@@ -1248,32 +1248,32 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
       <<
       /* States */
       <%vars.stateVars |> var =>
-        globalDataVarDefine(var, "realVars", 0)
+        globalDataVarDefine(var, "realVars")
       ;separator="\n"%>
 
       /* StatesDerivatives */
       <%vars.derivativeVars |> var =>
-        globalDataVarDefine(var, "realVars", numStateVars)
+        globalDataVarDefine(var, "realVars")
       ;separator="\n"%>
 
       /* Non Discrete Real Algebraic Vars */
       <%vars.algVars |> var =>
-        globalDataVarDefine(var, "realVars", intMul(2, numStateVars) )
+        globalDataVarDefine(var, "realVars")
       ;separator="\n"%>
 
       /* Discrete Real Algebraic Vars */
       <%vars.discreteAlgVars |> var =>
-        globalDataVarDefine(var, "realVars", intAdd(intMul(2, numStateVars),numAlgVars))
+        globalDataVarDefine(var, "realVars")
       ;separator="\n"%>
 
       /* Nonlinear Constraints For Dyn. Optimization */
       <%vars.realOptimizeConstraintsVars |> var =>
-        globalDataVarDefine(var, "realVars", intAdd(intAdd(intMul(2, numStateVars),numAlgVars), numDiscreteReal))
+        globalDataVarDefine(var, "realVars")
       ;separator="\n"%>
 
       /* Nonlinear Final Constraints For Dyn. Optimization */
       <%vars.realOptimizeFinalConstraintsVars |> var =>
-        globalDataVarDefine(var, "realVars", intAdd(intAdd(intMul(2, numStateVars),numAlgVars), intAdd(numDiscreteReal,numOptimizeConstraints)))
+        globalDataVarDefine(var, "realVars")
       ;separator="\n"%>
 
       /* residual variables of DAE solution method */
@@ -1293,7 +1293,7 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
 
       /* Algebraic Integer Vars */
       <%vars.intAlgVars |> var =>
-        globalDataVarDefine(var, "integerVars",0)
+        globalDataVarDefine(var, "integerVars")
       ;separator="\n"%>
 
       /* Algebraic Integer Parameter */
@@ -1303,7 +1303,7 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
 
       /* Algebraic Boolean Vars */
       <%vars.boolAlgVars |> var =>
-        globalDataVarDefine(var, "booleanVars",0)
+        globalDataVarDefine(var, "booleanVars")
       ;separator="\n"%>
 
       /* Algebraic Boolean Parameters */
@@ -1313,7 +1313,7 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
 
       /* Algebraic String Variables */
       <%vars.stringAlgVars |> var =>
-        globalDataVarDefine(var, "stringVars",0)
+        globalDataVarDefine(var, "stringVars")
       ;separator="\n"%>
 
       /* Algebraic String Parameter */
@@ -1365,7 +1365,7 @@ template globalDataParDefine(SimVar simVar, String arrayName)
   end match
 end globalDataParDefine;
 
-template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "template globalDataVarDefine
+template globalDataVarDefine(SimVar simVar, String arrayName) "template globalDataVarDefine
   Generates a define statement for a varable in the global data section."
 ::=
   match simVar
@@ -1373,33 +1373,33 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
   let tmp = System.tmpTick()
     <<
     /* <%crefStrNoUnderscore(c)%> */
-    #define _<%cref(c)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
+    #define _<%cref(c)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
     #define <%cref(c)%> _<%cref(c)%>(0)
-    #define $P$PRE<%cref(c)%> data->simulationInfo-><%arrayName%>Pre[<%intAdd(offset,index)%>]
+    #define $P$PRE<%cref(c)%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
 
     <%crefMacroSubsAtEndVarNew(c)%>
 
     /* <%crefStrNoUnderscore(name)%> */
-    #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
+    #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
-    #define $P$PRE<%cref(name)%> data->simulationInfo-><%arrayName%>Pre[<%intAdd(offset,index)%>]
-    #define $P$ATTRIBUTE<%cref(name)%> data->modelData-><%arrayName%>Data[<%intAdd(offset,index)%>].attribute
+    #define $P$PRE<%cref(name)%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
+    #define $P$ATTRIBUTE<%cref(name)%> data->modelData-><%arrayName%>Data[<%index%>].attribute
     #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
-    #define <%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%intAdd(offset,index)%>].info
-    #define $P$PRE<%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%intAdd(offset,index)%>].info
+    #define <%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%index%>].info
+    #define $P$PRE<%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%index%>].info
 
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
   let tmp = System.tmpTick()
     <<
     /* <%crefStrNoUnderscore(name)%> */
-    #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
+    #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
-    #define $P$PRE<%cref(name)%> data->simulationInfo-><%arrayName%>Pre[<%intAdd(offset,index)%>]
-    #define $P$ATTRIBUTE<%cref(name)%> data->modelData-><%arrayName%>Data[<%intAdd(offset,index)%>].attribute
+    #define $P$PRE<%cref(name)%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
+    #define $P$ATTRIBUTE<%cref(name)%> data->modelData-><%arrayName%>Data[<%index%>].attribute
     #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
-    #define <%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%intAdd(offset,index)%>].info
-    #define $P$PRE<%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%intAdd(offset,index)%>].info
+    #define <%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%index%>].info
+    #define $P$PRE<%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%index%>].info
     #define _$P$PRE<%cref(name)%>(i) $P$PRE<%cref(name)%>
 
     >>
