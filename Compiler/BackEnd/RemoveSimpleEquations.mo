@@ -2849,14 +2849,14 @@ end negateOptExp;
 protected function addSubstitutionOption "author: Frenkel TUD 2012-12"
  input Option<DAE.Exp> optExp;
  input DAE.Exp exp;
- input DAE.ElementSource iSource;
- output DAE.ElementSource oSource;
+ input output DAE.ElementSource source;
+protected
+  DAE.Exp e;
 algorithm
-  oSource := match(optExp, exp, iSource)
-    local DAE.Exp e;
-    case (SOME(e), _, _) then ElementSource.addSymbolicTransformationSubstitution(true, iSource, exp, e);
-    else iSource;
-  end match;
+  if isSome(optExp) then
+    SOME(e) := optExp;
+    source := ElementSource.addSymbolicTransformationSubstitution(true, source, exp, e);
+  end if;
 end addSubstitutionOption;
 
 protected function addVarSetAttributes "author: Frenkel TUD 2012-12"
@@ -3131,7 +3131,7 @@ algorithm
   elseif referenceEq(omin2,omin1) and referenceEq(omax2, omax1) then
     minMax := ominmax1;
   else
-    minMax := (omin, omax);
+    minMax := (omin2, omax2);
   end if;
 end mergeMinMax1;
 
