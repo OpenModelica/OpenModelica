@@ -39,7 +39,7 @@ end mixedTest1;
 
 setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC3"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC3 --preOptModules-=comSubExp"); getErrorString();
 simulate(mixedTest1); getErrorString();
 
 // Result:

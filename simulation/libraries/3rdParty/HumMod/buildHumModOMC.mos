@@ -26,13 +26,5 @@ buildModel(HumModTest); getErrorString();
 // => select value from gases.acidBase.artysPH._BEox(start = -0.177) for variable: cardioVascularSystem.busConnector.Blood_BEox
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// Warning: Alias set with several free start values
-// * candidate: gases.carbonDioxyd.artysCO2.pCO2(start = 5.33)
-// * candidate: gases.oxygen.artysO2.pCO2(start = 4.42803)
-// => select value from gases.carbonDioxyd.artysCO2.pCO2(start = 5.33) for variable: gases.carbonDioxyd.artysCO2.pCO2
-// Warning: Alias set with several free start values
-// * candidate: gases.carbonDioxyd.veinsCO2.pCO2(start = 6.24)
-// * candidate: gases.oxygen.veinsO2.pCO2(start = 6.4)
-// => select value from gases.carbonDioxyd.veinsCO2.pCO2(start = 6.24) for variable: gases.carbonDioxyd.veinsCO2.pCO2
 // "
 // endResult

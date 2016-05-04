@@ -6,7 +6,7 @@ loadFile("Algorithm2.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC3"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC3 --preOptModules-=comSubExp"); getErrorString();
 simulate(Algorithm2); getErrorString();
 
 val(x0,0.5); getErrorString();

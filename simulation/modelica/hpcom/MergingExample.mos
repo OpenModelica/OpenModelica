@@ -8,7 +8,7 @@ loadModel(Modelica, {"3.2.1"}); getErrorString();
 
 loadFile("MergingExample.mo"); getErrorString();
 setDebugFlags("hpcom"); getErrorString();
-setCommandLineOptions("+n=4 +hpcomScheduler=list"); getErrorString();
+setCommandLineOptions("+n=4 +hpcomScheduler=list --preOptModules-=comSubExp"); getErrorString();
 simulate(MergingExample, stopTime = 1.0); getErrorString();
 
 res := OpenModelica.Scripting.checkTaskGraph("taskGraphMergingExampleODE.graphml","ReferenceGraphs/MergingExample_TaskGraphODE.graphml");

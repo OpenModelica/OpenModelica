@@ -47,7 +47,7 @@ getErrorString();
 val(res,0);
 val(res,1);
 
-setCommandLineOptions("+maxSizeSolveLinearSystem=10");
+setCommandLineOptions("+maxSizeSolveLinearSystem=10 --preOptModules-=comSubExp");
 simulate(foo, simflags="-lv LOG_LS -s euler"); 
 getErrorString();
 val(res,0);

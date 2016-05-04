@@ -38,7 +38,7 @@ end mixedTest1;
 "); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
-setTearingMethod("omcTearing"); getErrorString();
+setTearingMethod("omcTearing --preOptModules-=comSubExp"); getErrorString();
 simulate(mixedTest1); getErrorString();
 
 // Result:
