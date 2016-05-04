@@ -157,6 +157,7 @@ private:
     int lineNumberAreaWidth();
     void lineNumberAreaPaintEvent(QPaintEvent *event);
     void lineNumberAreaMouseEvent(QMouseEvent *event);
+    void drawFoldingMarker(QPainter *painter, const QPalette &pal, const QRect &rect, bool expanded, bool active, bool hovered) const;
     void goToLineNumber(int lineNumber);
     void updateLineNumberAreaWidth(int newBlockCount);
     void updateLineNumberArea(const QRect &rect, int dy);

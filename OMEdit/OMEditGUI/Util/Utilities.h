@@ -350,6 +350,7 @@ namespace Utilities {
 #ifdef WIN32
   void killProcessTreeWindows(DWORD myprocID);
 #endif
+  QColor mergedColors(const QColor &colorA, const QColor &colorB, int factor = 50);
 
 }
 
