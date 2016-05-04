@@ -11667,7 +11667,7 @@ algorithm
         derCr = ComponentReference.crefPrefixDer(cr);
         true = ComponentReference.crefEqualNoStringCompare(derCr, cref);
         cref_exp = crefExp(derCr);
-      then (cref_exp, SOME(cref));
+      then (cref_exp, optCr);
 
     case (DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), NONE())
       equation
