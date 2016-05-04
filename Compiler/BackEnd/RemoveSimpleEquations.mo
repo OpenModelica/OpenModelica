@@ -1124,23 +1124,23 @@ algorithm
       then List.threadFold2(elst1, elst2, simpleEquationAcausal, eqnAttributes, true, inTpl);
     // {a1+b1, a2+b2, a3+b3, ..} = 0;
     case (DAE.ARRAY(array = elst1), _, _, _, _)
-      equation
-        true = Expression.isZero(rhs);
+      guard
+        Expression.isZero(rhs)
       then List.fold2(elst1, simpleExpressionAcausal, eqnAttributes, true, inTpl);
     // 0 = {a1+b1, a2+b2, a3+b3, ..};
     case (_, DAE.ARRAY(array = elst2), _, _, _)
-      equation
-        true = Expression.isZero(lhs);
+      guard
+        Expression.isZero(lhs)
       then List.fold2(elst2, simpleExpressionAcausal, eqnAttributes, true, inTpl);
      // lhs = 0
     case (_, _, _, _, _)
-      equation
-        true = Expression.isZero(rhs);
+      guard
+        Expression.isZero(rhs)
       then simpleExpressionAcausal(lhs, eqnAttributes, selfCalled, inTpl);
     // 0 = rhs
     case (_, _, _, _, _)
-      equation
-        true = Expression.isZero(lhs);
+      guard
+        Expression.isZero(lhs)
       then simpleExpressionAcausal(rhs, eqnAttributes, selfCalled, inTpl);
     // time independent equations
     else
@@ -1175,16 +1175,18 @@ algorithm
 
     // complex types to complex equations
     case (_, _, _, (source, eqAttr), (v, s, eqns, seqns, index, mT, b))
+      guard
+        DAEUtil.expTypeComplex(ty)
       equation
-        true = DAEUtil.expTypeComplex(ty);
         size = Expression.sizeOf(ty);
         //  print("Add Equation:\n" + BackendDump.equationStr(BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source)) + "\n");
        then
         ((v, s, BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, eqAttr)::eqns, seqns, index, mT, b));
     // array types to array equations
     case (_, _, _, (source, eqAttr), (v, s, eqns, seqns, index, mT, b))
+      guard
+        DAEUtil.expTypeArray(ty)
       equation
-        true = DAEUtil.expTypeArray(ty);
         dims = Expression.arrayDimension(ty);
         ds = Expression.dimensionsSizes(dims);
         //  print("Add Equation:\n" + BackendDump.equationStr(BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source)) + "\n");
@@ -1779,8 +1781,9 @@ algorithm
          ((vars, shared, eqns, seqns, index, mT, true));
     // const
     case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
+      guard
+        Expression.isConstValue(exp)
       equation
-        true = Expression.isConstValue(exp);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           BackendDump.debugStrCrefStrExpStr("Const Equation ", cr, " = ", exp, " found.\n");
         end if;
@@ -1790,8 +1793,9 @@ algorithm
         ((vars, shared, eqns, TIMEINDEPENTVAR(cr, i, exp, eqnAttributes, -1)::seqns, index+1, mT, true));
 
     case (_, _, _, _, _, (vars, shared as BackendDAE.SHARED(functionTree=functions), eqns, seqns, index, mT, _))
+      guard
+        not Expression.isImpure(exp) // lochel: this is at least needed for impure functions
       equation
-        false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
         //exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
         exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp,functions);
         if not Expression.isConst(exp2) then
@@ -1806,8 +1810,9 @@ algorithm
 
       // TODO: Remove or fix this case. We do not want to add function calls here as they are inlined in a very bad way sometimes.
     case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
+      guard
+        not Expression.isImpure(exp) // lochel: this is at least needed for impure functions
       equation
-        false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n");
         end if;
@@ -2849,8 +2854,8 @@ protected function addSubstitutionOption "author: Frenkel TUD 2012-12"
 algorithm
   oSource := match(optExp, exp, iSource)
     local DAE.Exp e;
-    case (NONE(), _, _) then iSource;
     case (SOME(e), _, _) then ElementSource.addSymbolicTransformationSubstitution(true, iSource, exp, e);
+    else iSource;
   end match;
 end addSubstitutionOption;
 
@@ -3000,19 +3005,17 @@ protected function addNominalValue
   input BackendDAE.Var inVar;
   input list<tuple<DAE.Exp, DAE.ComponentRef>> iNominal;
   output list<tuple<DAE.Exp, DAE.ComponentRef>> oNominal;
+protected
+  DAE.Exp nominal;
+  DAE.ComponentRef cr;
 algorithm
-  (oNominal) := matchcontinue(inVar, iNominal)
-    local
-      DAE.Exp nominal, nominalset;
-      DAE.ComponentRef cr;
-
-    case(_, _) equation
-      nominal = BackendVariable.varNominalValue(inVar);
-      cr = BackendVariable.varCref(inVar);
-    then ((nominal, cr)::iNominal);
-
-    else (iNominal);
-  end matchcontinue;
+  try
+    nominal := BackendVariable.varNominalValue(inVar);
+    cr := BackendVariable.varCref(inVar);
+    oNominal := (nominal, cr)::iNominal;
+  else
+    oNominal := iNominal;
+  end try;
 end addNominalValue;
 
 protected function mergeNominalAttribute
@@ -3033,8 +3036,7 @@ algorithm
       {e} = List.uniqueOnTrue(allExp, Expression.expEqual);
     then BackendVariable.setVarNominalValue(inVar, e);
 
-    case (_, _)
-    then selectFreeValue1(nominalList, {}, "Alias set with different nominal values\n", "nominal", BackendVariable.setVarNominalValue, inVar);
+    else selectFreeValue1(nominalList, {}, "Alias set with different nominal values\n", "nominal", BackendVariable.setVarNominalValue, inVar);
   end matchcontinue;
 end mergeNominalAttribute;
 
@@ -3116,16 +3118,21 @@ protected function mergeMinMax1 "author: Frenkel TUD 2012-12"
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>> ominmax1;
   output tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
 protected
-  Option<DAE.Exp> omin, omin1;
-  Option<DAE.Exp> omax, omax1;
+  Option<DAE.Exp> omin, omin1, omin2;
+  Option<DAE.Exp> omax, omax1, omax2;
 algorithm
   (omin, omax) := ominmax;
   (omin1, omax1) := ominmax1;
 
-  omin := Expression.expOptMaxScalar(omin, omin1);
-  omax := Expression.expOptMinScalar(omax, omax1);
-  minMax := (omin, omax);
-
+  omin2 := Expression.expOptMaxScalar(omin, omin1);
+  omax2 := Expression.expOptMinScalar(omax, omax1);
+  if referenceEq(omin2,omin) and referenceEq(omax2, omax) then
+    minMax := ominmax;
+  elseif referenceEq(omin2,omin1) and referenceEq(omax2, omax1) then
+    minMax := ominmax1;
+  else
+    minMax := (omin, omax);
+  end if;
 end mergeMinMax1;
 
 protected function checkMinMax "author: Frenkel TUD 2012-12"
@@ -3202,13 +3209,13 @@ algorithm
     local
       DAE.Exp e;
       Boolean b;
-    case(NONE(), _) then iOExp;
     case(SOME(e), _)
       equation
         (e, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
         (e, _) = ExpressionSimplify.condsimplify(b, e);
       then
         SOME(e);
+    else iOExp;
  end match;
 end optExpReplaceCrefWithBindExp;
 
@@ -3294,15 +3301,19 @@ algorithm
       HashSet.HashSet hs;
     // true if crefs replaced in expression
     case (DAE.CREF(componentRef=cr), (vars, _, hs))
-      equation
+      guard
         // check for cyclic bindings in start value
-        false = BaseHashSet.has(cr, hs);
+        not BaseHashSet.has(cr, hs)
+      equation
         (BackendDAE.VAR(bindExp = SOME(e)), _) = BackendVariable.getVarSingle(cr, vars);
         hs = BaseHashSet.add(cr, hs);
         (e, (_, _, hs)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (vars, false, hs));
       then
         (e, (vars, true, hs));
     // true if crefs in expression
+    case (e as DAE.CREF(), (_, true, _))
+      then
+        (e, inTuple);
     case (e as DAE.CREF(), (vars, _, hs))
       then
         (e, (vars, true, hs));
@@ -3871,7 +3882,7 @@ algorithm
     local
       BackendVarTransform.VariableReplacements repl;
     case (SOME(repl), _) then repl;
-    case (NONE(), _)
+    else
       equation
         repl = BackendVarTransform.emptyReplacementsSized(BackendVariable.varsSize(aliasVars));
         repl = BackendVariable.traverseBackendDAEVars(aliasVars, getAliasVarReplacements, repl);
