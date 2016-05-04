@@ -524,7 +524,7 @@ template simulationFile_set(SimCode simCode)
     #if defined(__cplusplus)
     extern "C" {
     #endif
-    <%functionInitialStateSets(stateSets, modelNamePrefix(simCode))%>
+    <%functionInitialStateSets(simCode, stateSets, modelNamePrefix(simCode))%>
 
     #if defined(__cplusplus)
     }
@@ -628,7 +628,7 @@ template simulationFile_bnd(SimCode simCode)
     extern "C" {
     #endif
 
-    <%functionUpdateBoundVariableAttributes(startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, modelNamePrefix(simCode))%>
+    <%functionUpdateBoundVariableAttributes(simCode, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, modelNamePrefix(simCode))%>
 
     <%functionUpdateBoundParameters(parameterEquations, modelNamePrefix(simCode))%>
 
@@ -885,7 +885,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
     extern "C" {
     #endif
 
-    <%functionInput(modelInfo, modelNamePrefixStr)%>
+    <%functionInput(simCode, modelInfo, modelNamePrefixStr)%>
 
     <%functionOutput(modelInfo, modelNamePrefixStr)%>
 
@@ -1349,7 +1349,6 @@ template globalDataParDefine(SimVar simVar, String arrayName)
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData-><%arrayName%>Data[<%index%>].attribute
     #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
     #define _<%cref(name)%>(i) <%cref(name)%>
-    #define <%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%index%>].info
 
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
@@ -1359,7 +1358,6 @@ template globalDataParDefine(SimVar simVar, String arrayName)
     #define _<%cref(name)%>(i) <%cref(name)%>
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData-><%arrayName%>Data[<%index%>].attribute
     #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
-    #define <%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%index%>].info
 
     >>
   end match
@@ -1385,8 +1383,6 @@ template globalDataVarDefine(SimVar simVar, String arrayName) "template globalDa
     #define $P$PRE<%cref(name)%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData-><%arrayName%>Data[<%index%>].attribute
     #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
-    #define <%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%index%>].info
-    #define $P$PRE<%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%index%>].info
 
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
@@ -1398,8 +1394,6 @@ template globalDataVarDefine(SimVar simVar, String arrayName) "template globalDa
     #define $P$PRE<%cref(name)%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData-><%arrayName%>Data[<%index%>].attribute
     #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
-    #define <%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%index%>].info
-    #define $P$PRE<%cref(name)%>__varInfo data->modelData-><%arrayName%>Data[<%index%>].info
     #define _$P$PRE<%cref(name)%>(i) $P$PRE<%cref(name)%>
 
     >>
@@ -1510,7 +1504,6 @@ template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Intege
         <<
         #define _<%crefName%>(i) data->simulationInfo->analyticJacobians[<%indexJac%>].<%arrayName%>
         #define <%crefName%> _<%crefName%>(0)
-        #define <%crefName%>__varInfo dummyVAR_INFO
         #define $P$ATTRIBUTE<%crefName%> dummyREAL_ATTRIBUTE<%optDefineMayer%><%optDefineLangrangeB%><%optDefineLangrangeC%>
         >>
     end match
@@ -1521,7 +1514,6 @@ template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Intege
       let crefName = cref(name)
       <<
       #define <%crefName%> data->simulationInfo->analyticJacobians[<%indexJac%>].seedVars[<%index0%>]
-      #define <%crefName%>__varInfo dummyVAR_INFO
       >>
     end match
   end match
@@ -1600,7 +1592,7 @@ template functionCallExternalObjectDestructors(ExtObjInfo extObjInfo, String mod
   end match
 end functionCallExternalObjectDestructors;
 
-template functionInput(ModelInfo modelInfo, String modelNamePrefix)
+template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   match modelInfo
@@ -1624,7 +1616,9 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
       TRACE_PUSH
 
       <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
-        'data->simulationInfo->inputVars[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.start;'
+        match cref2simvar(name, simCode)
+        case SIMVAR(__) then
+        'data->simulationInfo->inputVars[<%i0%>] = data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start;'
         ;separator="\n"
       %>
 
@@ -1637,7 +1631,9 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
       TRACE_PUSH
 
       <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
-        '$P$ATTRIBUTE<%cref(name)%>.start = data->simulationInfo->inputVars[<%i0%>];'
+        match cref2simvar(name, simCode)
+        case SIMVAR(__) then
+        'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start = data->simulationInfo->inputVars[<%i0%>];'
         ;separator="\n"
       %>
 
@@ -1649,7 +1645,9 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
       TRACE_PUSH
 
       <%vars.inputVars |> simVar as SIMVAR(__) hasindex i0 =>
-        'names[<%i0%>] = (char *) <%cref(name)%>__varInfo.name;'
+        match cref2simvar(name, simCode)
+        case SIMVAR(__) then
+        'names[<%i0%>] = (char *) data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].info.name;'
         ;separator="\n"
       %>
 
@@ -2669,7 +2667,7 @@ end functionNonLinearResiduals;
 //   - void initializeStateSets(int nStateSets, STATE_SET_DATA* statesetData, DATA *data)
 // =============================================================================
 
-template functionInitialStateSets(list<StateSet> stateSets, String modelNamePrefix)
+template functionInitialStateSets(SimCode simCode, list<StateSet> stateSets, String modelNamePrefix)
   "Generates functions in simulation file to initialize the stateset data."
 ::=
      let body = (stateSets |> set hasindex i1 fromindex 0 => (match set
@@ -2677,8 +2675,8 @@ template functionInitialStateSets(list<StateSet> stateSets, String modelNamePref
        let generatedJac = match jacobianMatrix case (_,_,name,_,_,_,_) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column'
        let initialJac =  match jacobianMatrix case (_,_,name,_,_,_,_) then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>'
        let jacIndex = match jacobianMatrix case (_,_,_,_,_,_,jacindex) then '<%jacindex%>'
-       let statesvars = (states |> s hasindex i2 fromindex 0 => 'statesetData[<%i1%>].states[<%i2%>] = &<%cref(s)%>__varInfo;' ;separator="\n")
-       let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => 'statesetData[<%i1%>].statescandidates[<%i2%>] = &<%cref(cstate)%>__varInfo;' ;separator="\n")
+       let statesvars = (states |> s hasindex i2 fromindex 0 => 'statesetData[<%i1%>].states[<%i2%>] = &<%crefVarInfo(simCode, s)%>;' ;separator="\n")
+       let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => 'statesetData[<%i1%>].statescandidates[<%i2%>] = &<%crefVarInfo(simCode, cstate)%>;' ;separator="\n")
        <<
        assertStreamPrint(NULL, nStateSets > <%i1%>, "Internal Error: nStateSets mismatch!");
        statesetData[<%i1%>].nCandidates = <%nCandidates%>;
@@ -2688,7 +2686,7 @@ template functionInitialStateSets(list<StateSet> stateSets, String modelNamePref
        <%statesvars%>
        statesetData[<%i1%>].statescandidates = (VAR_INFO**) calloc(<%nCandidates%>,sizeof(VAR_INFO));
        <%statescandidatesvars%>
-       statesetData[<%i1%>].A = &<%cref(crA)%>__varInfo;
+       statesetData[<%i1%>].A = &<%crefVarInfo(simCode, crA)%>;
        statesetData[<%i1%>].rowPivot = (modelica_integer*) calloc(<%nCandidates%>-<%nStates%>,sizeof(modelica_integer));
        statesetData[<%i1%>].colPivot = (modelica_integer*) calloc(<%nCandidates%>,sizeof(modelica_integer));
        statesetData[<%i1%>].J = (modelica_real*) calloc(<%nCandidates%>*(<%nCandidates%>-<%nStates%>),sizeof(modelica_real));
@@ -2719,7 +2717,7 @@ end functionInitialStateSets;
 //   - int functionRemovedInitialEquations(DATA *data)
 // =============================================================================
 
-template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquations, list<SimEqSystem> nominalValueEquations, list<SimEqSystem> minValueEquations, list<SimEqSystem> maxValueEquations, String modelNamePrefix)
+template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem> startValueEquations, list<SimEqSystem> nominalValueEquations, list<SimEqSystem> minValueEquations, list<SimEqSystem> maxValueEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &tmp = buffer ""
@@ -2748,7 +2746,7 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
     <%minValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
       $P$ATTRIBUTE<%cref(cref)%>.min = <%cref(cref)%>;
-        infoStreamPrint(LOG_INIT, 0, "%s(min=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.min);
+        infoStreamPrint(LOG_INIT, 0, "%s(min=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(simCode,cref)%>.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.min);
       >>
       ;separator="\n"
     %>
@@ -2761,7 +2759,7 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
     <%maxValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
       $P$ATTRIBUTE<%cref(cref)%>.max = <%cref(cref)%>;
-        infoStreamPrint(LOG_INIT, 0, "%s(max=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.max);
+        infoStreamPrint(LOG_INIT, 0, "%s(max=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(simCode,cref)%>.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.max);
       >>
       ;separator="\n"
     %>
@@ -2774,7 +2772,7 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
     <%nominalValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
       $P$ATTRIBUTE<%cref(cref)%>.nominal = <%cref(cref)%>;
-        infoStreamPrint(LOG_INIT, 0, "%s(nominal=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.nominal);
+        infoStreamPrint(LOG_INIT, 0, "%s(nominal=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(simCode,cref)%>.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.nominal);
       >>
       ;separator="\n"
     %>
@@ -2787,7 +2785,7 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
     <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
       $P$ATTRIBUTE<%cref(cref)%>.start = <%cref(cref)%>;
-        infoStreamPrint(LOG_INIT, 0, "%s(start=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>)  $P$ATTRIBUTE<%cref(cref)%>.start);
+        infoStreamPrint(LOG_INIT, 0, "%s(start=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(simCode,cref)%>.name, (<%crefType(cref)%>)  $P$ATTRIBUTE<%cref(cref)%>.start);
       >>
       ;separator="\n"
     %>
@@ -4202,6 +4200,16 @@ template crefType(ComponentRef cr) "template crefType
   end match
 end crefType;
 
+template crefShortType(ComponentRef cr) "template crefType
+  Like cref but with cast if type is integer."
+::=
+  match cr
+  case CREF_IDENT(__) then '<%expTypeShort(identType)%>'
+  case CREF_QUAL(__)  then '<%crefShortType(componentRef)%>'
+  else "crefType:ERROR"
+  end match
+end crefShortType;
+
 template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, String modelNamePrefix) "template functionAssertsforCheck
   Generates function in simulation file.
   This is a helper of template simulationFile."
@@ -5540,7 +5548,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
             case MODELINFO(vars=SIMVARS(__)) then
               <<
               <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
-              'min[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.min;<%\n%>max[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.max;<%\n%>nominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.nominal;<%\n%>useNominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.useNominal;<%\n%>name[<%i0%>] =(char *) <%cref(name)%>__varInfo.name;<%\n%>start[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.start;'
+              'min[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.min;<%\n%>max[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.max;<%\n%>nominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.nominal;<%\n%>useNominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.useNominal;<%\n%>name[<%i0%>] =(char *) <%crefVarInfo(simCode,name)%>.name;<%\n%>start[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.start;'
               ;separator="\n"%>
               >>
            <<
@@ -5683,6 +5691,13 @@ template equationNames_Partial(list<SimEqSystem> eqs, String modelNamePrefixStr,
     break;
   >>
 end equationNames_Partial;
+
+template crefVarInfo(SimCode simCode, ComponentRef cr)
+::=
+  match cref2simvar(cr, simCode)
+  case SIMVAR(__) then
+  'data->modelData-><%crefShortType(cr)%>VarsData[<%index%>].info /* <%Util.escapeModelicaStringToCString(crefStr(name))%> */'
+end crefVarInfo;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenC;
