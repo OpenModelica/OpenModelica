@@ -433,6 +433,33 @@ static int foldBoxWidth(const QFontMetrics &fm)
   return lineSpacing + lineSpacing % 2 + 1;
 }
 
+static void drawRectBox(QPainter *painter, const QRect &rect, bool start, bool end, const QPalette &pal)
+{
+  painter->save();
+  painter->setRenderHint(QPainter::Antialiasing, false);
+
+  QRgb b = pal.base().color().rgb();
+  QRgb h = pal.highlight().color().rgb();
+  QColor c = Utilities::mergedColors(b,h, 50);
+
+  QLinearGradient grad(rect.topLeft(), rect.topRight());
+  grad.setColorAt(0, c.lighter(110));
+  grad.setColorAt(1, c.lighter(130));
+  QColor outline = c;
+
+  painter->fillRect(rect, grad);
+  painter->setPen(outline);
+  if (start) {
+    painter->drawLine(rect.topLeft() + QPoint(1, 0), rect.topRight() -  QPoint(1, 0));
+  }
+  if (end) {
+    painter->drawLine(rect.bottomLeft() + QPoint(1, 0), rect.bottomRight() -  QPoint(1, 0));
+  }
+  painter->drawLine(rect.topRight() + QPoint(0, start ? 1 : 0), rect.bottomRight() - QPoint(0, end ? 1 : 0));
+  painter->drawLine(rect.topLeft() + QPoint(0, start ? 1 : 0), rect.bottomLeft() - QPoint(0, end ? 1 : 0));
+  painter->restore();
+}
+
 /*!
  * \class BaseEditor::PlainTextEdit
  * Internal QPlainTextEdit for Editor.
@@ -476,17 +503,19 @@ int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
 {
   int digits = 2;
   int max = qMax(1, document()->blockCount());
-  while (max >= 10) {
+  while (max >= 100) {
     max /= 10;
     ++digits;
   }
   const QFontMetrics fm(document()->defaultFont());
   int space = fm.width(QLatin1Char('9')) * digits;
   if (mpBaseEditor->canHaveBreakpoints()) {
-    space += fm.lineSpacing() + 2;
+    space += fm.lineSpacing();
   }
   if (mpBaseEditor->canHaveFoldings()) {
     space += foldBoxWidth(fm);
+  } else {
+    space += 4;
   }
   return space;
 }
@@ -499,6 +528,8 @@ int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
  */
 void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
 {
+  QPalette pal = mpLineNumberArea->palette();
+  pal.setCurrentColorGroup(QPalette::Active);
   QPainter painter(mpLineNumberArea);
   painter.fillRect(event->rect(), QColor(240, 240, 240));
 
@@ -508,6 +539,9 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
   int bottom = top + (int) blockBoundingRect(block).height();
   const QFontMetrics fm(document()->defaultFont());
   int fmLineSpacing = fm.lineSpacing();
+
+  const int collapseColumnWidth = mpBaseEditor->canHaveFoldings() ? foldBoxWidth(fm) : 4;
+  const int lineNumbersWidth = mpLineNumberArea->width() - collapseColumnWidth;
 
   while (block.isValid() && top <= event->rect().bottom()) {
     /* paint breakpoints */
@@ -538,9 +572,60 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
         painter.setPen(Qt::gray);
       }
       painter.setFont(document()->defaultFont());
-      const int collapseColumnWidth = mpBaseEditor->canHaveFoldings() ? foldBoxWidth(fm): 0;
-      painter.drawText(0, top, mpLineNumberArea->width() - collapseColumnWidth - 5, fm.height(), Qt::AlignRight, number);
+      painter.drawText(0, top, lineNumbersWidth, fm.height(), Qt::AlignRight, number);
     }
+
+
+    if (mpBaseEditor->canHaveFoldings()) {
+      painter.save();
+      painter.setRenderHint(QPainter::Antialiasing, false);
+      int extraAreaHighlightFoldBlockNumber = -1;
+      int extraAreaHighlightFoldEndBlockNumber = -1;
+      bool endIsVisible = false;
+//      if (!d->m_highlightBlocksInfo.isEmpty()) {
+//          extraAreaHighlightFoldBlockNumber =  d->m_highlightBlocksInfo.open.last();
+//          extraAreaHighlightFoldEndBlockNumber =  d->m_highlightBlocksInfo.close.first();
+//          endIsVisible = doc->findBlockByNumber(extraAreaHighlightFoldEndBlockNumber).isVisible();
+
+////                    QTextBlock before = doc->findBlockByNumber(extraAreaHighlightCollapseBlockNumber-1);
+////                    if (TextBlockUserData::hasCollapseAfter(before)) {
+////                        extraAreaHighlightCollapseBlockNumber--;
+////                    }
+//      }
+
+//      TextBlockUserData *nextBlockUserData = TextDocumentLayout::testUserData(nextBlock);
+
+//      bool drawBox = nextBlockUserData
+//                     && TextDocumentLayout::foldingIndent(block) < nextBlockUserData->foldingIndent();
+
+      bool drawBox = blockNumber == 0;
+
+      bool active = blockNumber == extraAreaHighlightFoldBlockNumber;
+
+      bool drawStart = active;
+      bool drawEnd = blockNumber == extraAreaHighlightFoldEndBlockNumber || (drawStart && !endIsVisible);
+      bool hovered = blockNumber >= extraAreaHighlightFoldBlockNumber
+                     && blockNumber <= extraAreaHighlightFoldEndBlockNumber;
+
+      int boxWidth = foldBoxWidth(fm);
+      if (hovered) {
+          QRect box = QRect(lineNumbersWidth + 1, top, boxWidth - 2, bottom - top);
+          drawRectBox(&painter, box, drawStart, drawEnd, pal);
+      }
+
+      if (drawBox) {
+          bool expanded = block.next().isVisible();
+          int size = boxWidth/4;
+          QRect box(lineNumbersWidth + size, top + size, 2 * (size) + 1, 2 * (size) + 1);
+          drawFoldingMarker(&painter, pal, box, expanded, active, hovered);
+      }
+      painter.restore();
+    }
+
+
+
+
+
     block = block.next();
     top = bottom;
     bottom = top + (int) blockBoundingRect(block).height();
@@ -561,9 +646,8 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
   }
 
   QTextCursor cursor = cursorForPosition(QPoint(0, event->pos().y()));
-  const QFontMetrics fm(mpLineNumberArea->font());
-  int breakPointWidth = 0;
-  breakPointWidth += fm.lineSpacing();
+  const QFontMetrics fm(document()->defaultFont());
+  int breakPointWidth = fm.lineSpacing();
 
   // Set whether the mouse cursor is a hand or a normal arrow
   if (event->type() == QEvent::MouseMove) {
@@ -571,7 +655,8 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
     if (handCursor != (mpLineNumberArea->cursor().shape() == Qt::PointingHandCursor)) {
       mpLineNumberArea->setCursor(handCursor ? Qt::PointingHandCursor : Qt::ArrowCursor);
     }
-  } else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick) {
+  } else if ((event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick) &&
+             (event->pos().x() <= breakPointWidth)) {
     /* Do not allow breakpoints if file is not saved. */
     if (!mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSaved()) {
       mpBaseEditor->getMainWindow()->getInfoBar()->showMessage(tr("<b>Information: </b>Breakpoints are only allowed on saved classes."));
@@ -587,6 +672,59 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
       menu.addAction(mpBaseEditor->getToggleBreakpointAction());
       menu.exec(event->globalPos());
     }
+  }
+}
+
+void BaseEditor::PlainTextEdit::drawFoldingMarker(QPainter *painter, const QPalette &pal, const QRect &rect, bool expanded, bool active,
+                                                  bool hovered) const
+{
+  QStyle *s = style();
+  if (!qstrcmp(s->metaObject()->className(), "OxygenStyle")) {
+    painter->save();
+    painter->setPen(Qt::NoPen);
+    int size = rect.size().width();
+    int sqsize = 2*(size/2);
+
+    QColor textColor = pal.buttonText().color();
+    QColor brushColor = textColor;
+
+    textColor.setAlpha(100);
+    brushColor.setAlpha(100);
+
+    QPolygon a;
+    if (expanded) {
+      // down arrow
+      a.setPoints(3, 0, sqsize/3,  sqsize/2, sqsize  - sqsize/3,  sqsize, sqsize/3);
+    } else {
+      // right arrow
+      a.setPoints(3, sqsize - sqsize/3, sqsize/2,  sqsize/2 - sqsize/3, 0,  sqsize/2 - sqsize/3, sqsize);
+      painter->setBrush(brushColor);
+    }
+    painter->translate(0.5, 0.5);
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->translate(rect.topLeft());
+    painter->setPen(textColor);
+    painter->setBrush(textColor);
+    painter->drawPolygon(a);
+    painter->restore();
+  } else {
+    QStyleOptionViewItemV2 opt;
+    opt.rect = rect;
+    opt.state = QStyle::State_Active | QStyle::State_Item | QStyle::State_Children;
+    if (expanded)
+      opt.state |= QStyle::State_Open;
+    if (active)
+      opt.state |= QStyle::State_MouseOver | QStyle::State_Enabled | QStyle::State_Selected;
+    if (hovered)
+      opt.palette.setBrush(QPalette::Window, pal.highlight());
+
+    // QGtkStyle needs a small correction to draw the marker in the right place
+    if (!qstrcmp(s->metaObject()->className(), "QGtkStyle"))
+      opt.rect.translate(-2, 0);
+    else if (!qstrcmp(s->metaObject()->className(), "QMacStyle"))
+      opt.rect.translate(-1, 0);
+
+    s->drawPrimitive(QStyle::PE_IndicatorBranch, &opt, painter, mpLineNumberArea);
   }
 }
 
