@@ -585,10 +585,8 @@ public function traverseExpsOfEquationList<ArgT> "author: Frenkel TUD 2010-11
   output ArgT outArg = inArg;
 
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input ArgT inArg;
-    output DAE.Exp outExp;
-    output ArgT outArg;
+    input output DAE.Exp inoutExp;
+    input output ArgT inoutArg;
   end FuncExpType;
 algorithm
   for eq in inEquations loop
@@ -662,10 +660,8 @@ public function traverseExpsOfEquation<T> "author: Frenkel TUD 2010-11
   output T outTypeA;
 
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input T inTypeA;
-    output DAE.Exp outExp;
-    output T outTypeA;
+    input output DAE.Exp inoutExp;
+    input output T inoutTypeA;
   end FuncExpType;
 algorithm
   (outEquation, outTypeA) := match(inEquation)
@@ -844,10 +840,8 @@ public function traverseExpsOfWhenEquation<T>
   output T outTypeA;
 
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input T inTypeA;
-    output DAE.Exp outExp;
-    output T outTypeA;
+    input output DAE.Exp inoutExp;
+    input output T inoutTypeA;
   end FuncExpType;
 algorithm
   (outWhenEquation, outTypeA) := match(inWhenEquation)
@@ -885,10 +879,8 @@ public function traverseExpsOfWhenOps<T>
   output T outTypeA;
 
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input T inTypeA;
-    output DAE.Exp outExp;
-    output T outTypeA;
+    input output DAE.Exp inExp;
+    input output T inTypeA;
   end FuncExpType;
 algorithm
   (outWhenOps, outTypeA) := match (inWhenOps)
@@ -1104,10 +1096,8 @@ protected function traverseExpsOfExpList<T> "author Frenkel TUD:
   output T outTypeA = inExtArg;
 
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input T inTypeA;
-    output DAE.Exp outExp;
-    output T outA;
+    input output DAE.Exp inoutExp;
+    input output T inoutTypeA;
   end FuncExpType;
 algorithm
 
@@ -1152,10 +1142,8 @@ public function traverseEquationArray<T> "author: Frenkel TUD
   output T outTypeA;
 
   partial function FuncExpType
-    input BackendDAE.Equation inEq;
-    input T inA;
-    output BackendDAE.Equation outEq;
-    output T outA;
+    input output BackendDAE.Equation inoutEq;
+    input output T inoutA;
   end FuncExpType;
 algorithm
   //try
@@ -1201,24 +1189,18 @@ protected function traverseOptEquation<T>
   output T outTypeA;
 
   partial function FuncExpType
-    input BackendDAE.Equation inEq;
-    input T inA;
-    output BackendDAE.Equation outEq;
-    output T outA;
+    input output BackendDAE.Equation inoutEq;
+    input output T inoutA;
   end FuncExpType;
+protected
+  BackendDAE.Equation eqn;
 algorithm
-  outTypeA := match(inEquation)
-    local
-      BackendDAE.Equation eqn;
-      T ext_arg;
-
-    case NONE()
-    then inTypeA;
-
-    case SOME(eqn) equation
-      (_, ext_arg) = func(eqn, inTypeA);
-    then ext_arg;
-  end match;
+  if isSome(inEquation) then
+    SOME(eqn) := inEquation;
+    (_, outTypeA) := func(eqn, inTypeA);
+  else
+    outTypeA := inTypeA;
+  end if;
 end traverseOptEquation;
 
 protected function traverseOptEquation_WithStop<T>
@@ -1235,38 +1217,29 @@ protected function traverseOptEquation_WithStop<T>
     output Boolean cont;
     output T outA;
   end FuncWithStop;
+protected
+  BackendDAE.Equation eqn;
 algorithm
-  (outBoolean, outTypeA) :=  match(inEquation)
-    local
-      BackendDAE.Equation eqn;
-      T ext_arg;
-      Boolean b;
-
-    case NONE()
-    then (true, inTypeA);
-
-    case SOME(eqn) equation
-      (_, b, ext_arg) = inFuncWithStop(eqn, inTypeA);
-    then (b, ext_arg);
-  end match;
+  if isSome(inEquation) then
+    SOME(eqn) := inEquation;
+    (_, outBoolean, outTypeA) := inFuncWithStop(eqn, inTypeA);
+  else
+    outTypeA := inTypeA;
+    outBoolean := true;
+  end if;
 end traverseOptEquation_WithStop;
 
 public function calculateOptArrEqnSizeProperly "author: lochel"
   input array<Option<BackendDAE.Equation>> inEquOptArr;
   output Integer outSize = 0;
+protected
+  BackendDAE.Equation eq;
 algorithm
   for optEq in inEquOptArr loop
-    outSize := match optEq
-      local
-        Integer size;
-        BackendDAE.Equation eq;
-
-      case SOME(eq) equation
-        size = BackendEquation.equationSize(eq);
-      then outSize+size;
-
-      else outSize;
-    end match;
+    if isSome(optEq) then
+      SOME(eq) := optEq;
+      outSize := outSize + BackendEquation.equationSize(eq);
+    end if;
   end for;
 end calculateOptArrEqnSizeProperly;
 
@@ -1279,10 +1252,8 @@ public function traverseEquationArray_WithUpdate<T> "author: Frenkel TUD
   output T outTypeA;
 
   partial function FuncWithUpdate
-    input BackendDAE.Equation inEq;
-    input T inA;
-    output BackendDAE.Equation outEq;
-    output T outA;
+    input output BackendDAE.Equation inoutEq;
+    input output T inoutA;
   end FuncWithUpdate;
 protected
   array<Option<BackendDAE.Equation>> equOptArr;
@@ -1294,51 +1265,39 @@ end traverseEquationArray_WithUpdate;
 
 protected function traverseOptEquation_WithUpdate<T> "author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqnsWithUpdate."
-  input Option<BackendDAE.Equation> inEquation;
+  input output Option<BackendDAE.Equation> inEquation;
   input FuncWithUpdate inFuncWithUpdate;
-  input T inTypeA;
-  output Option<BackendDAE.Equation> outEquation;
-  output T outTypeA;
+  input output T inTypeA;
 
   partial function FuncWithUpdate
-    input BackendDAE.Equation inEq;
-    input T inA;
-    output BackendDAE.Equation outEq;
-    output T outA;
+    input output BackendDAE.Equation inEq;
+    input output T inA;
   end FuncWithUpdate;
+protected
+  BackendDAE.Equation eqn, eqn1;
 algorithm
-  (outEquation, outTypeA) :=  match(inEquation)
-    local
-      Option<BackendDAE.Equation> oeqn;
-      BackendDAE.Equation eqn, eqn1;
-      T ext_arg;
-
-    case NONE()
-    then (NONE(), inTypeA);
-
-    case SOME(eqn) equation
-      (eqn1, ext_arg) = inFuncWithUpdate(eqn, inTypeA);
-      oeqn = if referenceEq(eqn, eqn1) then inEquation else SOME(eqn1);
-    then (oeqn, ext_arg);
-  end match;
+  if isSome(inEquation) then
+    SOME(eqn) := inEquation;
+    (eqn1, inTypeA) := inFuncWithUpdate(eqn, inTypeA);
+    if not referenceEq(eqn, eqn1) then
+      inEquation := SOME(eqn1);
+    end if;
+  end if;
 end traverseOptEquation_WithUpdate;
 
 public function equationEqual "
   Returns true if two equations are equal"
   input BackendDAE.Equation e1;
   input BackendDAE.Equation e2;
-  output Boolean res;
+  output Boolean res = true;
 algorithm
+  if referenceEq(e1, e2) then return; end if;
   res := match (e1, e2)
     local
       DAE.Exp e11, e12, e21, e22, exp1, exp2;
       DAE.ComponentRef cr1, cr2;
       DAE.Algorithm alg1, alg2;
       list<DAE.Exp> explst1, explst2;
-
-    case (_, _)
-      guard referenceEq(e1, e2)
-    then true;
 
     case (BackendDAE.EQUATION(exp=e11, scalar=e12), BackendDAE.EQUATION(exp=e21, scalar=e22)) equation
       res = boolAnd(Expression.expEqual(e11, e21), Expression.expEqual(e12, e22));
@@ -1430,16 +1389,18 @@ algorithm
       array<Option<BackendDAE.Equation>> arr_1, equOptArr, arr_2;
       Real rsize, rexpandsize;
 
-    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) equation
-      (numberOfElement < arrSize) = true "Have space to add array elt.";
+    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) guard
+      (numberOfElement < arrSize) "Have space to add array elt."
+    equation
       n_1 = numberOfElement + 1;
       index = findFirstUnusedEquOptEntry(n_1, arrSize, equOptArr);
       arr_1 = arrayUpdate(equOptArr, index, SOME(inEquation));
       size = equationSize(inEquation) + size;
     then BackendDAE.EQUATION_ARRAY(size, n_1, arrSize, arr_1);
 
-    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) equation /* Do NOT Have space to add array elt. Expand array 1.4 times */
-      (numberOfElement < arrSize) = false;
+    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) guard /* Do NOT Have space to add array elt. Expand array 1.4 times */
+      not (numberOfElement < arrSize)
+    equation
       rsize = intReal(arrSize);
       rexpandsize = rsize * 0.4;
       expandsize = realInt(rexpandsize);
@@ -1482,10 +1443,8 @@ public function requationsAddDAE "author: Frenkel TUD 2012-10
   input BackendDAE.EqSystem inSyst;
   output BackendDAE.EqSystem outSyst;
 algorithm
-  outSyst := match inEquations
-    case {} then inSyst;
-    else  then BackendDAEUtil.setEqSystRemovedEqns(inSyst, List.fold(inEquations, addEquation, inSyst.removedEqs));
-  end match;
+  outSyst := if listEmpty(inEquations) then inSyst
+    else BackendDAEUtil.setEqSystRemovedEqns(inSyst, List.fold(inEquations, addEquation, inSyst.removedEqs));
 end requationsAddDAE;
 
 public function removeRemovedEqs "remove removedEqs"
@@ -2546,8 +2505,9 @@ algorithm
     then (BackendDAE.EQUATION(crefExp, e2, source, eqAttr));
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr), _, _) equation
-      cr = Expression.expCref(crefExp);
-      false = ComponentReference.crefEqual(cref, cr);
+      // already checked in rule above:
+      //cr = Expression.expCref(crefExp);
+      //false = ComponentReference.crefEqual(cref, cr);
       e1 = Expression.crefExp(cref);
       (res, _, {}, {}) = ExpressionSolve.solve2(e1, e2, crefExp, functions, NONE());
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
