@@ -3709,6 +3709,96 @@ algorithm
   outList := listReverseInPlace(outList);
 end mapFold2;
 
+public function mapFold3<TI, TO, FT1, FT2, FT3>
+  "Takes a list, a function, and three extra arguments. The function will be applied
+  to each element in the list, and the extra arguments will be passed to the
+  function and updated."
+  input list<TI> inList;
+  input FuncType inFunc;
+  output list<TO> outList = {};
+  input output FT1 inArg1;
+  input output FT2 inArg2;
+  input output FT3 inArg3;
+
+  partial function FuncType
+    input TI inElem;
+    output TO outResult;
+    input output FT1 inArg1;
+    input output FT2 inArg2;
+    input output FT3 inArg3;
+  end FuncType;
+protected
+  TO res;
+algorithm
+  for e in inList loop
+    (res, inArg1, inArg2, inArg3) := inFunc(e, inArg1, inArg2, inArg3);
+    outList := res::outList;
+  end for;
+  outList := listReverseInPlace(outList);
+end mapFold3;
+
+public function mapFold4<TI, TO, FT1, FT2, FT3, FT4>
+  "Takes a list, a function, and four extra arguments. The function will be applied
+  to each element in the list, and the extra arguments will be passed to the
+  function and updated."
+  input list<TI> inList;
+  input FuncType inFunc;
+  output list<TO> outList = {};
+  input output FT1 inArg1;
+  input output FT2 inArg2;
+  input output FT3 inArg3;
+  input output FT4 inArg4;
+
+  partial function FuncType
+    input TI inElem;
+    output TO outResult;
+    input output FT1 inArg1;
+    input output FT2 inArg2;
+    input output FT3 inArg3;
+    input output FT4 inArg4;
+  end FuncType;
+protected
+  TO res;
+algorithm
+  for e in inList loop
+    (res, inArg1, inArg2, inArg3, inArg4) := inFunc(e, inArg1, inArg2, inArg3, inArg4);
+    outList := res::outList;
+  end for;
+  outList := listReverseInPlace(outList);
+end mapFold4;
+
+public function mapFold5<TI, TO, FT1, FT2, FT3, FT4, FT5>
+  "Takes a list, a function, and five extra arguments. The function will be applied
+  to each element in the list, and the extra arguments will be passed to the
+  function and updated."
+  input list<TI> inList;
+  input FuncType inFunc;
+  output list<TO> outList = {};
+  input output FT1 inArg1;
+  input output FT2 inArg2;
+  input output FT3 inArg3;
+  input output FT4 inArg4;
+  input output FT5 inArg5;
+
+  partial function FuncType
+    input TI inElem;
+    output TO outResult;
+    input output FT1 inArg1;
+    input output FT2 inArg2;
+    input output FT3 inArg3;
+    input output FT4 inArg4;
+    input output FT5 inArg5;
+  end FuncType;
+protected
+  TO res;
+algorithm
+  for e in inList loop
+    (res, inArg1, inArg2, inArg3, inArg4, inArg5) := inFunc(e, inArg1, inArg2, inArg3, inArg4, inArg5);
+    outList := res::outList;
+  end for;
+  outList := listReverseInPlace(outList);
+end mapFold5;
+
 public function map1Fold<TI, TO, FT, ArgT1>
   "Takes a list, an extra argument, an extra constant argument, and a function.
   The function will be applied to each element in the list, and the extra
