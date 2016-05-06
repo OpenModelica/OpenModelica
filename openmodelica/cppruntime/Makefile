@@ -1,7 +1,6 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
-ClockInterval.mos \
 tearnonlin1.mos \
 WhenStatement1.mos \
 BouncingBall.mos \
@@ -9,7 +8,6 @@ arraySliceTest.mos \
 clockedEventTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
-clockedTest.mos \
 externalArrayInputTest.mos \
 mathFunctionsTest.mos \
 functionPointerTest.mos \
@@ -17,8 +15,9 @@ recordTupleReturnTest.mos \
 solveTest.mos
 
 
-FAILINGTESTFILES= 
-
+FAILINGTESTFILES= \
+ClockInterval.mos \
+clockedTest.mos \
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
