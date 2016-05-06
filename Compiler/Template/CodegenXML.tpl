@@ -867,9 +867,9 @@ match eq
         <equ:Condition>
           <%cond%>
         </equ:Condition>
-        <eq:Equation>
+        <equ:Equation>
           <%body%>
-        </eq:Equation>
+        </equ:Equation>
       </equ:When>
       >>
   case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions,elseWhen = SOME(elseWhenEq)) then
@@ -887,9 +887,9 @@ match eq
         <equ:Condition>
           <%cond%>
         </equ:Condition>
-        <eq:Equation>
+        <equ:Equation>
           <%body%>
-        </eq:Equation>
+        </equ:Equation>
       </equ:When>
       <%elseWhen%>
       >>
@@ -911,9 +911,9 @@ case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions,elseWhen = NONE()
       <equ:Condition>
         <%cond%>
       </equ:Condition>
-      <eq:Equation>
+      <equ:Equation>
         <%body%>
-      </eq:Equation>
+      </equ:Equation>
     </equ:ElseWhen>
     >>
 case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions,elseWhen = SOME(elseWhenEq)) then
@@ -929,9 +929,9 @@ case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions,elseWhen = SOME(e
       <equ:Condition>
         <%cond%>
       </equ:Condition>
-      <eq:Equation>
+      <equ:Equation>
         <%body%>
-      </eq:Equation>
+      </equ:Equation>
     </equ:ElseWhen>
     <%elseWhen%>
     >>
@@ -1043,9 +1043,9 @@ template functionsXml(list<Function> functions)
  "Generates the body for a set of functions."
 ::=
   <<
-  <fun:FunctionList>
+  <fun:FunctionsList>
     <%functions |> fn => functionXml(fn) ;separator="\n"%>
-  </fun:FunctionList>
+  </fun:FunctionsList>
   >>
 end functionsXml;
 
