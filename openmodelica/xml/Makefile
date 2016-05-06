@@ -5,6 +5,8 @@ XmlDumpComment.mos \
 testMSD.mos \
 SimpleTriggeredTrapezoid.mos \
 BB.mos \
+Bug3857.mos \
+
 
 FAILINGTESTFILES= \
 
