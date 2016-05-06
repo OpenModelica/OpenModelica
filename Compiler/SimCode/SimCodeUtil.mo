@@ -635,7 +635,7 @@ algorithm
 
     prevClockedVars := {};
     isPrevVar := arrayCreate(BackendVariable.varsSize(syst.orderedVars), false);
-    preEquations := {};
+
     for cr in subPartition.prevVars loop
       (_, varIxs) := BackendVariable.getVar(cr, syst.orderedVars);
       for i in varIxs loop
@@ -652,13 +652,13 @@ algorithm
         simVar.name := ComponentReference.crefPrefixPrevious(cr);
         clockedVars := simVar::clockedVars;
         simEq := SimCode.SES_SIMPLE_ASSIGN(ouniqueEqIndex, simVar.name, DAE.CREF(cr, simVar.type_), DAE.emptyElementSource);
-        preEquations := simEq::preEquations;
+         equations := simEq::equations;
         ouniqueEqIndex := ouniqueEqIndex + 1;
       end if;
     end for;
 
     //otempvars := listAppend(clockedVars, otempvars);
-    simSubPartition := SimCode.SUBPARTITION(prevClockedVars, preEquations, equations, removedEquations, subPartition.clock, subPartition.holdEvents);
+    simSubPartition := SimCode.SUBPARTITION(prevClockedVars,  equations, removedEquations, subPartition.clock, subPartition.holdEvents);
 
     assert(isNone(simSubPartitions[subPartIdx]), "SimCodeUtil.translateClockedEquations failed");
     arrayUpdate(simSubPartitions, subPartIdx, SOME(simSubPartition));
