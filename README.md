@@ -3,4 +3,5 @@ The OpenModelica Compiler is the core of the OpenModelica project, which is an o
 
 ## Building the OpenModelica Compiler
 
-There are [Linux instructions](README.Linux.md) available.
+* [Linux instructions](README.Linux.md)
+* [Windows instructions](README-OMDev-MINGW.md)
