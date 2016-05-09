@@ -33,7 +33,7 @@ $ (cd testsuite/partest && ./runtests.pl)
 
 ## Compilation (Windows)
 
-Windows instruction are [here](https://github.com/OpenModelica/OMCompiler/blob/master/README.md)
+Windows instruction are [here](../../../OMCompiler/blob/master/README-OMDev-MINGW.md).
 
 ## Working with the repository
 
