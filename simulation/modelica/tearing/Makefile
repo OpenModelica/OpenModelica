@@ -78,6 +78,7 @@ AnnotationTest2-omc.mos \
 totalTearing1.mos \
 totalTearing2.mos \
 totalTearing3.mos \
+userDefinedTearing1.mos \
 
 
 
