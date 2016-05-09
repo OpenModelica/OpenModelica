@@ -1,14 +1,11 @@
 # Compiling OMC using OMDev package
 
-- Checkout the OMDev package from Subversion:
-  https://openmodelica.org/svn/OpenModelicaExternal/trunk/tools/windows/OMDev
-  + this package contains all prerequisites to compile OMC on Windows using MinGW+MSys
-  + NOTE THAT YOU MUST UPDATE THIS PACKAGE IF YOU CANNOT COMPILE OpenModelica any longer!
-- Make sure you place the OMDev package into:
-  c:\OMDev\
-  + Follow the instructions in the c:\OMDev\INSTALL.txt file
-- You should have an OpenModelica directory you got from OpenModelica GIT repository
-  https://github.com/OpenModelica/OpenModelica
+- Checkout the OMDev package from SVN https://openmodelica.org/svn/OpenModelicaExternal/trunk/tools/windows/OMDev
+  - this package contains all prerequisites to compile OMC on Windows using MinGW+MSys
+  - NOTE THAT YOU MUST UPDATE THIS PACKAGE IF YOU CANNOT COMPILE OpenModelica any longer!
+- Make sure you place the OMDev package into *c:\OMDev\*
+  - Follow the instructions in the *c:\OMDev\INSTALL.txt* file
+- You should have an OpenModelica directory you got from OpenModelica GIT repository https://github.com/OpenModelica/OpenModelica
 - You could use msys or eclipse to build OMC. Follow the instructions in **Compiling OMC using MSYS** or **Compiling OMC using Eclipse**.
 
 ## Compiling OMC using MSYS
@@ -24,46 +21,38 @@ make -f Makefile.omdev.mingw -j8
 - Inside the OpenModelica directory you will find a .project-sample file
   which you should rename to OpenModelica/.project and do whatever modifications
   you need on it to reflect your paths. Windows doesn't let you create files
-  that start with dot (.) so you do like this:
-  Copy your .project-sample to .project again from DOS:
-    Start->Run->cmd.exe
-    $ cd \path\to\OpenModelica
-    $ ren ".project-sample" ".project"
-- rename the file OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder32bit.launch-sample or OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder64bit.launch-sample
-  to OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder32bit.launch or OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder64bit.launch and do whatever
+  that start with dot (.) so you do like this,
+  - Start->Run->cmd.exe
+  - $ cd \path\to\OpenModelica
+  - $ ren ".project-sample" ".project"
+- rename the file *OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder32bit.launch-sample* or *OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder64bit.launch-sample*
+  to *OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder32bit.launch* or *OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder64bit.launch* and do whatever
   modifications are needed on it to reflect your paths.
 - Installing Modelica Development Tooling (MDT) and setting your Eclipse workspace
-  Start Eclipse and follow instructions from:
-  https://trac.openmodelica.org/documents/MDT/install/InstallingMDT.pdf
-  to install MDT. Eclipse will restart at the end.
-  Start Eclipse, change workspace to your installation:
-    - note here that your workspace must point one directory
-      up the OpenModelica svn directory (for me named OpenModelica)
-      Example: if you downloaded OpenModelica in a directory like this:
-      c:\some_paths\dev\OpenModelica then your workspace must point to:
-      c:\some_patsh\dev\
+  Start Eclipse and follow instructions from https://trac.openmodelica.org/documents/MDT/install/InstallingMDT.pdf
+  to install MDT. Eclipse will restart at the end. Start Eclipse, change workspace to your installation:
+  - note here that your workspace must point one directory
+    up the OpenModelica svn directory (for me named OpenModelica).
+  - Example: if you downloaded OpenModelica in a directory like this *c:\some_paths\dev\OpenModelica* then your workspace must point to *c:\some_patsh\dev\*
 - Setting your project.
     - File -> New -> (Modelica Project) or
       File -> New -> Project -> Modelica -> Modelica Project
     - Type the name of your OpenModelica directory installation
-      For me "OpenModelica"
+      For me **OpenModelica**
     - Say Finish.
 - Editing the OMDev-MINGW-OpenModelicaBuilder
     - Project->Project Properties->Builders->OMDev-MINGW-OpenModelicaBuilder->Edit
-    - NOTE: In tab Main you have to change the Working Directory from "OpenModelica" to
-            your directory name
-    - Go to Environment tab and change the name of the OMDEV variable from there
-      to point to your OMDev installation:
-      /c/path/to/your/omdev (/c/OMDev)
+    - NOTE: In tab Main you have to change the Working Directory from "OpenModelica" to your directory name
+    - Go to Environment tab and change the name of the OMDEV variable from there to point to your OMDev installation */c/path/to/your/omdev (/c/OMDev)*
 - Running the OMDev-MINGW-OpenModelica builder:
     - To run the OMDev-MINGW-OpenModelicaBuilder press Ctrl+B or right-click project and say rebuild.
-    - Then the OMDev-MINGW-OpenModelicaBuilder will start
-      and compile an OpenModelica/build/omc.exe.
+    - Then the OMDev-MINGW-OpenModelicaBuilder will start and compile an OpenModelica/build/omc.exe.
     - If the builder refuse to start, please check the **NOTES** below.
 
 ## NOTES ON PROBLEMS WITH THE ECLIPSE PROJECT/OMDev BUILDER
 
 If something does not work in Eclipse, please check:
+
 1. is the Modelica perspective chosen in eclipse?
    Set it up in the right top corner.
 2. is OMDev installed into c:\OMDev?
