@@ -425,24 +425,31 @@ protected
   list<SimpleContainer> simpleeqnslst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  array<list<Integer>> mT;
+  array<list<Integer>> mT; //[varIdx] = simpleContainer
   Boolean foundSimple, globalFindSimple, b;
-  Integer traversals;
+  Integer maxTraversals;
+
+  DAE.Exp e1,e2,e3,e4;
+
 algorithm
   try
     BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := outSystem;
-    ((repl, globalFindSimple, unReplaceable, traversals)) := inTpl;
+    ((repl, globalFindSimple, unReplaceable, maxTraversals)) := inTpl;
     // transform to list, this is later not neccesary because the acausal system should save the equations as list
     eqnslst := BackendEquation.equationList(eqns);
     mT := arrayCreate(BackendVariable.varsSize(vars), {});
     // check equations
     ((_, _, eqnslst, simpleeqnslst, _, _, foundSimple)) := List.fold( eqnslst, simpleEquationsFinder,
                                                                       (vars, inShared, {}, {}, 1, mT, false) );
+
+    //print("Found "+intString(listLength(simpleeqnslst))+" SimpleEquationsContainers\n");
+    //print(stringDelimitList(List.map(simpleeqnslst, dumpSimpleContainer),"\n")+"\n");
+
     ((_, vars, outShared, repl, unReplaceable, _, eqnslst, b)) :=
-        causalFinder( foundSimple, simpleeqnslst, eqnslst, 1, traversals, vars, inShared,
+        causalFinder( foundSimple, simpleeqnslst, eqnslst, 1, maxTraversals, vars, inShared,
                       repl, unReplaceable, mT, {}, globalFindSimple );
     outSystem := updateSystem(b, eqnslst, vars, repl, outSystem);
-    outTpl := ((repl, b, unReplaceable, traversals));
+    outTpl := ((repl, b, unReplaceable, maxTraversals));
   else
     //Error.addCompilerWarning("The module removeSimpleEquations failed for a subsystem. The relevant subsystem get skipped and the transformation is proceeded.");
     outSystem := inSystem;
@@ -453,10 +460,10 @@ end fastAcausal1;
 
 protected function causalFinder "author: Frenkel TUD 2012-12"
   input Boolean foundSimple;
-  input list<SimpleContainer> iSimpleeqnslst;
+  input list<SimpleContainer> simpleContainerIn;
   input list<BackendDAE.Equation> iEqnslst;
-  input Integer index;
-  input Integer traversals;
+  input Integer traversalIdx;
+  input Integer maxTraversals;
   input BackendDAE.Variables iVars;
   input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements iRepl;
@@ -470,20 +477,22 @@ protected
   BackendDAE.Variables vars;
   BackendVarTransform.VariableReplacements repl;
   Boolean b1;
-  array<SimpleContainer> simpleeqns;
+  array<SimpleContainer> simpleContainer;
   list<BackendDAE.Equation> eqnslst;
   BackendDAE.Shared shared;
 algorithm
   if foundSimple then
     // transform simpleeqns to array
-    simpleeqns := List.listArrayReverse(iSimpleeqnslst);
+    simpleContainer := List.listArrayReverse(simpleContainerIn);
     // collect and handle sets
-    (vars, eqnslst, shared, repl) := handleSets(arrayLength(simpleeqns), 1, simpleeqns, iMT, iUnreplaceable, iVars, iEqnslst, ishared, iRepl);
+    (vars, eqnslst, shared, repl) := handleSets(arrayLength(simpleContainer), 1, simpleContainer, iMT, iUnreplaceable, iVars, iEqnslst, ishared, iRepl);
+      //BackendVarTransform.dumpReplacements(repl);
+
     // perform replacements and try again
     (eqnslst, b1) := BackendVarTransform.replaceEquations(eqnslst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-    oTpl := causalFinder1(intGt(index, traversals), b1, eqnslst, index+1, traversals, vars, shared, repl, iUnreplaceable, iMT, iGlobalEqnslst, true);
+    oTpl := causalFinder1(intGt(traversalIdx, maxTraversals), b1, eqnslst, traversalIdx+1, maxTraversals, vars, shared, repl, iUnreplaceable, iMT, iGlobalEqnslst, true);
   else
-    oTpl := ((traversals, iVars, ishared, iRepl, iUnreplaceable, iMT, listAppend(iEqnslst, iGlobalEqnslst), globalFoundSimple));
+    oTpl := ((maxTraversals, iVars, ishared, iRepl, iUnreplaceable, iMT, listAppend(iEqnslst, iGlobalEqnslst), globalFoundSimple));
   end if;
 end causalFinder;
 
@@ -1307,6 +1316,7 @@ algorithm
         (vars1, ilst1, varskn1, time1) = getVars(cr1, vars, shared);
         (vars2, ilst2, varskn2, time2) = getVars(cr2, vars, shared);
         // add to Simple Equations List
+        true = intEq(listLength(vars1),listLength(vars2));
         (seqns, index, mT) = generateSimpleContainters(vars1, negatedCr1, ilst1, varskn1, time1, vars2, negatedCr2, ilst2, varskn2, time2, eqnAttributes, seqns, index, mT);
       then
         ((vars, shared, eqns, seqns, index, mT, true));
@@ -1344,8 +1354,13 @@ algorithm
       then
         (oVars, oIndexs, false, false);
     case (_, _, _)
-      equation
-        (oVars as _::_, oIndexs) = BackendVariable.getVarShared(cr, shared);
+      algorithm
+        (oVars as _::_, oIndexs) := BackendVariable.getVarShared(cr, shared);
+        if ComponentReference.crefIsScalarWithVariableSubs(cr) then
+        //waurich: We don't support this case properly at the moment. Don't assign an alias.
+          oVars := {};
+          oIndexs := {};
+        end if;
       then
         (oVars, oIndexs, true, false);
   end matchcontinue;
@@ -1824,9 +1839,9 @@ end aliasExp;
 protected function handleSets "author: Frenkel TUD 2012-12
   convert the found simple equtions to replacements and remove the simple
   variabes from the variables"
-  input Integer index "downwarts";
+  input Integer containerIdx "downwards";
   input Integer inMark;
-  input array<SimpleContainer> simpleeqnsarr;
+  input array<SimpleContainer> containerArr;
   input array<list<Integer>> iMT;
   input HashSet.HashSet unReplaceable;
   input BackendDAE.Variables iVars;
@@ -1838,7 +1853,7 @@ protected function handleSets "author: Frenkel TUD 2012-12
   output BackendDAE.Shared oshared;
   output BackendVarTransform.VariableReplacements oRepl;
 algorithm
-  (oVars, oEqnslst, oshared, oRepl) := match (index, inMark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl)
+  (oVars, oEqnslst, oshared, oRepl) := match (containerIdx, inMark, containerArr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl)
     local
       Option<tuple<Integer, Integer>> rmax, smax;
       Option<Integer> unremovable, const;
@@ -1850,8 +1865,9 @@ algorithm
     case (0, _, _, _, _, _, _, _, _) then (iVars, iEqnslst, ishared, iRepl);
     else
       equation
-        (mark, vars, eqnslst, shared, repl) = handleSetsWork(intGt(getVisited(simpleeqnsarr[index]), 0), index, inMark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl);
-        (vars, eqnslst, shared, repl) = handleSets(index-1, mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl);
+        // make this function a for-loop not recursive
+        (mark, vars, eqnslst, shared, repl) = handleSetsWork(intGt(getVisited(containerArr[containerIdx]), 0), containerIdx, inMark, containerArr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl);
+        (vars, eqnslst, shared, repl) = handleSets(containerIdx-1, mark, containerArr, iMT, unReplaceable, vars, eqnslst, shared, repl);
       then
         (vars, eqnslst, shared, repl);
   end match;
@@ -1861,10 +1877,10 @@ protected function handleSetsWork "author: Frenkel TUD 2012-12
   convert the found simple equtions to replacements and remove the simple
   variabes from the variables"
   input Boolean isVisited;
-  input Integer index "downwarts";
-  input Integer mark;
-  input array<SimpleContainer> simpleeqnsarr;
-  input array<list<Integer>> iMT;
+  input Integer containerIdx "downwards";
+  input Integer mark; //how to mark a visited container
+  input array<SimpleContainer> containerArr;
+  input array<list<Integer>> iMT; //[varIdx] = simpleContainer
   input HashSet.HashSet unReplaceable;
   input BackendDAE.Variables iVars;
   input list<BackendDAE.Equation> iEqnslst;
@@ -1876,7 +1892,7 @@ protected function handleSetsWork "author: Frenkel TUD 2012-12
   output BackendDAE.Shared oshared;
   output BackendVarTransform.VariableReplacements oRepl;
 algorithm
-  (oMark, oVars, oEqnslst, oshared, oRepl) := match (isVisited, index, mark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, iShared, iRepl)
+  (oMark, oVars, oEqnslst, oshared, oRepl) := match (isVisited, containerIdx, mark, containerArr, iMT, unReplaceable, iVars, iEqnslst, iShared, iRepl)
     local
       Option<tuple<Integer, Integer>> rmax, smax;
       Option<Integer> unremovable, const;
@@ -1892,9 +1908,10 @@ algorithm
     else
       equation
         // collect set
-        (rmax, smax, unremovable, const, _) = getAlias({index}, NONE(), mark, simpleeqnsarr, iMT, iVars, unReplaceable, false, {}, NONE(), NONE(), NONE(), NONE());
+          //print("Check Simple Container "+dumpSimpleContainer(containerArr[containerIdx])+"\n");
+        (rmax, smax, unremovable, const, _) = getAlias({containerIdx}, NONE(), mark, containerArr, iMT, iVars, unReplaceable, false, {}, NONE(), NONE(), NONE(), NONE());
         // traverse set and add replacements, move vars, ...
-        (vars, eqnslst, shared, repl) = handleSet(rmax, smax, unremovable, const, mark+1, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, iShared, iRepl);
+        (vars, eqnslst, shared, repl) = handleSet(rmax, smax, unremovable, const, mark+1, containerArr, iMT, unReplaceable, iVars, iEqnslst, iShared, iRepl);
       then (mark+2, vars, eqnslst, shared, repl);
 
   end match;
@@ -1902,11 +1919,11 @@ end handleSetsWork;
 
 protected function getAlias "author: Frenkel TUD 2012-12
   traverse the simple tree to find the variable we keep"
-  input list<Integer> rows;
-  input Option<Integer> i;
-  input Integer mark;
-  input array<SimpleContainer> simpleeqnsarr;
-  input array<list<Integer>> iMT;
+  input list<Integer> rows; //{containerIdx}
+  input Option<Integer> prevVar; //previous variable
+  input Integer mark; //how to mark a visited container
+  input array<SimpleContainer> containerArr;
+  input array<list<Integer>> iMT;//[varIdx] = simpleContainer
   input BackendDAE.Variables vars;
   input HashSet.HashSet unReplaceable;
   input Boolean negate;
@@ -1921,22 +1938,22 @@ protected function getAlias "author: Frenkel TUD 2012-12
   output Option<Integer> oConst;
   output Boolean oContinue;
 algorithm
-  (oRmax, oSmax, oUnremovable, oConst, oContinue) := match(rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
+  (oRmax, oSmax, oUnremovable, oConst, oContinue) := match(rows, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
     local
       Integer r;
       list<Integer> rest;
-      SimpleContainer s;
+      SimpleContainer container;
       Option<tuple<Integer, Integer>> rmax, smax;
       Option<Integer> unremovable, const;
-      Boolean b, cont;
+      Boolean visited, cont;
 
     case ({}, _, _, _, _, _, _, _, _, _, _, _, _) then (iRmax, iSmax, iUnremovable, iConst, true);
 
     case (r::rest, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
-        s = simpleeqnsarr[r];
-        b = isVisited(mark, s);
-        (rmax, smax, unremovable, const, cont) = getAlias1(b, s, r, rest, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst);
+        container = containerArr[r];
+        visited = isVisited(mark, container);
+        (rmax, smax, unremovable, const, cont) = getAlias1(visited, container, r, rest, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst);
       then
         (rmax, smax, unremovable, const, cont);
 
@@ -1945,13 +1962,13 @@ end getAlias;
 
 protected function getAlias1 "author: Frenkel TUD 2012-12"
   input Boolean visited;
-  input SimpleContainer s;
-  input Integer r;
+  input SimpleContainer containerIn;
+  input Integer currIdx; //the container idx
   input list<Integer> rows;
-  input Option<Integer> i;
-  input Integer mark;
-  input array<SimpleContainer> simpleeqnsarr;
-  input array<list<Integer>> iMT;
+  input Option<Integer> prevVar;
+  input Integer mark; //how to mark a visited container
+  input array<SimpleContainer> containerArr;
+  input array<list<Integer>> iMT;//[varIdx] = simpleContainer
   input BackendDAE.Variables vars;
   input HashSet.HashSet unReplaceable;
   input Boolean negate;
@@ -1967,7 +1984,7 @@ protected function getAlias1 "author: Frenkel TUD 2012-12"
   output Boolean oContinue;
 algorithm
   (oRmax, oSmax, oUnremovable, oConst, oContinue) :=
-  matchcontinue(visited, s, r, rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
+  matchcontinue(visited, containerIn, currIdx, rows, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
     local
       Option<tuple<Integer, Integer>> rmax, smax;
       Option<Integer> unremovable, const;
@@ -1978,11 +1995,11 @@ algorithm
     case (false, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         // set visited
-        arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
+        arrayUpdate(containerArr, currIdx, setVisited(mark, containerIn));
         // check alias connection
-        (rmax, smax, unremovable, const, cont) = getAlias2(s, r, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, r::stack, iRmax, iSmax, iUnremovable, iConst);
+        (rmax, smax, unremovable, const, cont) = getAlias2(containerIn, currIdx, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, currIdx::stack, iRmax, iSmax, iUnremovable, iConst);
         // next arm
-        (rmax, smax, unremovable, const, cont) = getAliasContinue(cont, rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, rmax, smax, unremovable, const);
+        (rmax, smax, unremovable, const, cont) = getAliasContinue(cont, rows, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, stack, rmax, smax, unremovable, const);
       then
         (rmax, smax, unremovable, const, cont);
 
@@ -1990,7 +2007,7 @@ algorithm
     case (true, _, _, _, _, _, _, _, _, _, true, _, _, _, SOME(_), _)
       equation
         // is only valid for real or int
-        ALIAS(cr1=cr) = simpleeqnsarr[r];
+        ALIAS(cr1=cr) = containerArr[currIdx];
         true = Types.isIntegerOrRealOrSubTypeOfEither(ComponentReference.crefLastType(cr));
       then
         (NONE(), NONE(), NONE(), iUnremovable, false);
@@ -1998,15 +2015,15 @@ algorithm
     case (true, _, _, _, _, _, _, _, _, _, true, _, _, _, _, _)
       equation
         // is only valid for real or int
-        ALIAS(cr1=cr) = simpleeqnsarr[r];
+        ALIAS(cr1=cr) = containerArr[currIdx];
         true = Types.isIntegerOrRealOrSubTypeOfEither(ComponentReference.crefLastType(cr));
       then
-        (NONE(), NONE(), NONE(), SOME(r), false);
+        (NONE(), NONE(), NONE(), SOME(currIdx), false);
 
     case (true, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         msg = "Circular Equalities Detected for Variables:\n";
-        msg = circularEqualityMsg(stack, r, simpleeqnsarr, msg);
+        msg = circularEqualityMsg(stack, currIdx, containerArr, msg);
         // report error
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
@@ -2075,16 +2092,17 @@ algorithm
   end match;
 end getVarsNames;
 
-protected function getAlias2 "author: Frenkel TUD 2012-12"
-  input SimpleContainer s;
-  input Integer r;
-  input Option<Integer> oi;
-  input Integer mark;
+protected function getAlias2 "author: Frenkel TUD 2012-12
+is the container connected somehow?"
+  input SimpleContainer containerIn;
+  input Integer currIdx; //the container idx
+  input Option<Integer> prevVar;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
-  input array<list<Integer>> iMT;
+  input array<list<Integer>> iMT;//[varIdx] = simpleContainer
   input BackendDAE.Variables vars;
   input HashSet.HashSet unReplaceable;
-  input Boolean negate;
+  input Boolean negate; //do we negate negative aliases?
   input list<Integer> stack;
   input Option<tuple<Integer, Integer>> iRmax;
   input Option<tuple<Integer, Integer>> iSmax;
@@ -2097,73 +2115,76 @@ protected function getAlias2 "author: Frenkel TUD 2012-12"
   output Boolean oContinue;
 algorithm
   (oRmax, oSmax, oUnremovable, oConst, oContinue) :=
-  match(s, r, oi, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
+  match(containerIn, currIdx, prevVar, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
     local
-      list<Integer> next;
+      list<Integer> adjEqs;
       Option<tuple<Integer, Integer>> rmax, smax;
       Option<Integer> unremovable, const;
       BackendDAE.Var v;
-      Integer i1, i2, i;
+      Integer i1, i2, i, prevVarIdx;
       Boolean state, replaceable_, cont, replaceble1, neg, negatedCr1, negatedCr2;
 
     case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), _, NONE(), _, _, _, _, _, _, _, _, _, _, _)
       equation
         // collect next rows
         neg = boolOr(negatedCr1, negatedCr2);
-        next = List.removeOnTrue(r, intEq, iMT[i1]);
+        adjEqs = List.removeOnTrue(currIdx, intEq, iMT[i1]);
         v = BackendVariable.getVarAt(vars, i1);
         // update max
-        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
         state = BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
-        (rmax, smax, unremovable) = getAlias3(v, i1, state, replaceable_ and replaceble1, r, iRmax, iSmax, iUnremovable);
+        (rmax, smax, unremovable) = getAlias3(v, i1, state, replaceable_ and replaceble1, currIdx, iRmax, iSmax, iUnremovable);
         // go deeper
         neg = if neg then not negate else negate;
-        (rmax, smax, unremovable, const, cont) = getAlias(next, SOME(i1), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
+        (rmax, smax, unremovable, const, cont) = getAlias(adjEqs, SOME(i1), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
         // collect next rows
-        next = List.removeOnTrue(r, intEq, iMT[i2]);
+        adjEqs = List.removeOnTrue(currIdx, intEq, iMT[i2]);
         v = BackendVariable.getVarAt(vars, i2);
         // update max
-        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
         state = BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
-        (rmax, smax, unremovable) = getAlias3(v, i2, state, replaceable_ and replaceble1, r, rmax, smax, unremovable);
+        (rmax, smax, unremovable) = getAlias3(v, i2, state, replaceable_ and replaceble1, currIdx, rmax, smax, unremovable);
         // go deeper
-        (rmax, smax, unremovable, const, cont) = getAliasContinue(cont, next, SOME(i2), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, const);
+        (rmax, smax, unremovable, const, cont) = getAliasContinue(cont, adjEqs, SOME(i2), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, const);
        then
          (rmax, smax, unremovable, const, cont);
 
-    case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), _, SOME(i), _, _, _, _, _, _, _, _, _, _, _)
+    case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), _, SOME(prevVarIdx), _, _, _, _, _, _, _, _, _, _, _)
       equation
-        i = if intEq(i, i1) then i2 else i1;
+        i = if intEq(prevVarIdx, i1) then i2 else i1;
         neg = boolOr(negatedCr1, negatedCr2);
         // collect next rows
-        next = List.removeOnTrue(r, intEq, iMT[i]);
+        adjEqs = List.removeOnTrue(currIdx, intEq, iMT[i]);
         v = BackendVariable.getVarAt(vars, i);
         // update max
-        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
         state = BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
-        (rmax, smax, unremovable) = getAlias3(v, i, state, replaceable_ and replaceble1, r, iRmax, iSmax, iUnremovable);
+        (rmax, smax, unremovable) = getAlias3(v, i, state, replaceable_ and replaceble1, currIdx, iRmax, iSmax, iUnremovable);
         // go deeper
         neg = if neg then not negate else negate;
-        (rmax, smax, unremovable, const, cont) = getAlias(next, SOME(i), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
+        (rmax, smax, unremovable, const, cont) = getAlias(adjEqs, SOME(i), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
        then
          (rmax, smax, unremovable, const, cont);
 
     case (PARAMETERALIAS(), _, _, _, _, _, _, _, _, _, _, _, _, _)
        then
-        (NONE(), NONE(), NONE(), SOME(r), false);
+        (NONE(), NONE(), NONE(), SOME(currIdx), false);
 
     case (TIMEALIAS(), _, _, _, _, _, _, _, _, _, _, _, _, _)
       then
-        (NONE(), NONE(), NONE(), SOME(r), false);
+        (NONE(), NONE(), NONE(), SOME(currIdx), false);
 
     case (TIMEINDEPENTVAR(), _, _, _, _, _, _, _, _, _, _, _, _, _)
       then
-        (NONE(), NONE(), NONE(), SOME(r), false);
+        (NONE(), NONE(), NONE(), SOME(currIdx), false);
 
   end match;
 end getAlias2;
 
-protected function getAlias3 "author: Frenkel TUD 2012-12"
+protected function getAlias3 "
+apply some heuristics which variable should be kept in the system. quantify some properties, distributes some points.
+handle states differently
+author: Frenkel TUD 2012-12"
   input BackendDAE.Var var;
   input Integer i;
   input Boolean state;
@@ -2172,7 +2193,7 @@ protected function getAlias3 "author: Frenkel TUD 2012-12"
   input Option<tuple<Integer, Integer>> iRmax;
   input Option<tuple<Integer, Integer>> iSmax;
   input Option<Integer> iUnremovable;
-  output Option<tuple<Integer, Integer>> oRmax;
+  output Option<tuple<Integer, Integer>> oRmax; //(idx,points)
   output Option<tuple<Integer, Integer>> oSmax;
   output Option<Integer> oUnremovable;
 algorithm
@@ -2215,12 +2236,12 @@ algorithm
   end match;
 end getAlias3;
 
-protected function getAliasContinue
-"author: Frenkel TUD 2012-12"
+protected function getAliasContinue"TODO: make this call an if-else in the calling function
+author: Frenkel TUD 2012-12"
   input Boolean iContinue;
   input list<Integer> rows;
   input Option<Integer> i;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input array<list<Integer>> iMT;
   input BackendDAE.Variables vars;
@@ -2256,7 +2277,7 @@ algorithm
 end getAliasContinue;
 
 protected function isVisited "author: Frenkel TUD 2012-12"
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input SimpleContainer iS;
   output Boolean visited;
 algorithm
@@ -2336,7 +2357,7 @@ protected function handleSet "author: Frenkel TUD 2012-12
   input Option<tuple<Integer, Integer>> iSmax;
   input Option<Integer> iUnremovable;
   input Option<Integer> iConst;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input array<list<Integer>> iMT;
   input HashSet.HashSet unReplaceable;
@@ -2354,7 +2375,7 @@ algorithm
     local
       SimpleContainer s;
       Integer r, i1, i2, i;
-      BackendDAE.Var v, pv;
+      BackendDAE.Var v,v1, pv;
       DAE.ComponentRef pcr, cr1, cr2, cr;
       EquationSourceAndAttributes eqnAttributes;
       Boolean negated, replaceable_, replaceble1, constExp, isState, negatedCr1, negatedCr2;
@@ -2379,7 +2400,7 @@ algorithm
        exp = Expression.crefExp(cr2);
        exp2 = negateExpression(negated, exp, exp, " PARAMETERALIAS ");
        v = BackendVariable.getVarAt(iVars, i1);
-       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
        (vars, eqnslst, shared, repl) = handleSetVar(replaceable_ and replaceble1, SOME(DAE.RCONST(0.0)), v, i1, eqnAttributes, exp2, iMT, iVars, iEqnslst, ishared, iRepl);
        expcr = Expression.crefExp(cr1);
        pv = BackendVariable.getVarSharedAt(i2, ishared);
@@ -2403,7 +2424,7 @@ algorithm
        exp = Expression.crefExp(DAE.crefTime);
        exp1 = negateExpression(negated, exp, exp, " timealias ");
        v = BackendVariable.getVarAt(iVars, i1);
-       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
        dexp = negateExpression(negated, exp, DAE.RCONST(1.0), " timealias der ");
        (vars, eqnslst, shared, repl) = handleSetVar(replaceable_ and replaceble1, SOME(dexp), v, i1, eqnAttributes, exp1, iMT, iVars, iEqnslst, ishared, iRepl);
        expcr = Expression.crefExp(cr1);
@@ -2421,7 +2442,7 @@ algorithm
        TIMEINDEPENTVAR(cr=cr, i=i, exp=exp, eqnAttributes=eqnAttributes) = s;
        arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
-       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
        (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addKnVarDAE, iMT, iVars, ishared, iEqnslst);
        constExp = Expression.isConstValue(exp);
        // add to replacements if constant
@@ -2444,7 +2465,7 @@ algorithm
        arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
        exp = if Types.isRealOrSubTypeReal(ComponentReference.crefLastType(cr)) then DAE.RCONST(0.0) else DAE.ICONST(0);
-       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
        (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addKnVarDAE, iMT, iVars, ishared, iEqnslst);
        constExp = Expression.isConstValue(exp);
        // add to replacements if constant
@@ -2667,7 +2688,7 @@ protected function traverseAliasTree "author: Frenkel TUD 2012-12
   input Option<DAE.Exp> optExp;
   input Boolean globalnegate;
   input Option<DAE.Exp> derReplaceState;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input array<list<Integer>> iMT;
   input HashSet.HashSet unReplaceable;
@@ -2716,7 +2737,7 @@ protected function traverseAliasTree1 "author: Frenkel TUD 2012-12
   input Option<DAE.Exp> optExp;
   input Boolean globalnegated;
   input Option<DAE.Exp> derReplaceState;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input array<list<Integer>> iMT;
   input HashSet.HashSet unReplaceable;
@@ -2755,7 +2776,7 @@ algorithm
         i = if intEq(i1, ilast) then i2 else i1;
         negated = boolOr(negatedCr2, negatedCr1);
         (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
-        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
         crexp = Expression.crefExp(cr);
         // negate if necessary
         globalnegated1 = if negated then not globalnegated else globalnegated;
@@ -2836,7 +2857,7 @@ end addSubstitutionOption;
 protected function addVarSetAttributes "author: Frenkel TUD 2012-12"
   input BackendDAE.Var inVar;
   input Boolean negate;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input VarSetAttributes iAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
   output VarSetAttributes oAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
@@ -2869,7 +2890,7 @@ protected function addStartValue "author: Frenkel TUD 2012-12"
   input Option<DAE.Exp> start;
   input Option<DAE.Exp> origin;
   input Boolean negate;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> iStartvalues;
   output Boolean oFixed;
@@ -3020,7 +3041,7 @@ end mergeNominalAttribute;
 protected function addMinMaxAttribute "author: Frenkel TUD 2012-12"
   input BackendDAE.Var inVar;
   input Boolean negate;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>> iMinMax;
   output tuple<Option<DAE.Exp>, Option<DAE.Exp>> oMinMax;
@@ -3037,7 +3058,7 @@ protected function mergeMinMax "author: Frenkel TUD 2012-12"
   input Boolean negate;
   input list<Option<DAE.Exp>> ominmax;
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>> ominmax1;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   output tuple<Option<DAE.Exp>, Option<DAE.Exp>> outMinMax;
 algorithm
@@ -3109,7 +3130,7 @@ end mergeMinMax1;
 
 protected function checkMinMax "author: Frenkel TUD 2012-12"
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>> minmax;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
 algorithm
   _ :=
@@ -5207,6 +5228,47 @@ algorithm
     end if;
   end for;
 end getDominantAttributeValue;
+
+
+protected function dumpSimpleContainer
+  input SimpleContainer container;
+  output String sOut;
+algorithm
+  sOut := matchcontinue(container)
+    local
+      DAE.ComponentRef cr1,cr2;
+      DAE.Exp e;
+      String s1,s2;
+      Boolean n1,n2;
+      Integer i1,i2;
+  case(ALIAS(cr1,n1,i1,cr2,n2,i2,_,_))
+    equation
+      s1 = if n1 then "(-)" else "" ;
+      s2 = if n2 then "(-)" else "" ;
+      s1 = s1 +ComponentReference.printComponentRefStr(cr1);
+      s2= s2 +ComponentReference.printComponentRefStr(cr2);
+    then "ALIASE: \t\t"+s1 + " = " +s2+"  ("+intString(i1)+", "+intString(i2)+")";
+  case(PARAMETERALIAS(cr1,n1,i1,cr2,n2,i2,_,_))
+    equation
+      s1 = if n1 then "(-)" else "" ;
+      s2 = if n2 then "(-)" else "" ;
+      s1 = s1 +ComponentReference.printComponentRefStr(cr1);
+      s2= s2 +ComponentReference.printComponentRefStr(cr2);
+    then "PARAMETERALIASE: \t"+s1 + " = " +s2+"  ("+intString(i1)+", "+intString(i2)+")";
+  case(TIMEALIAS(cr1,n1,i1,cr2,n2,i2,_,_))
+    equation
+      s1 = if n1 then "(-)" else "" ;
+      s2 = if n2 then "(-)" else "" ;
+      s1 = s1 +ComponentReference.printComponentRefStr(cr1);
+      s2= s2 +ComponentReference.printComponentRefStr(cr2);
+    then "TIMEALIASE: \t"+s1 + " = " +s2+"  ("+intString(i1)+", "+intString(i2)+")";
+  case(TIMEINDEPENTVAR(cr1,_,e,_,_))
+    equation
+    then "TIMEINDEPENT: \t"+ComponentReference.printComponentRefStr(cr1) + " = " +ExpressionDump.printExpStr(e);
+  else
+    then "----------";
+  end matchcontinue;
+end dumpSimpleContainer;
 
 annotation(__OpenModelica_Interface="backend");
 end RemoveSimpleEquations;
