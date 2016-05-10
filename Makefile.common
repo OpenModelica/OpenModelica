@@ -416,12 +416,17 @@ sundials: 3rdParty/sundials/CMakeLists.txt umfpack
 	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX=`pwd` -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(OMBUILDDIR)/../OMCompiler/3rdParty/SuiteSparse/build/" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" -DCMAKE_C_FLAGS="-lm" $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DSUITESPARSECONFIG_LIBRARY=""
 	$(MAKE) -C 3rdParty/sundials/build install
 	# adrpo: do not copy the headers as they are not needed!
-	mkdir -p $(OMBUILDDIR)/include/omc/c/sundials
-	(cp -pufr 3rdParty/sundials/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
+	#mkdir -p $(OMBUILDDIR)/include/omc/c/sundials
+	#(cp -pfr 3rdParty/sundials/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
 	# copy the libs to the build/lib/omc directory
-	(cp -puf 3rdParty/sundials/build/lib/* $(builddir_lib_omc))
-	# copy the dlls to the build bin directory
-	(cp -puf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
+	(cp -pf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_lib_omc))
+	# fix OSX build
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.so.1.0.0 $(builddir_lib_omc)/libsundials_arkode.so.1.0.0
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.so.1.0.0 $(builddir_lib_omc)/libsundials_cvode.so.1.0.0
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.so.2.0.0 $(builddir_lib_omc)/libsundials_cvodes.so.2.0.0
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.so.2.0.0 $(builddir_lib_omc)/libsundials_ida.so.2.0.0
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.so.0.0.0 $(builddir_lib_omc)/libsundials_idas.so.0.0.0
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.so.0.0.2 $(builddir_lib_omc)/libsundials_nvecserial.so.0.0.2
 clean-sundials:
 	if test -d 3rdParty/sundials/build ; then cd 3rdParty/sundials/build && make clean ; fi
 	rm -rf $(OMBUILDDIR)/include/omc/cpp/sundials
