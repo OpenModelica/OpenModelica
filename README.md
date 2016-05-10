@@ -26,7 +26,7 @@ $ make install
 $ cd /path/to/OpenModelica
 $ make -f Makefile.omdev.mingw omshell
 ```
-- Start OMShell from /path/to/OpenModelica/build/bin/OMShell.exe
+- Start OMShell from `/path/to/OpenModelica/build/bin/OMShell.exe`
 
 ## Bug Reports
 
