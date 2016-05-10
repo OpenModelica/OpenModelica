@@ -337,7 +337,7 @@ algorithm
   // check over all mss
   unassignedEqns := List.flatten(inEqnsLst);
   stateindxs := List.fold2(unassignedEqns, statesInEquations, (m, statemark, 0), inAssignments1, {});
-  ((unassignedEqns, eqnslst, discEqns)) := List.fold2(unassignedEqns, unassignedContinuesEqns, vars, (inAssignments2, m), ({}, {}, {}));
+  ((unassignedEqns, eqnslst, discEqns)) := List.fold3(unassignedEqns, unassignedContinuesEqns, vars, inAssignments2, m, ({}, {}, {}));
   b := intGe(listLength(stateindxs), listLength(unassignedEqns));
   singulareSystemError(b, stateindxs, unassignedEqns, eqnslst, syst, shared, inAssignments1, inAssignments2, inArg);
   // check each mss
@@ -377,7 +377,7 @@ algorithm
 
     case ilst::rest equation
       // print("Eqns " + stringDelimitList(List.map(ilst, intString), ", ") + "\n");
-      ((unassignedEqns, eqnsLst, discEqns)) = List.fold2(ilst, unassignedContinuesEqns, vars, (inAssignments2, m), ({}, {}, inDiscEqnsAcc));
+      ((unassignedEqns, eqnsLst, discEqns)) = List.fold3(ilst, unassignedContinuesEqns, vars, inAssignments2, m, ({}, {}, inDiscEqnsAcc));
       // print("unassignedEqns " + stringDelimitList(List.map(unassignedEqns, intString), ", ") + "\n");
       stateIndxs = List.fold2(ilst, statesInEquations, (m, statemark, mark), inAssignments1, {});
       // print("stateIndxs " + stringDelimitList(List.map(stateIndxs, intString), ", ") + "\n");
@@ -460,20 +460,19 @@ protected function unassignedContinuesEqns
   Helper for minimalStructurallySingularSystem."
   input Integer eindx;
   input BackendDAE.Variables vars;
-  input tuple<array<Integer>,BackendDAE.IncidenceMatrix> inTpl;
+  input array<Integer> ass2;
+  input BackendDAE.IncidenceMatrix m;
   input tuple<list<Integer>,list<Integer>,list<Integer>> inFold;
   output tuple<list<Integer>,list<Integer>,list<Integer>> outFold;
 algorithm
-  outFold := matchcontinue(eindx,vars,inTpl,inFold)
+  outFold := matchcontinue(eindx,vars,inFold)
     local
-      BackendDAE.IncidenceMatrix m;
-      array<Integer> ass2;
       Integer vindx;
       list<Integer> unassignedEqns,eqnsLst,varlst,discEqns;
       list<BackendDAE.Var> vlst;
       Boolean b,ba;
       list<Boolean> blst;
-/*    case(_,_,(ass2,m),(unassignedEqns,eqnsLst))
+/*    case(_,_,(unassignedEqns,eqnsLst))
       equation
         vindx = ass2[eindx];
         true = intGt(vindx,0);
@@ -482,7 +481,7 @@ algorithm
         eqnsLst = List.consOnTrue(not b, eindx, eqnsLst);
       then
        ((unassignedEqns,eqnsLst));
-*/    case(_,_,(ass2,m),(unassignedEqns,eqnsLst,discEqns))
+*/    case(_,_,(unassignedEqns,eqnsLst,discEqns))
       equation
         vindx = ass2[eindx];
         ba = intLt(vindx,1);
@@ -497,7 +496,7 @@ algorithm
         discEqns = List.consOnTrue(b, eindx, discEqns);
       then
        ((unassignedEqns,eqnsLst,discEqns));
-    case(_,_,(ass2,_),(unassignedEqns,eqnsLst,discEqns))
+    case(_,_,(unassignedEqns,eqnsLst,discEqns))
       equation
         vindx = ass2[eindx];
         false = intGt(vindx,0);
@@ -526,7 +525,7 @@ algorithm
 //  vars := List.removeOnTrue(ass1, Matching.isUnAssigned, vars);
   vars := List.map(vars,intAbs);
   vars := List.removeOnTrue((statemark,mark), isMarked, vars);
-  _ := List.fold(vars, markTrue, (statemark,mark));
+  _ := List.fold1(vars, markTrue, mark, statemark);
   // add states to list
   outStateLst := listAppend(inStateLst,vars);
 end statesInEquations;
@@ -547,15 +546,10 @@ end isMarked;
 protected function markTrue
 "author: Frenkel TUD 2012-05"
   input Integer indx;
-  input tuple<array<Integer>,Integer> iMark;
-  output tuple<array<Integer>,Integer> oMark;
-protected
-  array<Integer> arr;
-  Integer mark;
+  input Integer mark;
+  input output array<Integer> arr;
 algorithm
-  (arr,mark) := iMark;
   _ := arrayUpdate(arr,intAbs(indx),mark);
-  oMark := iMark;
 end markTrue;
 
 protected function differentiateEqns
@@ -1160,7 +1154,7 @@ algorithm
     case (e as DAE.CREF(componentRef=cr), (vars,_,repl))
       equation
         (vlst as _::_,_) = BackendVariable.getVar(cr,vars);
-        ((repl,true)) = List.fold(vlst,replaceFinalVarsGetExp,(repl,false));
+        (repl,true) = List.fold20(vlst,replaceFinalVarsGetExp,repl,false);
         (e2,true) = BackendVarTransform.replaceExp(e,repl,NONE());
       then (e2, (vars,true,repl));
     else (inExp,inTpl);
@@ -1170,38 +1164,38 @@ end replaceFinalVarsExp;
 protected function replaceFinalVarsGetExp
 "author: Frenkel TUD 2012-11"
  input BackendDAE.Var inVar;
- input tuple<BackendVarTransform.VariableReplacements,Boolean> iTpl;
- output tuple<BackendVarTransform.VariableReplacements,Boolean> oTpl;
+ input output BackendVarTransform.VariableReplacements repl;
+ input output Boolean b;
 algorithm
-  oTpl:=
-  matchcontinue (inVar,iTpl)
+  (repl, b) :=
+  matchcontinue (inVar)
     local
-      BackendVarTransform.VariableReplacements repl;
+      BackendVarTransform.VariableReplacements repl1;
       DAE.ComponentRef cr;
       Option< .DAE.VariableAttributes> values;
       DAE.Exp exp;
       Values.Value bindValue;
-    case (BackendDAE.VAR(varName=cr,bindExp=SOME(exp)),(repl,_))
+    case (BackendDAE.VAR(varName=cr,bindExp=SOME(exp)))
       guard BackendVariable.isFinalVar(inVar)
       equation
-        repl = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
+        repl1 = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
     then
-      ((repl,true));
-    case (BackendDAE.VAR(varName=cr,bindExp=NONE(),bindValue=SOME(bindValue)),(repl,_))
+      (repl1,true);
+    case (BackendDAE.VAR(varName=cr,bindExp=NONE(),bindValue=SOME(bindValue)))
       guard BackendVariable.isFinalVar(inVar)
       equation
         exp = ValuesUtil.valueExp(bindValue);
-        repl = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
+        repl1 = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
     then
-      ((repl,true));
-    case (BackendDAE.VAR(varName=cr,bindExp=NONE(),values=values),(repl,_))
+      (repl1,true);
+    case (BackendDAE.VAR(varName=cr,bindExp=NONE(),values=values))
       guard BackendVariable.isFinalVar(inVar)
       equation
         exp = DAEUtil.getStartAttrFail(values);
-        repl = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
+        repl1 = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
     then
-      ((repl,true));
-    else iTpl;
+      (repl1,true);
+    else (repl, b);
   end matchcontinue;
 end replaceFinalVarsGetExp;
 
@@ -2443,7 +2437,7 @@ algorithm
         arrayUpdate(collmarkarr,r,iNSystems);
         colls = List.select(mT[r], Util.intPositive);
         colls = List.select1r(colls,Matching.isUnAssigned, rowmarkarr);
-        _ = List.fold(colls, markTrue, (rowmarkarr,iNSystems));
+        _ = List.fold1(colls, markTrue, iNSystems, rowmarkarr);
         rows = List.flatten(List.map1r(colls,arrayGet,m));
         rows = List.select1r(rows,Matching.isUnAssigned, collmarkarr);
         rows = listAppend(rows,iQueue);

@@ -2239,7 +2239,7 @@ algorithm
         // traverse the equations
         eqnslst := BackendEquation.equationList(eqns);
         // traverse equations in reverse order, than branch equations of if equaitions need no reverse
-        ((eqnslst,asserts,true)) := List.fold1(listReverse(eqnslst), simplifyIfEquationsFinder, knvars, ({},{},false));
+        ((eqnslst,asserts,true)) := List.fold31(listReverse(eqnslst), simplifyIfEquationsFinder, knvars, {},{},false);
         syst.orderedEqs := BackendEquation.listEquation(eqnslst);
         syst := BackendDAEUtil.clearEqSyst(syst);
         syst := BackendEquation.requationsAddDAE(asserts, syst);
@@ -2255,21 +2255,21 @@ protected function simplifyIfEquationsFinder
   helper for simplifyIfEquations"
   input BackendDAE.Equation inElem;
   input BackendDAE.Variables inConstArg;
-  input tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,Boolean> inArg;
-  output tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,Boolean> outArg;
+  input output list<BackendDAE.Equation> acc;
+  input output list<BackendDAE.Equation> asserts;
+  input output Boolean b;
 algorithm
-  outArg := matchcontinue(inElem,inConstArg,inArg)
+  (acc, asserts, b) := matchcontinue(inElem,inConstArg)
     local
       list<DAE.Exp> explst;
-      list<BackendDAE.Equation> eqnslst,acc,asserts,asserts1;
+      list<BackendDAE.Equation> eqnslst,asserts1;
       list<list<BackendDAE.Equation>> eqnslstlst;
       DAE.ElementSource source;
       BackendDAE.Variables knvars;
-      Boolean b;
       BackendDAE.Equation eqn;
       BackendDAE.EquationAttributes attr;
 
-    case (BackendDAE.IF_EQUATION(conditions=explst, eqnstrue=eqnslstlst, eqnsfalse=eqnslst, source=source, attr=attr), knvars, (acc, asserts, _))
+    case (BackendDAE.IF_EQUATION(conditions=explst, eqnstrue=eqnslstlst, eqnsfalse=eqnslst, source=source, attr=attr), knvars)
       equation
         // check conditions
         (explst,_) = Expression.traverseExpList(explst, simplifyEvaluatedParamter, (knvars,false));
@@ -2278,13 +2278,13 @@ algorithm
         (acc,asserts1) = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,knvars,acc,attr);
         asserts = listAppend(asserts,asserts1);
       then
-        ((acc, asserts, true));
+        (acc, asserts, true);
 
-    case (eqn,knvars,(acc,asserts,b))
+    case (eqn,knvars)
       equation
         (eqn,(_,b)) = BackendEquation.traverseExpsOfEquation(eqn, simplifyIfExpevaluatedParamter, (knvars,b));
       then
-        ((eqn::acc,asserts,b));
+        (eqn::acc,asserts,b);
   end matchcontinue;
 end simplifyIfEquationsFinder;
 
@@ -2357,7 +2357,7 @@ algorithm
     case ({},{},_,{},{},_,_,_,_)
       equation
         // simplify nested if equations
-        ((eqns,asserts,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},{},false));
+        ((eqns,asserts,_)) = List.fold31(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, {},{},false);
       then
         (listAppend(eqns,inEqns),asserts);
     // true case left with condition<>false
@@ -2366,7 +2366,7 @@ algorithm
         explst = listReverse(conditions1);
         eqnslst = listReverse(theneqns1);
         // simplify nested if equations
-        ((elseenqs1,asserts,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},{},false));
+        ((elseenqs1,asserts,_)) = List.fold31(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, {},{},false);
         elseenqs1 = listAppend(elseenqs1,asserts);
         (eqnslst,elseenqs1,asserts) = simplifyIfEquationAsserts(explst,eqnslst,elseenqs1,{},{},{});
         eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,knvars,inEqns,inEqAttr);
@@ -2376,7 +2376,7 @@ algorithm
     case(DAE.BCONST(true)::_,eqns::_,_,{},_,_,_,_,_)
       equation
         // simplify nested if equations
-        ((eqns,asserts,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},{},false));
+        ((eqns,asserts,_)) = List.fold31(listReverse(eqns), simplifyIfEquationsFinder, knvars, {},{},false);
       then
         (listAppend(eqns,inEqns),asserts);
     // if true and not first use it as new else
@@ -2385,7 +2385,7 @@ algorithm
         explst = listReverse(conditions1);
         eqnslst = listReverse(theneqns1);
         // simplify nested if equations
-        ((elseenqs1,asserts,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},{},false));
+        ((elseenqs1,asserts,_)) = List.fold31(listReverse(eqns), simplifyIfEquationsFinder, knvars, {},{},false);
         elseenqs1 = listAppend(elseenqs1,asserts);
         (eqnslst,elseenqs1,asserts) = simplifyIfEquationAsserts(explst,eqnslst,elseenqs1,{},{},{});
         eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,knvars,inEqns,inEqAttr);
@@ -2401,7 +2401,7 @@ algorithm
     case(e::explst,eqns::eqnslst,_,_,_,_,_,_,_)
       equation
         // simplify nested if equations
-        ((eqns,asserts,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},{},false));
+        ((eqns,asserts,_)) = List.fold31(listReverse(eqns), simplifyIfEquationsFinder, knvars, {},{},false);
         eqns = listAppend(eqns,asserts);
         (eqns,asserts) = simplifyIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,knvars,inEqns,inEqAttr);
       then

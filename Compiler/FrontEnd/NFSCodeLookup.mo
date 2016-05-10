@@ -1079,8 +1079,8 @@ protected
 algorithm
   NFSCodeEnv.FRAME(extendsTable =
     NFSCodeEnv.EXTENDS_TABLE(baseClasses = bcl as _ :: _)) :: _ := inEnv;
-  ((_, outBaseClasses)) :=
-    List.fold2(bcl, lookupBaseClasses2, inName, inEnv, ({}, {}));
+  (_, outBaseClasses) :=
+    List.fold22(bcl, lookupBaseClasses2, inName, inEnv, {}, {});
   false := listEmpty(outBaseClasses);
   outBaseClasses := listReverse(outBaseClasses);
 end lookupBaseClasses;
@@ -1092,21 +1092,19 @@ protected function lookupBaseClasses2
   input Extends inBaseClass;
   input SCode.Ident inName;
   input Env inEnv;
-  input tuple<list<Item>, list<Absyn.Path>> inAccum;
-  output tuple<list<Item>, list<Absyn.Path>> outResult;
+  input output list<Item> items;
+  input output list<Absyn.Path> bcl;
 algorithm
-  outResult := matchcontinue(inBaseClass, inName, inEnv, inAccum)
+  (items, bcl) := matchcontinue(inBaseClass, inName, inEnv)
     local
       Absyn.Path bc;
       list<NFSCodeEnv.Redeclaration> redecls;
       SourceInfo info;
       Env env;
       Item item;
-      list<Item> items;
-      list<Absyn.Path> bcl;
 
     case (NFSCodeEnv.EXTENDS(baseClass = bc,
-        info = info), _, _, _)
+        info = info), _, _)
       equation
         // Look up the base class.
         (item, _, env) = lookupBaseClassName(bc, inEnv, info);
@@ -1123,11 +1121,10 @@ algorithm
         // Check if we can find the name in the base class. If so, add the base
         // class path to the list.
         (item, _, _) = lookupNameInItem(Absyn.IDENT(inName), item, env);
-        (items, bcl) = inAccum;
       then
-        ((item :: items, bc :: bcl));
+        (item :: items, bc :: bcl);
 
-    else inAccum;
+    else (items, bcl);
 
   end matchcontinue;
 end lookupBaseClasses2;
@@ -1153,8 +1150,8 @@ protected
 algorithm
   NFSCodeEnv.FRAME(extendsTable =
     NFSCodeEnv.EXTENDS_TABLE(baseClasses = bcl as _ :: _)) :: _ := inEnv;
-  ((outItems, outBaseClasses)) :=
-    List.fold2(bcl, lookupBaseClasses2, inName, inEnv, ({}, {}));
+  (outItems, outBaseClasses) :=
+    List.fold22(bcl, lookupBaseClasses2, inName, inEnv, {}, {});
   outBaseClasses := listReverse(outBaseClasses);
   outItems := listReverse(outItems);
 end lookupInheritedNameAndBC;

@@ -10541,39 +10541,39 @@ algorithm
 
   numStateVars := listLength(stateVars);
   varCount := 0;
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(stateVars, createAllSCVarMapping0, varCount, ({},0));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(stateVars, createAllSCVarMapping0, varCount, {},0);
   varCount := varCount + numStateVars;
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(derivativeVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(derivativeVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + numStateVars;
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(algVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(algVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(algVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(discreteAlgVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(discreteAlgVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(discreteAlgVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(intAlgVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(intAlgVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(intAlgVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(boolAlgVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(boolAlgVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(boolAlgVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(stringAlgVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(stringAlgVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(stringAlgVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(inputVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(inputVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(inputVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(outputVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(outputVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(outputVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(aliasVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(aliasVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(aliasVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(intAliasVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(intAliasVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(intAliasVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(boolAliasVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(boolAliasVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(boolAliasVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(stringAliasVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(stringAliasVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(stringAliasVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(paramVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(paramVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(paramVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(intParamVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(intParamVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(intParamVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(boolParamVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(boolParamVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(boolParamVars);
-  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(stringParamVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold21(stringParamVars, createAllSCVarMapping0, varCount, idxSimVarMappingTplList,highestIdx);
   varCount := varCount + listLength(stringParamVars);
 
   mappingArray := arrayCreate(highestIdx, NONE());
@@ -10585,13 +10585,11 @@ protected function createAllSCVarMapping0 "author: marcusw
   Append the given variable to the Index/SimVar-List."
   input SimCodeVar.SimVar iSimVar;
   input Integer iOffset; //an offset that should be added to the index (necessary for state derivatives)
-  input tuple<list<tuple<Integer,SimCodeVar.SimVar>>, Integer> iSimVarIdxMapping;
-  output tuple<list<tuple<Integer,SimCodeVar.SimVar>>, Integer> oSimVarIdxMapping; //<mapping index -> simvar, highestIndex>
+  input output list<tuple<Integer,SimCodeVar.SimVar>> iMapping;
+  input output Integer highestIdx;
 protected
-  Integer simVarIdx, highestIdx;
-  list<tuple<Integer,SimCodeVar.SimVar>> iMapping;
+  Integer simVarIdx;
 algorithm
-  (iMapping,highestIdx) := iSimVarIdxMapping;
   //print("createAllSCVarMapping0: Mapping variable \n");
   //dumpVar(iSimVar);
   //print(" to index " + intString(simVarIdx) + "\n");
@@ -10600,7 +10598,6 @@ algorithm
   highestIdx := if intGt(simVarIdx, highestIdx) then simVarIdx else highestIdx;
   iMapping := (simVarIdx, iSimVar)::iMapping;
   //print("createAllSCVarMapping0: Mapping-Length: " + intString(listLength(iMapping)) + "\n");
-  oSimVarIdxMapping := (iMapping,highestIdx);
 end createAllSCVarMapping0;
 
 protected function createAllSCVarMapping1 "author: marcusw
