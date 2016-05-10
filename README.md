@@ -24,8 +24,8 @@ $ make install
 - Follow the instructions in `https://openmodelica.org/svn/OpenModelicaExternal/trunk/tools/windows/OMDev/INSTALL.txt`.
 - Open msys terminal. Either `$OMDEV/tools/msys/mingw32_shell.bat` OR `$OMDEV/tools/msys/mingw64_shell.bat`.
 ```bash
-$ cd /path/to/OpenModelica/OMEdit
-$ make -f Makefile.omdev.mingw OMBUILDDIR=/path/to/OpenModelica/build
+$ cd /path/to/OpenModelica
+$ make -f Makefile.omdev.mingw omedit
 ```
 - Start OMEdit from `/path/to/OpenModelica/build/bin/OMEdit.exe`
 
