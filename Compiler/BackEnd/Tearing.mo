@@ -345,25 +345,40 @@ protected
   Integer i=1, start, end_;
 algorithm
   while i < listLength(userTVars) loop
-    if intEq(listLength(userTVars),listLength(userResiduals)) and intEq(listGet(userTVars,i),listGet(userResiduals,i)) and intEq(listGet(userTVars,i+1),listGet(userResiduals,i+1)) then
       if intEq(listGet(userTVars,i),strongComponentIndex) then
         start := i+2;
         end_ := i + 1 + listGet(userTVars, i+1);
         userTvarsThisComponent := List.unique(selectFromList_rev(userTVars, List.intRange2(start, end_)));
-        userResidualsThisComponent := List.unique(selectFromList_rev(userResiduals, List.intRange2(start, end_)));
-        if not intEq(listLength(userTvarsThisComponent),listLength(userResidualsThisComponent)) then
-          Error.addMessage(Error.USER_DEFINED_TEARING_ERROR, {"The selected tearing variables and residual equations must have unique indexes."});
+        if not intEq(listLength(userTvarsThisComponent), listGet(userTVars, i+1)) then
+          Error.addMessage(Error.USER_DEFINED_TEARING_ERROR, {"The selected tearing variables must have unique indexes."});
           fail();
         end if;
-        return;
+        break;
       else
         i := i + 2 + listGet(userTVars, i+1);
       end if;
-    else
-      Error.addMessage(Error.USER_DEFINED_TEARING_ERROR, {"The strong component indexes and the number of tearing variables and residual equations need to be identical for both flags."});
+  end while;
+  if not listEmpty(userTvarsThisComponent) then
+    i := 1;
+    while i < listLength(userResiduals) loop
+        if intEq(listGet(userResiduals,i),strongComponentIndex) then
+          start := i+2;
+          end_ := i + 1 + listGet(userResiduals, i+1);
+          userResidualsThisComponent := List.unique(selectFromList_rev(userResiduals, List.intRange2(start, end_)));
+          if not intEq(listLength(userResidualsThisComponent), listGet(userResiduals, i+1)) then
+            Error.addMessage(Error.USER_DEFINED_TEARING_ERROR, {"The selected residual equations must have unique indexes."});
+            fail();
+          end if;
+          break;
+        else
+          i := i + 2 + listGet(userResiduals, i+1);
+        end if;
+    end while;
+    if listEmpty(userResidualsThisComponent) then
+      Error.addMessage(Error.USER_DEFINED_TEARING_ERROR, {"The corresponding residual equations to the selected tearing variables for strong component " + intString(strongComponentIndex) + " can not be found."});
       fail();
     end if;
-  end while;
+  end if;
 end getUserTearingSet;
 
 
@@ -901,7 +916,7 @@ algorithm
           print("Variables with annotation attribute 'always' as tVars: " + stringDelimitList(List.map(tSel_always,intString),",")+"\n");
         end if;
         // mark tearing var
-        markTVars(tSel_always,ass1);
+        markTVarsOrResiduals(tSel_always, ass1);
         (_,unsolv,_) = List.intersection1OnTrue(unsolvables,tSel_always,intEq);
         // equations not yet assigned containing the tvars
         vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always);
@@ -2145,11 +2160,11 @@ algorithm
       end if;
 
       // mark tvars in ass1In
-      markTVars(tvars, ass1In);
+      markTVarsOrResiduals(tvars, ass1In);
 
       // remove tearing var from incidence matrix and transposed incidence matrix
-      deleteEntriesFromIncidenceMatrix(mIn,mtIn,tvars);
-      deleteRowsFromIncidenceMatrix(mtIn,tvars);
+      deleteEntriesFromIncidenceMatrix(mIn, mtIn, tvars);
+      deleteRowsFromIncidenceMatrix(mtIn, tvars);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n\n###BEGIN print Incidence Matrix w/o tvars###########\n(Function: CellierTearing2)\n");
         BackendDump.dumpIncidenceMatrix(mIn);
@@ -3495,21 +3510,20 @@ algorithm
    end match;
 end getpossibleEqn;
 
-protected function markTVars
-" marks several tVars in ass1
+protected function markTVarsOrResiduals
+" marks several tVars in ass1 or residuals in ass2
   author: ptaeuber FHB 2013-10"
-  input list<Integer> tVars;
-  input array<Integer> ass1In;
-  output array<Integer> ass1Out = ass1In;
+  input list<Integer> markList;
+  input array<Integer> assIn;
+  output array<Integer> assOut = assIn;
 protected
   Integer len;
 algorithm
-  len := arrayLength(ass1In);
-
-  for i in tVars loop
-    arrayUpdate(ass1Out, i, len * 2);
+  len := arrayLength(assIn);
+  for i in markList loop
+    arrayUpdate(assOut, i, len * 2);
   end for;
-end markTVars;
+end markTVarsOrResiduals;
 
 protected function countMultiples "counts multiple entries in array<list<Integer row(list)-wise.
 counter gives the maximum amount of same entries and value gives the corresponding entry.
@@ -3632,9 +3646,8 @@ protected function deleteEntriesFromIncidenceMatrix "Deletes given entries from 
   input BackendDAE.IncidenceMatrix mHelp;
   input list<Integer> entries;
 protected
-  list<Integer> rowsIndx,row;
   Integer rowIndx;
-  Integer entry;
+  list<Integer> rowsIndx, row;
 algorithm
   for entry in entries loop
     rowsIndx := arrayGet(mHelp,entry);
@@ -3651,11 +3664,9 @@ protected function deleteRowsFromIncidenceMatrix "Deletes given rows from matrix
   author: ptaeuber 2015-02"
   input BackendDAE.IncidenceMatrix mUpdate;
   input list<Integer> rows;
-protected
-  Integer row;
 algorithm
   for row in rows loop
-     _ := Array.replaceAtWithFill(row,{},{},mUpdate);
+    _ := Array.replaceAtWithFill(row,{},{},mUpdate);
   end for;
 end deleteRowsFromIncidenceMatrix;
 
@@ -4250,11 +4261,11 @@ algorithm
       mtLoop := arrayCopy(mt);
 
       // mark tVars in ass1
-      markTVars(tVars, ass1);
+      markTVarsOrResiduals(tVars, ass1);
 
       // remove tearing var from incidence matrix and transposed incidence matrix
-      deleteEntriesFromIncidenceMatrix(mLoop,mtLoop,tVars);
-      deleteRowsFromIncidenceMatrix(mtLoop,tVars);
+      deleteEntriesFromIncidenceMatrix(mLoop, mtLoop, tVars);
+      deleteRowsFromIncidenceMatrix(mtLoop, tVars);
 
       // initially find equations which can be causalized in the next step and save in causEq
       causEq := traverseEqnsforAssignable(ass2,mLoop,mapEqnIncRow,mapIncRowEqn,0);
@@ -4496,7 +4507,7 @@ protected
   Integer size;
   array<Integer> ass1,ass2,mapIncRowEqn;
   array<list<Integer>> mapEqnIncRow;
-  list<Integer> tVars,residuals,order,causEq,unsolvables,discreteVars,unsolvableDiscretes;
+  list<Integer> tVars,residuals,order,causEq,causEq_exp,unsolvables,discreteVars,unsolvableDiscretes,userResiduals_exp;
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
@@ -4513,18 +4524,8 @@ protected
   String modelName;
 algorithm
 
-  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("\nUsers tearing vars: " + stringDelimitList(List.map(userTVars,intString),",") + "\n");
-    print("\nUsers residual equations: " + stringDelimitList(List.map(userResiduals,intString),",") + "\n");
-  end if;
-
   linear := getLinearfromJacType(jacType);
   BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
-  // BackendDAE.SIMULATION() := DAEtype;
-
-  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("\n" + BORDER + "\nBEGINNING of userDefinedTearing\n\n");
-  end if;
 
   // Generate Subsystem to get the incidence matrix
   size := listLength(vindx);
@@ -4535,21 +4536,40 @@ algorithm
   subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
   (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE());
 
-
-
   // Delete negative entries from incidence matrix
   m := Array.map(m,deleteNegativeEntries);
   mt := Array.map(mt,deleteNegativeEntries);
 
+  // Get advanced adjacency matrix (determine how the variables occur in the equations)
+  (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,false);
+
+  // Expand algorithm or equation array residual equations
+  try
+    userResiduals_exp := List.flatten(list(arrayGet(mapEqnIncRow, i) for i in userResiduals));
+  else
+    Error.addMessage(Error.USER_DEFINED_TEARING_ERROR, {"Index out of bounds."});
+    fail();
+  end try;
+
+
+  // Dumps
+  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    print("\n" + BORDER + "\nBEGINNING of userDefinedTearing\n\n");
+  end if;
+
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    print("\nUsers tearing vars: " + stringDelimitList(List.map(userTVars,intString),",") + "\n");
+    print("\nUsers residual equations: " + stringDelimitList(List.map(userResiduals,intString),",") + "\n");
+    print("\nUsers residual equations expanded: " + stringDelimitList(List.map(userResiduals_exp,intString),",") + "\n");
     print("\n\n###BEGIN print Strong Component#####################\n(Function:userDefinedTearing)\n");
     BackendDump.printEqSystem(subsyst);
     print("\n###END print Strong Component#######################\n(Function:userDefinedTearing)\n\n\n");
   end if;
 
-
-  // Get advanced adjacency matrix (determine how the variables occur in the equations)
-  (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,false);
+  if not intEq(listLength(userTVars),listLength(userResiduals_exp)) then
+    Error.addMessage(Error.USER_DEFINED_TEARING_ERROR, {"The number of tearing variables and residual equations is not identical."});
+    fail();
+  end if;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nAdjacencyMatrixEnhanced:\n");
@@ -4558,28 +4578,18 @@ algorithm
     BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
   end if;
 
-  deleteImpossibleAssignments(m,me);
-  deleteImpossibleAssignments(mt,meT);
-
-  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("\nIncidence Matrix without Impossible Assignments:\n");
-    BackendDump.dumpIncidenceMatrix(m);
-    BackendDump.dumpIncidenceMatrix(mt);
-  end if;
-
   // Determine unsolvable vars to consider solvability
   unsolvables := getUnsolvableVars(1,size,meT,{});
 
+  // Determine discrete vars
+  discreteVars := findDiscrete(var_lst);
+
+  // Dumps
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n\nmapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
     BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
     print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
     print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
-  end if;
-
-  // Determine discrete vars
-  discreteVars := findDiscrete(var_lst);
-  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
   end if;
 
@@ -4596,9 +4606,9 @@ algorithm
   order := {};
 
   // mark userTVars in ass1
-  markTVars(userTVars, ass1);
+  markTVarsOrResiduals(userTVars, ass1);
   // mark userResiduals in ass2
-  markTVars(userResiduals, ass2);
+  markTVarsOrResiduals(userResiduals_exp, ass2);
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nass1: " + stringDelimitList(List.map(arrayList(ass1),intString),",") + "\n");
@@ -4606,11 +4616,11 @@ algorithm
   end if;
 
   // remove tearing vars from incidence matrix and transposed incidence matrix
-  deleteEntriesFromIncidenceMatrix(m,mt,userTVars);
-  deleteRowsFromIncidenceMatrix(mt,userTVars);
+  deleteEntriesFromIncidenceMatrix(m, mt, userTVars);
+  deleteRowsFromIncidenceMatrix(mt, userTVars);
   // remove residual equations from incidence matrix and transposed incidence matrix
-  deleteEntriesFromIncidenceMatrix(mt,m,userResiduals);
-  deleteRowsFromIncidenceMatrix(m,userResiduals);
+  deleteEntriesFromIncidenceMatrix(mt, m, userResiduals_exp);
+  deleteRowsFromIncidenceMatrix(m, userResiduals_exp);
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nIncidence Matrix without tvars and residuals:\n");
@@ -4618,9 +4628,14 @@ algorithm
     BackendDump.dumpIncidenceMatrix(mt);
   end if;
 
-  if intEq(listLength(userTVars), countEmptyRows(m)) and intEq(listLength(userResiduals), countEmptyRows(mt)) then
-    causEq := traverseEqnsforAssignable(ass2,m,mapEqnIncRow,mapIncRowEqn,0);
-    order := simpleMatching(ass1,ass2,order,causEq,m,mt,mapEqnIncRow,mapIncRowEqn);
+  if intEq(listLength(userTVars), countEmptyRows(m)) and intEq(listLength(userResiduals_exp), countEmptyRows(mt)) then
+    // Find initial causalizable equations
+    causEq_exp := traverseEqnsforAssignable(ass2,m,mapEqnIncRow,mapIncRowEqn,0);
+    // Transform to collective equations
+    causEq := List.unique(List.map1r(causEq_exp,arrayGet,mapIncRowEqn));
+
+    // Call the matching algorithm
+    order := simpleMatching(ass1,ass2,order,causEq,m,mt,me,mapEqnIncRow,mapIncRowEqn);
 
     // Convert indexes
     tVars := selectFromList_rev(vindx, userTVars);
@@ -4646,11 +4661,13 @@ algorithm
     end if;
 
   else
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      print("\nMatching failed, choose different tearing set!\n\n\n");
+    end if;
     Error.addCompilerError("There is no possible matching for a user-defined tearing set.");
     fail();
 
   end if;
-
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of userDefinedTearing\n" + BORDER + "\n\n");
@@ -4678,23 +4695,40 @@ author: ptaeuber FHB 2016"
   input list<Integer> causEqIn;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   output list<Integer> orderOut=orderIn;
 protected
-  list<Integer> causEq=causEqIn, unassigned;
-  array<Integer> ass1Copy,ass2Copy;
-  BackendDAE.IncidenceMatrix mCopy;
-  BackendDAE.IncidenceMatrixT mtCopy;
+  Integer e;
+  list<Integer> causEq=causEqIn, causEq_exp, e_exp, vars;
 algorithm
+  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    print("\nStart Matching:\n"+ UNDERLINE + "\n");
+  end if;
   while not listEmpty(causEq) loop
-    for e in causEq loop
-      // Match e with corresponding variable, i.e.: update ass1, ass2, m, order
-      makeAssignment({e},m[e],ass1,ass2,m,mt);
-      orderOut := e::orderOut;
-    end for;
+    try
+      ((_,e,e_exp,vars)) := getpossibleEqn((causEq,m,me,ass1,mapEqnIncRow));
+    else
+      if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+        print("\nMatching failed, choose different tearing set!\n\n\n");
+      end if;
+      Error.addCompilerError("There is no possible matching for a user-defined tearing set.");
+      fail();
+    end try;
+
+    // Dump
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      print("causEq: " + stringDelimitList(List.map(causEq,intString),",") + "\nProcess " + intString(e) + ":\ne_exp: " + stringDelimitList(List.map(e_exp,intString),",") + "\n");
+    end if;
+
+    // Match e_exp with corresponding variable, i.e.: update ass1, ass2, m, order
+    makeAssignment(e_exp,vars,ass1,ass2,m,mt);
+    orderOut := e::orderOut;
+
     // Determine new possible causEq
-    causEq := traverseEqnsforAssignable(ass2,m,mapEqnIncRow,mapIncRowEqn,0);
+    causEq_exp := traverseEqnsforAssignable(ass2,m,mapEqnIncRow,mapIncRowEqn,0);
+    causEq := List.unique(List.map1r(causEq_exp,arrayGet,mapIncRowEqn));
   end while;
   if listEmpty(getUnassigned(ass1)) then
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -4709,13 +4743,6 @@ algorithm
     fail();
   end if;
 end simpleMatching;
-
-
-
-
-
-
-
 
 
 annotation(__OpenModelica_Interface="backend");
