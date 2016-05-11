@@ -4,18 +4,15 @@
 //
 
 loadFile("SMMin.mo");
+echo(false);
 simulate(SMMin, startTime=0, stopTime=4, numberOfIntervals=0); getErrorString();
+echo(true);
 val(state1.active,4);
 val(state2.active,4);
 
 // Result:
 // true
-// record SimulationResult
-//     resultFile = "SMMin_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 0, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SMMin', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// ""
+// true
 // 1.0
 // 0.0
 // endResult

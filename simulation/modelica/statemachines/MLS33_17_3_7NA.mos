@@ -4,17 +4,13 @@
 //
 
 loadFile("MLS33_17_3_7NA.mo");
+echo(false);
 simulate(MLS33_17_3_7NA, startTime=0, stopTime=30, numberOfIntervals=0); getErrorString();
+echo(true);
 val(v,30.0);
 
 // Result:
 // true
-// record SimulationResult
-//     resultFile = "MLS33_17_3_7NA_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 30.0, numberOfIntervals = 0, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'MLS33_17_3_7NA', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// "
+// true
 // 18.0
 // endResult

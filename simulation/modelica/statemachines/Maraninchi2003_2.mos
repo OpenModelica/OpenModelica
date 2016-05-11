@@ -4,20 +4,16 @@
 //
 
 loadFile("Maraninchi2003_2.mo");
+echo(false);
 simulate(Maraninchi2003_2, startTime=0, stopTime=20, numberOfIntervals=0); getErrorString();
+echo(true);
 val(x,20.0);
 val(y,20.0);
 val(z,20.0);
 
 // Result:
 // true
-// record SimulationResult
-//     resultFile = "Maraninchi2003_2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 0, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Maraninchi2003_2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// "
+// true
 // 21
 // 1
 // 101
