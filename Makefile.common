@@ -417,11 +417,11 @@ sundials: 3rdParty/sundials/CMakeLists.txt umfpack
 	$(MAKE) -C 3rdParty/sundials/build install
 	# adrpo: do not copy the headers as they are not needed!
 	mkdir -p $(OMBUILDDIR)/include/omc/c/sundials
-	(cp -pufr 3rdParty/sundials/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
+	(cp -pfr 3rdParty/sundials/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
 	# copy the libs to the build/lib/omc directory
-	(cp -puf 3rdParty/sundials/build/lib/* $(builddir_lib_omc))
+	(cp -pf 3rdParty/sundials/build/lib/* $(builddir_lib_omc))
 	# copy the dlls to the build bin directory
-	(cp -puf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
+	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
 clean-sundials:
 	if test -d 3rdParty/sundials/build ; then cd 3rdParty/sundials/build && make clean ; fi
 	rm -rf $(OMBUILDDIR)/include/omc/cpp/sundials
