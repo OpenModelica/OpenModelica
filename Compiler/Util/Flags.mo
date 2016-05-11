@@ -429,8 +429,8 @@ constant DebugFlag NO_START_CALC = DEBUG_FLAG(127, "disableStartCalc", false,
   Util.gettext("Deactivates the pre-calculation of start values during compile-time."));
 constant DebugFlag NO_PARTITIONING = DEBUG_FLAG(128, "disablePartitioning", false,
   Util.gettext("Deactivates partitioning of entire equation system.\nDeprecated flag: Use --preOptModules-=clockPartitioning instead."));
-constant DebugFlag ADVANCE_TEARING = DEBUG_FLAG(129, "advanceTearing", false,
-  Util.gettext("Using ExpressionSolve in adjacencyRowEnhanced"));
+constant DebugFlag ALLOW_IMPOSSIBLE_ASSIGNMENTS = DEBUG_FLAG(129, "allowImpossibleAssignments", false,
+  Util.gettext("Using ExpressionSolve in adjacencyRowEnhanced instead of considering the partial derivative. This could lead to singularities during simulation."));
 constant DebugFlag CONSTJAC = DEBUG_FLAG(130, "constjac", false,
   Util.gettext("solves linear systems with constant Jacobian and variable b-Vector symbolically"));
 constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(131, "reduceDynOpt", false,
@@ -638,7 +638,7 @@ constant list<DebugFlag> allDebugFlags = {
   DISABLE_COMSUBEXP,
   NO_START_CALC,
   NO_PARTITIONING,
-  ADVANCE_TEARING,
+  ALLOW_IMPOSSIBLE_ASSIGNMENTS,
   CONSTJAC,
   REDUCE_DYN_OPT,
   VISUAL_XML,

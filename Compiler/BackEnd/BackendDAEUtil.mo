@@ -4759,7 +4759,7 @@ protected function tryToSolveOrDerive
   output BackendDAE.Constraints outCons={};
 protected
   DAE.Type tp = Expression.typeof(e);
-  Boolean trytosolve2 = Flags.isSet(Flags.ADVANCE_TEARING);
+  Boolean trytosolve2 = Flags.isSet(Flags.ALLOW_IMPOSSIBLE_ASSIGNMENTS);
   DAE.Exp one,solvedExp;
 algorithm
   if trytosolve1 or trytosolve2 then
