@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+VariableSubscriptAlias.mos \
 ActivateWhenEquation.mos \
 AliasEquations.mos \
 BouncingBall.mos BouncingBall2.mos BouncingBallExamples.mos \
