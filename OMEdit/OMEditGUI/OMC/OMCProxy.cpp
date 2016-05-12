@@ -2353,6 +2353,18 @@ bool OMCProxy::getDocumentationClassAnnotation(QString className)
 }
 
 /*!
+ * \brief OMCProxy::getCommandLineOptionsAnnotation
+ * Reads the __OpenModelica_commandLineOptions annotation from the class.
+ * \param className
+ * \return
+ */
+QString OMCProxy::getCommandLineOptionsAnnotation(QString className)
+{
+  sendCommand("getNamedAnnotation(" + className + ", __OpenModelica_commandLineOptions)");
+  return StringHandler::unparse(StringHandler::removeFirstLastCurlBrackets(getResult()));
+}
+
+/*!
  * \brief OMCProxy::numProcessors
  * Gets the number of processors.
  * \return the number of processors.

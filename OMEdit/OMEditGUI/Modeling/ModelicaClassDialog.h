@@ -227,12 +227,16 @@ private:
   Label *mpVersionLabel;
   QLineEdit *mpVersionTextBox;
   QGroupBox *mpUsesGroupBox;
+  QList<QList<QString> > mUsesAnnotation;
   QTableWidget *mpUsesTableWidget;
   QToolButton *mpMoveUpButton;
   QToolButton *mpMoveDownButton;
   QToolButton *mpAddUsesAnnotationButton;
   QToolButton *mpRemoveUsesAnnotationButton;
   QDialogButtonBox *mpUsesButtonBox;
+  Label *mpOMCFlagsLabel;
+  QString mOMCFlags;
+  QPlainTextEdit *mpOMCFlagsTextBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;

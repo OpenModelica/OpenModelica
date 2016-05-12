@@ -1092,13 +1092,13 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpUsesTableWidget->setHorizontalHeaderLabels(headerLabels);
   // get the uses annotation
   OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
-  QList<QList<QString> > usesAnnotation = pOMCProxy->getUses(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure());
-  mpUsesTableWidget->setRowCount(usesAnnotation.size());
-  for (int i = 0 ; i < usesAnnotation.size() ; i++) {
-    QTableWidgetItem *pLibraryTableWidgetItem = new QTableWidgetItem(usesAnnotation.at(i).at(0));
+  mUsesAnnotation = pOMCProxy->getUses(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure());
+  mpUsesTableWidget->setRowCount(mUsesAnnotation.size());
+  for (int i = 0 ; i < mUsesAnnotation.size() ; i++) {
+    QTableWidgetItem *pLibraryTableWidgetItem = new QTableWidgetItem(mUsesAnnotation.at(i).at(0));
     pLibraryTableWidgetItem->setFlags(pLibraryTableWidgetItem->flags() | Qt::ItemIsEditable);
     mpUsesTableWidget->setItem(i, 0, pLibraryTableWidgetItem);
-    QTableWidgetItem *pVersionTableWidgetItem = new QTableWidgetItem(usesAnnotation.at(i).at(1));
+    QTableWidgetItem *pVersionTableWidgetItem = new QTableWidgetItem(mUsesAnnotation.at(i).at(1));
     pVersionTableWidgetItem->setFlags(pVersionTableWidgetItem->flags() | Qt::ItemIsEditable);
     mpUsesTableWidget->setItem(i, 1, pVersionTableWidgetItem);
   }
@@ -1144,6 +1144,20 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   pVersionGridLayout->addWidget(mpUsesGroupBox, 1, 0, 1, 2);
   pVersionWidget->setLayout(pVersionGridLayout);
   mpTabWidget->addTab(pVersionWidget, Helper::version);
+  // OMC Flags tab
+  QWidget *pOMCFlagsWidget = new QWidget;
+  mpOMCFlagsLabel = new Label(Helper::OMCFlagsTip);
+  mpOMCFlagsTextBox = new QPlainTextEdit;
+  // get the command line options annotation
+  mOMCFlags = pOMCProxy->getCommandLineOptionsAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure());
+  mpOMCFlagsTextBox->insertPlainText(mOMCFlags);
+  // OMC Flags tab layout
+  QGridLayout *pOMCFlagsGridLayout = new QGridLayout;
+  pOMCFlagsGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pOMCFlagsGridLayout->addWidget(mpOMCFlagsLabel, 0, 0);
+  pOMCFlagsGridLayout->addWidget(mpOMCFlagsTextBox, 1, 0);
+  pOMCFlagsWidget->setLayout(pOMCFlagsGridLayout);
+  mpTabWidget->addTab(pOMCFlagsWidget, Helper::OMCFlags);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -1286,10 +1300,9 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
   // save old version
   QString oldVersion = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version;
   // save the old uses annotation
-  QList<QList<QString> > usesAnnotation = pMainWindow->getOMCProxy()->getUses(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure());
   QStringList oldUsesAnnotation;
-  for (int i = 0 ; i < usesAnnotation.size() ; i++) {
-    oldUsesAnnotation.append(QString("%1(version=\"%2\")").arg(usesAnnotation.at(i).at(0)).arg(usesAnnotation.at(i).at(1)));
+  for (int i = 0 ; i < mUsesAnnotation.size() ; i++) {
+    oldUsesAnnotation.append(QString("%1(version=\"%2\")").arg(mUsesAnnotation.at(i).at(0)).arg(mUsesAnnotation.at(i).at(1)));
   }
   QString oldUsesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(oldUsesAnnotation.join(","));
   // new uses annotation
@@ -1298,11 +1311,13 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
     newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(mpUsesTableWidget->item(i, 0)->text()).arg(mpUsesTableWidget->item(i, 1)->text()));
   }
   QString newUsesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(newUsesAnnotation.join(","));
+
   // push the CoOrdinateSystem change to undo stack
   UpdateCoOrdinateSystemCommand *pUpdateCoOrdinateSystemCommand;
   pUpdateCoOrdinateSystemCommand = new UpdateCoOrdinateSystemCommand(mpGraphicsView, oldCoOrdinateSystem, newCoOrdinateSystem,
                                                                      mpCopyProperties->isChecked(), oldVersion, mpVersionTextBox->text(),
-                                                                     oldUsesAnnotationString, newUsesAnnotationString);
+                                                                     oldUsesAnnotationString, newUsesAnnotationString, mOMCFlags,
+                                                                     mpOMCFlagsTextBox->toPlainText());
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateCoOrdinateSystemCommand);
   mpGraphicsView->getModelWidget()->updateModelText();
   accept();

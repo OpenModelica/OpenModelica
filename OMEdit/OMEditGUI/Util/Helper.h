@@ -317,6 +317,8 @@ public:
   static QString moveDown;
   static QString fixErrorsManually;
   static QString revertToLastCorrectVersion;
+  static QString OMCFlags;
+  static QString OMCFlagsTip;
 };
 
 class GUIMessages : public QObject

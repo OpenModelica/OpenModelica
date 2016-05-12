@@ -2757,8 +2757,8 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
     i++;
   }
   // OMC Flags
-  mpOMCFlagsLabel = new Label(tr("OMC Flags"));
-  mpOMCFlagsLabel->setToolTip(tr("Space separated list of flags e.g., +d=initialization +cheapmatchingAlgorithm=3"));
+  mpOMCFlagsLabel = new Label(QString("%1:").arg(Helper::OMCFlags));
+  mpOMCFlagsLabel->setToolTip(Helper::OMCFlagsTip);
   mpOMCFlagsTextBox = new QLineEdit("+d=initialization");
   mpOMCFlagsHelpButton = new QToolButton;
   mpOMCFlagsHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));

@@ -216,6 +216,7 @@ public:
   OMCInterface::convertUnits_res convertUnits(QString from, QString to);
   QList<QString> getDerivedUnits(QString baseUnit);
   bool getDocumentationClassAnnotation(QString className);
+  QString getCommandLineOptionsAnnotation(QString className);
   int numProcessors();
   QString help(QString topic);
   OMCInterface::getConfigFlagValidOptions_res getConfigFlagValidOptions(QString topic);

@@ -310,6 +310,8 @@ QString Helper::moveUp;
 QString Helper::moveDown;
 QString Helper::fixErrorsManually;
 QString Helper::revertToLastCorrectVersion;
+QString Helper::OMCFlags;
+QString Helper::OMCFlagsTip;
 
 void Helper::initHelperVariables()
 {
@@ -513,6 +515,8 @@ void Helper::initHelperVariables()
   Helper::moveDown = tr("Move Down");
   Helper::fixErrorsManually = tr("Fix error(s) manually");
   Helper::revertToLastCorrectVersion = tr("Revert to last correct version");
+  Helper::OMCFlags = tr("OMC Flags");
+  Helper::OMCFlagsTip = tr("Space separated list of flags e.g., +d=initialization +cheapmatchingAlgorithm=3");
 }
 
 QString GUIMessages::getMessage(int type)
