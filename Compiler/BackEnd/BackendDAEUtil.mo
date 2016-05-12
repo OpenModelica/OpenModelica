@@ -2997,9 +2997,6 @@ algorithm
        list<Integer> irest;
        Integer i;
     case ({},{},_,_) then vars;
-    /*If variable x is a state, der(x) is a variable in incidence matrix,
-         x is inserted as negative value, since it is needed by debugging and
-         index reduction using dummy derivatives */
     case (BackendDAE.VAR(varKind = BackendDAE.JAC_DIFF_VAR())::rest,i::irest,_,_)
       equation
         failure(_ = List.getMemberOnTrue(i, vars, intEq));
@@ -3038,7 +3035,7 @@ algorithm
         failure(_ = List.getMemberOnTrue(i, vars, intEq));
       then incidenceRowExp1(rest,irest,i::vars,diffindex);
     case (_ :: rest,_::irest,_,_)
-      then incidenceRowExp1(rest,irest,vars,diffindex);
+      then vars;
   end matchcontinue;
 end incidenceRowExp1withInput;
 
