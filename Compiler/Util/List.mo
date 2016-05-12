@@ -3054,6 +3054,74 @@ algorithm
   end for;
 end applyAndFold1;
 
+public function mapBoolOr<TI, ArgT1>
+  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value."
+  input list<TI> inList;
+  input MapFunc inFunc;
+  output Boolean res = false;
+
+  partial function MapFunc
+    input TI inElement;
+    output Boolean outBool;
+  end MapFunc;
+algorithm
+  for e in inList loop
+    if inFunc(e) then
+      res := true;
+      return;
+    end if;
+  end for;
+end mapBoolOr;
+
+
+public function map1BoolOr<TI, ArgT1>
+  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value.
+  inFunc takes one additional argument."
+  input list<TI> inList;
+  input MapFunc inFunc;
+  input ArgT1 inArg1;
+  output Boolean res = false;
+
+  partial function MapFunc
+    input TI inElement;
+    input ArgT1 inArg1;
+    output Boolean outBool;
+  end MapFunc;
+algorithm
+  for e in inList loop
+    if inFunc(e, inArg1) then
+      res := true;
+      return;
+    end if;
+  end for;
+end map1BoolOr;
+
+
+public function map1ListBoolOr<TI, ArgT1>
+  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value.
+  inFunc takes one additional argument."
+  input list<list<TI>> inListList;
+  input MapFunc inFunc;
+  input ArgT1 inArg1;
+  output Boolean res = false;
+
+  partial function MapFunc
+    input TI inElement;
+    input ArgT1 inArg1;
+    output Boolean outBool;
+  end MapFunc;
+algorithm
+  for el in inListList loop
+    for e in el loop
+      if inFunc(e, inArg1) then
+        res := true;
+        return;
+      end if;
+    end for;
+  end for;
+end map1ListBoolOr;
+
+
 public function mapList<TI, TO>
   "Takes a list of lists and a functions, and creates a new list of lists by
    applying the function to all elements in  the list of lists.

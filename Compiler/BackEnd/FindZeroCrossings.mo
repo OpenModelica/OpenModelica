@@ -1157,8 +1157,7 @@ algorithm
         BackendDump.debugExpStr(inExp, "\n");
       end if;
       b1 = Expression.expContains(e1, iterator);
-      b2 = Expression.expContains(e2, iterator);
-      true = Util.boolOrList({b1, b2});
+      true = if b1 then true else Expression.expContains(e2, iterator);
       (e_1, (iterator, inExpLst, range, (_, relations, samples, numRelations1, numMathFunctions), tp1)) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, inTpl);
       (e_2, (iterator, inExpLst, range, (_, relations, samples, numRelations1, numMathFunctions), tp1 as (alg_indx, vars, knvars))) = Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations1, numMathFunctions), tp1));
       true = intGt(numRelations1, numRelations);
@@ -1202,8 +1201,7 @@ algorithm
     case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), (iterator, inExpLst, range as DAE.RANGE(start=startvalue, step=stepvalueopt), (zeroCrossings, relations, samples, numRelations, numMathFunctions), tp1 as (alg_indx, vars, knvars))) equation
       true = Flags.isSet(Flags.EVENTS);
       b1 = Expression.expContains(e1, iterator);
-      b2 = Expression.expContains(e2, iterator);
-      true = Util.boolOrList({b1, b2});
+      true = if b1 then true else Expression.expContains(e2, iterator);
       if Flags.isSet(Flags.RELIDX) then
         print(" number of relations: " + intString(numRelations) + "\n");
       end if;
@@ -1238,9 +1236,8 @@ algorithm
     // All other functions generate zerocrossing.
     case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), tp1 as (alg_indx, vars, knvars))) equation
       true = Flags.isSet(Flags.EVENTS);
-      b1 = Expression.expContains(e1, iterator);
-      b2 = Expression.expContains(e2, iterator);
-      false = Util.boolOrList({b1, b2});
+      false = Expression.expContains(e1, iterator);
+      false = Expression.expContains(e2, iterator);
       eres = DAE.RELATION(e1, op, e2, numRelations, NONE());
       zc = createZeroCrossing(eres, {alg_indx});
       zc_lst = listAppend(relations, {zc});
