@@ -253,6 +253,9 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   }
   mpOMCProxy->setCommandLineOptions(QString("+simCodeTarget=%1").arg(mpOptionsDialog->getSimulationPage()->getTargetLanguageComboBox()->currentText()));
   mpOMCProxy->setCommandLineOptions(QString("+target=%1").arg(mpOptionsDialog->getSimulationPage()->getTargetCompilerComboBox()->currentText()));
+  if (mpOptionsDialog->getSimulationPage()->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
+    mpOMCProxy->setCommandLineOptions("+ignoreCommandLineOptionsAnnotation=true");
+  }
   // restore OMEdit widgets state
   QSettings *pSettings = OpenModelica::getApplicationSettings();
   if (mpOptionsDialog->getGeneralSettingsPage()->getPreserveUserCustomizations())

@@ -360,6 +360,9 @@ void OptionsDialog::readSimulationSettings()
   if (mpSettings->contains("simulation/OMCFlags")) {
     mpSimulationPage->getOMCFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
   }
+  if (mpSettings->contains("simulation/ignoreCommandLineOptionsAnnotation")) {
+    mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->setChecked(mpSettings->value("simulation/ignoreCommandLineOptionsAnnotation").toBool());
+  }
   if (mpSettings->contains("simulation/saveClassBeforeSimulation")) {
     mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->setChecked(mpSettings->value("simulation/saveClassBeforeSimulation").toBool());
   }
@@ -807,6 +810,12 @@ void OptionsDialog::saveSimulationSettings()
     mpSettings->setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
   } else {
     mpSimulationPage->getOMCFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
+  }
+  mpSettings->setValue("simulation/ignoreCommandLineOptionsAnnotation", mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked());
+  if (mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
+    mpMainWindow->getOMCProxy()->setCommandLineOptions("+ignoreCommandLineOptionsAnnotation=true");
+  } else {
+    mpMainWindow->getOMCProxy()->setCommandLineOptions("+ignoreCommandLineOptionsAnnotation=false");
   }
   // save class before simulation.
   mpSettings->setValue("simulation/saveClassBeforeSimulation", mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->isChecked());
@@ -2764,6 +2773,8 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpOMCFlagsHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
   mpOMCFlagsHelpButton->setToolTip(tr("OMC flags help"));
   connect(mpOMCFlagsHelpButton, SIGNAL(clicked()), SLOT(showOMCFlagsHelp()));
+  // ignore command line options annotation checkbox
+  mpIgnoreCommandLineOptionsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_commandLineOptions annotation"));
   /* save class before simulation checkbox */
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
   mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
@@ -2801,8 +2812,9 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pSimulationLayout->addWidget(mpOMCFlagsLabel, 4, 0);
   pSimulationLayout->addWidget(mpOMCFlagsTextBox, 4, 1);
   pSimulationLayout->addWidget(mpOMCFlagsHelpButton, 4, 2);
-  pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 5, 0, 1, 3);
-  pSimulationLayout->addWidget(mpOutputGroupBox, 6, 0, 1, 3);
+  pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, 5, 0, 1, 3);
+  pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 6, 0, 1, 3);
+  pSimulationLayout->addWidget(mpOutputGroupBox, 7, 0, 1, 3);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;

@@ -496,7 +496,8 @@ public:
   QComboBox* getTargetLanguageComboBox() {return mpTargetLanguageComboBox;}
   QComboBox* getTargetCompilerComboBox() {return mpTargetCompilerComboBox;}
   QLineEdit* getOMCFlagsTextBox() {return mpOMCFlagsTextBox;}
-  QCheckBox *getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
+  QCheckBox* getIgnoreCommandLineOptionsAnnotationCheckBox() {return mpIgnoreCommandLineOptionsAnnotationCheckBox;}
+  QCheckBox* getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
   void setOutputMode(QString value);
   QString getOutputMode();
 private:
@@ -513,6 +514,7 @@ private:
   Label *mpOMCFlagsLabel;
   QLineEdit *mpOMCFlagsTextBox;
   QToolButton *mpOMCFlagsHelpButton;
+  QCheckBox *mpIgnoreCommandLineOptionsAnnotationCheckBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
   QGroupBox *mpOutputGroupBox;
   QRadioButton *mpStructuredRadioButton;
