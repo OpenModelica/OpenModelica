@@ -12,6 +12,7 @@ testBug2764.mos \
 testBug3034.mos \
 testBug3049.mos \
 testBug3763.mos \
+testBug3846.mos \
 testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
 ZeroStates.mos \
