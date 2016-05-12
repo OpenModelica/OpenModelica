@@ -1402,7 +1402,7 @@ algorithm
   outArgs := readArgs(inArgs);
 end new;
 
-protected function saveFlags
+public function saveFlags
   "Saves the flags with setGlobalRoot."
   input Flags inFlags;
 algorithm
@@ -1425,7 +1425,7 @@ algorithm
   outDebugFlags := listArray(List.map(allDebugFlags, defaultDebugFlag));
 end createDebugFlags;
 
-protected function loadFlags
+public function loadFlags
   "Loads the flags with getGlobalRoot. Creates a new flags structure if it
    hasn't been created yet."
   output Flags outFlags;
@@ -1455,6 +1455,17 @@ algorithm
 
   end matchcontinue;
 end loadFlags;
+
+public function backupFlags
+  "Creates a copy of the existing flags."
+  output Flags outFlags;
+protected
+  array<Boolean> debug_flags;
+  array<FlagData> config_flags;
+algorithm
+  FLAGS(debug_flags, config_flags) := loadFlags();
+  outFlags := FLAGS(arrayCopy(debug_flags), arrayCopy(config_flags));
+end backupFlags;
 
 public function resetDebugFlags
   "Resets all debug flags to their default values."

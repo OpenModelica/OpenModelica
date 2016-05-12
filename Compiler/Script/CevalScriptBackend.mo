@@ -2689,21 +2689,33 @@ algorithm
       list<String> libs;
       String file_dir, fileNamePrefix;
       Absyn.Program p;
+      Flags.Flags flags;
       String commandLineOptions;
       list<String> args;
+      Boolean haveAnnotation;
 
     case (cache,env,_,st as GlobalScript.SYMBOLTABLE(),fileNamePrefix,_,_)
-      equation
+      algorithm
         // read the __OpenModelica_commandLineOptions
-        Absyn.STRING(commandLineOptions) = Interactive.getNamedAnnotation(className, st.ast, Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
-        // apply if there are any new flags
-        if boolNot(stringEq(commandLineOptions, "")) then
-          args = System.strtok(commandLineOptions, " ");
-          _ = Flags.readArgs(args);
-        end if;
+        Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, st.ast, Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+        haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
+        // backup the flags.
+        flags := if haveAnnotation then Flags.backupFlags() else Flags.loadFlags();
+        try
+	        // apply if there are any new flags
+	        if haveAnnotation then
+	          args := System.strtok(commandLineOptions, " ");
+	          _ := Flags.readArgs(args);
+	        end if;
 
-        (cache, st, indexed_dlow, libs, file_dir, resultValues) =
-          SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
+	        (cache, st, indexed_dlow, libs, file_dir, resultValues) :=
+	          SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
+	        // reset to the original flags
+	        Flags.saveFlags(flags);
+	      else
+	        Flags.saveFlags(flags);
+	        fail();
+        end try;
       then
         (cache,st,indexed_dlow,libs,file_dir,resultValues);
 
