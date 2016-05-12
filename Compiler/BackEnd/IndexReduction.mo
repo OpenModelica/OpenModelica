@@ -4347,6 +4347,11 @@ algorithm
         print("\n");
       then
         ();
+    case (BackendDAE.NOSTATEORDER())
+      equation
+        print("no stateorder\n");
+        print("=============\n");
+      then ();
   end match;
 end dumpStateOrder;
 
