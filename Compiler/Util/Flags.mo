@@ -1287,6 +1287,9 @@ constant ConfigFlag SET_TEARING_VARS = CONFIG_FLAG(97, "setTearingVars",
 constant ConfigFlag SET_RESIDUAL_EQNS = CONFIG_FLAG(98, "setResidualEqns",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
   Util.gettext("Sets the residual equations by its strong component indexes. Use '+d=tearingdump' to find out the relevant indexes for the collective equations.\nUse following format: '--setResidualEqns=(sci,n,r1,...,rn)*', with sci = strong component index, n = number of residual equations, r1,...rn = residual equations.\nE.g.: '--setResidualEqns=4,2,3,5' would select equations 3 and 5 in strong component 4.\nOnly works in combination with 'setTearingVars'."));
+constant ConfigFlag IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION = CONFIG_FLAG(99, "ignoreCommandLineOptionsAnnotation",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Ignores the command line options specified as annotation in the class."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1390,7 +1393,8 @@ constant list<ConfigFlag> allConfigFlags = {
   DAE_MODE,
   INLINE_METHOD,
   SET_TEARING_VARS,
-  SET_RESIDUAL_EQNS
+  SET_RESIDUAL_EQNS,
+  IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION
 };
 
 public function new
