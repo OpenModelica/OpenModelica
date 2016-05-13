@@ -1049,12 +1049,12 @@ algorithm
           print("Points after 'discriminateDiscrete':\n" + stringDelimitList(List.map(arrayList(points),intString),",") + "\n\n");
         end if;
     // 4th: Prefer variables with annotation attribute 'tearingSelect=prefer'
-        pointsLst = preferAvoidVariables(freeVars, arrayList(points), tSel_prefer, 3.0, 1);
+        pointsLst = preferAvoidVariables(freeVars, arrayList(points), tSel_prefer, 3.0);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after preferring variables with attribute 'prefer':\n" + stringDelimitList(List.map(pointsLst,intString),",") + "\n\n");
         end if;
     // 5th: Avoid variables with annotation attribute 'tearingSelect=avoid'
-        pointsLst = preferAvoidVariables(freeVars, pointsLst, tSel_avoid, 0.334, 1);
+        pointsLst = preferAvoidVariables(freeVars, pointsLst, tSel_avoid, 0.334);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after discrimination against variables with attribute 'avoid':\n" + stringDelimitList(List.map(pointsLst,intString),",") + "\n\n");
         end if;
@@ -1695,7 +1695,7 @@ protected
   Integer size,tornsize;
   array<Integer> ass1,ass2,mapIncRowEqn;
   array<list<Integer>> mapEqnIncRow;
-  list<Integer> OutTVars,residual,residual_coll,order,unsolvables,discreteVars,unsolvableDiscretes,tSel_always,tSel_prefer,tSel_avoid,tSel_never,userTVars,userResiduals;
+  list<Integer> OutTVars,residual,residual_coll,order,unsolvables,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,userTVars,userResiduals;
   BackendDAE.InnerEquations innerEquations;
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
@@ -1794,13 +1794,6 @@ algorithm
     print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
   end if;
 
-  // Look for unsolvable discrete variables because this leads to causalization error
-  unsolvableDiscretes := List.intersectionOnTrue(unsolvables,discreteVars,intEq);
-  if not listEmpty(unsolvableDiscretes) then
-    Error.addCompilerError("None of the equations can be solved for the following discrete variables:\n" + BackendDump.varListString(List.map1r(unsolvableDiscretes, BackendVariable.getVarAt, BackendVariable.daeVars(subsyst)),""));
-  fail();
-  end if;
-
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
   (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst);
   if debug then execStat("Tearing.CellierTearing -> 3"); end if;
@@ -1890,13 +1883,6 @@ algorithm
       print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
       print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
       print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
-    end if;
-
-    // Look for unsolvable discrete variables because this leads to causalization error
-    unsolvableDiscretes := List.intersectionOnTrue(unsolvables,discreteVars,intEq);
-    if not listEmpty(unsolvableDiscretes) then
-      Error.addCompilerError("None of the equations can be solved for the following discrete variables:\n" + BackendDump.varListString(List.map1r(unsolvableDiscretes, BackendVariable.getVarAt, BackendVariable.daeVars(subsyst)),""));
-    fail();
     end if;
 
     // Initialize matching
@@ -2078,8 +2064,7 @@ algorithm
  (OutTVars, orderOut) := match (Unsolvables,tSel_always)
   local
     Integer tvar;
-    list<Integer> tvars,unsolvables,tVar_never;
-    list<Integer> order;
+    list<Integer> tvars,unsolvables,tVar_never,tVar_discrete,order;
     Boolean causal;
 
   // case: There are no unsolvables and no variables with annotation 'tearingSelect = always'
@@ -2151,8 +2136,12 @@ algorithm
       // First choose unsolvables and 'always'-vars as tVars
       tvars = List.unique(listAppend(Unsolvables,tSel_always));
       tVar_never = List.intersectionOnTrue(tSel_never,tvars,intEq);
+      tVar_discrete = List.intersectionOnTrue(discreteVars,tvars,intEq);
       if not listEmpty(tVar_never) then
         Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+      end if;
+      if not listEmpty(tVar_discrete) then
+        Error.addCompilerWarning("There are discrete tearing variables because otherwise the system could not have been torn (unsolvables). This may lead to problems during simulation.");
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nForced selection of Tearing Variables:\n" + UNDERLINE + "\nUnsolvables as tVars: "+ stringDelimitList(List.map(Unsolvables,intString),",")+"\n");
@@ -2857,95 +2846,98 @@ protected
   constant Boolean debug = false;
 algorithm
   // Cellier heuristic [MC3]
-
-  // 1. Find all unassigned equations
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 1"); end if;
 
-  // 2. Determine the equations with size(equation)+1 variables and save them in causEq
+  // 1. Determine the equations with size(equation)+1 variables and save them in causEq
   causEq := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("2nd: "+ stringDelimitList(List.map(causEq,intString),",")+"\n(Equations from (1st) which could be causalized by knowing one more variable)\n\n");
+    print("1st: "+ stringDelimitList(List.map(causEq,intString),",")+"\n(Equations which could be causalized by knowing one more variable)\n\n");
   end if;
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 2"); end if;
 
-  // 3. Determine the variables in causEq
+  // 2. Determine the variables in causEq
   msel := Array.select(mIn,causEq);
   potentialTVars := List.unique(List.flatten(arrayList(msel)));
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("3rd: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(Variables in the equations from (2nd))\n\n");
+    print("2nd: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(Variables in the equations from (1st))\n\n");
   end if;
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 3"); end if;
 
-  // 4. Remove the discrete variables and the variables with attribute tearingSelect=never
+  // 3. Remove the discrete variables and the variables with attribute tearingSelect=never
   (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,discreteVars,intEq);
   (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,tSel_never,intEq);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("4th: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(All non-discrete variables from (3rd) without attribute 'never')\n\n");
+    print("3rd: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(All non-discrete variables from (2nd) without attribute 'never')\n\n");
   end if;
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 4"); end if;
 
-  // 4.1 Check if potentialTVars is empty, if yes, choose all unassigned non-discrete variables without attribute tearingSelect=never as potentialTVars
+  // 3.1 Check if potentialTVars is empty, if yes, choose all unassigned variables without attribute tearingSelect=never as potentialTVars
   if listEmpty(potentialTVars) then
     potentialTVars := getUnassigned(ass1In);
-
-    (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,discreteVars,intEq);
     (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,tSel_never,intEq);
     if listEmpty(potentialTVars) then
-      Error.addCompilerError("It is not possible to select a new tearing variable, because all left variables are discrete or have the attribute tearingSelect=never");
+      Error.addCompilerError("It is not possible to select a new tearing variable, because all left variables have the attribute tearingSelect=never");
       fail();
     end if;
-    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("\nNone of the variables from (3rd) is able to causalize an equation in the next step.\nNow consider ALL unassigned non-discrete variables without attribute tearingSelect=never as potential tVars.\n\n");
-      print("\n4th: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(All unassigned non-discrete variables without attribute 'never')\n\n");
+    if not intEq(listLength(potentialTVars),listLength(List.intersectionOnTrue(potentialTVars,discreteVars,intEq))) then
+      (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,discreteVars,intEq);
+      if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+        print("Note:\n====\nNone of the variables from (2nd) is able to causalize an equation in the next step.\nNow consider ALL unassigned variables without attribute tearingSelect=never as potential tVars.\n");
+        print("\n3rd: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(All unassigned variables without attribute 'never')\n\n");
+      end if;
+    else
+      if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+        print("Note:\n====\nNone of the variables from (2nd) is able to causalize an equation in the next step.\nNow consider ALL unassigned variables without attribute tearingSelect=never as potential tVars.\n");
+        print("\n3rd: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(All unassigned variables without attribute 'never' (only discrete variables left))\n\n");
+      end if;
+      Error.addCompilerWarning("The tearing heuristic was not able to avoid discrete iteration variables because otherwise the system could not have been torn. This may lead to problems during simulation.");
     end if;
   end if;
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 4.1"); end if;
 
-  // 5.1 Determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
+  // 4.1 Determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
   mtsel := Array.select(mtIn,potentialTVars);
-  ((_,_,_,counts1)) := Array.fold(mtsel,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(causEq, arrayLength(ass1In)),selVars=arrayCreate(1,potentialTVars)
-    ),({},0,1,{}));
+  ((_,_,_,counts1)) := Array.fold(mtsel,function selectCausalVars(me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(causEq, arrayLength(ass1In)),selVars=arrayCreate(1,potentialTVars)),({},0,1,{}));
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 5.1"); end if;
 
-  // 5.2 Determine for each variable the number of impossible assignments and save them in counts2
+  // 4.2 Determine for each variable the number of impossible assignments and save them in counts2
   (_,counts2,_) := countImpossibleAss(potentialTVars,ass2In,metIn,{},{},0);
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 5.2"); end if;
 
-  // 5.3 Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
+  // 4.3 Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
   points := List.threadMapReverse(counts1,counts2,intAdd);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("\n5th (Points): "+ stringDelimitList(List.map(points,intString),",")+"\n(Sum of impossible assignments and causalizable equations)\n");
+    print("\n4th (Points): "+ stringDelimitList(List.map(points,intString),",")+"\n(Sum of impossible assignments and causalizable equations)\n");
   end if;
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 5.3"); end if;
-  // 5.4 Prefer variables with annotation attribute 'tearingSelect=prefer'
+  // 4.4 Prefer variables with annotation attribute 'tearingSelect=prefer'
   if not listEmpty(tSel_prefer) then
-    points := preferAvoidVariables(potentialTVars, points, tSel_prefer, 3.0, 1);
+    points := preferAvoidVariables(potentialTVars, points, tSel_prefer, 3.0);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("    (Points): "+ stringDelimitList(List.map(points,intString),",")+"\n(Points after preferring variables with attribute 'prefer')\n");
     end if;
   end if;
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 5.4"); end if;
 
-  // 5.5 Avoid variables with annotation attribute 'tearingSelect=avoid'
+  // 4.5 Avoid variables with annotation attribute 'tearingSelect=avoid'
   if not listEmpty(tSel_avoid) then
-    points := preferAvoidVariables(potentialTVars, points, tSel_avoid, 0.334, 1);
+    points := preferAvoidVariables(potentialTVars, points, tSel_avoid, 0.334);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("    (Points): "+ stringDelimitList(List.map(points,intString),",")+"\n(Points after discrimination against variables with attribute 'avoid')\n");
     end if;
   end if;
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 5.5"); end if;
 
-  // 6. Choose vars with most points and save them in bestPotentialTVars
+  // 5. Choose vars with most points and save them in bestPotentialTVars
   bestPotentialTVars := maxListInt(points);
   maxpoints := listGet(points,listHead(bestPotentialTVars));
   bestPotentialTVars := selectFromList(potentialTVars,bestPotentialTVars);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("\n6th: "+ stringDelimitList(List.map(bestPotentialTVars,intString),",")+"\n(Variables from (4th) with most points [" + intString(maxpoints) + "])\n\n");
+    print("\n5th: "+ stringDelimitList(List.map(bestPotentialTVars,intString),",")+"\n(Variables from (4th) with most points [" + intString(maxpoints) + "])\n\n");
   end if;
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 6"); end if;
 
-  // 7. Choose vars with most occurrence in equations as potentials
+  // 6. Choose vars with most occurrence in equations as potentials
   mtsel := Array.select(mtIn,bestPotentialTVars);
   ((edges,_,potentials)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
   potentials := List.unique(potentials);
@@ -2955,7 +2947,7 @@ algorithm
   potentials := selectFromList(bestPotentialTVars,potentials);
   tVar := listHead(potentials);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("7th: "+ stringDelimitList(List.map(potentials,intString),",")+"\n(Variables from (6th) with most occurrence in equations (" + intString(edges) +" times))\n\nChosen tearing variable: " + intString(tVar) + "\n\n");
+    print("6th: "+ stringDelimitList(List.map(potentials,intString),",")+"\n(Variables from (5th) with most occurrence in equations (" + intString(edges) +" times))\n\nChosen tearing variable: " + intString(tVar) + "\n\n");
   end if;
   if listMember(tVar,tSel_avoid) then
     Error.addCompilerWarning("The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use +d=tearingdump and +d=tearingdumpV for more information.");
@@ -3060,27 +3052,21 @@ protected function preferAvoidVariables
   input list<Integer> pointsIn;
   input list<Integer> preferAvoidIn;
   input Real factor;
-  input Integer index;
-  output list<Integer> pointsOut;
+  output list<Integer> pointsOut=pointsIn;
+protected
+  Integer index=1, preferAvoidInLenght, pos;
 algorithm
- pointsOut := matchcontinue(varsIn,pointsIn,preferAvoidIn,factor,index)
-   local
-     Integer pos;
-   list<Integer> points;
-   case(_,_,_,_,_)
-     equation
-       true = intLe(index,listLength(preferAvoidIn));
-     pos = List.position(listGet(preferAvoidIn,index),varsIn);
-     points = List.set(pointsIn,pos,realInt(realMul(factor,intReal(listGet(pointsIn,pos)))));
-  then preferAvoidVariables(varsIn,points,preferAvoidIn,factor,index+1);
-   case(_,_,_,_,_)
-     equation
-       true = intLe(index,listLength(preferAvoidIn));
-  then preferAvoidVariables(varsIn,pointsIn,preferAvoidIn,factor,index+1);
-   else
-    then pointsIn;
- end matchcontinue;
+  preferAvoidInLenght := listLength(preferAvoidIn);
+  while intLe(index, preferAvoidInLenght) loop
+    try
+      pos := List.position(listGet(preferAvoidIn,index),varsIn);
+      pointsOut := List.set(pointsIn,pos,realInt(realMul(factor,intReal(listGet(pointsIn,pos)))));
+    else
+    end try;
+    index := index + 1;
+  end while;
 end preferAvoidVariables;
+
 
 protected function selectCausalVarsPrepareSelectionSet
   "selectCausalVars takes as input an array ass1In. selEqs and each row
@@ -4134,7 +4120,7 @@ protected
   Integer size;
   array<Integer> ass1,ass2,mapIncRowEqn;
   array<list<Integer>> mapEqnIncRow;
-  list<Integer> tVars,order,causEq,unsolvables,discreteVars,unsolvableDiscretes,tSel_always,tSel_prefer,tSel_avoid,tSel_never;
+  list<Integer> tVars,order,causEq,unsolvables,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never;
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
@@ -4216,12 +4202,6 @@ algorithm
     print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
   end if;
 
-  // Look for unsolvable discrete variables because this leads to causalization error
-  unsolvableDiscretes := List.intersectionOnTrue(unsolvables,discreteVars,intEq);
-  if not listEmpty(unsolvableDiscretes) then
-    Error.addCompilerError("None of the equations can be solved for the following discrete variables:\n" + BackendDump.varListString(List.map1r(unsolvableDiscretes, BackendVariable.getVarAt, BackendVariable.daeVars(subsyst)),""));
-  fail();
-  end if;
 
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
   (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst);
@@ -4507,7 +4487,7 @@ protected
   Integer size;
   array<Integer> ass1,ass2,mapIncRowEqn;
   array<list<Integer>> mapEqnIncRow;
-  list<Integer> tVars,residuals,order,causEq,causEq_exp,unsolvables,discreteVars,unsolvableDiscretes,userResiduals_exp;
+  list<Integer> tVars,residuals,order,causEq,causEq_exp,unsolvables,discreteVars,userResiduals_exp;
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
@@ -4591,13 +4571,6 @@ algorithm
     print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
     print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
     print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
-  end if;
-
-  // Look for unsolvable discrete variables because this leads to causalization error
-  unsolvableDiscretes := List.intersectionOnTrue(unsolvables,discreteVars,intEq);
-  if not listEmpty(unsolvableDiscretes) then
-    Error.addCompilerError("None of the equations can be solved for the following discrete variables:\n" + BackendDump.varListString(List.map1r(unsolvableDiscretes, BackendVariable.getVarAt, BackendVariable.daeVars(subsyst)),""));
-    fail();
   end if;
 
   // Initialize matching
