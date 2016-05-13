@@ -52,7 +52,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     <%equationsXml(allEquations)%>
 
-    <%initialEquationsXml(modelInfo)%>
+    <%initialEquationsXml(modelInfo, initialEquations)%>
 
     <%algorithmicEquationsXml(allEquations)%>
 
@@ -92,7 +92,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = VARINFO(__))) then
   let author = ''
   let version= ''
   let generationDateAndTime = xsdateTimeXml(getCurrentDateTime())
-  let variableNamingConvention= 'Structured'
+  let variableNamingConvention= 'structured'
   let numberOfContinuousStates =modelInfo.varInfo.numStateVars
   let numberOfEventIndicators =modelInfo.varInfo.numZeroCrossings
   <<
@@ -123,7 +123,7 @@ template defaultExperiment(Option<SimulationSettings> simulationSettingsOpt)
 match simulationSettingsOpt
   case SOME(de as  SIMULATION_SETTINGS(__)) then
   <<
-  <defaultExperiment startTime="<%de.startTime%>" stopTime="<%de.stopTime%>" tolerance="<%de.tolerance%>"/>
+  <DefaultExperiment startTime="<%de.startTime%>" stopTime="<%de.stopTime%>" tolerance="<%de.tolerance%>" />
   >>
 end defaultExperiment;
 
@@ -282,9 +282,10 @@ template initValXml(Exp initialValue)
   match initialValue
   case ICONST(__) then integer
   case RCONST(__) then real
-  case SCONST(__) then '"<%Util.escapeModelicaStringToXmlString(string)%>"'
+  case SCONST(__) then '&quot;<%Util.escapeModelicaStringToXmlString(string)%>&quot;'
   case BCONST(__) then (if bool then "1" else "0")
-  case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPathXml(name)%>*/'
+  case ENUM_LITERAL(__) then '<%index%>'
+  case CREF(__) then '<%crefStrXml(componentRef)%>'
   else "*ERROR* initial value of unknown type"
 end initValXml;
 
@@ -433,6 +434,7 @@ template crefStrXml(ComponentRef cr)
   match cr
   case CREF_IDENT(__) then '<%ident%><%subscriptsStrXml(subscriptLst)%>'
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStrXml(componentRef)%>)'
+  case CREF_QUAL(ident = "$PRE") then 'pre(<%crefStrXml(componentRef)%>)'
   case CREF_QUAL(__) then '<%ident%><%subscriptsStrXml(subscriptLst)%>.<%crefStrXml(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStrXml;
@@ -595,7 +597,7 @@ template bindingEquationXml(SimVar var)
         >>
 end bindingEquationXml;
 
-template equationsXml( list<SimEqSystem> allEquationsPlusWhen)
+template equationsXml(list<SimEqSystem> allEquationsPlusWhen)
   "Function for all equations"
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -639,11 +641,18 @@ let alg =(statements |> stmt =>
   >>
 end equationAlgorithmXml;
 
-template initialEquationsXml(ModelInfo modelInfo)
+
+template initialEquationsXml(ModelInfo modelInfo, list<SimEqSystem> initialEqs)
  "Function for Inititial Equations."
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
+  let &varDecls = buffer "" /*BUFD*/
+  let jens = System.tmpTickReset(0)
+  let &tmp = buffer ""
+  let eqs = (initialEqs |> eq =>
+      equation_Xml(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
+    ;separator="\n")
   <<
   <equ:InitialEquations>
     <%vars.stateVars |> var => initialEquationXml(var) ;separator="\n"%>
@@ -653,6 +662,8 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
     <%vars.intAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
     <%vars.boolAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
     <%vars.stringAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
+    <%&tmp%>
+    <%eqs%>
   </equ:InitialEquations>
   >>
 end initialEquationsXml;
@@ -2048,6 +2059,15 @@ end scalarLhsCrefXml;
 template daeExpXml(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Root Template for Expression-XML generation."
 ::=
+  let e = daeExpXml_dispatch(exp, context, &preExp /*BUFP*/, &varDecls /*BUFP*/)
+  let eStr1 = if e then e else preExp
+  let eStr2 = if intEq(0, stringFind(eStr1, "tmp")) then preExp else eStr1
+  eStr2
+end daeExpXml;
+
+template daeExpXml_dispatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+ "Root Template for Expression-XML generation."
+::=
   match exp
   case e as ICONST(__)          then '<exp:IntegerLiteral><%integer%></exp:IntegerLiteral>'
   case e as RCONST(__)          then '<exp:RealLiteral><%real%></exp:RealLiteral>'
@@ -2074,7 +2094,7 @@ template daeExpXml(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDec
   case e as UNBOX(__)           then daeExpUnboxXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as SHARED_LITERAL(__)  then daeExpSharedLiteralXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   else error(sourceInfo(), 'Unknown expression: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
-end daeExpXml;
+end daeExpXml_dispatch;
 
 template daeExpValueXml(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Expression-XML generation mainly used for optimica extension start and final value."
@@ -2098,7 +2118,7 @@ template daeExpSconstXml(String string, Context context, Text &preExp /*BUFP*/, 
  "Generates code for a string constant."
 ::=
   <<
-  "<%Util.escapeModelicaStringToCString(string)%>"
+  "<%Util.escapeModelicaStringToXmlString(string)%>"
   >>
 end daeExpSconstXml;
 
@@ -2965,7 +2985,8 @@ template daeExpIfXml(Exp exp, Context context, Text &preExp /*BUFP*/,
 ::=
 match exp
 case IFEXP(__) then
-  let condExp = daeExpXml(expCond, context, &preExp, &varDecls /*BUFD*/)
+  let &preExpCond = buffer ""
+  let condExp = daeExpXml(expCond, context, &preExpCond, &varDecls /*BUFD*/)
   let &resVar = buffer ""
   let &preExpThen = buffer ""
   let eThen = daeExpXml(expThen, context, &preExpThen, &varDecls /*BUFD*/)
@@ -2976,14 +2997,14 @@ case IFEXP(__) then
   <fun:If>
     <fun:Condition>
       <%condExp%>
-     </fun:Condition>
-     <fun:Statements>
-       <%eThen%>
-     </fun:Statements>
+    </fun:Condition>
+    <fun:Statements>
+      <%eThen%>
+    </fun:Statements>
+    <fun:Else>
+      <%eElse%>
+    </fun:Else>
   </fun:If>
-  <fun:Else>
-    <%eElse%>
-  </fun:Else>
   >>
   resVar
 end daeExpIfXml;
@@ -2998,7 +3019,7 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
             expLst={e1, e2, DAE.SCONST(string=string)}) then
     let var1 = daeExpXml(e1, context, &preExp, &varDecls)
     let var2 = daeExpXml(e2, context, &preExp, &varDecls)
-    let var3 = Util.escapeModelicaStringToCString(string)
+    let var3 = Util.escapeModelicaStringToXmlString(string)
     <<
     <exp:Div>
       <%var1%>
@@ -3217,6 +3238,7 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
     let typeStr = expTypeFromExpShortXml(e1)
     'modelica_rem_<%typeStr%>(<%var1%>,<%var2%>)'
 
+/*
   case CALL(path=IDENT(name="String"), expLst={s, format}) then
     let tvar = tempDeclXml("modelica_string", &varDecls /*BUFD*/)
     let sExp = daeExpXml(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -3243,6 +3265,7 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
     let signdigExp = daeExpXml(signdig, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
     '<%tvar%>'
+*/
 
   case CALL(path=IDENT(name="delay"), expLst={ICONST(integer=index), e, d, delayMax}) then
     let var1 = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -3350,9 +3373,28 @@ template builtinFunctionNameXml(Path path)
   case IDENT(name="POWER") then 'Pow'
   case IDENT(name="sin") then 'Sin'
   case IDENT(name="cos") then 'Cos'
+  case IDENT(name="tan") then 'Tan'
+  case IDENT(name="asin") then 'Asin'
+  case IDENT(name="acos") then 'Acos'
+  case IDENT(name="atan") then 'Atan'
+  case IDENT(name="sinh") then 'Sinh'
+  case IDENT(name="cosh") then 'Cosh'
+  case IDENT(name="tanh") then 'Tanh'
   case IDENT(name="exp") then 'Exp'
+  case IDENT(name="log") then 'Log'
+  case IDENT(name="log10") then 'Log10'
+  case IDENT(name="sqrt") then 'Sqrt'
+  case IDENT(name="atan2") then 'Atan2'
+  case IDENT(name="abs") then 'Abs'
+  case IDENT(name="sign") then 'Sign'
+  case IDENT(name="min") then 'Min'
+  case IDENT(name="max") then 'Max'
+  case IDENT(name="noEvent") then 'NoEvent'
+  case IDENT(name="array") then 'Array'
   case IDENT(name="sample") then 'Sample'
-  else "Builtin Function is not yet implemented "
+  case IDENT(name="smooth") then 'Smooth'
+  case IDENT(name="homotopy") then 'Homotopy'
+  else '<%dotPathXml(path)%>'
 end builtinFunctionNameXml;
 
 template daeExpTailCallXml(list<DAE.Exp> es, list<String> vs, Context context, Text &preExp, Text &varDecls)
@@ -3728,42 +3770,21 @@ template expTypeShortXml(DAE.Type type)
  "Generate type helper."
 ::=
   match type
-  case T_INTEGER(__)         then "integer"
-  case T_REAL(__)        then "real"
-  case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
-  case T_BOOL(__)        then "boolean"
-  case T_ENUMERATION(__) then "integer"
+  case T_INTEGER(__)     then "Integer"
+  case T_REAL(__)        then "Real"
+  case T_STRING(__)      then if acceptMetaModelicaGrammar() then "MetaType" else "String"
+  case T_BOOL(__)        then "Boolean"
+  case T_ENUMERATION(__) then "Integer"
   case T_ARRAY(__)       then expTypeShortXml(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
-                      then "complex"
+                      then "Complex"
   case T_COMPLEX(__)     then '<%underscorePathXml(ClassInf.getStateName(complexClassType))%>'
-  case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
+  case T_METATYPE(__) case T_METABOXED(__)    then "MetaType"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
-  case T_UNKNOWN(__) then "complex" /* TODO: Don't do this to me! */
-  case T_ANYTYPE(__) then "complex" /* TODO: Don't do this to me! */
+  case T_UNKNOWN(__) then "Complex" /* TODO: Don't do this to me! */
+  case T_ANYTYPE(__) then "Complex" /* TODO: Don't do this to me! */
   else error(sourceInfo(),'expTypeShortXml:<%unparseType(type)%>')
 end expTypeShortXml;
-
-template mmcVarTypeXml(Variable var)
-::=
-  match var
-  case VARIABLE(__) then 'modelica_<%mmcTypeShortXml(ty)%>'
-  case FUNCTION_PTR(__) then 'modelica_fnptr'
-end mmcVarTypeXml;
-
-template mmcTypeShortXml(DAE.Type type)
-::=
-  match type
-  case T_INTEGER(__)                 then "integer"
-  case T_REAL(__)                    then "real"
-  case T_STRING(__)                  then "string"
-  case T_BOOL(__)                    then "integer"
-  case T_ENUMERATION(__)             then "integer"
-  case T_ARRAY(__)                   then "array"
-  case T_METATYPE(__) case T_METABOXED(__)                then "metatype"
-  case T_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
-  else "mmcTypeShort:ERROR"
-end mmcTypeShortXml;
 
 template expTypeXml(DAE.Type ty, Boolean array)
  "Generate type helper."
