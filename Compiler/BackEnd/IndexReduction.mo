@@ -1411,7 +1411,7 @@ protected
   Integer size, numEqs, e;
 algorithm
   numEqs := arrayLength(inOrgEqns);
-  for e in List.intRange(numEqs) loop
+  for e in 1:numEqs loop
     orgeqns := arrayGet(inOrgEqns,e);
     size := BackendEquation.equationLstSize(orgeqns);
     oCount := oCount + size;
@@ -1432,7 +1432,7 @@ protected
 algorithm
   outOrgEqns := inOrgEqns;
   numEqs := arrayLength(inOrgEqns);
-  for e in List.intRange(numEqs) loop
+  for e in 1:numEqs loop
    orgeqns := arrayGet(inOrgEqns,e);
     (orgeqns,_) := BackendInline.inlineEqs(orgeqns, inA,{},false);
      arrayUpdate(outOrgEqns,e,orgeqns);
@@ -2849,7 +2849,7 @@ protected
 algorithm
   outOrgEqns := inOrgEqns;
   numEqs := arrayLength(inOrgEqns);
-  for e in List.intRange(numEqs) loop
+  for e in 1:numEqs loop
     orgeqns := arrayGet(outOrgEqns,e);
     if not listEmpty(orgeqns) then
       (outEqnsLst, orgeqns) := match orgeqns

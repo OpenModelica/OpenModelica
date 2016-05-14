@@ -1707,10 +1707,9 @@ algorithm
   dims := expDimensions(eIn);
   try
     {DAE.DIM_INTEGER(integer=size)} := dims;
-    for i in List.intRange(size) loop
+    for i in size:-1:1 loop
       eLstOut := makeASUBSingleSub(eIn,DAE.ICONST(i))::eLstOut;
     end for;
-    eLstOut := listReverse(eLstOut);
   else
     eLstOut := {};
   end try;

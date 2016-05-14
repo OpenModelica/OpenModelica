@@ -1212,15 +1212,15 @@ algorithm
         //eqAtts := List.threadMap(List.fill(false, arrayLength(m)), List.fill("", arrayLength(m)), Util.makeTuple);
         //BackendDump.dumpBipartiteGraphStrongComponent2(pathVars, eqs, m, varAtts, eqAtts, "shortenPaths"+stringDelimitList(List.map(partition,intString),"_"));
 
-     for varIdx in List.intRange(arrayLength(mT)) loop
-       adjEqs := arrayGet(mT,varIdx);
+     for idx in 1:arrayLength(mT) loop
+       adjEqs := arrayGet(mT,idx);
 
        if listLength(adjEqs)==2 then
          //print("varIdx1 "+intString(varIdx)+"\n");
          //print("adjEqs "+stringDelimitList(List.map(adjEqs,intString),",")+"\n");
          adjEqs := List.map1(adjEqs,List.getIndexFirst,partition);
          adjEqs := List.map1(adjEqs, Array.getIndexFirst, eqMap);
-         varIdx := arrayGet(pathVarIdxMap,varIdx);
+         varIdx := arrayGet(pathVarIdxMap,idx);
          cses := SHORTCUT_CSE(adjEqs,varIdx)::cses;
        end if;
      end for; //end the variables

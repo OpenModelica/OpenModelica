@@ -2288,7 +2288,7 @@ algorithm
     (start,stop,step) := getRangeBounds(range);
     true := intEq(step,1);
     repl := replIn;
-    for i in List.intRange2(start,stop) loop
+    for i in start:stop loop
       repl := BackendVarTransform.addReplacement(repl, ComponentReference.makeCrefIdent(iter,DAE.T_INTEGER_DEFAULT,{}),DAE.ICONST(i),NONE());
       (stmts,((_,repl,_))) := evaluateFunctions_updateStatement(stmtsIn,(funcTreeIn,repl,i),{});
 
