@@ -521,6 +521,9 @@ xmlFiles.log: omc-diff
 simoptions.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cruntime/simoptions -f Makefile test  > $@
 	@echo $@ done
+sensitivities.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cruntime/sensitivities -f Makefile test  > $@
+	@echo $@ done
 dumpCruntime.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cruntime/debugDumps -f Makefile test  > $@
 	@echo $@ done
