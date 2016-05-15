@@ -46,6 +46,7 @@
 #include "mixedSystem.h"
 #include "delay.h"
 #include "epsilon.h"
+#include "simulation/solver/stateset.h"
 #include "meta/meta_modelica.h"
 
 int maxEventIterations = 20;
@@ -1019,6 +1020,9 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   for(i=0; i<data->modelData->nDelayExpressions; i++)
     data->simulationInfo->delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
 
+  /* allocate memory for state selection */
+  initializeStateSetJacobians(data, threadData);
+
   TRACE_POP
 }
 
@@ -1134,6 +1138,10 @@ void deInitializeDataStruc(DATA *data)
     freeRingBuffer(data->simulationInfo->delayStructure[i]);
 
   free(data->simulationInfo->delayStructure);
+
+  /* free stateset data */
+  freeStateSetData(data);
+
 
   TRACE_POP
 }
