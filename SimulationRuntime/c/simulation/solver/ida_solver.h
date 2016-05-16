@@ -43,9 +43,9 @@
 
 #include <sundials/sundials_nvector.h>
 #include <nvector/nvector_serial.h>
-#include <ida/ida.h>
-#include <ida/ida_dense.h>
-#include <ida/ida_sparse.h>
+#include <idas/idas.h>
+#include <idas/idas_dense.h>
+#include <idas/idas_sparse.h>
 
 typedef struct IDA_USERDATA
 {
@@ -84,6 +84,13 @@ typedef struct IDA_SOLVER
   double *states;
   double *statesDer;
   int (*residualFunction)(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData);
+
+  /* ### ida sensitivities ### */
+  int idaSmode;
+  int Np;
+  N_Vector* yS;
+  N_Vector* ySp;
+  N_Vector* ySResult;
 
 }IDA_SOLVER;
 

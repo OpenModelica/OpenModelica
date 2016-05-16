@@ -7329,6 +7329,7 @@ protected function allPostOptimizationModules
     (SymbolicJacobian.calculateStateSetsJacobians, "calculateStateSetsJacobians"),
     (SymbolicJacobian.detectSparsePatternODE, "detectJacobianSparsePattern"),
     (SymbolicJacobian.generateSymbolicJacobianPast, "generateSymbolicJacobian"),
+    (SymbolicJacobian.generateSymbolicSensitivities, "generateSymbolicSensitivities"),
     (SymbolicJacobian.generateSymbolicLinearizationPast, "generateSymbolicLinearization"),
     (BackendDAEOptimize.removeConstants, "removeConstants"),
     (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls"),

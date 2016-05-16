@@ -46,6 +46,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_F */                     "f",
   /* FLAG_HELP */                  "help",
   /* FLAG_IDA_LS */                "idaLS",
+  /* FLAG_IDAS */                  "idaSensitivity",
   /* FLAG_IGNORE_HIDERESULT */     "ignoreHideResult",
   /* FLAG_IIF */                   "iif",
   /* FLAG_IIM */                   "iim",
@@ -115,6 +116,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get detailed information that specifies the command-line flag",
   /* FLAG_IDA_LS */                "selects the linear solver used by ida",
+  /* FLAG_IDAS */                  "flag to add sensitivity information to the result files",
   /* FLAG_IGNORE_HIDERESULT */     "ignore HideResult=true annotation",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
   /* FLAG_IIM */                   "value specifies the initialization method",
@@ -204,6 +206,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  For example, -help=f prints detailed information for command-line flag f.",
   /* FLAG_IDA_LS */
   "  Value specifies the IDA solver linear solver.",
+  /* FLAG_IDAS */
+  "flag to add sensitivity information to the result files",
   /* FLAG_IGNORE_HIDERESULT */
   "  Emits also variables with HideResult=true annotation.",
   /* FLAG_IIF */
@@ -359,6 +363,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_F */                     FLAG_TYPE_OPTION,
   /* FLAG_HELP */                  FLAG_TYPE_OPTION,
   /* FLAG_IDA_LS */                FLAG_TYPE_OPTION,
+  /* FLAG_IDAS */                  FLAG_TYPE_FLAG,
   /* FLAG_IGNORE_HIDERESULT */     FLAG_TYPE_FLAG,
   /* FLAG_IIF */                   FLAG_TYPE_OPTION,
   /* FLAG_IIM */                   FLAG_TYPE_OPTION,

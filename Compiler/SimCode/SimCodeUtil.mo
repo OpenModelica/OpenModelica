@@ -231,6 +231,9 @@ protected
   list<list<SimCode.SimEqSystem>> daeEquations;         // --> functionODE4DAE
   list<SimCodeVar.SimVar> residualVars, algebraicVars;  // --> variables for functionODE4DAE
   SimCodeVar.SimVars tmpSimVars;
+  SimCode.VarInfo varInfo;
+  list<SimCodeVar.SimVar> sensitivityVars;
+  Integer countSenParams;
   list<tuple<Integer, Integer>> equationSccMapping, eqBackendSimCodeMapping;
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
   constant Boolean debug = false;
@@ -430,6 +433,18 @@ algorithm
     crefToSimVarHT := createCrefToSimVarHT(modelInfo);
     if Flags.isSet(Flags.EXEC_HASH) then
       print("*** SimCode -> generate cref2simVar hashtable done!: " + realString(clock()) + "\n");
+    end if;
+
+    if Flags.getConfigBool(Flags.CALCULATE_SENSITIVITIES) then
+      tmpSimVars := modelInfo.vars;
+      (sensitivityVars, countSenParams) := createSimVarsForSensitivities(tmpSimVars.stateVars, tmpSimVars.paramVars, inAllPrimaryParameters);
+      sensitivityVars := rewriteIndex(sensitivityVars, 0);
+      tmpSimVars.sensitivityVars := sensitivityVars;
+      modelInfo.vars := tmpSimVars;
+      // set varInfo nSensitivities
+      varInfo := modelInfo.varInfo;
+      varInfo.numSensitivityParameters := countSenParams;
+      modelInfo.varInfo := varInfo;
     end if;
 
     backendMapping := setBackendVarMapping(inBackendDAE, crefToSimVarHT, modelInfo, backendMapping);
@@ -6049,7 +6064,7 @@ algorithm
   numTimeEvents := numTimeEvents;
   numRelations := numRelations;
   varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, ndy, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
-          next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints);
+          next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0);
 end createVarInfo;
 
 protected function evaluateStartValues"evaluates functions in the start values in the variableAttributes"
@@ -6459,6 +6474,7 @@ protected type SimVarsIndex = enumeration(
   residualDAE,
   algebraicDAE,
 
+  sensitivity,
   jacobian,
   seed
 );
@@ -6556,7 +6572,8 @@ algorithm
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeConstraints)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeFinalConstraints)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.residualDAE)),
-    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.algebraicDAE))
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.algebraicDAE)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.sensitivity))
   );
 end createVars;
 
@@ -7576,6 +7593,7 @@ algorithm
     outHT := List.fold(vars.stringConstVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.residualVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.algebraicDAEVars, addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.sensitivityVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.jacobianVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.seedVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.realOptimizeConstraintsVars, addSimVarToHashTable, outHT);
@@ -9055,15 +9073,15 @@ algorithm
       SimCode.Files files;
       list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars,
                    boolAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars,
-                   extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, residualVars, algebraicDAEVars;
+                   extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, residualVars, algebraicDAEVars, sensitivityVars;
 
     case (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, residualVars, algebraicDAEVars),
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, residualVars, algebraicDAEVars, sensitivityVars),
           files)
       equation
         (_, files) = List.mapFoldList(
                        {stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                        paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, residualVars, algebraicDAEVars},
+                        paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, residualVars, algebraicDAEVars, sensitivityVars},
                        getFilesFromSimVar, files);
       then
         files;
@@ -9746,12 +9764,12 @@ algorithm
                    aliasVars, intAliasVars, boolAliasVars, stringAliasVars,
                    paramVars, intParamVars, boolParamVars, stringParamVars,
                    constVars, intConstVars, boolConstVars, stringConstVars,
-                   residualVars, algebraicDAEVars, extObjVars, jacobianVars, seedVars,
+                   residualVars, algebraicDAEVars, sensitivityVars, extObjVars, jacobianVars, seedVars,
                    realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars;
      tpl intpl;
 
     case (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, residualVars, algebraicDAEVars), _, intpl)
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, residualVars, algebraicDAEVars, sensitivityVars), _, intpl)
          equation
            (stateVars, intpl) = List.mapFoldTuple(stateVars, func, intpl);
            (derivativeVars, intpl) = List.mapFoldTuple(derivativeVars, func, intpl);
@@ -9780,10 +9798,11 @@ algorithm
            (realOptimizeFinalConstraintsVars, intpl) = List.mapFoldTuple(realOptimizeFinalConstraintsVars, func, intpl);
            (residualVars, intpl) = List.mapFoldTuple(residualVars, func, intpl);
            (algebraicDAEVars, intpl) = List.mapFoldTuple(algebraicDAEVars, func, intpl);
+           (sensitivityVars, intpl) = List.mapFoldTuple(sensitivityVars, func, intpl);
 
 
          then (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, residualVars, algebraicDAEVars), intpl);
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, residualVars, algebraicDAEVars, sensitivityVars), intpl);
     case (_, _, _) then fail();
   end match;
 end traveseSimVars;
@@ -10644,6 +10663,7 @@ algorithm
         outVars := getEnumerationTypesHelper(inVars.stringConstVars, outVars);
         outVars := getEnumerationTypesHelper(inVars.residualVars, outVars);
         outVars := getEnumerationTypesHelper(inVars.algebraicDAEVars, outVars);
+        outVars := getEnumerationTypesHelper(inVars.sensitivityVars, outVars);
         outVars := getEnumerationTypesHelper(inVars.jacobianVars, outVars);
         outVars := getEnumerationTypesHelper(inVars.seedVars, outVars);
         outVars := getEnumerationTypesHelper(inVars.realOptimizeConstraintsVars, outVars);
@@ -12174,6 +12194,54 @@ algorithm
   oHasLargeEquationSystems := hasLargeEqSystem;
 end hasLargeEquationSystems1;
 
+
+protected function createSimVarsForSensitivities
+"Function create variables for sensitivities calculation. It creates for every
+ state Np(=size of real primary parameters) variables.
+"
+  input list<SimCodeVar.SimVar> inStateSimVars;
+  input list<SimCodeVar.SimVar> inParamSimVars;
+  input list<BackendDAE.Var> inPrimaryParameters;
+  output list<SimCodeVar.SimVar> outSimCodeVars;
+  output Integer countSensitivityParams = 0;
+protected
+  constant Boolean debug = false;
+  BackendDAE.Variables tmpVariables, emptyVars;
+  BackendDAE.Var var;
+  Integer i;
+  DAE.ComponentRef cref;
+  list<SimCodeVar.SimVar> sensitivityParams = {};
+algorithm
+  emptyVars := BackendVariable.emptyVars();
+  tmpVariables := BackendVariable.emptyVarsSized(listLength(inStateSimVars)*listLength(inPrimaryParameters));
+
+  for param in inParamSimVars loop
+    // take for now only parameters that are changeable and topLevel
+    if param.isValueChangeable == true and ComponentReference.crefIsIdent(param.name) then
+      countSensitivityParams := countSensitivityParams+1;
+      sensitivityParams := param::sensitivityParams;
+      for state in inStateSimVars loop
+        // create cref
+        cref := ComponentReference.makeCrefIdent("$Sensitivities", DAE.T_REAL_DEFAULT, {});
+        cref := ComponentReference.joinCrefs(cref, param.name);
+        cref := ComponentReference.joinCrefs(cref, state.name);
+
+        if debug then
+          print("createSimVarsForSensitivities for Var: " + ComponentReference.crefStr(cref) + "\n");
+        end if;
+        // create var
+        var := BackendVariable.makeVar(cref);
+
+        // add var to varibales
+        tmpVariables := BackendVariable.addNewVar(var, tmpVariables);
+      end for;
+    end if;
+  end for;
+  // generate SimCode vars
+  ((outSimCodeVars, _)) :=  BackendVariable.traverseBackendDAEVars(tmpVariables, traversingdlowvarToSimvar, ({}, emptyVars));
+  outSimCodeVars := listReverse(outSimCodeVars);
+  outSimCodeVars := listAppend(listReverse(sensitivityParams), outSimCodeVars);
+end createSimVarsForSensitivities;
 
 /*****************************************************************************************************
         FMU EXPERIMENTAL

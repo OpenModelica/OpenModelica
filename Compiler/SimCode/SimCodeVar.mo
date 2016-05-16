@@ -70,11 +70,12 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
     list<SimVar> realOptimizeFinalConstraintsVars;
     list<SimVar> residualVars;  // variable used to calculate residuals of a DAE form, they are real
     list<SimVar> algebraicDAEVars;  // variable used to calculate residuals of a DAE form, they are real
+    list<SimVar> sensitivityVars; // variable used to calculate sensitivities for parameters nSensitivitityParameters + nRealParam*nStates
   end SIMVARS;
 end SimVars;
 
 public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {},
-  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
+  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
 public uniontype SimVar "Information about a variable in a Modelica model."
   record SIMVAR

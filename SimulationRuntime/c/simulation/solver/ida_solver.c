@@ -57,13 +57,12 @@
 
 #include <sundials/sundials_nvector.h>
 #include <nvector/nvector_serial.h>
-#include <ida/ida.h>
-#include <ida/ida_dense.h>
-#include <ida/ida_klu.h>
-#include <ida/ida_spgmr.h>
-#include <ida/ida_spbcgs.h>
-#include <ida/ida_sptfqmr.h>
-
+#include <idas/idas.h>
+#include <idas/idas_dense.h>
+#include <idas/idas_klu.h>
+#include <idas/idas_spgmr.h>
+#include <idas/idas_spbcgs.h>
+#include <idas/idas_sptfqmr.h>
 
 
 static int jacobianOwnNumColoredIDA(long int Neq, realtype tt, realtype cj,
@@ -326,7 +325,14 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     }
     else
     {
-      idaData->jacobianMethod = COLOREDNUMJAC;
+      if (idaData->linearSolverMethod == IDA_LS_KLU)
+      {
+        idaData->jacobianMethod = KLUSPARSE;
+      }
+      else
+      {
+        idaData->jacobianMethod = COLOREDNUMJAC;
+      }
     }
   }
 
@@ -409,6 +415,57 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     }
   }
 
+  /* configure the sensitivities part */
+  idaData->idaSmode = omc_flag[FLAG_IDAS] ? 1 : 0;
+
+  if (idaData->idaSmode)
+  {
+    idaData->Np = data->modelData->nSensitivityParamVars;
+    idaData->yS = N_VCloneVectorArray_Serial(idaData->Np, idaData->y);
+    idaData->ySp = N_VCloneVectorArray_Serial(idaData->Np, idaData->yp);
+
+    for(i=0; i<idaData->Np; ++i)
+    {
+      int j;
+      for(j=0; j<idaData->N; ++j)
+      {
+        NV_Ith_S(idaData->yS[i],j) = 0;
+        NV_Ith_S(idaData->ySp[i],j) = 0;
+      }
+    }
+
+    flag = IDASensInit(idaData->ida_mem, idaData->Np, IDA_SIMULTANEOUS, NULL, idaData->yS, idaData->ySp);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## set IDASensInit failed!");
+    }
+
+    flag = IDASetSensParams(idaData->ida_mem, data->simulationInfo->realParameter, NULL, data->simulationInfo->sensitivityParList);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## set IDASetSensParams failed!");
+    }
+
+    flag = IDASetSensDQMethod(idaData->ida_mem, IDA_FORWARD, 0);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## set IDASetSensDQMethod failed!");
+    }
+
+    flag = IDASensEEtolerances(idaData->ida_mem);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## set IDASensEEtolerances failed!");
+    }
+/*
+    flag = IDASetSensErrCon(idaData->ida_mem, TRUE);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## set IDASensEEtolerances failed!");
+    }
+*/
+    /* allocate result workspace */
+    idaData->ySResult = N_VCloneVectorArrayEmpty_Serial(idaData->Np, idaData->y);
+    for(i = 0; i < idaData->Np; ++i)
+    {
+      N_VSetArrayPointer_Serial((data->simulationInfo->sensitivityMatrix + i*idaData->N), idaData->ySResult[i]);
+    }
+  }
 
   free(tmp);
   TRACE_POP
@@ -437,6 +494,13 @@ ida_solver_deinitial(IDA_SOLVER *idaData){
   {
     free(idaData->states);
     free(idaData->statesDer);
+  }
+
+  if (idaData->idaSmode)
+  {
+    N_VDestroyVectorArray_Serial(idaData->yS, idaData->Np);
+    N_VDestroyVectorArray_Serial(idaData->ySp, idaData->Np);
+    N_VDestroyVectorArray_Serial(idaData->ySResult, idaData->Np);
   }
 
   N_VDestroy_Serial(idaData->errwgt);
@@ -485,22 +549,38 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     if (idaData->daeMode)
     {
       memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
-      // and  also algebraic vars
+      /* and  also algebraic vars */
       data->callback->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
       memcpy(idaData->statesDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
     }
-
     flag = IDAReInit(idaData->ida_mem,
         solverInfo->currentTime,
         idaData->y,
         idaData->yp);
-
 
     debugStreamPrint(LOG_SOLVER, 0, "Re-initialized IDA Solver");
 
     if (checkIDAflag(flag)){
       throwStreamPrint(threadData, "##IDA## Something goes wrong while reinit IDA solver after event!");
     }
+
+    if (idaData->idaSmode)
+    {
+      for(i=0; i<idaData->Np; ++i)
+      {
+        int j;
+        for(j=0; j<idaData->N; ++j)
+        {
+          NV_Ith_S(idaData->yS[i],j) = 0;
+          NV_Ith_S(idaData->ySp[i],j) = 0;
+        }
+      }
+      flag = IDASensReInit(idaData->ida_mem, IDA_SIMULTANEOUS, idaData->yS, idaData->ySp);
+      if (checkIDAflag(flag)){
+        throwStreamPrint(threadData, "##IDA## set IDASensInit failed!");
+      }
+    }
+
     idaData->setInitialSolution = 1;
   }
 
@@ -569,6 +649,10 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
         infoStreamPrint(LOG_SOLVER, 0, "##IDA## root found at time = %.15g", solverInfo->currentTime);
         finished = TRUE;
       }
+      else if (flag == IDA_TOO_MUCH_WORK)
+      {
+        warningStreamPrint(LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
+      }
       else
       {
         infoStreamPrint(LOG_STDOUT, 0, "##IDA## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
@@ -576,6 +660,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
         retVal = flag;
       }
     }
+
     /* closing new step message */
     messageClose(LOG_SOLVER);
 
@@ -599,6 +684,15 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     // and  also algebraic vars
     data->callback->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
     memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+  }
+
+  /* sensitivity mode */
+  if (idaData->idaSmode)
+  {
+    flag = IDAGetSens(idaData->ida_mem, &solverInfo->currentTime, idaData->ySResult);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## Something goes wrong while obtain results for parameter sensitivities!");
+    }
   }
 
   /* save stats */
@@ -656,10 +750,10 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   return retVal;
 }
 
-
 int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData)
 {
   TRACE_PUSH
+  IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
   DATA* data = (DATA*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->simData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->simData)->threadData);
 
@@ -671,7 +765,6 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
   double *statesDer = N_VGetArrayPointer(yp);
   double *delta  = N_VGetArrayPointer(res);
 
-
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
     setContext(data, &time, CONTEXT_ODE);
@@ -679,17 +772,23 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
   printCurrentStatesVector(LOG_DASSL_STATES, states, data, time);
   printVector(LOG_DASSL_STATES, "yd", statesDer, data->modelData->nStates, time);
 
-
   timeBackup = data->localData[0]->timeValue;
   data->localData[0]->timeValue = time;
 
   saveJumpState = threadData->currentErrorStage;
   threadData->currentErrorStage = ERROR_INTEGRATOR;
 
+
   /* try */
 #if !defined(OMC_EMCC)
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
+
+  /* if sensitivity mode update also bound parameters*/
+  if (idaData->idaSmode)
+  {
+    data->callback->updateBoundParameters(data, threadData);
+  }
 
   /* read input vars */
   externalInputUpdate(data);
@@ -702,7 +801,6 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
      and xd(=statesDerivativesBackup) */
   for(i=0; i < data->modelData->nStates; i++)
   {
-
     NV_Ith_S(res, i) = data->localData[0]->realVars[data->modelData->nStates + i] - NV_Ith_S(yp, i);
   }
   printVector(LOG_DASSL_STATES, "dd", delta, data->modelData->nStates, time);
@@ -722,7 +820,6 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
   if (data->simulationInfo->currentContext == CONTEXT_ODE){
     unsetContext(data);
   }
-  messageClose(LOG_SOLVER);
 
   TRACE_POP
   return retVal;
@@ -804,7 +901,6 @@ int residualFunctionIDADAEmode(double time, N_Vector yy, N_Vector yp, N_Vector r
   if (data->simulationInfo->currentContext == CONTEXT_ODE){
     unsetContext(data);
   }
-  messageClose(LOG_SOLVER);
 
   TRACE_POP
   return retVal;
@@ -853,7 +949,6 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   if (data->simulationInfo->currentContext == CONTEXT_EVENTS){
     unsetContext(data);
   }
-
 
   TRACE_POP
   return 0;

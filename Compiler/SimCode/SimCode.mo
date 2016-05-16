@@ -259,6 +259,7 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numJacobians;
     Integer numOptimizeConstraints;
     Integer numOptimizeFinalConstraints;
+    Integer numSensitivityParameters;
   end VARINFO;
 end VarInfo;
 

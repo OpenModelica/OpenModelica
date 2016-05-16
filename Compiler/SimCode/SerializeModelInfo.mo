@@ -135,6 +135,7 @@ algorithm
         b = serializeVarsHelp(file, vars.extObjVars, withOperations, b);
         b = serializeVarsHelp(file, vars.constVars, withOperations, b);
         b = serializeVarsHelp(file, vars.jacobianVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.sensitivityVars, withOperations, b);
       then ();
     else
       equation

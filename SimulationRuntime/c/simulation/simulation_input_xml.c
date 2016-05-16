@@ -176,6 +176,7 @@ typedef struct omc_ModelInput
   omc_ModelVariables    *rAlg; /* algebraic */
   omc_ModelVariables    *rPar; /* parameters */
   omc_ModelVariables    *rAli; /* aliases */
+  omc_ModelVariables    *rSen; /* sensitivities */
 
   omc_ModelVariables    *iAlg; /* int algebraic */
   omc_ModelVariables    *iPar; /* int parameters */
@@ -273,6 +274,8 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
           mi->lastCT = &mi->rPar;
         } else if (0 == strcmp(ct+1,"Ali")) {
           mi->lastCT = &mi->rAli;
+        } else if (0 == strcmp(ct+1,"Sen")) {
+          mi->lastCT = &mi->rSen;
         } else {
           fail = 1;
         }
@@ -425,10 +428,11 @@ void read_input_xml(MODEL_DATA* modelData,
   const char *filename, *guid, *override, *overrideFile;
   FILE* file = NULL;
   XML_Parser parser = NULL;
-  hash_string_long *mapAlias = NULL, *mapAliasParam = NULL;
+  hash_string_long *mapAlias = NULL, *mapAliasParam = NULL, *mapAliasSen = NULL;
   long *it, *itParam;
   mmc_sint_t i;
   int inputIndex = 0;
+  int k = 0;
 
   modelica_integer nxchk, nychk, npchk;
   modelica_integer nyintchk, npintchk;
@@ -616,6 +620,16 @@ void read_input_xml(MODEL_DATA* modelData,
     } \
     addHashStringLong(&mapAlias, info->name, j); /* create a mapping for Alias variable to get the correct index */ \
     debugStreamPrint(LOG_DEBUG, 0, "real %s: mapAlias[%s] = %ld", debugName, info->name, (long) j); \
+    if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) \
+    { \
+      if (0 == strcmp(findHashStringString(v, "isValueChangeable"), "true")) \
+      { \
+        long *it = findHashStringLongPtr(mapAliasParam, info->name); \
+        simulationInfo->sensitivityParList[k] = *it; \
+        infoStreamPrint(LOG_SOLVER, 0, "%d. sensitivity parameter %s at index %d", k, info->name, simulationInfo->sensitivityParList[k]); \
+        k++; \
+      } \
+    } \
   } \
   messageClose(LOG_DEBUG);
 
@@ -631,6 +645,11 @@ void read_input_xml(MODEL_DATA* modelData,
   READ_VARIABLES(modelData->integerParameterData,mi.iPar,INTEGER_ATTRIBUTE,read_var_attribute_int,"integer parameters",0,modelData->nParametersInteger,mapAliasParam);
   READ_VARIABLES(modelData->booleanParameterData,mi.bPar,BOOLEAN_ATTRIBUTE,read_var_attribute_bool,"boolean parameters",0,modelData->nParametersBoolean,mapAliasParam);
   READ_VARIABLES(modelData->stringParameterData,mi.sPar,STRING_ATTRIBUTE,read_var_attribute_string,"string parameters",0,modelData->nParametersString,mapAliasParam);
+
+  if (omc_flag[FLAG_IDAS])
+  {
+    READ_VARIABLES(modelData->realSensitivityData,mi.rSen,REAL_ATTRIBUTE,read_var_attribute_real,"real sensitivities",0, modelData->nSensitivityVars,mapAliasSen);
+  }
 
   /*
    * real all alias vars

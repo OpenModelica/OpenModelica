@@ -208,6 +208,7 @@ package SimCodeVar
       list<SimVar> mixedArrayVars;
       list<SimVar> residualVars;
       list<SimVar> algebraicDAEVars;
+      list<SimVar> sensitivityVars;
     end SIMVARS;
   end SimVars;
 
@@ -609,6 +610,7 @@ package SimCode
       Integer numJacobians;
       Integer numOptimizeConstraints;
       Integer numOptimizeFinalConstraints;
+      Integer numSensitivityParameters;
       end VARINFO;
   end VarInfo;
 

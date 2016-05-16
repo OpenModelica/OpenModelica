@@ -426,6 +426,8 @@ typedef struct MODEL_DATA
   DATA_BOOLEAN_ALIAS* booleanAlias;
   DATA_STRING_ALIAS* stringAlias;
 
+  STATIC_REAL_DATA* realSensitivityData;
+
   MODEL_DATA_XML modelDataXml;         /* TODO: Rename me? */
 
   const char* modelName;
@@ -477,6 +479,9 @@ typedef struct MODEL_DATA
   long nJacobians;
   long nResidualVars;
   long nAlgebraicDAEVars;
+
+  long nSensitivityVars;
+  long nSensitivityParamVars;
 }MODEL_DATA;
 
 typedef struct CLOCK_DATA {
@@ -573,6 +578,9 @@ typedef struct SIMULATION_INFO
   modelica_real* outputVars;
   EXTERNAL_INPUT external_input;
   modelica_real* residualVars;         /* used by integrators in dae solver mode */
+
+  modelica_real* sensitivityMatrix;    /* used by integrator for sensitivity mode  */
+  int* sensitivityParList;             /* used by integrator for sensitivity mode  */
 
   ANALYTIC_JACOBIAN* analyticJacobians;
 

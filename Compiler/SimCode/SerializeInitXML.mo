@@ -277,6 +277,10 @@ algorithm
   vr := scalarVariables(file, vars.stringParamVars, "sPar", vr);
   vr := scalarVariables(file, vars.stringAliasVars, "sAli", vr);
 
+  // sensitivity variables
+  vr := scalarVariables(file, vars.sensitivityVars, "rSen", vr);
+
+
 end modelVariables;
 
 function scalarVariables

@@ -238,6 +238,73 @@ algorithm
 end createSymbolicJacobianforStates;
 
 // =============================================================================
+// section for postOptModule >>generateSymbolicSensitivities<<
+//
+// That function generates symbolic sentivities for parameters
+// by differentiatiating the states with respect to the parameters
+// =============================================================================
+
+public function generateSymbolicSensitivities
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.BackendDAE outBackendDAE;
+protected
+  BackendDAE.EqSystems eqs;
+  BackendDAE.Shared shared;
+  BackendDAE.SymbolicJacobian symJacS;
+  BackendDAE.SparsePattern sparsePattern;
+  BackendDAE.SparseColoring sparseColoring;
+  DAE.FunctionTree funcs, functionTree;
+algorithm
+  System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
+  BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
+  (symJacS , sparsePattern, sparseColoring, funcs) := createSymbolicJacobianforParameters(inBackendDAE);
+  shared := addBackendDAESharedJacobian(symJacS, sparsePattern, sparseColoring, shared);
+  functionTree := BackendDAEUtil.getFunctions(shared);
+  functionTree := DAE.AvlTreePathFunction.join(functionTree, funcs);
+  shared := BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
+  outBackendDAE := BackendDAE.DAE(eqs,shared);
+  System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
+end generateSymbolicSensitivities;
+
+protected function createSymbolicJacobianforParameters
+"author: wbraun
+  all functionODE equation are differentiated with respect to the parameters."
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.SymbolicJacobian outJacobian;
+  output BackendDAE.SparsePattern outSparsePattern;
+  output BackendDAE.SparseColoring outSparseColoring;
+  output DAE.FunctionTree outFunctionTree;
+protected
+  BackendDAE.BackendDAE backendDAE2;
+  list<BackendDAE.Var>  varlst, knvarlst, states, inputvars, paramvars;
+  BackendDAE.Variables v, kv;
+algorithm
+  if Flags.isSet(Flags.JAC_DUMP2) then
+    print("analytical Jacobians -> start generate system for matrix S time : " + realString(clock()) + "\n");
+  end if;
+
+  backendDAE2 := BackendDAEUtil.copyBackendDAE(inBackendDAE);
+  backendDAE2 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
+  backendDAE2 := BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
+  BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)},BackendDAE.SHARED(knownVars = kv)) := backendDAE2;
+
+  // Prepare all needed variables
+  varlst := BackendVariable.varList(v);
+  knvarlst := BackendVariable.varList(kv);
+  states := BackendVariable.getAllStateVarFromVariables(v);
+  inputvars := List.select(knvarlst,BackendVariable.isInput);
+  paramvars := List.select(knvarlst, BackendVariable.isParam);
+
+  if Flags.isSet(Flags.JAC_DUMP2) then
+    print("analytical Jacobians -> prepared vars for symbolic matrix S time: " + realString(clock()) + "\n");
+  end if;
+  if Flags.isSet(Flags.JAC_DUMP2) then
+    BackendDump.bltdump("System to create symbolic jacobian of: ",backendDAE2);
+  end if;
+  (outJacobian, outSparsePattern, outSparseColoring, outFunctionTree) := createJacobian(backendDAE2,paramvars,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(states),BackendVariable.listVar1(states),varlst,"S");
+end createSymbolicJacobianforParameters;
+
+// =============================================================================
 // section for postOptModule >>generateSymbolicLinearizationPast<<
 //
 // =============================================================================

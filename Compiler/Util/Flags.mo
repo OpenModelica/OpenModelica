@@ -865,6 +865,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("extendDynamicOptimization", Util.gettext("Move loops to constraints.")),
     ("generateSymbolicJacobian", Util.gettext("Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac.")),
     ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t:math:`ty = Cx +Du`")),
+    ("generateSymbolicSensitivities", Util.gettext("Generates symbolic Sensivities matrix, where der(x) is differentiated w.r.t. param.")),
     ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")),
     ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
     ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")),
@@ -1290,6 +1291,9 @@ constant ConfigFlag SET_RESIDUAL_EQNS = CONFIG_FLAG(98, "setResidualEqns",
 constant ConfigFlag IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION = CONFIG_FLAG(99, "ignoreCommandLineOptionsAnnotation",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Ignores the command line options specified as annotation in the class."));
+constant ConfigFlag CALCULATE_SENSITIVITIES = CONFIG_FLAG(100, "calculateSensitivities",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Generates sensitivities variables and matrixes."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1394,7 +1398,8 @@ constant list<ConfigFlag> allConfigFlags = {
   INLINE_METHOD,
   SET_TEARING_VARS,
   SET_RESIDUAL_EQNS,
-  IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION
+  IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION,
+  CALCULATE_SENSITIVITIES
 };
 
 public function new

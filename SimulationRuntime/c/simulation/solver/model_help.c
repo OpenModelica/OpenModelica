@@ -39,6 +39,7 @@
 #include "util/omc_error.h"
 #include "util/varinfo.h"
 #include "model_help.h"
+#include "simulation/options.h"
 #include "simulation/simulation_info_json.h"
 #include "util/omc_msvc.h" /* for freaking round! */
 #include "nonlinearSystem.h"
@@ -1023,6 +1024,15 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* allocate memory for state selection */
   initializeStateSetJacobians(data, threadData);
 
+  /* allocate memory for sensitivity analysis */
+  if (omc_flag[FLAG_IDAS])
+  {
+    data->simulationInfo->sensitivityParList = (int*) calloc(data->modelData->nSensitivityParamVars, sizeof(int));
+    data->simulationInfo->sensitivityMatrix = (modelica_real*) calloc(data->modelData->nSensitivityVars-data->modelData->nSensitivityParamVars, sizeof(modelica_real));
+    data->modelData->realSensitivityData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nSensitivityVars * sizeof(STATIC_REAL_DATA));
+  }
+
+
   TRACE_POP
 }
 
@@ -1142,6 +1152,13 @@ void deInitializeDataStruc(DATA *data)
   /* free stateset data */
   freeStateSetData(data);
 
+  /* free parameter sensitivities */
+  if (omc_flag[FLAG_IDAS])
+  {
+    free(data->simulationInfo->sensitivityParList);
+    free(data->simulationInfo->sensitivityMatrix);
+    FREE_VARS(nSensitivityVars, realSensitivityData)
+  }
 
   TRACE_POP
 }

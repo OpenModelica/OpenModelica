@@ -1184,6 +1184,8 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nResidualVars = <%listLength(vars.residualVars)%>;
     data->modelData->nAlgebraicDAEVars = <%listLength(vars.algebraicDAEVars)%>;
 
+    data->modelData->nSensitivityVars = <%listLength(vars.sensitivityVars)%>;
+    data->modelData->nSensitivityParamVars = <%varInfo.numSensitivityParameters%>;
     >>
   end match
 end populateModelInfo;
