@@ -442,10 +442,13 @@ ELSE(NOT FMU_TARGET)
   FIND_PACKAGE(Boost COMPONENTS filesystem system serialization program_options)
 ENDIF(NOT FMU_TARGET)
 
-# This helps with gcc5 when having compiled boost with gcc4
-#IF(NOT MSVC)
-#  ADD_DEFINITIONS(-D_GLIBCXX_USE_CXX11_ABI=0)
-#ENDIF(NOT MSVC)
+# Use old C++ ABI for cross compilation of FMUs
+# because libstdc++ might not be upgraded yet
+# (e.g. i686-w64-mingw32 under Ubuntu 16.04 LTS).
+# Note: the default ABI is used for simulators that link with boost libs.
+IF(FMU_TARGET AND NOT MSVC)
+  ADD_DEFINITIONS(-D_GLIBCXX_USE_CXX11_ABI=0)
+ENDIF(FMU_TARGET AND NOT MSVC)
 
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 SET(Boost_LIBRARIES ${Boost_LIBRARIES_TMP})
