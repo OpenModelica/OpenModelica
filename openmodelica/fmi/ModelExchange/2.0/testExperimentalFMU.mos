@@ -1,6 +1,7 @@
 // name:     TestExperimentalFMU
 // keywords: fmu export QSS multirate
 // status: correct
+// teardown_command: rm -rf log.txt
 
 loadString("
 model advection
@@ -20,14 +21,18 @@ end advection; ");
 setDebugFlags("fmuExperimental");
 translateModelFMU(advection ,"2","me","<default>");
 getErrorString();
-system("unzip -cqq advection.fmu sources/advection.c | grep \"void advection_functionODE_Partial(\"");
+system("rm -f log.txt");
+system("unzip -cqq advection.fmu sources/advection.c | grep \"void advection_functionODE_Partial(\"", "log.txt");
+readFile("log.txt");
 
-// Result: 
+// Result:
 // true
 // true
 // "SimCode: The model advection has been translated to FMU"
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
-// void advection_functionODE_Partial(DATA *data, threadData_t *threadData, int i)
 // 0
-
+// 0
+// "void advection_functionODE_Partial(DATA *data, threadData_t *threadData, int i)
+// "
+// endResult
