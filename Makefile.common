@@ -424,6 +424,13 @@ sundials: 3rdParty/sundials/CMakeLists.txt umfpack
 	(cp -pfr 3rdParty/sundials/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
 	# copy the libs to the build/lib/omc directory
 	(cp -pf 3rdParty/sundials/build/lib/* $(builddir_lib_omc))
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
 	# copy the dlls to the build bin directory
 	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
 clean-sundials:
