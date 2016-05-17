@@ -4742,11 +4742,9 @@ algorithm
        case SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
          equation
            res = DAE.NORM_INLINE();
-         then true;
+         then false;
 
        case SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(false))))
-         guard
-           (match res case  DAE.AFTER_INDEX_RED_INLINE() then false; else true; end match)
          equation
            res = DAE.NO_INLINE();
          then false;
@@ -4754,22 +4752,22 @@ algorithm
        case SCode.NAMEMOD("LateInline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
          equation
           res = DAE.AFTER_INDEX_RED_INLINE();
-         then false;
+         then true;
 
        case SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
          equation
           res = DAE.AFTER_INDEX_RED_INLINE();
-         then false;
+         then true;
 
        case SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
          equation
           res = DAE.AFTER_INDEX_RED_INLINE();
-         then false;
+         then true;
 
        case SCode.NAMEMOD("InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
          equation
           res = DAE.AFTER_INDEX_RED_INLINE();
-         then false;
+         then true;
 
        case SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
          equation
