@@ -238,6 +238,12 @@ install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) so
 	# copy libraries
 	cp -p $(LIBSIMULATION) $(LIBFMIRUNTIME) $(builddir_lib)
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
+	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.2.dylib @rpath/libsundials_ida.2.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib @rpath/libsundials_nvecserial.0.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib @rpath/libsundials_kinsol.1.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.2.dylib @rpath/libsundials_ida.2.dylib $(builddir_lib)/$(LIBSIMULATION)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib @rpath/libsundials_nvecserial.0.dylib $(builddir_lib)/$(LIBSIMULATION)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib @rpath/libsundials_kinsol.1.dylib $(builddir_lib)/$(LIBSIMULATION)
 	# copy fmi stuff
 	cp -p $(RUNTIME_HEADERS_FMU) ../fmi/export/fmi1/*.h \
 	   ../fmi/export/fmi1/fmu1_model_interface.c $(builddir_inc)/c/fmi1
