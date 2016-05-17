@@ -2211,12 +2211,12 @@ algorithm
         (cache, Values.ARRAY(valueLst = (indices as (Values.INTEGER(integer = i) :: _))), st) =
         cevalExp(e, inCache, inEnv, st);
         // Split the list of old values at the first slice index.
-        (old_values, old_values2) = List.split(old_values, i - 1);
+        (old_values, old_values2) = List.splitr(old_values, i - 1);
         // Update the rest of the old value with assignSlice.
         (cache, values2, st) =
           assignSlice(values, old_values2, indices, rest_subs, i, cache, inEnv, st);
         // Assemble the list of values again.
-        values = listAppend(old_values, values2);
+        values = List.append_reverse(old_values, values2);
       then
         (cache, Values.ARRAY(values, dims), st);
 

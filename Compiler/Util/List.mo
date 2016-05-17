@@ -453,8 +453,8 @@ protected
   list<T> lst1, lst2;
 algorithm
   true := (inN > 0);
-  (lst1, lst2) := split(inList, inN-1);
-  outList := listAppend(lst1,inElement::lst2);
+  (lst1, lst2) := splitr(inList, inN-1);
+  outList := append_reverse(lst1,inElement::lst2);
 end insert;
 
 public function insertListSorted<T>
@@ -524,9 +524,9 @@ protected
   list<T> lst1, lst2;
 algorithm
   true := (inN > 0);
-  (lst1, lst2) := split(inList, inN-1);
+  (lst1, lst2) := splitr(inList, inN-1);
   lst2 := stripFirst(lst2);
-  outList := listAppend(lst1,inElement::lst2);
+  outList := append_reverse(lst1,inElement::lst2);
 end set;
 
 public function first<T>
@@ -1144,6 +1144,31 @@ algorithm
   outList1 := listReverseInPlace(l1);
   outList2 := l2;
 end split;
+
+public function splitr<T>
+  "Takes a list and a position, and splits the list at the position given. The first list is returned in reverse order.
+    Example: split({1, 2, 5, 7}, 2) => ({2, 1}, {5, 7})"
+  input list<T> inList;
+  input Integer inPosition;
+  output list<T> outList1;
+  output list<T> outList2;
+protected
+  Integer pos;
+  list<T> l1 = {}, l2 = inList;
+  T e;
+algorithm
+  true := inPosition >= 0;
+  pos := inPosition;
+
+  // Move elements from l2 to l1 until we reach the split position.
+  for i in 1:pos loop
+    e :: l2 := l2;
+    l1 := e :: l1;
+  end for;
+
+  outList1 := l1;
+  outList2 := l2;
+end splitr;
 
 public function splitOnTrue<T>
   "Splits a list into two sublists depending on predicate function."
