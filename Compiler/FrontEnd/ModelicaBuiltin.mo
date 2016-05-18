@@ -3055,7 +3055,7 @@ end iconv;
 
 function getDocumentationAnnotation "Returns the documentaiton annotation defined in the class."
   input TypeName cl;
-  output String out[2] "{info,revision} TODO: Should be changed to have 2 outputs instead of an array of 2 Strings...";
+  output String out[3] "{info,revision,infoHeader} TODO: Should be changed to have 2 outputs instead of an array of 2 Strings...";
 external "builtin";
 annotation(preferredView="text");
 end getDocumentationAnnotation;

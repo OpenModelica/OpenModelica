@@ -41,14 +41,6 @@
 
 setDebugFlags("nogen") /* Don't generate dll/so-files when instantiating classes (performance) */;
 
-loadModel(Modelica);
-
-writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries()));
-getErrorString();
-runScript("loadModel.mos");
-getErrorString();
-getClassNames();
-
 // rmSymlinks
 // (false) should we keep readable names (nice online, if the server handles symbolic links), or
 // (true) use the hashed names in the links (nice if you want a zipped version to work on Windows). This removes the readable names, keeping only the hashed and de-duped images.
@@ -58,12 +50,40 @@ genBuiltin := true;
 // should we generate MetaModelica documentation?
 genMetaModelica := true and genBuiltin;
 
+shouldEcho := true;
+if getEnvironmentVar("GenerateDocTest") == "YES"
+then
+  writeFile("loadModel.mos","
+  loadString(\"
+  package TestGenerateDoc
+    annotation(Documentation(info=\\\"<html>TestGenerateDoc HTML</html>\\\"));
+  end TestGenerateDoc;\");"); getErrorString();
+  shouldEcho := false;
+else
+  // should we generate documentation for OM built-in functions?
+  genBuiltin := false;
+  // should we generate MetaModelica documentation?
+  genMetaModelica := false;
+  loadModel(Modelica); getErrorString();
+  writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries())); getErrorString();
+end if;
+getErrorString();
+runScript("loadModel.mos");
+getErrorString();
+getClassNames();
+
 echo(false);
 self:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/GenerateDoc.mos";getErrorString();
 py:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/generate_icons.py";getErrorString();
-commands:={"(ulimit -t 600 ; python "+py+" --quiet --output-dir Icons "+typeNameString(cl)+" )" for cl in getClassNames(builtin=false)};getErrorString();
-res:=system_parallel(commands);getErrorString();
-system("rm -f *.json");getErrorString();
+
+// adrpo: do not run the python stuff when running the testsuite
+if getEnvironmentVar("GenerateDocTest") == "YES" then
+  system("mkdir -p Icons");
+else
+  commands:={"(ulimit -t 600 ; python "+py+" --quiet --output-dir Icons "+typeNameString(cl)+" )" for cl in getClassNames(builtin=false)};getErrorString();
+  res:=system_parallel(commands);getErrorString();
+  system("rm -f *.json");getErrorString();
+end if;
 /* if max(res) <> 0 then
   exit(1);
 end if; */
@@ -74,12 +94,15 @@ if genMetaModelica then
   setCommandLineOptions("+g=Modelica");
 end if;
 
+genTimeStamp := "2016";
 allClassNames:=getClassNames(builtin=genBuiltin,recursive=true,sort=true);
+if not getEnvironmentVar("GenerateDocTest") == "YES" then
 system("date -u +%FT%TZ > tmp");
 genTimeStamp := readFile("tmp");
+end if;
 version := "<hr />Generated at " + genTimeStamp + " by <a href=\"http://openmodelica.org\">OpenModelica</a>" + getVersion() + " using <a href=\"GenerateDoc.mos\">GenerateDoc.mos</a>";
 
-echo(true);
+echo(shouldEcho);
 "classNames";
 classNames := getClassNames(builtin=genBuiltin,sort=true);
 
@@ -163,7 +186,7 @@ end head;
 record Item
   String file;
   String head;
-  String docInfo[2];
+  String docInfo[3];
   String contents;
   String comment;
   String interface;
@@ -224,7 +247,8 @@ items:={Item(
       preSuffixIfNotEmpty("\n<h4><a name=\"interface\">Interface</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,interfaceOnly=true)),"</pre></blockquote>"),
       preSuffixIfNotEmpty("\n<h4><a name=\"definition\">Definition</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,shortOnly=true)),"</pre></blockquote>")
     ) for c in allClassNames};
-echo(true);
+
+echo(shouldEcho);
 "Start writing items to file";
 writeFile(itemFile(items) /* Vector of filenames */,itemString(items,version) /* Vector of file contents */);
 getErrorString();
@@ -411,7 +435,7 @@ writeFile("FilterTidy.sh","#!/bin/bash
 grep -v DOCTYPE tidy.err | grep -v \"<body>\" |grep -v \"<html>\\|</html>\" |grep -v lacks |grep -v apos | grep -B1 Warning > tidy.filtered
 ");
 
-echo(true);
+echo(shouldEcho);
 "Removing previous generation output files...";
 system("rm -f tidy.links tidy.out tidy.err tidy.filtered");
 
