@@ -87,7 +87,7 @@ omc-bootstrapped: mkbuilddirs
 	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
 	@# See if any library is linked directly into the build dirs (we should use @rpath everywhere)
-	test ! `uname` = Darwin || ( ! otool -L "$(builddir_lib_omc)"/*.dylib | egrep "$(OMBUILDDIR)|`pwd`" || ( echo All dylibs should be linked using @rpath ; false ) )
+	test ! `uname` = Darwin || ( ! otool -L "$(builddir_lib_omc)"/*.dylib | egrep "$(OMBUILDDIR)|`pwd`" | grep -v : || ( echo All dylibs should be linked using @rpath ; false ) )
 
 omc-no-sim:
 	$(MAKE) bootstrap-dependencies interactive-short
