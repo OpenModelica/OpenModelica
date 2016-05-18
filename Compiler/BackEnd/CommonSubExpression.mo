@@ -108,7 +108,7 @@ algorithm
 
     // the module traverses the EqSystem twice
     // the first time the module notices the equations CREF = CALL or CALL = CREF; and creates a statistic if the experimentalB is true
-    (orderedEqs, (HT, HT2)) := BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, createStats, (HT, HT2));
+    //(orderedEqs, (HT, HT2)) := BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, createStats, (HT, HT2));
     // the second time the module looks for calls and substitutes with cse-variables or with the CREF of the first iteration
     (orderedEqs, (HT, index, eqList, varList, _, matchingBoolean)) := BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, wrapFunctionCalls2, (HT, index, {}, {}, functionTree, matchingBoolean));
 
@@ -261,8 +261,8 @@ algorithm
     case (DAE.CALL(), DAE.RCONST(0.0)) then (inEq, inTuple);
     case (_, DAE.CALL(path=Absyn.IDENT("smooth"))) then (inEq, inTuple);
     case (DAE.CALL(path=Absyn.IDENT("smooth")), _) then (inEq, inTuple);
-    case (DAE.CREF(), DAE.CALL()) then (inEq, inTuple);
-    case (DAE.CALL(), DAE.CREF()) then (inEq, inTuple);
+    // case (DAE.CREF(), DAE.CALL()) then (inEq, inTuple);
+    // case (DAE.CALL(), DAE.CREF()) then (inEq, inTuple);
     else equation
       (eq, (tpl, _)) = BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls3, (inTuple, BackendEquation.equationSource(inEq)));
     then (eq, tpl);
