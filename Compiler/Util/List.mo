@@ -736,32 +736,36 @@ public function sort<T>
       sort({2, 1, 3}, intLt) => {3, 2, 1}"
   input list<T> inList;
   input CompareFunc inCompFunc;
-  output list<T> outList;
+  output list<T> outList= {};
 
   partial function CompareFunc
     input T inElement1;
     input T inElement2;
     output Boolean inRes;
   end CompareFunc;
+protected
+  list<T> rest = inList;
+  T e1, e2;
+  list<T> left, right;
+  Integer middle;
 algorithm
-  outList := match(inList)
-    local
-      T e;
-      list<T> left, right;
-      Integer middle;
-
-    case {} then {};
-    case {e} then {e};
+  if not listEmpty(rest) then
+    e1 :: rest := rest;
+    if listEmpty(rest) then
+      outList := inList;
     else
-      equation
-        middle = intDiv(listLength(inList), 2);
-        (left, right) = split(inList, middle);
-        left = sort(left, inCompFunc);
-        right = sort(right, inCompFunc);
-      then
-        merge(left, right, inCompFunc, {});
-
-  end match;
+      e2 :: rest := rest;
+      if listEmpty(rest) then
+        outList := if inCompFunc(e2, e1) then inList else e2::{e1};
+      else
+        middle := intDiv(listLength(inList), 2);
+        (left, right) := split(inList, middle);
+        left := sort(left, inCompFunc);
+        right := sort(right, inCompFunc);
+        outList := merge(left, right, inCompFunc, {});
+      end if;
+    end if;
+  end if;
 end sort;
 
 public function sortedDuplicates<T>
@@ -810,7 +814,6 @@ algorithm
     rest := match rest
       local
         T e1,e2;
-      case {} then {};
       case {_} then {};
       case e1::(rest as e2::_)
         algorithm
