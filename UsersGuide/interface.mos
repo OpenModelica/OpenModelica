@@ -15,7 +15,7 @@ function reSTInterface
 protected
   String s;
   String strs[:] = OpenModelica.Scripting.typeNameStrings(cl);
-  String doc[2] = OpenModelica.Scripting.getDocumentationAnnotation(cl);
+  String doc[3] = OpenModelica.Scripting.getDocumentationAnnotation(cl);
   String doc1 = doc[1];
 algorithm
   out := \"\\n.. _\" + strs[end] + \" :\\n\\n\" + strs[end] + \"\\n\" + sum(\"^\" for c in 1:stringLength(strs[end])) + \"\\n\";
