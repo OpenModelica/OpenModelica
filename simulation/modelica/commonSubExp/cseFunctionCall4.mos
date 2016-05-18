@@ -51,23 +51,27 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (7)
+// ########### Updated Variable List (simulation) ########### (9)
 // ========================================
 // 1: z.r2:DISCRETE()  type: Integer 
 // 2: z.r1:VARIABLE()  type: Real 
 // 3: y.r2:DISCRETE()  type: Integer 
 // 4: y.r1:VARIABLE()  type: Real 
 // 5: x:VARIABLE()  type: Real 
-// 6: $cse1.r2:DISCRETE()  type: Integer  unreplaceable
-// 7: $cse1.r1:VARIABLE()  type: Real  unreplaceable
+// 6: $cse3.r2:DISCRETE()  type: Integer  unreplaceable
+// 7: $cse3.r1:VARIABLE()  type: Real  unreplaceable
+// 8: $cse2:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (4, 7)
+// ########### Updated Equation List (simulation) ########### (6, 9)
 // ========================================
-// 1/1 (1): x = sin(time * cos(time))   [dynamic]
-// 2/2 (2): y = $cse1   [binding]
-// 3/4 (2): z = $cse1   [binding]
-// 4/6 (2): $cse1 = CSE.functions.f3(time, x)   [binding]
+// 1/1 (1): x = $cse2   [dynamic]
+// 2/2 (2): y = $cse3   [binding]
+// 3/4 (2): z = $cse3   [binding]
+// 4/6 (2): $cse3 = CSE.functions.f3(time, x)   [binding]
+// 5/8 (1): $cse2 = sin(time * $cse1)   [binding]
+// 6/9 (1): $cse1 = cos(time)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest4_res.mat",

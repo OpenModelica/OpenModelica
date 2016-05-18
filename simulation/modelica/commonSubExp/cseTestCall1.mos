@@ -57,24 +57,26 @@ simulate(CSE.TestCall1); getErrorString();
 // 3/3 (2): ($cse1, $cse2) = CSE.TestCall1.f(time)   [binding]
 //
 //
-// ########### Updated Variable List (simulation) ########### (6)
+// ########### Updated Variable List (simulation) ########### (7)
 // ========================================
 // 1: E:VARIABLE()  type: Real 
 // 2: D:VARIABLE()  type: Real 
 // 3: C:VARIABLE()  type: Real 
 // 4: A:VARIABLE()  type: Real 
-// 5: $cse4:VARIABLE()  type: Real  unreplaceable
-// 6: $cse3:VARIABLE()  type: Real  unreplaceable
+// 5: $cse5:VARIABLE()  type: Real  unreplaceable
+// 6: $cse4:VARIABLE()  type: Real  unreplaceable
+// 7: $cse3:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (6, 6)
+// ########### Updated Equation List (simulation) ########### (7, 7)
 // ========================================
-// 1/1 (1): E = A + $cse4   [dynamic]
-// 2/2 (1): D = log(A)   [dynamic]
+// 1/1 (1): E = A + $cse5   [dynamic]
+// 2/2 (1): D = $cse3   [dynamic]
 // 3/3 (1): A = 4.0 * C   [dynamic]
 // 4/4 (1): C = 1.0 + time   [binding]
-// 5/5 (1): $cse4 = log($cse3)   [binding]
-// 6/6 (1): $cse3 = log(D)   [binding]
+// 5/5 (1): $cse5 = log($cse4)   [binding]
+// 6/6 (1): $cse4 = log($cse3)   [binding]
+// 7/7 (1): $cse3 = log(A)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.TestCall1_res.mat",

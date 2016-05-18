@@ -66,7 +66,7 @@ simulate(CSE.FunctionCallTest5); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (12)
+// ########### Updated Variable List (simulation) ########### (14)
 // ========================================
 // 1: b:VARIABLE()  type: Real 
 // 2: a:VARIABLE()  type: Real 
@@ -75,22 +75,26 @@ simulate(CSE.FunctionCallTest5); getErrorString();
 // 5: y.r2:DISCRETE()  type: Integer 
 // 6: y.r1:VARIABLE()  type: Real 
 // 7: x:VARIABLE()  type: Real 
-// 8: $cse3:VARIABLE()  type: Real  unreplaceable
-// 9: $cse2.r2:DISCRETE()  type: Integer  unreplaceable
-// 10: $cse2.r1:VARIABLE()  type: Real  unreplaceable
-// 11: $cse1.r2:DISCRETE()  type: Integer  unreplaceable
-// 12: $cse1.r1:VARIABLE()  type: Real  unreplaceable
+// 8: $cse5:VARIABLE()  type: Real  unreplaceable
+// 9: $cse4.r2:DISCRETE()  type: Integer  unreplaceable
+// 10: $cse4.r1:VARIABLE()  type: Real  unreplaceable
+// 11: $cse3.r2:DISCRETE()  type: Integer  unreplaceable
+// 12: $cse3.r1:VARIABLE()  type: Real  unreplaceable
+// 13: $cse2:VARIABLE()  type: Real  unreplaceable
+// 14: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (7, 12)
+// ########### Updated Equation List (simulation) ########### (9, 14)
 // ========================================
-// 1/1 (1): x = sin(time * cos(time))   [dynamic]
-// 2/2 (1): a = $cse3   [dynamic]
-// 3/3 (1): b = $cse3   [dynamic]
-// 4/4 (2): z = $cse2   [dynamic]
-// 5/6 (2): y = $cse2   [dynamic]
-// 6/8 (3): ($cse2, $cse3) = CSE.functions.f4(time, x, $cse1)   [binding]
-// 7/11 (2): $cse1 = CSE.functions.f3(time, x)   [binding]
+// 1/1 (1): x = $cse2   [dynamic]
+// 2/2 (1): a = $cse5   [dynamic]
+// 3/3 (1): b = $cse5   [dynamic]
+// 4/4 (2): z = $cse4   [dynamic]
+// 5/6 (2): y = $cse4   [dynamic]
+// 6/8 (3): ($cse4, $cse5) = CSE.functions.f4(time, x, $cse3)   [binding]
+// 7/11 (2): $cse3 = CSE.functions.f3(time, x)   [binding]
+// 8/13 (1): $cse2 = sin(time * $cse1)   [binding]
+// 9/14 (1): $cse1 = cos(time)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest5_res.mat",

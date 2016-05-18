@@ -49,7 +49,7 @@ simulate(Tearing3); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List ########### (17)
+// ########### Updated Variable List (simulation) ########### (17)
 // ========================================
 // 1: iC:VARIABLE()  type: Real 
 // 2: iL:DUMMY_STATE()  type: Real 
@@ -66,11 +66,55 @@ simulate(Tearing3); getErrorString();
 // 13: $DER.i1:DUMMY_DER(fixed = false )  type: Real 
 // 14: $DER.u1:DUMMY_DER(fixed = false )  type: Real 
 // 15: $DER.uL:DUMMY_DER(fixed = false )  type: Real 
-// 16: $cseb10:VARIABLE()  type: Real  unreplaceable
-// 17: $cseb3:VARIABLE()  type: Real  unreplaceable
+// 16: $cse2:VARIABLE()  type: Real  unreplaceable
+// 17: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List ########### (17, 17)
+// ########### Updated Equation List (simulation) ########### (17, 17)
+// ========================================
+// 1/1 (1): $DER.i1 = der(i2) + $DER.iL   [dynamic]
+// 2/2 (1): i0 = i1 + iC   [dynamic]
+// 3/3 (1): $DER.uC = $DER.u1 + $DER.uL   [dynamic]
+// 4/4 (1): $DER.u0 = $DER.u1 + $DER.uL   [dynamic]
+// 5/5 (1): iC = C * $DER.uC   [dynamic]
+// 6/6 (1): uL = L * $DER.iL   [dynamic]
+// 7/7 (1): $DER.uL = R2 * der(i2)   [dynamic]
+// 8/8 (1): $DER.u1 = R1 * $DER.i1   [dynamic]
+// 9/9 (1): $DER.u0 = $cse1   [dynamic]
+// 10/10 (1): u0 = $cse2   [dynamic]
+// 11/11 (1): u1 = R1 * i1   [dynamic]
+// 12/12 (1): uL = R2 * i2   [dynamic]
+// 13/13 (1): u0 = u1 + uL   [dynamic]
+// 14/14 (1): uC = u1 + uL   [dynamic]
+// 15/15 (1): i1 = i2 + iL   [dynamic]
+// 16/16 (1): $cse2 = sin(time)   [binding]
+// 17/17 (1): $cse1 = cos(time)   [binding]
+//
+//
+// ########### Updated Variable List ########### (19)
+// ========================================
+// 1: iC:VARIABLE()  type: Real 
+// 2: iL:DUMMY_STATE()  type: Real 
+// 3: i2:STATE(1)(start = 0.0 fixed = true )  type: Real 
+// 4: i1:DUMMY_STATE()  type: Real 
+// 5: i0:VARIABLE()  type: Real 
+// 6: uC:DUMMY_STATE()  type: Real 
+// 7: uL:DUMMY_STATE()  type: Real 
+// 8: u1:DUMMY_STATE()  type: Real 
+// 9: u0:DUMMY_STATE()  type: Real 
+// 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
+// 11: $DER.iL:DUMMY_DER(fixed = false )  type: Real 
+// 12: $DER.u0:DUMMY_DER(fixed = false )  type: Real 
+// 13: $DER.i1:DUMMY_DER(fixed = false )  type: Real 
+// 14: $DER.u1:DUMMY_DER(fixed = false )  type: Real 
+// 15: $DER.uL:DUMMY_DER(fixed = false )  type: Real 
+// 16: $cse2:VARIABLE()  type: Real  unreplaceable
+// 17: $cse1:VARIABLE()  type: Real  unreplaceable
+// 18: $cseb10:VARIABLE()  type: Real  unreplaceable
+// 19: $cseb3:VARIABLE()  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List ########### (19, 19)
 // ========================================
 // 1/1 (1): $DER.i1 = der(i2) + $DER.iL   [dynamic]
 // 2/2 (1): i0 = i1 + iC   [dynamic]
@@ -80,15 +124,17 @@ simulate(Tearing3); getErrorString();
 // 6/6 (1): uL = L * $DER.iL   [dynamic]
 // 7/7 (1): $DER.uL = R2 * der(i2)   [dynamic]
 // 8/8 (1): $DER.u1 = R1 * $DER.i1   [dynamic]
-// 9/9 (1): $DER.u0 = cos(time)   [dynamic]
-// 10/10 (1): u0 = sin(time)   [dynamic]
+// 9/9 (1): $DER.u0 = $cse1   [dynamic]
+// 10/10 (1): u0 = $cse2   [dynamic]
 // 11/11 (1): u1 = R1 * i1   [dynamic]
 // 12/12 (1): uL = R2 * i2   [dynamic]
 // 13/13 (1): u0 = $cseb10   [dynamic]
 // 14/14 (1): uC = $cseb10   [dynamic]
 // 15/15 (1): i1 = i2 + iL   [dynamic]
-// 16/16 (1): $cseb10 = u1 + uL   [binding]
-// 17/17 (1): $cseb3 = $DER.u1 + $DER.uL   [binding]
+// 16/16 (1): $cse2 = sin(time)   [binding]
+// 17/17 (1): $cse1 = cos(time)   [binding]
+// 18/18 (1): $cseb10 = u1 + uL   [binding]
+// 19/19 (1): $cseb3 = $DER.u1 + $DER.uL   [binding]
 //
 // record SimulationResult
 //     resultFile = "Tearing3_res.mat",

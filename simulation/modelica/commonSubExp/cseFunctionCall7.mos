@@ -69,7 +69,7 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (15)
+// ########### Updated Variable List (simulation) ########### (16)
 // ========================================
 // 1: r.r1:VARIABLE()  type: Real 
 // 2: b[2]:VARIABLE()  type: Real  [2]
@@ -79,27 +79,29 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // 6: z:VARIABLE()  type: Real 
 // 7: y:VARIABLE()  type: Real 
 // 8: x:VARIABLE()  type: Real 
-// 9: $cse5[2]:VARIABLE()  type: Real  [2] unreplaceable
-// 10: $cse5[1]:VARIABLE()  type: Real  [2] unreplaceable
-// 11: $cse4:VARIABLE()  type: Real  unreplaceable
-// 12: $cse3.r2:DISCRETE()  type: Integer  unreplaceable
-// 13: $cse3.r1:VARIABLE()  type: Real  unreplaceable
-// 14: $cse2:VARIABLE()  type: Real  unreplaceable
-// 15: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse6:VARIABLE()  type: Real  unreplaceable
+// 10: $cse5[2]:VARIABLE()  type: Real  [2] unreplaceable
+// 11: $cse5[1]:VARIABLE()  type: Real  [2] unreplaceable
+// 12: $cse4:VARIABLE()  type: Real  unreplaceable
+// 13: $cse3.r2:DISCRETE()  type: Integer  unreplaceable
+// 14: $cse3.r1:VARIABLE()  type: Real  unreplaceable
+// 15: $cse2:VARIABLE()  type: Real  unreplaceable
+// 16: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (10, 15)
+// ########### Updated Equation List (simulation) ########### (11, 16)
 // ========================================
 // 1/1 (1): x = $cse2 * r.r1   [dynamic]
 // 2/2 (2): a = $cse5   [dynamic]
 // 3/4 (2): b = $cse5   [dynamic]
-// 4/6 (1): r.r1 = CSE.functions.f6_eval4(time, time)   [dynamic]
-// 5/7 (1): z = $cse4   [dynamic]
-// 6/8 (1): y = $cse4   [dynamic]
-// 7/9 (3): ($cse4, $cse5) = CSE.functions.f5(time, x, $cse3)   [binding]
-// 8/12 (2): $cse3 = CSE.functions.f6(time, x)   [binding]
-// 9/14 (1): $cse2 = sin(time * $cse1)   [binding]
-// 10/15 (1): $cse1 = cos(time)   [binding]
+// 4/6 (1): r.r1 = $cse6   [dynamic]
+// 5/7 (1): $cse6 = CSE.functions.f6_eval4(time, time)   [binding]
+// 6/8 (1): z = $cse4   [dynamic]
+// 7/9 (1): y = $cse4   [dynamic]
+// 8/10 (3): ($cse4, $cse5) = CSE.functions.f5(time, x, $cse3)   [binding]
+// 9/13 (2): $cse3 = CSE.functions.f6(time, x)   [binding]
+// 10/15 (1): $cse2 = sin(time * $cse1)   [binding]
+// 11/16 (1): $cse1 = cos(time)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest7_res.mat",

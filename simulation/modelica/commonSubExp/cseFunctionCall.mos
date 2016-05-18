@@ -197,20 +197,24 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (4)
+// ########### Updated Variable List (simulation) ########### (6)
 // ========================================
 // 1: z:STATE(1)()  type: Real 
 // 2: y:STATE(1)()  type: Real 
 // 3: x:VARIABLE()  type: Real 
-// 4: $cse1:VARIABLE()  type: Real  unreplaceable
+// 4: $cse3:VARIABLE()  type: Real  unreplaceable
+// 5: $cse2:VARIABLE()  type: Real  unreplaceable
+// 6: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (4, 4)
+// ########### Updated Equation List (simulation) ########### (6, 6)
 // ========================================
-// 1/1 (1): x = sin(time * cos(time))   [dynamic]
-// 2/2 (1): der(y) = $cse1   [dynamic]
-// 3/3 (1): der(z) = $cse1   [dynamic]
-// 4/4 (1): $cse1 = CSE.functions.f1(time, x)   [binding]
+// 1/1 (1): x = $cse2   [dynamic]
+// 2/2 (1): der(y) = $cse3   [dynamic]
+// 3/3 (1): der(z) = $cse3   [dynamic]
+// 4/4 (1): $cse3 = CSE.functions.f1(time, x)   [binding]
+// 5/5 (1): $cse2 = sin(time * $cse1)   [binding]
+// 6/6 (1): $cse1 = cos(time)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest1_res.mat",
@@ -220,25 +224,29 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 //
-// ########### Updated Variable List (simulation) ########### (7)
+// ########### Updated Variable List (simulation) ########### (9)
 // ========================================
 // 1: d:VARIABLE()  type: Real 
 // 2: c:VARIABLE()  type: Real 
 // 3: b:VARIABLE()  type: Real 
 // 4: a:VARIABLE()  type: Real 
 // 5: x:VARIABLE()  type: Real 
-// 6: $cse2:VARIABLE()  type: Real  unreplaceable
-// 7: $cse1:VARIABLE()  type: Real  unreplaceable
+// 6: $cse4:VARIABLE()  type: Real  unreplaceable
+// 7: $cse3:VARIABLE()  type: Real  unreplaceable
+// 8: $cse2:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (6, 7)
+// ########### Updated Equation List (simulation) ########### (8, 9)
 // ========================================
-// 1/1 (1): x = sin(time * cos(time))   [dynamic]
-// 2/2 (1): b = $cse2   [dynamic]
-// 3/3 (1): d = $cse2   [dynamic]
-// 4/4 (1): c = $cse1   [dynamic]
-// 5/5 (1): a = $cse1   [dynamic]
-// 6/6 (2): ($cse1, $cse2) = CSE.functions.f2(time, x)   [binding]
+// 1/1 (1): x = $cse2   [dynamic]
+// 2/2 (1): b = $cse4   [dynamic]
+// 3/3 (1): d = $cse4   [dynamic]
+// 4/4 (1): c = $cse3   [dynamic]
+// 5/5 (1): a = $cse3   [dynamic]
+// 6/6 (2): ($cse3, $cse4) = CSE.functions.f2(time, x)   [binding]
+// 7/8 (1): $cse2 = sin(time * $cse1)   [binding]
+// 8/9 (1): $cse1 = cos(time)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest2_res.mat",
@@ -247,7 +255,7 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // end SimulationResult;
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (9)
+// ########### Updated Variable List (simulation) ########### (11)
 // ========================================
 // 1: d:VARIABLE()  type: Real 
 // 2: c:VARIABLE()  type: Real 
@@ -256,20 +264,24 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // 5: z:STATE(1)()  type: Real 
 // 6: y:STATE(1)()  type: Real 
 // 7: x:VARIABLE()  type: Real 
-// 8: $cse2:VARIABLE()  type: Real  unreplaceable
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 8: $cse4:VARIABLE()  type: Real  unreplaceable
+// 9: $cse3:VARIABLE()  type: Real  unreplaceable
+// 10: $cse2:VARIABLE()  type: Real  unreplaceable
+// 11: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (8, 9)
+// ########### Updated Equation List (simulation) ########### (10, 11)
 // ========================================
-// 1/1 (1): x = sin(time * cos(time))   [dynamic]
-// 2/2 (1): der(y) = 2.0 + ($cse1, $cse2)[1]   [dynamic]
-// 3/3 (1): der(z) = 2.0 + ($cse1, $cse2)[1]   [dynamic]
-// 4/4 (1): b = $cse2   [dynamic]
-// 5/5 (1): d = $cse2   [dynamic]
-// 6/6 (1): c = $cse1   [dynamic]
-// 7/7 (1): a = $cse1   [dynamic]
-// 8/8 (2): ($cse1, $cse2) = CSE.functions.f2(time, x)   [binding]
+// 1/1 (1): x = $cse2   [dynamic]
+// 2/2 (1): der(y) = 2.0 + ($cse3, $cse4)[1]   [dynamic]
+// 3/3 (1): der(z) = 2.0 + ($cse3, $cse4)[1]   [dynamic]
+// 4/4 (1): b = $cse4   [dynamic]
+// 5/5 (1): d = $cse4   [dynamic]
+// 6/6 (1): c = $cse3   [dynamic]
+// 7/7 (1): a = $cse3   [dynamic]
+// 8/8 (2): ($cse3, $cse4) = CSE.functions.f2(time, x)   [binding]
+// 9/10 (1): $cse2 = sin(time * $cse1)   [binding]
+// 10/11 (1): $cse1 = cos(time)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest3_res.mat",
@@ -279,23 +291,27 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 //
-// ########### Updated Variable List (simulation) ########### (7)
+// ########### Updated Variable List (simulation) ########### (9)
 // ========================================
 // 1: z.r2:DISCRETE()  type: Integer 
 // 2: z.r1:VARIABLE()  type: Real 
 // 3: y.r2:DISCRETE()  type: Integer 
 // 4: y.r1:VARIABLE()  type: Real 
 // 5: x:VARIABLE()  type: Real 
-// 6: $cse1.r2:DISCRETE()  type: Integer  unreplaceable
-// 7: $cse1.r1:VARIABLE()  type: Real  unreplaceable
+// 6: $cse3.r2:DISCRETE()  type: Integer  unreplaceable
+// 7: $cse3.r1:VARIABLE()  type: Real  unreplaceable
+// 8: $cse2:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (4, 7)
+// ########### Updated Equation List (simulation) ########### (6, 9)
 // ========================================
-// 1/1 (1): x = sin(time * cos(time))   [dynamic]
-// 2/2 (2): y = $cse1   [binding]
-// 3/4 (2): z = $cse1   [binding]
-// 4/6 (2): $cse1 = CSE.functions.f3(time, x)   [binding]
+// 1/1 (1): x = $cse2   [dynamic]
+// 2/2 (2): y = $cse3   [binding]
+// 3/4 (2): z = $cse3   [binding]
+// 4/6 (2): $cse3 = CSE.functions.f3(time, x)   [binding]
+// 5/8 (1): $cse2 = sin(time * $cse1)   [binding]
+// 6/9 (1): $cse1 = cos(time)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest4_res.mat",
@@ -304,7 +320,7 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // end SimulationResult;
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (12)
+// ########### Updated Variable List (simulation) ########### (14)
 // ========================================
 // 1: b:VARIABLE()  type: Real 
 // 2: a:VARIABLE()  type: Real 
@@ -313,22 +329,26 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // 5: y.r2:DISCRETE()  type: Integer 
 // 6: y.r1:VARIABLE()  type: Real 
 // 7: x:VARIABLE()  type: Real 
-// 8: $cse3:VARIABLE()  type: Real  unreplaceable
-// 9: $cse2.r2:DISCRETE()  type: Integer  unreplaceable
-// 10: $cse2.r1:VARIABLE()  type: Real  unreplaceable
-// 11: $cse1.r2:DISCRETE()  type: Integer  unreplaceable
-// 12: $cse1.r1:VARIABLE()  type: Real  unreplaceable
+// 8: $cse5:VARIABLE()  type: Real  unreplaceable
+// 9: $cse4.r2:DISCRETE()  type: Integer  unreplaceable
+// 10: $cse4.r1:VARIABLE()  type: Real  unreplaceable
+// 11: $cse3.r2:DISCRETE()  type: Integer  unreplaceable
+// 12: $cse3.r1:VARIABLE()  type: Real  unreplaceable
+// 13: $cse2:VARIABLE()  type: Real  unreplaceable
+// 14: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (7, 12)
+// ########### Updated Equation List (simulation) ########### (9, 14)
 // ========================================
-// 1/1 (1): x = sin(time * cos(time))   [dynamic]
-// 2/2 (1): a = $cse3   [dynamic]
-// 3/3 (1): b = $cse3   [dynamic]
-// 4/4 (2): z = $cse2   [dynamic]
-// 5/6 (2): y = $cse2   [dynamic]
-// 6/8 (3): ($cse2, $cse3) = CSE.functions.f4(time, x, $cse1)   [binding]
-// 7/11 (2): $cse1 = CSE.functions.f3(time, x)   [binding]
+// 1/1 (1): x = $cse2   [dynamic]
+// 2/2 (1): a = $cse5   [dynamic]
+// 3/3 (1): b = $cse5   [dynamic]
+// 4/4 (2): z = $cse4   [dynamic]
+// 5/6 (2): y = $cse4   [dynamic]
+// 6/8 (3): ($cse4, $cse5) = CSE.functions.f4(time, x, $cse3)   [binding]
+// 7/11 (2): $cse3 = CSE.functions.f3(time, x)   [binding]
+// 8/13 (1): $cse2 = sin(time * $cse1)   [binding]
+// 9/14 (1): $cse1 = cos(time)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest5_res.mat",
@@ -337,7 +357,7 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // end SimulationResult;
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (12)
+// ########### Updated Variable List (simulation) ########### (14)
 // ========================================
 // 1: b[2]:VARIABLE()  type: Real  [2]
 // 2: b[1]:VARIABLE()  type: Real  [2]
@@ -346,22 +366,26 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // 5: z:VARIABLE()  type: Real 
 // 6: y:VARIABLE()  type: Real 
 // 7: x:VARIABLE()  type: Real 
-// 8: $cse3[2]:VARIABLE()  type: Real  [2] unreplaceable
-// 9: $cse3[1]:VARIABLE()  type: Real  [2] unreplaceable
-// 10: $cse2:VARIABLE()  type: Real  unreplaceable
-// 11: $cse1.r2:DISCRETE()  type: Integer  unreplaceable
-// 12: $cse1.r1:VARIABLE()  type: Real  unreplaceable
+// 8: $cse5[2]:VARIABLE()  type: Real  [2] unreplaceable
+// 9: $cse5[1]:VARIABLE()  type: Real  [2] unreplaceable
+// 10: $cse4:VARIABLE()  type: Real  unreplaceable
+// 11: $cse3.r2:DISCRETE()  type: Integer  unreplaceable
+// 12: $cse3.r1:VARIABLE()  type: Real  unreplaceable
+// 13: $cse2:VARIABLE()  type: Real  unreplaceable
+// 14: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (7, 12)
+// ########### Updated Equation List (simulation) ########### (9, 14)
 // ========================================
-// 1/1 (1): x = sin(time * cos(time))   [dynamic]
-// 2/2 (2): a = $cse3   [dynamic]
-// 3/4 (2): b = $cse3   [dynamic]
-// 4/6 (1): z = $cse2   [dynamic]
-// 5/7 (1): y = $cse2   [dynamic]
-// 6/8 (3): ($cse2, $cse3) = CSE.functions.f5(time, x, $cse1)   [binding]
-// 7/11 (2): $cse1 = CSE.functions.f3(time, x)   [binding]
+// 1/1 (1): x = $cse2   [dynamic]
+// 2/2 (2): a = $cse5   [dynamic]
+// 3/4 (2): b = $cse5   [dynamic]
+// 4/6 (1): z = $cse4   [dynamic]
+// 5/7 (1): y = $cse4   [dynamic]
+// 6/8 (3): ($cse4, $cse5) = CSE.functions.f5(time, x, $cse3)   [binding]
+// 7/11 (2): $cse3 = CSE.functions.f3(time, x)   [binding]
+// 8/13 (1): $cse2 = sin(time * $cse1)   [binding]
+// 9/14 (1): $cse1 = cos(time)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest6_res.mat",
@@ -370,7 +394,7 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // end SimulationResult;
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (15)
+// ########### Updated Variable List (simulation) ########### (16)
 // ========================================
 // 1: r.r1:VARIABLE()  type: Real 
 // 2: b[2]:VARIABLE()  type: Real  [2]
@@ -380,27 +404,29 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // 6: z:VARIABLE()  type: Real 
 // 7: y:VARIABLE()  type: Real 
 // 8: x:VARIABLE()  type: Real 
-// 9: $cse5[2]:VARIABLE()  type: Real  [2] unreplaceable
-// 10: $cse5[1]:VARIABLE()  type: Real  [2] unreplaceable
-// 11: $cse4:VARIABLE()  type: Real  unreplaceable
-// 12: $cse3.r2:DISCRETE()  type: Integer  unreplaceable
-// 13: $cse3.r1:VARIABLE()  type: Real  unreplaceable
-// 14: $cse2:VARIABLE()  type: Real  unreplaceable
-// 15: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse6:VARIABLE()  type: Real  unreplaceable
+// 10: $cse5[2]:VARIABLE()  type: Real  [2] unreplaceable
+// 11: $cse5[1]:VARIABLE()  type: Real  [2] unreplaceable
+// 12: $cse4:VARIABLE()  type: Real  unreplaceable
+// 13: $cse3.r2:DISCRETE()  type: Integer  unreplaceable
+// 14: $cse3.r1:VARIABLE()  type: Real  unreplaceable
+// 15: $cse2:VARIABLE()  type: Real  unreplaceable
+// 16: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (10, 15)
+// ########### Updated Equation List (simulation) ########### (11, 16)
 // ========================================
 // 1/1 (1): x = $cse2 * r.r1   [dynamic]
 // 2/2 (2): a = $cse5   [dynamic]
 // 3/4 (2): b = $cse5   [dynamic]
-// 4/6 (1): r.r1 = CSE.functions.f6_eval4(time, time)   [dynamic]
-// 5/7 (1): z = $cse4   [dynamic]
-// 6/8 (1): y = $cse4   [dynamic]
-// 7/9 (3): ($cse4, $cse5) = CSE.functions.f5(time, x, $cse3)   [binding]
-// 8/12 (2): $cse3 = CSE.functions.f6(time, x)   [binding]
-// 9/14 (1): $cse2 = sin(time * $cse1)   [binding]
-// 10/15 (1): $cse1 = cos(time)   [binding]
+// 4/6 (1): r.r1 = $cse6   [dynamic]
+// 5/7 (1): $cse6 = CSE.functions.f6_eval4(time, time)   [binding]
+// 6/8 (1): z = $cse4   [dynamic]
+// 7/9 (1): y = $cse4   [dynamic]
+// 8/10 (3): ($cse4, $cse5) = CSE.functions.f5(time, x, $cse3)   [binding]
+// 9/13 (2): $cse3 = CSE.functions.f6(time, x)   [binding]
+// 10/15 (1): $cse2 = sin(time * $cse1)   [binding]
+// 11/16 (1): $cse1 = cos(time)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest7_res.mat",

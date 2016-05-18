@@ -49,7 +49,7 @@ simulate(CSE.FunctionCallTest3); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (9)
+// ########### Updated Variable List (simulation) ########### (11)
 // ========================================
 // 1: d:VARIABLE()  type: Real 
 // 2: c:VARIABLE()  type: Real 
@@ -58,20 +58,24 @@ simulate(CSE.FunctionCallTest3); getErrorString();
 // 5: z:STATE(1)()  type: Real 
 // 6: y:STATE(1)()  type: Real 
 // 7: x:VARIABLE()  type: Real 
-// 8: $cse2:VARIABLE()  type: Real  unreplaceable
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 8: $cse4:VARIABLE()  type: Real  unreplaceable
+// 9: $cse3:VARIABLE()  type: Real  unreplaceable
+// 10: $cse2:VARIABLE()  type: Real  unreplaceable
+// 11: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (8, 9)
+// ########### Updated Equation List (simulation) ########### (10, 11)
 // ========================================
-// 1/1 (1): x = sin(time * cos(time))   [dynamic]
-// 2/2 (1): der(y) = 2.0 + ($cse1, $cse2)[1]   [dynamic]
-// 3/3 (1): der(z) = 2.0 + ($cse1, $cse2)[1]   [dynamic]
-// 4/4 (1): b = $cse2   [dynamic]
-// 5/5 (1): d = $cse2   [dynamic]
-// 6/6 (1): c = $cse1   [dynamic]
-// 7/7 (1): a = $cse1   [dynamic]
-// 8/8 (2): ($cse1, $cse2) = CSE.functions.f2(time, x)   [binding]
+// 1/1 (1): x = $cse2   [dynamic]
+// 2/2 (1): der(y) = 2.0 + ($cse3, $cse4)[1]   [dynamic]
+// 3/3 (1): der(z) = 2.0 + ($cse3, $cse4)[1]   [dynamic]
+// 4/4 (1): b = $cse4   [dynamic]
+// 5/5 (1): d = $cse4   [dynamic]
+// 6/6 (1): c = $cse3   [dynamic]
+// 7/7 (1): a = $cse3   [dynamic]
+// 8/8 (2): ($cse3, $cse4) = CSE.functions.f2(time, x)   [binding]
+// 9/10 (1): $cse2 = sin(time * $cse1)   [binding]
+// 10/11 (1): $cse1 = cos(time)   [binding]
 //
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest3_res.mat",
