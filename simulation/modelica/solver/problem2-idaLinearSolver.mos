@@ -54,7 +54,7 @@ res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.
 });
 getErrorString();
 
-simulate(testSolver.problem2, stopTime=stopTime, method="ida", simflags="-idaLS=spbcg"); getErrorString();
+simulate(testSolver.problem2, stopTime=stopTime, method="ida", simflags="-idaLS=spbcg -alarm=360"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem2.mat",
@@ -180,7 +180,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaLS=spbcg'",
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaLS=spbcg -alarm=360'",
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
