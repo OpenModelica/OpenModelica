@@ -2413,7 +2413,7 @@ protected
   DAE.Exp condition;
 algorithm
   outEqnLst := match (inEqn)
-    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=condition, elsewhenPart=NONE())) guard(listLength(BackendDAEUtil.getConditionList(condition)) == 0) then inEqnLst;
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=condition, elsewhenPart=NONE())) guard listEmpty(BackendDAEUtil.getConditionList(condition)) then inEqnLst;
     else inEqn::inEqnLst;
   end match;
 end filterWhenEquation;

@@ -3935,7 +3935,7 @@ algorithm
         dims1 = Types.getDimensions(inLhsType);
         dims2 = Types.getDimensions(inRhsType);
         false = List.isEqualOnTrue(dims1, dims2, Expression.dimensionsEqual);
-        false = (listLength(dims1) + listLength(dims2)) == 0;
+        false = (listEmpty(dims1) and listEmpty(dims2));
         cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
         cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
         str1 = "[" + ExpressionDump.dimensionsString(dims1) + "]";
