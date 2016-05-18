@@ -669,7 +669,7 @@ algorithm
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) and listEmpty(elements) then
           print("Its a Record!\n");
           false=true;
-        elseif Flags.isSet(Flags.EVAL_FUNC_DUMP) and (listLength(protectVars)+listLength(algs)==0) then
+        elseif Flags.isSet(Flags.EVAL_FUNC_DUMP) and (listEmpty(protectVars) and listEmpty(algs)) then
           print("Its a Built-In!\n");
           false=true;
         end if;
@@ -2288,7 +2288,7 @@ algorithm
     (start,stop,step) := getRangeBounds(range);
     true := intEq(step,1);
     repl := replIn;
-    for i in start:stop loop
+    for i in List.intRange2(start,stop) loop
       repl := BackendVarTransform.addReplacement(repl, ComponentReference.makeCrefIdent(iter,DAE.T_INTEGER_DEFAULT,{}),DAE.ICONST(i),NONE());
       (stmts,((_,repl,_))) := evaluateFunctions_updateStatement(stmtsIn,(funcTreeIn,repl,i),{});
 
