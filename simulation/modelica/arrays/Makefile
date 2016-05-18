@@ -44,8 +44,8 @@ VectorizeOneReturnValue.mos \
 Xpowers1.mos \
 Xpowers2.mos \
 Xpowers3.mos \
-ZeroSizeLoop.mos 
-
+ZeroSizeLoop.mos \
+Bug3916.mos
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
