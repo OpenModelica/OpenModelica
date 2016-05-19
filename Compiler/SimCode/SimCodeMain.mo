@@ -639,6 +639,7 @@ algorithm
           (CodegenC.simulationFile_lnz, "_14lnz.c"),
           (CodegenC.simulationFile_syn, "_15syn.c"),
           (CodegenC.simulationFile_dae, "_16dae.c"),
+          (CodegenC.simulationFile_dae_header, "_16dae.h"),
           (CodegenC.simulationHeaderFile, "_model.h")
         } loop
           (func,str) := f;

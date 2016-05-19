@@ -130,7 +130,7 @@ uniontype SimCode
     //FMI 2.0 data for model structure
     Option<FmiModelStructure> modelStructure;
     PartitionData partitionData;
-    DaeModeDate daeModeDate;
+    Option<DaeModeData> daeModeData;
   end SIMCODE;
 end SimCode;
 
@@ -263,13 +263,15 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
   end VARINFO;
 end VarInfo;
 
-uniontype DaeModeDate
+uniontype DaeModeData
   "contains data that belongs to the dae mode"
   record DAEMODEDATA
     list<list<SimEqSystem>> daeEquations "daeModel residuals equations";
     Option<JacobianMatrix> sparsityPattern "contains the sparsity pattern for the daeMode";
+    list<SimCodeVar.SimVar> residualVars;  // variable used to calculate residuals of a DAE form, they are real
+    list<SimCodeVar.SimVar> algebraicDAEVars;  // variable used to calculate residuals of a DAE form, they are real
   end DAEMODEDATA;
-end DaeModeDate;
+end DaeModeData;
 
 // TODO: I believe some of these fields can be removed. Check to see what is
 //       used in templates.
