@@ -58,12 +58,13 @@ then
   package TestGenerateDoc
     annotation(Documentation(info=\\\"<html>TestGenerateDoc HTML</html>\\\"));
   end TestGenerateDoc;\");"); getErrorString();
-  shouldEcho := false;
-else
   // should we generate documentation for OM built-in functions?
   genBuiltin := false;
   // should we generate MetaModelica documentation?
   genMetaModelica := false;
+  // should we echo?
+  shouldEcho := false;
+else
   loadModel(Modelica); getErrorString();
   writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries())); getErrorString();
 end if;
