@@ -2,6 +2,7 @@
 // status: correct
 // teardown_command: rm -f nonlinear_system.problem2* _nonlinear_system.problem2* output.log
 
+alarm(360);
 loadFile("nlsTestPackage.mo"); getErrorString();
 OpenModelica.Scripting.setCommandLineOptions("+tearingMethod=noTearing"); getErrorString();
 OpenModelica.Scripting.setCommandLineOptions("+d=NLSanalyticJacobian"); getErrorString();
@@ -20,6 +21,7 @@ val(x[10],{0.0,1.0,2.0});
 val(y,{0.0,1.0,2.0});
 
 // Result:
+// 0
 // true
 // ""
 // true
