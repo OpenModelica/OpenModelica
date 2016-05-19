@@ -235,6 +235,9 @@ protected
   list<SimCodeVar.SimVar> residualVars, algebraicVars;  // --> variables for functionODE4DAE
   SimCodeVar.SimVars tmpSimVars;
   SimCode.VarInfo varInfo;
+  BackendDAE.Variables bdaeModeVars;
+  BackendDAE.EquationArray bdaeModeEqns;
+  Option<SimCode.JacobianMatrix> daeModeSP;
   list<SimCodeVar.SimVar> sensitivityVars;
   Integer countSenParams;
   list<tuple<Integer, Integer>> equationSccMapping, eqBackendSimCodeMapping;
@@ -335,7 +338,8 @@ algorithm
 
     // create residuals equations from ode equations for daeMode
     if Flags.getConfigBool(Flags.DAE_MODE) then
-      (daeEquations, residualVars, algebraicVars, uniqueEqIndex, tempvars) := createDAEEquations(contSysts, shared, uniqueEqIndex, tempvars);
+      (daeEquations, residualVars, algebraicVars, uniqueEqIndex, tempvars,
+        bdaeModeVars, bdaeModeEqns) := createDAEEquations(contSysts, shared, uniqueEqIndex, tempvars);
     else
       daeEquations := {};
       residualVars := {};
@@ -350,15 +354,6 @@ algorithm
     // create model info
     modelInfo := createModelInfo(inClassName, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts), tempvars);
     if debug then execStat("simCode: createModelInfo and variables"); end if;
-    // add residuals vars from DAE creation
-    if Flags.getConfigBool(Flags.DAE_MODE) then
-      residualVars := rewriteIndex(residualVars, 0);
-      algebraicVars := rewriteIndex(algebraicVars, 0);
-      tmpSimVars := modelInfo.vars;
-      tmpSimVars.residualVars := residualVars;
-      tmpSimVars.algebraicDAEVars := algebraicVars;
-      modelInfo.vars := tmpSimVars;
-    end if;
 
     // external objects
     extObjInfo := createExtObjInfo(shared);
@@ -438,6 +433,19 @@ algorithm
       print("*** SimCode -> generate cref2simVar hashtable done!: " + realString(clock()) + "\n");
     end if;
 
+    // add residuals vars from DAE creation
+    if Flags.getConfigBool(Flags.DAE_MODE) then
+      daeModeSP := createDaeModeSparsePattern(bdaeModeVars, bdaeModeEqns, shared, crefToSimVarHT);
+      residualVars := rewriteIndex(residualVars, 0);
+      algebraicVars := rewriteIndex(algebraicVars, 0);
+      tmpSimVars := modelInfo.vars;
+      tmpSimVars.residualVars := residualVars;
+      tmpSimVars.algebraicDAEVars := algebraicVars;
+      modelInfo.vars := tmpSimVars;
+    else
+      daeModeSP := NONE();
+    end if;
+
     if Flags.getConfigBool(Flags.CALCULATE_SENSITIVITIES) then
       tmpSimVars := modelInfo.vars;
       (sensitivityVars, countSenParams) := createSimVarsForSensitivities(tmpSimVars.stateVars, tmpSimVars.paramVars, inAllPrimaryParameters);
@@ -474,7 +482,6 @@ algorithm
                               odeEquations,
                               algebraicEquations,
                               clockedPartitions,
-                              daeEquations,
                               inUseHomotopy,
                               initialEquations,
                               initialEquations_lambda0,
@@ -508,7 +515,9 @@ algorithm
                               crefToClockIndexHT,
                               SOME(backendMapping),
                               modelStruct,
-                              SimCode.emptyPartitionData);
+                              SimCode.emptyPartitionData,
+                              SimCode.DAEMODEDATA(daeEquations, NONE())
+                              );
 
     (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
 
@@ -1727,7 +1736,11 @@ tuple<list<list<SimCode.SimEqSystem>> /* daeEquations */,
       list<SimCodeVar.SimVar> /* residualVars */,
       list<SimCodeVar.SimVar> /* algebraicVars*/,
       Integer /* uniqueEqIndex */,
-      list<SimCodeVar.SimVar> /* tempvars */>;
+      list<SimCodeVar.SimVar> /* tempvars */,
+      /*BackendDAE stuff is also needed for sparsity and jacobian */
+      BackendDAE.Variables /* daeMode variables */,
+      BackendDAE.EquationArray /* daeMode equations */
+      >;
 
 protected function createDAEEquations
 "Creates DAE equations of the form:
@@ -1741,11 +1754,17 @@ residualVar = eqRHS - eqLHS "
   output list<SimCodeVar.SimVar> oalgebraicVars;
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
+  output BackendDAE.Variables outDAEVars;
+  output BackendDAE.EquationArray outDAEEqns;
 protected
   createDAEEquationsFold foldArg;
+  Integer size;
 algorithm
-  foldArg := ({}, {}, {}, iuniqueEqIndex, itempvars);
-  (odaeEquations, oresidualVars, oalgebraicVars, ouniqueEqIndex, otempvars) :=
+  size := BackendDAEUtil.daeSize(BackendDAE.DAE(inSysts, shared));
+  outDAEVars := BackendVariable.emptyVarsSized(size);
+  outDAEEqns := BackendEquation.emptyEqnsSized(size);
+  foldArg := ({}, {}, {}, iuniqueEqIndex, itempvars, outDAEVars, outDAEEqns);
+  (odaeEquations, oresidualVars, oalgebraicVars, ouniqueEqIndex, otempvars, outDAEVars, outDAEEqns) :=
     List.fold1(inSysts, createDAEEqsPrepare, shared, foldArg);
 end createDAEEquations;
 
@@ -1769,9 +1788,11 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.Shared shared;
       Integer uniqueEqIndex;
+      BackendDAE.Variables bdaeVars;
+      BackendDAE.EquationArray bdaeEqns;
     case BackendDAE.MATCHING(ass1=ass1, comps=comps)
       equation
-        (daeEquations, resVars, algVars, uniqueEqIndex, tempvars) = inFold;
+        (daeEquations, resVars, algVars, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns) = inFold;
 
         funcs = BackendDAEUtil.getFunctions(inShared);
         (syst, _, _) = BackendDAEUtil.getIncidenceMatrixfromOption(inSyst, BackendDAE.ABSOLUTE(), SOME(funcs));
@@ -1779,8 +1800,8 @@ algorithm
         stateeqnsmark = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         stateeqnsmark = BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
 
-        (daeEquations1, resVars1, algVars1, uniqueEqIndex, tempvars) = createDAEEquation(
-                stateeqnsmark, syst, inShared, comps, uniqueEqIndex, tempvars);
+        (daeEquations1, resVars1, algVars1, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns) = createDAEEquation(
+                stateeqnsmark, syst, inShared, comps, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns);
 
         daeEquations = List.consOnTrue(not listEmpty(daeEquations1), daeEquations1, daeEquations);
         resVars = listAppend(resVars1, resVars);
@@ -1795,7 +1816,7 @@ algorithm
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, algVars1));
         end if;
 
-      then (daeEquations, resVars, algVars, uniqueEqIndex, tempvars);
+      then (daeEquations, resVars, algVars, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns);
 
     else inFold;
   end match;
@@ -1806,7 +1827,11 @@ tuple<list<list<SimCode.SimEqSystem>> /*daeEquations*/,
       list<SimCodeVar.SimVar> /* residualVars*/,
       list<SimCodeVar.SimVar> /* algebraicVars*/,
       Integer /*uniqueEqIndex*/,
-      list<SimCodeVar.SimVar> /*tempvars*/>;
+      list<SimCodeVar.SimVar> /*tempvars*/,
+      /*BackendDAE stuff is also needed for sparsity and jacobian */
+      BackendDAE.Variables /* daeMode variables */,
+      BackendDAE.EquationArray /* daeMode equations */
+      >;
 protected type createDAEEqnArg =
 tuple<array<Integer> /*stateeqnsmark*/, BackendDAE.EqSystem /*syst*/, BackendDAE.Shared /*shared*/>;
 
@@ -1817,20 +1842,24 @@ protected function createDAEEquation
   input BackendDAE.StrongComponents comps;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
+  input BackendDAE.Variables inDAEVars;
+  input BackendDAE.EquationArray inDAEEqns;
   output list<SimCode.SimEqSystem> outDAEEquations;
   output list<SimCodeVar.SimVar> oresvars;
   output list<SimCodeVar.SimVar> oalgvars;
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
+  output BackendDAE.Variables outDAEVars;
+  output BackendDAE.EquationArray outDAEEqns;
 protected
   createDAEEqnFold foldArg;
   createDAEEqnArg arg;
   list<list<SimCode.SimEqSystem>> daeEquations;
 algorithm
   arg := (stateeqnsmark, syst, shared);
-  foldArg := ({}, {}, {}, iuniqueEqIndex, itempvars);
+  foldArg := ({}, {}, {}, iuniqueEqIndex, itempvars, inDAEVars, inDAEEqns);
   foldArg := List.fold1(comps, createDAEEquationForComp, arg, foldArg);
-  (daeEquations, oresvars, oalgvars, ouniqueEqIndex, otempvars) := foldArg;
+  (daeEquations, oresvars, oalgvars, ouniqueEqIndex, otempvars, outDAEVars, outDAEEqns) := foldArg;
   outDAEEquations := List.flattenReverse(daeEquations);
 end createDAEEquation;
 
@@ -1860,10 +1889,13 @@ protected
 
   list<BackendDAE.Equation> eqnlst, alglst;
   list<BackendDAE.Var> varlst, algVarlst, tmpVarsLst;
+
+  BackendDAE.Variables bdaeVars;
+  BackendDAE.EquationArray bdaeEqns;
 algorithm
   try
     (stateeqnsmark, syst, shared) := inArg;
-    (daeEquations, resVars, algVars, uniqueEqIndex, tempvars) := inFold;
+    (daeEquations, resVars, algVars, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns) := inFold;
     emptyVars := BackendVariable.emptyVars();
     (varlst,varNums,eqnlst,eqnNums) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp, syst.orderedVars, syst.orderedEqs);
     skip := false;
@@ -1898,7 +1930,11 @@ algorithm
       algVarlst := List.filterOnFalse(varlst, BackendVariable.isStateVar);
       ((algVarsTmp, _)) :=  BackendVariable.traverseBackendDAEVars(BackendVariable.listVar1(algVarlst), traversingdlowvarToSimvar, ({}, emptyVars));
 
-      // result --> resVarsTmp, algVarsTmp, daeEquationsTmp
+      //collect also the BackendDAE versions for sparsity and jacobains
+      bdaeVars := BackendVariable.addVars(varlst, bdaeVars);
+      bdaeEqns := BackendEquation.addEquations(eqnlst, bdaeEqns);
+
+      // result --> resVarsTmp, algVarsTmp, daeEquationsTmp, bdaeVars, bdaeEqns
     end if;
 
     if debug then
@@ -1912,13 +1948,85 @@ algorithm
     resVars := listAppend(resVarsTmp, resVars);
     algVars := listAppend(algVarsTmp, algVars);
 
-    outFold := (daeEquations, resVars, algVars, uniqueEqIndex, tempvars);
+    outFold := (daeEquations, resVars, algVars, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns);
   else
     message := "function createDAEEquationForComp failed for component " + BackendDump.strongComponentString(comp);
     Error.addInternalError(message, sourceInfo());
     fail();
   end try;
 end createDAEEquationForComp;
+
+
+protected function createDaeModeSparsePattern
+  "create sparse pattern for daeMode equations and variables.
+   the sparsity pattern is determined just using adjacency matrix,
+   since no other dependencies are necessary "
+  input BackendDAE.Variables inVars;
+  input BackendDAE.EquationArray inEqns;
+  input BackendDAE.Shared inShared;
+  input SimCode.HashTableCrefToSimVar crefToSimVarHT;
+  output Option<SimCode.JacobianMatrix> outSimCodeJac;
+protected
+  Boolean debug = true;
+  BackendDAE.EqSystem system;
+  DAE.FunctionTree funcs;
+  BackendDAE.SparsePattern bdaeSP;
+  array<list<Integer>> intsp, intspT;
+  list<list<Integer>> intspList, intspTList;
+  list<list<DAE.ComponentRef>> translated;
+  list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsetuple, sparsetupleT;
+  array<DAE.ComponentRef> varCrefs;
+  list<DAE.ComponentRef> varCrefsList;
+  array<list<Integer>> coloredArray;
+  BackendDAE.SparseColoring coloring;
+  SimCode.JacobianMatrix simCodeJac;
+  Integer nonZeroElements;
+algorithm
+  try
+    // create adjacency matrix
+    funcs := BackendDAEUtil.getFunctions(inShared);
+    system := BackendDAEUtil.createEqSystem(inVars, inEqns);
+    (system,_,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(system, BackendDAE.SOLVABLE(), SOME(funcs));
+    if debug then
+      print("createDaeModeSparsePattern DAE-System:\n");
+      BackendDump.printEqSystem(system);
+    end if;
+
+    // translate adjacency matrix to BackendDAE sparsity pattern
+    intsp := BackendDAEUtil.absIncidenceMatrix(Util.getOption(system.m));
+    intspList := arrayList(intsp);
+    intspT := BackendDAEUtil.absIncidenceMatrix(Util.getOption(system.mT));
+    intspTList := arrayList(intspT);
+
+    // get number of non zero elements
+    nonZeroElements := List.lengthListElements(intspList);
+
+    // translated to DAE.ComRefs
+    varCrefsList := List.map(BackendVariable.varList(inVars), BackendVariable.varCref);
+    varCrefs := listArray(varCrefsList);
+
+    translated := list(list(arrayGet(varCrefs, i) for i in lst) for lst in intspList);
+    sparsetuple := list((cr,t) threaded for cr in varCrefs, t in translated);
+    translated := list(list(arrayGet(varCrefs, i) for i in lst) for lst in intspTList);
+    sparsetupleT := list((cr,t) threaded for cr in varCrefs, t in translated);
+
+    // build sparse pattern
+    bdaeSP :=(sparsetuple, sparsetupleT, (varCrefsList, varCrefsList), nonZeroElements);
+
+    coloredArray := SymbolicJacobian.createColoring(intsp, intspT, listLength(varCrefsList), listLength(varCrefsList));
+    coloring := list(list(arrayGet(varCrefs, i) for i in lst) for lst in coloredArray);
+    // get coloring
+    // or without coloring
+    //coloring = List.transposeList({inDepCompRefs});
+
+    // translate to SimCode sparsity
+    ({simCodeJac}, _) := createSymbolicJacobianssSimCode({(NONE(), bdaeSP, coloring)}, crefToSimVarHT, 0, {"daeMode"});
+
+    outSimCodeJac := SOME(simCodeJac);
+  else
+    Error.addInternalError("function createDaeModeSparsePattern failed", sourceInfo());
+  end try;
+end createDaeModeSparsePattern;
 
 // =============================================================================
 // section for zeroCrossingsEquations

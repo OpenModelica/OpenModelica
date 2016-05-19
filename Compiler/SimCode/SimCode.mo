@@ -91,7 +91,6 @@ uniontype SimCode
     list<list<SimEqSystem>> odeEquations;
     list<list<SimEqSystem>> algebraicEquations;
     list<ClockedPartition> clockedPartitions;
-    list<list<SimEqSystem>> daeEquations;
     Boolean useHomotopy "true if homotopy(...) is used during initialization";
     list<SimEqSystem> initialEquations;
     list<SimEqSystem> initialEquations_lambda0;
@@ -131,6 +130,7 @@ uniontype SimCode
     //FMI 2.0 data for model structure
     Option<FmiModelStructure> modelStructure;
     PartitionData partitionData;
+    DaeModeDate daeModeDate;
   end SIMCODE;
 end SimCode;
 
@@ -262,6 +262,14 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numSensitivityParameters;
   end VARINFO;
 end VarInfo;
+
+uniontype DaeModeDate
+  "contains data that belongs to the dae mode"
+  record DAEMODEDATA
+    list<list<SimEqSystem>> daeEquations "daeModel residuals equations";
+    Option<JacobianMatrix> sparsityPattern "contains the sparsity pattern for the daeMode";
+  end DAEMODEDATA;
+end DaeModeDate;
 
 // TODO: I believe some of these fields can be removed. Check to see what is
 //       used in templates.

@@ -1222,8 +1222,7 @@ algorithm
   end matchcontinue;
 end generateSparsePattern;
 
-
-protected function createColoring
+public function createColoring
   input array<list<Integer>> sparseArray;
   input array<list<Integer>> sparseArrayT;
   input Integer sizeVars;

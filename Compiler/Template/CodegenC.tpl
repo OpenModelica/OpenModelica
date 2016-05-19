@@ -808,7 +808,7 @@ template simulationFile_dae(SimCode simCode)
 "Algebraic"
 ::=
   match simCode
-    case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)), daeEquations=daeEquations) then
+    case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)), daeModeDate=DAEMODEDATA(daeEquations=daeEquations)) then
     match modelInfo
       case MODELINFO(vars=SIMVARS(__)) then
       <<

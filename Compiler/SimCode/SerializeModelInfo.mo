@@ -96,7 +96,7 @@ algorithm
         min(serializeEquation(file,eq,"max",withOperations) for eq in SimCodeUtil.sortEqSystems(code.maxValueEquations));
         min(serializeEquation(file,eq,"parameter",withOperations) for eq in SimCodeUtil.sortEqSystems(code.parameterEquations));
         min(serializeEquation(file,eq,"assertions",withOperations) for eq in SimCodeUtil.sortEqSystems(code.algorithmAndEquationAsserts));
-        min(serializeEquation(file,eq,"residuals",withOperations) for eq in SimCodeUtil.sortEqSystems(List.flatten(code.daeEquations)));
+        min(serializeEquation(file,eq,"residuals",withOperations) for eq in SimCodeUtil.sortEqSystems(List.flatten(code.daeModeDate.daeEquations)));
         min(serializeEquation(file,eq,"jacobian",withOperations) for eq in SimCodeUtil.sortEqSystems(code.jacobianEquations));
         File.write(file, "\n],\n\"functions\":[");
         serializeList(file,mi.functions,serializeFunction);

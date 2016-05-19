@@ -282,7 +282,6 @@ package SimCode
       list<list<SimEqSystem>> odeEquations;
       list<list<SimEqSystem>> algebraicEquations;
       list<ClockedPartition> clockedPartitions;
-      list<list<SimEqSystem>> daeEquations;
       Boolean useSymbolicInitialization;         // true if a system to solve the initial problem symbolically is generated, otherwise false
       Boolean useHomotopy;                       // true if homotopy(...) is used during initialization
       list<SimEqSystem> initialEquations;
@@ -315,6 +314,7 @@ package SimCode
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       Option<FmiModelStructure> modelStructure;
       PartitionData partitionData;
+      DaeModeDate daeModeDate;
     end SIMCODE;
   end SimCode;
 
@@ -612,6 +612,14 @@ package SimCode
       Integer numSensitivityParameters;
       end VARINFO;
   end VarInfo;
+
+  uniontype DaeModeDate
+    "contains data that belongs to the dae mode"
+    record DAEMODEDATA
+      list<list<SimEqSystem>> daeEquations "daeModel residuals equations";
+      Option<JacobianMatrix> sparsityPattern "contains the sparsity pattern for the daeMode";
+    end DAEMODEDATA;
+  end DaeModeDate;
 
   uniontype Function
     record FUNCTION
