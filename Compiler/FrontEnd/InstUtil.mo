@@ -679,7 +679,7 @@ protected function equalityConstraintOutputDimension
   input list<SCode.Element> inElements;
   output Integer outDimension;
 algorithm
-  outDimension := matchcontinue(inElements)
+  outDimension := match(inElements)
   local
     list<SCode.Element> tail;
     Integer dim;
@@ -693,7 +693,7 @@ algorithm
     case(_ :: tail) equation
       dim = equalityConstraintOutputDimension(tail);
       then dim;
-  end matchcontinue;
+  end match;
 end equalityConstraintOutputDimension;
 
 public function equalityConstraint
@@ -742,7 +742,7 @@ public function handleUnitChecking
   output FCore.Graph outEnv;
   output UnitAbsyn.InstStore outStore;
 algorithm
-  (outCache,outEnv,outStore) := matchcontinue(cache,env,inStore,pre,compDAE,daes,className)
+  (outCache,outEnv,outStore) := match(cache,env,inStore,pre,compDAE,daes,className)
     local
       DAE.DAElist daetemp;
       UnitAbsyn.UnitTerms ut;
@@ -750,8 +750,8 @@ algorithm
 
     // do nothing if we don't have to do unit checking
     case (_,_,store,_,_,_,_)
-      equation
-        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
+      guard
+        not Flags.getConfigBool(Flags.UNIT_CHECKING)
       then
         (cache,env,store);
 
@@ -780,7 +780,7 @@ algorithm
         //print("dae1="+DAEDump.dumpDebugDAE(DAE.DAE(dae1))+"\n");
      then
        (cache,env,store);
-  end matchcontinue;
+  end match;
 end  handleUnitChecking;
 
 protected function checkExtendsRestrictionMatch
@@ -984,15 +984,7 @@ protected function elementNameMember
   input list<SCode.Element> els;
   output Boolean isNamed;
 algorithm
-  isNamed := match(inElement, els)
-    local
-      Boolean b;
-
-    case (_, _)
-      equation
-        b = listMember(Util.tuple21(inElement), els);
-      then b;
-  end match;
+  isNamed := listMember(Util.tuple21(inElement), els);
 end elementNameMember;
 
 public function extractConstantPlusDepsTpl "
@@ -1180,7 +1172,7 @@ algorithm
         //debug_print("all",  (inComps, ocr, allComps, className, existing));
         print(" failure in get_Constant_PlusDeps \n");
       then fail();
-end matchcontinue;
+  end matchcontinue;
 end extractConstantPlusDeps2;
 
 protected function extractConstantPlusDeps3 "
@@ -1207,20 +1199,19 @@ algorithm outComps := matchcontinue(inAcrefs,remainingComps,className,inExisting
     then extractConstantPlusDeps3(acr :: acrefs, remainingComps, className, existing);
 
   case(Absyn.CREF_QUAL(s1,_,(acr as Absyn.CREF_IDENT(_,_)))::acrefs,_,_,existing)
-    equation
-      true = stringEq(className,s1); // in same scope look up.
-      acrefs = acr::acrefs;
+    guard
+      stringEq(className,s1) // in same scope look up.
     then
-      extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
+      extractConstantPlusDeps3(acr::acrefs,remainingComps,className,existing);
   case((Absyn.CREF_QUAL(s1,_,_))::acrefs,_,_,existing)
     equation
-      false = stringEq(className,s1);
+      // false = stringEq(className,s1);
       outComps = extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
     then
       outComps;
   case(Absyn.CREF_IDENT(s1,_)::acrefs,_,_,existing) // modifer dep already added
-    equation
-      true = List.isMemberOnTrue(s1,existing,stringEq);
+    guard
+      List.isMemberOnTrue(s1,existing,stringEq)
     then
       extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
   case(Absyn.CREF_IDENT(s1,_)::acrefs,_,_,existing)
@@ -1246,22 +1237,10 @@ public function removeSelfReference
   input  Absyn.Path path;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue (className, path)
-    local
-      String clsName;
-      Absyn.Path p, newPath;
-    case(clsName, p) // self reference, remove the first.
-      equation
-        true = stringEq(clsName, Absyn.pathFirstIdent(p));
-        newPath = Absyn.removePrefix(Absyn.IDENT(clsName), p);
-      then
-        newPath;
-    case(clsName, p) // not self reference, return the same.
-      equation
-        false = stringEq(clsName, Absyn.pathFirstIdent(p));
-      then
-        p;
-  end matchcontinue;
+  outPath := if stringEq(className, Absyn.pathFirstIdent(path)) then
+      Absyn.removePrefix(Absyn.IDENT(className), path)
+    else
+      path;
 end removeSelfReference;
 
 public function printExtcomps
@@ -1418,7 +1397,7 @@ algorithm
   outArrayDim := match (inAbsynArrayDimOption)
     local list<Absyn.Subscript> dim;
     case (SOME(dim)) then dim;
-    case (NONE()) then {};
+    else {};
   end match;
 end getOptionArraydim;
 
@@ -1523,28 +1502,7 @@ protected function removeCurrentElementFromArrayDimDeps
   input list<tuple<SCode.Element, DAE.Mod>> inDependencies;
   output list<tuple<SCode.Element, DAE.Mod>> outDependencies;
 algorithm
-  outDependencies := matchcontinue(name, inDependencies)
-    local
-      list<tuple<SCode.Element, DAE.Mod>> rest;
-      SCode.Element e;
-      tuple<SCode.Element, DAE.Mod> dep;
-
-    // handle empty case
-    case (_, {}) then {};
-    // handle match
-    case (_, (e,_)::rest)
-      equation
-        true = stringEq(name, SCode.elementName(e));
-        rest = removeCurrentElementFromArrayDimDeps(name, rest);
-      then
-        rest;
-    // handle rest
-    case (_, dep::rest)
-      equation
-        rest = removeCurrentElementFromArrayDimDeps(name, rest);
-      then
-        dep::rest;
-  end matchcontinue;
+  outDependencies := list(dep for dep guard not stringEq(name, SCode.elementName(Util.tuple21(dep))) in inDependencies);
 end removeCurrentElementFromArrayDimDeps;
 
 public function getExpsFromConstrainClass

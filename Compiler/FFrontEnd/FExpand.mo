@@ -79,10 +79,7 @@ algorithm
   (outGraph, outRef)  := match(inGraph, inPath)
     local
       Ref r, t;
-      Name n;
-      Absyn.Path p;
       Graph g;
-      Scope s;
 
     case (g, _)
       equation
