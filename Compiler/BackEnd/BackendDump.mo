@@ -2325,6 +2325,13 @@ algorithm
             + stringDelimitList(paths_lst, ", ") + " type: " + DAEDump.daeTypeStr(inVar.varType) + dimensions + unreplaceableStr;
 end varString;
 
+public function varStringShort "prints the cref name of the var only"
+  input BackendDAE.Var inVar;
+  output String outStr;
+algorithm
+  outStr := ComponentReference.printComponentRefStr(inVar.varName);
+end varStringShort;
+
 public function dumpKind
 "Helper function to dump."
   input BackendDAE.VarKind inVarKind;
@@ -3688,22 +3695,79 @@ algorithm
   end matchcontinue;
 end printCompInfo;
 
+
 // =============================================================================
-// section for all garphML dumping function functions
+// section for all html-dumping functions
 //
-// These are functions, that print directly to the standard-stream.
-//   - printBackendDAE
-//   - printEqSystem
-//   - printEquation
-//   - printEquationArray
-//   - printEquationList
-//   - printEquations
-//   - printClassAttributes
-//   - printShared
-//   - printStateSets
-//   - printVar
-//   - printVariables
-//   - printVarList
+// =============================================================================
+
+public function dumpEqSystemMatrixHTML"dumps the incidence matrix for the eqsystem as html file.
+author: waurich TUD 2016-05"
+  input BackendDAE.EqSystem sys;
+protected
+  BackendDAE.IncidenceMatrix m;
+algorithm
+  if Util.isSome(sys.m) then
+    m := Util.getOption(sys.m);
+  else
+    (_,m,_) := BackendDAEUtil.getIncidenceMatrix(sys,BackendDAE.NORMAL(),NONE());
+  end if;
+  BackendDump.dumpEqSystem(sys,"SYS");
+  BackendDump.dumpMatrixHTML(m,List.map(List.intRange(BackendDAEUtil.systemSize(sys)),intString),
+                               List.map(BackendVariable.varList(sys.orderedVars),BackendDump.varStringShort),
+                               "MATRIX_"+intString(BackendDAEUtil.systemSize(sys)));
+end dumpEqSystemMatrixHTML;
+
+public function dumpEqSystemBLTmatrixHTML"dumps the incidence matrix for the eqsystem as html file.
+author: waurich TUD 2016-05"
+  input BackendDAE.EqSystem sys;
+algorithm
+  _ := matchcontinue(sys)
+    local
+      BackendDAE.StrongComponents comps;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.EquationArray eqs;
+      BackendDAE.Variables vars;
+      list<BackendDAE.Var> varLst;
+      list<BackendDAE.Equation> eqLst;
+      list<Integer> vIdxs, eIdxs;
+  case(BackendDAE.EQSYSTEM(vars,eqs,_,_,BackendDAE.MATCHING(comps=comps),_,_,_))
+    algorithm
+      (varLst,vIdxs,eqLst,eIdxs) := BackendDAEUtil.getStrongComponentsVarsAndEquations(comps, vars, eqs);
+      eqs := BackendEquation.listEquation(eqLst);
+      vars := BackendVariable.listVar1(varLst);
+      (m, _) := BackendDAEUtil.incidenceMatrixDispatch(vars, eqs, BackendDAE.NORMAL(), NONE());
+      BackendDump.dumpMatrixHTML(m,List.map(eIdxs,intString),
+                                    List.map(vIdxs,intString),
+                                   "BLT_MATRIX_"+intString(BackendDAEUtil.systemSize(sys)));
+    then ();
+  else
+    algorithm
+      print("dumpEqSystemBLTmatrixHTML does not output anything since there is no BLT sorting.");
+    then ();
+  end matchcontinue;
+end dumpEqSystemBLTmatrixHTML;
+
+
+public function dumpMatrixHTML
+  input BackendDAE.IncidenceMatrix m;
+  input list<String> rowNames;
+  input list<String> columNames;
+  input String fileName;
+protected
+  Integer size;
+algorithm
+  size := arrayLength(m);
+  if listLength(rowNames)==size and listLength(columNames)==size then
+    DumpHTML.dumpMatrixHTML(m,rowNames,columNames,fileName);
+  else
+    DumpHTML.dumpMatrixHTML(m,List.fill("?",size),List.fill("?",size),fileName);
+  end if;
+end dumpMatrixHTML;
+
+// =============================================================================
+// section for all graphML dumping functions
+//
 // =============================================================================
 
 public function dumpBipartiteGraphDAE" Dumps a *.graphml of the complete BackendDAE.BackendDAE as a bipartite graph. Can be opened with yEd.

@@ -8632,7 +8632,35 @@ algorithm
   comps := Sorting.TarjanTransposed(mT, ass2);
 end causalizeVarBindSystem;
 
-public function getStrongComponentVarsAndEquations"gets the variables and and the equations from the sccs.
+public function getStrongComponentsVarsAndEquations"gets the variables and and the equations from all sccs.
+author: Waurich TUD 09-2015"
+  input BackendDAE.StrongComponents comps;
+  input BackendDAE.Variables varArr;
+  input BackendDAE.EquationArray eqArr;
+  output list<BackendDAE.Var> varsOut = {};
+  output list<Integer> varIdxsOut = {};
+  output list<BackendDAE.Equation> eqsOut = {};
+  output list<Integer> eqIdxsOut = {};
+protected
+  BackendDAE.StrongComponent comp;
+  list<BackendDAE.Equation> eqs;
+  list<BackendDAE.Var> vars;
+  list<Integer> vIdxs,eIdxs;
+algorithm
+  for comp in comps loop
+    (vars,vIdxs,eqs,eIdxs) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp, varArr, eqArr);
+    varsOut := listAppend(vars,varsOut);
+    varIdxsOut := listAppend(vIdxs,varIdxsOut);
+    eqsOut := listAppend(eqs,eqsOut);
+    eqIdxsOut := listAppend(eIdxs,eqIdxsOut);
+  end for;
+    varsOut := listReverse(varsOut);
+    varIdxsOut := listReverse(varIdxsOut);
+    eqsOut := listReverse(eqsOut);
+    eqIdxsOut := listReverse(eqIdxsOut);
+end getStrongComponentsVarsAndEquations;
+
+public function getStrongComponentVarsAndEquations"gets the variables and and the equations from the scc.
 author: Waurich TUD 09-2015"
   input BackendDAE.StrongComponent comp;
   input BackendDAE.Variables varArr;

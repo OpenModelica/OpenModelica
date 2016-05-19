@@ -503,6 +503,8 @@ constant DebugFlag DUMPBACKENDINLINE = DEBUG_FLAG(164, "dumpBackendInline", fals
   Util.gettext("Dumps debug output while inline function."));
 constant DebugFlag DUMPBACKENDINLINE_VERBOSE = DEBUG_FLAG(165, "dumpBackendInlineVerbose", false,
   Util.gettext("Dumps debug output while inline function."));
+constant DebugFlag BLT_MATRIX_DUMP = DEBUG_FLAG(166, "bltmatrixdump", false,
+  Util.gettext("Dumps the blt matrix in html file. IE seems to be very good in displaying large matrices."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -674,7 +676,8 @@ constant list<DebugFlag> allDebugFlags = {
   SERIALIZED_SIZE,
   BACKEND_KEEP_ENV_GRAPH,
   DUMPBACKENDINLINE,
-  DUMPBACKENDINLINE_VERBOSE
+  DUMPBACKENDINLINE_VERBOSE,
+  BLT_MATRIX_DUMP
 };
 
 public

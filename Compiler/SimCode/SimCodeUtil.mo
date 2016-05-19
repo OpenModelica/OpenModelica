@@ -1226,6 +1226,10 @@ algorithm
       BackendDAE.Shared shared;
     case BackendDAE.MATCHING(ass1=ass1, comps=comps)
       equation
+        if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+          BackendDump.dumpEqSystemBLTmatrixHTML(inSyst);
+        end if;
+
         (shared, zeroCrossings) = inArg;
         (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars,
          eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) = inFold;
