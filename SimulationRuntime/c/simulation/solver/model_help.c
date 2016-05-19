@@ -955,8 +955,6 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* buffer for inputs and outputs values */
   data->simulationInfo->inputVars = (modelica_real*) calloc(data->modelData->nInputVars, sizeof(modelica_real));
   data->simulationInfo->outputVars = (modelica_real*) calloc(data->modelData->nOutputVars, sizeof(modelica_real));
-  /* buffer for residual values of DAE solver*/
-  data->simulationInfo->residualVars = (modelica_real*) calloc(data->modelData->nResidualVars, sizeof(modelica_real));
 
   /* buffer for mixed systems */
   data->simulationInfo->mixedSystemData = (MIXED_SYSTEM_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nMixedSystems*sizeof(MIXED_SYSTEM_DATA));
@@ -973,6 +971,10 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* buffer for state sets */
   data->simulationInfo->stateSetData = (STATE_SET_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nStateSets*sizeof(STATE_SET_DATA));
   data->callback->initializeStateSets(data->modelData->nStateSets, data->simulationInfo->stateSetData, data);
+
+  /* buffer for daeMode */
+  data->simulationInfo->daeModeData = (DAEMODE_DATA*) omc_alloc_interface.malloc_uncollectable(sizeof(DAEMODE_DATA));
+  data->callback->initializeDAEmodeData(data, data->simulationInfo->daeModeData);
 
   /* buffer for analytical jacobians */
   data->simulationInfo->analyticJacobians = (ANALYTIC_JACOBIAN*) omc_alloc_interface.malloc_uncollectable(data->modelData->nJacobians*sizeof(ANALYTIC_JACOBIAN));
@@ -1133,6 +1135,9 @@ void deInitializeDataStruc(DATA *data)
 
   /* free buffer jacobians */
   omc_alloc_interface.free_uncollectable(data->simulationInfo->analyticJacobians);
+
+  /* free buffer for state sets */
+  omc_alloc_interface.free_uncollectable(data->simulationInfo->daeModeData);
 
   /* free inputs and output */
   free(data->simulationInfo->inputVars);

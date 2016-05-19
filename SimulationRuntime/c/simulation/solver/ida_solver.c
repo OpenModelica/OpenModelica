@@ -150,7 +150,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     {
       idaData->daeMode = 1;
       idaData->residualFunction = residualFunctionIDADAEmode;
-      idaData->N = data->modelData->nStates + data->modelData->nAlgebraicDAEVars;
+      idaData->N = data->modelData->nStates + data->simulationInfo->daeModeData->nAlgebraicDAEVars;
     }
     else
     {
@@ -166,7 +166,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
 
     memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
     // and  also algebraic vars
-    data->callback->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+    data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
     memcpy(idaData->statesDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
 
     idaData->y = N_VMake_Serial(idaData->N, idaData->states);
@@ -550,7 +550,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     {
       memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
       /* and  also algebraic vars */
-      data->callback->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+      data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
       memcpy(idaData->statesDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
     }
     flag = IDAReInit(idaData->ida_mem,
@@ -682,7 +682,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   {
     memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
     // and  also algebraic vars
-    data->callback->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+    data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
     memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
   }
 
@@ -783,7 +783,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
 #if !defined(OMC_EMCC)
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-
+  data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
   /* if sensitivity mode update also bound parameters*/
   if (idaData->idaSmode)
   {
@@ -862,7 +862,7 @@ int residualFunctionIDADAEmode(double time, N_Vector yy, N_Vector yp, N_Vector r
    */
   memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
   memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
-  data->callback->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+  data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
 
   saveJumpState = threadData->currentErrorStage;
   threadData->currentErrorStage = ERROR_INTEGRATOR;
@@ -877,14 +877,14 @@ int residualFunctionIDADAEmode(double time, N_Vector yy, N_Vector yp, N_Vector r
   data->callback->input_function(data, threadData);
 
   /* eval residual vars */
-  data->callback->evaluateDAEResiduals(data, threadData);
+  data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData);
 
   /* get data->simulationInfo->residualVars  */
-  for(i=0; i < data->modelData->nResidualVars; i++)
+  for(i=0; i < idaData->N; i++)
   {
-    NV_Ith_S(res, i) = data->simulationInfo->residualVars[i];
+    NV_Ith_S(res, i) = data->simulationInfo->daeModeData->residualVars[i];
   }
-  printVector(LOG_DASSL_STATES, "residual", delta, data->modelData->nResidualVars, time);
+  printVector(LOG_DASSL_STATES, "residual", delta, idaData->N, time);
   success = 1;
 #if !defined(OMC_EMCC)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -930,7 +930,7 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   if (idaData->daeMode)
   {
     memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
-    data->callback->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+    data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
     memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
   }
 

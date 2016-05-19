@@ -161,9 +161,7 @@ end translateModel;
     extern void <%symbolName(modelNamePrefixStr,"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);
     extern void <%symbolName(modelNamePrefixStr,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"inputNames")%>(DATA* data, char ** names);
-    extern int <%symbolName(modelNamePrefixStr,"evaluateDAEResiduals")%>(DATA *data, threadData_t *threadData);
-    extern int <%symbolName(modelNamePrefixStr,"setAlgebraicDAEVars")%>(DATA *data, threadData_t *threadData, double* algebraics);
-    extern int <%symbolName(modelNamePrefixStr,"getAlgebraicDAEVars")%>(DATA *data, threadData_t *threadData, double* algebraics);
+    extern int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *data, DAEMODE_DATA*);
     <%\n%>
     >>
   end match
@@ -804,32 +802,91 @@ template simulationFile_lnz(SimCode simCode)
   end match
 end simulationFile_lnz;
 
-template simulationFile_dae(SimCode simCode)
-"Algebraic"
+template defineSimVarArray(SimVar simVar, String arrayName)
+  "Generates a define statement for a parameter."
+::=
+ match simVar
+  case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
+    <<
+    /* <%crefStrNoUnderscore(c)%> */
+    #define <%cref(c)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
+
+    /* <%crefStrNoUnderscore(name)%> */
+    #define <%cref(name)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
+
+    >>
+  case SIMVAR(aliasvar=NOALIAS()) then
+    <<
+    /* <%crefStrNoUnderscore(name)%> */
+    #define <%cref(name)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
+
+    >>
+  end match
+end defineSimVarArray;
+
+template simulationFile_dae_header(SimCode simCode)
+"DAEmode header generation"
 ::=
   match simCode
-    case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)), daeModeDate=DAEMODEDATA(daeEquations=daeEquations)) then
-    match modelInfo
-      case MODELINFO(vars=SIMVARS(__)) then
-      <<
-      /* DAE residuals */
-      <%simulationFileHeader(simCode)%>
+    case simCode as SIMCODE(daeModeData=SOME(DAEMODEDATA(residualVars=residualVars))) then
+    <<
+    /* residual variable define for daeMode */
+    <%residualVars |> var =>
+      defineSimVarArray(var, "residualVars")
+    ;separator="\n"%>
+    >>
+    /* adrpo: leave a newline at the end of file to get rid of the warning */
+  end match
+end simulationFile_dae_header;
 
-      #ifdef __cplusplus
-      extern "C" {
-      #endif
+template simulationFile_dae(SimCode simCode)
+"DAEmode equations generation"
+::=
+  match simCode
+    case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),
+        daeModeData=SOME(DAEMODEDATA(daeEquations=daeEquations, sparsityPattern=sparsityPattern,
+                                     algebraicDAEVars=algebraicDAEVars, residualVars=residualVars))) then
+     let modelNamePrefixStr = modelNamePrefix(simCode)
+     let initDAEmode = 
+       match sparsityPattern
+       case SOME((_, _, _, (sparse,_), colorList, maxColor, _)) then
+         '<%initializeDAEmodeData(listLength(residualVars), listLength(algebraicDAEVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
+       case NONE() then
+         'int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *inData, DAEMODE_DATA* daeModeData){ return -1; }'
+       end match
+     <<
+     /* DAE residuals */
+     <%simulationFileHeader(simCode)%>
+     #include "<%fileNamePrefix%>_16dae.h"
 
+     #ifdef __cplusplus
+     extern "C" {
+     #endif
 
-      <%evaluateDAEResiduals(daeEquations, modelNamePrefix(simCode))%>
+     <%evaluateDAEResiduals(daeEquations, modelNamePrefixStr)%>
 
-      <%algebraicDAEVar(vars.algebraicDAEVars, modelNamePrefix(simCode))%>
+     <%algebraicDAEVar(algebraicDAEVars, modelNamePrefixStr)%>
 
-      #ifdef __cplusplus
-      }
-      #endif<%\n%>
-      >>
-      /* adrpo: leave a newline at the end of file to get rid of the warning */
-    end match
+     <%initDAEmode%>
+
+     #ifdef __cplusplus
+     }
+     #endif<%\n%>
+     >>
+     /* adrpo: leave a newline at the end of file to get rid of the warning */
+    else
+    let modelNamePrefixStr = modelNamePrefix(simCode)
+    <<
+    /* DAE residuals is empty */
+     <%simulationFileHeader(simCode)%>
+    #ifdef __cplusplus
+    extern "C" {
+    #endif
+    int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *inData, DAEMODE_DATA* daeModeData){ return -1; }
+    #ifdef __cplusplus
+    }
+    #endif<%\n%>
+    >>
   end match
 end simulationFile_dae;
 
@@ -940,12 +997,10 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"initialLinearSystem")%>,
        <%symbolName(modelNamePrefixStr,"initialMixedSystem")%>,
        <%symbolName(modelNamePrefixStr,"initializeStateSets")%>,
+       <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>,
        <%symbolName(modelNamePrefixStr,"functionODE")%>,
        <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
        <%symbolName(modelNamePrefixStr,"functionDAE")%>,
-       <%symbolName(modelNamePrefixStr,"evaluateDAEResiduals")%>,
-       <%symbolName(modelNamePrefixStr,"setAlgebraicDAEVars")%>,
-       <%symbolName(modelNamePrefixStr,"getAlgebraicDAEVars")%>,
        <%symbolName(modelNamePrefixStr,"input_function")%>,
        <%symbolName(modelNamePrefixStr,"input_function_init")%>,
        <%symbolName(modelNamePrefixStr,"input_function_updateStartValues")%>,
@@ -1181,9 +1236,6 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nClocks = <%nClocks%>;
     data->modelData->nSubClocks = <%nSubClocks%>;
 
-    data->modelData->nResidualVars = <%listLength(vars.residualVars)%>;
-    data->modelData->nAlgebraicDAEVars = <%listLength(vars.algebraicDAEVars)%>;
-
     data->modelData->nSensitivityVars = <%listLength(vars.sensitivityVars)%>;
     data->modelData->nSensitivityParamVars = <%varInfo.numSensitivityParameters%>;
     >>
@@ -1276,11 +1328,6 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
       /* Nonlinear Final Constraints For Dyn. Optimization */
       <%vars.realOptimizeFinalConstraintsVars |> var =>
         globalDataVarDefine(var, "realVars")
-      ;separator="\n"%>
-
-      /* residual variables of DAE solution method */
-      <%vars.residualVars |> var =>
-        globalDataParDefine(var, "residualVars")
       ;separator="\n"%>
 
       /* Algebraic Parameter */
@@ -3760,7 +3807,7 @@ template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String model
 
   <%systems%>
   /* for residuals DAE variables */
-  int <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>(DATA *data, threadData_t *threadData)
+  int <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>(DATA *data, threadData_t *threadData, double* residualVars)
   {
     TRACE_PUSH
     data->simulationInfo->callStatistics.functionEvalDAE++;
@@ -3810,6 +3857,61 @@ template algebraicDAEVar(list<SimVar> algVars, String modelNamePrefix)
   }
   >>
 end algebraicDAEVar;
+
+template initializeDAEmodeData(Integer nResVars, Integer nAlgVars, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
+  "Generates initialization function for daeMode."
+::=
+  let sizeCols = listLength(sparsepattern)
+  let sizeNNZ = lengthListElements(unzipSecond(sparsepattern))
+  let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
+  let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
+  let colorString = genSPColors(colorList, "daeModeData->sparsePattern->colorCols")
+  let maxColorStr = '<%maxColor%>'
+  <<
+  /* initialize the daeMode variables */
+  int <%symbolName(modelNamePrefix,"initializeDAEmodeData")%>(DATA *inData, DAEMODE_DATA* daeModeData)
+  {
+    TRACE_PUSH
+    DATA* data = ((DATA*)inData);
+    /* sparse patterns */
+    <%colPtr%>
+    <%rowIndex%>
+    int i = 0;
+
+    daeModeData->nResidualVars = <%nResVars%>;
+    daeModeData->nAlgebraicDAEVars = <%nAlgVars%>;
+
+    daeModeData->residualVars = (double*) malloc(sizeof(double)*<%nResVars%>);
+
+    /* set the function pointer */
+    daeModeData->evaluateDAEResiduals = <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>;
+    daeModeData->setAlgebraicDAEVars = <%symbolName(modelNamePrefix,"setAlgebraicDAEVars")%>;
+    daeModeData->getAlgebraicDAEVars = <%symbolName(modelNamePrefix,"getAlgebraicDAEVars")%>;
+
+    /* intialize sparse pattern */
+    daeModeData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
+
+    daeModeData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeCols%>+1)*sizeof(int));
+    daeModeData->sparsePattern->index = (unsigned int*) malloc(<%sizeNNZ%>*sizeof(int));
+    daeModeData->sparsePattern->numberOfNoneZeros = <%sizeNNZ%>;
+    daeModeData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeCols%>*sizeof(int));
+    daeModeData->sparsePattern->maxColors = <%maxColorStr%>;
+
+    /* write lead index of compressed sparse column */
+    memcpy(daeModeData->sparsePattern->leadindex, colPtrIndex, (1+<%sizeCols%>)*sizeof(int));
+    /* makek CRS compatible */
+    for(i=2;i<=<%sizeCols%>;++i)
+      daeModeData->sparsePattern->leadindex[i] += daeModeData->sparsePattern->leadindex[i-1];
+    /* call sparse index */
+    memcpy(daeModeData->sparsePattern->index, rowIndex, <%sizeNNZ%>*sizeof(int));
+
+    /* write color array */
+    <%colorString%>
+    TRACE_POP
+    return 0;
+  }
+  >>
+end initializeDAEmodeData;
 
 template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePrefix)
   "Generates function in simulation file.
@@ -4458,6 +4560,49 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   }
   >>
 end functionJac;
+
+// function for sparsity pattern generation
+template genSPCRSPtr(Integer sizeColPtr, list<tuple<Integer,list<Integer>>> sparsepattern, String constArrayName)
+"This template generates colPtr of the CRS format"
+::=
+  let colPtrindex = (sparsepattern |> (i, indexes) =>
+  <<
+  <%listLength(indexes)%>
+  >>
+  ;separator=",")
+  <<
+  const int <%constArrayName%>[1+<%sizeColPtr%>] = {0,<%colPtrindex%>};
+  >>
+end genSPCRSPtr;
+
+template genSPCRSRows(Integer nonZeroElems, list<tuple<Integer,list<Integer>>> sparsepattern, String constArrayName)
+"This template generates row of the CRS format"
+::=
+  let rowsIndex = ( sparsepattern |> (i, indexes) hasindex index0 =>
+    ( indexes |> indexrow =>
+    <<
+    <%indexrow%>
+    >>
+    ;separator=",")
+  ;separator=",")
+  <<
+  const int <%constArrayName%>[<%nonZeroElems%>] = {<%rowsIndex%>};
+  >>
+end genSPCRSRows;
+
+template genSPColors(list<list<Integer>> colorList, String arrayName)
+"This template generates row of the CRS format"
+::=
+  let colorArray = (colorList |> (indexes) hasindex index0 =>
+    let colorCol = ( indexes |> i_index =>
+    <<<%arrayName%>[<%i_index%>] = <%intAdd(index0,1)%>;>>
+    ;separator="\n")
+  '<%colorCol%>'
+  ;separator="\n")
+  <<
+  <%colorArray%>
+  >>
+end genSPColors;
 
 template equation_arrayFormat(SimEqSystem eq, String name, Context context, Integer arrayIndex, Text &eqArray, Text &eqfuncs, String modelNamePrefix)
  "Generates an equation.

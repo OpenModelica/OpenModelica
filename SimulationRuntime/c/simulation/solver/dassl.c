@@ -141,7 +141,7 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
     {
       dasslData->daeMode = 1;
       dasslData->residualFunction = functionDAE_residual;
-      N = data->modelData->nStates + data->modelData->nAlgebraicDAEVars;
+      N = data->modelData->nStates + data->simulationInfo->daeModeData->nAlgebraicDAEVars;
       NDAE = N;
     }
     else
@@ -546,7 +546,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     if (dasslData->daeMode)
     {
       memcpy(states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
-      data->callback->getAlgebraicDAEVars(data, threadData, states + data->modelData->nStates);
+      data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, states + data->modelData->nStates);
       memcpy(stateDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
     }
   }
@@ -666,7 +666,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   if (dasslData->daeMode)
   {
     memcpy(data->localData[0]->realVars, states, sizeof(double)*data->modelData->nStates);
-    data->callback->setAlgebraicDAEVars(data, threadData, states + data->modelData->nStates);
+    data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, states + data->modelData->nStates);
     memcpy(data->localData[0]->realVars + data->modelData->nStates, stateDer, sizeof(double)*data->modelData->nStates);
   }
   else
@@ -878,7 +878,7 @@ int functionDAE_residual(double *t, double *y, double *yd, double* cj, double *d
 
   memcpy(data->localData[0]->realVars, y, sizeof(double)*data->modelData->nStates);
   memcpy(data->localData[0]->realVars + data->modelData->nStates, yd, sizeof(double)*data->modelData->nStates);
-  data->callback->setAlgebraicDAEVars(data, threadData,  y + data->modelData->nStates);
+  data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData,  y + data->modelData->nStates);
 
   saveJumpState = threadData->currentErrorStage;
   threadData->currentErrorStage = ERROR_INTEGRATOR;
@@ -893,14 +893,14 @@ int functionDAE_residual(double *t, double *y, double *yd, double* cj, double *d
   data->callback->input_function(data, threadData);
 
   /* eval residual vars */
-  data->callback->evaluateDAEResiduals(data, threadData);
+  data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData);
 
   /* get data->simulationInfo->residualVars  */
-  for(i=0; i < data->modelData->nResidualVars; i++)
+  for(i=0; i < data->simulationInfo->daeModeData->nResidualVars; i++)
   {
-    delta[i] = data->simulationInfo->residualVars[i];
+    delta[i] = data->simulationInfo->daeModeData->residualVars[i];
   }
-  printVector(LOG_DASSL_STATES, "residual", delta, data->modelData->nResidualVars, *t);
+  printVector(LOG_DASSL_STATES, "residual", delta, data->simulationInfo->daeModeData->nResidualVars, *t);
   success = 1;
 #if !defined(OMC_EMCC)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -948,7 +948,7 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
   {
     memcpy(data->localData[0]->realVars, y, sizeof(double)*data->modelData->nStates);
     memcpy(data->localData[0]->realVars + data->modelData->nStates, yp, sizeof(double)*data->modelData->nStates);
-    data->callback->setAlgebraicDAEVars(data, threadData,  y + data->modelData->nStates);
+    data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData,  y + data->modelData->nStates);
   }
 
   /* read input vars */

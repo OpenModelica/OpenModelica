@@ -314,7 +314,7 @@ package SimCode
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       Option<FmiModelStructure> modelStructure;
       PartitionData partitionData;
-      DaeModeDate daeModeDate;
+      Option<DaeModeData> daeModeData;
     end SIMCODE;
   end SimCode;
 
@@ -613,13 +613,15 @@ package SimCode
       end VARINFO;
   end VarInfo;
 
-  uniontype DaeModeDate
+  uniontype DaeModeData
     "contains data that belongs to the dae mode"
     record DAEMODEDATA
       list<list<SimEqSystem>> daeEquations "daeModel residuals equations";
       Option<JacobianMatrix> sparsityPattern "contains the sparsity pattern for the daeMode";
+      list<SimCodeVar.SimVar> residualVars;  // variable used to calculate residuals of a DAE form, they are real
+      list<SimCodeVar.SimVar> algebraicDAEVars;  // variable used to calculate residuals of a DAE form, they are real
     end DAEMODEDATA;
-  end DaeModeDate;
+  end DaeModeData;
 
   uniontype Function
     record FUNCTION

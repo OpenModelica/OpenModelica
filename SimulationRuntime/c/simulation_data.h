@@ -384,6 +384,31 @@ typedef struct STATE_SET_DATA
   modelica_integer jacobianIndex;
 }STATE_SET_DATA;
 
+typedef struct DAEMODE_DATA
+{
+  /* number of dae residual variables */
+  long nResidualVars;
+
+  /* number of algebraic variables */
+  long nAlgebraicDAEVars;
+
+  /* workspace for the residual variables */
+  modelica_real* residualVars;
+
+  /* daeMode sparse pattern */
+  SPARSE_PATTERN* sparsePattern;
+
+  /* function to evaluate dynamic equations for DAE solver*/
+  int (*evaluateDAEResiduals)(struct DATA*, threadData_t*);
+
+  /* function to set algebraic DAE Variable form solver*/
+  int (*setAlgebraicDAEVars)(struct DATA*, threadData_t*, double*);
+
+  /* function to get algebraic DAE Variable form solver*/
+  int (*getAlgebraicDAEVars)(struct DATA*, threadData_t*, double*);
+} DAEMODE_DATA;
+
+
 typedef struct MODEL_DATA_XML
 {
   const char *fileName;
@@ -477,8 +502,6 @@ typedef struct MODEL_DATA
   long nAliasString;
 
   long nJacobians;
-  long nResidualVars;
-  long nAlgebraicDAEVars;
 
   long nSensitivityVars;
   long nSensitivityParamVars;
@@ -577,7 +600,6 @@ typedef struct SIMULATION_INFO
   modelica_real* inputVars;
   modelica_real* outputVars;
   EXTERNAL_INPUT external_input;
-  modelica_real* residualVars;         /* used by integrators in dae solver mode */
 
   modelica_real* sensitivityMatrix;    /* used by integrator for sensitivity mode  */
   int* sensitivityParList;             /* used by integrator for sensitivity mode  */
@@ -593,6 +615,8 @@ typedef struct SIMULATION_INFO
   MIXED_SYSTEM_DATA* mixedSystemData;
 
   STATE_SET_DATA* stateSetData;
+
+  DAEMODE_DATA* daeModeData;
 
   /* delay vars */
   double tStart;

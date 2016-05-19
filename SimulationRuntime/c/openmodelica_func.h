@@ -95,6 +95,14 @@ void (*initialMixedSystem)(int nMixedSystems, MIXED_SYSTEM_DATA *data);
  */
 void (*initializeStateSets)(int nStateSets, STATE_SET_DATA* statesetData, DATA *data);
 
+/*! \fn initializeDAEmodeData
+ *
+ *  This function to initialize the daeMode data structure in Data
+ *
+ *  \param [ref] [data]
+ */
+int (*initializeDAEmodeData)(DATA *data, DAEMODE_DATA* daeModeData);
+
 /* functionODE contains those equations that are needed
  * to calculate the dynamic part of the system */
 int (*functionODE)(DATA *data, threadData_t*);
@@ -106,15 +114,6 @@ int (*functionAlgebraics)(DATA *data, threadData_t*);
 /* function for calculating all equation sorting order
    uses in EventHandle  */
 int (*functionDAE)(DATA *data, threadData_t*);
-
-/* function to evaluate dynamic equations for DAE solver*/
-int (*evaluateDAEResiduals)(DATA *data, threadData_t*);
-
-/* function to set algebraic DAE Variable form solver*/
-int (*setAlgebraicDAEVars)(DATA *data, threadData_t*, double *algebraics);
-
-/* function to get algebraic DAE Variable form solver*/
-int (*getAlgebraicDAEVars)(DATA *data, threadData_t*, double *algebraics);
 
 /* functions for input and output */
 int (*input_function)(DATA*, threadData_t*);
