@@ -1178,6 +1178,7 @@ algorithm
         sparseArray = Array.select(eqnSparse, nodesEqnsIndex);
         sparsepattern = arrayList(sparseArray);
         sparsepattern = List.map1List(sparsepattern, intSub, adjSizeT-sizeN);
+        sparseArray = listArray(sparsepattern);
 
         if debug then execStat("generateSparsePattern -> postProcess "); end if;
 
@@ -1202,44 +1203,8 @@ algorithm
         translated = list(list(arrayGet(depCompRefs, i) for i in lst) for lst in sparsepatternT);
         sparsetupleT = list((cr,t) threaded for cr in inDepCompRefs, t in translated);
 
-        // build up a bi-partied graph of pattern
-        if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
-          print("analytical Jacobians[SPARSE] -> build sparse graph.\n");
-        end if;
-        sparseArray = listArray(sparsepattern);
-        nodesList = List.intRange2(1,adjSize);
-        sparseGraph = Graph.buildGraph(nodesList,createBipartiteGraph,sparseArray);
-        sparseGraphT = Graph.buildGraph(List.intRange2(1,sizeN),createBipartiteGraph,sparseArrayT);
-
-        // debug dump
-        if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
-          print("sparse graph: \n");
-          Graph.printGraphInt(sparseGraph);
-          print("transposed sparse graph: \n");
-          Graph.printGraphInt(sparseGraphT);
-          print("analytical Jacobians[SPARSE] -> builded graph for coloring.\n");
-        end if;
-
-        // color sparse bipartite graph
-        forbiddenColor = arrayCreate(sizeN,NONE());
-        colored = arrayCreate(sizeN,0);
-        arraysparseGraph = listArray(sparseGraph);
-        if debug then execStat("generateSparsePattern -> coloring start "); end if;
-        if (sizeN>0) then
-          Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
-        end if;
-        if debug then execStat("generateSparsePattern -> coloring end "); end if;
-        // get max color used
-        maxColor = Array.fold(colored, intMax, 0);
-
-        // map index of that array into colors
-        coloredArray = arrayCreate(maxColor, {});
-        mapIndexColors(colored, arrayLength(inDepCompRefs), coloredArray);
-
-        if Flags.isSet(Flags.DUMP_SPARSE) then
-          print("Print Coloring Cols: \n");
-          BackendDump.dumpSparsePattern(arrayList(coloredArray));
-        end if;
+        // get coloring based on sparse pattern
+        coloredArray = createColoring(sparseArray, sparseArrayT, sizeN, adjSize);
 
         coloring = list(list(arrayGet(inDepCompRefs, i) for i in lst) for lst in coloredArray);
 
@@ -1256,6 +1221,65 @@ algorithm
       then fail();
   end matchcontinue;
 end generateSparsePattern;
+
+
+protected function createColoring
+  input array<list<Integer>> sparseArray;
+  input array<list<Integer>> sparseArrayT;
+  input Integer sizeVars;
+  input Integer sizeVarswithDep;
+  output array<list<Integer>> coloredArray;
+protected
+  constant Boolean debug = false;
+  list<Integer> nodesList;
+  array<Integer> colored;
+  array<Option<list<Integer>>> forbiddenColor;
+  list<tuple<Integer, list<Integer>>> sparseGraph, sparseGraphT;
+  array<tuple<Integer, list<Integer>>> arraysparseGraph;
+  Integer maxColor;
+algorithm
+  try
+    // build up a bi-partied graph of pattern
+    if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
+      print("analytical Jacobians[SPARSE] -> build sparse graph.\n");
+    end if;
+    nodesList := List.intRange2(1,sizeVarswithDep);
+    sparseGraph := Graph.buildGraph(nodesList,createBipartiteGraph,sparseArray);
+    sparseGraphT := Graph.buildGraph(List.intRange2(1,sizeVars),createBipartiteGraph,sparseArrayT);
+
+    // debug dump
+    if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
+      print("sparse graph: \n");
+      Graph.printGraphInt(sparseGraph);
+      print("transposed sparse graph: \n");
+      Graph.printGraphInt(sparseGraphT);
+      print("analytical Jacobians[SPARSE] -> builded graph for coloring.\n");
+    end if;
+
+    // color sparse bipartite graph
+    forbiddenColor := arrayCreate(sizeVars,NONE());
+    colored := arrayCreate(sizeVars,0);
+    arraysparseGraph := listArray(sparseGraph);
+    if debug then execStat("generateSparsePattern -> coloring start "); end if;
+    if (sizeVars>0) then
+      Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
+    end if;
+    if debug then execStat("generateSparsePattern -> coloring end "); end if;
+    // get max color used
+    maxColor := Array.fold(colored, intMax, 0);
+
+    // map index of that array into colors
+    coloredArray := arrayCreate(maxColor, {});
+    mapIndexColors(colored, sizeVars, coloredArray);
+
+    if Flags.isSet(Flags.DUMP_SPARSE) then
+      print("Print Coloring Cols: \n");
+      BackendDump.dumpSparsePattern(arrayList(coloredArray));
+    end if;
+  else
+    Error.addInternalError("function createColoring failed", sourceInfo());
+  end try;
+end createColoring;
 
 protected function dumpSparsePatternStatistics
   input Integer nonZeroElements;
