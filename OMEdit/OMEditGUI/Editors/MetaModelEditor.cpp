@@ -1072,17 +1072,16 @@ void MetaModelHighlighter::highlightMultiLine(const QString &text)
 void MetaModelHighlighter::highlightBlock(const QString &text)
 {
   /* Only highlight the text if user has enabled the syntax highlighting */
-  if (!mpMetaModelEditorPage->getOptionsDialog()->getTextEditorPage()->getSyntaxHighlightingCheckbox()->isChecked()) {
+  if (!mpMetaModelEditorPage->getOptionsDialog()->getTextEditorPage()->getSyntaxHighlightingGroupBox()->isChecked()) {
     return;
   }
+  // set text block state
   setCurrentBlockState(0);
   setFormat(0, text.length(), mpMetaModelEditorPage->getTextRuleColor());
-  foreach (const HighlightingRule &rule, mHighlightingRules)
-  {
+  foreach (const HighlightingRule &rule, mHighlightingRules) {
     QRegExp expression(rule.mPattern);
     int index = expression.indexIn(text);
-    while (index >= 0)
-    {
+    while (index >= 0) {
       int length = expression.matchedLength();
       setFormat(index, length, rule.mFormat);
       index = expression.indexIn(text, index + length);
