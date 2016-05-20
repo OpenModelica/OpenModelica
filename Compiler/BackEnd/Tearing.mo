@@ -171,24 +171,36 @@ algorithm
     (ocomp, outRunMatching) := match inTearingMethod
       case OMC_TEARING()
         algorithm
+          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+            print("\nTearing type: heuristic\n");
+          end if;
           (ocomp,outRunMatching) := omcTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
           if debug then execStat("Tearing.omcTearing"); end if;
         then (ocomp,outRunMatching);
 
       case CELLIER_TEARING()
         algorithm
+          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+            print("\nTearing type: heuristic\n");
+          end if;
           (ocomp,outRunMatching) := CellierTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
           if debug then execStat("Tearing.CellierTearing"); end if;
         then (ocomp,outRunMatching);
 
       case TOTAL_TEARING()
         algorithm
+          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+            print("\nTearing type: total\n");
+          end if;
           (ocomp,outRunMatching) := totalTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
           if debug then execStat("Tearing.totalTearing"); end if;
         then (ocomp,outRunMatching);
 
     end match;
   else
+    if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      print("\nTearing type: user defined\n");
+    end if;
     (ocomp,outRunMatching) := userDefinedTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, userTVars, userResiduals);
     if debug then execStat("Tearing.userDefinedTearing"); end if;
   end if;
@@ -3332,7 +3344,7 @@ algorithm
     list<Integer> order,eqQueue;
   case(_,_,_,_,_,_,_,_,_)
     equation
-      ((eqQueue,eq_coll,eqns,vars)) = getpossibleEqn((eqQueueIn,m,me,ass1,mapEqnIncRow));
+      ((eqQueue,eq_coll,eqns,vars)) = getNextSolvableEqn((eqQueueIn,m,me,ass1,mapEqnIncRow));
       orderOut = eq_coll::orderIn;
     then (eqQueue,eqns,vars,orderOut,true);
   else
@@ -3341,7 +3353,7 @@ algorithm
 end TarjanGetAssignable;
 
 protected function traverseEqnsforAssignable
-" selects next equations that can be causalized
+" selects next equations that can be causalized without consideration of solvability
   author: ptaeuber FHB 2013-10"
   input array<Integer> inAss;
   input BackendDAE.IncidenceMatrix m;
@@ -3430,7 +3442,7 @@ algorithm
           vars = List.map1r(mapEqnIncRow[eq],arrayGet,ass2);
           otherEqn = listGet(eindex,eq);
           otherVars = selectFromList_rev(vindex,vars);
-      then BackendDAE.INNEREQUATION(eqn=otherEqn, vars=otherVars);
+       then BackendDAE.INNEREQUATION(eqn=otherEqn, vars=otherVars);
       case (eq,SOME(me))
         equation
           eqns = mapEqnIncRow[eq];
@@ -3443,8 +3455,8 @@ algorithm
           else
             innerEquation = BackendDAE.INNEREQUATIONCONSTRAINTS(eqn=otherEqn, vars=otherVars, cons=constraints);
           end if;
-      then (innerEquation);
-  end match for eqn in inEqns);
+       then (innerEquation);
+    end match for eqn in inEqns);
 end assignInnerEquations;
 
 
@@ -3467,7 +3479,7 @@ algorithm
 end findConstraintForInnerEquation;
 
 
-protected function getpossibleEqn " finds equation that can be matched
+protected function getNextSolvableEqn " finds equation that can be matched with respect to solvability
   author: ptaeuber FHB 2013-08"
   input tuple<list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.AdjacencyMatrixEnhanced,array<Integer>,array<list<Integer>>> inTpl;
   output tuple<list<Integer>,Integer,list<Integer>,list<Integer>> EqnsAndVars;
@@ -3481,20 +3493,41 @@ algorithm
       BackendDAE.AdjacencyMatrixEnhanced me;
       array<Integer> ass1;
       array<list<Integer>> mapEqnIncRow;
-      Boolean b;
+      Boolean solvable;
     case(({},_,_,_,_))
       then fail();
     case((eqn_coll::rest,m,me,ass1,mapEqnIncRow))
       equation
-        eqns = mapEqnIncRow[eqn_coll];
-        eqn = listHead(eqns);
-        vars = arrayGet(m,eqn);
-        vars_enh = List.removeOnTrue(ass1, isAssignedSaveEnhanced,me[eqn]);
-        b = solvableLst(vars_enh);
-       then if boolNot(b) then getpossibleEqn((rest,m,me,ass1,mapEqnIncRow)) else (rest,eqn_coll,eqns,vars);
+        (solvable, eqns, vars) = eqnSolvableCheck(eqn_coll, mapEqnIncRow, ass1, m, me);
+       then if solvable then (rest,eqn_coll,eqns,vars) else getNextSolvableEqn((rest,m,me,ass1,mapEqnIncRow));
     else fail();
    end match;
-end getpossibleEqn;
+end getNextSolvableEqn;
+
+
+protected function eqnSolvableCheck "
+  returns the expanded equation(s), variables and
+  a boolean whether the equation is solvable or not
+  author: ptaeuber FHB 2016"
+  input Integer eqn_coll;
+  input array<list<Integer>> mapEqnIncRow;
+  input array<Integer> ass1;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  output Boolean solvable;
+  output list<Integer> eqns;
+  output list<Integer> vars;
+protected
+  Integer eqn;
+  BackendDAE.AdjacencyMatrixElementEnhanced vars_enh;
+algorithm
+  eqns := mapEqnIncRow[eqn_coll];
+  eqn := listHead(eqns);
+  vars := arrayGet(m,eqn);
+  vars_enh := List.removeOnTrue(ass1, isAssignedSaveEnhanced,me[eqn]);
+  solvable := solvableLst(vars_enh);
+end eqnSolvableCheck;
+
 
 protected function markTVarsOrResiduals
 " marks several tVars in ass1 or residuals in ass2
@@ -4120,7 +4153,7 @@ protected
   Integer size;
   array<Integer> ass1,ass2,mapIncRowEqn;
   array<list<Integer>> mapEqnIncRow;
-  list<Integer> tVars,order,causEq,unsolvables,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never;
+  list<Integer> tVars,order,causEq,causEq_exp,unsolvables,discreteVars;
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
@@ -4155,7 +4188,6 @@ algorithm
   (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE());
 
 
-
   // Delete negative entries from incidence matrix
   m := Array.map(m,deleteNegativeEntries);
   mt := Array.map(mt,deleteNegativeEntries);
@@ -4166,18 +4198,8 @@ algorithm
     print("\n###END print Strong Component#######################\n(Function:totalTearing)\n\n\n");
   end if;
 
-
   // Get advanced adjacency matrix (determine how the variables occur in the equations)
   (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,false);
-
-  deleteImpossibleAssignments(m,me);
-  deleteImpossibleAssignments(mt,meT);
-
-  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("\nIncidence Matrix without Impossible Assignments:\n");
-    BackendDump.dumpIncidenceMatrix(m);
-    BackendDump.dumpIncidenceMatrix(mt);
-  end if;
 
   // Determine unsolvable vars to consider solvability
   unsolvables := getUnsolvableVars(1,size,meT,{});
@@ -4201,11 +4223,6 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
   end if;
-
-
-  // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
-  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst);
-
 
 
   // Determine all possible sets of tearing variables and save them in powerSet
@@ -4243,12 +4260,15 @@ algorithm
       // mark tVars in ass1
       markTVarsOrResiduals(tVars, ass1);
 
-      // remove tearing var from incidence matrix and transposed incidence matrix
+      // remove tearing vars from incidence matrix and transposed incidence matrix
       deleteEntriesFromIncidenceMatrix(mLoop, mtLoop, tVars);
       deleteRowsFromIncidenceMatrix(mtLoop, tVars);
 
       // initially find equations which can be causalized in the next step and save in causEq
-      causEq := traverseEqnsforAssignable(ass2,mLoop,mapEqnIncRow,mapIncRowEqn,0);
+      causEq_exp := traverseEqnsforAssignable(ass2,mLoop,mapEqnIncRow,mapIncRowEqn,0);
+      // Transform to collective equations
+      causEq := List.unique(List.map1r(causEq_exp,arrayGet,mapIncRowEqn));
+
       // if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
         // print("\nInitial ass1: " + stringDelimitList(List.map(arrayList(ass1),intString),",")+"\n");
         // print("Initial ass2: " + stringDelimitList(List.map(arrayList(ass2),intString),",") + "\n");
@@ -4260,7 +4280,7 @@ algorithm
 
 
       // Find all possible matchings for this set of tearing variables
-      matchingList := totalMatching(ass1,ass2,order,causEq,mLoop,mtLoop,mapEqnIncRow,mapIncRowEqn,{});
+      matchingList := totalMatching(ass1,ass2,order,causEq,mLoop,mtLoop,me,mapEqnIncRow,mapIncRowEqn,{});
       if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
         dumpMatchingList(matchingList);
       end if;
@@ -4331,7 +4351,6 @@ algorithm
 end getPowerSetElement;
 
 
-
 protected function totalMatching "function to find all possible matchings for one given set of tearing variables (DFS)
 author: ptaeuber FHB 2016"
   input array<Integer> ass1,ass2;
@@ -4339,15 +4358,17 @@ author: ptaeuber FHB 2016"
   input list<Integer> causEqIn;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingListIn;
   output list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingListOut=matchingListIn;
 protected
-  list<Integer> order, causEq, unassigned;
+  list<Integer> order, causEq, causEq_exp, e_exp, vars, unassigned;
   array<Integer> ass1Copy,ass2Copy;
   BackendDAE.IncidenceMatrix mCopy;
   BackendDAE.IncidenceMatrixT mtCopy;
+  Boolean solvable;
 algorithm
   for e in causEqIn loop
     // 1. Deep copies to avoid side effects
@@ -4356,36 +4377,42 @@ algorithm
     mCopy := arrayCopy(m);
     mtCopy := arrayCopy(mt);
 
-    // 2. Match e with corresponding variable, i.e.: update ass1, ass2, m, order
-    makeAssignment({e},mCopy[e],ass1Copy,ass2Copy,mCopy,mtCopy);
-    order := e::orderIn;
-
-    // 3. Determine new possible causEq
-    causEq := traverseEqnsforAssignable(ass2Copy,mCopy,mapEqnIncRow,mapIncRowEqn,0);
-
-    // 4. Dump
-    // if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
-      // print("\nNew ass1: " + stringDelimitList(List.map(arrayList(ass1Copy),intString),",")+"\n");
-        // print("New ass2: " + stringDelimitList(List.map(arrayList(ass2Copy),intString),",") + "\n");
-      // print("\nNew m:");BackendDump.dumpIncidenceMatrix(mCopy);
-      // print("\nNew mt:");BackendDump.dumpIncidenceMatrix(mtCopy);
-      // print("\nNew causEq: " + stringDelimitList(List.map(causEq,intString),",") + "\n");
-        // print("New order: " + stringDelimitList(List.map(order,intString),",") + "\n\n\n\n");
-    // end if;
-
-    // 5. Decide what to do
-    if listEmpty(causEq) then
-      // full matching found?
-      unassigned := getUnassigned(ass1Copy);
-      if listEmpty(unassigned) then
-        // save current full matching
-        if isNewMatching(matchingListOut,ass1Copy) then
-          matchingListOut := (ass1Copy,ass2Copy,listReverse(order)) :: matchingListOut;
-        end if;
-      end if;
+    (solvable, e_exp, vars) := eqnSolvableCheck(e, mapEqnIncRow, ass1Copy, mCopy, me);
+    if not solvable then
+      continue;
     else
-      // Continue with matching
-      matchingListOut := totalMatching(ass1Copy,ass2Copy,order,causEq,mCopy,mtCopy,mapEqnIncRow,mapIncRowEqn,matchingListOut);
+      // 2. Match e_exp with corresponding variable(s), i.e.: update ass1, ass2, m, order
+      makeAssignment(e_exp,vars,ass1Copy,ass2Copy,mCopy,mtCopy);
+      order := e::orderIn;
+
+      // 3. Determine new possible causEq
+      causEq_exp := traverseEqnsforAssignable(ass2Copy,mCopy,mapEqnIncRow,mapIncRowEqn,0);
+      causEq := List.unique(List.map1r(causEq_exp,arrayGet,mapIncRowEqn));
+
+      // 4. Dump
+      // if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
+        // print("\nNew ass1: " + stringDelimitList(List.map(arrayList(ass1Copy),intString),",")+"\n");
+          // print("New ass2: " + stringDelimitList(List.map(arrayList(ass2Copy),intString),",") + "\n");
+        // print("\nNew m:");BackendDump.dumpIncidenceMatrix(mCopy);
+        // print("\nNew mt:");BackendDump.dumpIncidenceMatrix(mtCopy);
+        // print("\nNew causEq: " + stringDelimitList(List.map(causEq,intString),",") + "\n");
+          // print("New order: " + stringDelimitList(List.map(order,intString),",") + "\n\n\n\n");
+      // end if;
+
+      // 5. Decide what to do
+      if listEmpty(causEq) then
+        // full matching found?
+        unassigned := getUnassigned(ass1Copy);
+        if listEmpty(unassigned) then
+          // save current full matching
+          if isNewMatching(matchingListOut,ass1Copy) then
+            matchingListOut := (ass1Copy,ass2Copy,listReverse(order)) :: matchingListOut;
+          end if;
+        end if;
+      else
+        // Continue with matching
+        matchingListOut := totalMatching(ass1Copy,ass2Copy,order,causEq,mCopy,mtCopy,me,mapEqnIncRow,mapIncRowEqn,matchingListOut);
+      end if;
     end if;
   end for;
 end totalMatching;
@@ -4439,6 +4466,11 @@ algorithm
 
     // Create BackendDAE.TearingSet for strict set
     tearingSetsOut := BackendDAE.TEARINGSET(tVars,residual,innerEquations,BackendDAE.EMPTY_JACOBIAN()) :: tearingSetsOut;
+
+    if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      print("\nTearing Variables:\n" + stringDelimitList(List.map(tVarsIn,intString),",") +"\n");
+      print("Residual Equations:\n" + stringDelimitList(List.map(residual_coll,intString),",") +"\n\n");
+    end if;
   end for;
 end createTearingSets;
 
@@ -4681,7 +4713,7 @@ algorithm
   end if;
   while not listEmpty(causEq) loop
     try
-      ((_,e,e_exp,vars)) := getpossibleEqn((causEq,m,me,ass1,mapEqnIncRow));
+      ((_,e,e_exp,vars)) := getNextSolvableEqn((causEq,m,me,ass1,mapEqnIncRow));
     else
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nMatching failed, choose different tearing set!\n\n\n");
@@ -4695,7 +4727,7 @@ algorithm
       print("causEq: " + stringDelimitList(List.map(causEq,intString),",") + "\nProcess " + intString(e) + ":\ne_exp: " + stringDelimitList(List.map(e_exp,intString),",") + "\n");
     end if;
 
-    // Match e_exp with corresponding variable, i.e.: update ass1, ass2, m, order
+    // Match e_exp with corresponding variable(s), i.e.: update ass1, ass2, m, order
     makeAssignment(e_exp,vars,ass1,ass2,m,mt);
     orderOut := e::orderOut;
 
