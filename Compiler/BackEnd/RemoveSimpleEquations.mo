@@ -2004,7 +2004,9 @@ algorithm
         // check alias connection
         (rmax, smax, unremovable, const, cont) = getAlias2(containerIn, currIdx, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, currIdx::stack, iRmax, iSmax, iUnremovable, iConst);
         // next arm
-        (rmax, smax, unremovable, const, cont) = getAliasContinue(cont, rows, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, stack, rmax, smax, unremovable, const);
+        if cont then
+          (rmax, smax, unremovable, const, cont) = getAlias(rows, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, stack, rmax, smax, unremovable, const);
+        end if;
       then
         (rmax, smax, unremovable, const, cont);
 
@@ -2150,7 +2152,9 @@ algorithm
         state = BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
         (rmax, smax, unremovable) = getAlias3(v, i2, state, replaceable_ and replaceble1, currIdx, rmax, smax, unremovable);
         // go deeper
-        (rmax, smax, unremovable, const, cont) = getAliasContinue(cont, adjEqs, SOME(i2), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, const);
+        if cont then
+          (rmax, smax, unremovable, const, cont) = getAlias(adjEqs, SOME(i2), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, const);
+        end if;
        then
          (rmax, smax, unremovable, const, cont);
 
@@ -2240,46 +2244,6 @@ algorithm
         (tpl, iSmax, iUnremovable);
   end match;
 end getAlias3;
-
-protected function getAliasContinue"TODO: make this call an if-else in the calling function
-author: Frenkel TUD 2012-12"
-  input Boolean iContinue;
-  input list<Integer> rows;
-  input Option<Integer> i;
-  input Integer mark; //how to mark a visited container
-  input array<SimpleContainer> simpleeqnsarr;
-  input array<list<Integer>> iMT;
-  input BackendDAE.Variables vars;
-  input HashSet.HashSet unReplaceable;
-  input Boolean negate;
-  input list<Integer> stack;
-  input Option<tuple<Integer, Integer>> iRmax;
-  input Option<tuple<Integer, Integer>> iSmax;
-  input Option<Integer> iUnremovable;
-  input Option<Integer> iConst;
-  output Option<tuple<Integer, Integer>> oRmax;
-  output Option<tuple<Integer, Integer>> oSmax;
-  output Option<Integer> oUnremovable;
-  output Option<Integer> oConst;
-  output Boolean oContinue;
-algorithm
-  (oRmax, oSmax, oUnremovable, oConst, oContinue) :=
-  match(iContinue, rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
-    local
-      Option<tuple<Integer, Integer>> rmax, smax;
-      Option<Integer> unremovable, const;
-      Boolean cont;
-    case (true, _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        // update candidates
-        (rmax, smax, unremovable, const, cont) = getAlias(rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst);
-      then
-        (rmax, smax, unremovable, const, cont);
-    case (false, _, _, _, _, _, _, _, _, _, _, _, _, _)
-      then
-        (iRmax, iSmax, iUnremovable, iConst, iContinue);
-  end match;
-end getAliasContinue;
 
 protected function isVisited "author: Frenkel TUD 2012-12"
   input Integer mark; //how to mark a visited container
