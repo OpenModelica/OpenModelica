@@ -1366,7 +1366,6 @@ template globalDataVarDefine(SimVar simVar, String arrayName) "template globalDa
 ::=
   match simVar
   case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
-  let tmp = System.tmpTick()
     <<
     /* <%crefStrNoUnderscore(c)%> */
     #define _<%cref(c)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
@@ -1382,7 +1381,6 @@ template globalDataVarDefine(SimVar simVar, String arrayName) "template globalDa
 
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
-  let tmp = System.tmpTick()
     <<
     /* <%crefStrNoUnderscore(name)%> */
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
