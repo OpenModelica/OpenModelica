@@ -6338,11 +6338,11 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp,
 ::=
   match exp
   case cr as CREF(__) then
-    '$P$ATTRIBUTE<%cref(cr.componentRef)%>.start'
+    '<%crefAttributes(cr.componentRef)%>.start'
   case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
     let offset = daeExp(sub_exp, context, &preExp, &varDecls, &auxFunction)
     let cref = cref(cr.componentRef)
-    '*(&$P$ATTRIBUTE<%cref(cr.componentRef)%>.start + <%offset%>)'
+    '*(&<%crefAttributes(cr.componentRef)%>.start + <%offset%>)'
   else
     error(sourceInfo(), 'Code generation does not support start(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
 end daeExpCallStart;
@@ -6839,6 +6839,47 @@ template daeSubscriptExp(Exp exp, Context context, Text &preExp, Text &varDecls,
   case "modelica_boolean" then '(<%res%>+1)'
   else '<%res%>' /* <%expTypeFromExpModelica(exp)%> */
 end daeSubscriptExp;
+
+template crefShortType(ComponentRef cr) "template crefType
+  Like cref but with cast if type is integer."
+::=
+  match cr
+  case CREF_IDENT(__) then '<%expTypeShort(identType)%>'
+  case CREF_QUAL(__)  then '<%crefShortType(componentRef)%>'
+  else "crefType:ERROR"
+  end match
+end crefShortType;
+
+template varArrayName(SimVar var)
+::=
+  match var
+  case SIMVAR(varKind=PARAM()) then '<%crefShortType(name)%>Parameter'
+  case SIMVAR(__) then '<%crefShortType(name)%>Vars'
+end varArrayName;
+
+template crefVarInfo(ComponentRef cr)
+::=
+  match cref2simvar(cr, getSimCode())
+  case var as SIMVAR(__) then
+  'data->modelData-><%varArrayName(var)%>Data[<%index%>].info /* <%Util.escapeModelicaStringToCString(crefStr(name))%> */'
+end crefVarInfo;
+
+template varAttributes(SimVar var)
+::=
+  match var
+  case SIMVAR(index=-1) then crefAttributes(name) // input variable?
+  case SIMVAR(__) then
+  'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%Util.escapeModelicaStringToCString(crefStr(name))%> */'
+end varAttributes;
+
+template crefAttributes(ComponentRef cr)
+::=
+  match cref2simvar(cr, getSimCode())
+  case var as SIMVAR(index=-1, varKind=JAC_VAR()) then "dummyREAL_ATTRIBUTE"
+  case var as SIMVAR(index=-1) then error(sourceInfo(), 'varAttributes got index=-1 for <%crefStr(name)%>')
+  case var as SIMVAR(__) then
+  'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%Util.escapeModelicaStringToCString(crefStr(name))%> */'
+end crefAttributes;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenCFunctions;

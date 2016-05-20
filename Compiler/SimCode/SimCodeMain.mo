@@ -587,6 +587,7 @@ protected
     output Boolean res;
   end PartialRunTpl;
 algorithm
+  setGlobalRoot(Global.optionSimCode, SOME(simCode));
   _ := match target
     local
       String str, guid;
@@ -655,6 +656,7 @@ algorithm
         else
           true := max(l for l in System.launchParallelTasks(numThreads, codegenFuncs, runCodegenFunc));
         end if;
+
       then ();
 
     case "JavaScript" equation
@@ -682,6 +684,7 @@ algorithm
       Error.addMessage(Error.INTERNAL_ERROR, {str});
     then fail();
   end match;
+  setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplates;
 
 protected function dumpTaskSystemIfFlag
@@ -709,6 +712,7 @@ protected function callTargetTemplatesFMU
   input String FMUVersion;
   input String FMUType;
 algorithm
+  setGlobalRoot(Global.optionSimCode, SOME(simCode));
   _ := match (simCode,target)
     local
       String str;
@@ -743,6 +747,7 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
+  setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplatesFMU;
 
 

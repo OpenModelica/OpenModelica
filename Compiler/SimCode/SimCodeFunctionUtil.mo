@@ -2905,5 +2905,17 @@ algorithm
   outdef := stringDelimitList(List.threadMap(List.fill("i_", nrdims), idxstrlst, stringAppend), ",");
 end generateSubPalceholders;
 
+public function getSimCode
+  output SimCode.SimCode code;
+protected
+  Option<SimCode.SimCode> ocode;
+algorithm
+  ocode := getGlobalRoot(Global.optionSimCode);
+  code := match ocode
+    case SOME(code) then code;
+    else algorithm Error.addInternalError("Tried to generate code that requires the SimCode structure, but this is not set (function context?)", sourceInfo()); then fail();
+  end match;
+end getSimCode;
+
 annotation(__OpenModelica_Interface="backendInterface");
 end SimCodeFunctionUtil;

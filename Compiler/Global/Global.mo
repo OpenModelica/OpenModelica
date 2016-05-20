@@ -58,6 +58,7 @@ constant Integer gcProfilingIndex = 20;
 constant Integer inlineHashTable = 21; // TODO: Should be a local root?
 constant Integer currentInstVar = 22;
 constant Integer operatorOverloadingCache = 23;
+constant Integer optionSimCode = 24;
 
 // indexes in System.tick
 // ----------------------

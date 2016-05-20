@@ -403,12 +403,11 @@ package SimCode
     end SIMULATION_CONTEXT;
     record FUNCTION_CONTEXT
     end FUNCTION_CONTEXT;
-   record JACOBIAN_CONTEXT
-   end JACOBIAN_CONTEXT;
-
+    record JACOBIAN_CONTEXT
+    end JACOBIAN_CONTEXT;
     record ALGLOOP_CONTEXT
-       Boolean genInitialisation;
-        Boolean genJacobian;
+      Boolean genInitialisation;
+      Boolean genJacobian;
     end ALGLOOP_CONTEXT;
     record OTHER_CONTEXT
     end OTHER_CONTEXT;
@@ -1041,6 +1040,10 @@ package SimCodeFunctionUtil
     input DAE.ComponentRef cr;
     output String outdef;
   end generateSubPalceholders;
+
+  function getSimCode
+    output SimCode.SimCode code;
+  end getSimCode;
 
 end SimCodeFunctionUtil;
 
