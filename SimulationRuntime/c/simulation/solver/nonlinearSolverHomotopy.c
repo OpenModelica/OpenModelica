@@ -61,7 +61,7 @@ typedef struct DATA_HOMOTOPY
   int m; /* dimension: m == size+1 */
 
   double xtol; /* tolerance for updating solution vector */
-  double ftol; /* tolerance fo accepting accuracy */
+  double ftol; /* tolerance for accepting accuracy */
 
   double error_f;
 
@@ -150,8 +150,8 @@ int allocateHomotopyData(int size, void** voiddata)
   data->initialized = 0;
   data->n = size;
   data->m = size + 1;
-  data->xtol = 1e-24;
-  data->ftol = 1e-24;
+  data->xtol = newtonXTol;
+  data->ftol = newtonFTol;
 
   data->error_f = 0;
 

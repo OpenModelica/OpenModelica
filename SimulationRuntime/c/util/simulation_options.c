@@ -76,6 +76,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_MAX_ORDER */             "maxIntegrationOrder",
   /* FLAG_MAX_STEP_SIZE */         "maxStepSize",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "measureTimePlotFormat",
+  /* FLAG_NEWTON_FTOL */           "newtonFTol",
+  /* FLAG_NEWTON_XTOL */           "newtonXTol",
   /* FLAG_NEWTON_STRATEGY */       "newton",
   /* FLAG_NLS */                   "nls",
   /* FLAG_NLS_INFO */              "nlsInfo",
@@ -146,6 +148,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_MAX_ORDER */             "value specifies maximum integration order, used by dassl solver",
   /* FLAG_MAX_STEP_SIZE */         "value specifies maximum absolute step size, used by dassl solver",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality",
+  /* FLAG_NEWTON_FTOL */           "[double (default 1e-24)] tolerance for accepting accuracy in Newton solver",
+  /* FLAG_NEWTON_XTOL */           "[double (default 1e-24)] tolerance for updating solution vector in Newton solver",
   /* FLAG_NEWTON_STRATEGY */       "value specifies the damping strategy for the newton solver",
   /* FLAG_NLS */                   "value specifies the nonlinear solver",
   /* FLAG_NLS_INFO */              "outputs detailed information about solving process of non-linear systems into csv files.",
@@ -285,6 +289,12 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * ps\n"
   "  * gif\n"
   "  * ...",
+  /* FLAG_NEWTON_FTOL */
+  "  Tolerance for accepting accuracy in Newton solver."
+  "  The value is a Double with default value 1e-24.",
+  /* FLAG_NEWTON_XTOL */
+  "  Tolerance for updating solution vector in Newton solver."
+  "  The value is a Double with default value 1e-24.",
   /* FLAG_NEWTON_STRATEGY */
   "  Value specifies the damping strategy for the newton solver.",
   /* FLAG_NLS */
@@ -393,6 +403,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_MAX_ORDER */             FLAG_TYPE_OPTION,
   /* FLAG_MAX_STEP_SIZE */         FLAG_TYPE_OPTION,
   /* FLAG_MEASURETIMEPLOTFORMAT */ FLAG_TYPE_OPTION,
+  /* FLAG_NEWTON_FTOL */           FLAG_TYPE_OPTION,
+  /* FLAG_NEWTON_XTOL */           FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_STRATEGY */       FLAG_TYPE_OPTION,
   /* FLAG_NLS */                   FLAG_TYPE_OPTION,
   /* FLAG_NLS_INFO */              FLAG_TYPE_FLAG,
