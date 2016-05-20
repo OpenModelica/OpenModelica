@@ -98,9 +98,7 @@ algorithm
       ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);
 
       // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
-      syst.m := NONE();
-      syst.mT := NONE();
-      syst.matching := BackendDAE.MATCHING(ass1, ass2, comps);
+      syst := BackendDAE.EQSYSTEM(syst.orderedVars, syst.orderedEqs, NONE(), NONE(), BackendDAE.MATCHING(ass1, ass2, comps), syst.stateSets, syst.partitionKind, syst.removedEqs);
     then (syst, comps);
 
     else algorithm
@@ -175,7 +173,6 @@ protected function analyseStrongComponentScalar "author: Frenkel TUD 2011-05"
 protected
   list<Integer> comp, vlst;
   list<BackendDAE.Var> varlst;
-  list<tuple<BackendDAE.Var, Integer>> var_varindx_lst;
   BackendDAE.Variables vars;
   list<BackendDAE.Equation> eqn_lst;
   BackendDAE.EquationArray eqns;
@@ -185,14 +182,13 @@ algorithm
     vlst := List.map1r(inComp, arrayGet, inAss2);
     vlst := List.select1(vlst, intGt, 0);
     varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
-    var_varindx_lst := List.threadTuple(varlst, vlst);
 
     // get from scalar eqns indexes the indexes in the equation array
     comp := List.map1r(inComp, arrayGet, mapIncRowEqn);
     comp := List.fold2(comp, uniqueComp, imark, markarray, {});
     //comp = List.unique(comp);
     eqn_lst := List.map1r(comp, BackendEquation.equationNth1, eqns);
-    outComp := analyseStrongComponentBlock(comp, eqn_lst, var_varindx_lst, syst, shared);
+    outComp := analyseStrongComponentBlock(comp, eqn_lst, varlst, vlst, syst, shared);
   else
     Error.addInternalError("function analyseStrongComponentScalar failed", sourceInfo());
     fail();
@@ -215,16 +211,16 @@ end uniqueComp;
 protected function analyseStrongComponentBlock "author: Frenkel TUD 2011-05"
   input list<Integer> inComp;
   input list<BackendDAE.Equation> inEqnLst;
-  input list<tuple<BackendDAE.Var, Integer>> inVarVarindxLst;
+  input list<BackendDAE.Var> inVarLst;
+  input list<Integer> inVarindxLst;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   output BackendDAE.StrongComponent outComp;
 algorithm
-  outComp := matchcontinue (inComp, inEqnLst, inVarVarindxLst)
+  outComp := matchcontinue (inComp, inEqnLst, inVarLst, inVarindxLst)
     local
       Integer compelem, v;
       list<Integer> comp, varindxs;
-      list<tuple<BackendDAE.Var, Integer>> var_varindx_lst, var_varindx_lst_cond;
       array<Integer> ass1, ass2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
@@ -244,13 +240,10 @@ algorithm
       list<String> slst;
       Boolean jacConstant, mixedSystem, b1;
 
-    case (compelem::{}, BackendDAE.ALGORITHM()::{}, var_varindx_lst) equation
-      varindxs = List.map(var_varindx_lst, Util.tuple22);
+    case (compelem::{}, BackendDAE.ALGORITHM()::{}, _, varindxs)
     then BackendDAE.SINGLEALGORITHM(compelem, varindxs);
 
-    case (compelem::{}, BackendDAE.ARRAY_EQUATION()::{}, var_varindx_lst) equation
-      varindxs = List.map(var_varindx_lst, Util.tuple22);
-      var_lst = List.map(var_varindx_lst, Util.tuple21);
+    case (compelem::{}, BackendDAE.ARRAY_EQUATION()::{}, var_lst, varindxs) equation
       crlst = List.map(var_lst,BackendVariable.varCref);
        // its only an array equation if all the solved variables belong to an array. Otherwise we have to handle it as a non-linear system
       b1 =  List.applyAndFold(crlst,boolAnd,ComponentReference.isArrayElement,true);
@@ -260,26 +253,21 @@ algorithm
       end if;
     then BackendDAE.SINGLEARRAY(compelem, varindxs);
 
-    case (compelem::{}, BackendDAE.IF_EQUATION()::{}, var_varindx_lst) equation
-      varindxs = List.map(var_varindx_lst, Util.tuple22);
+    case (compelem::{}, BackendDAE.IF_EQUATION()::{}, _, varindxs)
     then BackendDAE.SINGLEIFEQUATION(compelem, varindxs);
 
-    case (compelem::{}, BackendDAE.COMPLEX_EQUATION()::{}, var_varindx_lst) equation
-      varindxs = List.map(var_varindx_lst, Util.tuple22);
+    case (compelem::{}, BackendDAE.COMPLEX_EQUATION()::{}, _, varindxs)
     then BackendDAE.SINGLECOMPLEXEQUATION(compelem, varindxs);
 
-    case (compelem::{}, BackendDAE.WHEN_EQUATION()::{}, var_varindx_lst) equation
-      varindxs = List.map(var_varindx_lst, Util.tuple22);
+    case (compelem::{}, BackendDAE.WHEN_EQUATION()::{}, _, varindxs)
     then BackendDAE.SINGLEWHENEQUATION(compelem, varindxs);
 
-    case (compelem::{}, _, (_, v)::{})
+    case (compelem::{}, _, _, v::{})
     then BackendDAE.SINGLEEQUATION(compelem, v);
 
-    case (comp, eqn_lst, var_varindx_lst) equation
-      var_lst = List.map(var_varindx_lst, Util.tuple21);
+    case (comp, eqn_lst, var_lst, varindxs) equation
       //false = BackendVariable.hasDiscreteVar(var_lst); //lochel: mixed systems and non-linear systems are treated the same
       true = BackendVariable.hasContinuousVar(var_lst);   //lochel: pure discrete equation systems are not supported
-      varindxs = List.map(var_varindx_lst, Util.tuple22);
       eqn_lst1 = BackendEquation.replaceDerOpInEquationList(eqn_lst);
       // States are solved for der(x) not x.
       var_lst_1 = List.map(var_lst, transformXToXd);
@@ -304,8 +292,7 @@ algorithm
       end if;
     then BackendDAE.EQUATIONSYSTEM(comp, varindxs, BackendDAE.FULL_JACOBIAN(jac), jac_tp, mixedSystem);
 
-    case (_, eqn_lst, var_varindx_lst) equation
-      var_lst = List.map(var_varindx_lst, Util.tuple21);
+    case (_, eqn_lst, var_lst, _) equation
       true = BackendVariable.hasDiscreteVar(var_lst);
       false = BackendVariable.hasContinuousVar(var_lst);
       msg = getInstanceName() + " failed (Sorry - Support for Discrete Equation Systems is not yet implemented)\n";
@@ -317,8 +304,7 @@ algorithm
       Error.addInternalError(msg, sourceInfo());
     then fail();
 
-    case (_, eqn_lst, var_varindx_lst) equation
-      var_lst = List.map(var_varindx_lst, Util.tuple21);
+    case (_, eqn_lst, var_lst, _) equation
       msg = getInstanceName() + " failed\nvariables:\n  ";
       crlst = List.map(var_lst, BackendVariable.varCref);
       slst = List.map(crlst, ComponentReference.printComponentRefStr);
