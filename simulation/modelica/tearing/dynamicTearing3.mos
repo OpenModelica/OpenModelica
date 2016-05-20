@@ -46,6 +46,8 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // Use Flag '+d=tearingdumpV' for more details
 //
 //
+// Tearing type: heuristic
+//
 //
 // ###BEGIN print Strong Component#####################
 // (Function:CellierTearing)
@@ -179,6 +181,8 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // Tearing of NONLINEAR component
 // Use Flag '+d=tearingdumpV' for more details
 //
+//
+// Tearing type: heuristic
 //
 //
 // ###BEGIN print Strong Component#####################

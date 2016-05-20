@@ -186,23 +186,6 @@ simulate(totalTearing2); getErrorString();
 // *
 // * tVars: 2
 // *
-// * resEq: 3
-// *
-// * innerEquations ({eqn,vars}):
-// * {2:3}, {1:1}
-// *
-// *****************************************
-//
-//
-// ****************************************
-// * TEARING RESULTS:
-// * (Global Indexes)
-// *
-// * No of equations in strong component: 3
-// * No of tVars: 1
-// *
-// * tVars: 2
-// *
 // * resEq: 2
 // *
 // * innerEquations ({eqn,vars}):
@@ -246,7 +229,7 @@ simulate(totalTearing2); getErrorString();
 //
 //
 //
-// Total number of different tearing sets: 12
+// Total number of different tearing sets: 11
 //
 // record SimulationResult
 //     resultFile = "totalTearing2_res.mat",
