@@ -227,7 +227,15 @@ sub runone
     while(<LOG>) {
       s/^[ \t]*//;
       s/[ \t]+/ /;
-      print RES $_;
+      $str = $_;
+      # fix generated files on windows
+      if ($^O =~ /^msys/) {
+        # replace /X.mo?_tempNNNN/X.mo?: -> /X.mo?
+        if ( $str =~ m/(.*\/)[^\/]+\.mo*_temp[0-9]{4}\/(.*\.mo*\:.*)/ ) {
+          $str = $1 . $2;
+        }
+      } 
+      print RES $str;
     }
     close LOG;
     close RES;
