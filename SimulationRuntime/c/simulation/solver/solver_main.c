@@ -317,13 +317,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     return 1;
   }
 
-  if(measure_time_flag)
-  {
-    rt_accumulate(SIM_TIMER_PREINIT);
-    rt_tick(SIM_TIMER_INIT);
-    rt_tick(SIM_TIMER_TOTAL);
-  }
-
   TRACE_POP
   return retValue;
 }
@@ -431,6 +424,13 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
 
   SIMULATION_INFO *simInfo = data->simulationInfo;
 
+  if(measure_time_flag)
+  {
+    rt_accumulate(SIM_TIMER_PREINIT);
+    rt_tick(SIM_TIMER_INIT);
+    rt_tick(SIM_TIMER_TOTAL);
+  }
+
   copyStartValuestoInitValues(data);
 
   /* read input vars */
@@ -471,7 +471,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
 
   /* Initialization complete */
   if (measure_time_flag) {
-    rt_accumulate( SIM_TIMER_INIT);
+    rt_accumulate(SIM_TIMER_INIT);
   }
 
   TRACE_POP
