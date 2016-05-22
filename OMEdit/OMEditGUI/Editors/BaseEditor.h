@@ -103,6 +103,7 @@ public:
     : mFoldingIndent(0)
     , mFolded(false)
     , mFoldingEndIncluded(false)
+    , mFoldingState(false)
     , mLeadingSpaces(-1)
   {}
   ~TextBlockUserData();
@@ -142,6 +143,8 @@ public:
   // Set whether the last character of the folded region will show when the code is folded.
   inline void setFoldingEndIncluded(bool foldingEndIncluded) {mFoldingEndIncluded = foldingEndIncluded;}
   inline bool foldingEndIncluded() const {return mFoldingEndIncluded;}
+  inline void setFoldingState(bool foldingState) {mFoldingState = foldingState;}
+  inline bool foldingState() const {return mFoldingState;}
 
   inline void setLeadingSpaces(int leadingSpaces) {mLeadingSpaces = leadingSpaces;}
   inline int getLeadingSpaces() {return mLeadingSpaces;}
@@ -151,6 +154,7 @@ private:
   int mFoldingIndent;
   bool mFolded;
   bool mFoldingEndIncluded;
+  bool mFoldingState;
   int mLeadingSpaces;
 };
 
@@ -194,6 +198,7 @@ private:
     void toggleBreakpoint(const QString fileName, int lineNumber);
     void indentOrUnindent(bool doIndent);
     void moveCursorVisible(bool ensureVisible = true);
+    void ensureCursorVisible();
   private:
     BaseEditor *mpBaseEditor;
     LineNumberArea *mpLineNumberArea;

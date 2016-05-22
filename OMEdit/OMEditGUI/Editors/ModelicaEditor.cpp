@@ -708,10 +708,16 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
   /* Hand-written recognizer beats the crap known as QRegEx ;) */
   int index = 0, startIndex = 0;
   int blockState = previousBlockState();
-  // store parentheses info
-  Parentheses parentheses;
+  bool foldingState = false;
+  QTextBlock previousTextBlck = currentBlock().previous();
+  TextBlockUserData *pPreviousTextBlockUserData = BaseEditorDocumentLayout::userData(previousTextBlck);
+  if (pPreviousTextBlockUserData) {
+    foldingState = pPreviousTextBlockUserData->foldingState();
+  }
   QRegExp annotationRegExp("\\bannotation\\b");
   int annotationIndex = annotationRegExp.indexIn(text);
+  // store parentheses info
+  Parentheses parentheses;
   TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(currentBlock());
   if (pTextBlockUserData) {
     pTextBlockUserData->clearParentheses();
@@ -742,21 +748,6 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
           blockState = 0;
         }
         break;
-      case 4:
-        if (text[index] == ';') {
-          if (index == text.length() - 1) { // if we have some text after closing the annotation then we don't want to fold it.
-            if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
-              pTextBlockUserData->setFoldingIndent(1);
-            }
-            pTextBlockUserData->setFoldingEndIncluded(true);
-          } else {
-            pTextBlockUserData->setFoldingIndent(0);
-          }
-          blockState = 0;
-        } else if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
-          pTextBlockUserData->setFoldingIndent(1);
-        }
-        break;
       default:
         /* check if single line comment then set the blockstate to 1. */
         if (text[index] == '/' && index+1<text.length() && text[index+1] == '/') {
@@ -769,16 +760,6 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
         } else if (text[index] == '"') {
           startIndex = index;
           blockState = 3;
-        } else if (text[index] == 'a' && index+9<text.length() && text[index+1] == 'n' && text[index+2] == 'n' && text[index+3] == 'o'
-                   && text[index+4] == 't' && text[index+5] == 'a' && text[index+6] == 't' && text[index+7] == 'i' && text[index+8] == 'o'
-                   && text[index+9] == 'n') {
-          if (index+9 == text.length() - 1) { // if we just have annotation keyword in the line
-            index = index + 9;
-            blockState = 4;
-          } else if (index+10<text.length() && (text[index+10] == '(' || text[index+10] == ' ')) { // if annotation keyword is followed by '(' or space.
-            index = index + 10;
-            blockState = 4;
-          }
         }
     }
     // if no single line comment, no multi line comment and no quotes then store the parentheses
@@ -789,10 +770,54 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
         parentheses.append(Parenthesis(Parenthesis::Closed, text[index], index));
       }
     }
+    if (foldingState) {
+      // if no single line comment, no multi line comment and no quotes then check for annotation end
+      if (blockState < 1 || blockState > 3) {
+        if (text[index] == ';') {
+          if (index == text.length() - 1) { // if we have some text after closing the annotation then we don't want to fold it.
+            if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
+              pTextBlockUserData->setFoldingIndent(1);
+            }
+            pTextBlockUserData->setFoldingEndIncluded(true);
+          } else {
+            pTextBlockUserData->setFoldingIndent(0);
+          }
+          foldingState = false;
+        } else if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
+          pTextBlockUserData->setFoldingIndent(1);
+        }
+      } else if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
+        pTextBlockUserData->setFoldingIndent(1);
+      } else if (startIndex < annotationIndex) {  // if we have annotation word before quote or comment block is starting then fold.
+        pTextBlockUserData->setFoldingIndent(1);
+      }
+    } else {
+      // if no single line comment, no multi line comment and no quotes then check for annotation start
+      if (blockState < 1 || blockState > 3) {
+        if (text[index] == 'a' && index+9<text.length() && text[index+1] == 'n' && text[index+2] == 'n' && text[index+3] == 'o'
+            && text[index+4] == 't' && text[index+5] == 'a' && text[index+6] == 't' && text[index+7] == 'i' && text[index+8] == 'o'
+            && text[index+9] == 'n') {
+          if (index+9 == text.length() - 1) { // if we just have annotation keyword in the line
+            index = index + 9;
+            foldingState = true;
+          } else if (index+10<text.length() && (text[index+10] == '(' || text[index+10] == ' ')) { // if annotation keyword is followed by '(' or space.
+            index = index + 10;
+            foldingState = true;
+          }
+        }
+      }
+    }
     index++;
   }
   if (pTextBlockUserData) {
     pTextBlockUserData->setParentheses(parentheses);
+    if (foldingState) {
+      pTextBlockUserData->setFoldingState(true);
+      // Hanldle empty blocks inside annotaiton section
+      if (text.isEmpty() && foldingState) {
+        pTextBlockUserData->setFoldingIndent(1);
+      }
+    }
     // set text block user data
     setCurrentBlockUserData(pTextBlockUserData);
   }
@@ -804,9 +829,6 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
     case 3:
       setFormat(startIndex, text.length()-startIndex, mQuotationFormat);
       setCurrentBlockState(3);
-      break;
-    case 4:
-      setCurrentBlockState(4);
       break;
   }
 }
@@ -820,6 +842,10 @@ void ModelicaTextHighlighter::highlightBlock(const QString &text)
   }
   // set text block state
   setCurrentBlockState(0);
+  TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(currentBlock());
+  if (pTextBlockUserData) {
+    pTextBlockUserData->setFoldingState(false);
+  }
   setFormat(0, text.length(), mpModelicaEditorPage->getTextRuleColor());
   foreach (const HighlightingRule &rule, mHighlightingRules) {
     QRegExp expression(rule.mPattern);

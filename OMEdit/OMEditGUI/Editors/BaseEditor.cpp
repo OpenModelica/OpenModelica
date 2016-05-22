@@ -652,7 +652,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
   const int lineNumbersWidth = mpLineNumberArea->width() - collapseColumnWidth;
 
   while (block.isValid() && top <= event->rect().bottom()) {
-    QTextDocument *doc = document();
+    QTextDocument *pTextDocument = document();
     top = bottom;
     const qreal height = blockBoundingRect(block).height();
     bottom = top + height;
@@ -663,7 +663,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
 
     if (!nextVisibleBlock.isVisible()) {
       // invisible blocks do have zero line count
-      nextVisibleBlock = doc->findBlockByLineNumber(nextVisibleBlock.firstLineNumber());
+      nextVisibleBlock = pTextDocument->findBlockByLineNumber(nextVisibleBlock.firstLineNumber());
       nextVisibleBlockNumber = nextVisibleBlock.blockNumber();
     }
 
@@ -707,6 +707,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
     if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
       painter.save();
       painter.setRenderHint(QPainter::Antialiasing, false);
+      painter.setPen(Qt::gray);
 
       TextBlockUserData *nextBlockUserData = BaseEditorDocumentLayout::testUserData(nextBlock);
       bool drawFoldingControl = nextBlockUserData && BaseEditorDocumentLayout::foldingIndent(block) < nextBlockUserData->foldingIndent();
@@ -715,7 +716,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
       int boxWidth = foldBoxWidth(fm);
       int size = boxWidth / 4;
       QRect foldingMarkerBox(lineNumbersWidth + size, top + size, 2 * (size) + 1, 2 * (size) + 1);
-      QRect foldingLineBox(lineNumbersWidth + size, top, 2 * (size) + 1, fm.height());
+      QRect foldingLineBox(lineNumbersWidth + size, top, 2 * (size) + 1, height);
 
       if (drawEnd) {
         painter.drawLine(QPointF(foldingLineBox.center().x(), foldingLineBox.top()), foldingLineBox.center());
@@ -883,6 +884,7 @@ void BaseEditor::PlainTextEdit::updateCursorPosition()
     Label *pCursorPositionLabel = mpBaseEditor->getModelWidget()->getCursorPositionLabel();
     pCursorPositionLabel->setText(QString("Line: %1, Col: %2").arg(line).arg(column));
   }
+  ensureCursorVisible();
 }
 
 /*!
@@ -993,6 +995,35 @@ void BaseEditor::PlainTextEdit::moveCursorVisible(bool ensureVisible)
   if (ensureVisible) {
     ensureCursorVisible();
   }
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::ensureCursorVisible
+ * Makes sure cursor is visible when user moves it inside hidden block.
+ */
+void BaseEditor::PlainTextEdit::ensureCursorVisible()
+{
+  QTextBlock block = textCursor().block();
+  if (!block.isVisible()) {
+    BaseEditorDocumentLayout *pDocumentLayout = qobject_cast<BaseEditorDocumentLayout*>(document()->documentLayout());
+    // Open all folds of current line.
+    int indent = BaseEditorDocumentLayout::foldingIndent(block);
+    block = block.previous();
+    while (block.isValid()) {
+      const int indent2 = BaseEditorDocumentLayout::foldingIndent(block);
+      if (BaseEditorDocumentLayout::canFold(block) && indent2 < indent) {
+        BaseEditorDocumentLayout::foldOrUnfold(block, true);
+        if (block.isVisible()) {
+          break;
+        }
+        indent = indent2;
+      }
+      block = block.previous();
+    }
+    pDocumentLayout->requestUpdate();
+    pDocumentLayout->emitDocumentSizeChanged();
+  }
+  QPlainTextEdit::ensureCursorVisible();
 }
 
 /*!
