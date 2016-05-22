@@ -99,7 +99,13 @@ typedef QVector<Parenthesis> Parentheses;
 class TextBlockUserData : public QTextBlockUserData
 {
 public:
-  inline TextBlockUserData() {mLeadingSpaces = -1;}
+  inline TextBlockUserData()
+    : mFoldingIndent(0)
+    , mFolded(false)
+    , mFoldingEndIncluded(false)
+    , mFoldingState(false)
+    , mLeadingSpaces(-1)
+  {}
   ~TextBlockUserData();
 
   inline TextMarks marks() const { return _marks; }
@@ -124,11 +130,31 @@ public:
   static MatchType checkClosedParenthesis(QTextCursor *cursor, QChar c);
   static MatchType matchCursorBackward(QTextCursor *cursor);
   static MatchType matchCursorForward(QTextCursor *cursor);
+
+  /* Set the code folding level.
+   * A code folding marker will appear the line *before* the one where the indention
+   * level increases. The code folding region will end in the last line that has the same
+   * indention level (or higher).
+   */
+  inline int foldingIndent() const {return mFoldingIndent;}
+  inline void setFoldingIndent(int indent) {mFoldingIndent = indent;}
+  inline void setFolded(bool b) {mFolded = b;}
+  inline bool folded() const {return mFolded;}
+  // Set whether the last character of the folded region will show when the code is folded.
+  inline void setFoldingEndIncluded(bool foldingEndIncluded) {mFoldingEndIncluded = foldingEndIncluded;}
+  inline bool foldingEndIncluded() const {return mFoldingEndIncluded;}
+  inline void setFoldingState(bool foldingState) {mFoldingState = foldingState;}
+  inline bool foldingState() const {return mFoldingState;}
+
   inline void setLeadingSpaces(int leadingSpaces) {mLeadingSpaces = leadingSpaces;}
   inline int getLeadingSpaces() {return mLeadingSpaces;}
 private:
   TextMarks _marks;
-  QVector<Parenthesis> mParentheses;
+  Parentheses mParentheses;
+  int mFoldingIndent;
+  bool mFolded;
+  bool mFoldingEndIncluded;
+  bool mFoldingState;
   int mLeadingSpaces;
 };
 
@@ -139,6 +165,12 @@ public:
   BaseEditorDocumentLayout(QTextDocument *document);
   static Parentheses parentheses(const QTextBlock &block);
   static bool hasParentheses(const QTextBlock &block);
+  static void setFoldingIndent(const QTextBlock &block, int indent);
+  static int foldingIndent(const QTextBlock &block);
+  static bool canFold(const QTextBlock &block);
+  static void foldOrUnfold(const QTextBlock& block, bool unfold);
+  static bool isFolded(const QTextBlock &block);
+  static void setFolded(const QTextBlock &block, bool folded);
   static TextBlockUserData *testUserData(const QTextBlock &block);
   static TextBlockUserData *userData(const QTextBlock &block);
   void emitDocumentSizeChanged() {emit documentSizeChanged(documentSize());}
@@ -165,6 +197,8 @@ private:
     void setLineWrapping();
     void toggleBreakpoint(const QString fileName, int lineNumber);
     void indentOrUnindent(bool doIndent);
+    void moveCursorVisible(bool ensureVisible = true);
+    void ensureCursorVisible();
   private:
     BaseEditor *mpBaseEditor;
     LineNumberArea *mpLineNumberArea;
@@ -181,6 +215,7 @@ private:
     virtual QMimeData* createMimeDataFromSelection() const;
     virtual void focusInEvent(QFocusEvent *event);
     virtual void focusOutEvent(QFocusEvent *event);
+    void paintEvent(QPaintEvent *e);
   };
 public:
   BaseEditor(MainWindow *pMainWindow);
@@ -194,9 +229,11 @@ public:
   QAction *getToggleBreakpointAction() {return mpToggleBreakpointAction;}
   DocumentMarker* getDocumentMarker() {return mpDocumentMarker;}
   void goToLineNumber(int lineNumber);
+  void toggleBlockVisible(const QTextBlock &block);
 private:
   void initialize();
   void createActions();
+  void foldOrUnfold(bool unFold);
 protected:
   ModelWidget *mpModelWidget;
   MainWindow *mpMainWindow;
@@ -209,24 +246,28 @@ protected:
   QAction *mpShowTabsAndSpacesAction;
   QAction *mpToggleBreakpointAction;
   QAction *mpToggleCommentSelectionAction;
+  QAction *mpFoldAllAction;
+  QAction *mpUnFoldAllAction;
   DocumentMarker *mpDocumentMarker;
 
   QMenu* createStandardContextMenu();
 private slots:
   virtual void showContextMenu(QPoint point) = 0;
 public slots:
+  void textSettingsChanged();
   void updateLineNumberAreaWidth(int newBlockCount);
   void updateLineNumberArea(const QRect &rect, int dy);
   void updateHighlights();
   void updateCursorPosition();
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) = 0;
-  void setLineWrapping();
   void showFindReplaceWidget();
   void clearFindReplaceTexts();
   void showGotoLineNumberDialog();
   void showTabsAndSpaces(bool On);
   void toggleBreakpoint();
   virtual void toggleCommentSelection() = 0;
+  void foldAll();
+  void unFoldAll();
 };
 
 class LineNumberArea : public QWidget

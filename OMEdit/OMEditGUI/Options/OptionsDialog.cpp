@@ -240,7 +240,10 @@ void OptionsDialog::readTextEditorSettings()
     mpTextEditorPage->getIndentSpinBox()->setValue(mpSettings->value("textEditor/indentSize").toInt());
   }
   if (mpSettings->contains("textEditor/enableSyntaxHighlighting")) {
-    mpTextEditorPage->getSyntaxHighlightingCheckbox()->setChecked(mpSettings->value("textEditor/enableSyntaxHighlighting").toBool());
+    mpTextEditorPage->getSyntaxHighlightingGroupBox()->setChecked(mpSettings->value("textEditor/enableSyntaxHighlighting").toBool());
+  }
+  if (mpSettings->contains("textEditor/enableCodeFolding")) {
+    mpTextEditorPage->getCodeFoldingCheckBox()->setChecked(mpSettings->value("textEditor/enableCodeFolding").toBool());
   }
   if (mpSettings->contains("textEditor/matchParenthesesCommentsQuotes")) {
     mpTextEditorPage->getMatchParenthesesCommentsQuotesCheckBox()->setChecked(mpSettings->value("textEditor/matchParenthesesCommentsQuotes").toBool());
@@ -744,7 +747,8 @@ void OptionsDialog::saveTextEditorSettings()
   mpSettings->setValue("textEditor/tabPolicy", mpTextEditorPage->getTabPolicyComboBox()->itemData(mpTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
   mpSettings->setValue("textEditor/tabSize", mpTextEditorPage->getTabSizeSpinBox()->value());
   mpSettings->setValue("textEditor/indentSize", mpTextEditorPage->getIndentSpinBox()->value());
-  mpSettings->setValue("textEditor/enableSyntaxHighlighting", mpTextEditorPage->getSyntaxHighlightingCheckbox()->isChecked());
+  mpSettings->setValue("textEditor/enableSyntaxHighlighting", mpTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked());
+  mpSettings->setValue("textEditor/enableCodeFolding", mpTextEditorPage->getCodeFoldingCheckBox()->isChecked());
   mpSettings->setValue("textEditor/matchParenthesesCommentsQuotes", mpTextEditorPage->getMatchParenthesesCommentsQuotesCheckBox()->isChecked());
   mpSettings->setValue("textEditor/enableLineWrapping", mpTextEditorPage->getLineWrappingCheckbox()->isChecked());
   mpSettings->setValue("textEditor/fontFamily", mpTextEditorPage->getFontFamilyComboBox()->currentFont().family());
@@ -1203,8 +1207,8 @@ void OptionsDialog::saveSettings()
   saveMetaModelEditorSettings();
   // emit the signal so that all syntax highlighters are updated
   emit MetaModelEditorSettingsChanged();
-  // emit the signal so that all text editors can set line wrapping mode
-  emit updateLineWrapping();
+  // emit the signal so that all text editors can set settings & line wrapping mode
+  emit textSettingsChanged();
   mpSettings->sync();
   saveDialogGeometry();
   accept();
@@ -2031,19 +2035,27 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   mpTabsAndIndentation->setLayout(pTabsAndIndentationGroupBoxLayout);
   // syntax highlight and text wrapping groupbox
   mpSyntaxHighlightAndTextWrappingGroupBox = new QGroupBox(tr("Syntax Highlight and Text Wrapping"));
-  // syntax highlighting checkbox
-  mpSyntaxHighlightingCheckbox = new QCheckBox(tr("Enable Syntax Highlighting"));
-  mpSyntaxHighlightingCheckbox->setChecked(true);
-  // syntax highlighting checkbox
+  // syntax highlighting groupbox
+  mpSyntaxHighlightingGroupBox = new QGroupBox(tr("Enable Syntax Highlighting"));
+  mpSyntaxHighlightingGroupBox->setCheckable(true);
+  mpSyntaxHighlightingGroupBox->setChecked(true);
+  // code folding checkbox
+  mpCodeFoldingCheckBox = new QCheckBox(tr("Enable Code Folding"));
+  mpCodeFoldingCheckBox->setChecked(true);
+  // match parenthesis within comments and quotes
   mpMatchParenthesesCommentsQuotesCheckBox = new QCheckBox(tr("Match Parentheses within Comments and Quotes"));
+  // set Syntax Highlighting groupbox layout
+  QGridLayout *pSyntaxHighlightingGroupBoxLayout = new QGridLayout;
+  pSyntaxHighlightingGroupBoxLayout->addWidget(mpCodeFoldingCheckBox, 0, 0);
+  pSyntaxHighlightingGroupBoxLayout->addWidget(mpMatchParenthesesCommentsQuotesCheckBox, 1, 0);
+  mpSyntaxHighlightingGroupBox->setLayout(pSyntaxHighlightingGroupBoxLayout);
   // line wrap checkbox
   mpLineWrappingCheckbox = new QCheckBox(tr("Enable Line Wrapping"));
   mpLineWrappingCheckbox->setChecked(true);
   // set Syntax Highlight & Text Wrapping groupbox layout
   QGridLayout *pSyntaxHighlightAndTextWrappingGroupBoxLayout = new QGridLayout;
-  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpSyntaxHighlightingCheckbox, 0, 0);
-  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpMatchParenthesesCommentsQuotesCheckBox, 1, 0);
-  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpLineWrappingCheckbox, 2, 0);
+  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpSyntaxHighlightingGroupBox, 0, 0);
+  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpLineWrappingCheckbox, 1, 0);
   mpSyntaxHighlightAndTextWrappingGroupBox->setLayout(pSyntaxHighlightAndTextWrappingGroupBoxLayout);
   // font groupbox
   mpFontGroupBox = new QGroupBox(tr("Font"));
@@ -2168,7 +2180,7 @@ ModelicaEditorPage::ModelicaEditorPage(OptionsDialog *pOptionsDialog)
   // highlight preview textbox
   ModelicaTextHighlighter *pModelicaTextHighlighter = new ModelicaTextHighlighter(this, mpPreviewPlainTextEdit);
   connect(this, SIGNAL(updatePreview()), pModelicaTextHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingCheckbox(), SIGNAL(toggled(bool)),
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
           pModelicaTextHighlighter, SLOT(settingsChanged()));
   connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
           pModelicaTextHighlighter, SLOT(settingsChanged()));
@@ -3948,7 +3960,7 @@ MetaModelEditorPage::MetaModelEditorPage(OptionsDialog *pOptionsDialog)
   // highlight preview textbox
   MetaModelHighlighter *pMetaModelHighlighter = new MetaModelHighlighter(this, mpPreviewPlainTextEdit);
   connect(this, SIGNAL(updatePreview()), pMetaModelHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingCheckbox(), SIGNAL(toggled(bool)),
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
           pMetaModelHighlighter, SLOT(settingsChanged()));
   connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
           pMetaModelHighlighter, SLOT(settingsChanged()));

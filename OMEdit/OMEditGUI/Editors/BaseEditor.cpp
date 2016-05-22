@@ -134,6 +134,7 @@ QString TabSettings::indentationString(int startColumn, int targetColumn) const
 
 /*!
  * \brief tabSettings::firstNonSpace
+ * Returns the index where first non space character is found.
  * \param text
  * \return
  */
@@ -399,25 +400,150 @@ BaseEditorDocumentLayout::BaseEditorDocumentLayout(QTextDocument *document)
 
 }
 
+/*!
+ * \brief BaseEditorDocumentLayout::parentheses
+ * Sets the Parentheses for the block.
+ * \param block
+ * \return
+ */
 Parentheses BaseEditorDocumentLayout::parentheses(const QTextBlock &block)
 {
-  if (TextBlockUserData *userData = testUserData(block))
+  if (TextBlockUserData *userData = testUserData(block)) {
     return userData->parentheses();
+  }
   return Parentheses();
 }
 
+/*!
+ * \brief BaseEditorDocumentLayout::hasParentheses
+ * Checks if the block has Parentheses.
+ * \param block
+ * \return
+ */
 bool BaseEditorDocumentLayout::hasParentheses(const QTextBlock &block)
 {
-  if (TextBlockUserData *userData = testUserData(block))
+  if (TextBlockUserData *userData = testUserData(block)) {
     return userData->hasParentheses();
+  }
   return false;
 }
 
+/*!
+ * \brief BaseEditorDocumentLayout::setFoldingIndent
+ * Sets the folding indent for the block.
+ * \param block
+ * \param indent
+ */
+void BaseEditorDocumentLayout::setFoldingIndent(const QTextBlock &block, int indent)
+{
+  if (indent == 0) {
+    if (TextBlockUserData *userData = testUserData(block)) {
+      userData->setFoldingIndent(0);
+    }
+  } else {
+    userData(block)->setFoldingIndent(indent);
+  }
+}
+
+/*!
+ * \brief BaseEditorDocumentLayout::foldingIndent
+ * Returns the folding indent of the block.
+ * \param block
+ * \return
+ */
+int BaseEditorDocumentLayout::foldingIndent(const QTextBlock &block)
+{
+  if (TextBlockUserData *userData = testUserData(block)) {
+    return userData->foldingIndent();
+  }
+  return 0;
+}
+
+/*!
+ * \brief BaseEditorDocumentLayout::canFold
+ * Checks if block is foldable.
+ * \param block
+ * \return
+ */
+bool BaseEditorDocumentLayout::canFold(const QTextBlock &block)
+{
+  return (block.next().isValid() && foldingIndent(block.next()) > foldingIndent(block));
+}
+
+/*!
+ * \brief BaseEditorDocumentLayout::foldOrUnfold
+ * Folds/unfolds the block.
+ * \param block
+ * \param unfold
+ */
+void BaseEditorDocumentLayout::foldOrUnfold(const QTextBlock& block, bool unfold)
+{
+  if (!canFold(block)) {
+    return;
+  }
+  QTextBlock b = block.next();
+  int indent = foldingIndent(block);
+  while (b.isValid() && foldingIndent(b) > indent && (unfold || b.next().isValid())) {
+    b.setVisible(unfold);
+    b.setLineCount(unfold? qMax(1, b.layout()->lineCount()) : 0);
+    if (unfold) { // do not unfold folded sub-blocks
+      if (isFolded(b) && b.next().isValid()) {
+        int jndent = foldingIndent(b);
+        b = b.next();
+        while (b.isValid() && foldingIndent(b) > jndent) {
+          b = b.next();
+        }
+        continue;
+      }
+    }
+    b = b.next();
+  }
+  setFolded(block, !unfold);
+}
+
+/*!
+ * \brief BaseEditorDocumentLayout::isFolded
+ * Sets the block state to folded/unfolded.
+ * \param block
+ * \return
+ */
+bool BaseEditorDocumentLayout::isFolded(const QTextBlock &block)
+{
+  if (TextBlockUserData *userData = testUserData(block)) {
+    return userData->folded();
+  }
+  return false;
+}
+
+/*!
+ * \brief BaseEditorDocumentLayout::setFolded
+ * \param block
+ * \param folded
+ */
+void BaseEditorDocumentLayout::setFolded(const QTextBlock &block, bool folded)
+{
+  if (folded) {
+    userData(block)->setFolded(true);
+  } else if (TextBlockUserData *userData = testUserData(block)) {
+    return userData->setFolded(false);
+  }
+}
+
+/*!
+ * \brief BaseEditorDocumentLayout::testUserData
+ * \param block
+ * \return
+ */
 TextBlockUserData* BaseEditorDocumentLayout::testUserData(const QTextBlock &block)
 {
   return static_cast<TextBlockUserData*>(block.userData());
 }
 
+/*!
+ * \brief BaseEditorDocumentLayout::userData
+ * \param block
+ * \return
+ */
 TextBlockUserData* BaseEditorDocumentLayout::userData(const QTextBlock &block)
 {
   TextBlockUserData *data = static_cast<TextBlockUserData*>(block.userData());
@@ -425,6 +551,18 @@ TextBlockUserData* BaseEditorDocumentLayout::userData(const QTextBlock &block)
     const_cast<QTextBlock&>(block).setUserData((data = new TextBlockUserData));
   }
   return data;
+}
+
+/*!
+ * \brief foldBoxWidth
+ * Returns the width for folding control.
+ * \param fm
+ * \return
+ */
+static int foldBoxWidth(const QFontMetrics &fm)
+{
+  const int lineSpacing = fm.lineSpacing();
+  return lineSpacing + lineSpacing % 2 + 1;
 }
 
 /*!
@@ -456,7 +594,7 @@ BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(updateCursorPosition()));
   connect(document(), SIGNAL(contentsChange(int,int,int)), mpBaseEditor, SLOT(contentsHasChanged(int,int,int)));
   OptionsDialog *pOptionsDialog = mpBaseEditor->getMainWindow()->getOptionsDialog();
-  connect(pOptionsDialog, SIGNAL(updateLineWrapping()), mpBaseEditor, SLOT(setLineWrapping()));
+  connect(pOptionsDialog, SIGNAL(textSettingsChanged()), mpBaseEditor, SLOT(textSettingsChanged()));
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), mpBaseEditor, SLOT(showContextMenu(QPoint)));
 }
@@ -470,13 +608,20 @@ int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
 {
   int digits = 2;
   int max = qMax(1, document()->blockCount());
-  while (max >= 10) {
+  while (max >= 100) {
     max /= 10;
     ++digits;
   }
-  int space = 10 + fontMetrics().width(QLatin1Char('9')) * digits;
+  const QFontMetrics fm(document()->defaultFont());
+  int space = fm.width(QLatin1Char('9')) * digits;
   if (mpBaseEditor->canHaveBreakpoints()) {
-    space += 16;  /* the breakpoint enable/disable svg is 16*16. */
+    space += fm.lineSpacing();
+  }
+  TextEditorPage *pTextEditorPage = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTextEditorPage();
+  if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
+    space += foldBoxWidth(fm);
+  } else {
+    space += 4;
   }
   return space;
 }
@@ -494,12 +639,51 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
 
   QTextBlock block = firstVisibleBlock();
   int blockNumber = block.blockNumber();
-  int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
-  int bottom = top + (int) blockBoundingRect(block).height();
-  const QFontMetrics fm(mpLineNumberArea->font());
+  qreal top = blockBoundingGeometry(block).translated(contentOffset()).top();
+  qreal bottom = top;
+  const QFontMetrics fm(document()->defaultFont());
   int fmLineSpacing = fm.lineSpacing();
 
+  int collapseColumnWidth = 4;
+  TextEditorPage *pTextEditorPage = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTextEditorPage();
+  if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
+    collapseColumnWidth = foldBoxWidth(fm);
+  }
+  const int lineNumbersWidth = mpLineNumberArea->width() - collapseColumnWidth;
+
   while (block.isValid() && top <= event->rect().bottom()) {
+    QTextDocument *pTextDocument = document();
+    top = bottom;
+    const qreal height = blockBoundingRect(block).height();
+    bottom = top + height;
+    QTextBlock nextBlock = block.next();
+
+    QTextBlock nextVisibleBlock = nextBlock;
+    int nextVisibleBlockNumber = blockNumber + 1;
+
+    if (!nextVisibleBlock.isVisible()) {
+      // invisible blocks do have zero line count
+      nextVisibleBlock = pTextDocument->findBlockByLineNumber(nextVisibleBlock.firstLineNumber());
+      nextVisibleBlockNumber = nextVisibleBlock.blockNumber();
+    }
+
+    if (bottom < event->rect().top()) {
+      block = nextVisibleBlock;
+      blockNumber = nextVisibleBlockNumber;
+      continue;
+    }
+    /* paint breakpoints */
+    TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData*>(block.userData());
+    if (pTextBlockUserData && mpBaseEditor->canHaveBreakpoints()) {
+      int xoffset = 0;
+      foreach (ITextMark *mk, pTextBlockUserData->marks()) {
+        int x = 0;
+        int radius = fmLineSpacing;
+        QRect r(x + xoffset, top, radius, radius);
+        mk->icon().paint(&painter, r, Qt::AlignCenter);
+        xoffset += 2;
+      }
+    }
     /* paint line numbers */
     if (block.isVisible() && bottom >= event->rect().top()) {
       QString number;
@@ -516,25 +700,55 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
         painter.setPen(Qt::gray);
       }
       painter.setFont(document()->defaultFont());
-      QFontMetrics fontMetrics (document()->defaultFont());
-      painter.drawText(0, top, mpLineNumberArea->width() - 5, fontMetrics.height(), Qt::AlignRight, number);
+      painter.drawText(0, top, lineNumbersWidth, fm.height(), Qt::AlignRight, number);
     }
-    /* paint breakpoints */
-    TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData*>(block.userData());
-    if (pTextBlockUserData && mpBaseEditor->canHaveBreakpoints()) {
-      int xoffset = 0;
-      foreach (ITextMark *mk, pTextBlockUserData->marks()) {
-        int x = 0;
-        int radius = fmLineSpacing + 2;
-        QRect r(x + xoffset, top, radius, radius);
-        mk->icon().paint(&painter, r, Qt::AlignCenter);
-        xoffset += 2;
+    // paint folding markers
+    TextEditorPage *pTextEditorPage = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTextEditorPage();
+    if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
+      painter.save();
+      painter.setRenderHint(QPainter::Antialiasing, false);
+      painter.setPen(Qt::gray);
+
+      TextBlockUserData *nextBlockUserData = BaseEditorDocumentLayout::testUserData(nextBlock);
+      bool drawFoldingControl = nextBlockUserData && BaseEditorDocumentLayout::foldingIndent(block) < nextBlockUserData->foldingIndent();
+      bool drawLine = BaseEditorDocumentLayout::foldingIndent(block) > 0;
+      bool drawEnd = drawLine && nextBlockUserData && BaseEditorDocumentLayout::foldingIndent(block) > nextBlockUserData->foldingIndent();
+      int boxWidth = foldBoxWidth(fm);
+      int size = boxWidth / 4;
+      QRect foldingMarkerBox(lineNumbersWidth + size, top + size, 2 * (size) + 1, 2 * (size) + 1);
+      QRect foldingLineBox(lineNumbersWidth + size, top, 2 * (size) + 1, height);
+
+      if (drawEnd) {
+        painter.drawLine(QPointF(foldingLineBox.center().x(), foldingLineBox.top()), foldingLineBox.center());
+        painter.drawLine(foldingLineBox.center(), QPointF(foldingLineBox.right(), foldingLineBox.center().y()));
       }
+
+      if (drawLine && !drawEnd) {
+        painter.drawLine(QPointF(foldingLineBox.center().x(), foldingLineBox.top()),
+                         QPointF(foldingLineBox.center().x(), foldingLineBox.bottom()));
+      }
+
+      if (drawFoldingControl) {
+        bool expanded = nextBlock.isVisible();
+        QStyle *pStyle = style();
+        QStyleOptionViewItemV2 styleOptionViewItem;
+        styleOptionViewItem.rect = foldingMarkerBox;
+        styleOptionViewItem.state = QStyle::State_Active | QStyle::State_Item | QStyle::State_Children;
+        if (expanded) {
+          styleOptionViewItem.state |= QStyle::State_Open;
+        }
+        // QGtkStyle needs a small correction to draw the marker in the right place
+        if (!qstrcmp(pStyle->metaObject()->className(), "QGtkStyle")) {
+          styleOptionViewItem.rect.translate(-2, 0);
+        } else if (!qstrcmp(pStyle->metaObject()->className(), "QMacStyle")) {
+          styleOptionViewItem.rect.translate(-1, 0);
+        }
+        pStyle->drawPrimitive(QStyle::PE_IndicatorBranch, &styleOptionViewItem, &painter, mpLineNumberArea);
+      }
+      painter.restore();
     }
-    block = block.next();
-    top = bottom;
-    bottom = top + (int) blockBoundingRect(block).height();
-    ++blockNumber;
+    block = nextVisibleBlock;
+    blockNumber = nextVisibleBlockNumber;
   }
 }
 
@@ -545,37 +759,48 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
  */
 void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
 {
-  /* if breakpoints are not enabled for this editor then return. */
-  if (!mpBaseEditor->canHaveBreakpoints()) {
-    return;
-  }
-
   QTextCursor cursor = cursorForPosition(QPoint(0, event->pos().y()));
-  const QFontMetrics fm(mpLineNumberArea->font());
-  int breakPointWidth = 0;
-  breakPointWidth += fm.lineSpacing();
-
-  // Set whether the mouse cursor is a hand or a normal arrow
-  if (event->type() == QEvent::MouseMove) {
-    bool handCursor = (event->pos().x() <= breakPointWidth);
-    if (handCursor != (mpLineNumberArea->cursor().shape() == Qt::PointingHandCursor)) {
-      mpLineNumberArea->setCursor(handCursor ? Qt::PointingHandCursor : Qt::ArrowCursor);
+  const QFontMetrics fm(document()->defaultFont());
+  // check mouse click for breakpoints
+  if (mpBaseEditor->canHaveBreakpoints()) {
+    int breakPointWidth = fm.lineSpacing();
+    // Set whether the mouse cursor is a hand or a normal arrow
+    if (event->type() == QEvent::MouseMove) {
+      bool handCursor = (event->pos().x() <= breakPointWidth);
+      if (handCursor != (mpLineNumberArea->cursor().shape() == Qt::PointingHandCursor)) {
+        mpLineNumberArea->setCursor(handCursor ? Qt::PointingHandCursor : Qt::ArrowCursor);
+      }
+    } else if ((event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick) &&
+               (event->pos().x() <= breakPointWidth)) {
+      /* Do not allow breakpoints if file is not saved. */
+      if (!mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSaved()) {
+        mpBaseEditor->getMainWindow()->getInfoBar()->showMessage(tr("<b>Information: </b>Breakpoints are only allowed on saved classes."));
+        return;
+      }
+      QString fileName = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getFileName();
+      int lineNumber = cursor.blockNumber() + 1;
+      if (event->button() == Qt::LeftButton) {  //! left clicked: add/remove breakpoint
+        toggleBreakpoint(fileName, lineNumber);
+      } else if (event->button() == Qt::RightButton) {  //! right clicked: show context menu
+        QMenu menu(this);
+        mpBaseEditor->getToggleBreakpointAction()->setData(QStringList() << fileName << QString::number(lineNumber));
+        menu.addAction(mpBaseEditor->getToggleBreakpointAction());
+        menu.exec(event->globalPos());
+      }
     }
-  } else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick) {
-    /* Do not allow breakpoints if file is not saved. */
-    if (!mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSaved()) {
-      mpBaseEditor->getMainWindow()->getInfoBar()->showMessage(tr("<b>Information: </b>Breakpoints are only allowed on saved classes."));
-      return;
-    }
-    QString fileName = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getFileName();
-    int lineNumber = cursor.blockNumber() + 1;
-    if (event->button() == Qt::LeftButton) {  //! left clicked: add/remove breakpoint
-      toggleBreakpoint(fileName, lineNumber);
-    } else if (event->button() == Qt::RightButton) {  //! right clicked: show context menu
-      QMenu menu(this);
-      mpBaseEditor->getToggleBreakpointAction()->setData(QStringList() << fileName << QString::number(lineNumber));
-      menu.addAction(mpBaseEditor->getToggleBreakpointAction());
-      menu.exec(event->globalPos());
+  }
+  // check mouse click for folding markers
+  TextEditorPage *pTextEditorPage = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTextEditorPage();
+  if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
+    int boxWidth = foldBoxWidth(fm);
+    if (event->button() == Qt::LeftButton && event->pos().x() > mpLineNumberArea->width() - boxWidth) {
+      if (!cursor.block().next().isVisible()) {
+        mpBaseEditor->toggleBlockVisible(cursor.block());
+        moveCursorVisible(false);
+      } else if (BaseEditorDocumentLayout::canFold(cursor.block())) {
+        mpBaseEditor->toggleBlockVisible(cursor.block());
+        moveCursorVisible(false);
+      }
     }
   }
 }
@@ -659,6 +884,7 @@ void BaseEditor::PlainTextEdit::updateCursorPosition()
     Label *pCursorPositionLabel = mpBaseEditor->getModelWidget()->getCursorPositionLabel();
     pCursorPositionLabel->setText(QString("Line: %1, Col: %2").arg(line).arg(column));
   }
+  ensureCursorVisible();
 }
 
 /*!
@@ -752,6 +978,52 @@ void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
   cursor.insertText(tabSettings.indentationString(startColumn, targetColumn));
   cursor.endEditBlock();
   setTextCursor(cursor);
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::moveCursorVisible
+ * \param ensureVisible
+ */
+void BaseEditor::PlainTextEdit::moveCursorVisible(bool ensureVisible)
+{
+  QTextCursor cursor = textCursor();
+  if (!cursor.block().isVisible()) {
+    cursor.setVisualNavigation(true);
+    cursor.movePosition(QTextCursor::Up);
+    setTextCursor(cursor);
+  }
+  if (ensureVisible) {
+    ensureCursorVisible();
+  }
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::ensureCursorVisible
+ * Makes sure cursor is visible when user moves it inside hidden block.
+ */
+void BaseEditor::PlainTextEdit::ensureCursorVisible()
+{
+  QTextBlock block = textCursor().block();
+  if (!block.isVisible()) {
+    BaseEditorDocumentLayout *pDocumentLayout = qobject_cast<BaseEditorDocumentLayout*>(document()->documentLayout());
+    // Open all folds of current line.
+    int indent = BaseEditorDocumentLayout::foldingIndent(block);
+    block = block.previous();
+    while (block.isValid()) {
+      const int indent2 = BaseEditorDocumentLayout::foldingIndent(block);
+      if (BaseEditorDocumentLayout::canFold(block) && indent2 < indent) {
+        BaseEditorDocumentLayout::foldOrUnfold(block, true);
+        if (block.isVisible()) {
+          break;
+        }
+        indent = indent2;
+      }
+      block = block.previous();
+    }
+    pDocumentLayout->requestUpdate();
+    pDocumentLayout->emitDocumentSizeChanged();
+  }
+  QPlainTextEdit::ensureCursorVisible();
 }
 
 /*!
@@ -983,6 +1255,97 @@ void BaseEditor::PlainTextEdit::focusOutEvent(QFocusEvent *event)
 }
 
 /*!
+ * \brief BaseEditor::PlainTextEdit::paintEvent
+ * Reimplementation for QPlainTextEdit::paintEvent() to draw folding indication in the text.
+ * \param e
+ */
+void BaseEditor::PlainTextEdit::paintEvent(QPaintEvent *e)
+{
+  QPlainTextEdit::paintEvent(e);
+
+  QPointF offset(contentOffset());
+  QPainter painter(viewport());
+  QTextBlock block = firstVisibleBlock();
+
+  qreal top = blockBoundingGeometry(block).translated(offset).top();
+  qreal bottom = top + blockBoundingRect(block).height();
+
+  QTextCursor cursor = textCursor();
+  bool hasSelection = cursor.hasSelection();
+  int selectionStart = cursor.selectionStart();
+  int selectionEnd = cursor.selectionEnd();
+
+  QTextDocument *pTextDocument = document();
+
+  while (block.isValid() && top <= e->rect().bottom()) {
+    QTextBlock nextBlock = block.next();
+    QTextBlock nextVisibleBlock = nextBlock;
+
+    if (!nextVisibleBlock.isVisible()) {
+      // invisible blocks do have zero line count
+      nextVisibleBlock = pTextDocument->findBlockByLineNumber(nextVisibleBlock.firstLineNumber());
+      // in case our code somewhere did not set the line count of the invisible block to 0
+      while (nextVisibleBlock.isValid() && !nextVisibleBlock.isVisible()) {
+        nextVisibleBlock = nextVisibleBlock.next();
+      }
+    }
+    if (block.isVisible() && bottom >= e->rect().top()) {
+      if (nextBlock.isValid() && !nextBlock.isVisible()) {
+        bool selectThis = (hasSelection && nextBlock.position() >= selectionStart && nextBlock.position() < selectionEnd);
+        painter.save();
+        painter.setFont(document()->defaultFont());
+        painter.setPen(QColor(Qt::darkGray));
+        if (selectThis) {
+          painter.setBrush(palette().highlight());
+        }
+
+        QTextLayout *pTextLayout = block.layout();
+        QTextLine line = pTextLayout->lineAt(pTextLayout->lineCount()-1);
+        QRectF lineRect = line.naturalTextRect().translated(offset.x(), top);
+        lineRect.adjust(0, 0, -1, -1);
+
+        QString replacement = QLatin1String("...");
+        QString rectReplacement = QLatin1String(" ") + replacement + QLatin1String("); ");
+
+        const QFontMetrics fm(document()->defaultFont());
+        QRectF collapseRect(lineRect.right() + 12, lineRect.top(), fm.width(rectReplacement), lineRect.height());
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        painter.translate(.5, .5);
+        painter.drawRoundedRect(collapseRect.adjusted(0, 0, 0, -1), 3, 3);
+        painter.setRenderHint(QPainter::Antialiasing, false);
+        painter.translate(-.5, -.5);
+
+        block = nextVisibleBlock.previous();
+        if (!block.isValid())
+          block = pTextDocument->lastBlock();
+
+        if (TextBlockUserData *blockUserData = BaseEditorDocumentLayout::testUserData(block)) {
+          if (blockUserData->foldingEndIncluded()) {
+            QString right = block.text().trimmed();
+            if (right.endsWith(QLatin1Char(';'))) {
+              right.chop(1);
+              right = right.trimmed();
+              replacement.append(right.right(right.endsWith(QLatin1Char('/')) ? 2 : 1));
+              replacement.append(QLatin1Char(';'));
+            }
+          }
+        }
+
+        if (selectThis) {
+          painter.setPen(palette().highlightedText().color());
+        }
+        painter.drawText(collapseRect, Qt::AlignCenter, replacement);
+        painter.restore();
+      }
+    }
+
+    block = nextVisibleBlock;
+    top = bottom;
+    bottom = top + blockBoundingRect(block).height();
+  }
+}
+
+/*!
  * \class BaseEditor
  * Base class for all editors.
  */
@@ -1022,6 +1385,20 @@ void BaseEditor::setCanHaveBreakpoints(bool canHaveBreakpoints)
 void BaseEditor::goToLineNumber(int lineNumber)
 {
   mpPlainTextEdit->goToLineNumber(lineNumber);
+}
+
+/*!
+ * \brief BaseEditor::toggleBlockVisible
+ * Toggles the folding of the block.
+ * \param block
+ */
+void BaseEditor::toggleBlockVisible(const QTextBlock &block)
+{
+  BaseEditorDocumentLayout *pBaseEditorDocumentLayout;
+  pBaseEditorDocumentLayout = qobject_cast<BaseEditorDocumentLayout*>(mpPlainTextEdit->document()->documentLayout());
+  BaseEditorDocumentLayout::foldOrUnfold(block, BaseEditorDocumentLayout::isFolded(block));
+  pBaseEditorDocumentLayout->requestUpdate();
+  pBaseEditorDocumentLayout->emitDocumentSizeChanged();
 }
 
 /*!
@@ -1075,6 +1452,45 @@ void BaseEditor::createActions()
   mpToggleCommentSelectionAction = new QAction(tr("Toggle Comment Selection"), this);
   mpToggleCommentSelectionAction->setShortcut(QKeySequence("Ctrl+k"));
   connect(mpToggleCommentSelectionAction, SIGNAL(triggered()), SLOT(toggleCommentSelection()));
+  // folding actions
+  bool enable = true;
+  // if user disables the code folding then unfold all the text editors.
+  TextEditorPage *pTextEditorPage = mpMainWindow->getOptionsDialog()->getTextEditorPage();
+  if (!pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() || !pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
+    enable = false;
+  }
+  // fold all action
+  mpFoldAllAction = new QAction(tr("Fold All"), this);
+  mpFoldAllAction->setEnabled(enable);
+  connect(mpFoldAllAction, SIGNAL(triggered()), SLOT(foldAll()));
+  // unfold all action
+  mpUnFoldAllAction = new QAction(tr("Unfold All"), this);
+  mpUnFoldAllAction->setEnabled(enable);
+  connect(mpUnFoldAllAction, SIGNAL(triggered()), SLOT(unFoldAll()));
+}
+
+/*!
+ * \brief BaseEditor::foldOrUnfold
+ * folds or unfolds the whole document foldings.
+ * \param unFold
+ */
+void BaseEditor::foldOrUnfold(bool unFold)
+{
+  QTextDocument *pTextDocument = mpPlainTextEdit->document();
+  BaseEditorDocumentLayout *pBaseEditorDocumentLayout = qobject_cast<BaseEditorDocumentLayout*>(pTextDocument->documentLayout());
+
+  QTextBlock block = pTextDocument->firstBlock();
+  while (block.isValid()) {
+    if (BaseEditorDocumentLayout::canFold(block)) {
+      BaseEditorDocumentLayout::foldOrUnfold(block, unFold);
+    }
+    block = block.next();
+  }
+
+  mpPlainTextEdit->moveCursorVisible();
+  pBaseEditorDocumentLayout->requestUpdate();
+  pBaseEditorDocumentLayout->emitDocumentSizeChanged();
+  mpPlainTextEdit->centerCursor();
 }
 
 /*!
@@ -1092,6 +1508,26 @@ QMenu* BaseEditor::createStandardContextMenu()
   pMenu->addSeparator();
   pMenu->addAction(mpShowTabsAndSpacesAction);
   return pMenu;
+}
+
+/*!
+ * \brief BaseEditor::textSettingsChanged
+ * Triggered when text settings are changed in the OptionsDialog.
+ */
+void BaseEditor::textSettingsChanged()
+{
+  // update line wrapping
+  mpPlainTextEdit->setLineWrapping();
+  // update code foldings
+  bool enable = true;
+  // if user disables the code folding then unfold all the text editors.
+  TextEditorPage *pTextEditorPage = mpMainWindow->getOptionsDialog()->getTextEditorPage();
+  if (!pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() || !pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
+    foldOrUnfold(true);
+    enable = false;
+  }
+  mpFoldAllAction->setEnabled(enable);
+  mpUnFoldAllAction->setEnabled(enable);
 }
 
 /*!
@@ -1133,14 +1569,6 @@ void BaseEditor::updateHighlights()
 void BaseEditor::updateCursorPosition()
 {
   mpPlainTextEdit->updateCursorPosition();
-}
-
-/*!
- * \brief BaseEditor::setLineWrapping
- */
-void BaseEditor::setLineWrapping()
-{
-  mpPlainTextEdit->setLineWrapping();
 }
 
 /*!
@@ -1198,6 +1626,30 @@ void BaseEditor::toggleBreakpoint()
   if (pAction) {
     QStringList list = pAction->data().toStringList();
     mpPlainTextEdit->toggleBreakpoint(list.at(0), list.at(1).toInt());
+  }
+}
+
+/*!
+ * \brief BaseEditor::foldAll
+ * Folds all the foldings in the document.
+ */
+void BaseEditor::foldAll()
+{
+  TextEditorPage *pTextEditorPage = mpMainWindow->getOptionsDialog()->getTextEditorPage();
+  if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
+    foldOrUnfold(false);
+  }
+}
+
+/*!
+ * \brief BaseEditor::unFoldAll
+ * Unfolds all the foldings in the document.
+ */
+void BaseEditor::unFoldAll()
+{
+  TextEditorPage *pTextEditorPage = mpMainWindow->getOptionsDialog()->getTextEditorPage();
+  if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
+    foldOrUnfold(true);
   }
 }
 

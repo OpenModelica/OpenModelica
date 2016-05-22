@@ -123,9 +123,9 @@ public:
   void show();
   TabSettings getTabSettings();
 signals:
+  void textSettingsChanged();
   void modelicaTextSettingsChanged();
   void MetaModelEditorSettingsChanged();
-  void updateLineWrapping();
 public slots:
   void changePage(QListWidgetItem *current, QListWidgetItem *previous);
   void reject();
@@ -308,7 +308,8 @@ public:
   QComboBox *getTabPolicyComboBox() {return mpTabPolicyComboBox;}
   QSpinBox *getTabSizeSpinBox() {return mpTabSizeSpinBox;}
   QSpinBox *getIndentSpinBox() {return mpIndentSpinBox;}
-  QCheckBox* getSyntaxHighlightingCheckbox() {return mpSyntaxHighlightingCheckbox;}
+  QGroupBox* getSyntaxHighlightingGroupBox() {return mpSyntaxHighlightingGroupBox;}
+  QCheckBox* getCodeFoldingCheckBox() {return mpCodeFoldingCheckBox;}
   QCheckBox* getMatchParenthesesCommentsQuotesCheckBox() {return mpMatchParenthesesCommentsQuotesCheckBox;}
   QCheckBox* getLineWrappingCheckbox() {return mpLineWrappingCheckbox;}
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
@@ -328,7 +329,8 @@ private:
   Label *mpIndentSizeLabel;
   QSpinBox *mpIndentSpinBox;
   QGroupBox *mpSyntaxHighlightAndTextWrappingGroupBox;
-  QCheckBox *mpSyntaxHighlightingCheckbox;
+  QGroupBox *mpSyntaxHighlightingGroupBox;
+  QCheckBox *mpCodeFoldingCheckBox;
   QCheckBox *mpMatchParenthesesCommentsQuotesCheckBox;
   QCheckBox *mpLineWrappingCheckbox;
   QGroupBox *mpFontGroupBox;

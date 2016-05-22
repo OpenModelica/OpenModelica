@@ -313,6 +313,9 @@ void ModelicaEditor::showContextMenu(QPoint point)
   QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->addSeparator();
   pMenu->addAction(mpToggleCommentSelectionAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpFoldAllAction);
+  pMenu->addAction(mpUnFoldAllAction);
   pMenu->exec(mapToGlobal(point));
   delete pMenu;
 }
@@ -343,6 +346,7 @@ void ModelicaEditor::setPlainText(const QString &text)
     }
     mForceSetPlainText = false;
     mLastValidText = contents;
+    foldAll();
   }
 }
 
@@ -389,9 +393,10 @@ void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int char
 }
 
 /*!
-  Slot activated when toggle comment selection is seleteted from context menu or ctrl+k is pressed.
-  The implementation and logic is inspired from Qt Creator sources.
-  */
+ * \brief ModelicaEditor::toggleCommentSelection
+ * Slot activated when toggle comment selection is seleteted from context menu or ctrl+k is pressed.
+ * The implementation and logic is inspired from Qt Creator sources.
+ */
 void ModelicaEditor::toggleCommentSelection()
 {
   CommentDefinition definition;
@@ -605,6 +610,10 @@ void ModelicaTextHighlighter::initializeSettings()
   rule.mPattern = QRegExp("\\b[A-Za-z_][A-Za-z0-9_]*");
   rule.mFormat = mTextFormat;
   mHighlightingRules.append(rule);
+  // functions
+  rule.mPattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
+  rule.mFormat = mFunctionFormat;
+  mHighlightingRules.append(rule);
   // keywords
   QStringList keywordPatterns;
   keywordPatterns << "\\balgorithm\\b"
@@ -669,8 +678,7 @@ void ModelicaTextHighlighter::initializeSettings()
                   << "\\bwhen\\b"
                   << "\\bwhile\\b"
                   << "\\bwithin\\b";
-  foreach (const QString &pattern, keywordPatterns)
-  {
+  foreach (const QString &pattern, keywordPatterns) {
     rule.mPattern = QRegExp(pattern);
     rule.mFormat = mKeywordFormat;
     mHighlightingRules.append(rule);
@@ -681,16 +689,11 @@ void ModelicaTextHighlighter::initializeSettings()
                << "\\bInteger\\b"
                << "\\bBoolean\\b"
                << "\\bReal\\b";
-  foreach (const QString &pattern, typePatterns)
-  {
+  foreach (const QString &pattern, typePatterns) {
     rule.mPattern = QRegExp(pattern);
     rule.mFormat = mTypeFormat;
     mHighlightingRules.append(rule);
   }
-
-  rule.mPattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
-  rule.mFormat = mFunctionFormat;
-  mHighlightingRules.append(rule);
 }
 
 /*!
@@ -705,11 +708,21 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
   /* Hand-written recognizer beats the crap known as QRegEx ;) */
   int index = 0, startIndex = 0;
   int blockState = previousBlockState();
+  bool foldingState = false;
+  QTextBlock previousTextBlck = currentBlock().previous();
+  TextBlockUserData *pPreviousTextBlockUserData = BaseEditorDocumentLayout::userData(previousTextBlck);
+  if (pPreviousTextBlockUserData) {
+    foldingState = pPreviousTextBlockUserData->foldingState();
+  }
+  QRegExp annotationRegExp("\\bannotation\\b");
+  int annotationIndex = annotationRegExp.indexIn(text);
   // store parentheses info
   Parentheses parentheses;
   TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(currentBlock());
   if (pTextBlockUserData) {
     pTextBlockUserData->clearParentheses();
+    pTextBlockUserData->setFoldingIndent(0);
+    pTextBlockUserData->setFoldingEndIncluded(false);
   }
   while (index < text.length()) {
     switch (blockState) {
@@ -757,10 +770,54 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
         parentheses.append(Parenthesis(Parenthesis::Closed, text[index], index));
       }
     }
+    if (foldingState) {
+      // if no single line comment, no multi line comment and no quotes then check for annotation end
+      if (blockState < 1 || blockState > 3) {
+        if (text[index] == ';') {
+          if (index == text.length() - 1) { // if we have some text after closing the annotation then we don't want to fold it.
+            if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
+              pTextBlockUserData->setFoldingIndent(1);
+            }
+            pTextBlockUserData->setFoldingEndIncluded(true);
+          } else {
+            pTextBlockUserData->setFoldingIndent(0);
+          }
+          foldingState = false;
+        } else if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
+          pTextBlockUserData->setFoldingIndent(1);
+        }
+      } else if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
+        pTextBlockUserData->setFoldingIndent(1);
+      } else if (startIndex < annotationIndex) {  // if we have annotation word before quote or comment block is starting then fold.
+        pTextBlockUserData->setFoldingIndent(1);
+      }
+    } else {
+      // if no single line comment, no multi line comment and no quotes then check for annotation start
+      if (blockState < 1 || blockState > 3) {
+        if (text[index] == 'a' && index+9<text.length() && text[index+1] == 'n' && text[index+2] == 'n' && text[index+3] == 'o'
+            && text[index+4] == 't' && text[index+5] == 'a' && text[index+6] == 't' && text[index+7] == 'i' && text[index+8] == 'o'
+            && text[index+9] == 'n') {
+          if (index+9 == text.length() - 1) { // if we just have annotation keyword in the line
+            index = index + 9;
+            foldingState = true;
+          } else if (index+10<text.length() && (text[index+10] == '(' || text[index+10] == ' ')) { // if annotation keyword is followed by '(' or space.
+            index = index + 10;
+            foldingState = true;
+          }
+        }
+      }
+    }
     index++;
   }
   if (pTextBlockUserData) {
     pTextBlockUserData->setParentheses(parentheses);
+    if (foldingState) {
+      pTextBlockUserData->setFoldingState(true);
+      // Hanldle empty blocks inside annotaiton section
+      if (text.isEmpty() && foldingState) {
+        pTextBlockUserData->setFoldingIndent(1);
+      }
+    }
     // set text block user data
     setCurrentBlockUserData(pTextBlockUserData);
   }
@@ -780,11 +837,15 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
 void ModelicaTextHighlighter::highlightBlock(const QString &text)
 {
   /* Only highlight the text if user has enabled the syntax highlighting */
-  if (!mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getSyntaxHighlightingCheckbox()->isChecked()) {
+  if (!mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getSyntaxHighlightingGroupBox()->isChecked()) {
     return;
   }
   // set text block state
   setCurrentBlockState(0);
+  TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(currentBlock());
+  if (pTextBlockUserData) {
+    pTextBlockUserData->setFoldingState(false);
+  }
   setFormat(0, text.length(), mpModelicaEditorPage->getTextRuleColor());
   foreach (const HighlightingRule &rule, mHighlightingRules) {
     QRegExp expression(rule.mPattern);
