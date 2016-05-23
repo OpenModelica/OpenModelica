@@ -281,6 +281,10 @@ Making Connections
 In order to connect one component model to another the user first needs
 to enable the connect mode (|connect-mode|) from the toolbar.
 
+Move the mouse over the connector. The mouse cursor will change from arrow cursor to cross cursor.
+To start the connection press left button and keep it pressed and move. Now release the left button.
+Move towards the end connector and click when cursor changes to cross cursor.
+
 .. |connect-mode| image:: media/omedit-icons/connect-mode.*
   :height: 14pt
   :alt: OMEdit connect mode icon
@@ -672,8 +676,13 @@ Libraries
 -  *User Libraries* – The list of user libraries/files that should be
        loaded every time OMEdit starts.
 
-Modelica Text Editor
-~~~~~~~~~~~~~~~~~~~~
+Text Editor
+~~~~~~~~~~~
+-  Format
+
+  -  *Line Ending* - Sets the file line ending.
+
+  -  *Byte Order Mark (BOM)* - Sets the file BOM.
 
 -  Tabs and Indentation
 
@@ -683,24 +692,28 @@ Modelica Text Editor
 
   -  *Indent Size* – Sets the indent size.
 
-  -  *Preserve Text Indentation* – If true then uses *diffModelicaFileListings* API call otherwise uses the OMC pretty-printing.
-
 -  Syntax Highlight and Text Wrapping
 
-  -  *Enable Syntax Highlighting* – Enable/Disable the syntax highlighting
-     for the Modelica Text Widget.
+  -  *Enable Syntax Highlighting* – Enable/Disable the syntax highlighting.
 
-  -  *Match Parentheses within Comments and Quotes* – Enable/Disable the matching of parenthese
-     within comments and quotes.
-   
-  -  *Enable Line Wrapping* – Enable/Disable the line wrapping for the
-     Modelica Text Widget.
+    -  *Enable Code Folding* - Enable/Disable the code folding.
 
--  Fonts and Colors
+    -  *Match Parentheses within Comments and Quotes* – Enable/Disable the matching of parenthese within comments and quotes.
+
+  -  *Enable Line Wrapping* – Enable/Disable the line wrapping.
+
+-  Font
 
   -  *Font Family* – Contains the names list of available fonts.
 
   -  *Font Size* – Sets the font size.
+  
+Modelica Editor
+~~~~~~~~~~~~~~~
+
+-  *Preserve Text Indentation* – If true then uses *diffModelicaFileListings* API call otherwise uses the OMC pretty-printing.
+
+-  Colors
 
   -  *Items* – List of categories used of syntax highlighting the code.
 
