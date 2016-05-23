@@ -180,21 +180,25 @@ protected function returnVar "returns the new calculated units in DAE"
   input HashTableUnitToString.HashTable inHtU2S;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := match(inVar, inHtCr2U, inHtU2S)
+  outVar := match(inVar)
     local
       BackendDAE.Var var;
       DAE.ComponentRef cr;
       Unit.Unit ut;
       String s;
 
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(unit=SOME(_)))), _, _)
+    case BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(unit=SOME(_))))
     then inVar;
 
     else equation
       cr = BackendVariable.varCref(inVar);
       ut = BaseHashTable.get(cr, inHtCr2U);
-      s = unit2String(ut, inHtU2S);
-      var = BackendVariable.setUnit(inVar, DAE.SCONST(s));
+      if Unit.isUnit(ut) then
+        s = unit2String(ut, inHtU2S);
+        var = BackendVariable.setUnit(inVar, DAE.SCONST(s));
+      else
+        var = inVar;
+      end if;
     then var;
   end match;
 end returnVar;
@@ -1196,10 +1200,10 @@ protected
   list<String> charList;
   list<Token> tokenList;
 algorithm
-  if inUnitString == "" then
+  charList := stringListStringChar(inUnitString);
+  if listEmpty(charList) then
     fail();
   end if;
-  charList := stringListStringChar(inUnitString);
   tokenList := lexer(charList);
   outUnit := parser(tokenList, Unit.UPDATECREF, inKnownUnits);
 end parseUnitString;
