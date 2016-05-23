@@ -183,6 +183,16 @@ public
     end match;
   end merge;
 
+  function isEmpty
+    input Modifier mod;
+    output Boolean isEmpty;
+  algorithm
+    isEmpty := match mod
+      case NOMOD() then true;
+      else false;
+    end match;
+  end isEmpty;
+
   function toString
     input Modifier mod;
     output String string;

@@ -34,6 +34,7 @@ encapsulated package NFInstance
 import BaseAvlTree;
 import NFComponent.Component;
 import SCode.Element;
+import NFMod.Modifier;
 
 constant array<Component> NO_COMPONENTS = listArray({});
 
@@ -74,6 +75,7 @@ uniontype Instance
   record EXPANDED_CLASS
     ClassTree.Tree classes;
     array<Component> components;
+    Modifier classMod;
   end EXPANDED_CLASS;
 
   record INSTANCED_CLASS
@@ -94,7 +96,7 @@ uniontype Instance
     input ClassTree.Tree classes;
     output Instance instance;
   algorithm
-    instance := EXPANDED_CLASS(classes, NO_COMPONENTS);
+    instance := EXPANDED_CLASS(classes, NO_COMPONENTS, Modifier.NOMOD());
   end initExpandedClass;
 
   function setComponents
@@ -115,6 +117,30 @@ uniontype Instance
           ();
     end match;
   end setComponents;
+
+  function setModifier
+    input Modifier modifier;
+    input output Instance instance;
+  algorithm
+    _ := match instance
+      case EXPANDED_CLASS()
+        algorithm
+          instance.classMod := modifier;
+        then
+          ();
+
+      else ();
+    end match;
+  end setModifier;
+
+  function modifier
+    input Instance instance;
+    output Modifier modifier;
+  algorithm
+    modifier := match instance
+      case EXPANDED_CLASS() then instance.classMod;
+    end match;
+  end modifier;
 
   function lookupClassId
     input String name;

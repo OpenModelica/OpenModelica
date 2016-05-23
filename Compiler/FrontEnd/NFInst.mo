@@ -111,7 +111,8 @@ algorithm
   (scope, _, tree) := makeScope(topClasses, InstanceTree.new());
   // Update the top scope with the added classes.
   top := InstanceTree.lookupNode(NFInstanceTree.TOP_SCOPE, tree);
-  top := InstNode.setInstance(top, Instance.INSTANCED_CLASS(scope, NFInstance.NO_COMPONENTS));
+  top := InstNode.setInstance(top,
+    Instance.INSTANCED_CLASS(scope, NFInstance.NO_COMPONENTS));
   tree := InstanceTree.updateNode(top, tree);
 end makeTree;
 
@@ -295,9 +296,8 @@ end expandClass;
 function expandClass2
   input InstNode node;
   input SCode.Element definition;
-  input InstanceTree inTree;
-  output InstNode expandedNode = node;
-  output InstanceTree tree = inTree;
+        output InstNode expandedNode = node;
+  input output InstanceTree tree;
 algorithm
   _ := match definition
     local
@@ -309,10 +309,12 @@ algorithm
       array<Component> comp_array;
       Integer idx;
       Instance i;
+      SCode.Mod der_mod;
+      Modifier mod;
 
-    case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ty))
+    case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ty, modifications = der_mod))
       algorithm
-        // Derived classes have no scope of their own.
+        // Derived classes have no scope of their own, use the parent scope.
         tree := InstanceTree.setCurrentScope(tree, InstNode.parent(expandedNode));
 
         // Lookup and expand the derived class.
@@ -320,6 +322,18 @@ algorithm
         (expandedNode, tree) := Lookup.lookupName(ty_path, tree);
         (expandedNode, tree) := expand(expandedNode, tree);
 
+        // Translate the modifier on the class.
+        mod := Modifier.translate(der_mod, definition.name);
+        // Merge the modifier with any modifier from the derived class.
+        mod := Modifier.merge(mod, Instance.modifier(InstNode.instance(expandedNode)));
+
+        // If we have a modifier, add it to the expanded instance.
+        if not Modifier.isEmpty(mod) then
+          expandedNode := InstNode.setInstance(expandedNode,
+            Instance.setModifier(mod, InstNode.instance(expandedNode)));
+        end if;
+
+        // Update the expanded instance in the instance tree.
         expandedNode := InstNode.setIndex(expandedNode, InstNode.index(node));
         tree := InstanceTree.updateNode(expandedNode, tree);
       then
@@ -441,7 +455,7 @@ algorithm
       array<Component> components;
       ClassTree.Tree scope;
       Integer comp_count, idx;
-      Modifier comp_mod;
+      Modifier comp_mod, class_mod;
 
     case InstNode.INST_NODE(instance = i as Instance.EXPANDED_CLASS(classes = scope))
       algorithm
@@ -453,9 +467,11 @@ algorithm
           components := Dangerous.arrayCreateNoInit(comp_count,
             Dangerous.arrayGetNoBoundsChecking(i.components, 1));
 
+          class_mod := Modifier.merge(modifier, i.classMod);
+
           idx := 1;
           for c in i.components loop
-            comp_mod := Modifier.lookupSub(modifier, Component.name(c));
+            comp_mod := Modifier.lookupSub(class_mod, Component.name(c));
             (c, tree) := instComponent(c, comp_mod, tree);
             Dangerous.arrayUpdateNoBoundsChecking(components, idx, c);
             idx := idx + 1;
