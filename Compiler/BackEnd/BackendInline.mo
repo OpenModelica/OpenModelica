@@ -394,14 +394,14 @@ algorithm
     case BackendDAE.ASSIGN(left = cr, right = e2, source = source)
       equation
         (e2, source, b,_) = Inline.inlineExp(e2, fns, source);
-        outWhenOps = BackendDAE.ASSIGN(cr, e2, source)::outWhenOps;
+        outWhenOps = (if b then BackendDAE.ASSIGN(cr, e2, source) else whenOp)::outWhenOps;
         inlined = inlined or b;
       then ();
 
     case BackendDAE.REINIT(stateVar = cr, value = e2,  source = source)
       equation
         (e2, source, b,_) = Inline.inlineExp(e2, fns, source);
-        outWhenOps = BackendDAE.REINIT(cr, e2, source)::outWhenOps;
+        outWhenOps = (if b then BackendDAE.REINIT(cr, e2, source) else whenOp)::outWhenOps;
         inlined = inlined or b;
       then ();
 
@@ -409,21 +409,21 @@ algorithm
       equation
         (e1, source, b,_) = Inline.inlineExp(e1, fns, source);
         (e2, source, b2,_) = Inline.inlineExp(e2, fns, source);
-        outWhenOps = BackendDAE.ASSERT(e1, e2, level, source)::outWhenOps;
+        outWhenOps = (if b or b2 then BackendDAE.ASSERT(e1, e2, level, source) else whenOp)::outWhenOps;
         inlined = inlined or b or b2;
       then ();
 
     case BackendDAE.TERMINATE(message = e1,  source = source)
       equation
         (e1, source, b,_) = Inline.inlineExp(e1, fns, source);
-        outWhenOps = BackendDAE.TERMINATE(e1, source)::outWhenOps;
+        outWhenOps = (if b then BackendDAE.TERMINATE(e1, source) else whenOp)::outWhenOps;
         inlined = inlined or b;
       then ();
 
     case BackendDAE.NORETCALL(exp = e1,  source = source)
       equation
         (e1, source, b,_) = Inline.inlineExp(e1, fns, source);
-        outWhenOps = BackendDAE.NORETCALL(e1, source)::outWhenOps;
+        outWhenOps = (if b then BackendDAE.NORETCALL(e1, source) else whenOp)::outWhenOps;
         inlined = inlined or b;
       then ();
   end match;

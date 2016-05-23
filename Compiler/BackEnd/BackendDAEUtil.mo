@@ -5085,16 +5085,16 @@ algorithm
 
     // pre(v) is considered a known variable
     case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF()}), (vars, bs, iat, pa))
-    then (inExp, false, (vars, bs, iat, pa));
+    then (inExp, false, inTpl);
 
     // previous(v) is considered a known variable
     case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={DAE.CREF()}), (vars, bs, iat, pa))
-    then (inExp, false, (vars, bs, iat, pa));
+    then (inExp, false, inTpl);
 
     // delay(e) can be used to break algebraic loops given some solver options
     case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={_, _, e1, e2}), (vars, bs, iat, pa)) equation
       b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
-    then (inExp, not b, (vars, bs, iat, pa));
+    then (inExp, not b, inTpl);
 
     else (inExp, true, inTpl);
   end matchcontinue;
