@@ -44,6 +44,9 @@ QLineEdit:disabled {
   background-color: #f0f0f0;
 }
 
+QPlainTextEdit {
+  border: 1px solid gray;
+}
 QPlainTextEdit#BaseEditor {
   selection-background-color: #3399FF;
   selection-color: white;
