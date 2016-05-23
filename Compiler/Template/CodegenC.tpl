@@ -1323,13 +1323,6 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
         globalDataParDefine(var, "stringParameter")
       ;separator="\n"%>
 
-      /* sample */
-      <%(timeEvents |> timeEvent =>
-        match timeEvent
-          case SAMPLE_TIME_EVENT(__) then '#define $P$sample<%index%> data->simulationInfo->samples[<%intSub(index, 1)%>]'
-          else ''
-        ;separator="\n")%>
-
       <%functions |> fn hasindex i0 => '#define <%functionName(fn,false)%>_index <%i0%>'; separator="\n"%>
       >>
   end match
@@ -1707,7 +1700,7 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
           let e2 = daeExp(intervalExp, contextOther, &preExp, &varDecls, &auxFunction)
           <<
           <%preExp%>
-          /* $P$sample<%index%> */
+          /* sample <%index%> */
           data->modelData->samplesInfo[i].index = <%index%>;
           data->modelData->samplesInfo[i].start = <%e1%>;
           data->modelData->samplesInfo[i].interval = <%e2%>;

@@ -5887,7 +5887,7 @@ simple_alloc_1d_base_array(&<%tvar%>, <%nElts%>, <%tvardata%>);
     daeExp(e1, context, &preExp, &varDecls, &auxFunction)
 
   case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), _, _}) then
-    '$P$sample<%index%>'
+    'data->simulationInfo->samples[<%intSub(index, 1)%>]'
 
   case CALL(path=IDENT(name="anyString"), expLst={e1}) then
     'mmc_anyString(<%daeExp(e1, context, &preExp, &varDecls, &auxFunction)%>)'
