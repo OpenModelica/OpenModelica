@@ -150,8 +150,8 @@ int allocateHomotopyData(int size, void** voiddata)
   data->initialized = 0;
   data->n = size;
   data->m = size + 1;
-  data->xtol = newtonXTol;
-  data->ftol = newtonFTol;
+  data->xtol = newtonXTol*newtonXTol;
+  data->ftol = newtonFTol*newtonFTol;
 
   data->error_f = 0;
 
@@ -1279,7 +1279,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
 
     /* debug information */
-    debugString(LOG_NLS_V, "error measurements:");
+    debugString(LOG_NLS_V, "error measurements (squared):");
     debugDouble(LOG_NLS_V, "delta_x        =", delta_x);
     debugDouble(LOG_NLS_V, "delta_x_scaled =", delta_x_scaled);
     debugDouble(LOG_NLS_V, "eps_x          =", solverData->xtol);

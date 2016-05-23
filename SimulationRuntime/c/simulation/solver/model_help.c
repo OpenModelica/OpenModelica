@@ -53,8 +53,8 @@
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = 0.2;
 int linearSparseSolverMinSize = 4001;
-double newtonXTol = 1e-24;
-double newtonFTol = 1e-24;
+double newtonXTol = 1e-12;
+double newtonFTol = 1e-12;
 const size_t SIZERINGBUFFER = 3;
 int compiledInDAEMode = 0;
 
