@@ -37,10 +37,15 @@ encapsulated package Unit
                authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)"
 
 
-public import DAE;
+public
+import DAE;
+import System;
 
-protected import ComponentReference;
-public import System;
+protected
+import ComponentReference;
+import HashTableStringToUnit;
+import HashTableUnitToString;
+import Util;
 
 
 public uniontype Unit
@@ -116,9 +121,39 @@ public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 //("degC",       UNIT(1e0, 0, 0, 0, 0, 0, 1, 0, 273.15))};//°Celsius
 /*                 fac, mol, cd, m, s, A, K, g*/
 
+public function getKnownUnits
+  output HashTableStringToUnit.HashTable outKnownUnits;
+algorithm
+  outKnownUnits := HashTableStringToUnit.emptyHashTableSized(Util.nextPrime(2 * listLength(LU_COMPLEXUNITS)));
 
+  for unit in LU_COMPLEXUNITS loop
+    outKnownUnits := BaseHashTable.add(unit, outKnownUnits);
+  end for;
+end getKnownUnits;
 
+public function getKnownUnitsInverse
+  output HashTableUnitToString.HashTable outKnownUnitsInverse;
+protected
+  String s;
+  Unit ut;
+algorithm
+  outKnownUnitsInverse := HashTableUnitToString.emptyHashTableSized(Util.nextPrime(2 * listLength(LU_COMPLEXUNITS)));
 
+  for unit in LU_COMPLEXUNITS loop
+    (s, ut) := unit;
+    outKnownUnitsInverse := BaseHashTable.add((ut, s), outKnownUnitsInverse);
+  end for;
+end getKnownUnitsInverse;
+
+public function isUnit
+  input Unit inUnit;
+  output Boolean b;
+algorithm
+  b := match inUnit
+    case UNIT() then true;
+  else false;
+  end match;
+end isUnit;
 
 public function hashUnitMod
   input Unit inKey;

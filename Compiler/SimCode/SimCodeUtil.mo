@@ -46,30 +46,31 @@ import DAE;
 import FCore;
 import FGraph;
 import HashTable;
-import HashTableCrILst;
 import HashTableCrIListArray;
+import HashTableCrILst;
 import HashTableExpToIndex;
 import SCode;
-import Tpl;
-import Types;
-import Values;
 import SimCode;
 import SimCodeVar;
+import Tpl;
+import Types;
+import Unit;
+import Values;
 import Vectorization;
 
 // protected imports
 protected
 import Array;
+import BackendDAEEXT;
 import BackendDAEOptimize;
 import BackendDAETransform;
 import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
-import BackendDAEEXT;
 import BackendVariable;
 import BackendVarTransform;
-import BaseHashTable;
 import BaseHashSet;
+import BaseHashTable;
 import Builtin;
 import CheckModel;
 import ClassInf;
@@ -92,6 +93,8 @@ import Flags;
 import FMI;
 import Graph;
 import HashSet;
+import HashTableStringToUnit;
+import HashTableUnitToString;
 import HpcOmSimCode;
 import Inline;
 import List;
@@ -99,12 +102,13 @@ import Matching;
 import MetaModelica.Dangerous;
 import PriorityQueue;
 import SimCodeDump;
-import TaskSystemDump;
 import SimCodeFunctionUtil;
 import SimCodeFunctionUtil.varName;
 import Sorting;
 import SymbolicJacobian;
 import System;
+import TaskSystemDump;
+import UnitCheck;
 import Util;
 import ValuesUtil;
 import VisualXML;
@@ -6735,11 +6739,20 @@ end addSimVar;
 protected function derVarFromStateVar
   input SimCodeVar.SimVar state;
   output SimCodeVar.SimVar deriv = state;
+protected
+  Unit.Unit unit;
 algorithm
   deriv.arrayCref := Util.applyOption(deriv.arrayCref, ComponentReference.crefPrefixDer);
   deriv.name := ComponentReference.crefPrefixDer(deriv.name);
   deriv.varKind := BackendDAE.STATE_DER();
-  deriv.unit := "";
+  try
+    unit := UnitCheck.parseUnitString(deriv.unit);
+    unit := UnitCheck.unitDiv(unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
+    true := Unit.isUnit(unit);
+    deriv.unit := UnitCheck.unit2String(unit);
+  else
+    deriv.unit := "";
+  end try;
   deriv.displayUnit := "";
   deriv.initialValue := NONE();
   deriv.aliasvar := SimCodeVar.NOALIAS();

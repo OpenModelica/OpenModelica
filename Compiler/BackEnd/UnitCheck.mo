@@ -74,8 +74,6 @@ protected uniontype Token
   record T_RPAREN end T_RPAREN;
 end Token;
 
-
-
 // =============================================================================
 // section for preOptModule >>unitChecking<<
 // The unit check module verifies the consistency of units.
@@ -104,8 +102,8 @@ algorithm
     eqList := BackendEquation.equationList(syst.orderedEqs);
 
     HtCr2U1 := HashTableCrToUnit.emptyHashTableSized(2053);
-    HtS2U := foldComplexUnits(HashTableStringToUnit.emptyHashTableSized(2053));
-    HtU2S := foldComplexUnits2(HashTableUnitToString.emptyHashTableSized(2053));
+    HtS2U := Unit.getKnownUnits();
+    HtU2S := Unit.getKnownUnitsInverse();
 
     if Flags.isSet(Flags.DUMP_EQ_UNIT) then
       BackendDump.dumpEquationList(eqList, "########### Equation-Liste: #########\n");
@@ -145,17 +143,6 @@ algorithm
   end try;
 end unitChecking;
 
-//
-//
-protected function foldComplexUnits
-  input HashTableStringToUnit.HashTable inHtS2U;
-  output HashTableStringToUnit.HashTable outHtS2U;
-algorithm
-  outHtS2U := List.fold(Unit.LU_COMPLEXUNITS, addUnit2HtS2U, inHtS2U);
-end foldComplexUnits;
-
-//
-//
 protected function addUnit2HtS2U
   input tuple<String, Unit.Unit> inTpl;
   input HashTableStringToUnit.HashTable inHtS2U;
@@ -164,17 +151,6 @@ algorithm
   outHtS2U := BaseHashTable.add(inTpl,inHtS2U);
 end addUnit2HtS2U;
 
-//
-//
-protected function foldComplexUnits2
-  input HashTableUnitToString.HashTable inHtU2S;
-  output HashTableUnitToString.HashTable outHtU2S;
-algorithm
-  outHtU2S := List.fold(Unit.LU_COMPLEXUNITS, addUnit2HtU2S, inHtU2S);
-end foldComplexUnits2;
-
-//
-//
 protected function addUnit2HtU2S
   input tuple<String, Unit.Unit> inTpl;
   input HashTableUnitToString.HashTable inHtU2S;
@@ -225,9 +201,9 @@ end returnVar;
 
 //
 //
-protected function unit2String "transforms the unit in string"
+public function unit2String "transforms the unit in string"
   input Unit.Unit inUt;
-  input HashTableUnitToString.HashTable inHtU2S;
+  input HashTableUnitToString.HashTable inHtU2S = Unit.getKnownUnitsInverse();
   output String outS;
 algorithm
   outS := matchcontinue(inUt, inHtU2S)
@@ -1211,6 +1187,23 @@ algorithm
   end match;
 end tokenList2string;
 
+public function parseUnitString "author: lochel
+  The second argument is optional."
+  input String inUnitString;
+  input HashTableStringToUnit.HashTable inKnownUnits = Unit.getKnownUnits();
+  output Unit.Unit outUnit;
+protected
+  list<String> charList;
+  list<Token> tokenList;
+algorithm
+  if inUnitString == "" then
+    fail();
+  end if;
+  charList := stringListStringChar(inUnitString);
+  tokenList := lexer(charList);
+  outUnit := parser(tokenList, Unit.UPDATECREF, inKnownUnits);
+end parseUnitString;
+
 //
 //
 protected function parse "author: lochel"
@@ -1219,31 +1212,21 @@ protected function parse "author: lochel"
   input HashTableStringToUnit.HashTable inHtS2U;
   input HashTableUnitToString.HashTable inHtU2S;
   output Unit.Unit outUnit;
-  output HashTableStringToUnit.HashTable outHtS2U;
-  output HashTableUnitToString.HashTable outHtU2S;
+  output HashTableStringToUnit.HashTable outHtS2U = inHtS2U;
+  output HashTableUnitToString.HashTable outHtU2S = inHtU2S;
+protected
+  list<String> charList;
+  list<Token> tokenList;
 algorithm
-  (outUnit, outHtS2U, outHtU2S):=matchcontinue(inUnitString, inCref, inHtS2U, inHtU2S)
-
-  local
-    Unit.Unit unit;
-    HashTableStringToUnit.HashTable HtS2U;
-    HashTableUnitToString.HashTable HtU2S;
-    list<String> charList;
-    list<Token> tokenList;
-
-
-  case (_, _, _, _) equation
-    unit=BaseHashTable.get(inUnitString, inHtS2U);
-  then (unit, inHtS2U, inHtU2S);
-
-  else equation
-    charList = stringListStringChar(inUnitString);
-    tokenList = lexer(charList);
-    unit = parser(tokenList, inCref, inHtS2U);
-    HtS2U = addUnit2HtS2U((inUnitString, unit), inHtS2U);
-    HtU2S = addUnit2HtU2S((inUnitString, unit), inHtU2S);
-  then (unit, HtS2U, HtU2S);
-  end matchcontinue;
+  try
+    outUnit := BaseHashTable.get(inUnitString, inHtS2U);
+  else
+    charList := stringListStringChar(inUnitString);
+    tokenList := lexer(charList);
+    outUnit := parser(tokenList, inCref, inHtS2U);
+    outHtS2U := addUnit2HtS2U((inUnitString, outUnit), inHtS2U);
+    outHtU2S := addUnit2HtU2S((inUnitString, outUnit), inHtU2S);
+  end try;
 end parse;
 
 //
@@ -1669,7 +1652,7 @@ end unitMul;
 
 //
 //
-protected function unitDiv
+public function unitDiv
   input Unit.Unit inUt1;
   input Unit.Unit inUt2;
   output Unit.Unit outUt;
