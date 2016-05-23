@@ -99,8 +99,7 @@ uniontype Instance
 
   function setComponents
     input array<Component> components;
-    input Instance inInstance;
-    output Instance instance = inInstance;
+    input output Instance instance;
   algorithm
     _ := match instance
       case EXPANDED_CLASS()

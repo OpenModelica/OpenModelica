@@ -76,73 +76,43 @@ uniontype InstanceTree
 
   function addInstances
     input list<InstNode> instances;
-    input InstanceTree inTree;
-    output InstanceTree tree = inTree;
+    input output InstanceTree tree;
   algorithm
-    _ := match tree
-      case INST_TREE()
-        algorithm
-          tree.instances := InstVector.addList(tree.instances, instances);
-        then
-          ();
-    end match;
+    tree.instances := InstVector.addList(tree.instances, instances);
   end addInstances;
 
   function lookupNode
     input Integer index;
     input InstanceTree tree;
     output InstNode node;
-  protected
-    InstVector.Vector instances;
   algorithm
-    INST_TREE(instances = instances) := tree;
-    node := InstVector.get(instances, index);
+    node := InstVector.get(tree.instances, index);
   end lookupNode;
 
   function updateNode
     input InstNode node;
-    input InstanceTree inTree;
-    output InstanceTree tree = inTree;
+    input output InstanceTree tree;
   algorithm
-    _ := match tree
-      case INST_TREE()
-        algorithm
-          tree.instances := InstVector.set(tree.instances, InstNode.index(node), node);
-        then
-          ();
-    end match;
+    tree.instances := InstVector.set(tree.instances, InstNode.index(node), node);
   end updateNode;
 
   function setCurrentScope
-    input InstanceTree inTree;
+    input output InstanceTree tree;
     input Integer scope;
-    output InstanceTree tree = inTree;
   algorithm
-    _ := match tree
-      case INST_TREE()
-        algorithm
-          tree.currentScope := scope;
-        then
-          ();
-    end match;
+    tree.currentScope := scope;
   end setCurrentScope;
 
   function currentScopeIndex
-    input InstanceTree inTree;
-    output Integer outIndex;
-  algorithm
-    INST_TREE(currentScope = outIndex) := inTree;
+    input InstanceTree tree;
+    output Integer index = tree.currentScope;
   end currentScopeIndex;
 
   function currentScope
-    input InstanceTree inTree;
-    output InstNode outScope;
-  protected
-    Integer scope;
-    InstVector.Vector iv;
+    input InstanceTree tree;
+    output InstNode scope;
   algorithm
-    INST_TREE(currentScope = scope, instances = iv) := inTree;
-    outScope := InstVector.get(iv, scope);
+    scope := InstVector.get(tree.instances, tree.currentScope);
   end currentScope;
 end InstanceTree;
 

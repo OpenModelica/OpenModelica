@@ -68,59 +68,34 @@ uniontype InstNode
   end index;
 
   function setIndex
-    input InstNode inNode;
+    input output InstNode node;
     input Integer index;
-    output InstNode node = inNode;
   algorithm
-    _ := match node
-      case INST_NODE()
-        algorithm
-          node.index := index;
-        then
-          ();
-    end match;
+    node.index := index;
   end setIndex;
 
   function parent
     input InstNode node;
-    output Integer parent;
-  algorithm
-    INST_NODE(parent = parent) := node;
+    output Integer parent = node.parent;
   end parent;
 
   function setParent
-    input InstNode inNode;
+    input output InstNode node;
     input Integer parent;
-    output InstNode node = inNode;
   algorithm
-    _ := match node
-      case INST_NODE()
-        algorithm
-          node.parent := parent;
-        then
-          ();
-    end match;
+    node.parent := parent;
   end setParent;
 
   function instance
     input InstNode node;
-    output Instance instance;
-  algorithm
-    INST_NODE(instance = instance) := node;
+    output Instance instance = node.instance;
   end instance;
 
   function setInstance
-    input InstNode inNode;
+    input output InstNode node;
     input Instance instance;
-    output InstNode node = inNode;
   algorithm
-    _ := match node
-      case INST_NODE()
-        algorithm
-          node.instance := instance;
-        then
-          ();
-    end match;
+    node.instance := instance;
   end setInstance;
 end InstNode;
 

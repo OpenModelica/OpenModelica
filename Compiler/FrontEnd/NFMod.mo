@@ -71,13 +71,13 @@ uniontype Modifier
 
 public
   function translate
-    input SCode.Mod inMod;
-    input String inElementName;
+    input SCode.Mod mod;
+    input String elementName;
     //input Integer inDimensions;
     //input ScopeIndex inScope;
-    output Modifier outMod;
+    output Modifier translatedMod;
   algorithm
-    outMod := match inMod
+    translatedMod := match mod
       local
         list<Modifier> submods;
         Binding binding;
@@ -86,92 +86,92 @@ public
 
       case SCode.MOD()
         algorithm
-          binding := Binding.fromAbsyn(inMod.binding, inMod.finalPrefix,
-              inMod.eachPrefix, inMod.info);
-          submods := translateSubMods(inMod.subModLst);
+          binding := Binding.fromAbsyn(mod.binding, mod.finalPrefix,
+              mod.eachPrefix, mod.info);
+          submods := translateSubMods(mod.subModLst);
         then
-          MODIFIER(inElementName, binding, submods, inMod.info);
+          MODIFIER(elementName, binding, submods, mod.info);
 
       case SCode.REDECL()
-        then REDECLARE(inMod.finalPrefix, inMod.eachPrefix, inMod.element);
+        then REDECLARE(mod.finalPrefix, mod.eachPrefix, mod.element);
 
     end match;
   end translate;
 
   function lookupSub
-    input Modifier inModifier;
-    input String inName;
-    output Modifier outSubMod;
+    input Modifier modifier;
+    input String modName;
+    output Modifier subMod;
   protected
     list<Modifier> submods;
   algorithm
-    submods := subModifiers(inModifier);
+    submods := subModifiers(modifier);
 
     for m in submods loop
-      if inName == name(m) then
-        outSubMod := m;
+      if modName == name(m) then
+        subMod := m;
         return;
       end if;
     end for;
 
-    outSubMod := EMPTY_MOD;
+    subMod := EMPTY_MOD;
   end lookupSub;
 
   function name
-    input Modifier inModifier;
-    output String outName;
+    input Modifier modifier;
+    output String name;
   algorithm
-    outName := match inModifier
-      case MODIFIER() then inModifier.name;
-      case REDECLARE(element = SCode.COMPONENT(name = outName)) then outName;
-      case REDECLARE(element = SCode.CLASS(name = outName)) then outName;
+    name := match modifier
+      case MODIFIER() then modifier.name;
+      case REDECLARE(element = SCode.COMPONENT(name = name)) then name;
+      case REDECLARE(element = SCode.CLASS(name = name)) then name;
     end match;
   end name;
 
   function binding
-    input Modifier inModifier;
-    output Binding outBinding;
+    input Modifier modifier;
+    output Binding binding;
   algorithm
-    outBinding := match inModifier
-      case MODIFIER() then inModifier.binding;
+    binding := match modifier
+      case MODIFIER() then modifier.binding;
       else Binding.UNBOUND();
     end match;
   end binding;
 
   function subModifiers
-    input Modifier inModifier;
-    output list<Modifier> outSubMods;
+    input Modifier modifier;
+    output list<Modifier> subMods;
   algorithm
-    outSubMods := match inModifier
-      case MODIFIER() then inModifier.subModifiers;
+    subMods := match modifier
+      case MODIFIER() then modifier.subModifiers;
       else {};
     end match;
   end subModifiers;
 
   function merge
-    input Modifier inOuterMod;
-    input Modifier inInnerMod;
-    output Modifier outMod;
+    input Modifier outerMod;
+    input Modifier innerMod;
+    output Modifier mergedMod;
   algorithm
-    outMod := match(inOuterMod, inInnerMod)
+    mergedMod := match(outerMod, innerMod)
       local
         list<Modifier> submods;
         Binding binding;
 
       // One of the modifiers is NOMOD, return the other.
-      case (NOMOD(), _) then inInnerMod;
-      case (_, NOMOD()) then inOuterMod;
+      case (NOMOD(), _) then innerMod;
+      case (_, NOMOD()) then outerMod;
 
       // Two modifiers, merge bindings and submodifiers.
       case (MODIFIER(), MODIFIER())
         algorithm
-          checkFinalOverride(inOuterMod.name, inOuterMod.binding,
-            inOuterMod.info, inInnerMod.binding, inInnerMod.info);
-          binding := if Binding.isBound(inOuterMod.binding) then
-            inOuterMod.binding else inInnerMod.binding;
-          submods := mergeSubMods(inOuterMod.subModifiers, inInnerMod.subModifiers);
+          checkFinalOverride(outerMod.name, outerMod.binding,
+            outerMod.info, innerMod.binding, innerMod.info);
+          binding := if Binding.isBound(outerMod.binding) then
+            outerMod.binding else innerMod.binding;
+          submods := mergeSubMods(outerMod.subModifiers, innerMod.subModifiers);
         then
-          MODIFIER(inOuterMod.name, binding, submods, inOuterMod.info);
+          MODIFIER(outerMod.name, binding, submods, outerMod.info);
 
       else
         algorithm
@@ -184,24 +184,24 @@ public
   end merge;
 
   function toString
-    input Modifier inMod;
-    output String outString;
+    input Modifier mod;
+    output String string;
   algorithm
-    outString := match inMod
+    string := match mod
       local
         String subs_str;
 
       case NOMOD() then "";
       case MODIFIER()
         algorithm
-          if not listEmpty(inMod.subModifiers) then
+          if not listEmpty(mod.subModifiers) then
             subs_str := "(" + stringDelimitList(list(toString(s) for s in
-              inMod.subModifiers), ", ") + ")";
+              mod.subModifiers), ", ") + ")";
           else
             subs_str := "";
           end if;
         then
-          inMod.name + subs_str + Binding.toString(inMod.binding, " = ");
+          mod.name + subs_str + Binding.toString(mod.binding, " = ");
 
       case REDECLARE() then "redeclare";
     end match;
@@ -209,41 +209,35 @@ public
 
 protected
   function translateSubMods
-    input list<SCode.SubMod> inSubMods;
+    input list<SCode.SubMod> subMods;
     //input ScopeIndex inScope;
-    output list<Modifier> outSubMods;
+    output list<Modifier> translatedSubMods;
   algorithm
     //  pd := if SCode.eachBool(inEach) then 0 else inDimensions;
-    outSubMods := list(translateSubMod(m) for m in inSubMods);
+    translatedSubMods := list(translateSubMod(m) for m in subMods);
   end translateSubMods;
 
   function translateSubMod
-    input SCode.SubMod inSubMod;
+    input SCode.SubMod subMod;
     //input ScopeIndex inScope;
-    output Modifier outMod;
-  protected
-    String name;
-    SCode.Mod mod;
-  algorithm
-    SCode.NAMEMOD(name, mod) := inSubMod;
-    outMod := translate(mod, name);
+    output Modifier mod = translate(subMod.mod, subMod.ident);
   end translateSubMod;
 
   function checkFinalOverride
     "Checks that a modifier is not trying to override a final modifier. In that
      case it prints an error and fails, otherwise it does nothing."
-    input String inName;
-    input Binding inOuterBinding;
-    input SourceInfo inOuterInfo;
-    input Binding inInnerBinding;
-    input SourceInfo inInnerInfo;
+    input String name;
+    input Binding outerBinding;
+    input SourceInfo outerInfo;
+    input Binding innerBinding;
+    input SourceInfo innerInfo;
   algorithm
-    _ := match (inOuterBinding, inInnerBinding)
+    _ := match (outerBinding, innerBinding)
       case (Binding.RAW_BINDING(), Binding.RAW_BINDING(finalPrefix = SCode.FINAL()))
         algorithm
           Error.addMultiSourceMessage(Error.FINAL_COMPONENT_OVERRIDE,
-            {inName, Dump.printExpStr(inOuterBinding.bindingExp)},
-            {inOuterInfo, inInnerInfo});
+            {name, Dump.printExpStr(outerBinding.bindingExp)},
+            {outerInfo, innerInfo});
         then
           fail();
 
@@ -252,23 +246,23 @@ protected
   end checkFinalOverride;
 
   function mergeSubMods
-    input list<Modifier> inOuterSubMods;
-    input list<Modifier> inInnerSubMods;
-    output list<Modifier> outSubMods;
+    input list<Modifier> outerSubMods;
+    input list<Modifier> innerSubMods;
+    output list<Modifier> subMods;
   algorithm
-    outSubMods := List.fold(inOuterSubMods, mergeSubMod, inInnerSubMods);
+    subMods := List.fold(outerSubMods, mergeSubMod, innerSubMods);
   end mergeSubMods;
 
   function mergeSubMod
-    input Modifier inSubMod;
-    input list<Modifier> inSubMods;
-    output list<Modifier> outSubMods = {};
+    input Modifier subMod;
+    input list<Modifier> subMods;
+    output list<Modifier> mergedSubMods = {};
   protected
     String id;
     Modifier mod;
-    list<Modifier> rest_mods = inSubMods;
+    list<Modifier> rest_mods = subMods;
   algorithm
-    id := name(inSubMod);
+    id := name(subMod);
 
     // Try to find a modifier with the same name.
     while not listEmpty(rest_mods) loop
@@ -276,16 +270,16 @@ protected
 
       // Matching modifier found, merge them and return.
       if name(mod) == id then
-        mod := merge(inSubMod, mod);
-        outSubMods := listAppend(listReverse(mod :: outSubMods), rest_mods);
+        mod := merge(subMod, mod);
+        mergedSubMods := listAppend(listReverse(mod :: mergedSubMods), rest_mods);
         return;
       end if;
 
-      outSubMods := mod :: outSubMods;
+      mergedSubMods := mod :: mergedSubMods;
     end while;
 
     // No matching modifier found, add the new one to the list.
-    outSubMods := listReverse(inSubMod :: outSubMods);
+    mergedSubMods := listReverse(subMod :: mergedSubMods);
   end mergeSubMod;
 end Modifier;
 
