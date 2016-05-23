@@ -6456,13 +6456,13 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     let rangeExp = daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls, &auxFunction)
     let &rangeExpPre += '<%loopVar%> = <%rangeExp%>;<%\n%>'
     let &rangeExpPre += if firstIndex then '<%firstIndex%> = 1;<%\n%>'
-    let guardCond = (match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls, &auxFunction) else "1")
+    let guardCond = (match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls, &auxFunction) else "")
     let iteratorName = contextIteratorName(iter.id, context)
     let &tmpVarDecls += '<%identType%> <%iteratorName%>;<%\n%>'
     let guardExp =
       <<
       <%&guardExpPre%>
-      if(<%guardCond%>) { /* found non-guarded */
+      if (<%guardCond%>) {
         <%endLoop%>--;
         break;
       }
@@ -6470,20 +6470,39 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     (match identType
       case "modelica_metatype" then
       (if isMetaArray(iter.exp) then
-        <<
-        while (<%firstIndex%> <= arrayLength(<%loopVar%>)) {
-          <%iteratorName%> = arrayGet(<%loopVar%>, <%firstIndex%>++);
-          <%guardExp%>
-        }
-        >>
+        (if stringEq(guardCond,"") then
+          <<
+          if (<%firstIndex%> <= arrayLength(<%loopVar%>)) {
+            <%iteratorName%> = arrayGet(<%loopVar%>, <%firstIndex%>++);
+            <%endLoop%>--;
+          }
+          >>
+        else
+          <<
+          while (<%firstIndex%> <= arrayLength(<%loopVar%>)) {
+            <%iteratorName%> = arrayGet(<%loopVar%>, <%firstIndex%>++);
+            <%guardExp%>
+          }
+          >>
+        )
       else
-        <<
-        while (!listEmpty(<%loopVar%>)) {
-          <%iteratorName%> = MMC_CAR(<%loopVar%>);
-          <%loopVar%> = MMC_CDR(<%loopVar%>);
-          <%guardExp%>
-        }
-        >>
+        (if stringEq(guardCond,"") then
+          <<
+          if (!listEmpty(<%loopVar%>)) {
+            <%iteratorName%> = MMC_CAR(<%loopVar%>);
+            <%loopVar%> = MMC_CDR(<%loopVar%>);
+            <%endLoop%>--;
+          }
+          >>
+        else
+          <<
+          while (!listEmpty(<%loopVar%>)) {
+            <%iteratorName%> = MMC_CAR(<%loopVar%>);
+            <%loopVar%> = MMC_CDR(<%loopVar%>);
+            <%guardExp%>
+          }
+          >>
+        )
       )
       else
       let addr = match iter.ty
@@ -6492,12 +6511,20 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           '*((<%rec_name%>*)generic_array_element_addr1(&<%loopVar%>, sizeof(<%rec_name%>), <%firstIndex%>++))'
         else
           '*(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++))'
+      (if stringEq(guardCond,"") then
+      <<
+      if(<%firstIndex%> <= size_of_dimension_base_array(<%loopVar%>, 1)) {
+        <%iteratorName%> = <%addr%>;
+        <%endLoop%>--;
+      }
+      >>
+      else
       <<
       while(<%firstIndex%> <= size_of_dimension_base_array(<%loopVar%>, 1)) {
         <%iteratorName%> = <%addr%>;
         <%guardExp%>
       }
-      >>))
+      >>)))
   let firstValue = (match ri.path
      case IDENT(name="array") then
        let length = tempDecl("int",&tmpVarDecls)
