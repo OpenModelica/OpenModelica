@@ -29,13 +29,36 @@
  *
  */
 
-encapsulated package NFEnv
-" file:        NFEnv.mo
-  package:     NFEnv
-  description: Symbol table for lookup
+encapsulated package NFComponent
 
+import SCode.Element;
+import DAE.Type;
+import NFInstNode.InstNode;
+import NFBinding.Binding;
 
-"
+uniontype Component
+  record COMPONENT_DEF
+    Element definition;
+    Integer scope;
+  end COMPONENT_DEF;
+
+  record COMPONENT
+    String name;
+    InstNode classInst;
+    Type ty;
+    Binding binding;
+  end COMPONENT;
+
+  function name
+    input Component component;
+    output String name;
+  algorithm
+    name := match component
+      case COMPONENT_DEF(definition = SCode.COMPONENT(name = name)) then name;
+      case COMPONENT() then component.name;
+    end match;
+  end name;
+end Component;
 
 annotation(__OpenModelica_Interface="frontend");
-end NFEnv;
+end NFComponent;

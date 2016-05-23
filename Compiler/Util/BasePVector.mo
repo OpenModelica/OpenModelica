@@ -48,8 +48,8 @@ encapsulated partial package BasePVector
 
 replaceable type T = Integer; // Should be Any.
 
-protected
 import List;
+protected
 import MetaModelica.Dangerous;
 
 uniontype Vector
@@ -103,7 +103,7 @@ algorithm
       Integer sz, shift;
 
     // Space left in the tail, insert the value in the tail.
-    case VECTOR(tail = tail) guard(arrayLength(tail)) < 32
+    case VECTOR(tail = tail) guard(arrayLength(tail) < 32)
       algorithm
         outVector.tail := tailAdd(tail, VALUE(inValue));
         outVector.size := outVector.size + 1;
@@ -142,7 +142,7 @@ algorithm
   list_len := listLength(inList);
 
   // Check if we have enough space left in the tail for the whole list.
-  if tail_len + list_len < 32 then
+  if tail_len + list_len <= 32 then
     // Space left in the tail, just append the list to the it.
     node_lst := list(VALUE(v) for v in inList);
     tail := arrayAppend(tail, listArray(node_lst));
@@ -169,7 +169,7 @@ algorithm
     // While we have more than 32 elements left to add, take 32 of them at a
     // time and push them down into the tree.
     while rest_len > 32 loop
-      tail := Dangerous.arrayCreateNoInit(32, EMPTY());
+      tail := MetaModelica.Dangerous.arrayCreateNoInit(32, EMPTY());
 
       for i in 1:32 loop
         e :: rest := rest;
@@ -315,9 +315,6 @@ function map
   end MapFunc;
 algorithm
   outVector := match outVector
-    local
-      array<Node> tail;
-
     case VECTOR()
       algorithm
         outVector.root := mapNode(outVector.root, inFunc);
@@ -334,7 +331,7 @@ function fold<FT>
   input Vector inVector;
   input FoldFunc inFunc;
   input FT inStartValue;
-  output FT outResult = inStartValue;
+  output FT outResult;
 
   partial function FoldFunc
     input T inValue;
@@ -346,7 +343,7 @@ protected
   array<Node> tail;
 algorithm
   VECTOR(root = root, tail = tail) := inVector;
-  outResult := foldNode(root, inFunc, outResult);
+  outResult := foldNode(root, inFunc, inStartValue);
   outResult := foldNodeArray(tail, inFunc, outResult);
 end fold;
 
@@ -486,7 +483,7 @@ function tailAdd
 protected
   Integer new_len = arrayLength(inTail) + 1;
 algorithm
-  outTail := Dangerous.arrayCreateNoInit(new_len, EMPTY());
+  outTail := MetaModelica.Dangerous.arrayCreateNoInit(new_len, EMPTY());
 
   for i in 1:new_len-1 loop
     arrayUpdate(outTail, i, inTail[i]);
@@ -564,7 +561,7 @@ function tailPop
 protected
   Integer new_len = arrayLength(inTail) - 1;
 algorithm
-  outTail := Dangerous.arrayCreateNoInit(new_len, EMPTY());
+  outTail := MetaModelica.Dangerous.arrayCreateNoInit(new_len, EMPTY());
 
   for i in 1:new_len loop
     arrayUpdate(outTail, i, inTail[i]);
@@ -702,8 +699,8 @@ algorithm
   outNodes := arrayCopy(inNodes);
 
   for i in 1:arrayLength(outNodes) loop
-    Dangerous.arrayUpdateNoBoundsChecking(outNodes, i,
-      mapNode(Dangerous.arrayGetNoBoundsChecking(outNodes, i), inFunc));
+    MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(outNodes, i,
+      mapNode(MetaModelica.Dangerous.arrayGetNoBoundsChecking(outNodes, i), inFunc));
   end for;
 end mapNodeArray;
 

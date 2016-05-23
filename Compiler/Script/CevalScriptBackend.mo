@@ -2597,11 +2597,10 @@ algorithm
        // ic_1 = Interactive.addInstantiatedClass(ic,
        //   GlobalScript.INSTCLASS(className, dae, env));
        // st = GlobalScript.SYMBOLTABLE(p, fp, ic_1, iv, cf, lf);
-        _ = NFInst.instClassInProgram(className, scodeP);
+        dae = NFInst.instClassInProgram(className, scodeP);
 
         cache = FCore.emptyCache();
         env = FGraph.empty();
-        dae = DAE.DAE({});
         st = inInteractiveSymbolTable;
       then
         (cache, env, dae, st);

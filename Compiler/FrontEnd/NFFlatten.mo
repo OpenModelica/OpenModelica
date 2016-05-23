@@ -38,78 +38,112 @@ encapsulated package NFFlatten
   New instantiation, enable with +d=scodeInst.
 "
 
-public import NFInst.{Instance};
+import NFBinding.Binding;
+import Inst = NFInst;
+import NFInst.InstanceTree;
+import NFInst.InstNode;
+import NFInst.Instance;
+import NFInst.Component;
 
+import DAE;
+import SCode;
+import System;
 
-public function flattenClass
-  input Instance inClass;
-  output Instance outClass = inClass;
+function flattenClass
+  input InstNode classInst;
+  output DAE.DAElist dae;
+protected
+  list<DAE.Element> elems;
+  DAE.Element class_elem;
 algorithm
-  outClass := match outClass
-    case NFInst.CLASS_INST()
-      algorithm
-        outClass.children := flattenElements(outClass.children);
-      then
-        outClass;
-
-  end match;
+  elems := flattenNode(classInst);
+  elems := listReverse(elems);
+  class_elem := DAE.COMP(InstNode.name(classInst), elems, DAE.emptyElementSource, NONE());
+  dae := DAE.DAE({class_elem});
 end flattenClass;
 
-protected function flattenElements
-  input list<Instance> inElements;
-  output list<Instance> outElements = {};
+function flattenNode
+  input InstNode node;
+  input list<String> prefix = {};
+  input list<DAE.Element> inElements = {};
+  output list<DAE.Element> elements;
+protected
+  Instance i;
+  String name;
 algorithm
-  for e in inElements loop
-    outElements := flattenElement(e, outElements);
-  end for;
-end flattenElements;
+  InstNode.INST_NODE(name = name, instance = i) := node;
+  elements := flattenInstance(name, i, prefix, inElements);
+end flattenNode;
 
-protected function flattenElement
-  input Instance inElement;
-  input list<Instance> inAccum = {};
-  output list<Instance> outElements;
+function flattenInstance
+  input String name;
+  input Instance instance;
+  input list<String> prefix;
+  input list<DAE.Element> inElements;
+  output list<DAE.Element> elements = inElements;
 algorithm
-  outElements := match inElement
+  _ := match instance
+    case Instance.INSTANCED_CLASS()
+      algorithm
+        for c in instance.components loop
+          elements := flattenComponent(c, prefix, elements);
+        end for;
+      then
+        ();
+
+    else
+      algorithm
+        print("Got non-instantiated component " +
+          stringDelimitList(listReverse(prefix), ".") + "\n");
+      then
+        ();
+
+  end match;
+end flattenInstance;
+
+function flattenComponent
+  input Component component;
+  input list<String> prefix;
+  input list<DAE.Element> inElements;
+  output list<DAE.Element> elements;
+algorithm
+  elements := match component
     local
-      list<Instance> el;
+      Instance i;
+      DAE.Element var;
+      DAE.ComponentRef cref;
 
-   case NFInst.COMP_INST(ty = NFInst.CLASS_INST(parentScope = 1))
-     then inElement :: inAccum;
-
-   case NFInst.COMP_INST()
+    case Component.COMPONENT(classInst = InstNode.INST_NODE(instance = Instance.PARTIAL_BUILTIN()))
       algorithm
-        NFInst.CLASS_INST(children = el) := flattenClass(inElement.ty);
-        el := prefixElements(el, inElement.name);
+        cref := DAE.CREF_IDENT(component.name, DAE.T_UNKNOWN_DEFAULT, {});
+        for id in prefix loop
+          cref := DAE.CREF_QUAL(id, DAE.T_UNKNOWN_DEFAULT, {}, cref);
+        end for;
+
+        var := DAE.VAR(
+          cref,
+          DAE.VARIABLE(),
+          DAE.BIDIR(),
+          DAE.NON_PARALLEL(),
+          DAE.PUBLIC(),
+          component.ty,
+          Binding.untypedExp(component.binding),
+          {},
+          DAE.NON_CONNECTOR(),
+          DAE.emptyElementSource,
+          NONE(),
+          NONE(),
+          Absyn.NOT_INNER_OUTER());
+
+        elements := var :: inElements;
       then
-        listAppend(el, inAccum);
+        elements;
 
-    else inAccum;
+    case Component.COMPONENT(classInst = InstNode.INST_NODE(instance = i))
+      then flattenInstance(component.name, i, component.name :: prefix, inElements);
+
   end match;
-end flattenElement;
-
-protected function prefixElement
-  input Instance inElement;
-  input String inPrefix;
-  output Instance outElement = inElement;
-algorithm
-  outElement := match outElement
-   case NFInst.COMP_INST()
-      algorithm
-        outElement.name := inPrefix + "." + outElement.name;
-      then
-        outElement;
-
-    else inElement;
-  end match;
-end prefixElement;
-
-protected function prefixElements
-  input list<Instance> inElements;
-  input String inPrefix;
-  output list<Instance> outElements;
-algorithm
-  outElements := list(prefixElement(e, inPrefix) for e in inElements);
-end prefixElements;
+end flattenComponent;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;

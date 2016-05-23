@@ -50,10 +50,10 @@ public constant SCode.Prefixes BUILTIN_PREFIXES = SCode.PREFIXES(
   Absyn.NOT_INNER_OUTER(), SCode.NOT_REPLACEABLE());
 
 public constant SCode.Attributes BUILTIN_ATTRIBUTES = SCode.ATTR(
-  {}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR());
+  {}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD());
 
 public constant SCode.Attributes BUILTIN_CONST_ATTRIBUTES = SCode.ATTR(
-  {}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR());
+  {}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NONFIELD());
 
 public constant SCode.ClassDef BUILTIN_EMPTY_CLASS = SCode.PARTS(
   {}, {}, {}, {}, {}, {}, {}, NONE());
@@ -233,7 +233,7 @@ public constant SCode.Element BUILTIN_STATESELECT = SCode.CLASS("StateSelect",
 
 // Builtin variable time:
 public constant SCode.Element BUILTIN_TIME = SCode.COMPONENT("time", SCode.defaultPrefixes,
-    SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+    SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT(), Absyn.NONFIELD()),
     Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 
