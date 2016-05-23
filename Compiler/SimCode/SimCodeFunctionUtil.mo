@@ -2131,7 +2131,7 @@ algorithm
         if "Windows_NT" == System.os() then
           // omcruntime on windows needs linking with mico2313 and wsock and then some :)
           str = "-l" + str;
-          strs = str :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: {};
+          strs = str :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-ltre" :: "-lomniORB420_rt" :: "-lomnithread40_rt" :: "-lws2_32" :: "-lRpcrt4" :: "-lregex" :: {};
         else
           strs = System.getRuntimeLibs();
         end if;
