@@ -71,7 +71,7 @@ algorithm
   inst_tree := makeTree(program);
 
   (cls, inst_tree) := Lookup.lookupName(classPath, inst_tree);
-  (cls, inst_tree) := instantiate(cls, inst_tree);
+  (cls, inst_tree) := instantiate(cls, Modifier.NOMOD(), inst_tree);
 
   (cls, inst_tree) := instBindings(cls, inst_tree);
 
@@ -83,61 +83,57 @@ algorithm
 end instClassInProgram;
 
 function instantiate
-  input InstNode inNode;
-  input InstanceTree inTree;
-  output InstNode outNode;
-  output InstanceTree outTree = inTree;
+  input output InstNode node;
+  input Modifier modifier;
+  input output InstanceTree tree;
 algorithm
-  (outNode, outTree) := partialInstClass(inNode, outTree);
-  (outNode, outTree) := expandClass(outNode, outTree);
-  (outNode, outTree) := instClass(outNode, outTree);
+  (node, tree) := partialInstClass(node, tree);
+  (node, tree) := expandClass(node, tree);
+  (node, tree) := instClass(node, modifier, tree);
 end instantiate;
 
 function expand
-  input InstNode inNode;
-  input InstanceTree inTree;
-  output InstNode outNode;
-  output InstanceTree outTree;
+  input output InstNode node;
+  input output InstanceTree tree;
 algorithm
-  (outNode, outTree) := partialInstClass(inNode, inTree);
-  (outNode, outTree) := expandClass(outNode, outTree);
+  (node, tree) := partialInstClass(node, tree);
+  (node, tree) := expandClass(node, tree);
 end expand;
 
 function makeTree
-  input list<SCode.Element> inTopClasses;
-  output InstanceTree outTree;
+  input list<SCode.Element> topClasses;
+  output InstanceTree tree;
 protected
   ClassTree.Tree scope;
   InstNode top;
 algorithm
   // Add the given classes to a new instance tree.
-  (scope, _, outTree) := makeScope(inTopClasses, InstanceTree.new());
+  (scope, _, tree) := makeScope(topClasses, InstanceTree.new());
   // Update the top scope with the added classes.
-  top := InstanceTree.lookupNode(NFInstanceTree.TOP_SCOPE, outTree);
+  top := InstanceTree.lookupNode(NFInstanceTree.TOP_SCOPE, tree);
   top := InstNode.setInstance(top, Instance.INSTANCED_CLASS(scope, NFInstance.NO_COMPONENTS));
-  outTree := InstanceTree.updateNode(top, outTree);
+  tree := InstanceTree.updateNode(top, tree);
 end makeTree;
 
 function makeScope
   "Creates a new scope from a list of SCode elements. It returns a scope with
    all the classes added to it, a list of the non-class elements that were not
    added to the scope, and an updated instance tree."
-  input list<SCode.Element> inElements;
-  input InstanceTree inTree;
-  output ClassTree.Tree scope "Tree with classes.";
-  output list<SCode.Element> elements = {} "Components and extends.";
-  output InstanceTree tree;
+  input list<SCode.Element> elements;
+        output ClassTree.Tree scope "Tree with classes.";
+        output list<SCode.Element> componentsExtends = {} "Components and extends.";
+  input output InstanceTree tree;
 protected
   Integer idx, scope_id;
   list<InstNode> il = {};
   InstNode node;
   list<SCode.Element> imports = {};
 algorithm
-  scope_id := InstanceTree.currentScopeIndex(inTree);
-  idx := InstanceTree.instanceCount(inTree);
+  scope_id := InstanceTree.currentScopeIndex(tree);
+  idx := InstanceTree.instanceCount(tree);
   scope := ClassTree.new();
 
-  for e in inElements loop
+  for e in elements loop
     _ := match e
       // A class, add a class node to the instance tree and a pointer to that
       // node in the class scope.
@@ -153,14 +149,14 @@ algorithm
       // A component, add it to the list of non-class elements.
       case SCode.COMPONENT()
         algorithm
-          elements := e :: elements;
+          componentsExtends := e :: componentsExtends;
         then
           ();
 
       // An extends, add it to the list of non-class elements.
       case SCode.EXTENDS()
         algorithm
-          elements := e :: elements;
+          componentsExtends := e :: componentsExtends;
         then
           ();
 
@@ -173,7 +169,7 @@ algorithm
     end match;
   end for;
 
-  tree := InstanceTree.addInstances(Dangerous.listReverseInPlace(il), inTree);
+  tree := InstanceTree.addInstances(Dangerous.listReverseInPlace(il), tree);
   (scope, tree) := addImportsToScope(imports, scope, tree);
 end makeScope;
 
@@ -181,11 +177,10 @@ function addElementIdToScope
   input String name;
   input ElementId id;
   input SourceInfo info;
-  input ClassTree.Tree inScope;
-  output ClassTree.Tree scope;
+  input output ClassTree.Tree scope;
 algorithm
   try
-    scope := ClassTree.add(inScope, name, id, ClassTree.addConflictFail);
+    scope := ClassTree.add(scope, name, id, ClassTree.addConflictFail);
   else
     // TODO: Add proper error message.
     print("Duplicate element " + name + " found.\n");
@@ -195,10 +190,8 @@ end addElementIdToScope;
 
 function addImportsToScope
   input list<SCode.Element> imports;
-  input ClassTree.Tree inScope;
-  input InstanceTree inTree;
-  output ClassTree.Tree outScope = inScope;
-  output InstanceTree outTree = inTree;
+  input output ClassTree.Tree scope;
+  input output InstanceTree tree;
 protected
   Absyn.Import i;
   Integer scope_idx;
@@ -208,7 +201,7 @@ algorithm
     return;
   end if;
 
-  scope_idx := InstanceTree.currentScopeIndex(outTree);
+  scope_idx := InstanceTree.currentScopeIndex(tree);
 
   for imp in imports loop
     SCode.IMPORT(imp = i) := imp;
@@ -216,16 +209,16 @@ algorithm
     _ := match i
       case Absyn.NAMED_IMPORT()
         algorithm
-          (node, outTree) := Lookup.lookupName(Absyn.FULLYQUALIFIED(i.path), outTree);
-          outScope := ClassTree.add(outScope, i.name,
+          (node, tree) := Lookup.lookupName(Absyn.FULLYQUALIFIED(i.path), tree);
+          scope := ClassTree.add(scope, i.name,
             ElementId.CLASS_ID(InstNode.index(node)));
         then
           ();
 
       case Absyn.QUAL_IMPORT()
         algorithm
-          (node, outTree) := Lookup.lookupName(Absyn.FULLYQUALIFIED(i.path), outTree);
-          outScope := ClassTree.add(outScope, Absyn.pathLastIdent(i.path),
+          (node, tree) := Lookup.lookupName(Absyn.FULLYQUALIFIED(i.path), tree);
+          scope := ClassTree.add(scope, Absyn.pathLastIdent(i.path),
             ElementId.CLASS_ID(InstNode.index(node)));
         then
           ();
@@ -234,14 +227,12 @@ algorithm
     end match;
   end for;
 
-  outTree := InstanceTree.setCurrentScope(outTree, scope_idx);
+  tree := InstanceTree.setCurrentScope(tree, scope_idx);
 end addImportsToScope;
 
 function partialInstClass
-  input InstNode inNode;
-  input InstanceTree inTree;
-  output InstNode node = inNode;
-  output InstanceTree tree = inTree;
+  input output InstNode node;
+  input output InstanceTree tree;
 algorithm
   _ := match node
     local
@@ -250,7 +241,7 @@ algorithm
 
     case InstNode.INST_NODE(instance = Instance.NOT_INSTANTIATED(), definition = SOME(def))
       algorithm
-        tree := InstanceTree.setCurrentScope(tree, InstNode.index(inNode));
+        tree := InstanceTree.setCurrentScope(tree, InstNode.index(node));
         (instance, tree) := partialInstClass2(def, tree);
         node.instance := instance;
         tree := InstanceTree.updateNode(node, tree);
@@ -263,15 +254,14 @@ end partialInstClass;
 
 function partialInstClass2
   input SCode.Element definition;
-  input InstanceTree inTree;
-  output Instance outInstance;
-  output InstanceTree tree = inTree;
+        output Instance instance;
+  input output InstanceTree tree;
 protected
   SCode.ClassDef cdef;
   ClassTree.Tree classes;
   list<SCode.Element> elements;
 algorithm
-  outInstance := match definition
+  instance := match definition
     case SCode.CLASS(classDef = cdef as SCode.PARTS())
       algorithm
         (classes, elements, tree) := makeScope(cdef.elementLst, tree);
@@ -283,32 +273,30 @@ algorithm
 end partialInstClass2;
 
 function expandClass
-  input InstNode inNode;
-  input InstanceTree inTree;
-  output InstNode node;
-  output InstanceTree tree;
+  input output InstNode node;
+  input output InstanceTree tree;
 algorithm
-  (node, tree) := match inNode
+  _ := match node
     local
       SCode.Element def;
 
     case InstNode.INST_NODE(instance = Instance.PARTIAL_CLASS(), definition = SOME(def))
       algorithm
-        (node, tree) := expandClass2(inNode, def, inTree);
+        (node, tree) := expandClass2(node, def, tree);
       then
-        (node, tree);
+        ();
 
-    else (inNode, inTree);
+    else ();
   end match;
 
   tree := InstanceTree.setCurrentScope(tree, InstNode.index(node));
 end expandClass;
 
 function expandClass2
-  input InstNode inNode;
+  input InstNode node;
   input SCode.Element definition;
   input InstanceTree inTree;
-  output InstNode node = inNode;
+  output InstNode expandedNode = node;
   output InstanceTree tree = inTree;
 algorithm
   _ := match definition
@@ -325,25 +313,26 @@ algorithm
     case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ty))
       algorithm
         // Derived classes have no scope of their own.
-        tree := InstanceTree.setCurrentScope(tree, InstNode.parent(node));
+        tree := InstanceTree.setCurrentScope(tree, InstNode.parent(expandedNode));
 
         // Lookup and expand the derived class.
         Absyn.TPATH(path = ty_path) := ty;
-        (node, tree) := Lookup.lookupName(ty_path, tree);
-        (node, tree) := expand(node, tree);
+        (expandedNode, tree) := Lookup.lookupName(ty_path, tree);
+        (expandedNode, tree) := expand(expandedNode, tree);
 
-        node := InstNode.setIndex(node, InstNode.index(inNode));
-        tree := InstanceTree.updateNode(node, tree);
+        expandedNode := InstNode.setIndex(expandedNode, InstNode.index(node));
+        tree := InstanceTree.updateNode(expandedNode, tree);
       then
         ();
 
     case SCode.CLASS(classDef = SCode.PARTS())
       algorithm
-        InstNode.INST_NODE(instance = Instance.PARTIAL_CLASS(classes = scope, elements = elements)) := node;
-        tree := InstanceTree.setCurrentScope(tree, InstNode.index(node));
+        Instance.PARTIAL_CLASS(classes = scope, elements = elements) :=
+          InstNode.instance(expandedNode);
+        tree := InstanceTree.setCurrentScope(tree, InstNode.index(expandedNode));
         i := Instance.initExpandedClass(scope);
-        node := InstNode.setInstance(node, i);
-        tree := InstanceTree.updateNode(node, tree);
+        expandedNode := InstNode.setInstance(expandedNode, i);
+        tree := InstanceTree.updateNode(expandedNode, tree);
 
         // Expand all extends clauses.
         (components, scope, tree) := expandExtends(elements, scope, tree);
@@ -357,8 +346,8 @@ algorithm
 
         // Add the components to the instance.
         i := Instance.setComponents(listArray(components), i);
-        node := InstNode.setInstance(node, i);
-        tree := InstanceTree.updateNode(node, tree);
+        expandedNode := InstNode.setInstance(expandedNode, i);
+        tree := InstanceTree.updateNode(expandedNode, tree);
       then
         ();
 
@@ -368,15 +357,13 @@ end expandClass2;
 
 function expandExtends
   input list<SCode.Element> elements;
-  input ClassTree.Tree inScope;
-  input InstanceTree inTree;
-  output list<Component> components = {};
-  output ClassTree.Tree scope = inScope;
-  output InstanceTree tree = inTree;
+        output list<Component> components = {};
+  input output ClassTree.Tree scope;
+  input output InstanceTree tree;
 protected
   InstNode ext_inst;
   list<SCode.Element> ext_comps;
-  Integer scope_id = InstanceTree.currentScopeIndex(inTree);
+  Integer scope_id = InstanceTree.currentScopeIndex(tree);
 algorithm
   for e in elements loop
     _ := match e
@@ -409,10 +396,8 @@ end expandExtends;
 
 function mergeInheritedElements
   input Instance extClass;
-  input ClassTree.Tree inScope;
-  input list<Component> inComponents;
-  output ClassTree.Tree scope;
-  output list<Component> components = inComponents;
+  input output ClassTree.Tree scope;
+  input output list<Component> components;
 algorithm
   (scope, components) := match extClass
     local
@@ -421,7 +406,7 @@ algorithm
     case Instance.EXPANDED_CLASS()
       algorithm
         // Copy the classes from the derived class into the deriving class' scope.
-        scope := ClassTree.fold(extClass.classes, mergeInheritedElements2, inScope);
+        scope := ClassTree.fold(extClass.classes, mergeInheritedElements2, scope);
 
         // Add the components from the derived class to the list of components.
         for c in extClass.components loop
@@ -446,10 +431,9 @@ algorithm
 end mergeInheritedElements2;
 
 function instClass
-  input InstNode inNode;
-  input InstanceTree inTree;
-  output InstNode node = inNode;
-  output InstanceTree tree = inTree;
+  input output InstNode node;
+  input Modifier modifier;
+  input output InstanceTree tree;
 algorithm
   _ := match node
     local
@@ -457,20 +441,22 @@ algorithm
       array<Component> components;
       ClassTree.Tree scope;
       Integer comp_count, idx;
+      Modifier comp_mod;
 
     case InstNode.INST_NODE(instance = i as Instance.EXPANDED_CLASS(classes = scope))
       algorithm
         comp_count := arrayLength(i.components);
 
         if comp_count > 0 then
-          tree := InstanceTree.setCurrentScope(tree, InstNode.index(inNode));
+          tree := InstanceTree.setCurrentScope(tree, InstNode.index(node));
 
           components := Dangerous.arrayCreateNoInit(comp_count,
             Dangerous.arrayGetNoBoundsChecking(i.components, 1));
 
           idx := 1;
           for c in i.components loop
-            (c, tree) := instComponent(c, tree);
+            comp_mod := Modifier.lookupSub(modifier, Component.name(c));
+            (c, tree) := instComponent(c, comp_mod, tree);
             Dangerous.arrayUpdateNoBoundsChecking(components, idx, c);
             idx := idx + 1;
           end for;
@@ -487,24 +473,24 @@ algorithm
 end instClass;
 
 function instComponent
-  input Component inComponent;
-  input InstanceTree inTree;
-  output Component component;
-  output InstanceTree tree = inTree;
+  input output Component component;
+  input Modifier modifier;
+  input output InstanceTree tree;
 protected
   SCode.Element comp;
   InstNode cls;
-  Modifier mod;
+  Modifier comp_mod;
   Binding binding;
   DAE.Type ty;
 algorithm
-  (component, tree) := match inComponent
+  (component, tree) := match component
     case Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT())
       algorithm
-        tree := InstanceTree.setCurrentScope(tree, inComponent.scope);
-        mod := Modifier.translate(comp.modifications, comp.name);
-        binding := Modifier.binding(mod);
-        (cls, tree) := instTypeSpec(comp.typeSpec, tree);
+        tree := InstanceTree.setCurrentScope(tree, component.scope);
+        comp_mod := Modifier.translate(comp.modifications, comp.name);
+        comp_mod := Modifier.merge(modifier, comp_mod);
+        binding := Modifier.binding(comp_mod);
+        (tree, cls) := instTypeSpec(comp.typeSpec, comp_mod, tree);
         ty := makeType(cls);
       then
         (Component.COMPONENT(comp.name, cls, ty, binding), tree);
@@ -512,18 +498,18 @@ algorithm
 end instComponent;
 
 function instTypeSpec
-  input Absyn.TypeSpec inTypeSpec;
-  input InstanceTree inTree;
-  output InstNode outNode;
-  output InstanceTree outTree = inTree;
+  input Absyn.TypeSpec typeSpec;
+  input Modifier modifier;
+  input output InstanceTree tree;
+        output InstNode node;
 algorithm
-  (outNode, outTree) := match inTypeSpec
+  (node, tree) := match typeSpec
     case Absyn.TPATH()
       algorithm
-        (outNode, outTree) := Lookup.lookupName(inTypeSpec.path, outTree);
-        (outNode, outTree) := instantiate(outNode, outTree);
+        (node, tree) := Lookup.lookupName(typeSpec.path, tree);
+        (node, tree) := instantiate(node, modifier, tree);
       then
-        (outNode, outTree);
+        (node, tree);
 
     case Absyn.TCOMPLEX()
       algorithm
@@ -557,10 +543,8 @@ algorithm
 end makeType;
 
 function instBindings
-  input InstNode inNode;
-  input InstanceTree inTree;
-  output InstNode node = inNode;
-  output InstanceTree tree = inTree;
+  input output InstNode node;
+  input output InstanceTree tree;
 algorithm
   _ := match node
     local
@@ -582,10 +566,8 @@ algorithm
 end instBindings;
 
 function instComponentBinding
-  input Component inComponent;
-  input InstanceTree inTree;
-  output Component component = inComponent;
-  output InstanceTree tree = inTree;
+  input output Component component;
+  input output InstanceTree tree;
 algorithm
   _ := match component
     local
@@ -605,10 +587,8 @@ algorithm
 end instComponentBinding;
 
 function instBinding
-  input Binding inBinding;
-  input InstanceTree inTree;
-  output Binding binding = inBinding;
-  output InstanceTree tree = inTree;
+  input output Binding binding;
+  input output InstanceTree tree;
 algorithm
   binding := match binding
     local
@@ -620,7 +600,7 @@ algorithm
       then
         Binding.UNTYPED_BINDING(bind_exp, false, 0, binding.info);
 
-    else inBinding;
+    else binding;
   end match;
 end instBinding;
 
