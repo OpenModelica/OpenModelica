@@ -1,6 +1,6 @@
 static inline void *mmc_mk_box0(unsigned int ctor)
 {
-  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(1);
+  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words_atomic(1);
   p->header = MMC_STRUCTHDR(0, ctor);
   return MMC_TAGPTR(p);
 }
