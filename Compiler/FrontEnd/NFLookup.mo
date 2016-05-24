@@ -36,6 +36,7 @@ encapsulated package NFLookup
 "
 
 import Absyn;
+import Error;
 import Inst = NFInst;
 import NFInstance.ClassTree;
 import NFInstance.Instance;
@@ -52,24 +53,62 @@ constant NFInst.InstNode BOOL_TYPE = NFInstNode.INST_NODE("Boolean",
 constant NFInst.InstNode STRING_TYPE = NFInstNode.INST_NODE("String",
   SOME(NFBuiltin.BUILTIN_STRING), NFInstance.PARTIAL_BUILTIN(), 0, 0);
 
+function lookupClassName
+  input Absyn.Path name;
+        output InstNode instance;
+  input output InstanceTree tree;
+  input SourceInfo info;
+algorithm
+  (instance, tree) := lookupName(name, tree, info, Error.LOOKUP_ERROR);
+end lookupClassName;
+
+function lookupBaseClassName
+  input Absyn.Path name;
+        output InstNode instance;
+  input output InstanceTree tree;
+  input SourceInfo info;
+algorithm
+  (instance, tree) := lookupName(name, tree, info, Error.LOOKUP_BASECLASS_ERROR);
+end lookupBaseClassName;
+
+function lookupVariableName
+  input Absyn.Path name;
+        output InstNode instance;
+  input output InstanceTree tree;
+  input SourceInfo info;
+algorithm
+  (instance, tree) := lookupName(name, tree, info, Error.LOOKUP_VARIABLE_ERROR);
+end lookupVariableName;
+
+function lookupFunctionName
+  input Absyn.Path name;
+        output InstNode instance;
+  input output InstanceTree tree;
+  input SourceInfo info;
+algorithm
+  (instance, tree) := lookupName(name, tree, info, Error.LOOKUP_FUNCTION_ERROR);
+end lookupFunctionName;
+
+protected
+
 function lookupSimpleName
-  input String inName;
-  input InstanceTree inTree;
-  output InstNode outInstance;
+  input String name;
+  input InstanceTree tree;
+  output InstNode instance;
 protected
   InstNode scope;
   InstVector.Vector iv;
   ClassTree.Tree scope_tree;
   Integer scope_idx, idx;
 algorithm
-  InstanceTree.INST_TREE(currentScope = scope_idx, instances = iv) := inTree;
+  InstanceTree.INST_TREE(currentScope = scope_idx, instances = iv) := tree;
 
   while scope_idx <> NFInstanceTree.NO_SCOPE loop
     scope := InstVector.get(iv, scope_idx);
 
     try
-      idx := Instance.lookupClassId(inName, InstNode.instance(scope));
-      outInstance := InstVector.get(iv, idx);
+      idx := Instance.lookupClassId(name, InstNode.instance(scope));
+      instance := InstVector.get(iv, idx);
       return;
     else
       scope_idx := InstNode.parent(scope);
@@ -80,92 +119,91 @@ algorithm
 end lookupSimpleName;
 
 function lookupName
-  input Absyn.Path inName;
-  input InstanceTree inTree;
-  output InstNode outInstance;
-  output InstanceTree outTree;
+  input Absyn.Path name;
+        output InstNode instance;
+  input output InstanceTree tree;
+  input SourceInfo info;
+  input Error.Message errorType;
 algorithm
-  (outInstance, outTree) := matchcontinue inName
+  (instance, tree) := matchcontinue name
     local
-      InstanceTree tree;
       InstNode i;
 
     case Absyn.IDENT()
-      then (lookupSimpleBuiltinName(inName.name), inTree);
+      then (lookupSimpleBuiltinName(name.name), tree);
 
     case Absyn.IDENT()
-      then (lookupSimpleName(inName.name, inTree), inTree);
+      then (lookupSimpleName(name.name, tree), tree);
 
     // Qualified name, look up first part, expand it, and look up the rest of
     // the name in the expanded instance.
     case Absyn.QUALIFIED()
       algorithm
-        i := lookupSimpleName(inName.name, inTree);
-        (i, tree) := Inst.expand(i, inTree);
+        i := lookupSimpleName(name.name, tree);
+        (i, tree) := Inst.expand(i, tree);
       then
-        lookupLocalName(inName.path, tree);
+        lookupLocalName(name.path, tree);
 
     // Fully qualified path, start from top scope.
     case Absyn.FULLYQUALIFIED()
       algorithm
-        tree := InstanceTree.setCurrentScope(inTree, NFInstanceTree.TOP_SCOPE);
+        tree := InstanceTree.setCurrentScope(tree, NFInstanceTree.TOP_SCOPE);
       then
-        lookupName(inName.path, tree);
+        lookupName(name.path, tree, info, errorType);
 
     else
       algorithm
-        print(Absyn.pathString(inName) + " could not be found.\n");
+        Error.addSourceMessage(errorType, {Absyn.pathString(name), "<unknown>"}, info);
       then
         fail();
+
   end matchcontinue;
 end lookupName;
 
 function lookupLocalSimpleName
-  input String inName;
-  input InstanceTree inTree;
-  output InstNode outInstance;
+  input String name;
+  input InstanceTree tree;
+  output InstNode instance;
 protected
   ClassTree.Tree scope_tree;
   InstVector.Vector iv;
   Integer idx;
 algorithm
   // Look up the current scope.
-  InstanceTree.INST_TREE(currentScope = idx, instances = iv) := inTree;
-  outInstance := InstVector.get(iv, idx);
+  InstanceTree.INST_TREE(currentScope = idx, instances = iv) := tree;
+  instance := InstVector.get(iv, idx);
   // Look up the name in that scope.
-  idx := Instance.lookupClassId(inName, InstNode.instance(outInstance));
-  outInstance := InstVector.get(iv, idx);
+  idx := Instance.lookupClassId(name, InstNode.instance(instance));
+  instance := InstVector.get(iv, idx);
 end lookupLocalSimpleName;
 
 function lookupLocalName
-  input Absyn.Path inName;
-  input InstanceTree inTree;
-  output InstNode outInstance;
-  output InstanceTree outTree;
+  input Absyn.Path name;
+        output InstNode instance;
+  input output InstanceTree tree;
 algorithm
-  (outInstance, outTree) := match inName
+  (instance, tree) := match name
     local
       InstNode i;
-      InstanceTree tree;
 
     case Absyn.IDENT()
-      then (lookupLocalSimpleName(inName.name, inTree), inTree);
+      then (lookupLocalSimpleName(name.name, tree), tree);
 
     case Absyn.QUALIFIED()
       algorithm
-        i := lookupLocalSimpleName(inName.name, inTree);
-        (i, tree) := Inst.expand(i, inTree);
+        i := lookupLocalSimpleName(name.name, tree);
+        (i, tree) := Inst.expand(i, tree);
       then
-        lookupLocalName(inName.path, tree);
+        lookupLocalName(name.path, tree);
 
   end match;
 end lookupLocalName;
 
 function lookupSimpleBuiltinName
-  input String inName;
-  output InstNode outBuiltin;
+  input String name;
+  output InstNode builtin;
 algorithm
-  outBuiltin := match inName
+  builtin := match name
     case "Real" then REAL_TYPE;
     case "Integer" then INT_TYPE;
     case "Boolean" then BOOL_TYPE;

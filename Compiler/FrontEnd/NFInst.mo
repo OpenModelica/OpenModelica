@@ -71,7 +71,7 @@ algorithm
   System.startTimer();
   inst_tree := makeTree(program);
 
-  (cls, inst_tree) := Lookup.lookupName(classPath, inst_tree);
+  (cls, inst_tree) := Lookup.lookupClassName(classPath, inst_tree, Absyn.dummyInfo);
   (cls, inst_tree) := instantiate(cls, Modifier.NOMOD(), inst_tree);
 
   (cls, inst_tree) := instBindings(cls, inst_tree);
@@ -197,6 +197,7 @@ protected
   Absyn.Import i;
   Integer scope_idx;
   InstNode node;
+  SourceInfo info;
 algorithm
   if listEmpty(imports) then
     return;
@@ -205,12 +206,12 @@ algorithm
   scope_idx := InstanceTree.currentScopeIndex(tree);
 
   for imp in imports loop
-    SCode.IMPORT(imp = i) := imp;
+    SCode.IMPORT(imp = i, info = info) := imp;
 
     _ := match i
       case Absyn.NAMED_IMPORT()
         algorithm
-          (node, tree) := Lookup.lookupName(Absyn.FULLYQUALIFIED(i.path), tree);
+          (node, tree) := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), tree, info);
           scope := ClassTree.add(scope, i.name,
             ElementId.CLASS_ID(InstNode.index(node)));
         then
@@ -218,7 +219,7 @@ algorithm
 
       case Absyn.QUAL_IMPORT()
         algorithm
-          (node, tree) := Lookup.lookupName(Absyn.FULLYQUALIFIED(i.path), tree);
+          (node, tree) := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), tree, info);
           scope := ClassTree.add(scope, Absyn.pathLastIdent(i.path),
             ElementId.CLASS_ID(InstNode.index(node)));
         then
@@ -320,7 +321,7 @@ algorithm
 
         // Lookup and expand the derived class.
         Absyn.TPATH(path = ty_path) := ty;
-        (expandedNode, tree) := Lookup.lookupName(ty_path, tree);
+        (expandedNode, tree) := Lookup.lookupClassName(ty_path, tree, definition.info);
         (expandedNode, tree) := expand(expandedNode, tree);
 
         // Process the modifier from the class.
@@ -394,7 +395,7 @@ algorithm
       case SCode.EXTENDS()
         algorithm
           // Look up the name and expand the class.
-          (ext_node, tree) := Lookup.lookupName(e.baseClassPath, tree);
+          (ext_node, tree) := Lookup.lookupBaseClassName(e.baseClassPath, tree, e.info);
           (ext_node, tree) := expand(ext_node, tree);
 
           // Initialize the modifier from the extends clause.
@@ -585,7 +586,7 @@ algorithm
         comp_mod := Modifier.merge(component.modifier, comp_mod);
         //comp_mod := Modifier.merge(modifier, comp_mod);
         binding := Modifier.binding(comp_mod);
-        (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, tree);
+        (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, comp.info, tree);
         ty := makeType(cls);
       then
         (Component.COMPONENT(comp.name, cls, ty, binding), tree);
@@ -595,13 +596,14 @@ end instComponent;
 function instTypeSpec
   input Absyn.TypeSpec typeSpec;
   input Modifier modifier;
+  input SourceInfo info;
         output InstNode node;
   input output InstanceTree tree;
 algorithm
   (node, tree) := match typeSpec
     case Absyn.TPATH()
       algorithm
-        (node, tree) := Lookup.lookupName(typeSpec.path, tree);
+        (node, tree) := Lookup.lookupClassName(typeSpec.path, tree, info);
         (node, tree) := instantiate(node, modifier, tree);
       then
         (node, tree);
