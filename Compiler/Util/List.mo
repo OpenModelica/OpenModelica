@@ -436,7 +436,7 @@ algorithm
           l::ll := ll;
         end while;
         ol := listAppend(l, inList) :: ol;
-        outListList := listReverseInPlace(ol);
+        ol := listReverseInPlace(ol);
       then ol;
 
   end match;
@@ -1583,8 +1583,6 @@ protected function addPos
   input array<Integer> inArray;
   input Integer inIndex;
   output array<Integer> outArray;
-protected
-  Integer len = arrayLength(inArray);
 algorithm
   for i in inList loop
     _ := arrayUpdate(inArray, i, intAdd(arrayGet(inArray, i), inIndex));
@@ -1908,7 +1906,7 @@ public function mapCheckReferenceEq<TI>
    to each element of the list."
   input list<TI> inList;
   input MapFunc inFunc;
-  output list<TI> outList={};
+  output list<TI> outList;
 
   partial function MapFunc
     input TI inElement;
@@ -6019,7 +6017,7 @@ public function replaceAt<T>
   input T inElement;
   input Integer inPosition "one-based index" ;
   input list<T> inList;
-  output list<T> outList = {};
+  output list<T> outList;
 protected
   T e;
   list<T> rest = inList;
@@ -6648,7 +6646,7 @@ public function combination<TI>
       {{1, 3, 4}, {1, 3, 5}, {2, 3, 4}, {2, 3, 5}}
   "
   input list<list<TI>> inElements;
-  output list<list<TI>> outElements = {};
+  output list<list<TI>> outElements;
 protected
   list<list<TI>> elems;
 algorithm
@@ -6691,7 +6689,7 @@ public function combinationMap<TI, TO>
   "
   input list<list<TI>> inElements;
   input MapFunc inMapFunc;
-  output list<TO> outElements = {};
+  output list<TO> outElements;
 
   partial function MapFunc
     input list<TI> inElements;

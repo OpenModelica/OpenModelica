@@ -7849,7 +7849,7 @@ algorithm
   BackendDAE.DAE(systs, shared) := dae;
   extra := List.fold1(systs,func,shared,initialExtra);
   // Filter out empty systems
-  (systs, shared) := filterEmptySystems(systs, shared);
+  (_, shared) := filterEmptySystems(systs, shared);
 end foldEqSystem;
 
 public function mapEqSystem

@@ -420,7 +420,7 @@ protected
   HashTableExpToIndex.HashTable ht;
 algorithm
   ht := HashTableExpToIndex.emptyHashTable();
-  (outDAE, outTree, (_, (ht, _, _, outTimeEvents))) := DAEUtil.traverseDAE(inDAE, functionTree, Expression.traverseSubexpressionsHelper, (transformBuiltinExpression, (ht, 0, 0, {})));
+  (outDAE, outTree, (_, (_, _, _, outTimeEvents))) := DAEUtil.traverseDAE(inDAE, functionTree, Expression.traverseSubexpressionsHelper, (transformBuiltinExpression, (ht, 0, 0, {})));
 end processBuiltinExpressions;
 
 protected function transformBuiltinExpression "author: lochel
@@ -1701,7 +1701,7 @@ protected function lowerWhenEqn
   output list<BackendDAE.Equation> outEquationLst;
   output list<BackendDAE.Equation> outREquationLst;
 protected
-  Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
+  //Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
 algorithm
   (outEquationLst, outREquationLst):= matchcontinue inElement
     local
@@ -1716,7 +1716,7 @@ algorithm
 
     case DAE.WHEN_EQUATION(condition = cond, equations = eqnl, elsewhen_ = NONE(), source = source)
       equation
-        (DAE.PARTIAL_EQUATION(cond), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(cond),source);
+        (DAE.PARTIAL_EQUATION(cond), _) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(cond),source);
         (res, rEqns) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
         res = mergeWhenEqns(inEquationLst, res, {});
         rEqns = mergeWhenEqns(inREquationLst, rEqns, {});
@@ -1726,7 +1726,7 @@ algorithm
 
     case DAE.WHEN_EQUATION(condition = cond, equations = eqnl, elsewhen_ = SOME(elsePart), source = source)
       equation
-        (DAE.PARTIAL_EQUATION(cond), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(cond),source);
+        (DAE.PARTIAL_EQUATION(cond), _) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(cond),source);
         (trueEqnLst, trueREqns) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
         res = mergeWhenEqns(inEquationLst, trueEqnLst, {});
         rEqns = mergeWhenEqns(inREquationLst, trueREqns, {});
@@ -1755,7 +1755,7 @@ protected function lowerWhenEqn2
   output list<BackendDAE.Equation> outEquationLst;
   output list<BackendDAE.Equation> outREquationLst;
 protected
-  Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
+  //Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
 algorithm
   (outEquationLst, outREquationLst) := matchcontinue inDAEElementLst
     local

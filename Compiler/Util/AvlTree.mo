@@ -716,7 +716,7 @@ protected
   Val val;
   Integer hl,hr,height;
 algorithm
-  NODE(item = i as ITEM(val = val), left = l, right = r) := inNode;
+  NODE(item = i as ITEM(), left = l, right = r) := inNode;
   hl := getHeight(l);
   hr := getHeight(r);
   height := intMax(hl, hr) + 1;
