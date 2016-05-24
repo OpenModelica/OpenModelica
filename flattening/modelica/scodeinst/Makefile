@@ -7,6 +7,7 @@ conn1.mo \
 conn2.mo \
 const3.mo \
 DuplicateMod1.mo \
+DuplicateMod2.mo \
 DuplicateMod3.mo \
 ImportNamed1.mo \
 ImportNamed2.mo \
@@ -38,7 +39,6 @@ conn5.mo \
 conn8.mo \
 const1.mo \
 const2.mo \
-const3.mo \
 const4.mo \
 const5.mo \
 const7.mo \
@@ -60,7 +60,6 @@ dim14.mo \
 dim16.mo \
 dim18.mo \
 dim1.mo \
-DuplicateMod2.mo \
 DuplicateMod4.mo \
 DuplicateMod5.mo \
 enum1.mo \
