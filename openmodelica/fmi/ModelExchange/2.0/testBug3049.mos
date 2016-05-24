@@ -89,8 +89,6 @@ readFile("modelDescription.tmp.xml");
 //     </Outputs>
 //     <Derivatives>
 //     </Derivatives>
-//     <InitialUnknowns>
-//     </InitialUnknowns>
 //   </ModelStructure>
 // </fmiModelDescription>
 // "

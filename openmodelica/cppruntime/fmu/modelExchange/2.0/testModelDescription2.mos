@@ -2467,8 +2467,6 @@ readFile("modelDescription.tmp.xml");
 //       <Unknown index=\"5\" dependencies=\"1 2 3 27 55\" dependenciesKind=\"dependent dependent dependent dependent dependent\" />
 //       <Unknown index=\"6\" dependencies=\"1 2 3 27 55\" dependenciesKind=\"dependent dependent dependent dependent dependent\" />
 //     </Derivatives>
-//     <InitialUnknowns>
-//     </InitialUnknowns>
 //   </ModelStructure>
 // </fmiModelDescription>
 // "

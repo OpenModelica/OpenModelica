@@ -148,8 +148,6 @@ readFile("modelDescription.tmp.xml");
 //     <DiscreteStates>
 //       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
 //     </DiscreteStates>
-//     <InitialUnknowns>
-//     </InitialUnknowns>
 //   </ModelStructure>
 // </fmiModelDescription>
 // "
