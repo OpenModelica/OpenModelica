@@ -35,10 +35,12 @@ import SCode.Element;
 import DAE.Type;
 import NFInstNode.InstNode;
 import NFBinding.Binding;
+import NFMod.Modifier;
 
 uniontype Component
   record COMPONENT_DEF
     Element definition;
+    Modifier modifier;
     Integer scope;
   end COMPONENT_DEF;
 
@@ -58,6 +60,19 @@ uniontype Component
       case COMPONENT() then component.name;
     end match;
   end name;
+
+  function setModifier
+    input Modifier modifier;
+    input output Component component;
+  algorithm
+    _ := match component
+      case COMPONENT_DEF()
+        algorithm
+          component.modifier := modifier;
+        then
+          ();
+    end match;
+  end setModifier;
 end Component;
 
 annotation(__OpenModelica_Interface="frontend");

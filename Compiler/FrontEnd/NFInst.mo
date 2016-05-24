@@ -49,6 +49,7 @@ import NFInstance.Instance;
 import NFInstanceTree.InstanceTree;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
+import NFMod.ModifierScope;
 
 protected
 import Error;
@@ -322,15 +323,14 @@ algorithm
         (expandedNode, tree) := Lookup.lookupName(ty_path, tree);
         (expandedNode, tree) := expand(expandedNode, tree);
 
-        // Translate the modifier on the class.
-        mod := Modifier.create(der_mod, definition.name, scope_id);
-        // Merge the modifier with any modifier from the derived class.
-        mod := Modifier.merge(mod, Instance.modifier(InstNode.instance(expandedNode)));
+        // Process the modifier from the class.
+        mod := Modifier.create(der_mod, definition.name,
+          ModifierScope.CLASS_SCOPE(definition.name), scope_id);
 
         // If we have a modifier, add it to the expanded instance.
         if not Modifier.isEmpty(mod) then
           expandedNode := InstNode.setInstance(expandedNode,
-            Instance.setModifier(mod, InstNode.instance(expandedNode)));
+            applyModifier(mod, InstNode.instance(expandedNode)));
         end if;
 
         // Update the expanded instance in the instance tree.
@@ -358,6 +358,8 @@ algorithm
           idx := idx + 1;
         end for;
 
+        i := Instance.setElements(scope, i);
+
         // Add the components to the instance.
         i := Instance.setComponents(listArray(components), i);
         expandedNode := InstNode.setInstance(expandedNode, i);
@@ -370,31 +372,49 @@ algorithm
 end expandClass2;
 
 function expandExtends
+  "This function takes a list of SCode elements and expands all the extends
+   clauses. This means expanding the extended classes and inserting their
+   contents into the scope and element list, as well as applying any modifiers
+   from the extends clause to the inherited elements. The result is a list of
+   components, both local and inherited, as well as a scope filled with local
+   and inherited components and classes."
   input list<SCode.Element> elements;
         output list<Component> components = {};
   input output ClassTree.Tree scope;
   input output InstanceTree tree;
 protected
-  InstNode ext_inst;
+  InstNode ext_node;
   list<SCode.Element> ext_comps;
   Integer scope_id = InstanceTree.currentScopeIndex(tree);
+  Modifier mod;
+  Instance ext_inst;
 algorithm
   for e in elements loop
     _ := match e
       case SCode.EXTENDS()
         algorithm
-          // Look up the name and instantiate the class.
-          (ext_inst, tree) := Lookup.lookupName(e.baseClassPath, tree);
-          (ext_inst, tree) := expand(ext_inst, tree);
-          // Add the contents of the inherited class to the extending class.
-          (scope, components) := mergeInheritedElements(InstNode.instance(ext_inst), scope, components);
+          // Look up the name and expand the class.
+          (ext_node, tree) := Lookup.lookupName(e.baseClassPath, tree);
+          (ext_node, tree) := expand(ext_node, tree);
+
+          // Initialize the modifier from the extends clause.
+          mod := Modifier.create(e.modifications, "",
+            ModifierScope.EXTENDS_SCOPE(e.baseClassPath), InstNode.index(ext_node));
+
+          // Apply the modifier to the expanded instance of the extended class.
+          ext_inst := InstNode.instance(ext_node);
+          ext_inst := applyModifier(mod, ext_inst);
+
+          // Add the inherited elements to the extending class.
+          (scope, components) := mergeInheritedElements(InstNode.instance(ext_node),
+            e.modifications, scope, components);
         then
           ();
 
       case SCode.COMPONENT()
         algorithm
           // Make a class element and add it to the list of components.
-          components := Component.COMPONENT_DEF(e, scope_id) :: components;
+          components := Component.COMPONENT_DEF(e, Modifier.NOMOD(), scope_id) :: components;
         then
           ();
 
@@ -408,21 +428,71 @@ algorithm
   end for;
 end expandExtends;
 
+function applyModifier
+  input Modifier modifier;
+  input output Instance instance;
+algorithm
+  _ := match instance
+    local
+      list<Modifier> mods;
+      ClassTree.Tree elements;
+      array<Component> components;
+      ElementId idx;
+
+    case Instance.EXPANDED_CLASS(elements = elements, components = components)
+      algorithm
+        mods := Modifier.toList(modifier);
+
+        for m in mods loop
+          // Skip empty modifiers.
+          if Modifier.isEmpty(m) then
+            continue;
+          end if;
+
+          // Fetch the element id for the element with the same name as the modifier.
+          idx :=  ClassTree.get(elements, Modifier.name(m));
+
+          _ := match idx
+            // Modifier is for a component, add it to the component in the array.
+            case ElementId.COMPONENT_ID()
+              algorithm
+                arrayUpdate(components, idx.id,
+                  Component.setModifier(m, arrayGet(components, idx.id)));
+              then
+                ();
+
+            case ElementId.CLASS_ID()
+              algorithm
+                print("IMPLEMENT ME: Class modifier.\n");
+              then
+                ();
+
+          end match;
+        end for;
+      then
+        ();
+  end match;
+end applyModifier;
+
 function mergeInheritedElements
   input Instance extClass;
+  input SCode.Mod modifier;
   input output ClassTree.Tree scope;
   input output list<Component> components;
 algorithm
   (scope, components) := match extClass
     local
       String name;
+      Modifier mod;
 
     case Instance.EXPANDED_CLASS()
       algorithm
         // Copy the classes from the derived class into the deriving class' scope.
-        scope := ClassTree.fold(extClass.classes, mergeInheritedElements2, scope);
+        scope := ClassTree.fold(extClass.elements, mergeInheritedElements2, scope);
 
-        // Add the components from the derived class to the list of components.
+
+        // Components are not added to the scope yet since they need to be
+        // given a unique array index, so just collect them for later.
         components := listAppend(arrayList(extClass.components), components);
       then
         (scope, components);
@@ -449,13 +519,13 @@ function instClass
 algorithm
   _ := match node
     local
-      Instance i;
+      Instance i, i_mod;
       array<Component> components;
       ClassTree.Tree scope;
       Integer comp_count, idx;
-      Modifier comp_mod, class_mod;
+      Modifier comp_mod;
 
-    case InstNode.INST_NODE(instance = i as Instance.EXPANDED_CLASS(classes = scope))
+    case InstNode.INST_NODE(instance = i as Instance.EXPANDED_CLASS(elements = scope))
       algorithm
         comp_count := arrayLength(i.components);
 
@@ -465,12 +535,10 @@ algorithm
           components := Dangerous.arrayCreateNoInit(comp_count,
             Dangerous.arrayGetNoBoundsChecking(i.components, 1));
 
-          class_mod := Modifier.merge(modifier, i.classMod);
-
+          i_mod := applyModifier(modifier, i);
           idx := 1;
-          for c in i.components loop
-            comp_mod := Modifier.lookupModifier(Component.name(c), class_mod);
-            (c, tree) := instComponent(c, comp_mod, tree);
+          for c in Instance.components(i_mod) loop
+            (c, tree) := instComponent(c, tree);
             Dangerous.arrayUpdateNoBoundsChecking(components, idx, c);
             idx := idx + 1;
           end for;
@@ -488,7 +556,6 @@ end instClass;
 
 function instComponent
   input output Component component;
-  input Modifier modifier;
   input output InstanceTree tree;
 protected
   SCode.Element comp;
@@ -497,24 +564,26 @@ protected
   Binding binding;
   DAE.Type ty;
 algorithm
-  (component, tree) := match (component, modifier)
-    case (Component.COMPONENT_DEF(),
-          Modifier.REDECLARE(element = comp as SCode.COMPONENT()))
-      algorithm
-        tree := InstanceTree.setCurrentScope(tree, modifier.scope); // redeclare scope
-        comp_mod := Modifier.create(comp.modifications, comp.name, modifier.scope);
-        comp_mod := Modifier.merge(modifier, comp_mod);
-        binding := Modifier.binding(comp_mod);
-        (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, tree);
-        ty := makeType(cls);
-      then
-        (Component.COMPONENT(comp.name, cls, ty, binding), tree);
+  (component, tree) := match component
+    //case (Component.COMPONENT_DEF(),
+    //      Modifier.REDECLARE(element = comp as SCode.COMPONENT()))
+    //  algorithm
+    //    tree := InstanceTree.setCurrentScope(tree, modifier.scope); // redeclare scope
+    //    comp_mod := Modifier.create(comp.modifications, comp.name, modifier.scope);
+    //    comp_mod := Modifier.merge(modifier, comp_mod);
+    //    binding := Modifier.binding(comp_mod);
+    //    (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, tree);
+    //    ty := makeType(cls);
+    //  then
+    //    (Component.COMPONENT(comp.name, cls, ty, binding), tree);
 
-    case (Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT()), _)
+    case Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT())
       algorithm
         tree := InstanceTree.setCurrentScope(tree, component.scope);
-        comp_mod := Modifier.create(comp.modifications, comp.name, component.scope);
-        comp_mod := Modifier.merge(modifier, comp_mod);
+        comp_mod := Modifier.create(comp.modifications, comp.name,
+          ModifierScope.COMPONENT_SCOPE(comp.name), component.scope);
+        comp_mod := Modifier.merge(component.modifier, comp_mod);
+        //comp_mod := Modifier.merge(modifier, comp_mod);
         binding := Modifier.binding(comp_mod);
         (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, tree);
         ty := makeType(cls);

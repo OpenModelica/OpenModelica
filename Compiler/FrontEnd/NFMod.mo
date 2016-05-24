@@ -76,12 +76,37 @@ encapsulated package ModTable
 end ModTable;
 
 public
+uniontype ModifierScope
+  "Structure that represents where a modifier comes from."
+
+  record COMPONENT_SCOPE
+    String name;
+  end COMPONENT_SCOPE;
+
+  record CLASS_SCOPE
+    String name;
+  end CLASS_SCOPE;
+
+  record EXTENDS_SCOPE
+    Absyn.Path path;
+  end EXTENDS_SCOPE;
+
+  function toString
+    input ModifierScope scope;
+    output String string;
+  algorithm
+    string := match scope
+      case COMPONENT_SCOPE() then "component " + scope.name;
+      case CLASS_SCOPE() then "class " + scope.name;
+      case EXTENDS_SCOPE() then "extends " + Absyn.pathString(scope.path);
+    end match;
+  end toString;
+end ModifierScope;
+
 uniontype Modifier
   record MODIFIER
     String name;
     Binding binding;
-    // TODO: AvlTree?
-    //list<Modifier> subModifiers;
     ModTable.Tree subModifiers;
     SourceInfo info;
   end MODIFIER;
@@ -98,7 +123,8 @@ uniontype Modifier
 public
   function create
     input SCode.Mod mod;
-    input String elementName;
+    input String name;
+    input ModifierScope modScope;
     //input Integer dimensions;
     input Integer scope;
     output Modifier newMod;
@@ -115,11 +141,11 @@ public
         algorithm
           binding := Binding.fromAbsyn(mod.binding, mod.finalPrefix,
             mod.eachPrefix, scope, mod.info);
-          submod_lst := list((m.ident, createSubMod(m, scope)) for m in mod.subModLst);
+          submod_lst := list((m.ident, createSubMod(m, scope, modScope)) for m in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
-            function mergeLocal(elementName = elementName, prefix = {}));
+            function mergeLocal(scope = modScope, prefix = {}));
         then
-          MODIFIER(elementName, binding, submod_table, mod.info);
+          MODIFIER(name, binding, submod_table, mod.info);
 
       case SCode.REDECL()
         then REDECLARE(mod.finalPrefix, mod.eachPrefix, mod.element, scope);
@@ -207,6 +233,16 @@ public
     end match;
   end isEmpty;
 
+  function toList
+    input Modifier mod;
+    output list<Modifier> modList;
+  algorithm
+    modList := match mod
+      case MODIFIER() then ModTable.listValues(mod.subModifiers);
+      else {};
+    end match;
+  end toList;
+
   function toString
     input Modifier mod;
     output String string;
@@ -236,7 +272,8 @@ protected
   function createSubMod
     input SCode.SubMod subMod;
     input Integer scope;
-    output Modifier mod = create(subMod.mod, subMod.ident, scope);
+    input ModifierScope modScope;
+    output Modifier mod = create(subMod.mod, subMod.ident, modScope, scope);
   end createSubMod;
 
   function checkFinalOverride
@@ -267,7 +304,7 @@ protected
      element, otherwise it's an error."
     input Modifier mod1;
     input Modifier mod2;
-    input String elementName;
+    input ModifierScope scope;
     input list<String> prefix = {};
     output Modifier mod;
   protected
@@ -278,7 +315,7 @@ protected
       case (MODIFIER(), MODIFIER(binding = Binding.UNBOUND()))
         algorithm
           mod1.subModifiers := ModTable.join(mod1.subModifiers, mod2.subModifiers,
-            function mergeLocal(elementName = elementName, prefix = mod1.name :: prefix));
+            function mergeLocal(scope = scope, prefix = mod1.name :: prefix));
         then
           mod1;
 
@@ -286,7 +323,7 @@ protected
       case (MODIFIER(binding = Binding.UNBOUND()), MODIFIER())
         algorithm
           mod2.subModifiers := ModTable.join(mod2.subModifiers, mod1.subModifiers,
-            function mergeLocal(elementName = elementName, prefix = mod1.name :: prefix));
+            function mergeLocal(scope = scope, prefix = mod1.name :: prefix));
         then
           mod2;
 
@@ -295,7 +332,7 @@ protected
         algorithm
           comp_name := stringDelimitList(listReverse(mod1.name :: prefix), ".");
           Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
-            {comp_name, "component " + elementName}, {mod1.info, mod2.info});
+            {comp_name, ModifierScope.toString(scope)}, {mod1.info, mod2.info});
         then
           fail();
 

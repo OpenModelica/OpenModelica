@@ -73,9 +73,8 @@ uniontype Instance
   end PARTIAL_CLASS;
 
   record EXPANDED_CLASS
-    ClassTree.Tree classes;
+    ClassTree.Tree elements;
     array<Component> components;
-    Modifier classMod;
   end EXPANDED_CLASS;
 
   record INSTANCED_CLASS
@@ -96,8 +95,18 @@ uniontype Instance
     input ClassTree.Tree classes;
     output Instance instance;
   algorithm
-    instance := EXPANDED_CLASS(classes, NO_COMPONENTS, Modifier.NOMOD());
+    instance := EXPANDED_CLASS(classes, NO_COMPONENTS);
   end initExpandedClass;
+
+  function components
+    input Instance instance;
+    output array<Component> components;
+  algorithm
+    components := match instance
+      case EXPANDED_CLASS() then instance.components;
+      case INSTANCED_CLASS() then instance.components;
+    end match;
+  end components;
 
   function setComponents
     input array<Component> components;
@@ -118,29 +127,24 @@ uniontype Instance
     end match;
   end setComponents;
 
-  function setModifier
-    input Modifier modifier;
+  function setElements
+    input ClassTree.Tree elements;
     input output Instance instance;
   algorithm
     _ := match instance
       case EXPANDED_CLASS()
         algorithm
-          instance.classMod := modifier;
+          instance.elements := elements;
         then
           ();
 
-      else ();
+      case INSTANCED_CLASS()
+        algorithm
+          instance.elements := elements;
+        then
+          ();
     end match;
-  end setModifier;
-
-  function modifier
-    input Instance instance;
-    output Modifier modifier;
-  algorithm
-    modifier := match instance
-      case EXPANDED_CLASS() then instance.classMod;
-    end match;
-  end modifier;
+  end setElements;
 
   function lookupClassId
     input String name;
@@ -150,7 +154,7 @@ uniontype Instance
     ClassTree.Tree scope;
   algorithm
     scope := match instance
-      case EXPANDED_CLASS() then instance.classes;
+      case EXPANDED_CLASS() then instance.elements;
       case INSTANCED_CLASS() then instance.elements;
     end match;
 
