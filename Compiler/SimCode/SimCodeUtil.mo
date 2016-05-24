@@ -6747,9 +6747,8 @@ algorithm
   deriv.varKind := BackendDAE.STATE_DER();
   try
     unit := UnitCheck.parseUnitString(deriv.unit);
-    unit := UnitCheck.unitDiv(unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
-    true := Unit.isUnit(unit);
-    deriv.unit := UnitCheck.unit2String(unit);
+    unit := Unit.unitDiv(unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
+    deriv.unit := Unit.unitString(unit);
   else
     deriv.unit := "";
   end try;

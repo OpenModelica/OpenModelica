@@ -32,10 +32,10 @@
 encapsulated package Unit
 " file:        Unit.mo
   package:     Unit
-  description:
+  description: This package defines the type Unit, which represents a unit based
+               on SI base units, and some auxiliary functions therefore.
 
                authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)"
-
 
 public
 import DAE;
@@ -43,13 +43,14 @@ import System;
 
 protected
 import ComponentReference;
+import Error;
 import HashTableStringToUnit;
 import HashTableUnitToString;
 import Util;
 
 
 public uniontype Unit
-  record UNIT
+  record UNIT "based on SI base units"
     Real factor "prefix";
     Integer mol "exponent";
     Integer cd  "exponent";
@@ -65,7 +66,7 @@ public uniontype Unit
     list<DAE.ComponentRef> varList;
   end MASTER;
 
-  record UNKNOWN "unknown unit"
+  record UNKNOWN "unknown SI base unit decomposition"
     String unit;
   end UNKNOWN;
 end Unit;
@@ -154,7 +155,7 @@ public function isUnit
 algorithm
   b := match inUnit
     case UNIT() then true;
-  else false;
+    else false;
   end match;
 end isUnit;
 
@@ -164,10 +165,9 @@ public function hashUnitMod
   output Integer outHash;
 protected
   String str;
-  Integer i;
 algorithm
   str := unit2string(inKey);
-  outHash := System.stringHashDjb2Mod(str,inMod);
+  outHash := System.stringHashDjb2Mod(str, inMod);
 end hashUnitMod;
 
 public function unitEqual
@@ -322,6 +322,245 @@ algorithm
 
   end match;
 end printListCr;
+
+public function unitMul
+  input Unit inUnit1;
+  input Unit inUnit2;
+  output Unit outUnit;
+protected
+  Real factor1, factor2;
+  Integer i1, i2, i3, i4, i5, i6, i7;
+  Integer j1, j2, j3, j4, j5, j6, j7;
+algorithm
+  UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) := inUnit1;
+  UNIT(factor2, j1, j2, j3, j4, j5, j6, j7) := inUnit2;
+  factor1 := factor1 * factor2;
+  i1 := i1+j1;
+  i2 := i2+j2;
+  i3 := i3+j3;
+  i4 := i4+j4;
+  i5 := i5+j5;
+  i6 := i6+j6;
+  i7 := i7+j7;
+  outUnit := UNIT(factor1, i1, i2, i3, i4, i5, i6, i7);
+end unitMul;
+
+public function unitDiv
+  input Unit inUnit1;
+  input Unit inUnit2;
+  output Unit outUnit;
+protected
+  Real factor1, factor2;
+  Integer i1, i2, i3, i4, i5, i6, i7;
+  Integer j1, j2, j3, j4, j5, j6, j7;
+algorithm
+  UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) := inUnit1;
+  UNIT(factor2, j1, j2, j3, j4, j5, j6, j7) := inUnit2;
+  factor1 := factor1 / factor2;
+  i1 := i1-j1;
+  i2 := i2-j2;
+  i3 := i3-j3;
+  i4 := i4-j4;
+  i5 := i5-j5;
+  i6 := i6-j6;
+  i7 := i7-j7;
+  outUnit := UNIT(factor1, i1, i2, i3, i4, i5, i6, i7);
+end unitDiv;
+
+public function unitPow
+  input Unit inUnit;
+  input Integer inExp "exponent";
+  output Unit outUnit;
+algorithm
+  outUnit := match(inUnit)
+    local
+      Unit unit;
+
+    case unit as UNIT() equation
+      unit.factor = realPow(unit.factor, intReal(inExp));
+      unit.mol = unit.mol*inExp;
+      unit.cd = unit.cd*inExp;
+      unit.m = unit.m*inExp;
+      unit.s = unit.s*inExp;
+      unit.A = unit.A*inExp;
+      unit.K = unit.K*inExp;
+      unit.g = unit.g*inExp;
+    then unit;
+
+    else fail();
+  end match;
+end unitPow;
+
+public function unitMulReal
+  input Unit inUnit;
+  input Real inFactor;
+  output Unit outUnit;
+algorithm
+  outUnit := match(inUnit)
+    local
+      Unit unit;
+
+    case unit as UNIT() equation
+      unit.factor = unit.factor * inFactor;
+    then unit;
+
+    else fail();
+  end match;
+end unitMulReal;
+
+public function unitRoot
+  input Unit inUnit;
+  input Real inExponent;
+  output Unit outUnit;
+algorithm
+  outUnit := match(inUnit)
+    local
+      Unit unit;
+      Real r;
+      Integer i;
+
+    case unit as UNIT() equation
+      i = realInt(inExponent);
+      r = realDiv(1.0, inExponent);
+      unit.factor = realPow(unit.factor, r);
+
+        r = intReal(unit.mol);
+        r = realDiv(r, inExponent);
+      unit.mol = intDiv(unit.mol, i);
+      true = realEq(r, intReal(unit.mol));
+
+        r = intReal(unit.cd);
+        r = realDiv(r, inExponent);
+      unit.cd = intDiv(unit.cd, i);
+      true = realEq(r, intReal(unit.cd));
+
+        r = intReal(unit.m);
+        r = realDiv(r, inExponent);
+      unit.m = intDiv(unit.m, i);
+      true = realEq(r, intReal(unit.m));
+
+        r = intReal(unit.s);
+        r = realDiv(r, inExponent);
+      unit.s = intDiv(unit.s, i);
+      true = realEq(r, intReal(unit.s));
+
+        r = intReal(unit.A);
+        r = realDiv(r, inExponent);
+      unit.A = intDiv(unit.A, i);
+      true = realEq(r, intReal(unit.A));
+
+        r = intReal(unit.K);
+        r = realDiv(r, inExponent);
+      unit.K = intDiv(unit.K, i);
+      true = realEq(r, intReal(unit.K));
+
+        r = intReal(unit.g);
+        r = realDiv(r, inExponent);
+      unit.g = intDiv(unit.g, i);
+      true = realEq(r, intReal(unit.g));
+    then unit;
+
+    else fail();
+  end match;
+end unitRoot;
+
+public function unitString "Unit to Modelica unit string"
+  input Unit inUnit;
+  input HashTableUnitToString.HashTable inHtU2S = getKnownUnitsInverse();
+  output String outString;
+algorithm
+  outString := match(inUnit)
+    local
+      String s, s1, s2, s3, s4, s5, s6, s7, sExponent;
+      Boolean b;
+      Unit unit;
+
+    case _ guard BaseHashTable.hasKey(inUnit, inHtU2S) equation
+      s = BaseHashTable.get(inUnit, inHtU2S);
+    then s;
+
+    case unit as Unit.UNIT() equation
+      s = prefix2String(unit.factor);
+
+      s = if realEq(unit.factor, 1.0) then "" else s;
+      b = false;
+      sExponent = if intEq(unit.mol, 1) then "" else intString(unit.mol);
+      s1 = "mol" + sExponent;
+      s1 = if intEq(unit.mol, 0) then "" else s1;
+      b = b or intNe(unit.mol, 0);
+
+      s2 = if b and intNe(unit.cd, 0) then "." else "";
+      sExponent = if intEq(unit.cd, 1) then "" else intString(unit.cd);
+      s2 = s2 + "cd" + sExponent;
+      s2 = if intEq(unit.cd, 0) then "" else s2;
+      b = b or intNe(unit.cd, 0);
+
+      s3 = if b and intNe(unit.m, 0) then "." else "";
+      sExponent = if intEq(unit.m, 1) then "" else intString(unit.m);
+      s3 = s3 + "m" + sExponent;
+      s3 = if intEq(unit.m, 0) then "" else s3;
+      b = b or intNe(unit.m, 0);
+
+      s4 = if b and intNe(unit.s, 0) then "." else "";
+      sExponent = if intEq(unit.s, 1) then "" else intString(unit.s);
+      s4 = s4 + "s" + sExponent;
+      s4 = if intEq(unit.s, 0) then "" else s4;
+      b = b or intNe(unit.s, 0);
+
+      s5 = if b and intNe(unit.A, 0) then "." else "";
+      sExponent = if intEq(unit.A, 1) then "" else intString(unit.A);
+      s5 = s5 + "A" + sExponent;
+      s5 = if intEq(unit.A, 0) then "" else s5;
+      b = b or intNe(unit.A, 0);
+
+      s6 = if b and intNe(unit.K, 0) then "." else "";
+      sExponent = if intEq(unit.K, 1) then "" else intString(unit.K);
+      s6 = s6 + "K" + sExponent;
+      s6 = if intEq(unit.K, 0) then "" else s6;
+      b = b or intNe(unit.K, 0);
+
+      s7 = if b and intNe(unit.g, 0) then "." else "";
+      sExponent = if intEq(unit.g, 1) then "" else intString(unit.g);
+      s7 = s7 + "g" + sExponent;
+      s7 = if intEq(unit.g, 0) then "" else s7;
+      b = b or intNe(unit.g, 0);
+
+      s = if b then s + s1 + s2 + s3 + s4 + s5 + s6 + s7 else "1";
+    then s;
+
+    else equation
+      Error.addCompilerWarning("function Unit.unitString failed for \"" + unit2string(inUnit) +"\".");
+    then fail();
+  end match;
+end unitString;
+
+protected function prefix2String
+  input Real inReal;
+  output String outPrefix;
+algorithm
+  outPrefix := match(inReal)
+    case 1e-24 then "y";
+    case 1e-21 then "z";
+    case 1e-18 then "a";
+    case 1e-15 then "f";
+    case 1e-12 then "p";
+    case 1e-6 then "u";
+    case 1e-3 then "m";
+    case 1e-2 then "c";
+    case 1e-1 then "d";
+    case 1e1 then "da";
+    case 1e2 then "h";
+    case 1e3 then "k";
+    case 1e6 then "M";
+    case 1e9 then "G";
+    case 1e12 then "T";
+    case 1e15 then "P";
+    case 1e18 then "E";
+    case 1e21 then "Z";
+    case 1e24 then "Y";
+    else realString(inReal);
+  end match;
+end prefix2String;
 
 annotation(__OpenModelica_Interface="backend");
 end Unit;

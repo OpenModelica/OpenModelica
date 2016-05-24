@@ -38,26 +38,27 @@ encapsulated package UnitCheck
 
                authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)"
 
+public
+import Absyn;
+import BackendDAE;
+import DAE;
+import Unit;
 
-public import Absyn;
-public import BackendDAE;
-public import DAE;
-public import Unit;
-
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import BackendDAEUtil;
-protected import BaseHashTable;
-protected import ComponentReference;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import Flags;
-protected import HashTableCrToUnit;
-protected import HashTableStringToUnit;
-protected import HashTableUnitToString;
-protected import List;
+protected
+import BackendDump;
+import BackendEquation;
+import BackendVariable;
+import BackendDAEUtil;
+import BaseHashTable;
+import ComponentReference;
+import Error;
+import Expression;
+import ExpressionDump;
+import Flags;
+import HashTableCrToUnit;
+import HashTableStringToUnit;
+import HashTableUnitToString;
+import List;
 
 protected uniontype Token
   record T_NUMBER
@@ -194,7 +195,7 @@ algorithm
       cr = BackendVariable.varCref(inVar);
       ut = BaseHashTable.get(cr, inHtCr2U);
       if Unit.isUnit(ut) then
-        s = unit2String(ut, inHtU2S);
+        s = Unit.unitString(ut, inHtU2S);
         var = BackendVariable.setUnit(inVar, DAE.SCONST(s));
       else
         var = inVar;
@@ -202,110 +203,6 @@ algorithm
     then var;
   end match;
 end returnVar;
-
-//
-//
-public function unit2String "transforms the unit in string"
-  input Unit.Unit inUt;
-  input HashTableUnitToString.HashTable inHtU2S = Unit.getKnownUnitsInverse();
-  output String outS;
-algorithm
-  outS := matchcontinue(inUt, inHtU2S)
-    local
-      String s, s1, s2, s3, s4, s5, s6, s7, sExponent;
-      Integer prefix, exponent, i1, i2, i3, i4, i5, i6, i7;
-      Real factor;
-      Boolean b;
-      Unit.Unit ut;
-
-    case (ut, _) equation
-      s = BaseHashTable.get(ut, inHtU2S);
-    then s;
-
-    case (Unit.UNIT(factor, i1, i2, i3, i4, i5, i6, i7), _) equation
-      s = prefix2String(factor);
-
-      s= if realEq(factor, 1.0) then "" else s;
-      b = false;
-      sExponent = if intEq(i1, 1) then "" else intString(i1);
-      s1 = "mol" + sExponent;
-      s1 = if intEq(i1, 0) then "" else s1;
-      b = b or intNe(i1, 0);
-
-      s2 = if b and intNe(i2, 0) then "." else "";
-      sExponent = if intEq(i2, 1) then "" else intString(i2);
-      s2 = s2 + "cd" + sExponent;
-      s2 = if intEq(i2, 0) then "" else s2;
-      b = b or intNe(i2, 0);
-
-      s3 = if b and intNe(i3, 0) then "." else "";
-      sExponent = if intEq(i3, 1) then "" else intString(i3);
-      s3 = s3 + "m" + sExponent;
-      s3 = if intEq(i3, 0) then "" else s3;
-      b = b or intNe(i3, 0);
-
-      s4 = if b and intNe(i4, 0) then "." else "";
-      sExponent = if intEq(i4, 1) then "" else intString(i4);
-      s4 = s4 + "s" + sExponent;
-      s4 = if intEq(i4, 0) then "" else s4;
-      b = b or intNe(i4, 0);
-
-      s5 = if b and intNe(i5, 0) then "." else "";
-      sExponent = if intEq(i5, 1) then "" else intString(i5);
-      s5 = s5 + "A" + sExponent;
-      s5 = if intEq(i5, 0) then "" else s5;
-      b = b or intNe(i5, 0);
-
-      s6 = if b and intNe(i6, 0) then "." else "";
-      sExponent = if intEq(i6, 1) then "" else intString(i6);
-      s6 = s6 + "K" + sExponent;
-      s6 = if intEq(i6, 0) then "" else s6;
-      b = b or intNe(i6, 0);
-
-      s7 = if b and intNe(i7, 0) then "." else "";
-      sExponent = if intEq(i7, 1) then "" else intString(i7);
-      s7 = s7 + "g" + sExponent;
-      s7 = if intEq(i7, 0) then "" else s7;
-      b = b or intNe(i7, 0);
-      s = s + s1 + s2 + s3 + s4 + s5 + s6 + s7;
-      s = if b then s else "1";
-    then s;
-
-    else equation
-      Error.addCompilerWarning("function unit2String failed: \"" + Unit.unit2string(inUt) +"\" can not return in DAE!!!");
-    then Unit.unit2string(inUt);
-  end matchcontinue;
-end unit2String;
-
-//
-//
-protected function prefix2String
-  input Real inReal;
-  output String outPrefix;
-algorithm
-  outPrefix := match(inReal)
-  case 1e-24 then "y";
-  case 1e-21 then "z";
-  case 1e-18 then "a";
-  case 1e-15 then "f";
-  case 1e-12 then "p";
-  case 1e-6 then "u";
-  case 1e-3 then "m";
-  case 1e-2 then "c";
-  case 1e-1 then "d";
-  case 1e1 then "da";
-  case 1e2 then "h";
-  case 1e3 then "k";
-  case 1e6 then "M";
-  case 1e9 then "G";
-  case 1e12 then "T";
-  case 1e15 then "P";
-  case 1e18 then "E";
-  case 1e21 then "Z";
-  case 1e24 then "Y";
-  else realString(inReal);
-  end match;
-end prefix2String;
 
 //
 //
@@ -539,13 +436,13 @@ algorithm
 
     case ((exp, ut)::{}, _) equation
       s = ExpressionDump.printExpStr(exp);
-      s1 = unit2String(ut, inHtU2S);
+      s1 = Unit.unitString(ut, inHtU2S);
       s = "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"";
     then s;
 
     case ((exp, ut)::expList, _) equation
       s = ExpressionDump.printExpStr(exp);
-      s1 = unit2String(ut, inHtU2S);
+      s1 = Unit.unitString(ut, inHtU2S);
       s2 = Errorfunction2(expList, inHtU2S);
       s = "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"\n" + s2;
     then s;
@@ -602,7 +499,7 @@ algorithm
     case (t1::lt1, _, _) equation
       (cr1, Unit.MASTER())=t1;
       Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7)=BaseHashTable.get(cr1, inHtCr2U2);
-      s1="\"" + ComponentReference.crefStr(cr1) + "\" has the Unit \"" + unit2String(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), inHtU2S) + "\"" + "\n";
+      s1="\"" + ComponentReference.crefStr(cr1) + "\" has the Unit \"" + Unit.unitString(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), inHtU2S) + "\"" + "\n";
       s2=notification2(lt1, inHtCr2U2, inHtU2S);
     then s1 + s2;
 
@@ -711,9 +608,9 @@ algorithm
     case (DAE.BINARY(exp1, DAE.MUL(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
       (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      //s1="(" + unit2String(ut, HtU2S) + ").(" + unit2String(ut2, HtU2S) + ")";
-      ut = unitMul(ut, ut2);
-      s1 = unit2String(ut, HtU2S);
+      //s1="(" + Unit.unitString(ut, HtU2S) + ").(" + Unit.unitString(ut2, HtU2S) + ")";
+      ut = Unit.unitMul(ut, ut2);
+      s1 = Unit.unitString(ut, HtU2S);
       expListList = listAppend(expListList, expListList2);
       HtS2U = addUnit2HtS2U((s1, ut), HtS2U);
       HtU2S = addUnit2HtU2S((s1, ut), HtU2S);
@@ -728,9 +625,9 @@ algorithm
     case (DAE.BINARY(exp1, DAE.MUL(), exp2), (HtCr2U, HtS2U, HtU2S), Unit.UNIT()) equation
       (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      //s1="(" + unit2String(inUt, HtU2S) + ")/(" + unit2String(ut2, HtU2S) + ")";
-      ut = unitDiv(inUt, ut2);
-      s1 = unit2String(ut, HtU2S);
+      //s1="(" + Unit.unitString(inUt, HtU2S) + ")/(" + Unit.unitString(ut2, HtU2S) + ")";
+      ut = Unit.unitDiv(inUt, ut2);
+      s1 = Unit.unitString(ut, HtU2S);
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
       expListList = listAppend(expListList, expListList2);
       HtS2U = addUnit2HtS2U((s1, ut), HtS2U);
@@ -746,9 +643,9 @@ algorithm
     case (DAE.BINARY(exp1, DAE.MUL(), exp2), (HtCr2U, HtS2U, HtU2S), Unit.UNIT()) equation
       (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      //s1="(" + unit2String(inUt, HtU2S) + ")/(" + unit2String(ut2, HtU2S) + ")";
-      ut = unitDiv(inUt, ut2);
-      s1 = unit2String(ut, HtU2S);
+      //s1="(" + Unit.unitString(inUt, HtU2S) + ")/(" + Unit.unitString(ut2, HtU2S) + ")";
+      ut = Unit.unitDiv(inUt, ut2);
+      s1 = Unit.unitString(ut, HtU2S);
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
       expListList = listAppend(expListList, expListList2);
       HtS2U = addUnit2HtS2U((s1, ut), HtS2U);
@@ -764,9 +661,9 @@ algorithm
     case (DAE.BINARY(exp1, DAE.DIV(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
       (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      //s1="(" + unit2String(ut, HtU2S) + ")/(" + unit2String(ut2, HtU2S) + ")";
-      ut = unitDiv(ut, ut2);
-      s1 = unit2String(ut, HtU2S);
+      //s1="(" + Unit.unitString(ut, HtU2S) + ")/(" + Unit.unitString(ut2, HtU2S) + ")";
+      ut = Unit.unitDiv(ut, ut2);
+      s1 = Unit.unitString(ut, HtU2S);
       expListList = listAppend(expListList, expListList2);
       HtS2U = addUnit2HtS2U((s1, ut), HtS2U);
       HtU2S = addUnit2HtU2S((s1, ut), HtU2S);
@@ -781,9 +678,9 @@ algorithm
     case (DAE.BINARY(exp1, DAE.DIV(), exp2), (HtCr2U, HtS2U, HtU2S), Unit.UNIT()) equation
       (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      //s1="(" + unit2String(inUt, HtU2S) + ").(" + unit2String(ut2, HtU2S) + ")";
-      ut = unitMul(inUt, ut2);
-      s1 = unit2String(ut, HtU2S);
+      //s1="(" + Unit.unitString(inUt, HtU2S) + ").(" + Unit.unitString(ut2, HtU2S) + ")";
+      ut = Unit.unitMul(inUt, ut2);
+      s1 = Unit.unitString(ut, HtU2S);
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
       expListList = listAppend(expListList, expListList2);
       HtS2U = addUnit2HtS2U((s1, ut), HtS2U);
@@ -799,9 +696,9 @@ algorithm
     case (DAE.BINARY(exp1, DAE.DIV(), exp2), (HtCr2U, HtS2U, HtU2S), Unit.UNIT()) equation
       (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      //s1="(" + unit2String(ut2, HtU2S) + ")/(" + unit2String(inUt, HtU2S) + ")";
-      ut = unitDiv(ut2, inUt);
-      s1 = unit2String(ut, HtU2S);
+      //s1="(" + Unit.unitString(ut2, HtU2S) + ")/(" + Unit.unitString(inUt, HtU2S) + ")";
+      ut = Unit.unitDiv(ut2, inUt);
+      s1 = Unit.unitString(ut, HtU2S);
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
       expListList = listAppend(expListList, expListList2);
       HtS2U = addUnit2HtS2U((s1, ut), HtS2U);
@@ -819,17 +716,17 @@ algorithm
       (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       i = realInt(r);
       true = realEq(r, intReal(i));
-      ut = unitPow(ut, i);
-      s1 = unit2String(ut, HtU2S);
+      ut = Unit.unitPow(ut, i);
+      s1 = Unit.unitString(ut, HtU2S);
       HtS2U = addUnit2HtS2U((s1, ut), HtS2U);
       HtU2S = addUnit2HtU2S((s1, ut), HtU2S);
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.POW(), DAE.RCONST(r)), (HtCr2U, HtS2U, HtU2S), ut as Unit.UNIT()) equation
       (Unit.MASTER(lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) = unitRoot(ut, r);
+      Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) = Unit.unitRoot(ut, r);
       HtCr2U = List.fold1(lcr, updateHtCr2U, Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), HtCr2U);
-      s1 = unit2String(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), HtU2S);
+      s1 = Unit.unitString(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), HtU2S);
       HtS2U = addUnit2HtS2U((s1, Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7)), HtS2U);
       HtU2S = addUnit2HtU2S((s1, Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7)), HtU2S);
     then (inUt, (HtCr2U, HtS2U, HtU2S), expListList);
@@ -841,17 +738,17 @@ algorithm
     //DER
     case (DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {exp1}), (HtCr2U, HtS2U, HtU2S), Unit.UNIT()) equation
       (Unit.MASTER(lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      ut = unitMul(inUt, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
+      ut = Unit.unitMul(inUt, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
-      s1 = unit2String(ut, HtU2S);
+      s1 = Unit.unitString(ut, HtU2S);
       HtS2U = addUnit2HtS2U((s1, ut), HtS2U);
       HtU2S = addUnit2HtU2S((s1, ut), HtU2S);
     then (inUt, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {exp1}), (HtCr2U, HtS2U, HtU2S), _) equation
       (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList)=insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      ut=unitDiv(ut, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
-      s1=unit2String(ut, HtU2S);
+      ut=Unit.unitDiv(ut, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
+      s1=Unit.unitString(ut, HtU2S);
       HtS2U=addUnit2HtS2U((s1, ut), HtS2U);
       HtU2S=addUnit2HtU2S((s1, ut), HtU2S);
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
@@ -863,16 +760,16 @@ algorithm
     //SQRT
     case (DAE.CALL(path = Absyn.IDENT(name = "sqrt"), expLst = {exp1}), (HtCr2U, HtS2U, HtU2S), _) equation
       (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) = unitRoot(ut, 2.0);
-      s1 = unit2String(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), HtU2S);
+      Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) = Unit.unitRoot(ut, 2.0);
+      s1 = Unit.unitString(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), HtU2S);
       HtS2U = addUnit2HtS2U((s1, Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7)), HtS2U);
       HtU2S = addUnit2HtU2S((s1, Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7)), HtU2S);
     then (Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.CALL(path = Absyn.IDENT(name = "sqrt"), expLst = {exp1}), (HtCr2U, HtS2U, HtU2S), Unit.UNIT()) equation
       (Unit.MASTER(lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      ut = unitPow(inUt, 2);
-      s1 = unit2String(ut, HtU2S);
+      ut = Unit.unitPow(inUt, 2);
+      s1 = Unit.unitString(ut, HtU2S);
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
       HtS2U = addUnit2HtS2U((s1, ut), HtS2U);
       HtU2S = addUnit2HtU2S((s1, ut), HtU2S);
@@ -1206,6 +1103,9 @@ algorithm
   end if;
   tokenList := lexer(charList);
   outUnit := parser(tokenList, Unit.UPDATECREF, inKnownUnits);
+  if not Unit.isUnit(outUnit) then
+    fail();
+  end if;
 end parseUnitString;
 
 //
@@ -1301,22 +1201,22 @@ algorithm
     // "1"
     case (bMul::bRest, T_NUMBER(number=1)::tokens, _, _) equation
       ut = Unit.UNIT(1e0, 0, 0, 0, 0, 0, 0, 0/* , 0e0 */);
-      ut = if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
+      ut = if bMul then Unit.unitMul(inUnit,ut) else Unit.unitDiv(inUnit, ut);
       ut = parser3(bRest, tokens, ut, inHtS2U);
     then ut;
 
     // "unit^i"
     case (bMul::bRest, T_UNIT(unit=s)::T_NUMBER(exponent)::tokens, _, _) equation
       ut = unitToken2unit(s, inHtS2U);
-      ut = unitPow(ut, exponent);
-      ut = if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
+      ut = Unit.unitPow(ut, exponent);
+      ut = if bMul then Unit.unitMul(inUnit,ut) else Unit.unitDiv(inUnit, ut);
       ut = parser3(bRest, tokens, ut, inHtS2U);
     then ut;
 
     // "unit"
     case (bMul::bRest, T_UNIT(unit=s)::tokens, _, _) equation
       ut = unitToken2unit(s, inHtS2U);
-      ut = if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
+      ut = if bMul then Unit.unitMul(inUnit,ut) else Unit.unitDiv(inUnit, ut);
       ut = parser3(bRest, tokens, ut, inHtS2U);
     then ut;
 
@@ -1372,7 +1272,7 @@ algorithm
       s = stringGetStringChar(inS, 1);
       (r, s) = getPrefix(s, inS);
       ut = unitToken2unit(s, inHtS2U);
-      ut = unitMulReal(ut, r);
+      ut = Unit.unitMulReal(ut, r);
     then ut;
   end matchcontinue;
 end unitToken2unit;
@@ -1629,157 +1529,6 @@ algorithm
     else (inCharList, "");
   end matchcontinue;
 end popNumber;
-
-//
-//
-protected function unitMul
-  input Unit.Unit inUt1;
-  input Unit.Unit inUt2;
-  output Unit.Unit outUt;
-protected
-  Real factor1, factor2, shift1, shift2;
-  Integer i1, i2, i3, i4, i5, i6, i7;
-  Integer j1, j2, j3, j4, j5, j6, j7;
-algorithm
-  Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) := inUt1;
-  Unit.UNIT(factor2, j1, j2, j3, j4, j5, j6, j7) := inUt2;
-  factor1 := factor1 * factor2;
-  i1 := i1+j1;
-  i2 := i2+j2;
-  i3 := i3+j3;
-  i4 := i4+j4;
-  i5 := i5+j5;
-  i6 := i6+j6;
-  i7 := i7+j7;
-  outUt := Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7);
-end unitMul;
-
-//
-//
-public function unitDiv
-  input Unit.Unit inUt1;
-  input Unit.Unit inUt2;
-  output Unit.Unit outUt;
-protected
-  Real factor1, factor2, shift1, shift2;
-  Integer i1, i2, i3, i4, i5, i6, i7;
-  Integer j1, j2, j3, j4, j5, j6, j7;
-algorithm
-  Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) := inUt1;
-  Unit.UNIT(factor2, j1, j2, j3, j4, j5, j6, j7) := inUt2;
-  factor1 := factor1 / factor2;
-  i1 := i1-j1;
-  i2 := i2-j2;
-  i3 := i3-j3;
-  i4 := i4-j4;
-  i5 := i5-j5;
-  i6 := i6-j6;
-  i7 := i7-j7;
-  outUt := Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7);
-end unitDiv;
-
-//
-//
-protected function unitPow
-  input Unit.Unit inUt;
-  input Integer inExp "exponent";
-  output Unit.Unit outUt;
-protected
-  Real factor, shift;
-  Integer i1, i2, i3, i4, i5, i6, i7;
-algorithm
-  Unit.UNIT(factor, i1, i2, i3, i4, i5, i6, i7) := inUt;
-  factor:=realPow(factor, intReal(inExp));
-  i1 := i1*inExp;
-  i2 := i2*inExp;
-  i3 := i3*inExp;
-  i4 := i4*inExp;
-  i5 := i5*inExp;
-  i6 := i6*inExp;
-  i7 := i7*inExp;
-  outUt := Unit.UNIT(factor, i1, i2, i3, i4, i5, i6, i7);
-end unitPow;
-
-//
-//
-protected function unitMulReal
-  input Unit.Unit inUt;
-  input Real inFactor;
-  output Unit.Unit outUt;
-protected
-  Real factor, shift;
-  Integer i1, i2, i3, i4, i5, i6, i7;
-algorithm
-  Unit.UNIT(factor, i1, i2, i3, i4, i5, i6, i7) := inUt;
-  factor := factor * inFactor;
-  outUt := Unit.UNIT(factor, i1, i2, i3, i4, i5, i6, i7);
-end unitMulReal;
-
-//
-//
-protected function unitRoot
-  input Unit.Unit inUt;
-  input Real inExponent;
-  output Unit.Unit outUt;
-algorithm
-  outUt := match(inUt, inExponent)
-    local
-      Real factor1, r, r1, r2, r3, r4, r5, r6, r7;
-      Real q1, q2, q3, q4, q5, q6, q7;
-      Integer i, i1, i2, i3, i4, i5, i6, i7;
-      Integer j1, j2, j3, j4, j5, j6, j7;
-
-    case (Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), r) equation
-      i = realInt(r);
-      r1 = realDiv(1.0, r);
-      factor1 = realPow(factor1, r1);
-
-      j1 = intDiv(i1, i);
-        r1 = intReal(i1);
-        r1 = realDiv(r1, r);
-      q1 = intReal(j1);
-      true = realEq(r1, q1);
-
-      j2 = intDiv(i2, i);
-        r2 = intReal(i2);
-        r2 = realDiv(r2, r);
-      q2 = intReal(j2);
-      true = realEq(r2, q2);
-
-      j3 = intDiv(i3, i);
-        r3 = intReal(i3);
-        r3 = realDiv(r3, r);
-      q3 = intReal(j3);
-      true = realEq(r3, q3);
-
-      j4 = intDiv(i4, i);
-        r4 = intReal(i4);
-        r4 = realDiv(r4, r);
-      q4 = intReal(j4);
-      true = realEq(r4, q4);
-
-      j5 = intDiv(i5, i);
-        r5 = intReal(i5);
-        r5 = realDiv(r5, r);
-      q5 = intReal(j5);
-      true = realEq(r5, q5);
-
-      j6 = intDiv(i6, i);
-        r6 = intReal(i6);
-        r6 = realDiv(r6, r);
-      q6 = intReal(j6);
-      true = realEq(r6, q6);
-
-      j7 = intDiv(i7, i);
-        r7 = intReal(i7);
-        r7 = realDiv(r7, r);
-      q7 = intReal(j7);
-      true = realEq(r7, q7);
-    then Unit.UNIT(factor1, j1, j2, j3, j4, j5 , j6, j7);
-
-    else fail();
-  end match;
-end unitRoot;
 
 annotation(__OpenModelica_Interface="backend");
 end UnitCheck;
