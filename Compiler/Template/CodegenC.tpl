@@ -1337,8 +1337,6 @@ template globalDataParDefine(SimVar simVar, String arrayName)
     /* <%crefStrNoUnderscore(c)%> */
     #define <%cref(c)%> data->simulationInfo-><%arrayName%>[<%index%>]
 
-    <%crefMacroSubsAtEndParNew(c)%>
-
     /* <%crefStrNoUnderscore(name)%> */
     #define <%cref(name)%> data->simulationInfo-><%arrayName%>[<%index%>]
     #define _<%cref(name)%>(i) <%cref(name)%>
@@ -1365,8 +1363,6 @@ template globalDataVarDefine(SimVar simVar, String arrayName) "template globalDa
     #define <%cref(c)%> _<%cref(c)%>(0)
     #define $P$PRE<%cref(c)%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
 
-    <%crefMacroSubsAtEndVarNew(c)%>
-
     /* <%crefStrNoUnderscore(name)%> */
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
@@ -1384,35 +1380,6 @@ template globalDataVarDefine(SimVar simVar, String arrayName) "template globalDa
     >>
   end match
 end globalDataVarDefine;
-
-template crefMacroSubsAtEndParNew(ComponentRef cr)
-::=
-  let &auxFunction = buffer ""
-  let fullpath = contextCref(cr,contextSimulationNonDiscrete, &auxFunction)
-  let nosubfullpath = contextCref(crefStripSubs(cr),contextSimulationNonDiscrete, &auxFunction)
-  let totnrdims = listLength(crefDims(cr))
-  let dimstr = crefDims(cr) |> dim => dimension(dim) ;separator=", "
-  let substr = generateSubPalceholders(cr)
-  let &subsDimThread = buffer "" /*BUFD*/
-  <<
-  #define <%nosubfullpath%>_index(<%substr%>)    (&<%fullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
-  >>
-end crefMacroSubsAtEndParNew;
-
-template crefMacroSubsAtEndVarNew(ComponentRef cr)
-::=
-  let &auxFunction = buffer ""
-  let fullpath = contextCref(cr,contextSimulationNonDiscrete, &auxFunction)
-  let nosubfullpath = contextCref(crefStripSubs(cr),contextSimulationNonDiscrete, &auxFunction)
-  let totnrdims = listLength(crefDims(cr))
-  let dimstr = crefDims(cr) |> dim => dimension(dim) ;separator=", "
-  let substr = generateSubPalceholders(cr)
-  let &subsDimThread = buffer "" /*BUFD*/
-  <<
-  #define <%nosubfullpath%>_index(<%substr%>)    (&<%fullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
-  #define $P$PRE<%nosubfullpath%>_index(<%substr%>)    (&$P$PRE<%fullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
-  >>
-end crefMacroSubsAtEndVarNew;
 
 template globalDataAliasVarArray(String _type, String _name, list<SimVar> items)
   "Generates array with variable names in global data section."
@@ -4798,7 +4765,7 @@ template equationArrayCallAssign(SimEqSystem eq, Context context,
 case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-  let lhsstr = daeExpCrefLhs(lhs, context, &preExp, &varDecls, &auxFunction)
+  let lhsstr = daeExpCrefLhs(lhs, context, &preExp, &varDecls, &auxFunction, false)
   match expTypeFromExpShort(eqn.exp)
   case "boolean" then
     <<
