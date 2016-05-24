@@ -798,10 +798,10 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
             && text[index+4] == 't' && text[index+5] == 'a' && text[index+6] == 't' && text[index+7] == 'i' && text[index+8] == 'o'
             && text[index+9] == 'n') {
           if (index+9 == text.length() - 1) { // if we just have annotation keyword in the line
-            index = index + 9;
+            index = index + 8;
             foldingState = true;
           } else if (index+10<text.length() && (text[index+10] == '(' || text[index+10] == ' ')) { // if annotation keyword is followed by '(' or space.
-            index = index + 10;
+            index = index + 9;
             foldingState = true;
           }
         }
