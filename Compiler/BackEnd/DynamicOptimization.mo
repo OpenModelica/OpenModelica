@@ -67,14 +67,14 @@ public function addOptimizationVarsEqns
   input Boolean inOptimicaFlag;
   input list< .DAE.ClassAttributes> inClassAttr;
   input list< .DAE.Constraint> inConstraint;
-  input BackendDAE.Variables knvars;
+  input BackendDAE.Variables globalKnownVars;
   input Boolean inDynOptimization;
   output BackendDAE.Variables outVars;
   output list<BackendDAE.Equation>  outEqns;
   output list< .DAE.ClassAttributes> outClassAttr;
 protected
   Option<DAE.Exp> mayer, lagrange, startTimeE, finalTimeE;
-  BackendDAE.Variables v, inVarsAndknvars;
+  BackendDAE.Variables v, inVarsAndglobalKnownVars;
   list<BackendDAE.Var> varlst;
   BackendDAE.Var tG;
   list<BackendDAE.Equation> e;
@@ -100,13 +100,13 @@ algorithm
                         end match;
 
 
-    _ := addTimeGrid(BackendVariable.varList(knvars), knvars);
-    inVarsAndknvars := BackendVariable.addVariables(inVars, BackendVariable.copyVariables(knvars));
-    varlst := BackendVariable.varList(inVarsAndknvars);
+    _ := addTimeGrid(BackendVariable.varList(globalKnownVars), globalKnownVars);
+    inVarsAndglobalKnownVars := BackendVariable.addVariables(inVars, BackendVariable.copyVariables(globalKnownVars));
+    varlst := BackendVariable.varList(inVarsAndglobalKnownVars);
     (v, e, mayer) := joinObjectFun(makeObject(BackendDAE.optimizationMayerTermName, findMayerTerm, varlst, mayer), inVars, inEqns);
     (v, e, lagrange) := joinObjectFun(makeObject(BackendDAE.optimizationLagrangeTermName, findLagrangeTerm, varlst, lagrange), v, e);
-    (v, e) := joinConstraints(inConstraint, "$con$", BackendDAE.OPT_CONSTR(), knvars, varlst ,v, e, BackendVariable.hasConTermAnno);
-    (outVars, outEqns) := joinConstraints({}, "$finalCon$", BackendDAE.OPT_FCONSTR(), knvars, varlst, v, e, BackendVariable.hasFinalConTermAnno);
+    (v, e) := joinConstraints(inConstraint, "$con$", BackendDAE.OPT_CONSTR(), globalKnownVars, varlst ,v, e, BackendVariable.hasConTermAnno);
+    (outVars, outEqns) := joinConstraints({}, "$finalCon$", BackendDAE.OPT_FCONSTR(), globalKnownVars, varlst, v, e, BackendVariable.hasFinalConTermAnno);
     Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
 
     outClassAttr := {DAE.OPTIMIZATION_ATTRS(mayer, lagrange, startTimeE, finalTimeE)};
@@ -137,7 +137,7 @@ protected function joinConstraints "author: Vitalij Ruge"
   input list< .DAE.Constraint> inConstraint;
   input String name;
   input BackendDAE.VarKind conKind;
-  input BackendDAE.Variables knvars;
+  input BackendDAE.Variables globalKnownVars;
   input list<BackendDAE.Var> varlst;
   input BackendDAE.Variables vars;
   input list<BackendDAE.Equation> e;
@@ -154,7 +154,7 @@ protected
   list< .DAE.Constraint> constraints;
 algorithm
   constraints := addConstraints(varlst, inConstraint, findCon);
-  (ovars, oe) := addOptimizationVarsEqns2(constraints, 1, vars, e, knvars, name, conKind);
+  (ovars, oe) := addOptimizationVarsEqns2(constraints, 1, vars, e, globalKnownVars, name, conKind);
 end joinConstraints;
 
 protected function joinObjectFun "author: Vitalij Ruge"
@@ -212,7 +212,7 @@ protected function addOptimizationVarsEqns1
  input Integer inI;
  input BackendDAE.Variables inVars;
  input list<BackendDAE.Equation> inEqns;
- input BackendDAE.Variables knvars;
+ input BackendDAE.Variables globalKnownVars;
  input String prefConCrefName;
  input BackendDAE.VarKind conKind;
 
@@ -233,7 +233,7 @@ algorithm
      conCrefName := prefConCrefName + intString(i);
      i := i + 1;
    end try;
-   (conEqn, dummyVar) := BackendEquation.generateResidualFromRelation(conCrefName, elem, DAE.emptyElementSource, outVars, knvars, conKind);
+   (conEqn, dummyVar) := BackendEquation.generateResidualFromRelation(conCrefName, elem, DAE.emptyElementSource, outVars, globalKnownVars, conKind);
    outVars := BackendVariable.addNewVar(dummyVar, outVars);
    outEqns := listAppend(conEqn, outEqns);
  end for;
@@ -244,20 +244,20 @@ protected function addOptimizationVarsEqns2
  input Integer inI;
  input BackendDAE.Variables inVars;
  input list<BackendDAE.Equation> inEqns;
- input BackendDAE.Variables knvars;
+ input BackendDAE.Variables globalKnownVars;
  input String prefConCrefName;
  input BackendDAE.VarKind conKind;
 
  output BackendDAE.Variables outVars;
  output list<BackendDAE.Equation>  outEqns;
 algorithm
-  (outVars, outEqns) := match(inConstraint, inI, inVars, inEqns, knvars,prefConCrefName,conKind)
+  (outVars, outEqns) := match(inConstraint, inI, inVars, inEqns, globalKnownVars,prefConCrefName,conKind)
   local
    list<BackendDAE.Equation> e;
    BackendDAE.Variables v;
    list< .DAE.Exp> constraintLst;
     case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}, _, _, _, _, _, _) equation
-      (v, e) = addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns, knvars,prefConCrefName,conKind);
+      (v, e) = addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns, globalKnownVars,prefConCrefName,conKind);
       then (v, e);
   else (inVars, inEqns);
   end match;
@@ -651,10 +651,10 @@ protected
   Integer ind_e, ind_v;
   list<Integer> ind_lst_v = List.map(vindx,intAbs);
   list<Integer> ind_lst_e = eindex;
-  BackendDAE.Variables knvars;
+  BackendDAE.Variables globalKnownVars;
 algorithm
 
-  BackendDAE.SHARED(knownVars=knvars) := oshared;
+  BackendDAE.SHARED(globalKnownVars=globalKnownVars) := oshared;
 
   for var_ in var_lst loop
 
@@ -687,7 +687,7 @@ algorithm
       var := BackendVariable.setVarKind(var, BackendDAE.OPT_LOOP_INPUT(ComponentReference.crefPrefixDer(cr_var)));
     else
       // don't merge der(x) with x
-      var := BackendVariable.mergeAliasVars(var, var_, false, knvars);
+      var := BackendVariable.mergeAliasVars(var, var_, false, globalKnownVars);
       var := BackendVariable.setVarKind(var, BackendDAE.OPT_LOOP_INPUT(cr_var));
     end if;
     oshared := BackendVariable.addKnVarDAE(var, oshared);
@@ -720,7 +720,7 @@ protected
   list<BackendDAE.Var> var_lst, var_lst_opt, var_lst1;
   DAE.Exp e1, e2, e, c;
   DAE.FunctionTree funcs;
-  BackendDAE.Variables vars, knownVars;
+  BackendDAE.Variables vars, globalKnownVars;
   BackendDAE.EquationArray eqns;
   BackendDAE.BaseClockPartitionKind partitionKind;
   BackendDAE.StateSets stateSets;
@@ -735,7 +735,7 @@ algorithm
 
     //BackendDump.bltdump("START:", inDAE);
     BackendDAE.DAE(systlst, shared) := inDAE;
-    BackendDAE.SHARED(functionTree = funcs, knownVars = knownVars) := shared;
+    BackendDAE.SHARED(functionTree = funcs, globalKnownVars = globalKnownVars) := shared;
 
     for syst in systlst loop
       BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps)) := syst;
@@ -760,7 +760,7 @@ algorithm
            var_lst := BackendEquation.equationsLstVars({eqn_}, vars);
            var_lst_opt := list(vv for vv  guard BackendVariable.isStateVar(vv) in var_lst);
            b3 := listLength(var_lst_opt) == 1;
-           var_lst := BackendEquation.equationsLstVars({eqn_}, knownVars);
+           var_lst := BackendEquation.equationsLstVars({eqn_}, globalKnownVars);
            var_lst_opt := listAppend(var_lst_opt, list(vv for vv guard BackendVariable.isInput(vv) in var_lst));
            //print("\nn = " + intString(listLength(var_lst_opt)));
            if listLength(var_lst_opt) == 1 then
@@ -783,13 +783,13 @@ algorithm
               //print("\ne = " + ExpressionDump.printExpStr(e));
               //print("\ne2 = " + ExpressionDump.printExpStr(e2));
 
-              var_lst := BackendEquation.expressionVars(der_e, knownVars);
+              var_lst := BackendEquation.expressionVars(der_e, globalKnownVars);
               if b3 then
                 var_lst := list(vv for vv guard not BackendVariable.isParam(vv) in var_lst);
               end if;
               var_lst := listAppend(BackendEquation.expressionVars(der_e, vars), var_lst);
 
-              var_lst1 := BackendEquation.expressionVars(c, knownVars);
+              var_lst1 := BackendEquation.expressionVars(c, globalKnownVars);
               if b3 then
                 var_lst1 := list(vv for vv guard not BackendVariable.isParam(vv) in var_lst1);
               end if;
@@ -838,8 +838,8 @@ algorithm
                   vars := BackendVariable.setVarAt(vars, vindx, var_);
                   //print("var" +  BackendDump.varString(var_));
                 else
-                  (_,vindx) := BackendVariable.getVarSingle(cr, knownVars);
-                  knownVars := BackendVariable.setVarAt(knownVars, vindx, var_);
+                  (_,vindx) := BackendVariable.getVarSingle(cr, globalKnownVars);
+                  globalKnownVars := BackendVariable.setVarAt(globalKnownVars, vindx, var_);
                   //print("var" +  BackendDump.varString(var_));
                 end try;
 
@@ -865,7 +865,7 @@ algorithm
       end if;
     end for;
 
-    shared := BackendDAEUtil.setSharedKnVars(shared, knownVars);
+    shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, globalKnownVars);
     outDAE := BackendDAE.DAE(new_systlst, shared);
   else
     outDAE := inDAE;

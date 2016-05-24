@@ -105,7 +105,8 @@ end BaseClockPartitionKind;
 public
 uniontype Shared "Data shared for all equation-systems"
   record SHARED
-    Variables knownVars                     "Known variables, i.e. constants and parameters";
+    Variables globalKnownVars               "variables only depending on parameters and constants [TODO: move stuff (like inputs) to localKnownVars]";
+    Variables localKnownVars                "variables only depending on locally constant variables in the simulation step, i.e. states, input variables";
     Variables externalObjects               "External object variables";
     Variables aliasVars                     "Data originating from removed simple equations needed to build
                                              variables' lookup table (in C output).

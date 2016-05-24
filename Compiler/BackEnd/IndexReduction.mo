@@ -3812,7 +3812,7 @@ protected
   BackendDAE.EventInfo eventInfo;
 algorithm
   BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.aliasVars, replaceDummyDerivativesVar, ht);
-  BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.knownVars, replaceDummyDerivativesVar, ht);
+  BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.globalKnownVars, replaceDummyDerivativesVar, ht);
   BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( outShared.initialEqs, Expression.traverseSubexpressionsHelper,
                                                        (replaceDummyDerivativesExp, ht) );
   BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( outSyst.removedEqs, Expression.traverseSubexpressionsHelper,

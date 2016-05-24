@@ -72,7 +72,7 @@ public function unitChecking "author: jhagemann"
 protected
   BackendDAE.EqSystem syst;
   BackendDAE.Shared shared;
-  BackendDAE.Variables orderedVars, knownVars, aliasVars;
+  BackendDAE.Variables orderedVars, globalKnownVars, aliasVars;
   HashTableCrToUnit.HashTable HtCr2U1, HtCr2U2;
   HashTableStringToUnit.HashTable HtS2U;
   HashTableUnitToString.HashTable HtU2S;
@@ -83,7 +83,7 @@ algorithm
     BackendDAE.DAE({syst}, shared) := inDAE;
 
     varList := BackendVariable.varList(syst.orderedVars);
-    paraList := BackendVariable.varList(shared.knownVars);
+    paraList := BackendVariable.varList(shared.globalKnownVars);
     aliasList := BackendVariable.varList(shared.aliasVars);
     eqList := BackendEquation.equationList(syst.orderedEqs);
 
@@ -114,11 +114,11 @@ algorithm
     aliasList := List.map2(aliasList, returnVar, HtCr2U2, HtU2S);
 
     orderedVars := BackendVariable.listVar(varList);
-    knownVars := BackendVariable.listVar(paraList);
+    globalKnownVars := BackendVariable.listVar(paraList);
     aliasVars := BackendVariable.listVar(aliasList);
 
     syst := BackendDAEUtil.setEqSystVars(syst, orderedVars);
-    shared := BackendDAEUtil.setSharedKnVars(shared, knownVars);
+    shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, globalKnownVars);
     shared := BackendDAEUtil.setSharedAliasVars(shared, aliasVars);
     outDAE := BackendDAE.DAE({syst}, shared);
   else

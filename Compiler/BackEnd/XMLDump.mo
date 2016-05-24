@@ -1025,6 +1025,7 @@ algorithm
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(
                  vars_knownVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_knownVars),
+                 _,
                  vars_externalObject as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_externalObject),
                  vars_aliasVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_aliasVars),
                  ieqns,_,constrs,_,_,_,funcs,eventInfo,
@@ -1067,6 +1068,7 @@ algorithm
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(
                  vars_knownVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_knownVars),
+                 _,
                  vars_externalObject as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_externalObject),
                  vars_aliasVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_aliasVars),
                  ieqns,_,constrs,_,_,_,funcs,eventInfo,

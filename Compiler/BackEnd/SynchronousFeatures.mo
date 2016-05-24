@@ -118,7 +118,6 @@ protected
   list<BackendDAE.Equation> unpartRemEqs;
 algorithm
   syst := substitutePartitionOpExps(inSyst, inShared);
-
   (contSysts, clockedSysts, unpartRemEqs) := baseClockPartitioning(syst, shared);
 
   (contSysts, holdComps) := removeHoldExpsSyst(contSysts);
@@ -1460,10 +1459,8 @@ protected
   list<BackendDAE.Equation> newEqs = {};
   list<BackendDAE.Var> newVars = {};
   Integer cnt = 1;
-  BackendDAE.Equation eq;
 algorithm
-  for i in 1:BackendDAEUtil.equationArraySize(inSyst.orderedEqs) loop
-    eq := BackendEquation.equationNth1(inSyst.orderedEqs, i);
+  for eq in BackendEquation.equationList(inSyst.orderedEqs) loop
     (eq, (newEqs, newVars, cnt, _)) := BackendEquation.traverseExpsOfEquation(eq, substitutePartitionOpExp, (newEqs, newVars, cnt, inShared));
     newEqs := eq::newEqs;
   end for;
@@ -1558,19 +1555,19 @@ protected function isKnownOrConstantExp_traverser
   output Boolean outContinue;
   output tuple<Boolean, BackendDAE.Variables> outTpl;
 protected
-  BackendDAE.Variables knownVars;
+  BackendDAE.Variables globalKnownVars;
   Boolean isKnown;
 algorithm
-  (isKnown, knownVars) := inTpl;
+  (isKnown, globalKnownVars) := inTpl;
   isKnown := match inExp
     local
       DAE.ComponentRef componentRef;
     case DAE.CALL() then false;
-    case DAE.CREF(componentRef=componentRef) then BackendVariable.containsCref(componentRef, knownVars);
+    case DAE.CREF(componentRef=componentRef) then BackendVariable.containsCref(componentRef, globalKnownVars);
     else isKnown;
   end match;
 
-  outTpl := (isKnown, knownVars);
+  outTpl := (isKnown, globalKnownVars);
   outContinue := isKnown;
 end isKnownOrConstantExp_traverser;
 
@@ -1587,7 +1584,7 @@ protected function substClockExp
 protected
   DAE.Type ty;
 algorithm
-  if isKnownOrConstantExp(inExp, inShared.knownVars) then
+  if isKnownOrConstantExp(inExp, inShared.globalKnownVars) then
     outExp := inExp;
     outNewEqs := inNewEqs;
     outNewVars := inNewVars;
@@ -1766,8 +1763,9 @@ algorithm
   clockedVars := arrayCreate(BackendVariable.varsSize(vars), NONE());
   clockedPartitions := arrayCreate(if partitionCnt > 0 then partitionCnt else 1, NONE());
   //Detect clocked equations and variables
-  for j in 1:BackendDAEUtil.equationArraySize(eqs) loop
-    eq := BackendEquation.equationNth1(eqs, j);
+  j := 0;
+  for eq in BackendEquation.equationList(eqs) loop
+    j := j+1;
     (partitionType, refsInfo) := detectEqPartition(eq);
     info := BackendEquation.equationInfo(eq);
     arrayUpdate(clockedEqs, j, setClockedPartition(partitionType, arrayGet(clockedEqs, j), NONE(), info));

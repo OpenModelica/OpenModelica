@@ -87,6 +87,7 @@ uniontype SimCode
     list<DAE.Exp> literals "shared literals";
     list<RecordDeclaration> recordDecls;
     list<String> externalFunctionIncludes;
+    list<SimEqSystem> localKnownVars "state and input dependent variables, that are not inserted into any partion";
     list<SimEqSystem> allEquations;
     list<list<SimEqSystem>> odeEquations;
     list<list<SimEqSystem>> algebraicEquations;

@@ -2025,7 +2025,7 @@ algorithm
 end tearingSelect;
 
 
-protected function deleteNegativeEntries
+public function deleteNegativeEntries
  "deletes all negative entries from incidence matrix, works with Array.map1, needed for proper Cellier-Tearing
   author: ptaeuber FHB 2014-01"
   input list<Integer> rowIn;
@@ -3798,7 +3798,7 @@ protected
   list<BackendDAE.EqSystem> systlst_new = {};
   BackendDAE.Shared shared;
   DAE.FunctionTree funcs;
-  BackendDAE.Variables vars, knownVars;
+  BackendDAE.Variables vars, globalKnownVars;
   BackendDAE.StrongComponents comps;
   BackendDAE.EquationArray eqns;
   BackendDAE.StateSets stateSets;
@@ -3826,7 +3826,7 @@ protected
   list<DAE.Exp> loopT, noLoopT;
 algorithm
   shared := inDAE.shared;
-  BackendDAE.SHARED(functionTree=funcs, knownVars=knownVars) := shared;
+  BackendDAE.SHARED(functionTree=funcs, globalKnownVars=globalKnownVars) := shared;
   //BackendDump.bltdump("IN:", inDAE);
   for syst in inDAE.eqs loop
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps),stateSets=stateSets,partitionKind=partitionKind) := syst;

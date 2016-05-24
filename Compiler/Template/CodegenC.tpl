@@ -955,6 +955,8 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
 
     <%functionDAE(allEquations, modelNamePrefixStr)%>
 
+    <%functionLocalKnownVars(localKnownVars, modelNamePrefixStr)%>
+
     <%functionSymEuler(modelInfo, modelNamePrefixStr)%>
 
     <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr)%>
@@ -1008,6 +1010,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"functionODE")%>,
        <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
        <%symbolName(modelNamePrefixStr,"functionDAE")%>,
+       <%symbolName(modelNamePrefixStr,"functionLocalKnownVars")%>,
        <%symbolName(modelNamePrefixStr,"input_function")%>,
        <%symbolName(modelNamePrefixStr,"input_function_init")%>,
        <%symbolName(modelNamePrefixStr,"input_function_updateStartValues")%>,
@@ -1060,7 +1063,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
     <%\n%>
     };
 
-    <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps, modelNamePrefixStr, isModelExchangeFMU)%>
+    <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, delayedExps, modelNamePrefixStr, isModelExchangeFMU)%>
 
     #ifdef __cplusplus
     }
@@ -1152,7 +1155,7 @@ template simulationFileHeader(SimCode simCode)
   end match
 end simulationFileHeader;
 
-template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed, Boolean isModelExchangeFMU)
+template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, DelayedExpression delayed, Boolean isModelExchangeFMU)
   "Generates information for data.modelInfo struct."
 ::=
   match modelInfo
@@ -1249,7 +1252,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
   end match
 end populateModelInfo;
 
-template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed, String modelNamePrefix, Boolean isModelExchangeFMU)
+template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, DelayedExpression delayed, String modelNamePrefix, Boolean isModelExchangeFMU)
   "Generates function in simulation file."
 ::=
   <<
@@ -1257,7 +1260,7 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   {
     assertStreamPrint(threadData,0!=data, "Error while initialize Data");
     data->callback = &<%symbolName(modelNamePrefix,"callback")%>;
-    <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, symJacs, delayed, isModelExchangeFMU)%>
+    <%populateModelInfo(modelInfo, fileNamePrefix, guid, delayed, isModelExchangeFMU)%>
   }
   >>
 end functionInitializeDataStruc;
@@ -3753,6 +3756,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
 
     data->simulationInfo->callStatistics.functionODE++;
 
+    <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(data, threadData);
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionODE(<%nrfuncs%>, data, threadData, functionODE_systems);'
     else '<%fncalls%>' %>
 
@@ -3964,6 +3968,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
 
     data->simulationInfo->needToIterate = 0;
     data->simulationInfo->discreteCall = 1;
+    <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(data, threadData);
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAE(<%nrfuncs%>, data, threadData, functionDAE_systems);'
     else '<%fncalls%>' %>
     data->simulationInfo->discreteCall = 0;
@@ -3973,6 +3978,30 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
   }
   >>
 end functionDAE;
+
+template functionLocalKnownVars(list<SimEqSystem> localKnownVars, String modelNamePrefix)
+  "Generates function in simulation file.
+  This is a helper of template simulationFile."
+::=
+  let &eqfuncs = buffer ""
+  let fncalls = (localKnownVars |> eq =>
+                    equation_(-1, eq, contextSimulationDiscrete, &eqfuncs, modelNamePrefix)
+                    ;separator="\n")
+
+  <<
+  <%&eqfuncs%>
+
+  int <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(DATA *data, threadData_t *threadData)
+  {
+    TRACE_PUSH
+
+    <%fncalls%>
+
+    TRACE_POP
+    return 0;
+  }
+  >>
+end functionLocalKnownVars;
 
 template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem> equationsForZeroCrossings, String modelNamePrefix)
 "template functionZeroCrossing

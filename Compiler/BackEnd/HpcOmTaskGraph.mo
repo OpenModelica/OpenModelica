@@ -446,7 +446,7 @@ protected
   BackendDAE.EqSystem isyst;
   BackendDAE.Shared ishared;
   BackendDAE.Variables orderedVars;
-  BackendDAE.Variables knownVars;
+  BackendDAE.Variables globalKnownVars;
   BackendDAE.EquationArray orderedEqs;
   TaskGraph graphIn;
   TaskGraph graphTmp;
@@ -468,7 +468,7 @@ protected
   array<list<Integer>> compParamMapping;
 algorithm
   (incidenceMatrix,isyst,ishared,numberOfComps) := iSystInfo;
-  BackendDAE.SHARED(knownVars=knownVars) := ishared;
+  BackendDAE.SHARED(globalKnownVars=globalKnownVars) := ishared;
   BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs) := isyst;
   (varCompMapping,eqCompMapping,eventVarLst) := iVarInfo;
   (graphIn,inComps,compParamMapping,commCosts,compNames,nodeMark,componentIndex) := graphInfoIn;
@@ -477,7 +477,7 @@ algorithm
   compNames := arrayUpdate(compNames,componentIndex,compName);
   _ := HpcOmBenchmark.benchSystem();
 
-  (unsolvedVars,paramVars) := getUnsolvedVarsBySCC(iComponent,incidenceMatrix,orderedVars,knownVars,orderedEqs,eventVarLst,iAnalyzeParameters);
+  (unsolvedVars,paramVars) := getUnsolvedVarsBySCC(iComponent,incidenceMatrix,orderedVars,globalKnownVars,orderedEqs,eventVarLst,iAnalyzeParameters);
   compParamMapping := arrayUpdate(compParamMapping, componentIndex, paramVars);
   requiredSccs := arrayCreate(numberOfComps,({},{},{},{})); //create a ref-counter for each component
   requiredSccs := List.fold2(List.map1(Util.tuple41(unsolvedVars),Util.makeTuple,1),fillSccList,1,varCompMapping,requiredSccs);

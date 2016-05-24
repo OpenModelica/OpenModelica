@@ -2555,7 +2555,7 @@ end subsPreForPrevious;
 protected function debugPrintKnownVars
   input BackendDAE.Shared shared;
 protected
-  BackendDAE.Variables knownVars;
+  BackendDAE.Variables globalKnownVars;
   BackendDAE.VariableArray varArr "Array of variables";
   array<Option<BackendDAE.Var>> varOptArr;
   list<Option<BackendDAE.Var>> varOptLst;
@@ -2563,15 +2563,15 @@ protected
   list<String> strLst;
   String varStrs;
 algorithm
-  BackendDAE.SHARED(knownVars=knownVars) := shared;
-  BackendDAE.VARIABLES(varArr=varArr) := knownVars;
+  BackendDAE.SHARED(globalKnownVars=globalKnownVars) := shared;
+  BackendDAE.VARIABLES(varArr=varArr) := globalKnownVars;
   BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) := varArr;
   varOptLst := arrayList(varOptArr);
   varOptLst := List.filterOnTrue(varOptLst, isSome);
   varStrLst := List.map(varOptLst, dumpSomeVarStr);
   strLst := List.map(varStrLst, function Util.getOptionOrDefault(inDefault="NONE"));
   varStrs := stringDelimitList(strLst, ";\n");
-  print("Shared knownVars:\n"+varStrs+"\n");
+  print("Shared globalKnownVars:\n"+varStrs+"\n");
 end debugPrintKnownVars;
 
 
@@ -2662,7 +2662,7 @@ protected function debugDumpMathematicaStr
   input BackendDAE.Shared shared;
   output String str;
 protected
-  BackendDAE.Variables orderedVars, knownVars;
+  BackendDAE.Variables orderedVars, globalKnownVars;
   BackendDAE.EquationArray orderedEqs, initialEqs;
   list<BackendDAE.Equation> orderedEqsLst;
   list<BackendDAE.Equation> initialEqsLst;
@@ -2671,10 +2671,10 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := syst;
   orderedEqsLst := BackendEquation.equationList(orderedEqs);
 
-  BackendDAE.SHARED(knownVars=knownVars, initialEqs=initialEqs) := shared;
+  BackendDAE.SHARED(globalKnownVars=globalKnownVars, initialEqs=initialEqs) := shared;
   initialEqsLst := BackendEquation.equationList(initialEqs);
 
-  str := MathematicaDump.dumpMmaDAEStr((knownVars, orderedVars,initialEqsLst,orderedEqsLst));
+  str := MathematicaDump.dumpMmaDAEStr((globalKnownVars, orderedVars,initialEqsLst,orderedEqsLst));
 end debugDumpMathematicaStr;
 
 

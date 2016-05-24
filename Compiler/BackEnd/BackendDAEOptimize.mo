@@ -81,6 +81,7 @@ import RewriteRules;
 import SCode;
 import Sorting;
 import SynchronousFeatures;
+import Tearing;
 import Types;
 import Util;
 import Values;
@@ -143,11 +144,11 @@ algorithm
       algorithm
         ((_, (_, _, true))) := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate (
             syst.orderedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls,
-            (shared.knownVars, shared.aliasVars, false))
+            (shared.globalKnownVars, shared.aliasVars, false))
         );
         ((_, (_, _, true))) := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate (
             syst.removedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls,
-            (shared.knownVars, shared.aliasVars, false))
+            (shared.globalKnownVars, shared.aliasVars, false))
         );
     then (isyst, inShared, true);
 
@@ -163,7 +164,7 @@ protected function traverserExpsimplifyTimeIndepFuncCalls
 algorithm
   (outExp, outTpl) := matchcontinue (inExp, inTpl)
     local
-      BackendDAE.Variables knvars, aliasvars;
+      BackendDAE.Variables globalKnownVars, aliasvars;
       DAE.Type tp;
       DAE.Exp e, zero;
       DAE.ComponentRef cr;
@@ -171,88 +172,88 @@ algorithm
       DAE.CallAttributes attr;
       Boolean negate;
 
-    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (knvars, aliasvars, _)) equation
-      (var, _) = BackendVariable.getVarSingle(cr, knvars);
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (globalKnownVars, aliasvars, _)) equation
+      (var, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
       false = BackendVariable.isVarOnTopLevelAndInput(var);
       (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-    then (zero, (knvars, aliasvars, true));
+    then (zero, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.CREF(componentRef=cr)}), (knvars, aliasvars, _)) equation
-      (_, _) = BackendVariable.getVarSingle(cr, knvars);
-    then(e, (knvars, aliasvars, true));
+    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.CREF(componentRef=cr)}), (globalKnownVars, aliasvars, _)) equation
+      (_, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
+    then(e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.CREF(componentRef=cr)}), (knvars, aliasvars, _)) equation
-      (_, _) = BackendVariable.getVarSingle(cr, knvars);
-    then(e, (knvars, aliasvars, true));
+    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.CREF(componentRef=cr)}), (globalKnownVars, aliasvars, _)) equation
+      (_, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
+    then(e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (knvars, aliasvars, _))
-    then (e, (knvars, aliasvars, true));
+    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _))
+    then (e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (knvars, aliasvars, _))
-    then (e, (knvars, aliasvars, true));
+    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _))
+    then (e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}), (knvars, aliasvars, _))
-    then (e, (knvars, aliasvars, true));
+    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}), (globalKnownVars, aliasvars, _))
+    then (e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}), (knvars, aliasvars, _))
-    then (e, (knvars, aliasvars, true));
+    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}), (globalKnownVars, aliasvars, _))
+    then (e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (globalKnownVars, aliasvars, _)) equation
       (var, _) = BackendVariable.getVarSingle(cr, aliasvars);
       (cr, negate) = BackendVariable.getAlias(var);
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
       (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("pre"), {e}, attr));
-      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
-    then (e, (knvars, aliasvars, true));
+      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (globalKnownVars, aliasvars, false));
+    then (e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (globalKnownVars, aliasvars, _)) equation
       (var, _) = BackendVariable.getVarSingle(cr, aliasvars);
       (cr, negate) = BackendVariable.getAlias(var);
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
       (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("previous"), {e}, attr));
-      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
-    then (e, (knvars, aliasvars, true));
+      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (globalKnownVars, aliasvars, false));
+    then (e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (knvars, aliasvars, _)) equation
-      (_::_, _) = BackendVariable.getVar(cr, knvars);
+    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (globalKnownVars, aliasvars, _)) equation
+      (_::_, _) = BackendVariable.getVar(cr, globalKnownVars);
       zero = Expression.arrayFill(Expression.arrayDimension(tp), DAE.BCONST(false));
-    then (zero, (knvars, aliasvars, true));
+    then (zero, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (knvars, aliasvars, _)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (globalKnownVars, aliasvars, _)) equation
       (_::_, _) = BackendVariable.getVar(cr, aliasvars);
       zero = Expression.arrayFill(Expression.arrayDimension(tp), DAE.BCONST(false));
-    then (zero, (knvars, aliasvars, true));
+    then (zero, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (knvars, aliasvars, _))
-    then (DAE.BCONST(false), (knvars, aliasvars, true));
+    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _))
+    then (DAE.BCONST(false), (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (globalKnownVars, aliasvars, _)) equation
       (var, _) = BackendVariable.getVarSingle(cr, aliasvars);
       (cr, negate) = BackendVariable.getAlias(var);
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
       (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("change"), {e}, attr));
-      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
-    then (e, (knvars, aliasvars, true));
+      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (globalKnownVars, aliasvars, false));
+    then (e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (knvars, aliasvars, _)) equation
-      (_, _) = BackendVariable.getVarSingle(cr, knvars);
+    case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (globalKnownVars, aliasvars, _)) equation
+      (_, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
       zero = Expression.arrayFill(Expression.arrayDimension(tp), DAE.BCONST(false));
-    then (zero, (knvars, aliasvars, true));
+    then (zero, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (knvars, aliasvars, _))
-    then (DAE.BCONST(false), (knvars, aliasvars, true));
+    case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _))
+    then (DAE.BCONST(false), (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (globalKnownVars, aliasvars, _)) equation
       (var, _) = BackendVariable.getVarSingle(cr, aliasvars);
       (cr, negate) = BackendVariable.getAlias(var);
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
       (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("edge"), {e}, attr));
-      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
-    then (e, (knvars, aliasvars, true));
+      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (globalKnownVars, aliasvars, false));
+    then (e, (globalKnownVars, aliasvars, true));
 
     else (inExp, inTpl);
   end matchcontinue;
@@ -269,10 +270,10 @@ protected
   BackendDAE.Shared shared;
 algorithm
   shared := inDAE.shared;
-  BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(shared.knownVars, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.knownVars, shared.aliasVars, false)));
-  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.knownVars, shared.aliasVars, false)));
-  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.knownVars, shared.aliasVars, false)));
-  (shared.eventInfo, _) := traverseEventInfoExps(shared.eventInfo, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.knownVars, shared.aliasVars, false)));
+  BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(shared.globalKnownVars, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.globalKnownVars, shared.aliasVars, false)));
+  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.globalKnownVars, shared.aliasVars, false)));
+  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.globalKnownVars, shared.aliasVars, false)));
+  (shared.eventInfo, _) := traverseEventInfoExps(shared.eventInfo, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.globalKnownVars, shared.aliasVars, false)));
   outDAE := BackendDAE.DAE(inDAE.eqs, shared);
 end simplifyTimeIndepFuncCallsShared;
 
@@ -473,38 +474,38 @@ algorithm
     local
       DAE.Exp e;
       Boolean b,b1,b2;
-      BackendDAE.Variables vars,knvars;
+      BackendDAE.Variables vars,globalKnownVars;
       DAE.ComponentRef cr;
       BackendDAE.Var var;
       list<BackendDAE.Var> vlst;
 
-    case (e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars,b1,b2))
-      then (e,false,(true,vars,knvars,b1,b2));
+    case (e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,globalKnownVars,b1,b2))
+      then (e,false,(true,vars,globalKnownVars,b1,b2));
     // inputs not constant and parameter(fixed=false) are constant but evaluated after konstant variables are evaluted
-    case (e as DAE.CREF(cr,_), (_,vars,knvars,b1,b2))
+    case (e as DAE.CREF(cr,_), (_,vars,globalKnownVars,b1,b2))
       equation
-        (vlst,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level";
+        (vlst,_::_)= BackendVariable.getVar(cr, globalKnownVars) "input variables stored in known variables are input on top level";
         false = List.mapAllValueBool(vlst,toplevelInputOrUnfixed,false);
-      then (e,false,(true,vars,knvars,b1,b2));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_,_}), (_,vars,knvars,b1,b2)) then (e,false,(true,vars,knvars,b1,b2));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars,b1,b2)) then (e,false,(true,vars,knvars,b1,b2));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "previous"), expLst = {_}), (_,vars,knvars,b1,b2)) then (e,false,(true,vars,knvars,b1,b2));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "change"), expLst = {_}), (_,vars,knvars,b1,b2)) then (e,false,(true,vars,knvars,b1,b2));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "edge"), expLst = {_}), (_,vars,knvars,b1,b2)) then (e,false,(true,vars,knvars,b1,b2));
+      then (e,false,(true,vars,globalKnownVars,b1,b2));
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_,_}), (_,vars,globalKnownVars,b1,b2)) then (e,false,(true,vars,globalKnownVars,b1,b2));
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,globalKnownVars,b1,b2)) then (e,false,(true,vars,globalKnownVars,b1,b2));
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "previous"), expLst = {_}), (_,vars,globalKnownVars,b1,b2)) then (e,false,(true,vars,globalKnownVars,b1,b2));
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "change"), expLst = {_}), (_,vars,globalKnownVars,b1,b2)) then (e,false,(true,vars,globalKnownVars,b1,b2));
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "edge"), expLst = {_}), (_,vars,globalKnownVars,b1,b2)) then (e,false,(true,vars,globalKnownVars,b1,b2));
     // case for finding simple equation in jacobians
     // there are all known variables mark as input
     // and they are all time-depending
-    case (e as DAE.CREF(cr,_), (_,vars,knvars,true,b2))
+    case (e as DAE.CREF(cr,_), (_,vars,globalKnownVars,true,b2))
       equation
-        (var::_,_::_)= BackendVariable.getVar(cr, knvars);
+        (var::_,_::_)= BackendVariable.getVar(cr, globalKnownVars);
         DAE.INPUT() = BackendVariable.getVarDirection(var);
-      then (e,false,(true,vars,knvars,true,b2));
+      then (e,false,(true,vars,globalKnownVars,true,b2));
     // unkown var
-    case (e as DAE.CREF(cr,_), (_,vars,knvars,b1,true))
+    case (e as DAE.CREF(cr,_), (_,vars,globalKnownVars,b1,true))
       equation
         (_::_,_::_)= BackendVariable.getVar(cr, vars);
-      then (e,false,(true,vars,knvars,b1,true));
-    case (e,(b,vars,knvars,b1,b2)) then (e,not b,(b,vars,knvars,b1,b2));
+      then (e,false,(true,vars,globalKnownVars,b1,true));
+    case (e,(b,vars,globalKnownVars,b1,b2)) then (e,not b,(b,vars,globalKnownVars,b1,b2));
 
   end matchcontinue;
 end traversingTimeEqnsFinder;
@@ -574,7 +575,7 @@ algorithm
       DAE.ComponentRef cr;
       Integer i,j;
       DAE.Exp es,cre,e1,e2;
-      BackendDAE.Variables vars,knvars;
+      BackendDAE.Variables vars,globalKnownVars;
       BackendDAE.Var var;
       BackendDAE.EquationArray eqns;
       BackendDAE.Equation eqn;
@@ -595,9 +596,9 @@ algorithm
         eqn = BackendEquation.equationNth1(eqns,pos);
         BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
         // variable time not there
-        knvars = BackendVariable.daeKnVars(shared);
-        (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,true,false));
-        (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,true,false));
+        globalKnownVars = BackendVariable.daeKnVars(shared);
+        (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,globalKnownVars,true,false));
+        (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,globalKnownVars,true,false));
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (_,{}) = ExpressionSolve.solve(e1,e2,cre);
@@ -614,9 +615,9 @@ algorithm
         eqn = BackendEquation.equationNth1(eqns,pos);
         BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
         // variable time not there
-        knvars = BackendVariable.daeKnVars(shared);
-        (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
-        (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
+        globalKnownVars = BackendVariable.daeKnVars(shared);
+        (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,globalKnownVars,false,false));
+        (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,globalKnownVars,false,false));
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (_,{}) = ExpressionSolve.solve(e1,e2,cre);
@@ -652,21 +653,21 @@ public function removeParameters
 algorithm
   outDAE := match inDAE
     local
-      BackendDAE.Variables knvars;
+      BackendDAE.Variables globalKnownVars;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
-    case (BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars)))
+    case (BackendDAE.DAE(systs, shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars)))
       algorithm
         repl := BackendVarTransform.emptyReplacements();
-        ((repl, _)) := BackendVariable.traverseBackendDAEVars(knvars, removeParametersFinder, (repl, knvars));
-        (knvars, repl) := replaceFinalVars(1, knvars, repl);
-        (knvars, repl) := replaceFinalVars(1, knvars, repl);
+        ((repl, _)) := BackendVariable.traverseBackendDAEVars(globalKnownVars, removeParametersFinder, (repl, globalKnownVars));
+        (globalKnownVars, repl) := replaceFinalVars(1, globalKnownVars, repl);
+        (globalKnownVars, repl) := replaceFinalVars(1, globalKnownVars, repl);
         if Flags.isSet(Flags.DUMP_PARAM_REPL) then
           BackendVarTransform.dumpReplacements(repl);
         end if;
         systs := List.map1(systs,removeParameterswork, repl);
-        shared.knownVars := knvars;
+        shared.globalKnownVars := globalKnownVars;
       then
         BackendDAE.DAE(systs, shared);
   end match;
@@ -743,19 +744,19 @@ algorithm
   (outVars,outRepl) := matchcontinue(inNumRepl,inVars,inRepl)
     local
       Integer numrepl;
-      BackendDAE.Variables knvars,knvars1,knvars2;
+      BackendDAE.Variables globalKnownVars,globalKnownVars1,globalKnownVars2;
       BackendVarTransform.VariableReplacements repl,repl1,repl2;
 
-    case(numrepl,knvars,repl)
+    case(numrepl,globalKnownVars,repl)
       equation
       true = intEq(0,numrepl);
-    then (knvars,repl);
+    then (globalKnownVars,repl);
 
-    case(numrepl,knvars,repl)
+    case(numrepl,globalKnownVars,repl)
       equation
-      (knvars1, (repl1,numrepl)) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,replaceFinalVarTraverser,(repl,0));
-      (knvars2, repl2) = replaceFinalVars(numrepl,knvars1,repl1);
-    then (knvars2,repl2);
+      (globalKnownVars1, (repl1,numrepl)) = BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars,replaceFinalVarTraverser,(repl,0));
+      (globalKnownVars2, repl2) = replaceFinalVars(numrepl,globalKnownVars1,repl1);
+    then (globalKnownVars2,repl2);
 
   end matchcontinue;
 end replaceFinalVars;
@@ -841,19 +842,19 @@ public function removeProtectedParameters
 algorithm
   outDAE := match inDAE
     local
-      BackendDAE.Variables knvars;
+      BackendDAE.Variables globalKnownVars;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
-    case BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars))
+    case BackendDAE.DAE(systs, shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars))
       algorithm
         repl := BackendVarTransform.emptyReplacements();
-        repl := BackendVariable.traverseBackendDAEVars(knvars, protectedParametersFinder, repl);
+        repl := BackendVariable.traverseBackendDAEVars(globalKnownVars, protectedParametersFinder, repl);
         if Flags.isSet(Flags.DUMP_PP_REPL) then
           BackendVarTransform.dumpReplacements(repl);
         end if;
         systs := List.map1(systs, removeProtectedParameterswork, repl);
-        shared.knownVars := knvars;
+        shared.globalKnownVars := globalKnownVars;
       then
         (BackendDAE.DAE(systs, shared));
   end match;
@@ -1161,21 +1162,21 @@ public function removeUnusedParameter
 algorithm
   outDlow := match inDlow
     local
-      BackendDAE.Variables knvars, knvars1;
+      BackendDAE.Variables globalKnownVars, globalKnownVars1;
       BackendDAE.EqSystems eqs;
       BackendDAE.Shared shared;
 
     case BackendDAE.DAE(eqs, shared)
       algorithm
-        knvars1 := BackendVariable.emptyVars();
-        knvars := shared.knownVars;
-        ((knvars, knvars1)) := BackendVariable.traverseBackendDAEVars(knvars, copyNonParamVariables, (knvars,knvars1));
-        ((_, knvars1)) := List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem, checkUnusedVariables, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(knvars, checkUnusedParameter, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, checkUnusedParameter, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, checkUnusedParameter, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, checkUnusedParameter, (knvars,knvars1));
-        shared.knownVars := knvars1;
+        globalKnownVars1 := BackendVariable.emptyVars();
+        globalKnownVars := shared.globalKnownVars;
+        ((globalKnownVars, globalKnownVars1)) := BackendVariable.traverseBackendDAEVars(globalKnownVars, copyNonParamVariables, (globalKnownVars,globalKnownVars1));
+        ((_, globalKnownVars1)) := List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem, checkUnusedVariables, (globalKnownVars,globalKnownVars1));
+        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(globalKnownVars, checkUnusedParameter, (globalKnownVars,globalKnownVars1));
+        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, checkUnusedParameter, (globalKnownVars,globalKnownVars1));
+        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, checkUnusedParameter, (globalKnownVars,globalKnownVars1));
+        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, checkUnusedParameter, (globalKnownVars,globalKnownVars1));
+        shared.globalKnownVars := globalKnownVars1;
       then
         BackendDAE.DAE(eqs, shared);
   end match;
@@ -1288,20 +1289,20 @@ public function removeUnusedVariables
 algorithm
   outDlow := match inDlow
     local
-      BackendDAE.Variables knvars, knvars1;
+      BackendDAE.Variables globalKnownVars, globalKnownVars1;
       BackendDAE.EqSystems eqs;
       BackendDAE.Shared shared;
 
     case BackendDAE.DAE(eqs, shared)
       algorithm
-        knvars1 := BackendVariable.emptyVars();
-        knvars := shared.knownVars;
-        ((_, knvars1)) := List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem, checkUnusedVariables, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(knvars, checkUnusedVariables, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, checkUnusedVariables, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, checkUnusedVariables, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, checkUnusedVariables, (knvars,knvars1));
-        shared.knownVars := knvars1;
+        globalKnownVars1 := BackendVariable.emptyVars();
+        globalKnownVars := shared.globalKnownVars;
+        ((_, globalKnownVars1)) := List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem, checkUnusedVariables, (globalKnownVars,globalKnownVars1));
+        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(globalKnownVars, checkUnusedVariables, (globalKnownVars,globalKnownVars1));
+        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, checkUnusedVariables, (globalKnownVars,globalKnownVars1));
+        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, checkUnusedVariables, (globalKnownVars,globalKnownVars1));
+        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, checkUnusedVariables, (globalKnownVars,globalKnownVars1));
+        shared.globalKnownVars := globalKnownVars1;
       then
         BackendDAE.DAE(eqs, shared);
   end match;
@@ -1408,7 +1409,7 @@ algorithm
   func := function checkUnusedFunctions(inFunctions = funcs);
   usedfuncs := List.fold1(eqs, BackendDAEUtil.traverseBackendDAEExpsEqSystem, func, usedfuncs);
   usedfuncs := List.fold1(eqs, BackendDAEUtil.traverseBackendDAEExpsEqSystemJacobians, func, usedfuncs);
-  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(shared.knownVars, func, usedfuncs);
+  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(shared.globalKnownVars, func, usedfuncs);
   usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(shared.externalObjects, func, usedfuncs);
   usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, func, usedfuncs);
   usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, func, usedfuncs);
@@ -2227,19 +2228,19 @@ protected function simplifyIfEquationsWork "author: Frenkel TUD 2012-07
 algorithm
   (osyst,oshared) := matchcontinue (isyst, ishared)
     local
-      BackendDAE.Variables vars, knvars;
+      BackendDAE.Variables vars, globalKnownVars;
       BackendDAE.EquationArray eqns;
       list<BackendDAE.Equation> eqnslst, asserts;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
 
     case ( syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),
-           shared as BackendDAE.SHARED(knownVars=knvars) )
+           shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars) )
       algorithm
         // traverse the equations
         eqnslst := BackendEquation.equationList(eqns);
         // traverse equations in reverse order, than branch equations of if equaitions need no reverse
-        ((eqnslst,asserts,true)) := List.fold31(listReverse(eqnslst), simplifyIfEquationsFinder, knvars, {},{},false);
+        ((eqnslst,asserts,true)) := List.fold31(listReverse(eqnslst), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
         syst.orderedEqs := BackendEquation.listEquation(eqnslst);
         syst := BackendDAEUtil.clearEqSyst(syst);
         syst := BackendEquation.requationsAddDAE(asserts, syst);
@@ -2265,24 +2266,24 @@ algorithm
       list<BackendDAE.Equation> eqnslst,asserts1;
       list<list<BackendDAE.Equation>> eqnslstlst;
       DAE.ElementSource source;
-      BackendDAE.Variables knvars;
+      BackendDAE.Variables globalKnownVars;
       BackendDAE.Equation eqn;
       BackendDAE.EquationAttributes attr;
 
-    case (BackendDAE.IF_EQUATION(conditions=explst, eqnstrue=eqnslstlst, eqnsfalse=eqnslst, source=source, attr=attr), knvars)
+    case (BackendDAE.IF_EQUATION(conditions=explst, eqnstrue=eqnslstlst, eqnsfalse=eqnslst, source=source, attr=attr), globalKnownVars)
       equation
         // check conditions
-        (explst,_) = Expression.traverseExpList(explst, simplifyEvaluatedParamter, (knvars,false));
+        (explst,_) = Expression.traverseExpList(explst, simplifyEvaluatedParamter, (globalKnownVars,false));
         explst = ExpressionSimplify.simplifyList(explst);
         // simplify if equation
-        (acc,asserts1) = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,knvars,acc,attr);
+        (acc,asserts1) = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,globalKnownVars,acc,attr);
         asserts = listAppend(asserts,asserts1);
       then
         (acc, asserts, true);
 
-    case (eqn,knvars)
+    case (eqn,globalKnownVars)
       equation
-        (eqn,(_,b)) = BackendEquation.traverseExpsOfEquation(eqn, simplifyIfExpevaluatedParamter, (knvars,b));
+        (eqn,(_,b)) = BackendEquation.traverseExpsOfEquation(eqn, simplifyIfExpevaluatedParamter, (globalKnownVars,b));
       then
         (eqn::acc,asserts,b);
   end matchcontinue;
@@ -2296,15 +2297,15 @@ protected function simplifyIfExpevaluatedParamter
 algorithm
   (outExp,tpl2) := matchcontinue (inExp,tpl1)
     local
-      BackendDAE.Variables knvars;
+      BackendDAE.Variables globalKnownVars;
       DAE.Exp e1,e2,cond,expThen,expElse;
       Boolean b,b1;
-    case (e1 as DAE.IFEXP(expCond=cond, expThen=expThen, expElse=expElse),(knvars,b))
+    case (e1 as DAE.IFEXP(expCond=cond, expThen=expThen, expElse=expElse),(globalKnownVars,b))
       equation
-        (cond,(_,b1)) = Expression.traverseExpBottomUp(cond, simplifyEvaluatedParamter, (knvars,false));
+        (cond,(_,b1)) = Expression.traverseExpBottomUp(cond, simplifyEvaluatedParamter, (globalKnownVars,false));
         e2 = if b1 then DAE.IFEXP(cond,expThen,expElse) else e1;
         (e2,_) = ExpressionSimplify.condsimplify(b1,e2);
-      then (e2,(knvars,b or b1));
+      then (e2,(globalKnownVars,b or b1));
     else (inExp,tpl1);
   end matchcontinue;
 end simplifyIfExpevaluatedParamter;
@@ -2317,16 +2318,16 @@ protected function simplifyEvaluatedParamter
 algorithm
   (outExp,tpl2) := matchcontinue (inExp,tpl1)
     local
-      BackendDAE.Variables knvars;
+      BackendDAE.Variables globalKnownVars;
       DAE.ComponentRef cr;
       BackendDAE.Var v;
       DAE.Exp e;
-    case (DAE.CREF(componentRef = cr),(knvars,_))
+    case (DAE.CREF(componentRef = cr),(globalKnownVars,_))
       equation
-        (v,_) = BackendVariable.getVarSingle(cr,knvars);
+        (v,_) = BackendVariable.getVarSingle(cr,globalKnownVars);
         true = BackendVariable.isFinalVar(v);
         e = BackendVariable.varBindExpStartValue(v);
-      then (e,(knvars,true));
+      then (e,(globalKnownVars,true));
     else (inExp,tpl1);
   end matchcontinue;
 end simplifyEvaluatedParamter;
@@ -2340,13 +2341,13 @@ protected function simplifyIfEquation
   input list<DAE.Exp> conditions1;
   input list<list<BackendDAE.Equation>> theneqns1;
   input DAE.ElementSource source;
-  input BackendDAE.Variables knvars;
+  input BackendDAE.Variables globalKnownVars;
   input list<BackendDAE.Equation> inEqns;
   input BackendDAE.EquationAttributes inEqAttr;
   output list<BackendDAE.Equation> outEqns;
   output list<BackendDAE.Equation> outAsserts;
 algorithm
-  (outEqns,outAsserts) := match(conditions,theneqns,elseenqs,conditions1,theneqns1,source,knvars,inEqns,inEqAttr)
+  (outEqns,outAsserts) := match(conditions,theneqns,elseenqs,conditions1,theneqns1,source,globalKnownVars,inEqns,inEqAttr)
     local
       DAE.Exp e;
       list<DAE.Exp> explst;
@@ -2357,7 +2358,7 @@ algorithm
     case ({},{},_,{},{},_,_,_,_)
       equation
         // simplify nested if equations
-        ((eqns,asserts,_)) = List.fold31(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, {},{},false);
+        ((eqns,asserts,_)) = List.fold31(listReverse(elseenqs), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
       then
         (listAppend(eqns,inEqns),asserts);
     // true case left with condition<>false
@@ -2366,17 +2367,17 @@ algorithm
         explst = listReverse(conditions1);
         eqnslst = listReverse(theneqns1);
         // simplify nested if equations
-        ((elseenqs1,asserts,_)) = List.fold31(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, {},{},false);
+        ((elseenqs1,asserts,_)) = List.fold31(listReverse(elseenqs), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
         elseenqs1 = listAppend(elseenqs1,asserts);
         (eqnslst,elseenqs1,asserts) = simplifyIfEquationAsserts(explst,eqnslst,elseenqs1,{},{},{});
-        eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,knvars,inEqns,inEqAttr);
+        eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,globalKnownVars,inEqns,inEqAttr);
       then
         (eqns,asserts);
     // if true and first use it
     case(DAE.BCONST(true)::_,eqns::_,_,{},_,_,_,_,_)
       equation
         // simplify nested if equations
-        ((eqns,asserts,_)) = List.fold31(listReverse(eqns), simplifyIfEquationsFinder, knvars, {},{},false);
+        ((eqns,asserts,_)) = List.fold31(listReverse(eqns), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
       then
         (listAppend(eqns,inEqns),asserts);
     // if true and not first use it as new else
@@ -2385,25 +2386,25 @@ algorithm
         explst = listReverse(conditions1);
         eqnslst = listReverse(theneqns1);
         // simplify nested if equations
-        ((elseenqs1,asserts,_)) = List.fold31(listReverse(eqns), simplifyIfEquationsFinder, knvars, {},{},false);
+        ((elseenqs1,asserts,_)) = List.fold31(listReverse(eqns), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
         elseenqs1 = listAppend(elseenqs1,asserts);
         (eqnslst,elseenqs1,asserts) = simplifyIfEquationAsserts(explst,eqnslst,elseenqs1,{},{},{});
-        eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,knvars,inEqns,inEqAttr);
+        eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,globalKnownVars,inEqns,inEqAttr);
       then
         (eqns,asserts);
     // if false skip it
     case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_,_,_)
       equation
-        (eqns,asserts) = simplifyIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,knvars,inEqns,inEqAttr);
+        (eqns,asserts) = simplifyIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,globalKnownVars,inEqns,inEqAttr);
       then
         (eqns,asserts);
     // all other cases
     case(e::explst,eqns::eqnslst,_,_,_,_,_,_,_)
       equation
         // simplify nested if equations
-        ((eqns,asserts,_)) = List.fold31(listReverse(eqns), simplifyIfEquationsFinder, knvars, {},{},false);
+        ((eqns,asserts,_)) = List.fold31(listReverse(eqns), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
         eqns = listAppend(eqns,asserts);
-        (eqns,asserts) = simplifyIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,knvars,inEqns,inEqAttr);
+        (eqns,asserts) = simplifyIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,globalKnownVars,inEqns,inEqAttr);
       then
         (eqns,asserts);
   end match;
@@ -2416,12 +2417,12 @@ protected function simplifyIfEquation1
   input list<list<BackendDAE.Equation>> theneqns;
   input list<BackendDAE.Equation> elseenqs;
   input DAE.ElementSource source;
-  input BackendDAE.Variables knvars;
+  input BackendDAE.Variables globalKnownVars;
   input list<BackendDAE.Equation> inEqns;
   input BackendDAE.EquationAttributes inEqAttr;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := matchcontinue(conditions,theneqns,elseenqs,source,knvars,inEqns,inEqAttr)
+  outEqns := matchcontinue(conditions,theneqns,elseenqs,source,globalKnownVars,inEqns,inEqAttr)
     local
       list<DAE.Exp> fbsExp;
       list<list<DAE.Exp>> tbsExp;
@@ -3425,22 +3426,22 @@ public function removeConstants "author: Frenkel TUD"
 algorithm
   outDAE := match inDAE
     local
-      BackendDAE.Variables knvars;
+      BackendDAE.Variables globalKnownVars;
       BackendDAE.EquationArray inieqns, remeqns;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
       list<BackendDAE.Equation> lsteqns;
       Boolean b;
-    case BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars, initialEqs=inieqns))
+    case BackendDAE.DAE(systs, shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars, initialEqs=inieqns))
       algorithm
         repl := BackendVarTransform.emptyReplacements();
-        repl := BackendVariable.traverseBackendDAEVars(knvars, removeConstantsFinder, repl);
+        repl := BackendVariable.traverseBackendDAEVars(globalKnownVars, removeConstantsFinder, repl);
         if Flags.isSet(Flags.DUMP_CONST_REPL) then
           BackendVarTransform.dumpReplacements(repl);
         end if;
 
-        (knvars, (repl, _)) := BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceFinalVarTraverser, (repl, 0));
+        (globalKnownVars, (repl, _)) := BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars, replaceFinalVarTraverser, (repl, 0));
 
         lsteqns := BackendEquation.equationList(shared.initialEqs);
         (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
@@ -3599,6 +3600,84 @@ algorithm
       then BackendDAE.DAE(systs, shared);
   end match;
 end replaceEdgeChangeShared;
+
+
+// =============================================================================
+// section for preOptModule >>removeLocalKnownVars<<
+//
+// =============================================================================
+
+public function removeLocalKnownVars "Looks for equations only depending on one variable and save them in localKnownVars."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := BackendDAEUtil.mapEqSystem(inDAE, removeLocalKnownVars2);
+end removeLocalKnownVars;
+
+
+public function removeLocalKnownVars2
+  input output BackendDAE.EqSystem syst;
+  input output BackendDAE.Shared shared;
+protected
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.Var potentialLocalKnownVar;
+  BackendDAE.Equation potentialGlobalKnownEquation;
+  DAE.Exp lhs;
+  DAE.Exp rhs;
+  DAE.Exp crefExp;
+  DAE.Exp binding;
+  list<Integer> localKnownVars={};
+  list<Integer> localKnownEqns={};
+  Integer eindex=0;
+  Integer vindex;
+algorithm
+  (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(),NONE());
+
+  // Delete negative entries from incidence matrix
+  m := Array.map(m,Tearing.deleteNegativeEntries);
+
+  for row in m loop
+    eindex := eindex+1;
+    if listLength(row) == 1 then
+      {vindex} := row;
+      //print("Variable: " + intString(vindex) + "\n");
+      //print("Equation: " + intString(eindex) + "\n\n");
+
+      potentialLocalKnownVar := BackendVariable.getVarAt(syst.orderedVars,vindex);
+      potentialGlobalKnownEquation := BackendEquation.equationNth1(syst.orderedEqs,eindex);
+
+      try
+        BackendDAE.EQUATION(exp = lhs, scalar = rhs) := potentialGlobalKnownEquation;
+        crefExp := BackendVariable.varExp(potentialLocalKnownVar);
+        (binding,_) := ExpressionSolve.solve(lhs,rhs,crefExp);
+        potentialLocalKnownVar := BackendVariable.setBindExp(potentialLocalKnownVar, SOME(binding));
+        localKnownVars := vindex::localKnownVars;
+        localKnownEqns := eindex::localKnownEqns;
+        shared.localKnownVars := BackendVariable.addVar(potentialLocalKnownVar, shared.localKnownVars);
+      else
+      end try;
+    end if;
+  end for;
+  localKnownVars := List.sort(localKnownVars, intLt);
+  localKnownEqns := listReverse(localKnownEqns);
+
+  for var in localKnownVars loop
+    syst.orderedVars := BackendVariable.removeVar(var, syst.orderedVars);
+  end for;
+
+  for eqn in localKnownEqns loop
+    syst.orderedEqs := BackendEquation.equationRemove(eqn, syst.orderedEqs);
+  end for;
+
+  // delete adjacency matrix
+  syst.m := NONE();
+  syst.mT := NONE();
+  syst.matching := BackendDAE.NO_MATCHING();
+
+  // TODO: remove this
+  syst.orderedVars := BackendVariable.listVar(BackendVariable.varList(syst.orderedVars));
+end removeLocalKnownVars2;
+
 
 // =============================================================================
 // section for postOptModule >>addInitialStmtsToAlgorithms<<
@@ -4000,7 +4079,7 @@ protected
   BackendDAE.EqSystem syst;
 algorithm
   BackendDAE.DAE(systlst, oshared) := inDAE;
-  kvarlst := BackendVariable.varList(oshared.knownVars);
+  kvarlst := BackendVariable.varList(oshared.globalKnownVars);
   lst_inputs := List.select(kvarlst, BackendVariable.isVarOnTopLevelAndInputNoDerInput);
 
   //BackendDump.printVarList(lst_inputs);
@@ -5362,7 +5441,7 @@ protected
   BackendDAE.Shared shared;
 algorithm
   shared := inDAE.shared;
-  BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(shared.knownVars, traverserapplyRewriteRulesBackend, false);
+  BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(shared.globalKnownVars, traverserapplyRewriteRulesBackend, false);
   BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, traverserapplyRewriteRulesBackend, false);
   BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, traverserapplyRewriteRulesBackend, false);
   // not sure if we should apply the rules on the event info!

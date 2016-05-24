@@ -417,7 +417,7 @@ protected
   BackendDAE.EquationArray eqns,  oeqns, hs0Eqs;
   BackendDAE.Matching matchingNew;
   BackendDAE.StrongComponents comps, compsNew, oComps, compsEqSys;
-  BackendDAE.Variables vars, kv,  diffVars, ovars, dVars;
+  BackendDAE.Variables vars, diffVars, ovars, dVars;
   BackendVarTransform.VariableReplacements derRepl;
   DAE.FunctionTree functree;
   list<BackendDAE.Equation> eqLst,reqns, otherEqnsLst,otherEqnsLstReplaced, eqNew, hs, hs1, hLst, hsLst, hs_0, addEqLst;
@@ -436,7 +436,6 @@ protected
 algorithm
    // handle torn systems for the linear case
    BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, matching = BackendDAE.MATCHING(comps=comps)) := isyst;
-   BackendDAE.SHARED(knownVars=kv, functionTree=functree) := ishared;
    eqLst := BackendEquation.equationList(eqns);
    varLst := BackendVariable.varList(vars);
    tvars := List.map1r(tVarIdcs0, BackendVariable.getVarAt, vars);

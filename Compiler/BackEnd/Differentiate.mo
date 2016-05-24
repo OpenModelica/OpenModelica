@@ -104,7 +104,7 @@ algorithm
       BackendDump.debugStrEqnStr("### Differentiate equation\n", inEquation, " w.r.t. time.\n");
     end if;
     funcs := BackendDAEUtil.getFunctions(inShared);
-    knvars := BackendDAEUtil.getknvars(inShared);
+    knvars := BackendDAEUtil.getGlobalKnownVarsFromShared(inShared);
     diffData := BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), SOME(inVariables), {}, {}, NONE());
     (outEquation, funcs) := differentiateEquation(inEquation, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
@@ -137,7 +137,7 @@ algorithm
       BackendDump.debugStrExpStr("### Differentiate expression\n ", inExp, " w.r.t. time.\n");
     end if;
     funcs := BackendDAEUtil.getFunctions(inShared);
-    knvars := BackendDAEUtil.getknvars(inShared);
+    knvars := BackendDAEUtil.getGlobalKnownVarsFromShared(inShared);
     diffData := BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), SOME(inVariables), {}, {}, NONE());
     (dexp, funcs) := differentiateExp(inExp, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs, defaultMaxIter, {});
     (outExp, _) := ExpressionSimplify.simplify(dexp);
@@ -212,7 +212,7 @@ protected
 algorithm
   try
     funcs := BackendDAEUtil.getFunctions(inShared);
-    knvars := BackendDAEUtil.getknvars(inShared);
+    knvars := BackendDAEUtil.getGlobalKnownVarsFromShared(inShared);
     diffData := BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), NONE(), {}, {}, NONE());
     (dexp, funcs) := differentiateExp(inExp, inCref, diffData, BackendDAE.DIFF_FULL_JACOBIAN(), funcs, defaultMaxIter, {});
     (outExp,_) := ExpressionSimplify.simplify(dexp);

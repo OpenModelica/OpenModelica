@@ -89,30 +89,30 @@ author:Waurich TUD 2015-04"
 protected
   BackendDAE.EqSystems eqs, eqs0;
   BackendDAE.Shared shared;
-  BackendDAE.Variables knownVars, aliasVars;
-  list<BackendDAE.Var> knownVarLst, allVarLst, aliasVarLst;
+  BackendDAE.Variables globalKnownVars, aliasVars;
+  list<BackendDAE.Var> globalKnownVarLst, allVarLst, aliasVarLst;
   list<Visualization> visuals;
   list<DAE.ComponentRef> allVisuals;
 algorithm
   BackendDAE.DAE(eqs=eqs0, shared=shared) := daeIn;
-  BackendDAE.SHARED(knownVars=knownVars,aliasVars=aliasVars) := shared;
+  BackendDAE.SHARED(globalKnownVars=globalKnownVars,aliasVars=aliasVars) := shared;
   //in case we have a time dependent, protected variable, set the solved equation as binding
   eqs := List.map(eqs0,BackendDAEUtil.copyEqSystem);
   eqs := List.map(eqs,setBindingForProtectedVars);
 
   //get all variables that contain visualization vars
-  knownVarLst := BackendVariable.varList(knownVars);
+  globalKnownVarLst := BackendVariable.varList(globalKnownVars);
   aliasVarLst := BackendVariable.varList(aliasVars);
   allVarLst := List.flatten(List.mapMap(eqs, BackendVariable.daeVars,BackendVariable.varList));
 
   //collect all visualization objects
-  (knownVarLst,allVisuals) := List.fold(knownVarLst,isVisualizationVar,({},{}));
+  (globalKnownVarLst,allVisuals) := List.fold(globalKnownVarLst,isVisualizationVar,({},{}));
   (allVarLst,allVisuals) := List.fold(allVarLst,isVisualizationVar,({},allVisuals));
   (aliasVarLst,allVisuals) := List.fold(aliasVarLst,isVisualizationVar,({},allVisuals));
     //print("ALL VISUALS "+stringDelimitList(List.map(allVisuals,ComponentReference.printComponentRefStr)," |")+"\n");
 
   //fill theses visualization objects with information
-  allVarLst := listAppend(knownVarLst,listAppend(allVarLst,aliasVarLst));
+  allVarLst := listAppend(globalKnownVarLst,listAppend(allVarLst,aliasVarLst));
   (visuals,_) := List.mapFold(allVisuals, fillVisualizationObjects,allVarLst);
     //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
 

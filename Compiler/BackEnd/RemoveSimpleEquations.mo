@@ -59,7 +59,6 @@ protected import BaseHashSet;
 protected import BaseHashTable;
 protected import Ceval;
 protected import ComponentReference;
-protected import SimCodeUtil;
 protected import Debug;
 protected import ElementSource;
 protected import Error;
@@ -70,12 +69,13 @@ protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import Flags;
 protected import HashSet;
-protected import List;
-protected import Types;
-protected import Util;
 protected import HashTableCrToCrEqLst;
 protected import HashTableCrToExp;
 protected import HashTableExpToIndex;
+protected import List;
+protected import SimCodeUtil;
+protected import Types;
+protected import Util;
 
 
 
@@ -173,6 +173,7 @@ algorithm
     end match;
 
     outDAE := fixAliasVars(outDAE) "workaround for #3323";
+    outDAE := fixKnownVars(outDAE);
   end if;
 end removeSimpleEquations;
 
@@ -202,7 +203,7 @@ protected
   DAE.Exp binding;
 algorithm
   aliasVars := BackendDAEUtil.getAliasVars(inDAE);
-  knownVarList := BackendVariable.varList(BackendDAEUtil.getKnownVars(inDAE));
+  knownVarList := BackendVariable.varList(BackendDAEUtil.getGlobalKnownVarsFromDAE(inDAE));
 
   for var in BackendVariable.varList(aliasVars) loop
     binding := BackendVariable.varBindExp(var);
@@ -216,6 +217,46 @@ algorithm
   outDAE := BackendDAEUtil.setAliasVars(inDAE, BackendVariable.listVar(aliasVarList));
   outDAE := BackendDAEUtil.setKnownVars(outDAE, BackendVariable.listVar(knownVarList));
 end fixAliasVars;
+
+protected function fixKnownVars "author: lochel
+  This is a workaround.
+  TODO: Remove this once removeSimpleEquations is implemented properly.
+
+  This module traverses all known variables and double-checks if they are known or not."
+  input output BackendDAE.BackendDAE dae;
+protected
+  BackendDAE.EqSystem eqs;
+  BackendDAE.Variables globalKnownVars;
+  DAE.Exp binding;
+  list<BackendDAE.Equation> eqnList = {};
+  list<BackendDAE.Var> varList = {};
+  list<BackendDAE.Var> knownVarList = {};
+  list<DAE.ComponentRef> crlst;
+algorithm
+  globalKnownVars := dae.shared.globalKnownVars;
+
+  for var in BackendVariable.varList(globalKnownVars) loop
+    if BackendVariable.varHasBindExp(var) then
+      binding := BackendVariable.varBindExp(var);
+      (_, crlst) := Expression.traverseExpTopDown(binding, Expression.traversingComponentRefFinderNoPreDer, {});
+      if BackendDAEUtil.containAnyVar(crlst, dae.shared.localKnownVars) then
+        varList := BackendVariable.setBindExp(var, NONE())::varList;
+        eqnList := BackendDAE.EQUATION(BackendVariable.varExp(var), binding, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING)::eqnList;
+      else
+        knownVarList := var::knownVarList;
+      end if;
+    else
+      knownVarList := var::knownVarList;
+    end if;
+  end for;
+
+  if not listEmpty(varList) then
+    eqs := BackendDAEUtil.createEqSystem(BackendVariable.listVar(varList), BackendEquation.listEquation(eqnList), {}, BackendDAE.UNSPECIFIED_PARTITION());
+    dae.eqs := eqs::dae.eqs;
+  end if;
+
+  dae := BackendDAEUtil.setKnownVars(dae, BackendVariable.listVar(knownVarList));
+end fixKnownVars;
 
 protected function fixAliasAndKnownVarsCausal "author: lochel
   TODO: Remove this once removeSimpleEquations is implemented properly.
@@ -234,8 +275,8 @@ algorithm
   aliasVars1 := BackendDAEUtil.getAliasVars(inDAE1);
   aliasVars2 := BackendDAEUtil.getAliasVars(inDAE2);
 
-  knownVars1 := BackendDAEUtil.getKnownVars(inDAE1);
-  knownVars2 := BackendDAEUtil.getKnownVars(inDAE2);
+  knownVars1 := BackendDAEUtil.getGlobalKnownVarsFromDAE(inDAE1);
+  knownVars2 := BackendDAEUtil.getGlobalKnownVarsFromDAE(inDAE2);
 
   for var in BackendVariable.varList(aliasVars2) loop
     cref := BackendVariable.varCref(var);
@@ -1536,15 +1577,15 @@ algorithm
   outTpl := matchcontinue (lhs, rhs, eqnAttributes, selfCalled, inTpl)
     local
       DAE.Type ty;
-      BackendDAE.Variables vars, knvars;
+      BackendDAE.Variables vars, globalKnownVars;
       list<Integer> ilst;
       list<BackendDAE.Var> vlst;
 
-    case (_, _, _, _, (vars, BackendDAE.SHARED(knownVars=knvars), _, _, _, _, _))
+    case (_, _, _, _, (vars, BackendDAE.SHARED(globalKnownVars=globalKnownVars), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
-        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false, vars, knvars, false, false, {}));
-        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false, vars, knvars, false, false, ilst));
+        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false, vars, globalKnownVars, false, false, {}));
+        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false, vars, globalKnownVars, false, false, ilst));
         ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
         vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
       then
@@ -1570,14 +1611,14 @@ algorithm
     local
       DAE.Exp e2;
       DAE.Type ty;
-      BackendDAE.Variables vars, knvars;
+      BackendDAE.Variables vars, globalKnownVars;
       list<Integer> ilst;
       list<BackendDAE.Var> vlst;
 
-    case (_, _, _, (vars, BackendDAE.SHARED(knownVars=knvars), _, _, _, _, _))
+    case (_, _, _, (vars, BackendDAE.SHARED(globalKnownVars=globalKnownVars), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
-        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, knvars, false, false, {}));
+        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, globalKnownVars, false, false, {}));
         ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
         vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
         ty = Expression.typeof(exp);
@@ -1614,29 +1655,29 @@ algorithm
   (outExp,cont,outTuple) := matchcontinue (inExp,inTuple)
     local
       Boolean b, b1, b2;
-      BackendDAE.Variables vars, knvars;
+      BackendDAE.Variables vars, globalKnownVars;
       DAE.ComponentRef cr;
       list<Integer> ilst, vlst;
       list<BackendDAE.Var> varlst;
 
-    case (DAE.CREF(DAE.CREF_IDENT(ident="time", subscriptLst={}), _), (b, vars, knvars, b1, b2, ilst))
-    then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
+    case (DAE.CREF(DAE.CREF_IDENT(ident="time", subscriptLst={}), _), (b, vars, globalKnownVars, b1, b2, ilst))
+    then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
 
-    case (DAE.CREF(cr, _), (b, vars, knvars, b1, b2, ilst)) equation
-      (varlst, _::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level";
+    case (DAE.CREF(cr, _), (b, vars, globalKnownVars, b1, b2, ilst)) equation
+      (varlst, _::_)= BackendVariable.getVar(cr, globalKnownVars) "input variables stored in known variables are input on top level";
       false = List.mapAllValueBool(varlst, toplevelInputOrUnfixed, false);
-    then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
+    then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
 
-    case (DAE.CALL(path = Absyn.IDENT(name="pre")), (b, vars, knvars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
-    case (DAE.CALL(path = Absyn.IDENT(name="previous")), (b, vars, knvars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst) );
-    case (DAE.CALL(path = Absyn.IDENT(name="change")), (b, vars, knvars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
-    case (DAE.CALL(path = Absyn.IDENT(name="edge")), (b, vars, knvars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="pre")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="previous")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst) );
+    case (DAE.CALL(path = Absyn.IDENT(name="change")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="edge")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
 
     // var
-    case (DAE.CREF(cr, _), (b, vars, knvars, b1, b2, ilst)) equation
+    case (DAE.CREF(cr, _), (b, vars, globalKnownVars, b1, b2, ilst)) equation
       (_::_, vlst)= BackendVariable.getVar(cr, vars);
       ilst = listAppend(ilst, vlst);
-    then (inExp, true, (b, vars, knvars, b1, b2, ilst));
+    then (inExp, true, (b, vars, globalKnownVars, b1, b2, ilst));
 
     case (_, (b, _, _, _, _, _))
     then (inExp, not b, inTuple);
@@ -1754,7 +1795,7 @@ protected function constOrAliasAcausal "author: Frenkel TUD 2012-12"
 algorithm
   outTpl := matchcontinue (var, i, cr, exp, eqnAttributes, inTpl)
     local
-      BackendDAE.Variables vars, knvars;
+      BackendDAE.Variables vars, globalKnownVars;
       BackendDAE.Shared shared;
       list<BackendDAE.Equation> eqns;
       list<SimpleContainer> seqns;
@@ -1773,8 +1814,8 @@ algorithm
         // alias
         (negated, cra) = aliasExp(exp);
         // get Variables
-        knvars = BackendVariable.daeKnVars(shared);
-        (vars2, ilst2) = BackendVariable.getVar(cra, knvars);
+        globalKnownVars = BackendVariable.daeKnVars(shared);
+        (vars2, ilst2) = BackendVariable.getVar(cra, globalKnownVars);
         // add to Simple Equations List
         (seqns, index, mT) = generateSimpleContainters({var}, false, {i}, false, false, vars2, negated, ilst2, true, false, eqnAttributes, seqns, index, mT);
       then
@@ -1799,9 +1840,10 @@ algorithm
         //exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
         exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp,functions);
         if not Expression.isConst(exp2) then
-          exp2 = exp; end if;
+          exp2 = exp;
+        end if;
         if Flags.isSet(Flags.DEBUG_ALIAS) then
-          BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n");
+          BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval, case 1) ", cr, " = ", exp, " found.\n");
         end if;
         colum = mT[i];
         arrayUpdate(mT, i, index::colum);
@@ -1814,7 +1856,7 @@ algorithm
         not Expression.isImpure(exp) // lochel: this is at least needed for impure functions
       equation
         if Flags.isSet(Flags.DEBUG_ALIAS) then
-          BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n");
+          BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval, case 2) ", cr, " = ", exp, " found.\n");
         end if;
         colum = mT[i];
         arrayUpdate(mT, i, index::colum);
@@ -2925,7 +2967,7 @@ algorithm
       list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> values;
       list<tuple<DAE.Exp, DAE.ComponentRef>> zerofreevalues;
       BackendDAE.Var v;
-      BackendDAE.Variables knVars;
+      BackendDAE.Variables globalKnownVars;
 
     // default value
     case (_, _, (_, {}), _) then inVar;
@@ -2936,10 +2978,10 @@ algorithm
     then BackendVariable.setVarStartValueOption(v, start);
 
     // fixed true several start values, this need some investigation
-    case (_, true, (_, (start, cr)::values), BackendDAE.SHARED(knownVars=knVars)) equation
+    case (_, true, (_, (start, cr)::values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) equation
       v = BackendVariable.setVarFixed(inVar, true);
-      start1 = optExpReplaceCrefWithBindExp(start, knVars);
-      ((_, start, _)) = equalNonFreeStartValues(values, knVars, (start1, start, cr));
+      start1 = optExpReplaceCrefWithBindExp(start, globalKnownVars);
+      ((_, start, _)) = equalNonFreeStartValues(values, globalKnownVars, (start1, start, cr));
     then BackendVariable.setVarStartValueOption(v, start);
 
     case (_, true, (_, values), BackendDAE.SHARED()) equation
@@ -2953,9 +2995,9 @@ algorithm
     then BackendVariable.setVarStartValueOption(inVar, start);
 
     // fixed false several start value, this need some investigation
-    case (_, false, (_, (start, cr)::values), BackendDAE.SHARED(knownVars=knVars)) equation
-      start1 = optExpReplaceCrefWithBindExp(start, knVars);
-      ((_, start, _)) = equalFreeStartValues(values, knVars, (start1, start, cr));
+    case (_, false, (_, (start, cr)::values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) equation
+      start1 = optExpReplaceCrefWithBindExp(start, globalKnownVars);
+      ((_, start, _)) = equalFreeStartValues(values, globalKnownVars, (start1, start, cr));
     then BackendVariable.setVarStartValueOption(inVar, start);
 
     case (_, false, (_, values), _) equation
@@ -3166,16 +3208,16 @@ end handleVarSetAttributes;
 
 protected function optExpReplaceCrefWithBindExp "author: Frenkel TUD 2012-12"
   input Option<DAE.Exp> iOExp;
-  input BackendDAE.Variables knVars;
+  input BackendDAE.Variables globalKnownVars;
   output Option<DAE.Exp> oOExp;
 algorithm
-  oOExp := match(iOExp, knVars)
+  oOExp := match(iOExp, globalKnownVars)
     local
       DAE.Exp e;
       Boolean b;
     case(SOME(e), _)
       equation
-        (e, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
         (e, _) = ExpressionSimplify.condsimplify(b, e);
       then
         SOME(e);
@@ -3185,11 +3227,11 @@ end optExpReplaceCrefWithBindExp;
 
 protected function equalNonFreeStartValues "author: Frenkel TUD 2012-12"
   input list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> iValues;
-  input BackendDAE.Variables knVars;
+  input BackendDAE.Variables globalKnownVars;
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>, DAE.ComponentRef> iValue;
   output tuple<Option<DAE.Exp>, Option<DAE.Exp>, DAE.ComponentRef> oValue;
 algorithm
-  oValue := match(iValues, knVars, iValue)
+  oValue := match(iValues, globalKnownVars, iValue)
     local
       list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> values;
       DAE.Exp e, e1, e2;
@@ -3198,32 +3240,32 @@ algorithm
     case ({}, _, _) then iValue;
     case (((NONE(), _))::values, _, _)
       then
-        equalNonFreeStartValues(values, knVars, iValue);
+        equalNonFreeStartValues(values, globalKnownVars, iValue);
     case (((NONE(), _))::values, _, (NONE(), _, _))
       then
-        equalNonFreeStartValues(values, knVars, iValue);
+        equalNonFreeStartValues(values, globalKnownVars, iValue);
     case (((NONE(), cr))::values, _, (SOME(e2), _, _))
       guard
         Expression.isZero(e2)
       then
-        equalNonFreeStartValues(values, knVars, (NONE(), NONE(), cr));
+        equalNonFreeStartValues(values, globalKnownVars, (NONE(), NONE(), cr));
     case (((SOME(e), _))::values, _, (SOME(e2), _, _))
       equation
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         true = Expression.expEqual(e1, e2);
       then
-        equalNonFreeStartValues(values, knVars, iValue);
+        equalNonFreeStartValues(values, globalKnownVars, iValue);
   end match;
 end equalNonFreeStartValues;
 
 protected function equalFreeStartValues "author: Frenkel TUD 2012-12"
   input list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> iValues;
-  input BackendDAE.Variables knVars;
+  input BackendDAE.Variables globalKnownVars;
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>, DAE.ComponentRef> iValue;
   output tuple<Option<DAE.Exp>, Option<DAE.Exp>, DAE.ComponentRef> oValue;
 algorithm
-  oValue := match(iValues, knVars, iValue)
+  oValue := match(iValues, globalKnownVars, iValue)
     local
       list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> values;
       DAE.Exp e, e1, e2;
@@ -3233,21 +3275,21 @@ algorithm
     // ignore default values
     case (((NONE(), _))::values, _, _)
       then
-        equalFreeStartValues(values, knVars, iValue);
+        equalFreeStartValues(values, globalKnownVars, iValue);
     case (((SOME(e), cr))::values, _, (NONE(), _, _))
       equation
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
       then
-        equalFreeStartValues(values, knVars, (SOME(e1), SOME(e), cr));
+        equalFreeStartValues(values, globalKnownVars, (SOME(e1), SOME(e), cr));
     // compare
     case (((SOME(e), _))::values, _, (SOME(e2), _, _))
       equation
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         true = Expression.expEqual(e1, e2);
       then
-        equalFreeStartValues(values, knVars, iValue);
+        equalFreeStartValues(values, globalKnownVars, iValue);
   end match;
 end equalFreeStartValues;
 
@@ -3508,7 +3550,7 @@ algorithm
   outDAE:=
   match (b, inDAE)
     local
-      BackendDAE.Variables knvars;
+      BackendDAE.Variables globalKnownVars;
       BackendDAE.Variables aliasVars;
       BackendDAE.EquationArray inieqns;
       list<DAE.Constraint> constraintsLst;
@@ -3521,7 +3563,7 @@ algorithm
       BackendDAE.Shared shared;
 
     case (false, _) then inDAE;
-    case (true, BackendDAE.DAE(systs, shared as BackendDAE.SHARED( knownVars=knvars, aliasVars=aliasVars, initialEqs=inieqns,
+    case (true, BackendDAE.DAE(systs, shared as BackendDAE.SHARED( globalKnownVars=globalKnownVars, aliasVars=aliasVars, initialEqs=inieqns,
                                                                    constraints=constraintsLst, classAttrs=clsAttrsLst )))
       equation
         if Flags.isSet(Flags.DUMP_REPL) then
@@ -3529,12 +3571,12 @@ algorithm
           BackendVarTransform.dumpExtendReplacements(repl);
           BackendVarTransform.dumpDerConstReplacements(repl);
         end if;
-        // replace moved vars in knvars, remeqns
+        // replace moved vars in globalKnownVars, remeqns
         (_, (_, varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceAliasVarTraverser, (repl, {}));
         aliasVars = List.fold(varlst, fixAliasConstBindings, aliasVars);
         shared.aliasVars = aliasVars;
 
-        (_, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceVarTraverser, repl);
+        (_, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars, replaceVarTraverser, repl);
 
         ((_, eqnslst, b1)) = BackendEquation.traverseEquationArray(shared.initialEqs, replaceEquationTraverser, (repl, {}, false));
         shared.initialEqs = if b1 then BackendEquation.listEquation(eqnslst) else shared.initialEqs;
@@ -4309,7 +4351,7 @@ algorithm
   (outSystem,outShared) := matchcontinue(inSystem,inShared)
     local
       BackendDAE.Variables orderedVars;
-      BackendDAE.Variables knownVars;
+      BackendDAE.Variables globalKnownVars;
       BackendDAE.EquationArray orderedEqs;
       BackendDAE.EquationArray inieqns;
       BackendDAE.StateSets stateSets;
@@ -4330,7 +4372,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.EventInfo eventInfo;
-      BackendDAE.Variables knvars, exobj, knvars1;
+      BackendDAE.Variables globalKnownVars, exobj, globalKnownVars1;
       BackendDAE.Variables aliasVars;
       BackendDAE.EquationArray remeqns, inieqns, remeqns1;
       list<DAE.Constraint> constraintsLst;
@@ -4347,7 +4389,7 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
 
     case ( syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, removedEqs=remeqns),
-           shared as BackendDAE.SHARED( knownVars=knvars, aliasVars=aliasVars, initialEqs=inieqns,
+           shared as BackendDAE.SHARED( globalKnownVars=globalKnownVars, aliasVars=aliasVars, initialEqs=inieqns,
                                        eventInfo=eventInfo) )
       equation
 
@@ -4363,7 +4405,7 @@ algorithm
       (_, HTCrToExp, HTCrToCrEqLst, eqList, simpleEqList) = BackendEquation.traverseEquationArray(orderedEqs, function findSimpleEquations(findAliases=findAliases),
       (orderedVars, HTCrToExp, HTCrToCrEqLst, {}, {}));
       (tplExp) = BaseHashTable.hashTableList(HTCrToExp);
-//    (knvars, orderedVars) = moveVars(tplExp, knvars, orderedVars);
+//    (globalKnownVars, orderedVars) = moveVars(tplExp, globalKnownVars, orderedVars);
       //SimCodeUtil.execStat("FINDSIMPLE1: ");
 
 
@@ -4410,7 +4452,7 @@ algorithm
       // Update Alias variables, some might be moved to known variables!!!
       (aliasVars, (_, varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceAliasVarTraverser, (repl, {}));
       aliasVars = List.fold(varlst, fixAliasConstBindings, aliasVars);
-      (knvars, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceVarTraverser, repl);
+      (globalKnownVars, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars, replaceVarTraverser, repl);
 
       // BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
       // BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
@@ -4436,7 +4478,7 @@ algorithm
       syst.orderedEqs = orderedEqs;
 
       shared.eventInfo = eventInfo;
-      shared.knownVars = knvars;
+      shared.globalKnownVars = globalKnownVars;
       shared.aliasVars = aliasVars;
       shared.initialEqs = inieqns;
 

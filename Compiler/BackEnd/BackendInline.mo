@@ -109,7 +109,7 @@ algorithm
     eqs := inBackendDAE.eqs;
     tpl := (SOME(shared.functionTree), inITLst);
     eqs := List.map1(eqs, inlineEquationSystem, tpl);
-    shared.knownVars := inlineVariables(shared.knownVars, tpl);
+    shared.globalKnownVars := inlineVariables(shared.globalKnownVars, tpl);
     shared.externalObjects := inlineVariables(shared.externalObjects, tpl);
     shared.initialEqs := inlineEquationArray(shared.initialEqs, tpl);
     shared.removedEqs := inlineEquationArray(shared.removedEqs, tpl);
@@ -730,7 +730,7 @@ algorithm
       BackendDump.dumpEqSystems(eqs, "Result DAE after Inline.");
     end if;
     // TODO: use new BackendInline also for other parts
-    shared.knownVars := BackendInline.inlineVariables(shared.knownVars, tpl);
+    shared.globalKnownVars := BackendInline.inlineVariables(shared.globalKnownVars, tpl);
     shared.externalObjects := BackendInline.inlineVariables(shared.externalObjects, tpl);
     shared.initialEqs := BackendInline.inlineEquationArray(shared.initialEqs, tpl);
     shared.removedEqs := BackendInline.inlineEquationArray(shared.removedEqs, tpl);

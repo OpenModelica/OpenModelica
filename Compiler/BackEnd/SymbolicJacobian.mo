@@ -210,7 +210,7 @@ protected function createSymbolicJacobianforStates "author: wbraun
 protected
   BackendDAE.BackendDAE backendDAE2;
   list<BackendDAE.Var>  varlst, knvarlst, states, inputvars, paramvars;
-  BackendDAE.Variables v, kv;
+  BackendDAE.Variables v, globalKnownVars;
 algorithm
   if Flags.isSet(Flags.JAC_DUMP2) then
     print("analytical Jacobians -> start generate system for matrix A time : " + realString(clock()) + "\n");
@@ -219,11 +219,11 @@ algorithm
   backendDAE2 := BackendDAEUtil.copyBackendDAE(inBackendDAE);
   backendDAE2 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
   backendDAE2 := BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
-  BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)},BackendDAE.SHARED(knownVars = kv)) := backendDAE2;
+  BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)},BackendDAE.SHARED(globalKnownVars = globalKnownVars)) := backendDAE2;
 
   // Prepare all needed variables
   varlst := BackendVariable.varList(v);
-  knvarlst := BackendVariable.varList(kv);
+  knvarlst := BackendVariable.varList(globalKnownVars);
   states := BackendVariable.getAllStateVarFromVariables(v);
   inputvars := List.select(knvarlst,BackendVariable.isInput);
   paramvars := List.select(knvarlst, BackendVariable.isParam);
@@ -277,7 +277,7 @@ protected function createSymbolicJacobianforParameters
 protected
   BackendDAE.BackendDAE backendDAE2;
   list<BackendDAE.Var>  varlst, knvarlst, states, inputvars, paramvars;
-  BackendDAE.Variables v, kv;
+  BackendDAE.Variables v, globalKnownVars;
 algorithm
   if Flags.isSet(Flags.JAC_DUMP2) then
     print("analytical Jacobians -> start generate system for matrix S time : " + realString(clock()) + "\n");
@@ -286,11 +286,11 @@ algorithm
   backendDAE2 := BackendDAEUtil.copyBackendDAE(inBackendDAE);
   backendDAE2 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
   backendDAE2 := BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
-  BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)},BackendDAE.SHARED(knownVars = kv)) := backendDAE2;
+  BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)},BackendDAE.SHARED(globalKnownVars = globalKnownVars)) := backendDAE2;
 
   // Prepare all needed variables
   varlst := BackendVariable.varList(v);
-  knvarlst := BackendVariable.varList(kv);
+  knvarlst := BackendVariable.varList(globalKnownVars);
   states := BackendVariable.getAllStateVarFromVariables(v);
   inputvars := List.select(knvarlst,BackendVariable.isInput);
   paramvars := List.select(knvarlst, BackendVariable.isParam);
@@ -1584,7 +1584,7 @@ algorithm
       list<DAE.ComponentRef> comref_states, comref_inputvars, comref_outputvars, comref_vars, comref_knvars;
       DAE.ComponentRef leftcref;
 
-      BackendDAE.Variables v,kv,statesarr,inputvarsarr,paramvarsarr,outputvarsarr, optimizer_vars, conVars;
+      BackendDAE.Variables v,globalKnownVars,statesarr,inputvarsarr,paramvarsarr,outputvarsarr, optimizer_vars, conVars;
       BackendDAE.EquationArray e;
 
       BackendDAE.SymbolicJacobians linearModelMatrices;
@@ -1605,13 +1605,13 @@ algorithm
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
         backendDAE2 = BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
-        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)}, BackendDAE.SHARED(knownVars = kv, functionTree = functionTree, cache=cache, graph=graph, info=ei)) = backendDAE2;
+        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)}, BackendDAE.SHARED(globalKnownVars = globalKnownVars, functionTree = functionTree, cache=cache, graph=graph, info=ei)) = backendDAE2;
 
 
         emptyBDAE = BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
-        knvarlst = BackendVariable.varList(kv);
+        knvarlst = BackendVariable.varList(globalKnownVars);
         states = BackendVariable.getAllStateVarFromVariables(v);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
@@ -1646,11 +1646,11 @@ algorithm
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
         backendDAE2 = BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
-        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)}, BackendDAE.SHARED(knownVars = kv)) = backendDAE2;
+        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)}, BackendDAE.SHARED(globalKnownVars = globalKnownVars)) = backendDAE2;
 
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
-        knvarlst = BackendVariable.varList(kv);
+        knvarlst = BackendVariable.varList(globalKnownVars);
         states = BackendVariable.getAllStateVarFromVariables(v);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
@@ -1709,11 +1709,11 @@ algorithm
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
         backendDAE2 = BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
-        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)}, BackendDAE.SHARED(knownVars = kv)) = backendDAE2;
+        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)}, BackendDAE.SHARED(globalKnownVars = globalKnownVars)) = backendDAE2;
 
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
-        knvarlst = BackendVariable.varList(kv);
+        knvarlst = BackendVariable.varList(globalKnownVars);
         states = BackendVariable.getAllStateVarFromVariables(v);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
@@ -1812,7 +1812,7 @@ algorithm
       list<DAE.ComponentRef> comref_vars, comref_seedVars, comref_differentiatedVars;
 
       BackendDAE.Shared shared;
-      BackendDAE.Variables  knvars, knvars1;
+      BackendDAE.Variables  globalKnownVars, knvars1;
       list<BackendDAE.Var> diffedVars, diffVarsTmp, seedlst, knvarsTmp;
 
       BackendDAE.SparsePattern sparsepattern;
@@ -1848,8 +1848,8 @@ algorithm
           print("analytical Jacobians -> generated Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
 
-        knvars = BackendVariable.daeKnVars(shared);
-        diffVarsTmp = BackendVariable.varList(knvars);
+        globalKnownVars = BackendVariable.daeKnVars(shared);
+        diffVarsTmp = BackendVariable.varList(globalKnownVars);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> sorted know diff vars(" + intString(listLength(diffVarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
@@ -1857,8 +1857,8 @@ algorithm
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> sorted know vars(" + intString(listLength(knvarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
-        knvars = BackendVariable.listVar1(knvarsTmp);
-        backendDAE = BackendDAEUtil.setKnownVars(backendDAE, knvars);
+        globalKnownVars = BackendVariable.listVar1(knvarsTmp);
+        backendDAE = BackendDAEUtil.setKnownVars(backendDAE, globalKnownVars);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated optimized jacobians: " + realString(clock()) + "\n");
         end if;
@@ -1969,7 +1969,7 @@ algorithm
 
       // BackendDAE
       BackendDAE.Variables orderedVars, jacOrderedVars; // ordered Variables, only states and alg. vars
-      BackendDAE.Variables knownVars, jacKnownVars; // Known variables, i.e. constants and parameters
+      BackendDAE.Variables globalKnownVars, jacKnownVars; // Known variables, i.e. constants and parameters
       BackendDAE.EquationArray orderedEqs, jacOrderedEqs; // ordered Equations
       BackendDAE.EquationArray removedEqs, jacRemovedEqs; // Removed equations a=b
       // end BackendDAE
@@ -1999,7 +1999,7 @@ algorithm
     then (jacobian, DAE.AvlTreePathFunction.Tree.EMPTY());
 
     case( BackendDAE.DAE( BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, matching=BackendDAE.MATCHING(ass2=ass2))::{},
-                         BackendDAE.SHARED(knownVars=knownVars, cache=cache,graph=graph, functionTree=functions, info=ei) ),
+                         BackendDAE.SHARED(globalKnownVars=globalKnownVars, cache=cache,graph=graph, functionTree=functions, info=ei) ),
           diffVars, diffedVars, _, _, _, _, matrixName ) equation
       // Generate tmp variables
       dummyVarName = ("dummyVar" + matrixName);
@@ -2011,7 +2011,7 @@ algorithm
       end if;
       diffVarsArr = BackendVariable.listVar1(diffVars);
       comref_diffvars = List.map(diffVars, BackendVariable.varCref);
-      diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(knownVars), SOME(orderedVars), {}, comref_diffvars, SOME(matrixName));
+      diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(globalKnownVars), SOME(orderedVars), {}, comref_diffvars, SOME(matrixName));
       eqns = BackendEquation.equationList(orderedEqs);
       if Flags.isSet(Flags.JAC_DUMP2) then
         print("*** analytical Jacobians -> before derive all equation: " + realString(clock()) + "\n");
@@ -2036,11 +2036,11 @@ algorithm
       jacOrderedVars = BackendVariable.listVar1(derivedVariables);
       // known vars: all variable from original system + seed
       size = BackendVariable.varsSize(orderedVars) +
-             BackendVariable.varsSize(knownVars) +
+             BackendVariable.varsSize(globalKnownVars) +
              BackendVariable.varsSize(inseedVars);
       jacKnownVars = BackendVariable.emptyVarsSized(size);
       jacKnownVars = BackendVariable.addVariables(orderedVars, jacKnownVars);
-      jacKnownVars = BackendVariable.addVariables(knownVars, jacKnownVars);
+      jacKnownVars = BackendVariable.addVariables(globalKnownVars, jacKnownVars);
       jacKnownVars = BackendVariable.addVariables(inseedVars, jacKnownVars);
       (jacKnownVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(jacKnownVars, BackendVariable.setVarDirectionTpl, (DAE.INPUT()));
       jacOrderedEqs = BackendEquation.listEquation(derivedEquations);
@@ -2049,7 +2049,7 @@ algorithm
       shared = BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph);
 
       jacobian = BackendDAE.DAE( BackendDAEUtil.createEqSystem(jacOrderedVars, jacOrderedEqs)::{},
-                                 BackendDAEUtil.setSharedKnVars(shared, jacKnownVars) );
+                                 BackendDAEUtil.setSharedGlobalKnownVars(shared, jacKnownVars) );
     then (jacobian, functions);
 
     else
@@ -2199,7 +2199,7 @@ algorithm
       BackendDAE.Equation derEquation;
       DAE.FunctionTree functions;
       list<DAE.ComponentRef> vars;
-      BackendDAE.Variables allVars, paramVars, stateVars, knownVars;
+      BackendDAE.Variables allVars, paramVars, stateVars, globalKnownVars;
       list<Integer> ass2_1, solvedfor;
 
     case (true) equation
@@ -2674,7 +2674,7 @@ algorithm
       FCore.Graph graph;
       BackendDAE.BackendDAE backendDAE, jacBackendDAE;
 
-      BackendDAE.Variables emptyVars, dependentVars, independentVars, knvars, allvars;
+      BackendDAE.Variables emptyVars, dependentVars, independentVars, globalKnownVars, allvars;
       BackendDAE.EquationArray emptyEqns, eqns;
       list<BackendDAE.Var> knvarLst1, knvarLst2, independentVarsLst, dependentVarsLst,  otherVarsLst;
       list<BackendDAE.Equation> residual_eqnlst;
@@ -2694,7 +2694,7 @@ algorithm
 
     case(_, _, _, _, _, _, _, _)
       equation
-        knvars = BackendDAEUtil.getknvars(inShared);
+        globalKnownVars = BackendDAEUtil.getGlobalKnownVarsFromShared(inShared);
         funcs = BackendDAEUtil.getFunctions(inShared);
         einfo = BackendDAEUtil.getExtraInfo(inShared);
 
@@ -2714,7 +2714,7 @@ algorithm
 
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("\n---+++ known variables +++---\n");
-          BackendDump.printVariables(knvars);
+          BackendDump.printVariables(globalKnownVars);
         end if;
 
         // dependentVarsLst = listReverse(dependentVarsLst);
@@ -2730,17 +2730,17 @@ algorithm
         end if;
 
         // create known variables
-        knvarLst1 = BackendEquation.equationsVars(eqns, knvars);
+        knvarLst1 = BackendEquation.equationsVars(eqns, globalKnownVars);
         knvarLst2 = BackendEquation.equationsVars(eqns, inAllVars);
         // Create a list of known variables true *only* for this shared system
-        knvars = BackendVariable.listVar2(knvarLst1,knvarLst2);
+        globalKnownVars = BackendVariable.listVar2(knvarLst1,knvarLst2);
         // Remove inputs for the jacobian
-        knvars = BackendVariable.removeCrefs(independentComRefs, knvars);
-        knvars = BackendVariable.removeCrefs(otherVarsLstComRefs, knvars);
+        globalKnownVars = BackendVariable.removeCrefs(independentComRefs, globalKnownVars);
+        globalKnownVars = BackendVariable.removeCrefs(otherVarsLstComRefs, globalKnownVars);
 
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("\n---+++ known variables +++---\n");
-          BackendDump.printVariables(knvars);
+          BackendDump.printVariables(globalKnownVars);
         end if;
 
         // prepare vars and equations for BackendDAE
@@ -2749,12 +2749,12 @@ algorithm
         cache = FCore.emptyCache();
         graph = FGraph.empty();
         shared = BackendDAEUtil.createEmptyShared(BackendDAE.ALGEQSYSTEM(), einfo, cache, graph);
-        shared = BackendDAEUtil.setSharedKnVars(shared, knvars);
+        shared = BackendDAEUtil.setSharedGlobalKnownVars(shared, globalKnownVars);
         shared = BackendDAEUtil.setSharedFunctionTree(shared, funcs);
         backendDAE = BackendDAE.DAE({BackendDAEUtil.createEqSystem(dependentVars, eqns)}, shared);
 
         backendDAE = BackendDAEUtil.transformBackendDAE(backendDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
-        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = dependentVars)}, BackendDAE.SHARED(knownVars = knvars)) = backendDAE;
+        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = dependentVars)}, BackendDAE.SHARED(globalKnownVars = globalKnownVars)) = backendDAE;
 
         // prepare creation of symbolic jacobian
         // create dependent variables
@@ -2764,7 +2764,7 @@ algorithm
           independentVarsLst,
           emptyVars,
           emptyVars,
-          knvars,
+          globalKnownVars,
           inResVars,
           dependentVarsLst,
           inName);
@@ -3275,7 +3275,7 @@ protected function addBackendDAESharedJacobian
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
 protected
-  BackendDAE.Variables knvars,exobj,av;
+  BackendDAE.Variables globalKnownVars,exobj,av;
   BackendDAE.EquationArray remeqns,inieqns;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;
@@ -3301,7 +3301,7 @@ protected function addBackendDAESharedJacobianSparsePattern
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
 protected
-  BackendDAE.Variables knvars,exobj,av;
+  BackendDAE.Variables globalKnownVars,exobj,av;
   BackendDAE.EquationArray remeqns,inieqns;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;

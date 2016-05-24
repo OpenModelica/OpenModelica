@@ -115,6 +115,9 @@ int (*functionAlgebraics)(DATA *data, threadData_t*);
    uses in EventHandle  */
 int (*functionDAE)(DATA *data, threadData_t*);
 
+/* function that evaluates all localKnownVars  */
+int (*functionLocalKnownVars)(DATA *data, threadData_t*);
+
 /* functions for input and output */
 int (*input_function)(DATA*, threadData_t*);
 int (*input_function_init)(DATA*, threadData_t*);

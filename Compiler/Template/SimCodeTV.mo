@@ -278,6 +278,7 @@ package SimCode
       list<DAE.Exp> literals;
       list<RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
+      list<SimEqSystem> localKnownVars;
       list<SimEqSystem> allEquations;
       list<list<SimEqSystem>> odeEquations;
       list<list<SimEqSystem>> algebraicEquations;

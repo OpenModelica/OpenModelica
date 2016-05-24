@@ -257,7 +257,8 @@ algorithm
   printBackendDAEType(inShared.backendDAEType);
   print("\n\n");
 
-  dumpVariables(inShared.knownVars, "Known Variables (constants)");
+  dumpVariables(inShared.globalKnownVars, "Known variables only depending on parameters and constants - globalKnownVars");
+  dumpVariables(inShared.localKnownVars, "Known variables only depending on states and inputs - localKnownVars");
   dumpVariables(inShared.externalObjects, "External Objects");
   dumpExternalObjectClasses(inShared.extObjClasses, "Classes of External Objects");
   dumpVariables(inShared.aliasVars, "Alias Variables");

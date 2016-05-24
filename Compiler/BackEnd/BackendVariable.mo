@@ -2131,7 +2131,7 @@ end daeVars;
 
 public function daeKnVars
   input BackendDAE.Shared inShared;
-  output BackendDAE.Variables outKnownVars = inShared.knownVars;
+  output BackendDAE.Variables outGlobalKnownVars = inShared.globalKnownVars;
 end daeKnVars;
 
 public function daeAliasVars
@@ -2193,7 +2193,7 @@ algorithm
   matchcontinue (inComponentRef1, inVariables2, inVariables3)
     local
       DAE.ComponentRef cr;
-      BackendDAE.Variables vars, knvars;
+      BackendDAE.Variables vars, globalKnownVars;
       BackendDAE.VarKind kind;
 
     case (cr, vars, _) equation
@@ -2201,8 +2201,8 @@ algorithm
       isVarKindVariable(kind);
     then ();
 
-    case (cr, _, knvars) equation
-      ((BackendDAE.VAR(varKind = kind) :: _), _) = getVar(cr, knvars);
+    case (cr, _, globalKnownVars) equation
+      ((BackendDAE.VAR(varKind = kind) :: _), _) = getVar(cr, globalKnownVars);
       isVarKindVariable(kind);
     then ();
   end matchcontinue;
@@ -2241,11 +2241,11 @@ public function isTopLevelInputOrOutput "author: LP
   on the top level.
   inputs:  (cref: DAE.ComponentRef,
               vars: Variables, /* BackendDAE.Variables */
-              knownVars: BackendDAE.Variables /* Known BackendDAE.Variables */)
+              globalKnownVars: BackendDAE.Variables /* Known BackendDAE.Variables */)
   outputs: bool"
   input DAE.ComponentRef inComponentRef;
   input BackendDAE.Variables inVars;
-  input BackendDAE.Variables inKnVars;
+  input BackendDAE.Variables inGlobalKnownVars;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue inComponentRef
@@ -2256,7 +2256,7 @@ algorithm
       equation (v::_, _) = getVar(inComponentRef, inVars);
       then isVarOnTopLevelAndOutput(v);
     case _
-      equation (v::_, _) = getVar(inComponentRef, inKnVars);
+      equation (v::_, _) = getVar(inComponentRef, inGlobalKnownVars);
       then isVarOnTopLevelAndInput(v);
     else false;
   end matchcontinue;
@@ -2513,7 +2513,7 @@ public function addKnVarDAE
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
 algorithm
-  outShared := BackendDAEUtil.setSharedKnVars(inShared, addVar(inVar, inShared.knownVars));
+  outShared := BackendDAEUtil.setSharedGlobalKnownVars(inShared, addVar(inVar, inShared.globalKnownVars));
 end addKnVarDAE;
 
 public function addNewKnVarDAE
@@ -2524,7 +2524,7 @@ public function addNewKnVarDAE
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
 algorithm
-  outShared := BackendDAEUtil.setSharedKnVars(inShared, addNewVar(inVar, inShared.knownVars));
+  outShared := BackendDAEUtil.setSharedGlobalKnownVars(inShared, addNewVar(inVar, inShared.globalKnownVars));
 end addNewKnVarDAE;
 
 public function addAliasVarDAE
@@ -2658,7 +2658,7 @@ public function getVarSharedAt
   input BackendDAE.Shared inShared;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := getVarAt(inShared.knownVars, inInteger);
+  outVar := getVarAt(inShared.globalKnownVars, inInteger);
 end getVarSharedAt;
 
 public function getVarDAE
@@ -2680,7 +2680,7 @@ public function getVarShared
   output list<BackendDAE.Var> outVarLst;
   output list<Integer> outIntegerLst;
 algorithm
-  (outVarLst, outIntegerLst) := getVar(inComponentRef, inShared.knownVars);
+  (outVarLst, outIntegerLst) := getVar(inComponentRef, inShared.globalKnownVars);
 end getVarShared;
 
 public function containsCref
@@ -3419,7 +3419,7 @@ public function mergeAliasVars "author: Frenkel TUD 2011-04"
   input BackendDAE.Var inVar;
   input BackendDAE.Var inAVar "the alias var";
   input Boolean negate;
-  input BackendDAE.Variables knVars "the KnownVars, needd to report Warnings";
+  input BackendDAE.Variables globalKnownVars "the globalKnownVars, need to report Warnings";
   output BackendDAE.Var outVar;
 protected
   BackendDAE.Var v,va,v1,v2;
@@ -3436,7 +3436,7 @@ algorithm
   sva := varStartValueOption(inAVar);
   so := varStartOrigin(inVar);
   soa := varStartOrigin(inAVar);
-  v1 := mergeStartFixed(inVar,fixed,sv,so,inAVar,fixeda,sva,soa,negate,knVars);
+  v1 := mergeStartFixed(inVar,fixed,sv,so,inAVar,fixeda,sva,soa,negate,globalKnownVars);
   // nominal
   v2 := mergeNominalAttribute(inAVar,v1,negate);
   // minmax
@@ -3454,11 +3454,11 @@ protected function mergeStartFixed
   input Option<DAE.Exp> sva;
   input Option<DAE.Exp> soa;
   input Boolean negate;
-  input BackendDAE.Variables knVars "the KnownVars, needd to report Warnings";
+  input BackendDAE.Variables globalKnownVars "the globalKnownVars, need to report Warnings";
   output BackendDAE.Var outVar;
 algorithm
   outVar :=
-  matchcontinue (inVar,fixed,sv,so,inAVar,fixeda,sva,soa,negate,knVars)
+  matchcontinue (inVar,fixed,sv,so,inAVar,fixeda,sva,soa,negate,globalKnownVars)
     local
       BackendDAE.Var v,va,v1,v2;
       DAE.ComponentRef cr,cra;
@@ -3500,7 +3500,7 @@ algorithm
         sa = startValueType(sv,ty);
         sb = startValueType(sva,tya);
         e = if negate then Expression.negate(sb) else sb;
-        (e,origin) = getNonZeroStart(false,sa,so,e,soa,knVars);
+        (e,origin) = getNonZeroStart(false,sa,so,e,soa,globalKnownVars);
         _ = setVarStartValue(v,e);
         v1 = setVarStartOrigin(v,origin);
       then v1;
@@ -3524,7 +3524,7 @@ algorithm
         sa = startValueType(sv,ty);
         sb = startValueType(sva,tya);
         e = if negate then Expression.negate(sb) else sb;
-        (e,origin) = getNonZeroStart(true,sa,so,e,soa,knVars);
+        (e,origin) = getNonZeroStart(true,sa,so,e,soa,globalKnownVars);
         _ = setVarStartValue(v,e);
         v1 = setVarStartOrigin(v,origin);
       then v1;
@@ -3649,12 +3649,12 @@ protected function getNonZeroStart
   input Option<DAE.Exp> so "StartOrigin";
   input DAE.Exp exp2;
   input Option<DAE.Exp> sao "StartOrigin";
-  input BackendDAE.Variables knVars "the KnownVars, need to report Warnings";
+  input BackendDAE.Variables globalKnownVars "the globalKnownVars, need to report Warnings";
   output DAE.Exp outExp;
   output Option<DAE.Exp> outStartOrigin;
 algorithm
   (outExp,outStartOrigin) :=
-  matchcontinue (mustBeEqual,exp1,so,exp2,sao,knVars)
+  matchcontinue (mustBeEqual,exp1,so,exp2,sao,globalKnownVars)
     local
       DAE.Exp exp2_1,exp1_1;
       Integer i,ia;
@@ -3680,8 +3680,8 @@ algorithm
     case (_,_,_,_,_,_)
       equation
         // simple evaluation, by replace crefs with bind expressions recursivly
-        (exp1_1, (_,b1,_)) = Expression.traverseExpBottomUp(exp1, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
-        (exp2_1, (_,b2,_)) = Expression.traverseExpBottomUp(exp2, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
+        (exp1_1, (_,b1,_)) = Expression.traverseExpBottomUp(exp1, replaceCrefWithBindExp, (globalKnownVars,false,HashSet.emptyHashSet()));
+        (exp2_1, (_,b2,_)) = Expression.traverseExpBottomUp(exp2, replaceCrefWithBindExp, (globalKnownVars,false,HashSet.emptyHashSet()));
         (exp1_1,_) = ExpressionSimplify.condsimplify(b1,exp1_1);
         (exp2_1,_) = ExpressionSimplify.condsimplify(b2,exp2_1);
         true = Expression.expEqual(exp1_1, exp2_1);

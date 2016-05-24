@@ -329,16 +329,16 @@ author:Waurich TUD 2014-04"
   input BackendDAE.Shared sharedIn;
   output BackendDAE.Shared sharedOut;
 protected
-  BackendDAE.Variables knVars;
+  BackendDAE.Variables globalKnownVars;
   DAE.FunctionTree funcTree;
   list<BackendDAE.Var> varLst;
 algorithm
-  knVars := BackendDAEUtil.getknvars(sharedIn);
+  globalKnownVars := BackendDAEUtil.getGlobalKnownVarsFromShared(sharedIn);
   funcTree := BackendDAEUtil.getFunctions(sharedIn);
-  varLst := BackendVariable.varList(knVars);
+  varLst := BackendVariable.varList(globalKnownVars);
   varLst := List.map1(varLst,evaluateParameter,funcTree);
-  knVars := BackendVariable.listVar(varLst);
-  sharedOut := BackendDAEUtil.setSharedKnVars(sharedIn,knVars);
+  globalKnownVars := BackendVariable.listVar(varLst);
+  sharedOut := BackendDAEUtil.setSharedGlobalKnownVars(sharedIn,globalKnownVars);
 end evaluateShared;
 
 protected function evaluateParameter "evaluates a parameter"

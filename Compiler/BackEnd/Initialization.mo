@@ -130,7 +130,8 @@ algorithm
     reeqns := BackendEquation.emptyEqns();
 
     ((vars, fixvars, eqns, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.aliasVars, introducePreVarsForAliasVariables, (vars, fixvars, eqns, hs));
-    ((vars, fixvars, eqns, _, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.knownVars, collectInitialVars, (vars, fixvars, eqns, hs, outAllPrimaryParameters));
+    ((vars, fixvars, eqns, _, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, collectInitialVars, (vars, fixvars, eqns, hs, outAllPrimaryParameters));
+    ((vars, fixvars, eqns, _, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.localKnownVars, collectInitialVars, (vars, fixvars, eqns, hs, outAllPrimaryParameters));
     ((eqns, reeqns)) := BackendEquation.traverseEquationArray(dae.shared.initialEqs, collectInitialEqns, (eqns, reeqns));
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpEquationArray(eqns, "initial equations");
@@ -149,7 +150,7 @@ algorithm
     fixvars := BackendVariable.rehashVariables(fixvars);
     shared := BackendDAEUtil.createEmptyShared(BackendDAE.INITIALSYSTEM(), dae.shared.info, dae.shared.cache, dae.shared.graph);
     shared.removedEqs := inDAE.shared.removedEqs;
-    shared := BackendDAEUtil.setSharedKnVars(shared, fixvars);
+    shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, fixvars);
     shared := BackendDAEUtil.setSharedOptimica(shared, dae.shared.constraints, dae.shared.classAttrs);
     shared := BackendDAEUtil.setSharedFunctionTree(shared, dae.shared.functionTree);
     execStat("setup shared object (initialization)");
@@ -757,13 +758,13 @@ protected
   DAE.Exp bindExp;
 algorithm
   outVars := selectInitializationVariables(inDAE.eqs);
-  outVars := BackendVariable.traverseBackendDAEVars(inDAE.shared.knownVars, selectInitializationVariables2, outVars);
+  outVars := BackendVariable.traverseBackendDAEVars(inDAE.shared.globalKnownVars, selectInitializationVariables2, outVars);
   outVars := BackendVariable.traverseBackendDAEVars(inDAE.shared.aliasVars, selectInitializationVariables2, outVars);
 
   // select all parameters
   allParameters := BackendVariable.emptyVars();
   allParameterEqns := BackendEquation.emptyEqns();
-  (allParameters, allParameterEqns) := BackendVariable.traverseBackendDAEVars(inDAE.shared.knownVars, selectParameter2, (allParameters, allParameterEqns));
+  (allParameters, allParameterEqns) := BackendVariable.traverseBackendDAEVars(inDAE.shared.globalKnownVars, selectParameter2, (allParameters, allParameterEqns));
   nParam := BackendVariable.varsSize(allParameters);
 
   if nParam > 0 then
