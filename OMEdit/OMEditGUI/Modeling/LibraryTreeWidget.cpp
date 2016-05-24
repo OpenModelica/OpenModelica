@@ -3204,7 +3204,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     Utilities::LineEndingMode lineEndingMode = (Utilities::LineEndingMode)pLineEndingComboBox->itemData(pLineEndingComboBox->currentIndex()).toInt();
     switch (lineEndingMode) {
       case Utilities::CRLFLineEnding:
-        contents.replace(QLatin1Char('\n'), QLatin1String("\r\n"));
+        contents.replace(QLatin1String("\n"), QLatin1String("\r\n"));
         break;
       case Utilities::LFLineEnding:
         contents.replace(QLatin1String("\r\n"), QLatin1String("\n"));
