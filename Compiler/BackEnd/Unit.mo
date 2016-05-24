@@ -141,7 +141,10 @@ algorithm
 
   for unit in LU_COMPLEXUNITS loop
     (s, ut) := unit;
-    outKnownUnitsInverse := BaseHashTable.add((ut, s), outKnownUnitsInverse);
+
+    if not BaseHashTable.hasKey(ut, outKnownUnitsInverse) then
+      outKnownUnitsInverse := BaseHashTable.add((ut, s), outKnownUnitsInverse);
+    end if;
   end for;
 end getKnownUnitsInverse;
 
