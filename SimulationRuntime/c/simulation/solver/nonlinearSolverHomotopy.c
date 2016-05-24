@@ -60,10 +60,10 @@ typedef struct DATA_HOMOTOPY
   int n; /* dimension; n == size */
   int m; /* dimension: m == size+1 */
 
-  double xtol; /* tolerance for updating solution vector */
-  double ftol; /* tolerance for accepting accuracy */
+  double xtol_sqrd; /* tolerance for updating solution vector */
+  double ftol_sqrd; /* tolerance for accepting accuracy */
 
-  double error_f;
+  double error_f_sqrd;
 
   double* resScaling; /* residual scaling */
   double* fvecScaled; /* function values scaled */
@@ -150,10 +150,10 @@ int allocateHomotopyData(int size, void** voiddata)
   data->initialized = 0;
   data->n = size;
   data->m = size + 1;
-  data->xtol = newtonXTol*newtonXTol;
-  data->ftol = newtonFTol*newtonFTol;
+  data->xtol_sqrd = newtonXTol*newtonXTol;
+  data->ftol_sqrd = newtonFTol*newtonFTol;
 
-  data->error_f = 0;
+  data->error_f_sqrd = 0;
 
   data->maxNumberOfIterations = size*100;
   data->numberOfIterations = 0;
@@ -508,7 +508,7 @@ void debugDouble(int logName, char* message, double value)
  *  \author bbachmann
  */
 
-double vecNorm(int n, double *x)
+double vec2Norm(int n, double *x)
 {
   int i;
   double norm=0.0;
@@ -517,7 +517,7 @@ double vecNorm(int n, double *x)
   return sqrt(norm);
 }
 
-double vecNorm2(int n, double *x)
+double vec2NormSqrd(int n, double *x)
 {
   int i;
   double norm=0.0;
@@ -613,7 +613,7 @@ void vecDivScaling(int n, double *a, double *b, double *c)
 void vecNormalize(int n, double *a, double *b)
 {
   int i;
-  double norm = vecNorm(n,a);
+  double norm = vec2Norm(n,a);
   for (i=0;i<n;i++)
     b[i] = a[i]/norm;
 }
@@ -1084,7 +1084,7 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
     debugVectorDouble(LOG_NLS_JAC,"solution:", x, m);
     matVecMult(n, m, A, x, res);
     debugVectorDouble(LOG_NLS_JAC,"test solution:", res, n);
-    debugDouble(LOG_NLS_JAC,"error of linear system = ", vecNorm(n, res));
+    debugDouble(LOG_NLS_JAC,"error of linear system = ", vec2Norm(n, res));
     free(res);
     messageClose(LOG_NLS_JAC);
   }
@@ -1100,7 +1100,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 {
   int numberOfIterations = 0 ,i, j, n=solverData->n, m=solverData->m;
   int  pos = solverData->n, rank;
-  double error_f, error_f1, error_f2,error_f_scaled, delta_x, delta_x_scaled, grad_f1, grad_f;
+  double error_f_sqrd, error_f1_sqrd, error_f2_sqrd, error_f_sqrd_scaled, delta_x_sqrd, delta_x_sqrd_scaled, grad_f;
   int numberOfSmallSteps = 0;
   double error_f_old = 1e100;
   int countNegativeSteps = 0;
@@ -1125,8 +1125,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   solverData->info = 0;
 
   /* calculated error of function values */
-  error_f = vecNorm2(solverData->n, solverData->f1);
-  error_f_scaled = error_f;
+  error_f_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
+  error_f_sqrd_scaled = error_f_sqrd;
 
   while(1)
   {
@@ -1187,18 +1187,18 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
       /* Damping (see Numerical Recipes) */
       /* calculate gradient of quadratic function for damping strategy */
-      grad_f = -2.0*error_f;
-      error_f1 = vecNorm2(solverData->n, solverData->f1);
+      grad_f = -2.0*error_f_sqrd;
+      error_f1_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
       debugDouble(LOG_NLS_V,"Need to damp, grad_f = ", grad_f);
-      debugDouble(LOG_NLS_V,"Need to damp, error_f = ", error_f);
+      debugDouble(LOG_NLS_V,"Need to damp, error_f = ", sqrt(error_f_sqrd));
 
       debugDouble(LOG_NLS_V,"Need to damp this!! lambda1 = ", lambda1);
-      debugDouble(LOG_NLS_V,"Need to damp, error_f1 = ", error_f1);
+      debugDouble(LOG_NLS_V,"Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
 
-      debugDouble(LOG_NLS_V,"Need to damp, forced error = ", error_f + alpha*lambda1*grad_f);
-      if ((error_f1 > error_f + alpha*lambda1*grad_f) && (error_f > 1e-12) && (error_f_scaled > 1e-12))
+      debugDouble(LOG_NLS_V,"Need to damp, forced error = ", error_f_sqrd + alpha*lambda1*grad_f);
+      if ((error_f1_sqrd > error_f_sqrd + alpha*lambda1*grad_f) && (error_f_sqrd > 1e-12) && (error_f_sqrd_scaled > 1e-12))
       {
-        lambda2 = fmax(-lambda1*lambda1*grad_f/(2*(error_f1-error_f-lambda1*grad_f)),lambdaMin);
+        lambda2 = fmax(-lambda1*lambda1*grad_f/(2*(error_f1_sqrd-error_f_sqrd-lambda1*grad_f)),lambdaMin);
         debugDouble(LOG_NLS_V,"Need to damp this!! lambda2 = ", lambda2);
         vecAddScal(solverData->n, x, solverData->dy0, lambda2, solverData->x1);
         assert= 1;
@@ -1206,8 +1206,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
         solverData->f(solverData, solverData->x1, solverData->f1);
-        error_f2 = vecNorm2(solverData->n, solverData->f1);
-        debugDouble(LOG_NLS_V,"Need to damp, error_f2 = ", error_f2);
+        error_f2_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
+        debugDouble(LOG_NLS_V,"Need to damp, error_f2 = ", sqrt(error_f2_sqrd));
         assert = 0;
 #ifndef OMC_EMCC
         MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -1218,10 +1218,10 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
           solverData->info = -1;
           break;
         }
-        if ((error_f1 > error_f + alpha*lambda2*grad_f) && (error_f > 1e-12) && (error_f_scaled > 1e-12))
+        if ((error_f1_sqrd > error_f_sqrd + alpha*lambda2*grad_f) && (error_f_sqrd > 1e-12) && (error_f_sqrd_scaled > 1e-12))
         {
-          rhs1 = error_f1 - grad_f*lambda1 - error_f;
-          rhs2 = error_f2 - grad_f*lambda2 - error_f;
+          rhs1 = error_f1_sqrd - grad_f*lambda1 - error_f_sqrd;
+          rhs2 = error_f2_sqrd - grad_f*lambda2 - error_f_sqrd;
           a3 = (rhs1/(lambda1*lambda1) - rhs2/(lambda2*lambda2))/(lambda1 - lambda2);
           a2 = (-lambda2*rhs1/(lambda1*lambda1) + lambda1*rhs2/(lambda2*lambda2))/(lambda1 - lambda2);
           if (a3==0.0)
@@ -1245,8 +1245,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
           MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
           solverData->f(solverData, solverData->x1, solverData->f1);
-          error_f1 = vecNorm2(solverData->n, solverData->f1);
-          debugDouble(LOG_NLS_V,"Need to damp, error_f1 = ", error_f1);
+          error_f1_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
+          debugDouble(LOG_NLS_V,"Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
           assert = 0;
 #ifndef OMC_EMCC
           MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -1262,7 +1262,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         lambda = lambda1;
       }
     }
-    /* updating x, fvec, error_f */
+    /* updating x, fvec, error_f_sqrd */
     /* event. swapPointer(&x, &(solverData->x1)); */
     vecCopy(solverData->n, solverData->x1, x);
 
@@ -1272,23 +1272,23 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     debugVectorDouble(LOG_NLS_V,"scaled function values:",solverData->fvecScaled, n);
 
     vecDivScaling(solverData->n, solverData->dy0, solverData->xScaling, solverData->dxScaled);
-    delta_x        = vecNorm2(solverData->n, solverData->dy0);
-    delta_x_scaled = vecNorm2(solverData->n, solverData->dxScaled);
-    error_f        = vecNorm2(solverData->n, solverData->f1);
-    error_f_scaled = vecNorm2(solverData->n, solverData->fvecScaled);
+    delta_x_sqrd        = vec2NormSqrd(solverData->n, solverData->dy0);
+    delta_x_sqrd_scaled = vec2NormSqrd(solverData->n, solverData->dxScaled);
+    error_f_sqrd        = vec2NormSqrd(solverData->n, solverData->f1);
+    error_f_sqrd_scaled = vec2NormSqrd(solverData->n, solverData->fvecScaled);
 
 
     /* debug information */
-    debugString(LOG_NLS_V, "error measurements (squared):");
-    debugDouble(LOG_NLS_V, "delta_x        =", delta_x);
-    debugDouble(LOG_NLS_V, "delta_x_scaled =", delta_x_scaled);
-    debugDouble(LOG_NLS_V, "eps_x          =", solverData->xtol);
-    debugDouble(LOG_NLS_V, "error_f        =", error_f);
-    debugDouble(LOG_NLS_V, "error_f_scaled =", error_f_scaled);
-    debugDouble(LOG_NLS_V, "eps_f          =", solverData->ftol);
+    debugString(LOG_NLS_V, "error measurements:");
+    debugDouble(LOG_NLS_V, "delta_x        =", sqrt(delta_x_sqrd));
+    debugDouble(LOG_NLS_V, "delta_x_scaled =", sqrt(delta_x_sqrd_scaled));
+    debugDouble(LOG_NLS_V, "newtonXTol          =", sqrt(solverData->xtol_sqrd));
+    debugDouble(LOG_NLS_V, "error_f        =", sqrt(error_f_sqrd));
+    debugDouble(LOG_NLS_V, "error_f_scaled =", sqrt(error_f_sqrd_scaled));
+    debugDouble(LOG_NLS_V, "newtonFTol          =", sqrt(solverData->ftol_sqrd));
 
-    countNegativeSteps += (error_f > 10*error_f_old);
-    error_f_old = error_f;
+    countNegativeSteps += (error_f_sqrd > 10*error_f_old);
+    error_f_old = error_f_sqrd;
 
 #if !defined(OMC_MINIMAL_RUNTIME)
     if (solverData->data->simulationInfo->nlsCsvInfomation){
@@ -1298,15 +1298,15 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
                              numberOfIterations,
                              solverData->x,
                              solverData->f1,
-                             delta_x,
-                             delta_x_scaled,
-                             error_f,
-                             error_f_scaled,
+                             delta_x_sqrd,
+                             delta_x_sqrd_scaled,
+                             error_f_sqrd,
+                             error_f_sqrd_scaled,
                              lambda
       );
     }
 #endif
-    if ((error_f_scaled < 1e-30*error_f) || countNegativeSteps > 20)
+    if ((error_f_sqrd_scaled < 1e-30*error_f_sqrd) || countNegativeSteps > 20)
     {
       debugInt(LOG_NLS_V,"UPS! Something happened, NegativeSteps = ", countNegativeSteps);
       solverData->info = -1;
@@ -1314,7 +1314,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     }
 
     /* solution found */
-    if (((error_f < solverData->ftol) || (error_f_scaled < solverData->ftol)) && ((delta_x_scaled < solverData->xtol) || (delta_x < solverData->xtol)))
+    if (((error_f_sqrd < solverData->ftol_sqrd) || (error_f_sqrd_scaled < solverData->ftol_sqrd)) && ((delta_x_sqrd_scaled < solverData->xtol_sqrd) || (delta_x_sqrd < solverData->xtol_sqrd)))
     {
       solverData->info = 1;
 
@@ -1325,7 +1325,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
       /* update statistics */
       solverData->numberOfIterations += numberOfIterations;
-      solverData->error_f = error_f;
+      solverData->error_f_sqrd = error_f_sqrd;
 
       break;
     }
@@ -1344,11 +1344,11 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       break;
     }
 
-    numberOfSmallSteps += (delta_x < solverData->xtol*1e4) ||  (delta_x_scaled < solverData->xtol*1e4);
+    numberOfSmallSteps += (delta_x_sqrd < solverData->xtol_sqrd*1e4) ||  (delta_x_sqrd_scaled < solverData->xtol_sqrd*1e4);
     /* check changes in unknown vector */
-    if ((delta_x < solverData->xtol) ||  (delta_x_scaled < solverData->xtol) || (numberOfSmallSteps > 20))
+    if ((delta_x_sqrd < solverData->xtol_sqrd) ||  (delta_x_sqrd_scaled < solverData->xtol_sqrd) || (numberOfSmallSteps > 20))
     {
-      if ((error_f < solverData->ftol*1e6) || (error_f_scaled < solverData->ftol*1e6))
+      if ((error_f_sqrd < solverData->ftol_sqrd*1e6) || (error_f_sqrd_scaled < solverData->ftol_sqrd*1e6))
       {
         solverData->info = 1;
 
@@ -1356,7 +1356,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         debugString(LOG_NLS_V, "NEWTON SOLVER DID CONVERGE TO A SOLUTION WITH LESS ACCURACY!!!");
         printUnknowns(LOG_NLS_V, solverData);
         debugString(LOG_NLS_V, "******************************************************");
-        solverData->error_f = 0;
+        solverData->error_f_sqrd = 0;
 
       } else
       {
@@ -1404,11 +1404,11 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 {
   int i, j;
   double xerror = -1, xerror_scaled = -1;
-  double error_h, error_h_scaled, delta_x, delta_x_scaled;
+  double error_h, error_h_scaled, delta_x;
   int success = 0;
   int nfunc_evals = 0;
   int continuous = 1;
-  double local_tol = solverData->ftol;
+  double local_tol = solverData->ftol_sqrd;
   double vecScalarProduct;
 
   int giveUp = 0;
@@ -1561,7 +1561,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     /* Corrector step: Newton iteration! */
     for(j=0;j<maxiter;j++)
     {
-      if (vecNorm(solverData->n, solverData->hvec)<hEps || vecNorm(solverData->n, solverData->hvecScaled)<hEps)
+      if (vec2Norm(solverData->n, solverData->hvec)<hEps || vec2Norm(solverData->n, solverData->hvecScaled)<hEps)
       {
         stepAccept = 1;
         break;
@@ -1615,9 +1615,9 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       /* Calculate different error measurements */
       vecDivScaling(solverData->n, solverData->hvec, solverData->resScaling, solverData->hvecScaled);
 
-      delta_x        = vecNorm(solverData->m, solverData->dy1);
-      error_h        = vecNorm(solverData->n, solverData->hvec);
-      error_h_scaled = vecNorm(solverData->n, solverData->hvecScaled);
+      delta_x        = vec2Norm(solverData->m, solverData->dy1);
+      error_h        = vec2Norm(solverData->n, solverData->hvec);
+      error_h_scaled = vec2Norm(solverData->n, solverData->hvecScaled);
 
 
       /* debug information
@@ -1636,7 +1636,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       vecDiff(solverData->m, solverData->y1, solverData->yt, solverData->dy1);
       vecDiff(solverData->m, solverData->yt, solverData->y0, solverData->dy2);
       printHomotopyCorrectorStep(LOG_NLS_HOMOTOPY, solverData);
-      bend = vecNorm(solverData->m,solverData->dy1)/vecNorm(solverData->m,solverData->dy2);
+      bend = vec2Norm(solverData->m,solverData->dy1)/vec2Norm(solverData->m,solverData->dy2);
     }
     if ((bend > adaptBend) ||   !stepAccept)
     {
@@ -1703,9 +1703,9 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   int success = 0;
   int nfunc_evals = 0;
   int continuous = 1;
-  double local_tol = solverData->ftol;
+  double local_tol = solverData->ftol_sqrd;
   double lambda;
-  double error_f, error_f1;
+  double error_f_sqrd, error_f1_sqrd;
 
   int assert = 1;
   int giveUp = 0;
@@ -1786,10 +1786,10 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
 
     solverData->f(solverData, solverData->x0, solverData->f1);
     /* Try to get out of here!!! */
-    error_f        = vecNorm2(solverData->n, solverData->f1);
-    if ((error_f - solverData->error_f)<=0)
+    error_f_sqrd        = vec2NormSqrd(solverData->n, solverData->f1);
+    if ((error_f_sqrd - solverData->error_f_sqrd)<=0)
     {
-      //infoStreamPrint(LOG_STDOUT, 0, "No Iteration at time %g needed new f = %g  and old f1 = %g", solverData->timeValue, error_f, solverData->error_f);
+      //infoStreamPrint(LOG_STDOUT, 0, "No Iteration at time %g needed new f = %g  and old f1 = %g", solverData->timeValue, error_f_sqrd, solverData->error_f_sqrd);
       if (mixedSystem && data->simulationInfo->discreteCall && isNotEqualVectorInt(((DATA*)data)->modelData->nRelations, ((DATA*)data)->simulationInfo->relations, relationsPreBackup)){}
       else
       {
