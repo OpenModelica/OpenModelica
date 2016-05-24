@@ -277,7 +277,7 @@ template Implementation()
       <Capabilities
         canHandleVariableCommunicationStepSize="true"
         canHandleEvents="true"
-        canBeInstantiatedOnlyOncePerProcess="true"
+        canBeInstantiatedOnlyOncePerProcess="false"
         canInterpolateInputs="true"
         maxOutputDerivativeOrder="1"/>
     </CoSimulation_StandAlone>
