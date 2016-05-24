@@ -118,6 +118,7 @@ algorithm
   for i in 1:arrayLength(mapEqnIncRow) loop
     elst := mapEqnIncRow[i];
     vlst := list(arrayGet(ass2, e) for e guard(arrayGet(ass2, e) > 0) in elst);
+    acc := vlst::acc;
   end for;
 
   outAcc := List.listArrayReverse(acc);
