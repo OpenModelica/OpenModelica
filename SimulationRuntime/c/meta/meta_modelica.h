@@ -155,7 +155,7 @@ modelica_metatype mmc_gdb_listGet(threadData_t* threadData, modelica_metatype ls
 modelica_metatype mmc_gdb_arrayGet(threadData_t* threadData, modelica_metatype arr, modelica_integer i); /* For debugging */
 extern void printAny(void*any); /* For debugging */
 extern void printTypeOfAny(void*any); /* For debugging */
-extern char* getTypeOfAny(void*any); /* For debugging */
+extern char* getTypeOfAny(void*any, int inRecord); /* For debugging */
 extern char* getRecordElementName(void*any, int element); /* For debugging */
 extern int isOptionNone(void*any); /* For debugging */
 extern void changeStdStreamBuffer(void); /* For debugging */

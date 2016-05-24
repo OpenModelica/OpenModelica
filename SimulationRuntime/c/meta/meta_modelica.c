@@ -624,14 +624,14 @@ void printTypeOfAny(void* any) /* for debugging */
   EXIT(1);
 }
 
-inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
+inline static int getTypeOfAnyWork(void* any, int ix, int inRecord)  /* for debugging */
 {
   mmc_uint_t hdr;
   int numslots;
   unsigned int ctor;
   int i;
 
-  if (any == NULL) {
+  if (any == NULL && !inRecord) {  // To handle integer inside Record.
     checkAnyStringBufSize(ix,21);
     ix += sprintf(anyStringBuf+ix, "%s", "replaceable type Any");
     return ix;
@@ -678,7 +678,7 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
   if (numslots>0 && ctor == MMC_ARRAY_TAG) {
     checkAnyStringBufSize(ix,7);
     ix += sprintf(anyStringBuf+ix, "Array<");
-    ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)), ix);
+    ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)), ix, inRecord);
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, ">");
     return ix;
@@ -695,7 +695,7 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
     checkAnyStringBufSize(ix,7);
     ix += sprintf(anyStringBuf+ix, "tuple<");
     for (i=0; i<numslots; i++) {
-      ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)), ix);
+      ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)), ix, inRecord);
       if (i!=numslots-1) {
         checkAnyStringBufSize(ix,3);
         ix += sprintf(anyStringBuf+ix, ", ");
@@ -716,7 +716,7 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
     checkAnyStringBufSize(ix,8);
     ix += sprintf(anyStringBuf+ix, "Option<");
     for (i=0; i<numslots; i++) {
-      ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)), ix);
+      ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)), ix, inRecord);
       if (i!=numslots-1) {
         checkAnyStringBufSize(ix,3);
         ix += sprintf(anyStringBuf+ix, ", ");
@@ -730,7 +730,7 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
   if (numslots==2 && ctor==1) { /* CONS-PAIR */
     checkAnyStringBufSize(ix,6);
     ix += sprintf(anyStringBuf+ix, "list<");
-    ix = getTypeOfAnyWork(MMC_CAR(any), ix);
+    ix = getTypeOfAnyWork(MMC_CAR(any), ix, inRecord);
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, ">");
     return ix;
@@ -740,10 +740,10 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
   return ix;
 }
 
-char* getTypeOfAny(void* any) /* for debugging */
+char* getTypeOfAny(void* any, int inRecord) /* for debugging */
 {
   initializeStringBuffer();
-  getTypeOfAnyWork(any,0);
+  getTypeOfAnyWork(any,0, inRecord);
   return anyStringBuf;
 }
 
@@ -817,7 +817,7 @@ char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt)
   }
 
   /* get the type of the element */
-  getTypeOfAny(name);
+  getTypeOfAny(name, 0);
   ty = malloc(strlen(anyStringBuf) + 1);
   strcpy(ty, anyStringBuf);
 
