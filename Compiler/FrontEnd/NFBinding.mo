@@ -39,7 +39,6 @@ encapsulated package NFBinding
 public
 import SCode;
 import DAE;
-//import NFEnvScope.ScopeIndex;
 
 protected
 import Dump;
@@ -53,7 +52,7 @@ uniontype Binding
     Absyn.Exp bindingExp;
     SCode.Final finalPrefix;
     SCode.Each eachPrefix;
-    //ScopeIndex scope;
+    Integer scope;
     Integer propagatedDims;
     SourceInfo info;
   end RAW_BINDING;
@@ -77,6 +76,7 @@ public
     input Option<Absyn.Exp> inBinding;
     input SCode.Final inFinal;
     input SCode.Each inEach;
+    input Integer scope;
     input SourceInfo inInfo;
     output Binding outBinding;
   algorithm
@@ -85,7 +85,7 @@ public
         Absyn.Exp exp;
 
       case SOME(exp)
-        then RAW_BINDING(exp, inFinal, inEach, 0, inInfo);
+        then RAW_BINDING(exp, inFinal, inEach, 0, scope, inInfo);
 
       else UNBOUND();
     end match;

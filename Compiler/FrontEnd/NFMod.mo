@@ -65,6 +65,7 @@ uniontype Modifier
     SCode.Final finalPrefix;
     SCode.Each eachPrefix;
     SCode.Element element;
+    Integer scope;
   end REDECLARE;
 
   record NOMOD end NOMOD;
@@ -74,7 +75,7 @@ public
     input SCode.Mod mod;
     input String elementName;
     //input Integer inDimensions;
-    //input ScopeIndex inScope;
+    input Integer scope;
     output Modifier translatedMod;
   algorithm
     translatedMod := match mod
@@ -87,13 +88,13 @@ public
       case SCode.MOD()
         algorithm
           binding := Binding.fromAbsyn(mod.binding, mod.finalPrefix,
-              mod.eachPrefix, mod.info);
-          submods := translateSubMods(mod.subModLst);
+              mod.eachPrefix, scope, mod.info);
+          submods := translateSubMods(mod.subModLst, scope);
         then
           MODIFIER(elementName, binding, submods, mod.info);
 
       case SCode.REDECL()
-        then REDECLARE(mod.finalPrefix, mod.eachPrefix, mod.element);
+        then REDECLARE(mod.finalPrefix, mod.eachPrefix, mod.element, scope);
 
     end match;
   end translate;
@@ -173,6 +174,9 @@ public
         then
           MODIFIER(outerMod.name, binding, submods, outerMod.info);
 
+      case (REDECLARE(), _) then outerMod;
+      case (_, REDECLARE()) then innerMod;
+
       else
         algorithm
           Error.addMessage(Error.INTERNAL_ERROR,
@@ -220,17 +224,17 @@ public
 protected
   function translateSubMods
     input list<SCode.SubMod> subMods;
-    //input ScopeIndex inScope;
+    input Integer scope;
     output list<Modifier> translatedSubMods;
   algorithm
     //  pd := if SCode.eachBool(inEach) then 0 else inDimensions;
-    translatedSubMods := list(translateSubMod(m) for m in subMods);
+    translatedSubMods := list(translateSubMod(m, scope) for m in subMods);
   end translateSubMods;
 
   function translateSubMod
     input SCode.SubMod subMod;
-    //input ScopeIndex inScope;
-    output Modifier mod = translate(subMod.mod, subMod.ident);
+    input Integer scope;
+    output Modifier mod = translate(subMod.mod, subMod.ident, scope);
   end translateSubMod;
 
   function checkFinalOverride

@@ -78,7 +78,7 @@ algorithm
   dae := NFFlatten.flattenClass(cls);
 
   System.stopTimer();
-  print("NFInst done in " + String(System.getTimerIntervalTime()) + "\n");
+  //print("NFInst done in " + String(System.getTimerIntervalTime()) + "\n");
   //flattenNode(cls, inst_tree);
 end instClassInProgram;
 
@@ -307,7 +307,7 @@ algorithm
       list<SCode.Element> elements;
       list<Component> components;
       array<Component> comp_array;
-      Integer idx;
+      Integer idx, scope_id;
       Instance i;
       SCode.Mod der_mod;
       Modifier mod;
@@ -315,7 +315,8 @@ algorithm
     case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ty, modifications = der_mod))
       algorithm
         // Derived classes have no scope of their own, use the parent scope.
-        tree := InstanceTree.setCurrentScope(tree, InstNode.parent(expandedNode));
+        scope_id := InstNode.parent(expandedNode);
+        tree := InstanceTree.setCurrentScope(tree, scope_id);
 
         // Lookup and expand the derived class.
         Absyn.TPATH(path = ty_path) := ty;
@@ -323,7 +324,7 @@ algorithm
         (expandedNode, tree) := expand(expandedNode, tree);
 
         // Translate the modifier on the class.
-        mod := Modifier.translate(der_mod, definition.name);
+        mod := Modifier.translate(der_mod, definition.name, scope_id);
         // Merge the modifier with any modifier from the derived class.
         mod := Modifier.merge(mod, Instance.modifier(InstNode.instance(expandedNode)));
 
@@ -499,14 +500,26 @@ protected
   Binding binding;
   DAE.Type ty;
 algorithm
-  (component, tree) := match component
-    case Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT())
+  (component, tree) := match (component, modifier)
+    case (Component.COMPONENT_DEF(),
+          Modifier.REDECLARE(element = comp as SCode.COMPONENT()))
       algorithm
-        tree := InstanceTree.setCurrentScope(tree, component.scope);
-        comp_mod := Modifier.translate(comp.modifications, comp.name);
+        tree := InstanceTree.setCurrentScope(tree, modifier.scope); // redeclare scope
+        comp_mod := Modifier.translate(comp.modifications, comp.name, modifier.scope);
         comp_mod := Modifier.merge(modifier, comp_mod);
         binding := Modifier.binding(comp_mod);
-        (tree, cls) := instTypeSpec(comp.typeSpec, comp_mod, tree);
+        (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, tree);
+        ty := makeType(cls);
+      then
+        (Component.COMPONENT(comp.name, cls, ty, binding), tree);
+
+    case (Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT()), _)
+      algorithm
+        tree := InstanceTree.setCurrentScope(tree, component.scope);
+        comp_mod := Modifier.translate(comp.modifications, comp.name, component.scope);
+        comp_mod := Modifier.merge(modifier, comp_mod);
+        binding := Modifier.binding(comp_mod);
+        (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, tree);
         ty := makeType(cls);
       then
         (Component.COMPONENT(comp.name, cls, ty, binding), tree);
@@ -516,8 +529,8 @@ end instComponent;
 function instTypeSpec
   input Absyn.TypeSpec typeSpec;
   input Modifier modifier;
-  input output InstanceTree tree;
         output InstNode node;
+  input output InstanceTree tree;
 algorithm
   (node, tree) := match typeSpec
     case Absyn.TPATH()
