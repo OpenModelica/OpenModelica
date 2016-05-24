@@ -1,6 +1,22 @@
 TEST=../../../rtest -v
 
 TESTFILES=\
+bindings5.mo \
+BuiltinTime.mo \
+conn1.mo \
+conn2.mo \
+const3.mo \
+DuplicateMod1.mo \
+DuplicateMod3.mo \
+ImportNamed1.mo \
+ImportNamed2.mo \
+ImportNested1.mo \
+ImportQualified1.mo \
+mod1.mo \
+mod4.mo \
+mod6.mo \
+mod8.mo \
+mod10.mo \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -10,21 +26,16 @@ bindings1.mo \
 bindings2.mo \
 bindings3.mo \
 bindings4.mo \
-bindings5.mo \
 bindings7.mo \
 builtinmod.mo \
 builtinmod2.mo \
-BuiltinTime.mo \
 ClassAsComponentError.mo \
 compfunc.mo \
 ComponentAsTypeError.mo \
-conn1.mo \
-conn2.mo \
 conn3.mo \
 conn4.mo \
 conn5.mo \
 conn8.mo \
-conn9.mo \
 const1.mo \
 const2.mo \
 const3.mo \
@@ -49,9 +60,7 @@ dim14.mo \
 dim16.mo \
 dim18.mo \
 dim1.mo \
-DuplicateMod1.mo \
 DuplicateMod2.mo \
-DuplicateMod3.mo \
 DuplicateMod4.mo \
 DuplicateMod5.mo \
 enum1.mo \
@@ -84,12 +93,8 @@ ih1.mo \
 ih2.mo \
 ih3.mo \
 ImportConflict1.mo \
-ImportNamed1.mo \
-ImportNamed2.mo \
 ImportNamedInvalid1.mo \
-ImportNested1.mo \
 ImportNested2.mo \
-ImportQualified1.mo \
 ImportQualifiedInvalid1.mo \
 ImportQualifiedInvalid2.mo \
 ImportShadowing1.mo \
@@ -119,16 +124,11 @@ loop2.mo \
 loop3.mo \
 loop4.mo \
 MissingRedeclare1.mo \
-mod1.mo \
-mod10.mo \
 mod11.mo \
 mod12.mo \
 mod13.mo \
-mod4.mo \
 mod5.mo \
-mod6.mo \
 mod7.mo \
-mod8.mo \
 mod9.mo \
 MultiInheritanceRedeclare2.mo \
 NonexistentRedeclareModifier1.mo \
