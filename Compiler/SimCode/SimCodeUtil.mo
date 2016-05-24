@@ -11895,7 +11895,13 @@ algorithm
     discreteStates := List.map(clockedStates, createFmiUnknownFromSimVar);
 
     //print("-- finished createFMIModelStructure\n");
-    outFmiModelStructure := SOME(SimCode.FMIMODELSTRUCTURE(SimCode.FMIOUTPUTS(outputs), SimCode.FMIDERIVATIVES(derivatives), SimCode.FMIDISCRETESTATES(discreteStates), SimCode.FMIINITIALUNKNOWNS({})));
+    outFmiModelStructure :=
+      SOME(
+        SimCode.FMIMODELSTRUCTURE(
+          SimCode.FMIOUTPUTS(outputs),
+          SimCode.FMIDERIVATIVES(derivatives),
+          SimCode.FMIDISCRETESTATES(discreteStates),
+          SimCode.FMIINITIALUNKNOWNS({})));
 else
   Error.addInternalError("SimCodeUtil.createFMIModelStructure failed", sourceInfo());
   fail();

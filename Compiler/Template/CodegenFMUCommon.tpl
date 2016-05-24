@@ -405,11 +405,16 @@ template ModelStructureInitialUnknowns(FmiInitialUnknowns fmiInitialUnknowns)
 ::=
 match fmiInitialUnknowns
 case FMIINITIALUNKNOWNS(__) then
+  if listEmpty(fmiUnknownsList)
+  then
+  ''
+  else
   <<
   <InitialUnknowns>
     <%ModelStructureUnknowns(fmiUnknownsList)%>
   </InitialUnknowns>
   >>
+end match
 end ModelStructureInitialUnknowns;
 
 template ModelStructureUnknowns(list<FmiUnknown> fmiUnknownsList)
