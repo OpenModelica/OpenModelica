@@ -182,6 +182,7 @@ int functionJacAC_num(DATA* data, threadData_t *threadData, double *matrixA, dou
         x[i] = xsave;
     }
 
+    free(xScaling);
     free(x0);
     free(y0);
     free(x1);

@@ -333,6 +333,9 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   int retValue = 0;
   int i;
 
+  /* free solver statistics */
+  free(solverInfo->solverStats);
+  free(solverInfo->solverStatsTmp);
   /* deintialize solver related workspace */
   if (solverInfo->solverMethod == S_SYM_IMP_EULER)
   {
