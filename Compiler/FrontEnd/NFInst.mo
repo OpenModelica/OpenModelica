@@ -79,7 +79,6 @@ algorithm
 
   System.stopTimer();
   //print("NFInst done in " + String(System.getTimerIntervalTime()) + "\n");
-  //flattenNode(cls, inst_tree);
 end instClassInProgram;
 
 function instantiate
@@ -324,7 +323,7 @@ algorithm
         (expandedNode, tree) := expand(expandedNode, tree);
 
         // Translate the modifier on the class.
-        mod := Modifier.translate(der_mod, definition.name, scope_id);
+        mod := Modifier.create(der_mod, definition.name, scope_id);
         // Merge the modifier with any modifier from the derived class.
         mod := Modifier.merge(mod, Instance.modifier(InstNode.instance(expandedNode)));
 
@@ -424,9 +423,7 @@ algorithm
         scope := ClassTree.fold(extClass.classes, mergeInheritedElements2, scope);
 
         // Add the components from the derived class to the list of components.
-        for c in extClass.components loop
-          components := c :: components;
-        end for;
+        components := listAppend(arrayList(extClass.components), components);
       then
         (scope, components);
 
@@ -472,7 +469,7 @@ algorithm
 
           idx := 1;
           for c in i.components loop
-            comp_mod := Modifier.lookupSub(class_mod, Component.name(c));
+            comp_mod := Modifier.lookupModifier(Component.name(c), class_mod);
             (c, tree) := instComponent(c, comp_mod, tree);
             Dangerous.arrayUpdateNoBoundsChecking(components, idx, c);
             idx := idx + 1;
@@ -505,7 +502,7 @@ algorithm
           Modifier.REDECLARE(element = comp as SCode.COMPONENT()))
       algorithm
         tree := InstanceTree.setCurrentScope(tree, modifier.scope); // redeclare scope
-        comp_mod := Modifier.translate(comp.modifications, comp.name, modifier.scope);
+        comp_mod := Modifier.create(comp.modifications, comp.name, modifier.scope);
         comp_mod := Modifier.merge(modifier, comp_mod);
         binding := Modifier.binding(comp_mod);
         (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, tree);
@@ -516,7 +513,7 @@ algorithm
     case (Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT()), _)
       algorithm
         tree := InstanceTree.setCurrentScope(tree, component.scope);
-        comp_mod := Modifier.translate(comp.modifications, comp.name, component.scope);
+        comp_mod := Modifier.create(comp.modifications, comp.name, component.scope);
         comp_mod := Modifier.merge(modifier, comp_mod);
         binding := Modifier.binding(comp_mod);
         (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, tree);

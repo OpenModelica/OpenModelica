@@ -40,8 +40,8 @@ encapsulated package NFMod
   "
 
 public
+import BaseAvlTree;
 import NFBinding.Binding;
-//import NFEnvScope.{ScopeIndex};
 import SCode;
 
 protected
@@ -52,12 +52,37 @@ import List;
 constant Modifier EMPTY_MOD = NOMOD();
 
 public
+encapsulated package ModTable
+  import BaseAvlTree;
+  import NFMod.Modifier;
+  extends BaseAvlTree(redeclare type Key = String,
+                      redeclare type Value = Modifier);
+
+  redeclare function extends keyStr
+  algorithm
+    outString := inKey;
+  end keyStr;
+
+  redeclare function extends valueStr
+  algorithm
+    outString := Modifier.toString(inValue);
+  end valueStr;
+
+  redeclare function extends keyCompare
+  algorithm
+    outResult := stringCompare(inKey1, inKey2);
+  end keyCompare;
+  annotation(__OpenModelica_Interface="util");
+end ModTable;
+
+public
 uniontype Modifier
   record MODIFIER
     String name;
     Binding binding;
     // TODO: AvlTree?
-    list<Modifier> subModifiers;
+    //list<Modifier> subModifiers;
+    ModTable.Tree subModifiers;
     SourceInfo info;
   end MODIFIER;
 
@@ -71,16 +96,17 @@ uniontype Modifier
   record NOMOD end NOMOD;
 
 public
-  function translate
+  function create
     input SCode.Mod mod;
     input String elementName;
-    //input Integer inDimensions;
+    //input Integer dimensions;
     input Integer scope;
-    output Modifier translatedMod;
+    output Modifier newMod;
   algorithm
-    translatedMod := match mod
+    newMod := match mod
       local
-        list<Modifier> submods;
+        list<tuple<String, Modifier>> submod_lst;
+        ModTable.Tree submod_table;
         Binding binding;
 
       case SCode.NOMOD() then NOMOD();
@@ -88,35 +114,29 @@ public
       case SCode.MOD()
         algorithm
           binding := Binding.fromAbsyn(mod.binding, mod.finalPrefix,
-              mod.eachPrefix, scope, mod.info);
-          submods := translateSubMods(mod.subModLst, scope);
+            mod.eachPrefix, scope, mod.info);
+          submod_lst := list((m.ident, createSubMod(m, scope)) for m in mod.subModLst);
+          submod_table := ModTable.fromList(submod_lst,
+            function mergeLocal(elementName = elementName, prefix = {}));
         then
-          MODIFIER(elementName, binding, submods, mod.info);
+          MODIFIER(elementName, binding, submod_table, mod.info);
 
       case SCode.REDECL()
         then REDECLARE(mod.finalPrefix, mod.eachPrefix, mod.element, scope);
 
     end match;
-  end translate;
+  end create;
 
-  function lookupSub
-    input Modifier modifier;
+  function lookupModifier
     input String modName;
+    input Modifier modifier;
     output Modifier subMod;
-  protected
-    list<Modifier> submods;
   algorithm
-    submods := subModifiers(modifier);
-
-    for m in submods loop
-      if modName == name(m) then
-        subMod := m;
-        return;
-      end if;
-    end for;
-
-    subMod := EMPTY_MOD;
-  end lookupSub;
+    subMod := matchcontinue modifier
+      case MODIFIER() then ModTable.get(modifier.subModifiers, modName);
+      else EMPTY_MOD;
+    end matchcontinue;
+  end lookupModifier;
 
   function name
     input Modifier modifier;
@@ -139,16 +159,6 @@ public
     end match;
   end binding;
 
-  function subModifiers
-    input Modifier modifier;
-    output list<Modifier> subMods;
-  algorithm
-    subMods := match modifier
-      case MODIFIER() then modifier.subModifiers;
-      else {};
-    end match;
-  end subModifiers;
-
   function merge
     input Modifier outerMod;
     input Modifier innerMod;
@@ -156,7 +166,7 @@ public
   algorithm
     mergedMod := match(outerMod, innerMod)
       local
-        list<Modifier> submods;
+        ModTable.Tree submods;
         Binding binding;
 
       // One of the modifiers is NOMOD, return the other.
@@ -170,7 +180,7 @@ public
             outerMod.info, innerMod.binding, innerMod.info);
           binding := if Binding.isBound(outerMod.binding) then
             outerMod.binding else innerMod.binding;
-          submods := mergeSubMods(outerMod.subModifiers, innerMod.subModifiers);
+          submods := ModTable.join(innerMod.subModifiers, outerMod.subModifiers, merge);
         then
           MODIFIER(outerMod.name, binding, submods, outerMod.info);
 
@@ -203,14 +213,15 @@ public
   algorithm
     string := match mod
       local
+        list<Modifier> submods;
         String subs_str;
 
       case NOMOD() then "";
       case MODIFIER()
         algorithm
-          if not listEmpty(mod.subModifiers) then
-            subs_str := "(" + stringDelimitList(list(toString(s) for s in
-              mod.subModifiers), ", ") + ")";
+          submods := ModTable.listValues(mod.subModifiers);
+          if not listEmpty(submods) then
+            subs_str := "(" + stringDelimitList(list(toString(s) for s in submods), ", ") + ")";
           else
             subs_str := "";
           end if;
@@ -222,20 +233,11 @@ public
   end toString;
 
 protected
-  function translateSubMods
-    input list<SCode.SubMod> subMods;
-    input Integer scope;
-    output list<Modifier> translatedSubMods;
-  algorithm
-    //  pd := if SCode.eachBool(inEach) then 0 else inDimensions;
-    translatedSubMods := list(translateSubMod(m, scope) for m in subMods);
-  end translateSubMods;
-
-  function translateSubMod
+  function createSubMod
     input SCode.SubMod subMod;
     input Integer scope;
-    output Modifier mod = translate(subMod.mod, subMod.ident, scope);
-  end translateSubMod;
+    output Modifier mod = create(subMod.mod, subMod.ident, scope);
+  end createSubMod;
 
   function checkFinalOverride
     "Checks that a modifier is not trying to override a final modifier. In that
@@ -259,42 +261,46 @@ protected
     end match;
   end checkFinalOverride;
 
-  function mergeSubMods
-    input list<Modifier> outerSubMods;
-    input list<Modifier> innerSubMods;
-    output list<Modifier> subMods;
-  algorithm
-    subMods := List.fold(outerSubMods, mergeSubMod, innerSubMods);
-  end mergeSubMods;
-
-  function mergeSubMod
-    input Modifier subMod;
-    input list<Modifier> subMods;
-    output list<Modifier> mergedSubMods = {};
+  function mergeLocal
+    "Merges two modifiers in the same scope, i.e. like a(x(y = 1), x(z = 2)).
+     This is allowed as long as the two modifiers doesn't modify the same
+     element, otherwise it's an error."
+    input Modifier mod1;
+    input Modifier mod2;
+    input String elementName;
+    input list<String> prefix = {};
+    output Modifier mod;
   protected
-    String id;
-    Modifier mod;
-    list<Modifier> rest_mods = subMods;
+    String comp_name;
   algorithm
-    id := name(subMod);
+    mod := match (mod1, mod2)
+      // The second modifier has no binding, use the binding from the first.
+      case (MODIFIER(), MODIFIER(binding = Binding.UNBOUND()))
+        algorithm
+          mod1.subModifiers := ModTable.join(mod1.subModifiers, mod2.subModifiers,
+            function mergeLocal(elementName = elementName, prefix = mod1.name :: prefix));
+        then
+          mod1;
 
-    // Try to find a modifier with the same name.
-    while not listEmpty(rest_mods) loop
-      mod :: rest_mods := rest_mods;
+      // The first modifier has no binding, use the binding from the second.
+      case (MODIFIER(binding = Binding.UNBOUND()), MODIFIER())
+        algorithm
+          mod2.subModifiers := ModTable.join(mod2.subModifiers, mod1.subModifiers,
+            function mergeLocal(elementName = elementName, prefix = mod1.name :: prefix));
+        then
+          mod2;
 
-      // Matching modifier found, merge them and return.
-      if name(mod) == id then
-        mod := merge(subMod, mod);
-        mergedSubMods := listAppend(listReverse(mod :: mergedSubMods), rest_mods);
-        return;
-      end if;
+      // Both modifiers have bindings, give duplicate modification error.
+      case (MODIFIER(), MODIFIER())
+        algorithm
+          comp_name := stringDelimitList(listReverse(mod1.name :: prefix), ".");
+          Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
+            {comp_name, "component " + elementName}, {mod1.info, mod2.info});
+        then
+          fail();
 
-      mergedSubMods := mod :: mergedSubMods;
-    end while;
-
-    // No matching modifier found, add the new one to the list.
-    mergedSubMods := listReverse(subMod :: mergedSubMods);
-  end mergeSubMod;
+    end match;
+  end mergeLocal;
 end Modifier;
 
 annotation(__OpenModelica_Interface="frontend");
