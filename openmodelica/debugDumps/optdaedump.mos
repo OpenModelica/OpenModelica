@@ -105,12 +105,16 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (4)
+// Known variables only depending on parameters and constants - globalKnownVars (4)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -212,12 +216,16 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (4)
+// Known variables only depending on parameters and constants - globalKnownVars (4)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -319,12 +327,16 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (4)
+// Known variables only depending on parameters and constants - globalKnownVars (4)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -426,12 +438,16 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (4)
+// Known variables only depending on parameters and constants - globalKnownVars (4)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -567,12 +583,16 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (4)
+// Known variables only depending on parameters and constants - globalKnownVars (4)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -674,12 +694,16 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (4)
+// Known variables only depending on parameters and constants - globalKnownVars (4)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -781,12 +805,16 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (4)
+// Known variables only depending on parameters and constants - globalKnownVars (4)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -888,12 +916,16 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (4)
+// Known variables only depending on parameters and constants - globalKnownVars (4)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -995,12 +1027,16 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (4)
+// Known variables only depending on parameters and constants - globalKnownVars (4)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -1092,13 +1128,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: v0:VARIABLE()  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
 // 5: C:PARAM()  = 3.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -1194,13 +1234,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: v0:VARIABLE()  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
 // 5: C:PARAM()  = 3.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -1296,13 +1340,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: v0:VARIABLE()  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
 // 5: C:PARAM()  = 3.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -1398,13 +1446,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: v0:VARIABLE()  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
 // 5: C:PARAM()  = 3.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -1510,7 +1562,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -1630,7 +1686,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -1782,7 +1842,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -1935,7 +1999,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -2036,7 +2104,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (7)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input $res1:VARIABLE()  type: Real 
 // 2: input i2:VARIABLE()  type: Real 
@@ -2045,6 +2113,10 @@ buildModel(testOptdaedump); getErrorString();
 // 5: input iL:VARIABLE()  type: Real 
 // 6: input uC:DUMMY_STATE()  type: Real 
 // 7: input i1SeedLSJac0:STATE_DER()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -2124,7 +2196,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (7)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -2133,6 +2205,10 @@ buildModel(testOptdaedump); getErrorString();
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
 // 7: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -2214,7 +2290,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (7)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -2223,6 +2299,10 @@ buildModel(testOptdaedump); getErrorString();
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
 // 7: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -2315,7 +2395,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (7)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -2324,6 +2404,10 @@ buildModel(testOptdaedump); getErrorString();
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
 // 7: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -2415,7 +2499,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (7)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -2424,6 +2508,10 @@ buildModel(testOptdaedump); getErrorString();
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
 // 7: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -2515,7 +2603,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (7)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -2524,6 +2612,10 @@ buildModel(testOptdaedump); getErrorString();
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
 // 7: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -2615,7 +2707,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (7)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -2624,6 +2716,10 @@ buildModel(testOptdaedump); getErrorString();
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
 // 7: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -2715,7 +2811,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (7)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -2724,6 +2820,10 @@ buildModel(testOptdaedump); getErrorString();
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
 // 7: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -2815,7 +2915,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (7)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -2824,6 +2924,10 @@ buildModel(testOptdaedump); getErrorString();
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
 // 7: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -2915,7 +3019,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (7)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -2924,6 +3028,10 @@ buildModel(testOptdaedump); getErrorString();
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
 // 7: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -3015,7 +3123,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (7)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -3024,6 +3132,10 @@ buildModel(testOptdaedump); getErrorString();
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
 // 7: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -3178,7 +3290,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -3331,7 +3447,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -3484,7 +3604,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -3601,13 +3725,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: v0:VARIABLE()  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
 // 5: C:PARAM()  = 3.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -3726,13 +3854,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: v0:VARIABLE()  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
 // 5: C:PARAM()  = 3.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -3851,13 +3983,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: v0:VARIABLE()  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
 // 5: C:PARAM()  = 3.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -3976,13 +4112,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: v0:VARIABLE()  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
 // 5: C:PARAM()  = 3.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -4101,13 +4241,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
 // 5: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -4226,13 +4370,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
 // 5: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -4351,13 +4499,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
 // 5: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -4477,13 +4629,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
 // 5: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -4603,13 +4759,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
 // 5: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -4713,7 +4873,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (9)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input $res1:VARIABLE()  type: Real 
 // 2: input i2:VARIABLE()  type: Real 
@@ -4724,6 +4884,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7: input iL:STATE(1)()  type: Real 
 // 8: input uC:DUMMY_STATE()  type: Real 
 // 9: input i1SeedLSJac1:STATE_DER()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -4803,7 +4967,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (9)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -4814,6 +4978,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
 // 9: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -4895,7 +5063,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (9)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -4906,6 +5074,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
 // 9: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -4998,7 +5170,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (9)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -5009,6 +5181,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
 // 9: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -5100,7 +5276,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (9)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -5111,6 +5287,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
 // 9: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -5202,7 +5382,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (9)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -5213,6 +5393,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
 // 9: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -5304,7 +5488,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (9)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -5315,6 +5499,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
 // 9: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -5406,7 +5594,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (9)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -5417,6 +5605,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
 // 9: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -5508,7 +5700,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (9)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -5519,6 +5711,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
 // 9: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -5610,7 +5806,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (9)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -5621,6 +5817,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
 // 9: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -5712,7 +5912,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (9)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
 // 2: input uC:DUMMY_STATE()  type: Real 
@@ -5723,6 +5923,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
 // 9: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -5841,13 +6045,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
 // 5: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -5967,13 +6175,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
 // 5: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -6093,13 +6305,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
 // 5: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -6219,13 +6435,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
 // 5: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -6345,13 +6565,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
 // 5: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -6471,13 +6695,17 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (5)
+// Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
 // 1: C:PARAM()  = 3.0  type: Real 
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
 // 5: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)

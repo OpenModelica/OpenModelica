@@ -101,9 +101,13 @@ simulate(foo,stopTime=0);
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (1)
+// Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
 // 1: input u:VARIABLE(nominal = 20.0 )  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -211,9 +215,13 @@ simulate(foo,stopTime=0);
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (1)
+// Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
 // 1: input u:VARIABLE(nominal = 20.0 )  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -325,9 +333,13 @@ simulate(foo,stopTime=0);
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (1)
+// Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
 // 1: input u:VARIABLE(nominal = 20.0 )  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)

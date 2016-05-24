@@ -65,7 +65,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -149,7 +153,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -246,7 +254,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -341,7 +353,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -436,7 +452,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -531,7 +551,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -626,7 +650,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -721,7 +749,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: initialization
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //
@@ -817,7 +849,11 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (0)
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
 // ========================================
 //
 //

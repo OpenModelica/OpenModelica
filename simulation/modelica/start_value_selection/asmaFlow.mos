@@ -1194,7 +1194,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (261)
+// Known variables only depending on parameters and constants - globalKnownVars (261)
 // ========================================
 // 1: aimc.statorCore.wLimit:VARIABLE(unit = "rad/s" protected = true )  = max(abs(aimc.statorCoreParameters.wRef), 0.0003141592653589793)  "Limited angular velocity" type: Real 
 // 2: aimc.statorCore.Gc:VARIABLE(unit = "S" )  = 0.0  "Variable core loss conductance" type: Real 
@@ -1457,6 +1457,10 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 259: aimc.statorCore.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
 // 260: aimc.friction.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
 // 261: aimc.friction.flange.tau:VARIABLE(flow=true unit = "N.m" )  = -0.0  "Cut torque in the flange" type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)

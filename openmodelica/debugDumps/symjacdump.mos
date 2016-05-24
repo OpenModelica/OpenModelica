@@ -251,7 +251,7 @@ buildModel(testSymjacdump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (99)
+// Known variables only depending on parameters and constants - globalKnownVars (99)
 // ========================================
 // 1: input $res1:VARIABLE()  type: Real 
 // 2: input x[99]:VARIABLE(start = 0.5 )  type: Real  [100]
@@ -352,6 +352,10 @@ buildModel(testSymjacdump); getErrorString();
 // 97: input x[4]:VARIABLE(start = 0.5 )  type: Real  [100]
 // 98: input x[3]:VARIABLE(start = 0.5 )  type: Real  [100]
 // 99: input x_2_SeedNLSJac0:STATE_DER()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -823,7 +827,7 @@ buildModel(testSymjacdump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (99)
+// Known variables only depending on parameters and constants - globalKnownVars (99)
 // ========================================
 // 1: input x_2_SeedNLSJac0:STATE_DER()  type: Real 
 // 2: input x[3]:VARIABLE(start = 0.5 )  type: Real  [100]
@@ -924,6 +928,10 @@ buildModel(testSymjacdump); getErrorString();
 // 97: input x[98]:VARIABLE(start = 0.5 )  type: Real  [100]
 // 98: input x[99]:VARIABLE(start = 0.5 )  type: Real  [100]
 // 99: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -1193,7 +1201,7 @@ buildModel(testSymjacdump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (99)
+// Known variables only depending on parameters and constants - globalKnownVars (99)
 // ========================================
 // 1: input $res1:VARIABLE()  type: Real 
 // 2: input x[2]:VARIABLE(start = 0.5 )  type: Real  [100]
@@ -1294,6 +1302,10 @@ buildModel(testSymjacdump); getErrorString();
 // 97: input x[97]:VARIABLE(start = 0.5 )  type: Real  [100]
 // 98: input x[98]:VARIABLE(start = 0.5 )  type: Real  [100]
 // 99: input x_99_SeedNLSJac1:STATE_DER()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -1765,7 +1777,7 @@ buildModel(testSymjacdump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known Variables (constants) (99)
+// Known variables only depending on parameters and constants - globalKnownVars (99)
 // ========================================
 // 1: input x_99_SeedNLSJac1:STATE_DER()  type: Real 
 // 2: input x[98]:VARIABLE(start = 0.5 )  type: Real  [100]
@@ -1866,6 +1878,10 @@ buildModel(testSymjacdump); getErrorString();
 // 97: input x[3]:VARIABLE(start = 0.5 )  type: Real  [100]
 // 98: input x[2]:VARIABLE(start = 0.5 )  type: Real  [100]
 // 99: input $res1:VARIABLE()  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
 //
 //
 // External Objects (0)
