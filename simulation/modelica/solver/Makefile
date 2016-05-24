@@ -52,7 +52,7 @@ test:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	rm -rf externalInput.csv
-	@$(TEST) $(TESTFILES) $(DAETESTFILES)
+	@$(TEST) $(TESTFILES)
 
 testDAE:
 	@echo
@@ -64,7 +64,7 @@ testDAE:
 # Cleans all files that are not listed as dependencies 
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
-	@rm -f $(CLEAN) $(DAETESTFILES)
+	@rm -f $(CLEAN)
 
 # Run this if you want to list out the files (dependencies).
 # do it after cleaning and updating the folder
