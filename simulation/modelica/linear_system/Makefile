@@ -11,6 +11,7 @@ problem2.mos \
 problem3.mos \
 constantStates.mos \
 Ticket2404.mos \
+Ticket3926.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make failingtest
