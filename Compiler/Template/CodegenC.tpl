@@ -836,6 +836,13 @@ template simulationFile_dae_header(SimCode simCode)
     ;separator="\n"%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
+    case simCode as SIMCODE(__) then
+    <<
+    #ifndef <%fileNamePrefix%>_16DAE_H
+    #define <%fileNamePrefix%>_16DAE_H
+    #endif
+    <%\n%>
+    >>
   end match
 end simulationFile_dae_header;
 
@@ -847,9 +854,9 @@ template simulationFile_dae(SimCode simCode)
         daeModeData=SOME(DAEMODEDATA(daeEquations=daeEquations, sparsityPattern=sparsityPattern,
                                      algebraicDAEVars=algebraicDAEVars, residualVars=residualVars))) then
      let modelNamePrefixStr = modelNamePrefix(simCode)
-     let initDAEmode = 
+     let initDAEmode =
        match sparsityPattern
-       case SOME((_, _, _, (sparse,_), colorList, maxColor, _)) then
+       case SOME((_, _, _, (_, sparse), colorList, maxColor, _)) then
          '<%initializeDAEmodeData(listLength(residualVars), listLength(algebraicDAEVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
        case NONE() then
          'int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *inData, DAEMODE_DATA* daeModeData){ return -1; }'
@@ -3807,7 +3814,7 @@ template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String model
 
   <%systems%>
   /* for residuals DAE variables */
-  int <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>(DATA *data, threadData_t *threadData, double* residualVars)
+  int <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
     data->simulationInfo->callStatistics.functionEvalDAE++;

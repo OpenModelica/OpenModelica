@@ -1485,7 +1485,7 @@ algorithm
   end matchcontinue;
 end getSparsePatternHelp2;
 
-protected function transposeSparsePattern
+public function transposeSparsePattern
   input list<list<Integer>> inSparsePattern;
   input array<list<Integer>> inAccumList;
   input Integer inValue;
@@ -1502,6 +1502,37 @@ algorithm
     value := value + 1;
   end for;
 end transposeSparsePattern;
+
+public function transposeSparsePatternTuple
+  input list<tuple<Integer, list<Integer>>> inSparsePattern;
+  input array<tuple<Integer,list<Integer>>> inAccumList;
+  output array<tuple<Integer,list<Integer>>> outSparsePattern = inAccumList;
+protected
+  Integer value;
+  list<Integer> tmplist;
+  list<Integer> oneList;
+  tuple<Integer,list<Integer>> tmpTuple;
+  Integer i;
+algorithm
+  for oneListTuple in inSparsePattern loop
+    (value, oneList) := oneListTuple;
+    for oneElem in oneList loop
+      tmpTuple := arrayGet(outSparsePattern,oneElem+1);
+      (_, tmplist) := tmpTuple;
+      tmplist := value::tmplist;
+      tmpTuple := (oneElem, tmplist);
+      MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(outSparsePattern, oneElem+1, tmpTuple);
+    end for;
+  end for;
+  // sort all transposed lists
+  for i in 1:listLength(inSparsePattern) loop
+    tmpTuple := arrayGet(outSparsePattern,i);
+    (value, tmplist) := tmpTuple;
+    tmplist := List.sort(tmplist, intGt);
+    tmpTuple := (value, tmplist);
+    MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(outSparsePattern, i, tmpTuple);
+  end for;
+end transposeSparsePatternTuple;
 
 protected function mapIndexColors
   input array<Integer> inColors;

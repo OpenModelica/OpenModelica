@@ -438,7 +438,7 @@ algorithm
     if Flags.getConfigBool(Flags.DAE_MODE) then
       daeModeSP := createDaeModeSparsePattern(bdaeModeVars, bdaeModeEqns, shared, crefToSimVarHT);
       residualVars := rewriteIndex(residualVars, 0);
-      algebraicVars := rewriteIndex(algebraicVars, 0);
+      algebraicVars := sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
       daeModeData := SOME(SimCode.DAEMODEDATA(daeEquations, daeModeSP, residualVars, algebraicVars));
     else
       daeModeData := NONE();
@@ -1764,6 +1764,8 @@ algorithm
   foldArg := ({}, {}, {}, iuniqueEqIndex, itempvars, outDAEVars, outDAEEqns);
   (odaeEquations, oresidualVars, oalgebraicVars, ouniqueEqIndex, otempvars, outDAEVars, outDAEEqns) :=
     List.fold1(inSysts, createDAEEqsPrepare, shared, foldArg);
+  oresidualVars := listReverse(oresidualVars);
+  oalgebraicVars := listReverse(oalgebraicVars);
 end createDAEEquations;
 
 protected function createDAEEqsPrepare
@@ -1978,11 +1980,26 @@ protected
   BackendDAE.SparseColoring coloring;
   SimCode.JacobianMatrix simCodeJac;
   Integer nonZeroElements;
+  list<SimCodeVar.SimVar> inSimVars;
+  list<tuple<SimCodeVar.SimVar, BackendDAE.Var>> tupleVars;
+  list<BackendDAE.Var> inVarsLst;
+  BackendDAE.Variables sortedVars;
+  SimCodeVar.SimVar svar; BackendDAE.Var bvar;
 algorithm
   try
+    // sort variables in SimCode order
+    inVarsLst := BackendVariable.varList(inVars);
+    varCrefsList := listReverse(List.map(inVarsLst, BackendVariable.varCref));
+    inSimVars := getSimVars2Crefs(varCrefsList, crefToSimVarHT);
+    tupleVars := List.threadTuple(inSimVars, inVarsLst);
+    tupleVars := List.sort(tupleVars, compareSimVarTupleIndexGt);
+    inVarsLst := List.unzipSecond(tupleVars);
+    sortedVars := BackendVariable.listVar(listReverse(inVarsLst));
+    varCrefsList := List.map(inVarsLst, BackendVariable.varCref);
+
     // create adjacency matrix
     funcs := BackendDAEUtil.getFunctions(inShared);
-    system := BackendDAEUtil.createEqSystem(inVars, inEqns);
+    system := BackendDAEUtil.createEqSystem(sortedVars, inEqns);
     (system,_,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(system, BackendDAE.SOLVABLE(), SOME(funcs));
     if debug then
       print("createDaeModeSparsePattern DAE-System:\n");
@@ -1990,16 +2007,20 @@ algorithm
     end if;
 
     // translate adjacency matrix to BackendDAE sparsity pattern
-    intsp := BackendDAEUtil.absIncidenceMatrix(Util.getOption(system.m));
+    intsp := BackendDAEUtil.incidenceMatrixToSparsePattern(Util.getOption(system.m));
     intspList := arrayList(intsp);
-    intspT := BackendDAEUtil.absIncidenceMatrix(Util.getOption(system.mT));
+    intspT := BackendDAEUtil.incidenceMatrixToSparsePattern(Util.getOption(system.mT));
     intspTList := arrayList(intspT);
-
     // get number of non zero elements
     nonZeroElements := List.lengthListElements(intspList);
+    if debug then
+      BackendDump.dumpSparsePatternArray(intsp);
+      print("daeMode prepared a pattern: " + realString(clock()) + "\n");
+      BackendDump.dumpSparsePatternArray(intspT);
+      print("daeMode prepared a pattern: " + realString(clock()) + "\n");
+    end if;
 
     // translated to DAE.ComRefs
-    varCrefsList := List.map(BackendVariable.varList(inVars), BackendVariable.varCref);
     varCrefs := listArray(varCrefsList);
 
     translated := list(list(arrayGet(varCrefs, i) for i in lst) for lst in intspList);
@@ -2010,14 +2031,14 @@ algorithm
     // build sparse pattern
     bdaeSP :=(sparsetuple, sparsetupleT, (varCrefsList, varCrefsList), nonZeroElements);
 
+    // get coloring
     coloredArray := SymbolicJacobian.createColoring(intsp, intspT, listLength(varCrefsList), listLength(varCrefsList));
     coloring := list(list(arrayGet(varCrefs, i) for i in lst) for lst in coloredArray);
-    // get coloring
     // or without coloring
-    //coloring = List.transposeList({inDepCompRefs});
+    //coloring := List.transposeList({varCrefsList});
 
     // translate to SimCode sparsity
-    ({simCodeJac}, _) := createSymbolicJacobianssSimCode({(NONE(), bdaeSP, coloring)}, crefToSimVarHT, 0, {"daeMode"});
+    (simCodeJac, _) :=  createSimCodeSparsePattenDAEmode({(NONE(), bdaeSP, coloring)}, crefToSimVarHT, 0, "daeMode");
 
     outSimCodeJac := SOME(simCodeJac);
   else
@@ -2038,6 +2059,20 @@ algorithm
     daeEquations := {};
   end if;
 end getSimCodeDAEModeDataEqns;
+
+protected function sortSimVarsAndWriteIndex
+  input list<SimCodeVar.SimVar> inSimVar;
+  input SimCode.HashTableCrefToSimVar crefToSimVarHT;
+  output list<SimCodeVar.SimVar> outSimVar;
+protected
+  list<DAE.ComponentRef> crefs;
+  list<SimCodeVar.SimVar> sorted;
+algorithm
+  crefs := List.map(inSimVar, getSimVarCompRef);
+  sorted := getSimVars2Crefs(crefs, crefToSimVarHT);
+  sorted := List.sort(sorted, compareVarIndexGt);
+  outSimVar := rewriteIndex(sorted, 0);
+end sortSimVarsAndWriteIndex;
 
 // =============================================================================
 // section for zeroCrossingsEquations
@@ -4526,6 +4561,94 @@ algorithm
   end if;
 end sortSparsePattern;
 
+protected function sortSparsePatternDAEmode
+  input list<SimCodeVar.SimVar> inSimVars;
+  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> inSparsePattern;
+  input Boolean useFMIIndex;
+  output list<tuple<Integer, list<Integer>>> outSparse = {};
+protected
+  HashTable.HashTable ht;
+  DAE.ComponentRef cref;
+  Integer size, i, j;
+  list<Integer> intLst;
+  list<DAE.ComponentRef> crefs;
+algorithm
+  //create HT
+  size := listLength(inSimVars);
+  if size>0 then
+    ht := HashTable.emptyHashTableSized(size);
+    for var in inSimVars loop
+      if not useFMIIndex then
+        SimCodeVar.SIMVAR(name = cref, index=i) := var;
+      else
+        SimCodeVar.SIMVAR(name = cref) := var;
+        i := getVariableIndex(var);
+      end if;
+      //print("Setup HashTable with cref: " + ComponentReference.printComponentRefStr(cref) + " index: "+ intString(i) + "\n");
+      ht := BaseHashTable.add((cref, i), ht);
+    end for;
+
+    //translate
+    i := 0;
+    for tpl in inSparsePattern loop
+       (cref, crefs) := tpl;
+       intLst := {};
+       for cr in crefs loop
+         j := BaseHashTable.get(cr, ht);
+         intLst := j :: intLst;
+       end for;
+       intLst := List.sort(intLst, intGt);
+       outSparse := (i, intLst) :: outSparse;
+       i := i + 1;
+    end for;
+    outSparse := listReverse(outSparse);
+  end if;
+end sortSparsePatternDAEmode;
+
+protected function sortSparsePatternTDAEmode
+  input list<SimCodeVar.SimVar> inSimVars;
+  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> inSparsePattern;
+  input Boolean useFMIIndex;
+  output list<tuple<Integer, list<Integer>>> outSparse = {};
+protected
+  HashTable.HashTable ht;
+  DAE.ComponentRef cref;
+  Integer size, i, j;
+  list<Integer> intLst;
+  list<DAE.ComponentRef> crefs;
+algorithm
+  //create HT
+  size := listLength(inSimVars);
+  if size>0 then
+    ht := HashTable.emptyHashTableSized(size);
+    for var in inSimVars loop
+      if not useFMIIndex then
+        SimCodeVar.SIMVAR(name = cref, index=i) := var;
+      else
+        SimCodeVar.SIMVAR(name = cref) := var;
+        i := getVariableIndex(var);
+      end if;
+      //print("Setup HashTable with cref: " + ComponentReference.printComponentRefStr(cref) + " index: "+ intString(i) + "\n");
+      ht := BaseHashTable.add((cref, i), ht);
+    end for;
+
+    //translate
+    for tpl in inSparsePattern loop
+       (cref, crefs) := tpl;
+       i := BaseHashTable.get(cref, ht);
+       intLst := {};
+       j := 0;
+       for cr in crefs loop
+         intLst := j :: intLst;
+         j := j + 1;
+       end for;
+       intLst := listReverse(intLst);
+       outSparse := (i, intLst) :: outSparse;
+    end for;
+  outSparse := List.sort(outSparse, Util.compareTupleIntGt);
+  end if;
+end sortSparsePatternTDAEmode;
+
 protected function sortColoring
   input list<SimCodeVar.SimVar> inSimVars;
   input list<list<DAE.ComponentRef>> inColoring;
@@ -4583,6 +4706,103 @@ algorithm
     print("Cols: " + stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr)," ") + "\n");
   end for;
 end dumpSparsePattern;
+
+protected function createSimCodeSparsePattenDAEmode
+"fuction translates the sparse pattern of the daeMode
+ author: wbraun"
+  input BackendDAE.SymbolicJacobians inSymJacobian;
+  input SimCode.HashTableCrefToSimVar inSimVarHT;
+  input Integer iuniqueEqIndex;
+  input String inName;
+  output SimCode.JacobianMatrix outJacobianMatrix;
+  output Integer ouniqueEqIndex;
+algorithm
+  (outJacobianMatrix, ouniqueEqIndex) :=
+  matchcontinue (inSymJacobian)
+    local
+      list<DAE.ComponentRef> diffCompRefs, diffedCompRefs;
+
+      Integer uniqueEqIndex;
+
+      String name, s, dummyVar;
+
+      list<SimCodeVar.SimVar> seedVars, indexVars, seedIndexVars;
+
+      list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepattern, sparsepatternT;
+      list<list<DAE.ComponentRef>> colsColors;
+      Integer maxColor;
+
+      list<tuple<Integer, list<Integer>>> sparseInts, sparseIntsT;
+      array<tuple<Integer, list<Integer>>> sparseArrayT;
+      list<list<Integer>> coloring;
+      Option<BackendDAE.SymbolicJacobian> optionBDAE;
+
+      constant Boolean debug = false;
+
+    // if only sparsity pattern is generated
+    case ({(optionBDAE, (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors)})
+      guard  checkForEmptyBDAE(optionBDAE)
+      equation
+        if debug then
+          print("Start sparse pattern without analytical Jacobians\n");
+        end if;
+
+        seedVars = getSimVars2Crefs(diffCompRefs, inSimVarHT);
+        seedVars = List.sort(seedVars, compareVarIndexGt);
+
+        if debug then
+          print("diffCrefs: " + ComponentReference.printComponentRefListStr(diffCompRefs) + "\n");
+          print("\n---+++  seedVars +++---\n");
+          print(Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
+        end if;
+
+        indexVars = getSimVars2Crefs(diffedCompRefs, inSimVarHT);
+        indexVars = List.sort(indexVars, compareVarIndexGt);
+
+        if debug then
+          print("diffedCrefs: " + ComponentReference.printComponentRefListStr(diffedCompRefs) + "\n");
+          print("\n---+++  indexVars +++---\n");
+          print(Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
+          print("\n---+++  sparse pattern vars +++---\n");
+          dumpSparsePattern(sparsepattern);
+          print("\n---+++  sparse pattern transpose +++---\n");
+          dumpSparsePattern(sparsepatternT);
+        end if;
+        seedVars = rewriteIndex(seedVars, 0);
+        indexVars = rewriteIndex(indexVars, 0);
+        seedIndexVars = listAppend(seedVars, indexVars);
+
+        //sparseInts = sortSparsePattern(seedIndexVars, sparsepattern, false);
+        //sparseIntsT = sortSparsePattern(seedIndexVars, sparsepatternT, false);
+        sparseInts = sortSparsePatternDAEmode(seedIndexVars, sparsepattern, false);
+
+        sparseArrayT = arrayCreate(listLength(sparseInts), (-1,{}));
+        sparseArrayT = SymbolicJacobian.transposeSparsePatternTuple(sparseInts, sparseArrayT);
+        sparseIntsT = arrayList(sparseArrayT);
+
+        maxColor = listLength(colsColors);
+        s = intString(listLength(diffedCompRefs));
+        coloring = sortColoring(seedVars, colsColors);
+
+        if debug then
+          print("analytical Jacobians -> transformed to SimCode for Matrix " + inName + " time: " + realString(clock()) + "\n");
+          print("\n---+++  sparse pattern vars +++---\n");
+          dumpSparsePatternInt(sparseInts);
+          print("\n---+++  sparse pattern transpose +++---\n");
+          dumpSparsePatternInt(sparseIntsT);
+        end if;
+
+     then
+        (({(({}, {}, s))}, {}, inName, (sparseInts, sparseIntsT), coloring, maxColor, -1), iuniqueEqIndex);
+
+    else
+      equation
+        Error.addInternalError("Function createSimCodeSparsePattenDAEmode failed", sourceInfo());
+      then
+        fail();
+  end matchcontinue;
+end createSimCodeSparsePattenDAEmode;
+
 
 // =============================================================================
 // section with unsorted function
@@ -9145,6 +9365,18 @@ algorithm
   SimCodeVar.SIMVAR(variable_index=SOME(index2)) := var2;
   result := index1 > index2;
 end compareVarIndexGt;
+
+public function compareSimVarTupleIndexGt
+  input tuple<SimCodeVar.SimVar, BackendDAE.Var> var1;
+  input tuple<SimCodeVar.SimVar, BackendDAE.Var> var2;
+  output Boolean result;
+protected
+  Integer index1, index2;
+algorithm
+  (SimCodeVar.SIMVAR(variable_index=SOME(index1)),_) := var1;
+  (SimCodeVar.SIMVAR(variable_index=SOME(index2)),_) := var2;
+  result := index1 > index2;
+end compareSimVarTupleIndexGt;
 
 public function countDynamicExternalFunctions
   input list<SimCode.Function> inFncLst;

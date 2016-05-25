@@ -81,6 +81,7 @@ typedef struct IDA_SOLVER
   /* ### daeMode ### */
   int daeMode;                  /* if TRUE then solve dae more with a reals residual function */
   long int N;
+  long int NNZ;
   double *states;
   double *statesDer;
   int (*residualFunction)(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData);

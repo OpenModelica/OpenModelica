@@ -3764,6 +3764,21 @@ algorithm
 end match;
 end traverseStmtsExpList;
 
+public function incidenceMatrixToSparsePattern
+" Applies absolute value to all entries in the incidence matrix and
+  also sort and unique them."
+  input BackendDAE.IncidenceMatrix m;
+  output BackendDAE.IncidenceMatrix res;
+protected
+  list<list<Integer>> lst,lst_1;
+algorithm
+  lst := arrayList(m);
+  lst_1 := List.mapList(lst, intAbs);
+  lst_1 := List.map1(lst_1, List.sort, intGt);
+  lst_1 := List.map1(lst_1, List.sortedUnique, intGe);
+  res := listArray(lst_1);
+end incidenceMatrixToSparsePattern;
+
 /******************************************************************
  stuff to calculate enhanced Adjacency matrix
 
