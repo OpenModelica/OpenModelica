@@ -4,65 +4,65 @@ package Absyn
   uniontype Exp end Exp;
 end Absyn;
 
-package NFConnect2
-  uniontype Face
-    record INSIDE end INSIDE;
-    record OUTSIDE end OUTSIDE;
-    record NO_FACE end NO_FACE;
-  end Face;
-
-  uniontype ExpandableConnector
-    record EXPANDABLE_CONNECTOR
-      //list<...> potentialVars;
-      //list<...> presentVars;
-    end EXPANDABLE_CONNECTOR;
-  end ExpandableConnector;
-
-  uniontype Connector
-    record CONNECTOR
-      DAE.ComponentRef name;
-      Face face;
-    end CONNECTOR;
-  end Connector;
-
-  uniontype Connection
-    record CONNECTION
-      Connector lhs;
-      Connector rhs;
-      SourceInfo info;
-    end CONNECTION;
-  end Connection;
-
-  //uniontype Branch
-  //  record BRANCH
-  //    Connector lhs;
-  //    Connector rhs;
-  //    Boolean breakable;
-  //    SourceInfo info;
-  //  end BRANCH;
-  //end Branch;
-
-  uniontype Root
-    record ROOT
-      DAE.ComponentRef name;
-      SourceInfo info;
-    end ROOT;
-
-    record POTENTIAL_ROOT
-      DAE.ComponentRef name;
-      Integer priority;
-      SourceInfo info;
-    end POTENTIAL_ROOT;
-  end Root;
-
-  uniontype Connections
-    record CONNECTIONS
-      list<Connection> connections;
-      list<Connection> branches;
-      list<Root> roots;
-    end CONNECTIONS;
-  end Connections;
-end NFConnect2;
+//package NFConnect2
+//  uniontype Face
+//    record INSIDE end INSIDE;
+//    record OUTSIDE end OUTSIDE;
+//    record NO_FACE end NO_FACE;
+//  end Face;
+//
+//  uniontype ExpandableConnector
+//    record EXPANDABLE_CONNECTOR
+//      //list<...> potentialVars;
+//      //list<...> presentVars;
+//    end EXPANDABLE_CONNECTOR;
+//  end ExpandableConnector;
+//
+//  uniontype Connector
+//    record CONNECTOR
+//      DAE.ComponentRef name;
+//      Face face;
+//    end CONNECTOR;
+//  end Connector;
+//
+//  uniontype Connection
+//    record CONNECTION
+//      Connector lhs;
+//      Connector rhs;
+//      SourceInfo info;
+//    end CONNECTION;
+//  end Connection;
+//
+//  //uniontype Branch
+//  //  record BRANCH
+//  //    Connector lhs;
+//  //    Connector rhs;
+//  //    Boolean breakable;
+//  //    SourceInfo info;
+//  //  end BRANCH;
+//  //end Branch;
+//
+//  uniontype Root
+//    record ROOT
+//      DAE.ComponentRef name;
+//      SourceInfo info;
+//    end ROOT;
+//
+//    record POTENTIAL_ROOT
+//      DAE.ComponentRef name;
+//      Integer priority;
+//      SourceInfo info;
+//    end POTENTIAL_ROOT;
+//  end Root;
+//
+//  uniontype Connections
+//    record CONNECTIONS
+//      list<Connection> connections;
+//      list<Connection> branches;
+//      list<Root> roots;
+//    end CONNECTIONS;
+//  end Connections;
+//end NFConnect2;
 
 package DAE
   uniontype ComponentRef end ComponentRef;
