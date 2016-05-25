@@ -83,7 +83,12 @@ uniontype Instance
   end INSTANCED_CLASS;
 
   record PARTIAL_BUILTIN
+    Modifier modifier;
   end PARTIAL_BUILTIN;
+
+  record INSTANCED_BUILTIN
+    list<Modifier> attributes;
+  end INSTANCED_BUILTIN;
 
   function emptyInstancedClass
     output Instance instance;

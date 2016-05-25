@@ -113,7 +113,7 @@ algorithm
       DAE.Element var;
       DAE.ComponentRef cref;
 
-    case Component.COMPONENT(classInst = InstNode.INST_NODE(instance = Instance.PARTIAL_BUILTIN()))
+    case Component.COMPONENT(classInst = InstNode.INST_NODE(instance = Instance.INSTANCED_BUILTIN()))
       algorithm
         cref := DAE.CREF_IDENT(component.name, DAE.T_UNKNOWN_DEFAULT, {});
         for id in prefix loop

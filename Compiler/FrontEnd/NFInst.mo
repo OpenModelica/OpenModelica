@@ -472,6 +472,13 @@ algorithm
         end for;
       then
         ();
+
+    case Instance.PARTIAL_BUILTIN()
+      algorithm
+        instance.modifier := Modifier.merge(modifier, instance.modifier);
+      then
+        ();
+
   end match;
 end applyModifier;
 
@@ -524,8 +531,11 @@ algorithm
       array<Component> components;
       ClassTree.Tree scope;
       Integer comp_count, idx;
-      Modifier comp_mod;
+      Modifier type_mod;
+      list<Modifier> type_mods, inst_type_mods;
+      Binding binding;
 
+    // A normal class.
     case InstNode.INST_NODE(instance = i as Instance.EXPANDED_CLASS(elements = scope))
       algorithm
         comp_count := arrayLength(i.components);
@@ -551,6 +561,38 @@ algorithm
       then
         ();
 
+    // A builtin type.
+    case InstNode.INST_NODE(instance = i as Instance.PARTIAL_BUILTIN())
+      algorithm
+        inst_type_mods := {};
+        // Merge any outer modifiers on the class with the class' own modifier.
+        type_mod := Modifier.merge(modifier, i.modifier);
+
+        // If the modifier isn't empty, instantiate it.
+        if not Modifier.isEmpty(type_mod) then
+          type_mods := Modifier.toList(type_mod);
+
+          // Instantiate the binding of each submodifier.
+          for m in type_mods loop
+            _ := match m
+              case Modifier.MODIFIER()
+                algorithm
+                  (binding, tree) := instBinding(m.binding, tree);
+                  m.binding := binding;
+                then
+                  ();
+
+              else ();
+            end match;
+
+            inst_type_mods := m :: inst_type_mods;
+          end for;
+        end if;
+
+        node.instance := Instance.INSTANCED_BUILTIN(inst_type_mods);
+      then
+        ();
+
     else ();
   end match;
 end instClass;
@@ -564,19 +606,14 @@ protected
   Modifier comp_mod;
   Binding binding;
   DAE.Type ty;
+  Component redecl_comp;
 algorithm
   (component, tree) := match component
-    //case (Component.COMPONENT_DEF(),
-    //      Modifier.REDECLARE(element = comp as SCode.COMPONENT()))
-    //  algorithm
-    //    tree := InstanceTree.setCurrentScope(tree, modifier.scope); // redeclare scope
-    //    comp_mod := Modifier.create(comp.modifications, comp.name, modifier.scope);
-    //    comp_mod := Modifier.merge(modifier, comp_mod);
-    //    binding := Modifier.binding(comp_mod);
-    //    (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, tree);
-    //    ty := makeType(cls);
-    //  then
-    //    (Component.COMPONENT(comp.name, cls, ty, binding), tree);
+    case Component.COMPONENT_DEF(modifier = comp_mod as Modifier.REDECLARE())
+      algorithm
+        redecl_comp := Component.COMPONENT_DEF(comp_mod.element, Modifier.NOMOD(), comp_mod.scope);
+      then
+        instComponent(redecl_comp, tree);
 
     case Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT())
       algorithm
@@ -584,7 +621,6 @@ algorithm
         comp_mod := Modifier.create(comp.modifications, comp.name,
           ModifierScope.COMPONENT_SCOPE(comp.name), component.scope);
         comp_mod := Modifier.merge(component.modifier, comp_mod);
-        //comp_mod := Modifier.merge(modifier, comp_mod);
         binding := Modifier.binding(comp_mod);
         (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, comp.info, tree);
         ty := makeType(cls);
@@ -617,27 +653,65 @@ algorithm
   end match;
 end instTypeSpec;
 
+function instModifier
+  input output Modifier modifier;
+  input output InstanceTree tree;
+algorithm
+
+end instModifier;
+
 function makeType
   input InstNode node;
   output DAE.Type ty;
 algorithm
   ty := match node
+    local
+      list<Modifier> type_mods;
+      list<DAE.Var> type_attr;
+
     case InstNode.INST_NODE(instance = Instance.INSTANCED_CLASS())
       then DAE.T_COMPLEX_DEFAULT;
 
-    case InstNode.INST_NODE(instance = Instance.PARTIAL_BUILTIN())
+    case InstNode.INST_NODE(instance = Instance.INSTANCED_BUILTIN(attributes = type_mods))
+      algorithm
+        type_attr := list(makeTypeAttribute(m) for m in type_mods);
       then
         match node.name
-          case "Real" then DAE.T_REAL_DEFAULT;
-          case "Integer" then DAE.T_INTEGER_DEFAULT;
-          case "Boolean" then DAE.T_BOOL_DEFAULT;
-          case "String" then DAE.T_STRING_DEFAULT;
+          case "Real" then DAE.T_REAL(type_attr, DAE.emptyTypeSource);
+          case "Integer" then DAE.T_INTEGER(type_attr, DAE.emptyTypeSource);
+          case "Boolean" then DAE.T_BOOL(type_attr, DAE.emptyTypeSource);
+          case "String" then DAE.T_STRING(type_attr, DAE.emptyTypeSource);
           else DAE.T_UNKNOWN_DEFAULT;
         end match;
 
     else DAE.T_UNKNOWN_DEFAULT;
   end match;
 end makeType;
+
+function makeTypeAttribute
+  input Modifier modifier;
+  output DAE.Var attribute;
+algorithm
+  attribute := match modifier
+    local
+      DAE.Exp exp;
+      DAE.Binding binding;
+
+    case Modifier.MODIFIER(binding = Binding.UNTYPED_BINDING(bindingExp = exp))
+      algorithm
+        binding := DAE.EQBOUND(exp, NONE(), DAE.C_UNKNOWN(),
+          DAE.BindingSource.BINDING_FROM_START_VALUE());
+      then
+        DAE.TYPES_VAR(modifier.name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT, binding, NONE());
+
+    else
+      algorithm
+        print("NFInst.makeTypeAttribute: Bad modifier\n");
+      then
+        fail();
+
+  end match;
+end makeTypeAttribute;
 
 function instBindings
   input output InstNode node;
@@ -708,6 +782,11 @@ function instExp
   output InstanceTree tree = inTree;
 algorithm
   daeExp := match absynExp
+    local
+      DAE.Exp exp1, exp2;
+      DAE.Operator op;
+      list<DAE.Exp> expl;
+
     case Absyn.INTEGER() then DAE.ICONST(absynExp.value);
     case Absyn.REAL() then DAE.RCONST(stringReal(absynExp.value));
     case Absyn.STRING() then DAE.SCONST(absynExp.value);
@@ -718,9 +797,92 @@ algorithm
       then
         daeExp;
 
+    case Absyn.BINARY()
+      algorithm
+        (exp1, tree) := instExp(absynExp.exp1, tree);
+        (exp2, tree) := instExp(absynExp.exp2, tree);
+        op := instOperator(absynExp.op);
+      then
+        DAE.BINARY(exp1, op, exp2);
+
+    case Absyn.UNARY()
+      algorithm
+        (exp1, tree) := instExp(absynExp.exp, tree);
+        op := instOperator(absynExp.op);
+      then
+        DAE.UNARY(op, exp1);
+
+    case Absyn.LBINARY()
+      algorithm
+        (exp1, tree) := instExp(absynExp.exp1, tree);
+        (exp2, tree) := instExp(absynExp.exp2, tree);
+        op := instOperator(absynExp.op);
+      then
+        DAE.LBINARY(exp1, op, exp2);
+
+    case Absyn.LUNARY()
+      algorithm
+        (exp1, tree) := instExp(absynExp.exp, tree);
+        op := instOperator(absynExp.op);
+      then
+        DAE.LUNARY(op, exp1);
+
+    case Absyn.RELATION()
+      algorithm
+        (exp1, tree) := instExp(absynExp.exp1, tree);
+        (exp2, tree) := instExp(absynExp.exp2, tree);
+        op := instOperator(absynExp.op);
+      then
+        DAE.RELATION(exp1, op, exp2, 0, NONE());
+
+    case Absyn.ARRAY()
+      algorithm
+        (expl, tree) := List.mapFold(absynExp.arrayExp, instExp, tree);
+      then
+        DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, expl);
+
+    case Absyn.MATRIX()
+      algorithm
+        (expl, tree) := List.mapFold(list(Absyn.ARRAY(e) for e in absynExp.matrix), instExp, tree);
+      then
+        DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, expl);
+
     else DAE.SCONST("ERROR");
   end match;
 end instExp;
+
+protected function instOperator
+  input Absyn.Operator inOperator;
+  output DAE.Operator outOperator;
+algorithm
+  outOperator := match(inOperator)
+    case Absyn.ADD() then DAE.ADD(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.SUB() then DAE.SUB(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.MUL() then DAE.MUL(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.DIV() then DAE.DIV(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.POW() then DAE.POW(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.UPLUS() then DAE.ADD(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.UMINUS() then DAE.UMINUS(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.ADD_EW() then DAE.ADD_ARR(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.SUB_EW() then DAE.SUB_ARR(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.MUL_EW() then DAE.MUL_ARR(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.DIV_EW() then DAE.DIV_ARR(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.POW_EW() then DAE.POW_ARR2(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.UPLUS_EW() then DAE.ADD(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.UMINUS_EW() then DAE.UMINUS(DAE.T_UNKNOWN_DEFAULT);
+    // logical have boolean type
+    case Absyn.AND() then DAE.AND(DAE.T_BOOL_DEFAULT);
+    case Absyn.OR() then DAE.OR(DAE.T_BOOL_DEFAULT);
+    case Absyn.NOT() then DAE.NOT(DAE.T_BOOL_DEFAULT);
+    // relational have boolean type too
+    case Absyn.LESS() then DAE.LESS(DAE.T_BOOL_DEFAULT);
+    case Absyn.LESSEQ() then DAE.LESSEQ(DAE.T_BOOL_DEFAULT);
+    case Absyn.GREATER() then DAE.GREATER(DAE.T_BOOL_DEFAULT);
+    case Absyn.GREATEREQ() then DAE.GREATEREQ(DAE.T_BOOL_DEFAULT);
+    case Absyn.EQUAL() then DAE.EQUAL(DAE.T_BOOL_DEFAULT);
+    case Absyn.NEQUAL() then DAE.NEQUAL(DAE.T_BOOL_DEFAULT);
+  end match;
+end instOperator;
 
 function instCref
   input Absyn.ComponentRef absynCref;

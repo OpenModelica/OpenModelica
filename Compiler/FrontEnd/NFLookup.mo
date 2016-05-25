@@ -43,15 +43,16 @@ import NFInstance.Instance;
 import NFInstanceTree.InstanceTree;
 import NFInstanceTree.InstVector;
 import NFInstNode.InstNode;
+import NFMod.Modifier;
 
 constant NFInst.InstNode REAL_TYPE = NFInstNode.INST_NODE("Real",
-  SOME(NFBuiltin.BUILTIN_REAL), NFInstance.PARTIAL_BUILTIN(), 0, 0);
+  SOME(NFBuiltin.BUILTIN_REAL), NFInstance.PARTIAL_BUILTIN(Modifier.NOMOD()), 0, 0);
 constant NFInst.InstNode INT_TYPE = NFInstNode.INST_NODE("Integer",
-  SOME(NFBuiltin.BUILTIN_INTEGER), NFInstance.PARTIAL_BUILTIN(), 0, 0);
+  SOME(NFBuiltin.BUILTIN_INTEGER), NFInstance.PARTIAL_BUILTIN(Modifier.NOMOD()), 0, 0);
 constant NFInst.InstNode BOOL_TYPE = NFInstNode.INST_NODE("Boolean",
-  SOME(NFBuiltin.BUILTIN_BOOLEAN), NFInstance.PARTIAL_BUILTIN(), 0, 0);
+  SOME(NFBuiltin.BUILTIN_BOOLEAN), NFInstance.PARTIAL_BUILTIN(Modifier.NOMOD()), 0, 0);
 constant NFInst.InstNode STRING_TYPE = NFInstNode.INST_NODE("String",
-  SOME(NFBuiltin.BUILTIN_STRING), NFInstance.PARTIAL_BUILTIN(), 0, 0);
+  SOME(NFBuiltin.BUILTIN_STRING), NFInstance.PARTIAL_BUILTIN(Modifier.NOMOD()), 0, 0);
 
 function lookupClassName
   input Absyn.Path name;
