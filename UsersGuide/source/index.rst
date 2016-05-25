@@ -20,6 +20,7 @@ OpenModelica User's Guide
   omnotebook
   fmi
   optimization
+  parametersensitivity
   mdt
   mdtdebugger
   profiler
