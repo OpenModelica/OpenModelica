@@ -112,8 +112,10 @@ algorithm
       Instance i;
       DAE.Element var;
       DAE.ComponentRef cref;
+      Component.Attributes attr;
 
-    case Component.COMPONENT(classInst = InstNode.INST_NODE(instance = Instance.INSTANCED_BUILTIN()))
+    case Component.COMPONENT(classInst = InstNode.INST_NODE(instance = Instance.INSTANCED_BUILTIN()),
+        attributes = attr as Component.Attributes.ATTRIBUTES())
       algorithm
         cref := DAE.CREF_IDENT(component.name, DAE.T_UNKNOWN_DEFAULT, {});
         for id in prefix loop
@@ -122,14 +124,14 @@ algorithm
 
         var := DAE.VAR(
           cref,
-          DAE.VARIABLE(),
-          DAE.BIDIR(),
+          attr.variability,
+          attr.direction,
           DAE.NON_PARALLEL(),
-          DAE.PUBLIC(),
+          attr.visibility,
           component.ty,
           Binding.untypedExp(component.binding),
           {},
-          DAE.NON_CONNECTOR(),
+          attr.connectorType,
           DAE.emptyElementSource,
           NONE(),
           NONE(),

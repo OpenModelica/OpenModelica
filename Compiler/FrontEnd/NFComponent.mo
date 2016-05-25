@@ -38,6 +38,15 @@ import NFBinding.Binding;
 import NFMod.Modifier;
 
 uniontype Component
+  uniontype Attributes
+    record ATTRIBUTES
+      DAE.VarKind variability;
+      DAE.VarDirection direction;
+      DAE.VarVisibility visibility;
+      DAE.ConnectorType connectorType;
+    end ATTRIBUTES;
+  end Attributes;
+
   record COMPONENT_DEF
     Element definition;
     Modifier modifier;
@@ -49,6 +58,7 @@ uniontype Component
     InstNode classInst;
     Type ty;
     Binding binding;
+    Component.Attributes attributes;
   end COMPONENT;
 
   function name

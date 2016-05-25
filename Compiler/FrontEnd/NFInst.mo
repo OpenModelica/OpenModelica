@@ -54,6 +54,7 @@ import NFMod.ModifierScope;
 protected
 import Error;
 import Flatten = NFFlatten;
+import InstUtil = NFInstUtil;
 import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous;
@@ -355,7 +356,9 @@ algorithm
         // Add component ids to the scope.
         idx := 1;
         for c in components loop
-          scope := ClassTree.add(scope, Component.name(c), ElementId.COMPONENT_ID(idx));
+          // TODO: Handle components with the same name.
+          scope := ClassTree.add(scope, Component.name(c),
+              ElementId.COMPONENT_ID(idx), ClassTree.addConflictReplace);
           idx := idx + 1;
         end for;
 
@@ -607,6 +610,7 @@ protected
   Binding binding;
   DAE.Type ty;
   Component redecl_comp;
+  Component.Attributes attr;
 algorithm
   (component, tree) := match component
     case Component.COMPONENT_DEF(modifier = comp_mod as Modifier.REDECLARE())
@@ -624,10 +628,29 @@ algorithm
         binding := Modifier.binding(comp_mod);
         (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, comp.info, tree);
         ty := makeType(cls);
+        attr := instComponentAttributes(comp.attributes, comp.prefixes);
       then
-        (Component.COMPONENT(comp.name, cls, ty, binding), tree);
+        (Component.COMPONENT(comp.name, cls, ty, binding, attr), tree);
+
   end match;
 end instComponent;
+
+function instComponentAttributes
+  input SCode.Attributes compAttr;
+  input SCode.Prefixes compPrefs;
+  output Component.Attributes attributes;
+protected
+  DAE.VarKind variability;
+  DAE.VarDirection direction;
+  DAE.VarVisibility visiblity;
+  DAE.ConnectorType connectorType;
+algorithm
+  variability := InstUtil.translateVariability(compAttr.variability);
+  direction := InstUtil.translateDirection(compAttr.direction);
+  visiblity := InstUtil.translateVisibility(compPrefs.visibility);
+  connectorType := InstUtil.translateConnectorType(compAttr.connectorType);
+  attributes := Component.Attributes.ATTRIBUTES(variability, direction, visiblity, connectorType);
+end instComponentAttributes;
 
 function instTypeSpec
   input Absyn.TypeSpec typeSpec;
