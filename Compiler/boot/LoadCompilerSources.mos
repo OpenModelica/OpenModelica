@@ -185,6 +185,7 @@ if true then /* Suppress output */
     "../Util/HashTable3.mo",
     "../Util/HashTable5.mo",
     "../Util/HashTableCG.mo",
+    "../Util/HashTableCrefSimVar.mo",
     "../Util/HashTableCrILst.mo",
     "../Util/HashTableCrIListArray.mo",
     "../Util/HashTableCrToExpOption.mo",

@@ -3892,7 +3892,7 @@ algorithm
   crefLst := List.map1(simEqSysIdcs,SimCodeUtil.getAssignedCrefsOfSimEq,simCodeIn);
   crefs := List.flatten(crefLst);
   //print("crefs :\n"+stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr),"\n")+"\n");
-  simVarLst := List.map1(crefs,SimCodeFunctionUtil.get,ht);
+  simVarLst := List.map1(crefs,BaseHashTable.get,ht);
 
   // build the new crefs, new simVars
   numVars := listLength(simVarLst);

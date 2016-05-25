@@ -4184,7 +4184,7 @@ public function getSimVars2Crefs
 algorithm
   for cref in inCrefs loop
     try
-      outSimVars := SimCodeFunctionUtil.get(cref, inSimVarHT)::outSimVars;
+      outSimVars := BaseHashTable.get(cref, inSimVarHT)::outSimVars;
     else
     end try;
   end for;
@@ -7579,8 +7579,8 @@ algorithm
     size := varInfo.numStateVars + varInfo.numAlgVars + varInfo.numIntAlgVars + varInfo.numBoolAlgVars + varInfo.numAlgAliasVars +
             varInfo.numIntAliasVars + varInfo.numBoolAliasVars + varInfo.numParams + varInfo.numIntParams + varInfo.numBoolParams +
             varInfo.numOutVars + varInfo.numInVars + varInfo.numOptimizeConstraints + varInfo.numOptimizeFinalConstraints;
-    size := intMax(size, 1000);
-    outHT := SimCodeFunctionUtil.emptyHashTableSized(size);
+    size := intMax(size, 1023);
+    outHT := HashTableCrefSimVar.emptyHashTableSized(size);
     arraySimVars := HashTableCrILst.emptyHashTableSized(size);
 
     outHT := List.fold(vars.stateVars, addSimVarToHashTable, outHT);
@@ -7633,14 +7633,14 @@ algorithm
     case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = NONE()), _)
       equation
         //print("addSimVarToHashTable: handling variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
-        outHT = SimCodeFunctionUtil.add((cr, sv), inHT);
+        outHT = BaseHashTable.add((cr, sv), inHT);
       then outHT;
         // add the whole array crefs to the hashtable, too
     case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = SOME(acr)), _)
       equation
         //print("addSimVarToHashTable: handling array variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
-        outHT = SimCodeFunctionUtil.add((acr, sv), inHT);
-        outHT = SimCodeFunctionUtil.add((cr, sv), outHT);
+        outHT = BaseHashTable.add((acr, sv), inHT);
+        outHT = BaseHashTable.add((cr, sv), outHT);
       then outHT;
     else
       equation
@@ -10948,11 +10948,11 @@ algorithm
         crefs = List.map(vars,BackendVariable.varCref);
         size = listLength(crefs);
         bVarIdcs = List.intRange(size);
-        simVars = List.map1(crefs,SimCodeFunctionUtil.get,ht);
+        simVars = List.map1(crefs,BaseHashTable.get,ht);
 
         // get states and create hash table
         SimCode.MODELINFO(varInfo=varInfo,vars=allVars) = modelInfo;
-        htStates = List.fold(allVars.stateVars, addSimVarToHashTable, SimCodeFunctionUtil.emptyHashTableSized(size));
+        htStates = List.fold(allVars.stateVars, addSimVarToHashTable, HashTableCrefSimVar.emptyHashTableSized(size));
 
         // produce mapping
         simVarIdcs = List.map2(simVars,getSimVarIndex,varInfo,htStates);
@@ -10988,14 +10988,13 @@ author:Waurich TUD 2014-04"
 protected
   Integer offset;
 algorithm
-  try
-    _ := SimCodeFunctionUtil.get(var.name, htStates);
+  if BaseHashTable.hasKey(var.name, htStates) then
     idx := var.index;
   else
     offset := varInfo.numStateVars;
     idx := var.index;
     idx := idx+2*offset;
-  end try;
+  end if;
 end getSimVarIndex;
 
 protected function makeVarMapTuple"builds a tuple for the varMapping. ((simvarindex,backendvarindex))
@@ -11717,24 +11716,6 @@ algorithm
     else iIdx + 1;
   end match;
 end dumpIdxScVarMapping0;
-
-protected function dumpCrefToSimVarHashTable
-  input SimCode.HashTableCrefToSimVar iCrefToSimVarHT;
-protected
-  array<list<tuple<DAE.ComponentRef,Integer>>> hashTable;
-  list<tuple<DAE.ComponentRef,Integer>> entry;
-  tuple<DAE.ComponentRef,Integer> tupleEntry;
-algorithm
-  SimCode.HASHTABLE(hashTable=hashTable) := iCrefToSimVarHT;
-  for entryIdx in 1:arrayLength(hashTable) loop
-    entry := arrayGet(hashTable, entryIdx);
-    if(intGt(listLength(entry), 1)) then
-      for tupleEntry in entry loop
-        print(ComponentReference.printComponentRefStr(Util.tuple21(tupleEntry)) + " mapped to " + intString(Util.tuple22(tupleEntry)) + "\n");
-      end for;
-    end if;
-  end for;
-end dumpCrefToSimVarHashTable;
 
 protected function dumpBackendMapping"dump function for the backendmapping
 author:Waurich TUD 2014-04"

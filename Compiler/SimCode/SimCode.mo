@@ -51,16 +51,16 @@ encapsulated package SimCode
 "
 
 // public imports
-public import Absyn;
-public import BackendDAE;
-public import DAE;
-public import HashTableCrILst;
-public import HashTableCrIListArray;
-public import HpcOmSimCode;
-public import SimCodeVar;
-public import SCode;
+import Absyn;
+import BackendDAE;
+import DAE;
+import HashTableCrILst;
+import HashTableCrIListArray;
+import HashTableCrefSimVar;
+import HpcOmSimCode;
+import SimCodeVar;
+import SCode;
 
-public
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
@@ -74,8 +74,8 @@ type JacobianMatrix = tuple<list<JacobianColumn>,                         // col
                             Integer>;                                     // jacobian index
 
 
-public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
-public constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL(),DAE.VARIABLE())::{} "For CodegenC.tpl";
+constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
+constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL(),DAE.VARIABLE())::{} "For CodegenC.tpl";
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
 
@@ -594,33 +594,10 @@ public constant Context contextOptimization           = OPTIMIZATION_CONTEXT();
 public constant Context contextFMI                    = FMI_CONTEXT();
 
 /****** HashTable ComponentRef -> SimCodeVar.SimVar ******/
-/* a workaround to enable "cross public import" */
 
-/* HashTable instance specific code */
-public
-type Key = DAE.ComponentRef;
-type Value = SimCodeVar.SimVar;
-/* end of HashTable instance specific code */
-
-/* Generic hashtable code below!! */
-public
-uniontype HashTableCrefToSimVar
-  record HASHTABLE
-    array<list<tuple<Key,Integer>>> hashTable " hashtable to translate Key to array indx";
-    ValueArray valueArr "Array of values";
-    Integer bucketSize "bucket size";
-    Integer numberOfEntries "number of entries in hashtable";
-  end HASHTABLE;
-end HashTableCrefToSimVar;
-
-uniontype ValueArray "array of values are expandable, to amortize the cost of adding elements in a more
-efficient manner"
-  record VALUE_ARRAY
-    Integer numberOfElements "number of elements in hashtable";
-    Integer arrSize "size of crefArray";
-    array<Option<tuple<Key,Value>>> valueArray "array of values";
-  end VALUE_ARRAY;
-end ValueArray;
+type Key = HashTableCrefSimVar.Key;
+type Value = HashTableCrefSimVar.Value;
+type HashTableCrefToSimVar = HashTableCrefSimVar.HashTable;
 
 /* FMI 2.0 Export */
 public uniontype FmiUnknown
