@@ -5201,7 +5201,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
       <<
       <%preExp%>
       <%lhs%>
-      infoStreamPrint(LOG_EVENTS, 0, "reinit <%cref(stateVar)%> = <%crefToPrintfArg(stateVar)%>", <%cref(stateVar)%>);
+      infoStreamPrint(LOG_EVENTS, 0, "reinit <%crefStrNoUnderscore(stateVar)%> = <%crefToPrintfArg(stateVar)%>", <%cref(stateVar)%>);
       data->simulationInfo->needToIterate = 1;
       >>
     case TERMINATE(__) then
