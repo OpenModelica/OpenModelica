@@ -129,32 +129,6 @@ res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.
 });
 getErrorString();
 
-simulate(testSolver.problem2, stopTime=stopTime, method="ida", simflags="-idaLS=klu -jacobian=kluColored"); getErrorString();
-
-res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem2.mat",
-  "testSolver.problem2_diff.csv",0.1,0.1,
-{
-"y[1]",
-"y[2]",
-"y[3]",
-"y[4]",
-"y[5]",
-"y[6]",
-"y[7]",
-"y[8]",
-"der(y[1])",
-"der(y[2])",
-"der(y[3])",
-"der(y[4])",
-"der(y[5])",
-"der(y[6])",
-"der(y[7])",
-"der(y[8])"
-});
-getErrorString();
-
-
 
 // Result:
 // 321.8122
@@ -199,15 +173,6 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaLS=klu -jacobian=kluSparse'",
-//     messages = ""
-// end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// "
-// {"Files Equal!"}
-// ""
-// record SimulationResult
-//     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaLS=klu -jacobian=kluColored'",
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
