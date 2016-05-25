@@ -10952,7 +10952,7 @@ algorithm
 
         // get states and create hash table
         SimCode.MODELINFO(varInfo=varInfo,vars=allVars) = modelInfo;
-        htStates = List.fold(allVars.stateVars, addSimVarToHashTable, HashTableCrefSimVar.emptyHashTableSized(size));
+        htStates = List.fold(allVars.stateVars, addSimVarToHashTable, HashTableCrefSimVar.emptyHashTableSized(1+integer(1.4*size)));
 
         // produce mapping
         simVarIdcs = List.map2(simVars,getSimVarIndex,varInfo,htStates);
