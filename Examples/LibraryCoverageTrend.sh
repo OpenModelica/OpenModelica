@@ -15,12 +15,12 @@ echo "<html><head><title>OpenModelica - Library Coverage Trend Overview</title><
 echo "<center>" >> $OUT
 echo "<h2>OpenModelica Library Coverage Overview ran each night by <a href="/hudson/view/Library%20Testing/">Hudson</a></h2><br/><b>$SDATE</b>" >> $OUT
 echo "<hr />" >> $OUT
-for f in history/*-trend.svg; do
+for f in history/*/*-trend.svg; do
   # Filter out entries <10 days old. New entries will appear the day after this run!
   if test `find "$f" \( ! -mmin +14400 \)`; then
     IMG=$f
-    HTML=`echo $IMG | sed -e 's,^history/\(.*\)-trend.svg,\1/BuildModelRecursive.html,'`
-    NAME=`echo $IMG | sed -e 's,^history/\(.*\)-trend.svg,\1,'`
+    HTML=`echo $IMG | sed -e 's,^history/\(.*\)/.*-trend.svg,\1/BuildModelRecursive.html,'`
+    NAME=`echo $IMG | sed -e 's,^history/\(.*\)/.*-trend.svg,\1,'`
     echo "<h3>$NAME<h3>" >> $OUT
     echo "<p><a href=\"$HTML\"><img src=\"$IMG\" width="80%" /></a></p>" >> $OUT
     echo "<hr />" >> $OUT
@@ -42,8 +42,8 @@ for f in history/*-trend-detailed.svg; do
   # Filter out entries <10 days old. New entries will appear the day after this run!
   if test `find "$f" \( ! -mmin +14400 \)`; then
     IMG=$f
-    HTML=`echo $IMG | sed -e 's,^history/\(.*\)-trend-detailed.svg,\1/BuildModelRecursive.html,'`
-    NAME=`echo $IMG | sed -e 's,^history/\(.*\)-trend-detailed.svg,\1,'`
+    HTML=`echo $IMG | sed -e 's,^history/\(.*\)/.*-trend-detailed.svg,\1/BuildModelRecursive.html,'`
+    NAME=`echo $IMG | sed -e 's,^history/\(.*\)/.*-trend-detailed.svg,\1,'`
     echo "<h3>$NAME<h3>" >> $OUT
     echo "<p><a href=\"$HTML\"><img src=\"$IMG\" width="80%" /></a></p>" >> $OUT
     echo "<hr />" >> $OUT
