@@ -2,7 +2,9 @@ TEST=../../../rtest -v
 
 TESTFILES=\
 bindings5.mo \
+builtinmod2.mo \
 BuiltinTime.mo \
+ComponentAsTypeError.mo \
 conn1.mo \
 conn2.mo \
 const3.mo \
@@ -18,6 +20,9 @@ mod4.mo \
 mod6.mo \
 mod8.mo \
 mod10.mo \
+redeclare6.mo \
+redeclare13.mo \
+usertype1.mo \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -29,10 +34,8 @@ bindings3.mo \
 bindings4.mo \
 bindings7.mo \
 builtinmod.mo \
-builtinmod2.mo \
 ClassAsComponentError.mo \
 compfunc.mo \
-ComponentAsTypeError.mo \
 conn3.mo \
 conn4.mo \
 conn5.mo \
@@ -139,7 +142,6 @@ RecursiveExtends2.mo \
 redeclare2.mo \
 redeclare4.mo \
 redeclare5.mo \
-redeclare6.mo \
 redeclare11.mo \
 redeclare12.mo \
 type1.mo \
@@ -204,7 +206,6 @@ MultiInheritanceRedeclare1.mo \
 noretcall1.mo \
 redeclare3.mo \
 redeclare10.mo \
-redeclare13.mo \
 when1.mo \
 
 # Dependency files that are not .mo .mos or Makefile
