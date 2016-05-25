@@ -71,6 +71,21 @@ public uniontype Unit
   end UNKNOWN;
 end Unit;
 
+protected uniontype Token
+  record T_NUMBER
+    Integer number;
+  end T_NUMBER;
+
+  record T_UNIT
+    String unit;
+  end T_UNIT;
+
+  record T_MUL end T_MUL;
+  record T_DIV end T_DIV;
+  record T_LPAREN end T_LPAREN;
+  record T_RPAREN end T_RPAREN;
+end Token;
+
 public constant DAE.ComponentRef UPDATECREF = DAE.CREF_IDENT("jhagemann", DAE.T_REAL_DEFAULT, {});
 
 public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
@@ -463,7 +478,7 @@ algorithm
       s = BaseHashTable.get(inUnit, inHtU2S);
     then s;
 
-    case unit as Unit.UNIT() equation
+    case unit as UNIT() equation
       s = prefix2String(unit.factor);
 
       s = if realEq(unit.factor, 1.0) then "" else s;
@@ -545,6 +560,367 @@ algorithm
     else realString(inReal);
   end match;
 end prefix2String;
+
+public function parseUnitString "author: lochel
+  The second argument is optional."
+  input String inUnitString;
+  input HashTableStringToUnit.HashTable inKnownUnits = getKnownUnits();
+  output Unit outUnit;
+protected
+  list<String> charList;
+  list<Token> tokenList;
+algorithm
+  charList := stringListStringChar(inUnitString);
+  if listEmpty(charList) then
+    fail();
+  end if;
+  tokenList := lexer(charList);
+  outUnit := parser3({true, true}, tokenList, UNIT(1e0, 0, 0, 0, 0, 0, 0, 0), inKnownUnits);
+  if not isUnit(outUnit) then
+    fail();
+  end if;
+end parseUnitString;
+
+protected function parser3
+  input list<Boolean> inMul "true=Mul, false=Div, initial call with true";
+  input list<Token> inTokenList "Tokenliste";
+  input Unit inUnit "initial call with UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)";
+  input HashTableStringToUnit.HashTable inHtS2U;
+  output Unit outUnit;
+algorithm
+  outUnit := matchcontinue(inMul, inTokenList, inUnit, inHtS2U)
+    local
+      String s, s1, s2, unit;
+      list<Token> tokens;
+      Unit ut;
+      Integer exponent;
+      Boolean bMul, b;
+      list<Boolean> bRest;
+
+    // ""
+    case ({true}, {}, _, _) then inUnit;
+
+    // "1"
+    case (bMul::bRest, T_NUMBER(number=1)::tokens, _, _) equation
+      ut = UNIT(1e0, 0, 0, 0, 0, 0, 0, 0/* , 0e0 */);
+      ut = if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
+      ut = parser3(bRest, tokens, ut, inHtS2U);
+    then ut;
+
+    // "unit^i"
+    case (bMul::bRest, T_UNIT(unit=s)::T_NUMBER(exponent)::tokens, _, _) equation
+      ut = unitToken2unit(s, inHtS2U);
+      ut = unitPow(ut, exponent);
+      ut = if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
+      ut = parser3(bRest, tokens, ut, inHtS2U);
+    then ut;
+
+    // "unit"
+    case (bMul::bRest, T_UNIT(unit=s)::tokens, _, _) equation
+      ut = unitToken2unit(s, inHtS2U);
+      ut = if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
+      ut = parser3(bRest, tokens, ut, inHtS2U);
+    then ut;
+
+    // "*("
+    case (bMul::_, T_MUL()::T_LPAREN()::tokens, _, _) equation
+      ut = parser3(bMul::bMul::inMul, tokens, inUnit, inHtS2U);
+    then ut;
+
+    // "/("
+    case (bMul::_, T_DIV()::T_LPAREN()::tokens, _, _) equation
+      b = not bMul;
+      ut = parser3(b::b::inMul, tokens, inUnit, inHtS2U);
+    then ut;
+
+    // ")"
+    case (_::bRest, T_RPAREN()::tokens, _, _) equation
+      ut = parser3(bRest, tokens, inUnit, inHtS2U);
+    then ut;
+
+    // "*"
+    case (bMul::_, T_MUL()::tokens, _, _) equation
+      ut = parser3(bMul::inMul, tokens, inUnit, inHtS2U);
+    then ut;
+
+    // "/"
+    case (bMul::_, T_DIV()::tokens, _, _) equation
+      b = not bMul;
+      ut = parser3(b::inMul, tokens, inUnit, inHtS2U);
+    then ut;
+
+    else fail();
+  end matchcontinue;
+end parser3;
+
+protected function unitToken2unit
+  input String inS;
+  input HashTableStringToUnit.HashTable inHtS2U;
+  output Unit outUnit;
+algorithm
+  outUnit := matchcontinue(inS, inHtS2U)
+    local
+      String s, s2;
+      Real r;
+      Unit ut;
+
+    case (_, _) equation
+      ut=BaseHashTable.get(inS, inHtS2U);
+    then ut;
+
+    else equation
+      s = stringGetStringChar(inS, 1);
+      (r, s) = getPrefix(s, inS);
+      ut = unitToken2unit(s, inHtS2U);
+      ut = unitMulReal(ut, r);
+    then ut;
+  end matchcontinue;
+end unitToken2unit;
+
+protected function getPrefix
+  input String inS;
+  input String inS2;
+  output Real outR;
+  output String  outUnit;
+algorithm
+  (outR, outUnit) := matchcontinue(inS, inS2)
+    local
+      list<String> strRest;
+      String s;
+
+    case ("y", _) //-24
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e-24, s);
+
+    case ("z", _) //-21
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e-21, s);
+
+    case ("a", _) //-18
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e-18, s);
+
+    case ("f", _) //-15
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e-15, s);
+
+    case ("p", _) //-12
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e-12, s);
+
+    case ("u", _) //-6
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e-6, s);
+
+    case ("m", _) //-3
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e-3, s);
+
+    case ("c", _) //-2
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e-2, s);
+
+    case ("d", _)  //+1
+      equation
+        strRest = stringListStringChar(inS2);
+        "d"::"a"::strRest = strRest;
+        s = stringCharListString(strRest);
+    then (1e1, s);
+
+    case ("d", _) //-1
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e-1, s);
+
+    case ("h", _) //+2
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e2, s);
+
+    case ("k", _) //+3
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e3, s);
+
+    case ("M", _) //+6
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e6, s);
+
+    case ("G", _) //+9
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e9, s);
+
+    case ("T", _) //+12
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e12, s);
+
+    case ("P", _) //+15
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e15, s);
+
+    case ("E", _) //+18
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e18, s);
+
+    case ("Z", _) //+21
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e21, s);
+
+    case ("Y", _) //+24
+      equation
+        _::strRest = stringListStringChar(inS2);
+        s = stringCharListString(strRest);
+    then (1e24, s);
+
+    else fail();
+  end matchcontinue;
+end getPrefix;
+
+protected function lexer "author: lochel
+  Tokenizer: charList to tokenList"
+  input list<String> inCharList;
+  output list<Token> outTokenList;
+algorithm
+  outTokenList := matchcontinue(inCharList)
+    local
+      list<String> charList;
+      String number;
+      String unit;
+      list<Token> tokenList;
+      Integer i;
+
+    case {} then {};
+
+    case "."::charList equation
+      tokenList = lexer(charList);
+    then T_MUL()::tokenList;
+
+    case "("::charList equation
+      tokenList = lexer(charList);
+    then T_LPAREN()::tokenList;
+
+    case ")"::charList equation
+      tokenList = lexer(charList);
+    then T_RPAREN()::tokenList;
+
+    case "/"::charList equation
+      tokenList = lexer(charList);
+    then T_DIV()::tokenList;
+
+    case "+"::charList equation
+      (charList, number) = popNumber(charList);
+      false = (number == "");
+      tokenList = lexer(charList);
+      i = stringInt(number);
+    then T_NUMBER(i)::tokenList;
+
+    case "-"::charList equation
+      (charList, number) = popNumber(charList);
+      false = (number == "");
+      tokenList = lexer(charList);
+      i = -stringInt(number);
+    then T_NUMBER(i)::tokenList;
+
+    case charList equation
+      (charList, number) = popNumber(charList);
+      false = (number == "");
+      tokenList = lexer(charList);
+      i = stringInt(number);
+    then T_NUMBER(i)::tokenList;
+
+    case charList equation
+      (charList, unit) = popUnit(charList);
+      false = (unit == "");
+      tokenList = lexer(charList);
+    then T_UNIT(unit)::tokenList;
+
+    else equation
+      Error.addInternalError("function lexer failed", sourceInfo());
+    then fail();
+  end matchcontinue;
+end lexer;
+
+protected function popUnit
+  input list<String> inCharList;
+  output list<String> outCharList;
+  output String outUnit;
+algorithm
+  (outCharList, outUnit) := matchcontinue(inCharList)
+    local
+      String s1, s2;
+      list<String> strRest;
+
+    case {}
+    then ({}, "");
+
+    case s1::strRest equation
+      true = (stringCompare(s1, "a") >= 0) and (stringCompare(s1, "z") <= 0);
+      (strRest, s2) = popUnit(strRest);
+    then (strRest, s1 + s2);
+
+    case s1::strRest equation
+      true = (stringCompare(s1, "A") >= 0) and (stringCompare(s1, "Z") <= 0) ;
+      (strRest, s2) = popUnit(strRest);
+    then (strRest, s1 + s2);
+
+    else (inCharList, "");
+  end matchcontinue;
+end popUnit;
+
+protected function popNumber
+  input list<String> inCharList;
+  output list<String> outCharList;
+  output String outNumber;
+algorithm
+  (outCharList, outNumber) := matchcontinue(inCharList)
+    local
+      String s1, s2;
+      list<String> strRest;
+      Integer i;
+
+    case {}
+    then ({}, "");
+
+    case s1::strRest equation
+      i = stringInt(s1);
+      true = (intString(i) == s1);
+      (strRest, s2) = popNumber(strRest);
+    then (strRest, s1 + s2);
+
+    else (inCharList, "");
+  end matchcontinue;
+end popNumber;
 
 annotation(__OpenModelica_Interface="backend");
 end Unit;

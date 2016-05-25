@@ -108,7 +108,6 @@ import Sorting;
 import SymbolicJacobian;
 import System;
 import TaskSystemDump;
-import UnitCheck;
 import Util;
 import ValuesUtil;
 import VisualXML;
@@ -6746,7 +6745,7 @@ algorithm
   deriv.name := ComponentReference.crefPrefixDer(deriv.name);
   deriv.varKind := BackendDAE.STATE_DER();
   try
-    unit := UnitCheck.parseUnitString(deriv.unit);
+    unit := Unit.parseUnitString(deriv.unit);
     unit := Unit.unitDiv(unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
     deriv.unit := Unit.unitString(unit);
   else
