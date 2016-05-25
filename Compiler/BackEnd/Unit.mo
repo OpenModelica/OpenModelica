@@ -371,24 +371,20 @@ public function unitPow
   input Unit inUnit;
   input Integer inExp "exponent";
   output Unit outUnit;
+protected
+  Real factor;
+  Integer i1, i2, i3, i4, i5, i6, i7;
 algorithm
-  outUnit := match(inUnit)
-    local
-      Unit unit;
-
-    case unit as UNIT() equation
-      unit.factor = realPow(unit.factor, intReal(inExp));
-      unit.mol = unit.mol*inExp;
-      unit.cd = unit.cd*inExp;
-      unit.m = unit.m*inExp;
-      unit.s = unit.s*inExp;
-      unit.A = unit.A*inExp;
-      unit.K = unit.K*inExp;
-      unit.g = unit.g*inExp;
-    then unit;
-
-    else fail();
-  end match;
+  UNIT(factor, i1, i2, i3, i4, i5, i6, i7) := inUnit;
+  factor := realPow(factor, intReal(inExp));
+  i1 := i1*inExp;
+  i2 := i2*inExp;
+  i3 := i3*inExp;
+  i4 := i4*inExp;
+  i5 := i5*inExp;
+  i6 := i6*inExp;
+  i7 := i7*inExp;
+  outUnit := UNIT(factor, i1, i2, i3, i4, i5, i6, i7);
 end unitPow;
 
 public function unitMulReal
@@ -412,56 +408,44 @@ public function unitRoot
   input Unit inUnit;
   input Real inExponent;
   output Unit outUnit;
+protected
+  Real r, factor;
+  Integer i, i1, i2, i3, i4, i5, i6, i7;
 algorithm
-  outUnit := match(inUnit)
-    local
-      Unit unit;
-      Real r;
-      Integer i;
+  i := realInt(inExponent);
+  r := realDiv(1.0, inExponent);
+  UNIT(factor, i1, i2, i3, i4, i5, i6, i7) := inUnit;
+  factor := realPow(factor, r);
 
-    case unit as UNIT() equation
-      i = realInt(inExponent);
-      r = realDiv(1.0, inExponent);
-      unit.factor = realPow(unit.factor, r);
+  r := realDiv(intReal(i1),inExponent);
+  i1 := intDiv(i1, i);
+  true := realEq(r, intReal(i1));
 
-        r = intReal(unit.mol);
-        r = realDiv(r, inExponent);
-      unit.mol = intDiv(unit.mol, i);
-      true = realEq(r, intReal(unit.mol));
+  r := realDiv(intReal(i2),inExponent);
+  i2 := intDiv(i2, i);
+  true := realEq(r, intReal(i2));
 
-        r = intReal(unit.cd);
-        r = realDiv(r, inExponent);
-      unit.cd = intDiv(unit.cd, i);
-      true = realEq(r, intReal(unit.cd));
+  r := realDiv(intReal(i3),inExponent);
+  i3 := intDiv(i3, i);
+  true := realEq(r, intReal(i3));
 
-        r = intReal(unit.m);
-        r = realDiv(r, inExponent);
-      unit.m = intDiv(unit.m, i);
-      true = realEq(r, intReal(unit.m));
+  r := realDiv(intReal(i4),inExponent);
+  i4 := intDiv(i4, i);
+  true := realEq(r, intReal(i4));
 
-        r = intReal(unit.s);
-        r = realDiv(r, inExponent);
-      unit.s = intDiv(unit.s, i);
-      true = realEq(r, intReal(unit.s));
+  r := realDiv(intReal(i5),inExponent);
+  i5 := intDiv(i5, i);
+  true := realEq(r, intReal(i5));
 
-        r = intReal(unit.A);
-        r = realDiv(r, inExponent);
-      unit.A = intDiv(unit.A, i);
-      true = realEq(r, intReal(unit.A));
+  r := realDiv(intReal(i6),inExponent);
+  i6 := intDiv(i6, i);
+  true := realEq(r, intReal(i6));
 
-        r = intReal(unit.K);
-        r = realDiv(r, inExponent);
-      unit.K = intDiv(unit.K, i);
-      true = realEq(r, intReal(unit.K));
+  r := realDiv(intReal(i7),inExponent);
+  i7 := intDiv(i7, i);
+  true := realEq(r, intReal(i7));
 
-        r = intReal(unit.g);
-        r = realDiv(r, inExponent);
-      unit.g = intDiv(unit.g, i);
-      true = realEq(r, intReal(unit.g));
-    then unit;
-
-    else fail();
-  end match;
+  outUnit := UNIT(factor, i1, i2, i3, i4, i5, i6, i7);
 end unitRoot;
 
 public function unitString "Unit to Modelica unit string"
