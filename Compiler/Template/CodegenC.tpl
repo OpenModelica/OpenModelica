@@ -4355,7 +4355,7 @@ template getVarName(list<SimVar> simVars, String arrayName, Integer arraySize) "
   simVars |> var hasindex arrindex fromindex 1 =>
     (match var
     case SIMVAR(__) then
-      <<  Real '<%arrayName%>_<%cref(name)%>' = <%arrayName%>[<%arrindex%>];\n>>
+      <<  Real '<%arrayName%>_<%crefStrNoUnderscore(name)%>' = <%arrayName%>[<%arrindex%>];\n>>
     end match)
   ; empty
 end getVarName;
