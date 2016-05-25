@@ -287,7 +287,7 @@ algorithm
       Boolean mixedSystem;
 
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
-      equality(jacType = BackendDAE.JAC_LINEAR());
+      true = getLinearfromJacType(jacType);
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
         Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"linear",intString(maxSize)});
@@ -318,7 +318,7 @@ algorithm
 
     // tearing of non-linear systems
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
-      failure(equality(jacType = BackendDAE.JAC_LINEAR()));
+      false = getLinearfromJacType(jacType);
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
         Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"nonlinear",intString(maxSize)});
