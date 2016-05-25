@@ -3422,6 +3422,29 @@ annotation(Documentation(info="<html>
 </html>"));
 end getSimulationOptions;
 
+function getAnnotationNamedModifiers
+   input TypeName name;
+   input String vendorannotation;
+   output String[:] modifiernamelist;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Returns the Modifiers name in the vendor annotation example annotation(__OpenModelica_simulationFlags(solver=\"dassl\"))
+calling sequence should be getAnnotationNamedModifiers(className,\"__OpenModelica_simulationFlags\") which returns {solver}.</p>
+</html>"));
+end getAnnotationNamedModifiers;
+
+function getAnnotationModifierValue
+  input TypeName name;
+  input String vendorannotation;
+  input String modifiername;
+  output String modifiernamevalue;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Returns the Modifiers value in the vendor annotation example annotation(__OpenModelica_simulationFlags(solver=\"dassl\"))
+calling sequence should be getAnnotationNamedModifiersValue(className,\"__OpenModelica_simulationFlags\",\"modifiername\") which returns \"dassl\".</p>
+</html>"));
+end getAnnotationModifierValue;
+
 function classAnnotationExists "Check if annotation exists"
   input TypeName className;
   input TypeName annotationName;
