@@ -230,10 +230,8 @@ sub runone
       $str = $_;
       # fix generated files on windows
       if ($^O =~ /^msys/) {
-        # replace /X.mo?_tempNNNN/X.mo?: -> /X.mo?
-        if ( $str =~ m/(.*\/)[^\/]+\.mo*_temp[0-9]{4}\/(.*\.mo*\:.*)/ ) {
-          $str = $1 . $2;
-        }
+        # replace /X.mo?_tempNNNN/: -> /
+		$str =~ s/\/[^\/]+\.mos?_temp[\d]+\//\//g;
       } 
       print RES $str;
     }
