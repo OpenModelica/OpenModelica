@@ -103,6 +103,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       if(linsys[i].initialAnalyticalJacobian(data, threadData))
       {
         linsys[i].jacobianIndex = -1;
+        throwStreamPrint(threadData, "Failed to initialize the jacobian for torn linear system %d.", (int)linsys[i].equationIndex);
       }
       nnz = data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex].sparsePattern.numberOfNoneZeros;
       linsys[i].nnz = nnz;

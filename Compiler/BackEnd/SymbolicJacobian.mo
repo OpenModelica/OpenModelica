@@ -3466,6 +3466,16 @@ algorithm
 
 end jacobianConstant;
 
+public function isJacobianGeneric
+  input BackendDAE.Jacobian inJac;
+  output Boolean result;
+algorithm
+  result := match(inJac)
+  case BackendDAE.GENERIC_JACOBIAN() then true;
+  else false;
+  end match;
+end isJacobianGeneric;
+
 protected function varsNotInRelations
   input output DAE.Exp exp;
   output Boolean cont;
