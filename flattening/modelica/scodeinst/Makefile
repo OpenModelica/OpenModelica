@@ -20,9 +20,11 @@ mod4.mo \
 mod6.mo \
 mod8.mo \
 mod10.mo \
+redeclare2.mo \
 redeclare6.mo \
 redeclare13.mo \
 usertype1.mo \
+usertype2.mo \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -139,7 +141,6 @@ ParameterBug.mos \
 PartialInst.mo \
 RecursiveExtends1.mo \
 RecursiveExtends2.mo \
-redeclare2.mo \
 redeclare4.mo \
 redeclare5.mo \
 redeclare11.mo \
