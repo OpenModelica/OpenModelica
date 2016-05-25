@@ -1576,7 +1576,7 @@ algorithm
 
     case (_, _)
       equation
-        // Don't do this if +d=scodeInst is used, it messed up the new
+        // Don't do this if +d=newInst is used, it messed up the new
         // instantiation which handles this correctly.
         false = Flags.isSet(Flags.SCODE_INST);
         env_path = NFSCodeEnv.getEnvPath(inEnv);

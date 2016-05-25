@@ -35,7 +35,7 @@ encapsulated package NFFlatten
   description: Flattening
 
 
-  New instantiation, enable with +d=scodeInst.
+  New instantiation, enable with +d=newInst.
 "
 
 import NFBinding.Binding;

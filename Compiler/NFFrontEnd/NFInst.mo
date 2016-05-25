@@ -34,7 +34,7 @@ encapsulated package NFInst
   package:     NFInst
   description: Instantiation
 
-  New instantiation, enable with +d=scodeInst.
+  New instantiation, enable with +d=newInst.
 "
 
 import Absyn;
