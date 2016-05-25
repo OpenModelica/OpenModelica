@@ -66,8 +66,8 @@ readFile("linear_simple__test.log"); // Check that output log is empty
 //   Real x[2](start = x0);
 //   input Real u[0];
 //   output Real y[0];
-//   Real 'x_$Pa' = x[1];
-//   Real 'x_$Pb' = x[2];
+//   Real 'x_a' = x[1];
+//   Real 'x_b' = x[2];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
@@ -113,8 +113,8 @@ readFile("linear_simple__test.log"); // Check that output log is empty
 //   input Real u[0];
 //   output Real y[0];
 //   output Real z[0];
-//   Real 'x_$Pa' = x[1];
-//   Real 'x_$Pb' = x[2];
+//   Real 'x_a' = x[1];
+//   Real 'x_b' = x[2];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;

@@ -55,10 +55,10 @@ readFile("linear_twoflattankmodel.log"); // Check that output log is empty
 //   Real x[2](start = x0);
 //   input Real u[1](start = u0);
 //   output Real y[1];
-//   Real 'x_$Ph1' = x[1];
-//   Real 'x_$Ph2' = x[2];
-//   Real 'u_$PF' = u[1];
-//   Real 'y_$PF2' = y[1];
+//   Real 'x_h1' = x[1];
+//   Real 'x_h2' = x[2];
+//   Real 'u_F' = u[1];
+//   Real 'y_F2' = y[1];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
@@ -103,13 +103,13 @@ readFile("linear_twoflattankmodel.log"); // Check that output log is empty
 //   input Real u[1](start = u0);
 //   output Real y[1];
 //   output Real z[3];
-//   Real 'x_$Ph1' = x[1];
-//   Real 'x_$Ph2' = x[2];
-//   Real 'u_$PF' = u[1];
-//   Real 'y_$PF2' = y[1];
-//   Real 'z_$PF' = z[1];
-//   Real 'z_$PF1' = z[2];
-//   Real 'z_$PF2' = z[3];
+//   Real 'x_h1' = x[1];
+//   Real 'x_h2' = x[2];
+//   Real 'u_F' = u[1];
+//   Real 'y_F2' = y[1];
+//   Real 'z_F' = z[1];
+//   Real 'z_F1' = z[2];
+//   Real 'z_F2' = z[3];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;

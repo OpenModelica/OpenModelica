@@ -28,7 +28,7 @@ simulate(testEvents3, simflags="-lv=LOG_EVENTS"); getErrorString();
 // |                 | |       | | [1] (pre:  0) -1 = time > 0.5
 // LOG_EVENTS        | info    | state event at time=0.50000000015
 // |                 | |       | | [1] time > 0.5
-// |                 | |       | | reinit $Px  = 0.000000
+// |                 | |       | | reinit x = 0
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.

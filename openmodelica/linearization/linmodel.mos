@@ -55,10 +55,10 @@ readFile("linear_linearmodel.log"); // Check that output log is empty
 //   Real x[4](start = x0);
 //   input Real u[0];
 //   output Real y[0];
-//   Real 'x_$Px1' = x[1];
-//   Real 'x_$Px2' = x[2];
-//   Real 'x_$Px3' = x[3];
-//   Real 'x_$Px4' = x[4];
+//   Real 'x_x1' = x[1];
+//   Real 'x_x2' = x[2];
+//   Real 'x_x3' = x[3];
+//   Real 'x_x4' = x[4];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
@@ -103,10 +103,10 @@ readFile("linear_linearmodel.log"); // Check that output log is empty
 //   input Real u[0];
 //   output Real y[0];
 //   output Real z[0];
-//   Real 'x_$Px1' = x[1];
-//   Real 'x_$Px2' = x[2];
-//   Real 'x_$Px3' = x[3];
-//   Real 'x_$Px4' = x[4];
+//   Real 'x_x1' = x[1];
+//   Real 'x_x2' = x[2];
+//   Real 'x_x3' = x[3];
+//   Real 'x_x4' = x[4];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;

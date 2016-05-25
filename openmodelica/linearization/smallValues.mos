@@ -55,8 +55,8 @@ readFile("linear_VanDerPolSmallValue.log"); // Check that output log is empty
 //   Real x[2](start = x0);
 //   input Real u[0];
 //   output Real y[0];
-//   Real 'x_$Px' = x[1];
-//   Real 'x_$Py' = x[2];
+//   Real 'x_x' = x[1];
+//   Real 'x_y' = x[2];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
@@ -101,8 +101,8 @@ readFile("linear_VanDerPolSmallValue.log"); // Check that output log is empty
 //   input Real u[0];
 //   output Real y[0];
 //   output Real z[0];
-//   Real 'x_$Px' = x[1];
-//   Real 'x_$Py' = x[2];
+//   Real 'x_x' = x[1];
+//   Real 'x_y' = x[2];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
