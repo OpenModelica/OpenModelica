@@ -1,7 +1,7 @@
 // name: usertype2.mo
 // keywords:
 // status: correct
-// cflags: -d=scodeInst
+// cflags: -d=newInst
 //
 
 type MyReal = Real(start = 1.0);

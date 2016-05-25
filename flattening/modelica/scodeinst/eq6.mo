@@ -1,7 +1,7 @@
 // name: eq6.mo
 // keywords:
 // status: correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 
 package P

@@ -1,7 +1,7 @@
 // name: DuplicateMod2.mo
 // keywords:
 // status: incorrect
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 
 model A

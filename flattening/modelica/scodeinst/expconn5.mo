@@ -1,7 +1,7 @@
 // name: expconn5.mo
 // keywords:
 // status: correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 // FAILREASON: Expandable connectors not handled yet.
 //

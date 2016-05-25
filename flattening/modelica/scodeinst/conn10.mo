@@ -1,7 +1,7 @@
 // name: conn10.mo
 // keywords:
 // status: correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 // FAILREASON: Connects not handled yet.
 //

@@ -1,7 +1,7 @@
 // name: InvalidComplexConnectorType1
 // keywords:
 // status: incorrect
-// cflags: +d=scodeInst
+// cflags: +d=newInst
 //
 
 model InvalidComplexConnectorType1

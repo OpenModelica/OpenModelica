@@ -1,7 +1,7 @@
 // name: dim18
 // keywords:
 // status: correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 
 model A

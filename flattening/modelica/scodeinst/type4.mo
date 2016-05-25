@@ -1,7 +1,7 @@
 // name: type4.mo
 // keywords:
 // status: incorrect
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 
 type RealInput = input Real;

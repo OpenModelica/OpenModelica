@@ -1,7 +1,7 @@
 // name: eq8.mo
 // keywords:
 // status: correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 
 model A

@@ -1,7 +1,7 @@
 // name: type3.mo
 // keywords:
 // status: correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 //
 

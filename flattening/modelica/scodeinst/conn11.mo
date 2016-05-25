@@ -1,7 +1,7 @@
 // name: conn11.mo
 // keywords:
 // status: correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 // FAILREASON: Connect equation not expanded.
 //

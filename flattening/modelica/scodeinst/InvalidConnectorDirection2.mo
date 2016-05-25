@@ -1,7 +1,7 @@
 // name: InvalidConnectorDirection2
 // keywords:
 // status: incorrect
-// cflags: +d=scodeInst
+// cflags: +d=newInst
 //
 
 model InvalidConnectorDirection2

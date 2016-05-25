@@ -1,7 +1,7 @@
 // name:     ImportUnqualified2
 // keywords: unqualified import
 // status:   correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 // Checks that unqualified imports work.
 //

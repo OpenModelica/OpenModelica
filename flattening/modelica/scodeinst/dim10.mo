@@ -1,7 +1,7 @@
 // name: dim10.mo
 // keywords:
 // status: correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 
 

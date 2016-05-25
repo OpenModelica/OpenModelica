@@ -1,5 +1,5 @@
 // status: correct
-// cflags: +d=scodeInst
+// cflags: +d=newInst
 
 model function1
   function myfill

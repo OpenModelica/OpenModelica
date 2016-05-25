@@ -1,7 +1,7 @@
 // name: MultiInheritanceRedeclare1
 // keywords:
 // status: correct
-// cflags: +d=scodeInst
+// cflags: +d=newInst
 //
 
 package P

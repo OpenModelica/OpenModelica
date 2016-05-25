@@ -1,7 +1,7 @@
 // name: ClassAsComponentError
 // keywords: type error
 // status: incorrect
-// cflags: +d=scodeInst
+// cflags: +d=newInst
 //
 // Checks that an error is output if a class is used as a component.
 //

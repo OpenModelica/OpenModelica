@@ -1,7 +1,7 @@
 // name: mod1.mo
 // keywords:
 // status: correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 
 model M

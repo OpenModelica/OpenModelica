@@ -1,7 +1,7 @@
 // name: const7.mo
 // keywords:
 // status: correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 // Correct, but old instantiation fails.
 //

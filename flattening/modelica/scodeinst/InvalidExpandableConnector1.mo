@@ -1,7 +1,7 @@
 // name: InvalidExpandableConnector1
 // keywords:
 // status: incorrect
-// cflags: +d=scodeInst
+// cflags: +d=newInst
 //
 
 

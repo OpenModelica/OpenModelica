@@ -1,7 +1,7 @@
 // name: InvalidConnectorType5
 // keywords:
 // status: incorrect
-// cflags: +d=scodeInst
+// cflags: +d=newInst
 //
 
 model InvalidConnectorType5

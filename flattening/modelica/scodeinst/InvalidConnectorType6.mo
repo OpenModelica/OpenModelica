@@ -1,7 +1,7 @@
 // name: InvalidConnectorType6
 // keywords:
 // status: incorrect
-// cflags: +d=scodeInst
+// cflags: +d=newInst
 //
 
 model InvalidConnectorType6

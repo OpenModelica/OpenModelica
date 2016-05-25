@@ -1,7 +1,7 @@
 // name: cond4.mo
 // keywords:
 // status: correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 // FAILREASON: Seems like conditional components are a bit broken.
 //

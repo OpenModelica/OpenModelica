@@ -1,7 +1,7 @@
 // name: conn12.mo
 // keywords:
 // status: correct
-// cflags:   +d=scodeInst
+// cflags:   +d=newInst
 //
 // FAILREASON: Expandable connector checks are not perfect yet.
 //
