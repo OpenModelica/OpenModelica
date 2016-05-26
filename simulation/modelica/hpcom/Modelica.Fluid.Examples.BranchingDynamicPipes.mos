@@ -100,7 +100,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.
    "pipe4.flowModel.m_flows[5]"});
 
 // Result:
-// 0
+// 900
 // true
 // true
 // ""

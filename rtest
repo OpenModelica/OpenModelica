@@ -4,9 +4,9 @@ use File::Temp qw/ tempfile /;
 
 #delete($ENV{'OPENMODELICALIBRARY'});
 if (defined $ENV{"RTEST_OMCFLAGS"}) {
-    $omcflags=$ENV{"RTEST_OMCFLAGS"};
+    $omcflags=$ENV{"RTEST_OMCFLAGS"} . " --alarm=900";
 } else {
-    $omcflags="";
+    $omcflags="--alarm=900";
 }
 
 (undef,$testTempFile) = tempfile("rtest$$.XXXXX", TMPDIR => 1, SUFFIX => ".tmp", UNLINK => 1);
