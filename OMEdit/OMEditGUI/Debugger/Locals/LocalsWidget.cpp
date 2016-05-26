@@ -39,16 +39,20 @@
 #include "CommandFactory.h"
 
 /*!
-  \class LocalsTreeItem
-  \brief Contains the information about the local variable.
-  */
+ * \class LocalsTreeItem
+ * \brief Contains the information about the local variable.
+ */
 /*!
-  \param localItemData - a list of items.\n
-  0 -> name\n
-  1 -> displayName\n
-  2 -> type\n
-  3 -> value
-  */
+ * \brief LocalsTreeItem::LocalsTreeItem
+ * \param localItemData - a list of items.\n
+ * 0 -> name\n
+ * 1 -> displayName\n
+ * 2 -> type\n
+ * 3 -> value
+ * \param localItemData
+ * \param pLocalsTreeModel
+ * \param pLocalsTreeItem
+ */
 LocalsTreeItem::LocalsTreeItem(const QVector<QVariant> &localItemData, LocalsTreeModel *pLocalsTreeModel, LocalsTreeItem *pLocalsTreeItem)
   : QObject(pLocalsTreeModel)
 {
@@ -60,22 +64,18 @@ LocalsTreeItem::LocalsTreeItem(const QVector<QVariant> &localItemData, LocalsTre
   setNameStructure("");
   setType(localItemData[2].toString());
   /* if the item is a root item then its just a header */
-  if (!mpParentLocalsTreeItem)
-  {
+  if (!mpParentLocalsTreeItem) {
     setDisplayName(getName());
     setDisplayType(getType());
     setDisplayValue(localItemData[3].toString());
-  }
-  /* if the item is a top level item then we need to fetch the type and value. */
-  else if (mpParentLocalsTreeItem == mpLocalsTreeModel->getRootLocalsTreeItem())
-  {
+  } else if (mpParentLocalsTreeItem == mpLocalsTreeModel->getRootLocalsTreeItem()) {
+    /* if the item is a top level item then we need to fetch the type and value. */
     setDisplayType("");
     retrieveType();
     setDisplayValue("");
     retrieveValue();
-  }
-  else  /* child node */
-  {
+  } else {
+    /* child node */
     setDisplayName(getDisplayName());
     setDisplayType(getType());
     setDisplayValue("");
@@ -91,25 +91,37 @@ LocalsTreeItem::~LocalsTreeItem()
   mChildren.clear();
 }
 
+/*!
+ * \brief LocalsTreeItem::isCoreType
+ * Returns true if is core type.
+ * \return
+ */
 bool LocalsTreeItem::isCoreType()
 {
   if ((getDisplayType().compare(Helper::STRING) == 0) ||
       (getDisplayType().compare(Helper::BOOLEAN) == 0) ||
       (getDisplayType().compare(Helper::INTEGER) == 0) ||
-      (getDisplayType().compare(Helper::REAL) == 0))
+      (getDisplayType().compare(Helper::REAL) == 0)) {
     return true;
-  else
+  } else {
     return false;
+  }
 }
 
+/*!
+ * \brief LocalsTreeItem::isCoreTypeExceptString
+ * Returns true if is core type except STRING.
+ * \return
+ */
 bool LocalsTreeItem::isCoreTypeExceptString()
 {
   if ((getDisplayType().compare(Helper::BOOLEAN) == 0) ||
       (getDisplayType().compare(Helper::INTEGER) == 0) ||
-      (getDisplayType().compare(Helper::REAL) == 0))
+      (getDisplayType().compare(Helper::REAL) == 0)) {
     return true;
-  else
+  } else {
     return false;
+  }
 }
 
 void LocalsTreeItem::insertChild(int position, LocalsTreeItem *pLocalsTreeItem)
@@ -148,11 +160,9 @@ bool LocalsTreeItem::setData(int column, const QVariant &value, int role)
 
 QVariant LocalsTreeItem::data(int column, int role) const
 {
-  switch (role)
-  {
+  switch (role) {
     case Qt::DisplayRole:
-      switch (column)
-      {
+      switch (column) {
         case 0:
           return getDisplayName();
         case 1:
@@ -163,8 +173,7 @@ QVariant LocalsTreeItem::data(int column, int role) const
           break;
       }
     case Qt::ToolTipRole:
-      switch (column)
-      {
+      switch (column) {
         case 0:
           return getDisplayName();
         case 1:
@@ -184,9 +193,9 @@ QVariant LocalsTreeItem::data(int column, int role) const
 
 int LocalsTreeItem::row() const
 {
-  if (mpParentLocalsTreeItem)
+  if (mpParentLocalsTreeItem) {
     return mpParentLocalsTreeItem->mChildren.indexOf(const_cast<LocalsTreeItem*>(this));
-
+  }
   return 0;
 }
 
@@ -212,50 +221,54 @@ void LocalsTreeItem::retrieveType()
 
 void LocalsTreeItem::retrieveModelicaMetaType()
 {
-  if (getDisplayType().isEmpty()
-      || (getDisplayType().compare(Helper::VALUE_OPTIMIZED_OUT) == 0)
-      || (getDisplayType().compare(Helper::REPLACEABLE_TYPE_ANY) == 0))
-  {
+  if (getDisplayType().isEmpty() || (getDisplayType().compare(Helper::VALUE_OPTIMIZED_OUT) == 0)
+      || (getDisplayType().compare(Helper::REPLACEABLE_TYPE_ANY) == 0)) {
     GDBAdapter *pGDBAdapter = mpLocalsTreeModel->getLocalsWidget()->getDebuggerMainWindow()->getGDBAdapter();
-    pGDBAdapter->postCommand(CommandFactory::getTypeOfAny(getName()), this, &GDBAdapter::getTypeOfAnyCB);
-  }
-  else
-  {
+    StackFramesWidget *pStackFramesWidget = mpLocalsTreeModel->getLocalsWidget()->getDebuggerMainWindow()->getStackFramesWidget();
+    if (parent() && parent()->getModelicaValue() && qobject_cast<ModelicaRecordValue*>(parent()->getModelicaValue())) {
+      pGDBAdapter->postCommand(CommandFactory::getTypeOfAny(pStackFramesWidget->getSelectedThread(), pStackFramesWidget->getSelectedFrame(),
+                                                            getName(), true),
+                               GDBAdapter::BlockUntilResponse, this, &GDBAdapter::getTypeOfAnyCB);
+    } else {
+      pGDBAdapter->postCommand(CommandFactory::getTypeOfAny(pStackFramesWidget->getSelectedThread(), pStackFramesWidget->getSelectedFrame(),
+                                                            getName(), false),
+                               GDBAdapter::BlockUntilResponse, this, &GDBAdapter::getTypeOfAnyCB);
+    }
+  } else {
     retrieveValue();
   }
 }
 
+/*!
+ * \brief LocalsTreeItem::retrieveValue
+ * Gets the value of the LocalsTreeItem using CommandFactory::anyString
+ */
 void LocalsTreeItem::retrieveValue()
 {
   GDBAdapter *pGDBAdapter = mpLocalsTreeModel->getLocalsWidget()->getDebuggerMainWindow()->getGDBAdapter();
-  if ((getDisplayType().compare(Helper::STRING) == 0) || (parent() != mpLocalsTreeModel->getRootLocalsTreeItem()))
-  {
-    pGDBAdapter->postCommand(CommandFactory::anyString(getName()), this, &GDBAdapter::anyStringCB);
-  }
-  else if (isCoreTypeExceptString())
-  {
-    pGDBAdapter->postCommand(CommandFactory::dataEvaluateExpression(getName()), this, &GDBAdapter::dataEvaluateExpressionCB);
-  }
-  else
-  {
-    setValue(getDisplayType());
+  StackFramesWidget *pStackFramesWidget = mpLocalsTreeModel->getLocalsWidget()->getDebuggerMainWindow()->getStackFramesWidget();
+  if (isCoreTypeExceptString()) {
+    pGDBAdapter->postCommand(CommandFactory::dataEvaluateExpression(pStackFramesWidget->getSelectedThread(),
+                                                                    pStackFramesWidget->getSelectedFrame(), getName()),
+                             GDBAdapter::BlockUntilResponse, this, &GDBAdapter::dataEvaluateExpressionCB);
+  } else {
+    pGDBAdapter->postCommand(CommandFactory::anyString(pStackFramesWidget->getSelectedThread(), pStackFramesWidget->getSelectedFrame(),
+                                                       getName()), GDBAdapter::BlockUntilResponse, this, &GDBAdapter::anyStringCB);
   }
 }
 
+/*!
+ * \brief LocalsTreeItem::setModelicaMetaType
+ * Sets the type of the LocalsTreeItem and sends the command to retireve value.
+ * \param type
+ */
 void LocalsTreeItem::setModelicaMetaType(QString type)
 {
   setDisplayType(type);
-  if (getDisplayType().compare(Helper::REPLACEABLE_TYPE_ANY) == 0)
-  {
+  if (getDisplayType().compare(Helper::REPLACEABLE_TYPE_ANY) == 0) {
     setDisplayValue(tr("<uninitialized variable>"));
-  }
-  else if (isCoreType())
-  {
+  } else {
     retrieveValue();
-  }
-  else
-  {
-    setValue(getDisplayType());
   }
   /* invalidate the view so that the items show the updated values. */
   mpLocalsTreeModel->getLocalsWidget()->getLocalsTreeProxyModel()->invalidate();
@@ -263,8 +276,7 @@ void LocalsTreeItem::setModelicaMetaType(QString type)
 
 void LocalsTreeItem::setValue(QString value)
 {
-  if (mpModelicaValue)
-  {
+  if (mpModelicaValue) {
     QString previousValue = mpModelicaValue->getValueString();
     mpModelicaValue->setValue(value);
     setDisplayValue(mpModelicaValue->getValueString());
@@ -274,44 +286,32 @@ void LocalsTreeItem::setValue(QString value)
     } else {
       setValueChanged(true);
     }
-  }
-  else if (isCoreType())
-  {
+  } else if (isCoreType()) {
     mpModelicaValue = new ModelicaCoreValue(this);
     mpModelicaValue->setValue(value);
     setDisplayValue(mpModelicaValue->getValueString());
-  }
-  else if (getDisplayType().startsWith(Helper::RECORD))
-  {
+  } else if (getDisplayType().startsWith(Helper::RECORD)) {
     mpModelicaValue = new ModelicaRecordValue(this);
     mpModelicaValue->setValue(value);
     setDisplayValue(mpModelicaValue->getValueString());
     /* get the record elements size */
     mpModelicaValue->retrieveChildrenSize();
-  }
-  else if (getDisplayType().startsWith(Helper::LIST))
-  {
+  } else if (getDisplayType().startsWith(Helper::LIST)) {
     mpModelicaValue = new ModelicaListValue(this);
     setDisplayValue(mpModelicaValue->getValueString());
     /* get the list items size */
     mpModelicaValue->retrieveChildrenSize();
-  }
-  else if (getDisplayType().startsWith(Helper::OPTION))
-  {
+  } else if (getDisplayType().startsWith(Helper::OPTION)) {
     mpModelicaValue = new ModelicaOptionValue(this);
     setDisplayValue(mpModelicaValue->getValueString());
     /* get the option item elements size */
     mpModelicaValue->retrieveChildrenSize();
-  }
-  else if (getDisplayType().startsWith(Helper::TUPLE))
-  {
+  } else if (getDisplayType().startsWith(Helper::TUPLE)) {
     mpModelicaValue = new ModelicaTupleValue(this);
     setDisplayValue(mpModelicaValue->getValueString());
     /* get the tuple elements size */
     mpModelicaValue->retrieveChildrenSize();
-  }
-  else if (getDisplayType().startsWith(Helper::ARRAY))
-  {
+  } else if (getDisplayType().startsWith(Helper::ARRAY)) {
     mpModelicaValue = new MetaModelicaArrayValue(this);
     setDisplayValue(mpModelicaValue->getValueString());
     /* get the tuple elements size */
@@ -323,8 +323,9 @@ void LocalsTreeItem::setValue(QString value)
 
 void LocalsTreeItem::retrieveLocalChildren()
 {
-  if (!mpModelicaValue)
+  if (!mpModelicaValue) {
     return;
+  }
   mpModelicaValue->retrieveChildren();
 }
 
@@ -339,30 +340,34 @@ LocalsTreeModel::LocalsTreeModel(LocalsWidget *pLocalsWidget)
 
 int LocalsTreeModel::columnCount(const QModelIndex &parent) const
 {
-  if (parent.isValid())
+  if (parent.isValid()) {
     return static_cast<LocalsTreeItem*>(parent.internalPointer())->columnCount();
-  else
+  } else {
     return mpRootLocalsTreeItem->columnCount();
+  }
 }
 
 int LocalsTreeModel::rowCount(const QModelIndex &parent) const
 {
   LocalsTreeItem *pParentLocalsTreeViewItem;
-  if (parent.column() > 0)
+  if (parent.column() > 0) {
     return 0;
+  }
 
-  if (!parent.isValid())
+  if (!parent.isValid()) {
     pParentLocalsTreeViewItem = mpRootLocalsTreeItem;
-  else
+  } else {
     pParentLocalsTreeViewItem = static_cast<LocalsTreeItem*>(parent.internalPointer());
+  }
   return pParentLocalsTreeViewItem->getChildren().size();
 }
 
 bool LocalsTreeModel::hasChildren(const QModelIndex &parent) const
 {
   LocalsTreeItem *pParentLocalsTreeViewItem = static_cast<LocalsTreeItem*>(parent.internalPointer());
-  if (!pParentLocalsTreeViewItem)
+  if (!pParentLocalsTreeViewItem) {
     return true;
+  }
   return pParentLocalsTreeViewItem->getModelicaValue() && pParentLocalsTreeViewItem->getModelicaValue()->hasChildren();
 }
 
@@ -376,39 +381,44 @@ bool LocalsTreeModel::canFetchMore(const QModelIndex &parent) const
 
 QVariant LocalsTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-  if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
+  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
     return mpRootLocalsTreeItem->data(section);
+  }
   return QVariant();
 }
 
 QModelIndex LocalsTreeModel::index(int row, int column, const QModelIndex &parent) const
 {
-  if (!hasIndex(row, column, parent))
+  if (!hasIndex(row, column, parent)) {
     return QModelIndex();
+  }
 
   LocalsTreeItem *pParentLocalsTreeViewItem;
-
-  if (!parent.isValid())
+  if (!parent.isValid()) {
     pParentLocalsTreeViewItem = mpRootLocalsTreeItem;
-  else
+  } else {
     pParentLocalsTreeViewItem = static_cast<LocalsTreeItem*>(parent.internalPointer());
+  }
 
   LocalsTreeItem *pChildLocalsTreeViewItem = pParentLocalsTreeViewItem->child(row);
-  if (pChildLocalsTreeViewItem)
+  if (pChildLocalsTreeViewItem) {
     return createIndex(row, column, pChildLocalsTreeViewItem);
-  else
+  } else {
     return QModelIndex();
+  }
 }
 
 QModelIndex LocalsTreeModel::parent(const QModelIndex &index) const
 {
-  if (!index.isValid())
+  if (!index.isValid()) {
     return QModelIndex();
+  }
 
   LocalsTreeItem *pChildLocalsTreeViewItem = static_cast<LocalsTreeItem*>(index.internalPointer());
   LocalsTreeItem *pParentLocalsTreeViewItem = pChildLocalsTreeViewItem->parent();
-  if (pParentLocalsTreeViewItem == mpRootLocalsTreeItem)
+  if (pParentLocalsTreeViewItem == mpRootLocalsTreeItem) {
     return QModelIndex();
+  }
 
   return createIndex(pParentLocalsTreeViewItem->row(), 0, pParentLocalsTreeViewItem);
 }
@@ -417,8 +427,9 @@ bool LocalsTreeModel::setData(const QModelIndex &index, const QVariant &value, i
 {
   Q_UNUSED(role);
   LocalsTreeItem *pLocalsTreeViewItem = static_cast<LocalsTreeItem*>(index.internalPointer());
-  if (!pLocalsTreeViewItem)
+  if (!pLocalsTreeViewItem) {
     return false;
+  }
   bool result = pLocalsTreeViewItem->setData(index.column(), value);
   emit dataChanged(index, index);
   return result;
@@ -426,8 +437,9 @@ bool LocalsTreeModel::setData(const QModelIndex &index, const QVariant &value, i
 
 QVariant LocalsTreeModel::data(const QModelIndex &index, int role) const
 {
-  if (!index.isValid())
+  if (!index.isValid()) {
     return QVariant();
+  }
 
   LocalsTreeItem *pLocalsTreeViewItem = static_cast<LocalsTreeItem*>(index.internalPointer());
   return pLocalsTreeViewItem->data(index.column(), role);
@@ -435,11 +447,14 @@ QVariant LocalsTreeModel::data(const QModelIndex &index, int role) const
 
 LocalsTreeItem* LocalsTreeModel::findLocalsTreeItem(const QString &name, LocalsTreeItem *root) const
 {
-  if (root->getNameStructure() == name)
+  if (root->getNameStructure() == name) {
     return root;
-  for (int i = root->getChildren().size(); --i >= 0; )
-    if (LocalsTreeItem *item = findLocalsTreeItem(name, root->getChildren().at(i)))
+  }
+  for (int i = root->getChildren().size(); --i >= 0;) {
+    if (LocalsTreeItem *item = findLocalsTreeItem(name, root->getChildren().at(i))) {
       return item;
+    }
+  }
   return 0;
 }
 
@@ -451,14 +466,16 @@ QModelIndex LocalsTreeModel::localsTreeItemIndex(const LocalsTreeItem *pLocalsTr
 QModelIndex LocalsTreeModel::localsTreeItemIndexHelper(const LocalsTreeItem *pLocalsTreeItem, const LocalsTreeItem *pParentLocalsTreeItem,
                                                        const QModelIndex &parentIndex) const
 {
-  if (pLocalsTreeItem == pParentLocalsTreeItem)
+  if (pLocalsTreeItem == pParentLocalsTreeItem) {
     return parentIndex;
+  }
   for (int i = pParentLocalsTreeItem->getChildren().size(); --i >= 0; ) {
     const LocalsTreeItem *childItem = pParentLocalsTreeItem->getChildren().at(i);
     QModelIndex childIndex = index(i, 0, parentIndex);
     QModelIndex index = localsTreeItemIndexHelper(pLocalsTreeItem, childItem, childIndex);
-    if (index.isValid())
+    if (index.isValid()) {
       return index;
+    }
   }
   return QModelIndex();
 }
@@ -467,22 +484,16 @@ void LocalsTreeModel::insertLocalItemData(const QVector<QVariant> &localItemData
 {
   QString nameStructure;
   /* construct the item name structure. */
-  if (mpRootLocalsTreeItem == pParentLocalsTreeItem)
-  {
+  if (mpRootLocalsTreeItem == pParentLocalsTreeItem) {
     nameStructure = QString("%1.%2").arg(pParentLocalsTreeItem->getNameStructure()).arg(localItemData[0].toString());
-  }
-  else
-  {
+  } else {
     nameStructure = QString("%1.%2%3").arg(pParentLocalsTreeItem->getNameStructure()).arg(localItemData[0].toString()).arg(localItemData[1].toString());
   }
   /* find the item */
   LocalsTreeItem *pLocalsTreeItem = findLocalsTreeItem(nameStructure, pParentLocalsTreeItem);
-  if (pLocalsTreeItem)
-  {
+  if (pLocalsTreeItem) {
     pLocalsTreeItem->retrieveModelicaMetaType();
-  }
-  else
-  {
+  } else {
     QModelIndex index = localsTreeItemIndex(pParentLocalsTreeItem);
     pLocalsTreeItem = new LocalsTreeItem(localItemData, this, pParentLocalsTreeItem);
     pLocalsTreeItem->setNameStructure(nameStructure);
@@ -496,36 +507,28 @@ void LocalsTreeModel::insertLocalItemData(const QVector<QVariant> &localItemData
 void LocalsTreeModel::insertLocalsList(const QList<QVector<QVariant> > &locals)
 {
   QList<LocalsTreeItem*> localsTreeItems = mpRootLocalsTreeItem->getChildren();
-  foreach (LocalsTreeItem *pLocalsTreeItem, localsTreeItems)
-  {
+  foreach (LocalsTreeItem *pLocalsTreeItem, localsTreeItems) {
     bool isFound = false;
-    foreach (QVector<QVariant> local, locals)
-    {
+    foreach (QVector<QVariant> local, locals) {
       QString nameStructure;
       /* construct the item name structure. */
-      if (pLocalsTreeItem->parent() == mpRootLocalsTreeItem)
-      {
+      if (pLocalsTreeItem->parent() == mpRootLocalsTreeItem) {
         nameStructure = QString("%1.%2").arg(pLocalsTreeItem->parent()->getNameStructure()).arg(local[0].toString());
-      }
-      else
-      {
+      } else {
         nameStructure = QString("%1.%2%3").arg(pLocalsTreeItem->parent()->getNameStructure()).arg(local[0].toString()).arg(local[1].toString());
       }
       /* compare the name structure to find the item. */
-      if (nameStructure.compare(pLocalsTreeItem->getNameStructure()) == 0)
-      {
+      if (nameStructure.compare(pLocalsTreeItem->getNameStructure()) == 0) {
         isFound = true;
         break;
       }
     }
     /* if not found then the item has been removed from the stack so we must also remove it from the locals tree. */
-    if (!isFound)
-    {
+    if (!isFound) {
       removeLocalItem(pLocalsTreeItem);
     }
   }
-  foreach (QVector<QVariant> local, locals)
-  {
+  foreach (QVector<QVariant> local, locals) {
     insertLocalItemData(local, mpRootLocalsTreeItem);
   }
 }
@@ -545,8 +548,9 @@ void LocalsTreeModel::removeLocalItem(LocalsTreeItem *pLocalsTreeItem)
 void LocalsTreeModel::removeLocalItems()
 {
   int n = mpRootLocalsTreeItem->getChildren().size();
-  if (n == 0)
-      return;
+  if (n == 0) {
+    return;
+  }
   QModelIndex index = localsTreeItemIndex(mpRootLocalsTreeItem);
   beginRemoveRows(index, 0, n - 1);
   mpRootLocalsTreeItem->removeChildren();
@@ -572,7 +576,7 @@ LocalsTreeView::LocalsTreeView(LocalsWidget *pLocalsWidget)
   : QTreeView(pLocalsWidget)
 {
   mpLocalsWidget = pLocalsWidget;
-  setObjectName("TreeWithBranches");
+  //setObjectName("TreeWithBranches");
   setItemDelegate(new ItemDelegate(this, false, true));
   setTextElideMode(Qt::ElideMiddle);
   setIndentation(Helper::treeIndentation);
@@ -618,8 +622,9 @@ void LocalsWidget::localsTreeItemExpanded(QModelIndex index)
 {
   index = mpLocalsTreeProxyModel->mapToSource(index);
   LocalsTreeItem *pLocalsTreeItem = static_cast<LocalsTreeItem*>(index.internalPointer());
-  if (!pLocalsTreeItem || pLocalsTreeItem->isExpanded())
+  if (!pLocalsTreeItem || pLocalsTreeItem->isExpanded()) {
     return;
+  }
 
   pLocalsTreeItem->setExpanded(true);
   pLocalsTreeItem->retrieveLocalChildren();
@@ -631,16 +636,18 @@ void LocalsWidget::showLocalValue(QModelIndex currentIndex, QModelIndex previous
 
   currentIndex = mpLocalsTreeProxyModel->mapToSource(currentIndex);
   LocalsTreeItem *pLocalsTreeItem = static_cast<LocalsTreeItem*>(currentIndex.internalPointer());
-  if (!pLocalsTreeItem)
+  if (!pLocalsTreeItem) {
     return;
+  }
 
   mpLocalValueViewer->setPlainText(pLocalsTreeItem->getDisplayValue());
 }
 
 /*!
-  Slot activated when GDBProcessFinished signal of GDBAdapter is raised.
-  Clears the LocalsTreeView by removing all the items.
-  */
+ * \brief LocalsWidget::handleGDBProcessFinished
+ * Slot activated when GDBProcessFinished signal of GDBAdapter is raised.
+ * Clears the LocalsTreeView by removing all the items.
+ */
 void LocalsWidget::handleGDBProcessFinished()
 {
   mpLocalsTreeModel->removeLocalItems();

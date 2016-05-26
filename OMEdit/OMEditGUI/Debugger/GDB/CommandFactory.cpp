@@ -48,32 +48,38 @@ QByteArray CommandFactory::GDBSet(QString command)
 }
 
 /*!
-  Attach the process to GDB.
-  \param processID - the process ID to attach.
-  \return the command.
-  */
+ * \brief CommandFactory::attach
+ * Attach the process to GDB.
+ * \param processID - the process ID to attach.
+ * \return the command.
+ */
 QByteArray CommandFactory::attach(QString processID)
 {
   return QByteArray("attach ").append(processID);
 }
 
 /*!
-  Changes the stdout & stderr stream buffer.\n
-  Sets them to NULL so that executable can flush the output as they receive it.
-  \return the command.
-  */
+ * \brief CommandFactory::changeStdStreamBuffer
+ * Changes the stdout & stderr stream buffer.\n
+ * Sets them to NULL so that executable can flush the output as they receive it.
+ * \return
+ */
 QByteArray CommandFactory::changeStdStreamBuffer()
 {
   return QByteArray("-data-evaluate-expression changeStdStreamBuffer()");
 }
 
 /*!
-  Creates the -break-insert command.\n
-  \param fileName - the breakpoint location.
-  \param line - the breakpoint line number.
-  \param isPending - sets the breakpoint pending.
-  \return the command.
-  */
+ * \brief CommandFactory::breakInsert
+ * Creates the -break-insert command.\n
+ * \param fileName - the breakpoint location.
+ * \param line - the breakpoint line number.
+ * \param isDisabled
+ * \param condition
+ * \param ignoreCount
+ * \param isPending - sets the breakpoint pending.
+ * \return
+ */
 QByteArray CommandFactory::breakInsert(QString fileName, int line, bool isDisabled, QString condition, int ignoreCount, bool isPending)
 {
   QStringList command;
@@ -97,239 +103,294 @@ QByteArray CommandFactory::breakInsert(QString fileName, int line, bool isDisabl
 }
 
 /*!
-  Creates the -break-delete command.\n
-  \param breakpointIDs - the breakpoint ids to delete.
-  \return the command.
-  */
+ * \brief CommandFactory::breakDelete
+ * Creates the -break-delete command.\n
+ * \param breakpointIDs - the breakpoint ids to delete.
+ * \return
+ */
 QByteArray CommandFactory::breakDelete(QStringList breakpointIDs)
 {
   return QByteArray("-break-delete ").append(breakpointIDs.join(" "));
 }
 
 /*!
-  Creates the -break-enable command.\n
-  \param breakpointIDs - the breakpoint ids to enable.
-  \return the command.
-  */
+ * \brief CommandFactory::breakEnable
+ * Creates the -break-enable command.\n
+ * \param breakpointIDs - the breakpoint ids to enable.
+ * \return
+ */
 QByteArray CommandFactory::breakEnable(QStringList breakpointIDs)
 {
   return QByteArray("-break-enable ").append(breakpointIDs.join(" "));
 }
 
 /*!
-  Creates the -break-disable command.\n
-  \param breakpointIDs - the breakpoint ids to disable.
-  \return the command.
-  */
+ * \brief CommandFactory::breakDisable
+ * Creates the -break-disable command.\n
+ * \param breakpointIDs - the breakpoint ids to disable.
+ * \return
+ */
 QByteArray CommandFactory::breakDisable(QStringList breakpointIDs)
 {
   return QByteArray("-break-disable ").append(breakpointIDs.join(" "));
 }
 
 /*!
-  Creates the -break-after command.\n
-  \param breakpointID - the breakpoint id.
-  \param count - the ignore count.
-  \return the command.
-  */
+ * \brief CommandFactory::breakAfter
+ * Creates the -break-after command.\n
+ * \param breakpointID - the breakpoint id.
+ * \param count - the ignore count.
+ * \param breakpointID
+ * \param count
+ * \return
+ */
 QByteArray CommandFactory::breakAfter(QString breakpointID, int count)
 {
   return QByteArray("-break-after ").append(breakpointID).append(" ").append(QString::number(count));
 }
 
 /*!
-  Creates the -break-condition command.\n
-  \param breakpointID - the breakpoint id.
-  \param condition - the conditional expression.
-  \return the command.
-  */
+ * \brief CommandFactory::breakCondition
+ * Creates the -break-condition command.\n
+ * \param breakpointID - the breakpoint id.
+ * \param condition - the conditional expression.
+ * \param breakpointID
+ * \param condition
+ * \return
+ */
 QByteArray CommandFactory::breakCondition(QString breakpointID, QString condition)
 {
   return QByteArray("-break-condition ").append(breakpointID).append(" ").append("\"\\\"" + condition + "\\\"\"");
 }
 
 /*!
-  Creates the -exec-run command.\n
-  \return the command.
-  */
+ * \brief CommandFactory::execRun
+ * Creates the -exec-run command.\n
+ * \return
+ */
 QByteArray CommandFactory::execRun()
 {
   return "-exec-run";
 }
 
 /*!
-  Creates the -exec-continue command.\n
-  \return the command.
-  */
+ * \brief CommandFactory::execContinue
+ * Creates the -exec-continue command.\n
+ * \return
+ */
 QByteArray CommandFactory::execContinue()
 {
   return "-exec-continue";
 }
 
 /*!
-  Creates the -exec-next command.\n
-  \return the command.
-  */
+ * \brief CommandFactory::execNext
+ * Creates the -exec-next command.\n
+ * \return
+ */
 QByteArray CommandFactory::execNext()
 {
   return "-exec-next";
 }
 
 /*!
-  Creates the -exec-step command.\n
-  \return the command.
-  */
+ * \brief CommandFactory::execStep
+ * Creates the -exec-step command.\n
+ * \return
+ */
 QByteArray CommandFactory::execStep()
 {
   return "-exec-step";
 }
 
 /*!
-  Creates the -exec-finish command.\n
-  \return the command.
-  */
+ * \brief CommandFactory::execFinish
+ * Creates the -exec-finish command.\n
+ * \return
+ */
 QByteArray CommandFactory::execFinish()
 {
   return "-exec-finish";
 }
 
 /*!
-  Creates the -thread-info command.\n
-  \return the command.
-  */
+ * \brief CommandFactory::threadInfo
+ * Creates the -thread-info command.\n
+ * \return
+ */
 QByteArray CommandFactory::threadInfo()
 {
   return "-thread-info";
 }
 
 /*!
-  Creates the -thread-select command.\n
-  \param num - the thread number to select.
-  \return the command.
-  */
-QByteArray CommandFactory::threadSelect(int num)
+ * \brief CommandFactory::stackListFrames
+ * Creates the -stack-list-frames --thread 1 command.\n
+ * \param thread
+ * \return
+ */
+QByteArray CommandFactory::stackListFrames(int thread)
 {
-  return QByteArray("-thread-select ").append(QString::number(num));
+  QString command = QString("-stack-list-frames --thread %1").arg(thread);
+  return QByteArray(command.toStdString().c_str());
 }
 
 /*!
-  Creates the -stack-list-frames command.\n
-  \return the command.
-  */
-QByteArray CommandFactory::stackListFrames()
+ * \brief CommandFactory::stackListVariables
+ * Creates the -stack-list-variables command.\n
+ * \param thread
+ * \param frame
+ * \param printValues - defines the format how the values are printed.\n
+ * If print-values is 0 or --no-values, print only the names of the variables; if it is 1 or --all-values, print also their values;
+ * and if it is 2 or --simple-values, print the name, type and value for simple data types, and the name and type for arrays,
+ * structures and unions
+ * \return
+ */
+QByteArray CommandFactory::stackListVariables(int thread, int frame, QString printValues)
 {
-  return "-stack-list-frames";
+  QString command = QString("-stack-list-variables --thread %1 --frame %2 %3").arg(thread).arg(frame).arg(printValues);
+  return QByteArray(command.toStdString().c_str());
 }
 
 /*!
-  Creates the -stack-select-frame command.\n
-  \param num - the frame number to select.
-  \return the command.
-  */
-QByteArray CommandFactory::stackSelectFrame(int num)
-{
-  return QByteArray("-stack-select-frame ").append(QString::number(num));
-}
-
-/*!
-  Creates the -stack-list-variables command.\n
-  \param printValues - defines the format how the values are printed.\n
-  If print-values is 0 or --no-values, print only the names of the variables; if it is 1 or --all-values, print also their values;
-  and if it is 2 or --simple-values, print the name, type and value for simple data types, and the name and type for arrays,
-  structures and unions
-  \return the command.
-  */
-QByteArray CommandFactory::stackListVariables(QString printValues)
-{
-  return QByteArray("-stack-list-variables ").append(printValues);
-}
-
-/*!
-  Creates the "thread apply all bt full" command.\n
-  Generates a full backtrace of the program.
-  \return the command.
-  */
+ * \brief CommandFactory::createFullBacktrace
+ * Creates the "thread apply all bt full" command.\n
+ * Generates a full backtrace of the program.
+ * \return
+ */
 QByteArray CommandFactory::createFullBacktrace()
 {
   return "thread apply all bt full";
 }
 
 /*!
-  Creates the -data-evaluate-expression "expr" command.\n
-  \param expression - the expression to be evaluated.
-  \return the command.
-  */
-QByteArray CommandFactory::dataEvaluateExpression(QString expression)
+ * \brief CommandFactory::dataEvaluateExpression
+ * Creates the -data-evaluate-expression --thread 1 --frame 0 "expression" command.\n
+ * \param expression - the expression to be evaluated.
+ * \param thread
+ * \param frame
+ * \param expression
+ * \return the command.
+ */
+QByteArray CommandFactory::dataEvaluateExpression(int thread, int frame, QString expression)
 {
-  return QByteArray("-data-evaluate-expression \"").append(expression).append("\"");
+  QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"%3\"").arg(thread).arg(frame).arg(expression);
+  return QByteArray(command.toStdString().c_str());
 }
 
 /*!
-  Creates the -data-evaluate-expression "(char*)getTypeOfAny(expr)" command.\n
-  \param expression - the expression to be evaluated.
-  \return the command.
-  */
-QByteArray CommandFactory::getTypeOfAny(QString expression)
+ * \brief CommandFactory::getTypeOfAny
+ * * Creates the -data-evaluate-expression --thread 1 --frame 0 "(char*)getTypeOfAny(expression, inRecord)" command.\n
+ * \param expression - the expression to be evaluated.
+ * \param thread
+ * \param frame
+ * \param expression
+ * \param inRecord
+ * \return the command.
+ */
+QByteArray CommandFactory::getTypeOfAny(int thread, int frame, QString expression, bool inRecord)
 {
-  return QByteArray("-data-evaluate-expression \"(char*)getTypeOfAny(").append(expression).append(")\"");
+  QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"(char*)getTypeOfAny(%3, %4)\"").arg(thread).arg(frame)
+      .arg(expression).arg(inRecord ? "1" : "0");
+  return QByteArray(command.toStdString().c_str());
 }
 
 /*!
-  Creates the -data-evaluate-expression "(char*)anyString(expr)" command.\n
-  \param expression - the expression to be evaluated.
+
   \return the command.
   */
-QByteArray CommandFactory::anyString(QString expression)
+/*!
+ * \brief CommandFactory::anyString
+ * Creates the -data-evaluate-expression --thread 1 --frame 0 "(char*)anyString(expr)" command.\n
+ * \param expression - the expression to be evaluated.
+ * \param thread
+ * \param frame
+ * \param expression
+ * \return
+ */
+QByteArray CommandFactory::anyString(int thread, int frame, QString expression)
 {
-  return QByteArray("-data-evaluate-expression \"(char*)anyString(").append(expression).append(")\"");
+  QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"(char*)anyString(%3)\"").arg(thread).arg(frame)
+      .arg(expression);
+  return QByteArray(command.toStdString().c_str());
 }
 
 /*!
-  Creates the -data-evaluate-expression "(char*)getRecordElement(expr, index)" command.\n
-  \param expression - the expression to find.
+
   \return the command.
   */
-QByteArray CommandFactory::getMetaTypeElement(QString expression, int index, metaType mt)
+/*!
+ * \brief CommandFactory::getMetaTypeElement
+ * Creates the -data-evaluate-expression --thread 1 --frame 0 "(char*)getMetaTypeElement(expr, index)" command.\n
+ * \param expression - the expression to find.
+ * \param frame
+ * \param expression
+ * \param index
+ * \param mt
+ * \return
+ */
+QByteArray CommandFactory::getMetaTypeElement(int thread, int frame, QString expression, int index, metaType mt)
 {
-  QByteArray cmd = QByteArray("-data-evaluate-expression \"(char*)getMetaTypeElement(").append(expression)
-      .append(", ").append(QString::number(index)).append(", ").append(QString::number(mt)).append(")\"");
-  return cmd;
+  QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"(char*)getMetaTypeElement(%3, %4, %5)\"").arg(thread)
+      .arg(frame).arg(expression).arg(index).arg(mt);
+  return QByteArray(command.toStdString().c_str());
 }
 
 /*!
-  Creates the -data-evaluate-expression "(int)arrayLength(expr)" command.\n
-  \param expression - the expression to find the array length.
+
   \return the command.
   */
-QByteArray CommandFactory::arrayLength(QString expression)
+/*!
+ * \brief CommandFactory::arrayLength
+ * Creates the -data-evaluate-expression --thread 1 --frame 0 "(int)mmc_gdb_arrayLength(expr)" command.\n
+ * \param expression - the expression to find the array length.
+ * \param thread
+ * \param frame
+ * \param expression
+ * \return
+ */
+QByteArray CommandFactory::arrayLength(int thread, int frame, QString expression)
 {
-  return QByteArray("-data-evaluate-expression \"(int)mmc_gdb_arrayLength(").append(expression).append(")\"");
+  QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"(int)mmc_gdb_arrayLength(%3)\"").arg(thread).arg(frame)
+      .arg(expression);
+  return QByteArray(command.toStdString().c_str());
 }
 
 /*!
-  Creates the -data-evaluate-expression "(int)listLength(expr)" command.\n
-  \param expression - the expression to find the list length.
-  \return the command.
-  */
-QByteArray CommandFactory::listLength(QString expression)
+ * \brief CommandFactory::listLength
+ * Creates the -data-evaluate-expression --thread 1 --frame 0 "(int)listLength(expr)" command.\n
+ * \param thread
+ * \param frame
+ * \param expression - the expression to find the list length.
+ * \return
+ */
+QByteArray CommandFactory::listLength(int thread, int frame, QString expression)
 {
-  return QByteArray("-data-evaluate-expression \"(int)listLength(").append(expression).append(")\"");
+  QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"(int)listLength(%3)\"").arg(thread).arg(frame).arg(expression);
+  return QByteArray(command.toStdString().c_str());
 }
 
 /*!
-  Creates the -data-evaluate-expression "(int)isOptionNone(expr)" command.\n
-  \param expression - the expression to check if option is none.
-  \return the command.
-  */
-QByteArray CommandFactory::isOptionNone(QString expression)
+ * \brief CommandFactory::isOptionNone
+ * Creates the -data-evaluate-expression --thread 1 --frame 0 "(int)isOptionNone(expr)" command.\n
+ * \param expression - the expression to check if option is none.
+ * \param thread
+ * \param frame
+ * \param expression
+ * \return
+ */
+QByteArray CommandFactory::isOptionNone(int thread, int frame, QString expression)
 {
-  return QByteArray("-data-evaluate-expression \"(int)isOptionNone(").append(expression).append(")\"");
+  QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"(int)isOptionNone(%3)\"").arg(thread).arg(frame)
+      .arg(expression);
+  return QByteArray(command.toStdString().c_str());
 }
 
 /*!
-  Creates the -gdb-exit command.\n
-  \return the command.
-  */
+ * \brief CommandFactory::GDBExit
+ * Creates the -gdb-exit command.\n
+ * \return
+ */
 QByteArray CommandFactory::GDBExit()
 {
   return "-gdb-exit";

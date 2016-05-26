@@ -70,20 +70,18 @@ public:
   static QByteArray execFinish();
   /* Thread Commands */
   static QByteArray threadInfo();
-  static QByteArray threadSelect(int num);
   /* Stack Manipulation Commands */
-  static QByteArray stackListFrames();
-  static QByteArray stackSelectFrame(int num);
-  static QByteArray stackListVariables(QString printValues);
+  static QByteArray stackListFrames(int thread);
+  static QByteArray stackListVariables(int thread, int frame, QString printValues);
   static QByteArray createFullBacktrace();
   /* Data Manipulation Commands */
-  static QByteArray dataEvaluateExpression(QString expression);
-  static QByteArray getTypeOfAny(QString expression);
-  static QByteArray anyString(QString expression);
-  static QByteArray getMetaTypeElement(QString expression, int index, metaType mt);
-  static QByteArray arrayLength(QString expression);
-  static QByteArray listLength(QString expression);
-  static QByteArray isOptionNone(QString expression);
+  static QByteArray dataEvaluateExpression(int thread, int frame, QString expression);
+  static QByteArray getTypeOfAny(int thread, int frame, QString expression, bool inRecord);
+  static QByteArray anyString(int thread, int frame, QString expression);
+  static QByteArray getMetaTypeElement(int thread, int frame, QString expression, int index, metaType mt);
+  static QByteArray arrayLength(int thread, int frame, QString expression);
+  static QByteArray listLength(int thread, int frame, QString expression);
+  static QByteArray isOptionNone(int thread, int frame, QString expression);
   static QByteArray GDBExit();
 };
 

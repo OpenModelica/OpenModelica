@@ -95,7 +95,12 @@ class StackFramesWidget : public QWidget
 public:
   StackFramesWidget(DebuggerMainWindow *pDebuggerMainWindow);
   DebuggerMainWindow *getDebuggerMainWindow() {return mpDebuggerMainWindow;}
+  QComboBox* getThreadsComboBox() {return mpThreadsComboBox;}
   StackFramesTreeWidget* getStackFramesTreeWidget() {return mpStackFramesTreeWidget;}
+  void setSelectedThread(int thread) {mSelectedThread = thread;}
+  int getSelectedThread() {return mSelectedThread;}
+  void setSelectedFrame(int frame) {mSelectedFrame = frame;}
+  int getSelectedFrame() {return mSelectedFrame;}
   void setStatusMessage(QString statusMessage);
 private:
   DebuggerMainWindow *mpDebuggerMainWindow;
@@ -110,6 +115,8 @@ private:
   Label *mpStatusLabel;
   QStatusBar *mpStatusBar;
   StackFramesTreeWidget *mpStackFramesTreeWidget;
+  int mSelectedThread;
+  int mSelectedFrame;
 public slots:
   void resumeButtonClicked();
   void interruptButtonClicked();
@@ -123,7 +130,7 @@ public slots:
   void handleInferiorResumed();
   void threadChanged(int threadIndex);
   void fillThreadComboBox(GDBMIValue *pThreadsGDBMIValue, QString currentThreadId);
-  bool stackItemDoubleClicked(QTreeWidgetItem *pQTreeWidgetItem);
+  void stackItemDoubleClicked(QTreeWidgetItem *pQTreeWidgetItem);
 };
 
 #endif // STACKFRAMESWIDGET_H

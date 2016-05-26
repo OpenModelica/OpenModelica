@@ -40,12 +40,13 @@
 #include "SimulationOutputWidget.h"
 
 /*!
-  \class GDBLoggerWidget
-  \brief Console for viewing GDB response & sending user commands to GDB.
-  */
+ * \class GDBLoggerWidget
+ * \brief Console for viewing GDB response & sending user commands to GDB.
+ */
 /*!
-  \param pDebuggerMainWindow - pointer to DebuggerMainWindow
-  */
+ * \brief GDBLoggerWidget::GDBLoggerWidget
+ * \param pDebuggerMainWindow - pointer to DebuggerMainWindow
+ */
 GDBLoggerWidget::GDBLoggerWidget(DebuggerMainWindow *pDebuggerMainWindow)
 {
   mpDebuggerMainWindow = pDebuggerMainWindow;
@@ -88,8 +89,10 @@ GDBLoggerWidget::GDBLoggerWidget(DebuggerMainWindow *pDebuggerMainWindow)
 }
 
 /*!
-  Writes Debugger command in Debugger Logger window.
-  */
+ * \brief GDBLoggerWidget::logDebuggerCommand
+ * Writes Debugger command in Debugger Logger window.
+ * \param command
+ */
 void GDBLoggerWidget::logDebuggerCommand(QString command)
 {
   // move the cursor down before adding to the logger.
@@ -104,24 +107,31 @@ void GDBLoggerWidget::logDebuggerCommand(QString command)
 }
 
 /*!
-  Writes Debugger standard response in Debugger Logger window.
-  */
+ * \brief GDBLoggerWidget::logDebuggerStandardResponse
+ * Writes Debugger standard response in Debugger Logger window.
+ * \param response
+ */
 void GDBLoggerWidget::logDebuggerStandardResponse(QString response)
 {
   logDebuggerResponse(response, Qt::black);
 }
 
 /*!
-  Writes Debugger error response in Debugger Logger window.
-  */
+ * \brief GDBLoggerWidget::logDebuggerErrorResponse
+ * Writes Debugger error response in Debugger Logger window.
+ * \param response
+ */
 void GDBLoggerWidget::logDebuggerErrorResponse(QString response)
 {
   logDebuggerResponse(response, Qt::red);
 }
 
 /*!
-  Writes Debugger response in Debugger Logger window.
-  */
+ * \brief GDBLoggerWidget::logDebuggerResponse
+ * Writes Debugger response in Debugger Logger window.
+ * \param response
+ * \param color
+ */
 void GDBLoggerWidget::logDebuggerResponse(QString response, QColor color)
 {
   // move the cursor down before adding to the logger.
@@ -140,19 +150,22 @@ void GDBLoggerWidget::logDebuggerResponse(QString response, QColor color)
 }
 
 /*!
-  Posts the user typed GDB command.
-  */
+ * \brief GDBLoggerWidget::postCommand
+ * Posts the user typed GDB command.
+ */
 void GDBLoggerWidget::postCommand()
 {
-  if (mpCommandTextBox->text().isEmpty())
+  if (mpCommandTextBox->text().isEmpty()) {
     return;
+  }
   mpDebuggerMainWindow->getGDBAdapter()->postCommand(QByteArray(mpCommandTextBox->text().toStdString().c_str()));
 }
 
 /*!
-  Slot activated when GDBProcessStarted signal of GDBAdapter is raised.
-  Clears the GDB response text box area. Allows to send commands.
-  */
+ * \brief GDBLoggerWidget::handleGDBProcessStarted
+ * Slot activated when GDBProcessStarted signal of GDBAdapter is raised.
+ * Clears the GDB response text box area. Allows to send commands.
+ */
 void GDBLoggerWidget::handleGDBProcessStarted()
 {
   /* if clear log on new run option is set then clear the log windows. */
@@ -166,9 +179,10 @@ void GDBLoggerWidget::handleGDBProcessStarted()
 }
 
 /*!
-  Slot activated when GDBProcessFinished signal of GDBAdapter is raised.
-  Disables the user commands.
-  */
+ * \brief GDBLoggerWidget::handleGDBProcessFinished
+ * Slot activated when GDBProcessFinished signal of GDBAdapter is raised.
+ * Disables the user commands.
+ */
 void GDBLoggerWidget::handleGDBProcessFinished()
 {
   mpCommandTextBox->setEnabled(false);
@@ -176,12 +190,14 @@ void GDBLoggerWidget::handleGDBProcessFinished()
 }
 
 /*!
-  \class TargetOutputWidget
-  \brief Console for viewing GDB inferior output.
-  */
+ * \class TargetOutputWidget
+ * \brief Console for viewing GDB inferior output.
+ */
 /*!
-  \param pDebuggerMainWindow - pointer to DebuggerMainWindow
-  */
+ * \brief TargetOutputWidget::TargetOutputWidget
+ * \param pDebuggerMainWindow - pointer to DebuggerMainWindow
+ * \param pDebuggerMainWindow
+ */
 TargetOutputWidget::TargetOutputWidget(DebuggerMainWindow *pDebuggerMainWindow)
   : QPlainTextEdit(pDebuggerMainWindow)
 {
@@ -191,24 +207,31 @@ TargetOutputWidget::TargetOutputWidget(DebuggerMainWindow *pDebuggerMainWindow)
 }
 
 /*!
-  Writes Debugger standard response in Output Browser window.
-  */
+ * \brief TargetOutputWidget::logDebuggerStandardOutput
+ * Writes Debugger standard response in Output Browser window.
+ * \param output
+ */
 void TargetOutputWidget::logDebuggerStandardOutput(QString output)
 {
   logDebuggerOutput(output, Qt::black);
 }
 
 /*!
-  Writes Debugger error response in Output Browser window.
-  */
+ * \brief TargetOutputWidget::logDebuggerErrorOutput
+ * Writes Debugger error response in Output Browser window.
+ * \param output
+ */
 void TargetOutputWidget::logDebuggerErrorOutput(QString output)
 {
   logDebuggerOutput(output, Qt::red);
 }
 
 /*!
-  Writes Debugger response in Output Browser window.
-  */
+ * \brief TargetOutputWidget::logDebuggerOutput
+ * Writes Debugger response in Output Browser window.
+ * \param output
+ * \param color
+ */
 void TargetOutputWidget::logDebuggerOutput(QString output, QColor color)
 {
   // move the cursor down before adding to the logger.
@@ -227,9 +250,10 @@ void TargetOutputWidget::logDebuggerOutput(QString output, QColor color)
 }
 
 /*!
-  Slot activated when GDBProcessStarted signal of GDBAdapter is raised.
-  Clears the GDB output text box area. Allows to send commands.
-  */
+ * \brief TargetOutputWidget::handleGDBProcessStarted
+ * Slot activated when GDBProcessStarted signal of GDBAdapter is raised.
+ * Clears the GDB output text box area. Allows to send commands.
+ */
 void TargetOutputWidget::handleGDBProcessStarted()
 {
   /* if clear output on new run option is set then clear the log windows. */
@@ -240,12 +264,14 @@ void TargetOutputWidget::handleGDBProcessStarted()
 }
 
 /*!
-  \class GDBAdapter
-  \brief Interface for communication with GDB.
-  */
+ * \class GDBAdapter
+ * \brief Interface for communication with GDB.
+ */
 /*!
-  \param pDebuggerMainWindow - pointer to DebuggerMainWindow
-  */
+ * \brief GDBAdapter::GDBAdapter
+ * \param pDebuggerMainWindow - pointer to DebuggerMainWindow
+ * \param pDebuggerMainWindow
+ */
 GDBAdapter::GDBAdapter(DebuggerMainWindow *pDebuggerMainWindow)
   : QObject(pDebuggerMainWindow)
 {
@@ -264,15 +290,15 @@ GDBAdapter::GDBAdapter(DebuggerMainWindow *pDebuggerMainWindow)
 }
 
 /*!
-  Launches the GDB with the default arguments.
-  \param program - the program to debug with GDB.
-  \param workingDirectory - working directory for GDB.
-  \param arguments - program arguments
-  \param GDBPath - GDB location.
-  \param standAlone - if true then GDB is used to debug Modelica model otherwise MetaMdodelica.
-  */
-void GDBAdapter::launch(QString program, QString workingDirectory, QStringList arguments, QString GDBPath,
-                        SimulationOptions simulationOptions)
+ * \brief GDBAdapter::launch
+ * Launches the GDB with the default arguments.
+ * \param program - the program to debug with GDB.
+ * \param workingDirectory - working directory for GDB.
+ * \param arguments - program arguments
+ * \param GDBPath - GDB location.
+ * \param simulationOptions
+ */
+void GDBAdapter::launch(QString program, QString workingDirectory, QStringList arguments, QString GDBPath, SimulationOptions simulationOptions)
 {
   mpGDBProcess = new QProcess;
   setGDBKilled(false);
@@ -317,10 +343,11 @@ void GDBAdapter::launch(QString program, QString workingDirectory, QStringList a
 }
 
 /*!
-  Launches the GDB and attachs it to the processID.
-  \param processID - process ID to attach.
-  \param GDBPath - GDB location.
-  */
+ * \brief GDBAdapter::launch
+ * Launches the GDB and attachs it to the processID.
+ * \param processID - process ID to attach.
+ * \param GDBPath - GDB location.
+ */
 void GDBAdapter::launch(QString processId, QString GDBPath)
 {
   mAttachToProcessId = processId;
@@ -351,44 +378,48 @@ void GDBAdapter::launch(QString processId, QString GDBPath)
 }
 
 /*!
-  Sends a command to GDB.
-  \param command - the command to send.
-  \param callback - the command to callback function.
-  */
+ * \brief GDBAdapter::postCommand
+ * Sends a command to GDB.
+ * \param command - the command to send.
+ * \param callback - the command to callback function.
+ */
 void GDBAdapter::postCommand(QByteArray command, GDBCommandCallback callback)
 {
   postCommand(command, GDBAdapter::NoFlags, 0, callback);
 }
 
 /*!
-  Sends a command to GDB.
-  \param command - the command to send.
-  \param pCallbackObject - the QObject pointer which is used to call the callback function.
-  \param callback - the command to callback function.
-  */
+ * \brief GDBAdapter::postCommand
+ * Sends a command to GDB.
+ * \param command - the command to send.
+ * \param pCallbackObject - the QObject pointer which is used to call the callback function.
+ * \param callback - the command to callback function.
+ */
 void GDBAdapter::postCommand(QByteArray command, QObject *pCallbackObject, GDBCommandCallback callback)
 {
   postCommand(command, GDBAdapter::NoFlags, pCallbackObject, callback);
 }
 
 /*!
-  Sends a command to GDB.
-  \param command - the command to send.
-  \param flags - the command flags.
-  \param callback - the command to callback function.
-  */
+ * \brief GDBAdapter::postCommand
+ * Sends a command to GDB.
+ * \param command - the command to send.
+ * \param flags - the command flags.
+ * \param callback - the command to callback function.
+ */
 void GDBAdapter::postCommand(QByteArray command, GDBCommandFlags flags, GDBCommandCallback callback)
 {
   postCommand(command, flags, 0, callback);
 }
 
 /*!
-  Sends a command to GDB.
-  \param command - the command to send.
-  \param flags - the command flags.
-  \param pCallbackObject - the QObject pointer which is used to call the callback function.
-  \param callback - the command to callback function.
-  */
+ * \brief GDBAdapter::postCommand
+ * Sends a command to GDB.
+ * \param command - the command to send.
+ * \param flags - the command flags.
+ * \param pCallbackObject - the QObject pointer which is used to call the callback function.
+ * \param callback - the command to callback function.
+ */
 void GDBAdapter::postCommand(QByteArray command, GDBCommandFlags flags, QObject *pCallbackObject, GDBCommandCallback callback)
 {
   if (isGDBRunning()) {
@@ -399,126 +430,43 @@ void GDBAdapter::postCommand(QByteArray command, GDBCommandFlags flags, QObject 
     cmd.mCommand = command;
     cmd.mpCallbackObject = pCallbackObject;
     cmd.mGDBCommandCallback = callback;
-    mGDBMICommandsHash[token] = cmd;
     if (cmd.mFlags & GDBAdapter::ConsoleCommand) {
       cmd.mCommand = "-interpreter-exec console \"" + cmd.mCommand + '"';
     }
     cmd.mCommand = QByteArray::number(token) + cmd.mCommand;
-    mpGDBProcess->write(cmd.mCommand + "\r\n");
-    mGDBCommandTimer.setInterval(commandTimeoutTime());
-    if (!cmd.mCommand.endsWith("-gdb-exit")) {
-      mGDBCommandTimer.start();
-    }
+    mGDBMICommandsHash[token] = cmd;
+    // log command
     writeDebuggerCommandLog(cmd.mCommand);
     mpDebuggerMainWindow->getGDBLoggerWidget()->logDebuggerCommand(QString(cmd.mCommand));
+    /* if command needs a response
+     * block until response is arrived
+     */
+    if (cmd.mFlags & GDBAdapter::BlockUntilResponse) {
+      QEventLoop eventLoop;
+      QTimer timer;
+      connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
+      connect(this, SIGNAL(commandCompleted()), &eventLoop, SLOT(quit()));
+      /* Just in case command response doesn't arrive for some reason we don't want to stay in blocked state.
+       * So we start a timer which will quit the event loop after 5 secs.
+       */
+      timer.start(5000);
+      mpGDBProcess->write(cmd.mCommand + "\r\n");
+      eventLoop.exec();
+    } else {
+      mpGDBProcess->write(cmd.mCommand + "\r\n");
+      mGDBCommandTimer.setInterval(commandTimeoutTime());
+      if (!cmd.mCommand.endsWith("-gdb-exit")) {
+        mGDBCommandTimer.start();
+      }
+    }
   }
 }
 
 /*!
-  Sets the running state of GDB process.
-  \param running - the state of GDB process.
-  */
-void GDBAdapter::setGDBRunning(bool running)
-{
-  mIsRunning = running;
-}
-
-/*!
-  \return Returns the running state of GDB process.
-  */
-bool GDBAdapter::isGDBRunning()
-{
-  return mIsRunning;
-}
-
-/*!
-  Sets the parsing standard output state.
-  \param parsing - the state of parsing.
-  */
-void GDBAdapter::setParsingStandardOutput(bool parsing)
-{
-  mIsParsingStandardOutput = parsing;
-}
-
-/*!
-  \return Returns the true if parsing the standard output of GDB.
-  */
-bool GDBAdapter::isParsingStandardOutput()
-{
-  return mIsParsingStandardOutput;
-}
-
-/*!
-  Sets the inferior state suspended.
-  \param suspended - the state of inferior.
-  */
-void GDBAdapter::setInferiorSuspended(bool suspended)
-{
-  mIsInferiorSuspended = suspended;
-}
-
-/*!
-  \return Returns the suspended state of inferior.
-  */
-bool GDBAdapter::isInferiorSuspended()
-{
-  return mIsInferiorSuspended;
-}
-
-/*!
-  Sets the inferior state terminated.
-  \param terminated - the state of inferior.
-  */
-void GDBAdapter::setInferiorTerminated(bool terminated)
-{
-  mIsInferiorTerminated = terminated;
-}
-
-/*!
-  \return Returns the terminated state of inferior.
-  */
-bool GDBAdapter::isInferiorTerminated()
-{
-  return mIsInferiorTerminated;
-}
-
-/*!
-  Sets the inferior state running.
-  \param running - the state of inferior.
-  */
-void GDBAdapter::setInferiorRunning(bool running)
-{
-  mIsInferiorRunning = running;
-}
-
-/*!
-  \return Returns the running state of inferior.
-  */
-bool GDBAdapter::isInferiorRunning()
-{
-  return mIsInferiorRunning;
-}
-
-/*!
-  Sets the current token number for commands.
-  \param token - the current token number.
-  */
-void GDBAdapter::setCurrentToken(int token)
-{
-  mToken = token;
-}
-
-/*!
-  \return Returns the current token number for commands.
-  */
-int GDBAdapter::currentToken()
-{
-  return mToken;
-}
-
-/*!
-  Returns the GDB Command timeout.
-  */
+ * \brief GDBAdapter::commandTimeoutTime
+ * Returns the GDB Command timeout.
+ * \return
+ */
 int GDBAdapter::commandTimeoutTime() const
 {
   int timeout = mpDebuggerMainWindow->getMainWindow()->getOptionsDialog()->getDebuggerPage()->getGDBCommandTimeoutSpinBox()->value();
@@ -526,70 +474,82 @@ int GDBAdapter::commandTimeoutTime() const
 }
 
 /*!
-  Inserts a breakpoint at Catch.omc:1 to handle MMC_THROW()
-  */
+ * \brief GDBAdapter::insertCatchOMCBreakpoint
+ * Inserts a breakpoint at Catch.omc:1 to handle MMC_THROW()
+ */
 void GDBAdapter::insertCatchOMCBreakpoint()
 {
   postCommand(CommandFactory::breakInsert("Catch.omc", 1, true), GDBAdapter::SilentCommand);
 }
 
 /*!
-  Enables the breakpoint at Catch.omc:1 to handle MMC_THROW()
-  */
+ * \brief GDBAdapter::enableCatchOMCBreakpoint
+ * Enables the breakpoint at Catch.omc:1 to handle MMC_THROW()
+ */
 void GDBAdapter::enableCatchOMCBreakpoint()
 {
   postCommand(CommandFactory::breakEnable(QStringList() << mCatchOMCBreakpointId), GDBAdapter::SilentCommand);
 }
 
 /*!
-  Disables the breakpoint at Catch.omc:1 to handle MMC_THROW()
-  */
+ * \brief GDBAdapter::disableCatchOMCBreakpoint
+ * Disables the breakpoint at Catch.omc:1 to handle MMC_THROW()
+ */
 void GDBAdapter::disableCatchOMCBreakpoint()
 {
   postCommand(CommandFactory::breakDisable(QStringList() << mCatchOMCBreakpointId), GDBAdapter::SilentCommand);
 }
 
 /*!
-  Deletes the breakpoint at Catch.omc:1
-  */
+ * \brief GDBAdapter::deleteCatchOMCBreakpoint
+ * Deletes the breakpoint at Catch.omc:1
+ */
 void GDBAdapter::deleteCatchOMCBreakpoint()
 {
   postCommand(CommandFactory::breakDelete(QStringList() << mCatchOMCBreakpointId), GDBAdapter::SilentCommand);
 }
 
 /*!
-  Callback function for handling the -stack-list-variables command.
-  \param pGDBMIResultRecord - the stack list variables record.
-  */
+ * \brief GDBAdapter::stackListFramesCB
+ * Callback function for handling the -stack-list-frames command.
+ * \param pGDBMIResultRecord - the stack list frames result record.
+ */
+void GDBAdapter::stackListFramesCB(GDBMIResultRecord *pGDBMIResultRecord)
+{
+  GDBMIResult *pStackGDBMIResult = getGDBMIResult("stack", pGDBMIResultRecord->miResultsList);
+  if (pStackGDBMIResult) {
+    emit stackListFrames(pStackGDBMIResult->miValue);
+  }
+}
+
+/*!
+ * \brief GDBAdapter::stackListVariablesCB
+ * Callback function for handling the -stack-list-variables command.
+ * \param pGDBMIResultRecord - the stack list variables record.
+ */
 /*
   -stack-list-variables --thread 1 --frame 0 --all-values
   ^done,variables=[{name="x",value="11"},{name="s",value="{a = 1, b = 2}"}]
   */
 void GDBAdapter::stackListVariablesCB(GDBMIResultRecord *pGDBMIResultRecord)
 {
-  if (pGDBMIResultRecord->cls.compare("done") == 0)
-  {
+  if (pGDBMIResultRecord->cls.compare("done") == 0) {
     GDBMIResult *pVaribalesGDBMIResult = getGDBMIResult("variables", pGDBMIResultRecord->miResultsList);
-    if (pVaribalesGDBMIResult)
-    {
+    if (pVaribalesGDBMIResult) {
       GDBMIValue* pVariablesGDBMIValue = pVaribalesGDBMIResult->miValue;
-      if(pVariablesGDBMIValue->type == GDBMIValue::ListValue)
-      {
+      if(pVariablesGDBMIValue->type == GDBMIValue::ListValue) {
         GDBMIValueList::iterator valuesListiterator;
         QList<QVector<QVariant> > locals;
-        for (valuesListiterator = pVariablesGDBMIValue->miList->miValuesList.begin(); valuesListiterator != pVariablesGDBMIValue->miList->miValuesList.end(); ++valuesListiterator)
-        {
+        for (valuesListiterator = pVariablesGDBMIValue->miList->miValuesList.begin(); valuesListiterator != pVariablesGDBMIValue->miList->miValuesList.end(); ++valuesListiterator) {
           GDBMIValue *pGDBMIValue = *valuesListiterator;
           QString name, type, value;
-          if (pGDBMIValue->type == GDBMIValue::TupleValue)
-          {
+          if (pGDBMIValue->type == GDBMIValue::TupleValue) {
             GDBMIResultList resultsList = pGDBMIValue->miTuple->miResultsList;
             name = getGDBMIConstantValue(getGDBMIResult("name", resultsList));
             type = getGDBMIConstantValue(getGDBMIResult("type", resultsList));
             value = getGDBMIConstantValue(getGDBMIResult("value", resultsList));
             /* We are only interested in the variables starting with underscore. */
-            if (name.startsWith("_"))
-            {
+            if (name.startsWith("_")) {
               QVector<QVariant> localItemData;
               localItemData << name << name.mid(1) << type << value; /* always return 4 items from here. */
               locals.append(localItemData);
@@ -600,30 +560,17 @@ void GDBAdapter::stackListVariablesCB(GDBMIResultRecord *pGDBMIResultRecord)
       }
     }
   }
-  /*
-    The debugger almost completes one cycle here. For example if user clicks stepOver then debugger requests threads, stacks, locals etc.
-    And all fetching of all these things after the stopped event are finished here. So we suspend the debugger here.
-    */
+  /* The debugger almost completes one cycle here. For example if user clicks stepOver then debugger requests threads, stacks, locals etc.
+   * And all fetching of all these things after the stopped event are finished here. So we suspend the debugger here.
+   */
   suspendDebugger();
 }
 
 /*!
-  Callback function for handling the -thread-select command.
-  \param pGDBMIResultRecord - the threads list result record.
-  */
-void GDBAdapter::threadSelectCB(GDBMIResultRecord *pGDBMIResultRecord)
-{
-  /* if -thread-select was successful. */
-  if (pGDBMIResultRecord->cls.compare("done") == 0)
-  {
-    postCommand(CommandFactory::stackListFrames(), &GDBAdapter::stackListFramesCB);
-  }
-}
-
-/*!
-  Callback function for handling the "-data-evaluate-expression (char*)getTypeOfAny(expr)" command.
-  \param pGDBMIResultRecord - the variable type result record.
-  */
+ * Callback function for handling the "-data-evaluate-expression (char*)getTypeOfAny(expr)" command.
+ * \param pGDBMIResultRecord - the variable type result record.
+ * \param pGDBMIResultRecord
+ */
 /*
   935^done,value="0x72e1938 \"String\""
   59^done,value="0x5c012e0 \"record<GlobalScript.SymbolTable.SYMBOLTABLE>\""
@@ -647,32 +594,29 @@ void GDBAdapter::getTypeOfAnyCB(GDBMIResultRecord *pGDBMIResultRecord)
     metaTypeValue = getGDBMIConstantValue(pGDBMIResult);
   }
   GDBMICommand cmd = mGDBMICommandsHash.value(pGDBMIResultRecord->token);
-  if (LocalsTreeItem *pLocalsTreeItem = qobject_cast<LocalsTreeItem*>(cmd.mpCallbackObject))
-  {
+  if (LocalsTreeItem *pLocalsTreeItem = qobject_cast<LocalsTreeItem*>(cmd.mpCallbackObject)) {
     pLocalsTreeItem->setModelicaMetaType(metaTypeValue);
   }
 }
 
 /*!
-  Callback function for handling the "-data-evaluate-expression expr" command.
-  \param pGDBMIResultRecord - the variable value result record.
-  */
+ * \brief GDBAdapter::dataEvaluateExpressionCB
+ * Callback function for handling the "-data-evaluate-expression expr" command.
+ * \param pGDBMIResultRecord - the variable value result record.
+ */
 /*
   392^done,value="0 '\\000'"
   929^done,value="6"
   */
 void GDBAdapter::dataEvaluateExpressionCB(GDBMIResultRecord *pGDBMIResultRecord)
 {
-  if (pGDBMIResultRecord->cls.compare("done") == 0)
-  {
+  if (pGDBMIResultRecord->cls.compare("done") == 0) {
     GDBMIResult *pGDBMIResult = getGDBMIResult("value", pGDBMIResultRecord->miResultsList);
-    if (pGDBMIResult->miValue->type == GDBMIValue::ConstantValue)
-    {
+    if (pGDBMIResult->miValue->type == GDBMIValue::ConstantValue) {
       QString value = QString(pGDBMIResult->miValue->value.c_str());
       value = StringHandler::removeFirstLastQuotes(value);
       GDBMICommand cmd = mGDBMICommandsHash.value(pGDBMIResultRecord->token);
-      if (LocalsTreeItem *pLocalsTreeItem = qobject_cast<LocalsTreeItem*>(cmd.mpCallbackObject))
-      {
+      if (LocalsTreeItem *pLocalsTreeItem = qobject_cast<LocalsTreeItem*>(cmd.mpCallbackObject)) {
         pLocalsTreeItem->setValue(value);
       }
     }
@@ -680,26 +624,24 @@ void GDBAdapter::dataEvaluateExpressionCB(GDBMIResultRecord *pGDBMIResultRecord)
 }
 
 /*!
-  Callback function for handling the "-data-evaluate-expression (char*)anyString(expr)" command.
-  \param pGDBMIResultRecord - the variable value result record.
-  */
+ * \brief GDBAdapter::anyStringCB
+ * Callback function for handling the "-data-evaluate-expression (char*)anyString(expr)" command.
+ * \param pGDBMIResultRecord - the variable value result record.
+ */
 /*
   1302^done,value="0x456c158 \"C:/OpenModelica/trunk/build/\""
   */
 void GDBAdapter::anyStringCB(GDBMIResultRecord *pGDBMIResultRecord)
 {
-  if (pGDBMIResultRecord->cls.compare("done") == 0)
-  {
+  if (pGDBMIResultRecord->cls.compare("done") == 0) {
     GDBMIResult *pGDBMIResult = getGDBMIResult("value", pGDBMIResultRecord->miResultsList);
-    if (pGDBMIResult->miValue->type == GDBMIValue::ConstantValue)
-    {
+    if (pGDBMIResult->miValue->type == GDBMIValue::ConstantValue) {
       QString value = QString(pGDBMIResult->miValue->value.c_str());
       value = StringHandler::removeFirstLastQuotes(value);
       int beginIndex = value.indexOf("\"") + 1;
       int endIndex = value.lastIndexOf("\"") - 1;
       GDBMICommand cmd = mGDBMICommandsHash.value(pGDBMIResultRecord->token);
-      if (LocalsTreeItem *pLocalsTreeItem = qobject_cast<LocalsTreeItem*>(cmd.mpCallbackObject))
-      {
+      if (LocalsTreeItem *pLocalsTreeItem = qobject_cast<LocalsTreeItem*>(cmd.mpCallbackObject)) {
         pLocalsTreeItem->setValue(value.mid(beginIndex, endIndex - beginIndex));
       }
     }
@@ -707,24 +649,22 @@ void GDBAdapter::anyStringCB(GDBMIResultRecord *pGDBMIResultRecord)
 }
 
 /*!
-  Callback function for handling the "-data-evaluate-expression (int)arrayLength(expr)" command.
-  \param pGDBMIResultRecord - the variable value result record.
-  */
+ * \brief GDBAdapter::arrayLengthCB
+ * Callback function for handling the "-data-evaluate-expression (int)arrayLength(expr)" command.
+ * \param pGDBMIResultRecord - the variable value result record.
+ */
 /*
   252^done,value="3"
   */
 void GDBAdapter::arrayLengthCB(GDBMIResultRecord *pGDBMIResultRecord)
 {
-  if (pGDBMIResultRecord->cls.compare("done") == 0)
-  {
+  if (pGDBMIResultRecord->cls.compare("done") == 0) {
     GDBMIResult *pGDBMIResult = getGDBMIResult("value", pGDBMIResultRecord->miResultsList);
-    if (pGDBMIResult->miValue->type == GDBMIValue::ConstantValue)
-    {
+    if (pGDBMIResult->miValue->type == GDBMIValue::ConstantValue) {
       QString value = QString(pGDBMIResult->miValue->value.c_str());
       value = StringHandler::removeFirstLastQuotes(value);
       GDBMICommand cmd = mGDBMICommandsHash.value(pGDBMIResultRecord->token);
-      if (ModelicaValue *pModelicaValue = qobject_cast<ModelicaValue*>(cmd.mpCallbackObject))
-      {
+      if (ModelicaValue *pModelicaValue = qobject_cast<ModelicaValue*>(cmd.mpCallbackObject)) {
         pModelicaValue->setChildrenSize(value);
       }
     }
@@ -732,20 +672,19 @@ void GDBAdapter::arrayLengthCB(GDBMIResultRecord *pGDBMIResultRecord)
 }
 
 /*!
-  Callback function for handling the "-data-evaluate-expression "(char*)getMetaTypeElementCB(expr, index)"" command.
-  \param pGDBMIResultRecord - the meta type element array as result record.
-  */
+ * \brief GDBAdapter::getMetaTypeElementCB
+ * Callback function for handling the "-data-evaluate-expression "(char*)getMetaTypeElementCB(expr, index)"" command.
+ * \param pGDBMIResultRecord - the meta type element array as result record.
+ */
 /*
   20^done,value="0x59f7008 \"^omc_element{3411547,name,String,BouncingBall}\""
   21^done,value="0x59f7008 \"^omc_element{21175143,subscripts,list<Any>,{NIL}}\""
   */
 void GDBAdapter::getMetaTypeElementCB(GDBMIResultRecord *pGDBMIResultRecord)
 {
-  if (pGDBMIResultRecord->cls.compare("done") == 0)
-  {
+  if (pGDBMIResultRecord->cls.compare("done") == 0) {
     GDBMIResult *pGDBMIResult = getGDBMIResult("value", pGDBMIResultRecord->miResultsList);
-    if (pGDBMIResult->miValue->type == GDBMIValue::ConstantValue)
-    {
+    if (pGDBMIResult->miValue->type == GDBMIValue::ConstantValue) {
       QString value = QString(pGDBMIResult->miValue->value.c_str());
       value = StringHandler::removeFirstLastQuotes(value);
       GDBMICommand cmd = mGDBMICommandsHash.value(pGDBMIResultRecord->token);
@@ -755,13 +694,10 @@ void GDBAdapter::getMetaTypeElementCB(GDBMIResultRecord *pGDBMIResultRecord)
       trimmedValue = trimmedValue.remove("\\");
       QString name, displayName, type;
       GDBMIResponse *pGDBMIResponse = parseGDBOutput(trimmedValue.toStdString().c_str());
-      if (pGDBMIResponse)
-      {
-        if (pGDBMIResponse->type == GDBMIResponse::ResultRecordResponse)
-        {
+      if (pGDBMIResponse) {
+        if (pGDBMIResponse->type == GDBMIResponse::ResultRecordResponse) {
           GDBMIResult* pGDBMIResult = getGDBMIResult("omc_element", pGDBMIResponse->miResultRecord->miResultsList);
-          if (pGDBMIResult->miValue->type == GDBMIValue::TupleValue)
-          {
+          if (pGDBMIResult->miValue->type == GDBMIValue::TupleValue) {
             GDBMIResultList resultsList = pGDBMIResult->miValue->miTuple->miResultsList;
             name = getGDBMIConstantValue(getGDBMIResult("name", resultsList));
             displayName = getGDBMIConstantValue(getGDBMIResult("displayName", resultsList));
@@ -770,8 +706,7 @@ void GDBAdapter::getMetaTypeElementCB(GDBMIResultRecord *pGDBMIResultRecord)
         }
         delete pGDBMIResponse;
       }
-      if (LocalsTreeItem *pLocalsTreeItem = qobject_cast<LocalsTreeItem*>(cmd.mpCallbackObject))
-      {
+      if (LocalsTreeItem *pLocalsTreeItem = qobject_cast<LocalsTreeItem*>(cmd.mpCallbackObject)) {
         QVector<QVariant> localItemData;
         localItemData << name << displayName << type << ""; /* always return 4 items */
         mpDebuggerMainWindow->getLocalsWidget()->getLocalsTreeModel()->insertLocalItemData(localItemData, pLocalsTreeItem);
@@ -781,24 +716,22 @@ void GDBAdapter::getMetaTypeElementCB(GDBMIResultRecord *pGDBMIResultRecord)
 }
 
 /*!
-  Callback function for handling the "-data-evaluate-expression (int)isOptionNone(expr)" command.
-  \param pGDBMIResultRecord - the option none value result record.
-  */
+ * \brief GDBAdapter::isOptionNoneCB
+ * Callback function for handling the "-data-evaluate-expression (int)isOptionNone(expr)" command.
+ * \param pGDBMIResultRecord - the option none value result record.
+ */
 /*
   252^done,value="1"
   */
 void GDBAdapter::isOptionNoneCB(GDBMIResultRecord *pGDBMIResultRecord)
 {
-  if (pGDBMIResultRecord->cls.compare("done") == 0)
-  {
+  if (pGDBMIResultRecord->cls.compare("done") == 0) {
     GDBMIResult *pGDBMIResult = getGDBMIResult("value", pGDBMIResultRecord->miResultsList);
-    if (pGDBMIResult->miValue->type == GDBMIValue::ConstantValue)
-    {
+    if (pGDBMIResult->miValue->type == GDBMIValue::ConstantValue) {
       QString value = QString(pGDBMIResult->miValue->value.c_str());
       value = StringHandler::removeFirstLastQuotes(value);
       GDBMICommand cmd = mGDBMICommandsHash.value(pGDBMIResultRecord->token);
-      if (ModelicaValue *pModelicaValue = qobject_cast<ModelicaValue*>(cmd.mpCallbackObject))
-      {
+      if (ModelicaValue *pModelicaValue = qobject_cast<ModelicaValue*>(cmd.mpCallbackObject)) {
         pModelicaValue->setChildrenSize(value);
       }
     }
@@ -806,9 +739,10 @@ void GDBAdapter::isOptionNoneCB(GDBMIResultRecord *pGDBMIResultRecord)
 }
 
 /*!
-  Callback function for handling the "-interpreter-exec console "thread apply all bt full"" command.
-  \param pGDBMIResultRecord - the backtrace result record.
-  */
+ * \brief GDBAdapter::createFullBacktraceCB
+ * Callback function for handling the "-interpreter-exec console "thread apply all bt full"" command.
+ * \param pGDBMIResultRecord - the backtrace result record.
+ */
 void GDBAdapter::createFullBacktraceCB(GDBMIResultRecord *pGDBMIResultRecord)
 {
   QString backtrace = QString(pGDBMIResultRecord->consoleStreamOutput.c_str()) + QString(pGDBMIResultRecord->logStreamOutput.c_str());
@@ -822,9 +756,10 @@ void GDBAdapter::createFullBacktraceCB(GDBMIResultRecord *pGDBMIResultRecord)
 }
 
 /*!
-  Callback function for handling the "-insert-break" command.
-  \param pGDBMIResultRecord - the breakpoint ID result record.
-  */
+ * \brief GDBAdapter::insertBreakpointCB
+ * Callback function for handling the "-insert-break" command.
+ * \param pGDBMIResultRecord - the breakpoint ID result record.
+ */
 /*
   6^done,bkpt={number="1",type="breakpoint",disp="keep",enabled="y",addr="0x00c397f1",func="omc_Interactive_getComponents2",
   file="c:/OpenModelica/trunk/Compiler/Script/Interactive.mo",fullname="c:\\openmodelica\\trunk\\compiler\\script\\interactive.mo",
@@ -846,19 +781,18 @@ void GDBAdapter::insertBreakpointCB(GDBMIResultRecord *pGDBMIResultRecord)
 }
 
 /*!
-  Finds the GDBMIResult from GDBMIResultList.
-  \param variable -  the name of GDBMIResult to find.
-  \param resultsList - GDBMIResultList
-  \return GDBMIResult
-  */
+ * \brief GDBAdapter::getGDBMIResult
+ * Finds the GDBMIResult from GDBMIResultList.
+ * \param variable -  the name of GDBMIResult to find.
+ * \param resultsList - GDBMIResultList
+ * \return GDBMIResult
+ */
 GDBMIResult* GDBAdapter::getGDBMIResult(const char *variable, GDBMIResultList resultsList)
 {
   GDBMIResultList::iterator it;
-  for (it = resultsList.begin(); it != resultsList.end(); ++it)
-  {
+  for (it = resultsList.begin(); it != resultsList.end(); ++it) {
     GDBMIResult *pGDBMIResult = *it;
-    if (pGDBMIResult->variable.compare(variable) == 0)
-    {
+    if (pGDBMIResult->variable.compare(variable) == 0) {
       return pGDBMIResult;
     }
   }
@@ -866,16 +800,15 @@ GDBMIResult* GDBAdapter::getGDBMIResult(const char *variable, GDBMIResultList re
 }
 
 /*!
-  Finds the constant value from GDBMIResult
-  \param pGDBMIResult - pointer to GDBMIResult
-  \return the constant value.
-  */
+ * \brief GDBAdapter::getGDBMIConstantValue
+ * Finds the constant value from GDBMIResult
+ * \param pGDBMIResult - pointer to GDBMIResult
+ * \return the constant value.
+ */
 QString GDBAdapter::getGDBMIConstantValue(GDBMIResult *pGDBMIResult)
 {
-  if (pGDBMIResult)
-  {
-    if (pGDBMIResult->miValue->type == GDBMIValue::ConstantValue)
-    {
+  if (pGDBMIResult) {
+    if (pGDBMIResult->miValue->type == GDBMIValue::ConstantValue) {
       return StringHandler::unparse(QString(pGDBMIResult->miValue->value.c_str()));
     }
   }
@@ -883,9 +816,10 @@ QString GDBAdapter::getGDBMIConstantValue(GDBMIResult *pGDBMIResult)
 }
 
 /*!
-  Sends the -break-insert command to GDB.
-  \param pBreakpointTreeItem - pointer to BreakpointTreeItem
-  */
+ * \brief GDBAdapter::insertBreakpoint
+ * Sends the -break-insert command to GDB.
+ * \param pBreakpointTreeItem - pointer to BreakpointTreeItem
+ */
 void GDBAdapter::insertBreakpoint(BreakpointTreeItem *pBreakpointTreeItem)
 {
   QFileInfo fileInfo(pBreakpointTreeItem->getFilePath());
@@ -896,9 +830,10 @@ void GDBAdapter::insertBreakpoint(BreakpointTreeItem *pBreakpointTreeItem)
 }
 
 /*!
-  Sets the debugger suspended.\n
-  Sends the notification to StackFramesWidget and LocalsWidget by emitting the signal inferiorSuspended
-  */
+ * \brief GDBAdapter::suspendDebugger
+ * Sets the debugger suspended.\n
+ * Sends the notification to StackFramesWidget and LocalsWidget by emitting the signal inferiorSuspended
+ */
 void GDBAdapter::suspendDebugger()
 {
   setInferiorSuspended(true);
@@ -908,10 +843,24 @@ void GDBAdapter::suspendDebugger()
 }
 
 /*!
-  Helper function for handling the GDB process start up.
-  \see GDBAdapter::handleGDBProcessStarted
-  \see GDBAdapter::handleGDBProcessStartedForAttach
-  */
+ * \brief GDBAdapter::resumeDebugger
+ * Sets the debugger resumed.\n
+ * Sends the notification to StackFramesWidget and LocalsWidget by emitting the signal inferiorResumed
+ */
+void GDBAdapter::resumeDebugger()
+{
+  setInferiorSuspended(false);
+  setInferiorTerminated(false);
+  setInferiorRunning(true);
+  emit inferiorResumed();
+}
+
+/*!
+ * \brief GDBAdapter::handleGDBProcessStartedHelper
+ * Helper function for handling the GDB process start up.
+ * \see GDBAdapter::handleGDBProcessStarted
+ * \see GDBAdapter::handleGDBProcessStartedForAttach
+ */
 void GDBAdapter::handleGDBProcessStartedHelper()
 {
   setGDBRunning(true);
@@ -955,26 +904,28 @@ void GDBAdapter::handleGDBProcessStartedHelper()
 }
 
 /*!
-  Writes the debugger command to the omeditdebugger.log file.
-  \param command - the command to write
-  */
+ * \brief GDBAdapter::writeDebuggerCommandLog
+ * Writes the debugger command to the omeditdebugger.log file.
+ * \param command - the command to write
+ * \param command
+ */
 void GDBAdapter::writeDebuggerCommandLog(QByteArray command)
 {
-  if (mDebuggerLogFileTextStream.device())
-  {
+  if (mDebuggerLogFileTextStream.device()) {
     mDebuggerLogFileTextStream << "MI TxThread :: " << command << "\n\n";
     mDebuggerLogFileTextStream.flush();
   }
 }
 
 /*!
-  Writes the debugger response to the omeditdebugger.log file.
-  \param response - the response to write
-  */
+ * \brief GDBAdapter::writeDebuggerResponseLog
+ * Writes the debugger response to the omeditdebugger.log file.
+ * \param response - the response to write
+ * \param response
+ */
 void GDBAdapter::writeDebuggerResponseLog(QString response)
 {
-  if (mDebuggerLogFileTextStream.device())
-  {
+  if (mDebuggerLogFileTextStream.device()) {
     QString newLine = response.endsWith("\n") ? "\n" : "\n\n";
     mDebuggerLogFileTextStream << "MI RxThread :: " << response << newLine;
     mDebuggerLogFileTextStream.flush();
@@ -982,8 +933,9 @@ void GDBAdapter::writeDebuggerResponseLog(QString response)
 }
 
 /*!
-  Reads the list of breakpoints from BreakpointsTreeModel and inserts them in GDB.\n
-  */
+ * \brief GDBAdapter::insertBreakpoints
+ * Reads the list of breakpoints from BreakpointsTreeModel and inserts them in GDB.\n
+ */
 void GDBAdapter::insertBreakpoints()
 {
   QList<BreakpointTreeItem*> breakpoints;
@@ -994,36 +946,30 @@ void GDBAdapter::insertBreakpoints()
 }
 
 /*!
-  Starts the debugger.\n
-  Sends the -exec-run command.\n
-  Sends the -data-evaluate-expression changeStdStreamBuffer() command.\n
-  Sends the notification to StackFramesWidget and LocalsWidget by emitting the signal inferiorResumed
-  */
+ * \brief GDBAdapter::startDebugger
+ * Starts the debugger.\n
+ * Sends the -exec-run command.\n
+ * Sends the -data-evaluate-expression changeStdStreamBuffer() command.\n
+ * Sends the notification to StackFramesWidget and LocalsWidget by emitting the signal inferiorResumed
+ */
 void GDBAdapter::startDebugger()
 {
   setInferiorSuspended(false);
   setInferiorTerminated(false);
   setInferiorRunning(true);
+  setChangeStdStreamBuffer(false);
+  postCommand(CommandFactory::breakInsert("CevalScriptBackend.mo", 2626));
+  mpDebuggerMainWindow->getStackFramesWidget()->setSelectedThread(1);
+  mpDebuggerMainWindow->getStackFramesWidget()->setSelectedFrame(0);
   postCommand(CommandFactory::execRun());
-  postCommand(CommandFactory::changeStdStreamBuffer(), GDBAdapter::NonCriticalResponse);
   emit inferiorResumed();
 }
 
 /*!
-  Sets the debugger resumed.\n
-  Sends the notification to StackFramesWidget and LocalsWidget by emitting the signal inferiorResumed
-  */
-void GDBAdapter::resumeDebugger()
-{
-  setInferiorSuspended(false);
-  setInferiorTerminated(false);
-  setInferiorRunning(true);
-  emit inferiorResumed();
-}
-
-/*!
-  Process the GDB output.
-  */
+ * \brief GDBAdapter::processGDBMIResponse
+ * Process the GDB output.
+ * \param response
+ */
 void GDBAdapter::processGDBMIResponse(QString response)
 {
   if (response.isEmpty() || response == "(gdb) ") {
@@ -1067,23 +1013,24 @@ void GDBAdapter::processGDBMIResponse(QString response)
 }
 
 /*!
-  Process the GDBMIOutOfBandRecord.
-  */
+ * \brief GDBAdapter::processGDBMIOutOfBandRecord
+ * Process the GDBMIOutOfBandRecord.
+ * \param pGDBMIOutOfBandRecord
+ */
 void GDBAdapter::processGDBMIOutOfBandRecord(GDBMIOutOfBandRecord *pGDBMIOutOfBandRecord)
 {
-  if (pGDBMIOutOfBandRecord->type == GDBMIOutOfBandRecord::AsyncRecord)
-  {
+  if (pGDBMIOutOfBandRecord->type == GDBMIOutOfBandRecord::AsyncRecord) {
     processGDBMIResultRecord(pGDBMIOutOfBandRecord->miResultRecord);
-  }
-  else if (pGDBMIOutOfBandRecord->type == GDBMIOutOfBandRecord::StreamRecord)
-  {
+  } else if (pGDBMIOutOfBandRecord->type == GDBMIOutOfBandRecord::StreamRecord) {
     handleGDBMIStreamRecord(pGDBMIOutOfBandRecord->miStreamRecord);
   }
 }
 
 /*!
-  Process the GDBMIResultRecord.
-  */
+ * \brief GDBAdapter::processGDBMIResultRecord
+ * Process the GDBMIResultRecord.
+ * \param pGDBMIResultRecord
+ */
 void GDBAdapter::processGDBMIResultRecord(GDBMIResultRecord *pGDBMIResultRecord)
 {
   /* output not as a response of command */
@@ -1114,10 +1061,9 @@ void GDBAdapter::processGDBMIResultRecord(GDBMIResultRecord *pGDBMIResultRecord)
                pGDBMIResultRecord->cls.compare("library-loaded") == 0 ||
                pGDBMIResultRecord->cls.compare("thread-exited") == 0 ||
                pGDBMIResultRecord->cls.compare("thread-group-exited") == 0) {
-      /*
-        Display few of the notify-async-output on the StackFramesWidget message label.
-        Not sure what to do of these notification at the moment.
-        */
+      /* Display few of the notify-async-output on the StackFramesWidget message label.
+       * Not sure what to do of these notification at the moment.
+       */
       mpDebuggerMainWindow->getStackFramesWidget()->setStatusMessage(mCurrentResponse);
     } else if (pGDBMIResultRecord->cls.compare("error") == 0) {
       /* handle the error response */
@@ -1136,6 +1082,9 @@ void GDBAdapter::processGDBMIResultRecord(GDBMIResultRecord *pGDBMIResultRecord)
       if (cmd.mGDBCommandCallback) {
         (this->*cmd.mGDBCommandCallback)(pGDBMIResultRecord);
       }
+      if (cmd.mFlags & GDBAdapter::BlockUntilResponse) {
+        emit commandCompleted();
+      }
       cmd.mCompleted = true;
       mGDBMICommandsHash[pGDBMIResultRecord->token] = cmd;
     }
@@ -1153,12 +1102,13 @@ void GDBAdapter::processGDBMIResultRecord(GDBMIResultRecord *pGDBMIResultRecord)
 }
 
 /*!
-  Handles the GDBMIStreamRecord.
-  */
+ * \brief GDBAdapter::handleGDBMIStreamRecord
+ * Handles the GDBMIStreamRecord.
+ * \param pGDBMIStreamRecord
+ */
 void GDBAdapter::handleGDBMIStreamRecord(GDBMIStreamRecord *pGDBMIStreamRecord)
 {
-  switch (pGDBMIStreamRecord->type)
-  {
+  switch (pGDBMIStreamRecord->type) {
     case GDBMIStreamRecord::ConsoleStream:
       handleGDBMIConsoleStream(pGDBMIStreamRecord);
       break;
@@ -1174,24 +1124,25 @@ void GDBAdapter::handleGDBMIStreamRecord(GDBMIStreamRecord *pGDBMIStreamRecord)
 }
 
 /*!
-  Handles the GDBMIStreamRecord.
-  */
+ * \brief GDBAdapter::handleGDBMIConsoleStream
+ * Handles the GDBMIStreamRecord.
+ * \param pGDBMIStreamRecord
+ */
 void GDBAdapter::handleGDBMIConsoleStream(GDBMIStreamRecord *pGDBMIStreamRecord)
 {
   QString consoleData = StringHandler::unparse(pGDBMIStreamRecord->value.c_str());
   mPendingConsoleStreamOutput += consoleData;
   /* Only display some selected console messages */
-  if (consoleData.startsWith("Reading symbols from ")
-      || consoleData.startsWith("[New ")
-      || consoleData.startsWith("[Thread "))
-  {
+  if (consoleData.startsWith("Reading symbols from ") || consoleData.startsWith("[New ") || consoleData.startsWith("[Thread ")) {
     mpDebuggerMainWindow->getStackFramesWidget()->setStatusMessage(consoleData.simplified());
   }
 }
 
 /*!
-  Handles the GDBMIStreamRecord.
-  */
+ * \brief GDBAdapter::handleGDBMILogStream
+ * Handles the GDBMIStreamRecord.
+ * \param pGDBMIStreamRecord
+ */
 void GDBAdapter::handleGDBMILogStream(GDBMIStreamRecord *pGDBMIStreamRecord)
 {
   QString LogData = StringHandler::unparse(pGDBMIStreamRecord->value.c_str());
@@ -1200,9 +1151,12 @@ void GDBAdapter::handleGDBMILogStream(GDBMIStreamRecord *pGDBMIStreamRecord)
 }
 
 /*!
-  Checks if debugger is stopped on a non-modelica file.
-  Performs silent -exec-next or -exec-step until we reach a valid modelica file.
-  */
+ * \brief GDBAdapter::skipSteppedInFrames
+ * Checks if debugger is stopped on a non-modelica file.
+ * Performs silent -exec-next or -exec-step until we reach a valid modelica file.
+ * \param pGDBMIResultRecord
+ * \return
+ */
 bool GDBAdapter::skipSteppedInFrames(GDBMIResultRecord *pGDBMIResultRecord)
 {
   GDBMIResult *pGDBMIResult = getGDBMIResult("frame", pGDBMIResultRecord->miResultsList);
@@ -1224,10 +1178,18 @@ bool GDBAdapter::skipSteppedInFrames(GDBMIResultRecord *pGDBMIResultRecord)
 }
 
 /*!
-  Handles the GDB stopped event.
-  */
+ * \brief GDBAdapter::handleStoppedEvent
+ * Handles the GDB stopped event.
+ * \param reason
+ * \param pGDBMIResultRecord
+ */
 void GDBAdapter::handleStoppedEvent(string reason, GDBMIResultRecord *pGDBMIResultRecord)
 {
+  // call changeStdStreamBuffer no matter for what reason we have stopped
+  if (!isChangeStdStreamBuffer()) {
+    setChangeStdStreamBuffer(true);
+    postCommand(CommandFactory::changeStdStreamBuffer(), GDBAdapter::NonCriticalResponse | GDBAdapter::BlockUntilResponse);
+  }
   if (reason.compare("\"breakpoint-hit\"") == 0) {
     handleBreakpointHit(pGDBMIResultRecord);
   } else if (reason.compare("\"end-stepping-range\"") == 0) {
@@ -1244,13 +1206,16 @@ void GDBAdapter::handleStoppedEvent(string reason, GDBMIResultRecord *pGDBMIResu
     /* Get the list of threads. */
     postCommand(CommandFactory::threadInfo(), &GDBAdapter::threadInfoCB);
     /* Get the list of stack frames. */
-    postCommand(CommandFactory::stackListFrames(), &GDBAdapter::stackListFramesCB);
+    StackFramesWidget *pStackFramesWidget = mpDebuggerMainWindow->getStackFramesWidget();
+    postCommand(CommandFactory::stackListFrames(pStackFramesWidget->getSelectedThread()), &GDBAdapter::stackListFramesCB);
   }
 }
 
 /*!
-  Handles the GDB breakpoint hit event.
-  */
+ * \brief GDBAdapter::handleBreakpointHit
+ * Handles the GDB breakpoint hit event.
+ * \param pGDBMIResultRecord
+ */
 void GDBAdapter::handleBreakpointHit(GDBMIResultRecord *pGDBMIResultRecord)
 {
   GDBMIResult *pGDBMIResult = getGDBMIResult("frame", pGDBMIResultRecord->miResultsList);
@@ -1259,8 +1224,9 @@ void GDBAdapter::handleBreakpointHit(GDBMIResultRecord *pGDBMIResultRecord)
     QString file = getGDBMIConstantValue(getGDBMIResult("file", resultsList));
     if (file.compare("Catch.omc") == 0) {
       disableCatchOMCBreakpoint();
-      /*since we reached inside the Catch.omc::mmc_catch_dummy_fn() function we should move out from there
-        send -exec-finish command to return back to actual function.*/
+      /* since we reached inside the Catch.omc::mmc_catch_dummy_fn() function we should move out from there
+       * send -exec-finish command to return back to actual function.
+       */
       postCommand(CommandFactory::execFinish());
       return;
     }
@@ -1273,12 +1239,15 @@ void GDBAdapter::handleBreakpointHit(GDBMIResultRecord *pGDBMIResultRecord)
   /* Get the list of threads. */
   postCommand(CommandFactory::threadInfo(), &GDBAdapter::threadInfoCB);
   /* Get the list of stack frames. */
-  postCommand(CommandFactory::stackListFrames(), &GDBAdapter::stackListFramesCB);
+  StackFramesWidget *pStackFramesWidget = mpDebuggerMainWindow->getStackFramesWidget();
+  postCommand(CommandFactory::stackListFrames(pStackFramesWidget->getSelectedThread()), &GDBAdapter::stackListFramesCB);
 }
 
 /*!
-  Handles the GDB end stepping range event.
-  */
+ * \brief GDBAdapter::handleSteppingRange
+ * Handles the GDB end stepping range event.
+ * \param pGDBMIResultRecord
+ */
 void GDBAdapter::handleSteppingRange(GDBMIResultRecord *pGDBMIResultRecord)
 {
   disableCatchOMCBreakpoint();
@@ -1289,26 +1258,32 @@ void GDBAdapter::handleSteppingRange(GDBMIResultRecord *pGDBMIResultRecord)
     /* Get the list of threads. */
     postCommand(CommandFactory::threadInfo(), &GDBAdapter::threadInfoCB);
     /* Get the list of stack frames. */
-    postCommand(CommandFactory::stackListFrames(), &GDBAdapter::stackListFramesCB);
+    StackFramesWidget *pStackFramesWidget = mpDebuggerMainWindow->getStackFramesWidget();
+    postCommand(CommandFactory::stackListFrames(pStackFramesWidget->getSelectedThread()), &GDBAdapter::stackListFramesCB);
   }
 }
 
 /*!
-  Handles the GDB function finished event.
-  */
+ * \brief GDBAdapter::handleFunctionFinished
+ * Handles the GDB function finished event.
+ * \param pGDBMIResultRecord
+ */
 void GDBAdapter::handleFunctionFinished(GDBMIResultRecord *pGDBMIResultRecord)
 {
   if (skipSteppedInFrames(pGDBMIResultRecord)) {
     /* Get the list of threads. */
     postCommand(CommandFactory::threadInfo(), &GDBAdapter::threadInfoCB);
     /* Get the list of stack frames. */
-    postCommand(CommandFactory::stackListFrames(), &GDBAdapter::stackListFramesCB);
+    StackFramesWidget *pStackFramesWidget = mpDebuggerMainWindow->getStackFramesWidget();
+    postCommand(CommandFactory::stackListFrames(pStackFramesWidget->getSelectedThread()), &GDBAdapter::stackListFramesCB);
   }
 }
 
 /*!
-  Handles the GDB signal received event.
-  */
+ * \brief GDBAdapter::handleSignalReceived
+ * Handles the GDB signal received event.
+ * \param pGDBMIResultRecord
+ */
 void GDBAdapter::handleSignalReceived(GDBMIResultRecord *pGDBMIResultRecord)
 {
   /* Display signal received message */
@@ -1340,38 +1315,31 @@ void GDBAdapter::handleSignalReceived(GDBMIResultRecord *pGDBMIResultRecord)
     /* Get the list of threads. */
     postCommand(CommandFactory::threadInfo(), &GDBAdapter::threadInfoCB);
     /* Get the list of stack frames. */
-    postCommand(CommandFactory::stackListFrames(), &GDBAdapter::stackListFramesCB);
+    StackFramesWidget *pStackFramesWidget = mpDebuggerMainWindow->getStackFramesWidget();
+    postCommand(CommandFactory::stackListFrames(pStackFramesWidget->getSelectedThread()), &GDBAdapter::stackListFramesCB);
   }
 }
 
 /*!
-  Callback function for handling the -stack-list-frames command.
-  \param pGDBMIResultRecord - the stack list frames result record.
-  */
-void GDBAdapter::stackListFramesCB(GDBMIResultRecord *pGDBMIResultRecord)
-{
-  GDBMIResult *pStackGDBMIResult = getGDBMIResult("stack", pGDBMIResultRecord->miResultsList);
-  if (pStackGDBMIResult)
-    emit stackListFrames(pStackGDBMIResult->miValue);
-}
-
-/*!
-  Callback function for handling the -thread-info command.
-  \param pGDBMIResultRecord - the threads list result record.
-  */
+ * \brief GDBAdapter::threadInfoCB
+ * Callback function for handling the -thread-info command.
+ * \param pGDBMIResultRecord - the threads list result record.
+ */
 void GDBAdapter::threadInfoCB(GDBMIResultRecord *pGDBMIResultRecord)
 {
   GDBMIResult *pThreadsGDBMIResult = getGDBMIResult("threads", pGDBMIResultRecord->miResultsList);
   QString currentThreadId = getGDBMIConstantValue(getGDBMIResult("current-thread-id", pGDBMIResultRecord->miResultsList));
-
-  if (pThreadsGDBMIResult)
+  if (pThreadsGDBMIResult) {
     emit threadInfo(pThreadsGDBMIResult->miValue, currentThreadId);
+  }
 }
 
 /*!
-  Callback function for handling the "attach pid" command.
-  \param pGDBMIResultRecord - the attach command result record.
-  */
+ * \brief GDBAdapter::attachCB
+ * Callback function for handling the "attach pid" command.
+ * \param pGDBMIResultRecord - the attach command result record.
+ * \param pGDBMIResultRecord
+ */
 void GDBAdapter::attachCB(GDBMIResultRecord *pGDBMIResultRecord)
 {
   if (pGDBMIResultRecord->cls.compare("running") == 0 || pGDBMIResultRecord->cls.compare("done") == 0) {
@@ -1396,9 +1364,10 @@ void GDBAdapter::attachCB(GDBMIResultRecord *pGDBMIResultRecord)
 }
 
 /*!
-  Slot activated when started signal of GDB process is raised.
-  Sets the GDB running state flag to true.
-  */
+ * \brief GDBAdapter::handleGDBProcessStarted
+ * Slot activated when started signal of GDB process is raised.
+ * Sets the GDB running state flag to true.
+ */
 void GDBAdapter::handleGDBProcessStarted()
 {
   handleGDBProcessStartedHelper();
@@ -1407,9 +1376,10 @@ void GDBAdapter::handleGDBProcessStarted()
 }
 
 /*!
-  Slot activated when started signal of GDB process is raised for the simulation.\n
-  Saves the result file last modified time.
-  */
+ * \brief GDBAdapter::handleGDBProcessStartedForSimulation
+ * Slot activated when started signal of GDB process is raised for the simulation.\n
+ * Saves the result file last modified time.
+ */
 void GDBAdapter::handleGDBProcessStartedForSimulation()
 {
   QFileInfo resultFileInfo(QString(mSimulationOptions.getWorkingDirectory()).append("/").append(mSimulationOptions.getResultFileName()));
@@ -1419,9 +1389,10 @@ void GDBAdapter::handleGDBProcessStartedForSimulation()
 }
 
 /*!
-  Slot activated when started signal of GDB process is raised.\n
-  Sets the GDB running state flag to true. Posts the attach to process command.
-  */
+ * \brief GDBAdapter::handleGDBProcessStartedForAttach
+ * Slot activated when started signal of GDB process is raised.\n
+ * Sets the GDB running state flag to true. Posts the attach to process command.
+ */
 void GDBAdapter::handleGDBProcessStartedForAttach()
 {
   handleGDBProcessStartedHelper();
@@ -1430,38 +1401,43 @@ void GDBAdapter::handleGDBProcessStartedForAttach()
 }
 
 /*!
-  Slot activated when readyReadStandardOutput signal of GDB process is raised.
-  Reads the output stream of GDB, parses the result and generates the events.
-  */
+ * \brief GDBAdapter::readGDBStandardOutput
+ * Slot activated when readyReadStandardOutput signal of GDB process is raised.
+ * Reads the output stream of GDB, parses the result and generates the events.
+ */
 void GDBAdapter::readGDBStandardOutput()
 {
   mGDBCommandTimer.start(); // Restart timer.
   int newstart = 0;
   int scan = mStandardOutputBuffer.size();
-  mStandardOutputBuffer.append(mpGDBProcess->readAllStandardOutput());
-  // This can trigger when a dialog starts a nested event loop.
-  if (isParsingStandardOutput())
+  QString standardOutput = mpGDBProcess->readAllStandardOutput();
+  mStandardOutputBuffer.append(standardOutput);
+  // This can trigger when a blocking command starts an event loop.
+  if (isParsingStandardOutput()) {
+    GDBMICommand cmd = mGDBMICommandsHash.value(currentToken());
+    if (cmd.mFlags & GDBAdapter::BlockUntilResponse && standardOutput.startsWith(QString::number(currentToken()))) {
+      emit commandCompleted();
+    }
     return;
-
-  while (newstart < mStandardOutputBuffer.size())
-  {
+  }
+  while (newstart < mStandardOutputBuffer.size()) {
     int start = newstart;
     int end = mStandardOutputBuffer.indexOf('\n', scan);
-    if (end < 0)
-    {
+    if (end < 0) {
       mStandardOutputBuffer.remove(0, start);
       return;
     }
     newstart = end + 1;
     scan = newstart;
-    if (end == start)
+    if (end == start) {
       continue;
+    }
 #ifdef Q_OS_WIN
-    if (mStandardOutputBuffer.at(end - 1) == '\r')
-    {
+    if (mStandardOutputBuffer.at(end - 1) == '\r') {
       --end;
-      if (end == start)
+      if (end == start) {
         continue;
+      }
     }
 #endif
     setParsingStandardOutput(true);
@@ -1475,9 +1451,10 @@ void GDBAdapter::readGDBStandardOutput()
 }
 
 /*!
-  Slot activated when readyReadStandardError signal of GDB process is raised.
-  Reads the error stream of GDB.
-  */
+ * \brief GDBAdapter::readGDBErrorOutput
+ * Slot activated when readyReadStandardError signal of GDB process is raised.
+ * Reads the error stream of GDB.
+ */
 void GDBAdapter::readGDBErrorOutput()
 {
   QString response = QString(mpGDBProcess->readAllStandardError());
@@ -1487,9 +1464,11 @@ void GDBAdapter::readGDBErrorOutput()
 }
 
 /*!
-  Slot activated when error signal of GDB Process is raised.
-  Sets the GDB running state flag to false.
-  */
+ * \brief GDBAdapter::handleGDBProcessError
+ * Slot activated when error signal of GDB Process is raised.
+ * Sets the GDB running state flag to false.
+ * \param error
+ */
 void GDBAdapter::handleGDBProcessError(QProcess::ProcessError error)
 {
   /* this signal is raised when we kill the timed out GDB forcefully. */
@@ -1513,14 +1492,17 @@ void GDBAdapter::handleGDBProcessError(QProcess::ProcessError error)
 }
 
 /*!
-  Slot activated when finished signal of GDB Process is raised.
-  Sets the GDB running state flag to false.
-  */
+ * \brief GDBAdapter::handleGDBProcessFinished
+ * Slot activated when finished signal of GDB Process is raised.
+ * Sets the GDB running state flag to false.
+ * \param exitCode
+ */
 void GDBAdapter::handleGDBProcessFinished(int exitCode)
 {
   Q_UNUSED(exitCode);
-  if (mGDBCommandTimer.isActive())
+  if (mGDBCommandTimer.isActive()) {
     mGDBCommandTimer.stop();
+  }
   setGDBRunning(false);
   /* close the debugger log file */
   mDebuggerLogFile.close();
@@ -1528,9 +1510,10 @@ void GDBAdapter::handleGDBProcessFinished(int exitCode)
 }
 
 /*!
-  Slot activated when finished signal of GDB Process is raised.
-
-  */
+ * \brief GDBAdapter::handleGDBProcessFinishedForSimulation
+ * Slot activated when finished signal of GDB Process is raised.
+ * \param exitCode
+ */
 void GDBAdapter::handleGDBProcessFinishedForSimulation(int exitCode)
 {
   Q_UNUSED(exitCode);
@@ -1540,21 +1523,21 @@ void GDBAdapter::handleGDBProcessFinishedForSimulation(int exitCode)
 }
 
 /*!
-  Slot activated when timeout signal of mGDBCommandTimer is raised.
-  */
+ * \brief GDBAdapter::GDBcommandTimeout
+ * Slot activated when timeout signal of mGDBCommandTimer is raised.
+ */
 void GDBAdapter::GDBcommandTimeout()
 {
   QList<int> keys = mGDBMICommandsHash.keys();
   qSort(keys);
   bool killIt = false;
-  foreach (int key, keys)
-  {
+  foreach (int key, keys) {
     const GDBMICommand &cmd = mGDBMICommandsHash.value(key);
-    if (!cmd.mCompleted && !(cmd.mFlags & GDBAdapter::NonCriticalResponse))
+    if (!cmd.mCompleted && !(cmd.mFlags & GDBAdapter::NonCriticalResponse)) {
       killIt = true;
+    }
   }
-  if (killIt)
-  {
+  if (killIt) {
     int timeOut = mGDBCommandTimer.interval();
     const QString msg = tr("The gdb process has not responded "
                            "to a command within %n second(s). This could mean it is stuck "
@@ -1567,11 +1550,9 @@ void GDBAdapter::GDBcommandTimeout()
     pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
     pMessageBox->button(QMessageBox::Cancel)->setText(tr("Give GDB more time"));
     pMessageBox->button(QMessageBox::Ok)->setText(tr("Stop debugging"));
-    if (pMessageBox->exec() == QMessageBox::Ok)
-    {
+    if (pMessageBox->exec() == QMessageBox::Ok) {
       /* make sure you don't kill the GDB twice. */
-      if (!isGDBKilled())
-      {
+      if (!isGDBKilled()) {
         setGDBKilled(true);
         mpGDBProcess->kill();
       }
