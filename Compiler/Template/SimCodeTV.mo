@@ -1077,6 +1077,7 @@ package BackendDAE
     record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
     record JAC_VAR end JAC_VAR;
     record JAC_DIFF_VAR end JAC_DIFF_VAR;
+    record SEED_VAR end SEED_VAR;
     record OPT_CONSTR end OPT_CONSTR;
     record OPT_FCONSTR end OPT_FCONSTR;
     record OPT_INPUT_WITH_DER end OPT_INPUT_WITH_DER;
@@ -3080,6 +3081,17 @@ package ComponentReference
     input DAE.ComponentRef inCref;
     output DAE.ComponentRef outCref;
   end crefPrefixPrevious;
+
+  function crefPrefixDer
+    input DAE.ComponentRef inCref;
+    output DAE.ComponentRef outCref;
+  end crefPrefixDer;
+
+  function makeUntypedCrefIdent
+    input DAE.Ident ident;
+    output DAE.ComponentRef outCrefIdent;
+  end makeUntypedCrefIdent;
+
 end ComponentReference;
 
 package Expression
@@ -3284,6 +3296,7 @@ package Flags
   constant ConfigFlag PROFILING_LEVEL;
   constant ConfigFlag CPP_FLAGS;
   constant ConfigFlag MATRIX_FORMAT;
+  constant ConfigFlag SYM_EULER;
   constant DebugFlag FMU_EXPERIMENTAL;
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;

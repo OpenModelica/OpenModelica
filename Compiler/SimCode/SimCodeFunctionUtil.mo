@@ -237,7 +237,7 @@ algorithm
     case (_, _)
       equation
         //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
-        badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.T_REAL_DEFAULT, {});
+        badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
         /* Todo: This also generates an error for example itearation variables, so i commented  out
         "Template did not find the simulation variable for "+ ComponentReference.printComponentRefStr(cref) + ". ";
         Error.addInternalError(errstr, sourceInfo());*/

@@ -107,7 +107,9 @@ protected
 
 function opaqueStr
   input SimCodeVar.SimVar var;
-  output String str = "#opaqueStr#";
+  output String str;
+algorithm
+  str := "#SimVar(index="+String(var.index)+",name="+ComponentReference.printComponentRefStr(var.name)+")#";
 end opaqueStr;
 
 annotation(__OpenModelica_Interface="backend");

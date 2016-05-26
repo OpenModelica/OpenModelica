@@ -319,8 +319,8 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParam
 
 
   // define initial state vector as vector of value references
-  #define STATES { <%vars.stateVars |> SIMVAR(__) => if stringEq(crefStr(name),"$dummy") then '' else '<%cref(name)%>_'  ;separator=", "%> }
-  #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => if stringEq(crefStr(name),"der($dummy)") then '' else '<%cref(name)%>_'  ;separator=", "%> }
+  #define STATES { <%vars.stateVars |> SIMVAR(__) => if stringEq(crefStr(name),"$dummy") then '' else '<%crefDefine(name)%>_vr'  ;separator=", "%> }
+  #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => if stringEq(crefStr(name),"der($dummy)") then '' else '<%crefDefine(name)%>_vr'  ;separator=", "%> }
 
   <%System.tmpTickReset(0)%>
   <%(functions |> fn => defineExternalFunction(fn) ; separator="\n")%>
@@ -346,7 +346,7 @@ match simVar
   <<>>
   else
   <<
-  #define <%cref(name)%>_ <%System.tmpTick()%> <%description%>
+  #define <%crefDefine(name)%>_vr <%System.tmpTick()%> <%description%>
   >>
 end DefineVariables;
 
@@ -425,7 +425,7 @@ template initializeFunction(list<SimEqSystem> allEquations)
 
     <%eqPart%>
     <%allEquations |> SES_SIMPLE_ASSIGN(__) =>
-      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
+      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%escapeModelicaStringToCString(crefStrNoUnderscore(cref))%>", <%cref(cref)%>); }'
     ;separator="\n"%>
 
   }
@@ -910,11 +910,11 @@ match simVar
   if stringEq(arrayName, "stringVars")
   then
   <<
-  case <%cref(name)%>_ : return MMC_STRINGDATA(comp->fmuData->localData[0]-><%arrayName%>[<%index%>]); break;
+  case <%crefDefine(name)%>_vr : return MMC_STRINGDATA(comp->fmuData->localData[0]-><%arrayName%>[<%index%>]); break;
   >>
   else
   <<
-  case <%cref(name)%>_ : return comp->fmuData->localData[0]-><%arrayName%>[<%index%>]; break;
+  case <%crefDefine(name)%>_vr : return comp->fmuData->localData[0]-><%arrayName%>[<%index%>]; break;
   >>
 end SwitchVars;
 
@@ -927,11 +927,11 @@ match simVar
   if stringEq(arrayName,  "stringParameter")
   then
   <<
-  case <%cref(name)%>_ : return MMC_STRINGDATA(comp->fmuData->simulationInfo-><%arrayName%>[<%index%>]); break;
+  case <%crefDefine(name)%>_vr : return MMC_STRINGDATA(comp->fmuData->simulationInfo-><%arrayName%>[<%index%>]); break;
   >>
   else
   <<
-  case <%cref(name)%>_ : return comp->fmuData->simulationInfo-><%arrayName%>[<%index%>]; break;
+  case <%crefDefine(name)%>_vr : return comp->fmuData->simulationInfo-><%arrayName%>[<%index%>]; break;
   >>
 end SwitchParameters;
 
@@ -942,7 +942,7 @@ template SwitchAliasVars(SimVar simVar, String arrayName, String negate)
 match simVar
   case SIMVAR(__) then
     let description = if comment then '// "<%comment%>"'
-    let crefName = '<%cref(name)%>_'
+    let crefName = '<%crefDefine(name)%>_vr'
       match aliasvar
         case ALIAS(__) then
         if stringEq(crefStr(varName),"time") then
@@ -951,7 +951,7 @@ match simVar
         >>
         else
         <<
-        case <%crefName%> : return get<%arrayName%>(comp, <%cref(varName)%>_); break;
+        case <%crefName%> : return get<%arrayName%>(comp, <%crefDefine(varName)%>_vr); break;
         >>
         case NEGATEDALIAS(__) then
         if stringEq(crefStr(varName),"time") then
@@ -960,7 +960,7 @@ match simVar
         >>
         else
         <<
-        case <%crefName%> : return (<%negate%> get<%arrayName%>(comp, <%cref(varName)%>_)); break;
+        case <%crefName%> : return (<%negate%> get<%arrayName%>(comp, <%crefDefine(varName)%>_vr)); break;
         >>
      end match
 end SwitchAliasVars;
@@ -980,11 +980,11 @@ match simVar
   if stringEq(arrayName, "stringVars")
   then
   <<
-  case <%cref(name)%>_ : comp->fmuData->localData[0]-><%arrayName%>[<%index%>] = mmc_mk_scon(value); break;
+  case <%crefDefine(name)%>_vr : comp->fmuData->localData[0]-><%arrayName%>[<%index%>] = mmc_mk_scon(value); break;
   >>
   else
   <<
-  case <%cref(name)%>_ : comp->fmuData->localData[0]-><%arrayName%>[<%index%>] = value; break;
+  case <%crefDefine(name)%>_vr : comp->fmuData->localData[0]-><%arrayName%>[<%index%>] = value; break;
   >>
 end SwitchVarsSet;
 
@@ -997,11 +997,11 @@ match simVar
   if stringEq(arrayName, "stringParameter")
   then
   <<
-  case <%cref(name)%>_ : comp->fmuData->simulationInfo-><%arrayName%>[<%index%>] = mmc_mk_scon(value); break;
+  case <%crefDefine(name)%>_vr : comp->fmuData->simulationInfo-><%arrayName%>[<%index%>] = mmc_mk_scon(value); break;
   >>
   else
   <<
-  case <%cref(name)%>_ : comp->fmuData->simulationInfo-><%arrayName%>[<%index%>] = value; break;
+  case <%crefDefine(name)%>_vr : comp->fmuData->simulationInfo-><%arrayName%>[<%index%>] = value; break;
   >>
 end SwitchParametersSet;
 
@@ -1012,7 +1012,7 @@ template SwitchAliasVarsSet(SimVar simVar, String arrayName, String negate)
 match simVar
   case SIMVAR(__) then
     let description = if comment then '// "<%comment%>"'
-    let crefName = '<%cref(name)%>_'
+    let crefName = '<%crefDefine(name)%>_vr'
       match aliasvar
         case ALIAS(__) then
         if stringEq(crefStr(varName),"time") then
@@ -1020,7 +1020,7 @@ match simVar
         >>
         else
         <<
-        case <%crefName%> : return set<%arrayName%>(comp, <%cref(varName)%>_, value); break;
+        case <%crefName%> : return set<%arrayName%>(comp, <%crefDefine(varName)%>_vr, value); break;
         >>
         case NEGATEDALIAS(__) then
         if stringEq(crefStr(varName),"time") then
@@ -1028,7 +1028,7 @@ match simVar
         >>
         else
         <<
-        case <%crefName%> : return set<%arrayName%>(comp, <%cref(varName)%>_, (<%negate%> value)); break;
+        case <%crefName%> : return set<%arrayName%>(comp, <%crefDefine(varName)%>_vr, (<%negate%> value)); break;
         >>
      end match
 end SwitchAliasVarsSet;
