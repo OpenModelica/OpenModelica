@@ -5063,9 +5063,7 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       <%nls.crefs |> name hasindex i0 =>
         let namestr = cref(name)
         <<
-        data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
-        data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old1*/;
-        data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/, <%crefAttributes(name)%>.min, <%crefAttributes(name)%>.max);
+        data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%namestr%>;
         >>
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, threadData, <%nls.indexNonLinearSystem%>);
