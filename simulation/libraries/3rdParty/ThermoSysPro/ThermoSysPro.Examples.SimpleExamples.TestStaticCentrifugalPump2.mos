@@ -67,15 +67,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: Alias set with different nominal values
-//  * candidate: VanneReglante1.pro.T(nominal = 320.0)
-//  * candidate: VanneReglante1.T(nominal = 300.0)
-// => select value from VanneReglante1.T(nominal = 300.0) for variable: VanneReglante1.T
-// Warning: Alias set with different nominal values
-//  * candidate: Bache1.Cth.T(nominal = 300.0)
-//  * candidate: Bache1.pro.T(nominal = 320.0)
-//  * candidate: Bache1.T(nominal = 300.0)
-// => select value from Bache1.T(nominal = 300.0) for variable: Bache1.T
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // {"Files Equal!"}

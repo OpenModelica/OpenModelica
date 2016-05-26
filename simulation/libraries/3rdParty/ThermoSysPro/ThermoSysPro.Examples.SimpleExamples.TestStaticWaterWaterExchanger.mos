@@ -60,30 +60,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: Alias set with different nominal values
-//  * candidate: plateHeatExchanger.profs.T(nominal = 320.0)
-//  * candidate: plateHeatExchanger.Tsf(nominal = 300.0)
-// => select value from plateHeatExchanger.Tsf(nominal = 300.0) for variable: plateHeatExchanger.Tsf
-// Warning: Alias set with different nominal values
-//  * candidate: plateHeatExchanger.profe.T(nominal = 320.0)
-//  * candidate: plateHeatExchanger.Tef(nominal = 300.0)
-// => select value from plateHeatExchanger.Tef(nominal = 300.0) for variable: plateHeatExchanger.Tef
-// Warning: Alias set with different nominal values
-//  * candidate: plateHeatExchanger.procs.T(nominal = 320.0)
-//  * candidate: plateHeatExchanger.Tsc(nominal = 300.0)
-// => select value from plateHeatExchanger.Tsc(nominal = 300.0) for variable: plateHeatExchanger.Tsc
-// Warning: Alias set with different nominal values
-//  * candidate: plateHeatExchanger.proce.T(nominal = 320.0)
-//  * candidate: plateHeatExchanger.Tec(nominal = 300.0)
-// => select value from plateHeatExchanger.Tec(nominal = 300.0) for variable: plateHeatExchanger.Tec
-// Warning: Alias set with different nominal values
-//  * candidate: plateHeatExchanger.prof.T(nominal = 320.0)
-//  * candidate: plateHeatExchanger.Tmf(nominal = 300.0)
-// => select value from plateHeatExchanger.Tmf(nominal = 300.0) for variable: plateHeatExchanger.Tmf
-// Warning: Alias set with different nominal values
-//  * candidate: plateHeatExchanger.proc.T(nominal = 320.0)
-//  * candidate: plateHeatExchanger.Tmc(nominal = 300.0)
-// => select value from plateHeatExchanger.Tmc(nominal = 300.0) for variable: plateHeatExchanger.Tmc
 // "
 // {"Files Equal!"}
 // endResult

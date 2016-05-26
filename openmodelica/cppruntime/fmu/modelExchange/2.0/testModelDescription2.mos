@@ -30,45 +30,7 @@ readFile("modelDescription.tmp.xml");
 // true
 // ""
 // "SimCode: The model DrumBoiler has been translated to FMU"
-// "Warning: Alias set with several free start values
-//  * candidate: evaporator.p(start = evaporator.p_start)
-//  * candidate: evaporator.port_b.p(start = 5000000.0)
-//  * candidate: temperature.port.p(start = 5000000.0)
-//  * candidate: pressure.port.p(start = 5000000.0)
-//  * candidate: massFlowRate.port_a.p(start = 5000000.0)
-//  * candidate: massFlowRate.port_b.p(start = 5000000.0)
-//  * candidate: SteamValve.port_a.p(start = 5000000.0)
-//  * candidate: SteamValve.state_a.p(start = 5000000.0)
-//  * candidate: evaporator.port_a.p(start = 5000000.0)
-//  * candidate: pump.ports[1].p(start = 5000000.0)
-//  * candidate: pump.medium.state.p(start = 5000000.0)
-//  * candidate: pump.medium.sat.psat(start = 5000000.0)
-//  * candidate: evaporator.sat.psat(start = 5000000.0)
-// => select value from evaporator.p(start = evaporator.p_start) for variable: evaporator.p
-// Warning: Alias set with different nominal values
-//  * candidate: evaporator.sat.psat(nominal = 1000000.0)
-//  * candidate: pump.medium.sat.psat(nominal = 1000000.0)
-//  * candidate: pump.medium.state.p(nominal = 1000000.0)
-//  * candidate: pump.medium.p(nominal = 100000.0)
-//  * candidate: pump.ports[1].p(nominal = 1000000.0)
-//  * candidate: evaporator.port_a.p(nominal = 1000000.0)
-//  * candidate: SteamValve.state_a.p(nominal = 1000000.0)
-//  * candidate: SteamValve.port_a.p(nominal = 1000000.0)
-//  * candidate: massFlowRate.port_b.p(nominal = 1000000.0)
-//  * candidate: massFlowRate.port_a.p(nominal = 1000000.0)
-//  * candidate: pressure.port.p(nominal = 1000000.0)
-//  * candidate: temperature.port.p(nominal = 1000000.0)
-//  * candidate: evaporator.port_b.p(nominal = 1000000.0)
-//  * candidate: evaporator.p(nominal = 1000000.0)
-// => select value from evaporator.p(nominal = 1000000.0) for variable: evaporator.p
-// Warning: Alias set with different nominal values
-//  * candidate: furnace.port.T(nominal = 300.0)
-//  * candidate: evaporator.heatPort.T(nominal = 300.0)
-//  * candidate: evaporator.sat.Tsat(nominal = 500.0)
-//  * candidate: evaporator.T(nominal = 500.0)
-//  * candidate: evaporator.T_D(nominal = 500.0)
-// => select value from evaporator.T_D(nominal = 500.0) for variable: evaporator.T_D
-// "
+// ""
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <fmiModelDescription

@@ -37,14 +37,6 @@ runScript(modelTesting);getErrorString();
 // [Modelica 3.2.1/Media/IdealGases/Common/Functions.mo:256:5-257:40:writable] Error: PartialMedium is partial, name lookup is not allowed in partial classes.
 // [Modelica 3.2.1/Media/IdealGases/Common/Functions.mo:258:5-258:76:writable] Error: PartialMedium is partial, name lookup is not allowed in partial classes.
 // [Modelica 3.2.1/Media/IdealGases/Common/Functions.mo:262:5-263:39:writable] Error: PartialMedium is partial, name lookup is not allowed in partial classes.
-// Warning: Alias set with different nominal values
-//  * candidate: medium2.state.p(nominal = 1000000.0)
-//  * candidate: medium2.p(nominal = 100000.0)
-// => select value from medium2.p(nominal = 100000.0) for variable: medium2.p
-// Warning: Alias set with different nominal values
-//  * candidate: medium1.state.p(nominal = 1000000.0)
-//  * candidate: medium1.p(nominal = 100000.0)
-// => select value from medium1.p(nominal = 100000.0) for variable: medium1.p
 //
 // "true
 // "

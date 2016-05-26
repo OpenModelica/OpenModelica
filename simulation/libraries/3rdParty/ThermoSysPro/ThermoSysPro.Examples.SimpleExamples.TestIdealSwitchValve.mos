@@ -66,26 +66,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: Alias set with several free start values
-//  * candidate: PuitsP1.C.Q(start = 500.0)
-//  * candidate: perteDP1.C2.Q(start = 500.0)
-//  * candidate: perteDP1.C1.Q(start = 500.0)
-//  * candidate: SwitchValve.C2.Q(start = 500.0)
-//  * candidate: SwitchValve.C1.Q(start = 500.0)
-//  * candidate: perteDP2.C2.Q(start = 500.0)
-//  * candidate: perteDP2.C1.Q(start = 500.0)
-//  * candidate: SourceP1.C.Q(start = 500.0)
-//  * candidate: perteDP2.Q(start = 100.0)
-//  * candidate: perteDP1.Q(start = 100.0)
-// => select value from perteDP2.Q(start = 100.0) for variable: PuitsP1.Q
-// Warning: Alias set with different nominal values
-//  * candidate: perteDP1.pro.T(nominal = 320.0)
-//  * candidate: perteDP1.T(nominal = 300.0)
-// => select value from perteDP1.T(nominal = 300.0) for variable: perteDP1.T
-// Warning: Alias set with different nominal values
-//  * candidate: perteDP2.pro.T(nominal = 320.0)
-//  * candidate: perteDP2.T(nominal = 300.0)
-// => select value from perteDP2.T(nominal = 300.0) for variable: perteDP2.T
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "

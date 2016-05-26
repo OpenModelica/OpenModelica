@@ -62,26 +62,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet$exchangerWaterSteamDTorWorEFF$Ec is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet$exchangerWaterSteamDTorWorEFF$Ef is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: Alias set with several free start values
-//  * candidate: sourceWaterSteam_FC.C.P(start = 2400000.0)
-//  * candidate: exchangerWaterSteamDTorWorEFF.Ec.P(start = 2300000.0)
-// => select value from sourceWaterSteam_FC.C.P(start = 2400000.0) for variable: sourceWaterSteam_FC.P
-// Warning: Alias set with different nominal values
-//  * candidate: exchangerWaterSteamDTorWorEFF.profe.T(nominal = 320.0)
-//  * candidate: exchangerWaterSteamDTorWorEFF.Tef(nominal = 300.0)
-// => select value from exchangerWaterSteamDTorWorEFF.Tef(nominal = 300.0) for variable: exchangerWaterSteamDTorWorEFF.Tef
-// Warning: Alias set with different nominal values
-//  * candidate: exchangerWaterSteamDTorWorEFF.procs.T(nominal = 320.0)
-//  * candidate: exchangerWaterSteamDTorWorEFF.Tsc(nominal = 300.0)
-// => select value from exchangerWaterSteamDTorWorEFF.Tsc(nominal = 300.0) for variable: exchangerWaterSteamDTorWorEFF.Tsc
-// Warning: Alias set with different nominal values
-//  * candidate: exchangerWaterSteamDTorWorEFF.proce.T(nominal = 320.0)
-//  * candidate: exchangerWaterSteamDTorWorEFF.Tec(nominal = 300.0)
-// => select value from exchangerWaterSteamDTorWorEFF.Tec(nominal = 300.0) for variable: exchangerWaterSteamDTorWorEFF.Tec
-// Warning: Alias set with different nominal values
-//  * candidate: exchangerWaterSteamDTorWorEFF.profs.T(nominal = 320.0)
-//  * candidate: exchangerWaterSteamDTorWorEFF.Tsf(nominal = 300.0)
-// => select value from exchangerWaterSteamDTorWorEFF.Tsf(nominal = 300.0) for variable: exchangerWaterSteamDTorWorEFF.Tsf
 // "
 // {"Files Equal!"}
 // endResult

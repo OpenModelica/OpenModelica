@@ -20,10 +20,6 @@ buildModel(HumModTest); getErrorString();
 // "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
-// Warning: Alias set with several free start values
-//  * candidate: gases.acidBase.veinsPH._cTHox(start = 0.0)
-//  * candidate: gases.acidBase.artysPH._BEox(start = -0.177)
-// => select value from gases.acidBase.artysPH._BEox(start = -0.177) for variable: cardioVascularSystem.busConnector.Blood_BEox
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "

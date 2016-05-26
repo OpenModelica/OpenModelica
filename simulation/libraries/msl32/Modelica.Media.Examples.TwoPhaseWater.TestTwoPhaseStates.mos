@@ -32,15 +32,6 @@ runScript(modelTesting);getErrorString();
 // assert            | warning | Variable violating min/max constraint: 0.0 <= medium.x <= 1.0, has value: 1
 //
 // Files Equal!
-// Warning: Alias set with different nominal values
-//  * candidate: medium.dew.p(nominal = 1000000.0)
-//  * candidate: medium.bubble.p(nominal = 1000000.0)
-//  * candidate: medium.bubble2.p(nominal = 1000000.0)
-//  * candidate: medium.sat.psat(nominal = 1000000.0)
-//  * candidate: medium.state.p(nominal = 1000000.0)
-//  * candidate: medium.p(nominal = 100000.0)
-// => select value from medium.p(nominal = 100000.0) for variable: medium.p
-//
 // "true
 // "
 // ""

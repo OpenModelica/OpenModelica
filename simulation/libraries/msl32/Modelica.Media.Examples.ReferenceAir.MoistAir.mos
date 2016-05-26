@@ -37,11 +37,6 @@ runScript(modelTesting);getErrorString();
 // assert            | warning | Variable violating min/max constraint: 0.0 <= medium.x_sat <= 1.0, has value: 1.0089
 //
 // Files Equal!
-// Warning: Alias set with several free start values
-//  * candidate: medium.Xi[1](start = 0.01)
-//  * candidate: medium.X[1](start = 0.95)
-// => select value from medium.Xi[1](start = 0.01) for variable: medium.Xi[1]
-//
 // "true
 // "
 // ""

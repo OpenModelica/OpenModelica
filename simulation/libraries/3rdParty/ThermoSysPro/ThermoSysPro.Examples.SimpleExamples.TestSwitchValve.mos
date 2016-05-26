@@ -62,10 +62,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// Warning: Alias set with different nominal values
-//  * candidate: SwitchValve.pro.T(nominal = 320.0)
-//  * candidate: SwitchValve.T(nominal = 300.0)
-// => select value from SwitchValve.T(nominal = 300.0) for variable: SwitchValve.T
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // {"Files Equal!"}

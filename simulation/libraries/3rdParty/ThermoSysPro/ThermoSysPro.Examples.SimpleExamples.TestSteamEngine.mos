@@ -62,18 +62,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: Alias set with different nominal values
-//  * candidate: sourceP.pro.T(nominal = 320.0)
-//  * candidate: sourceP.T(nominal = 300.0)
-// => select value from sourceP.T(nominal = 300.0) for variable: sourceP.T
-// Warning: Alias set with different nominal values
-//  * candidate: steamEngine1.pros.T(nominal = 320.0)
-//  * candidate: steamEngine1.Ts(nominal = 300.0)
-// => select value from steamEngine1.Ts(nominal = 300.0) for variable: steamEngine1.Ts
-// Warning: Alias set with different nominal values
-//  * candidate: steamEngine1.proe.T(nominal = 320.0)
-//  * candidate: steamEngine1.Te(nominal = 300.0)
-// => select value from steamEngine1.Te(nominal = 300.0) for variable: steamEngine1.Te
 // "
 // {"Files Equal!"}
 // endResult

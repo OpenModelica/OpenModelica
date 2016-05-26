@@ -36,30 +36,6 @@ runScript(modelTesting);getErrorString();
 // Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 11116
 //  * Number of variables: 11116
-// Warning: Alias set with several free start values
-//  * candidate: cylinder1.Cylinder.s(start = -0.3)
-//  * candidate: cylinder1.gasForce.s_rel(start = 0.0)
-// => select value from cylinder1.Cylinder.s(start = -0.3) for variable: cylinder1.Cylinder.s
-// Warning: Alias set with several free start values
-//  * candidate: cylinder2.Cylinder.s(start = -0.3)
-//  * candidate: cylinder2.gasForce.s_rel(start = 0.0)
-// => select value from cylinder2.Cylinder.s(start = -0.3) for variable: cylinder2.Cylinder.s
-// Warning: Alias set with several free start values
-//  * candidate: cylinder3.Cylinder.s(start = -0.3)
-//  * candidate: cylinder3.gasForce.s_rel(start = 0.0)
-// => select value from cylinder3.Cylinder.s(start = -0.3) for variable: cylinder3.Cylinder.s
-// Warning: Alias set with several free start values
-//  * candidate: cylinder4.Cylinder.s(start = -0.3)
-//  * candidate: cylinder4.gasForce.s_rel(start = 0.0)
-// => select value from cylinder4.Cylinder.s(start = -0.3) for variable: cylinder4.Cylinder.s
-// Warning: Alias set with several free start values
-//  * candidate: cylinder5.Cylinder.s(start = -0.3)
-//  * candidate: cylinder5.gasForce.s_rel(start = 0.0)
-// => select value from cylinder5.Cylinder.s(start = -0.3) for variable: cylinder5.Cylinder.s
-// Warning: Alias set with several free start values
-//  * candidate: cylinder6.Cylinder.s(start = -0.3)
-//  * candidate: cylinder6.gasForce.s_rel(start = 0.0)
-// => select value from cylinder6.Cylinder.s(start = -0.3) for variable: cylinder6.Cylinder.s
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 2527
 //  * Number of states: 0 ()

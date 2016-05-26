@@ -21,31 +21,7 @@ val(crankshaftSpeed,1.0); getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'EngineV6_output', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: Alias set with several free start values
-//  * candidate: cylinder1.Cylinder.s(start = -0.3)
-//  * candidate: cylinder1.gasForce.s_rel(start = 0.0)
-// => select value from cylinder1.Cylinder.s(start = -0.3) for variable: cylinder1.Cylinder.s
-// Warning: Alias set with several free start values
-//  * candidate: cylinder2.Cylinder.s(start = -0.3)
-//  * candidate: cylinder2.gasForce.s_rel(start = 0.0)
-// => select value from cylinder2.Cylinder.s(start = -0.3) for variable: cylinder2.Cylinder.s
-// Warning: Alias set with several free start values
-//  * candidate: cylinder3.Cylinder.s(start = -0.3)
-//  * candidate: cylinder3.gasForce.s_rel(start = 0.0)
-// => select value from cylinder3.Cylinder.s(start = -0.3) for variable: cylinder3.Cylinder.s
-// Warning: Alias set with several free start values
-//  * candidate: cylinder4.Cylinder.s(start = -0.3)
-//  * candidate: cylinder4.gasForce.s_rel(start = 0.0)
-// => select value from cylinder4.Cylinder.s(start = -0.3) for variable: cylinder4.Cylinder.s
-// Warning: Alias set with several free start values
-//  * candidate: cylinder5.Cylinder.s(start = -0.3)
-//  * candidate: cylinder5.gasForce.s_rel(start = 0.0)
-// => select value from cylinder5.Cylinder.s(start = -0.3) for variable: cylinder5.Cylinder.s
-// Warning: Alias set with several free start values
-//  * candidate: cylinder6.Cylinder.s(start = -0.3)
-//  * candidate: cylinder6.gasForce.s_rel(start = 0.0)
-// => select value from cylinder6.Cylinder.s(start = -0.3) for variable: cylinder6.Cylinder.s
-// "
-// 561.4775584669968
+// ""
+// 561.4775584669902
 // ""
 // endResult

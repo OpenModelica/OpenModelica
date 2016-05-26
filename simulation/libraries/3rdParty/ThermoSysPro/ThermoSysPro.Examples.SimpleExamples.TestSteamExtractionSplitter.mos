@@ -74,41 +74,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: Alias set with several free start values
-//  * candidate: singularPressureLoss1.Q(start = 100.0)
-//  * candidate: singularPressureLoss1.C1.Q(start = 500.0)
-//  * candidate: steamExtractionSplitter.Cs.Q(start = 500.0)
-//  * candidate: singularPressureLoss1.C2.Q(start = 500.0)
-//  * candidate: sinkP.C.Q(start = 500.0)
-// => select value from singularPressureLoss1.Q(start = 100.0) for variable: singularPressureLoss1.Q
-// Warning: Alias set with several free start values
-//  * candidate: steamExtractionSplitter.P(start = 1000000.0)
-//  * candidate: steamExtractionSplitter.Cex.P(start = 100000.0)
-//  * candidate: singularPressureLoss3.C1.P(start = 100000.0)
-//  * candidate: steamExtractionSplitter.Cs.P(start = 100000.0)
-//  * candidate: singularPressureLoss1.C1.P(start = 100000.0)
-//  * candidate: steamExtractionSplitter.Ce.P(start = 100000.0)
-//  * candidate: singularPressureLoss2.C2.P(start = 100000.0)
-// => select value from steamExtractionSplitter.P(start = 1000000.0) for variable: steamExtractionSplitter.P
-// Warning: Alias set with several free start values
-//  * candidate: steamExtractionSplitter.h(start = 1000000.0)
-//  * candidate: steamExtractionSplitter.Cs.h_vol(start = 100000.0)
-//  * candidate: singularPressureLoss1.C1.h_vol(start = 100000.0)
-//  * candidate: steamExtractionSplitter.Ce.h_vol(start = 100000.0)
-//  * candidate: singularPressureLoss2.C2.h_vol(start = 100000.0)
-// => select value from steamExtractionSplitter.h(start = 1000000.0) for variable: steamExtractionSplitter.h
-// Warning: Alias set with different nominal values
-//  * candidate: singularPressureLoss3.pro.T(nominal = 320.0)
-//  * candidate: singularPressureLoss3.T(nominal = 300.0)
-// => select value from singularPressureLoss3.T(nominal = 300.0) for variable: singularPressureLoss3.T
-// Warning: Alias set with different nominal values
-//  * candidate: singularPressureLoss1.pro.T(nominal = 320.0)
-//  * candidate: singularPressureLoss1.T(nominal = 300.0)
-// => select value from singularPressureLoss1.T(nominal = 300.0) for variable: singularPressureLoss1.T
-// Warning: Alias set with different nominal values
-//  * candidate: singularPressureLoss2.pro.T(nominal = 320.0)
-//  * candidate: singularPressureLoss2.T(nominal = 300.0)
-// => select value from singularPressureLoss2.T(nominal = 300.0) for variable: singularPressureLoss2.T
 // "
 // {"Files Equal!"}
 // endResult

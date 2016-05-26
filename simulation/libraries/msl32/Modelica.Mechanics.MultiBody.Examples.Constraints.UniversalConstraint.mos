@@ -41,31 +41,6 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Mechanics.MultiBody.Examples.Constraints.UniversalConstraint_res.mat
 // Messages: stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
 //
-// Warning: Alias set with several free start values
-//  * candidate: bodyOfConstraint.r_0[3](start = 0.1)
-//  * candidate: bodyOfConstraint.body.r_0[3](start = 0.0)
-// => select value from bodyOfConstraint.r_0[3](start = 0.1) for variable: bodyOfConstraint.body.frame_a.r_0[3]
-// Warning: Alias set with several free start values
-//  * candidate: bodyOfConstraint.r_0[2](start = -0.5)
-//  * candidate: bodyOfConstraint.body.r_0[2](start = 0.0)
-// => select value from bodyOfConstraint.r_0[2](start = -0.5) for variable: bodyOfConstraint.body.frame_a.r_0[2]
-// Warning: Alias set with several free start values
-//  * candidate: bodyOfConstraint.r_0[1](start = 0.2)
-//  * candidate: bodyOfConstraint.body.r_0[1](start = 0.0)
-// => select value from bodyOfConstraint.r_0[1](start = 0.2) for variable: bodyOfConstraint.body.frame_a.r_0[1]
-// Warning: Alias set with several free start values
-//  * candidate: bodyOfJoint.r_0[3](start = 0.1)
-//  * candidate: bodyOfJoint.body.r_0[3](start = 0.0)
-// => select value from bodyOfJoint.r_0[3](start = 0.1) for variable: bodyOfJoint.body.frame_a.r_0[3]
-// Warning: Alias set with several free start values
-//  * candidate: bodyOfJoint.r_0[2](start = -0.5)
-//  * candidate: bodyOfJoint.body.r_0[2](start = 0.0)
-// => select value from bodyOfJoint.r_0[2](start = -0.5) for variable: bodyOfJoint.body.frame_a.r_0[2]
-// Warning: Alias set with several free start values
-//  * candidate: bodyOfJoint.r_0[1](start = 0.2)
-//  * candidate: bodyOfJoint.body.r_0[1](start = 0.0)
-// => select value from bodyOfJoint.r_0[1](start = 0.2) for variable: bodyOfJoint.body.frame_a.r_0[1]
-//
 // "true
 // "
 // ""

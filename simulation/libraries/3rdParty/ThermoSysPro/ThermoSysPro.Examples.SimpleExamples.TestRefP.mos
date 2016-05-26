@@ -73,26 +73,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: Alias set with several free start values
-//  * candidate: lumpedStraightPipe.Q(start = 100.0)
-//  * candidate: lumpedStraightPipe.C1.Q(start = 500.0)
-//  * candidate: loopBreakerH.C2.Q(start = 500.0)
-//  * candidate: loopBreakerH.C1.Q(start = 500.0)
-//  * candidate: loopBreakerQ.C2.Q(start = 500.0)
-//  * candidate: lumpedStraightPipe.C2.Q(start = 500.0)
-//  * candidate: refP.C1.Q(start = 500.0)
-//  * candidate: refP.C2.Q(start = 500.0)
-//  * candidate: refT.C1.Q(start = 500.0)
-//  * candidate: refT.C2.Q(start = 500.0)
-//  * candidate: pump.C1.Q(start = 500.0)
-//  * candidate: pump.Q(start = 500.0)
-//  * candidate: pump.C2.Q(start = 500.0)
-//  * candidate: loopBreakerQ.C1.Q(start = 500.0)
-// => select value from lumpedStraightPipe.Q(start = 100.0) for variable: lumpedStraightPipe.Q
-// Warning: Alias set with different nominal values
-//  * candidate: lumpedStraightPipe.pro.T(nominal = 320.0)
-//  * candidate: lumpedStraightPipe.T(nominal = 300.0)
-// => select value from lumpedStraightPipe.T(nominal = 300.0) for variable: lumpedStraightPipe.T
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
 // {"Files Equal!"}

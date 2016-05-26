@@ -39,45 +39,7 @@ getErrorString();
 // "
 // end SimulationResult;
 // true
-// "Warning: Alias set with several free start values
-//  * candidate: evaporator.p(start = evaporator.p_start)
-//  * candidate: evaporator.port_b.p(start = 5000000.0)
-//  * candidate: temperature.port.p(start = 5000000.0)
-//  * candidate: pressure.port.p(start = 5000000.0)
-//  * candidate: massFlowRate.port_a.p(start = 5000000.0)
-//  * candidate: massFlowRate.port_b.p(start = 5000000.0)
-//  * candidate: SteamValve.port_a.p(start = 5000000.0)
-//  * candidate: SteamValve.state_a.p(start = 5000000.0)
-//  * candidate: evaporator.port_a.p(start = 5000000.0)
-//  * candidate: pump.ports[1].p(start = 5000000.0)
-//  * candidate: pump.medium.state.p(start = 5000000.0)
-//  * candidate: pump.medium.sat.psat(start = 5000000.0)
-//  * candidate: evaporator.sat.psat(start = 5000000.0)
-// => select value from evaporator.p(start = evaporator.p_start) for variable: evaporator.p
-// Warning: Alias set with different nominal values
-//  * candidate: evaporator.sat.psat(nominal = 1000000.0)
-//  * candidate: pump.medium.sat.psat(nominal = 1000000.0)
-//  * candidate: pump.medium.state.p(nominal = 1000000.0)
-//  * candidate: pump.medium.p(nominal = 100000.0)
-//  * candidate: pump.ports[1].p(nominal = 1000000.0)
-//  * candidate: evaporator.port_a.p(nominal = 1000000.0)
-//  * candidate: SteamValve.state_a.p(nominal = 1000000.0)
-//  * candidate: SteamValve.port_a.p(nominal = 1000000.0)
-//  * candidate: massFlowRate.port_b.p(nominal = 1000000.0)
-//  * candidate: massFlowRate.port_a.p(nominal = 1000000.0)
-//  * candidate: pressure.port.p(nominal = 1000000.0)
-//  * candidate: temperature.port.p(nominal = 1000000.0)
-//  * candidate: evaporator.port_b.p(nominal = 1000000.0)
-//  * candidate: evaporator.p(nominal = 1000000.0)
-// => select value from evaporator.p(nominal = 1000000.0) for variable: evaporator.p
-// Warning: Alias set with different nominal values
-//  * candidate: furnace.port.T(nominal = 300.0)
-//  * candidate: evaporator.heatPort.T(nominal = 300.0)
-//  * candidate: evaporator.sat.Tsat(nominal = 500.0)
-//  * candidate: evaporator.T(nominal = 500.0)
-//  * candidate: evaporator.T_D(nominal = 500.0)
-// => select value from evaporator.T_D(nominal = 500.0) for variable: evaporator.T_D
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
 // record SimulationResult
 //     resultFile = "drumBoiler.optDrumBoiler_res.mat",
@@ -126,14 +88,14 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 61.2227 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 15.3174 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 3.83254 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.958957 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.958954 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.240159 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.0600255 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.014993 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.00373604 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000922696 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000214121 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 4.54588e-05 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.060028 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0149908 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0037337 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000922331 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000216782 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 4.53796e-05 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // "
 // end SimulationResult;
 // ""

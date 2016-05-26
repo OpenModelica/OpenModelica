@@ -46,58 +46,6 @@ runScript(modelTesting);getErrorString();
 // [Modelica 3.2.1/Fluid/Examples/TraceSubstances.mo:112:17-112:29:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
 // [Modelica 3.2.1/Fluid/Examples/TraceSubstances.mo:122:23-122:37:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
 // [Modelica 3.2.1/Fluid/Examples/TraceSubstances.mo:168:23-168:37:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
-// Warning: Alias set with different nominal values
-//  * candidate: volume.heatTransfer.states[1].X[1](nominal = 0.1)
-//  * candidate: volume.medium.state.X[1](nominal = 0.1)
-//  * candidate: volume.medium.X[1](nominal = 0.1)
-//  * candidate: ductIn.flowModel.states[4].X[1](nominal = 0.1)
-//  * candidate: ductIn.statesFM[4].X[1](nominal = 0.1)
-//  * candidate: ductIn.state_b.X[1](nominal = 0.1)
-//  * candidate: volume.ports[1].Xi_outflow[1](nominal = 0.1)
-//  * candidate: volume.ports[2].Xi_outflow[1](nominal = 0.1)
-//  * candidate: ductOut.flowModel.states[1].X[1](nominal = 0.1)
-//  * candidate: ductOut.statesFM[1].X[1](nominal = 0.1)
-//  * candidate: ductOut.state_a.X[1](nominal = 0.1)
-//  * candidate: volume.ports[3].Xi_outflow[1](nominal = 0.1)
-//  * candidate: volume.ports[4].Xi_outflow[1](nominal = 0.1)
-//  * candidate: volume.medium.Xi[1](nominal = 0.01)
-// => select value from volume.medium.Xi[1](nominal = 0.01) for variable: volume.medium.Xi[1]
-// Warning: Alias set with different nominal values
-//  * candidate: ductIn.heatTransfer.states[2].X[1](nominal = 0.1)
-//  * candidate: ductIn.flowModel.states[3].X[1](nominal = 0.1)
-//  * candidate: ductIn.statesFM[3].X[1](nominal = 0.1)
-//  * candidate: ductIn.mediums[2].state.X[1](nominal = 0.1)
-//  * candidate: ductIn.mediums[2].X[1](nominal = 0.1)
-//  * candidate: ductIn.port_b.Xi_outflow[1](nominal = 0.1)
-//  * candidate: ductIn.mediums[2].Xi[1](nominal = 0.01)
-// => select value from ductIn.mediums[2].Xi[1](nominal = 0.01) for variable: ductIn.mediums[2].Xi[1]
-// Warning: Alias set with different nominal values
-//  * candidate: ductIn.heatTransfer.states[1].X[1](nominal = 0.1)
-//  * candidate: ductIn.flowModel.states[2].X[1](nominal = 0.1)
-//  * candidate: ductIn.statesFM[2].X[1](nominal = 0.1)
-//  * candidate: ductIn.mediums[1].state.X[1](nominal = 0.1)
-//  * candidate: ductIn.mediums[1].X[1](nominal = 0.1)
-//  * candidate: ductIn.port_a.Xi_outflow[1](nominal = 0.1)
-//  * candidate: ductIn.mediums[1].Xi[1](nominal = 0.01)
-// => select value from ductIn.mediums[1].Xi[1](nominal = 0.01) for variable: ductIn.mediums[1].Xi[1]
-// Warning: Alias set with different nominal values
-//  * candidate: ductOut.heatTransfer.states[2].X[1](nominal = 0.1)
-//  * candidate: ductOut.flowModel.states[3].X[1](nominal = 0.1)
-//  * candidate: ductOut.statesFM[3].X[1](nominal = 0.1)
-//  * candidate: ductOut.mediums[2].state.X[1](nominal = 0.1)
-//  * candidate: ductOut.mediums[2].X[1](nominal = 0.1)
-//  * candidate: ductOut.port_b.Xi_outflow[1](nominal = 0.1)
-//  * candidate: ductOut.mediums[2].Xi[1](nominal = 0.01)
-// => select value from ductOut.mediums[2].Xi[1](nominal = 0.01) for variable: ductOut.mediums[2].Xi[1]
-// Warning: Alias set with different nominal values
-//  * candidate: ductOut.heatTransfer.states[1].X[1](nominal = 0.1)
-//  * candidate: ductOut.flowModel.states[2].X[1](nominal = 0.1)
-//  * candidate: ductOut.statesFM[2].X[1](nominal = 0.1)
-//  * candidate: ductOut.mediums[1].state.X[1](nominal = 0.1)
-//  * candidate: ductOut.mediums[1].X[1](nominal = 0.1)
-//  * candidate: ductOut.port_a.Xi_outflow[1](nominal = 0.1)
-//  * candidate: ductOut.mediums[1].Xi[1](nominal = 0.01)
-// => select value from ductOut.mediums[1].Xi[1](nominal = 0.01) for variable: ductOut.mediums[1].Xi[1]
 //
 // "true
 // "

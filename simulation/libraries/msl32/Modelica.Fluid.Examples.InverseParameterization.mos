@@ -48,56 +48,6 @@ runScript(modelTesting);getErrorString();
 // 	first:  Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start, stateSelect = if momentumDynamics == Modelica.Fluid.Types.Dynamics.SteadyState then StateSelect.default else StateSelect.prefer) "mass flow rates between states"
 // 	second: Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start) "Mass flow rate in design flow direction"
 // Continue ....
-// Warning: Alias set with several free start values
-//  * candidate: pump.medium.p(start = pump.p_start)
-//  * candidate: pump.port_b.p(start = pump.p_b_start)
-//  * candidate: orifice.port_a.p(start = 5000000.0)
-//  * candidate: pipe2.port_a.p(start = 5000000.0)
-//  * candidate: pipe2.flowModel.states[1].p(start = 5000000.0)
-//  * candidate: pipe1.port_a.p(start = 5000000.0)
-//  * candidate: pipe1.flowModel.states[1].p(start = 5000000.0)
-//  * candidate: orifice.state_a.p(start = 5000000.0)
-//  * candidate: pump.medium.state.p(start = 5000000.0)
-//  * candidate: pump.monitoring.state.p(start = 5000000.0)
-//  * candidate: pump.heatTransfer.states[1].p(start = 5000000.0)
-//  * candidate: pump.medium.sat.psat(start = 5000000.0)
-// => select value from pump.medium.p(start = pump.p_start) for variable: pump.medium.p
-// Warning: Alias set with different nominal values
-//  * candidate: pump.medium.sat.psat(nominal = 1000000.0)
-//  * candidate: pump.heatTransfer.states[1].p(nominal = 1000000.0)
-//  * candidate: pump.monitoring.state.p(nominal = 1000000.0)
-//  * candidate: pump.medium.state.p(nominal = 1000000.0)
-//  * candidate: orifice.state_a.p(nominal = 1000000.0)
-//  * candidate: pipe1.flowModel.states[1].p(nominal = 1000000.0)
-//  * candidate: pipe1.port_a.p(nominal = 1000000.0)
-//  * candidate: pipe2.flowModel.states[1].p(nominal = 1000000.0)
-//  * candidate: pipe2.port_a.p(nominal = 1000000.0)
-//  * candidate: orifice.port_a.p(nominal = 1000000.0)
-//  * candidate: pump.port_b.p(nominal = 1000000.0)
-//  * candidate: pump.medium.p(nominal = 100000.0)
-// => select value from pump.medium.p(nominal = 100000.0) for variable: pump.medium.p
-// Warning: Alias set with several free start values
-//  * candidate: pump.medium.h(start = pump.h_start)
-//  * candidate: pump.port_b.h_outflow(start = 100000.0)
-//  * candidate: pump.port_a.h_outflow(start = 100000.0)
-//  * candidate: pump.medium.state.h(start = 100000.0)
-//  * candidate: pump.monitoring.state.h(start = 100000.0)
-//  * candidate: pump.heatTransfer.states[1].h(start = 100000.0)
-// => select value from pump.medium.h(start = pump.h_start) for variable: pump.medium.h
-// Warning: Alias set with several free start values
-//  * candidate: pump.heatTransfer.states[1].T(start = 500.0)
-//  * candidate: pump.medium.state.T(start = 500.0)
-//  * candidate: pump.monitoring.state.T(start = 500.0)
-//  * candidate: pump.medium.T(start = pump.T_start)
-// => select value from pump.medium.T(start = pump.T_start) for variable: pump.heatTransfer.Ts[1]
-// Warning: Alias set with different nominal values
-//  * candidate: pump.medium.T(nominal = 500.0)
-//  * candidate: pump.monitoring.state.T(nominal = 500.0)
-//  * candidate: pump.medium.state.T(nominal = 500.0)
-//  * candidate: pump.heatTransfer.states[1].T(nominal = 500.0)
-//  * candidate: pump.heatTransfer.heatPorts[1].T(nominal = 300.0)
-//  * candidate: pump.heatTransfer.Ts[1](nominal = 300.0)
-// => select value from pump.heatTransfer.Ts[1](nominal = 300.0) for variable: pump.heatTransfer.Ts[1]
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 //
 // "true

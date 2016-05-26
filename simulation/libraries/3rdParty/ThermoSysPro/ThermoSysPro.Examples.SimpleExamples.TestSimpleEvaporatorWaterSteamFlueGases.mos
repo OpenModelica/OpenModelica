@@ -64,39 +64,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// Warning: Alias set with several free start values
-//  * candidate: EchangeurEfficacite.Hee(start = 300000.0)
-//  * candidate: EchangeurEfficacite.Cws1.h(start = 100000.0)
-//  * candidate: source_Eau.C.h(start = 100000.0)
-// => select value from EchangeurEfficacite.Hee(start = 300000.0) for variable: EchangeurEfficacite.Hee
-// Warning: Alias set with several free start values
-//  * candidate: EchangeurEfficacite.Hse(start = 2000000.0)
-//  * candidate: EchangeurEfficacite.Cws2.h(start = 100000.0)
-//  * candidate: puits_Eau.C.h(start = 100000.0)
-// => select value from EchangeurEfficacite.Hse(start = 2000000.0) for variable: EchangeurEfficacite.Hse
-// Warning: Alias set with several free start values
-//  * candidate: EchangeurEfficacite.Pse(start = 2000000.0)
-//  * candidate: EchangeurEfficacite.Cws2.P(start = 100000.0)
-//  * candidate: puits_Eau.C.P(start = 100000.0)
-// => select value from EchangeurEfficacite.Pse(start = 2000000.0) for variable: EchangeurEfficacite.Pse
-// Warning: Alias set with several free start values
-//  * candidate: EchangeurEfficacite.Tsf(start = 400.0)
-//  * candidate: EchangeurEfficacite.Cfg2.T(start = 300.0)
-//  * candidate: Puits_Fumees.C.T(start = 300.0)
-// => select value from EchangeurEfficacite.Tsf(start = 400.0) for variable: EchangeurEfficacite.Tsf
-// Warning: Alias set with several free start values
-//  * candidate: EchangeurEfficacite.Psf(start = 250000.0)
-//  * candidate: EchangeurEfficacite.Cfg2.P(start = 100000.0)
-//  * candidate: Puits_Fumees.C.P(start = 100000.0)
-// => select value from EchangeurEfficacite.Psf(start = 250000.0) for variable: EchangeurEfficacite.Psf
-// Warning: Alias set with different nominal values
-//  * candidate: EchangeurEfficacite.proes.T(nominal = 320.0)
-//  * candidate: EchangeurEfficacite.Tse(nominal = 300.0)
-// => select value from EchangeurEfficacite.Tse(nominal = 300.0) for variable: EchangeurEfficacite.Tse
-// Warning: Alias set with different nominal values
-//  * candidate: EchangeurEfficacite.proee.T(nominal = 320.0)
-//  * candidate: EchangeurEfficacite.Tee(nominal = 300.0)
-// => select value from EchangeurEfficacite.Tee(nominal = 300.0) for variable: EchangeurEfficacite.Tee
 // "
 // {"Files Equal!"}
 // endResult

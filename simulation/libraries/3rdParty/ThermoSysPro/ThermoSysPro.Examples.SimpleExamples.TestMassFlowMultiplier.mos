@@ -64,39 +64,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: Alias set with several free start values
-//  * candidate: massFlowMultiplier.h(start = 1000000.0)
-//  * candidate: massFlowMultiplier.Cs.h_vol(start = 100000.0)
-//  * candidate: singularPressureLoss1.C1.h_vol(start = 100000.0)
-//  * candidate: massFlowMultiplier.Ce.h_vol(start = 100000.0)
-//  * candidate: singularPressureLoss.C2.h_vol(start = 100000.0)
-// => select value from massFlowMultiplier.h(start = 1000000.0) for variable: massFlowMultiplier.h
-// Warning: Alias set with several free start values
-//  * candidate: singularPressureLoss1.Q(start = 100.0)
-//  * candidate: singularPressureLoss1.C1.Q(start = 500.0)
-//  * candidate: massFlowMultiplier.Cs.Q(start = 500.0)
-//  * candidate: singularPressureLoss1.C2.Q(start = 500.0)
-//  * candidate: sink.C.Q(start = 500.0)
-// => select value from singularPressureLoss1.Q(start = 100.0) for variable: singularPressureLoss1.Q
-// Warning: Alias set with several free start values
-//  * candidate: massFlowMultiplier.P(start = 1000000.0)
-//  * candidate: massFlowMultiplier.Cs.P(start = 100000.0)
-//  * candidate: singularPressureLoss1.C1.P(start = 100000.0)
-//  * candidate: massFlowMultiplier.Ce.P(start = 100000.0)
-//  * candidate: singularPressureLoss.C2.P(start = 100000.0)
-// => select value from massFlowMultiplier.P(start = 1000000.0) for variable: massFlowMultiplier.P
-// Warning: Alias set with different nominal values
-//  * candidate: massFlowMultiplier.pro.T(nominal = 320.0)
-//  * candidate: massFlowMultiplier.T(nominal = 300.0)
-// => select value from massFlowMultiplier.T(nominal = 300.0) for variable: massFlowMultiplier.T
-// Warning: Alias set with different nominal values
-//  * candidate: singularPressureLoss1.pro.T(nominal = 320.0)
-//  * candidate: singularPressureLoss1.T(nominal = 300.0)
-// => select value from singularPressureLoss1.T(nominal = 300.0) for variable: singularPressureLoss1.T
-// Warning: Alias set with different nominal values
-//  * candidate: singularPressureLoss.pro.T(nominal = 320.0)
-//  * candidate: singularPressureLoss.T(nominal = 300.0)
-// => select value from singularPressureLoss.T(nominal = 300.0) for variable: singularPressureLoss.T
 // "
 // {"Files Equal!"}
 // endResult

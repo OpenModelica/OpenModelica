@@ -80,48 +80,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: Alias set with several free start values
-//  * candidate: perteDP.Q(start = 100.0)
-//  * candidate: perteDP.C1.Q(start = 500.0)
-//  * candidate: sourceP.C.Q(start = 500.0)
-//  * candidate: perteDP.C2.Q(start = 500.0)
-//  * candidate: volumeD.Ce.Q(start = 500.0)
-// => select value from perteDP.Q(start = 100.0) for variable: perteDP.Q
-// Warning: Alias set with several free start values
-//  * candidate: perteDP1.Q(start = 100.0)
-//  * candidate: perteDP1.C1.Q(start = 500.0)
-//  * candidate: volumeC.Cs.Q(start = 500.0)
-//  * candidate: perteDP1.C2.Q(start = 500.0)
-//  * candidate: puitsP.C.Q(start = 500.0)
-// => select value from perteDP1.Q(start = 100.0) for variable: perteDP1.Q
-// Warning: Alias set with different nominal values
-//  * candidate: perteDP1.pro.T(nominal = 320.0)
-//  * candidate: perteDP1.T(nominal = 300.0)
-// => select value from perteDP1.T(nominal = 300.0) for variable: perteDP1.T
-// Warning: Alias set with different nominal values
-//  * candidate: perteDP.pro.T(nominal = 320.0)
-//  * candidate: perteDP.T(nominal = 300.0)
-// => select value from perteDP.T(nominal = 300.0) for variable: perteDP.T
-// Warning: Alias set with different nominal values
-//  * candidate: volumeC.pro.T(nominal = 320.0)
-//  * candidate: volumeC.T(nominal = 300.0)
-// => select value from volumeC.T(nominal = 300.0) for variable: volumeC.T
-// Warning: Alias set with different nominal values
-//  * candidate: checkValve2.pro.T(nominal = 320.0)
-//  * candidate: checkValve2.T(nominal = 300.0)
-// => select value from checkValve2.T(nominal = 300.0) for variable: checkValve2.T
-// Warning: Alias set with different nominal values
-//  * candidate: checkValve1.pro.T(nominal = 320.0)
-//  * candidate: checkValve1.T(nominal = 300.0)
-// => select value from checkValve1.T(nominal = 300.0) for variable: checkValve1.T
-// Warning: Alias set with different nominal values
-//  * candidate: volumeD.pro.T(nominal = 320.0)
-//  * candidate: volumeD.T(nominal = 300.0)
-// => select value from volumeD.T(nominal = 300.0) for variable: volumeD.T
-// Warning: Alias set with different nominal values
-//  * candidate: checkValve3.pro.T(nominal = 320.0)
-//  * candidate: checkValve3.T(nominal = 300.0)
-// => select value from checkValve3.T(nominal = 300.0) for variable: checkValve3.T
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // {"Files Equal!"}

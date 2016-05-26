@@ -74,54 +74,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: Alias set with several free start values
-//  * candidate: singularPressureLossVALI3.Q(start = 100.0)
-//  * candidate: singularPressureLossVALI3.C1.Q(start = 500.0)
-//  * candidate: StaticDrumTh1.Cs_sur.Q(start = 500.0)
-//  * candidate: singularPressureLossVALI3.C2.Q(start = 500.0)
-//  * candidate: sensorT1.C1.Q(start = 500.0)
-//  * candidate: sensorT1.Q(start = 500.0)
-//  * candidate: sensorT1.C2.Q(start = 500.0)
-//  * candidate: sinkP2.C.Q(start = 500.0)
-// => select value from singularPressureLossVALI3.Q(start = 100.0) for variable: singularPressureLossVALI3.Q
-// Warning: Alias set with several free start values
-//  * candidate: StaticDrumTh1.P(start = 1000000.0)
-//  * candidate: StaticDrumTh1.Cs_sur.P(start = 100000.0)
-//  * candidate: singularPressureLossVALI3.C1.P(start = 100000.0)
-//  * candidate: StaticDrumTh1.Cs_sup.P(start = 100000.0)
-//  * candidate: StaticDrumTh1.Cs_purg.P(start = 100000.0)
-//  * candidate: singularPressureLossVALI1.C1.P(start = 100000.0)
-//  * candidate: StaticDrumTh1.Cs_eva.P(start = 100000.0)
-//  * candidate: StaticDrumTh1.Ce_eco.P(start = 100000.0)
-//  * candidate: singularPressureLossVALI2.C2.P(start = 100000.0)
-//  * candidate: StaticDrumTh1.Ce_eva.P(start = 100000.0)
-//  * candidate: StaticDrumTh1.Ce_sup.P(start = 100000.0)
-//  * candidate: StaticDrumTh1.Ce_steam.P(start = 100000.0)
-// => select value from StaticDrumTh1.P(start = 1000000.0) for variable: StaticDrumTh1.P
-// Warning: Alias set with different nominal values
-//  * candidate: sensorT1.pro.T(nominal = 320.0)
-//  * candidate: sensorT1.T(nominal = 300.0)
-// => select value from sensorT1.T(nominal = 300.0) for variable: sensorT1.T
-// Warning: Alias set with different nominal values
-//  * candidate: singularPressureLossVALI3.pro.T(nominal = 320.0)
-//  * candidate: singularPressureLossVALI3.T(nominal = 300.0)
-// => select value from singularPressureLossVALI3.T(nominal = 300.0) for variable: singularPressureLossVALI3.T
-// Warning: Alias set with different nominal values
-//  * candidate: sensorT.pro.T(nominal = 320.0)
-//  * candidate: sensorT.T(nominal = 300.0)
-// => select value from sensorT.T(nominal = 300.0) for variable: sensorT.T
-// Warning: Alias set with different nominal values
-//  * candidate: singularPressureLossVALI2.pro.T(nominal = 320.0)
-//  * candidate: singularPressureLossVALI2.T(nominal = 300.0)
-// => select value from singularPressureLossVALI2.T(nominal = 300.0) for variable: singularPressureLossVALI2.T
-// Warning: Alias set with different nominal values
-//  * candidate: singularPressureLossVALI1.pro.T(nominal = 320.0)
-//  * candidate: singularPressureLossVALI1.T(nominal = 300.0)
-// => select value from singularPressureLossVALI1.T(nominal = 300.0) for variable: singularPressureLossVALI1.T
-// Warning: Alias set with several free start values
-//  * candidate: StaticDrumTh1.hv(start = 2800000.0)
-//  * candidate: StaticDrumTh1.Ce_steam.h_vol(start = 100000.0)
-// => select value from StaticDrumTh1.hv(start = 2800000.0) for variable: StaticDrumTh1.hv
 // "
 // {"Files Equal!"}
 // endResult

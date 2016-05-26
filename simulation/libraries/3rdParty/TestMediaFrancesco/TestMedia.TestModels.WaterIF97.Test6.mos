@@ -28,25 +28,6 @@ res := OpenModelica.Scripting.compareSimulationResults("TestMedia.TestModels.Wat
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.WaterIF97.Test6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: Alias set with several free start values
-//  * candidate: p2(start = 5000000.0)
-//  * candidate: medium2.baseProperties.state.p(start = 5000000.0)
-//  * candidate: medium2.completeState.state.p(start = 5000000.0)
-//  * candidate: medium2.baseProperties.sat.psat(start = 100000.0)
-// => select value from p2(start = 5000000.0) for variable: p2
-// Warning: Alias set with different nominal values
-//  * candidate: medium2.baseProperties.sat.psat(nominal = 1000000.0)
-//  * candidate: medium2.completeState.state.p(nominal = 1000000.0)
-//  * candidate: medium2.baseProperties.state.p(nominal = 1000000.0)
-//  * candidate: medium2.baseProperties.p(nominal = 100000.0)
-//  * candidate: p2(nominal = 1000000.0)
-// => select value from p2(nominal = 1000000.0) for variable: p2
-// Warning: Alias set with different nominal values
-//  * candidate: medium1.completeState.state.h(nominal = 500000.0)
-//  * candidate: medium1.baseProperties.state.h(nominal = 500000.0)
-//  * candidate: medium1.baseProperties.h(nominal = 1000000.0)
-//  * candidate: h1(nominal = 500000.0)
-// => select value from h1(nominal = 500000.0) for variable: h1
-// "
+// ""
 // {"Files Equal!"}
 // endResult
