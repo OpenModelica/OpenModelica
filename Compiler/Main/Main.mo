@@ -809,12 +809,17 @@ public function main
 protected
   list<String> args_1;
   GC.ProfStats stats;
+  Integer seconds;
 algorithm
   try
   try
     args_1 := init(args);
     if Flags.isSet(Flags.GC_PROF) then
       print(GC.profStatsStr(GC.getProfStats(), head="GC stats after initialization:") + "\n");
+    end if;
+    seconds := Flags.getConfigInt(Flags.ALARM);
+    if seconds > 0 then
+      System.alarm(seconds);
     end if;
     main2(args_1);
   else

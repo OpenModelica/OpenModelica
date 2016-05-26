@@ -1297,6 +1297,9 @@ constant ConfigFlag IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION = CONFIG_FLAG(99, "ig
 constant ConfigFlag CALCULATE_SENSITIVITIES = CONFIG_FLAG(100, "calculateSensitivities",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Generates sensitivities variables and matrixes."));
+constant ConfigFlag ALARM = CONFIG_FLAG(101, "alarm",
+  SOME("r"), EXTERNAL(), INT_FLAG(0), NONE(),
+  Util.gettext("Sets the number seconds until omc timeouts and exits. Used by the testing framework to terminate infinite running processes."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1402,7 +1405,8 @@ constant list<ConfigFlag> allConfigFlags = {
   SET_TEARING_VARS,
   SET_RESIDUAL_EQNS,
   IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION,
-  CALCULATE_SENSITIVITIES
+  CALCULATE_SENSITIVITIES,
+  ALARM
 };
 
 public function new
