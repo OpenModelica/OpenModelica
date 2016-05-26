@@ -817,7 +817,11 @@ char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt)
   }
 
   /* get the type of the element */
-  getTypeOfAny(name, 0);
+  if (mt == record_metaType) {
+    getTypeOfAny(name, 1);
+  } else {
+    getTypeOfAny(name, 0);
+  }
   ty = malloc(strlen(anyStringBuf) + 1);
   strcpy(ty, anyStringBuf);
 
