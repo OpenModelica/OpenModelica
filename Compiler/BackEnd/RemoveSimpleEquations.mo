@@ -3367,7 +3367,9 @@ algorithm
       ((e, cr, i)) = selectNonZeroExpression(rest);
       crVar = BackendVariable.varCref(inVar);
       s = iStr + "=> select value from " +  ComponentReference.printComponentRefStr(cr) +  "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ") for variable: " +  ComponentReference.printComponentRefStr(crVar) + "\n";
-      Error.addMessage(Error.COMPILER_WARNING, {s});
+      if Flags.isSet(Flags.DEBUG_ALIAS) then
+        Error.addMessage(Error.COMPILER_WARNING, {s});
+      end if;
       v = inFunc(inVar, e);
     then v;
 
