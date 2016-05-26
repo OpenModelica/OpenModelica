@@ -16,6 +16,7 @@ my $test_full = $ARGV[0];
 my $no_colour = 0;
 my $withxml = 0;
 my $rtest_extra_args = "";
+my $test_baseline = 0;
 
 for(@ARGV){
   if(/--no-colour/) {
@@ -25,15 +26,19 @@ for(@ARGV){
     $withxml = 1;
   }
   elsif(/-have-dwdiff/) {
-    $rtest_extra_args = "-c";
+    $rtest_extra_args = $rtest_extra_args . " -c";
   }
   elsif(/^--with-omc=(.*)$/) {
-    $rtest_extra_args = "--with-omc=$1";
+    $rtest_extra_args = $rtest_extra_args . " --with-omc=$1";
+  }
+  elsif(/-b/) {
+    $rtest_extra_args = $rtest_extra_args . " -b";
+	$test_baseline = 1;
   }
 }
-if($no_colour) {
-  $rtest_extra_args = "";
-}
+#if($no_colour) {
+#  $rtest_extra_args = "";
+#}
 
 # Extract the directory and test name.
 (my $test_dir, my $test) = $test_full =~ /(.*)\/([^\/]*)$/;
@@ -233,11 +238,23 @@ while(<$test_log>) {
     $nfailed = $1;
     $time = $2;
   }
+  elsif(/== Failed to set baseline.*time: (\d*)/) {
+    $nfailed = 1;
+    $time = $2;
+  }  
+  elsif(/.*time: (\d*)/) {
+    $nfailed = 0;
+    $time = $1;
+  }
 }
 
 if (!$no_colour) {
   if($nfailed =~ /0/) {
-    print color 'green';
+    if ($test_baseline) {
+	  print color 'blue';
+	} else {
+      print color 'green';
+	}
   } else {
     if($erroneous == 0) {
       system("cp $test.test_log $fail_log");
@@ -250,7 +267,11 @@ if (!$no_colour) {
   }
   print " ";
 }
-print "[$test:$time]";
+if ($test_baseline) {
+  print "[Baselining $test:$time]";
+} else {
+  print "[$test:$time]";
+}
 if ($no_colour) {
   if($nfailed =~ /0/) {
     print " OK\n";

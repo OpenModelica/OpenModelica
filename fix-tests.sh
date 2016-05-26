@@ -1,10 +1,18 @@
 #!/bin/bash
-# usage: fix-tests.sh /full/path/to/file/containing/broken/tests.txt
+# usage: fix-tests.sh /path/to/file/containing/broken/tests.txt
 # should be run from trunk/testsuite
 # created by Martin Sjölund
+
+FILE=`realpath $1`
+CD=`pwd`
+echo Started in directory: $CD
 if test -z "$OPENMODELICAHOME"; then
-  RTEST=`pwd`/rtest
+  cd `pwd`/testsuite/partest/
 else
-  RTEST=$OPENMODELICAHOME/../testsuite/rtest
+  cd $OPENMODELICAHOME/../testsuite/partest/
 fi
-while read line ; do (if test ! -z "$line"; then cd `dirname $line` && $RTEST -b `basename $line`; fi) ; done < $1
+echo Switched to directory: $(pwd)
+echo Baselining files from $FILE in parallel ...
+perl ./runtests.pl -b -file=$FILE
+cd $CD
+

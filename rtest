@@ -88,12 +88,15 @@ sub setbaselineone
     my $teardown_command = $info{"teardown_command"};
     my $stack_size = $info{"stack_size"};
     my $ulimit = ulimit_cmd($stack_size);
+	my $start_t = time;
 
     $log = "$tmpdir/log-$f";
     system "rm -f $log";
     if ($setup_command) {
       if ( system "$setup_command" ) {
+	    my $end_t = time-$start_t;
         print "== Failed to set baseline for $f (system $setup_command failed)";
+		print " [time: $end_t]\n";
         return 1;
       }
     }
@@ -145,7 +148,9 @@ sub setbaselineone
     close RES;
     close LOG;
     close SRC;
-    print "Set baseline for ";print $f;print "\n";
+	
+	my $end_t = time-$start_t;
+    print "Set baseline for $f [time: $end_t]\n";
 
     open(SRC,"<$baseline");
     open(DST,">$f");
@@ -248,7 +253,7 @@ sub runone
     system "$OPENMODELICAHOME/bin/omc-diff $epsilon $expected $got > $difference";
 
     if ( $? != 0 ) {
-    print "equation mismatch [time:$end_t]\n";
+    print "equation mismatch [time: $end_t]\n";
     ## make a newline
     system "echo '' >> $log";
     system "echo Equation mismatch: diff says: >> $log";
@@ -261,7 +266,7 @@ sub runone
     return 1;
     }
 
-    print "ok [time:$end_t]\n";
+    print "ok [time: $end_t]\n";
     return 0;
 }
 

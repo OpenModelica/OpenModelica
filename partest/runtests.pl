@@ -62,6 +62,7 @@ my $withxml = 0;
 my $withxmlcmd = 0;
 my $withtxt = 0;
 my $have_dwdiff = "";
+my $rebase_test = "";
 
 {
   eval { require File::Which; 1; };
@@ -97,6 +98,7 @@ for(@ARGV){
     print("  -veryfew      Run only a very small number of tests to see if runtests.pl is working.\n");
     print("  -gitlibs      If you have installed omc using GITLIBRARIES=Yes, you can test some of those libraries.\n");
     print("  -parmodexp    Run the OpenCL ParModelica tests.\n");
+	print("  -b            Rebase tests in parallel. Use in conjuction with -file=/path/to/file.\n");
     exit 1;
   }
   if(/^-f$/) {
@@ -148,6 +150,9 @@ for(@ARGV){
   }
   elsif(/^-parmodexp$/) {
     $parmodexp = 1;
+  }
+  elsif(/^-b$/) {
+    $rebase_test = "-b";
   }
   else {
     print("Unknown flag " . $_ . "!\n");
@@ -257,7 +262,7 @@ sub run_tests {
     (my $test_dir, my $test) = $test_full =~ /(.*)\/([^\/]*)$/;
 
     my $t0 = [gettimeofday];
-    my $cmd = "$testscript $test_full $have_dwdiff $nocolour $withxmlcmd $with_omc";
+    my $cmd = "$testscript $test_full $have_dwdiff $nocolour $withxmlcmd $with_omc $rebase_test";
     my $x = system("$cmd") >> 8;
     my $elapsed = tv_interval ( $t0, [gettimeofday]);
 
