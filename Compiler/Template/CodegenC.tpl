@@ -409,10 +409,8 @@ end functionSystemsSynchronous;
 
 template functionEquationsSynchronous(Integer i, list<tuple<SimCodeVar.SimVar, Boolean>> vars, list<SimEqSystem> equations, String modelNamePrefix)
 ::=
-  let &eqfuncs = buffer ""
-  let fncalls = equations |> eq => equation_(i, eq, contextOther, &eqfuncs, modelNamePrefix); separator="\n"
   <<
-  <%&eqfuncs%>
+  <%equations |> eq => equation_impl(i, eq, contextOther, modelNamePrefix) ; separator="\n"%>
 
   int <%symbolName(modelNamePrefix, 'functionEquationsSynchronous_system<%i%>')%>(DATA *data, threadData_t *threadData)
   {
@@ -421,7 +419,7 @@ template functionEquationsSynchronous(Integer i, list<tuple<SimCodeVar.SimVar, B
 
     <%addRootsTempArray()%>
 
-    <%fncalls%>
+    <%equations |> eq => equation_call(eq, modelNamePrefix) ; separator="\n"%>
 
     TRACE_POP
     return 0;
@@ -2452,7 +2450,8 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &eqs, String modelNa
   case e as SES_RESIDUAL(__)
   then ""
   else
-  equation_(-1, eq, contextSimulationDiscrete, &eqs, modelNamePrefixStr)
+    let &eqs += equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefixStr)
+    equation_call(eq, modelNamePrefixStr)
   end match
 end functionExtraResidualsPreBody;
 
@@ -2671,27 +2670,16 @@ end functionInitialStateSets;
 template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem> startValueEquations, list<SimEqSystem> nominalValueEquations, list<SimEqSystem> minValueEquations, list<SimEqSystem> maxValueEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
-  let &tmp = buffer ""
-  let startEqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(-1, eq, contextOther, &tmp, modelNamePrefix)
-    ;separator="\n")
-  let nominalEqPart = (nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(-1, eq, contextOther, &tmp, modelNamePrefix)
-    ;separator="\n")
-  let minEqPart = (minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(-1, eq, contextOther, &tmp, modelNamePrefix)
-    ;separator="\n")
-  let maxEqPart = (maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(-1, eq, contextOther, &tmp, modelNamePrefix)
-    ;separator="\n")
-
   <<
-  <%&tmp%>
+  <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl(-1, eq, contextOther, modelNamePrefix) ; separator="\n")
+  %><%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl(-1, eq, contextOther, modelNamePrefix) ; separator="\n")
+  %><%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl(-1, eq, contextOther, modelNamePrefix) ; separator="\n")
+  %><%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl(-1, eq, contextOther, modelNamePrefix) ; separator="\n") %>
   int <%symbolName(modelNamePrefix,"updateBoundVariableAttributes")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
     /* min ******************************************************** */
-    <%minEqPart%>
+    <%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix) ; separator="\n")%>
 
     infoStreamPrint(LOG_INIT, 1, "updating min-values");
     <%minValueEquations |> SES_SIMPLE_ASSIGN(__) =>
@@ -2704,7 +2692,7 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
     /* max ******************************************************** */
-    <%maxEqPart%>
+    <%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix) ; separator="\n")%>
 
     infoStreamPrint(LOG_INIT, 1, "updating max-values");
     <%maxValueEquations |> SES_SIMPLE_ASSIGN(__) =>
@@ -2717,7 +2705,7 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
     /* nominal **************************************************** */
-    <%nominalEqPart%>
+    <%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix) ; separator="\n")%>
 
     infoStreamPrint(LOG_INIT, 1, "updating nominal-values");
     <%nominalValueEquations |> SES_SIMPLE_ASSIGN(__) =>
@@ -2730,7 +2718,7 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
     /* start ****************************************************** */
-    <%startEqPart%>
+    <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix) ; separator="\n")%>
 
     infoStreamPrint(LOG_INIT, 1, "updating start-values");
     <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
@@ -2751,18 +2739,12 @@ end functionUpdateBoundVariableAttributes;
 template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
-  let () = System.tmpTickReset(0)
-  let &tmp = buffer ""
-  let body = (parameterEquations |> eq  =>
-    '<%equation_(-1, eq, contextSimulationDiscrete, &tmp, modelNamePrefix)%>'
-    ;separator="\n")
-
   <<
-  <%&tmp%>
+  <%(parameterEquations |> eq  => equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix) ; separator="\n")%>
   int <%symbolName(modelNamePrefix,"updateBoundParameters")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    <%body%>
+    <%(parameterEquations |> eq  => equation_call(eq, modelNamePrefix) ; separator="\n")%>
 
     TRACE_POP
     return 0;
@@ -2782,9 +2764,10 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, String mode
                     equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
               else
-                (initalEquations |> eq hasindex i0 =>
-                    equation_(-1, eq, contextSimulationDiscrete, &eqfuncs, modelNamePrefix)
+                let &eqfuncs += (initalEquations |> eq hasindex i0 =>
+                    equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix)
                     ;separator="\n")
+                (initalEquations |> eq hasindex i0 => equation_call(eq, modelNamePrefix) ;separator="\n")
 
   let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
                 <<
@@ -2827,9 +2810,10 @@ template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lamb
                     equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
               else
-                (initalEquations_lambda0 |> eq hasindex i0 =>
-                    equation_(-1, eq, contextSimulationDiscrete, &eqfuncs, modelNamePrefix)
+                let &eqfuncs += (initalEquations_lambda0 |> eq hasindex i0 =>
+                    equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix)
                     ;separator="\n")
+                (initalEquations_lambda0 |> eq hasindex i0 => equation_call(eq, modelNamePrefix) ;separator="\n")
 
   let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
                 <<
@@ -2883,7 +2867,8 @@ template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Tex
       >>
     end match
   else
-  equation_(-1, eq, contextSimulationDiscrete, &eqs, modelNamePrefix)
+    let &eqs += equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix)
+    equation_call(eq, modelNamePrefix)
   end match
 end functionRemovedInitialEquationsBody;
 
@@ -3750,15 +3735,12 @@ template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String model
                     (functionXXX_systems_arrayFormat(resEquations, "DAERes", &fncalls, &nrfuncs, &eqFuncs, modelNamePrefix))
                 else
                     (functionXXX_systems(resEquations, "DAERes", &fncalls, &eqFuncs, modelNamePrefix))
-
-  let eqns = (resEquations |> eqLst => (eqLst |> eq hasindex i0 =>
-                    equation_(-1, eq, contextSimulationDiscrete, &eqFuncs, modelNamePrefix)
-                    ;separator="\n");separator="\n")
-
   <<
   /*residual equations*/
   <%eqFuncs%>
-
+  <%(resEquations |> eqLst => (eqLst |> eq hasindex i0 =>
+                    equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix)
+                    ;separator="\n");separator="\n")%>
   <%systems%>
   /* for residuals DAE variables */
   int <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>(DATA *data, threadData_t *threadData)
@@ -3767,7 +3749,9 @@ template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String model
     data->simulationInfo->callStatistics.functionEvalDAE++;
 
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAERes(<%nrfuncs%>, data, threadData, functionDAERes_systems);'
-    else '<%fncalls%>' %>
+    else (resEquations |> eqLst => (eqLst |> eq hasindex i0 =>
+                    equation_call(eq, modelNamePrefix)
+                    ;separator="\n");separator="\n") %>
 
     <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(data, threadData);
 
@@ -3899,7 +3883,8 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
                     ;separator="\n")
               else
                 (allEquationsPlusWhen |> eq hasindex i0 =>
-                    equation_(-1, eq, contextSimulationDiscrete, &eqfuncs, modelNamePrefix)
+                    let &eqfuncs += equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix)
+                    equation_call(eq, modelNamePrefix)
                     ;separator="\n")
 
   let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
@@ -3941,19 +3926,18 @@ template functionLocalKnownVars(list<SimEqSystem> localKnownVars, String modelNa
   "Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
-  let &eqfuncs = buffer ""
-  let fncalls = (localKnownVars |> eq =>
-                    equation_(-1, eq, contextSimulationDiscrete, &eqfuncs, modelNamePrefix)
-                    ;separator="\n")
-
   <<
-  <%&eqfuncs%>
+  <%(localKnownVars |> eq =>
+                    equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix)
+                    ;separator="\n")%>
 
   int <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
 
-    <%fncalls%>
+    <%(localKnownVars |> eq =>
+                    equation_call(eq, modelNamePrefix)
+                    ;separator="\n")%>
 
     TRACE_POP
     return 0;
@@ -3966,11 +3950,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   Generates function for ZeroCrossings in simulation file.
   This is a helper of template simulationFile."
 ::=
-  let &tmp = buffer ""
   let &auxFunction = buffer ""
-  let eqs = (equationsForZeroCrossings |> eq =>
-       equation_(-1, eq, contextSimulationNonDiscrete, &tmp, modelNamePrefix)
-      ;separator="\n")
   let forwardEqs = equationsForZeroCrossings |> eq => equationForward_(eq,contextSimulationNonDiscrete,modelNamePrefix); separator="\n"
 
   let &varDecls2 = buffer ""
@@ -4013,7 +3993,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
 
     data->simulationInfo->callStatistics.functionZeroCrossingsEquations++;
 
-    <%eqs%>
+    <%(equationsForZeroCrossings |> eq => equation_call(eq, modelNamePrefix) ; separator="\n")%>
 
     TRACE_POP
     return 0;
@@ -4264,19 +4244,18 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
   Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
-  let &tmp = buffer ""
-  let algAndEqAssertsPart = (algAndEqAssertsEquations |> eq =>
-    equation_(-1, eq, contextSimulationDiscrete, &tmp, modelNamePrefix)
-    ;separator="\n")
-
   <<
-  <%&tmp%>
+  <%(algAndEqAssertsEquations |> eq =>
+    equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix)
+    ;separator="\n")%>
   /* function to check assert after a step is done */
   int <%symbolName(modelNamePrefix,"checkForAsserts")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
 
-    <%algAndEqAssertsPart%>
+    <%(algAndEqAssertsEquations |> eq =>
+    equation_call(eq, modelNamePrefix)
+    ;separator="\n")%>
 
     TRACE_POP
     return 0;
@@ -4538,19 +4517,17 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   This template generates functions for each column of a single jacobian.
   This is a helper of generateMatrix."
 ::=
-  let &tmp = buffer ""
-  let eqns_ = (jacEquations |> eq =>
-    equation_(-1, eq, contextSimulationNonDiscrete, &tmp, modelNamePrefix); separator="\n")
-
   <<
-  <%&tmp%>
+  <%(jacEquations |> eq =>
+    equation_impl(-1, eq, contextSimulationNonDiscrete, modelNamePrefix); separator="\n")%>
   int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_column(void* inData, threadData_t *threadData)
   {
     TRACE_PUSH
 
     DATA* data = ((DATA*)inData);
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixName%>;
-    <%eqns_%>
+    <%(jacEquations |> eq =>
+    equation_call(eq, modelNamePrefix); separator="\n")%>
 
     TRACE_POP
     return 0;
@@ -4676,7 +4653,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   )
 end equation_arrayFormat;
 
-template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &eqs, String modelNamePrefix)
+template equation_impl(Integer clockIndex, SimEqSystem eq, Context context, String modelNamePrefix)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
@@ -4722,7 +4699,10 @@ template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &eq
   case e as SES_RESIDUAL(__)
     then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
   case e as SES_MIXED(__)
-    then equationMixed(e, context, &eqs, modelNamePrefix)
+    then
+    let &eqs = buffer ""
+    let res = equationMixed(e, context, &eqs, modelNamePrefix)
+    eqs + res
   case e as SES_FOR_LOOP(__)
     then equationForLoop(e, context, &varD, &tempeqns)
   else
@@ -4743,7 +4723,6 @@ template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &eq
   // dynamic tearing
   case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__)))
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
-  let &eqs +=
   <<
 
   <%tempeqns%>
@@ -4775,15 +4754,8 @@ template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &eq
   }
   >>
 
-  <<
-  <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix2%>);' %>
-  <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix2%>(data, threadData);
-  <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix2%>);' %>
-  >>
-
   // no dynamic tearing
   else
-  let &eqs +=
   <<
 
   <%tempeqns%>
@@ -4800,14 +4772,27 @@ template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &eq
     TRACE_POP
   }
   >>
+  )
+end equation_impl;
 
+template equation_call(SimEqSystem eq, String modelNamePrefix)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  match eq
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  (
+  let ix = equationIndex(eq)
   <<
   <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(data, threadData);
   <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
   >>
   )
-end equation_;
+end equation_call;
 
 template equationForward_(SimEqSystem eq, Context context, String modelNamePrefixStr)
  "Generates an equation.
@@ -5010,10 +4995,10 @@ template equationMixed(SimEqSystem eq, Context context, Text &tmp, String modelN
 ::=
 match eq
 case eqn as SES_MIXED(__) then
-  let contEqs = equation_(-1, cont, context, &tmp, modelNamePrefixStr)
+  let &tmp += equation_impl(-1, cont, context, modelNamePrefixStr)
   let numDiscVarsStr = listLength(discVars)
   <<
-  /* Continuous equation part in <%contEqs%> */
+  /* Continuous equation part */
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%index%>).profileBlockIndex);' %>
   <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo->mixedSystemData[<%eqn.indexMixedSystem%>].iterationVarsPtr[<%i0%>] = (modelica_boolean*)&<%cref(name)%>;' ;separator="\n"%>;
   <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo->mixedSystemData[<%eqn.indexMixedSystem%>].iterationPreVarsPtr[<%i0%>] = (modelica_boolean*)&<%crefPre(name)%>;' ;separator="\n"%>;
@@ -5255,32 +5240,21 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   let &preExp = buffer ""
   let IfEquation = (ifbranches |> (e, eqns) hasindex index0 =>
     let condition = daeExp(e, context, &preExp, &varDecls, &eqnsDecls)
-    let ifequations = ( eqns |> eqn =>
-       let eqnStr = equation_(-1, eqn, context, &eqnsDecls, modelNamePrefixStr)
-       <<
-       <%eqnStr%>
-       >>
-
-      ;separator="\n")
+    let &eqnsDecls += ( eqns |> eqn => equation_impl(-1, eqn, context, modelNamePrefixStr) ; separator="\n" )
    let conditionline = if index0 then 'else if(<%condition%>)' else 'if(<%condition%>)'
     <<
     <%conditionline%>
     {
-      <%ifequations%>
+      <%( eqns |> eqn => equation_call(eqn, modelNamePrefixStr) ; separator="\n" )%>
     }
     >>
     ;separator="\n")
-  let elseequations = ( elsebranch |> eqn =>
-     let eqnStr = equation_(-1, eqn, context, &eqnsDecls /*EQNBUF*/, modelNamePrefixStr)
-       <<
-       <%eqnStr%>
-       >>
-    ;separator="\n")
+  let &eqnsDecls += ( elsebranch |> eqn => equation_impl(-1, eqn, context, modelNamePrefixStr) ; separator="\n" )
   <<
   <%preExp%>
   <%IfEquation%>else
   {
-    <%elseequations%>
+    <%elsebranch |> eqn => equation_call(eqn, modelNamePrefixStr)%>
   }
   >>
 end equationIfEquationAssign;
