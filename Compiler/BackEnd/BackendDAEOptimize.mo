@@ -3622,6 +3622,8 @@ protected
   BackendDAE.IncidenceMatrix m;
   BackendDAE.Var potentialLocalKnownVar;
   BackendDAE.Equation potentialGlobalKnownEquation;
+  BackendDAE.Variables orderedVars = syst.orderedVars;
+  BackendDAE.EquationArray orderedEqs = syst.orderedEqs;
   DAE.Exp lhs;
   DAE.Exp rhs;
   DAE.Exp crefExp;
@@ -3643,8 +3645,8 @@ algorithm
       //print("Variable: " + intString(vindex) + "\n");
       //print("Equation: " + intString(eindex) + "\n\n");
 
-      potentialLocalKnownVar := BackendVariable.getVarAt(syst.orderedVars,vindex);
-      potentialGlobalKnownEquation := BackendEquation.equationNth1(syst.orderedEqs,eindex);
+      potentialLocalKnownVar := BackendVariable.getVarAt(orderedVars,vindex);
+      potentialGlobalKnownEquation := BackendEquation.equationNth1(orderedEqs,eindex);
 
       try
         BackendDAE.EQUATION(exp = lhs, scalar = rhs) := potentialGlobalKnownEquation;
@@ -3661,12 +3663,13 @@ algorithm
   localKnownVars := List.sort(localKnownVars, intLt);
   localKnownEqns := listReverse(localKnownEqns);
 
+
   for var in localKnownVars loop
-    syst.orderedVars := BackendVariable.removeVar(var, syst.orderedVars);
+    orderedVars := BackendVariable.removeVar(var, orderedVars);
   end for;
 
   for eqn in localKnownEqns loop
-    syst.orderedEqs := BackendEquation.equationRemove(eqn, syst.orderedEqs);
+    orderedEqs := BackendEquation.equationRemove(eqn, orderedEqs);
   end for;
 
   // delete adjacency matrix
@@ -3675,7 +3678,8 @@ algorithm
   syst.matching := BackendDAE.NO_MATCHING();
 
   // TODO: remove this
-  syst.orderedVars := BackendVariable.listVar(BackendVariable.varList(syst.orderedVars));
+  syst.orderedVars := BackendVariable.listVar(BackendVariable.varList(orderedVars));
+  syst.orderedEqs := orderedEqs;
 end removeLocalKnownVars2;
 
 
