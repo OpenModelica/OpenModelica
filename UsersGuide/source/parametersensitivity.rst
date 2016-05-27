@@ -2,8 +2,8 @@ Parameter Sensitivities with OpenModelica
 =========================================
 
 This section describes the use of OpenModelica to compute parameter
-sensitivities using forward sensitivity analysis together with
-sundials/idas solver.
+sensitivities using forward sensitivity analysis together with the
+Sundials/IDA solver.
 
 *Note: this is a very short preliminary description which soon will be
 considerably improved, since this a rather new feature and will
@@ -36,7 +36,7 @@ For parameter sensitivity analysis the derivatives
 
 are required which quantify, according to their mathematical definition,
 the impact of parameters :math:`p` on states :math:`x`.
-In sundials/idas implementation the derivatives are used to evolve the
+In the Sundials/IDA implementation the derivatives are used to evolve the
 solution over the time by:
 
 .. math::
@@ -67,7 +67,7 @@ OpenModelica compiler flag:
     0 = -y* (mu2 -lambda2*x) - der(y);
   end LotkaVolterra;
 
-Also for the simulation it is needed to set ``ida`` as solver integration
+Also for the simulation it is needed to set ``IDA`` as solver integration
 method and add a further simulation flag ``-idaSensitivity`` to calculate
 the parameter sensitivities during the normal simulation.
 
@@ -81,7 +81,7 @@ the $Sensitivities block, where all currently every
 sensitivities w.r.t. **every state**.
 
 .. omc-gnuplot :: LotkaVolterraSensitivities
-  :caption: Results of the sensitivities calculated by ida solver.
+  :caption: Results of the sensitivities calculated by IDA solver.
 
   $Sensitivities.lambda1.x
   $Sensitivities.lambda1.y
