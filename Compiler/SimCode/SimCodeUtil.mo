@@ -7629,9 +7629,9 @@ end extObjInfoString;
 protected function dumpClockPartition
   input SimCode.ClockedPartition clockPart;
 algorithm
-  print("BaseClock:\n"+UNDERLINE+"\n"+ExpressionDump.clockKindString(clockPart.baseClock)+"\n");
+  print("BaseClock:\n"+UNDERLINE+"\n"+ExpressionDump.clockKindString(clockPart.baseClock)+UNDERLINE+"\n\n");
   print(stringDelimitList(List.map(clockPart.subPartitions,subPartitionString),"\n\n")+"\n");
-  print(UNDERLINE+"\n");
+  print("\n");
 end dumpClockPartition;
 
 protected function previousString"outputs a string representation if the boolean says the var is a previous var"
@@ -7662,7 +7662,7 @@ algorithm
   str := str + "partition equations:\n"+UNDERLINE+"\n";
   str := str + stringDelimitList(List.map(subPart.equations,simEqSystemString),"\n");
   str := str + "removedEquations equations:\n"+UNDERLINE+"\n";
-  str := str + stringDelimitList(List.map(subPart.removedEquations,simEqSystemString),"\n")+"\n";
+  str := str + stringDelimitList(List.map(subPart.removedEquations,simEqSystemString),"\n");
   str := str + "SubClock:\n"+ BackendDump.subClockString(subPart.subClock);
   str := str + "Hold Events: "+boolString(subPart.holdEvents);
 end subPartitionString;

@@ -3676,5 +3676,24 @@ algorithm
   end matchcontinue;
 end cmtListToString;
 
+public function clockKindString
+  input DAE.ClockKind cK;
+  output String sOut;
+algorithm
+  sOut := match(cK)
+    local
+  case(DAE.INFERRED_CLOCK())
+    then "Inferred Clock";
+  case(DAE.INTEGER_CLOCK())
+    then "Integer Clock";
+  case(DAE.REAL_CLOCK())
+    then "Real Clock";
+  case(DAE.BOOLEAN_CLOCK())
+    then "Boolean Clock";
+  case(DAE.SOLVER_CLOCK())
+    then "Solver Clock";
+  end match;
+end clockKindString;
+
 annotation(__OpenModelica_Interface="frontend");
 end DAEDump;

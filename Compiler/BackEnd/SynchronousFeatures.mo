@@ -471,7 +471,7 @@ protected
   BackendDAE.StrongComponents clockComps;
   array<Integer> subclksCnt;
   array<Integer> order;
-  array<BackendDAE.SubClock> subclocks;
+  array<BackendDAE.SubClock> subclocks, subclocksOutArr;
   array<Boolean> clockedEqsMask, clockedVarsMask;
 algorithm
   funcs := BackendDAEUtil.getFunctions(inShared);
@@ -516,9 +516,11 @@ algorithm
 
   (outSysts, _) := List.map2Fold(outSysts, makeClockedSyst, order, off, 1);
   outSubClocks := {};
-  for i in arrayLength(order):-1:1 loop
-    outSubClocks := subclocks[order[i]]::outSubClocks;
+  subclocksOutArr := arrayCopy(subclocks);
+  for i in List.intRange(arrayLength(subclocksOutArr)) loop
+    arrayUpdate(subclocksOutArr,order[i],subclocks[i]);
   end for;
+    outSubClocks := arrayList(subclocksOutArr);
 end subClockPartitioning;
 
 protected function maskMatrix
@@ -588,6 +590,7 @@ algorithm
             end match;
             (clockKind, (subClock, parentIdx)) := getSubClock(exp, inVars, outSubClocks);
           end if;
+
           if parentIdx == 0 then
             // start clock of new branch
             branchClockKind := DAE.INFERRED_CLOCK();
@@ -595,6 +598,7 @@ algorithm
             // get previously obtained clock
             branchClockKind := arrayGet(clockKinds, parentIdx);
           end if;
+
           (branchClockKind, _) := setClockKind(branchClockKind, clockKind, clockFactor);
           arrayUpdate(clockKinds, varIdx, branchClockKind);
           (clockKind, clockFactor) := setClockKind(outClockKind, clockKind, clockFactor);
@@ -2282,6 +2286,20 @@ algorithm
     end if;
   end for;
 end partitionEquations;
+
+protected function subClockTreeString
+  input array<tuple<BackendDAE.SubClock, Integer>> treeIn;
+  output String sOut="";
+protected
+ tuple<BackendDAE.SubClock, Integer> tpl;
+ BackendDAE.SubClock subClock;
+ Integer i;
+algorithm
+  for tpl in treeIn loop
+    (subClock,i) := tpl;
+    sOut := "["+intString(i)+"]:  "+BackendDump.subClockString(subClock)+"\n"+sOut;
+  end for;
+end subClockTreeString;
 
 annotation(__OpenModelica_Interface="backend");
 end SynchronousFeatures;
