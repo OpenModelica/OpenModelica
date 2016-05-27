@@ -42,7 +42,6 @@
 #include "omcinteractiveenvironment.h"
 #include "updategroupcellvisitor.h"
 #include "commandcompletion.h"
-#include "highlighterthread.h"
 #include "stylesheet.h"
 #include "inputcell.h"
 #include "notebookcommands.h"
@@ -190,10 +189,6 @@ namespace IAEX
           modelicacolorsfile = openmodelica + "share/omnotebook/modelicacolors.xml";
         else
           modelicacolorsfile = openmodelica + "/share/omnotebook/modelicacolors.xml";
-
-        OpenModelicaHighlighter *highlighter = new OpenModelicaHighlighter( modelicacolorsfile, *style.textCharFormat() );
-        HighlighterThread *thread = HighlighterThread::instance( highlighter );
-        //thread->start( QThread::LowPriority );
       }
       catch( exception &e )
       {
@@ -270,10 +265,6 @@ namespace IAEX
    */
   CellApplication::~CellApplication()
   {
-    // 2005-12-19 AF, stop highlighter thread
-    HighlighterThread *thread = HighlighterThread::instance();
-    thread->exit();
-
     // 2006-02-09 AF, moved code for quiting omc to the notebook windos
 
     // 2006-01-16 AF, remove temporary files
@@ -389,10 +380,6 @@ namespace IAEX
     // 2005-12-01 AF, Added try-catch
     try
     {
-      //2006-05-03 AF, during open, stop highlighter
-      HighlighterThread *thread = HighlighterThread::instance();
-      thread->setStop( true );
-
       //1. Create a new document.
       Document *d = new CellDocument( this, filename, readmode );
       add(d);
@@ -424,9 +411,6 @@ namespace IAEX
       // childs in the documentview
       UpdateGroupcellVisitor visitor;
       v->document()->runVisitor( visitor );
-
-      // 2006-05-03 AF, done, start highlighter again
-      thread->setStop( false );
     }
     catch( exception &e )
     {

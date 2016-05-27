@@ -53,11 +53,10 @@
 //IAEX Headers
 #include "cell.h"
 #include "inputcelldelegate.h"
-#include "syntaxhighlighter.h"
-//#include "highlighter.h"
 #include "document.h"
 //#include <QToolBar>
 #include "PlotWindow.h"
+#include "ModelicaTextHighlighter.h"
 
 class IndentationState;
 
@@ -101,7 +100,6 @@ namespace IAEX
 
   signals:
     void plotVariables(QStringList lst);
-    void heightChanged();
     void textChanged();
     void textChanged( bool );
     void clickedOutput( Cell* );          // Added 2006-02-03 AF
@@ -167,6 +165,7 @@ namespace IAEX
 
   public:
     MyTextEdit2* input_;
+    ModelicaTextHighlighter *mpModelicaTextHighlighter;
     QTextBrowser *output_;
   private:
     QTextBrowser *chaptercounter_;
@@ -191,7 +190,6 @@ namespace IAEX
     MyTextEdit2(QWidget *parent=0);
     virtual ~MyTextEdit2();
 
-    bool isStopingHighlighter();    // Added 2006-01-16 AF
     int state;
 
   public slots:
@@ -223,7 +221,6 @@ namespace IAEX
 
   private:
     bool inCommand;            // Added 2005-12-15 AF
-    bool stopHighlighter;        // Added 2006-01-16 AF
     int indentationLevel(QString, bool b=true);
     bool autoIndent;
     QMap<int, IndentationState*> indentationStates;

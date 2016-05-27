@@ -85,7 +85,6 @@ namespace IAEX
     virtual bool isEvaluated();
 
   signals:
-    void heightChanged();
     void textChanged();
     void textChanged( bool );
     void clickedOutput( Cell* );
@@ -198,7 +197,6 @@ namespace IAEX
 
   private:
     bool inCommand;
-    bool stopHighlighter;
     int indentationLevel(QString, bool b=true);
     bool autoIndent;
     QMap<int, IndentationState*> indentationStates;

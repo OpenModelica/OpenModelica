@@ -45,7 +45,6 @@
 #include "textcell.h"
 #include "inputcell.h"
 #include "cellcursor.h"
-#include "highlighterthread.h"
 #include "graphcell.h"
 
 using namespace std;
@@ -67,26 +66,14 @@ namespace IAEX
     virtual void visitTextCellNodeBefore(TextCell *node){}
     virtual void visitTextCellNodeAfter(TextCell *node){}
 
-    virtual void visitInputCellNodeBefore(InputCell *node)
-    {
-      HighlighterThread *thread = HighlighterThread::instance();
-      thread->removeEditor( node->textEdit() );
-    }
+    virtual void visitInputCellNodeBefore(InputCell *node){}
     virtual void visitInputCellNodeAfter(InputCell *node){}
 
-    virtual void visitGraphCellNodeBefore(GraphCell *node)
-    {
-      HighlighterThread *thread = HighlighterThread::instance();
-      thread->removeEditor( node->textEdit() );
-    }
+    virtual void visitGraphCellNodeBefore(GraphCell *node){}
     virtual void visitGraphCellNodeAfter(GraphCell *node){}
 
 
-    virtual void visitLatexCellNodeBefore(LatexCell *node)
-    {
-      HighlighterThread *thread = HighlighterThread::instance();
-      thread->removeEditor( node->textEdit() );
-    }
+    virtual void visitLatexCellNodeBefore(LatexCell *node){}
     virtual void visitLatexCellNodeAfter(LatexCell *node){}
 
 

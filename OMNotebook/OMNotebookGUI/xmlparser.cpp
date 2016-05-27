@@ -577,6 +577,8 @@ namespace IAEX
           text = e.text();
           GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
           gCell->setText(text);
+          // we need to call rehighlight when we set the text manually.
+          gCell->mpModelicaTextHighlighter->rehighlight();
         }
         else if( e.tagName() == XML_OUTPUTPART )
         {

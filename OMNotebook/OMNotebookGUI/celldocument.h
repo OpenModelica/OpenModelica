@@ -169,21 +169,13 @@ namespace IAEX
 
 
   signals:
-    virtual void copyAvailable(bool);
-    virtual void undoAvailable(bool);
-    virtual void redoAvailable(bool);
-    virtual void setAutoIndent(bool);
-
-    void updatePos(int, int);
-    void newState(QString);
-    void setStatusMenu(QList<QAction*>);
+    void setAutoIndent(bool);
     void widthChanged(const int);
     void cursorChanged();
     void viewExpression(const bool);
     void contentChanged();        // Added 2005-11-29 AF
     void hoverOverFile( QString );    // Added 2006-02-10 AF
     void forwardAction( int );      // Added 2006-04-27 AF
-
 
   protected:
     void setWorkspace(Cell *newWorkspace);

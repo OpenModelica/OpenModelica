@@ -163,14 +163,13 @@ namespace IAEX
 
 
 signals:
-    virtual void copyAvailable(bool) = 0;
-    virtual void undoAvailable(bool) = 0;
-    virtual void redoAvailable(bool) = 0;
+    void copyAvailable(bool);
+    void undoAvailable(bool);
+    void redoAvailable(bool);
 
-    virtual void updatePos(int, int) = 0;
-    virtual void newState(QString) = 0;
-    virtual void setStatusMenu(QList<QAction*>) = 0;
-
+    void updatePos(int, int);
+    void newState(QString);
+    void setStatusMenu(QList<QAction*>);
 
   };
 }

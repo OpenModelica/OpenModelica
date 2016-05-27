@@ -82,7 +82,6 @@ namespace IAEX
     virtual void viewExpression(const bool expr);
 
   signals:
-    void heightChanged();
     void textChanged();
     void textChanged( bool );
     void hoverOverUrl( const QUrl &link );    // Added 2006-02-10 AF

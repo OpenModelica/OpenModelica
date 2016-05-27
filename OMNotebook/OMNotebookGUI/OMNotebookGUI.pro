@@ -22,13 +22,12 @@ SOURCES += \
     textcell.cpp \
     cellcommands.cpp \
     commandcompletion.cpp \
-    openmodelicahighlighter.cpp \
+    ModelicaTextHighlighter.cpp \
     textcursorcommands.cpp \
     cell.cpp \
     printervisitor.cpp \
     treeview.cpp \
     cellcursor.cpp \
-    highlighterthread.cpp \
     puretextvisitor.cpp \
     updategroupcellvisitor.cpp \
     celldocument.cpp \
@@ -78,8 +77,7 @@ HEADERS += \
     stylesheet.h \
     cellcommands.h \
     cursorposvisitor.h \
-    openmodelicahighlighter.h \
-    syntaxhighlighter.h \
+    ModelicaTextHighlighter.h \
     cellcursor.h \
     document.h \
     otherdlg.h \
@@ -93,7 +91,6 @@ HEADERS += \
     printervisitor.h\
     treeview.h \
     cellfactory.h \
-    highlighterthread.h \
     puretextvisitor.h \
     updategroupcellvisitor.h \
     cellgroup.h \

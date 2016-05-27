@@ -75,7 +75,6 @@
 #include "treeview.h"
 #include "stylesheet.h"
 #include "commandcompletion.h"
-#include "highlighterthread.h"
 #include "omcinteractiveenvironment.h"
 #include "indent.h"
 
@@ -113,7 +112,7 @@ namespace IAEX {
   MyTextEdit2::MyTextEdit2(QWidget *parent)
     : QTextBrowser(parent),
     inCommand(false),
-    stopHighlighter(false), autoIndent(true)
+    autoIndent(true)
   {
 
   }
@@ -124,11 +123,6 @@ namespace IAEX {
     {
       delete i.value();
     }
-  }
-
-  bool MyTextEdit2::isStopingHighlighter()
-  {
-    return stopHighlighter;
   }
 
   /*!
@@ -144,7 +138,6 @@ namespace IAEX {
   */
   void MyTextEdit2::mousePressEvent(QMouseEvent *event)
   {
-    stopHighlighter = false;
     inCommand = false;
     QTextBrowser::mousePressEvent(event);
 
@@ -201,7 +194,6 @@ namespace IAEX {
       (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
     {
       inCommand = false;
-      stopHighlighter = false;
 
       event->accept();
       emit eval();
@@ -210,7 +202,6 @@ namespace IAEX {
     else if( (event->modifiers() == Qt::ShiftModifier && event->key() == Qt::Key_Backtab ) ||
       (event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_Space) )
     {
-      stopHighlighter = false;
 
       event->accept();
       if( inCommand )
@@ -227,7 +218,6 @@ namespace IAEX {
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_Tab )
     {
-      stopHighlighter = false;
 
       event->accept();
       inCommand = false;
@@ -238,7 +228,6 @@ namespace IAEX {
       event->key() == Qt::Key_Delete )
     {
       inCommand = false;
-      stopHighlighter = true;
 
       QTextBrowser::keyPressEvent( event );
     }
@@ -247,7 +236,6 @@ namespace IAEX {
       ( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return ))
     {
       inCommand = false;
-      stopHighlighter = false;
 
       event->ignore();
     }
@@ -255,7 +243,6 @@ namespace IAEX {
     else if( event->key() == Qt::Key_PageUp )
     {
       inCommand = false;
-      stopHighlighter = false;
 
       event->ignore();
     }
@@ -263,7 +250,6 @@ namespace IAEX {
     else if( event->key() == Qt::Key_PageDown )
     {
       inCommand = false;
-      stopHighlighter = false;
 
       event->ignore();
     }
@@ -272,7 +258,6 @@ namespace IAEX {
       event->key() == Qt::Key_C )
     {
       inCommand = false;
-      stopHighlighter = false;
 
       event->ignore();
       emit forwardAction( 1 );
@@ -282,7 +267,6 @@ namespace IAEX {
       event->key() == Qt::Key_X )
     {
       inCommand = false;
-      stopHighlighter = false;
 
       event->ignore();
       emit forwardAction( 2 );
@@ -292,7 +276,6 @@ namespace IAEX {
       event->key() == Qt::Key_V )
     {
       inCommand = false;
-      stopHighlighter = false;
 
       event->ignore();
       emit forwardAction( 3 );
@@ -300,7 +283,6 @@ namespace IAEX {
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_W)
     {
       inCommand = false;
-      stopHighlighter = false;
       indentText();
       event->ignore();
       //      QTextBrowser::keyPressEvent( event );
@@ -311,13 +293,11 @@ namespace IAEX {
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_E)
     {
       inCommand = false;
-      stopHighlighter = false;
       indentText();
     }
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_K)
     {
       inCommand = false;
-      stopHighlighter = true;
       QTextCursor tc(textCursor());
       int i = toPlainText().indexOf(QRegExp("\\n|$"), tc.position());
 
@@ -333,7 +313,6 @@ namespace IAEX {
     else if( event->key() == Qt::Key_Tab )
     {
       inCommand = false;
-      stopHighlighter = false;
       textCursor().insertText( "  " );
     }
     else if( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return )
@@ -390,7 +369,6 @@ namespace IAEX {
     else
     {
       inCommand = false;
-      stopHighlighter = false;
       QTextBrowser::keyPressEvent( event );
     }
 
@@ -545,26 +523,6 @@ namespace IAEX {
   */
   GraphCell::~GraphCell()
   {
-    //2006-01-05 AF, check if input texteditor is in the highlighter,
-    //if it is - wait for 60 ms and check again.
-    HighlighterThread *thread = HighlighterThread::instance();
-    int sleepTime = 0;
-    bool firstTime = true;
-    while( thread->haveEditor( input_ ) )
-    {
-      if( firstTime )
-      {
-        thread->removeEditor( input_ );
-        firstTime = false;
-      }
-
-      SleeperThread::msleep( 60 );
-      sleepTime++;
-
-      if( sleepTime > 100 )
-        break;
-    }
-
     delete mpPlotWindow;
     delete input_;
     delete output_;
@@ -590,6 +548,7 @@ namespace IAEX {
   void GraphCell::createGraphCell()
   {
     input_ = new MyTextEdit2( mainWidget() );
+    mpModelicaTextHighlighter = new ModelicaTextHighlighter(input_->document());
     variableButton = new QPushButton("D",input_);
     variableButton->setToolTip("New simulation data available");
 
@@ -898,7 +857,7 @@ namespace IAEX {
   void GraphCell::setText(QString text)
   {
     // 2005-12-16 AF, block signals
-    input_->document()->blockSignals(true);
+    bool state = input_->document()->blockSignals(true);
 
     // 2005-10-04 AF, added some code to replace/remove
     QString tmp = text.replace("<br>", "\n");
@@ -933,7 +892,7 @@ namespace IAEX {
 
 
     // 2005-12-16 AF, unblock signals and tell highlighter to highlight
-    input_->document()->blockSignals(false);
+    input_->document()->blockSignals(state);
     contentChanged();
   }
 
@@ -1128,7 +1087,7 @@ namespace IAEX {
   {
     try
     {
-      if( readonly )
+        if( readonly )
       {
         QTextCursor cursor = input_->textCursor();
         cursor.clearSelection();
@@ -1630,21 +1589,7 @@ namespace IAEX {
   */
   void GraphCell::addToHighlighter()
   {
-    //    QMessageBox::information(0, "uu3", "addToHighlighter");
     emit textChanged(true);
-    if( input_->toPlainText().isEmpty() )
-      return;
-
-    // 2006-01-16 AF, Don't add the text editor if MyTextEdit2
-    // don't allow it. MyTextEdit2 says no if the user removes
-    // text (backspace or delete).
-    if( dynamic_cast<MyTextEdit2 *>(input_)->isStopingHighlighter() )
-      return;
-
-    //    QMessageBox::information(0,"uu3", "add2");
-
-    HighlighterThread *thread = HighlighterThread::instance();
-    thread->addEditor( input_ );
   }
 
   /*!

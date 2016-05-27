@@ -65,7 +65,6 @@
 #include "graphcell.h"
 #include "latexcell.h"
 #include "cellgroup.h"
-#include "highlighterthread.h"
 #include <QDataStream>
 #include <QTextOption>
 
