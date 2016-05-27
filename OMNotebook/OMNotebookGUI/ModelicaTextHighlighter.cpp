@@ -57,12 +57,12 @@ namespace IAEX
     mHighlightingRules.clear();
     // set color highlighting
     mTextFormat.setForeground(QColor(0, 0, 0)); // black
-    mKeywordFormat.setForeground(QColor(139, 0, 0)); // dark red
+    mKeywordFormat.setForeground(QColor(180, 0, 0)); // dark red
     mTypeFormat.setForeground(QColor(255, 10, 10)); // red
-    mSingleLineCommentFormat.setForeground(QColor(0, 150, 0)); // dark green
-    mMultiLineCommentFormat.setForeground(QColor(0, 150, 0)); // dark green
-    mFunctionFormat.setForeground(QColor(0, 0, 255)); // blue
-    mQuotationFormat.setForeground(QColor(0, 139, 0)); // dark green
+    mSingleLineCommentFormat.setForeground(QColor(0, 120, 0)); // green
+    mMultiLineCommentFormat.setForeground(QColor(0, 120, 0)); // green
+    mFunctionFormat.setForeground(QColor(180, 0, 0)); // dark red
+    mQuotationFormat.setForeground(QColor(120, 120, 120)); // gray
     mNumberFormat.setForeground(QColor(139, 0, 139)); // purple
 
     HighlightingRule rule;

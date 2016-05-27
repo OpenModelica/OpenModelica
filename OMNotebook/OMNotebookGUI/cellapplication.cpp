@@ -174,31 +174,6 @@ namespace IAEX
     }
     else
     {
-      // 2006-01-09 AF, create a new highlight thread with the
-      // 'openmodelicahighlighter' as the highlighter that should be
-      // used.
-      // 2006-04-10 AF, use environment variable to find modelicacolors.xml
-      try
-      {
-        Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
-        CellStyle style = sheet->getStyle( "Input" );
-        style.textCharFormat()->setBackground( QBrush( QColor( 200, 200, 255 ) ));
-
-        QString modelicacolorsfile;
-        if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-          modelicacolorsfile = openmodelica + "share/omnotebook/modelicacolors.xml";
-        else
-          modelicacolorsfile = openmodelica + "/share/omnotebook/modelicacolors.xml";
-      }
-      catch( exception &e )
-      {
-        QString msg = e.what();
-        msg += "\nCould not create highlighter thread, exiting OMNotebook";
-        QMessageBox::warning( 0, "Error", msg, "OK" );
-        std::exit(-1);
-      }
-
-
       // second arg is a file that should be opened.
       if( argc > 1 )
       {
