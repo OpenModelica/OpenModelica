@@ -1,0 +1,203 @@
+// name: localKnownVars
+// status: correct
+
+loadString("
+model localKnownVars
+  Real x;
+  Real y;
+
+  Real a, b, c;
+initial equation
+  x = 2;
+  y = 3;
+
+equation
+  der(x) = a;
+  der(y) = b;
+
+  a = sin(x);
+  b = cos(y);
+
+  c = b + der(x);
+end localKnownVars;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules+=removeLocalKnownVars -d=dumpindxdae"); getErrorString();
+simulate(localKnownVars); getErrorString();
+
+val(c, {0.0, 0.3, 0.6}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// ########################################
+// dumpindxdae
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: c:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): c = b + a   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: x:STATE(1)()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): der(x) = a   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: y:STATE(1)()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): der(y) = b   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (2)
+// ========================================
+// 1: a:VARIABLE()  = sin(x)  type: Real 
+// 2: b:VARIABLE()  = cos(y)  type: Real 
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+// record SimulationResult
+//     resultFile = "localKnownVars_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'localKnownVars', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {-0.08069506977476371,-0.1338493936335761,-0.1493501084960088}
+// ""
+// endResult

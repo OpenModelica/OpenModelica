@@ -76,7 +76,8 @@ TestSolve16.mos \
 TestSolve17.mos \
 TestSolve18.mos \
 VariableFilter.mos \
-WhenStatement4.mos 
+WhenStatement4.mos \
+localKnownVars.mos
 
 
 # test that currently fail. Move up when fixed. 
