@@ -38,7 +38,7 @@ echo "<html><head><title>OpenModelica - Detailed Library Coverage Trend Overview
 echo "<center>" >> $OUT
 echo "<h2>OpenModelica Detailed Library Coverage Overview ran each night by <a href="/hudson/view/Library%20Testing/">Hudson</a></h2><br/><b>$SDATE</b>" >> $OUT
 echo "<hr />" >> $OUT
-for f in history/*-trend-detailed.svg; do
+for f in history/*/*-trend-detailed.svg; do
   # Filter out entries <10 days old. New entries will appear the day after this run!
   if test `find "$f" \( ! -mmin +14400 \)`; then
     IMG=$f
