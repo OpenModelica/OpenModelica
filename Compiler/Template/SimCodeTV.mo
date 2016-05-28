@@ -1071,6 +1071,7 @@ package BackendDAE
     record DUMMY_STATE end DUMMY_STATE;
     record CLOCKED_STATE
       DAE.ComponentRef previousName "the name of the previous variable";
+      Boolean isStartFixed "is fixed at first clock tick";
     end CLOCKED_STATE;
     record DISCRETE end DISCRETE;
     record PARAM end PARAM;

@@ -290,7 +290,9 @@ algorithm
     for i in 1:arrayLength(isPrevVarArr) loop
       if isPrevVarArr[i] then
         var := BackendVariable.setVarFixed(BackendVariable.getVarAt(inSyst.orderedVars, i), true);
-        var := BackendVariable.setVarKind(var, BackendDAE.CLOCKED_STATE(previousName = ComponentReference.crefPrefixPrevious(var.varName)));
+        var := BackendVariable.setVarKind(var, BackendDAE.CLOCKED_STATE(
+                 previousName = ComponentReference.crefPrefixPrevious(var.varName),
+                 isStartFixed = isSome(subPartition.clock.solver)));
         BackendVariable.setVarAt(inSyst.orderedVars, i, var);
         prevVars := var.varName::prevVars;
       end if;

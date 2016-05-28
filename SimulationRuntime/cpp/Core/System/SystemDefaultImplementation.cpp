@@ -55,7 +55,8 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , _clockInterval  (NULL)
   , _clockShift     (NULL)
   , _clockTime      (NULL)
-   , _clockCondition(NULL)
+  , _clockCondition (NULL)
+  , _clockStart     (NULL)
   , _outputStream(NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
@@ -91,7 +92,8 @@ SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementa
   , _clockInterval  (NULL)
   , _clockShift     (NULL)
   , _clockTime      (NULL)
-  , _clockCondition(NULL)
+  , _clockCondition (NULL)
+  , _clockStart     (NULL)
   , _outputStream(NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
@@ -134,7 +136,8 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
   if(_clockInterval) delete [] _clockInterval;
   if(_clockShift) delete [] _clockShift;
   if(_clockTime) delete [] _clockTime;
-   if(_clockCondition) delete [] _clockCondition;
+  if(_clockCondition) delete [] _clockCondition;
+  if(_clockStart) delete [] _clockStart;
 }
 
 void SystemDefaultImplementation::Assert(bool cond,const string& msg)
@@ -237,17 +240,16 @@ void SystemDefaultImplementation::initialize()
     _clockShift = new double [_dimClock];
     if (_clockTime) delete [] _clockTime;
     _clockTime = new double [_dimClock];
-	  if (_clockCondition) delete [] _clockCondition;
+    if (_clockCondition) delete [] _clockCondition;
     _clockCondition = new bool [_dimClock];
-	memset(_clockCondition,false,(_dimClock)*sizeof(bool));
+    memset(_clockCondition,false,(_dimClock)*sizeof(bool));
+    if (_clockStart) delete [] _clockStart;
+    _clockStart = new bool [_dimClock];
   }
   _start_time = 0.0;
   _terminal = false;
   _terminate = false;
-  _clockStart = true;
-
 };
-
 
 /// Set current integration time
 void SystemDefaultImplementation::setTime(const double& t)

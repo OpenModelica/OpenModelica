@@ -9815,6 +9815,7 @@ case SIMCODE(modelInfo = MODELINFO(__), modelStructure = fmims) then
           _clockInterval[<%i%>] = <%interval%> * <%fnom%>.0 / <%fres%>.0;
           _clockShift[<%i%>] = <%snom%>.0 / <%sres%>.0;
           _clockTime[<%i%>] = _simTime + _clockShift[<%i%>] * _clockInterval[<%i%>];
+          _clockStart[<%i%>] = true;
           <%i%> ++;
           >>
       ; separator="\n")
@@ -11564,6 +11565,9 @@ template equationSimpleAssign(SimEqSystem eq, Context context,Text &varDecls, Si
 match eq
 case SES_SIMPLE_ASSIGN(__) then
   let &preExp = buffer "" /*BUFD*/
+  let startFixedExp = match cref2simvar(cref, simCode)
+    case SIMVAR(varKind = CLOCKED_STATE(isStartFixed = true)) then
+      "if (_clockStart[clockIndex - 1]) return;"
   let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
   match cref
@@ -11585,6 +11589,7 @@ case SES_SIMPLE_ASSIGN(__) then
   let &assignExp += cref1(cref, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
   let &assignExp += if(assignToStartValues) then ',<%expPart%>,<%overwriteOldStartValue%>);' else ' = <%expPart%>;'
   <<
+  <%if not assignToStartValues then '<%startFixedExp%>'%>
   <%preExp%>
   <%assignExp%>
   >>
@@ -12759,6 +12764,9 @@ template clockedPartFunctions(Integer i, list<tuple<SimCodeVar.SimVar, Boolean>>
 
   void <%className%>::<%funcName%>(const UPDATETYPE command)
   {
+    if (_simTime > _clockTime[<%idx%>]) {
+      _clockStart[<%idx%>] = false;
+    }
     <%funcCalls%>
     if (_simTime > _clockTime[<%idx%>]) {
       _clockInterval[<%idx%>] = _simTime - _clockTime[<%idx%>];
