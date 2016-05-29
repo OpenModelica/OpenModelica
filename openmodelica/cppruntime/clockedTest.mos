@@ -1,5 +1,5 @@
 // name: clockedTest
-// keywords: synchronous clocked equations
+// keywords: synchronous clocked equations, continuous-time partition
 // status: correct
 // teardown_command: rm -f *DID*
 
@@ -13,16 +13,13 @@ model DID \"Double Integrator Discrete-time\"
   parameter Real y1_start = 1 \"start value for first state\";
   parameter Real y2_start = 0 \"start value for second state\";
   input Real u(start = -2);
+  output Real y1(start = y1_start, fixed = true);
+  output Real y2(start = y2_start, fixed = true);
   Real ud;
-  Real xd1(start = y1_start);
-  Real xd2(start = y2_start);
-  output Real y1, y2;
 equation
-  ud = sample(u, Clock(intervalCounter, resolution));
-  xd1 = previous(xd1) + p * ud * interval(ud);
-  xd2 = previous(xd2) + previous(xd1) * interval(xd1) + 0.5 * ud * interval()^2;
-  y1 = hold(previous(xd1));
-  y2 = hold(previous(xd2));
+  ud = sample(u, Clock(Clock(intervalCounter, resolution), solverMethod = \"ImplicitEuler\"));
+  der(y1) = p * ud;
+  der(y2) = previous(y1) + 0.5 * p * ud * interval(ud);
 end DID;
 ");
 getErrorString();
