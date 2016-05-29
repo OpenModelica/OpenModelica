@@ -827,8 +827,6 @@ public constant Message CLOCKED_WHEN_IN_WHEN_EQ = MESSAGE(566, TRANSLATION(), ER
   Util.gettext("Clocked when equation inside the body of when equation."));
 public constant Message CONT_CLOCKED_PARTITION_CONFLICT_EQ = MESSAGE(567, TRANSLATION(), ERROR(),
   Util.gettext("Equation belongs to clocked and continuous partitions."));
-public constant Message CLOCKED_DSICRETE_CONT_CONFLICT = MESSAGE(568, TRANSLATION(), ERROR(),
-  Util.gettext("Clocked equation contains discrete and continuous expression."));
 public constant Message INVALID_CLOCK_EQUATION = MESSAGE(569, TRANSLATION(), ERROR(),
   Util.gettext("Invalid form of clock equation"));
 public constant Message SUBCLOCK_CONFLICT = MESSAGE(570, TRANSLATION(), ERROR(),

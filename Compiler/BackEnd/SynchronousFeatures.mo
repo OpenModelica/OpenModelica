@@ -1082,14 +1082,10 @@ protected
 algorithm
   isContClockedPartition := arrayGet(inContPartitions, inPartitionIdx);
   isContClockedPartition := match isContClockedPartition
-    case NONE() then SOME(inIsContClockedPartition);
-    case SOME(isContClockedPrevPartition)
-      guard(inIsContClockedPartition == isContClockedPrevPartition)
-      then isContClockedPartition;
-    else
-      equation
-        Error.addSourceMessage(Error.CLOCKED_DSICRETE_CONT_CONFLICT, {}, source);
-      then fail();
+    case NONE() then
+      SOME(inIsContClockedPartition);
+    case SOME(isContClockedPrevPartition) then
+      SOME(inIsContClockedPartition or isContClockedPrevPartition);
   end match;
   arrayUpdate(inContPartitions, inPartitionIdx, isContClockedPartition);
 end setContClockedPartition;
