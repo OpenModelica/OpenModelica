@@ -7,6 +7,7 @@ Modelica_Synchronous.Examples.SimpleControlledDrive.Continuous.mos \
 Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreteTextbookController.mos \
 Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreteController.mos \
 Modelica_Synchronous.Examples.CascadeControlledDrive.Continuous.mos \
+Modelica_Synchronous.Examples.Elementary.ClockSignals.ShiftSample.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.TimeBasedStep.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.TickBasedStep.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.TimeBasedSine.mos \
@@ -14,6 +15,7 @@ Modelica_Synchronous.Examples.Elementary.RealSignals.TimeBasedRamp.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.TickBasedRamp.mos \
 Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedStep.mos \
 Modelica_Synchronous.Examples.Elementary.BooleanSignals.TickBasedStep.mos \
+
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -26,7 +28,8 @@ Modelica_Synchronous.Examples.CascadeControlledDrive.SuperSampled.mos \
 Modelica_Synchronous.Examples.CascadeControlledDrive.AbsoluteClocks.mos \
 Modelica_Synchronous.Examples.Systems.ControlledMixingUnit.mos \
 Modelica_Synchronous.Examples.Systems.EngineThrottleControl.mos \
-Modelica_Synchronous.Examples.Elementary.IntegerSignals.TimeBasedStep.mos \
+Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample.mos \
+Modelica_Synchronous.Examples.Elementary.ClockSignals.SuperSample.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.Sample1.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.Sample2.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.Sample3.mos \
@@ -61,6 +64,7 @@ Modelica_Synchronous.Examples.Elementary.IntegerSignals.BackSample.mos \
 Modelica_Synchronous.Examples.Elementary.IntegerSignals.AssignClock.mos \
 Modelica_Synchronous.Examples.Elementary.IntegerSignals.AssignClockVectorized.mos \
 Modelica_Synchronous.Examples.Elementary.IntegerSignals.UpSample.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.TimeBasedStep.mos \
 Modelica_Synchronous.Examples.Elementary.IntegerSignals.TickBasedStep.mos \
 Modelica_Synchronous.Examples.Elementary.BooleanSignals.Sample1.mos \
 Modelica_Synchronous.Examples.Elementary.BooleanSignals.Sample2.mos \
