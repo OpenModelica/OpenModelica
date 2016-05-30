@@ -8257,14 +8257,24 @@ public function createEmptyShared
   input FCore.Cache cache;
   input FCore.Graph graph;
   output BackendDAE.Shared shared;
-protected
-  BackendDAE.Variables emptyVars = BackendVariable.emptyVars();
-  BackendDAE.EquationArray emptyEqs = BackendEquation.emptyEqns();
-  DAE.FunctionTree functions = DAE.AvlTreePathFunction.new();
 algorithm
-  shared := BackendDAE.SHARED( emptyVars, emptyVars, emptyVars, emptyVars, emptyEqs, emptyEqs, {}, {}, cache, graph,
-                               DAE.AvlTreePathFunction.new(), emptyEventInfo(), {}, backendDAEType, {}, ei,
-                               emptyPartitionsInfo() );
+  shared := BackendDAE.SHARED(BackendVariable.emptyVars(),
+                              BackendVariable.emptyVars(),
+                              BackendVariable.emptyVars(),
+                              BackendVariable.emptyVars(),
+                              BackendEquation.emptyEqns(),
+                              BackendEquation.emptyEqns(),
+                              {},
+                              {},
+                              cache,
+                              graph,
+                              DAE.AvlTreePathFunction.new(),
+                              emptyEventInfo(),
+                              {},
+                              backendDAEType,
+                              {},
+                              ei,
+                              emptyPartitionsInfo());
 end createEmptyShared;
 
 public function emptyPartitionsInfo
