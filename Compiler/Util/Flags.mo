@@ -1033,7 +1033,7 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(45, "tearingHeuristic",
 
 constant ConfigFlag DISABLE_LINEAR_TEARING = CONFIG_FLAG(46, "disableLinearTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Disables the tearing of linear systems. That might improve the performance of large linear systems(N>1000) in combination with a sparse solver (e.g. umfpack) at runtime (usage with: -ls umfpack)."));
+  Util.gettext("Disables the tearing of linear systems. That might improve the performance of large linear systems(N>1000) in combination with a sparse solver (e.g. umfpack) at runtime (usage with: -ls umfpack).\nDeprecated flag: Use --maxSizeLinearTearing=0 instead."));
 
 constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(47, "scalarizeMinMax",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),

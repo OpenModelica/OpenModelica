@@ -303,12 +303,8 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nTearing of LINEAR component\nUse Flag '+d=tearingdumpV' for more details\n\n");
       end if;
-      false = Flags.getConfigBool(Flags.DISABLE_LINEAR_TEARING);
       // TODO: Remove when cpp runtime ready for doLinearTearing
       //false = stringEqual(Config.simCodeTarget(), "Cpp");
-      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("Flag 'disableLinearTearing' not set\n\n");
-      end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
       end if;

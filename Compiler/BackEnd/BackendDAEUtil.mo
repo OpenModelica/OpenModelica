@@ -7489,6 +7489,11 @@ algorithm
     enabledModules := deprecatedDebugFlag(Flags.ON_RELAXATION, enabledModules, "relaxSystem", "postOptModules+");
     enabledModules := deprecatedConfigFlag(Flags.GENERATE_SYMBOLIC_JACOBIAN, enabledModules, "generateSymbolicJacobian", "postOptModules+");
 
+    if Flags.getConfigBool(Flags.DISABLE_LINEAR_TEARING) then
+      Flags.setConfigInt(Flags.MAX_SIZE_LINEAR_TEARING, 0);
+      Error.addCompilerWarning("Deprecated flag --disableLinearTearing detected. Use --maxSizeLinearTearing=0 instead.");
+    end if;
+
     if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION) then
       enabledModules := "generateSymbolicLinearization"::enabledModules;
     end if;
