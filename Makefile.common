@@ -77,7 +77,7 @@ interactive-short: .testvariables interactive-common
 interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs $(SUNDIALS_TARGET) $(IPOPT_TARGET) $(UMFPACK_TARGET) $(MINGW_EXTRA_LIBS)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
-opc: .testvariables mkbuilddirs
+opc: .testvariables mkbuilddirs boehm-gc
 	$(MAKE) -C SimulationRuntime/opc/ua -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 docs:
