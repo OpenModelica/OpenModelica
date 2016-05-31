@@ -8684,6 +8684,18 @@ algorithm
   end match;
 end isCall;
 
+public function isTSUB
+  "Returns true if the given expression is TSUB,
+   otherwise false."
+  input DAE.Exp inExp;
+  output Boolean outIsCall;
+algorithm
+  outIsCall := match(inExp)
+    case DAE.TSUB() then true;
+    else false;
+  end match;
+end isTSUB;
+
 public function isPureCall
   "Returns true if the given expression is a pure function call,
    otherwise false."

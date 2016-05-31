@@ -1041,6 +1041,21 @@ public function systemSize
   output Integer outSize = equationSize(inEqSystem.orderedEqs);
 end systemSize;
 
+public function maxSizeOfEqSystems
+  "Returns the maximum system size of given EqSystems"
+  input list<BackendDAE.EqSystem> inEqSystems;
+  output Integer outSize = 0;
+protected
+  Integer i;
+algorithm
+  for eqSyst in inEqSystems loop
+    i := systemSize(eqSyst);
+    if intGt(i, outSize) then
+      outSize := i;
+    end if;
+  end for;
+end maxSizeOfEqSystems;
+
 public function numOfComps "Returns the number of StrongComponents in the EqSystem
   author: waurich TUD"
   input BackendDAE.EqSystem inEqSystem;
@@ -7283,8 +7298,8 @@ protected function allPreOptimizationModules
     (BackendDAEOptimize.expandDerOperator, "expandDerOperator"),
     (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls"),
     (BackendDAEOptimize.removeLocalKnownVars, "removeLocalKnownVars"),
-    (SynchronousFeatures.clockPartitioning, "clockPartitioning"),
     (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
+    (SynchronousFeatures.clockPartitioning, "clockPartitioning"),
     (IndexReduction.findStateOrder, "findStateOrder"),
     (BackendDAEOptimize.introduceDerAlias, "introduceDerAlias"),
     (DynamicOptimization.inputDerivativesForDynOpt, "inputDerivativesForDynOpt"), // only for dyn. opt.
