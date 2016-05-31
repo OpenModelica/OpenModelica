@@ -25,7 +25,7 @@ The compilation time overhead from having this tracing on is less than
 1%, however, in addition to that, some time is needed for the system to
 write the xml file containing the transformation tracing information.
 
-Enable +d=infoXmlOperations in Tools->Options->Simulation (see section
+Enable -d=infoXmlOperations in Tools->Options->Simulation (see section
 :ref:`omedit-settings-simulation`) OR alternatively click on the checkbox *Generate operations in
 the info xml* in Tools->Options->Debugger (see section :ref:`omedit-settings-debugger`) which
 performs the same thing.
@@ -64,7 +64,7 @@ are defined by the equation, or the equation is dependent on), and
 similar for variables. The equations and variables form a bipartite
 graph that you can walk.
 
-If the +d=infoXmlOperations was used or you clicked the “generate
+If the -d=infoXmlOperations was used or you clicked the “generate
 operations” button, the operations performed on the equations and
 variables can be viewed. In the example package, there are not a lot of
 operations because the models are small.

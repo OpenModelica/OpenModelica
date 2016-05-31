@@ -78,7 +78,7 @@ like this:
 
 .. omc-mos ::
 
-  setCommandLineOptions({"+d=rml,noevalfunc","+g=MetaModelica"})
+  setCommandLineOptions({"-d=rml,noevalfunc","-g=MetaModelica"})
   setCFlags(getCFlags() + " -g")
   HelloWorld(120.0)
 

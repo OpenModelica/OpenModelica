@@ -729,7 +729,7 @@ experimental version without load balancing. The following command, not
 yet available from the OpenModelica GUI, will run a parallel simulation
 on a model:
 
->>> omc +d=openmp model.mo
+>>> omc -d=openmp model.mo
 
 Loading Specific Library Version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1016,11 +1016,11 @@ parameters**
 | ""
 
 In order to obtain more information from the compiler one can use the
-command line options **+showErrorMessages +d=failtrace** when running
+command line options **--showErrorMessages -d=failtrace** when running
 the compiler:
 
-C:\\dev> C:\\OpenModelica1.9.2 \\bin\\omc +showErrorMessages
-+d=failtrace script.mos
+C:\\dev> C:\\OpenModelica1.9.2 \\bin\\omc --showErrorMessages
+-d=failtrace script.mos
 
 .. |omlogo| image:: logo.*
   :alt: OpenModelica logotype

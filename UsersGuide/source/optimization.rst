@@ -73,7 +73,7 @@ command line terminals similar to the options described below:
 
 .. omc-mos ::
 
-  setCommandLineOptions("+g=Optimica");
+  setCommandLineOptions("-g=Optimica");
 
 .. omc-loadstring ::
   :caption: BatchReactor.mo
@@ -182,7 +182,7 @@ also be exported to an XML code using the following steps from the
 terminal window:
 
 -  Go to the path where your model file found
--  Run command omc +g=Optimica +simCodeTarget=XML Model.mo
+-  Run command omc -g=Optimica --simCodeTarget=XML Model.mo
 
 An example
 ~~~~~~~~~~
@@ -254,7 +254,7 @@ CasADi and solves an optimization problem in windows PowerShell:
 
 a. Go to omc path from working directory and run the following command
 
-    E.g. ..\\..\\..\\bin\\omc +s +g=Optimica +simCodeTarget=XML
+    E.g. ..\\..\\..\\bin\\omc +s -g=Optimica --simCodeTarget=XML
     BatchReactor.mo
 
 3. Run defaultStart.py python script from OpenModelica optimization

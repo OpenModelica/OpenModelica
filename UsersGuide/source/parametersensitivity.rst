@@ -9,7 +9,7 @@ Sundials/IDA solver.
 considerably improved, since this a rather new feature and will
 continuous improved.*
 
-*Note: A OpenModelica version newer than openmodelica_1.10.0 is needed.*
+*Note: OpenModelica version 1.10 or newer is required.*
 
 
 Background
@@ -51,7 +51,7 @@ OpenModelica on an example. This module is enabled by the following
 OpenModelica compiler flag:
 
 .. omc-mos ::
-  setCommandLineOptions("+calculateSensitivities");
+  setCommandLineOptions("--calculateSensitivities");
 
 
 .. omc-loadstring ::
@@ -98,3 +98,4 @@ sensitivities w.r.t. **every state**.
   x
   y
 
+.. omc-reset ::
