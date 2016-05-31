@@ -81,7 +81,9 @@ loadModelCommand:="\n"+customCommands+"\nloadModel("+libraryString+",{\""+librar
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 dygraphs:=getInstallationDirectoryPath()+"/share/doc/omc/testmodels/dygraph-combined.js";
 
-a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(library,recursive=true,sort=sortFiles)};
+a:={typeNameString(x)
+    for x guard isExperiment(x) and not regexBool(typeNameString(x), "^Modelica_Synchronous\\.WorkInProgress")
+    in getClassNames(library,recursive=true,sort=sortFiles)};
 getErrorString();
 
 // writeFile("x",sum(s + "\n" for s in a));
