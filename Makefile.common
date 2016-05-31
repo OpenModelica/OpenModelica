@@ -161,7 +161,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 PREFIX=$(OMBUILDDIR) OPENBLAS_LIBRARY_DIR="$(OMBUILDDIR)/$(LIB_OMC) OPENBLAS_INCLUDE_DIR="$(OMBUILDDIR)/3rdParty/build/install-includes/ NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica install
 openblas: $(OMBUILDDIR)/$(LIB_OMC)/libopenblas_openmodelica.a
 
-opencl_rt:
+opencl_rt: boehm-gc
 ifeq ("$(OPENCL)","Yes")
 	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 endif
