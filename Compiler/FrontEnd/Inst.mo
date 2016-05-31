@@ -2980,7 +2980,7 @@ public function instElementList
   output list<DAE.Var> outVars;
   output ConnectionGraph.ConnectionGraph outGraph = inGraph;
   //output List<tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomLst = {};
-  output InstUtil.DomainFieldsLst domainFieldsList = {};
+  output InstUtil.DomainFieldsLst domainFieldsListOut = {};
 protected
   list<tuple<SCode.Element, DAE.Mod>> el;
   FCore.Cache cache;
@@ -2988,7 +2988,7 @@ protected
   list<DAE.Element> dae;
   list<list<DAE.Var>> varsl = {};
   list<list<DAE.Element>> dael = {};
-  Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomOpt;
+  InstUtil.DomainFieldOpt fieldDomOpt;
   list<Integer> element_order;
   array<tuple<SCode.Element, DAE.Mod>> el_arr;
   array<list<DAE.Var>> var_arr;
@@ -3023,7 +3023,7 @@ algorithm
       arrayUpdate(var_arr, length-idx+1, vars);
       arrayUpdate(dae_arr, length-idx+1, dae);
       if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
-        domainFieldsList := InstUtil.optAppendField(domainFieldsList,fieldDomOpt);
+        domainFieldsListOut := InstUtil.optAppendField(domainFieldsListOut,fieldDomOpt);
       end if;
     end for;
 
@@ -3111,7 +3111,7 @@ public function instElement2
   output ClassInf.State outState = inState;
   output list<DAE.Var> outVars = {};
   output ConnectionGraph.ConnectionGraph outGraph = inGraph;
-  output Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt;
+  output InstUtil.DomainFieldOpt outFieldDomOpt;
 protected
   tuple<SCode.Element, DAE.Mod> elt;
   Boolean is_deleted;
@@ -3224,7 +3224,7 @@ public function instElement "
   output ClassInf.State outState;
   output list<DAE.Var> outVars;
   output ConnectionGraph.ConnectionGraph outGraph;
-  output Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt = NONE();
+  output InstUtil.DomainFieldOpt outFieldDomOpt = NONE();
 algorithm
   (outCache, outEnv, outIH, outUnitStore, outDae, outSets, outState, outVars, outGraph):=
   matchcontinue (inCache, inEnv, inIH, inUnitStore, inMod, inPrefix, inState,
