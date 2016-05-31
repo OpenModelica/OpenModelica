@@ -30,7 +30,7 @@
 
 
 #include "string_array.h"
-#include "memory_pool.h"
+#include "gc/omc_gc.h"
 #include "index_spec.h"
 #include "modelica_string.h"
 

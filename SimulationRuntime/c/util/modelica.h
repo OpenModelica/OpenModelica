@@ -45,7 +45,7 @@ extern "C" {
 #include "omc_inline.h"
 
 #include "util/modelica_string.h"
-#include "util/memory_pool.h"
+#include "gc/omc_gc.h"
 #include "util/index_spec.h"
 
 #include "util/string_array.h"

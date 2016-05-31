@@ -36,7 +36,7 @@
 #include "simulation_data.h"
 
 #include "util/omc_error.h"
-#include "util/memory_pool.h"
+#include "gc/omc_gc.h"
 #include "util/read_csv.h"
 #include "util/libcsv.h"
 #include "util/read_matlab4.h"

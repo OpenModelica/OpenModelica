@@ -47,7 +47,7 @@ extern "C" {
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
-#include "gc/mmc_gc.h"
+#include "gc/omc_gc.h"
 #include "omc_inline.h"
 #include "openmodelica.h"
 #include "meta_modelica_data.h"

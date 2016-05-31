@@ -28,28 +28,29 @@ INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 .PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc $(MINGW_EXTRA_LIBS)
 
 mkbuilddirs:
-	@echo Making build directories under $(OMBUILDDIR)
-	@if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
-	@mkdir -p $(builddir_bin)
-	@mkdir -p $(OMBUILDDIR)/lib/omc/emcc
-	@mkdir -p $(builddir_lib_omc)
-	@mkdir -p $(builddir_inc)/c/
-	@mkdir -p $(builddir_inc)/c/linearization/
-	@mkdir -p $(builddir_inc)/c/optimization/
-	@mkdir -p $(builddir_inc)/c/simulation/
-	@mkdir -p $(builddir_inc)/c/simulation/results/
-	@mkdir -p $(builddir_inc)/c/simulation/solver/
-	@mkdir -p $(builddir_inc)/c/simulation/solver/initialization/
-	@mkdir -p $(builddir_inc)/c/meta/
-	@mkdir -p $(builddir_inc)/c/meta/gc/
-	@mkdir -p $(builddir_inc)/c/util/
-	@mkdir -p $(builddir_inc)/c/fmi1/
-	@mkdir -p $(builddir_inc)/c/fmi2/
-	@mkdir -p $(builddir_inc)/scripting-API
-	@mkdir -p $(builddir_java)
-	@mkdir -p $(builddir_share)/omc/scripts/OpenTurns/
-	@mkdir -p $(builddir_doc)/omc/testmodels
-	@mkdir -p $(builddir_man)/man1/
+	echo Making build directories under $(OMBUILDDIR)
+	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
+	mkdir -p $(builddir_bin)
+	mkdir -p $(OMBUILDDIR)/lib/omc/emcc
+	mkdir -p $(builddir_lib_omc)
+	mkdir -p $(builddir_inc)/c/
+	mkdir -p $(builddir_inc)/c/gc/
+	mkdir -p $(builddir_inc)/c/linearization/
+	mkdir -p $(builddir_inc)/c/optimization/
+	mkdir -p $(builddir_inc)/c/simulation/
+	mkdir -p $(builddir_inc)/c/simulation/results/
+	mkdir -p $(builddir_inc)/c/simulation/solver/
+	mkdir -p $(builddir_inc)/c/simulation/solver/initialization/
+	mkdir -p $(builddir_inc)/c/meta/
+	mkdir -p $(builddir_inc)/c/meta/
+	mkdir -p $(builddir_inc)/c/util/
+	mkdir -p $(builddir_inc)/c/fmi1/
+	mkdir -p $(builddir_inc)/c/fmi2/
+	mkdir -p $(builddir_inc)/scripting-API
+	mkdir -p $(builddir_java)
+	mkdir -p $(builddir_share)/omc/scripts/OpenTurns/
+	mkdir -p $(builddir_doc)/omc/testmodels
+	mkdir -p $(builddir_man)/man1/
 
 release: omc
 

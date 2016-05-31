@@ -40,7 +40,7 @@
 #include "simulation_data.h"
 
 #include "util/omc_error.h"
-#include "util/memory_pool.h"
+#include "gc/omc_gc.h"
 
 #include "simulation/options.h"
 #include "simulation/simulation_runtime.h"

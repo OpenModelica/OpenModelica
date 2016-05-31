@@ -31,8 +31,6 @@
 #include "ModelicaUtilities.h"
 #include "modelica_string.h"
 
-#include "gc.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>

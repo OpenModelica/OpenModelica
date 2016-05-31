@@ -30,11 +30,10 @@
 
 
 #include "index_spec.h"
-#include "memory_pool.h"
+#include "gc/omc_gc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "gc.h"
 
 int index_spec_ok(const index_spec_t* s)
 {

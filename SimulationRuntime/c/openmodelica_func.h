@@ -43,7 +43,7 @@ extern "C" {
 
 #include "simulation_data.h"
 
-#include "util/memory_pool.h"
+#include "gc/omc_gc.h"
 #include "util/index_spec.h"
 #include "util/boolean_array.h"
 #include "util/integer_array.h"

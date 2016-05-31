@@ -34,7 +34,7 @@
 
 #include "openmodelica.h"
 #include "base_array.h"
-#include "memory_pool.h"
+#include "gc/omc_gc.h"
 #include "index_spec.h"
 #include "omc_msvc.h"
 #include <stdarg.h>

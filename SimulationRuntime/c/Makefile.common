@@ -82,7 +82,7 @@ RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
 ./meta/meta_modelica_mk_box.h \
 ./meta/meta_modelica_segv.h
 
-RUNTIMEMETAGC_HEADERS = ./meta/gc/mmc_gc.h
+RUNTIMEMETAGC_HEADERS = ./gc/omc_gc.h ./gc/memory_pool.h
 
 RUNTIMEUTIL_HEADERS = \
 ./util/base_array.h \
@@ -92,7 +92,6 @@ RUNTIMEUTIL_HEADERS = \
 ./util/index_spec.h \
 ./util/integer_array.h \
 ./util/java_interface.h \
-./util/memory_pool.h \
 ./util/modelica.h \
 ./util/modelica_string.h \
 ./util/omc_error.h \
@@ -163,26 +162,29 @@ libOpenModelicaRuntimeC.a: $(BASE_OBJS) Makefile.objs
 	$(AR) $@ $(BASE_OBJS)
 	ranlib $@
 
-libOpenModelicaRuntimeC.so: $(BASE_OBJS) Makefile.objs
+libOpenModelicaRuntimeC.so: $(BASE_OBJS) $(GCOBJPATH_MINIMAL) Makefile.objs
 	@rm -f $@
-	$(CC) -shared -o $@ $(BASE_OBJS) $(LDFLAGS)
+	$(CC) -shared -o $@ $(BASE_OBJS) $(GCOBJPATH_MINIMAL) $(LDFLAGS)
 
-libOpenModelicaRuntimeC.dylib: $(BASE_OBJS) Makefile.objs
+libOpenModelicaRuntimeC.dylib: $(BASE_OBJS) $(GCOBJPATH_MINIMAL) Makefile.objs
 	@rm -f $@
-	$(CC) -shared -o $@ $(BASE_OBJS) $(LDFLAGS) -undefined dynamic_lookup -install_name '@rpath/$@'
+	$(CC) -shared -o $@ $(BASE_OBJS) $(GCOBJPATH_MINIMAL) $(LDFLAGS) -undefined dynamic_lookup -install_name '@rpath/$@'
 
-libOpenModelicaFMIRuntimeC.a: $(FMIOBJSPATH) Makefile.objs
+libOpenModelicaFMIRuntimeC.a: $(FMIOBJSPATH) $(GCOBJPATH_MINIMAL) Makefile.objs
 	@rm -f $@
-	$(AR) $@ $(FMILIB) $(FMIOBJSPATH)
+	$(AR) $@ $(FMILIB) $(FMIOBJSPATH) $(GCOBJPATH_MINIMAL)
 	ranlib $@
 
 libOpenModelicaFMIRuntimeC.so: $(FMIOBJSPATH) Makefile.objs
 	@rm -f $@
 	$(CC) -shared -o $@ $(FMIOBJSPATH) $(LDFLAGS)
 
-libOpenModelicaFMIRuntimeC.dylib: $(FMIOBJSPATH) Makefile.objs
+libOpenModelicaFMIRuntimeC.dylib: $(FMIOBJSPATH) $(GCOBJPATH_MINIMAL) Makefile.objs
 	@rm -f $@
-	$(CC) -shared -o $@ $(FMIOBJSPATH) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
+	$(CC) -shared -o $@ $(FMIOBJSPATH) $(GCOBJPATH_MINIMAL) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
+
+$(GCOBJSPATH):%$(OBJ_EXT): %.c $(GCHFILESPATH) $(COMMON_HEADERS)
+	$(CC) -c $(CFLAGS) -o $@ $<
 
 $(METAOBJSPATH):%$(OBJ_EXT): %.c $(METAHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $<
@@ -231,7 +233,7 @@ bootstrap-dependencies: $(LIBRUNTIME)
 	cp -p $(RUNTIMESIMSOLVER_HEADERS) $(builddir_inc)/c/simulation/solver/
 	cp -p $(RUNTIMEINITIALIZATION_HEADERS) $(builddir_inc)/c/simulation/solver/initialization/
 	cp -p $(RUNTIMEMETA_HEADERS) $(builddir_inc)/c/meta/
-	cp -p $(RUNTIMEMETAGC_HEADERS) $(builddir_inc)/c/meta/gc/
+	cp -p $(RUNTIMEMETAGC_HEADERS) $(builddir_inc)/c/gc/
 	cp -p $(RUNTIMEUTIL_HEADERS) $(builddir_inc)/c/util/
 
 install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) sourcedist

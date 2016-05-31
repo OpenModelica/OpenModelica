@@ -53,7 +53,7 @@ void mmc_init()
   exit(1);
 }
 #else
-#include "meta/gc/mmc_gc.h"
+#include "gc/omc_gc.h"
 void mmc_init()
 {
   mmc_init_nogc();
