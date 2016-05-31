@@ -1,0 +1,55 @@
+// name: wrapFunctionCalls1
+// keywords: cse, wrapFunctionCalls
+// status: correct
+
+loadString("
+package CSE
+  model wrapFunctionCalls1
+    Real y;
+    Real a;
+  equation
+    y = 5.0 + sin(cos(cos(time)) + sin(time));
+    a = sin(time);
+  end wrapFunctionCalls1;
+end CSE;
+"); getErrorString();
+
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls --preOptModules-=clockPartitioning -d=dumpCSE"); getErrorString();
+simulate(CSE.wrapFunctionCalls1); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// ########### Updated Variable List (simulation) ########### (5)
+// ========================================
+// 1: a:VARIABLE()  type: Real 
+// 2: y:VARIABLE()  type: Real 
+// 3: $cse3:VARIABLE()  type: Real  unreplaceable
+// 4: $cse2:VARIABLE()  type: Real  unreplaceable
+// 5: $cse1:VARIABLE()  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) ########### (5, 5)
+// ========================================
+// 1/1 (1): y = 5.0 + $cse1   [dynamic]
+// 2/2 (1): $cse1 = sin($cse2 + a)   [unknown]
+// 3/3 (1): $cse2 = cos($cse3)   [unknown]
+// 4/4 (1): $cse3 = cos(time)   [unknown]
+// 5/5 (1): a = sin(time)   [unknown]
+//
+// cse replacements (4/44)
+// ========================================
+// 1: $cse1 - sin($cse2 + a) - {}
+// 2: $cse2 - cos($cse3) - {}
+// 3: $cse3 - cos(time) - {}
+// 4: a - sin(time) - {}
+// record SimulationResult
+//     resultFile = "CSE.wrapFunctionCalls1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult

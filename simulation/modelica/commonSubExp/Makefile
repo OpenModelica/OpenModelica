@@ -24,7 +24,13 @@ cseTestCall5.mos \
 cseTestCall6.mos \
 cseTestCall7.mos \
 comSubExp1.mos \
-ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1.mos
+ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1.mos \
+wrapFunctionCalls1.mos \
+wrapFunctionCalls2.mos \
+wrapFunctionCalls3.mos \
+wrapFunctionCalls4.mos \
+wrapFunctionCalls5.mos \
+wrapFunctionCalls6.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
@@ -38,7 +44,8 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-ReferenceFiles
+ReferenceFiles \
+cleanHpcOmTestsuite.py
 
 
 
