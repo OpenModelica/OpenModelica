@@ -1524,7 +1524,7 @@ algorithm
     case (_,level)
       equation
         gen_str = genStringNTime("   |", level);
-        res_str = stringAppendList({gen_str," UNKNOWN EXPRESSION ","\n"});
+        res_str = stringAppendList({gen_str," UNKNOWN EXPRESSION (" + printExpTypeStr(inExp) + ")","\n"});
       then
         res_str;
   end matchcontinue;
