@@ -58,8 +58,6 @@ static inline void* mmc_mk_icon(mmc_sint_t i)
     return MMC_IMMEDIATE(MMC_TAGFIXNUM(i));
 }
 
-void* mmc_mk_rcon(double d);
-
 union mmc_double_as_words {
     double d;
     mmc_uint_t data[2];
@@ -186,6 +184,21 @@ struct record_description {
   const char* name; /* package.record_X */
   const char** fieldNames;
 };
+
+#if defined(OMC_MINIMAL_RUNTIME)
+static void* mmc_mk_rcon(double d)
+{
+    struct mmc_real *p = (struct mmc_real*)mmc_alloc_words_atomic(MMC_SIZE_DBL/MMC_SIZE_INT + 1);
+    mmc_prim_set_real(p, d);
+    p->header = MMC_REALHDR;
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "REAL size: %u\n", MMC_SIZE_DBL/MMC_SIZE_INT+1); fflush(NULL);
+#endif
+    return MMC_TAGPTR(p);
+}
+#else
+void* mmc_mk_rcon(double d);
+#endif
 
 #include "openmodelica.h"
 #include "meta_modelica_segv.h"
