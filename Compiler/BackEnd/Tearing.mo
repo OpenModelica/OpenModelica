@@ -79,6 +79,7 @@ uniontype TearingMethod
   record OMC_TEARING end OMC_TEARING;
   record CELLIER_TEARING end CELLIER_TEARING;
   record TOTAL_TEARING end TOTAL_TEARING;
+  record USER_DEFINED_TEARING end USER_DEFINED_TEARING;
 end TearingMethod;
 
 // =============================================================================
@@ -140,8 +141,6 @@ algorithm
 
     case ("cellier") then CELLIER_TEARING();
 
-    case ("totalTearing") then TOTAL_TEARING();
-
     else equation
       Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function getTearingMethod failed", sourceInfo());
     then fail();
@@ -163,12 +162,26 @@ protected function callTearingMethod
 protected
   protected constant Boolean debug = false;
   list<Integer> userTVars, userResiduals;
+  TearingMethod tearingMethod = inTearingMethod;
 algorithm
-  userTVars := Flags.getConfigIntList(Flags.SET_TEARING_VARS);
-  userResiduals := Flags.getConfigIntList(Flags.SET_RESIDUAL_EQNS);
-  (userTVars, userResiduals) := getUserTearingSet(userTVars, userResiduals, strongComponentIndex);
-  if listEmpty(userTVars) then
-    (ocomp, outRunMatching) := match inTearingMethod
+
+  // Check for total tearing for this component
+  if listMember(strongComponentIndex, Flags.getConfigIntList(Flags.TOTAL_TEARING)) then
+    tearingMethod := TOTAL_TEARING();
+  else
+    // Get users tearing sets if existing
+    userTVars := Flags.getConfigIntList(Flags.SET_TEARING_VARS);
+    userResiduals := Flags.getConfigIntList(Flags.SET_RESIDUAL_EQNS);
+    (userTVars, userResiduals) := getUserTearingSet(userTVars, userResiduals, strongComponentIndex);
+
+    // Check for user defined tearing for this component
+    if not listEmpty(userTVars) then
+      tearingMethod := USER_DEFINED_TEARING();
+    end if;
+  end if;
+
+  // Call the appropriate tearing method
+  (ocomp, outRunMatching) := match tearingMethod
       case OMC_TEARING()
         algorithm
           if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -196,14 +209,15 @@ algorithm
           if debug then execStat("Tearing.totalTearing"); end if;
         then (ocomp,outRunMatching);
 
+      case USER_DEFINED_TEARING()
+        algorithm
+          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+            print("\nTearing type: user defined\n");
+          end if;
+          (ocomp,outRunMatching) := userDefinedTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, userTVars, userResiduals);
+          if debug then execStat("Tearing.userDefinedTearing"); end if;
+        then (ocomp,outRunMatching);
     end match;
-  else
-    if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-      print("\nTearing type: user defined\n");
-    end if;
-    (ocomp,outRunMatching) := userDefinedTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, userTVars, userResiduals);
-    if debug then execStat("Tearing.userDefinedTearing"); end if;
-  end if;
 end callTearingMethod;
 
 protected function tearingSystemWork "author: Frenkel TUD 2012-05"
@@ -4168,7 +4182,6 @@ protected
 algorithm
   linear := getLinearfromJacType(jacType);
   BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
-  BackendDAE.SIMULATION() := DAEtype;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of totalTearing\n\n");

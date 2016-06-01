@@ -1011,8 +1011,7 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(44, "tearingMethod",
   SOME(STRING_DESC_OPTION({
     ("noTearing", Util.gettext("Skip tearing.")),
     ("omcTearing", Util.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
-    ("cellier", Util.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick")),
-    ("totalTearing", Util.gettext("Total Tearing (Determination of all possible tearing sets): Täuber, Patrick"))})),
+    ("cellier", Util.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"))})),
     Util.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
 
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(45, "tearingHeuristic",
@@ -1300,6 +1299,9 @@ constant ConfigFlag CALCULATE_SENSITIVITIES = CONFIG_FLAG(100, "calculateSensiti
 constant ConfigFlag ALARM = CONFIG_FLAG(101, "alarm",
   SOME("r"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the number seconds until omc timeouts and exits. Used by the testing framework to terminate infinite running processes."));
+constant ConfigFlag TOTAL_TEARING = CONFIG_FLAG(102, "totalTearing",
+  NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
+  Util.gettext("Activates total tearing (determination of all possible tearing sets) for the specified components.\nUse '+d=tearingdump' to find out the relevant indexes."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1406,7 +1408,8 @@ constant list<ConfigFlag> allConfigFlags = {
   SET_RESIDUAL_EQNS,
   IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION,
   CALCULATE_SENSITIVITIES,
-  ALARM
+  ALARM,
+  TOTAL_TEARING
 };
 
 public function new
