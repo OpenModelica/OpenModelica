@@ -7,6 +7,7 @@ Modelica_Synchronous.Examples.SimpleControlledDrive.Continuous.mos \
 Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreteTextbookController.mos \
 Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreteController.mos \
 Modelica_Synchronous.Examples.CascadeControlledDrive.Continuous.mos \
+Modelica_Synchronous.Examples.Systems.Utilities.ComponentsMixingUnit.MixingUnitWithContinuousControl.mos \
 Modelica_Synchronous.Examples.Elementary.ClockSignals.ShiftSample.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.TimeBasedStep.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.TickBasedStep.mos \
