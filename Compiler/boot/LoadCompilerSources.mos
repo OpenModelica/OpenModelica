@@ -166,6 +166,7 @@ if true then /* Suppress output */
     "../Util/ErrorExt.mo",
     "../Util/Error.mo",
     "../Util/ExecStat.mo",
+    "../Util/ExpandableArray.mo",
     "../Util/Flags.mo",
     "../Util/GC.mo",
     "../Util/Graph.mo",
