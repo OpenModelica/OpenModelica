@@ -565,15 +565,15 @@ type StateSets = list<StateSet> "List of StateSets";
 public
 uniontype StateSet
   record STATESET
-    Integer rang;
+    Integer rang; // how many states are needed?
     list< .DAE.ComponentRef> state;
     .DAE.ComponentRef crA "set.x=A*states";
-    list< Var> varA;
-    list< Var> statescandidates;
-    list< Var> ovars;
-    list< Equation> eqns;
-    list< Equation> oeqns;
-    .DAE.ComponentRef crJ;
+    list< Var> varA; //the jacobian matrix entries
+    list< Var> statescandidates; //all state candidates
+    list< Var> ovars; //other variables to solve the eqns
+    list< Equation> eqns; //the constraint equations
+    list< Equation> oeqns; //other equations to solve the eqns
+    .DAE.ComponentRef crJ; // the jac vector
     list< Var> varJ;
     Jacobian jacobian;
   end STATESET;

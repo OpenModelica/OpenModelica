@@ -4149,5 +4149,85 @@ algorithm
   eqString := "eqNode"+intString(intAbs(idx));
 end getEqNodeIdx;
 
+public function SSSHandlerArgString"
+author:Waurich"
+  input  Option<BackendDAE.StructurallySingularSystemHandlerArg> arg;
+protected
+  BackendDAE.StateOrder stateorder;
+  BackendDAE.ConstraintEquations constraints;
+  array<list<Integer>> eqs2EqIdxs;
+  array<Integer> eqIdx2Eq;
+  Integer numEqs;
+algorithm
+  if Util.isSome(arg) then
+    SOME((stateorder,constraints,eqs2EqIdxs,eqIdx2Eq,numEqs)) := arg;
+    print(intString(numEqs)+"eqs before IR\n");
+    dumpStateOrder(stateorder);
+    print("Constraints:\n"+constraintEquationString(constraints)+"\n");
+  else
+    print("Empty StructurallySingularSystemHandlerArg\n");
+  end if;
+end SSSHandlerArgString;
+
+public function constraintEquationString"
+author:Waurich"
+  input BackendDAE.ConstraintEquations constraints;
+  output String s = "";
+protected
+  Integer i;
+  String s1;
+algorithm
+  for i in List.intRange(arrayLength(constraints)) loop
+    s1 := stringDelimitList(List.map(arrayGet(constraints,i),BackendDump.equationString),"\n")+"\n------------------\n";
+    if listEmpty(arrayGet(constraints,i)) then
+      s1 := "empty Constraints\n";
+    end if;
+    s := "eq "+intString(i) +": "+ s1 + s;
+  end for;
+end constraintEquationString;
+
+public function dumpStateOrder
+"author: Frenkel TUD 2011-05
+  Prints the state order"
+  input BackendDAE.StateOrder inStateOrder;
+algorithm
+  _:=
+  match (inStateOrder)
+    local
+      String str,len_str;
+      Integer len;
+      HashTableCG.HashTable ht;
+      HashTable3.HashTable dht;
+      list<tuple<DAE.ComponentRef,DAE.ComponentRef>> tplLst;
+    case (BackendDAE.STATEORDER(ht,_))
+      equation
+        print("State Order: (");
+        (tplLst) = BaseHashTable.hashTableList(ht);
+        str = stringDelimitList(List.map(tplLst,printStateOrderStr),"\n");
+        len = listLength(tplLst);
+        len_str = intString(len);
+        print(len_str);
+        print(")\n");
+        print("=============\n");
+        print(str);
+        print("\n");
+      then
+        ();
+    case (BackendDAE.NOSTATEORDER())
+      equation
+        print("no stateorder\n");
+        print("=============\n");
+      then ();
+  end match;
+end dumpStateOrder;
+
+protected function printStateOrderStr "help function to dumpStateOrder"
+  input tuple<DAE.ComponentRef,DAE.ComponentRef> tpl;
+  output String str;
+algorithm
+  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ComponentReference.printComponentRefStr(Util.tuple22(tpl));
+end printStateOrderStr;
+
+
 annotation(__OpenModelica_Interface="backend");
 end BackendDump;

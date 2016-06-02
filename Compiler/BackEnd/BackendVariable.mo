@@ -3952,6 +3952,20 @@ algorithm
   end match;
 end transformXToXd;
 
+public function setStateIndex"updates the index of the state var.
+author:Waurich TUD"
+  input BackendDAE.Var v1;
+  input Integer idx;
+  output BackendDAE.Var v2 = v1;
+protected
+  Option<DAE.ComponentRef> derName;
+algorithm
+  if isStateVar(v1) then
+    BackendDAE.STATE(_,derName) := getVarKind(v1);
+    v2 := setVarKind(v1,BackendDAE.STATE(idx,derName));
+  end if;
+end setStateIndex;
+
 public function isRecordVar "outputs true if the variable belongs to a record.
 author: Waurich TUD 2014-09"
   input BackendDAE.Var inVar;
