@@ -1,12 +1,12 @@
 // name:  testModelDescription
 // keywords: FMI 2.0 export clocks
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml *SID* output.log
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml *SIDTest* output.log
 //
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 loadString("
-model SID
+model SIDTest
   parameter Real dt = 0.1 annotation(Evaluate = true);
   parameter Real p = 1;
   parameter Real y_start = 0;
@@ -18,15 +18,15 @@ equation
     xd = previous(xd) + p * u * interval(u);
     y = previous(xd);
   end when;
-end SID;
+end SIDTest;
 ");
 getErrorString();
 
-translateModelFMU(SID, version="2.0");
+translateModelFMU(SIDTest, version="2.0");
 getErrorString();
 
 // unzip to console, quiet, extra quiet
-system("unzip -cqq SID.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
+system("unzip -cqq SIDTest.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
 readFile("modelDescription.tmp.xml");
 
 // Result:
@@ -34,18 +34,18 @@ readFile("modelDescription.tmp.xml");
 // ""
 // true
 // ""
-// "SimCode: The model SID has been translated to FMU"
+// "SimCode: The model SIDTest has been translated to FMU"
 // ""
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <fmiModelDescription
 //   fmiVersion=\"2.0\"
-//   modelName=\"SID\"
+//   modelName=\"SIDTest\"
 //   description=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange
-//     modelIdentifier=\"SID\">
+//     modelIdentifier=\"SIDTest\">
 //   </ModelExchange>
 //   <TypeDefinitions>
 //     <Clocks>
