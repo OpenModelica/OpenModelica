@@ -562,6 +562,8 @@ typedef struct SIMULATION_INFO
   modelica_boolean solveContinuous;    /* =1 during the continuous integration to avoid zero-crossings jumps,  0 otherwise. */
   modelica_boolean noThrowDivZero;     /* =1 if solving nonlinear system to avoid THROW for division by zero,  0 otherwise. */
 
+  double solverSteps;                  /* Number of integration steps so far for writing to the result file*/
+
   void** extObjs;                      /* External objects */
 
   double nextSampleEvent;              /* point in time of next sample-call */

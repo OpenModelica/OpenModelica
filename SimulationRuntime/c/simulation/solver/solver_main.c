@@ -101,17 +101,23 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   {
   case S_EULER:
     retVal = euler_ex_step(data, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
   case S_HEUN:
   case S_RUNGEKUTTA:
     retVal = rungekutta_step(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   case S_DASSL:
     retVal = dassl_step(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
 #endif
@@ -124,6 +130,8 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       solverInfo->solverMethod = S_EULER;
       retVal = euler_ex_step(data, solverInfo);
     }
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
 #endif
@@ -135,18 +143,26 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   case S_LOBATTO4:
   case S_LOBATTO6:
     retVal = radau_lobatto_step(data, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
   case S_IDA:
     retVal = ida_solver_step(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
 #endif
   case S_SYM_EULER:
     retVal = sym_euler_im_step(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
   case S_SYM_IMP_EULER:
     retVal = sym_euler_im_with_step_size_control_step(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
   }
 
@@ -717,6 +733,8 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
       omc_alloc_interface.collect_a_little();
     } else {
       /* starts the simulation main loop - standard solver interface */
+      if(omc_flag[FLAG_SOLVER_STEPS])
+        data->simulationInfo->solverSteps = 0;
       if(solverInfo.solverMethod != S_OPTIMIZATION) {
         sim_result.emit(&sim_result,data,threadData);
       }

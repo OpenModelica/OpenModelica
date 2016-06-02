@@ -96,6 +96,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_R */                     "r",
   /* FLAG_RT */                    "rt",
   /* FLAG_S */                     "s",
+  /* FLAG_SOLVER_STEPS */          "steps",
   /* FLAG_UP_HESSIAN */            "keepHessian",
   /* FLAG_W */                     "w",
 
@@ -108,7 +109,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_ABORT_SLOW */            "aborts if the simulation chatters",
   /* FLAG_ALARM */                 "aborts after the given number of seconds (0 disables)",
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU",
-  /* FLAG_CPU */                   "dumps the cpu-time into the results-file",
+  /* FLAG_CPU */                   "dumps the cpu-time into the result file",
   /* FLAG_CSV_OSTEP */             "value specifies csv-files for debuge values for optimizer step",
   /* FLAG_DASSL_NO_RESTART */      "flag deactivates the restart of dassl after an event is performed.",
   /* FLAG_DASSL_NO_ROOTFINDING */  "flag deactivates the internal root finding procedure of dassl.",
@@ -168,6 +169,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
   /* FLAG_RT */                    "value specifies the scaling factor for real-time synchronization (0 disables)",
   /* FLAG_S */                     "value specifies the solver",
+  /* FLAG_SOLVER_STEPS */          "dumps the number of integration steps into the result file",
   /* FLAG_UP_HESSIAN */            "value specifies the number of steps, which keep hessian matrix constant",
   /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
 
@@ -186,7 +188,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * CYC (cpu cycles measured with RDTSC)\n"
   "  * CPU (process-based CPU-time)",
   /* FLAG_CPU */
-  "  Dumps the cpu-time into the result-file using the variable named $cpuTime",
+  "  Dumps the cpu-time into the result file using the variable named $cpuTime",
   /* FLAG_CSV_OSTEP */
   "value specifies csv-files for debuge values for optimizer step",
   /* FLAG_DASSL_NO_RESTART */
@@ -351,6 +353,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  A value > 1 means the simulation takes a longer time to simulate.\n",
   /* FLAG_S */
   "  Value specifies the solver (integration method).",
+  /* FLAG_SOLVER_STEPS */
+  "  dumps the number of integration steps into the result file",
   /* FLAG_UP_HESSIAN */
   "  Value specifies the number of steps, which keep hessian matrix constant.",
   /* FLAG_W */
@@ -425,6 +429,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_R */                     FLAG_TYPE_OPTION,
   /* FLAG_RT */                    FLAG_TYPE_OPTION,
   /* FLAG_S */                     FLAG_TYPE_OPTION,
+  /* FLAG_SOLVER_STEPS */          FLAG_TYPE_FLAG,
   /* FLAG_UP_HESSIAN */            FLAG_TYPE_OPTION,
   /* FLAG_W */                     FLAG_TYPE_FLAG
 };
