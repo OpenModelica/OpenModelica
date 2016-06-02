@@ -322,8 +322,7 @@ IF(WIN32)
   SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)
 
 
-  SET(SUNDIALS_INLCUDE_HOME  ${Sundials_Path}/include)
-  SET(SUNDIALS_LIBRARY_RELEASE_HOME  ${Sundials_Path}/lib)
+
 
 
 
@@ -331,15 +330,17 @@ IF(WIN32)
 ENDIF(WIN32)
 
 #set sundials solvers include and library directories
-  IF(MSVC)
-    SET(Sundials_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc")
-  ELSE(MSVC)
-    SET(Sundials_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build")
-  ENDIF(MSVC)
-  MESSAGE(STATUS "Sundials include:")
-  MESSAGE(STATUS "${SUNDIALS_INLCUDE_HOME}")
-  MESSAGE(STATUS "Sundials library:")
-  MESSAGE(STATUS "${SUNDIALS_LIBRARY_RELEASE_HOME}")
+IF(MSVC)
+ SET(Sundials_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc")
+ELSE(MSVC)
+ SET(Sundials_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build")
+ENDIF(MSVC)
+SET(SUNDIALS_INLCUDE_HOME  ${Sundials_Path}/include)
+SET(SUNDIALS_LIBRARY_RELEASE_HOME  ${Sundials_Path}/lib)
+MESSAGE(STATUS "Sundials include:")
+MESSAGE(STATUS "${SUNDIALS_INLCUDE_HOME}")
+MESSAGE(STATUS "Sundials library:")
+MESSAGE(STATUS "${SUNDIALS_LIBRARY_RELEASE_HOME}")
 
 # Find OpenMP
 FIND_PACKAGE(OpenMP)
