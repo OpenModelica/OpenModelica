@@ -738,19 +738,21 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     TRIPLET=<%getTriple()%>
     CC=<%makefileParams.ccompiler%>
     CXX=<%makefileParams.cxxcompiler%>
+    ABI_CFLAG=
     DLLEXT=<%makefileParams.dllext%>
     PLATFORM=<%platformstr%>
   else
     TRIPLET=$(TARGET_TRIPLET)
     CC=$(TRIPLET)-gcc
     CXX=$(TRIPLET)-g++
+    ABI_CFLAG=-D_GLIBCXX_USE_CXX11_ABI=0
     DLLEXT=$(if $(findstring mingw,$(TRIPLET)),.dll,.so)
     WORDSIZE=$(if $(findstring x86_64,$(TRIPLET)),64,32)
     PLATFORM=$(if $(findstring darwin,$(TRIPLET)),darwin,$(if $(findstring mingw,$(TRIPLET)),win,linux))$(WORDSIZE)
   endif
 
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-  FMU_CFLAGS=$(subst -DUSE_THREAD,,$(subst -O0,$(SIM_OPT_LEVEL),$(SYSTEM_CFLAGS))) -D_GLIBCXX_USE_CXX11_ABI=0
+  FMU_CFLAGS=$(subst -DUSE_THREAD,,$(subst -O0,$(SIM_OPT_LEVEL),$(SYSTEM_CFLAGS))) $(ABI_CFLAG)
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(FMU_CFLAGS) -DFMU_BUILD -DRUNTIME_STATIC_LINKING -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%additionalCFlags_GCC%>
 
   ifeq ($(USE_LOGGER),ON)
