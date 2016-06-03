@@ -217,6 +217,9 @@ public:
   QList<QString> getDerivedUnits(QString baseUnit);
   bool getDocumentationClassAnnotation(QString className);
   QString getCommandLineOptionsAnnotation(QString className);
+  QList<QString> getAnnotationNamedModifiers(QString className, QString annotation);
+  QString getAnnotationModifierValue(QString className, QString annotation, QString modifier);
+  QString getSimulationFlagsAnnotation(QString className);
   int numProcessors();
   QString help(QString topic);
   OMCInterface::getConfigFlagValidOptions_res getConfigFlagValidOptions(QString topic);

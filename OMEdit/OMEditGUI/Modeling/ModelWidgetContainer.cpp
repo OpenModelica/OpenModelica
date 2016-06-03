@@ -3878,9 +3878,8 @@ bool ModelWidget::metaModelEditorTextChanged()
  */
 void ModelWidget::handleCanUndoChanged(bool canUndo)
 {
-  if (isVisible()) {
-    mpModelWidgetContainer->getMainWindow()->getUndoAction()->setEnabled(canUndo);
-  }
+  Q_UNUSED(canUndo);
+  updateUndoRedoActions();
 }
 
 /*!
@@ -3890,9 +3889,8 @@ void ModelWidget::handleCanUndoChanged(bool canUndo)
  */
 void ModelWidget::handleCanRedoChanged(bool canRedo)
 {
-  if (isVisible()) {
-    mpModelWidgetContainer->getMainWindow()->getRedoAction()->setEnabled(canRedo);
-  }
+  Q_UNUSED(canRedo);
+  updateUndoRedoActions();
 }
 
 void ModelWidget::closeEvent(QCloseEvent *event)

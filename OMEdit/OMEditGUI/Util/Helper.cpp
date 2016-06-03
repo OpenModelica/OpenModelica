@@ -312,6 +312,8 @@ QString Helper::fixErrorsManually;
 QString Helper::revertToLastCorrectVersion;
 QString Helper::OMCFlags;
 QString Helper::OMCFlagsTip;
+QString Helper::saveExperimentAnnotation;
+QString Helper::saveOpenModelicaSimulationFlagsAnnotation;
 
 void Helper::initHelperVariables()
 {
@@ -517,6 +519,8 @@ void Helper::initHelperVariables()
   Helper::revertToLastCorrectVersion = tr("Revert to last correct version");
   Helper::OMCFlags = tr("OMC Flags");
   Helper::OMCFlagsTip = tr("Space separated list of flags e.g., +d=initialization +cheapmatchingAlgorithm=3");
+  Helper::saveExperimentAnnotation = tr("Save experiment annotation inside model");
+  Helper::saveOpenModelicaSimulationFlagsAnnotation = tr("Save __OpenModelica_simulationFlags annotation inside model");
 }
 
 QString GUIMessages::getMessage(int type)
@@ -631,6 +635,11 @@ QString GUIMessages::getMessage(int type)
       return tr("Terminal command is not set. You can define a new terminal command in <b>%1->General->Terminal Command</b>.");
     case UNABLE_FIND_COMPONENT:
       return tr("Unable to find component %1 while parsing connection %2.");
+    case SELECT_SIMULATION_OPTION:
+      return tr("Select at least one of the following options, <br /><br />* %1<br />* %2<br />* %3")
+          .arg(Helper::saveExperimentAnnotation)
+          .arg(Helper::saveOpenModelicaSimulationFlagsAnnotation)
+          .arg(Helper::simulate);
     default:
       return "";
   }

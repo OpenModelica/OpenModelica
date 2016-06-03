@@ -229,6 +229,20 @@ private:
   QString mNewExperimentAnnotation;
 };
 
+class UpdateClassSimulationFlagsAnnotationCommand : public QUndoCommand
+{
+public:
+  UpdateClassSimulationFlagsAnnotationCommand(MainWindow *pMainWindow, LibraryTreeItem *pLibraryTreeItem, QString oldSimulationFlags,
+                                              QString newSimulationFlags, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  MainWindow *mpMainWindow;
+  LibraryTreeItem *mpLibraryTreeItem;
+  QString mOldSimulationFlags;
+  QString mNewSimulationFlags;
+};
+
 class UpdateSubModelAttributesCommand : public QUndoCommand
 {
 public:

@@ -171,10 +171,12 @@ private:
   // Archived Simulation Flags Tab
   QWidget *mpArchivedSimulationsTab;
   QTreeWidget *mpArchivedSimulationsTreeWidget;
+  // checkboxes
+  QCheckBox *mpSaveExperimentAnnotationCheckBox;
+  QCheckBox *mpSaveSimulationFlagsAnnotationCheckBox;
+  QCheckBox *mpSimulateCheckBox;
   // buttons
-  QPushButton *mpSaveButton;
-  QPushButton *mpSaveAndSimulateButton;
-  QPushButton *mpSimulateButton;
+  QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
   QList<SimulationOutputWidget*> mSimulationOutputWidgetsList;
@@ -190,7 +192,9 @@ private:
   SimulationOptions createSimulationOptions();
   void createAndShowSimulationOutputWidget(SimulationOptions simulationOptions);
   void showSimulationOutputWidget(SimulationOutputWidget *pSimulationOutputWidget);
-  void saveSimulationSettings();
+  void saveExperimentAnnotation();
+  void saveSimulationFlagsAnnotation();
+  void performSimulation();
 public:
   void reSimulate(SimulationOptions simulationOptions);
   void showAlgorithmicDebugger(SimulationOptions simulationOptions);
@@ -207,8 +211,6 @@ public slots:
   void browseEquationSystemInitializationFile();
   void showSimulationFlagsHelp();
   void showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem);
-  void save();
-  void saveAndSimulate();
   void simulate();
 private slots:
   void resultFileNameChanged(QString text);

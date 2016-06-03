@@ -1081,6 +1081,37 @@ void UpdateClassExperimentAnnotationCommand::undo()
   mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldExperimentAnnotation);
 }
 
+UpdateClassSimulationFlagsAnnotationCommand::UpdateClassSimulationFlagsAnnotationCommand(MainWindow *pMainWindow,
+                                                                                         LibraryTreeItem *pLibraryTreeItem,
+                                                                                         QString oldSimulationFlags,
+                                                                                         QString newSimulationFlags, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpMainWindow = pMainWindow;
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mOldSimulationFlags = oldSimulationFlags;
+  mNewSimulationFlags = newSimulationFlags;
+  setText(QString("Update %1 simulation flags annotation").arg(mpLibraryTreeItem->getNameStructure()));
+}
+
+/*!
+ * \brief UpdateClassSimulationFlagsAnnotationCommand::redo
+ * Redo the UpdateClassSimulationFlagsAnnotationCommand.
+ */
+void UpdateClassSimulationFlagsAnnotationCommand::redo()
+{
+  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mNewSimulationFlags);
+}
+
+/*!
+ * \brief UpdateClassSimulationFlagsAnnotationCommand::undo
+ * Undo the UpdateClassSimulationFlagsAnnotationCommand.
+ */
+void UpdateClassSimulationFlagsAnnotationCommand::undo()
+{
+  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldSimulationFlags);
+}
+
 UpdateSubModelAttributesCommand::UpdateSubModelAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo,
                                                                  const ComponentInfo &newComponentInfo, QUndoCommand *pParent)
   : QUndoCommand(pParent)

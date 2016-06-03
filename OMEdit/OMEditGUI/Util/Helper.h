@@ -319,6 +319,8 @@ public:
   static QString revertToLastCorrectVersion;
   static QString OMCFlags;
   static QString OMCFlagsTip;
+  static QString saveExperimentAnnotation;
+  static QString saveOpenModelicaSimulationFlagsAnnotation;
 };
 
 class GUIMessages : public QObject
@@ -380,7 +382,8 @@ public:
     METAMODEL_UNSAVED,
     TLMCOSIMULATION_ALREADY_RUNNING,
     TERMINAL_COMMAND_NOT_SET,
-    UNABLE_FIND_COMPONENT
+    UNABLE_FIND_COMPONENT,
+    SELECT_SIMULATION_OPTION
   };
 
   static QString getMessage(int type);

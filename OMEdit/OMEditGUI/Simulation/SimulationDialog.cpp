@@ -500,33 +500,31 @@ void SimulationDialog::setUpForm()
   mpStopTimeTextBox->setValidator(pDoubleValidator);
   mpIntervalTextBox->setValidator(pDoubleValidator);
   mpToleranceTextBox->setValidator(pDoubleValidator);
+  // create checkboxes
+  mpSaveExperimentAnnotationCheckBox = new QCheckBox(Helper::saveExperimentAnnotation);
+  mpSaveSimulationFlagsAnnotationCheckBox = new QCheckBox(Helper::saveOpenModelicaSimulationFlagsAnnotation);
+  mpSimulateCheckBox = new QCheckBox(Helper::simulate);
+  mpSimulateCheckBox->setChecked(true);
   // Create the buttons
-  mpSaveButton = new QPushButton(Helper::save);
-  mpSaveButton->setAutoDefault(false);
-  mpSaveButton->setToolTip(tr("Save simulation settings inside model"));
-  connect(mpSaveButton, SIGNAL(clicked()), this, SLOT(save()));
-  mpSaveAndSimulateButton = new QPushButton(tr("Save && Simulate"));
-  mpSaveAndSimulateButton->setAutoDefault(false);
-  mpSaveAndSimulateButton->setToolTip(tr("Save simulation settings inside model & simulate"));
-  connect(mpSaveAndSimulateButton, SIGNAL(clicked()), this, SLOT(saveAndSimulate()));
-  mpSimulateButton = new QPushButton(Helper::simulate);
-  mpSimulateButton->setAutoDefault(true);
-  connect(mpSimulateButton, SIGNAL(clicked()), this, SLOT(simulate()));
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(simulate()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
   // adds buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
-  mpButtonBox->addButton(mpSaveButton, QDialogButtonBox::ActionRole);
-  mpButtonBox->addButton(mpSaveAndSimulateButton, QDialogButtonBox::ActionRole);
-  mpButtonBox->addButton(mpSimulateButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Create a layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->addWidget(mpSimulationHeading, 0, 0);
   pMainLayout->addWidget(mpHorizontalLine, 1, 0);
   pMainLayout->addWidget(mpSimulationTabWidget, 2, 0);
-  pMainLayout->addWidget(mpButtonBox, 3, 0);
+  pMainLayout->addWidget(mpSaveExperimentAnnotationCheckBox, 3, 0);
+  pMainLayout->addWidget(mpSaveSimulationFlagsAnnotationCheckBox, 4, 0);
+  pMainLayout->addWidget(mpSimulateCheckBox, 5, 0);
+  pMainLayout->addWidget(mpButtonBox, 6, 0);
   setLayout(pMainLayout);
 }
 
@@ -574,11 +572,73 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpNumberofIntervalsSpinBox->setValue(simulationOptions.numberOfIntervals);
       mpIntervalTextBox->setText(QString::number(simulationOptions.interval));
     }
+    // if the class has __OpenModelica_simulationFlags annotation then use its values.
+    QList<QString> simulationFlags = mpMainWindow->getOMCProxy()->getAnnotationNamedModifiers(mClassName, "__OpenModelica_simulationFlags");
+    foreach (QString simulationFlag, simulationFlags) {
+      QString value = mpMainWindow->getOMCProxy()->getAnnotationModifierValue(mClassName, "__OpenModelica_simulationFlags", simulationFlag);
+      if (simulationFlag.compare("clock") == 0) {
+        mpClockComboBox->setCurrentIndex(mpClockComboBox->findText(value));
+      } else if (simulationFlag.compare("cpu") == 0) {
+        mpCPUTimeCheckBox->setChecked(true);
+      } else if (simulationFlag.compare("dasslnoRestart") == 0) {
+        mpDasslRestartCheckBox->setChecked(false);
+      } else if (simulationFlag.compare("dasslnoRootFinding") == 0) {
+        mpDasslRootFindingCheckBox->setChecked(false);
+      } else if (simulationFlag.compare("emit_protected") == 0) {
+        mpProtectedVariablesCheckBox->setChecked(true);
+      } else if (simulationFlag.compare("f") == 0) {
+        mpModelSetupFileTextBox->setText(value);
+      } else if (simulationFlag.compare("iif") == 0) {
+        mpEquationSystemInitializationFileTextBox->setText(value);
+      } else if (simulationFlag.compare("iim") == 0) {
+        mpInitializationMethodComboBox->setCurrentIndex(mpInitializationMethodComboBox->findText(value));
+      } else if (simulationFlag.compare("iit") == 0) {
+        mpEquationSystemInitializationTimeTextBox->setText(value);
+      } else if (simulationFlag.compare("initialStepSize") == 0) {
+        mpDasslInitialStepSizeTextBox->setText(value);
+      } else if (simulationFlag.compare("jacobian") == 0) {
+        mpJacobianComboBox->setCurrentIndex(mpJacobianComboBox->findText(value));
+      } else if (simulationFlag.compare("l") == 0) {
+        mpLinearizationTimeTextBox->setText(value);
+      } else if (simulationFlag.compare("ls") == 0) {
+        mpLinearSolverComboBox->setCurrentIndex(mpLinearSolverComboBox->findText(value));
+      } else if (simulationFlag.compare("maxIntegrationOrder") == 0) {
+        mpDasslMaxIntegrationOrderSpinBox->setValue(value.toInt());
+      } else if (simulationFlag.compare("maxStepSize") == 0) {
+        mpDasslMaxStepSizeTextBox->setText(value);
+      } else if (simulationFlag.compare("nls") == 0) {
+        mpNonLinearSolverComboBox->setCurrentIndex(mpNonLinearSolverComboBox->findText(value));
+      } else if (simulationFlag.compare("noEquidistantTimeGrid") == 0) {
+        mpEquidistantTimeGridCheckBox->setChecked(false);
+      } else if (simulationFlag.compare("noEventEmit") == 0) {
+        mpStoreVariablesAtEventsCheckBox->setChecked(false);
+      } else if (simulationFlag.compare("output") == 0) {
+        mpOutputVariablesTextBox->setText(value);
+      } else if (simulationFlag.compare("r") == 0) {
+        mpResultFileName->setText(value);
+      } else if (simulationFlag.compare("s") == 0) {
+        mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(value));
+      } else if (simulationFlag.compare("w") == 0) {
+        mpEnableAllWarningsCheckBox->setChecked(true);
+      } else if (simulationFlag.compare("lv") == 0) {
+        QStringList logStreams = value.split(",", QString::SkipEmptyParts);
+        int i = 0;
+        while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
+          if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
+            QCheckBox *pLogStreamCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
+            if (logStreams.contains(pLogStreamCheckBox->text())) {
+              pLogStreamCheckBox->setChecked(true);
+            }
+          }
+          i++;
+        }
+      }
+    }
     mpCflagsTextBox->setEnabled(true);
     mpFileNameTextBox->setEnabled(true);
-    mpSaveButton->setEnabled(true);
-    mpSaveAndSimulateButton->setEnabled(true);
-    mpSimulateButton->setText(Helper::simulate);
+    mpSaveExperimentAnnotationCheckBox->setVisible(true);
+    mpSaveSimulationFlagsAnnotationCheckBox->setVisible(true);
+    mpSimulateCheckBox->setVisible(true);
   } else {
     mIsReSimulate = true;
     mClassName = simulationOptions.getClassName();
@@ -693,16 +753,18 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     }
     mpAdditionalSimulationFlagsTextBox->setText(simulationOptions.getAdditionalSimulationFlags());
     // save simulation settings
-    mpSaveButton->setEnabled(false);
-    mpSaveAndSimulateButton->setEnabled(false);
-    mpSimulateButton->setText(Helper::reSimulate);
+    mpSaveExperimentAnnotationCheckBox->setVisible(false);
+    mpSaveSimulationFlagsAnnotationCheckBox->setVisible(false);
+    mpSimulateCheckBox->setVisible(false);
   }
 }
 
 /*!
-  Used for non-interactive simulation.\n
-  Sends the translateModel command to OMC.
-  */
+ * \brief SimulationDialog::translateModel
+ * Sends the translateModel command to OMC.
+ * \param simulationParameters
+ * \return
+ */
 bool SimulationDialog::translateModel(QString simulationParameters)
 {
   // check reset messages number before simulation option
@@ -930,9 +992,9 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
 
 /*!
  * \brief SimulationDialog::saveSimulationSettings
- * Saves the simulation settings in the model.
+ * Saves the experiment annotation in the model.
  */
-void SimulationDialog::saveSimulationSettings()
+void SimulationDialog::saveExperimentAnnotation()
 {
   if (mIsReSimulate) {
     return;
@@ -980,6 +1042,180 @@ void SimulationDialog::saveSimulationSettings()
     mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), newExperimentAnnotation);
     LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
     pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief SimulationDialog::saveSimulationFlagsAnnotation
+ * Saves the __OpenModelica_simulationFlags annotation in the model.
+ */
+void SimulationDialog::saveSimulationFlagsAnnotation()
+{
+  if (mIsReSimulate) {
+    return;
+  }
+  // old simulation flags
+  QString oldSimulationFlags = QString("annotate=%1").arg(mpMainWindow->getOMCProxy()->getSimulationFlagsAnnotation(mpLibraryTreeItem->getNameStructure()));
+  // new simulation flags
+  QStringList simulationFlags;
+  if (!mpClockComboBox->currentText().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("clock").arg(mpClockComboBox->currentText()));
+  }
+  if (mpCPUTimeCheckBox->isChecked()) {
+    simulationFlags.append("cpu");
+  }
+  if (!mpDasslRestartCheckBox->isChecked()) {
+    simulationFlags.append("dasslnoRestart");
+  }
+  if (!mpDasslRootFindingCheckBox->isChecked()) {
+    simulationFlags.append("dasslnoRootFinding");
+  }
+  if (mpProtectedVariablesCheckBox->isChecked()) {
+    simulationFlags.append("emit_protected");
+  }
+  if (!mpModelSetupFileTextBox->text().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("f").arg(mpModelSetupFileTextBox->text()));
+  }
+  if (!mpEquationSystemInitializationFileTextBox->text().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("iif").arg(mpEquationSystemInitializationFileTextBox->text()));
+  }
+  if (!mpInitializationMethodComboBox->currentText().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("iim").arg(mpInitializationMethodComboBox->currentText()));
+  }
+  if (!mpEquationSystemInitializationTimeTextBox->text().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("iit").arg(mpEquationSystemInitializationTimeTextBox->text()));
+  }
+  if (!mpDasslInitialStepSizeTextBox->text().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("initialStepSize").arg(mpDasslInitialStepSizeTextBox->text()));
+  }
+  simulationFlags.append(QString("%1=\"%2\"").arg("jacobian").arg(mpJacobianComboBox->currentText()));
+  if (!mpLinearizationTimeTextBox->text().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("l").arg(mpLinearizationTimeTextBox->text()));
+  }
+  if (!mpLinearSolverComboBox->currentText().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("ls").arg(mpLinearSolverComboBox->currentText()));
+  }
+  if (mpDasslMaxIntegrationOrderSpinBox->value() != 5) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("maxIntegrationOrder").arg(mpDasslMaxIntegrationOrderSpinBox->value()));
+  }
+  if (!mpDasslMaxStepSizeTextBox->text().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("maxStepSize").arg(mpDasslMaxStepSizeTextBox->text()));
+  }
+  if (!mpNonLinearSolverComboBox->currentText().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("nls").arg(mpNonLinearSolverComboBox->currentText()));
+  }
+  if (mpEquidistantTimeGridCheckBox->isEnabled() && !mpEquidistantTimeGridCheckBox->isChecked()) {
+    simulationFlags.append("noEquidistantTimeGrid");
+  }
+  if (!mpStoreVariablesAtEventsCheckBox->isChecked()) {
+    simulationFlags.append("noEventEmit");
+  }
+  if (!mpOutputVariablesTextBox->text().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("output").arg(mpOutputVariablesTextBox->text()));
+  }
+  if (!mpResultFileName->text().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("r").arg(mpResultFileName->text()));
+  }
+  simulationFlags.append(QString("%1=\"%2\"").arg("s").arg(mpMethodComboBox->currentText()));
+  if (mpEnableAllWarningsCheckBox->isChecked()) {
+    simulationFlags.append("w");
+  }
+  QStringList logStreams;
+  int i = 0;
+  while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
+    if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
+      QCheckBox *pLogStreamCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
+      if (pLogStreamCheckBox->isChecked()) {
+        logStreams << pLogStreamCheckBox->text();
+      }
+    }
+    i++;
+  }
+  if (logStreams.size() > 0) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("lv").arg(logStreams.join(",")));
+  }
+  QString newSimulationFlags = QString("__OpenModelica_simulationFlags(%1)").arg(simulationFlags.join(","));
+  // if we have ModelWidget for class then put the change on undo stack.
+  if (mpLibraryTreeItem->getModelWidget()) {
+    UpdateClassSimulationFlagsAnnotationCommand *pUpdateClassSimulationFlagsAnnotationCommand;
+    pUpdateClassSimulationFlagsAnnotationCommand = new UpdateClassSimulationFlagsAnnotationCommand(mpMainWindow, mpLibraryTreeItem,
+                                                                                                   oldSimulationFlags, newSimulationFlags);
+    mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassSimulationFlagsAnnotationCommand);
+    mpLibraryTreeItem->getModelWidget()->updateModelText();
+  } else {
+    // send the simulations flags annotation to OMC
+    mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), newSimulationFlags);
+    LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
+    pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
+  }
+}
+
+void SimulationDialog::performSimulation()
+{
+  SimulationOptions simulationOptions;
+  QString simulationParameters;
+  /* build the simulation parameters */
+  simulationParameters.append("startTime=").append(mpStartTimeTextBox->text());
+  simulationParameters.append(", stopTime=").append(mpStopTimeTextBox->text());
+  QString numberOfIntervals;
+  if (mpNumberofIntervalsRadioButton->isChecked()) {
+    numberOfIntervals = QString::number(mpNumberofIntervalsSpinBox->value());
+  } else {
+    qreal startTime = mpStartTimeTextBox->text().toDouble();
+    qreal stopTime = mpStopTimeTextBox->text().toDouble();
+    qreal interval = mpIntervalTextBox->text().toDouble();
+    numberOfIntervals = QString::number((stopTime - startTime) / interval);
+  }
+  simulationParameters.append(", numberOfIntervals=").append(numberOfIntervals);
+  simulationParameters.append(", method=").append("\"").append(mpMethodComboBox->currentText()).append("\"");
+  if (!mpToleranceTextBox->text().isEmpty()) {
+    simulationParameters.append(", tolerance=").append(mpToleranceTextBox->text());
+  }
+  simulationParameters.append(", outputFormat=").append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
+  if (!mpFileNameTextBox->text().isEmpty()) {
+    simulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
+  } else if (mClassName.contains('\'')) {
+    simulationParameters.append(", fileNamePrefix=").append("\"_omcQuot_").append(QByteArray(mClassName.toStdString().c_str()).toHex()).append("\"");
+  }
+  if (!mpVariableFilterTextBox->text().isEmpty()) {
+    simulationParameters.append(", variableFilter=").append("\"").append(mpVariableFilterTextBox->text()).append("\"");
+  }
+  if (!mpCflagsTextBox->text().isEmpty()) {
+    simulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
+  }
+  mpMainWindow->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
+  simulationOptions = createSimulationOptions();
+  // show the progress bar
+  mpMainWindow->getStatusBar()->showMessage(tr("Translating %1.").arg(mClassName));
+  mpMainWindow->getProgressBar()->setRange(0, 0);
+  mpMainWindow->showProgressBar();
+  bool isTranslationSuccessful = mIsReSimulate ? true : translateModel(simulationParameters);
+  // hide the progress bar
+  mpMainWindow->hideProgressBar();
+  mpMainWindow->getStatusBar()->clearMessage();
+  mIsReSimulate = false;
+  if (isTranslationSuccessful) {
+    // check if we can compile using the target compiler
+    SimulationPage *pSimulationPage = mpMainWindow->getOptionsDialog()->getSimulationPage();
+    QString targetCompiler = pSimulationPage->getTargetCompilerComboBox()->currentText();
+    if ((targetCompiler.compare("vxworks69") == 0) || (targetCompiler.compare("debugrt") == 0)) {
+      QString msg = tr("Generated code for the target compiler <b>%1</b> at %2.").arg(targetCompiler)
+          .arg(simulationOptions.getWorkingDirectory());
+      mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                                   Helper::notificationLevel));
+      return;
+    }
+    QString targetLanguage = pSimulationPage->getTargetLanguageComboBox()->currentText();
+    // check if we can compile using the target language
+    if ((targetLanguage.compare("C") == 0) || (targetLanguage.compare("Cpp") == 0)) {
+      createAndShowSimulationOutputWidget(simulationOptions);
+    } else {
+      QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage)
+          .arg(simulationOptions.getWorkingDirectory());
+      mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                                   Helper::notificationLevel));
+      return;
+    }
   }
 }
 
@@ -1188,105 +1424,43 @@ void SimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem)
 }
 
 /*!
- * \brief SimulationDialog::save
- * Slot activated when mpSaveButton clicked signal is raised.\n
- * Saves the simulation settings in the model.
- */
-void SimulationDialog::save()
-{
-  if (validate()) {
-    saveSimulationSettings();
-    accept();
-  }
-}
-
-/*!
- * \brief SimulationDialog::saveAndSimulate
- * Slot activated when mpSaveAndSimulateButton clicked signal is raised.\n
- * Saves the simulation settings in the model and simulate the model.
- */
-void SimulationDialog::saveAndSimulate()
-{
-  if (validate()) {
-    saveSimulationSettings();
-    simulate();
-  }
-}
-
-/*!
  * \brief SimulationDialog::simulate
  * Slot activated when mpSimulateButton clicked signal is raised.\n
  * Reads the simulation options set by the user and sends them to OMC by calling buildModel.
  */
 void SimulationDialog::simulate()
 {
-  SimulationOptions simulationOptions;
   if (validate()) {
-    QString simulationParameters;
-    /* build the simulation parameters */
-    simulationParameters.append("startTime=").append(mpStartTimeTextBox->text());
-    simulationParameters.append(", stopTime=").append(mpStopTimeTextBox->text());
-    QString numberOfIntervals;
-    if (mpNumberofIntervalsRadioButton->isChecked()) {
-      numberOfIntervals = QString::number(mpNumberofIntervalsSpinBox->value());
+    if (mIsReSimulate) {
+      performSimulation();
     } else {
-      qreal startTime = mpStartTimeTextBox->text().toDouble();
-      qreal stopTime = mpStopTimeTextBox->text().toDouble();
-      qreal interval = mpIntervalTextBox->text().toDouble();
-      numberOfIntervals = QString::number((stopTime - startTime) / interval);
+      // if no option is selected then show error message to user
+      if (!(mpSaveExperimentAnnotationCheckBox->isChecked() ||
+            mpSaveSimulationFlagsAnnotationCheckBox->isChecked() ||
+            mpSimulateCheckBox->isChecked())) {
+        QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
+                                 GUIMessages::getMessage(GUIMessages::SELECT_SIMULATION_OPTION), Helper::ok);
+        return;
+      }
+      if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
+          mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
+        mpLibraryTreeItem->getModelWidget()->getUndoStack()->beginMacro("Simulation settings");
+      }
+      if (mpSaveExperimentAnnotationCheckBox->isChecked()) {
+        saveExperimentAnnotation();
+      }
+      if (mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
+        saveSimulationFlagsAnnotation();
+      }
+      if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
+          mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
+        mpLibraryTreeItem->getModelWidget()->getUndoStack()->endMacro();
+      }
+      if (mpSimulateCheckBox->isChecked()) {
+        performSimulation();
+      }
     }
-    simulationParameters.append(", numberOfIntervals=").append(numberOfIntervals);
-    simulationParameters.append(", method=").append("\"").append(mpMethodComboBox->currentText()).append("\"");
-    if (!mpToleranceTextBox->text().isEmpty()) {
-      simulationParameters.append(", tolerance=").append(mpToleranceTextBox->text());
-    }
-    simulationParameters.append(", outputFormat=").append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
-    if (!mpFileNameTextBox->text().isEmpty()) {
-      simulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
-    } else if (mClassName.contains('\'')) {
-      simulationParameters.append(", fileNamePrefix=").append("\"_omcQuot_").append(QByteArray(mClassName.toStdString().c_str()).toHex()).append("\"");
-    }
-    if (!mpVariableFilterTextBox->text().isEmpty()) {
-      simulationParameters.append(", variableFilter=").append("\"").append(mpVariableFilterTextBox->text()).append("\"");
-    }
-    if (!mpCflagsTextBox->text().isEmpty()) {
-      simulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
-    }
-    mpMainWindow->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
-    simulationOptions = createSimulationOptions();
-    // show the progress bar
-    mpMainWindow->getStatusBar()->showMessage(tr("Translating %1.").arg(mClassName));
-    mpMainWindow->getProgressBar()->setRange(0, 0);
-    mpMainWindow->showProgressBar();
-    bool isTranslationSuccessful = mIsReSimulate ? true : translateModel(simulationParameters);
-    // hide the progress bar
-    mpMainWindow->hideProgressBar();
-    mpMainWindow->getStatusBar()->clearMessage();
-    mIsReSimulate = false;
     accept();
-    if (isTranslationSuccessful) {
-      // check if we can compile using the target compiler
-      SimulationPage *pSimulationPage = mpMainWindow->getOptionsDialog()->getSimulationPage();
-      QString targetCompiler = pSimulationPage->getTargetCompilerComboBox()->currentText();
-      if ((targetCompiler.compare("vxworks69") == 0) || (targetCompiler.compare("debugrt") == 0)) {
-        QString msg = tr("Generated code for the target compiler <b>%1</b> at %2.").arg(targetCompiler)
-            .arg(simulationOptions.getWorkingDirectory());
-        mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
-                                                                     Helper::notificationLevel));
-        return;
-      }
-      QString targetLanguage = pSimulationPage->getTargetLanguageComboBox()->currentText();
-      // check if we can compile using the target language
-      if ((targetLanguage.compare("C") == 0) || (targetLanguage.compare("Cpp") == 0)) {
-        createAndShowSimulationOutputWidget(simulationOptions);
-      } else {
-        QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage)
-            .arg(simulationOptions.getWorkingDirectory());
-        mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
-                                                                     Helper::notificationLevel));
-        return;
-      }
-    }
   }
 }
 

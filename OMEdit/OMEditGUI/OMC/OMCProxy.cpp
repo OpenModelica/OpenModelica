@@ -1042,9 +1042,11 @@ bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassNa
   if (modifierValue.isEmpty()) {
     expression = QString("setExtendsModifierValue(%1, %2, %3, $Code(()))").arg(className).arg(extendsClassName).arg(modifierName);
   } else if (modifierValue.startsWith("(")) {
-    expression = QString("setExtendsModifierValue(%1, %2, %3, $Code(%4))").arg(className).arg(extendsClassName).arg(modifierName).arg(modifierValue);
+    expression = QString("setExtendsModifierValue(%1, %2, %3, $Code(%4))").arg(className).arg(extendsClassName).arg(modifierName)
+        .arg(modifierValue);
   } else {
-    expression = QString("setExtendsModifierValue(%1, %2, %3, $Code(=%4))").arg(className).arg(extendsClassName).arg(modifierName).arg(modifierValue);
+    expression = QString("setExtendsModifierValue(%1, %2, %3, $Code(=%4))").arg(className).arg(extendsClassName).arg(modifierName)
+        .arg(modifierValue);
   }
   sendCommand(expression);
   if (getResult().toLower().contains("ok")) {
@@ -1426,7 +1428,8 @@ bool OMCProxy::createClass(QString type, QString className, LibraryTreeItem *pEx
   if (!pExtendsLibraryTreeItem) {
     expression = QString("%1 %2 end %3;").arg(type).arg(className).arg(className);
   } else {
-    expression = QString("%1 %2 extends %3; end %4;").arg(type).arg(className).arg(pExtendsLibraryTreeItem->getNameStructure()).arg(className);
+    expression = QString("%1 %2 extends %3; end %4;").arg(type).arg(className).arg(pExtendsLibraryTreeItem->getNameStructure())
+        .arg(className);
   }
   return loadString(expression, className, Helper::utf8, false, false);
 }
@@ -2088,7 +2091,8 @@ QString OMCProxy::importFMU(QString fmuName, QString outputDirectory, int logLev
                             bool generateOutputConnectors)
 {
   outputDirectory = outputDirectory.isEmpty() ? "<default>" : outputDirectory;
-  QString fmuFileName = mpOMCInterface->importFMU(fmuName, outputDirectory, logLevel, true, debugLogging, generateInputConnectors, generateOutputConnectors);
+  QString fmuFileName = mpOMCInterface->importFMU(fmuName, outputDirectory, logLevel, true, debugLogging, generateInputConnectors,
+                                                  generateOutputConnectors);
   printMessagesStringInternal();
   return fmuFileName;
 }
@@ -2362,6 +2366,52 @@ QString OMCProxy::getCommandLineOptionsAnnotation(QString className)
 {
   sendCommand("getNamedAnnotation(" + className + ", __OpenModelica_commandLineOptions)");
   return StringHandler::unparse(StringHandler::removeFirstLastCurlBrackets(getResult()));
+}
+
+/*!
+ * \brief OMCProxy::getAnnotationNamedModifiers
+ * Returns the list of modifiers of the named annotation.
+ * \param className
+ * \param annotation
+ * \return
+ */
+QList<QString> OMCProxy::getAnnotationNamedModifiers(QString className, QString annotation)
+{
+  QList<QString> result = mpOMCInterface->getAnnotationNamedModifiers(className, annotation);
+  if (result.isEmpty()) {
+    printMessagesStringInternal();
+  }
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::getAnnotationModifierValue
+ * Returns the value of the named annotation modifier.
+ * \param className
+ * \param annotation
+ * \param modifier
+ * \return
+ */
+QString OMCProxy::getAnnotationModifierValue(QString className, QString annotation, QString modifier)
+{
+  return mpOMCInterface->getAnnotationModifierValue(className, annotation, modifier);
+}
+
+/*!
+ * \brief OMCProxy::getSimulationFlagsAnnotation
+ * Returns the __OpenModelica_simulationFlags annotation as string.
+ * \param className
+ * \return
+ */
+QString OMCProxy::getSimulationFlagsAnnotation(QString className)
+{
+  QStringList modifiers;
+  QList<QString> simulationFlags = getAnnotationNamedModifiers(className, "__OpenModelica_simulationFlags");
+  foreach (QString simulationFlag, simulationFlags) {
+    modifiers.append(QString("%1=\"%2\"").arg(simulationFlag)
+                     .arg(getAnnotationModifierValue(className, "__OpenModelica_simulationFlags", simulationFlag)));
+  }
+  return QString("__OpenModelica_simulationFlags(%1)").arg(modifiers.join(","));
 }
 
 /*!
