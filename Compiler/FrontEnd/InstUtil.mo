@@ -8211,6 +8211,65 @@ end propagateModFinal;
 public type DomainFieldOpt = Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>>;
 public type DomainFieldsLst = list<tuple<DAE.ComponentRef,list<Absyn.ComponentRef>>>;
 
+public function addGhostCells
+//add ghost cells to fields that are differentiated in pder
+  input list<tuple<SCode.Element, DAE.Mod>> inCompelts;
+  input list<SCode.Equation> inEqs;
+  output list<tuple<SCode.Element, DAE.Mod>> outCompelts;
+  protected list<Absyn.Ident> fieldNamesP;
+algorithm
+  fieldNamesP := List.fold(inEqs, fieldsInPderEq, {});
+  //TODO: implement
+
+
+   outCompelts := inCompelts;
+end addGhostCells;
+
+function fieldsInPderEq
+//adds field variable names that are differentiated using pder
+//in given equation to given list if it isn't already there
+  input SCode.Equation eq;
+  input list<Absyn.Ident> inFieldNames;
+  output list<Absyn.Ident> outFieldNames;
+  protected list<Absyn.Ident> fieldNames2;
+algorithm
+  fieldNames2 := match eq
+  local
+    list<Absyn.Ident> fieldNames1;
+    Absyn.Exp lhs_exp, rhs_exp;
+    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp))
+      /*,domain = domainCr as Absyn.CREF_IDENT(), comment = comment, info = info))*/
+    algorithm
+      (_,fieldNames1) := Absyn.traverseExp(lhs_exp, fieldInPderExp, inFieldNames);
+      (_,fieldNames1) := Absyn.traverseExp(rhs_exp, fieldInPderExp, fieldNames1);
+    then
+      fieldNames1;
+    else
+      inFieldNames;
+  end match;
+  outFieldNames := fieldNames2;
+end fieldsInPderEq;
+
+function fieldInPderExp
+//if given expression is pder call, than adds the differentiated field name
+//to given list of names if it is not already there
+  input Absyn.Exp inExp;
+  input list<Absyn.Ident> inFieldNames;
+  output Absyn.Exp outExp;
+  output list<Absyn.Ident> outFieldNames;
+algorithm
+  outFieldNames := match inExp
+    local
+      Absyn.Ident newFieldName;
+    case Absyn.CALL(function_=Absyn.CREF_IDENT(name="pder"),functionArgs=Absyn.FUNCTIONARGS(args={Absyn.CREF(Absyn.CREF_IDENT(name=newFieldName)),_}))
+    then
+      List.unionElt(newFieldName,inFieldNames);
+    else
+      inFieldNames;
+  end match;
+  outExp := inExp;
+end fieldInPderExp;
+
 public function elabField
 //For field variables: finds the "domain" modifier,
 //finds domain.N - length of discretized field array

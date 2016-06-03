@@ -2095,7 +2095,7 @@ algorithm
         (smCompCrefs, smInitialCrefs) = InstStateMachineUtil.getSMStatesInContext(eqs_1, pre);
         //ih = List.fold1(smCompCrefs, InnerOuter.updateSMHierarchy, inPrefix3, ih);
         ih = List.fold(smCompCrefs, InnerOuter.updateSMHierarchy, ih);
-
+        compelts_2 = InstUtil.addGhostCells(compelts_2, eqs_1);
         (cache,env5,ih,store,dae1,csets,ci_state2,vars,graph,domainFieldsLst) =
           instElementList(cache, env3, ih, store, mods, pre, ci_state1,
             compelts_2, inst_dims, impl, callscope, graph, csets, true);
