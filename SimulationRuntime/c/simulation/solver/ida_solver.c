@@ -413,6 +413,26 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     }
   }
 
+  /* define initial step size */
+  if (omc_flag[FLAG_INITIAL_STEP_SIZE])
+  {
+    double initialStepSize = atof(omc_flagValue[FLAG_INITIAL_STEP_SIZE]);
+
+    assertStreamPrint(threadData, initialStepSize >= DASSL_STEP_EPS, "Selected initial step size %e is too small.", initialStepSize);
+
+    flag = IDASetInitStep(idaData->ida_mem, initialStepSize);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## Set intial step size failed!");
+    }
+    infoStreamPrint(LOG_SOLVER, 0, "initial step size: %g", initialStepSize);
+  }
+  else
+  {
+    infoStreamPrint(LOG_SOLVER, 0, "initial step size is set automatically.");
+  }
+
+
+
   /* configure the sensitivities part */
   idaData->idaSmode = omc_flag[FLAG_IDAS] ? 1 : 0;
 
