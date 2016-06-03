@@ -1302,6 +1302,9 @@ constant ConfigFlag ALARM = CONFIG_FLAG(101, "alarm",
 constant ConfigFlag TOTAL_TEARING = CONFIG_FLAG(102, "totalTearing",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
   Util.gettext("Activates total tearing (determination of all possible tearing sets) for the specified components.\nUse '+d=tearingdump' to find out the relevant indexes."));
+constant ConfigFlag IGNORE_SIMULATION_FLAGS_ANNOTATION = CONFIG_FLAG(103, "ignoreSimulationFlagsAnnotation",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Ignores the simulation flags specified as annotation in the class."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1409,7 +1412,8 @@ constant list<ConfigFlag> allConfigFlags = {
   IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION,
   CALCULATE_SENSITIVITIES,
   ALARM,
-  TOTAL_TEARING
+  TOTAL_TEARING,
+  IGNORE_SIMULATION_FLAGS_ANNOTATION
 };
 
 public function new
