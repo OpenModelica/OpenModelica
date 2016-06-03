@@ -256,6 +256,9 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   if (mpOptionsDialog->getSimulationPage()->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
     mpOMCProxy->setCommandLineOptions("+ignoreCommandLineOptionsAnnotation=true");
   }
+  if (mpOptionsDialog->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
+    mpOMCProxy->setCommandLineOptions("+ignoreSimulationFlagsAnnotation=true");
+  }
   // restore OMEdit widgets state
   QSettings *pSettings = OpenModelica::getApplicationSettings();
   if (mpOptionsDialog->getGeneralSettingsPage()->getPreserveUserCustomizations())

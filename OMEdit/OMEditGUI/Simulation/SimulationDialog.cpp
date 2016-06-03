@@ -572,65 +572,68 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpNumberofIntervalsSpinBox->setValue(simulationOptions.numberOfIntervals);
       mpIntervalTextBox->setText(QString::number(simulationOptions.interval));
     }
-    // if the class has __OpenModelica_simulationFlags annotation then use its values.
-    QList<QString> simulationFlags = mpMainWindow->getOMCProxy()->getAnnotationNamedModifiers(mClassName, "__OpenModelica_simulationFlags");
-    foreach (QString simulationFlag, simulationFlags) {
-      QString value = mpMainWindow->getOMCProxy()->getAnnotationModifierValue(mClassName, "__OpenModelica_simulationFlags", simulationFlag);
-      if (simulationFlag.compare("clock") == 0) {
-        mpClockComboBox->setCurrentIndex(mpClockComboBox->findText(value));
-      } else if (simulationFlag.compare("cpu") == 0) {
-        mpCPUTimeCheckBox->setChecked(true);
-      } else if (simulationFlag.compare("dasslnoRestart") == 0) {
-        mpDasslRestartCheckBox->setChecked(false);
-      } else if (simulationFlag.compare("dasslnoRootFinding") == 0) {
-        mpDasslRootFindingCheckBox->setChecked(false);
-      } else if (simulationFlag.compare("emit_protected") == 0) {
-        mpProtectedVariablesCheckBox->setChecked(true);
-      } else if (simulationFlag.compare("f") == 0) {
-        mpModelSetupFileTextBox->setText(value);
-      } else if (simulationFlag.compare("iif") == 0) {
-        mpEquationSystemInitializationFileTextBox->setText(value);
-      } else if (simulationFlag.compare("iim") == 0) {
-        mpInitializationMethodComboBox->setCurrentIndex(mpInitializationMethodComboBox->findText(value));
-      } else if (simulationFlag.compare("iit") == 0) {
-        mpEquationSystemInitializationTimeTextBox->setText(value);
-      } else if (simulationFlag.compare("initialStepSize") == 0) {
-        mpDasslInitialStepSizeTextBox->setText(value);
-      } else if (simulationFlag.compare("jacobian") == 0) {
-        mpJacobianComboBox->setCurrentIndex(mpJacobianComboBox->findText(value));
-      } else if (simulationFlag.compare("l") == 0) {
-        mpLinearizationTimeTextBox->setText(value);
-      } else if (simulationFlag.compare("ls") == 0) {
-        mpLinearSolverComboBox->setCurrentIndex(mpLinearSolverComboBox->findText(value));
-      } else if (simulationFlag.compare("maxIntegrationOrder") == 0) {
-        mpDasslMaxIntegrationOrderSpinBox->setValue(value.toInt());
-      } else if (simulationFlag.compare("maxStepSize") == 0) {
-        mpDasslMaxStepSizeTextBox->setText(value);
-      } else if (simulationFlag.compare("nls") == 0) {
-        mpNonLinearSolverComboBox->setCurrentIndex(mpNonLinearSolverComboBox->findText(value));
-      } else if (simulationFlag.compare("noEquidistantTimeGrid") == 0) {
-        mpEquidistantTimeGridCheckBox->setChecked(false);
-      } else if (simulationFlag.compare("noEventEmit") == 0) {
-        mpStoreVariablesAtEventsCheckBox->setChecked(false);
-      } else if (simulationFlag.compare("output") == 0) {
-        mpOutputVariablesTextBox->setText(value);
-      } else if (simulationFlag.compare("r") == 0) {
-        mpResultFileName->setText(value);
-      } else if (simulationFlag.compare("s") == 0) {
-        mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(value));
-      } else if (simulationFlag.compare("w") == 0) {
-        mpEnableAllWarningsCheckBox->setChecked(true);
-      } else if (simulationFlag.compare("lv") == 0) {
-        QStringList logStreams = value.split(",", QString::SkipEmptyParts);
-        int i = 0;
-        while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
-          if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
-            QCheckBox *pLogStreamCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
-            if (logStreams.contains(pLogStreamCheckBox->text())) {
-              pLogStreamCheckBox->setChecked(true);
+    // if ignoreSimulationFlagsAnnotation flag is not set then read the __OpenModelica_simulationFlags annotation
+    if (!mpMainWindow->getOptionsDialog()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
+      // if the class has __OpenModelica_simulationFlags annotation then use its values.
+      QList<QString> simulationFlags = mpMainWindow->getOMCProxy()->getAnnotationNamedModifiers(mClassName, "__OpenModelica_simulationFlags");
+      foreach (QString simulationFlag, simulationFlags) {
+        QString value = mpMainWindow->getOMCProxy()->getAnnotationModifierValue(mClassName, "__OpenModelica_simulationFlags", simulationFlag);
+        if (simulationFlag.compare("clock") == 0) {
+          mpClockComboBox->setCurrentIndex(mpClockComboBox->findText(value));
+        } else if (simulationFlag.compare("cpu") == 0) {
+          mpCPUTimeCheckBox->setChecked(true);
+        } else if (simulationFlag.compare("dasslnoRestart") == 0) {
+          mpDasslRestartCheckBox->setChecked(false);
+        } else if (simulationFlag.compare("dasslnoRootFinding") == 0) {
+          mpDasslRootFindingCheckBox->setChecked(false);
+        } else if (simulationFlag.compare("emit_protected") == 0) {
+          mpProtectedVariablesCheckBox->setChecked(true);
+        } else if (simulationFlag.compare("f") == 0) {
+          mpModelSetupFileTextBox->setText(value);
+        } else if (simulationFlag.compare("iif") == 0) {
+          mpEquationSystemInitializationFileTextBox->setText(value);
+        } else if (simulationFlag.compare("iim") == 0) {
+          mpInitializationMethodComboBox->setCurrentIndex(mpInitializationMethodComboBox->findText(value));
+        } else if (simulationFlag.compare("iit") == 0) {
+          mpEquationSystemInitializationTimeTextBox->setText(value);
+        } else if (simulationFlag.compare("initialStepSize") == 0) {
+          mpDasslInitialStepSizeTextBox->setText(value);
+        } else if (simulationFlag.compare("jacobian") == 0) {
+          mpJacobianComboBox->setCurrentIndex(mpJacobianComboBox->findText(value));
+        } else if (simulationFlag.compare("l") == 0) {
+          mpLinearizationTimeTextBox->setText(value);
+        } else if (simulationFlag.compare("ls") == 0) {
+          mpLinearSolverComboBox->setCurrentIndex(mpLinearSolverComboBox->findText(value));
+        } else if (simulationFlag.compare("maxIntegrationOrder") == 0) {
+          mpDasslMaxIntegrationOrderSpinBox->setValue(value.toInt());
+        } else if (simulationFlag.compare("maxStepSize") == 0) {
+          mpDasslMaxStepSizeTextBox->setText(value);
+        } else if (simulationFlag.compare("nls") == 0) {
+          mpNonLinearSolverComboBox->setCurrentIndex(mpNonLinearSolverComboBox->findText(value));
+        } else if (simulationFlag.compare("noEquidistantTimeGrid") == 0) {
+          mpEquidistantTimeGridCheckBox->setChecked(false);
+        } else if (simulationFlag.compare("noEventEmit") == 0) {
+          mpStoreVariablesAtEventsCheckBox->setChecked(false);
+        } else if (simulationFlag.compare("output") == 0) {
+          mpOutputVariablesTextBox->setText(value);
+        } else if (simulationFlag.compare("r") == 0) {
+          mpResultFileName->setText(value);
+        } else if (simulationFlag.compare("s") == 0) {
+          mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(value));
+        } else if (simulationFlag.compare("w") == 0) {
+          mpEnableAllWarningsCheckBox->setChecked(true);
+        } else if (simulationFlag.compare("lv") == 0) {
+          QStringList logStreams = value.split(",", QString::SkipEmptyParts);
+          int i = 0;
+          while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
+            if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
+              QCheckBox *pLogStreamCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
+              if (logStreams.contains(pLogStreamCheckBox->text())) {
+                pLogStreamCheckBox->setChecked(true);
+              }
             }
+            i++;
           }
-          i++;
         }
       }
     }
