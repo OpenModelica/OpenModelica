@@ -620,8 +620,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
           mpResultFileName->setText(value);
         } else if (simulationFlag.compare("s") == 0) {
           mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(value));
-        } else if (simulationFlag.compare("w") == 0) {
-          mpEnableAllWarningsCheckBox->setChecked(true);
         } else if (simulationFlag.compare("lv") == 0) {
           QStringList logStreams = value.split(",", QString::SkipEmptyParts);
           int i = 0;
@@ -1065,16 +1063,16 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
     simulationFlags.append(QString("%1=\"%2\"").arg("clock").arg(mpClockComboBox->currentText()));
   }
   if (mpCPUTimeCheckBox->isChecked()) {
-    simulationFlags.append("cpu");
+    simulationFlags.append(QString("%1=\"()\"").arg("cpu"));
   }
   if (!mpDasslRestartCheckBox->isChecked()) {
-    simulationFlags.append("dasslnoRestart");
+    simulationFlags.append(QString("%1=\"()\"").arg("dasslnoRestart"));
   }
   if (!mpDasslRootFindingCheckBox->isChecked()) {
-    simulationFlags.append("dasslnoRootFinding");
+    simulationFlags.append(QString("%1=\"()\"").arg("dasslnoRootFinding"));
   }
   if (mpProtectedVariablesCheckBox->isChecked()) {
-    simulationFlags.append("emit_protected");
+    simulationFlags.append(QString("%1=\"()\"").arg("emit_protected"));
   }
   if (!mpModelSetupFileTextBox->text().isEmpty()) {
     simulationFlags.append(QString("%1=\"%2\"").arg("f").arg(mpModelSetupFileTextBox->text()));
@@ -1108,10 +1106,10 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
     simulationFlags.append(QString("%1=\"%2\"").arg("nls").arg(mpNonLinearSolverComboBox->currentText()));
   }
   if (mpEquidistantTimeGridCheckBox->isEnabled() && !mpEquidistantTimeGridCheckBox->isChecked()) {
-    simulationFlags.append("noEquidistantTimeGrid");
+    simulationFlags.append(QString("%1=\"()\"").arg("noEquidistantTimeGrid"));
   }
   if (!mpStoreVariablesAtEventsCheckBox->isChecked()) {
-    simulationFlags.append("noEventEmit");
+    simulationFlags.append(QString("%1=\"()\"").arg("noEventEmit"));
   }
   if (!mpOutputVariablesTextBox->text().isEmpty()) {
     simulationFlags.append(QString("%1=\"%2\"").arg("output").arg(mpOutputVariablesTextBox->text()));
@@ -1120,9 +1118,6 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
     simulationFlags.append(QString("%1=\"%2\"").arg("r").arg(mpResultFileName->text()));
   }
   simulationFlags.append(QString("%1=\"%2\"").arg("s").arg(mpMethodComboBox->currentText()));
-  if (mpEnableAllWarningsCheckBox->isChecked()) {
-    simulationFlags.append("w");
-  }
   QStringList logStreams;
   int i = 0;
   while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
