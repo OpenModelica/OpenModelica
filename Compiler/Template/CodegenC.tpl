@@ -3852,7 +3852,24 @@ template algebraicDAEVar(list<SimVar> algVars, String modelNamePrefix)
       'algebraic[<%i%>] = <%cref(name)%>;'
     end match)
   ;separator="\n")
+  let nominalVars = (algVars |> var hasindex i fromindex 0 =>
+    (match var
+    case SIMVAR(__) then
+      'algebraicNominal[<%i%>] = <%crefAttributes(name)%>.nominal;
+       infoStreamPrint(LOG_SOLVER, 0, "%s -> %g", <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);'
+    end match)
+  ;separator="\n")
+
   <<
+  /* algebraic nominal values */
+  int <%symbolName(modelNamePrefix,"getAlgebraicDAEVarNominals")%>(DATA *data, threadData_t *threadData, double* algebraicNominal)
+  {
+    TRACE_PUSH
+    <%nominalVars%>
+    TRACE_POP
+    return 0;
+  }
+
   /* forward algebraic variables */
   int <%symbolName(modelNamePrefix,"setAlgebraicDAEVars")%>(DATA *data, threadData_t *threadData, double* algebraic)
   {
@@ -3901,6 +3918,7 @@ template initializeDAEmodeData(Integer nResVars, Integer nAlgVars, list<tuple<In
     daeModeData->evaluateDAEResiduals = <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>;
     daeModeData->setAlgebraicDAEVars = <%symbolName(modelNamePrefix,"setAlgebraicDAEVars")%>;
     daeModeData->getAlgebraicDAEVars = <%symbolName(modelNamePrefix,"getAlgebraicDAEVars")%>;
+    daeModeData->getAlgebraicDAEVarNominals = <%symbolName(modelNamePrefix,"getAlgebraicDAEVarNominals")%>;
 
     /* intialize sparse pattern */
     daeModeData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));

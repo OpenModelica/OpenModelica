@@ -210,17 +210,15 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   /* set nominal values of the states for absolute tolerances */
   infoStreamPrint(LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
 
-  for(i=0; i<idaData->N; ++i)
+  for(i=0; i < data->modelData->nStates; ++i)
   {
-    if (i < data->modelData->nStates)
-    {
-      tmp[i] = data->simulationInfo->tolerance * fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
-    }
-    else
-    {
-      tmp[i] = data->simulationInfo->tolerance;
-    }
-    infoStreamPrint(LOG_SOLVER, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, tmp[i]);
+    tmp[i] = data->simulationInfo->tolerance * fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+     infoStreamPrint(LOG_SOLVER, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, tmp[i]);
+  }
+  /* daeMode: set nominal values for algebraic variables */
+  if (idaData->daeMode)
+  {
+    data->simulationInfo->daeModeData->getAlgebraicDAEVarNominals(data, threadData, tmp + data->modelData->nStates);
   }
   messageClose(LOG_SOLVER);
   flag = IDASVtolerances(idaData->ida_mem,

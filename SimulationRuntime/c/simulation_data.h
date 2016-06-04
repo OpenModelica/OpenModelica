@@ -406,6 +406,10 @@ typedef struct DAEMODE_DATA
 
   /* function to get algebraic DAE Variable form solver*/
   int (*getAlgebraicDAEVars)(struct DATA*, threadData_t*, double*);
+
+  /* function to get algebraic DAE nominal values*/
+  int (*getAlgebraicDAEVarNominals)(struct DATA*, threadData_t*, double*);
+
 } DAEMODE_DATA;
 
 
