@@ -4,6 +4,7 @@ TEST = ../../rtest
 TESTFILES = \
 DiffAlgorithm.mos \
 DumpTest.mos \
+ExpandableArrayTest.mos \
 ExpressionTest.mos \
 GraphTest.mos \
 HashTableTest.mos \

@@ -230,6 +230,7 @@ if true then /* Suppress output */
     prefixPath + "Util/DynLoad.mo",
     prefixPath + "Util/ErrorExt.mo",
     prefixPath + "Util/Error.mo",
+    prefixPath + "Util/ExpandableArray.mo",
     prefixPath + "Util/File.mo",
     prefixPath + "Util/Flags.mo",
     prefixPath + "Util/FMI.mo",
