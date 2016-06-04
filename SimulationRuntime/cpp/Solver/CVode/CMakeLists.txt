@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.8.9)
 
 project(${CVodeName})
-#include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 
 add_library(${CVodeName} CVode.cpp CVodeSettings.cpp FactoryExport.cpp)
 

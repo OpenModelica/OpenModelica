@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.8.9)
 
 project(${IDAName})
-#include_directories(${SUNDIALS_INCLUDE_DIR}/ida ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 
 add_library(${IDAName} IDA.cpp IDASettings.cpp FactoryExport.cpp)
 
