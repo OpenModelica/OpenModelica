@@ -1054,6 +1054,10 @@ match platform
   <%\t%>cp <%omhome%>/bin/libopenblas.dll ../binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/libquadmath-0.dll ../binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/libwinpthread-1.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libwinpthread-1.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/zlib1.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libszip-0.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libhdf5-0.dll ../binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/libgcc_s_*.dll ../binaries/<%platform%>/
   <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES)
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fileNamePrefix%>.fmu *
