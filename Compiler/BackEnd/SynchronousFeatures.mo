@@ -272,47 +272,43 @@ algorithm
   BackendDAE.CLOCKED_PARTITION(idx) := inSyst.partitionKind;
   subPartition := outShared.partitionsInfo.subPartitions[idx];
 
-  //rfranke: don't know why partitions with solver shall be excluded here
-  //if isNone(subPartition.clock.solver) then
-    isPrevVarArr := arrayCreate(BackendVariable.varsSize(inSyst.orderedVars), false);
-    isDerVarArr := arrayCreate(BackendVariable.varsSize(inSyst.orderedVars), false);
-    for cr in derVars loop
-      varIxs := getVarIxs(cr, inSyst.orderedVars);
-      for idx in varIxs loop
-        arrayUpdate(isDerVarArr, idx, true);
-      end for;
+  isPrevVarArr := arrayCreate(BackendVariable.varsSize(inSyst.orderedVars), false);
+  isDerVarArr := arrayCreate(BackendVariable.varsSize(inSyst.orderedVars), false);
+  for cr in derVars loop
+    varIxs := getVarIxs(cr, inSyst.orderedVars);
+    for idx in varIxs loop
+      arrayUpdate(isDerVarArr, idx, true);
     end for;
-    for i in 1:BackendDAEUtil.equationArraySize(inSyst.orderedEqs) loop
-      eq := BackendEquation.equationNth1(inSyst.orderedEqs, i);
-      (_, prevVars) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, prevVars);
+  end for;
+  for i in 1:BackendDAEUtil.equationArraySize(inSyst.orderedEqs) loop
+    eq := BackendEquation.equationNth1(inSyst.orderedEqs, i);
+    (_, prevVars) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, prevVars);
+  end for;
+  for i in 1:BackendDAEUtil.equationArraySize(inSyst.removedEqs) loop
+    eq := BackendEquation.equationNth1(inSyst.removedEqs, i);
+    (_, prevVars) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, prevVars);
+  end for;
+  for cr in prevVars loop
+    varIxs := getVarIxs(cr, inSyst.orderedVars);
+    for idx in varIxs loop
+      arrayUpdate(isPrevVarArr, idx, true);
     end for;
-    for i in 1:BackendDAEUtil.equationArraySize(inSyst.removedEqs) loop
-      eq := BackendEquation.equationNth1(inSyst.removedEqs, i);
-      (_, prevVars) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, prevVars);
-    end for;
-    for cr in prevVars loop
-      varIxs := getVarIxs(cr, inSyst.orderedVars);
-      for idx in varIxs loop
-        arrayUpdate(isPrevVarArr, idx, true);
-      end for;
-    end for;
-    prevVars := {};
-    for i in 1:arrayLength(isPrevVarArr) loop
-      if isPrevVarArr[i] then
-        var := BackendVariable.getVarAt(inSyst.orderedVars, i);
-        var := BackendVariable.setVarKind(var, BackendDAE.CLOCKED_STATE(
-                 previousName = ComponentReference.crefPrefixPrevious(var.varName),
-                 isStartFixed = isDerVarArr[i] or BackendVariable.varFixed(var)));
-        var := BackendVariable.setVarFixed(var, true);
-        BackendVariable.setVarAt(inSyst.orderedVars, i, var);
-        prevVars := var.varName::prevVars;
-      end if;
-    end for;
+  end for;
+  prevVars := {};
+  for i in 1:arrayLength(isPrevVarArr) loop
+    if isPrevVarArr[i] then
+      var := BackendVariable.getVarAt(inSyst.orderedVars, i);
+      var := BackendVariable.setVarKind(var, BackendDAE.CLOCKED_STATE(
+               previousName = ComponentReference.crefPrefixPrevious(var.varName),
+               isStartFixed = isDerVarArr[i] or BackendVariable.varFixed(var)));
+      var := BackendVariable.setVarFixed(var, true);
+      BackendVariable.setVarAt(inSyst.orderedVars, i, var);
+      prevVars := var.varName::prevVars;
+    end if;
+  end for;
 
-    subPartition.prevVars := prevVars;
-    arrayUpdate(outShared.partitionsInfo.subPartitions, idx, subPartition);
-  //end if;
-
+  subPartition.prevVars := prevVars;
+  arrayUpdate(outShared.partitionsInfo.subPartitions, idx, subPartition);
 end markClockedStates;
 
 protected function collectPrevVars
