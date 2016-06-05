@@ -787,13 +787,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     $(eval BINARIES=$(BINARIES) <%lapackbins%>)
   endif
 
-  # need boost system lib prior to C++11
+  # need boost system lib prior to C++11, forcing also dynamic libs
   ifeq ($(findstring USE_CPP_03,$(CFLAGS)),USE_CPP_03)
     $(eval LIBS=$(LIBS) -L"$(BOOST_LIBS)" -l$(BOOST_SYSTEM_LIB))
     $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT) <%platformbins%>)
-  # link static gcc libs to avoid dependencies
+  # link static libs to avoid dependencies; can't link all static under Linux
   else ifeq ($(findstring gcc,$(CC)),gcc)
-    $(eval LIBS=$(LIBS) -static-libstdc++ -static-libgcc)
+    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc,-static))
   endif
 
   CPPFILES=$(CALCHELPERMAINFILE)
