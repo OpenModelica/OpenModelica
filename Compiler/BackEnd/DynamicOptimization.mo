@@ -86,7 +86,6 @@ protected function addOptimizationVarsEqns
   input output BackendDAE.Shared shared;
 protected
   Option<DAE.Exp> mayer, lagrange, startTimeE, finalTimeE;
-  BackendDAE.Variables v, inVarsAndglobalKnownVars;
   list<BackendDAE.Var> varlst;
   BackendDAE.Var tG;
   list<BackendDAE.Equation> eqnsLst;
@@ -113,10 +112,9 @@ algorithm
     //Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
 
    (mayer,lagrange,startTimeE,finalTimeE) := getOptimicaArgs(classAttrs);
-
-    _ := addTimeGrid(BackendVariable.varList(globalKnownVars), globalKnownVars);
-    inVarsAndglobalKnownVars := BackendVariable.addVariables(vars, BackendVariable.copyVariables(globalKnownVars));
-    varlst := BackendVariable.varList(inVarsAndglobalKnownVars);
+    varlst :=  BackendVariable.varList(globalKnownVars);
+    _ := addTimeGrid(varlst, globalKnownVars);
+    varlst := listAppend(varlst, BackendVariable.varList(vars));
 
     (vars, eqnsLst, mayer) := joinObjectFun(makeObject(BackendDAE.optimizationMayerTermName, findMayerTerm, varlst, mayer), vars, eqnsLst);
     (vars, eqnsLst, lagrange) := joinObjectFun(makeObject(BackendDAE.optimizationLagrangeTermName, findLagrangeTerm, varlst, lagrange), vars, eqnsLst);
