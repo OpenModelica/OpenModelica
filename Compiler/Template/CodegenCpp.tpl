@@ -6687,7 +6687,7 @@ template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, Si
     else
       'HUGE_VAL'
 
-  '{"<%nameStr%>", <%nominalStr%>, <%minStr%>, <%maxStr%>}'
+  'AlgloopVarAttributes("<%nameStr%>", <%nominalStr%>, <%minStr%>, <%maxStr%>)'
 end createAlgloopVarAttributes;
 
 template writeAlgloopvars(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations, list<SimEqSystem> parameterEquations,
