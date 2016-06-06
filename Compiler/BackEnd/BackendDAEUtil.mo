@@ -7276,6 +7276,7 @@ protected function allPreOptimizationModules
   "This list contains all back end pre-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
     (UnitCheck.unitChecking, "unitChecking"),
+    (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
     (BackendInline.normalInlineFunction, "normalInlineFunction"),
     (EvaluateParameter.evaluateAllParameters, "evaluateAllParameters"),
     (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters"),
@@ -7422,12 +7423,14 @@ algorithm
 
   if Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) then
     // handle special flags, which enable modules
+
     enabledModules := deprecatedDebugFlag(Flags.SORT_EQNS_AND_VARS, enabledModules, "sortEqnsVars", "preOptModules+");
     enabledModules := deprecatedDebugFlag(Flags.RESOLVE_LOOPS, enabledModules, "resolveLoops", "preOptModules+");
     enabledModules := deprecatedDebugFlag(Flags.EVAL_ALL_PARAMS, enabledModules, "evaluateAllParameters", "preOptModules+");
     enabledModules := deprecatedDebugFlag(Flags.ADD_DER_ALIASES, enabledModules, "introduceDerAlias", "preOptModules+");
     if Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
       enabledModules := "inputDerivativesForDynOpt"::enabledModules;
+      enabledModules := "createDynamicOptimization"::enabledModules;
     end if;
 
     // handle special flags, which disable modules
@@ -7437,6 +7440,7 @@ algorithm
        Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "none" then
       disabledModules := "removeSimpleEquations"::disabledModules;
     end if;
+
 
     if not Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS) then
       disabledModules := "evalFunc"::disabledModules;
@@ -7497,7 +7501,7 @@ algorithm
       Error.addCompilerWarning("Deprecated flag --disableLinearTearing detected. Use --maxSizeLinearTearing=0 instead.");
     end if;
 
-    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION) then
+    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION)  or  Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
       enabledModules := "generateSymbolicLinearization"::enabledModules;
     end if;
 

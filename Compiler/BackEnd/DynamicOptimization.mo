@@ -59,60 +59,97 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 
-public function addOptimizationVarsEqns
+
+public function createDynamicOptimization
+ input output BackendDAE.BackendDAE dae;
+protected
+ BackendDAE.Variables vars;
+ BackendDAE.EqSystem syst;
+ BackendDAE.EquationArray eqns;
+ BackendDAE.Shared shared;
+algorithm
+  shared := dae.shared;
+  {syst} := dae.eqs;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := syst;
+  (vars, eqns, shared) := addOptimizationVarsEqns(vars, eqns, shared);
+  syst.orderedVars := vars;
+  syst.orderedEqs := eqns;
+  dae.eqs := {syst};
+  dae.shared := shared;
+end createDynamicOptimization;
+
+protected function addOptimizationVarsEqns
 "author: Vitalij Ruge
  add objective function and constraints to DAE. Neeed for derivatives"
-  input BackendDAE.Variables inVars;
-  input list<BackendDAE.Equation> inEqns;
-  input Boolean inOptimicaFlag;
-  input list< .DAE.ClassAttributes> inClassAttr;
-  input list< .DAE.Constraint> inConstraint;
-  input BackendDAE.Variables globalKnownVars;
-  input Boolean inDynOptimization;
-  output BackendDAE.Variables outVars;
-  output list<BackendDAE.Equation>  outEqns;
-  output list< .DAE.ClassAttributes> outClassAttr;
+  input output BackendDAE.Variables vars;
+  input output BackendDAE.EquationArray eqns;
+  input output BackendDAE.Shared shared;
 protected
   Option<DAE.Exp> mayer, lagrange, startTimeE, finalTimeE;
   BackendDAE.Variables v, inVarsAndglobalKnownVars;
   list<BackendDAE.Var> varlst;
   BackendDAE.Var tG;
-  list<BackendDAE.Equation> e;
+  list<BackendDAE.Equation> eqnsLst;
+
+  list< .DAE.ClassAttributes> classAttrs;
+  list< .DAE.Constraint> constraints;
+  BackendDAE.Variables globalKnownVars;
+  Boolean inOptimicaFlag = Config.acceptOptimicaGrammar();
+  Boolean inDynOptimization = Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
+  constant Boolean debug = false;
 algorithm
+   classAttrs := shared.classAttrs;
+   constraints := shared.constraints;
+   globalKnownVars := shared.globalKnownVars;
+   eqnsLst := {};
 
-  if (not inOptimicaFlag and not inDynOptimization) or Flags.getConfigString(Flags.SIMCODE_TARGET) == "XML" then //no optimization
-    outVars := inVars;
-    outEqns := inEqns;
-    outClassAttr := inClassAttr;
-    Flags.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM, false);
-  else
-
-   if not inOptimicaFlag then
-    Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+   if not(inOptimicaFlag or inDynOptimization)
+   then
+      print("Something going wrong for postOptModul=createDynamicOptimization. Check your flags. You need +g=DynOpt or +g=Optimica!\n");
+      fail();
    end if;
+   Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
 
     //Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
 
-    (mayer,lagrange,startTimeE,finalTimeE) := match(inClassAttr)
-                        local Option<DAE.Exp> mayer_, lagrange_, startTimeE_, finalTimeE_;
-                        case({DAE.OPTIMIZATION_ATTRS(objetiveE=mayer_, objectiveIntegrandE=lagrange_,startTimeE=startTimeE_,finalTimeE=finalTimeE_)}) then(mayer_,lagrange_,startTimeE_,finalTimeE_);
-                        else (NONE(), NONE(),NONE(),NONE());
-                        end match;
-
+   (mayer,lagrange,startTimeE,finalTimeE) := getOptimicaArgs(classAttrs);
 
     _ := addTimeGrid(BackendVariable.varList(globalKnownVars), globalKnownVars);
-    inVarsAndglobalKnownVars := BackendVariable.addVariables(inVars, BackendVariable.copyVariables(globalKnownVars));
+    inVarsAndglobalKnownVars := BackendVariable.addVariables(vars, BackendVariable.copyVariables(globalKnownVars));
     varlst := BackendVariable.varList(inVarsAndglobalKnownVars);
-    (v, e, mayer) := joinObjectFun(makeObject(BackendDAE.optimizationMayerTermName, findMayerTerm, varlst, mayer), inVars, inEqns);
-    (v, e, lagrange) := joinObjectFun(makeObject(BackendDAE.optimizationLagrangeTermName, findLagrangeTerm, varlst, lagrange), v, e);
-    (v, e) := joinConstraints(inConstraint, "$con$", BackendDAE.OPT_CONSTR(), globalKnownVars, varlst ,v, e, BackendVariable.hasConTermAnno);
-    (outVars, outEqns) := joinConstraints({}, "$finalCon$", BackendDAE.OPT_FCONSTR(), globalKnownVars, varlst, v, e, BackendVariable.hasFinalConTermAnno);
+
+    (vars, eqnsLst, mayer) := joinObjectFun(makeObject(BackendDAE.optimizationMayerTermName, findMayerTerm, varlst, mayer), vars, eqnsLst);
+    (vars, eqnsLst, lagrange) := joinObjectFun(makeObject(BackendDAE.optimizationLagrangeTermName, findLagrangeTerm, varlst, lagrange), vars, eqnsLst);
+
+    (vars, eqnsLst) := joinConstraints(constraints, "$con$", BackendDAE.OPT_CONSTR(), globalKnownVars, varlst, vars, eqnsLst, BackendVariable.hasConTermAnno);
+    (vars, eqnsLst) := joinConstraints({}, "$finalCon$", BackendDAE.OPT_FCONSTR(), globalKnownVars, varlst, vars, eqnsLst, BackendVariable.hasFinalConTermAnno);
+
+    // don't work....
     Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
 
-    outClassAttr := {DAE.OPTIMIZATION_ATTRS(mayer, lagrange, startTimeE, finalTimeE)};
-  end if;
+    shared.classAttrs := {DAE.OPTIMIZATION_ATTRS(mayer, lagrange, startTimeE, finalTimeE)};
+    if debug then
+      print("\neqs");
+      BackendDump.printEquationList(eqnsLst);
+    end if;
+    eqns := BackendEquation.addEquations(eqnsLst, eqns);
 
 end addOptimizationVarsEqns;
+
+protected function getOptimicaArgs
+  input list< .DAE.ClassAttributes> inClassAttr;
+  output Option<DAE.Exp> mayer,lagrange,startTimeE,finalTimeE;
+algorithm
+  (mayer,lagrange,startTimeE,finalTimeE) :=
+  match(inClassAttr)
+    local Option<DAE.Exp> mayer_, lagrange_, startTimeE_, finalTimeE_;
+
+    case({DAE.OPTIMIZATION_ATTRS(objetiveE=mayer_, objectiveIntegrandE=lagrange_,startTimeE=startTimeE_,finalTimeE=finalTimeE_)})
+    then(mayer_,lagrange_,startTimeE_,finalTimeE_);
+
+    else (NONE(), NONE(),NONE(),NONE());
+    end match;
+end getOptimicaArgs;
 
 
 protected function addTimeGrid
