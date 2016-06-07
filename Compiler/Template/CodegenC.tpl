@@ -2486,25 +2486,28 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
     // no dynamic tearing
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
-      let body_initializeStaticNLSData = generateNonLinearInitialFunction(nls)
+      let indexName = 'NLS<%nls.index%>'
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEARSYSTEM')
       <<
       <%residualFunction%>
-      <%body_initializeStaticNLSData%>
+      <%bodyStaticData%>
       >>
     // dynamic tearing
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
       // for strict tearing set
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
-      let body_initializeStaticNLSData = generateNonLinearInitialFunction(nls)
+      let indexName = 'NLS<%nls.index%>'
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEARSYSTEM')
       let residualFunctionStrict = generateNonLinearResidualFunction(at, modelNamePrefix)
-      let body_initializeStaticNLSDataStrict = generateNonLinearInitialFunction(at)
+      let indexName = 'NLS<%at.index%>'
+      let bodyStaticDataStrict = generateStaticInitialData(at.crefs, indexName, 'NONLINEARSYSTEM')
       <<
       /* start dynamic tearing sets */
       /* causal tearing set */
-      <%body_initializeStaticNLSData%>
+      <%bodyStaticData%>
       <%residualFunction%>
       /* strict tearing set */
-      <%body_initializeStaticNLSDataStrict%>
+      <%bodyStaticDataStrict%>
       <%residualFunctionStrict%>
       /* end dynamic tearing sets */
       >>
@@ -2585,29 +2588,27 @@ match system
     >>
 end generateNonLinearResidualFunction;
 
-template generateNonLinearInitialFunction(NonlinearSystem system)
+template generateStaticInitialData(list<ComponentRef> crefs, String indexName, String systemType)
   "Generates initial function for nonlinear loops."
 ::=
-match system
-  case nls as NONLINEARSYSTEM(__) then
-    let body_initializeStaticNLSData = (nls.crefs |> cr hasindex i0 =>
-      <<
-      /* static nls data for <%crefStrNoUnderscore(cr)%> */
-      nlsData->nominal[i] = <%crefAttributes(cr)%>.nominal;
-      nlsData->min[i]     = <%crefAttributes(cr)%>.min;
-      nlsData->max[i++]   = <%crefAttributes(cr)%>.max;
-      >>
-    ;separator="\n")
+  let bodyStaticData = (crefs |> cr hasindex i0 =>
     <<
-    void initializeStaticNLSData<%nls.index%>(void *inData, threadData_t *threadData, void *inNlsData)
+    /* static nls data for <%crefStrNoUnderscore(cr)%> */
+    sysData->nominal[i] = <%crefAttributes(cr)%>.nominal;
+    sysData->min[i]     = <%crefAttributes(cr)%>.min;
+    sysData->max[i++]   = <%crefAttributes(cr)%>.max;
+    >>
+  ;separator="\n")
+    <<
+    void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, void *inSystemData)
     {
       DATA* data = (DATA*) inData;
-      NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) inNlsData;
+      <%systemType%>* sysData = (<%systemType%>*) inSystemData;
       int i=0;
-      <%body_initializeStaticNLSData%>
+      <%bodyStaticData%>
     }
     >>
-end generateNonLinearInitialFunction;
+end generateStaticInitialData;
 // =============================================================================
 // section for State Sets
 //
