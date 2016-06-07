@@ -2401,71 +2401,47 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, Str
      case eq as SES_MIXED(__) then functionInitialNonLinearSystemsTemp(fill(eq.cont,1), modelPrefixName)
      // no dynamic tearing
      case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
-       let size = listLength(nls.crefs)
-       let generatedJac = match nls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-       let initialJac = match nls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-       let jacIndex = match nls.jacobianMatrix case SOME((_,_,name,_,_,_,jacindex)) then '<%jacindex%>' case NONE() then '-1'
-       let innerEqs = functionInitialNonLinearSystemsTemp(nls.eqs, modelPrefixName)
+       let system = generateNonLinearSystemData(nls, 'NULL', modelPrefixName)
        <<
-       assertStreamPrint(NULL, nNonLinearSystems > <%nls.indexNonLinearSystem%>, "Internal Error: nNonLinearSystems mismatch!");
-       <%innerEqs%>
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].equationIndex = <%nls.index%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].size = <%size%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].method = 0;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%boolStrC(nls.homotopySupport)%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].mixedSystem = <%boolStrC(nls.mixedSystem)%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].residualFunc = residualFunc<%nls.index%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].strictTearingFunctionCall = NULL;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].jacobianIndex = <%jacIndex%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].initializeStaticNLSData = initializeStaticNLSData<%nls.index%>;
+       <%system%>
        >>
-
      // dynamic tearing
      case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
-       let size = listLength(nls.crefs)
-       let generatedJac = match nls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-       let initialJac = match nls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-       let jacIndex = match nls.jacobianMatrix case SOME((_,_,name,_,_,_,jacindex)) then '<%jacindex%>' case NONE() then '-1'
-       let innerEqs = functionInitialNonLinearSystemsTemp(nls.eqs, modelPrefixName)
-       let size2 = listLength(at.crefs)
-       let generatedJac2 = match at.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-       let initialJac2 = match at.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-       let jacIndex2 = match at.jacobianMatrix case SOME((_,_,name,_,_,_,jacindex2)) then '<%jacindex2%>' case NONE() then '-1'
-       let innerEqs2 = functionInitialNonLinearSystemsTemp(at.eqs, modelPrefixName)
+       let system = generateNonLinearSystemData(nls, 'NULL', modelPrefixName)
+       let systemStrict = generateNonLinearSystemData(at, '<%symbolName(modelPrefixName,"eqFunction")%>_<%nls.index%>', modelPrefixName)
        <<
-       assertStreamPrint(NULL, nNonLinearSystems > <%nls.indexNonLinearSystem%>, "Internal Error: nNonLinearSystems mismatch!");
-       <%innerEqs%>
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].equationIndex = <%nls.index%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].size = <%size%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].method = 0;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%if nls.homotopySupport then '1' else '0'%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].mixedSystem = <%if nls.mixedSystem then '1' else '0'%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].residualFunc = residualFunc<%nls.index%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].strictTearingFunctionCall = NULL;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].jacobianIndex = <%jacIndex%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].initializeStaticNLSData = initializeStaticNLSData<%nls.index%>;
-
-       assertStreamPrint(NULL, nNonLinearSystems > <%nls.indexNonLinearSystem%>, "Internal Error: nNonLinearSystems mismatch!");
-       <%innerEqs2%>
-       nonLinearSystemData[<%at.indexNonLinearSystem%>].equationIndex = <%at.index%>;
-       nonLinearSystemData[<%at.indexNonLinearSystem%>].size = <%size2%>;
-       nonLinearSystemData[<%at.indexNonLinearSystem%>].method = 0;
-       nonLinearSystemData[<%at.indexNonLinearSystem%>].homotopySupport = <%if at.homotopySupport then '1' else '0'%>;
-       nonLinearSystemData[<%at.indexNonLinearSystem%>].mixedSystem = <%if at.mixedSystem then '1' else '0'%>;
-       nonLinearSystemData[<%at.indexNonLinearSystem%>].residualFunc = residualFunc<%at.index%>;
-       nonLinearSystemData[<%at.indexNonLinearSystem%>].strictTearingFunctionCall = <%symbolName(modelPrefixName,"eqFunction")%>_<%nls.index%>;
-       nonLinearSystemData[<%at.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac2%>;
-       nonLinearSystemData[<%at.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac2%>;
-       nonLinearSystemData[<%at.indexNonLinearSystem%>].jacobianIndex = <%jacIndex2%>;
-       nonLinearSystemData[<%at.indexNonLinearSystem%>].initializeStaticNLSData = initializeStaticNLSData<%at.index%>;
+       <%system%>
+       <%systemStrict%>
        >>
      )
    ;separator="\n\n")
 end functionInitialNonLinearSystemsTemp;
+
+template generateNonLinearSystemData(NonlinearSystem system, String strictSet, String modelPrefixName)
+  "Generates nonlinear system data."
+::=
+  match system
+    case nls as NONLINEARSYSTEM(__) then
+      let size = listLength(nls.crefs)
+      let generatedJac = match nls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
+      let initialJac = match nls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
+      let jacIndex = match nls.jacobianMatrix case SOME((_,_,name,_,_,_,jacindex)) then '<%jacindex%>' case NONE() then '-1'
+      let innerSystems = functionInitialNonLinearSystemsTemp(nls.eqs, modelPrefixName)
+      <<
+      <%innerSystems%>
+
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].equationIndex = <%nls.index%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].size = <%size%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%boolStrC(nls.homotopySupport)%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].mixedSystem = <%boolStrC(nls.mixedSystem)%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].residualFunc = residualFunc<%nls.index%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].strictTearingFunctionCall = <%strictSet%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].jacobianIndex = <%jacIndex%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].initializeStaticNLSData = initializeStaticDataNLS<%nls.index%>;
+      >>
+end generateNonLinearSystemData;
 
 template functionExtraResidualsPreBody(SimEqSystem eq, Text &eqs, String modelNamePrefixStr)
  "Generates an equation."
@@ -2487,7 +2463,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
       let indexName = 'NLS<%nls.index%>'
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEARSYSTEM')
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       <<
       <%residualFunction%>
       <%bodyStaticData%>
@@ -2497,18 +2473,18 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
       // for strict tearing set
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
       let indexName = 'NLS<%nls.index%>'
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEARSYSTEM')
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let residualFunctionStrict = generateNonLinearResidualFunction(at, modelNamePrefix)
       let indexName = 'NLS<%at.index%>'
-      let bodyStaticDataStrict = generateStaticInitialData(at.crefs, indexName, 'NONLINEARSYSTEM')
+      let bodyStaticDataStrict = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       <<
       /* start dynamic tearing sets */
       /* causal tearing set */
-      <%bodyStaticData%>
       <%residualFunction%>
+      <%bodyStaticData%>
       /* strict tearing set */
-      <%bodyStaticDataStrict%>
       <%residualFunctionStrict%>
+      <%bodyStaticDataStrict%>
       /* end dynamic tearing sets */
       >>
     )
@@ -2599,16 +2575,17 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
     sysData->max[i++]   = <%crefAttributes(cr)%>.max;
     >>
   ;separator="\n")
-    <<
-    void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, void *inSystemData)
-    {
-      DATA* data = (DATA*) inData;
-      <%systemType%>* sysData = (<%systemType%>*) inSystemData;
-      int i=0;
-      <%bodyStaticData%>
-    }
-    >>
+  <<
+  void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, void *inSystemData)
+  {
+    DATA* data = (DATA*) inData;
+    <%systemType%>* sysData = (<%systemType%>*) inSystemData;
+    int i=0;
+    <%bodyStaticData%>
+  }
+  >>
 end generateStaticInitialData;
+
 // =============================================================================
 // section for State Sets
 //
