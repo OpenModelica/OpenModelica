@@ -547,7 +547,6 @@ package SimCode
       list<DAE.ComponentRef> crefs;
       Integer indexNonLinearSystem;
       Option<JacobianMatrix> jacobianMatrix;
-      Boolean linearTearing;
       Boolean homotopySupport;
       Boolean mixedSystem;
     end NONLINEARSYSTEM;
