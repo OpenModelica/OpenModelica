@@ -190,13 +190,13 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_CPU */
   "  Dumps the cpu-time into the result file using the variable named $cpuTime",
   /* FLAG_CSV_OSTEP */
-  "value specifies csv-files for debuge values for optimizer step",
+  "  Value specifies csv-files for debuge values for optimizer step",
   /* FLAG_DASSL_NO_RESTART */
   "  Deactivates the restart of dassl after an event is performed.",
   /* FLAG_DASSL_NO_ROOTFINDING */
   "  Deactivates the internal root finding procedure of dassl.",
   /* FLAG_DAE_MODE */
-  "flag to let the integrator use daeMode",
+  "  Enables daeMode simulation if the model was compiled with the omc flag --daeMode and the IDA integrator is used.",
   /* FLAG_EMBEDDED_SERVER */
   "  Enables an embedded server. Valid values:\n\n"
   "  * none - default, run without embedded server\n"
@@ -211,9 +211,14 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Get detailed information that specifies the command-line flag\n"
   "  For example, -help=f prints detailed information for command-line flag f.",
   /* FLAG_IDA_LS */
-  "  Value specifies the IDA solver linear solver.",
+  "  Value specifies the linear solver of the IDA integrator. Valid values:\n\n"
+  "  * klu - default, fast sparse linear solver\n"
+  "  * dense - dense linear solver, sundials default method\n"
+  "  * spgmr - sparse iterative linear solver based on generalized minimal residual method, convergance is not guaranteed, sundials method\n"
+  "  * spbcg - sparse iterative linear solver based on biconjugate gradient method, convergance is not guaranteed, sundials method\n"
+  "  * spgmr - sparse iterative linear solver based on transpose free quasi-minimal residual method, convergance is not guaranteed, sundials method\n",
   /* FLAG_IDAS */
-  "flag to add sensitivity information to the result files",
+  "  Enables sensitivity analysis with respect to parameters if the model is compiled with omc flag --calculateSensitivities.",
   /* FLAG_IGNORE_HIDERESULT */
   "  Emits also variables with HideResult=true annotation.",
   /* FLAG_IIF */
@@ -231,7 +236,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies an csv-file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE */
   "  Value specifies an external file with inputs for the simulation/optimization of the model.",
- /* FLAG_INPUT_FILE_STATES */
+  /* FLAG_INPUT_FILE_STATES */
   "  Value specifies an file with states start values for the optimization of the model.",
   /* FLAG_IPOPT_HESSE */
   "  Value specifies the hessematrix for Ipopt(OMC, BFGS, const).",
