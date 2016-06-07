@@ -274,6 +274,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   void (*residualFunc)(void**, const double*, double*, const int*);
   void (*initializeStaticNLSData)(void*, threadData_t *threadData, void*);
   int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
+  void (*getIterationVars)(struct DATA*, double*);
 
   void *solverData;
   modelica_real *nlsx;                 /* x */
@@ -281,8 +282,8 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_real *nlsxExtrapolation;    /* extrapolated values for x from old and old2 - used as initial guess */
 
   void *oldValueList;                  /* old values organized in a sorted list for extrapolation and interpolate, respectively */
+  modelica_real *resValues;            /* memory space for evaluated residual values */
 
-  modelica_integer method;             /* used for linear tearing system if 1: Newton step is done otherwise 0 */
   modelica_real residualError;         /* not used */
   modelica_boolean solved;             /* 1: solved in current step - else not */
 
@@ -312,7 +313,6 @@ typedef struct LINEAR_SYSTEM_DATA
   void (*residualFunc)(void**, const double*, double*, const int*);
   void (*initializeStaticLSData)(void*, threadData_t *threadData, void*);
   int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
-
 
   /* attributes of iteration variables */
   modelica_real *min;

@@ -367,6 +367,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     nonlinsys[i].nlsx = (double*) malloc(size*sizeof(double));
     nonlinsys[i].nlsxExtrapolation = (double*) malloc(size*sizeof(double));
     nonlinsys[i].nlsxOld = (double*) malloc(size*sizeof(double));
+    nonlinsys[i].resValues = (double*) malloc(size*sizeof(double));
 
     /* allocate value list*/
     nonlinsys[i].oldValueList = (void*) allocValueList(1);
@@ -478,6 +479,7 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
     free(nonlinsys[i].nlsx);
     free(nonlinsys[i].nlsxExtrapolation);
     free(nonlinsys[i].nlsxOld);
+    free(nonlinsys[i].resValues);
     free(nonlinsys[i].nominal);
     free(nonlinsys[i].min);
     free(nonlinsys[i].max);
@@ -526,9 +528,9 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
   return 0;
 }
 
-/*! \fn int printNonLinearSystemSolvingStatistics(DATA *data)
+/*! \fn printNonLinearSystemSolvingStatistics
  *
- *  This function print memory for all non-linear systems.
+ *  This function prints memory for all non-linear systems.
  *
  *  \param [ref] [data]
  *         [in]  [sysNumber] index of corresponding non-linear system
@@ -543,6 +545,122 @@ void printNonLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLev
   infoStreamPrint(logLevel, 0, " average time per call          : %f", nonlinsys[sysNumber].totalTime/nonlinsys[sysNumber].numberOfCall);
   infoStreamPrint(logLevel, 0, " total time                     : %f", nonlinsys[sysNumber].totalTime);
   messageClose(logLevel);
+}
+
+/*! \fn getInitialGuess
+ *
+ *  This function writes initial guess to nonlinsys->nlsx and nonlinsys->nlsOld.
+ *
+ *  \param [in]  [nonlinsys]
+ *  \param [in]  [time] time for extrapolation
+ *
+ */
+int getInitialGuess(NONLINEAR_SYSTEM_DATA *nonlinsys, double time)
+{
+  /* value extrapolation */
+  printValuesListTimes((VALUES_LIST*)nonlinsys->oldValueList);
+  /* if list is empty use current start values */
+  if (listLen(((VALUES_LIST*)nonlinsys->oldValueList)->valueList)==0)
+  {
+    /* use old value if no values are stored in the list */
+    memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
+  }
+  else
+  {
+    /* get extrapolated values */
+    getValues((VALUES_LIST*)nonlinsys->oldValueList, time, nonlinsys->nlsxExtrapolation, nonlinsys->nlsxOld);
+    memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
+  }
+
+  return 0;
+}
+
+/*! \fn updateInitialGuessDB
+ *
+ *  This function writes new values to solution list.
+ *
+ *  \param [in]  [nonlinsys]
+ *  \param [in]  [time] time for extrapolation
+ *  \param [in]  [context] current context of evaluation
+ *
+ */
+int updateInitialGuessDB(NONLINEAR_SYSTEM_DATA *nonlinsys, double time, int context)
+{
+  /* write solution to oldValue list for extrapolation */
+  if (nonlinsys->solved == 1)
+  {
+    /* do not use solution of jacobian for next extrapolation */
+    if (context < 4)
+    {
+      addListElement((VALUES_LIST*)nonlinsys->oldValueList,
+              createValueElement(nonlinsys->size, time, nonlinsys->nlsx));
+    }
+  }
+  else if (nonlinsys->solved == 2)
+  {
+    if (listLen(((VALUES_LIST*)nonlinsys->oldValueList)->valueList)>0)
+    {
+      cleanValueList((VALUES_LIST*)nonlinsys->oldValueList, NULL);
+    }
+    /* do not use solution of jacobian for next extrapolation */
+    if (context < 4)
+    {
+      addListElement((VALUES_LIST*)nonlinsys->oldValueList,
+              createValueElement(nonlinsys->size, time, nonlinsys->nlsx));
+    }
+  }
+  messageClose(LOG_NLS_EXTRAPOLATE);
+}
+
+/*! \fn updateInnerEquation
+ *
+ *  This function updates inner equation with the current x.
+ *
+ *  \param [ref] [data]
+ *         [in]  [sysNumber] index of corresponding non-linear system
+ */
+int updateInnerEquation(void **dataIn, int sysNumber, int discrete)
+{
+  DATA *data = (DATA*) ((void**)dataIn[0]);
+  threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
+
+  NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  int success = 0;
+
+  /* solve non continuous at discrete points*/
+  if(discrete)
+  {
+    data->simulationInfo->solveContinuous = 0;
+  }
+
+  /* try */
+#ifndef OMC_EMCC
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+
+  /* call residual function */
+  nonlinsys->residualFunc((void*) dataIn, nonlinsys->nlsx, nonlinsys->resValues, (int*)&nonlinsys->size);
+
+  /* replace extrapolated values by current x for discrete step */
+  memcpy(nonlinsys->nlsxExtrapolation, nonlinsys->nlsx, nonlinsys->size*(sizeof(double)));
+
+  success = 1;
+  /*catch */
+#ifndef OMC_EMCC
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+
+  if (!success)
+  {
+    warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
+  }
+
+  if(discrete)
+  {
+    data->simulationInfo->solveContinuous = 1;
+  }
+
+  return success;
 }
 
 
@@ -566,73 +684,34 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   data->simulationInfo->noThrowDivZero = 1;
   ((DATA*)data)->simulationInfo->solveContinuous = 1;
 
-
+  /* performace measuremeant */
   rt_ext_tp_tick(&nonlinsys->totalTimeClock);
 
-  /* value extrapolation */
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "############ Start new iteration for system %d at time at %g ############", sysNumber, data->localData[0]->timeValue);
-  printValuesListTimes((VALUES_LIST*)nonlinsys->oldValueList);
-  /* if list is empty use current start values */
-  if (listLen(((VALUES_LIST*)nonlinsys->oldValueList)->valueList)==0)
+  /* grab the initial guess */
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "############ Start new iteration for system %d at time at %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
+  getInitialGuess(nonlinsys, data->localData[0]->timeValue);
+
+  /* update non continuous */
+  if (data->simulationInfo->discreteCall)
   {
-    //memcpy(nonlinsys->nlsxOld, nonlinsys->nlsx, nonlinsys->size*(sizeof(double)));
-    //memcpy(nonlinsys->nlsxExtrapolation, nonlinsys->nlsx, nonlinsys->size*(sizeof(double)));
-    memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
-  }
-  else
-  {
-    /* get extrapolated values */
-    getValues((VALUES_LIST*)nonlinsys->oldValueList, data->localData[0]->timeValue, nonlinsys->nlsxExtrapolation, nonlinsys->nlsxOld);
-    memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
+    updateInnerEquation(dataAndThreadData, sysNumber, 1);
   }
 
-  if(data->simulationInfo->discreteCall)
-  {
-    double *fvec = malloc(sizeof(double)*nonlinsys->size);
-    int success = 0;
-
+  /* try */
 #ifndef OMC_EMCC
-    /* try */
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
-    ((DATA*)data)->simulationInfo->solveContinuous = 0;
-    nonlinsys->residualFunc((void*) dataAndThreadData, nonlinsys->nlsx, fvec, (int*)&nonlinsys->size);
-    ((DATA*)data)->simulationInfo->solveContinuous = 1;
+  /* handle asserts */
+  saveJumpState = threadData->currentErrorStage;
+  threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
 
-    success = 1;
-    memcpy(nonlinsys->nlsxExtrapolation, nonlinsys->nlsx, nonlinsys->size*(sizeof(double)));
-#ifndef OMC_EMCC
-    /*catch */
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
-    if (!success)
-    {
-      warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
-    }
-
-
-    free(fvec);
-  }
-
-  /* strategy for solving nonlinear system
-   *
-   *
-   *
-   */
-#ifndef OMC_EMCC
-    /* try */
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-
+  /* use the selected solver for solving nonlinear system */
   switch(data->simulationInfo->nlsMethod)
   {
 #if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_HYBRID:
-    saveJumpState = threadData->currentErrorStage;
-    threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
     success = solveHybrd(data, threadData, sysNumber);
-    threadData->currentErrorStage = saveJumpState;
     break;
   case NLS_KINSOL:
     success = nonlinearSolve_kinsol(data, threadData, sysNumber);
@@ -648,69 +727,59 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     break;
 #endif
   case NLS_HOMOTOPY:
-    saveJumpState = threadData->currentErrorStage;
-    threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
     success = solveHomotopy(data, threadData, sysNumber);
-    threadData->currentErrorStage = saveJumpState;
     break;
 #if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_MIXED:
     mixedSolverData = nonlinsys->solverData;
     nonlinsys->solverData = mixedSolverData->newtonData;
 
-    saveJumpState = threadData->currentErrorStage;
-    threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
-    success = solveHomotopy(data, threadData, sysNumber);
+   success = solveHomotopy(data, threadData, sysNumber);
 
     /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
     if (!success && nonlinsys->strictTearingFunctionCall != NULL){
       debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
       success = nonlinsys->strictTearingFunctionCall(data, threadData);
-      if (success) success=2;
+      if (success){
+        success=2;
+        /* update iteration variables of the causal set*/
+        nonlinsys->getIterationVars(data, nonlinsys->nlsx);
+      }
     }
 
     if (!success) {
       nonlinsys->solverData = mixedSolverData->hybridData;
       success = solveHybrd(data, threadData, sysNumber);
     }
-    threadData->currentErrorStage = saveJumpState;
     nonlinsys->solverData = mixedSolverData;
     break;
 #endif
   default:
     throwStreamPrint(threadData, "unrecognized nonlinear solver");
   }
+  /* set result */
   nonlinsys->solved = success;
 
-  /* write solution to oldValue list for extrapolation */
-  if (nonlinsys->solved == 1)
-  {
-    /* do not use solution of jacobian for next extrapolation */
-    if (data->simulationInfo->currentContext < 4)
-    {
-      addListElement((VALUES_LIST*)nonlinsys->oldValueList,
-              createValueElement(nonlinsys->size, data->localData[0]->timeValue, nonlinsys->nlsx));
-    }
-  }
-  else if (nonlinsys->solved == 2)
-  {
-    if (listLen(((VALUES_LIST*)nonlinsys->oldValueList)->valueList)>0)
-      cleanValueList((VALUES_LIST*)nonlinsys->oldValueList, NULL);
-  }
-  messageClose(LOG_NLS_EXTRAPOLATE);
+  /* handle asserts */
+  threadData->currentErrorStage = saveJumpState;
 
+  /*catch */
 #ifndef OMC_EMCC
-    /*catch */
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
+
+  /* update value list database */
+  updateInitialGuessDB(nonlinsys, data->localData[0]->timeValue, data->simulationInfo->currentContext);
 
   /* enable to avoid division by zero */
   data->simulationInfo->noThrowDivZero = 0;
   ((DATA*)data)->simulationInfo->solveContinuous = 0;
 
+  /* performace measuremeant and statistics */
   nonlinsys->totalTime += rt_ext_tp_tock(&(nonlinsys->totalTimeClock));
   nonlinsys->numberOfCall++;
 
+  /* write csv file for debuging */
 #if !defined(OMC_MINIMAL_RUNTIME)
   if (data->simulationInfo->nlsCsvInfomation)
   {
@@ -752,13 +821,14 @@ int check_nonlinear_solutions(DATA *data, int printFailingSystems)
 
 /*! \fn check_nonlinear_solution
  *
- *   This function check whether one non-linear system
- *   is to solve. If one is failed it returns 1 otherwise 0.
+ *   This function checks if a non-linear system
+ *   is solved. Returns a warning and 1 in case it's not
+ *   solved otherwise 0.
  *
  *  \param [in]  [data]
  *  \param [in]  [printFailingSystems]
  *  \param [in]  [sysNumber] index of corresponding non-linear System
- *  \param [out] [returnValue] It returns 1 if fail otherwise 0.
+ *  \param [out] [returnValue] Returns 1 if fail otherwise 0.
  *
  *  \author wbraun
  */
@@ -812,7 +882,8 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
 
 /*! \fn cleanUpOldValueListAfterEvent
  *
- *   This function clean old value list up to parameter time.
+ *   This function clean old value list up to parameter time for all
+ *   non-linear systems.
  *
  *  \param [in]  [data]
  *  \param [in]  [time]
@@ -829,30 +900,3 @@ void cleanUpOldValueListAfterEvent(DATA *data, double time)
   }
 }
 
-/*! \fn extraPolate
- *   This function extrapolates linear next value from
- *   the both old values.
- *
- *  \param [in]  [data]
- *
- *  \author wbraun
- */
-double extraPolate(DATA *data, const double old1, const double old2, const double minValue, const double maxValue)
-{
-  double retValue;
-
-  if(data->localData[1]->timeValue == data->localData[2]->timeValue || old1 == old2)
-  {
-    retValue = old1;
-  }
-  else
-  {
-    retValue = old2 + ((data->localData[0]->timeValue - data->localData[2]->timeValue)/(data->localData[1]->timeValue - data->localData[2]->timeValue)) * (old1-old2);
-
-    if(retValue < minValue && old1 > minValue)  retValue = minValue;
-    else if(retValue > maxValue && old1 < maxValue ) retValue = maxValue;
-
-  }
-
-  return retValue;
-}

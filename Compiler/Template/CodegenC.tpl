@@ -2440,6 +2440,7 @@ template generateNonLinearSystemData(NonlinearSystem system, String strictSet, S
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].jacobianIndex = <%jacIndex%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].initializeStaticNLSData = initializeStaticDataNLS<%nls.index%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].getIterationVars = getIterationVarsNLS<%nls.index%>;
       >>
 end generateNonLinearSystemData;
 
@@ -2464,9 +2465,11 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
       let indexName = 'NLS<%nls.index%>'
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let updateIterationVars = getIterationVars(nls.crefs, indexName)
       <<
       <%residualFunction%>
       <%bodyStaticData%>
+      <%updateIterationVars%>
       >>
     // dynamic tearing
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
@@ -2474,17 +2477,21 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
       let indexName = 'NLS<%nls.index%>'
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let updateIterationVars = getIterationVars(nls.crefs, indexName)
       let residualFunctionStrict = generateNonLinearResidualFunction(at, modelNamePrefix)
       let indexName = 'NLS<%at.index%>'
       let bodyStaticDataStrict = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let updateIterationVarsStrict = getIterationVars(nls.crefs, indexName)
       <<
       /* start dynamic tearing sets */
       /* causal tearing set */
       <%residualFunction%>
       <%bodyStaticData%>
+      <%updateIterationVars%>
       /* strict tearing set */
       <%residualFunctionStrict%>
       <%bodyStaticDataStrict%>
+      <%updateIterationVarsStrict%>
       /* end dynamic tearing sets */
       >>
     )
@@ -2534,9 +2541,9 @@ match system
           >>
         ;separator="\n")
     <<
-    /* inner non-linear systems */
     <%innerNLSSystems%>
-    /* tmp variables */
+
+    /* inner equations */
     <%&innerEqns%>
 
     void residualFunc<%nls.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)
@@ -2576,6 +2583,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
     >>
   ;separator="\n")
   <<
+
   void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, void *inSystemData)
   {
     DATA* data = (DATA*) inData;
@@ -2585,6 +2593,22 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   }
   >>
 end generateStaticInitialData;
+
+template getIterationVars(list<ComponentRef> crefs, String indexName)
+  "Generates iteration variables update."
+::=
+  let vars = (crefs |> cr hasindex i0 =>
+      'array[<%i0%>] = <%cref(cr)%>;'
+  ;separator="\n")
+  <<
+
+  void getIterationVars<%indexName%>(void *inData, double *array)
+  {
+    DATA* data = (DATA*) inData;
+    <%vars%>
+  }
+  >>
+end getIterationVars;
 
 // =============================================================================
 // section for State Sets
@@ -5024,7 +5048,7 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex,-1);
       >>
       %>
-      /* extrapolate data */
+      /* get old value */
       <%nls.crefs |> name hasindex i0 =>
         'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%cref(name)%>;'
       ;separator="\n"%>
@@ -5066,16 +5090,9 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
       SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex,-1);
       >>
       %>
-      /* extrapolate data */
+      /* get old value */
       <%at.crefs |> name hasindex i0 =>
-        let namestr = cref(name)
-        let namestrOld1 = crefOld(name,1)
-        let namestrOld2 = crefOld(name,2)
-        <<
-        data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
-        data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%namestrOld1%>;
-        data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, <%namestrOld1%>, <%namestrOld2%>, <%crefAttributes(name)%>.min, <%crefAttributes(name)%>.max);
-        >>
+        'data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%cref(name)%>;'
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, threadData, <%at.indexNonLinearSystem%>);
       /* The casual tearing set found a solution */

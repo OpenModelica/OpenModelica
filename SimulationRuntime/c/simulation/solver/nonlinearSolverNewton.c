@@ -150,17 +150,11 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
       double xsave;
 
       int i,j,l, linear=0;
-      linear = systemData->method;
 
       for(i = 0; i < *n; i++) {
-        if(linear) {
-          delta_hh = 1;
-        } else {
-
-          delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(fvec[i])), delta_h);
-          delta_hh = ((fvec[i] >= 0) ? delta_hh : -delta_hh);
-          delta_hh = x[i] + delta_hh - x[i];
-        }
+        delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(fvec[i])), delta_h);
+        delta_hh = ((fvec[i] >= 0) ? delta_hh : -delta_hh);
+        delta_hh = x[i] + delta_hh - x[i];
         xsave = x[i];
         x[i] += delta_hh;
         delta_hh = 1. / delta_hh;

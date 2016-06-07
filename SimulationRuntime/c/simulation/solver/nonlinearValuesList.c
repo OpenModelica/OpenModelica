@@ -369,6 +369,16 @@ void printValuesListTimes(VALUES_LIST* list)
   }
 }
 
+/*! \fn extraPolateValues
+ *   This function extrapolates linear values based on old values.
+ *
+ *  \param [in]  [time] desired time for extrapolation
+ *  \param [in]  [old1] old value at time1
+ *  \param [in]  [time1] time for the first value
+ *  \param [in]  [old2] old value at time2
+ *  \param [in]  [time2] time for the second value
+ */
+
 double extrapolateValues(const double time, const double old1, const double time1, const double old2, const double time2)
 {
   double retValue;
