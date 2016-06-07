@@ -458,7 +458,7 @@ $(LIBMODELICASTANDARDTABLES): $(LIBMODELICAEXTERNALC)
 	test ! `uname` = Darwin || (install_name_tool -id @rpath/libModelicaStandardTables.0.dylib "$@" && install_name_tool -change "$(LIBMODELICAMATIO:%.dylib=%.0.dylib)" @rpath/libModelicaMatIO.0.dylib "$@" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$@")
 	@test -f "$@"
 $(LIBMODELICAZLIB): $(LIBMODELICAEXTERNALC)
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libzlib.0.dylib "$@"
+	test ! `uname` = Darwin || (install_name_tool -id @rpath/libzlib.0.dylib "$@" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$@")
 	@test -f "$@"
 $(LIBMODELICAIO): $(LIBMODELICAEXTERNALC)
 	test ! `uname` = Darwin || (install_name_tool -id @rpath/libModelicaIO.0.dylib "$@" && install_name_tool -change "$(LIBMODELICAMATIO:%.dylib=%.0.dylib)" @rpath/libModelicaMatIO.0.dylib "$@" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$@")
