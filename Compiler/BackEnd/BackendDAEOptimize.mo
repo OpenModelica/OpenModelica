@@ -752,7 +752,7 @@ algorithm
       true = intEq(0,numrepl);
     then (globalKnownVars,repl);
 
-    case(numrepl,globalKnownVars,repl)
+    case(_,globalKnownVars,repl)
       equation
       (globalKnownVars1, (repl1,numrepl)) = BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars,replaceFinalVarTraverser,(repl,0));
       (globalKnownVars2, repl2) = replaceFinalVars(numrepl,globalKnownVars1,repl1);
@@ -877,7 +877,7 @@ algorithm
     case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
       algorithm
         lsteqns := BackendEquation.equationList(eqns);
-        (lsteqns, b) := BackendVarTransform.replaceEquations(BackendEquation.equationList(eqns), repl, NONE());
+        (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
         if b then
           syst.orderedEqs := BackendEquation.listEquation(lsteqns);
           syst := BackendDAEUtil.clearEqSyst(syst);
@@ -1212,7 +1212,7 @@ algorithm
     local
       DAE.Exp exp;
       BackendDAE.Variables vars,vars1;
-    case (exp,(vars,vars1))
+    case (exp,(vars,_))
       equation
          (_,(_,vars1)) = Expression.traverseExpBottomUp(exp,checkUnusedParameterExp,inTpl);
        then (exp,(vars,vars1));
@@ -4268,7 +4268,6 @@ algorithm
   end match;
 
   for syst in inDAE.eqs loop
-    indRemove := {};
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) := syst;
     BackendDAE.EQUATION_ARRAY(numberOfElement = n) := eqns;
     update := false;
@@ -4435,7 +4434,7 @@ function simplifyComplexFunction2
   input DAE.Exp e1;
   output list<DAE.Exp> out_lst_e1 = {};
 protected
-  list<DAE.Exp> lst_e = {};
+  list<DAE.Exp> lst_e;
 algorithm
   try
     if Expression.isArray(e1) or Expression.isArrayType(Expression.typeof(e1)) then

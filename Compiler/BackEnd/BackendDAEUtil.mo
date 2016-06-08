@@ -3510,10 +3510,7 @@ public function getIncidenceMatrix "this function returns the incidence matrix,
   output BackendDAE.EqSystem outEqSystem;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
-protected
-  BackendDAE.EquationArray eq;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs=eq) := inEqSystem;
   (outM, outMT) := incidenceMatrix(inEqSystem, inIndxType, functionTree);
   outEqSystem := BackendDAEUtil.setEqSystMatrices(inEqSystem, SOME(outM), SOME(outMT));
 end getIncidenceMatrix;

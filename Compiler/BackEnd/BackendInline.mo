@@ -1147,12 +1147,11 @@ protected
   DAE.Type tp;
   list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
   HashTableCG.HashTable checkcr;
-  list<DAE.ComponentRef> tmpOutput = {};
   DAE.ComponentRef cr;
   BackendDAE.Var var;
   BackendDAE.IncidenceMatrix m;
   array<Integer> ass1, ass2;
-  list<BackendDAE.Equation> eqlst = {};
+  list<BackendDAE.Equation> eqlst;
 algorithm
   if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
     print("\ncreate EqnSys from function: "+funcname);

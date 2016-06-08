@@ -2552,7 +2552,7 @@ algorithm
 end qrDecomposition2;
 
 protected function qrDecomposition3
-"for debuge"
+"for debug"
 input array<DAE.Exp> A;
 input Integer sizeA;
 input Boolean isMat;

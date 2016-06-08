@@ -3582,7 +3582,7 @@ algorithm
         l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
         l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
         l2 = listAppend(l1, l2);
-        l2 = getCrefFromExp(e3,includeSubs,includeFunctions);
+        l1 = getCrefFromExp(e3,includeSubs,includeFunctions);
         res = listAppend(l1, l2);
       then
         res;
@@ -5630,7 +5630,7 @@ algorithm
     // make sure we don't have not initial()
     case (UNARY(NOT(), _) , _) then (inExp,inBool);
     // we have initial
-    case (e , b)
+    case (e , _)
       equation
         b = isInitial(e);
       then (e, b);
