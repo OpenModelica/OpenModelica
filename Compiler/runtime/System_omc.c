@@ -796,6 +796,14 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
   void *status[len];
   int ids[len];
   pthread_t th[numThreads];
+
+#if defined(__MINGW32__)
+  /* adrpo: set thread stack size on Windows to 2MB */
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setstacksize(&attr, 2097152);
+#endif
+
 #else
   void **commands = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
   void **status = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
@@ -821,7 +829,11 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
   }
   numThreads = numThreads > len ? len : numThreads;
   for (i=0; i<numThreads; i++) {
+#if defined(__MINGW32__)
+    GC_pthread_create(&th[i],&attr,System_launchParallelTasksThread,&data);
+#else
     GC_pthread_create(&th[i],NULL,System_launchParallelTasksThread,&data);
+#endif
   }
   for (i=0; i<numThreads; i++) {
     GC_pthread_join(th[i], NULL);

@@ -201,10 +201,11 @@ algorithm
         encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
 
-        if Config.getRunningTestsuiteFile()<>"" or Config.noProc()==1 or (System.os() == "Windows_NT") then
+        if Config.getRunningTestsuiteFile()<>"" or Config.noProc()==1 then
           strategy = STRATEGY_ON_DEMAND(encoding);
         else
           filenames = getAllFilesFromDirectory(path + pd + name);
+		  // print("Files load in parallel:\n" + stringDelimitList(filenames, "\n") + "\n");
           strategy = STRATEGY_HASHTABLE(Parser.parallelParseFiles(filenames, encoding));
         end if;
         cl = loadCompletePackageFromMp(id, name, path, strategy, Absyn.TOP(), Error.getNumErrorMessages());
