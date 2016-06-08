@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef OPTIONSDIALOG_H
@@ -61,6 +58,7 @@ class FMIPage;
 class TLMPage;
 class MetaModelEditorPage;
 class TabSettings;
+class StackFramesWidget;
 
 class OptionsDialog : public QDialog
 {

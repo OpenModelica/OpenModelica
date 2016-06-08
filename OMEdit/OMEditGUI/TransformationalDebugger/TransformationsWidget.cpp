@@ -446,7 +446,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, MainW
     mProfJSONFullFileName = infoJSONFullFileName.left(infoJSONFullFileName.size() - 9) + "prof.json";
     mProfilingDataRealFileName = infoJSONFullFileName.left(infoJSONFullFileName.size() - 9) + "prof.realdata";
   }
-  setWindowIcon(QIcon(":/Resources/icons/debugger.svg"));
+  setWindowIcon(QIcon(":/Resources/icons/equational-debugger.svg"));
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::transformationalDebugger));
   QToolButton *pReloadToolButton = new QToolButton;
   pReloadToolButton->setToolTip(Helper::reload);

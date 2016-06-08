@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include <QtSvg/QSvgGenerator>
@@ -43,6 +40,8 @@
 #include "SimulationOutputWidget.h"
 #include "FetchInterfaceDataDialog.h"
 #include "TLMCoSimulationOutputWidget.h"
+#include "DebuggerConfigurationsDialog.h"
+#include "AttachToProcessDialog.h"
 #ifdef WIN32
 #include "version.h"
 #else
@@ -88,7 +87,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   // Create MessagesDockWidget dock
   mpMessagesDockWidget = new QDockWidget(tr("Messages Browser"), this);
   mpMessagesDockWidget->setObjectName("Messages");
-  mpMessagesDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+  mpMessagesDockWidget->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
   mpMessagesDockWidget->setWidget(mpMessagesWidget);
   addDockWidget(Qt::BottomDockWidgetArea, mpMessagesDockWidget);
   mpMessagesDockWidget->hide();
@@ -123,10 +122,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
                                                 Helper::errorLevel));
 
   }
-  // Create an object of QStatusBar
-  mpStatusBar = new QStatusBar();
-  mpStatusBar->setObjectName("statusBar");
-  mpStatusBar->setContentsMargins(0, 0, 0, 0);
   // Create an object of QProgressBar
   mpProgressBar = new QProgressBar;
   mpProgressBar->setMaximumWidth(300);
@@ -137,10 +132,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpPointerXPositionLabel->setMinimumWidth(60);
   mpPointerYPositionLabel = new Label;
   mpPointerYPositionLabel->setMinimumWidth(60);
-  // add progressbar to statusbar
-  mpStatusBar->addPermanentWidget(mpProgressBar);
-  mpStatusBar->addPermanentWidget(mpPointerXPositionLabel);
-  mpStatusBar->addPermanentWidget(mpPointerYPositionLabel);
   // create the perspective tabs
   mpPerspectiveTabbar = new QTabBar;
   mpPerspectiveTabbar->setDocumentMode(true);
@@ -160,7 +151,21 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   QShortcut *pPlottingShortcut = new QShortcut(QKeySequence("Ctrl+f3"), this);
   connect(pPlottingShortcut, SIGNAL(activated()), SLOT(switchToPlottingPerspectiveSlot()));
   mpPerspectiveTabbar->setTabToolTip(2, tr("Changes to plotting perspective (%1)").arg(pPlottingShortcut->key().toString()));
+  // algorithmic debugging perspective
+  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/debugger.svg"), tr("Algorithmic Debugging"));
+  QShortcut *pAlgorithmicDebuggingShortcut = new QShortcut(QKeySequence("Ctrl+f5"), this);
+  connect(pAlgorithmicDebuggingShortcut, SIGNAL(activated()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
+  mpPerspectiveTabbar->setTabToolTip(3, tr("Changes to algorithmic debugging perspective (%1)").arg(pAlgorithmicDebuggingShortcut->key().toString()));
+  // change the perspective when perspective tab bar selection is changed
   connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
+  // Create an object of QStatusBar
+  mpStatusBar = new QStatusBar();
+  mpStatusBar->setObjectName("statusBar");
+  mpStatusBar->setContentsMargins(0, 0, 0, 0);
+  // add items to statusbar
+  mpStatusBar->addPermanentWidget(mpProgressBar);
+  mpStatusBar->addPermanentWidget(mpPointerXPositionLabel);
+  mpStatusBar->addPermanentWidget(mpPointerYPositionLabel);
   mpStatusBar->addPermanentWidget(mpPerspectiveTabbar);
   // set status bar for MainWindow
   setStatusBar(mpStatusBar);
@@ -168,13 +173,51 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpLibraryWidget = new LibraryWidget(this);
   // Create LibraryDockWidget
   mpLibraryDockWidget = new QDockWidget(tr("Libraries Browser"), this);
-  mpLibraryDockWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+  //mpLibraryDockWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
   mpLibraryDockWidget->setObjectName("Libraries");
   mpLibraryDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   mpLibraryDockWidget->setWidget(mpLibraryWidget);
   addDockWidget(Qt::LeftDockWidgetArea, mpLibraryDockWidget);
-  setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
   mpLibraryWidget->getLibraryTreeView()->setFocus(Qt::ActiveWindowFocusReason);
+  // create the GDB adapter instance
+  mpGDBAdapter = new GDBAdapter(this);
+  // create stack frames widget
+  mpStackFramesWidget = new StackFramesWidget(this);
+  // Create stack frames dock widget
+  mpStackFramesDockWidget = new QDockWidget(tr("Stack Frames Browser"), this);
+  mpStackFramesDockWidget->setObjectName("StackFrames");
+  mpStackFramesDockWidget->setWidget(mpStackFramesWidget);
+  addDockWidget(Qt::TopDockWidgetArea, mpStackFramesDockWidget);
+  // create breakpoints widget
+  mpBreakpointsWidget = new BreakpointsWidget(this);
+  // Create breakpoints dock widget
+  mpBreakpointsDockWidget = new QDockWidget(tr("BreakPoints Browser"), this);
+  mpBreakpointsDockWidget->setObjectName("BreakPoints");
+  mpBreakpointsDockWidget->setWidget(mpBreakpointsWidget);
+  addDockWidget(Qt::TopDockWidgetArea, mpBreakpointsDockWidget);
+  // create locals widget
+  mpLocalsWidget = new LocalsWidget(this);
+  // Create locals dock widget
+  mpLocalsDockWidget = new QDockWidget(tr("Locals Browser"), this);
+  mpLocalsDockWidget->setObjectName("Locals");
+  mpLocalsDockWidget->setWidget(mpLocalsWidget);
+  addDockWidget(Qt::RightDockWidgetArea, mpLocalsDockWidget);
+  // Create target output widget
+  mpTargetOutputWidget = new TargetOutputWidget(this);
+  // Create GDB console dock widget
+  mpTargetOutputDockWidget = new QDockWidget(tr("Output Browser"), this);
+  mpTargetOutputDockWidget->setObjectName("OutputBrowser");
+  mpTargetOutputDockWidget->setWidget(mpTargetOutputWidget);
+  addDockWidget(Qt::BottomDockWidgetArea, mpTargetOutputDockWidget);
+  // Create GDB console widget
+  mpGDBLoggerWidget = new GDBLoggerWidget(this);
+  // Create GDB console dock widget
+  mpGDBLoggerDockWidget = new QDockWidget(tr("Debugger CLI"), this);
+  mpGDBLoggerDockWidget->setObjectName("DebuggerLog");
+  mpGDBLoggerDockWidget->setWidget(mpGDBLoggerWidget);
+  addDockWidget(Qt::BottomDockWidgetArea, mpGDBLoggerDockWidget);
+  // put the GDB logger dock widget and output dock widget as tabbed items.
+  tabifyDockWidget(mpGDBLoggerDockWidget, mpTargetOutputDockWidget);
   // create an object of DocumentationWidget
   mpDocumentationWidget = new DocumentationWidget(this);
   // Create DocumentationWidget dock
@@ -184,7 +227,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpDocumentationDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   mpDocumentationDockWidget->setWidget(mpDocumentationWidget);
   addDockWidget(Qt::RightDockWidgetArea, mpDocumentationDockWidget);
-  setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
   mpDocumentationDockWidget->hide();
   connect(mpDocumentationDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(documentationDockWidgetVisibilityChanged(bool)));
   // Create an object of PlotWindowContainer
@@ -196,9 +238,12 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpVariablesDockWidget->setObjectName("Variables");
   mpVariablesDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   addDockWidget(Qt::RightDockWidgetArea, mpVariablesDockWidget);
-  setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
-  mpVariablesDockWidget->hide();
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
+  // set the corners for the dock widgets
+  setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
+  setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
+  setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
+  setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
   //Create Actions, Toolbar and Menus
   pSplashScreen->showMessage(tr("Creating Widgets"), Qt::AlignRight, Qt::white);
   setAcceptDrops(true);
@@ -209,9 +254,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpSimulationDialog = new SimulationDialog(this);
   // Create TLM co-simulation dialog
   mpTLMCoSimulationDialog = new TLMCoSimulationDialog(this);
-  /* Debugger MainWindow */
-  /* Important. Create the instance of DebuggerMainWindow before ModelWidgetContainer otherwise the ctrl+tab changer does not work. */
-  mpDebuggerMainWindow = new DebuggerMainWindow(this);
   // Create an object of ModelWidgetContainer
   mpModelWidgetContainer = new ModelWidgetContainer(this);
   // Create an object of WelcomePageWidget
@@ -266,6 +308,12 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
     bool restoreMessagesWidget = !mpMessagesWidget->getMessagesTextBrowser()->toPlainText().isEmpty();
     restoreState(pSettings->value("application/windowState").toByteArray());
+    pSettings->beginGroup("algorithmicDebugger");
+    /* restore stackframes list and locals columns width */
+    mpStackFramesWidget->getStackFramesTreeWidget()->header()->restoreState(pSettings->value("stackFramesTreeState").toByteArray());
+    mpBreakpointsWidget->getBreakpointsTreeView()->header()->restoreState(pSettings->value("breakPointsTreeState").toByteArray());
+    mpLocalsWidget->getLocalsTreeView()->header()->restoreState(pSettings->value("localsTreeState").toByteArray());
+    pSettings->endGroup();
     if (restoreMessagesWidget) {
       mpMessagesDockWidget->show();
     }
@@ -406,7 +454,6 @@ void MainWindow::beforeClosingMainWindow()
   }
   delete mpOMCProxy;
   delete mpModelWidgetContainer;
-  delete mpDebuggerMainWindow;
   delete mpSimulationDialog;
   delete mpTLMCoSimulationDialog;
   /* save the TransformationsWidget last window geometry and splitters state. */
@@ -438,6 +485,12 @@ void MainWindow::beforeClosingMainWindow()
     delete pTransformationsWidget;
   }
   mTransformationsWidgetHash.clear();
+  /* save stackframes list and locals columns width */
+  pSettings->beginGroup("algorithmicDebugger");
+  pSettings->setValue("stackFramesTreeState", mpStackFramesWidget->getStackFramesTreeWidget()->header()->saveState());
+  pSettings->setValue("breakPointsTreeState", mpBreakpointsWidget->getBreakpointsTreeView()->header()->saveState());
+  pSettings->setValue("localsTreeState", mpLocalsWidget->getLocalsTreeView()->header()->saveState());
+  pSettings->endGroup();
   /* save OMEdit MainWindow geometry state */
   pSettings->setValue("application/geometry", saveGeometry());
   pSettings->setValue("application/windowState", saveState());
@@ -924,6 +977,32 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName)
   return pTransformationsWidget;
 }
 
+/*!
+ * \brief MainWindow::findFileAndGoToLine
+ * Finds the file and opens it at specified line number.
+ * \param fileName
+ * \param lineNumber
+ */
+void MainWindow::findFileAndGoToLine(QString fileName, QString lineNumber)
+{
+  LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fileName, lineNumber.toInt());
+  if (pLibraryTreeItem) {
+    ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
+    if (pModelWidget) {
+      mpModelWidgetContainer->addModelWidget(pModelWidget, false);
+    } else {
+      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+    }
+    if (pModelWidget && pModelWidget->getEditor()) {
+      pModelWidget->getTextViewToolButton()->setChecked(true);
+      pModelWidget->getEditor()->goToLineNumber(lineNumber.toInt());
+    }
+  } else {
+    QString msg = tr("Unable to find the file <b>%1</b> with line number <b>%2</b>").arg(fileName).arg(lineNumber);
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
 void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char *title, const char *grid,
                                       const char *plotType, const char *logX, const char *logY, const char *xLabel, const char *yLabel,
                                       const char *x1, const char *x2, const char *y1, const char *y2, const char *curveWidth,
@@ -1346,15 +1425,6 @@ void MainWindow::zoomOut()
     else if (pModelWidget->getIconGraphicsView()->isVisible())
       pModelWidget->getIconGraphicsView()->zoomOut();
   }
-}
-
-void MainWindow::showAlgorithmicDebugger()
-{
-  mpDebuggerMainWindow->show();
-  mpDebuggerMainWindow->raise();
-  mpDebuggerMainWindow->activateWindow();
-  mpDebuggerMainWindow->setWindowState(mpDebuggerMainWindow->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
-  mpDebuggerMainWindow->restoreWindows();
 }
 
 /*!
@@ -2091,6 +2161,9 @@ void MainWindow::perspectiveTabChanged(int tabIndex)
     case 2:
       switchToPlottingPerspective();
       break;
+    case 3:
+      switchToAlgorithmicDebuggingPerspective();
+      break;
     default:
       switchToWelcomePerspective();
       break;
@@ -2153,6 +2226,38 @@ void MainWindow::switchToModelingPerspectiveSlot()
 void MainWindow::switchToPlottingPerspectiveSlot()
 {
   mpPerspectiveTabbar->setCurrentIndex(2);
+}
+
+/*!
+ * \brief MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot
+ * Slot activated when Ctrl+f5 is clicked.
+ * Switches to algorithmic debugging perspective.
+ */
+void MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot()
+{
+  mpPerspectiveTabbar->setCurrentIndex(3);
+}
+
+/*!
+ * \brief MainWindow::showConfigureDialog
+ * Slot activated when mpDebugConfigurationsAction triggered signal is raised.\n
+ * Shows the debugger configurations.
+ */
+void MainWindow::showConfigureDialog()
+{
+  DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog = new DebuggerConfigurationsDialog(this);
+  pDebuggerConfigurationsDialog->exec();
+}
+
+/*!
+ * \brief MainWindow::showAttachToProcessDialog
+ * Slot activated when mpAttachDebuggerToRunningProcessAction triggered signal is raised.\n
+ * Shows the attach to process dialog.
+ */
+void MainWindow::showAttachToProcessDialog()
+{
+  AttachToProcessDialog *pAttachToProcessDialog = new AttachToProcessDialog(this);
+  pAttachToProcessDialog->exec();
 }
 
 //! Defines the actions used by the toolbars
@@ -2286,11 +2391,6 @@ void MainWindow::createActions()
   mpZoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
   mpZoomOutAction->setEnabled(false);
   connect(mpZoomOutAction, SIGNAL(triggered()), SLOT(zoomOut()));
-  // Algorithmic Debugger action
-  mpShowAlgorithmicDebuggerAction = new QAction(Helper::algorithmicDebugger, this);
-  mpShowAlgorithmicDebuggerAction->setShortcut(QKeySequence("ctrl+t"));
-  mpShowAlgorithmicDebuggerAction->setStatusTip(Helper::algorithmicDebugger);
-  connect(mpShowAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(showAlgorithmicDebugger()));
   // close window action
   mpCloseWindowAction = new QAction(tr("Close Window"), this);
   mpCloseWindowAction->setStatusTip(tr("Closes the active window"));
@@ -2373,6 +2473,15 @@ void MainWindow::createActions()
   mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
   mpExportFigaroAction->setEnabled(false);
   connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
+  // Debug Menu
+  // Debug configurations
+  mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
+  mpDebugConfigurationsAction->setEnabled(false);
+  connect(mpDebugConfigurationsAction, SIGNAL(triggered()), SLOT(showConfigureDialog()));
+  // attach debugger to process
+  mpAttachDebuggerToRunningProcessAction = new QAction(Helper::attachToRunningProcess, this);
+  mpAttachDebuggerToRunningProcessAction->setEnabled(false);
+  connect(mpAttachDebuggerToRunningProcessAction, SIGNAL(triggered()), SLOT(showAttachToProcessDialog()));
   // Tools Menu
   // show OMC Logger widget action
   mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::OpenModelicaCompilerCLI, this);
@@ -2635,7 +2744,11 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
-  pViewWindowsMenu->addAction(mpShowAlgorithmicDebuggerAction);
+  pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
+  pViewWindowsMenu->addAction(mpBreakpointsDockWidget->toggleViewAction());
+  pViewWindowsMenu->addAction(mpLocalsDockWidget->toggleViewAction());
+  pViewWindowsMenu->addAction(mpTargetOutputDockWidget->toggleViewAction());
+  pViewWindowsMenu->addAction(mpGDBLoggerDockWidget->toggleViewAction());
   pViewWindowsMenu->addSeparator();
   pViewWindowsMenu->addAction(mpCloseWindowAction);
   pViewWindowsMenu->addAction(mpCloseAllWindowsAction);
@@ -2682,6 +2795,14 @@ void MainWindow::createMenus()
   pExportMenu->addAction(mpExportFigaroAction);
   // add Export menu to menu bar
   menuBar()->addAction(pExportMenu->menuAction());
+  // Debug menu
+  QMenu *pDebugMenu = new QMenu(menuBar());
+  pDebugMenu->setTitle(tr("&Debug"));
+  // add actions to Debug menu
+  pDebugMenu->addAction(mpDebugConfigurationsAction);
+  pDebugMenu->addAction(mpAttachDebuggerToRunningProcessAction);
+  // add Debug menu to menu bar
+  menuBar()->addAction(pDebugMenu->menuAction());
   // Tools menu
   QMenu *pToolsMenu = new QMenu(menuBar());
   pToolsMenu->setTitle(tr("&Tools"));
@@ -2783,6 +2904,11 @@ void MainWindow::switchToWelcomePerspective()
   mpRedoAction->setEnabled(false);
   mpModelSwitcherToolButton->setEnabled(false);
   mpVariablesDockWidget->hide();
+  mpStackFramesDockWidget->hide();
+  mpBreakpointsDockWidget->hide();
+  mpLocalsDockWidget->hide();
+  mpTargetOutputDockWidget->hide();
+  mpGDBLoggerDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
 }
 
@@ -2803,6 +2929,12 @@ void MainWindow::switchToModelingPerspective()
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpLibraryDockWidget);
   }
+  mpVariablesDockWidget->hide();
+  mpStackFramesDockWidget->hide();
+  mpBreakpointsDockWidget->hide();
+  mpLocalsDockWidget->hide();
+  mpTargetOutputDockWidget->hide();
+  mpGDBLoggerDockWidget->hide();
 }
 
 /*!
@@ -2848,6 +2980,56 @@ void MainWindow::switchToPlottingPerspective()
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpVariablesDockWidget);
   }
+  mpVariablesDockWidget->show();
+  mpStackFramesDockWidget->hide();
+  mpBreakpointsDockWidget->hide();
+  mpLocalsDockWidget->hide();
+  mpTargetOutputDockWidget->hide();
+  mpGDBLoggerDockWidget->hide();
+}
+
+/*!
+ * \brief MainWindow::switchToAlgorithmicDebuggingPerspective
+ * Switches to algorithmic debugging perspective.
+ */
+void MainWindow::switchToAlgorithmicDebuggingPerspective()
+{
+  storePlotWindowsStateAndGeometry();
+  mpPlotWindowContainer->tileSubWindows();
+  mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
+  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
+  mpVariablesDockWidget->hide();
+  mpPlotToolBar->setEnabled(false);
+  // In case user has tabbed the dock widgets then make LibraryWidget active.
+  QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
+  if (tabifiedDockWidgetsList.size() > 0) {
+    tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpLibraryDockWidget);
+  }
+  mpStackFramesDockWidget->show();
+  mpBreakpointsDockWidget->show();
+  mpLocalsDockWidget->show();
+  mpTargetOutputDockWidget->show();
+  mpGDBLoggerDockWidget->show();
+}
+
+void MainWindow::switchToTransformationDebuggingPerspective()
+{
+  storePlotWindowsStateAndGeometry();
+  mpPlotWindowContainer->tileSubWindows();
+  mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
+  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
+  mpVariablesDockWidget->hide();
+  mpPlotToolBar->setEnabled(false);
+  // In case user has tabbed the dock widgets then make LibraryWidget active.
+  QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
+  if (tabifiedDockWidgetsList.size() > 0) {
+    tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpLibraryDockWidget);
+  }
+  mpStackFramesDockWidget->hide();
+  mpBreakpointsDockWidget->hide();
+  mpLocalsDockWidget->hide();
+  mpGDBLoggerDockWidget->hide();
+  mpTargetOutputDockWidget->hide();
 }
 
 /*!

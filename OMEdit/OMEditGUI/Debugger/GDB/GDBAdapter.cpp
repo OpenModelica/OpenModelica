@@ -45,11 +45,11 @@
  */
 /*!
  * \brief GDBLoggerWidget::GDBLoggerWidget
- * \param pDebuggerMainWindow - pointer to DebuggerMainWindow
+ * \param pMainWindow - pointer to MainWindow
  */
-GDBLoggerWidget::GDBLoggerWidget(DebuggerMainWindow *pDebuggerMainWindow)
+GDBLoggerWidget::GDBLoggerWidget(MainWindow *pMainWindow)
 {
-  mpDebuggerMainWindow = pDebuggerMainWindow;
+  mpMainWindow = pMainWindow;
   /* GDB commands area */
   mpCommandsTextBox = new QPlainTextEdit;
   mpCommandsTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
@@ -84,8 +84,8 @@ GDBLoggerWidget::GDBLoggerWidget(DebuggerMainWindow *pDebuggerMainWindow)
   pGridLayout->addWidget(mpCommandTextBox, 1, 0);
   pGridLayout->addWidget(mpSendCommandButton, 1, 1);
   setLayout(pGridLayout);
-  connect(mpDebuggerMainWindow->getGDBAdapter(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
-  connect(mpDebuggerMainWindow->getGDBAdapter(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
+  connect(mpMainWindow->getGDBAdapter(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
+  connect(mpMainWindow->getGDBAdapter(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
 }
 
 /*!
@@ -158,7 +158,7 @@ void GDBLoggerWidget::postCommand()
   if (mpCommandTextBox->text().isEmpty()) {
     return;
   }
-  mpDebuggerMainWindow->getGDBAdapter()->postCommand(QByteArray(mpCommandTextBox->text().toStdString().c_str()));
+  mpMainWindow->getGDBAdapter()->postCommand(QByteArray(mpCommandTextBox->text().toStdString().c_str()));
 }
 
 /*!
@@ -169,7 +169,7 @@ void GDBLoggerWidget::postCommand()
 void GDBLoggerWidget::handleGDBProcessStarted()
 {
   /* if clear log on new run option is set then clear the log windows. */
-  DebuggerPage *pDebuggerPage = mpDebuggerMainWindow->getMainWindow()->getOptionsDialog()->getDebuggerPage();
+  DebuggerPage *pDebuggerPage = mpMainWindow->getOptionsDialog()->getDebuggerPage();
   if (pDebuggerPage->getClearLogOnNewRunCheckBox()->isChecked()) {
     mpCommandsTextBox->clear();
     mpResponseTextBox->clear();
@@ -195,15 +195,14 @@ void GDBLoggerWidget::handleGDBProcessFinished()
  */
 /*!
  * \brief TargetOutputWidget::TargetOutputWidget
- * \param pDebuggerMainWindow - pointer to DebuggerMainWindow
- * \param pDebuggerMainWindow
+ * \param pMainWindow - pointer to MainWindow
  */
-TargetOutputWidget::TargetOutputWidget(DebuggerMainWindow *pDebuggerMainWindow)
-  : QPlainTextEdit(pDebuggerMainWindow)
+TargetOutputWidget::TargetOutputWidget(MainWindow *pMainWindow)
+  : QPlainTextEdit(pMainWindow)
 {
   setFont(QFont(Helper::monospacedFontInfo.family()));
-  mpDebuggerMainWindow = pDebuggerMainWindow;
-  connect(mpDebuggerMainWindow->getGDBAdapter(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
+  mpMainWindow = pMainWindow;
+  connect(mpMainWindow->getGDBAdapter(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
 }
 
 /*!
@@ -257,7 +256,7 @@ void TargetOutputWidget::logDebuggerOutput(QString output, QColor color)
 void TargetOutputWidget::handleGDBProcessStarted()
 {
   /* if clear output on new run option is set then clear the log windows. */
-  DebuggerPage *pDebuggerPage = mpDebuggerMainWindow->getMainWindow()->getOptionsDialog()->getDebuggerPage();
+  DebuggerPage *pDebuggerPage = mpMainWindow->getOptionsDialog()->getDebuggerPage();
   if (pDebuggerPage->getClearOutputOnNewRunCheckBox()->isChecked()) {
     clear();
   }
@@ -269,14 +268,13 @@ void TargetOutputWidget::handleGDBProcessStarted()
  */
 /*!
  * \brief GDBAdapter::GDBAdapter
- * \param pDebuggerMainWindow - pointer to DebuggerMainWindow
- * \param pDebuggerMainWindow
+ * \param pMainWindow - pointer to MainWindow
  */
-GDBAdapter::GDBAdapter(DebuggerMainWindow *pDebuggerMainWindow)
-  : QObject(pDebuggerMainWindow)
+GDBAdapter::GDBAdapter(MainWindow *pMainWindow)
+  : QObject(pMainWindow)
 {
   setExecuteCommand(GDBAdapter::ExecNext);
-  mpDebuggerMainWindow = pDebuggerMainWindow;
+  mpMainWindow = pMainWindow;
   mAttachToProcessId = "0";
   mIsRunning = false;
   mIsParsingStandardOutput = false;
@@ -437,7 +435,7 @@ void GDBAdapter::postCommand(QByteArray command, GDBCommandFlags flags, QObject 
     mGDBMICommandsHash[token] = cmd;
     // log command
     writeDebuggerCommandLog(cmd.mCommand);
-    mpDebuggerMainWindow->getGDBLoggerWidget()->logDebuggerCommand(QString(cmd.mCommand));
+    mpMainWindow->getGDBLoggerWidget()->logDebuggerCommand(QString(cmd.mCommand));
     /* if command needs a response
      * block until response is arrived
      */
@@ -469,7 +467,7 @@ void GDBAdapter::postCommand(QByteArray command, GDBCommandFlags flags, QObject 
  */
 int GDBAdapter::commandTimeoutTime() const
 {
-  int timeout = mpDebuggerMainWindow->getMainWindow()->getOptionsDialog()->getDebuggerPage()->getGDBCommandTimeoutSpinBox()->value();
+  int timeout = mpMainWindow->getOptionsDialog()->getDebuggerPage()->getGDBCommandTimeoutSpinBox()->value();
   return 1000 * qMax(40, timeout);
 }
 
@@ -556,7 +554,7 @@ void GDBAdapter::stackListVariablesCB(GDBMIResultRecord *pGDBMIResultRecord)
             }
           }
         }
-        mpDebuggerMainWindow->getLocalsWidget()->getLocalsTreeModel()->insertLocalsList(locals);
+        mpMainWindow->getLocalsWidget()->getLocalsTreeModel()->insertLocalsList(locals);
       }
     }
   }
@@ -709,7 +707,7 @@ void GDBAdapter::getMetaTypeElementCB(GDBMIResultRecord *pGDBMIResultRecord)
       if (LocalsTreeItem *pLocalsTreeItem = qobject_cast<LocalsTreeItem*>(cmd.mpCallbackObject)) {
         QVector<QVariant> localItemData;
         localItemData << name << displayName << type << ""; /* always return 4 items */
-        mpDebuggerMainWindow->getLocalsWidget()->getLocalsTreeModel()->insertLocalItemData(localItemData, pLocalsTreeItem);
+        mpMainWindow->getLocalsWidget()->getLocalsTreeModel()->insertLocalItemData(localItemData, pLocalsTreeItem);
       }
     }
   }
@@ -746,7 +744,7 @@ void GDBAdapter::isOptionNoneCB(GDBMIResultRecord *pGDBMIResultRecord)
 void GDBAdapter::createFullBacktraceCB(GDBMIResultRecord *pGDBMIResultRecord)
 {
   QString backtrace = QString(pGDBMIResultRecord->consoleStreamOutput.c_str()) + QString(pGDBMIResultRecord->logStreamOutput.c_str());
-  LibraryTreeModel *pLibraryTreeModel = mpDebuggerMainWindow->getMainWindow()->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
   LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text,
                                                                                pLibraryTreeModel->getUniqueTopLevelItemName("Backtrace"), false);
   if (pLibraryTreeItem) {
@@ -892,7 +890,7 @@ void GDBAdapter::handleGDBProcessStartedHelper()
    * This limit also applies to the display of strings. When GDB starts, this limit is set to 200.\n
    * Setting number-of-elements to zero means that the printing is unlimited.
    */
-  int numberOfElements = mpDebuggerMainWindow->getMainWindow()->getOptionsDialog()->getDebuggerPage()->getGDBOutputLimitSpinBox()->value();
+  int numberOfElements = mpMainWindow->getOptionsDialog()->getDebuggerPage()->getGDBOutputLimitSpinBox()->value();
   postCommand(CommandFactory::GDBSet(QString("print elements %1").arg(QString::number(numberOfElements))), GDBAdapter::NonCriticalResponse);
   /* set the inferior arguments
    * GDB change the program arguments if we pass them through --args e.g -override=variableFilter=.*
@@ -939,7 +937,7 @@ void GDBAdapter::writeDebuggerResponseLog(QString response)
 void GDBAdapter::insertBreakpoints()
 {
   QList<BreakpointTreeItem*> breakpoints;
-  breakpoints = mpDebuggerMainWindow->getBreakpointsWidget()->getBreakpointsTreeModel()->getRootBreakpointTreeItem()->getChildren();
+  breakpoints = mpMainWindow->getBreakpointsWidget()->getBreakpointsTreeModel()->getRootBreakpointTreeItem()->getChildren();
   foreach (BreakpointTreeItem *pBreakpoint, breakpoints) {
     insertBreakpoint(pBreakpoint);
   }
@@ -959,8 +957,8 @@ void GDBAdapter::startDebugger()
   setInferiorRunning(true);
   setChangeStdStreamBuffer(false);
   postCommand(CommandFactory::breakInsert("CevalScriptBackend.mo", 2626));
-  mpDebuggerMainWindow->getStackFramesWidget()->setSelectedThread(1);
-  mpDebuggerMainWindow->getStackFramesWidget()->setSelectedFrame(0);
+  mpMainWindow->getStackFramesWidget()->setSelectedThread(1);
+  mpMainWindow->getStackFramesWidget()->setSelectedFrame(0);
   postCommand(CommandFactory::execRun());
   emit inferiorResumed();
 }
@@ -993,7 +991,7 @@ void GDBAdapter::processGDBMIResponse(QString response)
       //qDebug() << "ResultRecordResponse" << response;
       processGDBMIResultRecord(pGDBMIResponse->miResultRecord);
     } else {
-      mpDebuggerMainWindow->getTargetOutputWidget()->logDebuggerStandardOutput(response);
+      mpMainWindow->getTargetOutputWidget()->logDebuggerStandardOutput(response);
     }
     delete pGDBMIResponse;
   } else {
@@ -1053,7 +1051,7 @@ void GDBAdapter::processGDBMIResultRecord(GDBMIResultRecord *pGDBMIResultRecord)
       mPendingLogStreamOutput.clear();
     } else if (pGDBMIResultRecord->cls.compare("running") == 0) {
       /* handle running response */
-      mpDebuggerMainWindow->getStackFramesWidget()->setStatusMessage("Running");
+      mpMainWindow->getStackFramesWidget()->setStatusMessage("Running");
       resumeDebugger();
     } else if (pGDBMIResultRecord->cls.compare("thread-group-added") == 0 ||
                pGDBMIResultRecord->cls.compare("thread-group-started") == 0 ||
@@ -1064,11 +1062,11 @@ void GDBAdapter::processGDBMIResultRecord(GDBMIResultRecord *pGDBMIResultRecord)
       /* Display few of the notify-async-output on the StackFramesWidget message label.
        * Not sure what to do of these notification at the moment.
        */
-      mpDebuggerMainWindow->getStackFramesWidget()->setStatusMessage(mCurrentResponse);
+      mpMainWindow->getStackFramesWidget()->setStatusMessage(mCurrentResponse);
     } else if (pGDBMIResultRecord->cls.compare("error") == 0) {
       /* handle the error response */
       GDBMIResult* pGDBMIResult = getGDBMIResult("msg", pGDBMIResultRecord->miResultsList);
-      mpDebuggerMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(getGDBMIConstantValue(pGDBMIResult));
+      mpMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(getGDBMIConstantValue(pGDBMIResult));
     }
   } else {  /* output as a response to a command */
     GDBMICommand cmd;
@@ -1094,7 +1092,7 @@ void GDBAdapter::processGDBMIResultRecord(GDBMIResultRecord *pGDBMIResultRecord)
         GDBMIResult* pGDBMIResult = getGDBMIResult("msg", pGDBMIResultRecord->miResultsList);
         QString msg = getGDBMIConstantValue(pGDBMIResult);
         if (msg.compare(Helper::VALUE_OPTIMIZED_OUT) != 0) {
-          mpDebuggerMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(msg);
+          mpMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(msg);
         }
       }
     }
@@ -1113,7 +1111,7 @@ void GDBAdapter::handleGDBMIStreamRecord(GDBMIStreamRecord *pGDBMIStreamRecord)
       handleGDBMIConsoleStream(pGDBMIStreamRecord);
       break;
     case GDBMIStreamRecord::TargetStream:
-      mpDebuggerMainWindow->getTargetOutputWidget()->logDebuggerStandardOutput(pGDBMIStreamRecord->value.c_str());
+      mpMainWindow->getTargetOutputWidget()->logDebuggerStandardOutput(pGDBMIStreamRecord->value.c_str());
       break;
     case GDBMIStreamRecord::LogStream:
       handleGDBMILogStream(pGDBMIStreamRecord);
@@ -1134,7 +1132,7 @@ void GDBAdapter::handleGDBMIConsoleStream(GDBMIStreamRecord *pGDBMIStreamRecord)
   mPendingConsoleStreamOutput += consoleData;
   /* Only display some selected console messages */
   if (consoleData.startsWith("Reading symbols from ") || consoleData.startsWith("[New ") || consoleData.startsWith("[Thread ")) {
-    mpDebuggerMainWindow->getStackFramesWidget()->setStatusMessage(consoleData.simplified());
+    mpMainWindow->getStackFramesWidget()->setStatusMessage(consoleData.simplified());
   }
 }
 
@@ -1186,7 +1184,7 @@ bool GDBAdapter::skipSteppedInFrames(GDBMIResultRecord *pGDBMIResultRecord)
 void GDBAdapter::handleStoppedEvent(string reason, GDBMIResultRecord *pGDBMIResultRecord)
 {
   // call changeStdStreamBuffer no matter for what reason we have stopped
-  if (!isChangeStdStreamBuffer()) {
+  if (!isChangeStdStreamBuffer() && !(reason.compare("\"exited-normally\"") == 0 || reason.compare("\"exited\""))) {
     setChangeStdStreamBuffer(true);
     postCommand(CommandFactory::changeStdStreamBuffer(), GDBAdapter::NonCriticalResponse | GDBAdapter::BlockUntilResponse);
   }
@@ -1206,7 +1204,7 @@ void GDBAdapter::handleStoppedEvent(string reason, GDBMIResultRecord *pGDBMIResu
     /* Get the list of threads. */
     postCommand(CommandFactory::threadInfo(), &GDBAdapter::threadInfoCB);
     /* Get the list of stack frames. */
-    StackFramesWidget *pStackFramesWidget = mpDebuggerMainWindow->getStackFramesWidget();
+    StackFramesWidget *pStackFramesWidget = mpMainWindow->getStackFramesWidget();
     postCommand(CommandFactory::stackListFrames(pStackFramesWidget->getSelectedThread()), &GDBAdapter::stackListFramesCB);
   }
 }
@@ -1235,11 +1233,11 @@ void GDBAdapter::handleBreakpointHit(GDBMIResultRecord *pGDBMIResultRecord)
   QString breakPoint = getGDBMIConstantValue(getGDBMIResult("bkptno", pGDBMIResultRecord->miResultsList));
   int breakPointNumber = breakPoint.toInt() - 1; /* since we add an internal breakpoint at Catch.omc:1 */
   QString threadId = getGDBMIConstantValue(getGDBMIResult("thread-id", pGDBMIResultRecord->miResultsList));
-  mpDebuggerMainWindow->getStackFramesWidget()->setStatusMessage(QString("Stopped at breakpoint %1 in thread %2").arg(breakPointNumber).arg(threadId));
+  mpMainWindow->getStackFramesWidget()->setStatusMessage(QString("Stopped at breakpoint %1 in thread %2").arg(breakPointNumber).arg(threadId));
   /* Get the list of threads. */
   postCommand(CommandFactory::threadInfo(), &GDBAdapter::threadInfoCB);
   /* Get the list of stack frames. */
-  StackFramesWidget *pStackFramesWidget = mpDebuggerMainWindow->getStackFramesWidget();
+  StackFramesWidget *pStackFramesWidget = mpMainWindow->getStackFramesWidget();
   postCommand(CommandFactory::stackListFrames(pStackFramesWidget->getSelectedThread()), &GDBAdapter::stackListFramesCB);
 }
 
@@ -1254,11 +1252,11 @@ void GDBAdapter::handleSteppingRange(GDBMIResultRecord *pGDBMIResultRecord)
   if (skipSteppedInFrames(pGDBMIResultRecord)) {
     /* Display end stepping range message */
     QString threadId = getGDBMIConstantValue(getGDBMIResult("thread-id", pGDBMIResultRecord->miResultsList));
-    mpDebuggerMainWindow->getStackFramesWidget()->setStatusMessage(QString("End stepping range in thread %1").arg(threadId));
+    mpMainWindow->getStackFramesWidget()->setStatusMessage(QString("End stepping range in thread %1").arg(threadId));
     /* Get the list of threads. */
     postCommand(CommandFactory::threadInfo(), &GDBAdapter::threadInfoCB);
     /* Get the list of stack frames. */
-    StackFramesWidget *pStackFramesWidget = mpDebuggerMainWindow->getStackFramesWidget();
+    StackFramesWidget *pStackFramesWidget = mpMainWindow->getStackFramesWidget();
     postCommand(CommandFactory::stackListFrames(pStackFramesWidget->getSelectedThread()), &GDBAdapter::stackListFramesCB);
   }
 }
@@ -1274,7 +1272,7 @@ void GDBAdapter::handleFunctionFinished(GDBMIResultRecord *pGDBMIResultRecord)
     /* Get the list of threads. */
     postCommand(CommandFactory::threadInfo(), &GDBAdapter::threadInfoCB);
     /* Get the list of stack frames. */
-    StackFramesWidget *pStackFramesWidget = mpDebuggerMainWindow->getStackFramesWidget();
+    StackFramesWidget *pStackFramesWidget = mpMainWindow->getStackFramesWidget();
     postCommand(CommandFactory::stackListFrames(pStackFramesWidget->getSelectedThread()), &GDBAdapter::stackListFramesCB);
   }
 }
@@ -1289,7 +1287,7 @@ void GDBAdapter::handleSignalReceived(GDBMIResultRecord *pGDBMIResultRecord)
   /* Display signal received message */
   QString signalName = getGDBMIConstantValue(getGDBMIResult("signal-name", pGDBMIResultRecord->miResultsList));
   QString threadId = getGDBMIConstantValue(getGDBMIResult("thread-id", pGDBMIResultRecord->miResultsList));
-  mpDebuggerMainWindow->getStackFramesWidget()->setStatusMessage(QString("%1 signal received in thread %2").arg(signalName, threadId));
+  mpMainWindow->getStackFramesWidget()->setStatusMessage(QString("%1 signal received in thread %2").arg(signalName, threadId));
   /* check the signals received */
   if ((signalName.compare("SIGTRAP") == 0) || (signalName.compare("SIGINT") == 0)) {
     qDebug() << "Handle the SIGTRAP & SIGTINT";
@@ -1311,11 +1309,11 @@ void GDBAdapter::handleSignalReceived(GDBMIResultRecord *pGDBMIResultRecord)
       QString frameMsg = QString("level=\"%4\", address=\"%5\", function=\"%6\", line=\"%7\", file=\"%8\", fullName=\"%9\"").arg(level, address, function, line, file, fullName);
       signalMsg.append(frameMsg);
     }
-    mpDebuggerMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(signalMsg);
+    mpMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(signalMsg);
     /* Get the list of threads. */
     postCommand(CommandFactory::threadInfo(), &GDBAdapter::threadInfoCB);
     /* Get the list of stack frames. */
-    StackFramesWidget *pStackFramesWidget = mpDebuggerMainWindow->getStackFramesWidget();
+    StackFramesWidget *pStackFramesWidget = mpMainWindow->getStackFramesWidget();
     postCommand(CommandFactory::stackListFrames(pStackFramesWidget->getSelectedThread()), &GDBAdapter::stackListFramesCB);
   }
 }
@@ -1354,9 +1352,9 @@ void GDBAdapter::attachCB(GDBMIResultRecord *pGDBMIResultRecord)
           "Check the settings of\n"
           "/proc/sys/kernel/yama/ptrace_scope\n"
           "For more details, see /etc/sysctl.d/10-ptrace.conf\n";
-      mpDebuggerMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(ptraceMsg);
+      mpMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(ptraceMsg);
     } else {
-      mpDebuggerMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(msg);
+      mpMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(msg);
     }
     // Attach is failed. Stop the debugger
     postCommand(CommandFactory::GDBExit());
@@ -1443,7 +1441,7 @@ void GDBAdapter::readGDBStandardOutput()
     setParsingStandardOutput(true);
     QString response(QByteArray::fromRawData(mStandardOutputBuffer.constData() + start, end - start));
     writeDebuggerResponseLog(response);
-    mpDebuggerMainWindow->getGDBLoggerWidget()->logDebuggerStandardResponse(response);
+    mpMainWindow->getGDBLoggerWidget()->logDebuggerStandardResponse(response);
     processGDBMIResponse(response);
     setParsingStandardOutput(false);
   }
@@ -1459,8 +1457,8 @@ void GDBAdapter::readGDBErrorOutput()
 {
   QString response = QString(mpGDBProcess->readAllStandardError());
   writeDebuggerResponseLog(response);
-  mpDebuggerMainWindow->getGDBLoggerWidget()->logDebuggerErrorResponse(response);
-  mpDebuggerMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(response);
+  mpMainWindow->getGDBLoggerWidget()->logDebuggerErrorResponse(response);
+  mpMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(response);
 }
 
 /*!
@@ -1487,7 +1485,7 @@ void GDBAdapter::handleGDBProcessError(QProcess::ProcessError error)
       errorString = tr("Following error has occurred %1. GDB arguments are \"%2\"").arg(mpGDBProcess->errorString()).arg(mGDBArguments.join(" "));
       break;
   }
-  mpDebuggerMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(errorString);
+  mpMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(errorString);
   setGDBRunning(false);
 }
 
@@ -1518,7 +1516,7 @@ void GDBAdapter::handleGDBProcessFinishedForSimulation(int exitCode)
 {
   Q_UNUSED(exitCode);
   if (!isGDBKilled()) {
-    mpDebuggerMainWindow->getMainWindow()->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
+    mpMainWindow->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
   }
 }
 

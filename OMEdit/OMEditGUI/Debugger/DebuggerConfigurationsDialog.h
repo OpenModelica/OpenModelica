@@ -28,80 +28,15 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
-#ifndef DEBUGGERMAINWINDOW_H
-#define DEBUGGERMAINWINDOW_H
-
-#include <QSettings>
+#ifndef DEBUGGERCONFIGURATIONSDIALOG_H
+#define DEBUGGERCONFIGURATIONSDIALOG_H
 
 #include "MainWindow.h"
-#include "GDBAdapter.h"
-#include "StackFramesWidget.h"
-#include "LocalsWidget.h"
-#include "BreakpointsWidget.h"
-#include "Utilities.h"
-#include "DebuggerSourceEditor.h"
-#include "ProcessListModel.h"
 
-class GDBAdapter;
-class StackFramesWidget;
-class LocalsWidget;
-class BreakpointsWidget;
-class GDBLoggerWidget;
-class TargetOutputWidget;
 class DebuggerConfigurationsDialog;
-class DebuggerSourceEditor;
-class InfoBar;
-
-class DebuggerMainWindow : public QMainWindow
-{
-  Q_OBJECT
-public:
-  DebuggerMainWindow(MainWindow *pMainWindow = 0);
-  void restoreWindows();
-  void closeEvent(QCloseEvent *event);
-  void readFileAndNavigateToLine(QString fileName, QString lineNumber);
-  MainWindow* getMainWindow() {return mpMainWindow;}
-  GDBAdapter* getGDBAdapter() {return mpGDBAdapter;}
-  StackFramesWidget* getStackFramesWidget() {return mpStackFramesWidget;}
-  LocalsWidget* getLocalsWidget() {return mpLocalsWidget;}
-  BreakpointsWidget* getBreakpointsWidget() {return mpBreakpointsWidget;}
-  GDBLoggerWidget* getGDBLoggerWidget() {return mpGDBLoggerWidget;}
-  TargetOutputWidget *getTargetOutputWidget() {return mpTargetOutputWidget;}
-  Label* getDebuggerSourceEditorFileLabel() {return mpDebuggerSourceEditorFileLabel;}
-  InfoBar* getDebuggerSourceEditorInfoBar() {return mpDebuggerSourceEditorInfoBar;}
-  DebuggerSourceEditor* getDebuggerSourceEditor() {return mpDebuggerSourceEditor;}
-private:
-  void createActions();
-  void createMenus();
-
-  MainWindow *mpMainWindow;
-  GDBAdapter *mpGDBAdapter;
-  StackFramesWidget *mpStackFramesWidget;
-  QDockWidget *mpStackFramesDockWidget;
-  BreakpointsWidget *mpBreakpointsWidget;
-  QDockWidget *mpBreakpointsDockWidget;
-  LocalsWidget *mpLocalsWidget;
-  QDockWidget *mpLocalsDockWidget;
-  GDBLoggerWidget *mpGDBLoggerWidget;
-  QDockWidget *mpGDBLoggerDockWidget;
-  TargetOutputWidget *mpTargetOutputWidget;
-  QDockWidget *mpTargetOutputDockWidget;
-  Label *mpDebuggerSourceEditorFileLabel;
-  InfoBar *mpDebuggerSourceEditorInfoBar;
-  DebuggerSourceEditor *mpDebuggerSourceEditor;
-  QAction *mpDebugConfigurationsAction;
-  QAction *mpAttachDebuggerToRunningProcessAction;
-public slots:
-  void handleGDBProcessFinished();
-  void showConfigureDialog();
-  void showAttachToProcessDialog();
-};
 
 class DebuggerConfigurationPage : public QWidget
 {
@@ -144,11 +79,11 @@ class DebuggerConfigurationsDialog : public QDialog
   Q_OBJECT
 public:
   enum { MaxDebugConfigurations = 10 };
-  DebuggerConfigurationsDialog(DebuggerMainWindow *pDebuggerMainWindow);
+  DebuggerConfigurationsDialog(MainWindow *pMainWindow);
   QString getUniqueName(QString name = QString("New_configuration"), int number = 1);
   void readConfigurations();
 private:
-  DebuggerMainWindow *mpDebuggerMainWindow;
+  MainWindow *mpMainWindow;
   QAction *mpNewConfigurationAction;
   QAction *mpRemoveConfigurationAction;
   QToolButton *mpNewToolButton;
@@ -171,4 +106,4 @@ public slots:
   void saveAllConfigurationsAndDebugConfiguration();
 };
 
-#endif // DEBUGGERMAINWINDOW_H
+#endif // DEBUGGERCONFIGURATIONSDIALOG_H

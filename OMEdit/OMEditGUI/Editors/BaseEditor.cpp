@@ -616,6 +616,8 @@ int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
   int space = fm.width(QLatin1Char('9')) * digits;
   if (mpBaseEditor->canHaveBreakpoints()) {
     space += fm.lineSpacing();
+  } else {
+    space += 4;
   }
   TextEditorPage *pTextEditorPage = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTextEditorPage();
   if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
@@ -909,7 +911,7 @@ void BaseEditor::PlainTextEdit::setLineWrapping()
  */
 void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
 {
-  BreakpointsTreeModel *pBreakpointsTreeModel = mpBaseEditor->getMainWindow()->getDebuggerMainWindow()->getBreakpointsWidget()->getBreakpointsTreeModel();
+  BreakpointsTreeModel *pBreakpointsTreeModel = mpBaseEditor->getMainWindow()->getBreakpointsWidget()->getBreakpointsTreeModel();
   BreakpointMarker *pBreakpointMarker = pBreakpointsTreeModel->findBreakpointMarker(fileName, lineNumber);
   if (!pBreakpointMarker) {
     /* create a breakpoint marker */

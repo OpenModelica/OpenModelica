@@ -223,8 +223,8 @@ void LocalsTreeItem::retrieveModelicaMetaType()
 {
   if (getDisplayType().isEmpty() || (getDisplayType().compare(Helper::VALUE_OPTIMIZED_OUT) == 0)
       || (getDisplayType().compare(Helper::REPLACEABLE_TYPE_ANY) == 0)) {
-    GDBAdapter *pGDBAdapter = mpLocalsTreeModel->getLocalsWidget()->getDebuggerMainWindow()->getGDBAdapter();
-    StackFramesWidget *pStackFramesWidget = mpLocalsTreeModel->getLocalsWidget()->getDebuggerMainWindow()->getStackFramesWidget();
+    GDBAdapter *pGDBAdapter = mpLocalsTreeModel->getLocalsWidget()->getMainWindow()->getGDBAdapter();
+    StackFramesWidget *pStackFramesWidget = mpLocalsTreeModel->getLocalsWidget()->getMainWindow()->getStackFramesWidget();
     if (parent() && parent()->getModelicaValue() && qobject_cast<ModelicaRecordValue*>(parent()->getModelicaValue())) {
       pGDBAdapter->postCommand(CommandFactory::getTypeOfAny(pStackFramesWidget->getSelectedThread(), pStackFramesWidget->getSelectedFrame(),
                                                             getName(), true),
@@ -245,8 +245,8 @@ void LocalsTreeItem::retrieveModelicaMetaType()
  */
 void LocalsTreeItem::retrieveValue()
 {
-  GDBAdapter *pGDBAdapter = mpLocalsTreeModel->getLocalsWidget()->getDebuggerMainWindow()->getGDBAdapter();
-  StackFramesWidget *pStackFramesWidget = mpLocalsTreeModel->getLocalsWidget()->getDebuggerMainWindow()->getStackFramesWidget();
+  GDBAdapter *pGDBAdapter = mpLocalsTreeModel->getLocalsWidget()->getMainWindow()->getGDBAdapter();
+  StackFramesWidget *pStackFramesWidget = mpLocalsTreeModel->getLocalsWidget()->getMainWindow()->getStackFramesWidget();
   if (isCoreTypeExceptString()) {
     pGDBAdapter->postCommand(CommandFactory::dataEvaluateExpression(pStackFramesWidget->getSelectedThread(),
                                                                     pStackFramesWidget->getSelectedFrame(), getName()),
@@ -586,10 +586,10 @@ LocalsTreeView::LocalsTreeView(LocalsWidget *pLocalsWidget)
   sortByColumn(0, Qt::AscendingOrder);
 }
 
-LocalsWidget::LocalsWidget(DebuggerMainWindow *pDebuggerMainWindow)
-  : QWidget(pDebuggerMainWindow)
+LocalsWidget::LocalsWidget(MainWindow *pMainWindow)
+  : QWidget(pMainWindow)
 {
-  mpDebuggerMainWindow = pDebuggerMainWindow;
+  mpMainWindow = pMainWindow;
   /* Locals Tree View */
   mpLocalsTreeView = new LocalsTreeView(this);
   mpLocalsTreeModel = new LocalsTreeModel(this);
@@ -615,7 +615,7 @@ LocalsWidget::LocalsWidget(DebuggerMainWindow *pDebuggerMainWindow)
   pMainLayout->setContentsMargins(0, 0, 1, 0);
   pMainLayout->addWidget(pLocalsSplitter, 0, 0);
   setLayout(pMainLayout);
-  connect(mpDebuggerMainWindow->getGDBAdapter(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
+  connect(mpMainWindow->getGDBAdapter(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
 }
 
 void LocalsWidget::localsTreeItemExpanded(QModelIndex index)
