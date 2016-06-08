@@ -210,7 +210,7 @@ algorithm
         (varr,newpos) = valueArrayAdd(varr, v);
         indexes = hashvec[indx];
         hashvec = arrayUpdate(hashvec, indx, ((key, newpos) :: indexes));
-        n = valueArrayLength(varr);
+        _ = valueArrayLength(varr);
       then
         ((hashvec, varr, bsize, fntpl));
 
@@ -250,7 +250,7 @@ algorithm
         (varr,newpos) = valueArrayAdd(varr, v);
         indexes = hashvec[indx];
         hashvec = arrayUpdate(hashvec, indx, ((key, newpos) :: indexes));
-        n = valueArrayLength(varr);
+        _ = valueArrayLength(varr);
       then
         ((hashvec, varr, bsize, fntpl));
 
@@ -541,7 +541,7 @@ algorithm
       then
         ((n, size, arr));
 
-    case ((n, size, arr), _, _)
+    case ((_, size, _), _, _)
       equation
         Error.addInternalError("HashTable.valueArraySet(pos="+String(pos)+") size="+String(size)+" failed\n", sourceInfo());
       then

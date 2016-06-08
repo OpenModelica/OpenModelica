@@ -188,7 +188,7 @@ algorithm
       vis := SHAPE(crefIn,"",arrayCreate(3,{DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1)}),
                            arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)),arrayCreate(3,DAE.RCONST(-1)),
                            DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1), arrayCreate(3,DAE.RCONST(-1)), DAE.RCONST(-1));
-      (allVars,vis) := List.fold1(allVarsIn,fillVisualizationObjects1,true,({},vis));
+      (_,vis) := List.fold1(allVarsIn,fillVisualizationObjects1,true,({},vis));
     then (vis,allVarsIn);
   else
     algorithm
@@ -222,7 +222,7 @@ algorithm
   (crefOut,wasCut) := matchcontinue(crefIn,crefCut)
     local
       DAE.ComponentRef crefCut1, crefIn1;
-  case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL(componentRef=crefCut1))
+  case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL(componentRef=_))
     equation
       // the crefs are not equal, check the next cref in crefIn
       true = not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
@@ -370,8 +370,8 @@ algorithm
    case(DAE.CREF_IDENT(ident="extra"),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := BackendVariable.varExp(var);
+        _ := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
+      else _ := BackendVariable.varExp(var);
       end if;
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
 
@@ -384,7 +384,7 @@ algorithm
       color := arrayUpdate(color,pos,exp);
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
 
-   case(DAE.CREF_IDENT(ident="specularCoefficient"),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+   case(DAE.CREF_IDENT(ident="specularCoefficient"),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color))
     algorithm
       if isSome(bind) then
         exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
@@ -396,8 +396,8 @@ algorithm
     algorithm
       BackendDAE.VAR(bindExp=bind) := var;
       if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := DAE.SCONST("NO_BINDING");
+        _ := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
+      else _ := DAE.SCONST("NO_BINDING");
       end if;
        //print("whats this? :"+ComponentReference.printComponentRefStr(cref)+" with binding: "+ExpressionDump.printExpStr(exp)+"\n");
     then visIn;
@@ -444,10 +444,10 @@ algorithm
     String obj;
     list<Absyn.Path> paths;
     list<String> paths_lst;
-    case(BackendDAE.VAR(varName=varName, varType = varType, source=source), (varLst,crefs))
+    case(BackendDAE.VAR(varName=varName,  source=source), (varLst,crefs))
       algorithm
        paths := ElementSource.getElementSourceTypes(source);
-       paths_lst := list(Absyn.pathString(p) for p in paths);
+       _ := list(Absyn.pathString(p) for p in paths);
          //print("paths_lst "+stringDelimitList(paths_lst, "; ")+"\n");
        (obj,idx) := hasVisPath(paths,1);
        true := Util.stringNotEqual(obj,"");

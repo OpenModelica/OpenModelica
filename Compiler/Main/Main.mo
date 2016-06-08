@@ -728,7 +728,7 @@ public function setWindowsPaths
               changes you will need to change here!"
   input String inOMHome;
 algorithm
-  _ := matchcontinue(inOMHome)
+  _ := match(inOMHome)
     local
       String oldPath, newPath, omHome, omdevPath, mingwDir, binDir, libBinDir, msysBinDir;
       Boolean hasBinDir, hasLibBinDir;
@@ -765,7 +765,7 @@ algorithm
           end if;
         end if;
       then ();
-  end matchcontinue;
+  end match;
 end setWindowsPaths;
 
 protected function setDefaultCC "Reads the environment variable CC to change the default CC"

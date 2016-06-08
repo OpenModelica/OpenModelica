@@ -838,7 +838,6 @@ algorithm
       dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
 
       GC.free(dae);
-      graph = FCore.EG("<EMPTY>");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
         serializeNotify(dlow, filenameprefix, "dlow");

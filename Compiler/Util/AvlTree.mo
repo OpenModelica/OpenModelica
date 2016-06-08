@@ -315,7 +315,7 @@ algorithm
 
     // replacements of nodes maybe allowed!
     // we have an update check function
-    case (_, NODE(i, h, l, r), 0, key, val)
+    case (_, NODE(i, _, _, _), 0, key, val)
       equation
         true = hasUpdateCheckFunction(inTree);
         updateCheckFunc = getUpdateCheckFunc(inTree);
@@ -481,7 +481,7 @@ algorithm
       Item<Key,Val> i;
 
     // replace this node.
-    case (_, NODE(item = ITEM(key = _), height = h, left = l, right = r), 0, key, val)
+    case (_, NODE(item = ITEM(), height = h, left = l, right = r), 0, key, val)
       then
         NODE(ITEM(key, val), h, l, r);
 
@@ -510,7 +510,7 @@ protected function emptyNodeIfNoNode
 algorithm
   outNode := match(inNode)
     case (NO_NODE()) then NODE(NO_ITEM(), 0, NO_NODE(), NO_NODE());
-    case (NODE(item = _)) then inNode;
+    case (NODE()) then inNode;
   end match;
 end emptyNodeIfNoNode;
 
@@ -781,7 +781,7 @@ algorithm
       then
         res;
 
-    case (_, NODE(item = item as ITEM(key = _), left = l, right = r), _)
+    case (_, NODE(item = item as ITEM(), left = l, right = r), _)
       equation
         indent = inIndent + "  ";
         s1 = prettyPrintNodeStr(inTree, l, indent);
@@ -820,7 +820,7 @@ algorithm
 
     case (_, NO_NODE()) then "";
     case (_, NODE(item = NO_ITEM())) then "";
-    case (_, NODE(item = item as ITEM(_,_), left = left, right = right))
+    case (_, NODE(item = item as ITEM(), left = left, right = right))
       equation
         left_str = printNodeStr(inTree, left);
         right_str = printNodeStr(inTree, right);
@@ -886,14 +886,14 @@ algorithm
       Val v;
       Key k;
 
-    case NODE(item = item as ITEM(k,v), left = left, right = right)
+    case NODE(item=ITEM(k,v))
       equation
         true = valueEq(v, inVal);
       then
         k;
 
     // search left
-    case NODE(item = item as ITEM(k,v), left = left, right = right)
+    case NODE(item=ITEM(_,v), left = left)
       equation
         false = valueEq(v, inVal);
         k = getKeyOfValNode(inTree, left, inVal);
@@ -901,7 +901,7 @@ algorithm
         k;
 
     // search right
-    case NODE(item = item as ITEM(k,v), left = left, right = right)
+    case NODE(item=ITEM(_,v),  right = right)
       equation
         false = valueEq(v, inVal);
         k = getKeyOfValNode(inTree, right, inVal);
@@ -1014,7 +1014,7 @@ protected function addNodeUnique_dispatch
   output Node<Key,Val> outNode;
   output Item<Key,Val> outItem;
 algorithm
-  (outNode, outItem) := matchcontinue(inTree, inNode, inKeyComp, inKey, inVal)
+  (outNode, outItem) := match(inTree, inNode, inKeyComp, inKey, inVal)
     local
       Key key;
       Val val;
@@ -1025,7 +1025,7 @@ algorithm
 
     // replacements of nodes are not allowed in addUnique
     // we don't care about update check functions here
-    case (_, NODE(i, h, l, r), 0, key, val)
+    case (_, NODE(i, _, _, _), 0, _, _)
       then
         (inNode, i); // return the same node, no update for addUnique!
 
@@ -1044,7 +1044,7 @@ algorithm
         (n, it) = addNodeUnique(inTree, n, key, val);
       then
         (NODE(i, h, n, r), it);
-  end matchcontinue;
+  end match;
 end addNodeUnique_dispatch;
 
 annotation(__OpenModelica_Interface="backend");

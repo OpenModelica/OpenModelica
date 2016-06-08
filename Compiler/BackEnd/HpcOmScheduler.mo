@@ -1631,7 +1631,7 @@ algorithm
     case({section},HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
       equation
         // generate a serial section
-        compLst = List.flatten(List.map1(section,Array.getIndexFirst,inComps));
+        _ = List.flatten(List.map1(section,Array.getIndexFirst,inComps));
         //simEqSysIdcs = List.sort(simEqSysIdcs,intGt);
         task = makeCalcTaskLevel(section,inComps,iSccSimEqMapping);
         taskLst = HpcOmSimCode.SERIALTASKLIST({task}, true);
@@ -2554,7 +2554,7 @@ protected function createMetisSchedule2 "author: Waurich TUD 03-2015
   output list<Integer> prioLstOut;
   output list<Integer> otherLstOut;
 algorithm
-  (prioLstOut,otherLstOut) := matchcontinue(levelNodes,priorityArr,prioLstIn,otherLstIn)
+  (prioLstOut,otherLstOut) := match(levelNodes,priorityArr,prioLstIn,otherLstIn)
     local
       list<Integer> level, prioLst, otherLst;
       list<list<Integer>> rest;
@@ -2570,7 +2570,7 @@ algorithm
         otherLst := listAppend(otherLstIn,otherLst);
         (prioLst,otherLst) := createMetisSchedule2(rest,priorityArr,prioLst,otherLst);
     then (prioLst,otherLst);
-  end matchcontinue;
+  end match;
 end createMetisSchedule2;
 
 protected function isPrioNode "author: Waurich TUD 03-2015"
@@ -4550,7 +4550,7 @@ algorithm
       array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
       HpcOmSimCode.Schedule schedule;
       list<Integer> order;
-    case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps),_,_,_)
+    case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=_),_,_,_)
       algorithm
         true := intNe(arrayLength(iTaskGraph),0);
         nTasks := arrayLength(iTaskGraph);
@@ -4558,7 +4558,7 @@ algorithm
         partitions := arrayCreate(numProc,{});
         taskMap := arrayCreate(nTasks,-1);
         partMap := arrayCreate(listLength(rootNodes),{});
-        partitionCosts := arrayCreate(numProc,0.0);
+        _ := arrayCreate(numProc,0.0);
         graphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
         // get all existing partitions
         (taskMap,partMap,_) := List.fold1(rootNodes,assignPartitions,iTaskGraph,(taskMap,partMap,1));
@@ -6130,8 +6130,8 @@ algorithm
         true = taskIdx <= listLength(thread);
         task = listGet(thread,taskIdx);
         //compute timeFinished for the task
-        (threadTasks,checkedTasks,nextTaskIdx) = updateFinishingTime(task,taskIdx,threadIdxIn,threadTasksIn,checkedTasksIn,taskGraphTIn,taskGraphMetaIn);
-        taskIdcs = arrayUpdate(taskIdcsIn,threadIdxIn,nextTaskIdx);
+        (_,_,nextTaskIdx) = updateFinishingTime(task,taskIdx,threadIdxIn,threadTasksIn,checkedTasksIn,taskGraphTIn,taskGraphMetaIn);
+        _ = arrayUpdate(taskIdcsIn,threadIdxIn,nextTaskIdx);
         nextThreadIdx = getNextThreadIdx(threadIdxIn,closedThreadsIn,numProc);
         //threadTasks = computeTimeFinished(threadTasks,taskIdcs,nextThreadIdx,checkedTasks,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,closedThreadsIn);
       then

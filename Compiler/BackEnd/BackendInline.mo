@@ -344,7 +344,7 @@ protected function inlineWhenEq
   output DAE.ElementSource outSource;
   output Boolean inlined;
 algorithm
-  (outWhenEquation,outSource,inlined) := matchcontinue(inWhenEquation)
+  (outWhenEquation,outSource,inlined) := match(inWhenEquation)
     local
       DAE.ComponentRef cref;
       DAE.Exp e,e_1,cond;
@@ -371,7 +371,7 @@ algorithm
         end if;
       then (BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelsewe), source, b1 or b2 or b3);
 
-  end matchcontinue;
+  end match;
 end inlineWhenEq;
 
 protected function inlineWhenOps
@@ -1195,7 +1195,7 @@ algorithm
     guard not Expression.isRecordType(ComponentReference.crefTypeFull(cr))
       algorithm
         // create variables
-        (crVar, varLst, repl) := createReplacementVariables(cr, funcname, repl);
+        (_, varLst, repl) := createReplacementVariables(cr, funcname, repl);
         varLst := list(BackendVariable.setVarTS(_var, SOME(BackendDAE.AVOID())) for _var in varLst);
         outEqs := BackendVariable.addVarsDAE(varLst, outEqs);
     then ();

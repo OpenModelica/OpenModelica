@@ -451,7 +451,7 @@ algorithm
     then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample, timeEvents));
 
     // sample [already in ht]
-    case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, timeEvents))
+    case (DAE.CALL(Absyn.IDENT("sample"), es as {_, interval}, attr), (ht, iDelay, iSample, timeEvents))
     guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) equation
       i = BaseHashTable.get(inExp, ht);
     then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample, timeEvents));
@@ -697,7 +697,6 @@ algorithm
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr, b);
         dae_var_attr = setMinMaxFromEnumeration(t, dae_var_attr);
-        fnstpl = (SOME(functionTree), {DAE.NORM_INLINE()});
         // build algorithms for the inlined asserts
         eqLst = buildAssertAlgorithms({},source,assrtEqIn);
         // building an algorithm of the assert
@@ -1097,7 +1096,7 @@ algorithm
         (eqns,inREquations,inIEquations);
 
     // Only succeds for initial tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c)
-    case(DAE.INITIALEQUATION(e1 as DAE.TUPLE(explst),e2 as DAE.CALL(),source),_,_,_,_)
+    case(DAE.INITIALEQUATION(e1 as DAE.TUPLE(_),e2 as DAE.CALL(),source),_,_,_,_)
       equation
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
         eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.INITIAL_EQUATION(),functionTree,inIEquations);
@@ -1801,7 +1800,7 @@ algorithm
       then
         (eqnl, reqnl);
 
-    case DAE.EQUATION(exp = cre as DAE.TUPLE(PR=expl), scalar = e, source = source)::xs
+    case DAE.EQUATION(exp = DAE.TUPLE(PR=expl), scalar = e, source = source)::xs
       equation
         eqnl = lowerWhenTupleEqn(expl, inCond, e, source, 1, iEquationLst);
         (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, eqnl, iREquationLst);
@@ -2189,7 +2188,7 @@ algorithm
         ht = BaseHashTable.add((cr, (e, source)), iHt);
       then
         lowerWhenIfEqnsElse(rest, functionTree, ht);
-    case (DAE.IF_EQUATION(condition1=expl, equations2=eqnslst, equations3=eqns, source = source)::rest, _, _)
+    case (DAE.IF_EQUATION(condition1=expl, equations2=eqnslst, equations3=eqns)::rest, _, _)
       equation
         ht = lowerWhenIfEqnsElse(eqns, functionTree, iHt);
         ht = lowerWhenIfEqns(listReverse(expl), listReverse(eqnslst), functionTree, ht);

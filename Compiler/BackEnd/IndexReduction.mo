@@ -1081,7 +1081,7 @@ algorithm
         (syst,inShared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
 
     // if no state with unused derivative is in the set check global
-    case (_,{},_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=v, m=SOME(_), mT=SOME(mt)))
+    case (_,{},_,_,_,BackendDAE.EQSYSTEM(orderedVars=v, m=SOME(_), mT=SOME(mt)))
       equation
         ilst = Matching.getUnassigned(BackendVariable.varsSize(v), inAss1, {});
         ilst = List.fold1(ilst, statesWithUnusedDerivative, mt, {});
@@ -1862,7 +1862,6 @@ algorithm
         syst = BackendEquation.equationsAddDAE(eqnslst1, inSystem);
         // Dummy Derivatives
         if Flags.getConfigString(Flags.INDEX_REDUCTION_METHOD) == "dummyDerivatives" and neqns < nfreeStates then
-          nfreeStates = neqns;
           //print("BEFORE:\n");
           //BackendDump.printVarList(dummyVars);
           dummyVars = reduceStateSets(stateSets, dummyVars);

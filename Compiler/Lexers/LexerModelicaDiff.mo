@@ -1541,7 +1541,7 @@ algorithm
       case (e as (_,TOKEN(id=TokenId.NEWLINE)))::(Diff.Add,TOKEN(id=TokenId.NEWLINE))::rest
         then (false,e::rest,tmp);
       case (e as (_,TOKEN(id=TokenId.NEWLINE)))::rest then (true,rest,e::tmp);
-      case (Diff.Add,TOKEN(id=TokenId.WHITESPACE))::(e as (Diff.Add,t))::rest guard lastIsNewline
+      case (Diff.Add,TOKEN(id=TokenId.WHITESPACE))::(e as (Diff.Add,_))::rest guard lastIsNewline
         then (false,rest,e::
           (Diff.Add,TOKEN("WHITESPACE",TokenId.WHITESPACE,sum(" " for i in 1:depth),1,depth,0,0,0,0))
           ::tmp);

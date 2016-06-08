@@ -900,7 +900,7 @@ algorithm
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation=weqn,  attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation
+    case (BackendDAE.WHEN_EQUATION(whenEquation=weqn,  attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::_, _) equation
       print("WHEN_EQUATION: ");
       str = whenEquationString(weqn, true);
       print(str);
@@ -1502,7 +1502,7 @@ public function equationString "Helper function to e.g. dump."
   input BackendDAE.Equation inEquation;
   output String outString;
 algorithm
-  outString := matchcontinue (inEquation)
+  outString := match (inEquation)
     local
       String s1,s2,s3,s4,res;
       DAE.Exp e1,e2,e,cond, start, stop, iter;
@@ -1515,7 +1515,7 @@ algorithm
       list<list<BackendDAE.Equation>> eqnstrue;
       list<BackendDAE.Equation> eqnsfalse,eqns;
       list<BackendDAE.WhenOperator> whenStmtLst;
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2, attr=attr))
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2))
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1574,7 +1574,7 @@ algorithm
         res = stringAppendList({"for ",s1," loop \n    ",s2, "; end for; "});
       then
         res;
-  end matchcontinue;
+  end match;
 end equationString;
 
 protected function zeroCrossingString "Dumps a zerocrossing into a string, for debugging purposes."

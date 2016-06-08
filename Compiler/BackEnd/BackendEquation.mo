@@ -297,11 +297,11 @@ algorithm
     then (e, true, inTuple);
 
     // case for pre vars
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "pre")), _)
+    case (DAE.CALL(path = Absyn.IDENT(name = "pre")), _)
     then (inExp, false, inTuple);
 
     // case for previous vars
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "previous")), _)
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous")), _)
     then (inExp, false, inTuple);
 
     // add it
@@ -707,7 +707,7 @@ algorithm
       (we_1, extArg) = traverseExpsOfWhenEquation(we, inFunc, inTypeA);
     then (if referenceEq(we,we_1) then inEquation else BackendDAE.WHEN_EQUATION(size, we_1, source, attr), extArg);
 
-    case BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts), source=source, expand=crefExpand, attr=attr) equation
+    case BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(statementLst = stmts), source=source, expand=crefExpand, attr=attr) equation
       (stmts1, extArg) = DAEUtil.traverseDAEEquationsStmts(stmts, inFunc, inTypeA);
     then (if referenceEq(stmts,stmts1) then inEquation else BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(stmts1), source, crefExpand, attr), extArg);
 
@@ -1058,7 +1058,7 @@ algorithm
         (b, extArg) = traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
       then (b, extArg);
 
-    case (BackendDAE.ASSERT(condition = e1, message = e2, level = level)::rest)
+    case (BackendDAE.ASSERT(condition = e1, message = e2)::rest)
       equation
         if inCont then
          (_, b, extArg) = inFunc(e1, inTypeA);
@@ -1077,7 +1077,7 @@ algorithm
         (b, extArg) = traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
       then (b, extArg);
 
-    case (BackendDAE.NORETCALL(exp = e1,  source = source)::rest)
+    case (BackendDAE.NORETCALL(exp = e1)::rest)
       equation
         if inCont then
          (_, b, extArg) = inFunc(e1, inTypeA);

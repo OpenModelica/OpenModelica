@@ -1713,7 +1713,7 @@ algorithm
         // constant or alias
       then
         constOrAliasAcausal(v, i, cr, es, eqnAttributes, inTpl);
-    case (_, _, _, _, (source, eqAttr), (_, BackendDAE.SHARED(functionTree=functionTree), _, _, _, _, _))
+    case (_, _, _, _, (source, eqAttr), (_, BackendDAE.SHARED(), _, _, _, _, _))
       equation
         // size of equation have to be equal with number of vars
         size = Expression.sizeOf(Expression.typeof(lhs));
@@ -3368,7 +3368,7 @@ algorithm
 
     case ((e, cr, i)::_) guard not Expression.isZero(e) then ((e, cr, i));
 
-    case ((e, cr, i)::rest)
+    case ((_, _, _)::rest)
       then
         selectNonZeroExpression(rest);
   end match;
@@ -3406,7 +3406,7 @@ algorithm
 
     // end of list analyse what we got
     case ({}, rest, _, _, _, _) equation
-      ((e, cr, i)) = selectNonZeroExpression(rest);
+      ((e, cr, _)) = selectNonZeroExpression(rest);
       crVar = BackendVariable.varCref(inVar);
       s = iStr + "=> select value from " +  ComponentReference.printComponentRefStr(cr) +  "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ") for variable: " +  ComponentReference.printComponentRefStr(crVar) + "\n";
       if Flags.isSet(Flags.DEBUG_ALIAS) then
@@ -3563,7 +3563,7 @@ algorithm
       BackendDAE.Shared shared;
 
     case (false, _) then inDAE;
-    case (true, BackendDAE.DAE(systs, shared as BackendDAE.SHARED( globalKnownVars=globalKnownVars, aliasVars=aliasVars, initialEqs=inieqns,
+    case (true, BackendDAE.DAE(systs, shared as BackendDAE.SHARED( globalKnownVars=globalKnownVars, aliasVars=aliasVars,
                                                                    constraints=constraintsLst, classAttrs=clsAttrsLst )))
       equation
         if Flags.isSet(Flags.DUMP_REPL) then
@@ -4388,7 +4388,7 @@ algorithm
       Boolean b1;
       BackendVarTransform.VariableReplacements repl;
 
-    case ( syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, removedEqs=remeqns),
+    case ( syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs),
            shared as BackendDAE.SHARED( globalKnownVars=globalKnownVars, aliasVars=aliasVars, initialEqs=inieqns,
                                        eventInfo=eventInfo) )
       equation
@@ -4655,9 +4655,9 @@ algorithm
           true = Types.isSimpleType(Expression.typeof(exp1));
           exp2 = Expression.crefExp(cr2);
 
-          eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp2,NONE());
+          BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp2,NONE());
           true = isSimple(res);
-          eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp1,NONE());
+          BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp1,NONE());
           true = isSimple(res);
           if Flags.isSet(Flags.DEBUG_ALIAS) then
             print("Found Equation al1: "  + BackendDump.equationString(eq) + "\n");
@@ -5179,7 +5179,7 @@ algorithm
     BackendDAE.EquationAttributes eqAttr;
 
     case ({}) then (outHTStartExpToInt,outHTNominalExpToInt);
-    case (cr1,eq)::cr_eq_rest equation
+    case (cr1,_)::cr_eq_rest equation
       (v,_) = BackendVariable.getVarSingle(cr1,inAliasVars);
       e = BackendVariable.varBindExp(v);
       if BackendVariable.varHasStartValue(v) then

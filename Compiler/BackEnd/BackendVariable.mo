@@ -1751,7 +1751,6 @@ algorithm
         fail();
       end if;
       e = Expression.crefExp(name);
-      varStr = ComponentReference.printComponentRefStr(name);
       tp = BackendDAEUtil.makeExpType(varType);
 
       // do not add if const true
@@ -1842,7 +1841,6 @@ algorithm
       cond = getMinMaxAsserts1(min, max, e, tp);
       (cond, _) = ExpressionSimplify.simplify(cond);
       false = Expression.isConstTrue(cond);
-      varStr = ComponentReference.printComponentRefStr(name);
       str = getMinMaxAsserts1Str(min, max, ComponentReference.printComponentRefStr(name), nominal=true);
       // if is real use %g otherwise use %d (ints and enums)
       format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";

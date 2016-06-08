@@ -775,7 +775,7 @@ algorithm
       BackendDAE.Var backendVar;
       Absyn.Ident name;
 
-    case (e as DAE.CREF(componentRef=cr), (vars, globalKnownVars, blst)) equation
+    case (e as DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
       ((backendVar::_), _) = BackendVariable.getVar(cr, vars);
       false = BackendVariable.isVarDiscrete(backendVar);
     then (e, false, (vars, globalKnownVars, SOME(true)));
@@ -1919,7 +1919,7 @@ algorithm
       then (e,inTpl);
     case (e as DAE.MATRIX(matrix=(((DAE.UNARY(exp = DAE.CREF())))::_)::_), (DAE.STMT_WHEN(), _))
       then (e,inTpl);
-    case (e as DAE.ARRAY(array=(DAE.CREF())::_), (x as DAE.STMT_WHEN(), _))
+    case (e as DAE.ARRAY(array=(DAE.CREF())::_), (DAE.STMT_WHEN(), _))
       then (e,inTpl);
     case (e as DAE.ARRAY(array=(DAE.UNARY(exp = DAE.CREF()))::_), (DAE.STMT_WHEN(), _))
       then (e,inTpl);
@@ -3034,7 +3034,7 @@ algorithm
       equation
         failure(_ = List.getMemberOnTrue(i, vars, intEq));
       then incidenceRowExp1(rest,irest,i::vars,diffindex);
-    case (_ :: rest,_::irest,_,_)
+    case (_ :: _,_::_,_,_)
       then vars;
   end matchcontinue;
 end incidenceRowExp1withInput;
@@ -3489,11 +3489,11 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eq, m=NONE()) equation
+    case BackendDAE.EQSYSTEM(m=NONE()) equation
       (m, mT) = incidenceMatrix(inSyst, inIndxType, inFunctionTree);
     then (BackendDAEUtil.setEqSystMatrices(inSyst, SOME(m), SOME(mT)), m, mT);
 
-    case BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eq, m=SOME(m), mT=NONE()) equation
+    case BackendDAE.EQSYSTEM(orderedVars=v, m=SOME(m), mT=NONE()) equation
       mT = transposeMatrix(m, BackendVariable.varsSize(v));
     then (BackendDAEUtil.setEqSystMatrices(inSyst, SOME(m), SOME(mT)), m, mT);
 
@@ -4821,7 +4821,7 @@ algorithm
       DAE.Constraint con;
       list<DAE.ComponentRef> crlst;
       Boolean localCon;
-    case DAE.BINARY(exp1=e1, operator=DAE.DIV(), exp2=e2)
+    case DAE.BINARY(operator=DAE.DIV(), exp2=e2)
       equation
         rel = DAE.RELATION(e2,DAE.NEQUAL(DAE.T_UNKNOWN(DAE.emptyTypeSource)),DAE.RCONST(0.0),-1,NONE());
         (_,crlst) = Expression.traverseExpTopDown(rel, Expression.traversingComponentRefFinderNoPreDer, {});
@@ -5096,15 +5096,15 @@ algorithm
     then (inExp, false, (vars, bs, iat, res));
 
     // pre(v) is considered a known variable
-    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF()}), (vars, bs, iat, pa))
+    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF()}), (_, _, _, _))
     then (inExp, false, inTpl);
 
     // previous(v) is considered a known variable
-    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={DAE.CREF()}), (vars, bs, iat, pa))
+    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={DAE.CREF()}), (_, _, _, _))
     then (inExp, false, inTpl);
 
     // delay(e) can be used to break algebraic loops given some solver options
-    case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={_, _, e1, e2}), (vars, bs, iat, pa)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={_, _, e1, e2}), (_, _, _, _)) equation
       b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
     then (inExp, not b, inTpl);
 
@@ -6388,7 +6388,7 @@ algorithm
         a = SOME(DAE.VAR_ATTR_ENUMERATION(q_,min_,max_,i_,f_,eqbound_,p,fin,startOrigin));
      end if;
     then (a,outExtraArg);
-  case(SOME(DAE.VAR_ATTR_CLOCK(p, fin)),_,_)
+  case(SOME(DAE.VAR_ATTR_CLOCK(_, _)),_,_)
     then (attr,extraArg);
 
  end match;
@@ -8705,7 +8705,7 @@ author: Waurich TUD 09-2015"
   output list<BackendDAE.Equation> eqsOut;
   output list<Integer> eqIdcxs;
 algorithm
-  (varsOut,varIdxs,eqsOut,eqIdcxs) := matchcontinue(comp,varArr,eqArr)
+  (varsOut,varIdxs,eqsOut,eqIdcxs) := match(comp,varArr,eqArr)
     local
       Integer vidx,eidx;
       list<Integer> vidxs,eidxs, otherEqns, otherVars;
@@ -8759,7 +8759,7 @@ algorithm
       vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
       eqs = BackendEquation.getEqns(eidxs,eqArr);
     then (vars,vidxs,eqs,eidxs);
-  end matchcontinue;
+  end match;
 end getStrongComponentVarsAndEquations;
 
 public function getStrongComponentEquations"gets all equations from a component"

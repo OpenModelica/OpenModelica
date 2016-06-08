@@ -505,6 +505,8 @@ constant DebugFlag DUMPBACKENDINLINE_VERBOSE = DEBUG_FLAG(165, "dumpBackendInlin
   Util.gettext("Dumps debug output while inline function."));
 constant DebugFlag BLT_MATRIX_DUMP = DEBUG_FLAG(166, "bltmatrixdump", false,
   Util.gettext("Dumps the blt matrix in html file. IE seems to be very good in displaying large matrices."));
+constant DebugFlag LIST_REVERSE_WRONG_ORDER = DEBUG_FLAG(167, "listAppendWrongOrder", true,
+  Util.gettext("Print notifications about bad usage of listAppend."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -677,7 +679,8 @@ constant list<DebugFlag> allDebugFlags = {
   BACKEND_KEEP_ENV_GRAPH,
   DUMPBACKENDINLINE,
   DUMPBACKENDINLINE_VERBOSE,
-  BLT_MATRIX_DUMP
+  BLT_MATRIX_DUMP,
+  LIST_REVERSE_WRONG_ORDER
 };
 
 public

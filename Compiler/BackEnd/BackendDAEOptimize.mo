@@ -874,7 +874,7 @@ algorithm
       list<BackendDAE.Equation> lsteqns;
       Boolean b;
 
-    case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
+    case syst as BackendDAE.EQSYSTEM(orderedEqs=eqns)
       algorithm
         lsteqns := BackendEquation.equationList(eqns);
         (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
@@ -1193,7 +1193,7 @@ algorithm
       BackendDAE.Var v;
       BackendDAE.Variables vars,vars1;
       DAE.ComponentRef cr;
-    case (v as BackendDAE.VAR(varKind = BackendDAE.PARAM()),(vars,vars1))
+    case (v as BackendDAE.VAR(varKind = BackendDAE.PARAM()),(_,_))
       then (v,inTpl);
     case (v as BackendDAE.VAR(),(vars,vars1))
       equation
@@ -1237,7 +1237,7 @@ algorithm
       tuple<BackendDAE.Variables,BackendDAE.Variables> tp;
 
     // special case for time, it is never part of the equation system
-    case (e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,vars1))
+    case (e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(_,_))
       then (e, inTuple);
 
     // Special Case for Records
@@ -2234,7 +2234,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
 
-    case ( syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),
+    case ( syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),
            shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars) )
       algorithm
         // traverse the equations
@@ -2866,7 +2866,7 @@ algorithm
         oExp;
     // complex equation
     // (x,_) = f(.)
-    case(BackendDAE.COMPLEX_EQUATION(left = e1 as DAE.TUPLE(expl), right = e2))
+    case(BackendDAE.COMPLEX_EQUATION(left = DAE.TUPLE(expl), right = e2))
       algorithm
         expl1 := {};
         idxs := {};
@@ -3433,7 +3433,7 @@ algorithm
       BackendDAE.Shared shared;
       list<BackendDAE.Equation> lsteqns;
       Boolean b;
-    case BackendDAE.DAE(systs, shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars, initialEqs=inieqns))
+    case BackendDAE.DAE(systs, shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars))
       algorithm
         repl := BackendVarTransform.emptyReplacements();
         repl := BackendVariable.traverseBackendDAEVars(globalKnownVars, removeConstantsFinder, repl);
@@ -3470,7 +3470,7 @@ algorithm
       list<BackendDAE.Equation> lsteqns;
       Boolean b;
       BackendDAE.EqSystem syst;
-    case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
+    case syst as BackendDAE.EQSYSTEM(orderedVars=vars)
       algorithm
         BackendVariable.traverseBackendDAEVarsWithUpdate(vars, replaceFinalVarTraverser, (repl, 0));
 
@@ -4592,7 +4592,7 @@ algorithm
               e2 := hetsSplitExp(e2);
             then DAE.BINARY(e1, op, e2);
 
-          case e as DAE.BINARY(e1, op, e2)
+          case e as DAE.BINARY(_, op, _)
           guard Expression.isAddOrSub(op)
             algorithm
               terms := Expression.terms(e);
@@ -5632,7 +5632,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)
+    case syst as BackendDAE.EQSYSTEM( orderedEqs=orderedEqs)
       algorithm
         BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, addTimeAsState2, inFoo);
       then syst;

@@ -1618,10 +1618,10 @@ algorithm
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
         outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
 
-        statesarr = BackendVariable.listVar1(states);
-        inputvarsarr = BackendVariable.listVar1(inputvars);
-        paramvarsarr = BackendVariable.listVar1(paramvars);
-        outputvarsarr = BackendVariable.listVar1(outputvars);
+        _ = BackendVariable.listVar1(states);
+        _ = BackendVariable.listVar1(inputvars);
+        _ = BackendVariable.listVar1(paramvars);
+        _ = BackendVariable.listVar1(outputvars);
 
         // Generate sparse pattern for matrices A
         (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, states, states);
@@ -2617,7 +2617,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("homotopy")), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
 
 // For now exclude all not built in calls
-    case (DAE.CALL(expLst=expLst1,attr=DAE.CALL_ATTR(builtin=false)), (expLst, b, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
+    case (DAE.CALL(attr=DAE.CALL_ATTR(builtin=false)), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
 
 /*
     case (_, (expLst, _, true)) guard(Expression.isRecord(inExp)) then (inExp, false, (inExp::expLst, false, true));
@@ -2745,7 +2745,7 @@ algorithm
 
         // prepare vars and equations for BackendDAE
         emptyVars =  BackendVariable.emptyVars();
-        emptyEqns = BackendEquation.listEquation({});
+        _ = BackendEquation.listEquation({});
         cache = FCore.emptyCache();
         graph = FGraph.empty();
         shared = BackendDAEUtil.createEmptyShared(BackendDAE.ALGEQSYSTEM(), einfo, cache, graph);

@@ -808,7 +808,7 @@ algorithm
       // CREF
       DAE.ComponentRef cref;
       DAE.Type ty;
-    case ((i, expThen)::{}, DAE.CREF(componentRef=cref,ty=ty))
+    case ((i, expThen)::{}, DAE.CREF(componentRef=_,ty=ty))
       equation
         callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
         // SMS_PRE.initialState.activeState == i
@@ -2441,7 +2441,7 @@ algorithm
           then BaseHashTable.get(cstate1, inA)
             else MODE(ComponentReference.crefLastIdent(cstate1), true, HashSet.emptyHashSet(),
                       BackendEquation.emptyEqns(), BackendEquation.emptyEqns(), {}, {}, {});
-        MODE(name1,isInitial1,edges1,eqs1,outgoing1,os1,ol1,ps1) = mode1;
+        MODE(name1,_,edges1,eqs1,outgoing1,os1,ol1,ps1) = mode1;
         mode1 = MODE(name1,true,edges1,eqs1,outgoing1,os1,ol1,ps1);
         modes = BaseHashTable.add((cstate1, mode1), inA);
       then modes;

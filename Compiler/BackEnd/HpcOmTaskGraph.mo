@@ -4640,7 +4640,7 @@ algorithm
         costs = offset + 12*numAdds + 32*numMul + 37*numDiv + 236*numTrig + 2*numRel + 4*numLog + 110*numOth + 375*numFuncs;
      then (ops,intReal(costs));
 
-    case(BackendDAE.SYSTEM(allOperations=_,size=size,density=dens))// density is in procent
+    case(BackendDAE.SYSTEM(size=size,density=dens))// density is in procent
       equation
         allOpCosts = realMul(0.049, realPow(realMul(intReal(size),(realAdd(1.0,realMul(dens,19.0)))),3.0));
       then (1, allOpCosts);
@@ -6074,7 +6074,7 @@ algorithm
       array<ComponentInfo> compInformations1, compInformations2;
   case(_,_,_)
     equation
-      BackendDAE.DAE(eqs = systs, shared = shared) = dae;
+      BackendDAE.DAE(eqs = _, shared = shared) = dae;
       remEqs = BackendDAEUtil.collapseRemovedEqs(dae);
       TASKGRAPHMETA(varCompMapping=varCompMap) = graphDataIn;
       eqLst = BackendEquation.equationList(remEqs);

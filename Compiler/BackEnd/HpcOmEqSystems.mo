@@ -1043,7 +1043,7 @@ algorithm
         vars = BackendVariable.listVar1(inVars);
         eqArr = BackendEquation.listEquation(inEqs);
         sysTmp = BackendDAEUtil.createEqSystem(vars, eqArr);
-        (sysTmp,m,mt) = BackendDAEUtil.getIncidenceMatrix(sysTmp,BackendDAE.NORMAL(),NONE());
+        (sysTmp,m,_) = BackendDAEUtil.getIncidenceMatrix(sysTmp,BackendDAE.NORMAL(),NONE());
         nVars = listLength(inVars);
         nEqs = listLength(inEqs);
         ass1 = arrayCreate(nVars, -1);
