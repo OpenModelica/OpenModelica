@@ -1920,7 +1920,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -2019,7 +2019,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -2118,7 +2118,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -2217,7 +2217,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -2316,7 +2316,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -2415,7 +2415,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -2514,7 +2514,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -2613,7 +2613,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -2712,7 +2712,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -2811,7 +2811,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -2910,7 +2910,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -3009,7 +3009,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -3108,7 +3108,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -3207,7 +3207,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -3306,7 +3306,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
 // 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
 //
 //
 // Simple Equations (0, 0)

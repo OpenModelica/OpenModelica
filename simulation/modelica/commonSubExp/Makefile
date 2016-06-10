@@ -3,8 +3,8 @@ TEST = ../../../rtest -v
 TESTFILES = \
 cse1.mos \
 cse2.mos \
+cse2_comSubExp.mos \
 cse3.mos \
-cseFunctionCall.mos \
 cseFunctionCall1.mos \
 cseFunctionCall2.mos \
 cseFunctionCall3.mos \

@@ -66,9 +66,9 @@ simulate(dynamicTearing2); getErrorString();
 // 	simJac:
 //
 // 	Jacobian idx: 1
-// 	29: $cse4=cos(time)[Real ]
+// 	29: $cse6=sin(time)[Real ]
 // 	30: $cse5=sin(2.0 * time)[Real ]
-// 	31: $cse6=sin(time)[Real ]
+// 	31: $cse4=cos(time)[Real ]
 // 	32: x5.$pDERLSJac1.dummyVarLSJac1=(-x6SeedLSJac1) - 0.5 * $cse5 * x7SeedLSJac1[Real ]
 // 	33: $res2.$pDERLSJac1.dummyVarLSJac1=$cse6 * x4SeedLSJac1 + 5.0 * x5.$pDERLSJac1.dummyVarLSJac1 - x6SeedLSJac1[Real ]
 // 	34: x8.$pDERLSJac1.dummyVarLSJac1=(-x7SeedLSJac1) / -7.0[Real ]
@@ -92,9 +92,9 @@ simulate(dynamicTearing2); getErrorString();
 // 	simJac:
 //
 // 	Jacobian idx: 2
-// 	48: $cse7=sin(time)[Real ]
+// 	48: $cse9=sin(2.0 * time)[Real ]
 // 	49: $cse8=cos(time)[Real ]
-// 	50: $cse9=sin(2.0 * time)[Real ]
+// 	50: $cse7=sin(time)[Real ]
 // 	51: x3.$pDERLSJac2.dummyVarLSJac2=DIVISION(x2SeedLSJac2, $cse7)[Real ]
 // 	52: x4.$pDERLSJac2.dummyVarLSJac2=0.25 * (-$cse8) * x2SeedLSJac2 - -0.5 * x3.$pDERLSJac2.dummyVarLSJac2[Real ]
 // 	53: x5.$pDERLSJac2.dummyVarLSJac2=DIVISION(-2.0 * x4.$pDERLSJac2.dummyVarLSJac2 + x3.$pDERLSJac2.dummyVarLSJac2, $cse8)[Real ]
@@ -136,9 +136,9 @@ simulate(dynamicTearing2); getErrorString();
 // 	simJac:
 //
 // 	Jacobian idx: -1
-// 	29: $cse4=cos(time)[Real ]
+// 	29: $cse6=sin(time)[Real ]
 // 	30: $cse5=sin(2.0 * time)[Real ]
-// 	31: $cse6=sin(time)[Real ]
+// 	31: $cse4=cos(time)[Real ]
 // 	32: x5.$pDERLSJac1.dummyVarLSJac1=(-x6SeedLSJac1) - 0.5 * $cse5 * x7SeedLSJac1[Real ]
 // 	33: $res2.$pDERLSJac1.dummyVarLSJac1=$cse6 * x4SeedLSJac1 + 5.0 * x5.$pDERLSJac1.dummyVarLSJac1 - x6SeedLSJac1[Real ]
 // 	34: x8.$pDERLSJac1.dummyVarLSJac1=(-x7SeedLSJac1) / -7.0[Real ]
@@ -162,9 +162,9 @@ simulate(dynamicTearing2); getErrorString();
 // 	simJac:
 //
 // 	Jacobian idx: -1
-// 	48: $cse7=sin(time)[Real ]
+// 	48: $cse9=sin(2.0 * time)[Real ]
 // 	49: $cse8=cos(time)[Real ]
-// 	50: $cse9=sin(2.0 * time)[Real ]
+// 	50: $cse7=sin(time)[Real ]
 // 	51: x3.$pDERLSJac2.dummyVarLSJac2=DIVISION(x2SeedLSJac2, $cse7)[Real ]
 // 	52: x4.$pDERLSJac2.dummyVarLSJac2=0.25 * (-$cse8) * x2SeedLSJac2 - -0.5 * x3.$pDERLSJac2.dummyVarLSJac2[Real ]
 // 	53: x5.$pDERLSJac2.dummyVarLSJac2=DIVISION(-2.0 * x4.$pDERLSJac2.dummyVarLSJac2 + x3.$pDERLSJac2.dummyVarLSJac2, $cse8)[Real ]
@@ -201,9 +201,9 @@ simulate(dynamicTearing2); getErrorString();
 // 	6: sin(time) + x2 + x1 (RESIDUAL)
 // 	5: x7 - x8 + cos(time) * x6 (RESIDUAL)
 // 	Jacobian idx: 0
-// 	9: $cse1=cos(time)[Real ]
+// 	9: $cse3=sin(2.0 * time)[Real ]
 // 	10: $cse2=sin(time)[Real ]
-// 	11: $cse3=sin(2.0 * time)[Real ]
+// 	11: $cse1=cos(time)[Real ]
 // 	12: x8.$pDERLSJac0.dummyVarLSJac0=(-x7SeedLSJac0) / -7.0[Real ]
 // 	13: x5.$pDERLSJac0.dummyVarLSJac0=(-x6SeedLSJac0) - 0.5 * $cse3 * x7SeedLSJac0[Real ]
 // 	14: x3.$pDERLSJac0.dummyVarLSJac0=$cse1 * x5.$pDERLSJac0.dummyVarLSJac0 - -2.0 * x4SeedLSJac0[Real ]
@@ -256,9 +256,9 @@ simulate(dynamicTearing2); getErrorString();
 // jacobianMatrices: 
 // ========================================
 // 	Jacobian idx: 2
-// 	48: $cse7=sin(time)[Real ]
+// 	48: $cse9=sin(2.0 * time)[Real ]
 // 	49: $cse8=cos(time)[Real ]
-// 	50: $cse9=sin(2.0 * time)[Real ]
+// 	50: $cse7=sin(time)[Real ]
 // 	51: x3.$pDERLSJac2.dummyVarLSJac2=DIVISION(x2SeedLSJac2, $cse7)[Real ]
 // 	52: x4.$pDERLSJac2.dummyVarLSJac2=0.25 * (-$cse8) * x2SeedLSJac2 - -0.5 * x3.$pDERLSJac2.dummyVarLSJac2[Real ]
 // 	53: x5.$pDERLSJac2.dummyVarLSJac2=DIVISION(-2.0 * x4.$pDERLSJac2.dummyVarLSJac2 + x3.$pDERLSJac2.dummyVarLSJac2, $cse8)[Real ]
@@ -268,9 +268,9 @@ simulate(dynamicTearing2); getErrorString();
 // 	57: $res1.$pDERLSJac2.dummyVarLSJac2=x7.$pDERLSJac2.dummyVarLSJac2 + -7.0 * x8.$pDERLSJac2.dummyVarLSJac2[Real ]
 // 	
 // 	Jacobian idx: 1
-// 	29: $cse4=cos(time)[Real ]
+// 	29: $cse6=sin(time)[Real ]
 // 	30: $cse5=sin(2.0 * time)[Real ]
-// 	31: $cse6=sin(time)[Real ]
+// 	31: $cse4=cos(time)[Real ]
 // 	32: x5.$pDERLSJac1.dummyVarLSJac1=(-x6SeedLSJac1) - 0.5 * $cse5 * x7SeedLSJac1[Real ]
 // 	33: $res2.$pDERLSJac1.dummyVarLSJac1=$cse6 * x4SeedLSJac1 + 5.0 * x5.$pDERLSJac1.dummyVarLSJac1 - x6SeedLSJac1[Real ]
 // 	34: x8.$pDERLSJac1.dummyVarLSJac1=(-x7SeedLSJac1) / -7.0[Real ]
@@ -280,9 +280,9 @@ simulate(dynamicTearing2); getErrorString();
 // 	38: $res4.$pDERLSJac1.dummyVarLSJac1=x3.$pDERLSJac1.dummyVarLSJac1 + -2.0 * x4SeedLSJac1 - $cse4 * x5.$pDERLSJac1.dummyVarLSJac1[Real ]
 // 	
 // 	Jacobian idx: 0
-// 	9: $cse1=cos(time)[Real ]
+// 	9: $cse3=sin(2.0 * time)[Real ]
 // 	10: $cse2=sin(time)[Real ]
-// 	11: $cse3=sin(2.0 * time)[Real ]
+// 	11: $cse1=cos(time)[Real ]
 // 	12: x8.$pDERLSJac0.dummyVarLSJac0=(-x7SeedLSJac0) / -7.0[Real ]
 // 	13: x5.$pDERLSJac0.dummyVarLSJac0=(-x6SeedLSJac0) - 0.5 * $cse3 * x7SeedLSJac0[Real ]
 // 	14: x3.$pDERLSJac0.dummyVarLSJac0=$cse1 * x5.$pDERLSJac0.dummyVarLSJac0 - -2.0 * x4SeedLSJac0[Real ]

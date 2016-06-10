@@ -44,25 +44,28 @@ simulate(CSE.FunctionCallTest1); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (6)
+// ########### Updated Variable List (simulation) ########### (5)
 // ========================================
 // 1: z:STATE(1)()  type: Real 
 // 2: y:STATE(1)()  type: Real 
 // 3: x:VARIABLE()  type: Real 
-// 4: $cse3:VARIABLE()  type: Real  unreplaceable
-// 5: $cse2:VARIABLE()  type: Real  unreplaceable
-// 6: $cse1:VARIABLE()  type: Real  unreplaceable
+// 4: $cse2:VARIABLE()  type: Real  unreplaceable
+// 5: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (6, 6)
+// ########### Updated Equation List (simulation) ########### (5, 5)
 // ========================================
-// 1/1 (1): x = $cse2   [dynamic]
-// 2/2 (1): der(y) = $cse3   [dynamic]
-// 3/3 (1): der(z) = $cse3   [dynamic]
-// 4/4 (1): $cse3 = CSE.functions.f1(time, x)   [binding]
-// 5/5 (1): $cse2 = sin(time * $cse1)   [binding]
-// 6/6 (1): $cse1 = cos(time)   [binding]
+// 1/1 (1): der(y) = $cse2   [dynamic]
+// 2/2 (1): der(z) = $cse2   [dynamic]
+// 3/3 (1): x = sin(time * $cse1)   [unknown]
+// 4/4 (1): $cse1 = cos(time)   [unknown]
+// 5/5 (1): $cse2 = CSE.functions.f1(time, x)   [unknown]
 //
+// cse replacements (3/45)
+// ========================================
+// 1: x - sin(time * $cse1) - {}
+// 2: $cse1 - cos(time) - {}
+// 3: $cse2 - CSE.functions.f1(time, x) - {}
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

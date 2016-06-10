@@ -81,10 +81,14 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 // ========================================
 // 1/1 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = C * $DER.u2.$pDERLSJac0.dummyVarLSJac0 - i.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 // 2/2 (1): i.$pDERLSJac0.dummyVarLSJac0 = C * $DER_u1SeedLSJac0   [dynamic]
-// 3/3 (1): 0.0 = $cse2 * $DER_u1SeedLSJac0 + $DER.u2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
-// 4/4 (1): $cse2 = CSE.FunctionCallTest8.f(time, $cse1)   [binding]
-// 5/5 (1): $cse1 = CSE.FunctionCallTest8.g(time ^ 2.0)   [binding]
+// 3/3 (1): 0.0 = $cse1 * $DER_u1SeedLSJac0 + $DER.u2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 4/4 (1): $cse1 = CSE.FunctionCallTest8.f(time, $cse2)   [unknown]
+// 5/5 (1): $cse2 = CSE.FunctionCallTest8.g(time ^ 2.0)   [unknown]
 //
+// cse replacements (2/45)
+// ========================================
+// 1: $cse1 - CSE.FunctionCallTest8.f(time, $cse2) - {}
+// 2: $cse2 - CSE.FunctionCallTest8.g(time ^ 2.0) - {}
 //
 // ########### Updated Variable List (simulation) ########### (7)
 // ========================================
@@ -99,14 +103,19 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 //
 // ########### Updated Equation List (simulation) ########### (7, 7)
 // ========================================
-// 1/1 (1): 0.0 = $cse4 * der(u1) + $cse5 * u1 + $DER.u2   [dynamic]
+// 1/1 (1): 0.0 = $cse3 * der(u1) + $cse5 * u1 + $DER.u2   [dynamic]
 // 2/2 (1): i = C * $DER.u2   [dynamic]
 // 3/3 (1): i = C * der(u1)   [dynamic]
-// 4/4 (1): 10.0 = $cse4 * u1 + u2   [dynamic]
-// 5/5 (1): $cse5 = CSE.FunctionCallTest8.f_der(time, $cse3, 1.0)   [binding]
-// 6/6 (1): $cse4 = CSE.FunctionCallTest8.f(time, $cse3)   [binding]
-// 7/7 (1): $cse3 = CSE.FunctionCallTest8.g(time ^ 2.0)   [binding]
+// 4/4 (1): 10.0 = $cse3 * u1 + u2   [dynamic]
+// 5/5 (1): $cse3 = CSE.FunctionCallTest8.f(time, $cse4)   [unknown]
+// 6/6 (1): $cse4 = CSE.FunctionCallTest8.g(time ^ 2.0)   [unknown]
+// 7/7 (1): $cse5 = CSE.FunctionCallTest8.f_der(time, $cse4, 1.0)   [unknown]
 //
+// cse replacements (3/46)
+// ========================================
+// 1: $cse3 - CSE.FunctionCallTest8.f(time, $cse4) - {}
+// 2: $cse4 - CSE.FunctionCallTest8.g(time ^ 2.0) - {}
+// 3: $cse5 - CSE.FunctionCallTest8.f_der(time, $cse4, 1.0) - {}
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest8_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
