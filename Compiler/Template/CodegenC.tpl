@@ -939,6 +939,8 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
 
     #define prefixedName_performQSSSimulation <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>
     #include <simulation/solver/perform_qss_simulation.c>
+
+    int <%symbolName(modelNamePrefixStr,"functionLocalKnownVars")%>(DATA*, threadData_t*);
     >>
     %>
 
