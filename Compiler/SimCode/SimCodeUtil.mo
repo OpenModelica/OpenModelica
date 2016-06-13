@@ -12229,7 +12229,7 @@ algorithm
 
     //TODO: create DiscreteStates with dependencies, like derivatives
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
-    discreteStates := List.map(clockedStates, createFmiUnknownFromSimVar);
+    discreteStates := List.map1(clockedStates, createFmiUnknownFromSimVar, 2*listLength(derivatives)+1);
 
     //print("-- finished createFMIModelStructure\n");
     outFmiModelStructure :=
@@ -12259,9 +12259,10 @@ end isClockedStateSimVar;
 protected function createFmiUnknownFromSimVar
 "create a basic FMIUNKNOWN without dependencies from a SimVar"
   input SimCodeVar.SimVar var;
+  input Integer indexOffset;
   output SimCode.FmiUnknown unknown;
 algorithm
-  unknown := SimCode.FMIUNKNOWN(var.index + 1, {}, {});
+  unknown := SimCode.FMIUNKNOWN(var.index + indexOffset, {}, {});
 end createFmiUnknownFromSimVar;
 
 protected function translateSparsePatterInts2FMIUnknown
