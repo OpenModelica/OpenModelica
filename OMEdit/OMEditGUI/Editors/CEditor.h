@@ -28,10 +28,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef CEDITOR_H
@@ -40,12 +37,17 @@
 #include "MainWindow.h"
 
 class MainWindow;
+class ModelWidget;
 
 class CEditor : public BaseEditor
 {
   Q_OBJECT
 public:
+  CEditor(ModelWidget *pModelWidget);
   CEditor(MainWindow *pMainWindow);
+  void setPlainText(const QString &text);
+private:
+  bool mForceSetPlainText;
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:
@@ -53,16 +55,18 @@ public slots:
   virtual void toggleCommentSelection() {}
 };
 
+class CEditorPage;
 class CHighlighter : public QSyntaxHighlighter
 {
   Q_OBJECT
 public:
-  CHighlighter(QPlainTextEdit *pPlainTextEdit = 0);
+  CHighlighter(CEditorPage *pCEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
   void initializeSettings();
   void highlightMultiLine(const QString &text);
 protected:
   virtual void highlightBlock(const QString &text);
 private:
+  CEditorPage *mpCEditorPage;
   QPlainTextEdit *mpPlainTextEdit;
   struct HighlightingRule
   {
@@ -73,11 +77,12 @@ private:
   QTextCharFormat mTextFormat;
   QTextCharFormat mKeywordFormat;
   QTextCharFormat mTypeFormat;
-  QTextCharFormat mFunctionFormat;
   QTextCharFormat mQuotationFormat;
   QTextCharFormat mSingleLineCommentFormat;
   QTextCharFormat mMultiLineCommentFormat;
   QTextCharFormat mNumberFormat;
+public slots:
+  void settingsChanged();
 };
 
 #endif // CEDITOR_H

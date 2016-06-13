@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef MAINWINDOW_H
@@ -260,6 +257,7 @@ private:
   QAction *mpNewMetaModelFileAction;
   QAction *mpOpenMetaModelFileAction;
   QAction *mpLoadExternModelAction;
+  QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
@@ -373,6 +371,7 @@ public slots:
   void createNewMetaModelFile();
   void openMetaModelFile();
   void loadExternalModels();
+  void openDirectory();
   void loadSystemLibrary();
   void readOutputFile(qint64 bytes);
   void readErrorFile(qint64 bytes);

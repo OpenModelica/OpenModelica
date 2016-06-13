@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include <QNetworkRequest>
@@ -51,7 +48,7 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
   setObjectName("DocumentationWidget");
   setMinimumWidth(175);
   mpMainWindow = pParent;
-  mDocumentationFile.setFileName(OpenModelica::tempDirectory() + "/DocumentationWidget.html");
+  mDocumentationFile.setFileName(Utilities::tempDirectory() + "/DocumentationWidget.html");
   // create previous and next buttons for documentation navigation
   // create the previous button
   mpPreviousToolButton = new QToolButton;

@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "LineAnnotation.h"
@@ -1172,6 +1169,7 @@ ExpandableConnectorTreeView::ExpandableConnectorTreeView(CreateConnectionDialog 
   setItemDelegate(new ItemDelegate(this));
   setTextElideMode(Qt::ElideMiddle);
   setIndentation(Helper::treeIndentation);
+  setUniformRowHeights(true);
 }
 
 /*!

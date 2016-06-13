@@ -28,10 +28,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "StackFramesWidget.h"
@@ -67,20 +64,20 @@ void StackFrameItem::filterStackFrame()
   OptionsDialog *pOptionsDialog = mpStackFramesTreeWidget->getStackFramesWidget()->getMainWindow()->getOptionsDialog();
   /* If file is not readable then disable the frame. */
   QFileInfo fileInfo(getFileName());
-  if (StringHandler::isCFile(fileInfo.suffix()) || !fileInfo.isReadable()) {
+  if (Utilities::isCFile(fileInfo.suffix()) || !fileInfo.isReadable()) {
     setDisabled(true);
   } else {
     setDisabled(false);
   }
   /* check display of C Frames */
   if (!pOptionsDialog->getDebuggerPage()->getDisplayCFramesCheckBox()->isChecked()) {
-    if (StringHandler::isCFile(fileInfo.suffix())) {
+    if (Utilities::isCFile(fileInfo.suffix())) {
       setHidden(true);
       return;
     }
   }
   if (!pOptionsDialog->getDebuggerPage()->getDisplayUnknownFramesCheckBox()->isChecked()) {
-    if (!(StringHandler::isModelicaFile(fileInfo.suffix()) && StringHandler::isCFile(fileInfo.suffix()))) {
+    if (!(Utilities::isModelicaFile(fileInfo.suffix()) && Utilities::isCFile(fileInfo.suffix()))) {
       setHidden(true);
     }
   }
@@ -108,7 +105,7 @@ QString StackFrameItem::cleanupFunction(const QString &function)
 {
   QString cleanFunction = function;
   QFileInfo fileInfo(getFileName());
-  if (StringHandler::isModelicaFile(fileInfo.suffix())) {
+  if (Utilities::isModelicaFile(fileInfo.suffix())) {
     /* if the function name starts with omc_ then remove the first 4 characters. */
     if (function.startsWith("omc_")) {
       cleanFunction = function.mid(4);

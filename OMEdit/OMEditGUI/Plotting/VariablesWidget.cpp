@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "VariablesWidget.h"
@@ -767,6 +764,7 @@ VariablesTreeView::VariablesTreeView(VariablesWidget *pVariablesWidget)
   setContextMenuPolicy(Qt::CustomContextMenu);
   setExpandsOnDoubleClick(false);
   setEditTriggers(QAbstractItemView::AllEditTriggers);
+  setUniformRowHeights(true);
 }
 
 /*!

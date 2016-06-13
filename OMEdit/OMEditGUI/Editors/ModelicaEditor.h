@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef MODELICAEDITOR_H
@@ -95,11 +92,11 @@ public slots:
 };
 
 class ModelicaEditorPage;
-class ModelicaTextHighlighter : public QSyntaxHighlighter
+class ModelicaHighlighter : public QSyntaxHighlighter
 {
   Q_OBJECT
 public:
-  ModelicaTextHighlighter(ModelicaEditorPage *pModelicaEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
+  ModelicaHighlighter(ModelicaEditorPage *pModelicaEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
   void initializeSettings();
   void highlightMultiLine(const QString &text);
 protected:

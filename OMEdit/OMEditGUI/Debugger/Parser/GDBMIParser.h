@@ -28,11 +28,9 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
+
 #ifndef GDBMIPARSER_H
 #define GDBMIPARSER_H
 

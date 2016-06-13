@@ -30,28 +30,21 @@
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
+#include "MetaModelicaEditor.h"
 
-#include "CEditor.h"
-
-CEditor::CEditor(ModelWidget *pModelWidget)
+MetaModelicaEditor::MetaModelicaEditor(ModelWidget *pModelWidget)
   : BaseEditor(pModelWidget)
 {
 
 }
 
-CEditor::CEditor(MainWindow *pMainWindow)
-  : BaseEditor(pMainWindow)
-{
-
-}
-
 /*!
- * \brief CEditor::setPlainText
+ * \brief MetaModelicaEditor::setPlainText
  * Reimplementation of QPlainTextEdit::setPlainText method.
  * Makes sure we dont update if the passed text is same.
  * \param text the string to set.
  */
-void CEditor::setPlainText(const QString &text)
+void MetaModelicaEditor::setPlainText(const QString &text)
 {
   if (text != mpPlainTextEdit->toPlainText()) {
     mForceSetPlainText = true;
@@ -61,18 +54,18 @@ void CEditor::setPlainText(const QString &text)
 }
 
 /*!
- * \brief CEditor::showContextMenu
+ * \brief MetaModelicaEditor::showContextMenu
  * Create a context menu.
  * \param point
  */
-void CEditor::showContextMenu(QPoint point)
+void MetaModelicaEditor::showContextMenu(QPoint point)
 {
   QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->exec(mapToGlobal(point));
   delete pMenu;
 }
 
-void CEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
+void MetaModelicaEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
 {
   Q_UNUSED(position);
   if (mpModelWidget && mpModelWidget->isVisible()) {
@@ -87,41 +80,41 @@ void CEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
 }
 
 /*!
-  * \class CHighlighter
-  * \brief A syntax highlighter for CEditor.
+  * \class MetaModelicaHighlighter
+  * \brief A syntax highlighter for MetaModelicaEditor.
  */
 /*!
- * \brief CHighlighter::CHighlighter
- * \param pCEditorPage
+ * \brief MetaModelicaHighlighter::MetaModelicaHighlighter
+ * \param pMetaModelicaEditorPage
  * \param pPlainTextEdit
  */
-CHighlighter::CHighlighter(CEditorPage *pCEditorPage, QPlainTextEdit *pPlainTextEdit)
+MetaModelicaHighlighter::MetaModelicaHighlighter(MetaModelicaEditorPage *pMetaModelicaEditorPage, QPlainTextEdit *pPlainTextEdit)
   : QSyntaxHighlighter(pPlainTextEdit->document())
 {
-  mpCEditorPage = pCEditorPage;
+  mpMetaModelicaEditorPage = pMetaModelicaEditorPage;
   mpPlainTextEdit = pPlainTextEdit;
   initializeSettings();
 }
 
 //! Initialized the syntax highlighter with default values.
-void CHighlighter::initializeSettings()
+void MetaModelicaHighlighter::initializeSettings()
 {
   QFont font;
-  font.setFamily(mpCEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(mpCEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
+  font.setFamily(mpMetaModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(mpMetaModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
   mpPlainTextEdit->document()->setDefaultFont(font);
-  mpPlainTextEdit->setTabStopWidth(mpCEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
+  mpPlainTextEdit->setTabStopWidth(mpMetaModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;
-  mTextFormat.setForeground(mpCEditorPage->getColor("Text"));
-  mKeywordFormat.setForeground(mpCEditorPage->getColor("Keyword"));
-  mTypeFormat.setForeground(mpCEditorPage->getColor("Type"));
-  mSingleLineCommentFormat.setForeground(mpCEditorPage->getColor("Comment"));
-  mMultiLineCommentFormat.setForeground(mpCEditorPage->getColor("Comment"));
-  mQuotationFormat.setForeground(QColor(mpCEditorPage->getColor("Quotes")));
+  mTextFormat.setForeground(mpMetaModelicaEditorPage->getColor("Text"));
+  mKeywordFormat.setForeground(mpMetaModelicaEditorPage->getColor("Keyword"));
+  mTypeFormat.setForeground(mpMetaModelicaEditorPage->getColor("Type"));
+  mSingleLineCommentFormat.setForeground(mpMetaModelicaEditorPage->getColor("Comment"));
+  mMultiLineCommentFormat.setForeground(mpMetaModelicaEditorPage->getColor("Comment"));
+  mQuotationFormat.setForeground(mpMetaModelicaEditorPage->getColor("Quotes"));
   // Priority: keyword > func() > ident > number. Yes, the order matters :)
-  mNumberFormat.setForeground(mpCEditorPage->getColor("Number"));
+  mNumberFormat.setForeground(mpMetaModelicaEditorPage->getColor("Number"));
   rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
   rule.mFormat = mNumberFormat;
   mHighlightingRules.append(rule);
@@ -130,35 +123,87 @@ void CHighlighter::initializeSettings()
   mHighlightingRules.append(rule);
   // keywords
   QStringList keywordPatterns;
-  keywordPatterns << "\\bauto\\b"
+  keywordPatterns << "\\balgorithm\\b"
+                  << "\\band\\b"
+                  << "\\bannotation\\b"
+                  << "\\bassert\\b"
+                  << "\\bblock\\b"
                   << "\\bbreak\\b"
-                  << "\\bcase\\b"
-                  << "\\bconst\\b"
-                  << "\\bcontinue\\b"
-                  << "\\bdefault\\b"
-                  << "\\bdo\\b"
-                  << "\\belse\\b"
-                  << "\\benum\\b"
-                  << "\\bextern\\b"
-                  << "\\bfor\\b"
-                  << "\\bgoto\\b"
-                  << "\\bif\\b"
-                  << "\\blong\\b"
-                  << "\\bregister\\b"
-                  << "\\breturn\\b"
-                  << "\\bshort\\b"
-                  << "\\bsigned\\b"
-                  << "\\bsizeof\\b"
-                  << "\\bstatic\\b"
+                  << "\\bBoolean\\b"
                   << "\\bclass\\b"
-                  << "\\bstruct\\b"
-                  << "\\bswitch\\b"
-                  << "\\btypedef\\b"
-                  << "\\bunion\\b"
-                  << "\\bunsigned\\b"
-                  << "\\bvoid\\b"
-                  << "\\bvolatile\\b"
-                  << "\\bwhile\\b";
+                  << "\\bconnect\\b"
+                  << "\\bconnector\\b"
+                  << "\\bconstant\\b"
+                  << "\\bconstrainedby\\b"
+                  << "\\bder\\b"
+                  << "\\bdiscrete\\b"
+                  << "\\beach\\b"
+                  << "\\belse\\b"
+                  << "\\belseif\\b"
+                  << "\\belsewhen\\b"
+                  << "\\bencapsulated\\b"
+                  << "\\bend\\b"
+                  << "\\benumeration\\b"
+                  << "\\bequation\\b"
+                  << "\\bexpandable\\b"
+                  << "\\bextends\\b"
+                  << "\\bexternal\\b"
+                  << "\\bfalse\\b"
+                  << "\\bfinal\\b"
+                  << "\\bflow\\b"
+                  << "\\bfor\\b"
+                  << "\\bfunction\\b"
+                  << "\\bif\\b"
+                  << "\\bimport\\b"
+                  << "\\bimpure\\b"
+                  << "\\bin\\b"
+                  << "\\binitial\\b"
+                  << "\\binner\\b"
+                  << "\\binput\\b"
+                  << "\\bloop\\b"
+                  << "\\bmodel\\b"
+                  << "\\bnot\\b"
+                  << "\\boperator\\b"
+                  << "\\bor\\b"
+                  << "\\bouter\\b"
+                  << "\\boutput\\b"
+                  << "\\boptimization\\b"
+                  << "\\bpackage\\b"
+                  << "\\bparameter\\b"
+                  << "\\bpartial\\b"
+                  << "\\bprotected\\b"
+                  << "\\bpublic\\b"
+                  << "\\bpure\\b"
+                  << "\\brecord\\b"
+                  << "\\bredeclare\\b"
+                  << "\\breplaceable\\b"
+                  << "\\breturn\\b"
+                  << "\\bstream\\b"
+                  << "\\bthen\\b"
+                  << "\\btrue\\b"
+                  << "\\btype\\b"
+                  << "\\bwhen\\b"
+                  << "\\bwhile\\b"
+                  << "\\bwithin\\b"
+                  /* MetaModelica specific keywords */
+                  << "\\bas\\b"
+                  << "\\bcase\\b"
+                  << "\\bcontinue\\b"
+                  << "\\bequality\\b"
+                  << "\\bfailure\\b"
+                  << "\\bguard\\b"
+                  << "\\blocal\\b"
+                  << "\\bmatch\\b"
+                  << "\\bmatchcontinue\\b"
+                  << "\\buniontype\\b"
+                  << "\\bsubtypeof\\b"
+                  << "\\btry\\b"
+                  << "\\bparfor\\b"
+                  << "\\bparallel\\b"
+                  << "\\bparlocal\\b"
+                  << "\\bparglobal\\b"
+                  << "\\bparkernel\\b"
+                  << "\\bthreaded\\b";
   foreach (const QString &pattern, keywordPatterns) {
     rule.mPattern = QRegExp(pattern);
     rule.mFormat = mKeywordFormat;
@@ -166,11 +211,15 @@ void CHighlighter::initializeSettings()
   }
   // Modelica types
   QStringList typePatterns;
-  typePatterns << "\\bchar\\b"
-               << "\\bdouble\\b"
-               << "\\bint\\b"
-               << "\\bdouble\\b"
-               << "\\bfloat\\b";
+  typePatterns << "\\bString\\b"
+               << "\\bInteger\\b"
+               << "\\bBoolean\\b"
+               << "\\bReal\\b"
+               << "\\bOption\\b"
+               << "\\bSOME\\b"
+               << "\\bNONE\\b"
+               << "\\blist\\b"
+               << "\\barray\\b";
   foreach (const QString &pattern, typePatterns) {
     rule.mPattern = QRegExp(pattern);
     rule.mFormat = mTypeFormat;
@@ -180,7 +229,7 @@ void CHighlighter::initializeSettings()
 
 //! Highlights the multilines text.
 //! Quoted text or multiline comments.
-void CHighlighter::highlightMultiLine(const QString &text)
+void MetaModelicaHighlighter::highlightMultiLine(const QString &text)
 {
   /* Hand-written recognizer beats the crap known as QRegEx ;) */
   int index = 0, startIndex = 0;
@@ -241,7 +290,7 @@ void CHighlighter::highlightMultiLine(const QString &text)
         }
     }
     // if no single line comment, no multi line comment and no quotes then store the parentheses
-    if (pTextBlockUserData && (blockState < 1 || blockState > 3 || mpCEditorPage->getOptionsDialog()->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox()->isChecked())) {
+    if (pTextBlockUserData && (blockState < 1 || blockState > 3 || mpMetaModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox()->isChecked())) {
       if (text[index] == '(' || text[index] == '{' || text[index] == '[') {
         parentheses.append(Parenthesis(Parenthesis::Opened, text[index], index));
       } else if (text[index] == ')' || text[index] == '}' || text[index] == ']') {
@@ -312,7 +361,7 @@ void CHighlighter::highlightMultiLine(const QString &text)
 }
 
 //! Reimplementation of QSyntaxHighlighter::highlightBlock
-void CHighlighter::highlightBlock(const QString &text)
+void MetaModelicaHighlighter::highlightBlock(const QString &text)
 {
   setCurrentBlockState(0);
   setFormat(0, text.length(), mTextFormat.foreground().color());
@@ -329,10 +378,10 @@ void CHighlighter::highlightBlock(const QString &text)
 }
 
 /*!
- * \brief CHighlighter::settingsChanged
+ * \brief MetaModelicaHighlighter::settingsChanged
  * Slot activated whenever ModelicaEditor text settings changes.
  */
-void CHighlighter::settingsChanged()
+void MetaModelicaHighlighter::settingsChanged()
 {
   initializeSettings();
   rehighlight();

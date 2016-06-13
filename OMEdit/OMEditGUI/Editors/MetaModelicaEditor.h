@@ -30,38 +30,56 @@
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
-
-#ifndef ATTACHTOPROCESSDIALOG_H
-#define ATTACHTOPROCESSDIALOG_H
+#ifndef METAMODELICAEDITOR_H
+#define METAMODELICAEDITOR_H
 
 #include "MainWindow.h"
-#include "ProcessListModel.h"
 
-class AttachToProcessDialog : public QDialog
+class ModelWidget;
+
+class MetaModelicaEditor : public BaseEditor
 {
   Q_OBJECT
 public:
-  AttachToProcessDialog(MainWindow *pMainWindow);
+  MetaModelicaEditor(ModelWidget *pModelWidget);
+  void setPlainText(const QString &text);
 private:
-  MainWindow *mpMainWindow;
-  Label *mpAttachToProcessIDLabel;
-  QLineEdit *mpAttachToProcessIDTextBox;
-  QLineEdit *mpFilterProcessesTextBox;
-  ProcessListModel *mpProcessListModel;
-  ProcessListFilterModel mProcessListFilterModel;
-  QTreeView *mpProcessesTreeView;
-  QPushButton *mpOkButton;
-  QPushButton *mpRefreshButton;
-  QPushButton *mpCancelButton;
-  QDialogButtonBox *mpButtonBox;
+  bool mForceSetPlainText;
+private slots:
+  virtual void showContextMenu(QPoint point);
 public slots:
-  void attachProcess();
-  void updateProcessList();
-  void processIDChanged(const QString &pid);
-  void setFilterString(const QString &filter);
-  void processSelected(const QModelIndex &index);
-  void processClicked(const QModelIndex &index);
-
+  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
+  virtual void toggleCommentSelection() {}
 };
 
-#endif // ATTACHTOPROCESSDIALOG_H
+class MetaModelicaEditorPage;
+class MetaModelicaHighlighter : public QSyntaxHighlighter
+{
+  Q_OBJECT
+public:
+  MetaModelicaHighlighter(MetaModelicaEditorPage *pMetaModelicaEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
+  void initializeSettings();
+  void highlightMultiLine(const QString &text);
+protected:
+  virtual void highlightBlock(const QString &text);
+private:
+  MetaModelicaEditorPage *mpMetaModelicaEditorPage;
+  QPlainTextEdit *mpPlainTextEdit;
+  struct HighlightingRule
+  {
+    QRegExp mPattern;
+    QTextCharFormat mFormat;
+  };
+  QVector<HighlightingRule> mHighlightingRules;
+  QTextCharFormat mTextFormat;
+  QTextCharFormat mKeywordFormat;
+  QTextCharFormat mTypeFormat;
+  QTextCharFormat mQuotationFormat;
+  QTextCharFormat mSingleLineCommentFormat;
+  QTextCharFormat mMultiLineCommentFormat;
+  QTextCharFormat mNumberFormat;
+public slots:
+  void settingsChanged();
+};
+
+#endif // METAMODELICAEDITOR_H

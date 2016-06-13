@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "ComponentProperties.h"
@@ -268,7 +265,7 @@ QString Parameter::getModifierValueFromDerivedClass(Component *pComponent, QStri
   MainWindow *pMainWindow = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   OMCProxy *pOMCProxy = pMainWindow->getOMCProxy();
   if (!pComponent->getLibraryTreeItem()->getModelWidget()) {
-    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pComponent->getLibraryTreeItem(), "", false);
+    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pComponent->getLibraryTreeItem(), false);
   }
   foreach (Component *pInheritedComponent, pComponent->getInheritedComponentsList()) {
     if (!pOMCProxy->isBuiltinType(pInheritedComponent->getComponentInfo()->getClassName())) {

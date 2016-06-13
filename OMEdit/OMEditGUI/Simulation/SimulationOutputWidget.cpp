@@ -28,10 +28,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "SimulationOutputWidget.h"
@@ -320,9 +317,9 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
   if (file.exists()) {
     file.open(QIODevice::ReadOnly);
     BaseEditor *pEditor;
-    if (StringHandler::isCFile(fileInfo.suffix())) {
+    if (Utilities::isCFile(fileInfo.suffix())) {
       pEditor = new CEditor(mpMainWindow);
-      CHighlighter *pCHighlighter = new CHighlighter(pEditor->getPlainTextEdit());
+      CHighlighter *pCHighlighter = new CHighlighter(mpMainWindow->getOptionsDialog()->getCEditorPage(), pEditor->getPlainTextEdit());
       Q_UNUSED(pCHighlighter);
     } else {
       pEditor = new TextEditor(mpMainWindow);

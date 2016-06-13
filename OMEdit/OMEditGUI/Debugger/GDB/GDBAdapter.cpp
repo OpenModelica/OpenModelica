@@ -28,10 +28,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "GDBAdapter.h"
@@ -745,11 +742,15 @@ void GDBAdapter::createFullBacktraceCB(GDBMIResultRecord *pGDBMIResultRecord)
 {
   QString backtrace = QString(pGDBMIResultRecord->consoleStreamOutput.c_str()) + QString(pGDBMIResultRecord->logStreamOutput.c_str());
   LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
-  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text,
-                                                                               pLibraryTreeModel->getUniqueTopLevelItemName("Backtrace"), false);
-  if (pLibraryTreeItem) {
-    pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-    pLibraryTreeModel->showModelWidget(pLibraryTreeItem, backtrace);
+  QFileInfo fileInfo(QString("%1/backtrace%2.txt").arg(Utilities::tempDirectory())
+                     .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz")));
+  if (mpMainWindow->getLibraryWidget()->saveFile(fileInfo.absoluteFilePath(), backtrace)) {
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(),
+                                                                                 fileInfo.absoluteFilePath(), fileInfo.absoluteFilePath(),
+                                                                                 true, pLibraryTreeModel->getRootLibraryTreeItem());
+    if (pLibraryTreeItem) {
+      pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+    }
   }
 }
 
@@ -863,7 +864,7 @@ void GDBAdapter::handleGDBProcessStartedHelper()
 {
   setGDBRunning(true);
   /* create the tmp path */
-  QString& tmpPath = OpenModelica::tempDirectory();
+  QString& tmpPath = Utilities::tempDirectory();
   /* create a file to write debugger response log */
   mDebuggerLogFile.setFileName(QString("%1omeditdebugger.log").arg(tmpPath));
   if (mDebuggerLogFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -1162,7 +1163,7 @@ bool GDBAdapter::skipSteppedInFrames(GDBMIResultRecord *pGDBMIResultRecord)
     GDBMIResultList resultsList = pGDBMIResult->miValue->miTuple->miResultsList;
     QString file = getGDBMIConstantValue(getGDBMIResult("file", resultsList));
     QFileInfo fileInfo(file);
-    if (!StringHandler::isModelicaFile(fileInfo.suffix())) {
+    if (!Utilities::isModelicaFile(fileInfo.suffix())) {
       enableCatchOMCBreakpoint();
       if (getExecuteCommand() == GDBAdapter::ExecNext) {
         postCommand(CommandFactory::execNext(), GDBAdapter::SilentCommand);

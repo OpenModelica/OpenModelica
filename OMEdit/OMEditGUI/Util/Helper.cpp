@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "Helper.h"
@@ -644,35 +641,3 @@ QString GUIMessages::getMessage(int type)
       return "";
   }
 }
-
-QString& OpenModelica::tempDirectory()
-{
-  static int init = 0;
-  static QString tmpPath;
-  if (!init) {
-    init = 1;
-#ifdef WIN32
-    tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
-#else // UNIX environment
-    char *user = getenv("USER");
-    tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user ? user : "nobody") + "/OMEdit/";
-#endif
-    tmpPath.remove("\"");
-    if (!QDir().exists(tmpPath))
-      QDir().mkpath(tmpPath);
-  }
-  return tmpPath;
-}
-
-QSettings* OpenModelica::getApplicationSettings()
-{
-  static int init = 0;
-  static QSettings *pSettings;
-  if (!init) {
-    init = 1;
-    pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-    pSettings->setIniCodec(Helper::utf8.toStdString().data());
-  }
-  return pSettings;
-}
-

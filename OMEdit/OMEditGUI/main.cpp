@@ -29,49 +29,22 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 /*!
-  \mainpage OMEdit - OpenModelica Connection Editor Documentation
-  Source code documentation. Provides brief information about the classes used.
-
-  \section contributors_section Contributors
-  \subsection year_2015_subsection 2015
-  - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
-  - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
-  - Alachew Shitahun - <a href="mailto:alachew.mengist@liu.se">alachew.mengist@liu.se</a>
-
-  \subsection year_2014_subsection 2014
-  - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
-  - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
-  - Alachew Shitahun - <a href="mailto:alachew.mengist@liu.se">alachew.mengist@liu.se</a>
-  - Jan Kokert - <a href="mailto:jan.kokert@imtek.uni-freiburg.de">jan.kokert@imtek.uni-freiburg.de</a>
-
-  \subsection year_2013_subsection 2013
-  - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
-  - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
-  - Dr. Henning Kiel
-  - Alachew Shitahun
-
-  \subsection year_2012_subsection 2012
-  - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
-  - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
-  - Dr. Henning Kiel
-
-  \subsection year_2011_subsection 2011
-  - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
-  - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
-  - Haris Kapidzic
-  - Abhinn Kothari
-
-  \subsection year_2010_subsection 2010
-  - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
-  - Sonia Tariq
-  */
+ * \mainpage OMEdit - OpenModelica Connection Editor Documentation
+ * Source code documentation. Provides brief information about the classes used.
+ * \section contributors_section Contributors
+ * - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
+ * - Sonia Tariq
+ * - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
+ * - Alachew Shitahun - <a href="mailto:alachew.mengist@liu.se">alachew.mengist@liu.se</a>
+ * - Jan Kokert - <a href="mailto:jan.kokert@imtek.uni-freiburg.de">jan.kokert@imtek.uni-freiburg.de</a>
+ * - Dr. Henning Kiel
+ * - Haris Kapidzic
+ * - Abhinn Kothari
+ */
 
 #include "MainWindow.h"
 #include "Helper.h"
@@ -133,7 +106,7 @@ void signalHandler(int signum)
   }
   // Dump a stack trace to a file.
   QFile stackTraceFile;
-  QString& tmpPath = OpenModelica::tempDirectory();
+  QString& tmpPath = Utilities::tempDirectory();
   stackTraceFile.setFileName(QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName));
   if (stackTraceFile.open(QIODevice::WriteOnly | QIODevice::Text))
   {
@@ -180,7 +153,7 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
   }
   // Dump a stack trace to a file.
   QFile stackTraceFile;
-  stackTraceFile.setFileName(QString("%1/openmodelica.stacktrace.%2").arg(OpenModelica::tempDirectory()).arg(Helper::OMCServerName));
+  stackTraceFile.setFileName(QString("%1/openmodelica.stacktrace.%2").arg(Utilities::tempDirectory()).arg(Helper::OMCServerName));
   if (stackTraceFile.open(QIODevice::WriteOnly | QIODevice::Text))
   {
     QTextStream out(&stackTraceFile);
@@ -256,7 +229,7 @@ int main(int argc, char *argv[])
 #else /* unix */
   omhome = omhome ? omhome : CONFIG_DEFAULT_OPENMODELICAHOME;
 #endif
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
   QString locale = settingsLocale.name().isEmpty() ? QLocale::system().name() : settingsLocale.name();

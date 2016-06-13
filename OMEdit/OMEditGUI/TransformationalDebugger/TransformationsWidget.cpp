@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "TransformationsWidget.h"
@@ -411,6 +408,7 @@ TVariablesTreeView::TVariablesTreeView(TransformationsWidget *pTransformationsWi
   setSortingEnabled(true);
   sortByColumn(0, Qt::AscendingOrder);
   setExpandsOnDoubleClick(false);
+  setUniformRowHeights(true);
 }
 
 EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWidget)
@@ -606,9 +604,9 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, MainW
   mpTSourceEditorInfoBar = new InfoBar(this);
   mpTSourceEditorInfoBar->hide();
   mpTransformationsEditor = new TransformationsEditor(this);
-  ModelicaTextHighlighter *pModelicaTextHighlighter;
-  pModelicaTextHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaEditorPage(),
-                                                         mpTransformationsEditor->getPlainTextEdit());
+  ModelicaHighlighter *pModelicaTextHighlighter;
+  pModelicaTextHighlighter = new ModelicaHighlighter(mpMainWindow->getOptionsDialog()->getModelicaEditorPage(),
+                                                     mpTransformationsEditor->getPlainTextEdit());
   connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   QVBoxLayout *pTSourceEditorVerticalLayout = new QVBoxLayout;
   pTSourceEditorVerticalLayout->setSpacing(1);
@@ -715,7 +713,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, MainW
   pMainLayout->addWidget(mpTransformationsHorizontalSplitter, 1, 0);
   setLayout(pMainLayout);
   /* restore the TransformationsWidget geometry and splitters state. */
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     pSettings->beginGroup("transformationalDebugger");

@@ -28,10 +28,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "BaseEditor.h"
@@ -1588,7 +1585,7 @@ void BaseEditor::showFindReplaceWidget()
  */
 void BaseEditor::clearFindReplaceTexts()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->remove("FindReplaceDialog/textsToFind");
 }
 
@@ -1747,7 +1744,7 @@ void FindReplaceWidget::show()
  */
 void FindReplaceWidget::readFindTextFromSettings()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   mpFindComboBox->clear();
   QList<QVariant> findTexts = pSettings->value("FindReplaceDialog/textsToFind").toList();
   int numFindTexts = qMin(findTexts.size(), (int)MaxFindTexts);
@@ -1764,7 +1761,7 @@ void FindReplaceWidget::readFindTextFromSettings()
  */
 void FindReplaceWidget::saveFindTextToSettings(QString textToFind)
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> texts = pSettings->value("FindReplaceDialog/textsToFind").toList();
   // remove the already present text from the list.
   foreach (QVariant text, texts) {

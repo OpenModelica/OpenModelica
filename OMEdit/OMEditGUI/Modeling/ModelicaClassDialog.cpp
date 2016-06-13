@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include <limits>
@@ -355,7 +352,7 @@ void ModelicaClassDialog::createModelicaClass()
   pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
   pLibraryTreeItem->setExpanded(true);
   // show the ModelWidget
-  pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true);
+  pLibraryTreeModel->showModelWidget(pLibraryTreeItem, true);
   if (pLibraryTreeItem->getModelWidget()) {
     pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->addClassAnnotation(false);
     pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->addClassAnnotation(false);
@@ -927,8 +924,8 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   // instantiate the model
   QPlainTextEdit *pPlainTextEdit = new QPlainTextEdit(informationText);
   if (modelicaTextHighlighter) {
-    ModelicaTextHighlighter *pModelicaHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaEditorPage(),
-                                                                                pPlainTextEdit);
+    ModelicaHighlighter *pModelicaHighlighter = new ModelicaHighlighter(mpMainWindow->getOptionsDialog()->getModelicaEditorPage(),
+                                                                        pPlainTextEdit);
     Q_UNUSED(pModelicaHighlighter);
   }
   // Create the button
@@ -946,7 +943,7 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   /* restore the window geometry. */
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
-    QSettings *pSettings = OpenModelica::getApplicationSettings();
+    QSettings *pSettings = Utilities::getApplicationSettings();
     restoreGeometry(pSettings->value("InformationDialog/geometry").toByteArray());
   }
 }
@@ -956,7 +953,7 @@ void InformationDialog::closeEvent(QCloseEvent *event)
   /* save the window geometry. */
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
-    QSettings *pSettings = OpenModelica::getApplicationSettings();
+    QSettings *pSettings = Utilities::getApplicationSettings();
     pSettings->setValue("InformationDialog/geometry", saveGeometry());
   }
   event->accept();
@@ -1387,7 +1384,7 @@ void SaveChangesDialog::listUnSavedClasses()
  */
 void SaveChangesDialog::listUnSavedClasses(LibraryTreeItem *pLibraryTreeItem)
 {
-  for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (!pChildLibraryTreeItem->isSystemLibrary()) {
       if (!pChildLibraryTreeItem->isSaved()) {
@@ -1458,7 +1455,7 @@ ExportFigaroDialog::ExportFigaroDialog(MainWindow *pMainWindow, LibraryTreeItem 
   mpFigaroModeComboBox->addItem("fault-tree", "fault-tree");
   // working directory
   mpWorkingDirectoryLabel = new Label(Helper::workingDirectory);
-  mpWorkingDirectoryTextBox = new QLineEdit(OpenModelica::tempDirectory());
+  mpWorkingDirectoryTextBox = new QLineEdit(Utilities::tempDirectory());
   mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
   connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(browseWorkingDirectory()));
   // create the export button

@@ -117,7 +117,7 @@ DebuggerConfigurationPage::DebuggerConfigurationPage(DebuggerConfiguration debug
  */
 bool DebuggerConfigurationPage::configurationExists(QString configurationKeyToCheck)
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup("debuggerConfigurationList");
   QStringList configurationKeys = pSettings->childKeys();
   pSettings->endGroup();
@@ -178,7 +178,7 @@ void DebuggerConfigurationPage::browseGDBPath()
  */
 bool DebuggerConfigurationPage::saveDebugConfiguration()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup("debuggerConfigurationList");
   // remove the configuration setting if we have changed its name. But first check if there is no configuration with the new name.
   if (mDebuggerConfiguration.name.compare(mpNameTextBox->text()) != 0) {
@@ -312,7 +312,7 @@ QString DebuggerConfigurationsDialog::getUniqueName(QString name, int number)
   QString newName;
   newName = name + QString::number(number);
 
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup("debuggerConfigurationList");
   QStringList configurationKeys = pSettings->childKeys();
   pSettings->endGroup();
@@ -332,7 +332,7 @@ QString DebuggerConfigurationsDialog::getUniqueName(QString name, int number)
 void DebuggerConfigurationsDialog::readConfigurations()
 {
   // read the settings and add configurations
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup("debuggerConfigurationList");
   QStringList configurationKeys = pSettings->childKeys();
   foreach (QString configurationKey, configurationKeys) {
@@ -376,7 +376,7 @@ bool DebuggerConfigurationsDialog::saveAllConfigurationsHelper()
  */
 void DebuggerConfigurationsDialog::newConfiguration()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   // check if maximum limit for debug configurations is reached
   pSettings->beginGroup("debuggerConfigurationList");
   QStringList configurationKeys = pSettings->childKeys();
@@ -421,7 +421,7 @@ void DebuggerConfigurationsDialog::removeConfiguration()
     return;
   }
 
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup("debuggerConfigurationList");
   QStringList configurationKeys = pSettings->childKeys();
   pSettings->endGroup();

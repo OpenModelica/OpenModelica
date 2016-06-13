@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef HELPER_H
@@ -43,7 +40,6 @@
 #include <QSize>
 #include <QObject>
 #include <QFontInfo>
-#include <QSettings>
 
 class Helper : public QObject
 {
@@ -388,10 +384,5 @@ public:
 
   static QString getMessage(int type);
 };
-
-namespace OpenModelica {
-  QString& tempDirectory();
-  QSettings* getApplicationSettings();
-}
 
 #endif // HELPER_H

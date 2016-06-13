@@ -77,6 +77,7 @@ BreakpointsTreeView::BreakpointsTreeView(BreakpointsWidget *pBreakPointsWidget)
   setIconSize(QSize(15, 15));
   setExpandsOnDoubleClick(false);
   setContextMenuPolicy(Qt::CustomContextMenu);
+  setUniformRowHeights(true);
   createActions();
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
   connect(this, SIGNAL(doubleClicked(QModelIndex)), SLOT(breakPointDoubleClicked(QModelIndex)));

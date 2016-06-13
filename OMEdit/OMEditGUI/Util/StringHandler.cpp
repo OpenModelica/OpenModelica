@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 //! @brief Contains functions used for parsing results obtained from OpenModelica Compiler.
@@ -1156,7 +1153,7 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
   QFileDialog *dialog;
   dialog = new QFileDialog(parent, caption, dir_str, filter);
   QList<QUrl> urls = dialog->sidebarUrls();
-  urls << QUrl("file://" + OpenModelica::tempDirectory());
+  urls << QUrl("file://" + Utilities::tempDirectory());
   dialog->setSidebarUrls(urls);
   dialog->setFileMode(QFileDialog::ExistingFile);
   if (dialog->exec()) {
@@ -1189,7 +1186,7 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
   QFileDialog *dialog;
   dialog = new QFileDialog(parent, caption, dir_str, filter);
   QList<QUrl> urls = dialog->sidebarUrls();
-  urls << QUrl("file://" + OpenModelica::tempDirectory());
+  urls << QUrl("file://" + Utilities::tempDirectory());
   dialog->setSidebarUrls(urls);
   dialog->setFileMode(QFileDialog::ExistingFiles);
   if (dialog->exec()) {
@@ -1364,26 +1361,6 @@ void StringHandler::fillEncodingComboBox(QComboBox *pEncodingComboBox)
 QStringList StringHandler::makeVariableParts(QString variable)
 {
   return variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), QString::SkipEmptyParts);
-}
-
-bool StringHandler::isCFile(QString extension)
-{
-  if (extension.compare("c") == 0 ||
-      extension.compare("cpp") == 0 ||
-      extension.compare("cc") == 0 ||
-      extension.compare("h") == 0 ||
-      extension.compare("hpp") == 0)
-    return true;
-  else
-    return false;
-}
-
-bool StringHandler::isModelicaFile(QString extension)
-{
-  if (extension.compare("mo") == 0)
-    return true;
-  else
-    return false;
 }
 
 bool StringHandler::naturalSort(const QString &s1, const QString &s2) {

@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "NotificationsDialog.h"
@@ -206,7 +203,7 @@ QString NotificationsDialog::getNotificationCheckBoxString()
  */
 void NotificationsDialog::saveQuitNotificationSettings()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/promptQuitApplication", true);
 }
 
@@ -217,7 +214,7 @@ void NotificationsDialog::saveQuitNotificationSettings()
  */
 void NotificationsDialog::saveItemDroppedOnItselfNotificationSettings()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/itemDroppedOnItself", false);
   mpMainWindow->getOptionsDialog()->getNotificationsPage()->getItemDroppedOnItselfCheckBox()->setChecked(false);
 }
@@ -229,7 +226,7 @@ void NotificationsDialog::saveItemDroppedOnItselfNotificationSettings()
  */
 void NotificationsDialog::saveReplaceableIfPartialNotificationSettings()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/replaceableIfPartial", false);
   mpMainWindow->getOptionsDialog()->getNotificationsPage()->getReplaceableIfPartialCheckBox()->setChecked(false);
 }
@@ -241,7 +238,7 @@ void NotificationsDialog::saveReplaceableIfPartialNotificationSettings()
  */
 void NotificationsDialog::saveInnerModelNameChangedNotificationSettings()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/innerModelNameChanged", false);
   mpMainWindow->getOptionsDialog()->getNotificationsPage()->getInnerModelNameChangedCheckBox()->setChecked(false);
 }
@@ -253,7 +250,7 @@ void NotificationsDialog::saveInnerModelNameChangedNotificationSettings()
  */
 void NotificationsDialog::saveModelForBitmapInsertionNotificationSettings()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/saveModelForBitmapInsertion", false);
   mpMainWindow->getOptionsDialog()->getNotificationsPage()->getSaveModelForBitmapInsertionCheckBox()->setChecked(false);
 }

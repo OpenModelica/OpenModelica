@@ -93,7 +93,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpMessagesDockWidget->hide();
   connect(mpMessagesWidget, SIGNAL(MessageAdded()), mpMessagesDockWidget, SLOT(show()));
   // Reopen the standard output stream.
-  QString outputFileName = OpenModelica::tempDirectory() + "/omeditoutput.txt";
+  QString outputFileName = Utilities::tempDirectory() + "/omeditoutput.txt";
   freopen(outputFileName.toStdString().c_str(), "w", stdout);
   setbuf(stdout, NULL); // used non-buffered stdout
   mpOutputFileDataNotifier = 0;
@@ -108,7 +108,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
 
   }
   // Reopen the standard error stream.
-  QString errorFileName = OpenModelica::tempDirectory() + "/omediterror.txt";
+  QString errorFileName = Utilities::tempDirectory() + "/omediterror.txt";
   freopen(errorFileName.toStdString().c_str(), "w", stderr);
   setbuf(stderr, NULL); // used non-buffered stderr
   mpErrorFileDataNotifier = 0;
@@ -302,7 +302,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
     mpOMCProxy->setCommandLineOptions("+ignoreSimulationFlagsAnnotation=true");
   }
   // restore OMEdit widgets state
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   if (mpOptionsDialog->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
@@ -348,7 +348,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
  */
 void MainWindow::addRecentFile(const QString &fileName, const QString &encoding)
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
   // remove the already present RecentFile instance from the list.
   foreach (QVariant file, files)
@@ -379,7 +379,7 @@ void MainWindow::updateRecentFileActions()
   for (int i = 0; i < MaxRecentFiles; ++i)
     mpRecentFileActions[i]->setVisible(false);
   /* read the new recent files list */
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
   int numRecentFiles = qMin(files.size(), (int)MaxRecentFiles);
   for (int i = 0; i < numRecentFiles; ++i)
@@ -457,7 +457,7 @@ void MainWindow::beforeClosingMainWindow()
   delete mpSimulationDialog;
   delete mpTLMCoSimulationDialog;
   /* save the TransformationsWidget last window geometry and splitters state. */
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   QHashIterator<QString, TransformationsWidget*> transformationsWidgets(mTransformationsWidgetHash);
   if (mTransformationsWidgetHash.size() > 0) {
     transformationsWidgets.toBack();
@@ -704,7 +704,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   double version = mpOptionsDialog->getFMIPage()->getFMIExportVersion();
   QString type = mpOptionsDialog->getFMIPage()->getFMIExportType();
   QString FMUName = mpOptionsDialog->getFMIPage()->getFMUNameTextBox()->text();
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QString> platforms = pSettings->value("FMIExport/Platforms").toStringList();
   if (mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms)) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
@@ -1170,15 +1170,17 @@ void MainWindow::showOpenTransformationFileDialog()
 }
 
 /*!
-  Creates a new TLM LibraryTreeItem & ModelWidget.\n
-  Slot activated when mpNewMetaModelFileAction triggered signal is raised.
-  */
+ * \brief MainWindow::createNewMetaModelFile
+ * Creates a new TLM LibraryTreeItem & ModelWidget.\n
+ * Slot activated when mpNewMetaModelFileAction triggered signal is raised.
+ */
 void MainWindow::createNewMetaModelFile()
 {
   QString metaModelName = mpLibraryWidget->getLibraryTreeModel()->getUniqueTopLevelItemName("MetaModel");
-  LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->createLibraryTreeItem(LibraryTreeItem::MetaModel, metaModelName, false);
+  LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
+  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::MetaModel, metaModelName, metaModelName, "",
+                                                                               false, pLibraryTreeModel->getRootLibraryTreeItem());
   if (pLibraryTreeItem) {
-    pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
   }
 }
@@ -1259,8 +1261,28 @@ void MainWindow::loadExternalModels()
   hideProgressBar();
 }
 
+/*!
+ * \brief MainWindow::openDirectory
+ * Opens the directory.
+ */
+void MainWindow::openDirectory()
+{
+  QString dir = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory), NULL);
+  if (dir.isEmpty()) {
+    return;
+  }
+  mpLibraryWidget->openFile(dir, Helper::utf8, true);
+}
+
+/*!
+ * \brief MainWindow::loadSystemLibrary
+ * Loads a system library.
+ */
 void MainWindow::loadSystemLibrary()
 {
+  QTime t;
+  t.start();
+  fprintf(stdout, "%s\n", t.currentTime().toString("hh:mm:ss:zzz").toStdString().c_str());fflush(NULL);
   QAction *pAction = qobject_cast<QAction*>(sender());
   if (pAction) {
     /* check if library is already loaded. */
@@ -1286,6 +1308,8 @@ void MainWindow::loadSystemLibrary()
       hideProgressBar();
     }
   }
+  fprintf(stdout, "%s\n", t.currentTime().toString("hh:mm:ss:zzz").toStdString().c_str());fflush(NULL);
+  fprintf(stdout, "%s\n", QString::number((double)t.elapsed() / 1000).toStdString().c_str());
 }
 
 /*!
@@ -1322,7 +1346,7 @@ void MainWindow::openRecentFile()
 
 void MainWindow::clearRecentFilesList()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->remove("recentFilesList/files");
   updateRecentFileActions();
   mpWelcomePageWidget->addRecentFilesListItems();
@@ -2304,6 +2328,10 @@ void MainWindow::createActions()
   mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
   mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM meta-modeling"));
   connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
+  // open the directory action
+  mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
+  mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));
+  connect(mpOpenDirectoryAction, SIGNAL(triggered()), SLOT(openDirectory()));
   // save file action
   mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
   mpSaveAction->setShortcut(QKeySequence("Ctrl+s"));
@@ -2675,6 +2703,8 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpOpenMetaModelFileAction);
   pFileMenu->addAction(mpLoadExternModelAction);
   pFileMenu->addSeparator();
+  pFileMenu->addAction(mpOpenDirectoryAction);
+  pFileMenu->addSeparator();
   pFileMenu->addAction(mpSaveAction);
   pFileMenu->addAction(mpSaveAsAction);
   //menuFile->addAction(saveAllAction);
@@ -2851,7 +2881,7 @@ void MainWindow::createMenus()
  */
 void MainWindow::autoSaveHelper(LibraryTreeItem *pLibraryTreeItem)
 {
-  for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (!pChildLibraryTreeItem->isSystemLibrary()) {
       if (pChildLibraryTreeItem->isFilePathValid() && !pChildLibraryTreeItem->isSaved()) {

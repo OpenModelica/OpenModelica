@@ -28,10 +28,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "LocalsWidget.h"
@@ -584,6 +581,7 @@ LocalsTreeView::LocalsTreeView(LocalsWidget *pLocalsWidget)
   setExpandsOnDoubleClick(false);
   setSortingEnabled(true);
   sortByColumn(0, Qt::AscendingOrder);
+  setUniformRowHeights(true);
 }
 
 LocalsWidget::LocalsWidget(MainWindow *pMainWindow)

@@ -113,6 +113,7 @@ SOURCES += main.cpp \
   Editors/TextEditor.cpp \
   Editors/CEditor.cpp \
   Editors/MetaModelEditor.cpp \
+  Editors/MetaModelicaEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
   Component/Component.cpp \
   Annotations/ShapeAnnotation.cpp \
@@ -175,6 +176,7 @@ HEADERS  += Util/Helper.h \
   Editors/TextEditor.h \
   Editors/CEditor.h \
   Editors/MetaModelEditor.h \
+  Editors/MetaModelicaEditor.h \
   Plotting/PlotWindowContainer.h \
   Component/Component.h \
   Annotations/ShapeAnnotation.h \

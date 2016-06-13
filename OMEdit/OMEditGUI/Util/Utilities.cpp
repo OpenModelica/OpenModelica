@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "MainWindow.h"
@@ -282,6 +279,158 @@ void FixedCheckBox::paintEvent(QPaintEvent *event)
     p.drawLines(lines);
   }
 }
+
+PreviewPlainTextEdit::PreviewPlainTextEdit(QWidget *parent)
+ : QPlainTextEdit(parent)
+{
+  QTextDocument *pTextDocument = document();
+  pTextDocument->setDocumentMargin(2);
+  BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(pTextDocument);
+  pTextDocument->setDocumentLayout(pModelicaTextDocumentLayout);
+  setDocument(pTextDocument);
+  // parentheses matcher
+  mParenthesesMatchFormat = Utilities::getParenthesesMatchFormat();
+  mParenthesesMisMatchFormat = Utilities::getParenthesesMisMatchFormat();
+
+  updateHighlights();
+  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateHighlights()));
+}
+
+/*!
+ * \brief PreviewPlainTextEdit::highlightCurrentLine
+ * Hightlights the current line.
+ */
+void PreviewPlainTextEdit::highlightCurrentLine()
+{
+  Utilities::highlightCurrentLine(this);
+}
+
+/*!
+ * \brief PreviewPlainTextEdit::highlightParentheses
+ * Highlights the matching parentheses.
+ */
+void PreviewPlainTextEdit::highlightParentheses()
+{
+  Utilities::highlightParentheses(this, mParenthesesMatchFormat, mParenthesesMisMatchFormat);
+}
+
+void PreviewPlainTextEdit::updateHighlights()
+{
+  QList<QTextEdit::ExtraSelection> selections;
+  setExtraSelections(selections);
+  highlightCurrentLine();
+  highlightParentheses();
+}
+
+ListWidgetItem::ListWidgetItem(QString text, QColor color, QListWidget *pParentListWidget)
+  : QListWidgetItem(pParentListWidget)
+{
+  setText(text);
+  mColor = color;
+  setForeground(mColor);
+}
+
+CodeColorsWidget::CodeColorsWidget(QWidget *pParent)
+  : QWidget(pParent)
+{
+  // colors groupbox
+  mpColorsGroupBox = new QGroupBox(Helper::Colors);
+  // Item color label and pick color button
+  mpItemColorLabel = new Label(tr("Item Color:"));
+  mpItemColorPickButton = new QPushButton(Helper::pickColor);
+  mpItemColorPickButton->setAutoDefault(false);
+  connect(mpItemColorPickButton, SIGNAL(clicked()), SLOT(pickColor()));
+  // Items list
+  mpItemsLabel = new Label(tr("Items:"));
+  mpItemsListWidget = new QListWidget;
+  mpItemsListWidget->setItemDelegate(new ItemDelegate(mpItemsListWidget));
+  mpItemsListWidget->setMaximumHeight(90);
+  // text (black)
+  new ListWidgetItem("Text", QColor(0, 0, 0), mpItemsListWidget);
+  // make first item in the list selected
+  mpItemsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
+  // preview textbox
+  mpPreviewLabel = new Label(tr("Preview:"));
+  mpPreviewPlainTextEdit = new PreviewPlainTextEdit;
+  mpPreviewPlainTextEdit->setTabStopWidth(Helper::tabWidth);
+  // set colors groupbox layout
+  QGridLayout *pColorsGroupBoxLayout = new QGridLayout;
+  pColorsGroupBoxLayout->addWidget(mpItemsLabel, 1, 0);
+  pColorsGroupBoxLayout->addWidget(mpItemColorLabel, 1, 1);
+  pColorsGroupBoxLayout->addWidget(mpItemsListWidget, 2, 0);
+  pColorsGroupBoxLayout->addWidget(mpItemColorPickButton, 2, 1, Qt::AlignTop);
+  pColorsGroupBoxLayout->addWidget(mpPreviewLabel, 3, 0, 1, 2);
+  pColorsGroupBoxLayout->addWidget(mpPreviewPlainTextEdit, 4, 0, 1, 2);
+  mpColorsGroupBox->setLayout(pColorsGroupBoxLayout);
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpColorsGroupBox);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief CodeColorsWidget::pickColor
+ * Picks a color for one of the Text Settings rules.
+ * This method is called when mpColorPickButton clicked SIGNAL raised.
+ */
+void CodeColorsWidget::pickColor()
+{
+  QListWidgetItem *pItem = mpItemsListWidget->currentItem();
+  ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(pItem);
+  if (!pListWidgetItem) {
+    return;
+  }
+  QColor color = QColorDialog::getColor(pListWidgetItem->getColor());
+  if (!color.isValid()) {
+    return;
+  }
+  pListWidgetItem->setColor(color);
+  pListWidgetItem->setForeground(color);
+  emit colorUpdated();
+}
+
+/*!
+ * \brief Utilities::tempDirectory
+ * Returns the application temporary directory.
+ * \return
+ */
+QString& Utilities::tempDirectory()
+{
+  static int init = 0;
+  static QString tmpPath;
+  if (!init) {
+    init = 1;
+#ifdef WIN32
+    tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
+#else // UNIX environment
+    char *user = getenv("USER");
+    tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user ? user : "nobody") + "/OMEdit/";
+#endif
+    tmpPath.remove("\"");
+    if (!QDir().exists(tmpPath))
+      QDir().mkpath(tmpPath);
+  }
+  return tmpPath;
+}
+
+/*!
+ * \brief Utilities::getApplicationSettings
+ * Returns the application settings object.
+ * \return
+ */
+QSettings* Utilities::getApplicationSettings()
+{
+  static int init = 0;
+  static QSettings *pSettings;
+  if (!init) {
+    init = 1;
+    pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+    pSettings->setIniCodec(Helper::utf8.toStdString().data());
+  }
+  return pSettings;
+}
+
 
 /*!
  * \brief Utilities::parseMetaModelText
@@ -533,3 +682,88 @@ void Utilities::killProcessTreeWindows(DWORD myprocID)
   }
 }
 #endif
+
+/*!
+ * \brief Utilities::isCFile
+ * Returns true if extension is of C file.
+ * \param extension
+ * \return
+ */
+bool Utilities::isCFile(QString extension)
+{
+  if (extension.compare("c") == 0 ||
+      extension.compare("cpp") == 0 ||
+      extension.compare("cc") == 0 ||
+      extension.compare("h") == 0 ||
+      extension.compare("hpp") == 0)
+    return true;
+  else
+    return false;
+}
+
+/*!
+ * \brief Utilities::isModelicaFile
+ * Returns true if extension is of Modelica file.
+ * \param extension
+ * \return
+ */
+bool Utilities::isModelicaFile(QString extension)
+{
+  if (extension.compare("mo") == 0)
+    return true;
+  else
+    return false;
+}
+
+Utilities::FileIconProvider::FileIconProviderImplementation *instance()
+{
+  static Utilities::FileIconProvider::FileIconProviderImplementation theInstance;
+  return &theInstance;
+}
+
+QFileIconProvider* Utilities::FileIconProvider::iconProvider()
+{
+  return instance();
+}
+
+Utilities::FileIconProvider::FileIconProviderImplementation::FileIconProviderImplementation()
+   : mUnknownFileIcon(qApp->style()->standardIcon(QStyle::SP_FileIcon))
+{
+
+}
+
+QIcon Utilities::FileIconProvider::FileIconProviderImplementation::icon(const QFileInfo &fileInfo)
+{
+  // Check for cached overlay icons by file suffix.
+  bool isDir = fileInfo.isDir();
+  QString suffix = !isDir ? fileInfo.suffix() : QString();
+  if (!mIconsHash.isEmpty() && !isDir && !suffix.isEmpty()) {
+    if (mIconsHash.contains(suffix)) {
+      return mIconsHash.value(suffix);
+    }
+  }
+  // Get icon from OS.
+  QIcon icon;
+  // File icons are unknown on linux systems.
+#if defined(Q_OS_LINUX)
+  icon = isDir ? QFileIconProvider::icon(fileInfo) : m_unknownFileIcon;
+#else
+  icon = QFileIconProvider::icon(fileInfo);
+#endif
+  if (!isDir && !suffix.isEmpty()) {
+    mIconsHash.insert(suffix, icon);
+  }
+  return icon;
+}
+
+/*!
+ * \brief icon
+ * Returns the icon associated with the file suffix in fileInfo. If there is none,
+ * the default icon of the operating system is returned.
+ * \param info
+ * \return
+ */
+QIcon Utilities::FileIconProvider::icon(const QFileInfo &info)
+{
+  return instance()->icon(info);
+}

@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include <QMdiArea>
@@ -50,6 +47,11 @@
 #include <QPlainTextEdit>
 #include <QTextEdit>
 #include <QProcess>
+#include <QSettings>
+#include <QFileIconProvider>
+#include <QGroupBox>
+#include <QListWidget>
+#include <QListWidgetItem>
 
 #ifdef WIN32
 #include <windows.h>
@@ -318,6 +320,59 @@ typedef struct {
   QString mAlpha;
 } MetaModelConnection;
 
+class PreviewPlainTextEdit : public QPlainTextEdit
+{
+  Q_OBJECT
+public:
+  PreviewPlainTextEdit(QWidget *parent = 0);
+private:
+  QTextCharFormat mParenthesesMatchFormat;
+  QTextCharFormat mParenthesesMisMatchFormat;
+
+  void highlightCurrentLine();
+  void highlightParentheses();
+public slots:
+  void updateHighlights();
+};
+
+class ListWidgetItem : public QListWidgetItem
+{
+public:
+  ListWidgetItem(QString text, QColor color, QListWidget *pParentListWidget);
+  QColor getColor() {return mColor;}
+  void setColor(QColor color) {mColor = color;}
+private:
+  QColor mColor;
+};
+
+class CodeColorsWidget : public QWidget
+{
+  Q_OBJECT
+public:
+  CodeColorsWidget(QWidget *pParent = 0);
+  QListWidget* getItemsListWidget() {return mpItemsListWidget;}
+  PreviewPlainTextEdit* getPreviewPlainTextEdit() {return mpPreviewPlainTextEdit;}
+private:
+  QGroupBox *mpColorsGroupBox;
+  Label *mpItemsLabel;
+  QListWidget *mpItemsListWidget;
+  Label *mpItemColorLabel;
+  QPushButton *mpItemColorPickButton;
+  Label *mpPreviewLabel;
+  PreviewPlainTextEdit *mpPreviewPlainTextEdit;
+  ListWidgetItem *mpTextItem;
+  ListWidgetItem *mpNumberItem;
+  ListWidgetItem *mpKeywordItem;
+  ListWidgetItem *mpTypeItem;
+  ListWidgetItem *mpFunctionItem;
+  ListWidgetItem *mpQuotesItem;
+  ListWidgetItem *mpCommentItem;
+signals:
+  void colorUpdated();
+private slots:
+  void pickColor();
+};
+
 namespace Utilities {
 
   enum LineEndingMode {
@@ -337,6 +392,8 @@ namespace Utilities {
     AlwaysDeleteBom = 2
   };
 
+  QString& tempDirectory();
+  QSettings* getApplicationSettings();
   void parseMetaModelText(MessageHandler *pMessageHandler, QString contents);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
   Label* getHeadingLabel(QString heading);
@@ -350,7 +407,25 @@ namespace Utilities {
 #ifdef WIN32
   void killProcessTreeWindows(DWORD myprocID);
 #endif
+  bool isCFile(QString extension);
+  bool isModelicaFile(QString extension);
 
-}
+  namespace FileIconProvider {
+    class FileIconProviderImplementation : public QFileIconProvider
+    {
+    public:
+      FileIconProviderImplementation();
+      QIcon icon(const QFileInfo &info);
+      using QFileIconProvider::icon;
+      // Mapping of file suffix to icon.
+      QHash<QString, QIcon> mIconsHash;
+      QIcon mUnknownFileIcon;
+    };
+    // Access to the single instance
+    QFileIconProvider *iconProvider();
+    QIcon icon(const QFileInfo &info);
+  } // namespace FileIconProvider
+
+} // namespace Utilities
 
 #endif // UTILITIES_H
