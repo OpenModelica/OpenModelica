@@ -143,8 +143,6 @@ readFile("modelDescription.tmp.xml");
 //     <Outputs>
 //       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
 //     </Outputs>
-//     <Derivatives>
-//     </Derivatives>
 //     <DiscreteStates>
 //       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
 //     </DiscreteStates>
