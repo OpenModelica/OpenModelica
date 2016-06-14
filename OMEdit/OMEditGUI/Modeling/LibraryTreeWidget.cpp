@@ -557,6 +557,22 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
 }
 
 /*!
+ * \brief LibraryTreeItem::inRange
+ * Returns true if line number is in start and end range.\n
+ * We only check this for Modelica LibraryTreeItems and simply returns true for other types.
+ * \param lineNumber
+ * \return
+ */
+bool LibraryTreeItem::inRange(int lineNumber)
+{
+  if (mLibraryType == LibraryTreeItem::Modelica) {
+    return (lineNumber >= mClassInformation.lineNumberStart) && (lineNumber <= mClassInformation.lineNumberEnd);
+  } else {
+    return true;
+  }
+}
+
+/*!
  * \brief LibraryTreeItem::isInPackageOneFile
  * Returns true if the LibraryTreeItem is nested and is set to be saved in parent's file.
  * \return
@@ -2208,7 +2224,6 @@ Qt::DropActions LibraryTreeModel::supportedDropActions() const
 LibraryTreeView::LibraryTreeView(LibraryWidget *pLibraryWidget)
   : QTreeView(pLibraryWidget), mpLibraryWidget(pLibraryWidget)
 {
-  setObjectName("TreeWithBranches");
   setItemDelegate(new ItemDelegate(this));
   setTextElideMode(Qt::ElideMiddle);
   setIndentation(Helper::treeIndentation);
@@ -3123,7 +3138,7 @@ void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress)
   // check if the file is already loaded.
   for (int i = 0; i < mpLibraryTreeModel->getRootLibraryTreeItem()->childrenSize(); ++i) {
     LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->getRootLibraryTreeItem()->child(i);
-    if (pLibraryTreeItem && pLibraryTreeItem->getName().compare(fileInfo.absoluteDir().dirName()) == 0) {
+    if (pLibraryTreeItem && pLibraryTreeItem->getName().compare(fileInfo.fileName()) == 0) {
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
       pMessageBox->setIcon(QMessageBox::Information);

@@ -2504,11 +2504,11 @@ void MainWindow::createActions()
   // Debug Menu
   // Debug configurations
   mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
-  mpDebugConfigurationsAction->setEnabled(false);
+  mpDebugConfigurationsAction->setStatusTip(Helper::debugConfigurationsTip);
   connect(mpDebugConfigurationsAction, SIGNAL(triggered()), SLOT(showConfigureDialog()));
   // attach debugger to process
   mpAttachDebuggerToRunningProcessAction = new QAction(Helper::attachToRunningProcess, this);
-  mpAttachDebuggerToRunningProcessAction->setEnabled(false);
+  mpAttachDebuggerToRunningProcessAction->setStatusTip(Helper::attachToRunningProcessTip);
   connect(mpAttachDebuggerToRunningProcessAction, SIGNAL(triggered()), SLOT(showAttachToProcessDialog()));
   // Tools Menu
   // show OMC Logger widget action
@@ -3040,26 +3040,6 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpLocalsDockWidget->show();
   mpTargetOutputDockWidget->show();
   mpGDBLoggerDockWidget->show();
-}
-
-void MainWindow::switchToTransformationDebuggingPerspective()
-{
-  storePlotWindowsStateAndGeometry();
-  mpPlotWindowContainer->tileSubWindows();
-  mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
-  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-  mpVariablesDockWidget->hide();
-  mpPlotToolBar->setEnabled(false);
-  // In case user has tabbed the dock widgets then make LibraryWidget active.
-  QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
-  if (tabifiedDockWidgetsList.size() > 0) {
-    tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpLibraryDockWidget);
-  }
-  mpStackFramesDockWidget->hide();
-  mpBreakpointsDockWidget->hide();
-  mpLocalsDockWidget->hide();
-  mpGDBLoggerDockWidget->hide();
-  mpTargetOutputDockWidget->hide();
 }
 
 /*!

@@ -401,7 +401,6 @@ TVariablesTreeView::TVariablesTreeView(TransformationsWidget *pTransformationsWi
   : QTreeView(pTransformationsWidget)
 {
   mpTransformationsWidget = pTransformationsWidget;
-  setObjectName("TreeWithBranches");
   setItemDelegate(new ItemDelegate(this));
   setTextElideMode(Qt::ElideMiddle);
   setIndentation(Helper::treeIndentation);
@@ -532,7 +531,6 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, MainW
   pEquationsBrowserLabel->setObjectName("LabelWithBorder");
   /* Equations tree widget */
   mpEquationsTreeWidget = new EquationTreeWidget(this);
-  mpEquationsTreeWidget->setObjectName("TreeWithBranches");
   mpEquationsTreeWidget->setIndentation(Helper::treeIndentation);
   QGridLayout *pEquationsGridLayout = new QGridLayout;
   pEquationsGridLayout->setSpacing(1);

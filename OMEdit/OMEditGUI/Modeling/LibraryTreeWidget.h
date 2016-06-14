@@ -129,7 +129,7 @@ public:
   bool isNonExisting() const {return mNonExisting;}
   QString getTooltip() const;
   QIcon getLibraryTreeItemIcon() const;
-  bool inRange(int lineNumber) {return (lineNumber >= mClassInformation.lineNumberStart) && (lineNumber <= mClassInformation.lineNumberEnd);}
+  bool inRange(int lineNumber);
   bool isInPackageOneFile();
   void insertChild(int position, LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* child(int row);

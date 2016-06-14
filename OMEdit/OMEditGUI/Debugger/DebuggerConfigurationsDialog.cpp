@@ -503,7 +503,8 @@ void DebuggerConfigurationsDialog::saveAllConfigurationsAndDebugConfiguration()
       DebuggerConfigurationPage *pDebuggerConfigurationPage = qobject_cast<DebuggerConfigurationPage*>(mpConfigurationPagesWidget->currentWidget());
       DebuggerConfiguration debuggerConfiguration = pDebuggerConfigurationPage->getDebuggerConfiguration();
       mpMainWindow->getGDBAdapter()->launch(debuggerConfiguration.program, debuggerConfiguration.workingDirectory,
-                                                    debuggerConfiguration.arguments.split(" "), debuggerConfiguration.GDBPath);
+                                            debuggerConfiguration.arguments.split(" "), debuggerConfiguration.GDBPath);
+      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(3);
     }
   }
 }

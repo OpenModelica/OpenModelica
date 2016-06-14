@@ -58,7 +58,6 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   mpLibraryTreeProxyModel->setDynamicSortFilter(true);
   mpLibraryTreeProxyModel->setSourceModel(mpLibraryWidget->getLibraryTreeModel());
   mpLibraryTreeView = new QTreeView;
-  mpLibraryTreeView->setObjectName("TreeWithBranches");
   mpLibraryTreeView->setItemDelegate(new ItemDelegate(mpLibraryTreeView));
   mpLibraryTreeView->setTextElideMode(Qt::ElideMiddle);
   mpLibraryTreeView->setIndentation(Helper::treeIndentation);

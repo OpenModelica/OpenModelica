@@ -281,6 +281,7 @@ public:
   static QString debuggingFileNotSaveInfo;
   static QString algorithmicDebugger;
   static QString debugConfigurations;
+  static QString debugConfigurationsTip;
   static QString resume;
   static QString interrupt;
   static QString exit;
@@ -288,6 +289,7 @@ public:
   static QString stepInto;
   static QString stepReturn;
   static QString attachToRunningProcess;
+  static QString attachToRunningProcessTip;
   static QString crashReport;
   static QString parsingFailedJson;
   static QString expandAll;

@@ -446,7 +446,6 @@ private:
   void switchToModelingPerspective();
   void switchToPlottingPerspective();
   void switchToAlgorithmicDebuggingPerspective();
-  void switchToTransformationDebuggingPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem);

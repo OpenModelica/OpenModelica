@@ -573,8 +573,7 @@ LocalsTreeView::LocalsTreeView(LocalsWidget *pLocalsWidget)
   : QTreeView(pLocalsWidget)
 {
   mpLocalsWidget = pLocalsWidget;
-  //setObjectName("TreeWithBranches");
-  setItemDelegate(new ItemDelegate(this, false, true));
+  setItemDelegate(new ItemDelegate(this));
   setTextElideMode(Qt::ElideMiddle);
   setIndentation(Helper::treeIndentation);
   setContextMenuPolicy(Qt::CustomContextMenu);

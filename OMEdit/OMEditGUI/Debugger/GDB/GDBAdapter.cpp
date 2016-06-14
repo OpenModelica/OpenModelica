@@ -957,7 +957,6 @@ void GDBAdapter::startDebugger()
   setInferiorTerminated(false);
   setInferiorRunning(true);
   setChangeStdStreamBuffer(false);
-  postCommand(CommandFactory::breakInsert("CevalScriptBackend.mo", 2626));
   mpMainWindow->getStackFramesWidget()->setSelectedThread(1);
   mpMainWindow->getStackFramesWidget()->setSelectedFrame(0);
   postCommand(CommandFactory::execRun());

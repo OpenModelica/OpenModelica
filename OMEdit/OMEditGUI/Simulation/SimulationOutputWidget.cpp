@@ -45,7 +45,6 @@
 SimulationOutputTree::SimulationOutputTree(SimulationOutputWidget *pSimulationOutputWidget)
   : QTreeView(pSimulationOutputWidget), mpSimulationOutputWidget(pSimulationOutputWidget)
 {
-  setObjectName("TreeWithBranches");
   setItemDelegate(new ItemDelegate(this, true));
   setTextElideMode(Qt::ElideNone);
   setIndentation(Helper::treeIndentation);

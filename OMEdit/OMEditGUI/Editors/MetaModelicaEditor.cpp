@@ -35,7 +35,9 @@
 MetaModelicaEditor::MetaModelicaEditor(ModelWidget *pModelWidget)
   : BaseEditor(pModelWidget)
 {
-
+  setCanHaveBreakpoints(true);
+  /* set the document marker */
+  mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
 }
 
 /*!
