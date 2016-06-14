@@ -6866,7 +6866,7 @@ algorithm
 
   // ### simulation ###
   // Extract from variable list
-  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst guard not BackendDAEUtil.isClockedSyst(syst) in systs1), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
+  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs1), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
 
   // Extract from known variable list
   simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
@@ -6883,7 +6883,7 @@ algorithm
 
   // ### initialization ###
   // Extract from variable list
-  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst guard not BackendDAEUtil.isClockedSyst(syst) in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
+  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
 
   // Extract from known variable list
   simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
