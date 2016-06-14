@@ -1451,10 +1451,16 @@ algorithm
       then (cache,v,st);
 
     case (cache,_,"saveModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
-      equation
-        absynClass = Interactive.getPathedClassInProgram(classpath, p);
-        str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP()),true);
-        System.writeFile(filename, str);
+      algorithm
+        b := false;
+        absynClass := Interactive.getPathedClassInProgram(classpath, p);
+        str := Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP()),true);
+        try
+          System.writeFile(filename, str);
+          b := true;
+        else
+          Error.addMessage(Error.WRITING_FILE_ERROR, {filename});
+        end try;
       then
         (cache,Values.BOOL(true),st);
 
@@ -1475,14 +1481,6 @@ algorithm
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);
-
-    case (cache,_,"saveModel",{Values.STRING(name),Values.CODE(Absyn.C_TYPENAME(classpath))},
-        (st as GlobalScript.SYMBOLTABLE(ast = p)),_)
-      equation
-        _ = Interactive.getPathedClassInProgram(classpath, p);
-        Error.addMessage(Error.WRITING_FILE_ERROR, {name});
-      then
-        (cache,Values.BOOL(false),st);
 
     case (cache,_,"saveModel",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(classpath))},st,_)
       equation
@@ -2085,9 +2083,9 @@ algorithm
         (cache,v,st);
 
     case (cache,_,"removeComponentModifiers",
-	      Values.CODE(Absyn.C_TYPENAME(path))::
-		  Values.STRING(str1)::
-		  Values.BOOL(keepRedeclares)::_,(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+        Values.CODE(Absyn.C_TYPENAME(path))::
+      Values.STRING(str1)::
+      Values.BOOL(keepRedeclares)::_,(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         (p,b) = Interactive.removeComponentModifiers(path, str1, p, keepRedeclares);
         st = GlobalScriptUtil.setSymbolTableAST(st, p);
@@ -2097,7 +2095,7 @@ algorithm
     case (cache,_,"removeExtendsModifiers",
           Values.CODE(Absyn.C_TYPENAME(classpath))::
           Values.CODE(Absyn.C_TYPENAME(baseClassPath))::
-		  Values.BOOL(keepRedeclares)::_,st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      Values.BOOL(keepRedeclares)::_,st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         (p,b) = Interactive.removeExtendsModifiers(classpath, baseClassPath, p, keepRedeclares);
         st = GlobalScriptUtil.setSymbolTableAST(st, p);
@@ -2534,7 +2532,7 @@ algorithm
       Boolean b;
     case (_, GlobalScript.SYMBOLTABLE(ast=p))
       equation
-        _ = Interactive.getPathedClassInProgram(className, p, true);
+        Interactive.getPathedClassInProgram(className, p, true);
       then inSt;
     case (_, GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf))
       equation
@@ -2716,27 +2714,27 @@ algorithm
           (cache, st, indexed_dlow, libs, file_dir, resultValues) :=
             SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
         else
-	        // read the __OpenModelica_commandLineOptions
-	        Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, st.ast, Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
-	        haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
-	        // backup the flags.
-	        flags := if haveAnnotation then Flags.backupFlags() else Flags.loadFlags();
-	        try
-		        // apply if there are any new flags
-		        if haveAnnotation then
-		          args := System.strtok(commandLineOptions, " ");
-		          _ := Flags.readArgs(args);
-		        end if;
+          // read the __OpenModelica_commandLineOptions
+          Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, st.ast, Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+          haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
+          // backup the flags.
+          flags := if haveAnnotation then Flags.backupFlags() else Flags.loadFlags();
+          try
+            // apply if there are any new flags
+            if haveAnnotation then
+              args := System.strtok(commandLineOptions, " ");
+              _ := Flags.readArgs(args);
+            end if;
 
-		        (cache, st, indexed_dlow, libs, file_dir, resultValues) :=
-		          SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
-		        // reset to the original flags
-		        Flags.saveFlags(flags);
-		      else
-		        Flags.saveFlags(flags);
-		        fail();
-	        end try;
-	      end if;
+            (cache, st, indexed_dlow, libs, file_dir, resultValues) :=
+              SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
+            // reset to the original flags
+            Flags.saveFlags(flags);
+          else
+            Flags.saveFlags(flags);
+            fail();
+          end try;
+        end if;
       then
         (cache,st,indexed_dlow,libs,file_dir,resultValues);
 
@@ -5218,7 +5216,7 @@ algorithm
     // normal call
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),_,_,_,_, _,Values.STRING(filenameprefix),_},(st as GlobalScript.SYMBOLTABLE(ast = p  as Absyn.PROGRAM())),msg)
       equation
-        _ = Interactive.getPathedClassInProgram(classname,p);
+        Interactive.getPathedClassInProgram(classname,p);
         Error.clearMessages() "Clear messages";
         compileDir = System.pwd() + System.pathDelimiter();
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st,msg);
@@ -5237,7 +5235,6 @@ algorithm
           Debug.trace("buildModel: Compiling done.\n");
         end if;
         // SimCodegen.generateMakefileBeast(makefilename, filenameprefix, libs, file_dir);
-        _ = getWithinStatement(classname);
         CevalScript.compileModel(filenameprefix, libs);
         // (p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(r1,r2))) = Interactive.updateProgram2(p2,p,false);
         st2 = st; // Interactive.replaceSymbolTableProgram(st,p);

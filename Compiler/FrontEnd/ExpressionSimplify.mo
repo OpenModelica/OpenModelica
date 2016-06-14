@@ -333,8 +333,11 @@ algorithm
 
     // other subscripting/asub simplifications where e is not simplified first.
     case (_,_,_)
-      equation
-        _ = List.map(inSubs,Expression.expInt);
+      algorithm
+        // Are all expressions integers?
+        for exp in inSubs loop
+          Expression.expInt(exp);
+        end for;
       then List.foldr(inSubs,simplifyAsub,inExp);
     else origExp;
   end matchcontinue;
@@ -2021,13 +2024,11 @@ algorithm
 
     case (e1,op as DAE.MUL_ARR(),e2)
       equation
-        _ = Expression.typeof(e1);
         a1 = simplifyVectorBinary(e1, op, e2);
       then a1;
 
     case (e1,op as DAE.DIV_ARR(),e2)
       equation
-        _ = Expression.typeof(e1);
         a1 = simplifyVectorBinary(e1, op, e2);
       then a1;
 
@@ -4484,7 +4485,7 @@ algorithm
          * Exponentation is very expensive compared to the inner expressions.
          */
         ((exp_lst as (_ :: _ :: _ :: _))) = Expression.factors(e1);
-        _ = List.find(exp_lst,Expression.isConstValue);
+        true = List.exist(exp_lst,Expression.isConstValue);
         exp_lst_1 = simplifyBinaryDistributePow(exp_lst, e2);
       then Expression.makeProductLst(exp_lst_1);
     // (e1^e2)^e3 => e1^(e2*e3)

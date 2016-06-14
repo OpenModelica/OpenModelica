@@ -7520,8 +7520,6 @@ algorithm
         slots = makeEmptySlots(fargs);
         (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), st,pre,info,DAE.T_UNKNOWN_DEFAULT,fn);
         (cache,newslots2,constDefaultArgs,_) = fillGraphicsDefaultSlots(cache, newslots, cl, env_2, impl, pre, info);
-        _ = listAppend(constInputArgs, constDefaultArgs);
-        // _ = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         args_2 = slotListArgs(newslots2);
 
         tp = complexTypeFromSlots(newslots2,ClassInf.UNKNOWN(Absyn.IDENT("")));

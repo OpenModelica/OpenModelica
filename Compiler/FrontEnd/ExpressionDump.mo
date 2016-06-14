@@ -598,9 +598,9 @@ algorithm
         s2 = printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
         p = expPriority(e);
         p1 = expPriority(e1);
-        _ = expPriority(e2);
+        p2 = expPriority(e2);
         s1_1 = parenthesize(s1, p1, p,false);
-        s2_1 = parenthesize(s2, p1, p,true);
+        s2_1 = parenthesize(s2, p2, p,true);
         s = stringAppendList({s1_1, sym, s2_1});
       then
         s;
@@ -1105,7 +1105,6 @@ algorithm
 
     case(DAE.PARTEVALFUNCTION(path = fcn,expList = args))
       equation
-        _ = Absyn.pathString(fcn);
         argnodes = List.map(args, dumpExpGraphviz);
       then
         Graphviz.NODE("PARTEVALFUNCTION",{},argnodes);
@@ -1425,7 +1424,6 @@ algorithm
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
-        _ = Types.unparseType(ty);
         ct = dumpExpStr(e, new_level1);
         res_str = stringAppendList({gen_str,"CAST ","\n",ct,""});
       then
@@ -1476,7 +1474,6 @@ algorithm
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         new_level2 = level + 1;
-        _ = Absyn.pathString(fcn);
         expt = dumpExpStr(exp, new_level1);
         itert = dumpExpStr(iterexp, new_level2);
         res_str = stringAppendList({gen_str,"REDUCTION ","\n",expt,itert,""});

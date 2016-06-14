@@ -210,7 +210,6 @@ algorithm
         (varr,newpos) = valueArrayAdd(varr, v);
         indexes = hashvec[indx];
         hashvec = arrayUpdate(hashvec, indx, ((key, newpos) :: indexes));
-        _ = valueArrayLength(varr);
       then
         ((hashvec, varr, bsize, fntpl));
 
@@ -250,7 +249,6 @@ algorithm
         (varr,newpos) = valueArrayAdd(varr, v);
         indexes = hashvec[indx];
         hashvec = arrayUpdate(hashvec, indx, ((key, newpos) :: indexes));
-        _ = valueArrayLength(varr);
       then
         ((hashvec, varr, bsize, fntpl));
 
