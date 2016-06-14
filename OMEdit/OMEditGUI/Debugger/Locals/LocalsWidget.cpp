@@ -248,9 +248,11 @@ void LocalsTreeItem::retrieveValue()
     pGDBAdapter->postCommand(CommandFactory::dataEvaluateExpression(pStackFramesWidget->getSelectedThread(),
                                                                     pStackFramesWidget->getSelectedFrame(), getName()),
                              GDBAdapter::BlockUntilResponse, this, &GDBAdapter::dataEvaluateExpressionCB);
-  } else {
+  } else if (isCoreType()) {
     pGDBAdapter->postCommand(CommandFactory::anyString(pStackFramesWidget->getSelectedThread(), pStackFramesWidget->getSelectedFrame(),
                                                        getName()), GDBAdapter::BlockUntilResponse, this, &GDBAdapter::anyStringCB);
+  } else {
+    setValue(getDisplayType());
   }
 }
 
