@@ -8230,23 +8230,21 @@ function fieldsInPderEq
   input SCode.Equation eq;
   input list<Absyn.Ident> inFieldNames;
   output list<Absyn.Ident> outFieldNames;
-  protected list<Absyn.Ident> fieldNames2;
 algorithm
-  fieldNames2 := match eq
+  outFieldNames := match eq
   local
     list<Absyn.Ident> fieldNames1;
     Absyn.Exp lhs_exp, rhs_exp;
     case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp))
       /*,domain = domainCr as Absyn.CREF_IDENT(), comment = comment, info = info))*/
     algorithm
-      (_,fieldNames1) := Absyn.traverseExp(lhs_exp, fieldInPderExp, inFieldNames);
-      (_,fieldNames1) := Absyn.traverseExp(rhs_exp, fieldInPderExp, fieldNames1);
+      (_,fieldNames1) := Absyn.traverseExpTopDown(lhs_exp, fieldInPderExp, inFieldNames);
+      (_,fieldNames1) := Absyn.traverseExpTopDown(rhs_exp, fieldInPderExp, fieldNames1);
     then
-      fieldNames1;
+      listAppend(inFieldNames,fieldNames1);
     else
       inFieldNames;
   end match;
-  outFieldNames := fieldNames2;
 end fieldsInPderEq;
 
 function fieldInPderExp
@@ -8270,7 +8268,7 @@ algorithm
 end fieldInPderExp;
 
 function addGhostCells2
-  //if name os given variable is in the given array
+  //if name of given variable is in the given array
   //adds ghost cells for it
   input tuple<SCode.Element, DAE.Mod> inCompelt;
   input list<Absyn.Ident> fieldNamesP;
@@ -8901,7 +8899,7 @@ algorithm
         leftVar = (if i == 1 then
                      Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,".ghostL"), subscripts))
                    else
-                     Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i+1))::subscripts))
+                     Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i-1))::subscripts))
                   );
         rightVar = (if i == N then
                      Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,".ghostR"), subscripts))

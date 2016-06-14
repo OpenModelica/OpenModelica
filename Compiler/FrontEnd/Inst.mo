@@ -2072,6 +2072,8 @@ algorithm
         (compelts_1, eqs_1, initeqs_1, alg_1, initalg_1) =
           InstUtil.extractConstantPlusDepsTpl(compelts_1, instSingleCref, {}, className, eqs_1, initeqs_1, alg_1, initalg_1);
 
+        compelts_1 = InstUtil.addGhostCells(compelts_1, eqs_1);
+
         //(csets, env2, ih) = InstUtil.addConnectionCrefsFromEqs(csets, eqs_1, pre, env2, ih);
 
         //// fprintln(Flags.INST_TRACE, "Emods to InstUtil.addComponentsToEnv: " + Mod.printModStr(emods));
@@ -2095,7 +2097,7 @@ algorithm
         (smCompCrefs, smInitialCrefs) = InstStateMachineUtil.getSMStatesInContext(eqs_1, pre);
         //ih = List.fold1(smCompCrefs, InnerOuter.updateSMHierarchy, inPrefix3, ih);
         ih = List.fold(smCompCrefs, InnerOuter.updateSMHierarchy, ih);
-        compelts_2 = InstUtil.addGhostCells(compelts_2, eqs_1);
+
         (cache,env5,ih,store,dae1,csets,ci_state2,vars,graph,domainFieldsLst) =
           instElementList(cache, env3, ih, store, mods, pre, ci_state1,
             compelts_2, inst_dims, impl, callscope, graph, csets, true);
@@ -2112,7 +2114,9 @@ algorithm
         if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
           eqs_1 = List.fold1(eqs_1, InstUtil.discretizePDE, domainFieldsLst, {});
         end if;
-
+        if className == "ghostTest" then
+          print("GhostTest");
+        end if;
         //Instantiate equations (see function "instEquation")
         (cache,env5,ih,dae2,csets2,ci_state3,graph) =
           instList(cache, env5, ih, pre, csets1, ci_state2, InstSection.instEquation, eqs_1, impl, InstTypes.alwaysUnroll, graph);
