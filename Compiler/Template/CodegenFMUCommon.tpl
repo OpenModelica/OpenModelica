@@ -377,11 +377,15 @@ template ModelStructureDerivatives(FmiDerivatives fmiDerivatives)
 ::=
 match fmiDerivatives
 case FMIDERIVATIVES(__) then
+  if intGt(listLength(fmiUnknownsList), 0) then
   <<
   <Derivatives>
     <%ModelStructureUnknowns(fmiUnknownsList)%>
   </Derivatives>
   >>
+  else
+  // don't generate the element if model has none
+  <<>>
 end ModelStructureDerivatives;
 
 template ModelStructureDiscreteStates(FmiDiscreteStates fmiDiscreteStates)
