@@ -794,6 +794,16 @@ algorithm
   outSubPartitions := inPartition.subPartitions;
 end getSubPartition;
 
+public function getClockedEquations
+  input list<SimCode.SubPartition> inSubPartitions;
+  output list<SimCode.SimEqSystem> outEqs = {};
+algorithm
+  for part in inSubPartitions loop
+    outEqs := listAppend(part.equations, outEqs);
+    outEqs := listAppend(part.removedEquations, outEqs);
+  end for;
+end getClockedEquations;
+
 protected function addTempVars
   input array<list<SimCodeVar.SimVar>> simVars;
   input list<SimCodeVar.SimVar> tempVars;
