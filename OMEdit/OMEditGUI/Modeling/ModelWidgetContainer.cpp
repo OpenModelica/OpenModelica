@@ -2668,7 +2668,7 @@ void ModelWidget::createModelWidgetComponents()
       ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(mpEditor);
       pModelicaEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
       mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-      connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
+      connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaEditorSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelicaTypeLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);

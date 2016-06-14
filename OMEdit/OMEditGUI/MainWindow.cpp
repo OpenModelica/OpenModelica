@@ -1280,9 +1280,6 @@ void MainWindow::openDirectory()
  */
 void MainWindow::loadSystemLibrary()
 {
-  QTime t;
-  t.start();
-  fprintf(stdout, "%s\n", t.currentTime().toString("hh:mm:ss:zzz").toStdString().c_str());fflush(NULL);
   QAction *pAction = qobject_cast<QAction*>(sender());
   if (pAction) {
     /* check if library is already loaded. */
@@ -1308,8 +1305,6 @@ void MainWindow::loadSystemLibrary()
       hideProgressBar();
     }
   }
-  fprintf(stdout, "%s\n", t.currentTime().toString("hh:mm:ss:zzz").toStdString().c_str());fflush(NULL);
-  fprintf(stdout, "%s\n", QString::number((double)t.elapsed() / 1000).toStdString().c_str());
 }
 
 /*!

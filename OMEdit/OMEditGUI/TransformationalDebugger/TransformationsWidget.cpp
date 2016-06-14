@@ -605,7 +605,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, MainW
   ModelicaHighlighter *pModelicaTextHighlighter;
   pModelicaTextHighlighter = new ModelicaHighlighter(mpMainWindow->getOptionsDialog()->getModelicaEditorPage(),
                                                      mpTransformationsEditor->getPlainTextEdit());
-  connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
+  connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaEditorSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   QVBoxLayout *pTSourceEditorVerticalLayout = new QVBoxLayout;
   pTSourceEditorVerticalLayout->setSpacing(1);
   pTSourceEditorVerticalLayout->setContentsMargins(0, 0, 0, 0);
