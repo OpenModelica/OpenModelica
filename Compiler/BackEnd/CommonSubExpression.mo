@@ -492,8 +492,8 @@ algorithm
         BackendDump.dumpEquationList({inEq}, "wrapFunctionCalls_analysis (EQUATION)");
       end if;
 
-      // CREF = CALL
-      if isCallAndCref(lhs, rhs) then
+      // CREF = CALL or CONST = CALL
+      if isCallAndCref(lhs, rhs) or isConstAndCall(lhs, rhs) then
         (cref, call) := getTheRightPattern(lhs, rhs);
         if BaseHashTable.hasKey(call, HT) then
           exIndex := BaseHashTable.get(call, HT);
@@ -640,6 +640,8 @@ protected function getTheRightPattern
   output DAE.Exp outExp2;
 algorithm
   (outExp1, outExp2) := match(inExp1, inExp2)
+    case (DAE.RCONST(), DAE.CALL()) then (inExp1, inExp2);
+    case (DAE.CALL(), DAE.RCONST()) then (inExp2, inExp1);
     case (DAE.TUPLE(), DAE.CALL()) then (inExp1, inExp2);
     case (DAE.CALL(), DAE.TUPLE()) then (inExp2, inExp1);
     case (DAE.CREF(), DAE.CALL()) then (inExp1, inExp2);
@@ -656,11 +658,11 @@ protected function isEquationRedundant
 algorithm
   outB := match(inEq)
     local
-      DAE.ComponentRef cref1, cref2;
+      DAE.Exp exp1, exp2;
       list<DAE.Exp> lhs, rhs;
 
-    case BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cref1), scalar=DAE.CREF(componentRef=cref2))
-    then ComponentReference.crefEqual(cref1, cref2);
+    case BackendDAE.EQUATION(exp=exp1, scalar=exp2)
+    then Expression.expEqual(exp1, exp2);
 
     case BackendDAE.EQUATION(exp=DAE.TUPLE(lhs), scalar=DAE.TUPLE(rhs)) guard (listLength(lhs) == listLength(rhs)) equation
       print("This should never appear\n");
@@ -705,8 +707,6 @@ protected function isCallAndCref
   output Boolean outBoolean;
 algorithm
   outBoolean := match(inExp, inExp2)
-    case (DAE.CREF(componentRef=DAE.CREF_IDENT("time", DAE.T_REAL_DEFAULT, {})),DAE.CALL()) then false;
-    case (DAE.CALL(),DAE.CREF(componentRef=DAE.CREF_IDENT("time", DAE.T_REAL_DEFAULT, {}))) then false;
     case (DAE.CREF(),DAE.CALL()) then true;
     case (DAE.CALL(),DAE.CREF()) then true;
     else false;
@@ -719,13 +719,23 @@ protected function isTsubAndCref
   output Boolean outBoolean;
 algorithm
   outBoolean := match(inExp, inExp2)
-    case (DAE.CREF(componentRef=DAE.CREF_IDENT("time", DAE.T_REAL_DEFAULT, {})), DAE.TSUB()) then false;
-    case (DAE.TSUB(), DAE.CREF(componentRef=DAE.CREF_IDENT("time", DAE.T_REAL_DEFAULT, {}))) then false;
     case (DAE.CREF(), DAE.TSUB()) then true;
     case (DAE.TSUB(), DAE.CREF()) then true;
     else false;
   end match;
 end isTsubAndCref;
+
+protected function isConstAndCall
+  input DAE.Exp inExp;
+  input DAE.Exp inExp2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(inExp, inExp2)
+    case (DAE.RCONST(), DAE.CALL()) then true;
+    case (DAE.CALL(), DAE.RCONST()) then true;
+    else false;
+  end match;
+end isConstAndCall;
 
 protected function isCallAndTuple
   input DAE.Exp inExp;
@@ -827,6 +837,7 @@ algorithm
   outB := match(inCall)
     local
       Absyn.Path path;
+    case DAE.ASUB() then true;
     case DAE.CALL(path=Absyn.IDENT("$getPart")) then true;
     case DAE.CALL(path=Absyn.IDENT("pre")) then true;
     case DAE.CALL(path=Absyn.IDENT("previous")) then true;
@@ -947,7 +958,7 @@ algorithm
       // crefs = ComponentReference.expandCref(cr, false);
       // expLst = List.map(crefs, Expression.crefExp);
       // value = DAE.ARRAY(inType, true, expLst);
-          value = DAE.CREF(cr, inType);
+      value = DAE.CREF(cr, inType);
     then (value, inIndex + 1);
 
     // record types
@@ -959,7 +970,7 @@ algorithm
       // varNames = List.map(varLst, Expression.varName);
       // value = DAE.RECORD(path, expLst, varNames, inType);
       // print("   DAE.T_COMPLEX \n");
-          value = DAE.CREF(cr, inType);
+      value = DAE.CREF(cr, inType);
     then (value, inIndex + 1);
 
     else equation
