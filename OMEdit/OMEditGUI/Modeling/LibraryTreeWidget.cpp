@@ -1638,7 +1638,7 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
      */
     int row = pLibraryTreeItem->row();
     LibraryTreeItem *pNextLibraryTreeItem = 0;
-    bool expandState;
+    bool expandState = false;
     if (pLibraryTreeItem->parent()->childrenSize() > row + 1) {
       pNextLibraryTreeItem = pLibraryTreeItem->parent()->child(row + 1);
       QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
@@ -1691,7 +1691,7 @@ bool LibraryTreeModel::unloadMetaModelOrTextFile(LibraryTreeItem *pLibraryTreeIt
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
     pMessageBox->setIcon(QMessageBox::Question);
     pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_TEXT_FILE_MSG).arg(pLibraryTreeItem->getNameStructure()));
+    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::UNLOAD_TEXT_FILE_MSG).arg(pLibraryTreeItem->getNameStructure()));
     pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     pMessageBox->setDefaultButton(QMessageBox::Yes);
     int answer = pMessageBox->exec();
@@ -1713,14 +1713,13 @@ bool LibraryTreeModel::unloadMetaModelOrTextFile(LibraryTreeItem *pLibraryTreeIt
    */
   int row = pLibraryTreeItem->row();
   LibraryTreeItem *pNextLibraryTreeItem = 0;
-  bool expandState;
+  bool expandState = false;
   if (pLibraryTreeItem->parent()->childrenSize() > row + 1) {
     pNextLibraryTreeItem = pLibraryTreeItem->parent()->child(row + 1);
     QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
     QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
     expandState = mpLibraryWidget->getLibraryTreeView()->isExpanded(proxyIndex);
   }
-  // unload the LibraryTreeItem children if any and then unload the LibraryTreeItem.
   // remove the LibraryTreeItem from Libraries Browser
   beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
   // unload the LibraryTreeItem children if any and then unload the LibraryTreeItem.
@@ -1733,17 +1732,6 @@ bool LibraryTreeModel::unloadMetaModelOrTextFile(LibraryTreeItem *pLibraryTreeIt
   }
   /* Update the model switcher toolbar button. */
   mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
-  if (!pLibraryTreeItem->isTopLevel()) {
-    LibraryTreeItem *pContainingFileParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
-    // if we unload in a package saved in one file strucutre then we should update its containing file item text.
-    if (pContainingFileParentLibraryTreeItem != pLibraryTreeItem) {
-      updateLibraryTreeItemClassText(pContainingFileParentLibraryTreeItem);
-    } else {
-      // if we unload in a package saved in folder strucutre then we should mark its parent unsaved.
-      pLibraryTreeItem->parent()->setIsSaved(false);
-      updateLibraryTreeItem(pLibraryTreeItem->parent());
-    }
-  }
   return true;
 }
 
@@ -1822,7 +1810,7 @@ bool LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
    */
   int row = pLibraryTreeItem->row();
   LibraryTreeItem *pNextLibraryTreeItem = 0;
-  bool expandState;
+  bool expandState = false;
   if (pLibraryTreeItem->parent()->childrenSize() > row + 1) {
     pNextLibraryTreeItem = pLibraryTreeItem->parent()->child(row + 1);
     QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
@@ -1830,6 +1818,64 @@ bool LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     expandState = mpLibraryWidget->getLibraryTreeView()->isExpanded(proxyIndex);
   }
   unloadClassChildren(pLibraryTreeItem);
+  if (pNextLibraryTreeItem) {
+    QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
+    QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+    mpLibraryWidget->getLibraryTreeView()->setExpanded(proxyIndex, expandState);
+  }
+  /* Update the model switcher toolbar button. */
+  mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
+  return true;
+}
+
+/*!
+ * \brief LibraryTreeModel::deleteTextFile
+ * Deletes the Text LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \param askQuestion
+ * \return
+ */
+bool LibraryTreeModel::deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
+{
+  if (askQuestion) {
+    QMessageBox *pMessageBox = new QMessageBox(mpLibraryWidget->getMainWindow());
+    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
+    pMessageBox->setIcon(QMessageBox::Question);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_TEXT_FILE_MSG).arg(pLibraryTreeItem->getNameStructure()));
+    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    pMessageBox->setDefaultButton(QMessageBox::Yes);
+    int answer = pMessageBox->exec();
+    switch (answer) {
+      case QMessageBox::Yes:
+        // Yes was clicked. Don't return.
+        break;
+      case QMessageBox::No:
+        // No was clicked. Return
+        return false;
+      default:
+        // should never be reached
+        return false;
+    }
+  }
+  /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
+   * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
+   * The following code overcomes this issue. It stores the next index expand state and then apply it after deletion.
+   */
+  int row = pLibraryTreeItem->row();
+  LibraryTreeItem *pNextLibraryTreeItem = 0;
+  bool expandState = false;
+  if (pLibraryTreeItem->parent()->childrenSize() > row + 1) {
+    pNextLibraryTreeItem = pLibraryTreeItem->parent()->child(row + 1);
+    QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
+    QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+    expandState = mpLibraryWidget->getLibraryTreeView()->isExpanded(proxyIndex);
+  }
+  // remove the LibraryTreeItem from Libraries Browser
+  beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
+  // Deletes the LibraryTreeItem children if any and then deletes the LibraryTreeItem.
+  deleteFileChildren(pLibraryTreeItem);
+  endRemoveRows();
   if (pNextLibraryTreeItem) {
     QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
     QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
@@ -2311,6 +2357,55 @@ void LibraryTreeModel::unloadFileChildren(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
+ * \brief LibraryTreeModel::deleteFileHelper
+ * Helper function for deleting the LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \param pParentLibraryTreeItem
+ */
+void LibraryTreeModel::deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
+{
+   // remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it.
+  if (pLibraryTreeItem->getModelWidget()) {
+    QMdiSubWindow *pMdiSubWindow = mpLibraryWidget->getMainWindow()->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
+    if (pMdiSubWindow) {
+      pMdiSubWindow->close();
+      pMdiSubWindow->deleteLater();
+    }
+    pLibraryTreeItem->getModelWidget()->deleteLater();
+  }
+  pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
+  QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+  // delete the file/folder
+  bool fail = false;
+  if (fileInfo.isDir()) {
+    fail = !QDir().rmdir(fileInfo.absoluteFilePath());
+  } else {
+    fail = !QFile::remove(fileInfo.absoluteFilePath());
+  }
+  if (fail) {
+    MessagesWidget *pMessagesWidget = mpLibraryWidget->getMainWindow()->getMessagesWidget();
+    pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Unable to delete <b>%1</b>.")
+                                               .arg(fileInfo.absoluteFilePath()), Helper::scriptingKind, Helper::errorLevel));
+  }
+  pLibraryTreeItem->deleteLater();
+}
+
+/*!
+ * \brief LibraryTreeModel::deleteFileChildren
+ * Deletes the LibraryTreeItem childrens.
+ * \param pLibraryTreeItem
+ */
+void LibraryTreeModel::deleteFileChildren(LibraryTreeItem *pLibraryTreeItem)
+{
+  int i = 0;
+  while(i < pLibraryTreeItem->childrenSize()) {
+    deleteFileChildren(pLibraryTreeItem->child(i));
+    i = 0;  //Restart iteration
+  }
+  deleteFileHelper(pLibraryTreeItem, pLibraryTreeItem->parent());
+}
+
+/*!
  * \brief LibraryTreeModel::supportedDropActions
  * \return
  */
@@ -2445,6 +2540,10 @@ void LibraryTreeView::createActions()
   mpUnloadMetaModelFileAction->setShortcut(QKeySequence::Delete);
   mpUnloadMetaModelFileAction->setStatusTip(Helper::unloadMetaModelOrTextTip);
   connect(mpUnloadMetaModelFileAction, SIGNAL(triggered()), SLOT(unloadMetaModelOrTextFile()));
+  // Delete Action
+  mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
+  mpDeleteAction->setStatusTip(tr("Deletes the file"));
+  connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteTextFile()));
   // Export FMU Action
   mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::exportFMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
@@ -2604,7 +2703,9 @@ void LibraryTreeView::showContextMenu(QPoint point)
         }
         break;
       case LibraryTreeItem::Text:
+        menu.addAction(mpDeleteAction);
         if (pLibraryTreeItem->isTopLevel()) {
+          menu.addSeparator();
           menu.addAction(mpUnloadMetaModelFileAction);
         }
         break;
@@ -2853,13 +2954,25 @@ void LibraryTreeView::unloadClass()
 
 /*!
  * \brief LibraryTreeView::unloadMetaModelOrTextFile
- * Unloads/Deletes the MetaModel/Text LibraryTreeItem.
+ * Unloads the MetaModel/Text LibraryTreeItem.
  */
 void LibraryTreeView::unloadMetaModelOrTextFile()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->unloadMetaModelOrTextFile(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::deleteTextFile
+ * Deletes the Text LibraryTreeItem.
+ */
+void LibraryTreeView::deleteTextFile()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->deleteTextFile(pLibraryTreeItem);
   }
 }
 
@@ -3014,7 +3127,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
     } else if (event->key() == Qt::Key_Delete) {
       if (isModelicaLibraryType) {
         unloadClass();
-      } else {
+      } else  if (isTopLevel) {
         unloadMetaModelOrTextFile();
       }
     } else {

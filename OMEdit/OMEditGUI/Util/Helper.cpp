@@ -389,7 +389,7 @@ void Helper::initHelperVariables()
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
-  Helper::unloadMetaModelOrTextTip = tr("Unload the MetaModel/Text file");
+  Helper::unloadMetaModelOrTextTip = tr("Unloads the MetaModel/Text file");
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
   Helper::simulateTip = tr("Simulates the Modelica class");
@@ -584,8 +584,6 @@ QString GUIMessages::getMessage(int type)
       return tr("You cannot insert <b>%1</b>, it is a <b>%2</b>. Only <b>connector</b> is allowed on the icon layer.");
     case PLOT_PARAMETRIC_DIFF_FILES:
       return tr("You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.");
-    case FILE_FORMAT_NOT_SUPPORTED:
-      return tr("The file <b>%1</b> is not a valid Modelica file. The file format is not supported. You can only open <b>%2</b>.");
     case ENTER_VALID_NUMBER:
       return tr("Enter a valid number value for <b>%1</b>.");
     case ENTER_VALUE:
@@ -606,8 +604,10 @@ QString GUIMessages::getMessage(int type)
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
     case DELETE_CLASS_MSG:
       return tr("Are you sure you want to delete <b>%1</b>? Everything contained inside this class will also be deleted.");
-    case DELETE_TEXT_FILE_MSG:
+    case UNLOAD_TEXT_FILE_MSG:
       return tr("Are you sure you want to unload <b>%1</b>?");
+    case DELETE_TEXT_FILE_MSG:
+      return tr("Are you sure you want to delete <b>%1</b>?<br /><br />This will also delete from file system.");
     case WRONG_MODIFIER:
       return tr("The Modifier <b>%1</b> format is invalid. The correct format is <b>phi(start=1)</b>");
     case SET_INFO_XML_FLAG:

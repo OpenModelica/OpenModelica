@@ -501,35 +501,28 @@ void MainWindow::beforeClosingMainWindow()
   delete pSettings;
 }
 
+/*!
+ * \brief MainWindow::openDroppedFile
+ * Opens the dropped file.
+ * \param event
+ */
 void MainWindow::openDroppedFile(QDropEvent *event)
 {
   int progressValue = 0;
   mpProgressBar->setRange(0, event->mimeData()->urls().size());
   showProgressBar();
   //retrieves the filenames of all the dragged files in list and opens the valid files.
-  foreach (QUrl fileUrl, event->mimeData()->urls())
-  {
+  foreach (QUrl fileUrl, event->mimeData()->urls()) {
     QFileInfo fileInfo(fileUrl.toLocalFile());
     // show file loading message
     mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
     mpProgressBar->setValue(++progressValue);
     // check the file extension
     QRegExp resultFilesRegExp("\\b(mat|plt|csv)\\b");
-    if ((fileInfo.suffix().compare("mo", Qt::CaseInsensitive) == 0) || (fileInfo.suffix().compare("xml", Qt::CaseInsensitive) == 0)) {
-      mpLibraryWidget->openFile(fileInfo.absoluteFilePath(), Helper::utf8, false);
-    } else if (resultFilesRegExp.indexIn(fileInfo.suffix()) != -1) {
+    if (resultFilesRegExp.indexIn(fileInfo.suffix()) != -1) {
       openResultFiles(QStringList(fileInfo.absoluteFilePath()));
-    }
-    else
-    {
-      QMessageBox *pMessageBox = new QMessageBox(this);
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
-      pMessageBox->setIcon(QMessageBox::Critical);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::FILE_FORMAT_NOT_SUPPORTED).arg(fileInfo.fileName())
-                           .arg(Helper::omFileTypes));
-      pMessageBox->setStandardButtons(QMessageBox::Ok);
-      pMessageBox->exec();
+    } else {
+      mpLibraryWidget->openFile(fileInfo.absoluteFilePath(), Helper::utf8, false);
     }
   }
   mpStatusBar->clearMessage();

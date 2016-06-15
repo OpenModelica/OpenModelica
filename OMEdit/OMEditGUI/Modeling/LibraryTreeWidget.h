@@ -248,6 +248,7 @@ public:
   bool unloadMetaModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass);
   bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
   void moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top);
   void updateBindings(LibraryTreeItem *pLibraryTreeItem);
@@ -275,6 +276,8 @@ private:
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);
   void unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void unloadFileChildren(LibraryTreeItem *pLibraryTreeItem);
+  void deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
+  void deleteFileChildren(LibraryTreeItem *pLibraryTreeItem);
 protected:
   Qt::DropActions supportedDropActions() const;
 };
@@ -308,6 +311,7 @@ private:
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
   QAction *mpUnloadMetaModelFileAction;
+  QAction *mpDeleteAction;
   QAction *mpExportFMUAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
@@ -340,6 +344,7 @@ public slots:
   void duplicateClass();
   void unloadClass();
   void unloadMetaModelOrTextFile();
+  void deleteTextFile();
   void exportModelFMU();
   void exportModelXML();
   void exportModelFigaro();
