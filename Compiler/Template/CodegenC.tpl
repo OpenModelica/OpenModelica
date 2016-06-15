@@ -2789,7 +2789,7 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, String mode
 
     data->simulationInfo->discreteCall = 1;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations(<%nrfuncs%>, data, threadData, functionInitialEquations_systems);'
-    else '<%fncalls%>' %>
+    else fncalls %>
     data->simulationInfo->discreteCall = 0;
 
     TRACE_POP
@@ -2835,7 +2835,7 @@ template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lamb
 
     data->simulationInfo->discreteCall = 1;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations_lambda0(<%nrfuncs%>, data, threadData, functionInitialEquations_lambda0_systems);'
-    else '<%fncalls%>' %>
+    else fncalls %>
     data->simulationInfo->discreteCall = 0;
 
     TRACE_POP
@@ -3683,7 +3683,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
 
     <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(data, threadData);
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionODE(<%nrfuncs%>, data, threadData, functionODE_systems);'
-    else '<%fncalls%>' %>
+    else fncalls %>
 
     <% if profileFunctions() then "rt_accumulate(SIM_TIMER_FUNCTION_ODE);" %>
 
@@ -3714,7 +3714,7 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
     <%varDecls%>
 
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionAlg(<%nrfuncs%>, data, threadData, functionAlg_systems);'
-    else '<%fncalls%>' %>
+    else fncalls %>
 
     <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(data, threadData);
 
@@ -3749,9 +3749,7 @@ template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String model
     data->simulationInfo->callStatistics.functionEvalDAE++;
 
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAERes(<%nrfuncs%>, data, threadData, functionDAERes_systems);'
-    else (resEquations |> eqLst => (eqLst |> eq hasindex i0 =>
-                    equation_call(eq, modelNamePrefix)
-                    ;separator="\n");separator="\n") %>
+    else fncalls %>
 
     <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(data, threadData);
 
@@ -3913,7 +3911,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
     data->simulationInfo->discreteCall = 1;
     <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(data, threadData);
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAE(<%nrfuncs%>, data, threadData, functionDAE_systems);'
-    else '<%fncalls%>' %>
+    else fncalls %>
     data->simulationInfo->discreteCall = 0;
 
     TRACE_POP
@@ -4785,7 +4783,13 @@ template equation_call(SimEqSystem eq, String modelNamePrefix)
   then ""
   else
   (
-  let ix = equationIndex(eq)
+  let ix = match eq
+  case e as SES_LINEAR(alternativeTearing = SOME(LINEARSYSTEM))
+  case e as SES_NONLINEAR(alternativeTearing = SOME(NONLINEARSYSTEM)) then
+    equationIndexAlternativeTearing(eq)
+  else
+    equationIndex(eq)
+  end match
   <<
   <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(data, threadData);
