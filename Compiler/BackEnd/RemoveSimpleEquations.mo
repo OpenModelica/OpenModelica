@@ -1891,78 +1891,29 @@ protected function handleSets "author: Frenkel TUD 2012-12
   input array<SimpleContainer> containerArr;
   input array<list<Integer>> iMT;
   input HashSet.HashSet unReplaceable;
-  input BackendDAE.Variables iVars;
-  input list<BackendDAE.Equation> iEqnslst;
-  input BackendDAE.Shared ishared;
-  input BackendVarTransform.VariableReplacements iRepl;
-  output BackendDAE.Variables oVars;
-  output list<BackendDAE.Equation> oEqnslst;
-  output BackendDAE.Shared oshared;
-  output BackendVarTransform.VariableReplacements oRepl;
+  input output BackendDAE.Variables vars;
+  input output list<BackendDAE.Equation> eqnslst;
+  input output BackendDAE.Shared shared;
+  input output BackendVarTransform.VariableReplacements repl;
+protected
+  Option<tuple<Integer, Integer>> rmax, smax;
+  Option<Integer> unremovable, const;
+  Integer mark = inMark;
 algorithm
-  (oVars, oEqnslst, oshared, oRepl) := match (containerIdx, inMark, containerArr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl)
-    local
-      Option<tuple<Integer, Integer>> rmax, smax;
-      Option<Integer> unremovable, const;
-      Integer mark;
-      BackendDAE.Variables vars;
-      list<BackendDAE.Equation> eqnslst;
-      BackendDAE.Shared shared;
-      BackendVarTransform.VariableReplacements repl;
-    case (0, _, _, _, _, _, _, _, _) then (iVars, iEqnslst, ishared, iRepl);
-    else
-      equation
-        // make this function a for-loop not recursive
-        (mark, vars, eqnslst, shared, repl) = handleSetsWork(intGt(getVisited(containerArr[containerIdx]), 0), containerIdx, inMark, containerArr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl);
-        (vars, eqnslst, shared, repl) = handleSets(containerIdx-1, mark, containerArr, iMT, unReplaceable, vars, eqnslst, shared, repl);
-      then
-        (vars, eqnslst, shared, repl);
-  end match;
+  for idx in containerIdx:-1:1 loop
+    if not intGt(getVisited(containerArr[idx]), 0) then
+      // convert the found simple equtions to replacements and remove the simple
+      // variabes from the variables
+
+      // collect set
+      //print("Check Simple Container "+dumpSimpleContainer(containerArr[idx])+"\n");
+      (rmax, smax, unremovable, const, _) := getAlias({idx}, NONE(), mark, containerArr, iMT, vars, unReplaceable, false, {}, NONE(), NONE(), NONE(), NONE());
+      // traverse set and add replacements, move vars, ...
+      (vars, eqnslst, shared, repl) := handleSet(rmax, smax, unremovable, const, mark+1, containerArr, iMT, unReplaceable, vars, eqnslst, shared, repl);
+      mark := mark+2;
+    end if;
+  end for;
 end handleSets;
-
-protected function handleSetsWork "author: Frenkel TUD 2012-12
-  convert the found simple equtions to replacements and remove the simple
-  variabes from the variables"
-  input Boolean isVisited;
-  input Integer containerIdx "downwards";
-  input Integer mark; //how to mark a visited container
-  input array<SimpleContainer> containerArr;
-  input array<list<Integer>> iMT; //[varIdx] = simpleContainer
-  input HashSet.HashSet unReplaceable;
-  input BackendDAE.Variables iVars;
-  input list<BackendDAE.Equation> iEqnslst;
-  input BackendDAE.Shared iShared;
-  input BackendVarTransform.VariableReplacements iRepl;
-  output Integer oMark;
-  output BackendDAE.Variables oVars;
-  output list<BackendDAE.Equation> oEqnslst;
-  output BackendDAE.Shared oshared;
-  output BackendVarTransform.VariableReplacements oRepl;
-algorithm
-  (oMark, oVars, oEqnslst, oshared, oRepl) := match (isVisited, containerIdx, mark, containerArr, iMT, unReplaceable, iVars, iEqnslst, iShared, iRepl)
-    local
-      Option<tuple<Integer, Integer>> rmax, smax;
-      Option<Integer> unremovable, const;
-
-      BackendDAE.Variables vars;
-      list<BackendDAE.Equation> eqnslst;
-      BackendDAE.Shared shared;
-      BackendVarTransform.VariableReplacements repl;
-
-    case (true, _, _, _, _, _, _, _, _, _)
-      then (mark, iVars, iEqnslst, iShared, iRepl);
-
-    else
-      equation
-        // collect set
-          //print("Check Simple Container "+dumpSimpleContainer(containerArr[containerIdx])+"\n");
-        (rmax, smax, unremovable, const, _) = getAlias({containerIdx}, NONE(), mark, containerArr, iMT, iVars, unReplaceable, false, {}, NONE(), NONE(), NONE(), NONE());
-        // traverse set and add replacements, move vars, ...
-        (vars, eqnslst, shared, repl) = handleSet(rmax, smax, unremovable, const, mark+1, containerArr, iMT, unReplaceable, iVars, iEqnslst, iShared, iRepl);
-      then (mark+2, vars, eqnslst, shared, repl);
-
-  end match;
-end handleSetsWork;
 
 protected function getAlias "author: Frenkel TUD 2012-12
   traverse the simple tree to find the variable we keep"
