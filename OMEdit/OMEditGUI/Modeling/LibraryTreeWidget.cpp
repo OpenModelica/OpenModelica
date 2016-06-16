@@ -1272,15 +1272,18 @@ LibraryTreeItem* LibraryTreeModel::createNonExistingLibraryTreeItem(QString name
  * \param path
  * \param isSaved
  * \param pParentLibraryTreeItem
+ * \param row
  * \return
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path,
-                                                         bool isSaved, LibraryTreeItem *pParentLibraryTreeItem)
+                                                         bool isSaved, LibraryTreeItem *pParentLibraryTreeItem, int row)
 {
-  int row = pParentLibraryTreeItem->childrenSize();
+  if (row == -1) {
+    row = pParentLibraryTreeItem->childrenSize();
+  }
   QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
   beginInsertRows(index, row, row);
-  LibraryTreeItem *pLibraryTreeItem = createLibraryTreeItemImpl(type, name, nameStructure, path, isSaved, pParentLibraryTreeItem);
+  LibraryTreeItem *pLibraryTreeItem = createLibraryTreeItemImpl(type, name, nameStructure, path, isSaved, pParentLibraryTreeItem, row);
   endInsertRows();
   return pLibraryTreeItem;
 }
@@ -2248,6 +2251,12 @@ void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibrar
   pLibraryTreeItem->setNonExisting(false);
 }
 
+/*!
+ * \brief LibraryTreeModel::createLibraryTreeItemsImpl
+ * Creates the LibraryTreeItems for a folder structure.
+ * \param fileInfo
+ * \param pParentLibraryTreeItem
+ */
 void LibraryTreeModel::createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem)
 {
   // create root project folder
@@ -2264,12 +2273,26 @@ void LibraryTreeModel::createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTre
   }
 }
 
+/*!
+ * \brief LibraryTreeModel::createLibraryTreeItemImpl
+ * Creates the LibraryTreeItem
+ * \param type
+ * \param name
+ * \param nameStructure
+ * \param path
+ * \param isSaved
+ * \param pParentLibraryTreeItem
+ * \param row
+ * \return
+ */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure,
-                                                             QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem)
+                                                             QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem, int row)
 {
   OMCInterface::getClassInformation_res classInformation;
   LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(type, name, nameStructure, classInformation, path, isSaved, pParentLibraryTreeItem);
-  int row = pParentLibraryTreeItem->childrenSize();
+  if (row == -1) {
+    row = pParentLibraryTreeItem->childrenSize();
+  }
   pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
   return pLibraryTreeItem;
 }
@@ -2540,6 +2563,18 @@ void LibraryTreeView::createActions()
   mpUnloadMetaModelFileAction->setShortcut(QKeySequence::Delete);
   mpUnloadMetaModelFileAction->setStatusTip(Helper::unloadMetaModelOrTextTip);
   connect(mpUnloadMetaModelFileAction, SIGNAL(triggered()), SLOT(unloadMetaModelOrTextFile()));
+  // new file Action
+  mpNewFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New File"), this);
+  mpNewFileAction->setStatusTip(tr("Creates a new file"));
+  connect(mpNewFileAction, SIGNAL(triggered()), SLOT(createNewFile()));
+  // new file Action
+  mpNewFolderAction = new QAction(tr("New Folder"), this);
+  mpNewFolderAction->setStatusTip(tr("Creates a new folder"));
+  connect(mpNewFolderAction, SIGNAL(triggered()), SLOT(createNewFolder()));
+  // rename Action
+  mpRenameAction = new QAction(Helper::rename, this);
+  mpRenameAction->setStatusTip(tr("Renames a file/folder"));
+  connect(mpRenameAction, SIGNAL(triggered()), SLOT(renameFileOrFolder()));
   // Delete Action
   mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
   mpDeleteAction->setStatusTip(tr("Deletes the file"));
@@ -2643,6 +2678,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
   LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
   if (pLibraryTreeItem) {
     QMenu menu(this);
+    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
     switch (pLibraryTreeItem->getLibraryType()) {
       case LibraryTreeItem::Modelica:
       default:
@@ -2703,6 +2739,12 @@ void LibraryTreeView::showContextMenu(QPoint point)
         }
         break;
       case LibraryTreeItem::Text:
+        if (fileInfo.isDir()) {
+          menu.addAction(mpNewFileAction);
+          menu.addAction(mpNewFolderAction);
+          menu.addSeparator();
+        }
+        menu.addAction(mpRenameAction);
         menu.addAction(mpDeleteAction);
         if (pLibraryTreeItem->isTopLevel()) {
           menu.addSeparator();
@@ -2962,6 +3004,35 @@ void LibraryTreeView::unloadMetaModelOrTextFile()
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->unloadMetaModelOrTextFile(pLibraryTreeItem);
   }
+}
+
+/*!
+ * \brief LibraryTreeView::createNewFile
+ * Creates a new file.
+ */
+void LibraryTreeView::createNewFile()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (!pLibraryTreeItem) {
+    return;
+  }
+  CreateNewItem *pCreateNewItem = new CreateNewItem(pLibraryTreeItem->getFileName(), true, mpLibraryWidget->getMainWindow());
+  pCreateNewItem->exec();
+}
+
+void LibraryTreeView::createNewFolder()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (!pLibraryTreeItem) {
+    return;
+  }
+  CreateNewItem *pCreateNewItem = new CreateNewItem(pLibraryTreeItem->getFileName(), false, mpLibraryWidget->getMainWindow());
+  pCreateNewItem->exec();
+}
+
+void LibraryTreeView::renameFileOrFolder()
+{
+
 }
 
 /*!
@@ -3872,6 +3943,7 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
       pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
       pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
     }
+    mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
   } else {
     return false;
   }

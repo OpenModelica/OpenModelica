@@ -2690,14 +2690,14 @@ void ModelWidget::createModelWidgetComponents()
         mpEditor = new CEditor(this);
         mpEditor->getPlainTextEdit()->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         CHighlighter *pCHighlighter = new CHighlighter(pMainWindow->getOptionsDialog()->getCEditorPage(), mpEditor->getPlainTextEdit());
-        Q_UNUSED(pCHighlighter);
+        connect(pMainWindow->getOptionsDialog(), SIGNAL(cEditorSettingsChanged()), pCHighlighter, SLOT(settingsChanged()));
       } else if (Utilities::isModelicaFile(fileInfo.suffix())) {
         mpEditor = new MetaModelicaEditor(this);
         mpEditor->getPlainTextEdit()->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         MetaModelicaHighlighter *pMetaModelicaHighlighter;
         pMetaModelicaHighlighter = new MetaModelicaHighlighter(pMainWindow->getOptionsDialog()->getMetaModelicaEditorPage(),
                                                                mpEditor->getPlainTextEdit());
-        Q_UNUSED(pMetaModelicaHighlighter);
+        connect(pMainWindow->getOptionsDialog(), SIGNAL(metaModelicaEditorSettingsChanged()), pMetaModelicaHighlighter, SLOT(settingsChanged()));
       } else {
         mpEditor = new TextEditor(this);
         TextEditor *pTextEditor = dynamic_cast<TextEditor*>(mpEditor);
@@ -2753,7 +2753,7 @@ void ModelWidget::createModelWidgetComponents()
       MetaModelHighlighter *pMetaModelHighlighter = new MetaModelHighlighter(pMainWindow->getOptionsDialog()->getMetaModelEditorPage(),
                                                                              mpEditor->getPlainTextEdit());
       mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-      connect(pMainWindow->getOptionsDialog(), SIGNAL(MetaModelEditorSettingsChanged()), pMetaModelHighlighter, SLOT(settingsChanged()));
+      connect(pMainWindow->getOptionsDialog(), SIGNAL(metaModelEditorSettingsChanged()), pMetaModelHighlighter, SLOT(settingsChanged()));
       // only get the TLM submodels and connectors if the we are not creating a new class.
       if (!mpLibraryTreeItem->getFileName().isEmpty()) {
         getMetaModelSubModels();

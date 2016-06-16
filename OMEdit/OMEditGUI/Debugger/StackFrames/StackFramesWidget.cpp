@@ -157,7 +157,7 @@ StackFramesTreeWidget::StackFramesTreeWidget(StackFramesWidget *pStackFramesWidg
   setIconSize(Helper::iconSize);
   setColumnCount(3);
   QStringList headers;
-  headers << tr("Function") << Helper::line << tr("File");
+  headers << tr("Function") << Helper::line << Helper::file;
   setHeaderLabels(headers);
   setIndentation(0);
   setExpandsOnDoubleClick(false);

@@ -377,7 +377,7 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   setModal(true);
   mpMainWindow = pParent;
   // create the File Label, textbox and browse button.
-  mpFileLabel = new Label(Helper::file);
+  mpFileLabel = new Label(Helper::fileLabel);
   mpFileTextBox = new QLineEdit;
   mpFileBrowseButton = new QPushButton(Helper::browse);
   mpFileBrowseButton->setAutoDefault(false);
@@ -844,7 +844,7 @@ RenameClassDialog::RenameClassDialog(QString name, QString nameStructure, MainWi
   mpModelNameTextBox = new QLineEdit(name);
   mpModelNameLabel = new Label(tr("New Name:"));
   // Create the buttons
-  mpOkButton = new QPushButton(tr("Rename"));
+  mpOkButton = new QPushButton(Helper::rename);
   mpOkButton->setAutoDefault(true);
   connect(mpOkButton, SIGNAL(clicked()), this, SLOT(renameClass()));
   mpCancelButton = new QPushButton(tr("&Cancel"));
@@ -1508,5 +1508,119 @@ void ExportFigaroDialog::exportModelFigaro()
   mpMainWindow->hideProgressBar();
   // clear the status bar message
   mpMainWindow->getStatusBar()->clearMessage();
+  accept();
+}
+
+CreateNewItem::CreateNewItem(QString path, bool isCreateFile, MainWindow *pMainWindow)
+  : QDialog(pMainWindow), mPath(path), mIsCreateFile(isCreateFile), mpMainWindow(pMainWindow)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - Create New %2").arg(Helper::applicationName).arg(mIsCreateFile ? Helper::file : Helper::folder));
+  setMinimumWidth(400);
+  // Create the name label and text box
+  mpNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit;
+  // Create the path label, text box, browse button
+  mpPathLabel = new Label(Helper::path);
+  mpPathTextBox = new QLineEdit(path);
+  mpPathBrowseButton = new QPushButton(Helper::browse);
+  mpPathBrowseButton->setAutoDefault(false);
+  connect(mpPathBrowseButton, SIGNAL(clicked()), SLOT(browsePath()));
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(createNewFileOrFolder()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpNameLabel, 0, 0);
+  pMainLayout->addWidget(mpNameTextBox, 0, 1, 1, 2);
+  pMainLayout->addWidget(mpPathLabel, 1, 0);
+  pMainLayout->addWidget(mpPathTextBox, 1, 1);
+  pMainLayout->addWidget(mpPathBrowseButton, 1, 2);
+  pMainLayout->addWidget(mpButtonBox, 2, 0, 1, 3, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+void CreateNewItem::browsePath()
+{
+  QString currentPath = mpPathTextBox->text();
+  QString path = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory),
+                                                     currentPath.isEmpty() ? NULL : &currentPath);
+  if (path.isEmpty()) {
+    return;
+  }
+  mpPathTextBox->setText(path);
+}
+
+void CreateNewItem::createNewFileOrFolder()
+{
+  // check name
+  if (mpNameTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error), GUIMessages::getMessage(
+                            GUIMessages::ENTER_NAME).arg(mIsCreateFile ? Helper::file : Helper::folder), Helper::ok);
+    return;
+  }
+  // check path
+  if (mpPathTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error), tr("Please enter path."), Helper::ok);
+    return;
+  }
+  // check if path exists
+  QFileInfo pathInfo(mpPathTextBox->text());
+  if (!pathInfo.exists()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+                          tr("Path <b>%1</b> does not exist.").arg(mpPathTextBox->text()), Helper::ok);
+    return;
+  }
+  QString fileOrFolderPath = QString("%1/%2").arg(mpPathTextBox->text()).arg(mpNameTextBox->text());
+  QFileInfo fileInfo(fileOrFolderPath);
+  if (fileInfo.exists()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(mIsCreateFile ? Helper::file : Helper::folder)
+                          .arg(mpNameTextBox->text()).arg(mpPathTextBox->text()), Helper::ok);
+    return;
+  }
+  // find the LibraryTreeItem based on path
+  LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpPathTextBox->text());
+  if (!pParentLibraryTreeItem) {
+    pParentLibraryTreeItem = pLibraryTreeModel->getRootLibraryTreeItem();
+  }
+  // create file
+  bool success = false;
+  if (mIsCreateFile) {
+    success = mpMainWindow->getLibraryWidget()->saveFile(fileOrFolderPath, "");
+  } else {
+    QDir directory(mpPathTextBox->text());
+    success = directory.mkdir(mpNameTextBox->text());
+  }
+  // if file or folder creation is successful.
+  if (success) {
+    // find insertion index for new file or folder
+    int row = -1;
+    QDir directory(mpPathTextBox->text());
+    QFileInfoList files = directory.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot,
+                                                  QDir::Name | QDir::DirsFirst | QDir::IgnoreCase);
+    foreach (QFileInfo file, files) {
+      row += 1;
+      if (file.fileName().compare(mpNameTextBox->text()) == 0) {
+        break;
+      }
+    }
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(),
+                                                                                 fileInfo.absoluteFilePath(), fileInfo.absoluteFilePath(),
+                                                                                 true, pParentLibraryTreeItem, row);
+    if (pLibraryTreeItem && mIsCreateFile) {
+      pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+    }
+  }
   accept();
 }

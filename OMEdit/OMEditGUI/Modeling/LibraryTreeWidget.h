@@ -229,7 +229,7 @@ public:
   LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
   void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
-                                         LibraryTreeItem *pParentLibraryTreeItem);
+                                         LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   void loadNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void checkIfAnyNonExistingClassLoaded();
   void addNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.append(pLibraryTreeItem);}
@@ -271,7 +271,7 @@ private:
                                         int row = -1);
   void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
-                                             LibraryTreeItem *pParentLibraryTreeItem);
+                                             LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);
   void unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
@@ -311,6 +311,9 @@ private:
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
   QAction *mpUnloadMetaModelFileAction;
+  QAction *mpNewFileAction;
+  QAction *mpNewFolderAction;
+  QAction *mpRenameAction;
   QAction *mpDeleteAction;
   QAction *mpExportFMUAction;
   QAction *mpExportXMLAction;
@@ -344,6 +347,9 @@ public slots:
   void duplicateClass();
   void unloadClass();
   void unloadMetaModelOrTextFile();
+  void createNewFile();
+  void createNewFolder();
+  void renameFileOrFolder();
   void deleteTextFile();
   void exportModelFMU();
   void exportModelXML();

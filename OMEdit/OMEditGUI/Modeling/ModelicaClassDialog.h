@@ -288,4 +288,26 @@ public slots:
   void exportModelFigaro();
 };
 
+class CreateNewItem : public QDialog
+{
+  Q_OBJECT
+public:
+  CreateNewItem(QString path, bool isCreateFile, MainWindow *pMainWindow);
+private:
+  QString mPath;
+  bool mIsCreateFile;
+  MainWindow *mpMainWindow;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  Label *mpPathLabel;
+  QLineEdit *mpPathTextBox;
+  QPushButton *mpPathBrowseButton;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void browsePath();
+  void createNewFileOrFolder();
+};
+
 #endif // MODELICACLASSDIALOG_H

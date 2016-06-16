@@ -261,7 +261,7 @@ BreakpointsTreeModel::BreakpointsTreeModel(BreakpointsTreeView *pBreakpointsTree
 {
   mpBreakpointsTreeView = pBreakpointsTreeView;
   QVector<QVariant> headers;
-  headers << tr("File") << Helper::line;
+  headers << Helper::file << Helper::line;
   mpRootBreakpointTreeItem = new BreakpointTreeItem(headers);
   mpRootBreakpointTreeItem->setIsRootItem(true);
 }

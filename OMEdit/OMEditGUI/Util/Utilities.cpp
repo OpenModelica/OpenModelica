@@ -496,19 +496,21 @@ QFrame* Utilities::getHeadingLine()
 bool Utilities::detectBOM(QString fileName)
 {
   QFile file(fileName);
-  if (file.open(QIODevice::ReadOnly)) {
-    QByteArray data = file.readAll();
-    const int bytesRead = data.size();
-    const unsigned char *buf = reinterpret_cast<const unsigned char *>(data.constData());
-    // code taken from qtextstream
-    if (bytesRead >= 3 && ((buf[0] == 0xef && buf[1] == 0xbb) && buf[2] == 0xbf)) {
-      return true;
+  if (file.exists()) {
+    if (file.open(QIODevice::ReadOnly)) {
+      QByteArray data = file.readAll();
+      const int bytesRead = data.size();
+      const unsigned char *buf = reinterpret_cast<const unsigned char *>(data.constData());
+      // code taken from qtextstream
+      if (bytesRead >= 3 && ((buf[0] == 0xef && buf[1] == 0xbb) && buf[2] == 0xbf)) {
+        return true;
+      } else {
+        return false;
+      }
+      file.close();
     } else {
-      return false;
+      qDebug() << QString("Failed to detect byte order mark. Unable to open file %1.").arg(fileName);
     }
-    file.close();
-  } else {
-    qDebug() << QString("Failed to detect byte order mark. Unable to open file %1.").arg(fileName);
   }
   return false;
 }

@@ -122,7 +122,9 @@ public:
   static QString libraries;
   static QString clearRecentFiles;
   static QString encoding;
+  static QString fileLabel;
   static QString file;
+  static QString folder;
   static QString browse;
   static QString ok;
   static QString cancel;
