@@ -288,11 +288,11 @@ public slots:
   void exportModelFigaro();
 };
 
-class CreateNewItem : public QDialog
+class CreateNewItemDialog : public QDialog
 {
   Q_OBJECT
 public:
-  CreateNewItem(QString path, bool isCreateFile, MainWindow *pMainWindow);
+  CreateNewItemDialog(QString path, bool isCreateFile, MainWindow *pMainWindow);
 private:
   QString mPath;
   bool mIsCreateFile;
@@ -308,6 +308,26 @@ private:
 private slots:
   void browsePath();
   void createNewFileOrFolder();
+};
+
+class RenameItemDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  RenameItemDialog(QString path, bool isCreateFile, MainWindow *pMainWindow);
+private:
+  QString mPath;
+  bool mIsCreateFile;
+  MainWindow *mpMainWindow;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+
+  void updateChildrenPath(LibraryTreeItem *pLibraryTreeItem);
+private slots:
+  void renameFileOrFolder();
 };
 
 #endif // MODELICACLASSDIALOG_H

@@ -436,10 +436,10 @@ public:
   ModelWidget* getCurrentModelWidget();
   QMdiSubWindow* getCurrentMdiSubWindow();
   QMdiSubWindow* getMdiSubWindow(ModelWidget *pModelWidget);
-  void setPreviousViewType(StringHandler::ViewType viewType);
-  StringHandler::ViewType getPreviousViewType();
-  void setShowGridLines(bool On);
-  bool isShowGridLines();
+  void setPreviousViewType(StringHandler::ViewType viewType) {mPreviousViewType = viewType;}
+  StringHandler::ViewType getPreviousViewType() {return mPreviousViewType;}
+  void setShowGridLines(bool On) {mShowGridLines = On;}
+  bool isShowGridLines() {return mShowGridLines;}
   bool eventFilter(QObject *object, QEvent *event);
   void changeRecentModelsListSelection(bool moveDown);
 private:

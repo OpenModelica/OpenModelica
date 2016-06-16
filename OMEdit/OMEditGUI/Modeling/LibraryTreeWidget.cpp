@@ -3016,23 +3016,36 @@ void LibraryTreeView::createNewFile()
   if (!pLibraryTreeItem) {
     return;
   }
-  CreateNewItem *pCreateNewItem = new CreateNewItem(pLibraryTreeItem->getFileName(), true, mpLibraryWidget->getMainWindow());
-  pCreateNewItem->exec();
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog(pLibraryTreeItem->getFileName(), true, mpLibraryWidget->getMainWindow());
+  pCreateNewItemDialog->exec();
 }
 
+/*!
+ * \brief LibraryTreeView::createNewFolder
+ * Creates a new folder.
+ */
 void LibraryTreeView::createNewFolder()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (!pLibraryTreeItem) {
     return;
   }
-  CreateNewItem *pCreateNewItem = new CreateNewItem(pLibraryTreeItem->getFileName(), false, mpLibraryWidget->getMainWindow());
-  pCreateNewItem->exec();
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog(pLibraryTreeItem->getFileName(), false, mpLibraryWidget->getMainWindow());
+  pCreateNewItemDialog->exec();
 }
 
+/*!
+ * \brief LibraryTreeView::renameFileOrFolder
+ * Renames the file/folder.
+ */
 void LibraryTreeView::renameFileOrFolder()
 {
-
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (!pLibraryTreeItem) {
+    return;
+  }
+  RenameItemDialog *pRenameItemDialog = new RenameItemDialog(pLibraryTreeItem->getFileName(), false, mpLibraryWidget->getMainWindow());
+  pRenameItemDialog->exec();
 }
 
 /*!

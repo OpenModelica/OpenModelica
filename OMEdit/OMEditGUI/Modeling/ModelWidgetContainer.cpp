@@ -4031,53 +4031,52 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   }
 }
 
+/*!
+ * \brief ModelWidgetContainer::getCurrentModelWidget
+ * Returns the current ModelWidget.
+ * \return
+ */
 ModelWidget* ModelWidgetContainer::getCurrentModelWidget()
 {
-  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0)
+  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
-  else
+  } else {
     return qobject_cast<ModelWidget*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
+  }
 }
 
+/*!
+ * \brief ModelWidgetContainer::getCurrentMdiSubWindow
+ * Returns the current QMdiSubWindow.
+ * \return
+ */
 QMdiSubWindow* ModelWidgetContainer::getCurrentMdiSubWindow()
 {
-  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0)
+  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
-  else
+  } else {
     return subWindowList(QMdiArea::ActivationHistoryOrder).last();
+  }
 }
 
+/*!
+ * \brief ModelWidgetContainer::getMdiSubWindow
+ * Returns the QMdiSubWindow for a specific ModelWidget.
+ * \param pModelWidget
+ * \return
+ */
 QMdiSubWindow* ModelWidgetContainer::getMdiSubWindow(ModelWidget *pModelWidget)
 {
-  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0)
+  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
+  }
   QList<QMdiSubWindow*> mdiSubWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
-  foreach (QMdiSubWindow *pMdiSubWindow, mdiSubWindowsList)
-  {
-    if (pMdiSubWindow->widget() == pModelWidget)
+  foreach (QMdiSubWindow *pMdiSubWindow, mdiSubWindowsList) {
+    if (pMdiSubWindow->widget() == pModelWidget) {
       return pMdiSubWindow;
+    }
   }
   return 0;
-}
-
-void ModelWidgetContainer::setPreviousViewType(StringHandler::ViewType viewType)
-{
-  mPreviousViewType = viewType;
-}
-
-StringHandler::ViewType ModelWidgetContainer::getPreviousViewType()
-{
-  return mPreviousViewType;
-}
-
-void ModelWidgetContainer::setShowGridLines(bool On)
-{
-  mShowGridLines = On;
-}
-
-bool ModelWidgetContainer::isShowGridLines()
-{
-  return mShowGridLines;
 }
 
 bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)

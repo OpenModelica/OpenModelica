@@ -1511,7 +1511,17 @@ void ExportFigaroDialog::exportModelFigaro()
   accept();
 }
 
-CreateNewItem::CreateNewItem(QString path, bool isCreateFile, MainWindow *pMainWindow)
+/*!
+ * \class CreateNewItemDialog
+ * \brief Creates a dialog to allow users to create new file/folder.
+ */
+/*!
+ * \brief CreateNewItemDialog::CreateNewItemDialog
+ * \param path
+ * \param isCreateFile
+ * \param pMainWindow
+ */
+CreateNewItemDialog::CreateNewItemDialog(QString path, bool isCreateFile, MainWindow *pMainWindow)
   : QDialog(pMainWindow), mPath(path), mIsCreateFile(isCreateFile), mpMainWindow(pMainWindow)
 {
   setAttribute(Qt::WA_DeleteOnClose);
@@ -1549,7 +1559,12 @@ CreateNewItem::CreateNewItem(QString path, bool isCreateFile, MainWindow *pMainW
   setLayout(pMainLayout);
 }
 
-void CreateNewItem::browsePath()
+/*!
+ * \brief CreateNewItemDialog::browsePath
+ * Creates a new file/folder.\n
+ * Slot activated when mpOkButton clicked signal is raised.
+ */
+void CreateNewItemDialog::browsePath()
 {
   QString currentPath = mpPathTextBox->text();
   QString path = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory),
@@ -1560,7 +1575,7 @@ void CreateNewItem::browsePath()
   mpPathTextBox->setText(path);
 }
 
-void CreateNewItem::createNewFileOrFolder()
+void CreateNewItemDialog::createNewFileOrFolder()
 {
   // check name
   if (mpNameTextBox->text().isEmpty()) {
@@ -1580,6 +1595,7 @@ void CreateNewItem::createNewFileOrFolder()
                           tr("Path <b>%1</b> does not exist.").arg(mpPathTextBox->text()), Helper::ok);
     return;
   }
+  // check if file/folder already exists
   QString fileOrFolderPath = QString("%1/%2").arg(mpPathTextBox->text()).arg(mpNameTextBox->text());
   QFileInfo fileInfo(fileOrFolderPath);
   if (fileInfo.exists()) {
@@ -1620,6 +1636,112 @@ void CreateNewItem::createNewFileOrFolder()
                                                                                  true, pParentLibraryTreeItem, row);
     if (pLibraryTreeItem && mIsCreateFile) {
       pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+    }
+  }
+  accept();
+}
+
+/*!
+ * \class RenameItemDialog
+ * \brief Creates a dialog to allow users to rename a file/folder.
+ */
+/*!
+ * \brief RenameItemDialog::RenameItemDialog
+ * \param path
+ * \param isCreateFile
+ * \param pMainWindow
+ */
+RenameItemDialog::RenameItemDialog(QString path, bool isCreateFile, MainWindow *pMainWindow)
+  : QDialog(pMainWindow), mPath(path), mIsCreateFile(isCreateFile), mpMainWindow(pMainWindow)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(Helper::rename).arg(mIsCreateFile ? Helper::file : Helper::folder));
+  setMinimumWidth(400);
+  // Create the name label and text box
+  mpNameLabel = new Label(Helper::name);
+  QFileInfo fileInfo(mPath);
+  mpNameTextBox = new QLineEdit(fileInfo.fileName());
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(renameFileOrFolder()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpNameLabel, 0, 0);
+  pMainLayout->addWidget(mpNameTextBox, 0, 1);
+  pMainLayout->addWidget(mpButtonBox, 1, 0, 1, 2, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief RenameItemDialog::updateChildrenPath
+ * Updates the file path of childrens rescursivly.
+ * \param pLibraryTreeItem
+ */
+void RenameItemDialog::updateChildrenPath(LibraryTreeItem *pLibraryTreeItem)
+{
+  for (int i = 0 ; i < pLibraryTreeItem->childrenSize() ; i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    QString newPath = QString("%1/%2").arg(pLibraryTreeItem->getFileName()).arg(pChildLibraryTreeItem->getName());
+    pChildLibraryTreeItem->setNameStructure(newPath);
+    pChildLibraryTreeItem->setFileName(newPath);
+    if (pChildLibraryTreeItem->getModelWidget()) {
+      pChildLibraryTreeItem->getModelWidget()->setModelFilePathLabel(newPath);
+    }
+    QFileInfo fileInfo(pChildLibraryTreeItem->getFileName());
+    if (fileInfo.isDir()) {
+      updateChildrenPath(pChildLibraryTreeItem);
+    }
+  }
+}
+
+/*!
+ * \brief RenameItemDialog::renameFileOrFolder
+ * Renames a file/folder.\n
+ * Slot activated when mpOkButton clicked signal is raised.
+ */
+void RenameItemDialog::renameFileOrFolder()
+{
+  // check name
+  if (mpNameTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error), GUIMessages::getMessage(
+                            GUIMessages::ENTER_NAME).arg(mIsCreateFile ? Helper::file : Helper::folder), Helper::ok);
+    return;
+  }
+  // check if file/folder already exists
+  QFileInfo oldFileInfo(mPath);
+  QString fileOrFolderPath = QString("%1/%2").arg(oldFileInfo.absoluteDir().absolutePath()).arg(mpNameTextBox->text());
+  QFileInfo fileInfo(fileOrFolderPath);
+  if (fileInfo.exists()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(mIsCreateFile ? Helper::file : Helper::folder)
+                          .arg(mpNameTextBox->text()).arg(fileInfo.absoluteDir().absolutePath()), Helper::ok);
+    return;
+  }
+  // find the LibraryTreeItem based on path
+  LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mPath);
+  if (pLibraryTreeItem) {
+    if (QFile::rename(oldFileInfo.absoluteFilePath(), fileInfo.absoluteFilePath())) {
+      pLibraryTreeItem->setName(mpNameTextBox->text());
+      pLibraryTreeItem->setNameStructure(fileInfo.absoluteFilePath());
+      pLibraryTreeItem->setFileName(fileInfo.absoluteFilePath());
+      if (pLibraryTreeItem->getModelWidget()) {
+        pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileInfo.absoluteFilePath());
+        pLibraryTreeItem->getModelWidget()->setWindowTitle(mpNameTextBox->text());
+      }
+      // if we have renamed a directory then we need to update the file paths of the nested files.
+      if (fileInfo.isDir()) {
+        updateChildrenPath(pLibraryTreeItem);
+      }
     }
   }
   accept();
