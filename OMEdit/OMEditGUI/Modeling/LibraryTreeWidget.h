@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef LIBRARYTREEWIDGET_H
@@ -76,9 +73,9 @@ class LibraryTreeItem : public QObject
   Q_OBJECT
 public:
   enum LibraryType {
-    Modelica,   /* Used to represent Modelica models. */
-    Text,       /* Used to represent text based files. */
-    MetaModel   /* Used to represent MetaModel files. */
+    Modelica,    /* Used to represent Modelica models. */
+    Text,        /* Used to represent text based files. */
+    MetaModel    /* Used to represent MetaModel files. */
   };
   enum SaveContentsType {
     SaveInOneFile,
@@ -89,7 +86,8 @@ public:
                   QString fileName, bool isSaved, LibraryTreeItem *pParent = 0);
   ~LibraryTreeItem();
   bool isRootItem() {return mIsRootItem;}
-  QList<LibraryTreeItem*> getChildren() const {return mChildren;}
+  int childrenSize() const {return mChildren.size();}
+  LibraryTreeItem* childAt(int index) const {return mChildren.at(index);}
   LibraryType getLibraryType() {return mLibraryType;}
   void setLibraryType(LibraryType libraryType) {mLibraryType = libraryType;}
   void setSystemLibrary(bool systemLibrary) {mSystemLibrary = systemLibrary;}
@@ -102,7 +100,7 @@ public:
   const QString& getNameStructure() {return mNameStructure;}
   void setClassInformation(OMCInterface::getClassInformation_res classInformation);
   void setFileName(QString fileName) {mFileName = fileName;}
-  const QString& getFileName() {return mFileName;}
+  const QString& getFileName() const {return mFileName;}
   bool isFilePathValid();
   void setReadOnly(bool readOnly) {mReadOnly = readOnly;}
   bool isReadOnly() {return mReadOnly;}
@@ -110,13 +108,11 @@ public:
   bool isSaved() {return mIsSaved;}
   bool isProtected() {return mLibraryType == LibraryTreeItem::Modelica ? mClassInformation.isProtectedClass : false;}
   bool isDocumentationClass();
-  StringHandler::ModelicaClasses getRestriction() {return StringHandler::getModelicaClassType(mClassInformation.restriction);}
+  StringHandler::ModelicaClasses getRestriction() const {return StringHandler::getModelicaClassType(mClassInformation.restriction);}
   bool isConnector() {return (getRestriction() == StringHandler::ExpandableConnector || getRestriction() == StringHandler::Connector);}
   bool isPartial() {return mClassInformation.partialPrefix;}
   void setSaveContentsType(LibraryTreeItem::SaveContentsType saveContentsType) {mSaveContentsType = saveContentsType;}
   SaveContentsType getSaveContentsType() {return mSaveContentsType;}
-  void setToolTip(QString toolTip) {mToolTip = toolTip;}
-  void setIcon(QIcon icon) {mIcon = icon;}
   void setPixmap(QPixmap pixmap) {mPixmap = pixmap;}
   QPixmap getPixmap() {return mPixmap;}
   void setDragPixmap(QPixmap dragPixmap) {mDragPixmap = dragPixmap;}
@@ -131,9 +127,9 @@ public:
   bool isExpanded() const {return mExpanded;}
   void setNonExisting(bool nonExisting) {mNonExisting = nonExisting;}
   bool isNonExisting() const {return mNonExisting;}
-  void updateAttributes();
-  QIcon getLibraryTreeItemIcon();
-  bool inRange(int lineNumber) {return (lineNumber >= mClassInformation.lineNumberStart) && (lineNumber <= mClassInformation.lineNumberEnd);}
+  QString getTooltip() const;
+  QIcon getLibraryTreeItemIcon() const;
+  bool inRange(int lineNumber);
   bool isInPackageOneFile();
   void insertChild(int position, LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* child(int row);
@@ -170,8 +166,6 @@ private:
   bool mReadOnly;
   bool mIsSaved;
   SaveContentsType mSaveContentsType;
-  QString mToolTip;
-  QIcon mIcon;
   QPixmap mPixmap;
   QPixmap mDragPixmap;
   QString mClassTextBefore;
@@ -230,13 +224,12 @@ public:
   LibraryTreeItem* findNonExistingLibraryTreeItem(const QString &name, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
   void addModelicaLibraries(QSplashScreen *pSplashScreen);
-  void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                          bool isSystemLibrary = false, bool load = false, int row = -1);
-  LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, bool isSaved);
   LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
-  void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
-                                        int row = -1);
+  void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
+  LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
+                                         LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   void loadNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void checkIfAnyNonExistingClassLoaded();
   void addNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.append(pLibraryTreeItem);}
@@ -249,12 +242,13 @@ public:
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
   void loadDependentLibraries(QStringList libraries);
   LibraryTreeItem* getLibraryTreeItemFromFile(QString fileName, int lineNumber);
-  void showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text = QString(""), bool show = true);
+  void showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool show = true);
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadMetaModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass);
   bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
   void moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top);
   void updateBindings(LibraryTreeItem *pLibraryTreeItem);
@@ -270,8 +264,20 @@ private:
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
   void readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
+  void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
+  LibraryTreeItem* createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
+                                             bool isSystemLibrary = false, bool load = false, int row = -1);
+  void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
+                                        int row = -1);
+  void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
+  LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
+                                             LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);
+  void unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
+  void unloadFileChildren(LibraryTreeItem *pLibraryTreeItem);
+  void deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
+  void deleteFileChildren(LibraryTreeItem *pLibraryTreeItem);
 protected:
   Qt::DropActions supportedDropActions() const;
 };
@@ -305,6 +311,10 @@ private:
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
   QAction *mpUnloadMetaModelFileAction;
+  QAction *mpNewFileAction;
+  QAction *mpNewFolderAction;
+  QAction *mpRenameAction;
+  QAction *mpDeleteAction;
   QAction *mpExportFMUAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
@@ -337,6 +347,10 @@ public slots:
   void duplicateClass();
   void unloadClass();
   void unloadMetaModelOrTextFile();
+  void createNewFile();
+  void createNewFolder();
+  void renameFileOrFolder();
+  void deleteTextFile();
   void exportModelFMU();
   void exportModelXML();
   void exportModelFigaro();
@@ -363,6 +377,7 @@ public:
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
+  void openDirectory(QFileInfo fileInfo, bool showProgress = true);
   bool parseMetaModelFile(QFileInfo fileInfo);
   void parseAndLoadModelicaText(QString modelText);
   bool saveFile(QString fileName, QString contents);

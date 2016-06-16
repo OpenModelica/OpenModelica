@@ -29,11 +29,9 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
+
 #include "BreakpointMarker.h"
 #include "ModelicaEditor.h"
 #include "Helper.h"
@@ -576,7 +574,7 @@ void ModelicaEditor::toggleCommentSelection()
 //! @brief A syntax highlighter for ModelicaEditor.
 
 //! Constructor
-ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaEditorPage *pModelicaEditorPage, QPlainTextEdit *pPlainTextEdit)
+ModelicaHighlighter::ModelicaHighlighter(ModelicaEditorPage *pModelicaEditorPage, QPlainTextEdit *pPlainTextEdit)
   : QSyntaxHighlighter(pPlainTextEdit->document())
 {
   mpModelicaEditorPage = pModelicaEditorPage;
@@ -585,7 +583,7 @@ ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaEditorPage *pModelicaEd
 }
 
 //! Initialized the syntax highlighter with default values.
-void ModelicaTextHighlighter::initializeSettings()
+void ModelicaHighlighter::initializeSettings()
 {
   QFont font;
   font.setFamily(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
@@ -595,15 +593,15 @@ void ModelicaTextHighlighter::initializeSettings()
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;
-  mTextFormat.setForeground(mpModelicaEditorPage->getTextRuleColor());
-  mKeywordFormat.setForeground(mpModelicaEditorPage->getKeywordRuleColor());
-  mTypeFormat.setForeground(mpModelicaEditorPage->getTypeRuleColor());
-  mSingleLineCommentFormat.setForeground(mpModelicaEditorPage->getCommentRuleColor());
-  mMultiLineCommentFormat.setForeground(mpModelicaEditorPage->getCommentRuleColor());
-  mFunctionFormat.setForeground(mpModelicaEditorPage->getFunctionRuleColor());
-  mQuotationFormat.setForeground(QColor(mpModelicaEditorPage->getQuotesRuleColor()));
+  mTextFormat.setForeground(mpModelicaEditorPage->getColor("Text"));
+  mKeywordFormat.setForeground(mpModelicaEditorPage->getColor("Keyword"));
+  mTypeFormat.setForeground(mpModelicaEditorPage->getColor("Type"));
+  mSingleLineCommentFormat.setForeground(mpModelicaEditorPage->getColor("Comment"));
+  mMultiLineCommentFormat.setForeground(mpModelicaEditorPage->getColor("Comment"));
+  mFunctionFormat.setForeground(mpModelicaEditorPage->getColor("Function"));
+  mQuotationFormat.setForeground(mpModelicaEditorPage->getColor("Quotes"));
   // Priority: keyword > func() > ident > number. Yes, the order matters :)
-  mNumberFormat.setForeground(mpModelicaEditorPage->getNumberRuleColor());
+  mNumberFormat.setForeground(mpModelicaEditorPage->getColor("Number"));
   rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
   rule.mFormat = mNumberFormat;
   mHighlightingRules.append(rule);
@@ -703,7 +701,7 @@ void ModelicaTextHighlighter::initializeSettings()
  * \param text
  * \param text
  */
-void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
+void ModelicaHighlighter::highlightMultiLine(const QString &text)
 {
   /* Hand-written recognizer beats the crap known as QRegEx ;) */
   int index = 0, startIndex = 0;
@@ -834,7 +832,7 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
 }
 
 //! Reimplementation of QSyntaxHighlighter::highlightBlock
-void ModelicaTextHighlighter::highlightBlock(const QString &text)
+void ModelicaHighlighter::highlightBlock(const QString &text)
 {
   /* Only highlight the text if user has enabled the syntax highlighting */
   if (!mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getSyntaxHighlightingGroupBox()->isChecked()) {
@@ -846,7 +844,7 @@ void ModelicaTextHighlighter::highlightBlock(const QString &text)
   if (pTextBlockUserData) {
     pTextBlockUserData->setFoldingState(false);
   }
-  setFormat(0, text.length(), mpModelicaEditorPage->getTextRuleColor());
+  setFormat(0, text.length(), mpModelicaEditorPage->getColor("Text"));
   foreach (const HighlightingRule &rule, mHighlightingRules) {
     QRegExp expression(rule.mPattern);
     int index = expression.indexIn(text);
@@ -859,8 +857,11 @@ void ModelicaTextHighlighter::highlightBlock(const QString &text)
   highlightMultiLine(text);
 }
 
-//! Slot activated whenever ModelicaEditor text settings changes.
-void ModelicaTextHighlighter::settingsChanged()
+/*!
+ * \brief ModelicaHighlighter::settingsChanged
+ * Slot activated whenever ModelicaEditor text settings changes.
+ */
+void ModelicaHighlighter::settingsChanged()
 {
   initializeSettings();
   rehighlight();

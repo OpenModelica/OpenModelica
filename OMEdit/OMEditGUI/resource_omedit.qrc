@@ -121,6 +121,7 @@
         <file>Resources/icons/plt.svg</file>
         <file>Resources/icons/csv.svg</file>
         <file>Resources/icons/debugger.svg</file>
+		<file>Resources/icons/equational-debugger.svg</file>
         <file>Resources/icons/resume.svg</file>
         <file>Resources/icons/interrupt.svg</file>
         <file>Resources/icons/exit.svg</file>

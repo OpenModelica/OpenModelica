@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef MODELWIDGETCONTAINER_H
@@ -53,7 +50,9 @@
 #include "BaseEditor.h"
 #include "ModelicaEditor.h"
 #include "MetaModelEditor.h"
+#include "CEditor.h"
 #include "TextEditor.h"
+#include "MetaModelicaEditor.h"
 
 class ModelWidget;
 class ComponentInfo;
@@ -319,14 +318,14 @@ private slots:
 };
 
 class ModelWidgetContainer;
-class ModelicaTextHighlighter;
+class ModelicaHighlighter;
 class MetaModelHighlighter;
 class Label;
 class ModelWidget : public QWidget
 {
   Q_OBJECT
 public:
-  ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text);
+  ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer);
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
@@ -389,8 +388,6 @@ private:
   QUndoStack *mpUndoStack;
   QUndoView *mpUndoView;
   BaseEditor *mpEditor;
-  ModelicaTextHighlighter *mpModelicaTextHighlighter;
-  MetaModelHighlighter *mpMetaModelHighlighter;
   QStatusBar *mpModelStatusBar;
   bool mDiagramViewLoaded;
   bool mConnectionsLoaded;
@@ -439,10 +436,10 @@ public:
   ModelWidget* getCurrentModelWidget();
   QMdiSubWindow* getCurrentMdiSubWindow();
   QMdiSubWindow* getMdiSubWindow(ModelWidget *pModelWidget);
-  void setPreviousViewType(StringHandler::ViewType viewType);
-  StringHandler::ViewType getPreviousViewType();
-  void setShowGridLines(bool On);
-  bool isShowGridLines();
+  void setPreviousViewType(StringHandler::ViewType viewType) {mPreviousViewType = viewType;}
+  StringHandler::ViewType getPreviousViewType() {return mPreviousViewType;}
+  void setShowGridLines(bool On) {mShowGridLines = On;}
+  bool isShowGridLines() {return mShowGridLines;}
   bool eventFilter(QObject *object, QEvent *event);
   void changeRecentModelsListSelection(bool moveDown);
 private:

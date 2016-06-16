@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef VARIABLESWIDGET_H

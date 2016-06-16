@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef OPTIONSDIALOG_H
@@ -46,8 +43,10 @@ class MainWindow;
 class GeneralSettingsPage;
 class LibrariesPage;
 class TextEditorPage;
-class ModelicaTextHighlighter;
 class ModelicaEditorPage;
+class MetaModelicaEditorPage;
+class MetaModelEditorPage;
+class CEditorPage;
 class GraphicalViewsPage;
 class SimulationPage;
 class MessagesPage;
@@ -59,8 +58,8 @@ class FigaroPage;
 class DebuggerPage;
 class FMIPage;
 class TLMPage;
-class MetaModelEditorPage;
 class TabSettings;
+class StackFramesWidget;
 
 class OptionsDialog : public QDialog
 {
@@ -72,6 +71,9 @@ public:
   void readLibrariesSettings();
   void readTextEditorSettings();
   void readModelicaEditorSettings();
+  void readMetaModelicaEditorSettings();
+  void readMetaModelEditorSettings();
+  void readCEditorSettings();
   void readGraphicalViewsSettings();
   void readSimulationSettings();
   void readMessagesSettings();
@@ -83,13 +85,14 @@ public:
   void readDebuggerSettings();
   void readFMISettings();
   void readTLMSettings();
-  void readMetaModelEditorSettings();
   void saveGeneralSettings();
   void saveLibrariesSettings();
   void saveTextEditorSettings();
   void saveModelicaEditorSettings();
-  void saveTLMSettings();
+  void saveMetaModelicaEditorSettings();
   void saveMetaModelEditorSettings();
+  void saveCEditorSettings();
+  void saveTLMSettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
   void saveMessagesSettings();
@@ -107,6 +110,9 @@ public:
   GeneralSettingsPage* getGeneralSettingsPage() {return mpGeneralSettingsPage;}
   TextEditorPage* getTextEditorPage() {return mpTextEditorPage;}
   ModelicaEditorPage* getModelicaEditorPage() {return mpModelicaEditorPage;}
+  MetaModelicaEditorPage* getMetaModelicaEditorPage() {return mpMetaModelicaEditorPage;}
+  MetaModelEditorPage* getMetaModelEditorPage() {return mpMetaModelEditorPage;}
+  CEditorPage* getCEditorPage() {return mpCEditorPage;}
   GraphicalViewsPage* getGraphicalViewsPage() {return mpGraphicalViewsPage;}
   SimulationPage* getSimulationPage() {return mpSimulationPage;}
   MessagesPage* getMessagesPage() {return mpMessagesPage;}
@@ -118,14 +124,15 @@ public:
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
   TLMPage* getTLMPage() {return mpTLMPage;}
-  MetaModelEditorPage* getMetaModelEditorPage() {return mpMetaModelEditorPage;}
   void saveDialogGeometry();
   void show();
   TabSettings getTabSettings();
 signals:
   void textSettingsChanged();
-  void modelicaTextSettingsChanged();
-  void MetaModelEditorSettingsChanged();
+  void modelicaEditorSettingsChanged();
+  void metaModelicaEditorSettingsChanged();
+  void metaModelEditorSettingsChanged();
+  void cEditorSettingsChanged();
 public slots:
   void changePage(QListWidgetItem *current, QListWidgetItem *previous);
   void reject();
@@ -136,6 +143,9 @@ private:
   LibrariesPage *mpLibrariesPage;
   TextEditorPage *mpTextEditorPage;
   ModelicaEditorPage *mpModelicaEditorPage;
+  MetaModelicaEditorPage *mpMetaModelicaEditorPage;
+  MetaModelEditorPage *mpMetaModelEditorPage;
+  CEditorPage *mpCEditorPage;
   GraphicalViewsPage *mpGraphicalViewsPage;
   SimulationPage *mpSimulationPage;
   MessagesPage *mpMessagesPage;
@@ -147,7 +157,6 @@ private:
   DebuggerPage *mpDebuggerPage;
   FMIPage *mpFMIPage;
   TLMPage *mpTLMPage;
-  MetaModelEditorPage *mpMetaModelEditorPage;
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
@@ -340,21 +349,6 @@ private:
   DoubleSpinBox *mpFontSizeSpinBox;
 };
 
-class PreviewPlainTextEdit : public QPlainTextEdit
-{
-  Q_OBJECT
-public:
-  PreviewPlainTextEdit(QWidget *parent = 0);
-private:
-  QTextCharFormat mParenthesesMatchFormat;
-  QTextCharFormat mParenthesesMisMatchFormat;
-
-  void highlightCurrentLine();
-  void highlightParentheses();
-public slots:
-  void updateHighlights();
-};
-
 class ModelicaEditorPage : public QWidget
 {
   Q_OBJECT
@@ -362,49 +356,70 @@ public:
   ModelicaEditorPage(OptionsDialog *pOptionsDialog);
   OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
   QCheckBox *getPreserveTextIndentationCheckBox() {return mpPreserveTextIndentationCheckBox;}
-  void addListItems();
-  void setTextRuleColor(QColor color);
-  QColor getTextRuleColor() {return mTextColor;}
-  void setNumberRuleColor(QColor color);
-  QColor getNumberRuleColor() {return mNumberColor;}
-  void setKeywordRuleColor(QColor color);
-  QColor getKeywordRuleColor() {return mKeywordColor;}
-  void setTypeRuleColor(QColor color);
-  QColor getTypeRuleColor() {return mTypeColor;}
-  void setFunctionRuleColor(QColor color);
-  QColor getFunctionRuleColor() {return mFunctionColor;}
-  void setQuotesRuleColor(QColor color);
-  QColor getQuotesRuleColor() {return mQuotesColor;}
-  void setCommentRuleColor(QColor color);
-  QColor getCommentRuleColor() {return mCommentColor;}
+  void setColor(QString item, QColor color);
+  QColor getColor(QString item);
+  void emitUpdatePreview() {emit updatePreview();}
 private:
   OptionsDialog *mpOptionsDialog;
   QCheckBox *mpPreserveTextIndentationCheckBox;
-  QGroupBox *mpColorsGroupBox;
-  Label *mpItemsLabel;
-  QListWidget *mpItemsList;
-  Label *mpItemColorLabel;
-  QPushButton *mpItemColorPickButton;
-  Label *mpPreviewLabel;
-  PreviewPlainTextEdit *mpPreviewPlainTextEdit;
-  QColor mTextColor;
-  QListWidgetItem *mpTextItem;
-  QColor mNumberColor;
-  QListWidgetItem *mpNumberItem;
-  QColor mKeywordColor;
-  QListWidgetItem *mpKeywordItem;
-  QColor mTypeColor;
-  QListWidgetItem *mpTypeItem;
-  QColor mFunctionColor;
-  QListWidgetItem *mpFunctionItem;
-  QColor mQuotesColor;
-  QListWidgetItem *mpQuotesItem;
-  QColor mCommentColor;
-  QListWidgetItem *mpCommentItem;
+  CodeColorsWidget *mpCodeColorsWidget;
 signals:
   void updatePreview();
 public slots:
-  void pickColor();
+  void setLineWrapping(bool enabled);
+};
+
+class MetaModelicaEditorPage : public QWidget
+{
+  Q_OBJECT
+public:
+  MetaModelicaEditorPage(OptionsDialog *pOptionsDialog);
+  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
+  void setColor(QString item, QColor color);
+  QColor getColor(QString item);
+  void emitUpdatePreview() {emit updatePreview();}
+private:
+  OptionsDialog *mpOptionsDialog;
+  CodeColorsWidget *mpCodeColorsWidget;
+signals:
+  void updatePreview();
+public slots:
+  void setLineWrapping(bool enabled);
+};
+
+class MetaModelEditorPage : public QWidget
+{
+  Q_OBJECT
+public:
+  MetaModelEditorPage(OptionsDialog *pOptionsDialog);
+  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
+  void setColor(QString item, QColor color);
+  QColor getColor(QString item);
+  void emitUpdatePreview() {emit updatePreview();}
+private:
+  OptionsDialog *mpOptionsDialog;
+  CodeColorsWidget *mpCodeColorsWidget;
+signals:
+  void updatePreview();
+public slots:
+  void setLineWrapping(bool enabled);
+};
+
+class CEditorPage : public QWidget
+{
+  Q_OBJECT
+public:
+  CEditorPage(OptionsDialog *pOptionsDialog);
+  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
+  void setColor(QString item, QColor color);
+  QColor getColor(QString item);
+  void emitUpdatePreview() {emit updatePreview();}
+private:
+  OptionsDialog *mpOptionsDialog;
+  CodeColorsWidget *mpCodeColorsWidget;
+signals:
+  void updatePreview();
+public slots:
   void setLineWrapping(bool enabled);
 };
 
@@ -800,49 +815,6 @@ private slots:
   void browseTLMPluginPath();
   void browseTLMManagerProcess();
   void browseTLMMonitorProcess();
-};
-
-class MetaModelEditorPage : public QWidget
-{
-  Q_OBJECT
-public:
-  MetaModelEditorPage(OptionsDialog *pOptionsDialog);
-  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
-  void addListItems();
-  void setTextRuleColor(QColor color);
-  QColor getTextRuleColor(){return mTextColor;}
-  void setQuotesRuleColor(QColor color);
-  QColor getQuotesRuleColor(){return mQuotesColor;}
-  void setCommentRuleColor(QColor color);
-  QColor getCommentRuleColor(){return mCommentColor;}
-  void setTagRuleColor(QColor color);
-  QColor getTagRuleColor(){return mTagColor;}
-  void setElementRuleColor(QColor color);
-  QColor getElementRuleColor(){return mElementColor;}
-private:
-  OptionsDialog *mpOptionsDialog;
-  QGroupBox *mpColorsGroupBox;
-  Label *mpItemsLabel;
-  QListWidget *mpItemsList;
-  Label *mpItemColorLabel;
-  QPushButton *mpItemColorPickButton;
-  Label *mpPreviewLabel;
-  PreviewPlainTextEdit *mpPreviewPlainTextEdit;
-  QColor mTextColor;
-  QListWidgetItem *mpTextItem;
-  QColor mQuotesColor;
-  QListWidgetItem *mpQuotesItem;
-  QColor mCommentColor;
-  QListWidgetItem *mpCommentItem;
-  QColor mTagColor;
-  QListWidgetItem *mpTagItem;
-  QColor mElementColor;
-  QListWidgetItem *mpElementItem;
-signals:
-  void updatePreview();
-public slots:
-  void pickColor();
-  void setLineWrapping(bool enabled);
 };
 
 #endif // OPTIONSDIALOG_H

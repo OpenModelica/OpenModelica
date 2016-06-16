@@ -28,10 +28,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "LocalsWidget.h"
@@ -223,8 +220,8 @@ void LocalsTreeItem::retrieveModelicaMetaType()
 {
   if (getDisplayType().isEmpty() || (getDisplayType().compare(Helper::VALUE_OPTIMIZED_OUT) == 0)
       || (getDisplayType().compare(Helper::REPLACEABLE_TYPE_ANY) == 0)) {
-    GDBAdapter *pGDBAdapter = mpLocalsTreeModel->getLocalsWidget()->getDebuggerMainWindow()->getGDBAdapter();
-    StackFramesWidget *pStackFramesWidget = mpLocalsTreeModel->getLocalsWidget()->getDebuggerMainWindow()->getStackFramesWidget();
+    GDBAdapter *pGDBAdapter = mpLocalsTreeModel->getLocalsWidget()->getMainWindow()->getGDBAdapter();
+    StackFramesWidget *pStackFramesWidget = mpLocalsTreeModel->getLocalsWidget()->getMainWindow()->getStackFramesWidget();
     if (parent() && parent()->getModelicaValue() && qobject_cast<ModelicaRecordValue*>(parent()->getModelicaValue())) {
       pGDBAdapter->postCommand(CommandFactory::getTypeOfAny(pStackFramesWidget->getSelectedThread(), pStackFramesWidget->getSelectedFrame(),
                                                             getName(), true),
@@ -245,15 +242,17 @@ void LocalsTreeItem::retrieveModelicaMetaType()
  */
 void LocalsTreeItem::retrieveValue()
 {
-  GDBAdapter *pGDBAdapter = mpLocalsTreeModel->getLocalsWidget()->getDebuggerMainWindow()->getGDBAdapter();
-  StackFramesWidget *pStackFramesWidget = mpLocalsTreeModel->getLocalsWidget()->getDebuggerMainWindow()->getStackFramesWidget();
+  GDBAdapter *pGDBAdapter = mpLocalsTreeModel->getLocalsWidget()->getMainWindow()->getGDBAdapter();
+  StackFramesWidget *pStackFramesWidget = mpLocalsTreeModel->getLocalsWidget()->getMainWindow()->getStackFramesWidget();
   if (isCoreTypeExceptString()) {
     pGDBAdapter->postCommand(CommandFactory::dataEvaluateExpression(pStackFramesWidget->getSelectedThread(),
                                                                     pStackFramesWidget->getSelectedFrame(), getName()),
                              GDBAdapter::BlockUntilResponse, this, &GDBAdapter::dataEvaluateExpressionCB);
-  } else {
+  } else if (isCoreType()) {
     pGDBAdapter->postCommand(CommandFactory::anyString(pStackFramesWidget->getSelectedThread(), pStackFramesWidget->getSelectedFrame(),
                                                        getName()), GDBAdapter::BlockUntilResponse, this, &GDBAdapter::anyStringCB);
+  } else {
+    setValue(getDisplayType());
   }
 }
 
@@ -576,20 +575,20 @@ LocalsTreeView::LocalsTreeView(LocalsWidget *pLocalsWidget)
   : QTreeView(pLocalsWidget)
 {
   mpLocalsWidget = pLocalsWidget;
-  //setObjectName("TreeWithBranches");
-  setItemDelegate(new ItemDelegate(this, false, true));
+  setItemDelegate(new ItemDelegate(this));
   setTextElideMode(Qt::ElideMiddle);
   setIndentation(Helper::treeIndentation);
   setContextMenuPolicy(Qt::CustomContextMenu);
   setExpandsOnDoubleClick(false);
   setSortingEnabled(true);
   sortByColumn(0, Qt::AscendingOrder);
+  setUniformRowHeights(true);
 }
 
-LocalsWidget::LocalsWidget(DebuggerMainWindow *pDebuggerMainWindow)
-  : QWidget(pDebuggerMainWindow)
+LocalsWidget::LocalsWidget(MainWindow *pMainWindow)
+  : QWidget(pMainWindow)
 {
-  mpDebuggerMainWindow = pDebuggerMainWindow;
+  mpMainWindow = pMainWindow;
   /* Locals Tree View */
   mpLocalsTreeView = new LocalsTreeView(this);
   mpLocalsTreeModel = new LocalsTreeModel(this);
@@ -615,7 +614,7 @@ LocalsWidget::LocalsWidget(DebuggerMainWindow *pDebuggerMainWindow)
   pMainLayout->setContentsMargins(0, 0, 1, 0);
   pMainLayout->addWidget(pLocalsSplitter, 0, 0);
   setLayout(pMainLayout);
-  connect(mpDebuggerMainWindow->getGDBAdapter(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
+  connect(mpMainWindow->getGDBAdapter(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
 }
 
 void LocalsWidget::localsTreeItemExpanded(QModelIndex index)

@@ -962,11 +962,11 @@ void MetaModelHighlighter::initializeSettings()
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;
-  mTextFormat.setForeground(mpMetaModelEditorPage->getTextRuleColor());
-  mTagFormat.setForeground(mpMetaModelEditorPage->getTagRuleColor());
-  mElementFormat.setForeground(mpMetaModelEditorPage->getElementRuleColor());
-  mCommentFormat.setForeground(mpMetaModelEditorPage->getCommentRuleColor());
-  mQuotationFormat.setForeground(QColor(mpMetaModelEditorPage->getQuotesRuleColor()));
+  mTextFormat.setForeground(mpMetaModelEditorPage->getColor("Text"));
+  mTagFormat.setForeground(mpMetaModelEditorPage->getColor("Tag"));
+  mElementFormat.setForeground(mpMetaModelEditorPage->getColor("Element"));
+  mCommentFormat.setForeground(mpMetaModelEditorPage->getColor("Comment"));
+  mQuotationFormat.setForeground(QColor(mpMetaModelEditorPage->getColor("Quotes")));
 
   rule.mPattern = QRegExp("\\b[A-Za-z_][A-Za-z0-9_]*");
   rule.mFormat = mTextFormat;
@@ -1077,7 +1077,7 @@ void MetaModelHighlighter::highlightBlock(const QString &text)
   }
   // set text block state
   setCurrentBlockState(0);
-  setFormat(0, text.length(), mpMetaModelEditorPage->getTextRuleColor());
+  setFormat(0, text.length(), mpMetaModelEditorPage->getColor("Text"));
   foreach (const HighlightingRule &rule, mHighlightingRules) {
     QRegExp expression(rule.mPattern);
     int index = expression.indexIn(text);

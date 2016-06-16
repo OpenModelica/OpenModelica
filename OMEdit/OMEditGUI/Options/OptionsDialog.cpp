@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "OptionsDialog.h"
@@ -44,7 +41,7 @@
 //! Constructor
 //! @param pMainWindow is the pointer to MainWindow
 OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
-  : QDialog(pMainWindow), mpSettings(OpenModelica::getApplicationSettings())
+  : QDialog(pMainWindow), mpSettings(Utilities::getApplicationSettings())
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::options));
   setModal(true);
@@ -55,6 +52,9 @@ OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
   mpModelicaEditorPage = new ModelicaEditorPage(this);
   connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpModelicaEditorPage, SIGNAL(updatePreview()));
   connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpModelicaEditorPage, SIGNAL(updatePreview()));
+  mpMetaModelicaEditorPage = new MetaModelicaEditorPage(this);
+  mpMetaModelEditorPage = new MetaModelEditorPage(this);
+  mpCEditorPage = new CEditorPage(this);
   mpGraphicalViewsPage = new GraphicalViewsPage(this);
   mpSimulationPage = new SimulationPage(this);
   mpMessagesPage = new MessagesPage(this);
@@ -66,9 +66,6 @@ OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
   mpDebuggerPage = new DebuggerPage(this);
   mpFMIPage = new FMIPage(this);
   mpTLMPage = new TLMPage(this);
-  mpMetaModelEditorPage = new MetaModelEditorPage(this);
-  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpMetaModelEditorPage, SIGNAL(updatePreview()));
-  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpMetaModelEditorPage, SIGNAL(updatePreview()));
   // get the settings
   readSettings();
   // set up the Options Dialog
@@ -83,7 +80,17 @@ void OptionsDialog::readSettings()
   readLibrariesSettings();
   readTextEditorSettings();
   readModelicaEditorSettings();
-  emit modelicaTextSettingsChanged();
+  emit modelicaEditorSettingsChanged();
+  mpModelicaEditorPage->emitUpdatePreview();
+  readMetaModelicaEditorSettings();
+  emit metaModelicaEditorSettingsChanged();
+  mpMetaModelicaEditorPage->emitUpdatePreview();
+  readMetaModelEditorSettings();
+  emit metaModelEditorSettingsChanged();
+  mpMetaModelEditorPage->emitUpdatePreview();
+  readCEditorSettings();
+  emit cEditorSettingsChanged();
+  mpCEditorPage->emitUpdatePreview();
   readGraphicalViewsSettings();
   readSimulationSettings();
   readMessagesSettings();
@@ -95,8 +102,6 @@ void OptionsDialog::readSettings()
   readDebuggerSettings();
   readFMISettings();
   readTLMSettings();
-  readMetaModelEditorSettings();
-  emit MetaModelEditorSettingsChanged();
 }
 
 //! Reads the General section settings from omedit.ini
@@ -274,25 +279,100 @@ void OptionsDialog::readModelicaEditorSettings()
     mpModelicaEditorPage->getPreserveTextIndentationCheckBox()->setChecked(mpSettings->value("modelicaEditor/preserveTextIndentation").toBool());
   }
   if (mpSettings->contains("modelicaEditor/textRuleColor")) {
-    mpModelicaEditorPage->setTextRuleColor(QColor(mpSettings->value("modelicaEditor/textRuleColor").toUInt()));
+    mpModelicaEditorPage->setColor("Text", QColor(mpSettings->value("modelicaEditor/textRuleColor").toUInt()));
   }
   if (mpSettings->contains("modelicaEditor/keywordRuleColor")) {
-    mpModelicaEditorPage->setKeywordRuleColor(QColor(mpSettings->value("modelicaEditor/keywordRuleColor").toUInt()));
+    mpModelicaEditorPage->setColor("Keyword", QColor(mpSettings->value("modelicaEditor/keywordRuleColor").toUInt()));
   }
   if (mpSettings->contains("modelicaEditor/typeRuleColor")) {
-    mpModelicaEditorPage->setTypeRuleColor(QColor(mpSettings->value("modelicaEditor/typeRuleColor").toUInt()));
+    mpModelicaEditorPage->setColor("Type", QColor(mpSettings->value("modelicaEditor/typeRuleColor").toUInt()));
   }
   if (mpSettings->contains("modelicaEditor/functionRuleColor")) {
-    mpModelicaEditorPage->setFunctionRuleColor(QColor(mpSettings->value("modelicaEditor/functionRuleColor").toUInt()));
+    mpModelicaEditorPage->setColor("Function", QColor(mpSettings->value("modelicaEditor/functionRuleColor").toUInt()));
   }
   if (mpSettings->contains("modelicaEditor/quotesRuleColor")) {
-    mpModelicaEditorPage->setQuotesRuleColor(QColor(mpSettings->value("modelicaEditor/quotesRuleColor").toUInt()));
+    mpModelicaEditorPage->setColor("Quotes", QColor(mpSettings->value("modelicaEditor/quotesRuleColor").toUInt()));
   }
   if (mpSettings->contains("modelicaEditor/commentRuleColor")) {
-    mpModelicaEditorPage->setCommentRuleColor(QColor(mpSettings->value("modelicaEditor/commentRuleColor").toUInt()));
+    mpModelicaEditorPage->setColor("Comment", QColor(mpSettings->value("modelicaEditor/commentRuleColor").toUInt()));
   }
   if (mpSettings->contains("modelicaEditor/numberRuleColor")) {
-    mpModelicaEditorPage->setNumberRuleColor(QColor(mpSettings->value("modelicaEditor/numberRuleColor").toUInt()));
+    mpModelicaEditorPage->setColor("Number", QColor(mpSettings->value("modelicaEditor/numberRuleColor").toUInt()));
+  }
+}
+
+/*!
+ * \brief OptionsDialog::readMetaModelicaEditorSettings
+ * Reads the MetaModelicaEditor settings from omedit.ini
+ */
+void OptionsDialog::readMetaModelicaEditorSettings()
+{
+  if (mpSettings->contains("metaModelicaEditor/textRuleColor")) {
+    mpMetaModelicaEditorPage->setColor("Text", QColor(mpSettings->value("metaModelicaEditor/textRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("metaModelicaEditor/keywordRuleColor")) {
+    mpMetaModelicaEditorPage->setColor("Keyword", QColor(mpSettings->value("metaModelicaEditor/keywordRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("metaModelicaEditor/typeRuleColor")) {
+    mpMetaModelicaEditorPage->setColor("Type", QColor(mpSettings->value("metaModelicaEditor/typeRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("metaModelicaEditor/quotesRuleColor")) {
+    mpMetaModelicaEditorPage->setColor("Quotes", QColor(mpSettings->value("metaModelicaEditor/quotesRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("metaModelicaEditor/commentRuleColor")) {
+    mpMetaModelicaEditorPage->setColor("Comment", QColor(mpSettings->value("metaModelicaEditor/commentRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("metaModelicaEditor/numberRuleColor")) {
+    mpMetaModelicaEditorPage->setColor("Number", QColor(mpSettings->value("metaModelicaEditor/numberRuleColor").toUInt()));
+  }
+}
+
+/*!
+ * \brief OptionsDialog::readMetaModelEditorSettings
+ * Reads the MetaModelEditor settings from omedit.ini
+ */
+void OptionsDialog::readMetaModelEditorSettings()
+{
+  if (mpSettings->contains("MetaModelEditor/textRuleColor")) {
+    mpMetaModelEditorPage->setColor("Text", QColor(mpSettings->value("MetaModelEditor/textRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("MetaModelEditor/commentRuleColor")) {
+    mpMetaModelEditorPage->setColor("Comment", QColor(mpSettings->value("MetaModelEditor/commentRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("MetaModelEditor/tagRuleColor")) {
+    mpMetaModelEditorPage->setColor("Tag", QColor(mpSettings->value("MetaModelEditor/tagRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("MetaModelEditor/quotesRuleColor")) {
+    mpMetaModelEditorPage->setColor("Quotes", QColor(mpSettings->value("MetaModelEditor/quotesRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("MetaModelEditor/elementsRuleColor")) {
+    mpMetaModelEditorPage->setColor("Element", QColor(mpSettings->value("MetaModelEditor/elementsRuleColor").toUInt()));
+  }
+}
+
+/*!
+ * \brief OptionsDialog::readCEditorSettings
+ * Reads the CEditor settings from omedit.ini
+ */
+void OptionsDialog::readCEditorSettings()
+{
+  if (mpSettings->contains("cEditor/textRuleColor")) {
+    mpCEditorPage->setColor("Text", QColor(mpSettings->value("cEditor/textRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("cEditor/keywordRuleColor")) {
+    mpCEditorPage->setColor("Keyword", QColor(mpSettings->value("cEditor/keywordRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("cEditor/typeRuleColor")) {
+    mpCEditorPage->setColor("Type", QColor(mpSettings->value("cEditor/typeRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("cEditor/quotesRuleColor")) {
+    mpCEditorPage->setColor("Quotes", QColor(mpSettings->value("cEditor/quotesRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("cEditor/commentRuleColor")) {
+    mpCEditorPage->setColor("Comment", QColor(mpSettings->value("cEditor/commentRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("cEditor/numberRuleColor")) {
+    mpCEditorPage->setColor("Number", QColor(mpSettings->value("cEditor/numberRuleColor").toUInt()));
   }
 }
 
@@ -614,29 +694,6 @@ void OptionsDialog::readTLMSettings()
   }
 }
 
-/*!
- * \brief OptionsDialog::readMetaModelEditorSettings
- * Reads the MetaModelEditor settings from omedit.ini
- */
-void OptionsDialog::readMetaModelEditorSettings()
-{
-  if (mpSettings->contains("MetaModelEditor/textRuleColor")) {
-    mpMetaModelEditorPage->setTextRuleColor(QColor(mpSettings->value("MetaModelEditor/textRuleColor").toUInt()));
-  }
-  if (mpSettings->contains("MetaModelEditor/commentRuleColor")) {
-    mpMetaModelEditorPage->setCommentRuleColor(QColor(mpSettings->value("MetaModelEditor/commentRuleColor").toUInt()));
-  }
-  if (mpSettings->contains("MetaModelEditor/tagRuleColor")) {
-    mpMetaModelEditorPage->setTagRuleColor(QColor(mpSettings->value("MetaModelEditor/tagRuleColor").toUInt()));
-  }
-  if (mpSettings->contains("MetaModelEditor/quotesRuleColor")) {
-    mpMetaModelEditorPage->setQuotesRuleColor(QColor(mpSettings->value("MetaModelEditor/quotesRuleColor").toUInt()));
-  }
-  if (mpSettings->contains("MetaModelEditor/elementsRuleColor")) {
-    mpMetaModelEditorPage->setElementRuleColor(QColor(mpSettings->value("MetaModelEditor/elementsRuleColor").toUInt()));
-  }
-}
-
 //! Saves the General section settings to omedit.ini
 void OptionsDialog::saveGeneralSettings()
 {
@@ -765,13 +822,54 @@ void OptionsDialog::saveTextEditorSettings()
 void OptionsDialog::saveModelicaEditorSettings()
 {
   mpSettings->setValue("modelicaEditor/preserveTextIndentation", mpModelicaEditorPage->getPreserveTextIndentationCheckBox()->isChecked());
-  mpSettings->setValue("modelicaEditor/textRuleColor", mpModelicaEditorPage->getTextRuleColor().rgba());
-  mpSettings->setValue("modelicaEditor/keywordRuleColor", mpModelicaEditorPage->getKeywordRuleColor().rgba());
-  mpSettings->setValue("modelicaEditor/typeRuleColor", mpModelicaEditorPage->getTypeRuleColor().rgba());
-  mpSettings->setValue("modelicaEditor/functionRuleColor", mpModelicaEditorPage->getFunctionRuleColor().rgba());
-  mpSettings->setValue("modelicaEditor/quotesRuleColor", mpModelicaEditorPage->getQuotesRuleColor().rgba());
-  mpSettings->setValue("modelicaEditor/commentRuleColor", mpModelicaEditorPage->getCommentRuleColor().rgba());
-  mpSettings->setValue("modelicaEditor/numberRuleColor", mpModelicaEditorPage->getNumberRuleColor().rgba());
+  mpSettings->setValue("modelicaEditor/textRuleColor", mpModelicaEditorPage->getColor("Text").rgba());
+  mpSettings->setValue("modelicaEditor/keywordRuleColor", mpModelicaEditorPage->getColor("Keyword").rgba());
+  mpSettings->setValue("modelicaEditor/typeRuleColor", mpModelicaEditorPage->getColor("Type").rgba());
+  mpSettings->setValue("modelicaEditor/functionRuleColor", mpModelicaEditorPage->getColor("Function").rgba());
+  mpSettings->setValue("modelicaEditor/quotesRuleColor", mpModelicaEditorPage->getColor("Quotes").rgba());
+  mpSettings->setValue("modelicaEditor/commentRuleColor", mpModelicaEditorPage->getColor("Comment").rgba());
+  mpSettings->setValue("modelicaEditor/numberRuleColor", mpModelicaEditorPage->getColor("Number").rgba());
+}
+
+/*!
+ * \brief OptionsDialog::saveMetaModelicaEditorSettings
+ * Saves the MetaModelicaEditor settings to omedit.ini
+ */
+void OptionsDialog::saveMetaModelicaEditorSettings()
+{
+  mpSettings->setValue("metaModelicaEditor/textRuleColor", mpMetaModelicaEditorPage->getColor("Text").rgba());
+  mpSettings->setValue("metaModelicaEditor/keywordRuleColor", mpMetaModelicaEditorPage->getColor("Keyword").rgba());
+  mpSettings->setValue("metaModelicaEditor/typeRuleColor", mpMetaModelicaEditorPage->getColor("Type").rgba());
+  mpSettings->setValue("metaModelicaEditor/quotesRuleColor", mpMetaModelicaEditorPage->getColor("Quotes").rgba());
+  mpSettings->setValue("metaModelicaEditor/commentRuleColor", mpMetaModelicaEditorPage->getColor("Comment").rgba());
+  mpSettings->setValue("metaModelicaEditor/numberRuleColor", mpMetaModelicaEditorPage->getColor("Number").rgba());
+}
+
+/*!
+ * \brief OptionsDialog::saveMetaModelEditorSettings
+ * Saves the MetaModelEditor settings to omedit.ini
+ */
+void OptionsDialog::saveMetaModelEditorSettings()
+{
+  mpSettings->setValue("MetaModelEditor/textRuleColor", mpMetaModelEditorPage->getColor("Text").rgba());
+  mpSettings->setValue("MetaModelEditor/commentRuleColor", mpMetaModelEditorPage->getColor("Comment").rgba());
+  mpSettings->setValue("MetaModelEditor/tagRuleColor", mpMetaModelEditorPage->getColor("Tag").rgba());
+  mpSettings->setValue("MetaModelEditor/quotesRuleColor", mpMetaModelEditorPage->getColor("Quotes").rgba());
+  mpSettings->setValue("MetaModelEditor/elementsRuleColor", mpMetaModelEditorPage->getColor("Element").rgba());
+}
+
+/*!
+ * \brief OptionsDialog::saveCEditorSettings
+ * Saves the CEditor settings to omedit.ini
+ */
+void OptionsDialog::saveCEditorSettings()
+{
+  mpSettings->setValue("cEditor/textRuleColor", mpCEditorPage->getColor("Text").rgba());
+  mpSettings->setValue("cEditor/keywordRuleColor", mpCEditorPage->getColor("Keyword").rgba());
+  mpSettings->setValue("cEditor/typeRuleColor", mpCEditorPage->getColor("Type").rgba());
+  mpSettings->setValue("cEditor/quotesRuleColor", mpCEditorPage->getColor("Quotes").rgba());
+  mpSettings->setValue("cEditor/commentRuleColor", mpCEditorPage->getColor("Comment").rgba());
+  mpSettings->setValue("cEditor/numberRuleColor", mpCEditorPage->getColor("Number").rgba());
 }
 
 //! Saves the GraphicsViews section settings to omedit.ini
@@ -926,7 +1024,7 @@ void OptionsDialog::saveDebuggerSettings()
   mpSettings->setValue("GDBOutputLimit", mpDebuggerPage->getGDBOutputLimitSpinBox()->value());
   mpSettings->setValue("displayCFrames", mpDebuggerPage->getDisplayCFramesCheckBox()->isChecked());
   mpSettings->setValue("displayUnknownFrames", mpDebuggerPage->getDisplayUnknownFramesCheckBox()->isChecked());
-  mpMainWindow->getDebuggerMainWindow()->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
+  mpMainWindow->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
   mpSettings->setValue("clearOutputOnNewRun", mpDebuggerPage->getClearOutputOnNewRunCheckBox()->isChecked());
   mpSettings->setValue("clearLogOnNewRun", mpDebuggerPage->getClearLogOnNewRunCheckBox()->isChecked());
   mpSettings->endGroup();
@@ -979,19 +1077,6 @@ void OptionsDialog::saveTLMSettings()
   mpSettings->setValue("TLM/ManagerProcess", mpTLMPage->getTLMManagerProcessTextBox()->text());
   // save the TLM Monitor Process
   mpSettings->setValue("TLM/MonitorProcess", mpTLMPage->getTLMMonitorProcessTextBox()->text());
-}
-
-/*!
- * \brief OptionsDialog::saveMetaModelEditorSettings
- * Saves the MetaModelEditor settings to omedit.ini
- */
-void OptionsDialog::saveMetaModelEditorSettings()
-{
-  mpSettings->setValue("MetaModelEditor/textRuleColor", mpMetaModelEditorPage->getTextRuleColor().rgba());
-  mpSettings->setValue("MetaModelEditor/commentRuleColor", mpMetaModelEditorPage->getCommentRuleColor().rgba());
-  mpSettings->setValue("MetaModelEditor/tagRuleColor", mpMetaModelEditorPage->getTagRuleColor().rgba());
-  mpSettings->setValue("MetaModelEditor/quotesRuleColor", mpMetaModelEditorPage->getQuotesRuleColor().rgba());
-  mpSettings->setValue("MetaModelEditor/elementsRuleColor", mpMetaModelEditorPage->getElementRuleColor().rgba());
 }
 
 //! Sets up the Options Widget dialog
@@ -1061,6 +1146,18 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pModelicaEditorItem = new QListWidgetItem(mpOptionsList);
   pModelicaEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   pModelicaEditorItem->setText(tr("Modelica Editor"));
+  // MetaModelica Editor Item
+  QListWidgetItem *pMetaModelicaEditorItem = new QListWidgetItem(mpOptionsList);
+  pMetaModelicaEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+  pMetaModelicaEditorItem->setText(tr("MetaModelica Editor"));
+  // MetaModel Editor Item
+  QListWidgetItem *pMetaModelEditorItem = new QListWidgetItem(mpOptionsList);
+  pMetaModelEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+  pMetaModelEditorItem->setText(tr("MetaModel Editor"));
+  // C Editor Item
+  QListWidgetItem *pCEditorItem = new QListWidgetItem(mpOptionsList);
+  pCEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+  pCEditorItem->setText(tr("C Editor"));
   // Graphical Views Item
   QListWidgetItem *pGraphicalViewsItem = new QListWidgetItem(mpOptionsList);
   pGraphicalViewsItem->setIcon(QIcon(":/Resources/icons/modeling.png"));
@@ -1105,10 +1202,6 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pTLMItem = new QListWidgetItem(mpOptionsList);
   pTLMItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
   pTLMItem->setText(tr("TLM"));
-  // MetaModel Editor Item
-  QListWidgetItem *pMetaModelEditorItem = new QListWidgetItem(mpOptionsList);
-  pMetaModelEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  pMetaModelEditorItem->setText(tr("MetaModel Editor"));
 }
 
 //! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
@@ -1120,6 +1213,9 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpLibrariesPage);
   mpPagesWidget->addWidget(mpTextEditorPage);
   mpPagesWidget->addWidget(mpModelicaEditorPage);
+  mpPagesWidget->addWidget(mpMetaModelicaEditorPage);
+  mpPagesWidget->addWidget(mpMetaModelEditorPage);
+  mpPagesWidget->addWidget(mpCEditorPage);
   mpPagesWidget->addWidget(mpGraphicalViewsPage);
   mpPagesWidget->addWidget(mpSimulationPage);
   mpPagesWidget->addWidget(mpMessagesPage);
@@ -1131,7 +1227,6 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpDebuggerPage);
   mpPagesWidget->addWidget(mpFMIPage);
   mpPagesWidget->addWidget(mpTLMPage);
-  mpPagesWidget->addWidget(mpMetaModelEditorPage);
 }
 
 /*!
@@ -1202,8 +1297,13 @@ void OptionsDialog::saveSettings()
   saveLibrariesSettings();
   saveTextEditorSettings();
   saveModelicaEditorSettings();
-  // emit the signal so that all syntax highlighters are updated
-  emit modelicaTextSettingsChanged();
+  emit modelicaEditorSettingsChanged();
+  saveMetaModelicaEditorSettings();
+  emit metaModelicaEditorSettingsChanged();
+  saveMetaModelEditorSettings();
+  emit metaModelEditorSettingsChanged();
+  saveCEditorSettings();
+  emit cEditorSettingsChanged();
   saveGraphicalViewsSettings();
   saveSimulationSettings();
   saveMessagesSettings();
@@ -1215,9 +1315,6 @@ void OptionsDialog::saveSettings()
   saveDebuggerSettings();
   saveFMISettings();
   saveTLMSettings();
-  saveMetaModelEditorSettings();
-  // emit the signal so that all syntax highlighters are updated
-  emit MetaModelEditorSettingsChanged();
   // emit the signal so that all text editors can set settings & line wrapping mode
   emit textSettingsChanged();
   mpSettings->sync();
@@ -2100,48 +2197,6 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   setLayout(pMainLayout);
 }
 
-PreviewPlainTextEdit::PreviewPlainTextEdit(QWidget *parent)
- : QPlainTextEdit(parent)
-{
-  QTextDocument *pTextDocument = document();
-  pTextDocument->setDocumentMargin(2);
-  BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(pTextDocument);
-  pTextDocument->setDocumentLayout(pModelicaTextDocumentLayout);
-  setDocument(pTextDocument);
-  // parentheses matcher
-  mParenthesesMatchFormat = Utilities::getParenthesesMatchFormat();
-  mParenthesesMisMatchFormat = Utilities::getParenthesesMisMatchFormat();
-
-  updateHighlights();
-  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateHighlights()));
-}
-
-/*!
- * \brief PreviewPlainTextEdit::highlightCurrentLine
- * Hightlights the current line.
- */
-void PreviewPlainTextEdit::highlightCurrentLine()
-{
-  Utilities::highlightCurrentLine(this);
-}
-
-/*!
- * \brief PreviewPlainTextEdit::highlightParentheses
- * Highlights the matching parentheses.
- */
-void PreviewPlainTextEdit::highlightParentheses()
-{
-  Utilities::highlightParentheses(this, mParenthesesMatchFormat, mParenthesesMisMatchFormat);
-}
-
-void PreviewPlainTextEdit::updateHighlights()
-{
-  QList<QTextEdit::ExtraSelection> selections;
-  setExtraSelections(selections);
-  highlightCurrentLine();
-  highlightParentheses();
-}
-
 /*!
  * \class ModelicaEditorPage
  * \brief Creates an interface for Modelica Text settings.
@@ -2157,26 +2212,23 @@ ModelicaEditorPage::ModelicaEditorPage(OptionsDialog *pOptionsDialog)
   // preserve text indentation
   mpPreserveTextIndentationCheckBox = new QCheckBox(tr("Preserve Text Indentation"));
   mpPreserveTextIndentationCheckBox->setChecked(true);
-  // colors groupbox
-  mpColorsGroupBox = new QGroupBox(Helper::Colors);
-  // Item color label and pick color button
-  mpItemColorLabel = new Label(tr("Item Color:"));
-  mpItemColorPickButton = new QPushButton(Helper::pickColor);
-  mpItemColorPickButton->setAutoDefault(false);
-  connect(mpItemColorPickButton, SIGNAL(clicked()), SLOT(pickColor()));
-  // Items list
-  mpItemsLabel = new Label(tr("Items:"));
-  mpItemsList = new QListWidget;
-  mpItemsList->setItemDelegate(new ItemDelegate(mpItemsList));
-  mpItemsList->setMaximumHeight(90);
+  // code colors widget
+  mpCodeColorsWidget = new CodeColorsWidget(this);
+  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
   // Add items to list
-  addListItems();
-  // make first item in the list selected
-  mpItemsList->setCurrentRow(0, QItemSelectionModel::Select);
-  // preview textbox
-  mpPreviewLabel = new Label(tr("Preview:"));
-  mpPreviewPlainTextEdit = new PreviewPlainTextEdit;
-  mpPreviewPlainTextEdit->setTabStopWidth(Helper::tabWidth);
+  // number (purple)
+  new ListWidgetItem("Number", QColor(139, 0, 139), mpCodeColorsWidget->getItemsListWidget());
+  // keyword (dark red)
+  new ListWidgetItem("Keyword", QColor(139, 0, 0), mpCodeColorsWidget->getItemsListWidget());
+  // type (red)
+  new ListWidgetItem("Type", QColor(255, 10, 10), mpCodeColorsWidget->getItemsListWidget());
+  // function (blue)
+  new ListWidgetItem("Function", QColor(0, 0, 255), mpCodeColorsWidget->getItemsListWidget());
+  // Quotes (dark green)
+  new ListWidgetItem("Quotes", QColor(0, 139, 0), mpCodeColorsWidget->getItemsListWidget());
+  // comment (dark green)
+  new ListWidgetItem("Comment", QColor(0, 150, 0), mpCodeColorsWidget->getItemsListWidget());
+  // preview text
   QString previewText;
   previewText.append("class HelloWorld /* block\n"
                      "comment */\n"
@@ -2187,189 +2239,57 @@ ModelicaEditorPage::ModelicaEditorPage(OptionsDialog *pOptionsDialog)
                      "equation\n"
                      "\tder(x) = - a * x;\n"
                      "end HelloWorld;\n");
-  mpPreviewPlainTextEdit->setPlainText(previewText);
+  mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
   // highlight preview textbox
-  ModelicaTextHighlighter *pModelicaTextHighlighter = new ModelicaTextHighlighter(this, mpPreviewPlainTextEdit);
+  ModelicaHighlighter *pModelicaTextHighlighter = new ModelicaHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
   connect(this, SIGNAL(updatePreview()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
           pModelicaTextHighlighter, SLOT(settingsChanged()));
   connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
           pModelicaTextHighlighter, SLOT(settingsChanged()));
   connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
-  // set colors groupbox layout
-  QGridLayout *pColorsGroupBoxLayout = new QGridLayout;
-  pColorsGroupBoxLayout->addWidget(mpItemsLabel, 1, 0);
-  pColorsGroupBoxLayout->addWidget(mpItemColorLabel, 1, 1);
-  pColorsGroupBoxLayout->addWidget(mpItemsList, 2, 0);
-  pColorsGroupBoxLayout->addWidget(mpItemColorPickButton, 2, 1, Qt::AlignTop);
-  pColorsGroupBoxLayout->addWidget(mpPreviewLabel, 3, 0, 1, 2);
-  pColorsGroupBoxLayout->addWidget(mpPreviewPlainTextEdit, 4, 0, 1, 2);
-  mpColorsGroupBox->setLayout(pColorsGroupBoxLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->addWidget(mpPreserveTextIndentationCheckBox);
-  pMainLayout->addWidget(mpColorsGroupBox);
+  pMainLayout->addWidget(mpCodeColorsWidget);
   setLayout(pMainLayout);
 }
 
-//! Adds the Modelica Text settings rules to the mpItemsList.
-void ModelicaEditorPage::addListItems()
-{
-  // don't change the Data of items as it is being used in ModelicaEditorPage::pickColor slot to identify the items
-  // text
-  mpTextItem = new QListWidgetItem(mpItemsList);
-  mpTextItem->setText("Text");
-  mpTextItem->setData(Qt::UserRole, "Text");
-  setTextRuleColor(QColor(0, 0, 0)); // black
-  // number
-  mpNumberItem = new QListWidgetItem(mpItemsList);
-  mpNumberItem->setText("Number");
-  mpNumberItem->setData(Qt::UserRole, "Number");
-  setNumberRuleColor(QColor(139, 0, 139)); // purple
-  // keyword
-  mpKeywordItem = new QListWidgetItem(mpItemsList);
-  mpKeywordItem->setText("Keyword");
-  mpKeywordItem->setData(Qt::UserRole, "Keyword");
-  setKeywordRuleColor(QColor(139, 0, 0)); // dark red
-  // type
-  mpTypeItem = new QListWidgetItem(mpItemsList);
-  mpTypeItem->setText("Type");
-  mpTypeItem->setData(Qt::UserRole, "Type");
-  setTypeRuleColor(QColor(255, 10, 10)); // red
-  // function
-  mpFunctionItem = new QListWidgetItem(mpItemsList);
-  mpFunctionItem->setText("Function");
-  mpFunctionItem->setData(Qt::UserRole, "Function");
-  setFunctionRuleColor(QColor(0, 0, 255)); // blue
-  // Quotes
-  mpQuotesItem = new QListWidgetItem(mpItemsList);
-  mpQuotesItem->setText("Quotes");
-  mpQuotesItem->setData(Qt::UserRole, "Quotes");
-  setQuotesRuleColor(QColor(0, 139, 0)); // dark green
-  // comment
-  mpCommentItem = new QListWidgetItem(mpItemsList);
-  mpCommentItem->setText("Comment");
-  mpCommentItem->setData(Qt::UserRole, "Comment");
-  setCommentRuleColor(QColor(0, 150, 0)); // dark green
-}
-
 /*!
- * \brief ModelicaEditorPage::setTextRuleColor
+ * \brief ModelicaEditorPage::setColor
+ * Sets the color of an item.
+ * \param item
  * \param color
  */
-void ModelicaEditorPage::setTextRuleColor(QColor color)
+void ModelicaEditorPage::setColor(QString item, QColor color)
 {
-  mTextColor = color;
-  mpTextItem->setForeground(color);
-}
-
-/*!
- * \brief ModelicaEditorPage::setNumberRuleColor
- * \param color
- */
-void ModelicaEditorPage::setNumberRuleColor(QColor color)
-{
-  mNumberColor = color;
-  mpNumberItem->setForeground(color);
-}
-
-/*!
- * \brief ModelicaEditorPage::setKeywordRuleColor
- * \param color
- */
-void ModelicaEditorPage::setKeywordRuleColor(QColor color)
-{
-  mKeywordColor = color;
-  mpKeywordItem->setForeground(color);
-}
-
-/*!
- * \brief ModelicaEditorPage::setTypeRuleColor
- * \param color
- */
-void ModelicaEditorPage::setTypeRuleColor(QColor color)
-{
-  mTypeColor = color;
-  mpTypeItem->setForeground(color);
-}
-
-/*!
- * \brief ModelicaEditorPage::setFunctionRuleColor
- * \param color
- */
-void ModelicaEditorPage::setFunctionRuleColor(QColor color)
-{
-  mFunctionColor = color;
-  mpFunctionItem->setForeground(color);
-}
-
-/*!
- * \brief ModelicaEditorPage::setQuotesRuleColor
- * \param color
- */
-void ModelicaEditorPage::setQuotesRuleColor(QColor color)
-{
-  mQuotesColor = color;
-  mpQuotesItem->setForeground(color);
-}
-
-/*!
- * \brief ModelicaEditorPage::setCommentRuleColor
- * \param color
- */
-void ModelicaEditorPage::setCommentRuleColor(QColor color)
-{
-  mCommentColor = color;
-  mpCommentItem->setForeground(color);
-}
-
-/*!
- * \brief ModelicaEditorPage::pickColor
- * Picks a color for one of the Modelica Text Settings rules.
- * This method is called when mpColorPickButton clicked SIGNAL raised.
- */
-void ModelicaEditorPage::pickColor()
-{
-  QListWidgetItem *item = mpItemsList->currentItem();
-  QColor initialColor;
-  // get the color of the item
-  if (item->data(Qt::UserRole).toString().toLower().compare("text") == 0) {
-    initialColor = mTextColor;
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("number") == 0) {
-    initialColor = mNumberColor;
-  } else if (item->data(Qt::UserRole).toString().toLower().compare("keyword") == 0) {
-    initialColor = mKeywordColor;
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("type") == 0) {
-    initialColor = mTypeColor;
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("function") == 0) {
-    initialColor = mFunctionColor;
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("quotes") == 0) {
-    initialColor = mQuotesColor;
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("comment") == 0) {
-    initialColor = mCommentColor;
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      pListWidgetItem->setColor(color);
+      pListWidgetItem->setForeground(color);
+    }
   }
-  QColor color = QColorDialog::getColor(initialColor);
-  if (!color.isValid()) {
-    return;
+}
+
+/*!
+ * \brief ModelicaEditorPage::getColor
+ * Returns the color of an item.
+ * \param item
+ * \return
+ */
+QColor ModelicaEditorPage::getColor(QString item)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      return pListWidgetItem->getColor();
+    }
   }
-  // set the color of the item
-  if (item->data(Qt::UserRole).toString().toLower().compare("text") == 0) {
-    setTextRuleColor(color);
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("number") == 0) {
-    setNumberRuleColor(color);
-  } else if (item->data(Qt::UserRole).toString().toLower().compare("keyword") == 0) {
-    setKeywordRuleColor(color);
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("type") == 0) {
-    setTypeRuleColor(color);
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("function") == 0) {
-    setFunctionRuleColor(color);
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("quotes") == 0) {
-    setQuotesRuleColor(color);
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("comment") == 0) {
-    setCommentRuleColor(color);
-  }
-  emit updatePreview();
+  return QColor(0, 0, 0);
 }
 
 /*!
@@ -2380,9 +2300,315 @@ void ModelicaEditorPage::pickColor()
 void ModelicaEditorPage::setLineWrapping(bool enabled)
 {
   if (enabled) {
-    mpPreviewPlainTextEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   } else {
-    mpPreviewPlainTextEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::NoWrap);
+  }
+}
+
+/*!
+ * \class MetaModelicaEditorPage
+ * \brief Creates an interface for MetaModelica Text settings.
+ */
+/*!
+ * \brief MetaModelicaEditorPage::MetaModelicaEditorPage
+ * \param pOptionsDialog is the pointer to OptionsDialog
+ */
+MetaModelicaEditorPage::MetaModelicaEditorPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  // code colors widget
+  mpCodeColorsWidget = new CodeColorsWidget(this);
+  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  // Add items to list
+  // number (purple)
+  new ListWidgetItem("Number", QColor(139, 0, 139), mpCodeColorsWidget->getItemsListWidget());
+  // keyword (dark red)
+  new ListWidgetItem("Keyword", QColor(139, 0, 0), mpCodeColorsWidget->getItemsListWidget());
+  // type (red)
+  new ListWidgetItem("Type", QColor(255, 10, 10), mpCodeColorsWidget->getItemsListWidget());
+  // Quotes (dark green)
+  new ListWidgetItem("Quotes", QColor(0, 139, 0), mpCodeColorsWidget->getItemsListWidget());
+  // comment (dark green)
+  new ListWidgetItem("Comment", QColor(0, 150, 0), mpCodeColorsWidget->getItemsListWidget());
+  // preview text
+  QString previewText;
+  previewText.append("function HelloWorld /* block\n"
+                     "comment */\n"
+                     "\tinput Integer request; // Line comment\n"
+                     "\toutput String str;"
+                     "algorithm\n"
+                     "\tstr := match (request)\n"
+                     "\t\tcase (1) then \"Hi\";\n"
+                     "\t\tcase (2) then \"Hey\";\n"
+                     "\t\tcase (3) then \"Hello\";\n"
+                     "end HelloWorld;\n");
+  mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
+  // highlight preview textbox
+  MetaModelicaHighlighter *pMetaModelicaHighlighter = new MetaModelicaHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
+  connect(this, SIGNAL(updatePreview()), pMetaModelicaHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
+          pMetaModelicaHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
+          pMetaModelicaHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpCodeColorsWidget);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief MetaModelicaEditorPage::setColor
+ * Sets the color of an item.
+ * \param item
+ * \param color
+ */
+void MetaModelicaEditorPage::setColor(QString item, QColor color)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      pListWidgetItem->setColor(color);
+      pListWidgetItem->setForeground(color);
+    }
+  }
+}
+
+/*!
+ * \brief MetaModelicaEditorPage::getColor
+ * Returns the color of an item.
+ * \param item
+ * \return
+ */
+QColor MetaModelicaEditorPage::getColor(QString item)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      return pListWidgetItem->getColor();
+    }
+  }
+  return QColor(0, 0, 0);
+}
+
+/*!
+ * \brief MetaModelicaEditorPage::setLineWrapping
+ * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
+ * Sets the mpPreviewPlainTextBox line wrapping mode.
+ */
+void MetaModelicaEditorPage::setLineWrapping(bool enabled)
+{
+  if (enabled) {
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  } else {
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::NoWrap);
+  }
+}
+
+/*!
+ * \class MetaModelEditorPage
+ * \brief Creates an interface for MetaModel Text settings.
+ */
+/*!
+ * \brief MetaModelEditorPage::MetaModelEditorPage
+ * \param pOptionsDialog is the pointer to OptionsDialog
+ */
+MetaModelEditorPage::MetaModelEditorPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  // code colors widget
+  mpCodeColorsWidget = new CodeColorsWidget(this);
+  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  // Add items to list
+  // tag (blue)
+  new ListWidgetItem("Tag", QColor(0, 0, 255), mpCodeColorsWidget->getItemsListWidget());
+  // element (blue)
+  new ListWidgetItem("Element", QColor(0, 0, 255), mpCodeColorsWidget->getItemsListWidget());
+  // quotes (dark red)
+  new ListWidgetItem("Quotes", QColor(139, 0, 0), mpCodeColorsWidget->getItemsListWidget());
+  // comment (dark green)
+  new ListWidgetItem("Comment", QColor(0, 150, 0), mpCodeColorsWidget->getItemsListWidget());
+  // preview textbox
+  QString previewText;
+  previewText.append("<!-- This is a comment. -->\n"
+                     "<Model Name=\"model\">\n"
+                     "\t<SubModels>\n"
+                     "\t\t<SubModel Name=\"submodel\">\n"
+                     "\t\t</SubModel>\n"
+                     "\t</SubModels>\n"
+                     "\t<Connections>\n"
+                     "\t\t<Connection From=\"from\" To=\"to\">\n"
+                     "\t</Connections>\n"
+                     "</Model>\n");
+  mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
+  // highlight preview textbox
+  MetaModelHighlighter *pMetaModelHighlighter = new MetaModelHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
+  connect(this, SIGNAL(updatePreview()), pMetaModelHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
+          pMetaModelHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
+          pMetaModelHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpCodeColorsWidget);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief MetaModelEditorPage::setColor
+ * Sets the color of an item.
+ * \param item
+ * \param color
+ */
+void MetaModelEditorPage::setColor(QString item, QColor color)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      pListWidgetItem->setColor(color);
+      pListWidgetItem->setForeground(color);
+    }
+  }
+}
+
+/*!
+ * \brief MetaModelEditorPage::getColor
+ * Returns the color of an item.
+ * \param item
+ * \return
+ */
+QColor MetaModelEditorPage::getColor(QString item)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      return pListWidgetItem->getColor();
+    }
+  }
+  return QColor(0, 0, 0);
+}
+
+/*!
+ * \brief MetaModelEditorPage::setLineWrapping
+ * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
+ * Sets the mpPreviewPlainTextBox line wrapping mode.
+ */
+void MetaModelEditorPage::setLineWrapping(bool enabled)
+{
+  if (enabled) {
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  } else {
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::NoWrap);
+  }
+}
+
+/*!
+ * \class CEditorPage
+ * \brief Creates an interface for C Text settings.
+ */
+/*!
+ * \brief CEditorPage::CEditorPage
+ * \param pOptionsDialog is the pointer to OptionsDialog
+ */
+CEditorPage::CEditorPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  // code colors widget
+  mpCodeColorsWidget = new CodeColorsWidget(this);
+  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  // Add items to list
+  // number (purple)
+  new ListWidgetItem("Number", QColor(139, 0, 139), mpCodeColorsWidget->getItemsListWidget());
+  // keyword (dark red)
+  new ListWidgetItem("Keyword", QColor(139, 0, 0), mpCodeColorsWidget->getItemsListWidget());
+  // type (red)
+  new ListWidgetItem("Type", QColor(255, 10, 10), mpCodeColorsWidget->getItemsListWidget());
+  // Quotes (dark green)
+  new ListWidgetItem("Quotes", QColor(0, 139, 0), mpCodeColorsWidget->getItemsListWidget());
+  // comment (dark green)
+  new ListWidgetItem("Comment", QColor(0, 150, 0), mpCodeColorsWidget->getItemsListWidget());
+  // preview text
+  QString previewText;
+  previewText.append("#include <stdio.h>\n"
+                     "int main() { /* block\n"
+                     "comment */\n"
+                     "\tprintf(\"Hello World\"); // Line comment\n"
+                     "return 0;\n"
+                     "}\n");
+  mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
+  // highlight preview textbox
+  CHighlighter *pCHighlighter = new CHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
+  connect(this, SIGNAL(updatePreview()), pCHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
+          pCHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
+          pCHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpCodeColorsWidget);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief CEditorPage::setColor
+ * Sets the color of an item.
+ * \param item
+ * \param color
+ */
+void CEditorPage::setColor(QString item, QColor color)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      pListWidgetItem->setColor(color);
+      pListWidgetItem->setForeground(color);
+    }
+  }
+}
+
+/*!
+ * \brief CEditorPage::getColor
+ * Returns the color of an item.
+ * \param item
+ * \return
+ */
+QColor CEditorPage::getColor(QString item)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      return pListWidgetItem->getColor();
+    }
+  }
+  return QColor(0, 0, 0);
+}
+
+/*!
+ * \brief CEditorPage::setLineWrapping
+ * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
+ * Sets the mpPreviewPlainTextBox line wrapping mode.
+ */
+void CEditorPage::setLineWrapping(bool enabled)
+{
+  if (enabled) {
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  } else {
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::NoWrap);
   }
 }
 
@@ -3926,202 +4152,4 @@ void TLMPage::browseTLMMonitorProcess()
 {
   mpTLMMonitorProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
                                                                      NULL, Helper::exeFileTypes, NULL));
-}
-/*!
- * \class MetaModelEditorPage
- * \brief Creates an interface for MetaModel Text settings.
- */
-/*!
- * \brief MetaModelEditorPage::MetaModelEditorPage
- * \param pOptionsDialog is the pointer to OptionsDialog
- */
-MetaModelEditorPage::MetaModelEditorPage(OptionsDialog *pOptionsDialog)
-  : QWidget(pOptionsDialog)
-{
-  mpOptionsDialog = pOptionsDialog;
-  // colors groupbox
-  mpColorsGroupBox = new QGroupBox(Helper::Colors);
-  // Item color label and pick color button
-  mpItemColorLabel = new Label(tr("Item Color:"));
-  mpItemColorPickButton = new QPushButton(Helper::pickColor);
-  mpItemColorPickButton->setAutoDefault(false);
-  connect(mpItemColorPickButton, SIGNAL(clicked()), SLOT(pickColor()));
-  // Items list
-  mpItemsLabel = new Label(tr("Items:"));
-  mpItemsList = new QListWidget;
-  mpItemsList->setItemDelegate(new ItemDelegate(mpItemsList));
-  mpItemsList->setMaximumHeight(90);
-  // Add items to list
-  addListItems();
-  // make first item in the list selected
-  mpItemsList->setCurrentRow(0, QItemSelectionModel::Select);
-  // preview textbox
-  mpPreviewLabel = new Label(tr("Preview:"));
-  mpPreviewPlainTextEdit = new PreviewPlainTextEdit;
-  mpPreviewPlainTextEdit->setTabStopWidth(Helper::tabWidth);
-  QString previewText;
-  previewText.append("<!-- This is a comment. -->\n"
-                     "<Model Name=\"model\">\n"
-                     "\t<SubModels>\n"
-                     "\t\t<SubModel Name=\"submodel\">\n"
-                     "\t\t</SubModel>\n"
-                     "\t</SubModels>\n"
-                     "\t<Connections>\n"
-                     "\t\t<Connection From=\"from\" To=\"to\">\n"
-                     "\t</Connections>\n"
-                     "</Model>\n");
-  mpPreviewPlainTextEdit->setPlainText(previewText);
-  // highlight preview textbox
-  MetaModelHighlighter *pMetaModelHighlighter = new MetaModelHighlighter(this, mpPreviewPlainTextEdit);
-  connect(this, SIGNAL(updatePreview()), pMetaModelHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
-          pMetaModelHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
-          pMetaModelHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
-  // set colors groupbox layout
-  QGridLayout *pColorsGroupBoxLayout = new QGridLayout;
-  pColorsGroupBoxLayout->addWidget(mpItemsLabel, 1, 0);
-  pColorsGroupBoxLayout->addWidget(mpItemColorLabel, 1, 1);
-  pColorsGroupBoxLayout->addWidget(mpItemsList, 2, 0);
-  pColorsGroupBoxLayout->addWidget(mpItemColorPickButton, 2, 1, Qt::AlignTop);
-  pColorsGroupBoxLayout->addWidget(mpPreviewLabel, 3, 0, 1, 2);
-  pColorsGroupBoxLayout->addWidget(mpPreviewPlainTextEdit, 4, 0, 1, 2);
-  mpColorsGroupBox->setLayout(pColorsGroupBoxLayout);
-  // set the layout
-  QVBoxLayout *pMainLayout = new QVBoxLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(mpColorsGroupBox);
-  setLayout(pMainLayout);
-}
-
-//! Adds the MetaModelEditor settings rules to the mpItemsList.
-void MetaModelEditorPage::addListItems()
-{
-  // don't change the Data of items as it is being used in MetaModelEditorPage::pickColor slot to identify the items
-  // Text
-  mpTextItem = new QListWidgetItem(mpItemsList);
-  mpTextItem->setText("Text");
-  mpTextItem->setData(Qt::UserRole, "Text");
-  setTextRuleColor(QColor(0, 0, 0)); // black
-  // Tag
-  mpTagItem = new QListWidgetItem(mpItemsList);
-  mpTagItem->setText("Tag");
-  mpTagItem->setData(Qt::UserRole, "Tag");
-  setTagRuleColor(QColor(0, 0, 255)); // blue
-  // Element
-  mpElementItem = new QListWidgetItem(mpItemsList);
-  mpElementItem->setText("Element");
-  mpElementItem->setData(Qt::UserRole, "Element");
-  setElementRuleColor(QColor(0, 0, 255)); // blue
-  // Quotes
-  mpQuotesItem = new QListWidgetItem(mpItemsList);
-  mpQuotesItem->setText("Quotes");
-  mpQuotesItem->setData(Qt::UserRole, "Quotes");
-  setQuotesRuleColor(QColor(139, 0, 0)); // dark red
-  // Comment
-  mpCommentItem = new QListWidgetItem(mpItemsList);
-  mpCommentItem->setText("Comment");
-  mpCommentItem->setData(Qt::UserRole, "Comment");
-  setCommentRuleColor(QColor(0, 150, 0)); // dark green
-}
-
-/*!
- * \brief MetaModelEditorPage::setTextRuleColor
- * \param color
- */
-void MetaModelEditorPage::setTextRuleColor(QColor color)
-{
-  mTextColor = color;
-  mpTextItem->setForeground(color);
-}
-
-/*!
- * \brief MetaModelEditorPage::setTagRuleColor
- * \param color
- */
-void MetaModelEditorPage::setTagRuleColor(QColor color)
-{
-  mTagColor = color;
-  mpTagItem->setForeground(color);
-}
-
-/*!
- * \brief MetaModelEditorPage::setElementRuleColor
- * \param color
- */
-void MetaModelEditorPage::setElementRuleColor(QColor color)
-{
-  mElementColor = color;
-  mpElementItem->setForeground(color);
-}
-
-/*!
- * \brief MetaModelEditorPage::setQuotesRuleColor
- * \param color
- */
-void MetaModelEditorPage::setQuotesRuleColor(QColor color)
-{
-  mQuotesColor = color;
-  mpQuotesItem->setForeground(color);
-}
-
-/*!
- * \brief MetaModelEditorPage::setCommentRuleColor
- * \param color
- */
-void MetaModelEditorPage::setCommentRuleColor(QColor color)
-{
-  mCommentColor = color;
-  mpCommentItem->setForeground(color);
-}
-
-//! Picks a color for one of the MetaModelEditor Settings rules.
-//! This method is called when mpColorPickButton clicked signal raised.
-void MetaModelEditorPage::pickColor()
-{
-  QListWidgetItem *item = mpItemsList->currentItem();
-  QColor initialColor;
-  // get the color of the item
-  if (item->data(Qt::UserRole).toString().toLower().compare("text") == 0) {
-    initialColor = mTextColor;
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("quotes") == 0) {
-    initialColor = mQuotesColor;
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("tag") == 0) {
-    initialColor = mTagColor;
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("element") == 0) {
-    initialColor = mElementColor;
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("comment") == 0) {
-    initialColor = mCommentColor;
-  }
-  QColor color = QColorDialog::getColor(initialColor);
-  if (!color.isValid())
-    return;
-  // set the color of the item
-  if (item->data(Qt::UserRole).toString().toLower().compare("text") == 0) {
-   setTextRuleColor(color);
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("quotes") == 0) {
-    setQuotesRuleColor(color);
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("tag") == 0) {
-    setTagRuleColor(color);
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("element") == 0) {
-    setElementRuleColor(color);
-  } else if(item->data(Qt::UserRole).toString().toLower().compare("comment") == 0) {
-    setCommentRuleColor(color);
-  }
-  emit updatePreview();
-}
-
-/*!
- * \brief MetaModelEditorPage::setLineWrapping
- * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
- * Sets the mpPreviewPlainTextBox line wrapping mode.
- */
-void MetaModelEditorPage::setLineWrapping(bool enabled)
-{
-  if (enabled) {
-    mpPreviewPlainTextEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
-  } else {
-    mpPreviewPlainTextEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
-  }
 }

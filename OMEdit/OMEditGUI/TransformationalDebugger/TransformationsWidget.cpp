@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "TransformationsWidget.h"
@@ -404,13 +401,13 @@ TVariablesTreeView::TVariablesTreeView(TransformationsWidget *pTransformationsWi
   : QTreeView(pTransformationsWidget)
 {
   mpTransformationsWidget = pTransformationsWidget;
-  setObjectName("TreeWithBranches");
   setItemDelegate(new ItemDelegate(this));
   setTextElideMode(Qt::ElideMiddle);
   setIndentation(Helper::treeIndentation);
   setSortingEnabled(true);
   sortByColumn(0, Qt::AscendingOrder);
   setExpandsOnDoubleClick(false);
+  setUniformRowHeights(true);
 }
 
 EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWidget)
@@ -446,7 +443,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, MainW
     mProfJSONFullFileName = infoJSONFullFileName.left(infoJSONFullFileName.size() - 9) + "prof.json";
     mProfilingDataRealFileName = infoJSONFullFileName.left(infoJSONFullFileName.size() - 9) + "prof.realdata";
   }
-  setWindowIcon(QIcon(":/Resources/icons/debugger.svg"));
+  setWindowIcon(QIcon(":/Resources/icons/equational-debugger.svg"));
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::transformationalDebugger));
   QToolButton *pReloadToolButton = new QToolButton;
   pReloadToolButton->setToolTip(Helper::reload);
@@ -534,7 +531,6 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, MainW
   pEquationsBrowserLabel->setObjectName("LabelWithBorder");
   /* Equations tree widget */
   mpEquationsTreeWidget = new EquationTreeWidget(this);
-  mpEquationsTreeWidget->setObjectName("TreeWithBranches");
   mpEquationsTreeWidget->setIndentation(Helper::treeIndentation);
   QGridLayout *pEquationsGridLayout = new QGridLayout;
   pEquationsGridLayout->setSpacing(1);
@@ -606,10 +602,10 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, MainW
   mpTSourceEditorInfoBar = new InfoBar(this);
   mpTSourceEditorInfoBar->hide();
   mpTransformationsEditor = new TransformationsEditor(this);
-  ModelicaTextHighlighter *pModelicaTextHighlighter;
-  pModelicaTextHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaEditorPage(),
-                                                         mpTransformationsEditor->getPlainTextEdit());
-  connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
+  ModelicaHighlighter *pModelicaTextHighlighter;
+  pModelicaTextHighlighter = new ModelicaHighlighter(mpMainWindow->getOptionsDialog()->getModelicaEditorPage(),
+                                                     mpTransformationsEditor->getPlainTextEdit());
+  connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaEditorSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   QVBoxLayout *pTSourceEditorVerticalLayout = new QVBoxLayout;
   pTSourceEditorVerticalLayout->setSpacing(1);
   pTSourceEditorVerticalLayout->setContentsMargins(0, 0, 0, 0);
@@ -715,7 +711,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, MainW
   pMainLayout->addWidget(mpTransformationsHorizontalSplitter, 1, 0);
   setLayout(pMainLayout);
   /* restore the TransformationsWidget geometry and splitters state. */
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     pSettings->beginGroup("transformationalDebugger");

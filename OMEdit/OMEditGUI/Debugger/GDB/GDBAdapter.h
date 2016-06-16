@@ -28,29 +28,26 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef GDBADAPTER_H
 #define GDBADAPTER_H
 
-#include "DebuggerMainWindow.h"
+#include "MainWindow.h"
 #include "GDBMIParser.h"
 #include "BreakpointsWidget.h"
 #include "SimulationOptions.h"
 
 using namespace GDBMIParser;
-class DebuggerMainWindow;
+class MainWindow;
 class BreakpointTreeItem;
 
 class GDBLoggerWidget : public QWidget
 {
   Q_OBJECT
 public:
-  GDBLoggerWidget(DebuggerMainWindow *pDebuggerMainWindow);
+  GDBLoggerWidget(MainWindow *pMainWindow);
   QPlainTextEdit* getCommandsTextBox() {return mpCommandsTextBox;}
   QPlainTextEdit* getResponseTextBox() {return mpResponseTextBox;}
   QLineEdit* getCommandTextBox() {return mpCommandTextBox;}
@@ -59,7 +56,7 @@ public:
   void logDebuggerStandardResponse(QString response);
   void logDebuggerErrorResponse(QString response);
 private:
-  DebuggerMainWindow *mpDebuggerMainWindow;
+  MainWindow *mpMainWindow;
   QPlainTextEdit *mpCommandsTextBox;
   QPlainTextEdit *mpResponseTextBox;
   QLineEdit *mpCommandTextBox;
@@ -76,11 +73,11 @@ class TargetOutputWidget : public QPlainTextEdit
 {
   Q_OBJECT
 public:
-  TargetOutputWidget(DebuggerMainWindow *pDebuggerMainWindow);
+  TargetOutputWidget(MainWindow *pMainWindow);
   void logDebuggerStandardOutput(QString output);
   void logDebuggerErrorOutput(QString output);
 private:
-  DebuggerMainWindow *mpDebuggerMainWindow;
+  MainWindow *mpMainWindow;
   void logDebuggerOutput(QString output, QColor color);
 public slots:
   void handleGDBProcessStarted();
@@ -104,7 +101,7 @@ public:
     ExecStep
   };
 
-  GDBAdapter(DebuggerMainWindow *pMainWindow);
+  GDBAdapter(MainWindow *pMainWindow);
   void setExecuteCommand(ExecuteCommand command) {mExecuteCommand = command;}
   ExecuteCommand getExecuteCommand() {return mExecuteCommand;}
   QProcess* getGDBProcess() {return mpGDBProcess;}
@@ -152,7 +149,7 @@ public:
   void suspendDebugger();
   void resumeDebugger();
 private:
-  DebuggerMainWindow *mpDebuggerMainWindow;
+  MainWindow *mpMainWindow;
   ExecuteCommand mExecuteCommand;
   QString mAttachToProcessId;
   QProcess *mpGDBProcess;

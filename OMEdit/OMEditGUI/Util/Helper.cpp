@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "Helper.h"
@@ -119,7 +116,9 @@ QString Helper::openConvertModelicaFiles;
 QString Helper::libraries;
 QString Helper::clearRecentFiles;
 QString Helper::encoding;
+QString Helper::fileLabel;
 QString Helper::file;
+QString Helper::folder;
 QString Helper::browse;
 QString Helper::ok;
 QString Helper::cancel;
@@ -278,6 +277,7 @@ QString Helper::executionFraction;
 QString Helper::debuggingFileNotSaveInfo;
 QString Helper::algorithmicDebugger;
 QString Helper::debugConfigurations;
+QString Helper::debugConfigurationsTip;
 QString Helper::resume;
 QString Helper::interrupt;
 QString Helper::exit;
@@ -285,6 +285,7 @@ QString Helper::stepOver;
 QString Helper::stepInto;
 QString Helper::stepReturn;
 QString Helper::attachToRunningProcess;
+QString Helper::attachToRunningProcessTip;
 QString Helper::crashReport;
 QString Helper::parsingFailedJson;
 QString Helper::expandAll;
@@ -325,7 +326,9 @@ void Helper::initHelperVariables()
   Helper::libraries = tr("Libraries");
   Helper::clearRecentFiles = tr("Clear Recent Files");
   Helper::encoding = tr("Encoding:");
-  Helper::file = tr("File:");
+  Helper::fileLabel = tr("File:");
+  Helper::file = tr("File");
+  Helper::folder = tr("Folder");
   Helper::browse = tr("Browse...");
   Helper::ok = tr("OK");
   Helper::cancel = tr("Cancel");
@@ -355,7 +358,7 @@ void Helper::initHelperVariables()
   Helper::path = tr("Path:");
   Helper::type = tr("Type");
   Helper::information = tr("Information");
-  Helper::rename = tr("rename");
+  Helper::rename = tr("Rename");
   Helper::checkModel = tr("Check Model");
   Helper::checkModelTip = tr("Check the Modelica class");
   Helper::checkAllModels = tr("Check All Models");
@@ -390,7 +393,7 @@ void Helper::initHelperVariables()
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
-  Helper::unloadMetaModelOrTextTip = tr("Unload the MetaModel/Text file");
+  Helper::unloadMetaModelOrTextTip = tr("Unloads the MetaModel/Text file");
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
   Helper::simulateTip = tr("Simulates the Modelica class");
@@ -485,6 +488,7 @@ void Helper::initHelperVariables()
   Helper::debuggingFileNotSaveInfo = tr("<b>Info: </b>Update the actual model in <b>Modeling</b> perspective and simulate again. This is only shown for debugging purpose. Your changes will not be saved.");
   Helper::algorithmicDebugger = tr("Algorithmic Debugger");
   Helper::debugConfigurations = tr("Debug Configurations");
+  Helper::debugConfigurationsTip = tr("Manage debug configurations");
   Helper::resume = tr("Resume");
   Helper::interrupt = tr("Interrupt");
   Helper::exit = tr("Exit");
@@ -492,6 +496,7 @@ void Helper::initHelperVariables()
   Helper::stepInto = tr("Step Into");
   Helper::stepReturn = tr("Step Return");
   Helper::attachToRunningProcess = tr("Attach to Running Process");
+  Helper::attachToRunningProcessTip = tr("Attach the debugger to running process");
   Helper::crashReport = tr("Crash Report");
   Helper::parsingFailedJson = tr("Parsing of JSON file failed");
   Helper::expandAll = tr("Expand All");
@@ -583,8 +588,6 @@ QString GUIMessages::getMessage(int type)
       return tr("You cannot insert <b>%1</b>, it is a <b>%2</b>. Only <b>connector</b> is allowed on the icon layer.");
     case PLOT_PARAMETRIC_DIFF_FILES:
       return tr("You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.");
-    case FILE_FORMAT_NOT_SUPPORTED:
-      return tr("The file <b>%1</b> is not a valid Modelica file. The file format is not supported. You can only open <b>%2</b>.");
     case ENTER_VALID_NUMBER:
       return tr("Enter a valid number value for <b>%1</b>.");
     case ENTER_VALUE:
@@ -605,8 +608,10 @@ QString GUIMessages::getMessage(int type)
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
     case DELETE_CLASS_MSG:
       return tr("Are you sure you want to delete <b>%1</b>? Everything contained inside this class will also be deleted.");
-    case DELETE_TEXT_FILE_MSG:
+    case UNLOAD_TEXT_FILE_MSG:
       return tr("Are you sure you want to unload <b>%1</b>?");
+    case DELETE_TEXT_FILE_MSG:
+      return tr("Are you sure you want to delete <b>%1</b>?<br /><br />This will also delete from file system.");
     case WRONG_MODIFIER:
       return tr("The Modifier <b>%1</b> format is invalid. The correct format is <b>phi(start=1)</b>");
     case SET_INFO_XML_FLAG:
@@ -644,35 +649,3 @@ QString GUIMessages::getMessage(int type)
       return "";
   }
 }
-
-QString& OpenModelica::tempDirectory()
-{
-  static int init = 0;
-  static QString tmpPath;
-  if (!init) {
-    init = 1;
-#ifdef WIN32
-    tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
-#else // UNIX environment
-    char *user = getenv("USER");
-    tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user ? user : "nobody") + "/OMEdit/";
-#endif
-    tmpPath.remove("\"");
-    if (!QDir().exists(tmpPath))
-      QDir().mkpath(tmpPath);
-  }
-  return tmpPath;
-}
-
-QSettings* OpenModelica::getApplicationSettings()
-{
-  static int init = 0;
-  static QSettings *pSettings;
-  if (!init) {
-    init = 1;
-    pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-    pSettings->setIniCodec(Helper::utf8.toStdString().data());
-  }
-  return pSettings;
-}
-

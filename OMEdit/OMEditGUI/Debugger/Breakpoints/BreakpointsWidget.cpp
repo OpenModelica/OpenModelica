@@ -41,12 +41,12 @@
   \brief A widget containing BreakpointsTreeView.
   */
 /*!
-  \param pMainWindow - pointer to DebuggerMainWindow
+  \param pMainWindow - pointer to MainWindow
   */
-BreakpointsWidget::BreakpointsWidget(DebuggerMainWindow *pDebuggerMainWindow)
-  : QWidget(pDebuggerMainWindow)
+BreakpointsWidget::BreakpointsWidget(MainWindow *pMainWindow)
+  : QWidget(pMainWindow)
 {
-  mpDebuggerMainWindow = pDebuggerMainWindow;
+  mpMainWindow = pMainWindow;
   /* Breakpoints Tree view */
   mpBreakpointsTreeView = new BreakpointsTreeView(this);
   mpBreakpointsTreeModel = new BreakpointsTreeModel(mpBreakpointsTreeView);
@@ -77,6 +77,7 @@ BreakpointsTreeView::BreakpointsTreeView(BreakpointsWidget *pBreakPointsWidget)
   setIconSize(QSize(15, 15));
   setExpandsOnDoubleClick(false);
   setContextMenuPolicy(Qt::CustomContextMenu);
+  setUniformRowHeights(true);
   createActions();
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
   connect(this, SIGNAL(doubleClicked(QModelIndex)), SLOT(breakPointDoubleClicked(QModelIndex)));
@@ -260,7 +261,7 @@ BreakpointsTreeModel::BreakpointsTreeModel(BreakpointsTreeView *pBreakpointsTree
 {
   mpBreakpointsTreeView = pBreakpointsTreeView;
   QVector<QVariant> headers;
-  headers << tr("File") << Helper::line;
+  headers << Helper::file << Helper::line;
   mpRootBreakpointTreeItem = new BreakpointTreeItem(headers);
   mpRootBreakpointTreeItem->setIsRootItem(true);
 }
@@ -428,7 +429,7 @@ void BreakpointsTreeModel::insertBreakpoint(BreakpointMarker *pBreakpointMarker,
   pParentBreakpointTreeItem->insertChild(row, pBreakpointTreeItem);
   endInsertRows();
   // insert the breakpoint in gdb
-  GDBAdapter *pGDBAdapter = mpBreakpointsTreeView->getBreakpointsWidget()->getDebuggerMainWindow()->getGDBAdapter();
+  GDBAdapter *pGDBAdapter = mpBreakpointsTreeView->getBreakpointsWidget()->getMainWindow()->getGDBAdapter();
   if (pGDBAdapter->isGDBRunning()) {
     pGDBAdapter->insertBreakpoint(pBreakpointTreeItem);
   }
@@ -461,7 +462,7 @@ void BreakpointsTreeModel::updateBreakpoint(BreakpointTreeItem *pBreakpointTreeI
                                             int ignoreCount, QString condition)
 {
   // enable/disable the breakpoint in gdb.
-  GDBAdapter *pGDBAdapter = mpBreakpointsTreeView->getBreakpointsWidget()->getDebuggerMainWindow()->getGDBAdapter();
+  GDBAdapter *pGDBAdapter = mpBreakpointsTreeView->getBreakpointsWidget()->getMainWindow()->getGDBAdapter();
   if (pGDBAdapter->isGDBRunning() && !pBreakpointTreeItem->getBreakpointID().isEmpty()) {
     if (pBreakpointTreeItem->isEnabled() != enabled) {
       if (enabled) {
@@ -514,7 +515,7 @@ void BreakpointsTreeModel::removeBreakpoint(BreakpointTreeItem *pBreakpointTreeI
   if (pBreakpointTreeItem)
   {
     // remove the breakpoint in gdb
-    GDBAdapter *pGDBAdapter = mpBreakpointsTreeView->getBreakpointsWidget()->getDebuggerMainWindow()->getGDBAdapter();
+    GDBAdapter *pGDBAdapter = mpBreakpointsTreeView->getBreakpointsWidget()->getMainWindow()->getGDBAdapter();
     if (pGDBAdapter->isGDBRunning() && !pBreakpointTreeItem->getBreakpointID().isEmpty()) {
       pGDBAdapter->postCommand(CommandFactory::breakDelete(QStringList() << pBreakpointTreeItem->getBreakpointID()),
                                GDBAdapter::NonCriticalResponse);

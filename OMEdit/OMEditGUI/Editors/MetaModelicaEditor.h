@@ -28,26 +28,23 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
+#ifndef METAMODELICAEDITOR_H
+#define METAMODELICAEDITOR_H
 
-#ifndef DEBUGGERSOURCEEDITOR_H
-#define DEBUGGERSOURCEEDITOR_H
+#include "MainWindow.h"
 
-#include "BaseEditor.h"
-#include "DebuggerMainWindow.h"
+class ModelWidget;
 
-class DebuggerMainWindow;
-class DebuggerSourceEditor : public BaseEditor
+class MetaModelicaEditor : public BaseEditor
 {
   Q_OBJECT
 public:
-  DebuggerSourceEditor(DebuggerMainWindow *pDebuggerMainWindow);
+  MetaModelicaEditor(ModelWidget *pModelWidget);
+  void setPlainText(const QString &text);
 private:
-  DebuggerMainWindow *mpDebuggerMainWindow;
+  bool mForceSetPlainText;
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:
@@ -55,4 +52,34 @@ public slots:
   virtual void toggleCommentSelection() {}
 };
 
-#endif // DEBUGGERSOURCEEDITOR_H
+class MetaModelicaEditorPage;
+class MetaModelicaHighlighter : public QSyntaxHighlighter
+{
+  Q_OBJECT
+public:
+  MetaModelicaHighlighter(MetaModelicaEditorPage *pMetaModelicaEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
+  void initializeSettings();
+  void highlightMultiLine(const QString &text);
+protected:
+  virtual void highlightBlock(const QString &text);
+private:
+  MetaModelicaEditorPage *mpMetaModelicaEditorPage;
+  QPlainTextEdit *mpPlainTextEdit;
+  struct HighlightingRule
+  {
+    QRegExp mPattern;
+    QTextCharFormat mFormat;
+  };
+  QVector<HighlightingRule> mHighlightingRules;
+  QTextCharFormat mTextFormat;
+  QTextCharFormat mKeywordFormat;
+  QTextCharFormat mTypeFormat;
+  QTextCharFormat mQuotationFormat;
+  QTextCharFormat mSingleLineCommentFormat;
+  QTextCharFormat mMultiLineCommentFormat;
+  QTextCharFormat mNumberFormat;
+public slots:
+  void settingsChanged();
+};
+
+#endif // METAMODELICAEDITOR_H

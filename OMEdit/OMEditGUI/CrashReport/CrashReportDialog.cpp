@@ -28,10 +28,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "CrashReportDialog.h"
@@ -61,7 +58,7 @@ CrashReportDialog::CrashReportDialog()
   mpBugDescriptionTextBox = new QPlainTextEdit;
   // files label and checkboxes
   mpFilesDescriptionLabel = new Label(tr("Following selected files will be sent alongwith the crash report,"));
-  QString& tmpPath = OpenModelica::tempDirectory();
+  QString& tmpPath = Utilities::tempDirectory();
   // omeditcommunication.log file checkbox
   QFileInfo OMEditCommunicationLogFileInfo(QString("%1omeditcommunication.log").arg(tmpPath));
   mpOMEditCommunicationLogFileCheckBox = new QCheckBox(OMEditCommunicationLogFileInfo.absoluteFilePath());

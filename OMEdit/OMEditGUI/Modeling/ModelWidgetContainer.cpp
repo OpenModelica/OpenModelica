@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include <QNetworkReply>
@@ -2211,7 +2208,7 @@ void WelcomePageWidget::addRecentFilesListItems()
 {
   // remove list items first
   mpRecentItemsList->clear();
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
   int numRecentFiles = qMin(files.size(), (int)mpMainWindow->MaxRecentFiles);
   for (int i = 0; i < numRecentFiles; ++i)
@@ -2316,7 +2313,7 @@ void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)
   QDesktopServices::openUrl(url);
 }
 
-ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text)
+ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer)
   : QWidget(pModelWidgetContainer), mpModelWidgetContainer(pModelWidgetContainer), mpLibraryTreeItem(pLibraryTreeItem),
     mDiagramViewLoaded(false), mConnectionsLoaded(false), mCreateModelWidgetComponents(false), mExtendsModifiersLoaded(false)
 {
@@ -2361,9 +2358,19 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     }
     mpEditor = 0;
   }
-  // store the text of LibraryTreeItem::Text
+  // Read the file for LibraryTreeItem::Text
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text && !mpLibraryTreeItem->isFilePathValid()) {
-    mpLibraryTreeItem->setClassText(text);
+    QString contents = "";
+    QFile file(mpLibraryTreeItem->getFileName());
+    if (!file.open(QIODevice::ReadOnly)) {
+//      QMessageBox::critical(mpLibraryWidget->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
+//                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
+//                            .arg(file.errorString()), Helper::ok);
+    } else {
+      contents = QString(file.readAll());
+      file.close();
+    }
+    mpLibraryTreeItem->setClassText(contents);
   }
 }
 
@@ -2656,12 +2663,12 @@ void ModelWidget::createModelWidgetComponents()
       mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
       // modelica text editor
       mpEditor = new ModelicaEditor(this);
-      mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaEditorPage(),
-                                                              mpEditor->getPlainTextEdit());
+      ModelicaHighlighter *pModelicaTextHighlighter = new ModelicaHighlighter(pMainWindow->getOptionsDialog()->getModelicaEditorPage(),
+                                                                              mpEditor->getPlainTextEdit());
       ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(mpEditor);
       pModelicaEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
       mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-      connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
+      connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaEditorSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelicaTypeLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
@@ -2678,9 +2685,24 @@ void ModelWidget::createModelWidgetComponents()
       mpUndoStack->clear();
     } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
       pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
-      mpEditor = new TextEditor(this);
-      TextEditor *pTextEditor = dynamic_cast<TextEditor*>(mpEditor);
-      pTextEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
+      QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
+      if (Utilities::isCFile(fileInfo.suffix())) {
+        mpEditor = new CEditor(this);
+        mpEditor->getPlainTextEdit()->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
+        CHighlighter *pCHighlighter = new CHighlighter(pMainWindow->getOptionsDialog()->getCEditorPage(), mpEditor->getPlainTextEdit());
+        connect(pMainWindow->getOptionsDialog(), SIGNAL(cEditorSettingsChanged()), pCHighlighter, SLOT(settingsChanged()));
+      } else if (Utilities::isModelicaFile(fileInfo.suffix())) {
+        mpEditor = new MetaModelicaEditor(this);
+        mpEditor->getPlainTextEdit()->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
+        MetaModelicaHighlighter *pMetaModelicaHighlighter;
+        pMetaModelicaHighlighter = new MetaModelicaHighlighter(pMainWindow->getOptionsDialog()->getMetaModelicaEditorPage(),
+                                                               mpEditor->getPlainTextEdit());
+        connect(pMainWindow->getOptionsDialog(), SIGNAL(metaModelicaEditorSettingsChanged()), pMetaModelicaHighlighter, SLOT(settingsChanged()));
+      } else {
+        mpEditor = new TextEditor(this);
+        TextEditor *pTextEditor = dynamic_cast<TextEditor*>(mpEditor);
+        pTextEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
+      }
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
@@ -2728,9 +2750,10 @@ void ModelWidget::createModelWidgetComponents()
       } else {
         pMetaModelEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
       }
-      mpMetaModelHighlighter = new MetaModelHighlighter(pMainWindow->getOptionsDialog()->getMetaModelEditorPage(), mpEditor->getPlainTextEdit());
+      MetaModelHighlighter *pMetaModelHighlighter = new MetaModelHighlighter(pMainWindow->getOptionsDialog()->getMetaModelEditorPage(),
+                                                                             mpEditor->getPlainTextEdit());
       mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-      connect(pMainWindow->getOptionsDialog(), SIGNAL(MetaModelEditorSettingsChanged()), mpMetaModelHighlighter, SLOT(settingsChanged()));
+      connect(pMainWindow->getOptionsDialog(), SIGNAL(metaModelEditorSettingsChanged()), pMetaModelHighlighter, SLOT(settingsChanged()));
       // only get the TLM submodels and connectors if the we are not creating a new class.
       if (!mpLibraryTreeItem->getFileName().isEmpty()) {
         getMetaModelSubModels();
@@ -2976,7 +2999,7 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
   QStringList classNames = pMainWindow->getOMCProxy()->getClassNames(pLibraryTreeItem->getNameStructure());
   // first remove the classes that are removed by the user
   int i = 0;
-  while(i != pLibraryTreeItem->getChildren().size()) {
+  while(i != pLibraryTreeItem->childrenSize()) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (!classNames.contains(pChildLibraryTreeItem->getName())) {
       pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem);
@@ -3109,7 +3132,7 @@ void ModelWidget::getModelInheritedClasses()
         pInheritedLibraryTreeItem = pLibraryTreeModel->createNonExistingLibraryTreeItem(inheritedClass);
       }
       if (!pInheritedLibraryTreeItem->isNonExisting() && !pInheritedLibraryTreeItem->getModelWidget()) {
-        pLibraryTreeModel->showModelWidget(pInheritedLibraryTreeItem, "", false);
+        pLibraryTreeModel->showModelWidget(pInheritedLibraryTreeItem, false);
       }
       mpLibraryTreeItem->addInheritedClass(pInheritedLibraryTreeItem);
       addInheritedClass(pInheritedLibraryTreeItem);
@@ -3371,7 +3394,7 @@ void ModelWidget::drawModelIconComponents()
     // we only load and draw connectors here. Other components are drawn when loading diagram view.
     if (pLibraryTreeItem->isConnector()) {
       if (!pLibraryTreeItem->isNonExisting() && !pLibraryTreeItem->getModelWidget()) {
-        pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", false);
+        pLibraryTreeModel->showModelWidget(pLibraryTreeItem, false);
       }
       QString transformation = "";
       QStringList dialogAnnotation;
@@ -3412,7 +3435,7 @@ void ModelWidget::drawModelDiagramComponents()
         continue;
       }
       if (!pLibraryTreeItem->isNonExisting() && !pLibraryTreeItem->getModelWidget()) {
-        pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", false);
+        pLibraryTreeModel->showModelWidget(pLibraryTreeItem, false);
       }
     }
     QString transformation = "";
@@ -3946,6 +3969,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
         pModelWidget->createModelWidgetComponents();
         pModelWidget->show();
         setActiveSubWindow(subWindowsList.at(i));
+        break;
       }
     }
   } else {
@@ -4007,53 +4031,52 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   }
 }
 
+/*!
+ * \brief ModelWidgetContainer::getCurrentModelWidget
+ * Returns the current ModelWidget.
+ * \return
+ */
 ModelWidget* ModelWidgetContainer::getCurrentModelWidget()
 {
-  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0)
+  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
-  else
+  } else {
     return qobject_cast<ModelWidget*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
+  }
 }
 
+/*!
+ * \brief ModelWidgetContainer::getCurrentMdiSubWindow
+ * Returns the current QMdiSubWindow.
+ * \return
+ */
 QMdiSubWindow* ModelWidgetContainer::getCurrentMdiSubWindow()
 {
-  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0)
+  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
-  else
+  } else {
     return subWindowList(QMdiArea::ActivationHistoryOrder).last();
+  }
 }
 
+/*!
+ * \brief ModelWidgetContainer::getMdiSubWindow
+ * Returns the QMdiSubWindow for a specific ModelWidget.
+ * \param pModelWidget
+ * \return
+ */
 QMdiSubWindow* ModelWidgetContainer::getMdiSubWindow(ModelWidget *pModelWidget)
 {
-  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0)
+  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
+  }
   QList<QMdiSubWindow*> mdiSubWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
-  foreach (QMdiSubWindow *pMdiSubWindow, mdiSubWindowsList)
-  {
-    if (pMdiSubWindow->widget() == pModelWidget)
+  foreach (QMdiSubWindow *pMdiSubWindow, mdiSubWindowsList) {
+    if (pMdiSubWindow->widget() == pModelWidget) {
       return pMdiSubWindow;
+    }
   }
   return 0;
-}
-
-void ModelWidgetContainer::setPreviousViewType(StringHandler::ViewType viewType)
-{
-  mPreviousViewType = viewType;
-}
-
-StringHandler::ViewType ModelWidgetContainer::getPreviousViewType()
-{
-  return mPreviousViewType;
-}
-
-void ModelWidgetContainer::setShowGridLines(bool On)
-{
-  mShowGridLines = On;
-}
-
-bool ModelWidgetContainer::isShowGridLines()
-{
-  return mShowGridLines;
 }
 
 bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)

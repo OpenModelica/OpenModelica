@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "VariablesWidget.h"
@@ -759,7 +756,6 @@ VariablesTreeView::VariablesTreeView(VariablesWidget *pVariablesWidget)
   : QTreeView(pVariablesWidget)
 {
   mpVariablesWidget = pVariablesWidget;
-  setObjectName("TreeWithBranches");
   setItemDelegate(new ItemDelegate(this));
   setTextElideMode(Qt::ElideMiddle);
   setIndentation(Helper::treeIndentation);
@@ -767,6 +763,7 @@ VariablesTreeView::VariablesTreeView(VariablesWidget *pVariablesWidget)
   setContextMenuPolicy(Qt::CustomContextMenu);
   setExpandsOnDoubleClick(false);
   setEditTriggers(QAbstractItemView::AllEditTriggers);
+  setUniformRowHeights(true);
 }
 
 /*!

@@ -28,11 +28,8 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *         Adrian Pop <adrian.pop@liu.se>
- *
- * RCS: $Id: GDBMIOutput.g 24811 2015-02-26 18:55:19Z sjoelund.se $
  *
  * Based on gdb/mi Output Syntax defined here,
  * https://sourceware.org/gdb/current/onlinedocs/gdb/GDB_002fMI-Output-Syntax.html#GDB_002fMI-Output-Syntax

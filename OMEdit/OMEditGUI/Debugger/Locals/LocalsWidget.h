@@ -28,16 +28,13 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef LOCALSWIDGET_H
 #define LOCALSWIDGET_H
 
-#include "DebuggerMainWindow.h"
+#include "MainWindow.h"
 
 class LocalsWidget;
 class LocalsTreeModel;
@@ -153,13 +150,13 @@ class LocalsWidget : public QWidget
 {
   Q_OBJECT
 public:
-  LocalsWidget(DebuggerMainWindow *pDebuggerMainWindow);
-  DebuggerMainWindow* getDebuggerMainWindow() {return mpDebuggerMainWindow;}
+  LocalsWidget(MainWindow *pMainWindow);
+  MainWindow* getMainWindow() {return mpMainWindow;}
   LocalsTreeView* getLocalsTreeView() {return mpLocalsTreeView;}
   LocalsTreeModel* getLocalsTreeModel() {return mpLocalsTreeModel;}
   LocalsTreeProxyModel* getLocalsTreeProxyModel() {return mpLocalsTreeProxyModel;}
 private:
-  DebuggerMainWindow *mpDebuggerMainWindow;
+  MainWindow *mpMainWindow;
   LocalsTreeView *mpLocalsTreeView;
   LocalsTreeModel *mpLocalsTreeModel;
   LocalsTreeProxyModel *mpLocalsTreeProxyModel;

@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "meta/meta_modelica.h"
@@ -200,7 +197,7 @@ void OMCProxy::getNextCommand()
 bool OMCProxy::initializeOMC()
 {
   /* create the tmp path */
-  QString& tmpPath = OpenModelica::tempDirectory();
+  QString& tmpPath = Utilities::tempDirectory();
   /* create a file to write OMEdit communication log */
   mCommunicationLogFile.setFileName(QString("%1omeditcommunication.log").arg(tmpPath));
   if (mCommunicationLogFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -229,7 +226,7 @@ bool OMCProxy::initializeOMC()
   connect(mpOMCInterface, SIGNAL(throwException(QString)), SLOT(showException(QString)));
   mHasInitialized = true;
   // set the locale
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
   setCommandLineOptions("+locale=" + settingsLocale.name());
@@ -638,7 +635,7 @@ QString OMCProxy::getVersion(QString className)
  */
 void OMCProxy::loadSystemLibraries()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   bool forceModelicaLoad = true;
   if (pSettings->contains("forceModelicaLoad")) {
     forceModelicaLoad = pSettings->value("forceModelicaLoad").toBool();
@@ -674,7 +671,7 @@ void OMCProxy::loadSystemLibraries()
  */
 void OMCProxy::loadUserLibraries()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup("userlibraries");
   QStringList libraries = pSettings->childKeys();
   pSettings->endGroup();

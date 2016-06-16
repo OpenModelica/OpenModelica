@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef MODELICACLASSDIALOG_H
@@ -289,6 +286,48 @@ private:
 public slots:
   void browseWorkingDirectory();
   void exportModelFigaro();
+};
+
+class CreateNewItemDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  CreateNewItemDialog(QString path, bool isCreateFile, MainWindow *pMainWindow);
+private:
+  QString mPath;
+  bool mIsCreateFile;
+  MainWindow *mpMainWindow;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  Label *mpPathLabel;
+  QLineEdit *mpPathTextBox;
+  QPushButton *mpPathBrowseButton;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void browsePath();
+  void createNewFileOrFolder();
+};
+
+class RenameItemDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  RenameItemDialog(QString path, bool isCreateFile, MainWindow *pMainWindow);
+private:
+  QString mPath;
+  bool mIsCreateFile;
+  MainWindow *mpMainWindow;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+
+  void updateChildrenPath(LibraryTreeItem *pLibraryTreeItem);
+private slots:
+  void renameFileOrFolder();
 };
 
 #endif // MODELICACLASSDIALOG_H

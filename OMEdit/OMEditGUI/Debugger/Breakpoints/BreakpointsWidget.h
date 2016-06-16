@@ -35,10 +35,9 @@
 #ifndef BREAKPOINTSWIDGET_H
 #define BREAKPOINTSWIDGET_H
 
-#include "DebuggerMainWindow.h"
+#include "MainWindow.h"
 
 class MainWindow;
-class DebuggerMainWindow;
 class BreakpointsTreeView;
 class BreakpointsTreeModel;
 class BreakpointTreeItem;
@@ -47,12 +46,12 @@ class BreakpointsWidget : public QWidget
 {
   Q_OBJECT
 public:
-  BreakpointsWidget(DebuggerMainWindow *pDebuggerMainWindow);
+  BreakpointsWidget(MainWindow *pMainWindow);
   BreakpointsTreeView* getBreakpointsTreeView() {return mpBreakpointsTreeView;}
   BreakpointsTreeModel* getBreakpointsTreeModel() {return mpBreakpointsTreeModel;}
-  DebuggerMainWindow* getDebuggerMainWindow() {return mpDebuggerMainWindow;}
+  MainWindow* getMainWindow() {return mpMainWindow;}
 private:
-  DebuggerMainWindow *mpDebuggerMainWindow;
+  MainWindow *mpMainWindow;
   BreakpointsTreeView *mpBreakpointsTreeView;
   BreakpointsTreeModel *mpBreakpointsTreeModel;
 };

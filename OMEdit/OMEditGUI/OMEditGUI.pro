@@ -110,10 +110,10 @@ SOURCES += main.cpp \
   Editors/BaseEditor.cpp \
   Editors/ModelicaEditor.cpp \
   Editors/TransformationsEditor.cpp \
-  Editors/DebuggerSourceEditor.cpp \
   Editors/TextEditor.cpp \
   Editors/CEditor.cpp \
   Editors/MetaModelEditor.cpp \
+  Editors/MetaModelicaEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
   Component/Component.cpp \
   Annotations/ShapeAnnotation.cpp \
@@ -151,7 +151,7 @@ SOURCES += main.cpp \
   Debugger/Breakpoints/BreakpointMarker.cpp \
   Debugger/Breakpoints/BreakpointsWidget.cpp \
   Debugger/Breakpoints/BreakpointDialog.cpp \
-  Debugger/DebuggerMainWindow.cpp \
+  Debugger/DebuggerConfigurationsDialog.cpp \
   Debugger/Attach/AttachToProcessDialog.cpp \
   Debugger/Attach/ProcessListModel.cpp \
   CrashReport/backtrace.c \
@@ -173,10 +173,10 @@ HEADERS  += Util/Helper.h \
   Editors/BaseEditor.h \
   Editors/ModelicaEditor.h \
   Editors/TransformationsEditor.h \
-  Editors/DebuggerSourceEditor.h \
   Editors/TextEditor.h \
   Editors/CEditor.h \
   Editors/MetaModelEditor.h \
+  Editors/MetaModelicaEditor.h \
   Plotting/PlotWindowContainer.h \
   Component/Component.h \
   Annotations/ShapeAnnotation.h \
@@ -216,7 +216,7 @@ HEADERS  += Util/Helper.h \
   Debugger/Breakpoints/BreakpointMarker.h \
   Debugger/Breakpoints/BreakpointsWidget.h \
   Debugger/Breakpoints/BreakpointDialog.h \
-  Debugger/DebuggerMainWindow.h \
+  Debugger/DebuggerConfigurationsDialog.h \
   Debugger/Attach/AttachToProcessDialog.h \
   Debugger/Attach/ProcessListModel.h \
   CrashReport/backtrace.h \

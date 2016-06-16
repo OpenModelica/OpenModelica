@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef HELPER_H
@@ -43,7 +40,6 @@
 #include <QSize>
 #include <QObject>
 #include <QFontInfo>
-#include <QSettings>
 
 class Helper : public QObject
 {
@@ -126,7 +122,9 @@ public:
   static QString libraries;
   static QString clearRecentFiles;
   static QString encoding;
+  static QString fileLabel;
   static QString file;
+  static QString folder;
   static QString browse;
   static QString ok;
   static QString cancel;
@@ -285,6 +283,7 @@ public:
   static QString debuggingFileNotSaveInfo;
   static QString algorithmicDebugger;
   static QString debugConfigurations;
+  static QString debugConfigurationsTip;
   static QString resume;
   static QString interrupt;
   static QString exit;
@@ -292,6 +291,7 @@ public:
   static QString stepInto;
   static QString stepReturn;
   static QString attachToRunningProcess;
+  static QString attachToRunningProcessTip;
   static QString crashReport;
   static QString parsingFailedJson;
   static QString expandAll;
@@ -357,7 +357,6 @@ public:
     DIAGRAM_VIEW_DROP_MSG,
     ICON_VIEW_DROP_MSG,
     PLOT_PARAMETRIC_DIFF_FILES,
-    FILE_FORMAT_NOT_SUPPORTED,
     ENTER_VALID_NUMBER,
     ENTER_VALUE,
     ITEM_DROPPED_ON_ITSELF,
@@ -368,6 +367,7 @@ public:
     FIGARO_GENERATED,
     UNLOAD_CLASS_MSG,
     DELETE_CLASS_MSG,
+    UNLOAD_TEXT_FILE_MSG,
     DELETE_TEXT_FILE_MSG,
     WRONG_MODIFIER,
     SET_INFO_XML_FLAG,
@@ -388,10 +388,5 @@ public:
 
   static QString getMessage(int type);
 };
-
-namespace OpenModelica {
-  QString& tempDirectory();
-  QSettings* getApplicationSettings();
-}
 
 #endif // HELPER_H

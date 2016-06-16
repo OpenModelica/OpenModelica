@@ -28,20 +28,17 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef STACKFRAMESWIDGET_H
 #define STACKFRAMESWIDGET_H
 
-#include "DebuggerMainWindow.h"
+#include "MainWindow.h"
 #include "GDBMIParser.h"
 
 using namespace GDBMIParser;
-class DebuggerMainWindow;
+class MainWindow;
 class StackFramesWidget;
 class StackFramesTreeWidget;
 
@@ -93,8 +90,8 @@ class StackFramesWidget : public QWidget
 {
   Q_OBJECT
 public:
-  StackFramesWidget(DebuggerMainWindow *pDebuggerMainWindow);
-  DebuggerMainWindow *getDebuggerMainWindow() {return mpDebuggerMainWindow;}
+  StackFramesWidget(MainWindow *pMainWindow);
+  MainWindow *getMainWindow() {return mpMainWindow;}
   QComboBox* getThreadsComboBox() {return mpThreadsComboBox;}
   StackFramesTreeWidget* getStackFramesTreeWidget() {return mpStackFramesTreeWidget;}
   void setSelectedThread(int thread) {mSelectedThread = thread;}
@@ -103,7 +100,7 @@ public:
   int getSelectedFrame() {return mSelectedFrame;}
   void setStatusMessage(QString statusMessage);
 private:
-  DebuggerMainWindow *mpDebuggerMainWindow;
+  MainWindow *mpMainWindow;
   QToolButton *mpResumeToolButton;
   QToolButton *mpInterruptToolButton;
   QToolButton *mpExitToolButton;

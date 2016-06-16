@@ -28,220 +28,21 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
-#include "DebuggerMainWindow.h"
-#include "AttachToProcessDialog.h"
-
-DebuggerMainWindow::DebuggerMainWindow(MainWindow *pMainWindow)
-{
-  setWindowIcon(QIcon(":/Resources/icons/debugger.svg"));
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::algorithmicDebugger));
-  mpMainWindow = pMainWindow;
-  // create the GDB adapter instance
-  mpGDBAdapter = new GDBAdapter(this);
-  // create stack frames widget
-  mpStackFramesWidget = new StackFramesWidget(this);
-  // Create stack frames dock widget
-  mpStackFramesDockWidget = new QDockWidget(tr("Stack Frames Browser"), this);
-  mpStackFramesDockWidget->setObjectName("StackFrames");
-  mpStackFramesDockWidget->setWidget(mpStackFramesWidget);
-  addDockWidget(Qt::TopDockWidgetArea, mpStackFramesDockWidget);
-  // create breakpoints widget
-  mpBreakpointsWidget = new BreakpointsWidget(this);
-  // Create breakpoints dock widget
-  mpBreakpointsDockWidget = new QDockWidget(tr("BreakPoints Browser"), this);
-  mpBreakpointsDockWidget->setObjectName("BreakPoints");
-  mpBreakpointsDockWidget->setWidget(mpBreakpointsWidget);
-  addDockWidget(Qt::TopDockWidgetArea, mpBreakpointsDockWidget);
-  // create locals widget
-  mpLocalsWidget = new LocalsWidget(this);
-  // Create locals dock widget
-  mpLocalsDockWidget = new QDockWidget(tr("Locals Browser"), this);
-  mpLocalsDockWidget->setObjectName("Locals");
-  mpLocalsDockWidget->setWidget(mpLocalsWidget);
-  addDockWidget(Qt::RightDockWidgetArea, mpLocalsDockWidget);
-  setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
-  setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
-  // Create GDB console widget
-  mpGDBLoggerWidget = new GDBLoggerWidget(this);
-  // Create GDB console dock widget
-  mpGDBLoggerDockWidget = new QDockWidget(tr("Debugger CLI"), this);
-  mpGDBLoggerDockWidget->setObjectName("DebuggerLog");
-  mpGDBLoggerDockWidget->setWidget(mpGDBLoggerWidget);
-  addDockWidget(Qt::BottomDockWidgetArea, mpGDBLoggerDockWidget);
-  mpGDBLoggerDockWidget->hide();
-  // Create target output widget
-  mpTargetOutputWidget = new TargetOutputWidget(this);
-  // Create GDB console dock widget
-  mpTargetOutputDockWidget = new QDockWidget(tr("Output Browser"), this);
-  mpTargetOutputDockWidget->setObjectName("OutputBrowser");
-  mpTargetOutputDockWidget->setWidget(mpTargetOutputWidget);
-  addDockWidget(Qt::BottomDockWidgetArea, mpTargetOutputDockWidget);
-  /* Debugger source code widget */
-  mpDebuggerSourceEditorFileLabel = new Label;
-  mpDebuggerSourceEditorFileLabel->setObjectName("LabelWithBorder");
-  mpDebuggerSourceEditorFileLabel->setElideMode(Qt::ElideMiddle);
-  mpDebuggerSourceEditorInfoBar = new InfoBar(this);
-  mpDebuggerSourceEditorInfoBar->hide();
-  mpDebuggerSourceEditor = new DebuggerSourceEditor(this);
-  ModelicaTextHighlighter *pModelicaTextHighlighter;
-  pModelicaTextHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaEditorPage(),
-                                                         mpDebuggerSourceEditor->getPlainTextEdit());
-  connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
-  connect(mpGDBAdapter, SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
-  QWidget *pCentralWidget = new QWidget;
-  QVBoxLayout *pCentralWidgetVerticalLayout = new QVBoxLayout;
-  pCentralWidgetVerticalLayout->setContentsMargins(0, 0, 0, 0);
-  pCentralWidgetVerticalLayout->setSpacing(0);
-  pCentralWidgetVerticalLayout->addWidget(mpDebuggerSourceEditorFileLabel);
-  pCentralWidgetVerticalLayout->addWidget(mpDebuggerSourceEditorInfoBar);
-  pCentralWidgetVerticalLayout->addWidget(mpDebuggerSourceEditor);
-  pCentralWidget->setLayout(pCentralWidgetVerticalLayout);
-  setCentralWidget(pCentralWidget);
-  /* Create Actions and Menus */
-  createActions();
-  createMenus();
-  /* restore geometry and state. */
-  restoreWindows();
-}
-
-void DebuggerMainWindow::restoreWindows()
-{
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
-  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
-  {
-    pSettings->beginGroup("algorithmicDebugger");
-    restoreGeometry(pSettings->value("geometry").toByteArray());
-    restoreState(pSettings->value("windowState").toByteArray());
-    /* restore stackframes list and locals columns width */
-    mpStackFramesWidget->getStackFramesTreeWidget()->header()->restoreState(pSettings->value("stackFramesTreeState").toByteArray());
-    mpBreakpointsWidget->getBreakpointsTreeView()->header()->restoreState(pSettings->value("breakPointsTreeState").toByteArray());
-    mpLocalsWidget->getLocalsTreeView()->header()->restoreState(pSettings->value("localsTreeState").toByteArray());
-    pSettings->endGroup();
-  }
-}
-
-void DebuggerMainWindow::closeEvent(QCloseEvent *event)
-{
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
-  pSettings->beginGroup("algorithmicDebugger");
-  pSettings->setValue("geometry", saveGeometry());
-  pSettings->setValue("windowState", saveState());
-  /* save stackframes list and locals columns width */
-  pSettings->setValue("stackFramesTreeState", mpStackFramesWidget->getStackFramesTreeWidget()->header()->saveState());
-  pSettings->setValue("breakPointsTreeState", mpBreakpointsWidget->getBreakpointsTreeView()->header()->saveState());
-  pSettings->setValue("localsTreeState", mpLocalsWidget->getLocalsTreeView()->header()->saveState());
-  pSettings->endGroup();
-  pSettings->sync();
-  event->accept();
-}
+#include "DebuggerConfigurationsDialog.h"
 
 /*!
-  Reads the list of debugger configurations setting from the settings file.
-  */
-
+ * \class DebuggerConfigurationPage
+ * \brief Represents one debug configuration.
+ */
 /*!
-  Reads and loads the file contents in the DebuggerSourceEditor.\n
-  Navigates to the specified line number.
-  \param fileName - the file to read.
-  \param lineNumber - the line number to show.
-  */
-void DebuggerMainWindow::readFileAndNavigateToLine(QString fileName, QString lineNumber)
-{
-  if (mpDebuggerSourceEditorFileLabel->text().compare(fileName) == 0) { /* if we have already read the file then just navigate */
-    mpDebuggerSourceEditorFileLabel->show();
-    mpDebuggerSourceEditorInfoBar->hide();
-    mpDebuggerSourceEditor->goToLineNumber(lineNumber.toInt());
-  } else {  /* Read the file and navigate to the line number. */
-    QFile file(fileName);
-    if (file.exists()) {
-      mpDebuggerSourceEditorFileLabel->setText(file.fileName());
-      mpDebuggerSourceEditorFileLabel->show();
-      file.open(QIODevice::ReadOnly);
-      mpDebuggerSourceEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
-      mpDebuggerSourceEditorInfoBar->hide();
-      file.close();
-      mpDebuggerSourceEditor->goToLineNumber(lineNumber.toInt());
-    }
-  }
-}
-
-//! Defines the actions used by the menu.
-void DebuggerMainWindow::createActions()
-{
-  // Debug configurations
-  mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
-  connect(mpDebugConfigurationsAction, SIGNAL(triggered()), SLOT(showConfigureDialog()));
-  // attach debugger to process
-  mpAttachDebuggerToRunningProcessAction = new QAction(Helper::attachToRunningProcess, this);
-  connect(mpAttachDebuggerToRunningProcessAction, SIGNAL(triggered()), SLOT(showAttachToProcessDialog()));
-}
-
-//! Creates the menus
-void DebuggerMainWindow::createMenus()
-{
-  //Create the menus
-  QMenu *pDebugMenu = new QMenu(menuBar());
-  pDebugMenu->setTitle(tr("&Debug"));
-  // add actions to Debug menu
-  pDebugMenu->addAction(mpDebugConfigurationsAction);
-  pDebugMenu->addAction(mpAttachDebuggerToRunningProcessAction);
-  // add Debug menu to menu bar
-  menuBar()->addAction(pDebugMenu->menuAction());
-  // View menu
-  QMenu *pViewMenu = new QMenu(menuBar());
-  pViewMenu->setTitle(tr("&View"));
-  // add actions to View menu
-  pViewMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
-  pViewMenu->addAction(mpBreakpointsDockWidget->toggleViewAction());
-  pViewMenu->addAction(mpLocalsDockWidget->toggleViewAction());
-  pViewMenu->addAction(mpGDBLoggerDockWidget->toggleViewAction());
-  pViewMenu->addAction(mpTargetOutputDockWidget->toggleViewAction());
-  // add View menu to menu bar
-  menuBar()->addAction(pViewMenu->menuAction());
-}
-
-void DebuggerMainWindow::handleGDBProcessFinished()
-{
-  mpDebuggerSourceEditorFileLabel->setText("");
-  mpDebuggerSourceEditor->getPlainTextEdit()->setPlainText("");
-  mpDebuggerSourceEditorInfoBar->hide();
-}
-
-/*!
-  Slot activated when mpDebugConfigurationsAction triggered signal is raised.\n
-  Shows the debugger configurations.
-  */
-void DebuggerMainWindow::showConfigureDialog()
-{
-  DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog = new DebuggerConfigurationsDialog(this);
-  pDebuggerConfigurationsDialog->exec();
-}
-
-/*!
-  Slot activated when mpAttachDebuggerToRunningProcessAction triggered signal is raised.\n
-  Shows the attach to process dialog.
-  */
-void DebuggerMainWindow::showAttachToProcessDialog()
-{
-  AttachToProcessDialog *pAttachToProcessDialog = new AttachToProcessDialog(this);
-  pAttachToProcessDialog->exec();
-}
-
-/*!
-  \class DebuggerConfigurationPage
-  \brief Represents one debug configuration.
-  */
-/*!
-  \param debuggerConfiguration - DebuggerConfiguration
-  \param pListWidgetItem - pointer to QListWidgetItem
-  \param pDebuggerConfigurationsDialog - pointer to DebuggerConfigurationsDialog
-  */
+ * \brief DebuggerConfigurationPage::DebuggerConfigurationPage
+ * \param debuggerConfiguration - DebuggerConfiguration
+ * \param pListWidgetItem - pointer to QListWidgetItem
+ * \param pDebuggerConfigurationsDialog - pointer to DebuggerConfigurationsDialog
+ */
 DebuggerConfigurationPage::DebuggerConfigurationPage(DebuggerConfiguration debuggerConfiguration, QListWidgetItem *pListWidgetItem,
                                                      DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog)
   : QWidget(pDebuggerConfigurationsDialog)
@@ -308,9 +109,15 @@ DebuggerConfigurationPage::DebuggerConfigurationPage(DebuggerConfiguration debug
   setLayout(pMainLayout);
 }
 
+/*!
+ * \brief DebuggerConfigurationPage::configurationExists
+ * Checks if the debugger configuration exists or not.
+ * \param configurationKeyToCheck
+ * \return
+ */
 bool DebuggerConfigurationPage::configurationExists(QString configurationKeyToCheck)
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup("debuggerConfigurationList");
   QStringList configurationKeys = pSettings->childKeys();
   pSettings->endGroup();
@@ -323,47 +130,55 @@ bool DebuggerConfigurationPage::configurationExists(QString configurationKeyToCh
 }
 
 /*!
-  Slot activated when mProgramBrowseButton clicked signal is raised.\n
-  Allows user to select program File.
-  */
+ * \brief DebuggerConfigurationPage::browseProgramFile
+ * Slot activated when mProgramBrowseButton clicked signal is raised.\n
+ * Allows user to select program File.
+ */
 void DebuggerConfigurationPage::browseProgramFile()
 {
-  QString programFile = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+  QString programFile = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile),
                                                        NULL, "", NULL);
-  if (programFile.isEmpty())
+  if (programFile.isEmpty()) {
     return;
+  }
   mpProgramTextBox->setText(programFile);
 }
 
 /*!
-  Slot activated when mpWorkingDirectoryBrowseButton clicked signal is raised.\n
-  Allows user to select the working directory.
-  */
+ * \brief DebuggerConfigurationPage::browseWorkingDirectory
+ * Slot activated when mpWorkingDirectoryBrowseButton clicked signal is raised.\n
+ * Allows user to select the working directory.
+ */
 void DebuggerConfigurationPage::browseWorkingDirectory()
 {
-  mpWorkingDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL));
+  mpWorkingDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
+                                                                         .arg(Helper::chooseDirectory), NULL));
 }
 
 /*!
-  Slot activated when mpGDBPathBrowseButton clicked signal is raised.\n
-  Allows user to select the GDB path .
-  */
+ * \brief DebuggerConfigurationPage::browseGDBPath
+ * Slot activated when mpGDBPathBrowseButton clicked signal is raised.\n
+ * Allows user to select the GDB path.
+ */
 void DebuggerConfigurationPage::browseGDBPath()
 {
-  QString GDBPath = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+  QString GDBPath = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile),
                                                    NULL, "", NULL);
-  if (GDBPath.isEmpty())
+  if (GDBPath.isEmpty()) {
     return;
+  }
   mpGDBPathTextBox->setText(GDBPath);
 }
 
 /*!
-  Slot activated when mpApplyButton clicked signal is raised.\n
-  Saves the debug configuration.
-  */
+ * \brief DebuggerConfigurationPage::saveDebugConfiguration
+ * Slot activated when mpApplyButton clicked signal is raised.\n
+ * Saves the debug configuration.
+ * \return
+ */
 bool DebuggerConfigurationPage::saveDebugConfiguration()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup("debuggerConfigurationList");
   // remove the configuration setting if we have changed its name. But first check if there is no configuration with the new name.
   if (mDebuggerConfiguration.name.compare(mpNameTextBox->text()) != 0) {
@@ -390,9 +205,10 @@ bool DebuggerConfigurationPage::saveDebugConfiguration()
 }
 
 /*!
-  Slot activated when mpResetButton clicked signal is raised.\n
-  Resets the debug configuration state back to original.
-  */
+ * \brief DebuggerConfigurationPage::resetDebugConfiguration
+ * Slot activated when mpResetButton clicked signal is raised.\n
+ * Resets the debug configuration state back to original.
+ */
 void DebuggerConfigurationPage::resetDebugConfiguration()
 {
   mpNameTextBox->setText(mDebuggerConfiguration.name);
@@ -405,18 +221,19 @@ void DebuggerConfigurationPage::resetDebugConfiguration()
 }
 
 /*!
-  \class DebuggerConfigurationsDialog
-  \brief Provides interface for creating and managing the debug configurations.
-  */
+ * \class DebuggerConfigurationsDialog
+ * \brief Provides interface for creating and managing the debug configurations.
+ */
 /*!
-  \param pDebuggerMainWindow - pointer to DebuggerMainWindow
-  */
-DebuggerConfigurationsDialog::DebuggerConfigurationsDialog(DebuggerMainWindow *pDebuggerMainWindow)
-  : QDialog(pDebuggerMainWindow)
+ * \brief DebuggerConfigurationsDialog::DebuggerConfigurationsDialog
+ * \param pMainWindow - pointer to MainWindow
+ */
+DebuggerConfigurationsDialog::DebuggerConfigurationsDialog(MainWindow *pMainWindow)
+  : QDialog(pMainWindow)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::debugConfigurations));
   setAttribute(Qt::WA_DeleteOnClose);
-  mpDebuggerMainWindow = pDebuggerMainWindow;
+  mpMainWindow = pMainWindow;
   // create tool buttons
   mpNewToolButton = new QToolButton;
   mpNewToolButton->setIcon( QIcon(":/Resources/icons/new.svg"));
@@ -483,12 +300,19 @@ DebuggerConfigurationsDialog::DebuggerConfigurationsDialog(DebuggerMainWindow *p
   readConfigurations();
 }
 
+/*!
+ * \brief DebuggerConfigurationsDialog::getUniqueName
+ * Returns a unique name for debugger configuration.
+ * \param name
+ * \param number
+ * \return
+ */
 QString DebuggerConfigurationsDialog::getUniqueName(QString name, int number)
 {
   QString newName;
   newName = name + QString::number(number);
 
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup("debuggerConfigurationList");
   QStringList configurationKeys = pSettings->childKeys();
   pSettings->endGroup();
@@ -502,16 +326,16 @@ QString DebuggerConfigurationsDialog::getUniqueName(QString name, int number)
 }
 
 /*!
-  Reads the list of debugger configurations setting from the settings file.
-  */
+ * \brief DebuggerConfigurationsDialog::readConfigurations
+ * Reads the list of debugger configurations setting from the settings file.
+ */
 void DebuggerConfigurationsDialog::readConfigurations()
 {
   // read the settings and add configurations
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup("debuggerConfigurationList");
   QStringList configurationKeys = pSettings->childKeys();
-  foreach (QString configurationKey, configurationKeys)
-  {
+  foreach (QString configurationKey, configurationKeys) {
     QListWidgetItem *pListWidgetItem = new QListWidgetItem(mpConfigurationsListWidget);
     pListWidgetItem->setIcon(QIcon(":/Resources/icons/debugger.svg"));
     pListWidgetItem->setText(configurationKey);
@@ -520,8 +344,7 @@ void DebuggerConfigurationsDialog::readConfigurations()
     mpConfigurationPagesWidget->addWidget(new DebuggerConfigurationPage(debuggerConfiguration, pListWidgetItem, this));
   }
   pSettings->endGroup();
-  if (mpConfigurationsListWidget->count() > 0)
-  {
+  if (mpConfigurationsListWidget->count() > 0) {
     mpConfigurationsSplitter->setVisible(true);
     mpConfigurationsButtonBox->setVisible(true);
     mpConfigurationsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
@@ -529,33 +352,36 @@ void DebuggerConfigurationsDialog::readConfigurations()
 }
 
 /*!
-  Saves all the debug configurations to the settings file.
-  \return true if all debug configurations are saved successfully.
-  */
+ * \brief DebuggerConfigurationsDialog::saveAllConfigurationsHelper
+ * Saves all the debug configurations to the settings file.
+ * \return true if all debug configurations are saved successfully.
+ */
 bool DebuggerConfigurationsDialog::saveAllConfigurationsHelper()
 {
   int count = mpConfigurationPagesWidget->count();
-  for (int i = 0 ; i < count ; i++)
-  {
+  for (int i = 0 ; i < count ; i++) {
     DebuggerConfigurationPage *pDebuggerConfigurationPage = qobject_cast<DebuggerConfigurationPage*>(mpConfigurationPagesWidget->widget(i));
-    if (pDebuggerConfigurationPage)
-    {
-      if (!pDebuggerConfigurationPage->saveDebugConfiguration())
+    if (pDebuggerConfigurationPage) {
+      if (!pDebuggerConfigurationPage->saveDebugConfiguration()) {
         return false;
+      }
     }
   }
   return true;
 }
 
+/*!
+ * \brief DebuggerConfigurationsDialog::newConfiguration
+ * Creates a new debugger configuration.
+ */
 void DebuggerConfigurationsDialog::newConfiguration()
 {
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   // check if maximum limit for debug configurations is reached
   pSettings->beginGroup("debuggerConfigurationList");
   QStringList configurationKeys = pSettings->childKeys();
   pSettings->endGroup();
-  if (configurationKeys.size() >= MaxDebugConfigurations)
-  {
+  if (configurationKeys.size() >= MaxDebugConfigurations) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                              GUIMessages::getMessage(GUIMessages::DEBUG_CONFIGURATION_SIZE_EXCEED).arg(MaxDebugConfigurations), Helper::ok);
     return;
@@ -575,28 +401,32 @@ void DebuggerConfigurationsDialog::newConfiguration()
   pSettings->setValue(debuggerConfiguration.name, QVariant::fromValue(debuggerConfiguration));
   pSettings->endGroup();
   // show the configurations and buttons.
-  if (!mpConfigurationsSplitter->isVisible()) mpConfigurationsSplitter->setVisible(true);
-  if (!mpConfigurationsButtonBox->isVisible())
-  {
+  if (!mpConfigurationsSplitter->isVisible()) {
+    mpConfigurationsSplitter->setVisible(true);
+  }
+  if (!mpConfigurationsButtonBox->isVisible()) {
     mpConfigurationsButtonBox->setVisible(true);
     adjustSize();
   }
 }
 
+/*!
+ * \brief DebuggerConfigurationsDialog::removeConfiguration
+ * Removes the debugger configuration.
+ */
 void DebuggerConfigurationsDialog::removeConfiguration()
 {
   QListWidgetItem *pListWidgetItem = mpConfigurationsListWidget->currentItem();
-  if (!pListWidgetItem)
+  if (!pListWidgetItem) {
     return;
+  }
 
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup("debuggerConfigurationList");
   QStringList configurationKeys = pSettings->childKeys();
   pSettings->endGroup();
-  foreach (QString configurationKey, configurationKeys)
-  {
-    if (configurationKey.compare(pListWidgetItem->text()) == 0)
-    {
+  foreach (QString configurationKey, configurationKeys) {
+    if (configurationKey.compare(pListWidgetItem->text()) == 0) {
       // ask user if he is sure about removing the configuration
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
@@ -606,8 +436,7 @@ void DebuggerConfigurationsDialog::removeConfiguration()
       pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
       pMessageBox->setDefaultButton(QMessageBox::Yes);
       int answer = pMessageBox->exec();
-      switch (answer)
-      {
+      switch (answer) {
         case QMessageBox::Yes: // Yes was clicked. Don't return.
           break;
         case QMessageBox::No: // No was clicked. Return
@@ -623,8 +452,7 @@ void DebuggerConfigurationsDialog::removeConfiguration()
       delete pWidget;
       delete mpConfigurationsListWidget->item(mpConfigurationsListWidget->currentRow());
       mpConfigurationsListWidget->blockSignals(state);
-      if (mpConfigurationsListWidget->count() <= 0)
-      {
+      if (mpConfigurationsListWidget->count() <= 0) {
         mpConfigurationsSplitter->setVisible(false);
         mpConfigurationsButtonBox->setVisible(false);
       }
@@ -634,46 +462,49 @@ void DebuggerConfigurationsDialog::removeConfiguration()
 }
 
 /*!
-  Change the page in DebuggerConfigurationsDialogt when the mpConfigurationsListWidget currentItemChanged Signal is raised.
-  */
+ * \brief DebuggerConfigurationsDialog::changeConfigurationPage
+ * Change the page in DebuggerConfigurationsDialogt when the mpConfigurationsListWidget currentItemChanged Signal is raised.
+ * \param current
+ * \param previous
+ */
 void DebuggerConfigurationsDialog::changeConfigurationPage(QListWidgetItem *current, QListWidgetItem *previous)
 {
-  if (!current)
+  if (!current) {
     current = previous;
-
+  }
   mpConfigurationPagesWidget->setCurrentIndex(mpConfigurationsListWidget->row(current));
 }
 
 /*!
-  Saves all the debug configurations to the settings file.
-  */
+ * \brief DebuggerConfigurationsDialog::saveAllConfigurations
+ * Saves all the debug configurations to the settings file.
+ */
 void DebuggerConfigurationsDialog::saveAllConfigurations()
 {
-  if (saveAllConfigurationsHelper())
+  if (saveAllConfigurationsHelper()) {
     accept();
+  }
 }
 
 /*!
-  Saves all the debug configurations to the settings file.
-  Starts the Algorithmic debugger for the active configuration.
-  */
+ * \brief DebuggerConfigurationsDialog::saveAllConfigurationsAndDebugConfiguration
+ * Saves all the debug configurations to the settings file.
+ * Starts the Algorithmic debugger for the active configuration.
+ */
 void DebuggerConfigurationsDialog::saveAllConfigurationsAndDebugConfiguration()
 {
-  if (saveAllConfigurationsHelper())
-  {
+  if (saveAllConfigurationsHelper()) {
     accept();
     // start the debugger
-    if (mpDebuggerMainWindow->getGDBAdapter()->isGDBRunning())
-    {
+    if (mpMainWindow->getGDBAdapter()->isGDBRunning()) {
       QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
-    }
-    else
-    {
+    } else {
       DebuggerConfigurationPage *pDebuggerConfigurationPage = qobject_cast<DebuggerConfigurationPage*>(mpConfigurationPagesWidget->currentWidget());
       DebuggerConfiguration debuggerConfiguration = pDebuggerConfigurationPage->getDebuggerConfiguration();
-      mpDebuggerMainWindow->getGDBAdapter()->launch(debuggerConfiguration.program, debuggerConfiguration.workingDirectory,
-                                                    debuggerConfiguration.arguments.split(" "), debuggerConfiguration.GDBPath);
+      mpMainWindow->getGDBAdapter()->launch(debuggerConfiguration.program, debuggerConfiguration.workingDirectory,
+                                            debuggerConfiguration.arguments.split(" "), debuggerConfiguration.GDBPath);
+      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(3);
     }
   }
 }

@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "MessagesWidget.h"
@@ -261,12 +258,8 @@ void MessagesWidget::openErrorMessageClass(QUrl url)
   if (className.startsWith("/")) className.remove(0, 1);
   LibraryTreeItem *pLibraryTreeItem = mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
   if (pLibraryTreeItem) {
+    mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
-    if (pModelWidget) {
-      mpMainWindow->getModelWidgetContainer()->addModelWidget(pModelWidget, false);
-    } else {
-      mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-    }
     if (pModelWidget && pModelWidget->getEditor()) {
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
       QUrlQuery query(url);

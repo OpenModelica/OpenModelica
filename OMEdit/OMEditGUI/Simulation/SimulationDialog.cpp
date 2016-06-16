@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include <QTcpSocket>
@@ -1235,14 +1232,14 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
     fileName = fileName.append(".exe");
 #endif
     // start the debugger
-    if (mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->isGDBRunning()) {
+    if (mpMainWindow->getGDBAdapter()->isGDBRunning()) {
       QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
     } else {
       QString GDBPath = mpMainWindow->getOptionsDialog()->getDebuggerPage()->getGDBPath();
-      GDBAdapter *pGDBAdapter = mpMainWindow->getDebuggerMainWindow()->getGDBAdapter();
-      pGDBAdapter->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(), GDBPath, simulationOptions);
-      mpMainWindow->showAlgorithmicDebugger();
+      mpMainWindow->getGDBAdapter()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(),
+                                            GDBPath, simulationOptions);
+      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(3);
     }
   }
 }

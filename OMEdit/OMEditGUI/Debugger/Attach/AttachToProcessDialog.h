@@ -28,24 +28,22 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef ATTACHTOPROCESSDIALOG_H
 #define ATTACHTOPROCESSDIALOG_H
 
-#include "DebuggerMainWindow.h"
+#include "MainWindow.h"
+#include "ProcessListModel.h"
 
 class AttachToProcessDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AttachToProcessDialog(DebuggerMainWindow *pDebuggerMainWindow);
+  AttachToProcessDialog(MainWindow *pMainWindow);
 private:
-  DebuggerMainWindow *mpDebuggerMainWindow;
+  MainWindow *mpMainWindow;
   Label *mpAttachToProcessIDLabel;
   QLineEdit *mpAttachToProcessIDTextBox;
   QLineEdit *mpFilterProcessesTextBox;

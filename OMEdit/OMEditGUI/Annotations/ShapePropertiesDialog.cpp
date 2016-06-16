@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include <limits>
@@ -332,7 +329,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpFillStyleGroupBox->setLayout(pFillStyleGroupBoxLayout);
   // Image Group Box
   mpImageGroupBox = new QGroupBox(tr("Image"));
-  mpFileLabel = new Label(Helper::file);
+  mpFileLabel = new Label(Helper::fileLabel);
   mpFileTextBox = new QLineEdit(mpShapeAnnotation->getFileName());
   mpFileTextBox->setEnabled(false);
   mpBrowseFileButton = new QPushButton(Helper::browse);
@@ -718,14 +715,14 @@ bool ShapePropertiesDialog::applyShapeProperties()
     if (mpStoreImageInModelCheckBox->isChecked() && mpShapeAnnotation->getImageSource().isEmpty()) {
       if (mpFileTextBox->text().isEmpty()) {
         QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::file), Helper::ok);
+                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), Helper::ok);
         mpFileTextBox->setFocus();
         return false;
       }
     } else if (!mpStoreImageInModelCheckBox->isChecked()) {
       if (mpFileTextBox->text().isEmpty()) {
         QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::file), Helper::ok);
+                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), Helper::ok);
         mpFileTextBox->setFocus();
         return false;
       }

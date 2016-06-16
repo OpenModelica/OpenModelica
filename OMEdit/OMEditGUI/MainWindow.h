@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #ifndef MAINWINDOW_H
@@ -71,7 +68,9 @@
 #include "TLMCoSimulationDialog.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "ModelWidgetContainer.h"
-#include "DebuggerMainWindow.h"
+#include "GDBAdapter.h"
+#include "StackFramesWidget.h"
+#include "LocalsWidget.h"
 #include "ImportFMUDialog.h"
 #include "NotificationsDialog.h"
 
@@ -82,11 +81,16 @@ class TransformationsWidget;
 class LibraryWidget;
 class DocumentationWidget;
 class VariablesWidget;
+class GDBAdapter;
+class StackFramesWidget;
+class LocalsWidget;
+class BreakpointsWidget;
+class TargetOutputWidget;
+class GDBLoggerWidget;
 class SimulationDialog;
 class TLMCoSimulationDialog;
 class PlotWindowContainer;
 class ModelWidgetContainer;
-class DebuggerMainWindow;
 class InfoBar;
 class WelcomePageWidget;
 class AboutOMEditWidget;
@@ -104,6 +108,12 @@ public:
   OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
   MessagesWidget* getMessagesWidget() {return mpMessagesWidget;}
   LibraryWidget* getLibraryWidget() {return mpLibraryWidget;}
+  GDBAdapter* getGDBAdapter() {return mpGDBAdapter;}
+  StackFramesWidget* getStackFramesWidget() {return mpStackFramesWidget;}
+  BreakpointsWidget* getBreakpointsWidget() {return mpBreakpointsWidget;}
+  LocalsWidget* getLocalsWidget() {return mpLocalsWidget;}
+  TargetOutputWidget* getTargetOutputWidget() {return mpTargetOutputWidget;}
+  GDBLoggerWidget* getGDBLoggerWidget() {return mpGDBLoggerWidget;}
   DocumentationWidget* getDocumentationWidget() {return mpDocumentationWidget;}
   QDockWidget* getDocumentationDockWidget() {return mpDocumentationDockWidget;}
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
@@ -112,7 +122,6 @@ public:
   TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
   PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
-  DebuggerMainWindow* getDebuggerMainWindow() {return mpDebuggerMainWindow;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
   InfoBar* getInfoBar() {return mpInfoBar;}
   QStatusBar* getStatusBar() {return mpStatusBar;}
@@ -186,6 +195,7 @@ public:
   void createOMNotebookImageCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
   void createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
   TransformationsWidget* showTransformationsWidget(QString fileName);
+  void findFileAndGoToLine(QString fileName, QString lineNumber);
   static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid,
                                    const char* plotType, const char* logX, const char* logY, const char* xLabel, const char* yLabel,
                                    const char* x1, const char* x2, const char* y1, const char* y2, const char* curveWidth,
@@ -204,6 +214,17 @@ private:
   FileDataNotifier *mpErrorFileDataNotifier;
   LibraryWidget *mpLibraryWidget;
   QDockWidget *mpLibraryDockWidget;
+  GDBAdapter *mpGDBAdapter;
+  StackFramesWidget *mpStackFramesWidget;
+  QDockWidget *mpStackFramesDockWidget;
+  BreakpointsWidget *mpBreakpointsWidget;
+  QDockWidget *mpBreakpointsDockWidget;
+  LocalsWidget *mpLocalsWidget;
+  QDockWidget *mpLocalsDockWidget;
+  TargetOutputWidget *mpTargetOutputWidget;
+  QDockWidget *mpTargetOutputDockWidget;
+  GDBLoggerWidget *mpGDBLoggerWidget;
+  QDockWidget *mpGDBLoggerDockWidget;
   DocumentationWidget *mpDocumentationWidget;
   QDockWidget *mpDocumentationDockWidget;
   VariablesWidget *mpVariablesWidget;
@@ -214,16 +235,15 @@ private:
   QList<Qt::WindowStates> mPlotWindowsStatesList;
   QList<QByteArray> mPlotWindowsGeometriesList;
   ModelWidgetContainer *mpModelWidgetContainer;
-  DebuggerMainWindow *mpDebuggerMainWindow;
   WelcomePageWidget *mpWelcomePageWidget;
   AboutOMEditWidget *mpAboutOMEditDialog;
   InfoBar *mpInfoBar;
   QStackedWidget *mpCentralStackedWidget;
-  QStatusBar *mpStatusBar;
   QProgressBar *mpProgressBar;
   Label *mpPointerXPositionLabel;
   Label *mpPointerYPositionLabel;
   QTabBar *mpPerspectiveTabbar;
+  QStatusBar *mpStatusBar;
   QTimer *mpAutoSaveTimer;
   // File Menu
   // Modelica File Actions
@@ -237,6 +257,7 @@ private:
   QAction *mpNewMetaModelFileAction;
   QAction *mpOpenMetaModelFileAction;
   QAction *mpLoadExternModelAction;
+  QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
@@ -257,7 +278,6 @@ private:
   QAction *mpResetZoomAction;
   QAction *mpZoomInAction;
   QAction *mpZoomOutAction;
-  QAction *mpShowAlgorithmicDebuggerAction;
   QAction *mpCloseWindowAction;
   QAction *mpCloseAllWindowsAction;
   QAction *mpCloseAllWindowsButThisAction;
@@ -278,6 +298,9 @@ private:
   // Export Menu
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
+  // Debug Menu
+  QAction *mpDebugConfigurationsAction;
+  QAction *mpAttachDebuggerToRunningProcessAction;
   // Tools Menu
   QAction *mpShowOMCLoggerWidgetAction;
   QAction *mpShowOpenModelicaCommandPromptAction;
@@ -348,6 +371,7 @@ public slots:
   void createNewMetaModelFile();
   void openMetaModelFile();
   void loadExternalModels();
+  void openDirectory();
   void loadSystemLibrary();
   void readOutputFile(qint64 bytes);
   void readErrorFile(qint64 bytes);
@@ -360,7 +384,6 @@ public slots:
   void resetZoom();
   void zoomIn();
   void zoomOut();
-  void showAlgorithmicDebugger();
   void closeWindow();
   void closeAllWindows();
   void closeAllWindowsButThis();
@@ -410,6 +433,9 @@ private slots:
   void switchToWelcomePerspectiveSlot();
   void switchToModelingPerspectiveSlot();
   void switchToPlottingPerspectiveSlot();
+  void switchToAlgorithmicDebuggingPerspectiveSlot();
+  void showConfigureDialog();
+  void showAttachToProcessDialog();
 private:
   void createActions();
   void createToolbars();
@@ -419,6 +445,7 @@ private:
   void switchToWelcomePerspective();
   void switchToModelingPerspective();
   void switchToPlottingPerspective();
+  void switchToAlgorithmicDebuggingPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem);

@@ -28,23 +28,21 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "BreakpointDialog.h"
 #include <limits>
 
 /*!
-  \class BreakpointDialog
-  \brief Interface for adding and editing breakpoint.
-  */
+ * \class BreakpointDialog
+ * \brief Interface for adding and editing breakpoint.
+ */
 /*!
-  \param pBreakpointTreeItem - pointer to BreakpointTreeItem
-  \param pBreakpointsTreeModel - pointer to BreakpointsTreeModel
-  */
+ * \brief BreakpointDialog::BreakpointDialog
+ * \param pBreakpointTreeItem - pointer to BreakpointTreeItem
+ * \param pBreakpointsTreeModel - pointer to BreakpointsTreeModel
+ */
 BreakpointDialog::BreakpointDialog(BreakpointTreeItem *pBreakpointTreeItem, BreakpointsTreeModel *pBreakpointsTreeModel)
   : QDialog(pBreakpointsTreeModel->getBreakpointsTreeView())
 {
@@ -65,6 +63,7 @@ BreakpointDialog::BreakpointDialog(BreakpointTreeItem *pBreakpointTreeItem, Brea
   mpBrowseClassesButton->setAutoDefault(false);
   connect(mpBrowseClassesButton, SIGNAL(clicked()), SLOT(browseClasses()));
   mpBrowseFileSystemButton = new QPushButton(tr("File System"));
+  mpBrowseFileSystemButton->setEnabled(false);
   mpBrowseFileSystemButton->setAutoDefault(false);
   connect(mpBrowseFileSystemButton, SIGNAL(clicked()), SLOT(browseFileSystem()));
   // Create the line number label and text box
@@ -127,7 +126,7 @@ BreakpointDialog::BreakpointDialog(BreakpointTreeItem *pBreakpointTreeItem, Brea
   */
 void BreakpointDialog::browseClasses()
 {
-  MainWindow *pMainWindow = mpBreakpointsTreeModel->getBreakpointsTreeView()->getBreakpointsWidget()->getDebuggerMainWindow()->getMainWindow();
+  MainWindow *pMainWindow = mpBreakpointsTreeModel->getBreakpointsTreeView()->getBreakpointsWidget()->getMainWindow();
   LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Class"), mpFileNameTextBox, pMainWindow->getLibraryWidget());
   pLibraryBrowseDialog->exec();
 }
@@ -180,7 +179,7 @@ void BreakpointDialog::addOrEditBreakpoint()
     }
   } else {  /* if user has selected a class using Browse Classes button */
     LibraryWidget *pLibraryWidget;
-    pLibraryWidget = mpBreakpointsTreeModel->getBreakpointsTreeView()->getBreakpointsWidget()->getDebuggerMainWindow()->getMainWindow()->getLibraryWidget();
+    pLibraryWidget = mpBreakpointsTreeModel->getBreakpointsTreeView()->getBreakpointsWidget()->getMainWindow()->getLibraryWidget();
     LibraryTreeItem *pLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(mpFileNameTextBox->text());
     if (pLibraryTreeItem) {
       if (!pLibraryTreeItem->isSaved()) {
@@ -204,7 +203,14 @@ void BreakpointDialog::addOrEditBreakpoint()
         }
       } else {  /* Edit Case */
         /* find the BreakpointMarker and update its filepath and lineNumber. */
-        pBreakpointMarker = mpBreakpointsTreeModel->findBreakpointMarker(mpBreakpointTreeItem->getFilePath(), mpBreakpointTreeItem->getLineNumber().toInt());
+        pBreakpointMarker = mpBreakpointsTreeModel->findBreakpointMarker(mpBreakpointTreeItem->getFilePath(),
+                                                                         mpBreakpointTreeItem->getLineNumber().toInt());
+        // first remove the marker
+        if (mpBreakpointTreeItem->getLibraryTreeItem()->getModelWidget() &&
+            mpBreakpointTreeItem->getLibraryTreeItem()->getModelWidget()->getEditor()) {
+          mpBreakpointTreeItem->getLibraryTreeItem()->getModelWidget()->getEditor()->getDocumentMarker()->removeMark(pBreakpointMarker);
+        }
+        // set new attributes for the breakpoint marker
         pBreakpointMarker->setFilePath(pLibraryTreeItem->getFileName());
         pBreakpointMarker->setLineNumber(lineNumber);
         pBreakpointMarker->setEnabled(mpEnableCheckBox->isChecked());
@@ -216,7 +222,9 @@ void BreakpointDialog::addOrEditBreakpoint()
         mpBreakpointsTreeModel->updateBreakpoint(mpBreakpointTreeItem, pLibraryTreeItem->getFileName(), lineNumber,
                                                  mpEnableCheckBox->isChecked(), mpIgnoreCountSpinBox->value(), mpConditionTextBox->text());
         if (pLibraryTreeItem->getModelWidget()) {
-          pLibraryTreeItem->getModelWidget()->getEditor()->getDocumentMarker()->removeMark(pBreakpointMarker);
+          if (!pLibraryTreeItem->getModelWidget()->getEditor()) {
+            pLibraryTreeItem->getModelWidget()->createModelWidgetComponents();
+          }
           pLibraryTreeItem->getModelWidget()->getEditor()->getDocumentMarker()->addMark(pBreakpointMarker, lineNumber);
         }
       }

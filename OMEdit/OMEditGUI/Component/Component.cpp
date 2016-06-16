@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Adeel Asghar <adeel.asghar@liu.se>
- *
- *
  */
 
 #include "Component.h"
@@ -869,7 +866,7 @@ void Component::createClassComponents()
   if (!mpLibraryTreeItem->isNonExisting()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
       MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
     foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
       mComponentsList.append(new Component(pComponent, this, getRootParentComponent()));
@@ -1215,7 +1212,7 @@ void Component::createClassInheritedComponents()
   if (!mpLibraryTreeItem->isNonExisting()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
       MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
     foreach (LibraryTreeItem *pLibraryTreeItem, mpLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
       mInheritedComponentsList.append(new Component(pLibraryTreeItem, this));
@@ -1232,7 +1229,7 @@ void Component::createClassShapes()
   if (!mpLibraryTreeItem->isNonExisting()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
       MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
     GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
     if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && mComponentType == Component::Root) {
