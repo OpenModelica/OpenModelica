@@ -1276,7 +1276,8 @@ void MainWindow::loadSystemLibrary()
   QAction *pAction = qobject_cast<QAction*>(sender());
   if (pAction) {
     /* check if library is already loaded. */
-    if (mpOMCProxy->existClass(pAction->text())) {
+    LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
+    if (pLibraryTreeModel->findLibraryTreeItemOneLevel(pAction->text())) {
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
       pMessageBox->setIcon(QMessageBox::Information);
@@ -1291,7 +1292,11 @@ void MainWindow::loadSystemLibrary()
       mpProgressBar->setRange(0, 0);
       showProgressBar();
       mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(pAction->text()));
-      if (mpOMCProxy->loadModel(pAction->text())) {
+
+      if (pAction->text().compare("OpenModelica") == 0) {
+        pLibraryTreeModel->createLibraryTreeItem(pAction->text(), pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
+        pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
+      } else if (mpOMCProxy->loadModel(pAction->text())) {
         mpLibraryWidget->getLibraryTreeModel()->loadDependentLibraries(mpOMCProxy->getClassNames());
       }
       mpStatusBar->clearMessage();
@@ -2703,8 +2708,9 @@ void MainWindow::createMenus()
   mpLibrariesMenu->setTitle(tr("&System Libraries"));
   // get the available libraries.
   QStringList libraries = mpOMCProxy->getAvailableLibraries();
-  for (int i = 0; i < libraries.size(); ++i)
-  {
+  libraries.append("OpenModelica");
+  libraries.sort();
+  for (int i = 0; i < libraries.size(); ++i) {
     QAction *pAction = new QAction(libraries[i], this);
     connect(pAction, SIGNAL(triggered()), SLOT(loadSystemLibrary()));
     mpLibrariesMenu->addAction(pAction);

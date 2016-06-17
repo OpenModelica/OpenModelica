@@ -1102,19 +1102,20 @@ Qt::ItemFlags LibraryTreeModel::flags(const QModelIndex &index) const
  * \brief LibraryTreeModel::findLibraryTreeItem
  * Finds the LibraryTreeItem based on the name and case sensitivity.
  * \param name
- * \param root
+ * \param pLibraryTreeItem
  * \return
  */
-LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, LibraryTreeItem *root, Qt::CaseSensitivity caseSensitivity) const
+LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, LibraryTreeItem *pLibraryTreeItem,
+                                                       Qt::CaseSensitivity caseSensitivity) const
 {
-  if (!root) {
-    root = mpRootLibraryTreeItem;
+  if (!pLibraryTreeItem) {
+    pLibraryTreeItem = mpRootLibraryTreeItem;
   }
-  if (root->getNameStructure().compare(name, caseSensitivity) == 0) {
-    return root;
+  if (pLibraryTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
+    return pLibraryTreeItem;
   }
-  for (int i = root->childrenSize(); --i >= 0; ) {
-    if (LibraryTreeItem *item = findLibraryTreeItem(name, root->childAt(i), caseSensitivity)) {
+  for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
+    if (LibraryTreeItem *item = findLibraryTreeItem(name, pLibraryTreeItem->childAt(i), caseSensitivity)) {
       return item;
     }
   }
@@ -1125,20 +1126,41 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, Libr
  * \brief LibraryTreeModel::findLibraryTreeItem
  * Finds the LibraryTreeItem based on the Regular Expression.
  * \param regExp
- * \param root
+ * \param pLibraryTreeItem
  * \return
  */
-LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, LibraryTreeItem *root) const
+LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, LibraryTreeItem *pLibraryTreeItem) const
 {
-  if (!root) {
-    root = mpRootLibraryTreeItem;
+  if (!pLibraryTreeItem) {
+    pLibraryTreeItem = mpRootLibraryTreeItem;
   }
-  if (root->getNameStructure().contains(regExp)) {
-    return root;
+  if (pLibraryTreeItem->getNameStructure().contains(regExp)) {
+    return pLibraryTreeItem;
   }
-  for (int i = root->childrenSize(); --i >= 0; ) {
-    if (LibraryTreeItem *item = findLibraryTreeItem(regExp, root->childAt(i))) {
+  for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
+    if (LibraryTreeItem *item = findLibraryTreeItem(regExp, pLibraryTreeItem->childAt(i))) {
       return item;
+    }
+  }
+  return 0;
+}
+
+/*!
+ * \brief LibraryTreeModel::findLibraryTreeItemOneLevel
+ * Finds the LibraryTreeItem based on the name and case sensitivity only in the children of pLibraryTreeItem
+ * \param name
+ * \param pLibraryTreeItem
+ * \return
+ */
+LibraryTreeItem* LibraryTreeModel::findLibraryTreeItemOneLevel(const QString &name, LibraryTreeItem *pLibraryTreeItem,
+                                                               Qt::CaseSensitivity caseSensitivity) const
+{
+  if (!pLibraryTreeItem) {
+    pLibraryTreeItem = mpRootLibraryTreeItem;
+  }
+  for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
+    if (pLibraryTreeItem->childAt(i)->getNameStructure().compare(name, caseSensitivity) == 0) {
+      return pLibraryTreeItem->childAt(i);
     }
   }
   return 0;
@@ -1184,7 +1206,9 @@ void LibraryTreeModel::addModelicaLibraries(QSplashScreen *pSplashScreen)
   OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
   pOMCProxy->loadSystemLibraries();
   QStringList systemLibs = pOMCProxy->getClassNames();
-  systemLibs.prepend("OpenModelica");
+  if (mpLibraryWidget->getMainWindow()->getOptionsDialog()->getLibrariesPage()->getLoadOpenModelicaLibraryCheckBox()->isChecked()) {
+    systemLibs.prepend("OpenModelica");
+  }
   foreach (QString lib, systemLibs) {
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
     createLibraryTreeItem(lib, mpRootLibraryTreeItem, true, true, true);
@@ -2711,23 +2735,23 @@ void LibraryTreeView::showContextMenu(QPoint point)
           menu.addAction(mpSimulateWithAlgorithmicDebuggerAction);
           menu.addAction(mpSimulationSetupAction);
         }
-        /* If item is OpenModelica or part of it or is search tree item then don't show the unload for it. */
+        /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
         if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
           menu.addSeparator();
           menu.addAction(mpDuplicateClassAction);
-          if (pLibraryTreeItem->isTopLevel()) {
-            mpUnloadClassAction->setText(Helper::unloadClass);
-            mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
-          } else {
-            mpUnloadClassAction->setText(Helper::deleteStr);
-            mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
-          }
-          // only add unload/delete option for top level system libraries
-          if (!pLibraryTreeItem->isSystemLibrary()) {
-            menu.addAction(mpUnloadClassAction);
-          } else if (pLibraryTreeItem->isSystemLibrary() && pLibraryTreeItem->isTopLevel()) {
-            menu.addAction(mpUnloadClassAction);
-          }
+        }
+        if (pLibraryTreeItem->isTopLevel()) {
+          mpUnloadClassAction->setText(Helper::unloadClass);
+          mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
+        } else {
+          mpUnloadClassAction->setText(Helper::deleteStr);
+          mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
+        }
+        // only add unload/delete option for top level system libraries
+        if (!pLibraryTreeItem->isSystemLibrary()) {
+          menu.addAction(mpUnloadClassAction);
+        } else if (pLibraryTreeItem->isSystemLibrary() && pLibraryTreeItem->isTopLevel()) {
+          menu.addAction(mpUnloadClassAction);
         }
         menu.addSeparator();
         menu.addAction(mpExportFMUAction);
@@ -3337,7 +3361,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
     bool existModel = false;
     // check if the model already exists
     foreach(QString model, classesList) {
-      if (mpMainWindow->getOMCProxy()->existClass(model)) {
+      if (mpLibraryTreeModel->findLibraryTreeItemOneLevel(model)) {
         existingmodelsList.append(model);
         existModel = true;
       }
@@ -3517,7 +3541,7 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
     return;
   }
   QString className = classNames.at(0);
-  bool existModel = mpMainWindow->getOMCProxy()->existClass(className);
+  bool existModel = mpLibraryTreeModel->findLibraryTreeItemOneLevel(className);
   // check if existModel is true
   if (existModel) {
     QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);

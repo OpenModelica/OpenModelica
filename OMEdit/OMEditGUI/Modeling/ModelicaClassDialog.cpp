@@ -313,7 +313,7 @@ void ModelicaClassDialog::createModelicaClass()
     parentPackage = QString("Package '").append(mpParentClassTextBox->text().trimmed()).append("'");
   }
   // Check whether model exists or not.
-  if (mpMainWindow->getOMCProxy()->existClass(model) || mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(model)) {
+  if (mpMainWindow->getOMCProxy()->existClass(model) || mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(model)) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                             GUIMessages::MODEL_ALREADY_EXISTS).arg(mpSpecializationComboBox->currentText()).arg(model)
                           .arg(parentPackage), Helper::ok);
@@ -627,17 +627,14 @@ QComboBox* SaveAsClassDialog::getParentClassComboBox()
 void SaveAsClassDialog::saveAsModelicaClass()
 {
   QString type = StringHandler::getModelicaClassType(mpModelWidget->getLibraryTreeItem()->getRestriction());
-  if (mpNameTextBox->text().isEmpty())
-  {
+  if (mpNameTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                             GUIMessages::ENTER_NAME).arg(type), Helper::ok);
     return;
   }
   /* if insert in class doesn't exist. */
-  if (!mpParentClassComboBox->currentText().isEmpty())
-  {
-    if (!mpMainWindow->getOMCProxy()->existClass(mpParentClassComboBox->currentText()))
-    {
+  if (!mpParentClassComboBox->currentText().isEmpty()) {
+    if (!mpMainWindow->getOMCProxy()->existClass(mpParentClassComboBox->currentText())) {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                               GUIMessages::INSERT_IN_CLASS_NOT_FOUND).arg(mpParentClassComboBox->currentText()), Helper::ok);
       return;
@@ -647,8 +644,7 @@ void SaveAsClassDialog::saveAsModelicaClass()
   LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
   LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpParentClassComboBox->currentText());
   if (pParentLibraryTreeItem) {
-    if (pParentLibraryTreeItem->isSystemLibrary())
-    {
+    if (pParentLibraryTreeItem->isSystemLibrary()) {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                               GUIMessages::INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED).arg(mpParentClassComboBox->currentText()), Helper::ok);
       return;
@@ -667,8 +663,7 @@ void SaveAsClassDialog::saveAsModelicaClass()
     parentPackage = QString("Package '").append(mpParentClassComboBox->currentText()).append("'");
   }
   // Check whether model exists or not.
-  if (mpMainWindow->getOMCProxy()->existClass(model))
-  {
+  if (mpMainWindow->getOMCProxy()->existClass(model) || mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(model)) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                             GUIMessages::MODEL_ALREADY_EXISTS).arg(type).arg(model).arg(parentPackage), Helper::ok);
     return;
@@ -794,7 +789,7 @@ void DuplicateClassDialog::duplicateClass()
   }
   // check if new class already exists
   QString newClassPath = (mpPathTextBox->text().isEmpty() ? "" : mpPathTextBox->text() + ".") + mpNameTextBox->text();
-  if (mpMainWindow->getOMCProxy()->existClass(newClassPath) || mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(newClassPath)) {
+  if (mpMainWindow->getOMCProxy()->existClass(newClassPath) || mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(newClassPath)) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg("class").arg(mpNameTextBox->text())
                           .arg((mpPathTextBox->text().isEmpty() ? "Top Level" : mpPathTextBox->text())), Helper::ok);

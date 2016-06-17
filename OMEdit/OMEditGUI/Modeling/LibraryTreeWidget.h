@@ -219,8 +219,11 @@ public:
   QModelIndex parent(const QModelIndex & index) const;
   QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
   Qt::ItemFlags flags(const QModelIndex &index) const;
-  LibraryTreeItem* findLibraryTreeItem(const QString &name, LibraryTreeItem *root = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
-  LibraryTreeItem* findLibraryTreeItem(const QRegExp &regExp, LibraryTreeItem *root = 0) const;
+  LibraryTreeItem* findLibraryTreeItem(const QString &name, LibraryTreeItem *pLibraryTreeItem = 0,
+                                       Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
+  LibraryTreeItem* findLibraryTreeItem(const QRegExp &regExp, LibraryTreeItem *pLibraryTreeItem = 0) const;
+  LibraryTreeItem* findLibraryTreeItemOneLevel(const QString &name, LibraryTreeItem *pLibraryTreeItem = 0,
+                                               Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   LibraryTreeItem* findNonExistingLibraryTreeItem(const QString &name, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
   void addModelicaLibraries(QSplashScreen *pSplashScreen);

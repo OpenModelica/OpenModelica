@@ -174,8 +174,7 @@ void OptionsDialog::readLibrariesSettings()
 {
   // read the system libraries
   int i = 0;
-  while(i < mpLibrariesPage->getSystemLibrariesTree()->topLevelItemCount())
-  {
+  while(i < mpLibrariesPage->getSystemLibrariesTree()->topLevelItemCount()) {
     qDeleteAll(mpLibrariesPage->getSystemLibrariesTree()->topLevelItem(i)->takeChildren());
     delete mpLibrariesPage->getSystemLibrariesTree()->topLevelItem(i);
     i = 0;   //Restart iteration
@@ -183,20 +182,23 @@ void OptionsDialog::readLibrariesSettings()
   // read the settings and add libraries
   mpSettings->beginGroup("libraries");
   QStringList systemLibraries = mpSettings->childKeys();
-  foreach (QString systemLibrary, systemLibraries)
-  {
+  foreach (QString systemLibrary, systemLibraries) {
     QStringList values;
     values << systemLibrary << mpSettings->value(systemLibrary).toString();
     mpLibrariesPage->getSystemLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
   }
   mpSettings->endGroup();
   // read the forceModelicaLoad
-  if (mpSettings->contains("forceModelicaLoad"))
+  if (mpSettings->contains("forceModelicaLoad")) {
     mpLibrariesPage->getForceModelicaLoadCheckBox()->setChecked(mpSettings->value("forceModelicaLoad").toBool());
+  }
+  // read load OpenModelica library on startup
+  if (mpSettings->contains("loadOpenModelicaOnStartup")) {
+    mpLibrariesPage->getLoadOpenModelicaLibraryCheckBox()->setChecked(mpSettings->value("loadOpenModelicaOnStartup").toBool());
+  }
   // read user libraries
   i = 0;
-  while(i < mpLibrariesPage->getUserLibrariesTree()->topLevelItemCount())
-  {
+  while(i < mpLibrariesPage->getUserLibrariesTree()->topLevelItemCount()) {
     qDeleteAll(mpLibrariesPage->getUserLibrariesTree()->topLevelItem(i)->takeChildren());
     delete mpLibrariesPage->getUserLibrariesTree()->topLevelItem(i);
     i = 0;   //Restart iteration
@@ -204,8 +206,7 @@ void OptionsDialog::readLibrariesSettings()
   // read the settings and add libraries
   mpSettings->beginGroup("userlibraries");
   QStringList userLibraries = mpSettings->childKeys();
-  foreach (QString userLibrary, userLibraries)
-  {
+  foreach (QString userLibrary, userLibraries) {
     QStringList values;
     values << QUrl::fromPercentEncoding(QByteArray(userLibrary.toStdString().c_str())) << mpSettings->value(userLibrary).toString();
     mpLibrariesPage->getUserLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
@@ -767,28 +768,25 @@ void OptionsDialog::saveLibrariesSettings()
 {
   // read the settings and add system libraries
   mpSettings->beginGroup("libraries");
-  foreach (QString lib, mpSettings->childKeys())
-  {
+  foreach (QString lib, mpSettings->childKeys()) {
     mpSettings->remove(lib);
   }
   QTreeWidgetItemIterator systemLibrariesIterator(mpLibrariesPage->getSystemLibrariesTree());
-  while (*systemLibrariesIterator)
-  {
+  while (*systemLibrariesIterator) {
     QTreeWidgetItem *pItem = dynamic_cast<QTreeWidgetItem*>(*systemLibrariesIterator);
     mpSettings->setValue(pItem->text(0), pItem->text(1));
     ++systemLibrariesIterator;
   }
   mpSettings->endGroup();
   mpSettings->setValue("forceModelicaLoad", mpLibrariesPage->getForceModelicaLoadCheckBox()->isChecked());
+  mpSettings->setValue("loadOpenModelicaOnStartup", mpLibrariesPage->getLoadOpenModelicaLibraryCheckBox()->isChecked());
   // read the settings and add user libraries
   mpSettings->beginGroup("userlibraries");
-  foreach (QString lib, mpSettings->childKeys())
-  {
+  foreach (QString lib, mpSettings->childKeys()) {
     mpSettings->remove(lib);
   }
   QTreeWidgetItemIterator userLibrariesIterator(mpLibrariesPage->getUserLibrariesTree());
-  while (*userLibrariesIterator)
-  {
+  while (*userLibrariesIterator) {
     QTreeWidgetItem *pItem = dynamic_cast<QTreeWidgetItem*>(*userLibrariesIterator);
     mpSettings->setValue(QUrl::toPercentEncoding(pItem->text(0)), pItem->text(1));
     ++userLibrariesIterator;
@@ -1721,6 +1719,9 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   mpForceModelicaLoadCheckBox = new QCheckBox(tr("Force loading of Modelica Standard Library"));
   mpForceModelicaLoadCheckBox->setToolTip(tr("This will make sure that Modelica and ModelicaReference will always load even if user has removed them from the list of system libraries."));
   mpForceModelicaLoadCheckBox->setChecked(true);
+  // force Modelica load checkbox
+  mpLoadOpenModelicaOnStartupCheckBox = new QCheckBox(tr("Load OpenModelica library on startup"));
+  mpLoadOpenModelicaOnStartupCheckBox->setChecked(true);
   // user libraries groupbox
   mpUserLibrariesGroupBox = new QGroupBox(tr("User Libraries *"));
   // user libraries tree
@@ -1759,25 +1760,9 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   layout->setContentsMargins(0, 0, 0, 0);
   layout->addWidget(mpSystemLibrariesGroupBox);
   layout->addWidget(mpForceModelicaLoadCheckBox);
+  layout->addWidget(mpLoadOpenModelicaOnStartupCheckBox);
   layout->addWidget(mpUserLibrariesGroupBox);
   setLayout(layout);
-}
-
-//! Returns the System Libraries Tree instance.
-QTreeWidget* LibrariesPage::getSystemLibrariesTree()
-{
-  return mpSystemLibrariesTree;
-}
-
-QCheckBox* LibrariesPage::getForceModelicaLoadCheckBox()
-{
-  return mpForceModelicaLoadCheckBox;
-}
-
-//! Returns the User Libraries Tree instance.
-QTreeWidget* LibrariesPage::getUserLibrariesTree()
-{
-  return mpUserLibrariesTree;
 }
 
 //! Slot activated when mpAddSystemLibraryButton clicked signal is raised.

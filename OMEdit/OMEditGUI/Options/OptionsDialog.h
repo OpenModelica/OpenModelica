@@ -108,6 +108,7 @@ public:
   void createPages();
   MainWindow* getMainWindow() {return mpMainWindow;}
   GeneralSettingsPage* getGeneralSettingsPage() {return mpGeneralSettingsPage;}
+  LibrariesPage* getLibrariesPage() {return mpLibrariesPage;}
   TextEditorPage* getTextEditorPage() {return mpTextEditorPage;}
   ModelicaEditorPage* getModelicaEditorPage() {return mpModelicaEditorPage;}
   MetaModelicaEditorPage* getMetaModelicaEditorPage() {return mpMetaModelicaEditorPage;}
@@ -240,9 +241,10 @@ class LibrariesPage : public QWidget
   Q_OBJECT
 public:
   LibrariesPage(OptionsDialog *pOptionsDialog);
-  QTreeWidget* getSystemLibrariesTree();
-  QCheckBox* getForceModelicaLoadCheckBox();
-  QTreeWidget* getUserLibrariesTree();
+  QTreeWidget* getSystemLibrariesTree() {return mpSystemLibrariesTree;}
+  QCheckBox* getForceModelicaLoadCheckBox() {return mpForceModelicaLoadCheckBox;}
+  QCheckBox* getLoadOpenModelicaLibraryCheckBox() {return mpLoadOpenModelicaOnStartupCheckBox;}
+  QTreeWidget* getUserLibrariesTree() {return mpUserLibrariesTree;}
   OptionsDialog *mpOptionsDialog;
 private:
   QGroupBox *mpSystemLibrariesGroupBox;
@@ -253,6 +255,7 @@ private:
   QPushButton *mpEditSystemLibraryButton;
   QDialogButtonBox *mpSystemLibrariesButtonBox;
   QCheckBox *mpForceModelicaLoadCheckBox;
+  QCheckBox *mpLoadOpenModelicaOnStartupCheckBox;
   QGroupBox *mpUserLibrariesGroupBox;
   QTreeWidget *mpUserLibrariesTree;
   QPushButton *mpAddUserLibraryButton;
