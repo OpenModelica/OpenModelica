@@ -1669,6 +1669,7 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.Equation backendEq;
       list<Integer> ds;
+      Integer size;
       list<DAE.Exp> explst;
       list<BackendDAE.Equation> eqns;
       list<list<DAE.Subscript>> subslst;
@@ -1709,8 +1710,10 @@ algorithm
       eqns = List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
     then eqns;
 
-    case (backendEq as BackendDAE.COMPLEX_EQUATION())
-    then {backendEq};
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr)) equation
+      exp = Expression.createResidualExp(e1, e2);
+      (e, _) = ExpressionSimplify.simplify(exp);
+    then {BackendDAE.RESIDUAL_EQUATION(e, source, attr)};
 
     case (backendEq as BackendDAE.RESIDUAL_EQUATION())
     then {backendEq};
@@ -1724,6 +1727,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
+        BackendDump.printEquation(inEquation);
         Debug.trace("- BackendDAE.equationToScalarResidualForm failed\n");
       then fail();
   end match;
@@ -2545,6 +2549,19 @@ protected function generateRESIDUAL_EQUATION "author: Frenkel TUD 2010-05"
 algorithm
   outEqn := BackendDAE.RESIDUAL_EQUATION(inExp, inSource, inEqAttr);
 end generateRESIDUAL_EQUATION;
+
+public function generateRESIDUAL_EQUATION1
+  input tuple<DAE.Exp, DAE.Exp> inTpl;
+  input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes inEqAttr;
+  output BackendDAE.Equation outEqn;
+protected
+  DAE.Exp e1, e2, e;
+algorithm
+  (e1, e2) := inTpl;
+  e := Expression.createResidualExp(e1, e2);
+  outEqn := BackendDAE.RESIDUAL_EQUATION(e, source, inEqAttr);
+end generateRESIDUAL_EQUATION1;
 
 public function getEqnsFromEqSystem "
   Extracts the orderedEqs attribute from an equation system."

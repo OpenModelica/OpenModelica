@@ -1897,6 +1897,7 @@ protected
   list<SimCodeVar.SimVar> tempvars, resVars, algVars;
   list<list<SimCode.SimEqSystem>> daeEquations;
   list<SimCode.SimEqSystem> daeEquationsTmp = {};
+  list<SimCode.SimEqSystem> tmpEqns;
   list<SimCodeVar.SimVar> resVarsTmp = {};
   list<SimCodeVar.SimVar> algVarsTmp = {};
 
@@ -1927,14 +1928,21 @@ algorithm
     // convert only dynamic block here
     if BackendDAEUtil.blockIsDynamic(eqnNums, stateeqnsmark) and not skip  then
 
-      // make residual equations => 0 = f(x,xd,y)
-      eqnlst := List.flattenReverse(List.map(eqnlst, BackendEquation.equationToScalarResidualForm));
+      // try as is should fallback case is a hack for complex record equations
+      try
+	      // make residual equations => 0 = f(x,xd,y)
+	      eqnlst := List.flattenReverse(List.map(eqnlst, BackendEquation.equationToScalarResidualForm));
+	      tmpEqns := {};
+      else
+        (eqnlst, tmpEqns, uniqueEqIndex, tempvars) := createDAEResidualComplexEquation(eqnlst, uniqueEqIndex, tempvars);
+      end try;
 
       // add residual var => $DAEres = f(x,xd,y)
       (eqnlst, tmpVarsLst) := BackendEquation.convertResidualsIntoSolvedEquations(eqnlst, "$DAEres", BackendVariable.makeVar(DAE.emptyCref), uniqueEqIndex);
 
       // generate corresponding SimCode equations
       (daeEquationsTmp, uniqueEqIndex) := List.mapFold(eqnlst, makeSolved_SES_SIMPLE_ASSIGN, uniqueEqIndex);
+      daeEquationsTmp := listAppend(tmpEqns,daeEquationsTmp);
 
       // generate SimCode vars from $DAEres
       ((resVarsTmp, _)) :=  BackendVariable.traverseBackendDAEVars(BackendVariable.listVar1(tmpVarsLst), traversingdlowvarToSimvar, ({}, emptyVars));
@@ -2086,6 +2094,151 @@ algorithm
   sorted := List.sort(sorted, compareVarIndexGt);
   outSimVar := rewriteIndex(sorted, 0);
 end sortSimVarsAndWriteIndex;
+
+protected function createDAEResidualComplexEquation
+  input list<BackendDAE.Equation> inEquation;
+  input Integer iuniqueEqIndex;
+  input list<SimCodeVar.SimVar> itempvars;
+  output list<BackendDAE.Equation> outResEqn;
+  output list<SimCode.SimEqSystem> equations_;
+  output Integer ouniqueEqIndex;
+  output list<SimCodeVar.SimVar> otempvars;
+protected
+  DAE.Exp inExp, inExp1;
+  DAE.ElementSource source;
+  BackendDAE.EquationAttributes inEqAttr;
+  BackendDAE.Equation eqn;
+algorithm
+  eqn::{} := inEquation;
+  BackendDAE.COMPLEX_EQUATION(left = inExp, right = inExp1, source=source, attr=inEqAttr) := eqn;
+  (equations_, ouniqueEqIndex, otempvars) := matchcontinue (inExp, inExp1)
+    local
+      DAE.ComponentRef cr, crtmp;
+      list<DAE.ComponentRef> crlst;
+      list<list<DAE.ComponentRef>> crlstlst;
+      DAE.Exp e1, e2, e1_1, e2_1, etmp;
+      DAE.Statement stms;
+      DAE.Type tp;
+      list<DAE.Type> tplst;
+      list<DAE.Exp> expl, crexplst;
+      list<DAE.Var> varLst;
+      list<DAE.Exp> e1lst, e2lst;
+      SimCode.SimEqSystem simeqn;
+      list<SimCode.SimEqSystem> eqSystlst;
+      list<tuple<DAE.Exp, DAE.Exp>> exptl;
+      Integer uniqueEqIndex;
+      Absyn.Path path, rpath;
+      String ident, s, s1, s2;
+      list<SimCodeVar.SimVar> tempvars;
+
+    /* a = f() */
+    case (DAE.CREF(componentRef=cr), _) equation
+      // ((e1_1, _)) = Expression.extendArrExp((inExp, false));
+      (e2_1, _) = Expression.extendArrExp(inExp1, false);
+      // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+      (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(inExp);
+      // tmp
+      ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+      crtmp = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
+      tempvars = createTempVars(varLst, crtmp, itempvars);
+      // 0 = a - tmp
+      e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
+      e2lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, crtmp);
+      exptl = List.threadTuple(e1lst, e2lst);
+      outResEqn = List.map2(exptl, BackendEquation.generateRESIDUAL_EQUATION1, source, inEqAttr);
+      uniqueEqIndex = iuniqueEqIndex;
+
+      // tmp = f(x, y)
+      etmp = Expression.crefExp(crtmp);
+      stms = DAE.STMT_ASSIGN(tp, etmp, e2_1, source);
+      eqSystlst = {SimCode.SES_ALGORITHM(uniqueEqIndex, {stms})};
+    then (eqSystlst, uniqueEqIndex+1, tempvars);
+
+    // f() = a
+    case (_, DAE.CREF(componentRef=cr)) equation
+      // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+      (e1_1, _) = Expression.extendArrExp(inExp, false);
+      // ((e2_1, _)) = Expression.extendArrExp((inExp1, false));
+      (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(inExp1);
+      // tmp
+      ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+      crtmp = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
+      tempvars = createTempVars(varLst, crtmp, itempvars);
+      // 0 = a - tmp
+      e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
+      e2lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, crtmp);
+      exptl = List.threadTuple(e1lst, e2lst);
+      outResEqn = List.map2(exptl, BackendEquation.generateRESIDUAL_EQUATION1, source, inEqAttr);
+      uniqueEqIndex = iuniqueEqIndex;
+
+      // tmp = f(x, y)
+      etmp = Expression.crefExp(crtmp);
+      stms = DAE.STMT_ASSIGN(tp, etmp, e1_1, source);
+      eqSystlst = {SimCode.SES_ALGORITHM(uniqueEqIndex, {stms})};
+    then (eqSystlst, uniqueEqIndex+1, tempvars);
+
+    // Record() = f()
+    case (DAE.CALL(path=path, expLst=e2lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath)))), _) equation
+      true = Absyn.pathEqual(path, rpath);
+      (e2_1, _) = Expression.extendArrExp(inExp1, false);
+      // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+      // tmp = f()
+      ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+      cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
+      e1_1 = Expression.crefToExp(cr);
+      stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
+      simeqn = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+      uniqueEqIndex = iuniqueEqIndex + 1;
+
+      // Record()-tmp = 0
+      // Expand the tmp record and any arrays
+      e1lst = Expression.expandExpression(e1_1);
+      // Expand the varLst. Each var might be an array or record.
+      e2lst = List.mapFlat(e2lst, Expression.expandExpression);
+      // pair each of the expanded expressions to coressponding one
+      exptl = List.threadTuple(e1lst, e2lst);
+      // Create residual equations for each pair
+      outResEqn = List.map2(exptl, BackendEquation.generateRESIDUAL_EQUATION1, source, inEqAttr);
+      uniqueEqIndex = iuniqueEqIndex;
+
+      eqSystlst = {simeqn};
+
+      tempvars = createTempVars(varLst, cr, itempvars);
+    then (eqSystlst, uniqueEqIndex, tempvars);
+
+    // f() = Record()
+    case (_, DAE.CALL(path=path, expLst=e2lst, attr=DAE.CALL_ATTR(ty=tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath))))) equation
+      true = Absyn.pathEqual(path, rpath);
+      (e1_1, _) = Expression.extendArrExp(inExp1, false);
+      // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+      // tmp = f()
+      ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+      cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
+      e2_1 = Expression.crefExp(cr);
+      stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
+      simeqn = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+      uniqueEqIndex = iuniqueEqIndex + 1;
+      // Record()-tmp = 0
+      e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
+      exptl = List.threadTuple(e1lst, e2lst);
+      outResEqn = List.map2(exptl, BackendEquation.generateRESIDUAL_EQUATION1, source, inEqAttr);
+      uniqueEqIndex = iuniqueEqIndex;
+
+      eqSystlst = {simeqn};
+
+      tempvars = createTempVars(varLst, cr, itempvars);
+    then (eqSystlst, uniqueEqIndex, tempvars);
+
+    // failure
+    else equation
+      s1 = ExpressionDump.printExpStr(inExp);
+      s2 = ExpressionDump.printExpStr(inExp1);
+      s = stringAppendList({"function createDAEResidualComplexEquation failed for: ", s1, " = " , s2 });
+      Error.addInternalError(s, sourceInfo());
+    then fail();
+  end matchcontinue;
+end createDAEResidualComplexEquation;
+
 
 // =============================================================================
 // section for zeroCrossingsEquations
