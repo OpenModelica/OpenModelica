@@ -2023,7 +2023,7 @@ algorithm
         (cache,env) := generateFunctions2(cache,env,p,fullScodeProgram,cl,name,info,cleanCache);
         (cache,env) := generateFunctions(cache,env,p,fullScodeProgram,sp,cleanCache);
       then (cache,env);
-    case (cache,env,_,SCode.CLASS(encapsulatedPrefix=SCode.NOT_ENCAPSULATED(),name=name,info=info as SOURCEINFO(fileName=file))::_,_)
+    case (_,_,_,SCode.CLASS(encapsulatedPrefix=SCode.NOT_ENCAPSULATED(),name=name,info=info as SOURCEINFO(fileName=file))::_,_)
       equation
         (n,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
         Error.assertion(n > 0, "Not an encapsulated class (required for separate compilation): " + name, info);
@@ -2137,7 +2137,7 @@ function getNonPartialElementsForInstantiatedClass "Gets the non-partial element
   input SCode.Program sp;
   input SCode.Element cl;
   input Absyn.Path p;
-  output list<SCode.Element> elts={};
+  output list<SCode.Element> elts;
 protected
   FCore.Graph env;
   SCode.Element elt;
@@ -3116,7 +3116,7 @@ algorithm
       Boolean isDir;
       list<String> mps,names;
       String gd,mp,bp,str,name,version,fileName;
-    case ("modelica://",name,_,mp,_)
+    case ("modelica://",name,_,_,_)
       equation
         (name::names) = System.strtok(name,".");
         Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) = Interactive.getPathedClassInProgram(Absyn.IDENT(name),program);

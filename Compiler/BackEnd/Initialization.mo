@@ -1121,7 +1121,6 @@ protected
 algorithm
   // filter empty systems
   eqs := {};
-  outRemovedEqns := {};
   dumpVars := DoubleEndedList.fromList({});
   removedEqns := DoubleEndedList.fromList({});
   for syst in inInitDAE.eqs loop
@@ -2459,9 +2458,6 @@ end removeInitializationStuff2;
 protected function replaceHomotopyWithSimplified
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE = inDAE;
-protected
-  list<BackendDAE.Equation> removedEqsList = {};
-  BackendDAE.Shared shared = inDAE.shared;
 algorithm
   for eqs in outDAE.eqs loop
     _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.orderedEqs, replaceHomotopyWithSimplified1, false);

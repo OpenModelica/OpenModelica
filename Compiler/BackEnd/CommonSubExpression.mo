@@ -1090,7 +1090,7 @@ public function cseBinary "authors: Jan Hagemann and Lennart Ochel (FH Bielefeld
   This module eliminates common subexpressions in an acausal environment.
   NOTE: This is currently just an experimental prototype to demonstrate interesting effects."
   input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE = inDAE;
+  output BackendDAE.BackendDAE outDAE;
 algorithm
   outDAE := BackendDAEUtil.mapEqSystemAndFold(inDAE, CSE1, 1);
 end cseBinary;

@@ -2660,7 +2660,7 @@ algorithm
         _ = DAEUtil.getFunctionList(FCore.getFunctionTree(cache)); // Make sure that the functions are valid before returning success
       then (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
 
-    case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),_,_)
+    case (_,_,_,GlobalScript.SYMBOLTABLE(ast=p),_,_)
       equation
         str = Absyn.pathString(className);
         failure(_ = Interactive.getPathedClassInProgram(className, p));

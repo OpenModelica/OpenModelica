@@ -895,7 +895,7 @@ algorithm
         elements = DAEUtil.getFunctionElements(func);
         if listEmpty(elements) then
         // its a record
-          eLst = lst;
+          //eLst = lst;
         else
        // its a call, get the scalar outputs
         SOME(func) = DAE.AvlTreePathFunction.get(funcs,path);
@@ -1069,7 +1069,6 @@ algorithm
     case(DAE.CREF(componentRef=cref,ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(),varLst=varLst)))
       equation
         true = listLength(varLst)==1;
-        DAE.CREF(componentRef=cref) = expIn;
         crefs = getRecordScalars(cref);
         true = listLength(crefs)==1;
         cref = listHead(crefs);
@@ -1574,7 +1573,7 @@ algorithm
       Boolean b1,b2;
       DAE.Exp e1, e2;
       DAE.Statement stmt;
-    case(DAE.STMT_ASSIGN(exp1=e1,exp=e2),_)
+    case(DAE.STMT_ASSIGN(),_)
       equation
         ({stmt},_) = BackendVarTransform.replaceStatementLst({stmtIn},repl,NONE(),{},false);
         DAE.STMT_ASSIGN(exp1=e1,exp=e2) = stmt;

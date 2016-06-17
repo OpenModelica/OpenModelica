@@ -5425,7 +5425,7 @@ public function traverseExpList<ArgT> "Calls traverseExpBottomUp for each elemen
   input list<DAE.Exp> inExpl;
   input FuncExpType rel;
   input ArgT iext_arg;
-  output list<DAE.Exp> expl = {};
+  output list<DAE.Exp> expl;
   output ArgT ext_arg = iext_arg;
   partial function FuncExpType
     input DAE.Exp inExp;
@@ -6078,7 +6078,7 @@ protected function traverseExpTypeDims2<ArgT>
     output ArgT outArg;
   end FuncType;
 protected
-  Boolean changed = false;
+  Boolean changed;
   DAE.Exp exp, new_exp;
 algorithm
   for dim in inDims loop
@@ -7720,7 +7720,7 @@ end isEvaluatedConstWork;
 protected function isConstWork
 "Returns true if an expression is constant"
   input DAE.Exp inExp;
-  output Boolean outBoolean = false;
+  output Boolean outBoolean;
 algorithm
   outBoolean := match (inExp)
     local
@@ -8163,25 +8163,27 @@ end isWholeDim;
 
 public function isInt ""
   input DAE.Type it;
-  output Boolean re = false;
+  output Boolean re;
 algorithm
   re := match(it)
     local
-      Type t1,t2;
+      Type t1;
     case(DAE.T_INTEGER()) then true;
-    case(DAE.T_ARRAY(ty=t2)) then isInt(t2);
+    case(DAE.T_ARRAY(ty=t1)) then isInt(t1);
+    else false;
   end match;
 end isInt;
 
 public function isReal ""
   input DAE.Type it;
-  output Boolean re = false;
+  output Boolean re;
 algorithm
   re := match(it)
     local
-      Type t1,t2;
+      Type t1;
     case(DAE.T_REAL()) then true;
-    case(DAE.T_ARRAY(ty=t2)) then isReal(t2);
+    case(DAE.T_ARRAY(ty=t1)) then isReal(t1);
+  else false;
   end match;
 end isReal;
 
@@ -8556,7 +8558,7 @@ This function takes a list of Exp, assumes they are all ICONST
 and checks wheter the ICONST are in order."
   input Integer expectedValue;
   input list<DAE.Exp> integers;
-  output Boolean ob = false;
+  output Boolean ob;
 algorithm
   ob := match(expectedValue,integers)
     local
@@ -8567,6 +8569,7 @@ algorithm
     case(x1, DAE.ICONST(x2)::expl) guard intEq(x1, x2)
       then
         expIntOrder(x1+1,expl);
+    else false;
   end match;
 end expIntOrder;
 
@@ -9445,7 +9448,7 @@ public function expStructuralEqualList
 "Returns true if the two lists of expressions are structural equal."
   input list<DAE.Exp> inExp1;
   input list<DAE.Exp> inExp2;
-  output Boolean outBoolean = false;
+  output Boolean outBoolean;
 algorithm
   outBoolean := match (inExp1,inExp2)
     local
@@ -9456,6 +9459,7 @@ algorithm
     case (e1::es1,e2::es2) guard expStructuralEqual(e1,e2)
       then
         expStructuralEqualList(es1, es2);
+    else false;
   end match;
 end expStructuralEqualList;
 
@@ -9463,7 +9467,7 @@ protected function expStructuralEqualListLst
 "Returns true if the two lists of lists of expressions are structural equal."
   input list<list<DAE.Exp>> inExp1;
   input list<list<DAE.Exp>> inExp2;
-  output Boolean outBoolean = false;
+  output Boolean outBoolean;
 algorithm
   outBoolean := match (inExp1,inExp2)
     local
@@ -9474,6 +9478,7 @@ algorithm
     case (e1::es1,e2::es2) guard expStructuralEqualList(e1,e2)
       then
         expStructuralEqualListLst(es1, es2);
+    else false;
   end match;
 end expStructuralEqualListLst;
 
@@ -10037,7 +10042,7 @@ public function subscriptContain "This function checks whether sub2 contains sub
   input list<DAE.Subscript> issl2;
   output Boolean contained;
 algorithm
-  contained := matchcontinue(issl1,issl2)
+  contained := match(issl1,issl2)
     local
       Boolean b;
       Subscript ss1,ss2;
@@ -10079,14 +10084,14 @@ algorithm
       then
         b;
     else false;
-  end matchcontinue;
+  end match;
 end subscriptContain;
 
 protected function subscriptContain2 "
 "
   input Integer inInt;
   input list<DAE.Exp> inExp2;
-  output Boolean contained = false;
+  output Boolean contained;
 algorithm
   contained := match(inInt,inExp2)
     local
@@ -10106,6 +10111,7 @@ algorithm
           b2 = if b then true else subscriptContain2(i,expl);
         then
           b2;
+      else false;
   end match;
 end subscriptContain2;
 
@@ -11613,22 +11619,14 @@ public function checkDimensionSizes
   DIM_UNKNOWN if checkModel is used."
   input DAE.Dimension  dim;
   output Boolean value;
-  protected
-      Integer i;
-      DAE.Exp e;
 algorithm
-  value := matchcontinue(dim)
-    case DAE.DIM_INTEGER(integer = i) then true;
-    case DAE.DIM_ENUM(size = i) then true;
+  value := match(dim)
+    case DAE.DIM_INTEGER() then true;
+    case DAE.DIM_ENUM() then true;
     case DAE.DIM_BOOLEAN() then true;
-    case DAE.DIM_EXP(exp = e) then true;
-    case DAE.DIM_EXP()
-      then
-        false;
-    case DAE.DIM_UNKNOWN()
-      then
-        false;
-  end matchcontinue;
+    case DAE.DIM_EXP() then true;
+    case DAE.DIM_UNKNOWN() then false;
+  end match;
 end checkDimensionSizes;
 
 public function dimensionsList

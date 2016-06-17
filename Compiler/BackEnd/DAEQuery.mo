@@ -85,11 +85,10 @@ public function getEquations
   input BackendDAE.BackendDAE inBackendDAE;
   output String strEqs;
 protected
-  BackendDAE.Shared shared;
   BackendDAE.EqSystem syst;
   list<String> ls1;
 algorithm
-    BackendDAE.DAE({syst}, shared) := inBackendDAE;
+    BackendDAE.DAE({syst}, _) := inBackendDAE;
     ls1 := List.map(BackendEquation.equationList(syst.orderedEqs), equationStr);
     strEqs := "EqStr = {" + stringDelimitList(ls1, ",") + "};";
 end getEquations;
