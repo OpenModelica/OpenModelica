@@ -5466,8 +5466,17 @@ algorithm
 end opaqVal;
 
 public function initInstHashTable
+protected
+  InstHashTable ht;
 algorithm
-  setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
+  /* adrpo: reuse it if is already there! */
+  try
+    ht := getGlobalRoot(Global.instHashIndex);
+	ht := BaseHashTable.clear(ht);
+	setGlobalRoot(Global.instHashIndex, ht);
+  else
+    setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
+  end try;
 end initInstHashTable;
 
 public function releaseInstHashTable

@@ -126,9 +126,17 @@ static inline void *mmc_mk_some(void *x)
 }
 
 extern void *mmc_mk_box_arr(mmc_sint_t _slots, mmc_uint_t ctor, void** args);
-static inline void *mmc_mk_box_no_assign(mmc_sint_t _slots, mmc_uint_t ctor)
+static inline void *mmc_mk_box_no_assign(mmc_sint_t _slots, mmc_uint_t ctor, int is_atomic)
 {
-    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(_slots+1);
+    struct mmc_struct *p = NULL;
+    if (is_atomic)
+    {
+      p = (struct mmc_struct*)mmc_alloc_words_atomic(_slots+1);
+    }
+    else
+    {
+      p = (struct mmc_struct*)mmc_alloc_words(_slots+1);
+    }
     p->header = MMC_STRUCTHDR(_slots, ctor);
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "STRUCT NO ASSIGN slots%d ctor %u\n", _slots, ctor); fflush(NULL);
