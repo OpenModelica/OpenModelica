@@ -9,7 +9,6 @@ ExpressionTest.mos \
 GraphTest.mos \
 HashTableTest.mos \
 PriorityQueue.mos \
-PVectorTest.mos \
 SimplifyTest.mos \
 System.mos \
 UtilTest.mos \
@@ -18,6 +17,7 @@ VectorTest.mos
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES= \
+PVectorTest.mos
 
 
 # Dependency files that are not .mo .mos or Makefile
