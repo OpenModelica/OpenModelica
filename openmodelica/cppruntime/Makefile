@@ -7,7 +7,6 @@ BouncingBall.mos \
 arraySliceTest.mos \
 clockedEventTest.mos \
 clockedSolverTest.mos \
-clockedTest.mos \
 clockedTypesTest.mos \
 externalArrayInputTest.mos \
 mathFunctionsTest.mos \
@@ -18,7 +17,7 @@ solveTest.mos
 
 FAILINGTESTFILES= \
 ClockInterval.mos \
-
+clockedTest.mos \
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
