@@ -144,7 +144,9 @@ end ClockedPartition;
 
 public uniontype SubPartition
   record SUBPARTITION
+    Integer idx;  //a unique index among all subpartitions
     list<tuple<SimCodeVar.SimVar, Boolean /*previous*/>> vars;
+    list<SimEqSystem> previousAssignments;  //equations to assign the $CLKPRE_* variables
     list<SimEqSystem> equations;
     list<SimEqSystem> removedEquations;
     BackendDAE.SubClock subClock;

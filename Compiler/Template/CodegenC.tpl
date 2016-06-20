@@ -372,8 +372,8 @@ template functionSystemsSynchronous(list<SubPartition> subPartitions, String mod
 ::=
   let systs = subPartitions |> subPartition hasindex i =>
     match subPartition
-       case SUBPARTITION(__) then
-        functionEquationsSynchronous(i, vars, listAppend(equations, removedEquations), modelNamePrefix)
+      case SUBPARTITION(equations=equations, previousAssignments=preveequations) then
+        functionEquationsSynchronous(i, vars, listAppend(listAppend(previousAssignments,equations), removedEquations), modelNamePrefix)
     ; separator = "\n"
   let cases = subPartitions |> subPartition hasindex i =>
     let name = 'functionEquationsSynchronous_system<%i%>'

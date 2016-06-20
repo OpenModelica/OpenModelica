@@ -143,7 +143,7 @@ void Cvode::initialize()
   _event_n = 0;
   SolverDefaultImplementation::initialize();
   _dimSys = _continuous_system->getDimContinuousStates();
-  _dimZeroFunc = _event_system->getDimZeroFunc();
+  _dimZeroFunc = _event_system->getDimZeroFunc()+_event_system->getDimClock();
 
   if (_dimSys == 0)
     _dimSys = 1; // introduce dummy state
