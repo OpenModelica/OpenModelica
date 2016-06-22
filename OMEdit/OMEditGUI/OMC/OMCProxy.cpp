@@ -76,6 +76,7 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   mpOMCLoggerWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::OpenModelicaCompilerCLI));
   // OMC Logger textbox
   mpOMCLoggerTextBox = new QPlainTextEdit;
+  mOMCLoggerTextCursor = QTextCursor(mpOMCLoggerTextBox->document());
   mpOMCLoggerTextBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   mpOMCLoggerTextBox->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   mpOMCLoggerTextBox->setReadOnly(true);
@@ -324,78 +325,83 @@ QString OMCProxy::getResult()
 }
 
 /*!
-  Writes OMC command in OMC Logger window.
-  Writes the command to the omeditcommunication.log file.
-  Writes the command to the omeditcommands.mos file.
-  \param command - the command to write
-  \param commandTime - the command start time
-  */
+ * \brief OMCProxy::logCommand
+ * Writes OMC command in OMC Logger window.
+ * Writes the command to the omeditcommunication.log file.
+ * Writes the command to the omeditcommands.mos file.
+ * \param command - the command to write
+ * \param commandTime - the command start time
+ */
 void OMCProxy::logCommand(QString command, QTime *commandTime)
 {
   // move the cursor down before adding to the logger.
-  QTextCursor textCursor = mpOMCLoggerTextBox->textCursor();
-  textCursor.movePosition(QTextCursor::End);
-  mpOMCLoggerTextBox->setTextCursor(textCursor);
+  const bool atBottom = mpOMCLoggerTextBox->verticalScrollBar()->value() == mpOMCLoggerTextBox->verticalScrollBar()->maximum();
+  if (!mOMCLoggerTextCursor.atEnd()) {
+    mOMCLoggerTextCursor.movePosition(QTextCursor::End);
+  }
   // add the expression to commands list
   mCommandsList.append(command);
   // log expression
   QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
-  QTextCharFormat charFormat = mpOMCLoggerTextBox->currentCharFormat();
-  charFormat.setFont(font);
-  mpOMCLoggerTextBox->setCurrentCharFormat(charFormat);
-  mpOMCLoggerTextBox->insertPlainText(command + "\n");
+  QTextCharFormat format;
+  format.setFont(font);
+  mOMCLoggerTextCursor.beginEditBlock();
+  mOMCLoggerTextCursor.insertText(command + "\n", format);
+  mOMCLoggerTextCursor.endEditBlock();
   // move the cursor
-  textCursor.movePosition(QTextCursor::End);
-  mpOMCLoggerTextBox->setTextCursor(textCursor);
+  if (atBottom) {
+    mpOMCLoggerTextBox->verticalScrollBar()->setValue(mpOMCLoggerTextBox->verticalScrollBar()->maximum());
+    mpOMCLoggerTextBox->verticalScrollBar()->setValue(mpOMCLoggerTextBox->verticalScrollBar()->maximum());
+  }
   // set the current command index.
   mCurrentCommandIndex = mCommandsList.count();
   mpExpressionTextBox->setText("");
   // write the log to communication log file
   if (mCommunicationLogFileTextStream.device()) {
-    mCommunicationLogFileTextStream << command << " " << commandTime->currentTime().toString("hh:mm:ss:zzz");
-    mCommunicationLogFileTextStream << "\n";
-    mCommunicationLogFileTextStream.flush();
+    mCommunicationLogFileTextStream << QString("%1 %2\n").arg(command).arg(commandTime->currentTime().toString("hh:mm:ss:zzz"));
   }
   // write commands mos file
   if (mCommandsLogFileTextStream.device()) {
     if (command.compare("quit()") == 0) {
-      mCommandsLogFileTextStream << command << ";\n";
+      mCommandsLogFileTextStream << QString("%1;\n").arg(command);
     } else {
-      mCommandsLogFileTextStream << command << "; getErrorString();\n";
+      mCommandsLogFileTextStream << QString("%1; getErrorString();\n").arg(command);
     }
-    mCommandsLogFileTextStream.flush();
   }
 }
 
 /*!
-  Writes OMC response in OMC Logger window.
-  Writes the response to the omeditcommunication.log file.
-  Writes the response to the omeditcommands.mos file.
-  \param response - the response to write
-  \param commandTime - the command start time
-  */
+ * \brief OMCProxy::logResponse
+ * Writes OMC response in OMC Logger window.
+ * Writes the response to the omeditcommunication.log file.
+ * \param response - the response to write
+ * \param responseTime - the response end time
+ */
 void OMCProxy::logResponse(QString response, QTime *responseTime)
 {
   // move the cursor down before adding to the logger.
-  QTextCursor textCursor = mpOMCLoggerTextBox->textCursor();
-  textCursor.movePosition(QTextCursor::End);
-  mpOMCLoggerTextBox->setTextCursor(textCursor);
+  const bool atBottom = mpOMCLoggerTextBox->verticalScrollBar()->value() == mpOMCLoggerTextBox->verticalScrollBar()->maximum();
+  if (!mOMCLoggerTextCursor.atEnd()) {
+    mOMCLoggerTextCursor.movePosition(QTextCursor::End);
+  }
   // log expression
   QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
-  QTextCharFormat charFormat = mpOMCLoggerTextBox->currentCharFormat();
-  charFormat.setFont(font);
-  mpOMCLoggerTextBox->setCurrentCharFormat(charFormat);
-  mpOMCLoggerTextBox->insertPlainText(response + "\n\n");
+  QTextCharFormat format;
+  format.setFont(font);
+  mOMCLoggerTextCursor.beginEditBlock();
+  mOMCLoggerTextCursor.insertText(response + "\n\n", format);
+  mOMCLoggerTextCursor.endEditBlock();
   // move the cursor
-  textCursor.movePosition(QTextCursor::End);
-  mpOMCLoggerTextBox->setTextCursor(textCursor);
+  if (atBottom) {
+    mpOMCLoggerTextBox->verticalScrollBar()->setValue(mpOMCLoggerTextBox->verticalScrollBar()->maximum());
+    mpOMCLoggerTextBox->verticalScrollBar()->setValue(mpOMCLoggerTextBox->verticalScrollBar()->maximum());
+  }
   // write the log to communication log file
   if (mCommunicationLogFileTextStream.device()) {
-    mCommunicationLogFileTextStream << response << " " << responseTime->currentTime().toString("hh:mm:ss:zzz") << "\n";
+    mCommunicationLogFileTextStream << QString("%1 %2\n").arg(response).arg(responseTime->currentTime().toString("hh:mm:ss:zzz"));
     mTotalOMCCallsTime += (double)responseTime->elapsed() / 1000;
-    mCommunicationLogFileTextStream << QString::number((double)responseTime->elapsed() / 1000).append(" secs")
-                                    << " (" << QString::number(mTotalOMCCallsTime).append(" secs)") << "\n\n";
-    mCommunicationLogFileTextStream.flush();
+    mCommunicationLogFileTextStream << QString("%1 secs (%2 secs)\n\n").arg(QString::number((double)responseTime->elapsed() / 1000))
+                                       .arg(QString::number(mTotalOMCCallsTime));
   }
 }
 
