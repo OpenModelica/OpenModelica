@@ -2206,40 +2206,54 @@ bool OMCProxy::clearCommandLineOptions()
 /*!
  * \brief OMCProxy::makeDocumentationUriToFileName
  * Helper function for getDocumentationAnnotation. Takes the documentation html and replaces the modelica links with absolute pahts.\n
- * This function also makes the html valid. e.g html like,\n
- *   <p>Test</p><html><body>This is body</body></html>\n
- *  will become,\n
- *   <html><head></head><body><p>Test</p>This is body</body></html>
  * \param documentation - in html form.
  * \return New documentation in html form.
  */
 QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
 {
-  QWebPage *pWebPage = new QWebPage;
-  pWebPage->settings()->setAttribute(QWebSettings::JavascriptEnabled, false);
-  connect(pWebPage, SIGNAL(loadFinished(bool)), pWebPage, SLOT(deleteLater()));
-  QWebFrame *pWebFrame = pWebPage->mainFrame();
-  pWebFrame->setContent(QByteArray(documentation.toStdString().c_str()), "text/html");
-  QWebElement webElement = pWebFrame->documentElement();
-  QWebElementCollection tags = webElement.findAll("img,script,link");
-  foreach (QWebElement tag, tags) {
-    QString attributeName = "src";
-    if (tag.tagName().toLower().compare("link") == 0) {
-      attributeName = "href";
-    }
-    QString attributeValue = tag.attribute(attributeName);
-    if (attributeValue.startsWith("modelica://")) {
-      QString imgFileName = uriToFilename(attributeValue);
+  // get img src tags
+  QRegExp imgRegExp("\\<img[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
+  imgRegExp.setMinimal(true);
+  QStringList attributeMatches;
+  QStringList tagMatches;
+  int offset = 0;
+  while((offset = imgRegExp.indexIn(documentation, offset)) != -1) {
+    offset += imgRegExp.matchedLength();
+    tagMatches.append(imgRegExp.cap(0)); // complete tag
+    attributeMatches.append(imgRegExp.cap(1)); // attribute
+  }
+  // get script src tags
+  QRegExp scriptRegExp("\\<script[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
+  scriptRegExp.setMinimal(true);
+  offset = 0;
+  while((offset = scriptRegExp.indexIn(documentation, offset)) != -1) {
+    offset += scriptRegExp.matchedLength();
+    tagMatches.append(scriptRegExp.cap(0)); // complete tag
+    attributeMatches.append(scriptRegExp.cap(1));
+  }
+  // get link href tags
+  QRegExp linkRegExp("\\<link[^\\>]*href\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
+  linkRegExp.setMinimal(true);
+  offset = 0;
+  while((offset = linkRegExp.indexIn(documentation, offset)) != -1) {
+    offset += linkRegExp.matchedLength();
+    tagMatches.append(linkRegExp.cap(0)); // complete tag
+    attributeMatches.append(linkRegExp.cap(1));
+  }
+  // go through the list of links and convert them if needed.
+  foreach (QString attribute, attributeMatches) {
+    if (attribute.startsWith("modelica://")) {
+      QString fileName = uriToFilename(attribute);
 #ifdef WIN32
-      tag.setAttribute(attributeName, "file:///" + imgFileName);
+      documentation = documentation.replace(attribute, "file:///" + fileName);
 #else
-      tag.setAttribute(attributeName, "file://" + imgFileName);
+      documentation = documentation.replace(attribute, "file://" + fileName);
 #endif
     } else {
       //! @todo The img src value starts with modelica:// for MSL 3.2.1. Handle the other cases in this else block.
     }
   }
-  return webElement.toOuterXml();
+  return documentation;
 }
 
 /*!
