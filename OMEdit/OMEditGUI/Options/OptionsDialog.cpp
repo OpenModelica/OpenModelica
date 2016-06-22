@@ -1152,10 +1152,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pMetaModelEditorItem = new QListWidgetItem(mpOptionsList);
   pMetaModelEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   pMetaModelEditorItem->setText(tr("MetaModel Editor"));
-  // C Editor Item
+  // C/C++ Editor Item
   QListWidgetItem *pCEditorItem = new QListWidgetItem(mpOptionsList);
   pCEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  pCEditorItem->setText(tr("C Editor"));
+  pCEditorItem->setText(tr("C/C++ Editor"));
   // Graphical Views Item
   QListWidgetItem *pGraphicalViewsItem = new QListWidgetItem(mpOptionsList);
   pGraphicalViewsItem->setIcon(QIcon(":/Resources/icons/modeling.png"));
