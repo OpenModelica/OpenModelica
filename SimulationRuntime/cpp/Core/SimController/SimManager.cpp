@@ -16,7 +16,6 @@ SimManager::SimManager(shared_ptr<IMixedSystem> system, Configuration* config)
   , _tStops            ()
   , _dimtimeevent      (0)
   , _dimZeroFunc       (0)
-  , _dimClock		   (0)
   , _timeEventCounter  (NULL)
   , _events            (NULL)
   , _sampleCycles      (NULL)
@@ -155,14 +154,13 @@ void SimManager::initialize()
 
     // _solver->setTimeOut(_config->getGlobalSettings()->getAlarmTime());
     _dimZeroFunc = _event_system->getDimZeroFunc();
-	_dimClock = _event_system->getDimClock();
     _solverTask = ISolver::SOLVERCALL(ISolver::FIRST_CALL);
-    if (_dimZeroFunc+_dimClock > 0)
+    if (_dimZeroFunc == _event_system->getDimZeroFunc())
     {
         if (_events)
             delete[] _events;
-        _events = new bool[_dimZeroFunc+_dimClock];
-        memset(_events, false, (_dimZeroFunc+_dimClock) * sizeof(bool));
+        _events = new bool[_dimZeroFunc];
+        memset(_events, false, _dimZeroFunc * sizeof(bool));
     }
 
     LOGGER_WRITE("SimManager: Assemble completed",LC_INIT,LL_DEBUG);
@@ -544,7 +542,7 @@ void SimManager::runSingleProcess()
 {
     double startTime, endTime, *zeroVal_0, *zeroVal_new;
     int dimZeroF;
-    int dimClock;
+
     std::vector<std::pair<double, int> > tStopsSub;
 
     _H = _tEnd;
@@ -565,8 +563,7 @@ void SimManager::runSingleProcess()
     computeEndTimes(tStopsSub);
     _tStops.push_back(tStopsSub);
     dimZeroF = _event_system->getDimZeroFunc();
-	dimClock = _event_system->getDimClock();
-    zeroVal_new = new double[dimZeroF+dimClock];
+    zeroVal_new = new double[dimZeroF];
     _timeevent_system->setTime(_tStart);
     if (_dimtimeevent)
     {
@@ -575,8 +572,8 @@ void SimManager::runSingleProcess()
     _cont_system->evaluateAll(IContinuous::CONTINUOUS);      // vxworksupdate
     _event_system->getZeroFunc(zeroVal_new);
 
-    for (int i = 0; i < _dimZeroFunc+_dimClock; i++)
-        _events[i] = zeroVal_new[i]<0.0;
+    for (int i = 0; i < _dimZeroFunc; i++)
+        _events[i] = bool(zeroVal_new[i]);
     _mixed_system->handleSystemEvents(_events);
     //_cont_system->evaluateODE(IContinuous::CONTINUOUS);
     // Reset the time-events
@@ -634,8 +631,8 @@ void SimManager::runSingleProcess()
                     _timeevent_system->handleTimeEvent(_timeEventCounter);
 
                     _event_system->getZeroFunc(zeroVal_new);
-                    for (int i = 0; i < _dimZeroFunc+_dimClock; i++)
-                       _events[i] = zeroVal_new[i]<0.0;
+                    for (int i = 0; i < _dimZeroFunc; i++)
+                      _events[i] = bool(zeroVal_new[i]);
                     _mixed_system->handleSystemEvents(_events);
                     // Reset time-events
                     _timeevent_system->handleTimeEvent(_timeEventCounter);
@@ -695,8 +692,8 @@ void SimManager::runSingleProcess()
                     _timeevent_system->handleTimeEvent(_timeEventCounter);
                     _cont_system->evaluateAll(IContinuous::CONTINUOUS);   // vxworksupdate
                     _event_system->getZeroFunc(zeroVal_new);
-                    for (int i = 0; i < _dimZeroFunc+_dimClock; i++)
-                         _events[i] = zeroVal_new[i]<0.0;
+                    for (int i = 0; i < _dimZeroFunc; i++)
+                        _events[i] = bool(zeroVal_new[i]);
                     _mixed_system->handleSystemEvents(_events);
                     //_cont_system->evaluateODE(IContinuous::CONTINUOUS);
                     //reset time-events

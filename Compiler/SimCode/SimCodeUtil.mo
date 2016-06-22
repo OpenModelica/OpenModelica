@@ -662,7 +662,7 @@ algorithm
 
     prevClockedVars := {};
     isPrevVar := arrayCreate(BackendVariable.varsSize(syst.orderedVars), false);
-    preEquations := {};
+
     for cr in subPartition.prevVars loop
       (_, varIxs) := BackendVariable.getVar(cr, syst.orderedVars);
       for i in varIxs loop
@@ -679,13 +679,13 @@ algorithm
         simVar.name := ComponentReference.crefPrefixPrevious(cr);
         clockedVars := simVar::clockedVars;
         simEq := SimCode.SES_SIMPLE_ASSIGN(ouniqueEqIndex, simVar.name, DAE.CREF(cr, simVar.type_), DAE.emptyElementSource);
-        preEquations := simEq::preEquations;
+         equations := simEq::equations;
         ouniqueEqIndex := ouniqueEqIndex + 1;
       end if;
     end for;
 
     //otempvars := listAppend(clockedVars, otempvars);
-    simSubPartition := SimCode.SUBPARTITION(subPartIdx,prevClockedVars, preEquations, equations, removedEquations, subPartition.clock, subPartition.holdEvents);
+    simSubPartition := SimCode.SUBPARTITION(prevClockedVars,  equations, removedEquations, subPartition.clock, subPartition.holdEvents);
 
     assert(isNone(simSubPartitions[subPartIdx]), "SimCodeUtil.translateClockedEquations failed");
     arrayUpdate(simSubPartitions, subPartIdx, SOME(simSubPartition));
@@ -7818,7 +7818,7 @@ algorithm
   simVars := List.map(subPart.vars,Util.tuple21);
   arePrevious := List.map(subPart.vars,Util.tuple22);
   simVarStrings := List.threadMap(List.map(simVars,simVarString), List.map(arePrevious,previousString),stringAppend);
-  str := "SubPartition "+intString(subPart.idx)+"\nVars:\n"+UNDERLINE+"\n";
+  str := "SubPartition Vars:\n"+UNDERLINE+"\n";
   str := str + stringDelimitList(simVarStrings,"\n")+"\n";
   str := str + "partition equations:\n"+UNDERLINE+"\n";
   str := str + stringDelimitList(List.map(subPart.equations,simEqSystemString),"\n");
@@ -12875,13 +12875,6 @@ algorithm
     else -1;
   end match;
 end getInputIndex;
-
-public function getSubPartitionIdx
-  input SimCode.SubPartition sub;
-  output Integer idx;
-algorithm
-  idx := sub.idx;
-end getSubPartitionIdx;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

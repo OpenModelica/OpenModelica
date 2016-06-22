@@ -142,7 +142,7 @@ void Ida::initialize()
   _event_n = 0;
   SolverDefaultImplementation::initialize();
   _dimSys = _continuous_system->getDimContinuousStates();
-  _dimZeroFunc = _event_system->getDimZeroFunc()+_event_system->getDimClock();
+  _dimZeroFunc = _event_system->getDimZeroFunc();
 
   if (_dimSys <= 0)
   {
