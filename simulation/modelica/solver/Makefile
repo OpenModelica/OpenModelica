@@ -44,7 +44,7 @@ Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
-.PHONY : test clean getdeps
+.PHONY : test testDAE clean getdeps
 
 test:
 	@echo
