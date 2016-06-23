@@ -614,14 +614,7 @@ void Cvode::CVodeCore()
       //Solver has finished calculation - calculate the final values
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
       _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-      //check for state events at end time ( it is needed by clock ticks at end time. It is not needed anymore if the clock's treated again as time events later)
-	  _event_system->getZeroFunc(_zeroVal);
-       for (int i = 0; i < _dimZeroFunc; i++)
-        _events[i] = _zeroVal[i]<0.0;
-      _mixed_system->handleSystemEvents(_events);
-
-
-	  if(writeOutput)
+      if(writeOutput)
          writeToFile(0, _tEnd, _h);
 
       _accStps += _locStps;
