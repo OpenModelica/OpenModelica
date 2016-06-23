@@ -3356,6 +3356,9 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
                                       .arg(classesList.join(",")));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
+      if (showProgress) {
+        mpMainWindow->getStatusBar()->clearMessage();
+      }
       return;
     }
     bool existModel = false;
@@ -3390,11 +3393,15 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
         foreach (QString model, classesList) {
           mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true);
           mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
-          if (showProgress) mpMainWindow->getProgressBar()->setValue(++progressvalue);
+          if (showProgress) {
+            mpMainWindow->getProgressBar()->setValue(++progressvalue);
+          }
         }
         mpMainWindow->addRecentFile(fileName, encoding);
         mpLibraryTreeModel->loadDependentLibraries(mpMainWindow->getOMCProxy()->getClassNames());
-        if (showProgress) mpMainWindow->hideProgressBar();
+        if (showProgress) {
+          mpMainWindow->hideProgressBar();
+        }
       }
     }
   }
@@ -3411,7 +3418,9 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
  */
 void LibraryWidget::openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgress)
 {
-  if (showProgress) mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
+  if (showProgress) {
+    mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
+  }
   // check if the file is already loaded.
   for (int i = 0; i < mpLibraryTreeModel->getRootLibraryTreeItem()->childrenSize(); ++i) {
     LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->getRootLibraryTreeItem()->child(i);
@@ -3426,6 +3435,9 @@ void LibraryWidget::openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgres
                                       .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(fileInfo.absoluteFilePath())));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
+      if (showProgress) {
+        mpMainWindow->getStatusBar()->clearMessage();
+      }
       return;
     }
   }
@@ -3446,7 +3458,9 @@ void LibraryWidget::openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgres
     mpLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
     mpMainWindow->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
   }
-  if (showProgress) mpMainWindow->getStatusBar()->clearMessage();
+  if (showProgress) {
+    mpMainWindow->getStatusBar()->clearMessage();
+  }
 }
 
 /*!
@@ -3474,6 +3488,9 @@ void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress)
                                       .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(fileInfo.absoluteFilePath())));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
+      if (showProgress) {
+        mpMainWindow->getStatusBar()->clearMessage();
+      }
       return;
     }
   }
