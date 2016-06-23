@@ -3777,8 +3777,10 @@ template algebraicDAEVar(list<SimVar> algVars, String modelNamePrefix)
   let nominalVars = (algVars |> var hasindex i fromindex 0 =>
     (match var
     case SIMVAR(__) then
-      'algebraicNominal[<%i%>] = <%crefAttributes(name)%>.nominal;
-       infoStreamPrint(LOG_SOLVER, 0, "%s -> %g", <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);'
+      <<
+      algebraicNominal[<%i%>] = <%crefAttributes(name)%>.nominal * data->simulationInfo->tolerance;
+      infoStreamPrint(LOG_SOLVER, 0, "%s -> %g", <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);
+      >>
     end match)
   ;separator="\n")
 
