@@ -399,6 +399,46 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     infoStreamPrint(LOG_SOLVER, 0, "jacobian is calculated by %s", JACOBIAN_METHOD_DESC[idaData->jacobianMethod]);
   }
 
+  /* set max error test fails */
+  if (omc_flag[FLAG_IDA_MAXERRORTESTFAIL])
+  {
+    int maxErrorTestFails = atoi(omc_flagValue[FLAG_IDA_MAXERRORTESTFAIL]);
+    flag = IDASetMaxErrTestFails(idaData->ida_mem, maxErrorTestFails);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## set IDASetMaxErrTestFails failed!");
+    }
+  }
+
+  /* set maximum number of nonlinear solver iterations at one step */
+  if (omc_flag[FLAG_IDA_MAXNONLINITERS])
+  {
+    int maxNonlinIters = atoi(omc_flagValue[FLAG_IDA_MAXNONLINITERS]);
+    flag = IDASetMaxNonlinIters(idaData->ida_mem, maxNonlinIters);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## set IDASetMaxNonlinIters failed!");
+    }
+  }
+
+  /* maximum number of nonlinear solver convergence failures at one step */
+  if (omc_flag[FLAG_IDA_MAXCONVFAILS])
+  {
+    int maxConvFails = atoi(omc_flagValue[FLAG_IDA_MAXCONVFAILS]);
+    flag = IDASetMaxConvFails(idaData->ida_mem, maxConvFails);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## set IDASetMaxConvFails failed!");
+    }
+  }
+
+  /* safety factor in the nonlinear convergence test */
+  if (omc_flag[FLAG_IDA_NONLINCONVCOEF])
+  {
+    double nonlinConvCoef = atof(omc_flagValue[FLAG_IDA_NONLINCONVCOEF]);
+    flag = IDASetNonlinConvCoef(idaData->ida_mem, nonlinConvCoef);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## set IDASetNonlinConvCoef failed!");
+    }
+  }
+
   /* configure algebraic variables as such */
   if (idaData->daeMode)
   {

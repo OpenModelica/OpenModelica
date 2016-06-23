@@ -45,6 +45,10 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_EMIT_PROTECTED */        "emit_protected",
   /* FLAG_F */                     "f",
   /* FLAG_HELP */                  "help",
+  /* FLAG_IDA_MAXERRORTESTFAIL */  "idaMaxErrorTestFails",
+  /* FLAG_IDA_MAXNONLINITERS */    "idaMaxNonLinIters",
+  /* FLAG_IDA_MAXCONVFAILS */      "idaMaxConvFails",
+  /* FLAG_IDA_NONLINCONVCOEF */    "idaNonLinConvCoef",
   /* FLAG_IDA_LS */                "idaLS",
   /* FLAG_IDAS */                  "idaSensitivity",
   /* FLAG_IDA_SUPPRESS_ALG */      "idaSupressAlg",
@@ -119,6 +123,10 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_EMIT_PROTECTED */        "emits protected variables to the result-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get detailed information that specifies the command-line flag",
+  /* FLAG_IDA_MAXERRORTESTFAIL */  "value specifies the maximum number of error test failures in attempting one step. The default value is 7.",
+  /* FLAG_IDA_MAXNONLINITERS */    "value specifies the maximum number of nonlinear solver iterations at one step. The default value is 3.",
+  /* FLAG_IDA_MAXCONVFAILS */      "value specifies the maximum number of nonlinear solver convergence failures at one step. The default value is 10.",
+  /* FLAG_IDA_NONLINCONVCOEF */    "value specifies the safety factor in the nonlinear convergence test. The default value is 0.33.",
   /* FLAG_IDA_LS */                "selects the linear solver used by ida",
   /* FLAG_IDAS */                  "flag to add sensitivity information to the result files",
   /* FLAG_IDA_SUPPRESS_ALG */      "flag to to suppress algebraic variables in the local error of ida solver in daeMode",
@@ -212,6 +220,14 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_HELP */
   "  Get detailed information that specifies the command-line flag\n"
   "  For example, -help=f prints detailed information for command-line flag f.",
+  /* FLAG_IDA_MAXERRORTESTFAIL */
+  "  value specifies the maximum number of error test failures in attempting one step. The default value is 7.",
+  /* FLAG_IDA_MAXNONLINITERS */
+  "  value specifies the maximum number of nonlinear solver iterations at one step. The default value is 3.",
+  /* FLAG_IDA_MAXCONVFAILS */
+  "  value specifies the maximum number of nonlinear solver convergence failures at one step. The default value is 10.",
+  /* FLAG_IDA_NONLINCONVCOEF */
+  "  value specifies the safety factor in the nonlinear convergence test. The default value is 0.33.",
   /* FLAG_IDA_LS */
   "  Value specifies the linear solver of the IDA integrator. Valid values:\n\n"
   "  * klu - default, fast sparse linear solver\n"
@@ -387,6 +403,10 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_EMIT_PROTECTED */        FLAG_TYPE_FLAG,
   /* FLAG_F */                     FLAG_TYPE_OPTION,
   /* FLAG_HELP */                  FLAG_TYPE_OPTION,
+  /* FLAG_IDA_MAXERRORTESTFAIL */  FLAG_TYPE_OPTION,
+  /* FLAG_IDA_MAXNONLINITERS */    FLAG_TYPE_OPTION,
+  /* FLAG_IDA_MAXCONVFAILS */      FLAG_TYPE_OPTION,
+  /* FLAG_IDA_NONLINCONVCOEF */    FLAG_TYPE_OPTION,
   /* FLAG_IDA_LS */                FLAG_TYPE_OPTION,
   /* FLAG_IDAS */                  FLAG_TYPE_FLAG,
   /* FLAG_IDA_SUPPRESS_ALG */      FLAG_TYPE_FLAG,
