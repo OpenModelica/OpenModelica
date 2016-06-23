@@ -1184,12 +1184,14 @@ algorithm
       algorithm
         setContClockedPartition(false, inPartitionIdx, inContPartitions, source);
       then
-        (DAE.CALL(inPath, inExpLst, inAttr), inNewEqs, inNewVars, inClkCnt);
+        // Note: remove optional argument (inExpLst) to avoid algebraic loop
+        (DAE.CALL(inPath, {}, inAttr), inNewEqs, inNewVars, inClkCnt);
     case (Absyn.IDENT("interval"), _)
       algorithm
         setContClockedPartition(false, inPartitionIdx, inContPartitions, source);
       then
-        (DAE.CALL(inPath, inExpLst, inAttr), inNewEqs, inNewVars, inClkCnt);
+        // Note: remove optional argument (inExpLst) to avoid algebraic loop
+        (DAE.CALL(inPath, {}, inAttr), inNewEqs, inNewVars, inClkCnt);
 
     case (Absyn.IDENT("sample"), 2)
       algorithm
