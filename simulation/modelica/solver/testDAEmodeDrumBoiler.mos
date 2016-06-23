@@ -7,7 +7,7 @@ loadModel(Modelica,{"3.2.1"});
 getErrorString();
 
 setCommandLineOptions("+daeMode");
-simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, method="ida", simflags="-daeMode");
+simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, method="ida", simflags="-daeMode -idaSupressAlg");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
