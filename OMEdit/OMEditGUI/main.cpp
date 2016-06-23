@@ -172,8 +172,7 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
 
 void printOMEditUsage()
 {
-  printf("Usage: OMEdit [--OMCLogger=true|false] --Debug=true|false] [files]\n");
-  printf("    --OMCLogger=[true|false]    Allows sending OMC commands from OMCLogger. Default is false.\n");
+  printf("Usage: OMEdit --Debug=true|false] [files]\n");
   printf("    --Debug=[true|false]        Enables the debugging features like QUndoView, diffModelicaFileListings view. Default is false.\n");
   printf("    files                       List of Modelica files(*.mo) to open.\n");
 }
@@ -258,21 +257,12 @@ int main(int argc, char *argv[])
   /* Force C-style doubles */
   setlocale(LC_NUMERIC, "C");
   // if user has requested to open the file by passing it in argument then,
-  bool OMCLogger = false;
   bool debug = false;
   QString fileName = "";
   QStringList fileNames;
   if (a.arguments().size() > 1) {
     for (int i = 1; i < a.arguments().size(); i++) {
-      if (strncmp(a.arguments().at(i).toStdString().c_str(), "--OMCLogger=",12) == 0) {
-        QString omcLoggerArg = a.arguments().at(i);
-        omcLoggerArg.remove("--OMCLogger=");
-        if (0 == strcmp("true", omcLoggerArg.toStdString().c_str())) {
-          OMCLogger = true;
-        } else {
-          OMCLogger = false;
-        }
-      } else if (strncmp(a.arguments().at(i).toStdString().c_str(), "--Debug=",8) == 0) {
+      if (strncmp(a.arguments().at(i).toStdString().c_str(), "--Debug=",8) == 0) {
         QString debugArg = a.arguments().at(i);
         debugArg.remove("--Debug=");
         if (0 == strcmp("true", debugArg.toStdString().c_str())) {
@@ -285,11 +275,16 @@ int main(int argc, char *argv[])
         if (!fileName.isEmpty()) {
           // if path is relative make it absolute
           QFileInfo file (fileName);
+          QString absoluteFileName = fileName;
           if (file.isRelative()) {
-            fileName.prepend(QString(QDir::currentPath()).append("/"));
+            absoluteFileName = QString("%1/%2").arg(QDir::currentPath()).arg(fileName);
           }
-          fileName = fileName.replace("\\", "/");
-          fileNames << fileName;
+          absoluteFileName = absoluteFileName.replace("\\", "/");
+          if (QFile::exists(absoluteFileName)) {
+            fileNames << absoluteFileName;
+          } else {
+            printf("Invalid command line argument: %s %s\n", fileName.toStdString().c_str(), absoluteFileName.toStdString().c_str());
+          }
         }
       }
     }
@@ -304,8 +299,6 @@ int main(int argc, char *argv[])
   foreach (QString fileName, fileNames) {
     mainwindow.getLibraryWidget()->openFile(fileName);
   }
-  // hide OMCLogger send custom expression feature if OMCLogger is false
-  mainwindow.getOMCProxy()->enableCustomExpression(OMCLogger);
   // finally show the main window
   mainwindow.show();
   // hide the splash screen

@@ -66,7 +66,6 @@ private:
   QPushButton *mpOMCLoggerSendButton;
   QPlainTextEdit *mpOMCLoggerTextBox;
   QTextCursor mOMCLoggerTextCursor;
-  Label *mpOMCLoggerEnableHintLabel;
   QWidget *mpOMCDiffWidget;
   Label *mpOMCDiffBeforeLabel;
   QPlainTextEdit *mpOMCDiffBeforeTextBox;
@@ -88,7 +87,6 @@ private:
 public:
   OMCProxy(MainWindow *pMainWindow);
   ~OMCProxy();
-  void enableCustomExpression(bool enable);
   void getPreviousCommand();
   void getNextCommand();
   bool initializeOMC();

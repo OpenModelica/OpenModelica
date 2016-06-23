@@ -81,8 +81,6 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   mpOMCLoggerTextBox->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   mpOMCLoggerTextBox->setReadOnly(true);
   mpOMCLoggerTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
-  mpOMCLoggerEnableHintLabel = new Label(tr("* To enable OpenModelica Compiler CLI start OMEdit with argument --OMCLogger=true"));
-  mpOMCLoggerEnableHintLabel->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpExpressionTextBox = new CustomExpressionBox(this);
   connect(mpExpressionTextBox, SIGNAL(returnPressed()), SLOT(sendCustomExpression()));
   mpOMCLoggerSendButton = new QPushButton(tr("Send"));
@@ -96,7 +94,6 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   pVerticalalLayout->setContentsMargins(1, 1, 1, 1);
   pVerticalalLayout->addWidget(mpOMCLoggerTextBox);
   pVerticalalLayout->addLayout(pHorizontalLayout);
-  pVerticalalLayout->addWidget(mpOMCLoggerEnableHintLabel);
   mpOMCLoggerWidget->setLayout(pVerticalalLayout);
   if (mpMainWindow->isDebug()) {
     // OMC Diff widget
@@ -134,23 +131,6 @@ OMCProxy::~OMCProxy()
   delete mpOMCLoggerWidget;
   if (mpMainWindow->isDebug()) {
     delete mpOMCDiffWidget;
-  }
-}
-
-/*!
-  Show/Hide the custom command expression box.
-  \param enable - enables/disables the expression text box.
-  */
-void OMCProxy::enableCustomExpression(bool enable)
-{
-  if (!enable) {
-    mpExpressionTextBox->hide();
-    mpOMCLoggerSendButton->hide();
-    mpOMCLoggerEnableHintLabel->show();
-  } else {
-    mpExpressionTextBox->show();
-    mpOMCLoggerSendButton->show();
-    mpOMCLoggerEnableHintLabel->hide();
   }
 }
 
@@ -351,6 +331,9 @@ void OMCProxy::logCommand(QString command, QTime *commandTime)
   // move the cursor
   if (atBottom) {
     mpOMCLoggerTextBox->verticalScrollBar()->setValue(mpOMCLoggerTextBox->verticalScrollBar()->maximum());
+    // QPlainTextEdit destroys the first calls value in case of multiline
+    // text, so make sure that the scroll bar actually gets the value set.
+    // Is a noop if the first call succeeded.
     mpOMCLoggerTextBox->verticalScrollBar()->setValue(mpOMCLoggerTextBox->verticalScrollBar()->maximum());
   }
   // set the current command index.
@@ -394,6 +377,9 @@ void OMCProxy::logResponse(QString response, QTime *responseTime)
   // move the cursor
   if (atBottom) {
     mpOMCLoggerTextBox->verticalScrollBar()->setValue(mpOMCLoggerTextBox->verticalScrollBar()->maximum());
+    // QPlainTextEdit destroys the first calls value in case of multiline
+    // text, so make sure that the scroll bar actually gets the value set.
+    // Is a noop if the first call succeeded.
     mpOMCLoggerTextBox->verticalScrollBar()->setValue(mpOMCLoggerTextBox->verticalScrollBar()->maximum());
   }
   // write the log to communication log file

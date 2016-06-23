@@ -2688,20 +2688,25 @@ void ModelWidget::createModelWidgetComponents()
       QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
       if (Utilities::isCFile(fileInfo.suffix())) {
         mpEditor = new CEditor(this);
-        mpEditor->getPlainTextEdit()->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         CHighlighter *pCHighlighter = new CHighlighter(pMainWindow->getOptionsDialog()->getCEditorPage(), mpEditor->getPlainTextEdit());
+        CEditor *pCEditor = dynamic_cast<CEditor*>(mpEditor);
+        pCEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
+        mpEditor->hide();
         connect(pMainWindow->getOptionsDialog(), SIGNAL(cEditorSettingsChanged()), pCHighlighter, SLOT(settingsChanged()));
       } else if (Utilities::isModelicaFile(fileInfo.suffix())) {
         mpEditor = new MetaModelicaEditor(this);
-        mpEditor->getPlainTextEdit()->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         MetaModelicaHighlighter *pMetaModelicaHighlighter;
         pMetaModelicaHighlighter = new MetaModelicaHighlighter(pMainWindow->getOptionsDialog()->getMetaModelicaEditorPage(),
                                                                mpEditor->getPlainTextEdit());
+        MetaModelicaEditor *pMetaModelicaEditor = dynamic_cast<MetaModelicaEditor*>(mpEditor);
+        pMetaModelicaEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
+        mpEditor->hide();
         connect(pMainWindow->getOptionsDialog(), SIGNAL(metaModelicaEditorSettingsChanged()), pMetaModelicaHighlighter, SLOT(settingsChanged()));
       } else {
         mpEditor = new TextEditor(this);
         TextEditor *pTextEditor = dynamic_cast<TextEditor*>(mpEditor);
         pTextEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
+        mpEditor->hide();
       }
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
@@ -4002,6 +4007,9 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   }
   if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
     pModelWidget->getTextViewToolButton()->setChecked(true);
+    if (!pModelWidget->getEditor()->isVisible()) {
+      pModelWidget->getEditor()->show();
+    }
   }
   else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
     if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
