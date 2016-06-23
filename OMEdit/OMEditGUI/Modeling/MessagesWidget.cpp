@@ -241,13 +241,11 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
 }
 
 /*!
-  Slot activated when a link is clicked from MessagesWidget.\n
-  Parses the url and loads the Modelica class with the line selected.
-  \param url - the url that is clicked
-  */
-/*
-  <a href="omeditmessagesbrowser:///className?lineNumber=4></a>"
-  */
+ * \brief MessagesWidget::openErrorMessageClass
+ * Slot activated when a link e.g., "<a href="omeditmessagesbrowser:///className?lineNumber=4></a>" is clicked from MessagesWidget.\n
+ * Parses the url and loads the Modelica class with the line selected.
+ * \param url - the url that is clicked
+ */
 void MessagesWidget::openErrorMessageClass(QUrl url)
 {
   if (url.scheme() != "omeditmessagesbrowser") {
@@ -255,20 +253,30 @@ void MessagesWidget::openErrorMessageClass(QUrl url)
     return;
   }
   QString className = url.path();
-  if (className.startsWith("/")) className.remove(0, 1);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+  QUrlQuery query(url);
+  int lineNumber = query.queryItemValue("lineNumber").toInt();
+#else /* Qt4 */
+  int lineNumber = url.queryItemValue("lineNumber").toInt();
+#endif
+  if (className.startsWith("/")) {
+    className.remove(0, 1);
+  }
+  // find the class that has the error
   LibraryTreeItem *pLibraryTreeItem = mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
+  /* the error could be in P.M but we get P as error class in this case we see if current class has the same file as P
+   * and also contains the line number. If we have correct current class then no need to show root parent class i.e., P.
+   */
+  ModelWidget *pModelWidget = mpMainWindow->getModelWidgetContainer()->getCurrentModelWidget();
+  if ((pModelWidget->getLibraryTreeItem()->getFileName().compare(pLibraryTreeItem->getFileName()) == 0) &&
+      pModelWidget->getLibraryTreeItem()->inRange(lineNumber)) {
+    pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+  }
   if (pLibraryTreeItem) {
     mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-    ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
-    if (pModelWidget && pModelWidget->getEditor()) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-      QUrlQuery query(url);
-	  int lineNumber = query.queryItemValue("lineNumber").toInt();
-#else /* Qt4 */
-      int lineNumber = url.queryItemValue("lineNumber").toInt();
-#endif
-      pModelWidget->getTextViewToolButton()->setChecked(true);
-      pModelWidget->getEditor()->goToLineNumber(lineNumber);
+    if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
+      pLibraryTreeItem->getModelWidget()->getTextViewToolButton()->setChecked(true);
+      pLibraryTreeItem->getModelWidget()->getEditor()->goToLineNumber(lineNumber);
     }
   }
 }

@@ -79,6 +79,8 @@ public:
   QString removeLeadingSpaces(QString contents);
   void storeLeadingSpaces(QMap<int, int> leadingSpacesMap);
   QString getPlainText();
+  void setTextChanged(bool changed) {mTextChanged = changed;}
+  bool isTextChanged() {return mTextChanged;}
 private:
   QString mLastValidText;
   bool mTextChanged;

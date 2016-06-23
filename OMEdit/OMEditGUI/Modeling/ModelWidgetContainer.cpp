@@ -2920,7 +2920,25 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   QStringList classNames = pModelicaEditor->getClassNames(&errorString);
   LibraryTreeModel *pLibraryTreeModel = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel();
   OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
+  QString modelicaText = pModelicaEditor->getPlainText();
+  QString stringToLoad;
+  LibraryTreeItem *pParentLibraryTreeItem = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel()->getContainingFileParentLibraryTreeItem(mpLibraryTreeItem);
+  if (pParentLibraryTreeItem != mpLibraryTreeItem) {
+    stringToLoad = mpLibraryTreeItem->getClassTextBefore() + modelicaText + mpLibraryTreeItem->getClassTextAfter();
+  } else {
+    stringToLoad = modelicaText;
+  }
   if (classNames.size() == 0) {
+    /* if the error is occured in P.M and package is saved in one file.
+     * then update the package contents with new invalid code because we open P when user clicks on the error message.
+     */
+    if (mpLibraryTreeItem->isInPackageOneFile()) {
+      pParentLibraryTreeItem->getModelWidget()->createModelWidgetComponents();
+      ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
+      if (pModelicaEditor) {
+        pModelicaEditor->setPlainText(stringToLoad);
+      }
+    }
     if (!errorString.isEmpty()) {
       MessagesWidget *pMessagesWidget = getModelWidgetContainer()->getMainWindow()->getMessagesWidget();
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::syntaxKind, Helper::errorLevel));
@@ -2929,17 +2947,12 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   }
   /* if no errors are found with the Modelica Text then load it in OMC */
   QString className = classNames.at(0);
-  QString modelicaText = pModelicaEditor->getPlainText();
-  QString stringToLoad;
-  LibraryTreeItem *pParentLibraryTreeItem = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel()->getContainingFileParentLibraryTreeItem(mpLibraryTreeItem);
   if (pParentLibraryTreeItem != mpLibraryTreeItem) {
-    stringToLoad = mpLibraryTreeItem->getClassTextBefore() + modelicaText + mpLibraryTreeItem->getClassTextAfter();
     // only use OMCProxy::loadString merge when LibraryTreeItem::SaveFolderStructure i.e., package.mo
     if (!pOMCProxy->loadString(stringToLoad, pParentLibraryTreeItem->getFileName(), Helper::utf8, pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure)) {
       return false;
     }
   } else {
-    stringToLoad = modelicaText;
     // only use OMCProxy::loadString merge when LibraryTreeItem::SaveFolderStructure i.e., package.mo
     if (!pOMCProxy->loadString(stringToLoad, className, Helper::utf8, mpLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure)) {
       return false;

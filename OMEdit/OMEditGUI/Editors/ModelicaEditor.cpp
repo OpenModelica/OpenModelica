@@ -150,9 +150,22 @@ QStringList ModelicaEditor::getClassNames(QString *errorString)
     QString modelicaText = mpPlainTextEdit->toPlainText();
     QString stringToParse = modelicaText;
     if (!modelicaText.startsWith("within")) {
-      stringToParse = QString("within %1;%2").arg(pLibraryTreeItem->parent()->getNameStructure()).arg(modelicaText);
+      if (pLibraryTreeItem->isInPackageOneFile()) {
+        stringToParse = pLibraryTreeItem->getClassTextBefore() + modelicaText + pLibraryTreeItem->getClassTextAfter();
+        // first we try to parse whole string so that we get correct line numbers for errors if any (see Ticket #3969).
+        classNames = pOMCProxy->parseString(stringToParse, pLibraryTreeItem->getFileName());
+        // if the whole string parses successfully then parse the subset for just this class.
+        if (classNames.size() > 0) {
+          stringToParse = QString("within %1;%2").arg(pLibraryTreeItem->parent()->getNameStructure()).arg(modelicaText);
+          classNames = pOMCProxy->parseString(stringToParse, pLibraryTreeItem->getFileName());
+        }
+      } else {
+        stringToParse = QString("within %1;%2").arg(pLibraryTreeItem->parent()->getNameStructure()).arg(modelicaText);
+        classNames = pOMCProxy->parseString(stringToParse, pLibraryTreeItem->getFileName());
+      }
+    } else {
+      classNames = pOMCProxy->parseString(stringToParse, pLibraryTreeItem->getFileName());
     }
-    classNames = pOMCProxy->parseString(stringToParse, pLibraryTreeItem->getFileName());
   }
   // if user is defining multiple top level classes.
   if (classNames.size() > 1) {
@@ -188,7 +201,7 @@ QStringList ModelicaEditor::getClassNames(QString *errorString)
  */
 bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
 {
-  if (mTextChanged) {
+  if (isTextChanged()) {
     // if the user makes few mistakes in the text then dont let him change the perspective
     if (!mpModelWidget->modelicaEditorTextChanged(pLibraryTreeItem)) {
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
@@ -205,17 +218,17 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
       int answer = pMessageBox->exec();
       switch (answer) {
         case QMessageBox::RejectRole:
-          mTextChanged = false;
+          setTextChanged(false);
           // revert back to last correct version
           setPlainText(mLastValidText);
           return true;
         case QMessageBox::AcceptRole:
         default:
-          mTextChanged = true;
+          setTextChanged(true);
           return false;
       }
     } else {
-      mTextChanged = false;
+      setTextChanged(false);
       mLastValidText = mpPlainTextEdit->toPlainText();
     }
   }
@@ -342,6 +355,7 @@ void ModelicaEditor::setPlainText(const QString &text)
     } else {
       mpPlainTextEdit->setPlainText(contents);
     }
+    setTextChanged(false);
     mForceSetPlainText = false;
     mLastValidText = contents;
     foldAll();
@@ -369,7 +383,7 @@ void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int char
         mpModelWidget->setWindowTitle(QString(mpModelWidget->getLibraryTreeItem()->getName()).append("*"));
         mpModelWidget->getLibraryTreeItem()->setIsSaved(false);
         mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
-        mTextChanged = true;
+        setTextChanged(true);
       }
       /* Keep the line numbers and the block information for the line breakpoints updated */
       if (charsRemoved != 0) {
