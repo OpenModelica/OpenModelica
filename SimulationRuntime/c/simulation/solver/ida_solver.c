@@ -402,9 +402,12 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   /* configure algebraic variables as such */
   if (idaData->daeMode)
   {
-    flag = IDASetSuppressAlg(idaData->ida_mem, TRUE);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## Suppress algebraic variables in the local error test failed");
+    if (omc_flag[FLAG_IDA_SUPPRESS_ALG])
+    {
+      flag = IDASetSuppressAlg(idaData->ida_mem, TRUE);
+      if (checkIDAflag(flag)){
+        throwStreamPrint(threadData, "##IDA## Suppress algebraic variables in the local error test failed");
+      }
     }
 
     for(i=0; i<idaData->N; ++i)
