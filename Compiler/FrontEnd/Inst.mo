@@ -5254,6 +5254,7 @@ algorithm
     case "edge" then Absyn.FULLYQUALIFIED(Absyn.IDENT("edge"));
     case "exp" then Absyn.FULLYQUALIFIED(Absyn.IDENT("exp"));
     case "fill" then Absyn.FULLYQUALIFIED(Absyn.IDENT("fill"));
+    case "firstTick" then Absyn.FULLYQUALIFIED(Absyn.IDENT("firstTick"));
     case "floor" then Absyn.FULLYQUALIFIED(Absyn.IDENT("floor"));
     case "getInstanceName" then Absyn.FULLYQUALIFIED(Absyn.IDENT("getInstanceName"));
     case "hold" then Absyn.FULLYQUALIFIED(Absyn.IDENT("hold"));

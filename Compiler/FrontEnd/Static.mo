@@ -5185,6 +5185,54 @@ algorithm
   end match;
 end elabBuiltinNoClock;
 
+protected function elabBuiltinFirstTick "
+ This function elaborates the builtin operator firstTick(u)."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input SourceInfo info;
+  output FCore.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
+    local
+      DAE.Exp call, u;
+      DAE.Type ty1,ty;
+      Boolean impl;
+      FCore.Graph env;
+      FCore.Cache cache;
+      Prefix.Prefix pre;
+      DAE.Properties prop1, prop;
+      Absyn.Exp au;
+
+    case (cache,env,{},{},impl,pre,_)
+      equation
+        ty =  DAE.T_FUNCTION(
+                {},
+                DAE.T_REAL_DEFAULT,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                DAE.emptyTypeSource);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("firstTick"), args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+
+    case (cache,env,{au},{},impl,pre,_)
+      equation
+        (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        ty =  DAE.T_FUNCTION(
+                {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
+                DAE.T_REAL_DEFAULT,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                DAE.emptyTypeSource);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("firstTick"), args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+  end match;
+end elabBuiltinFirstTick;
+
 protected function elabBuiltinInterval "
 Author: BTH
 This function elaborates the builtin operator interval(u)."
@@ -6720,6 +6768,7 @@ algorithm
     case "sum" then elabBuiltinSum;
     case "product" then elabBuiltinProduct;
     case "pre" then elabBuiltinPre;
+    case "firstTick" then elabBuiltinFirstTick;
     case "interval" then elabBuiltinInterval;
     case "boolean" then elabBuiltinBoolean;
     case "diagonal" then elabBuiltinDiagonal;

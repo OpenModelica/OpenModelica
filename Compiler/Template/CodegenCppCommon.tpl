@@ -1698,6 +1698,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
   case CALL(path=IDENT(name="previous"), expLst={arg as CREF(__)}) then
     '<%cref(crefPrefixPrevious(arg.componentRef), useFlatArrayNotation)%>'
 
+  case CALL(path=IDENT(name="firstTick")) then
+    '_clockStart[clockIndex - 1]'
+
   case CALL(path=IDENT(name="interval")) then
     '_clockInterval[clockIndex - 1]'
 

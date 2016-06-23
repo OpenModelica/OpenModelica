@@ -1180,6 +1180,11 @@ algorithm
         setContClockedPartition(false, inPartitionIdx, inContPartitions, source);
       then
         (DAE.CALL(inPath, inExpLst, inAttr), inNewEqs, inNewVars, inClkCnt);
+    case (Absyn.IDENT("firstTick"), _)
+      algorithm
+        setContClockedPartition(false, inPartitionIdx, inContPartitions, source);
+      then
+        (DAE.CALL(inPath, inExpLst, inAttr), inNewEqs, inNewVars, inClkCnt);
     case (Absyn.IDENT("interval"), _)
       algorithm
         setContClockedPartition(false, inPartitionIdx, inContPartitions, source);

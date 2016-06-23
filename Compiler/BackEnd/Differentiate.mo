@@ -1479,6 +1479,7 @@ algorithm
 
     case ("previous",_) then (exp, inFuncs);
     case ("$getPart",_) then (exp, inFuncs);
+    case ("firstTick",_) then (exp, inFuncs);
     case ("interval",_) then (exp, inFuncs);
 
     // diff(sin(x)) = cos(x)*der(x)

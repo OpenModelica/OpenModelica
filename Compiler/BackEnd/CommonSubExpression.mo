@@ -856,6 +856,7 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("homotopy")) then true;
     case DAE.CALL(path=Absyn.IDENT("reinit")) then true;
     case DAE.CALL(path=Absyn.IDENT("String")) then true;
+    case DAE.CALL(path=Absyn.IDENT("firstTick")) then true;
     case DAE.CALL(path=Absyn.IDENT("interval")) then true;
     case DAE.CALL(path=Absyn.IDENT("Clock")) then true;
     case DAE.CALL(path=Absyn.IDENT("sample")) then true;
