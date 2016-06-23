@@ -575,7 +575,7 @@ end unelabSubmods;
 
 protected function unelabSubscript
   input list<Integer> inIntegerLst;
-  output list<SCode.Subscript> outSCodeSubscriptLst = {};
+  output list<SCode.Subscript> outSCodeSubscriptLst;
 algorithm
   outSCodeSubscriptLst := list(Absyn.SUBSCRIPT(Absyn.INTEGER(i)) for i in inIntegerLst);
 end unelabSubscript;
@@ -1186,7 +1186,6 @@ algorithm
 
     for name in names loop
       v :: values := values;
-      name :: names := names;
 
       if name == inName then
         e := ValuesUtil.valueExp(v);

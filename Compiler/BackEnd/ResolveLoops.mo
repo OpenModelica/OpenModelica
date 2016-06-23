@@ -1152,9 +1152,8 @@ protected
   list<Integer> nonLoopEqs,nonLoopVars,loopEqs, loopVars, allVars, eqCrossLst;
   list<list<Integer>> eqVars;
   BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrixT mT;
 algorithm
-  (m,mT,eqCrossLst) := tplIn;
+  (m,_,eqCrossLst) := tplIn;
   eqVars := List.map1(loopIn,Array.getIndexFirst,m);
   allVars := List.flatten(eqVars);
   loopVars := doubleEntriesInLst(allVars,{},{});

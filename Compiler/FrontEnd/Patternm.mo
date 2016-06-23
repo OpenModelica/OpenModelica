@@ -1280,7 +1280,7 @@ protected function checkDefUsePattern
 "Replace unused assignments with wildcards"
   input DAE.Pattern inPat;
   input tuple<AvlSetString.Tree,AvlSetString.Tree,SourceInfo> inTpl;
-  output DAE.Pattern outPat=inPat;
+  output DAE.Pattern outPat;
   output tuple<AvlSetString.Tree,AvlSetString.Tree,SourceInfo> outTpl=inTpl;
 algorithm
   outPat := matchcontinue (inPat,inTpl)
@@ -1407,7 +1407,7 @@ protected function usePatternAsBindings
   input DAE.Pattern inPat;
   input AvlSetString.Tree inTree;
   output DAE.Pattern outPat=inPat;
-  output AvlSetString.Tree outTree=inTree;
+  output AvlSetString.Tree outTree;
 algorithm
   outTree := matchcontinue inPat
     case DAE.PAT_AS()
@@ -2191,7 +2191,7 @@ algorithm
 
     case (cache,env,SOME(exp),_,st,_,_,info)
       equation
-        (cache,_,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+        (_,_,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
         str = Types.unparseType(Types.getPropType(prop));
         Error.addSourceMessage(Error.GUARD_EXPRESSION_TYPE_MISMATCH, {str}, info);
       then fail();

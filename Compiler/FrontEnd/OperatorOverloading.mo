@@ -1292,7 +1292,7 @@ algorithm
       list<Absyn.Path> paths;
       DAE.Type ty,scalarType;
       list<DAE.Type> rest;
-    case (cache,_,ty::rest,_,_,_)
+    case (_,_,ty::rest,_,_,_)
       equation
         (cache,funcs) = getOperatorFuncsOrEmptySingleTy(inCache,env,ty,opName,info);
         (cache,funcs) = getOperatorFuncsOrEmpty(cache,env,rest,opName,info,listAppend(funcs,acc));

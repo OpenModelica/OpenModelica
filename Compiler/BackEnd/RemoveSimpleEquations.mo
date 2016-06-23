@@ -4296,8 +4296,8 @@ main module for eliminating trivial equations
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
   input Boolean findAliases;
-  output BackendDAE.EqSystem outSystem = inSystem;
-  output BackendDAE.Shared outShared = inShared;
+  output BackendDAE.EqSystem outSystem;
+  output BackendDAE.Shared outShared;
 algorithm
   (outSystem,outShared) := matchcontinue(inSystem,inShared)
     local
@@ -4567,11 +4567,11 @@ algorithm
 
     case (eq ,(vars, HTCrToExp, HTCrToCrEqLst, eqList, simpleEqList)) equation
         res = BackendEquation.getEquationRHS(eq);
-       (_, (cr_lst,_,count,paramCount,true)) = Expression.traverseExpTopDown(res, findCrefs, ({},vars,0,0,true));
+        (_, (cr_lst,_,count,paramCount,true)) = Expression.traverseExpTopDown(res, findCrefs, ({},vars,0,0,true));
         res = BackendEquation.getEquationLHS(eq);
-       (_, (cr_lst,_,count,paramCount,true)) = Expression.traverseExpTopDown(res, findCrefs, (cr_lst,vars,count,paramCount,true));
-       keepEquation = true;
-       if (count == 1) then
+        (_, (cr_lst,_,count,paramCount,true)) = Expression.traverseExpTopDown(res, findCrefs, (cr_lst,vars,count,paramCount,true));
+        keepEquation = true;
+        if (count == 1) then
           if Flags.isSet(Flags.DEBUG_ALIAS) then
             print("Found Equation knw0: " + BackendDump.equationString(eq) + "\n");
           end if;
@@ -5000,7 +5000,7 @@ values of the alias variables.
 "
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystem outSystem = inSystem;
+  output BackendDAE.EqSystem outSystem;
   output BackendDAE.Shared outShared = inShared;
 protected
   BackendDAE.Variables orderedVars;
