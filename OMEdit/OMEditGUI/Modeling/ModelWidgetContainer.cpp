@@ -856,6 +856,15 @@ QRectF GraphicsView::itemsBoundingRect()
   foreach (QGraphicsItem *item, mConnectionsList) {
     rect |= item->sceneBoundingRect();
   }
+  foreach (Component *pComponent, mInheritedComponentsList) {
+    rect |= pComponent->itemsBoundingRect();
+  }
+  foreach (QGraphicsItem *item, mInheritedShapesList) {
+    rect |= item->sceneBoundingRect();
+  }
+  foreach (QGraphicsItem *item, mInheritedConnectionsList) {
+    rect |= item->sceneBoundingRect();
+  }
   qreal x1, y1, x2, y2;
   rect.getCoords(&x1, &y1, &x2, &y2);
   rect.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
