@@ -300,7 +300,7 @@ algorithm
       var := BackendVariable.getVarAt(inSyst.orderedVars, i);
       var := BackendVariable.setVarKind(var, BackendDAE.CLOCKED_STATE(
                previousName = ComponentReference.crefPrefixPrevious(var.varName),
-               isStartFixed = isDerVarArr[i] or BackendVariable.varFixed(var)));
+               isStartFixed = isDerVarArr[i]));
       var := BackendVariable.setVarFixed(var, true);
       BackendVariable.setVarAt(inSyst.orderedVars, i, var);
       prevVars := var.varName::prevVars;
