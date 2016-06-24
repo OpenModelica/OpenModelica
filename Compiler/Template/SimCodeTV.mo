@@ -208,6 +208,7 @@ package SimCodeVar
       list<SimVar> mixedArrayVars;
       list<SimVar> residualVars;
       list<SimVar> algebraicDAEVars;
+      list<SimVar> sensitivityVars;
     end SIMVARS;
   end SimVars;
 
@@ -277,11 +278,11 @@ package SimCode
       list<DAE.Exp> literals;
       list<RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
+      list<SimEqSystem> localKnownVars;
       list<SimEqSystem> allEquations;
       list<list<SimEqSystem>> odeEquations;
       list<list<SimEqSystem>> algebraicEquations;
       list<ClockedPartition> clockedPartitions;
-      list<list<SimEqSystem>> daeEquations;
       Boolean useSymbolicInitialization;         // true if a system to solve the initial problem symbolically is generated, otherwise false
       Boolean useHomotopy;                       // true if homotopy(...) is used during initialization
       list<SimEqSystem> initialEquations;
@@ -314,6 +315,7 @@ package SimCode
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       Option<FmiModelStructure> modelStructure;
       PartitionData partitionData;
+      Option<DaeModeData> daeModeData;
     end SIMCODE;
   end SimCode;
 
@@ -336,7 +338,6 @@ package SimCode
   uniontype SubPartition
     record SUBPARTITION
       list<tuple<SimCodeVar.SimVar, Boolean>> vars;
-      list<SimEqSystem> previousAssignments;
       list<SimEqSystem> equations;
       list<SimEqSystem> removedEquations;
       BackendDAE.SubClock subClock;
@@ -403,12 +404,11 @@ package SimCode
     end SIMULATION_CONTEXT;
     record FUNCTION_CONTEXT
     end FUNCTION_CONTEXT;
-   record JACOBIAN_CONTEXT
-   end JACOBIAN_CONTEXT;
-
+    record JACOBIAN_CONTEXT
+    end JACOBIAN_CONTEXT;
     record ALGLOOP_CONTEXT
-       Boolean genInitialisation;
-        Boolean genJacobian;
+      Boolean genInitialisation;
+      Boolean genJacobian;
     end ALGLOOP_CONTEXT;
     record OTHER_CONTEXT
     end OTHER_CONTEXT;
@@ -547,7 +547,6 @@ package SimCode
       list<DAE.ComponentRef> crefs;
       Integer indexNonLinearSystem;
       Option<JacobianMatrix> jacobianMatrix;
-      Boolean linearTearing;
       Boolean homotopySupport;
       Boolean mixedSystem;
     end NONLINEARSYSTEM;
@@ -610,8 +609,19 @@ package SimCode
       Integer numJacobians;
       Integer numOptimizeConstraints;
       Integer numOptimizeFinalConstraints;
+      Integer numSensitivityParameters;
       end VARINFO;
   end VarInfo;
+
+  uniontype DaeModeData
+    "contains data that belongs to the dae mode"
+    record DAEMODEDATA
+      list<list<SimEqSystem>> daeEquations "daeModel residuals equations";
+      Option<JacobianMatrix> sparsityPattern "contains the sparsity pattern for the daeMode";
+      list<SimCodeVar.SimVar> residualVars;  // variable used to calculate residuals of a DAE form, they are real
+      list<SimCodeVar.SimVar> algebraicDAEVars;  // variable used to calculate residuals of a DAE form, they are real
+    end DAEMODEDATA;
+  end DaeModeData;
 
   uniontype Function
     record FUNCTION
@@ -1041,6 +1051,10 @@ package SimCodeFunctionUtil
     output String outdef;
   end generateSubPalceholders;
 
+  function getSimCode
+    output SimCode.SimCode code;
+  end getSimCode;
+
 end SimCodeFunctionUtil;
 
 package BackendDAE
@@ -1056,6 +1070,7 @@ package BackendDAE
     record DUMMY_STATE end DUMMY_STATE;
     record CLOCKED_STATE
       DAE.ComponentRef previousName "the name of the previous variable";
+      Boolean isStartFixed "is fixed at first clock tick";
     end CLOCKED_STATE;
     record DISCRETE end DISCRETE;
     record PARAM end PARAM;
@@ -1063,6 +1078,7 @@ package BackendDAE
     record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
     record JAC_VAR end JAC_VAR;
     record JAC_DIFF_VAR end JAC_DIFF_VAR;
+    record SEED_VAR end SEED_VAR;
     record OPT_CONSTR end OPT_CONSTR;
     record OPT_FCONSTR end OPT_FCONSTR;
     record OPT_INPUT_WITH_DER end OPT_INPUT_WITH_DER;
@@ -3066,6 +3082,17 @@ package ComponentReference
     input DAE.ComponentRef inCref;
     output DAE.ComponentRef outCref;
   end crefPrefixPrevious;
+
+  function crefPrefixDer
+    input DAE.ComponentRef inCref;
+    output DAE.ComponentRef outCref;
+  end crefPrefixDer;
+
+  function makeUntypedCrefIdent
+    input DAE.Ident ident;
+    output DAE.ComponentRef outCrefIdent;
+  end makeUntypedCrefIdent;
+
 end ComponentReference;
 
 package Expression
@@ -3270,6 +3297,7 @@ package Flags
   constant ConfigFlag PROFILING_LEVEL;
   constant ConfigFlag CPP_FLAGS;
   constant ConfigFlag MATRIX_FORMAT;
+  constant ConfigFlag SYM_EULER;
   constant DebugFlag FMU_EXPERIMENTAL;
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;

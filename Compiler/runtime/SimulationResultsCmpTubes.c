@@ -649,7 +649,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   /* Calculate the tubes without additional events added */
   addTargetEventTimesRes ref,actual,actualoriginal;
   privates *priv=NULL;
-  size_t n,maxn;
+  size_t n,maxn,html_size=0;
   double *calibrated_values=NULL, *high=NULL, *low=NULL, *error=NULL,maxPlusTol,minMinusTol,abstol;
 
   ref.values = refdata->data;
@@ -682,10 +682,19 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   addRelativeTolerance(high,ref.values,n,reltol,abstol,1);
   addRelativeTolerance(low ,ref.values,n,reltol,abstol,-1);
   error = validate(n,ref,low,high,calibrated_values,reltol,abstol,xabstol);
-  if (isHtml ) {
+  if ( isHtml ) {
+
 #if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
-    size_t html_size=0;
+    html_size=0;
     fout = open_memstream(&html, &html_size);
+#else
+    fname = (char*) omc_alloc_interface.malloc_atomic(25 + strlen(varname));
+    sprintf(fname, "tmp.%s.html.tmp", varname);
+    fout = fopen(fname, "wb+");
+    if (!fout)
+    {
+      perror("Error opening temp file"); fflush(stderr);
+    }
 #endif
 
     fprintf(fout, "<html>\n"
@@ -798,10 +807,36 @@ fprintf(fout, "{title: '%s',\n"
 "</html>\n", varname);
     }
 
-    fclose(fout);
     if (isHtml) {
+#if !(_XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L)
+      size_t r;
+      if (fseek(fout, 0, SEEK_END))
+      {
+        perror("Error on fseek end!");
+      }
+      html_size = ftell(fout);
+      if (fseek(fout, 0, SEEK_SET))
+      {
+        perror("Error on fseek set!");
+      }
+      html = (char*)malloc((html_size + 1) * sizeof(char));
+      r = fread(html, sizeof(char), html_size, fout);
+      if (r != html_size)
+      {
+        perror("Error on fread!");
+      }
+      html[html_size] = '\0';
+      fclose(fout);
+      unlink(fname);
+#else
+      fclose(fout);
+#endif
       *htmlOut = omc_alloc_interface.malloc_strdup(html);
       free(html);
+    }
+    else
+    {
+      fclose(fout);
     }
   }
   /* Tell the GC some variables have been free'd */

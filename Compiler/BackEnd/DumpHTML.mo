@@ -89,6 +89,16 @@ uniontype Tag
     String type_;
     String text;
   end SCRIPT;
+
+  record SCRIPT_BODY
+    String type_;
+    String text;
+  end SCRIPT_BODY;
+
+  record CANVAS
+    list<String> attr;
+  end CANVAS;
+
 end Tag;
 
 protected
@@ -102,13 +112,17 @@ end Document;
 
 protected constant Document emptyDocument = DOCUMENT("", {}, {});
 
-protected function emtypDocumentWithToggleFunktion "author Frenkel TUD 2012-11"
+protected function emptyDocumentWithToggleFunktion "author Frenkel TUD 2012-11"
   output Document outDoc;
 algorithm
   outDoc := addScript("text/Javascript",
-    "function toggle(name) {\n   var element = document.getElementById(name);\n   if (element.style.display == \"none\") {\n      // show the div\n      element.style.display = \"block\";   \n   } else {\n      // hide the div\n      element.style.display = \"none\";\n      // reset element\n      element.reset();\n   }\n}\n\nfunction show(name) {\n   var element = document.getElementById(name);\n   if (element.style.display == \"none\") {\n      // show the div\n      element.style.display = \"block\";   \n   }\n   return true;\n}\n",
+    "function toggle(name) {\n   var element = document.getElementById(name);\n   if (element.style.display == \"none\") {\n      // show the div\n      element.style.display = \"block\";   \n   } else {\n      // hide the div\n      element.style.display = \"none\";\n      // reset element\n      element.reset();\n   }\n}\n\nfunction show(name) {\n   var element = document.getElementById(name);\n   if (element.style.display == \"none\") {\n      // show the div\n      element.style.display = \"block\";   \n   }\n   return true;\n}\n
+    ",
     emptyDocument);
-end emtypDocumentWithToggleFunktion;
+
+
+
+end emptyDocumentWithToggleFunktion;
 
 protected function addScript "add a script to the head of the document.
   author Frenkel TUD 2012-11"
@@ -119,6 +133,16 @@ protected function addScript "add a script to the head of the document.
 algorithm
   outDoc := addHeadTag(SCRIPT(type_, script), inDoc);
 end addScript;
+
+protected function addScriptBody "add a script to the head of the document.
+  author Frenkel TUD 2012-11"
+  input String type_;
+  input String script;
+  input Document inDoc;
+  output Document outDoc;
+algorithm
+  outDoc := addBodyTag(SCRIPT_BODY(type_, script), inDoc);
+end addScriptBody;
 
 protected function addHeading "add a heading to the body of the document.
   author Frenkel TUD 2012-11"
@@ -286,6 +310,7 @@ algorithm
     local
       Integer i;
       String t, t1, t2, str;
+      list<String> attr;
       list<Style> style;
       list<Tag> tags;
     case (HEADING(stage=i, text=t), _)
@@ -320,6 +345,17 @@ algorithm
         str = iBuffer + "\n<script type=\"" + t1 + "\">\n" + t2 + "\n</script>";
       then
         str;
+    case (SCRIPT_BODY(type_=t1, text=t2), _)
+      equation
+        str = iBuffer + "\n<SCRIPT \"" + t1 + "\">\n" + t2 + "\n</SCRIPT>";
+      then
+        str;
+    case (CANVAS(attr=attr), _)
+      equation
+        t1 = stringDelimitList(attr, " ");
+        str = iBuffer + "\n<canvas " + t1 + "\">\n";
+      then
+        str;
   end match;
 end dumpTag;
 
@@ -344,7 +380,7 @@ protected
   BackendDAE.EqSystems eqs;
 algorithm
   BackendDAE.DAE(eqs=eqs) := inDAE;
-  doc := emtypDocumentWithToggleFunktion();
+  doc := emptyDocumentWithToggleFunktion();
   doc := addHeading(1, inHeader, doc);
   str := intString(realInt(System.time()));
   ((doc, _)) := List.fold1(eqs, dumpEqSystem, str, (doc, 1));
@@ -517,6 +553,117 @@ algorithm
     outTags := inTags;
   end try;
 end dumpMatching2;
+
+public function dumpMatrixHTML"dumps a html file that shows the matrix representation of the incidence matrix.
+author: waurich TU Dresden 2016-05"
+  input BackendDAE.IncidenceMatrix m;
+  input list<String> rowNames;
+  input list<String> columNames;
+  input String fileName;
+protected
+  Integer size, rowIdx, colIdx;
+  Integer matrixMargin, blockSize;
+  list<Integer> row;
+  String color, rowLabel, colLabel, blockDraw, rowLabelDraw, colLabelDraw;
+  list<String> scripts, rowLabelScripts, colLabelScripts;
+
+  Document doc;
+  Tag canvas;
+algorithm
+
+  //some settings
+  matrixMargin := 100;
+  blockSize := 20;
+
+  scripts := {};
+  rowLabelScripts := {};
+  colLabelScripts := {};
+
+  //setting variables for the html file
+  scripts := "var ctx = document.querySelector('canvas').getContext('2d');\n"::scripts;
+	scripts := "ctx.fillStyle = '#001D4B';\n"::scripts;
+	scripts := "ctx.font=\"18px Arial\";\n\n"::scripts;
+	scripts := "var blockSize = "+intString(blockSize)+";\n"::scripts;
+	scripts := "var matrixMargin = "+intString(matrixMargin)+";\n\n"::scripts;
+
+  // the functions to draw the matrix
+  scripts := "
+function drawRectangle(px, py, blockSize, margin, ctx) {
+   ctx.fillRect(((py-1)*blockSize) + matrixMargin,((px-1)*blockSize) + matrixMargin, blockSize, blockSize);
+   return ctx;
+     }\n
+function rowName(name, rowIdx, blockSize, margin, ctx) {
+   ctx.strokeText(name, 0, 18+margin+(rowIdx-1)*blockSize, margin);
+   return ctx;
+	   }\n
+function colName(name, colIdx, blockSize, margin, ctx) {
+   ctx.strokeText(name, 0, 18+margin+(colIdx-1)*blockSize, margin);
+   return ctx;
+	   }\n
+function makeLines(blockSize, margin,  n,  ctx) {
+		 for (var x = 0; x < n+1; ++x) {
+		 ctx.beginPath();
+		 ctx.moveTo( x*blockSize + margin, margin);
+		 ctx.lineTo( x*blockSize + margin, margin + (n)*blockSize);
+		 ctx.stroke();
+		 }\n
+
+		for (var x = 0; x < n+1; ++x) {
+		 ctx.beginPath();
+		 ctx.moveTo(margin, x*blockSize + margin);
+		 ctx.lineTo(margin + (n)*blockSize, x*blockSize + margin);
+		 ctx.stroke();
+		}\n
+	return ctx;
+	}
+	"::scripts;
+
+  size := arrayLength(m);
+
+  // traverse the rows
+  for rowIdx in 1:size loop
+    row := arrayGet(m,rowIdx);
+
+    rowLabelDraw := "ctx = rowName(\"eq_"+listGet(rowNames,rowIdx)+"\", "+intString(rowIdx)+", blockSize, matrixMargin, ctx);\n";
+    rowLabelScripts :=  rowLabelDraw::rowLabelScripts;
+
+    colLabelDraw := "ctx = colName(\"var_"+listGet(columNames,rowIdx)+"\", "+intString(rowIdx)+", blockSize, matrixMargin, ctx);\n";
+    colLabelScripts :=  colLabelDraw::colLabelScripts;
+
+    //traverse the columns
+    for colIdx in row loop
+      if colIdx > 0 then
+        blockDraw := "ctx = drawRectangle("+intString(rowIdx)+", "+intString(colIdx)+",blockSize, matrixMargin,  ctx);\n";
+        scripts :=  blockDraw::scripts;
+      end if;
+    end for;
+
+  end for;
+
+  scripts := listAppend(rowLabelScripts, scripts);
+  scripts := "
+  ctx.textAlign = 'right';\n
+  ctx = makeLines(blockSize, matrixMargin, "+intString(size)+", ctx);\n"::scripts;
+
+  //rotate context for column labels
+  scripts := "ctx.rotate(-Math.PI / 2);\n"::scripts;
+  scripts := listAppend(colLabelScripts, scripts);
+
+  doc := emptyDocumentWithToggleFunktion();
+  canvas := CANVAS({"width = \""+intString(size*blockSize+matrixMargin)+"\"", " height = \""+intString(size*blockSize+matrixMargin)+"\""});
+
+  doc := addScriptBody("LANGUAGE=\"JavaScript", List.fold(scripts,stringAppend,""),doc);
+  doc := addHeadTag(canvas,doc);
+  dumpDocument(doc, fileName+".html");
+end dumpMatrixHTML;
+
+protected function intAbsGt
+  input Integer i1;
+  input Integer i2;
+  output Boolean out;
+algorithm
+  out := intGt(intAbs(i1),intAbs(i2));
+end intAbsGt;
 
 annotation(__OpenModelica_Interface="backend");
 end DumpHTML;

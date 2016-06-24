@@ -37,7 +37,7 @@ algorithm
     (stats as GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before, heapsize_full=heapsize_full, free_bytes_full=free_bytes_full)) := GC.getProfStats();
     memory := since+before;
     oldStats := getGlobalRoot(Global.gcProfilingIndex);
-    (oldStats as GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before)) := oldStats;
+    GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before) := oldStats;
     oldMemory := since+before;
     t := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT);
     total := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);

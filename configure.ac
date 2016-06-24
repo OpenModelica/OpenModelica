@@ -521,8 +521,8 @@ fi
 
 OMC_AC_LAPACK(RequireFound)
 
-AC_CHECK_HEADERS(ida/ida.h ida/ida_dense.h kinsol/kinsol.h kinsol/kinsol_dense.h nvector/nvector_serial.h sundials/sundials_types.h sundials/sundials_math.h,[],[NO_SUNDIALS="yes"])
-SUNDIALS_LDFLAGS="-lsundials_ida -lsundials_kinsol -lsundials_nvecserial $LD_LAPACK"
+AC_CHECK_HEADERS(idas/idas.h idas/idas.h idas/idas_dense.h kinsol/kinsol.h kinsol/kinsol_dense.h nvector/nvector_serial.h sundials/sundials_types.h sundials/sundials_math.h,[],[NO_SUNDIALS="yes"])
+SUNDIALS_LDFLAGS="-lsundials_idas -lsundials_kinsol -lsundials_nvecserial $LD_LAPACK"
 LIBS="$SUNDIALS_LDFLAGS -lm"
 AC_MSG_CHECKING([Sundials linking])
 AC_LINK_IFELSE([AC_LANG_CALL([], [KINInit])],

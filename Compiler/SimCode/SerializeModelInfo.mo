@@ -90,13 +90,14 @@ algorithm
         min(serializeEquation(file,eq,"removed-initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.removedInitialEquations));
         min(serializeEquation(file,eq,"initial-lambda0",withOperations) for eq in SimCodeUtil.sortEqSystems(code.initialEquations_lambda0));
         min(serializeEquation(file,eq,"regular",withOperations) for eq in SimCodeUtil.sortEqSystems(code.allEquations));
+        min(serializeEquation(file,eq,"synchronous",withOperations) for eq in SimCodeUtil.sortEqSystems(SimCodeUtil.getClockedEquations(SimCodeUtil.getSubPartitions(code.clockedPartitions))));
         min(serializeEquation(file,eq,"start",withOperations) for eq in SimCodeUtil.sortEqSystems(code.startValueEquations));
         min(serializeEquation(file,eq,"nominal",withOperations) for eq in SimCodeUtil.sortEqSystems(code.nominalValueEquations));
         min(serializeEquation(file,eq,"min",withOperations) for eq in SimCodeUtil.sortEqSystems(code.minValueEquations));
         min(serializeEquation(file,eq,"max",withOperations) for eq in SimCodeUtil.sortEqSystems(code.maxValueEquations));
         min(serializeEquation(file,eq,"parameter",withOperations) for eq in SimCodeUtil.sortEqSystems(code.parameterEquations));
         min(serializeEquation(file,eq,"assertions",withOperations) for eq in SimCodeUtil.sortEqSystems(code.algorithmAndEquationAsserts));
-        min(serializeEquation(file,eq,"residuals",withOperations) for eq in SimCodeUtil.sortEqSystems(List.flatten(code.daeEquations)));
+        min(serializeEquation(file,eq,"residuals",withOperations) for eq in SimCodeUtil.sortEqSystems(List.flatten(SimCodeUtil.getSimCodeDAEModeDataEqns(code.daeModeData))));
         min(serializeEquation(file,eq,"jacobian",withOperations) for eq in SimCodeUtil.sortEqSystems(code.jacobianEquations));
         File.write(file, "\n],\n\"functions\":[");
         serializeList(file,mi.functions,serializeFunction);
@@ -135,6 +136,7 @@ algorithm
         b = serializeVarsHelp(file, vars.extObjVars, withOperations, b);
         b = serializeVarsHelp(file, vars.constVars, withOperations, b);
         b = serializeVarsHelp(file, vars.jacobianVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.sensitivityVars, withOperations, b);
       then ();
     else
       equation

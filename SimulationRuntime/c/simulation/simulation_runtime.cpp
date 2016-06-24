@@ -801,6 +801,15 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     linearSparseSolverMinSize = atoi(omc_flagValue[FLAG_LSS_MIN_SIZE]);
     infoStreamPrint(LOG_STDOUT, 0, "Maximum system size for using linear sparse solver changed to %d", linearSparseSolverMinSize);
   }
+  if(omc_flag[FLAG_NEWTON_XTOL]) {
+    newtonXTol = atof(omc_flagValue[FLAG_NEWTON_XTOL]);
+    infoStreamPrint(LOG_STDOUT, 0, "Tolerance for updating solution vector in Newton solver changed to %g", newtonXTol);
+  }
+
+  if(omc_flag[FLAG_NEWTON_FTOL]) {
+    newtonFTol = atof(omc_flagValue[FLAG_NEWTON_FTOL]);
+    infoStreamPrint(LOG_STDOUT, 0, "Tolerance for accepting accuracy in Newton solver changed to %g", newtonFTol);
+  }
 
   rt_tick(SIM_TIMER_INIT_XML);
   read_input_xml(data->modelData, data->simulationInfo);

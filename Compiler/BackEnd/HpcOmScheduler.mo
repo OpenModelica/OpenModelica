@@ -1631,7 +1631,7 @@ algorithm
     case({section},HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
       equation
         // generate a serial section
-        compLst = List.flatten(List.map1(section,Array.getIndexFirst,inComps));
+        _ = List.flatten(List.map1(section,Array.getIndexFirst,inComps));
         //simEqSysIdcs = List.sort(simEqSysIdcs,intGt);
         task = makeCalcTaskLevel(section,inComps,iSccSimEqMapping);
         taskLst = HpcOmSimCode.SERIALTASKLIST({task}, true);
@@ -2554,7 +2554,7 @@ protected function createMetisSchedule2 "author: Waurich TUD 03-2015
   output list<Integer> prioLstOut;
   output list<Integer> otherLstOut;
 algorithm
-  (prioLstOut,otherLstOut) := matchcontinue(levelNodes,priorityArr,prioLstIn,otherLstIn)
+  (prioLstOut,otherLstOut) := match(levelNodes,priorityArr,prioLstIn,otherLstIn)
     local
       list<Integer> level, prioLst, otherLst;
       list<list<Integer>> rest;
@@ -2570,7 +2570,7 @@ algorithm
         otherLst := listAppend(otherLstIn,otherLst);
         (prioLst,otherLst) := createMetisSchedule2(rest,priorityArr,prioLst,otherLst);
     then (prioLst,otherLst);
-  end matchcontinue;
+  end match;
 end createMetisSchedule2;
 
 protected function isPrioNode "author: Waurich TUD 03-2015"
@@ -3445,7 +3445,7 @@ protected function TDS_replaceSimEqSysIndex "author: Waurich TUD 2014-07
 algorithm
   simEqOut := matchcontinue(simEqIn,assIn)
     local
-  Boolean linearTearing,partOfMixed;
+  Boolean partOfMixed;
   Integer newIdx, oldIdx, indexNonLinearSystem, indexLinearSystem;
   array<Integer> ass;
   SimCode.SimEqSystem simEqSys;
@@ -3458,13 +3458,13 @@ algorithm
   list<DAE.ElementSource> sources;
   Boolean homotopySupport;
   Boolean mixedSystem;
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,linearTearing=linearTearing,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),_)
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),_)
       equation
         eqs = List.map1(eqs,TDS_replaceSimEqSysIndex,assIn);
         oldIdx = SimCodeUtil.simEqSystemIndex(simEqIn);
         newIdx = arrayGet(assIn,oldIdx);
         jacobianMatrix = TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,assIn);
-        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,linearTearing,homotopySupport,mixedSystem), NONE());
+        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,homotopySupport,mixedSystem), NONE());
    then simEqSys;
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,residual=eqs,jacobianMatrix=jacobianMatrix,sources=sources,indexLinearSystem=indexLinearSystem)),ass)
       equation
@@ -3492,7 +3492,7 @@ protected function TDS_replaceSimEqSysIndexWithUpdate "author: Waurich TUD 2014-
 algorithm
   (simEqOut,tplOut) := matchcontinue(simEqIn,tplIn)
     local
-  Boolean linearTearing,partOfMixed;
+  Boolean partOfMixed;
   Integer newIdx, oldIdx, indexNonLinearSystem, indexLinearSystem, indexMixedSystem;
   array<Integer> ass;
   SimCode.SimEqSystem simEqSys,cont;
@@ -3505,12 +3505,12 @@ algorithm
   list<DAE.ElementSource> sources;
   Boolean homotopySupport;
   Boolean mixedSystem;
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=oldIdx,eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,linearTearing=linearTearing,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),(newIdx,ass))
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=oldIdx,eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),(newIdx,ass))
       equation
         (eqs,(newIdx,ass)) = List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
         (jacobianMatrix,(newIdx,ass)) = TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate(jacobianMatrix,(newIdx,ass));
         ass = arrayUpdate(ass,oldIdx,newIdx);
-        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,linearTearing,homotopySupport,mixedSystem), NONE());
+        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,homotopySupport,mixedSystem), NONE());
    then (simEqSys,(newIdx+1,ass));
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=oldIdx,partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,residual=eqs,jacobianMatrix=jacobianMatrix,sources=sources,indexLinearSystem=indexLinearSystem)),(newIdx,ass))
       equation
@@ -3892,7 +3892,7 @@ algorithm
   crefLst := List.map1(simEqSysIdcs,SimCodeUtil.getAssignedCrefsOfSimEq,simCodeIn);
   crefs := List.flatten(crefLst);
   //print("crefs :\n"+stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr),"\n")+"\n");
-  simVarLst := List.map1(crefs,SimCodeFunctionUtil.get,ht);
+  simVarLst := List.map1(crefs,BaseHashTable.get,ht);
 
   // build the new crefs, new simVars
   numVars := listLength(simVarLst);
@@ -4070,7 +4070,7 @@ protected function replaceSystemIndex "author: Waurich TUD 2014-04
 algorithm
   (simEqSysOut,idcsOut) := match(simEqSysIn,idcsIn)
     local
-      Boolean pom,lt;
+      Boolean pom;
       Integer idx,lsIdx,nlsIdx,mIdx;
       SimCode.SimEqSystem simEqSys,cont;
       list<SimCodeVar.SimVar> simVars;
@@ -4087,10 +4087,10 @@ algorithm
         (lsIdx,nlsIdx,mIdx) = idcsIn;
         simEqSys = SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(idx,pom,simVars,expLst,simJac,simEqSysLst,jac,sources,lsIdx), NONE());
       then (simEqSys,(lsIdx+1,nlsIdx,mIdx));
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,eqs=simEqSysLst,crefs=crefs,jacobianMatrix=jac,linearTearing=lt,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),_)
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,eqs=simEqSysLst,crefs=crefs,jacobianMatrix=jac,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),_)
       equation
         (lsIdx,nlsIdx,mIdx) = idcsIn;
-        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(idx,simEqSysLst,crefs,nlsIdx,jac,lt,homotopySupport,mixedSystem), NONE());
+        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(idx,simEqSysLst,crefs,nlsIdx,jac,homotopySupport,mixedSystem), NONE());
       then (simEqSys,(lsIdx,nlsIdx+1,mIdx));
     case(SimCode.SES_MIXED(index=idx,cont=cont,discVars=simVars,discEqs=simEqSysLst),_)
       equation
@@ -4120,7 +4120,7 @@ protected function replaceExpsInSimEqSystem "author: Waurich TUD 2014-06
 algorithm
     (simEqSysOut,changedOut) := matchcontinue(simEqSysIn,replIn)
     local
-      Boolean pom,lt,changed,changed1,hasRepl,ic;
+      Boolean pom,changed,changed1,hasRepl,ic;
       Integer idx,idxLS,idxNLS,idxMS;
       list<Boolean> bLst;
       DAE.ComponentRef cref;
@@ -4185,7 +4185,7 @@ algorithm
         simJac = List.map1(simJac,replaceInSimJac,replIn);
         simEqSys = SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(idx,pom,simVars,expLst,simJac,simEqSysLst,jac,sources,idxLS), NONE());
     then (simEqSys,changed);
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,eqs=simEqSysLst,crefs=crefs,indexNonLinearSystem=idxNLS,linearTearing=lt,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),_)
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,eqs=simEqSysLst,crefs=crefs,indexNonLinearSystem=idxNLS,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),_)
       equation
         expLst = List.map(crefs,Expression.crefExp);
         (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE());
@@ -4193,7 +4193,7 @@ algorithm
         (simEqSysLst,bLst) = List.map1_2(simEqSysLst,replaceExpsInSimEqSystem,replIn);
         changed = changed or List.fold(bLst,boolOr,false);
         print("implement Jacobian replacement for SES_NONLINEAR in HpcOmScheduler.replaceExpsInSimEqSystems!\n");
-        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(idx,simEqSysLst,crefs,idxNLS,NONE(),lt,homotopySupport,mixedSystem), NONE());
+        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(idx,simEqSysLst,crefs,idxNLS,NONE(),homotopySupport,mixedSystem), NONE());
     then (simEqSys,changed);
     case(SimCode.SES_MIXED(index=idx,cont=simEqSys,discVars=simVars,discEqs=simEqSysLst,indexMixedSystem=idxMS),_)
       equation
@@ -4550,7 +4550,7 @@ algorithm
       array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
       HpcOmSimCode.Schedule schedule;
       list<Integer> order;
-    case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps),_,_,_)
+    case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=_),_,_,_)
       algorithm
         true := intNe(arrayLength(iTaskGraph),0);
         nTasks := arrayLength(iTaskGraph);
@@ -4558,7 +4558,7 @@ algorithm
         partitions := arrayCreate(numProc,{});
         taskMap := arrayCreate(nTasks,-1);
         partMap := arrayCreate(listLength(rootNodes),{});
-        partitionCosts := arrayCreate(numProc,0.0);
+        _ := arrayCreate(numProc,0.0);
         graphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
         // get all existing partitions
         (taskMap,partMap,_) := List.fold1(rootNodes,assignPartitions,iTaskGraph,(taskMap,partMap,1));
@@ -6130,8 +6130,8 @@ algorithm
         true = taskIdx <= listLength(thread);
         task = listGet(thread,taskIdx);
         //compute timeFinished for the task
-        (threadTasks,checkedTasks,nextTaskIdx) = updateFinishingTime(task,taskIdx,threadIdxIn,threadTasksIn,checkedTasksIn,taskGraphTIn,taskGraphMetaIn);
-        taskIdcs = arrayUpdate(taskIdcsIn,threadIdxIn,nextTaskIdx);
+        (_,_,nextTaskIdx) = updateFinishingTime(task,taskIdx,threadIdxIn,threadTasksIn,checkedTasksIn,taskGraphTIn,taskGraphMetaIn);
+        _ = arrayUpdate(taskIdcsIn,threadIdxIn,nextTaskIdx);
         nextThreadIdx = getNextThreadIdx(threadIdxIn,closedThreadsIn,numProc);
         //threadTasks = computeTimeFinished(threadTasks,taskIdcs,nextThreadIdx,checkedTasks,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,closedThreadsIn);
       then

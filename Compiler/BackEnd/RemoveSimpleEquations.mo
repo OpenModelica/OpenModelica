@@ -59,7 +59,6 @@ protected import BaseHashSet;
 protected import BaseHashTable;
 protected import Ceval;
 protected import ComponentReference;
-protected import SimCodeUtil;
 protected import Debug;
 protected import ElementSource;
 protected import Error;
@@ -70,12 +69,13 @@ protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import Flags;
 protected import HashSet;
-protected import List;
-protected import Types;
-protected import Util;
 protected import HashTableCrToCrEqLst;
 protected import HashTableCrToExp;
 protected import HashTableExpToIndex;
+protected import List;
+protected import SimCodeUtil;
+protected import Types;
+protected import Util;
 
 
 
@@ -173,6 +173,7 @@ algorithm
     end match;
 
     outDAE := fixAliasVars(outDAE) "workaround for #3323";
+    outDAE := fixKnownVars(outDAE);
   end if;
 end removeSimpleEquations;
 
@@ -202,7 +203,7 @@ protected
   DAE.Exp binding;
 algorithm
   aliasVars := BackendDAEUtil.getAliasVars(inDAE);
-  knownVarList := BackendVariable.varList(BackendDAEUtil.getKnownVars(inDAE));
+  knownVarList := BackendVariable.varList(BackendDAEUtil.getGlobalKnownVarsFromDAE(inDAE));
 
   for var in BackendVariable.varList(aliasVars) loop
     binding := BackendVariable.varBindExp(var);
@@ -216,6 +217,46 @@ algorithm
   outDAE := BackendDAEUtil.setAliasVars(inDAE, BackendVariable.listVar(aliasVarList));
   outDAE := BackendDAEUtil.setKnownVars(outDAE, BackendVariable.listVar(knownVarList));
 end fixAliasVars;
+
+protected function fixKnownVars "author: lochel
+  This is a workaround.
+  TODO: Remove this once removeSimpleEquations is implemented properly.
+
+  This module traverses all known variables and double-checks if they are known or not."
+  input output BackendDAE.BackendDAE dae;
+protected
+  BackendDAE.EqSystem eqs;
+  BackendDAE.Variables globalKnownVars;
+  DAE.Exp binding;
+  list<BackendDAE.Equation> eqnList = {};
+  list<BackendDAE.Var> varList = {};
+  list<BackendDAE.Var> knownVarList = {};
+  list<DAE.ComponentRef> crlst;
+algorithm
+  globalKnownVars := dae.shared.globalKnownVars;
+
+  for var in BackendVariable.varList(globalKnownVars) loop
+    if BackendVariable.varHasBindExp(var) then
+      binding := BackendVariable.varBindExp(var);
+      (_, crlst) := Expression.traverseExpTopDown(binding, Expression.traversingComponentRefFinderNoPreDer, {});
+      if BackendDAEUtil.containAnyVar(crlst, dae.shared.localKnownVars) then
+        varList := BackendVariable.setBindExp(var, NONE())::varList;
+        eqnList := BackendDAE.EQUATION(BackendVariable.varExp(var), binding, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING)::eqnList;
+      else
+        knownVarList := var::knownVarList;
+      end if;
+    else
+      knownVarList := var::knownVarList;
+    end if;
+  end for;
+
+  if not listEmpty(varList) then
+    eqs := BackendDAEUtil.createEqSystem(BackendVariable.listVar(varList), BackendEquation.listEquation(eqnList), {}, BackendDAE.UNSPECIFIED_PARTITION());
+    dae.eqs := eqs::dae.eqs;
+  end if;
+
+  dae := BackendDAEUtil.setKnownVars(dae, BackendVariable.listVar(knownVarList));
+end fixKnownVars;
 
 protected function fixAliasAndKnownVarsCausal "author: lochel
   TODO: Remove this once removeSimpleEquations is implemented properly.
@@ -234,8 +275,8 @@ algorithm
   aliasVars1 := BackendDAEUtil.getAliasVars(inDAE1);
   aliasVars2 := BackendDAEUtil.getAliasVars(inDAE2);
 
-  knownVars1 := BackendDAEUtil.getKnownVars(inDAE1);
-  knownVars2 := BackendDAEUtil.getKnownVars(inDAE2);
+  knownVars1 := BackendDAEUtil.getGlobalKnownVarsFromDAE(inDAE1);
+  knownVars2 := BackendDAEUtil.getGlobalKnownVarsFromDAE(inDAE2);
 
   for var in BackendVariable.varList(aliasVars2) loop
     cref := BackendVariable.varCref(var);
@@ -425,24 +466,31 @@ protected
   list<SimpleContainer> simpleeqnslst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  array<list<Integer>> mT;
+  array<list<Integer>> mT; //[varIdx] = simpleContainer
   Boolean foundSimple, globalFindSimple, b;
-  Integer traversals;
+  Integer maxTraversals;
+
+  DAE.Exp e1,e2,e3,e4;
+
 algorithm
   try
     BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := outSystem;
-    ((repl, globalFindSimple, unReplaceable, traversals)) := inTpl;
+    ((repl, globalFindSimple, unReplaceable, maxTraversals)) := inTpl;
     // transform to list, this is later not neccesary because the acausal system should save the equations as list
     eqnslst := BackendEquation.equationList(eqns);
     mT := arrayCreate(BackendVariable.varsSize(vars), {});
     // check equations
     ((_, _, eqnslst, simpleeqnslst, _, _, foundSimple)) := List.fold( eqnslst, simpleEquationsFinder,
                                                                       (vars, inShared, {}, {}, 1, mT, false) );
+
+    //print("Found "+intString(listLength(simpleeqnslst))+" SimpleEquationsContainers\n");
+    //print(stringDelimitList(List.map(simpleeqnslst, dumpSimpleContainer),"\n")+"\n");
+
     ((_, vars, outShared, repl, unReplaceable, _, eqnslst, b)) :=
-        causalFinder( foundSimple, simpleeqnslst, eqnslst, 1, traversals, vars, inShared,
+        causalFinder( foundSimple, simpleeqnslst, eqnslst, 1, maxTraversals, vars, inShared,
                       repl, unReplaceable, mT, {}, globalFindSimple );
     outSystem := updateSystem(b, eqnslst, vars, repl, outSystem);
-    outTpl := ((repl, b, unReplaceable, traversals));
+    outTpl := ((repl, b, unReplaceable, maxTraversals));
   else
     //Error.addCompilerWarning("The module removeSimpleEquations failed for a subsystem. The relevant subsystem get skipped and the transformation is proceeded.");
     outSystem := inSystem;
@@ -453,10 +501,10 @@ end fastAcausal1;
 
 protected function causalFinder "author: Frenkel TUD 2012-12"
   input Boolean foundSimple;
-  input list<SimpleContainer> iSimpleeqnslst;
+  input list<SimpleContainer> simpleContainerIn;
   input list<BackendDAE.Equation> iEqnslst;
-  input Integer index;
-  input Integer traversals;
+  input Integer traversalIdx;
+  input Integer maxTraversals;
   input BackendDAE.Variables iVars;
   input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements iRepl;
@@ -470,20 +518,22 @@ protected
   BackendDAE.Variables vars;
   BackendVarTransform.VariableReplacements repl;
   Boolean b1;
-  array<SimpleContainer> simpleeqns;
+  array<SimpleContainer> simpleContainer;
   list<BackendDAE.Equation> eqnslst;
   BackendDAE.Shared shared;
 algorithm
   if foundSimple then
     // transform simpleeqns to array
-    simpleeqns := List.listArrayReverse(iSimpleeqnslst);
+    simpleContainer := List.listArrayReverse(simpleContainerIn);
     // collect and handle sets
-    (vars, eqnslst, shared, repl) := handleSets(arrayLength(simpleeqns), 1, simpleeqns, iMT, iUnreplaceable, iVars, iEqnslst, ishared, iRepl);
+    (vars, eqnslst, shared, repl) := handleSets(arrayLength(simpleContainer), 1, simpleContainer, iMT, iUnreplaceable, iVars, iEqnslst, ishared, iRepl);
+      //BackendVarTransform.dumpReplacements(repl);
+
     // perform replacements and try again
     (eqnslst, b1) := BackendVarTransform.replaceEquations(eqnslst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-    oTpl := causalFinder1(intGt(index, traversals), b1, eqnslst, index+1, traversals, vars, shared, repl, iUnreplaceable, iMT, iGlobalEqnslst, true);
+    oTpl := causalFinder1(intGt(traversalIdx, maxTraversals), b1, eqnslst, traversalIdx+1, maxTraversals, vars, shared, repl, iUnreplaceable, iMT, iGlobalEqnslst, true);
   else
-    oTpl := ((traversals, iVars, ishared, iRepl, iUnreplaceable, iMT, listAppend(iEqnslst, iGlobalEqnslst), globalFoundSimple));
+    oTpl := ((maxTraversals, iVars, ishared, iRepl, iUnreplaceable, iMT, listAppend(iEqnslst, iGlobalEqnslst), globalFoundSimple));
   end if;
 end causalFinder;
 
@@ -1115,23 +1165,23 @@ algorithm
       then List.threadFold2(elst1, elst2, simpleEquationAcausal, eqnAttributes, true, inTpl);
     // {a1+b1, a2+b2, a3+b3, ..} = 0;
     case (DAE.ARRAY(array = elst1), _, _, _, _)
-      equation
-        true = Expression.isZero(rhs);
+      guard
+        Expression.isZero(rhs)
       then List.fold2(elst1, simpleExpressionAcausal, eqnAttributes, true, inTpl);
     // 0 = {a1+b1, a2+b2, a3+b3, ..};
     case (_, DAE.ARRAY(array = elst2), _, _, _)
-      equation
-        true = Expression.isZero(lhs);
+      guard
+        Expression.isZero(lhs)
       then List.fold2(elst2, simpleExpressionAcausal, eqnAttributes, true, inTpl);
      // lhs = 0
     case (_, _, _, _, _)
-      equation
-        true = Expression.isZero(rhs);
+      guard
+        Expression.isZero(rhs)
       then simpleExpressionAcausal(lhs, eqnAttributes, selfCalled, inTpl);
     // 0 = rhs
     case (_, _, _, _, _)
-      equation
-        true = Expression.isZero(lhs);
+      guard
+        Expression.isZero(lhs)
       then simpleExpressionAcausal(rhs, eqnAttributes, selfCalled, inTpl);
     // time independent equations
     else
@@ -1166,16 +1216,18 @@ algorithm
 
     // complex types to complex equations
     case (_, _, _, (source, eqAttr), (v, s, eqns, seqns, index, mT, b))
+      guard
+        DAEUtil.expTypeComplex(ty)
       equation
-        true = DAEUtil.expTypeComplex(ty);
         size = Expression.sizeOf(ty);
         //  print("Add Equation:\n" + BackendDump.equationStr(BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source)) + "\n");
        then
         ((v, s, BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, eqAttr)::eqns, seqns, index, mT, b));
     // array types to array equations
     case (_, _, _, (source, eqAttr), (v, s, eqns, seqns, index, mT, b))
+      guard
+        DAEUtil.expTypeArray(ty)
       equation
-        true = DAEUtil.expTypeArray(ty);
         dims = Expression.arrayDimension(ty);
         ds = Expression.dimensionsSizes(dims);
         //  print("Add Equation:\n" + BackendDump.equationStr(BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source)) + "\n");
@@ -1307,6 +1359,7 @@ algorithm
         (vars1, ilst1, varskn1, time1) = getVars(cr1, vars, shared);
         (vars2, ilst2, varskn2, time2) = getVars(cr2, vars, shared);
         // add to Simple Equations List
+        true = intEq(listLength(vars1),listLength(vars2));
         (seqns, index, mT) = generateSimpleContainters(vars1, negatedCr1, ilst1, varskn1, time1, vars2, negatedCr2, ilst2, varskn2, time2, eqnAttributes, seqns, index, mT);
       then
         ((vars, shared, eqns, seqns, index, mT, true));
@@ -1344,8 +1397,13 @@ algorithm
       then
         (oVars, oIndexs, false, false);
     case (_, _, _)
-      equation
-        (oVars as _::_, oIndexs) = BackendVariable.getVarShared(cr, shared);
+      algorithm
+        (oVars as _::_, oIndexs) := BackendVariable.getVarShared(cr, shared);
+        if ComponentReference.crefIsScalarWithVariableSubs(cr) then
+        //waurich: We don't support this case properly at the moment. Don't assign an alias.
+          oVars := {};
+          oIndexs := {};
+        end if;
       then
         (oVars, oIndexs, true, false);
   end matchcontinue;
@@ -1519,15 +1577,15 @@ algorithm
   outTpl := matchcontinue (lhs, rhs, eqnAttributes, selfCalled, inTpl)
     local
       DAE.Type ty;
-      BackendDAE.Variables vars, knvars;
+      BackendDAE.Variables vars, globalKnownVars;
       list<Integer> ilst;
       list<BackendDAE.Var> vlst;
 
-    case (_, _, _, _, (vars, BackendDAE.SHARED(knownVars=knvars), _, _, _, _, _))
+    case (_, _, _, _, (vars, BackendDAE.SHARED(globalKnownVars=globalKnownVars), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
-        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false, vars, knvars, false, false, {}));
-        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false, vars, knvars, false, false, ilst));
+        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false, vars, globalKnownVars, false, false, {}));
+        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false, vars, globalKnownVars, false, false, ilst));
         ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
         vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
       then
@@ -1553,14 +1611,14 @@ algorithm
     local
       DAE.Exp e2;
       DAE.Type ty;
-      BackendDAE.Variables vars, knvars;
+      BackendDAE.Variables vars, globalKnownVars;
       list<Integer> ilst;
       list<BackendDAE.Var> vlst;
 
-    case (_, _, _, (vars, BackendDAE.SHARED(knownVars=knvars), _, _, _, _, _))
+    case (_, _, _, (vars, BackendDAE.SHARED(globalKnownVars=globalKnownVars), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
-        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, knvars, false, false, {}));
+        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, globalKnownVars, false, false, {}));
         ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
         vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
         ty = Expression.typeof(exp);
@@ -1597,29 +1655,29 @@ algorithm
   (outExp,cont,outTuple) := matchcontinue (inExp,inTuple)
     local
       Boolean b, b1, b2;
-      BackendDAE.Variables vars, knvars;
+      BackendDAE.Variables vars, globalKnownVars;
       DAE.ComponentRef cr;
       list<Integer> ilst, vlst;
       list<BackendDAE.Var> varlst;
 
-    case (DAE.CREF(DAE.CREF_IDENT(ident="time", subscriptLst={}), _), (b, vars, knvars, b1, b2, ilst))
-    then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
+    case (DAE.CREF(DAE.CREF_IDENT(ident="time", subscriptLst={}), _), (b, vars, globalKnownVars, b1, b2, ilst))
+    then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
 
-    case (DAE.CREF(cr, _), (b, vars, knvars, b1, b2, ilst)) equation
-      (varlst, _::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level";
+    case (DAE.CREF(cr, _), (b, vars, globalKnownVars, b1, b2, ilst)) equation
+      (varlst, _::_)= BackendVariable.getVar(cr, globalKnownVars) "input variables stored in known variables are input on top level";
       false = List.mapAllValueBool(varlst, toplevelInputOrUnfixed, false);
-    then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
+    then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
 
-    case (DAE.CALL(path = Absyn.IDENT(name="pre")), (b, vars, knvars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
-    case (DAE.CALL(path = Absyn.IDENT(name="previous")), (b, vars, knvars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst) );
-    case (DAE.CALL(path = Absyn.IDENT(name="change")), (b, vars, knvars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
-    case (DAE.CALL(path = Absyn.IDENT(name="edge")), (b, vars, knvars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, knvars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="pre")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="previous")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst) );
+    case (DAE.CALL(path = Absyn.IDENT(name="change")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="edge")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
 
     // var
-    case (DAE.CREF(cr, _), (b, vars, knvars, b1, b2, ilst)) equation
+    case (DAE.CREF(cr, _), (b, vars, globalKnownVars, b1, b2, ilst)) equation
       (_::_, vlst)= BackendVariable.getVar(cr, vars);
       ilst = listAppend(ilst, vlst);
-    then (inExp, true, (b, vars, knvars, b1, b2, ilst));
+    then (inExp, true, (b, vars, globalKnownVars, b1, b2, ilst));
 
     case (_, (b, _, _, _, _, _))
     then (inExp, not b, inTuple);
@@ -1655,7 +1713,7 @@ algorithm
         // constant or alias
       then
         constOrAliasAcausal(v, i, cr, es, eqnAttributes, inTpl);
-    case (_, _, _, _, (source, eqAttr), (_, BackendDAE.SHARED(functionTree=functionTree), _, _, _, _, _))
+    case (_, _, _, _, (source, eqAttr), (_, BackendDAE.SHARED(), _, _, _, _, _))
       equation
         // size of equation have to be equal with number of vars
         size = Expression.sizeOf(Expression.typeof(lhs));
@@ -1737,7 +1795,7 @@ protected function constOrAliasAcausal "author: Frenkel TUD 2012-12"
 algorithm
   outTpl := matchcontinue (var, i, cr, exp, eqnAttributes, inTpl)
     local
-      BackendDAE.Variables vars, knvars;
+      BackendDAE.Variables vars, globalKnownVars;
       BackendDAE.Shared shared;
       list<BackendDAE.Equation> eqns;
       list<SimpleContainer> seqns;
@@ -1756,16 +1814,17 @@ algorithm
         // alias
         (negated, cra) = aliasExp(exp);
         // get Variables
-        knvars = BackendVariable.daeKnVars(shared);
-        (vars2, ilst2) = BackendVariable.getVar(cra, knvars);
+        globalKnownVars = BackendVariable.daeKnVars(shared);
+        (vars2, ilst2) = BackendVariable.getVar(cra, globalKnownVars);
         // add to Simple Equations List
         (seqns, index, mT) = generateSimpleContainters({var}, false, {i}, false, false, vars2, negated, ilst2, true, false, eqnAttributes, seqns, index, mT);
       then
          ((vars, shared, eqns, seqns, index, mT, true));
     // const
     case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
+      guard
+        Expression.isConstValue(exp)
       equation
-        true = Expression.isConstValue(exp);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           BackendDump.debugStrCrefStrExpStr("Const Equation ", cr, " = ", exp, " found.\n");
         end if;
@@ -1775,14 +1834,16 @@ algorithm
         ((vars, shared, eqns, TIMEINDEPENTVAR(cr, i, exp, eqnAttributes, -1)::seqns, index+1, mT, true));
 
     case (_, _, _, _, _, (vars, shared as BackendDAE.SHARED(functionTree=functions), eqns, seqns, index, mT, _))
+      guard
+        not Expression.isImpure(exp) // lochel: this is at least needed for impure functions
       equation
-        false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
         //exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
         exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp,functions);
         if not Expression.isConst(exp2) then
-          exp2 = exp; end if;
+          exp2 = exp;
+        end if;
         if Flags.isSet(Flags.DEBUG_ALIAS) then
-          BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n");
+          BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval, case 1) ", cr, " = ", exp, " found.\n");
         end if;
         colum = mT[i];
         arrayUpdate(mT, i, index::colum);
@@ -1791,10 +1852,11 @@ algorithm
 
       // TODO: Remove or fix this case. We do not want to add function calls here as they are inlined in a very bad way sometimes.
     case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
+      guard
+        not Expression.isImpure(exp) // lochel: this is at least needed for impure functions
       equation
-        false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
         if Flags.isSet(Flags.DEBUG_ALIAS) then
-          BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n");
+          BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval, case 2) ", cr, " = ", exp, " found.\n");
         end if;
         colum = mT[i];
         arrayUpdate(mT, i, index::colum);
@@ -1824,89 +1886,42 @@ end aliasExp;
 protected function handleSets "author: Frenkel TUD 2012-12
   convert the found simple equtions to replacements and remove the simple
   variabes from the variables"
-  input Integer index "downwarts";
+  input Integer containerIdx "downwards";
   input Integer inMark;
-  input array<SimpleContainer> simpleeqnsarr;
+  input array<SimpleContainer> containerArr;
   input array<list<Integer>> iMT;
   input HashSet.HashSet unReplaceable;
-  input BackendDAE.Variables iVars;
-  input list<BackendDAE.Equation> iEqnslst;
-  input BackendDAE.Shared ishared;
-  input BackendVarTransform.VariableReplacements iRepl;
-  output BackendDAE.Variables oVars;
-  output list<BackendDAE.Equation> oEqnslst;
-  output BackendDAE.Shared oshared;
-  output BackendVarTransform.VariableReplacements oRepl;
+  input output BackendDAE.Variables vars;
+  input output list<BackendDAE.Equation> eqnslst;
+  input output BackendDAE.Shared shared;
+  input output BackendVarTransform.VariableReplacements repl;
+protected
+  Option<tuple<Integer, Integer>> rmax, smax;
+  Option<Integer> unremovable, const;
+  Integer mark = inMark;
 algorithm
-  (oVars, oEqnslst, oshared, oRepl) := match (index, inMark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl)
-    local
-      Option<tuple<Integer, Integer>> rmax, smax;
-      Option<Integer> unremovable, const;
-      Integer mark;
-      BackendDAE.Variables vars;
-      list<BackendDAE.Equation> eqnslst;
-      BackendDAE.Shared shared;
-      BackendVarTransform.VariableReplacements repl;
-    case (0, _, _, _, _, _, _, _, _) then (iVars, iEqnslst, ishared, iRepl);
-    else
-      equation
-        (mark, vars, eqnslst, shared, repl) = handleSetsWork(intGt(getVisited(simpleeqnsarr[index]), 0), index, inMark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl);
-        (vars, eqnslst, shared, repl) = handleSets(index-1, mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl);
-      then
-        (vars, eqnslst, shared, repl);
-  end match;
+  for idx in containerIdx:-1:1 loop
+    if not intGt(getVisited(containerArr[idx]), 0) then
+      // convert the found simple equtions to replacements and remove the simple
+      // variabes from the variables
+
+      // collect set
+      //print("Check Simple Container "+dumpSimpleContainer(containerArr[idx])+"\n");
+      (rmax, smax, unremovable, const, _) := getAlias({idx}, NONE(), mark, containerArr, iMT, vars, unReplaceable, false, {}, NONE(), NONE(), NONE(), NONE());
+      // traverse set and add replacements, move vars, ...
+      (vars, eqnslst, shared, repl) := handleSet(rmax, smax, unremovable, const, mark+1, containerArr, iMT, unReplaceable, vars, eqnslst, shared, repl);
+      mark := mark+2;
+    end if;
+  end for;
 end handleSets;
-
-protected function handleSetsWork "author: Frenkel TUD 2012-12
-  convert the found simple equtions to replacements and remove the simple
-  variabes from the variables"
-  input Boolean isVisited;
-  input Integer index "downwarts";
-  input Integer mark;
-  input array<SimpleContainer> simpleeqnsarr;
-  input array<list<Integer>> iMT;
-  input HashSet.HashSet unReplaceable;
-  input BackendDAE.Variables iVars;
-  input list<BackendDAE.Equation> iEqnslst;
-  input BackendDAE.Shared iShared;
-  input BackendVarTransform.VariableReplacements iRepl;
-  output Integer oMark;
-  output BackendDAE.Variables oVars;
-  output list<BackendDAE.Equation> oEqnslst;
-  output BackendDAE.Shared oshared;
-  output BackendVarTransform.VariableReplacements oRepl;
-algorithm
-  (oMark, oVars, oEqnslst, oshared, oRepl) := match (isVisited, index, mark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, iShared, iRepl)
-    local
-      Option<tuple<Integer, Integer>> rmax, smax;
-      Option<Integer> unremovable, const;
-
-      BackendDAE.Variables vars;
-      list<BackendDAE.Equation> eqnslst;
-      BackendDAE.Shared shared;
-      BackendVarTransform.VariableReplacements repl;
-
-    case (true, _, _, _, _, _, _, _, _, _)
-      then (mark, iVars, iEqnslst, iShared, iRepl);
-
-    else
-      equation
-        // collect set
-        (rmax, smax, unremovable, const, _) = getAlias({index}, NONE(), mark, simpleeqnsarr, iMT, iVars, unReplaceable, false, {}, NONE(), NONE(), NONE(), NONE());
-        // traverse set and add replacements, move vars, ...
-        (vars, eqnslst, shared, repl) = handleSet(rmax, smax, unremovable, const, mark+1, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, iShared, iRepl);
-      then (mark+2, vars, eqnslst, shared, repl);
-
-  end match;
-end handleSetsWork;
 
 protected function getAlias "author: Frenkel TUD 2012-12
   traverse the simple tree to find the variable we keep"
-  input list<Integer> rows;
-  input Option<Integer> i;
-  input Integer mark;
-  input array<SimpleContainer> simpleeqnsarr;
-  input array<list<Integer>> iMT;
+  input list<Integer> rows; //{containerIdx}
+  input Option<Integer> prevVar; //previous variable
+  input Integer mark; //how to mark a visited container
+  input array<SimpleContainer> containerArr;
+  input array<list<Integer>> iMT;//[varIdx] = simpleContainer
   input BackendDAE.Variables vars;
   input HashSet.HashSet unReplaceable;
   input Boolean negate;
@@ -1921,22 +1936,22 @@ protected function getAlias "author: Frenkel TUD 2012-12
   output Option<Integer> oConst;
   output Boolean oContinue;
 algorithm
-  (oRmax, oSmax, oUnremovable, oConst, oContinue) := match(rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
+  (oRmax, oSmax, oUnremovable, oConst, oContinue) := match(rows, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
     local
       Integer r;
       list<Integer> rest;
-      SimpleContainer s;
+      SimpleContainer container;
       Option<tuple<Integer, Integer>> rmax, smax;
       Option<Integer> unremovable, const;
-      Boolean b, cont;
+      Boolean visited, cont;
 
     case ({}, _, _, _, _, _, _, _, _, _, _, _, _) then (iRmax, iSmax, iUnremovable, iConst, true);
 
     case (r::rest, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
-        s = simpleeqnsarr[r];
-        b = isVisited(mark, s);
-        (rmax, smax, unremovable, const, cont) = getAlias1(b, s, r, rest, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst);
+        container = containerArr[r];
+        visited = isVisited(mark, container);
+        (rmax, smax, unremovable, const, cont) = getAlias1(visited, container, r, rest, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst);
       then
         (rmax, smax, unremovable, const, cont);
 
@@ -1945,13 +1960,13 @@ end getAlias;
 
 protected function getAlias1 "author: Frenkel TUD 2012-12"
   input Boolean visited;
-  input SimpleContainer s;
-  input Integer r;
+  input SimpleContainer containerIn;
+  input Integer currIdx; //the container idx
   input list<Integer> rows;
-  input Option<Integer> i;
-  input Integer mark;
-  input array<SimpleContainer> simpleeqnsarr;
-  input array<list<Integer>> iMT;
+  input Option<Integer> prevVar;
+  input Integer mark; //how to mark a visited container
+  input array<SimpleContainer> containerArr;
+  input array<list<Integer>> iMT;//[varIdx] = simpleContainer
   input BackendDAE.Variables vars;
   input HashSet.HashSet unReplaceable;
   input Boolean negate;
@@ -1967,7 +1982,7 @@ protected function getAlias1 "author: Frenkel TUD 2012-12"
   output Boolean oContinue;
 algorithm
   (oRmax, oSmax, oUnremovable, oConst, oContinue) :=
-  matchcontinue(visited, s, r, rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
+  matchcontinue(visited, containerIn, currIdx, rows, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
     local
       Option<tuple<Integer, Integer>> rmax, smax;
       Option<Integer> unremovable, const;
@@ -1978,11 +1993,13 @@ algorithm
     case (false, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         // set visited
-        arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
+        arrayUpdate(containerArr, currIdx, setVisited(mark, containerIn));
         // check alias connection
-        (rmax, smax, unremovable, const, cont) = getAlias2(s, r, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, r::stack, iRmax, iSmax, iUnremovable, iConst);
+        (rmax, smax, unremovable, const, cont) = getAlias2(containerIn, currIdx, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, currIdx::stack, iRmax, iSmax, iUnremovable, iConst);
         // next arm
-        (rmax, smax, unremovable, const, cont) = getAliasContinue(cont, rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, rmax, smax, unremovable, const);
+        if cont then
+          (rmax, smax, unremovable, const, cont) = getAlias(rows, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, stack, rmax, smax, unremovable, const);
+        end if;
       then
         (rmax, smax, unremovable, const, cont);
 
@@ -1990,7 +2007,7 @@ algorithm
     case (true, _, _, _, _, _, _, _, _, _, true, _, _, _, SOME(_), _)
       equation
         // is only valid for real or int
-        ALIAS(cr1=cr) = simpleeqnsarr[r];
+        ALIAS(cr1=cr) = containerArr[currIdx];
         true = Types.isIntegerOrRealOrSubTypeOfEither(ComponentReference.crefLastType(cr));
       then
         (NONE(), NONE(), NONE(), iUnremovable, false);
@@ -1998,15 +2015,15 @@ algorithm
     case (true, _, _, _, _, _, _, _, _, _, true, _, _, _, _, _)
       equation
         // is only valid for real or int
-        ALIAS(cr1=cr) = simpleeqnsarr[r];
+        ALIAS(cr1=cr) = containerArr[currIdx];
         true = Types.isIntegerOrRealOrSubTypeOfEither(ComponentReference.crefLastType(cr));
       then
-        (NONE(), NONE(), NONE(), SOME(r), false);
+        (NONE(), NONE(), NONE(), SOME(currIdx), false);
 
     case (true, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         msg = "Circular Equalities Detected for Variables:\n";
-        msg = circularEqualityMsg(stack, r, simpleeqnsarr, msg);
+        msg = circularEqualityMsg(stack, currIdx, containerArr, msg);
         // report error
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
@@ -2075,16 +2092,17 @@ algorithm
   end match;
 end getVarsNames;
 
-protected function getAlias2 "author: Frenkel TUD 2012-12"
-  input SimpleContainer s;
-  input Integer r;
-  input Option<Integer> oi;
-  input Integer mark;
+protected function getAlias2 "author: Frenkel TUD 2012-12
+is the container connected somehow?"
+  input SimpleContainer containerIn;
+  input Integer currIdx; //the container idx
+  input Option<Integer> prevVar;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
-  input array<list<Integer>> iMT;
+  input array<list<Integer>> iMT;//[varIdx] = simpleContainer
   input BackendDAE.Variables vars;
   input HashSet.HashSet unReplaceable;
-  input Boolean negate;
+  input Boolean negate; //do we negate negative aliases?
   input list<Integer> stack;
   input Option<tuple<Integer, Integer>> iRmax;
   input Option<tuple<Integer, Integer>> iSmax;
@@ -2097,73 +2115,78 @@ protected function getAlias2 "author: Frenkel TUD 2012-12"
   output Boolean oContinue;
 algorithm
   (oRmax, oSmax, oUnremovable, oConst, oContinue) :=
-  match(s, r, oi, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
+  match(containerIn, currIdx, prevVar, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
     local
-      list<Integer> next;
+      list<Integer> adjEqs;
       Option<tuple<Integer, Integer>> rmax, smax;
       Option<Integer> unremovable, const;
       BackendDAE.Var v;
-      Integer i1, i2, i;
+      Integer i1, i2, i, prevVarIdx;
       Boolean state, replaceable_, cont, replaceble1, neg, negatedCr1, negatedCr2;
 
     case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), _, NONE(), _, _, _, _, _, _, _, _, _, _, _)
       equation
         // collect next rows
         neg = boolOr(negatedCr1, negatedCr2);
-        next = List.removeOnTrue(r, intEq, iMT[i1]);
+        adjEqs = List.removeOnTrue(currIdx, intEq, iMT[i1]);
         v = BackendVariable.getVarAt(vars, i1);
         // update max
-        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
         state = BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
-        (rmax, smax, unremovable) = getAlias3(v, i1, state, replaceable_ and replaceble1, r, iRmax, iSmax, iUnremovable);
+        (rmax, smax, unremovable) = getAlias3(v, i1, state, replaceable_ and replaceble1, currIdx, iRmax, iSmax, iUnremovable);
         // go deeper
         neg = if neg then not negate else negate;
-        (rmax, smax, unremovable, const, cont) = getAlias(next, SOME(i1), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
+        (rmax, smax, unremovable, const, cont) = getAlias(adjEqs, SOME(i1), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
         // collect next rows
-        next = List.removeOnTrue(r, intEq, iMT[i2]);
+        adjEqs = List.removeOnTrue(currIdx, intEq, iMT[i2]);
         v = BackendVariable.getVarAt(vars, i2);
         // update max
-        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
         state = BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
-        (rmax, smax, unremovable) = getAlias3(v, i2, state, replaceable_ and replaceble1, r, rmax, smax, unremovable);
+        (rmax, smax, unremovable) = getAlias3(v, i2, state, replaceable_ and replaceble1, currIdx, rmax, smax, unremovable);
         // go deeper
-        (rmax, smax, unremovable, const, cont) = getAliasContinue(cont, next, SOME(i2), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, const);
+        if cont then
+          (rmax, smax, unremovable, const, cont) = getAlias(adjEqs, SOME(i2), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, const);
+        end if;
        then
          (rmax, smax, unremovable, const, cont);
 
-    case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), _, SOME(i), _, _, _, _, _, _, _, _, _, _, _)
+    case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), _, SOME(prevVarIdx), _, _, _, _, _, _, _, _, _, _, _)
       equation
-        i = if intEq(i, i1) then i2 else i1;
+        i = if intEq(prevVarIdx, i1) then i2 else i1;
         neg = boolOr(negatedCr1, negatedCr2);
         // collect next rows
-        next = List.removeOnTrue(r, intEq, iMT[i]);
+        adjEqs = List.removeOnTrue(currIdx, intEq, iMT[i]);
         v = BackendVariable.getVarAt(vars, i);
         // update max
-        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
         state = BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
-        (rmax, smax, unremovable) = getAlias3(v, i, state, replaceable_ and replaceble1, r, iRmax, iSmax, iUnremovable);
+        (rmax, smax, unremovable) = getAlias3(v, i, state, replaceable_ and replaceble1, currIdx, iRmax, iSmax, iUnremovable);
         // go deeper
         neg = if neg then not negate else negate;
-        (rmax, smax, unremovable, const, cont) = getAlias(next, SOME(i), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
+        (rmax, smax, unremovable, const, cont) = getAlias(adjEqs, SOME(i), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
        then
          (rmax, smax, unremovable, const, cont);
 
     case (PARAMETERALIAS(), _, _, _, _, _, _, _, _, _, _, _, _, _)
        then
-        (NONE(), NONE(), NONE(), SOME(r), false);
+        (NONE(), NONE(), NONE(), SOME(currIdx), false);
 
     case (TIMEALIAS(), _, _, _, _, _, _, _, _, _, _, _, _, _)
       then
-        (NONE(), NONE(), NONE(), SOME(r), false);
+        (NONE(), NONE(), NONE(), SOME(currIdx), false);
 
     case (TIMEINDEPENTVAR(), _, _, _, _, _, _, _, _, _, _, _, _, _)
       then
-        (NONE(), NONE(), NONE(), SOME(r), false);
+        (NONE(), NONE(), NONE(), SOME(currIdx), false);
 
   end match;
 end getAlias2;
 
-protected function getAlias3 "author: Frenkel TUD 2012-12"
+protected function getAlias3 "
+apply some heuristics which variable should be kept in the system. quantify some properties, distributes some points.
+handle states differently
+author: Frenkel TUD 2012-12"
   input BackendDAE.Var var;
   input Integer i;
   input Boolean state;
@@ -2172,7 +2195,7 @@ protected function getAlias3 "author: Frenkel TUD 2012-12"
   input Option<tuple<Integer, Integer>> iRmax;
   input Option<tuple<Integer, Integer>> iSmax;
   input Option<Integer> iUnremovable;
-  output Option<tuple<Integer, Integer>> oRmax;
+  output Option<tuple<Integer, Integer>> oRmax; //(idx,points)
   output Option<tuple<Integer, Integer>> oSmax;
   output Option<Integer> oUnremovable;
 algorithm
@@ -2215,48 +2238,8 @@ algorithm
   end match;
 end getAlias3;
 
-protected function getAliasContinue
-"author: Frenkel TUD 2012-12"
-  input Boolean iContinue;
-  input list<Integer> rows;
-  input Option<Integer> i;
-  input Integer mark;
-  input array<SimpleContainer> simpleeqnsarr;
-  input array<list<Integer>> iMT;
-  input BackendDAE.Variables vars;
-  input HashSet.HashSet unReplaceable;
-  input Boolean negate;
-  input list<Integer> stack;
-  input Option<tuple<Integer, Integer>> iRmax;
-  input Option<tuple<Integer, Integer>> iSmax;
-  input Option<Integer> iUnremovable;
-  input Option<Integer> iConst;
-  output Option<tuple<Integer, Integer>> oRmax;
-  output Option<tuple<Integer, Integer>> oSmax;
-  output Option<Integer> oUnremovable;
-  output Option<Integer> oConst;
-  output Boolean oContinue;
-algorithm
-  (oRmax, oSmax, oUnremovable, oConst, oContinue) :=
-  match(iContinue, rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst)
-    local
-      Option<tuple<Integer, Integer>> rmax, smax;
-      Option<Integer> unremovable, const;
-      Boolean cont;
-    case (true, _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        // update candidates
-        (rmax, smax, unremovable, const, cont) = getAlias(rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst);
-      then
-        (rmax, smax, unremovable, const, cont);
-    case (false, _, _, _, _, _, _, _, _, _, _, _, _, _)
-      then
-        (iRmax, iSmax, iUnremovable, iConst, iContinue);
-  end match;
-end getAliasContinue;
-
 protected function isVisited "author: Frenkel TUD 2012-12"
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input SimpleContainer iS;
   output Boolean visited;
 algorithm
@@ -2336,7 +2319,7 @@ protected function handleSet "author: Frenkel TUD 2012-12
   input Option<tuple<Integer, Integer>> iSmax;
   input Option<Integer> iUnremovable;
   input Option<Integer> iConst;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input array<list<Integer>> iMT;
   input HashSet.HashSet unReplaceable;
@@ -2354,7 +2337,7 @@ algorithm
     local
       SimpleContainer s;
       Integer r, i1, i2, i;
-      BackendDAE.Var v, pv;
+      BackendDAE.Var v,v1, pv;
       DAE.ComponentRef pcr, cr1, cr2, cr;
       EquationSourceAndAttributes eqnAttributes;
       Boolean negated, replaceable_, replaceble1, constExp, isState, negatedCr1, negatedCr2;
@@ -2379,7 +2362,7 @@ algorithm
        exp = Expression.crefExp(cr2);
        exp2 = negateExpression(negated, exp, exp, " PARAMETERALIAS ");
        v = BackendVariable.getVarAt(iVars, i1);
-       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
        (vars, eqnslst, shared, repl) = handleSetVar(replaceable_ and replaceble1, SOME(DAE.RCONST(0.0)), v, i1, eqnAttributes, exp2, iMT, iVars, iEqnslst, ishared, iRepl);
        expcr = Expression.crefExp(cr1);
        pv = BackendVariable.getVarSharedAt(i2, ishared);
@@ -2403,7 +2386,7 @@ algorithm
        exp = Expression.crefExp(DAE.crefTime);
        exp1 = negateExpression(negated, exp, exp, " timealias ");
        v = BackendVariable.getVarAt(iVars, i1);
-       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
        dexp = negateExpression(negated, exp, DAE.RCONST(1.0), " timealias der ");
        (vars, eqnslst, shared, repl) = handleSetVar(replaceable_ and replaceble1, SOME(dexp), v, i1, eqnAttributes, exp1, iMT, iVars, iEqnslst, ishared, iRepl);
        expcr = Expression.crefExp(cr1);
@@ -2421,7 +2404,7 @@ algorithm
        TIMEINDEPENTVAR(cr=cr, i=i, exp=exp, eqnAttributes=eqnAttributes) = s;
        arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
-       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
        (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addKnVarDAE, iMT, iVars, ishared, iEqnslst);
        constExp = Expression.isConstValue(exp);
        // add to replacements if constant
@@ -2444,7 +2427,7 @@ algorithm
        arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
        exp = if Types.isRealOrSubTypeReal(ComponentReference.crefLastType(cr)) then DAE.RCONST(0.0) else DAE.ICONST(0);
-       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+       (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
        (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addKnVarDAE, iMT, iVars, ishared, iEqnslst);
        constExp = Expression.isConstValue(exp);
        // add to replacements if constant
@@ -2667,7 +2650,7 @@ protected function traverseAliasTree "author: Frenkel TUD 2012-12
   input Option<DAE.Exp> optExp;
   input Boolean globalnegate;
   input Option<DAE.Exp> derReplaceState;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input array<list<Integer>> iMT;
   input HashSet.HashSet unReplaceable;
@@ -2716,7 +2699,7 @@ protected function traverseAliasTree1 "author: Frenkel TUD 2012-12
   input Option<DAE.Exp> optExp;
   input Boolean globalnegated;
   input Option<DAE.Exp> derReplaceState;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input array<list<Integer>> iMT;
   input HashSet.HashSet unReplaceable;
@@ -2755,7 +2738,7 @@ algorithm
         i = if intEq(i1, ilast) then i2 else i1;
         negated = boolOr(negatedCr2, negatedCr1);
         (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
-        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
+        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
         crexp = Expression.crefExp(cr);
         // negate if necessary
         globalnegated1 = if negated then not globalnegated else globalnegated;
@@ -2823,20 +2806,20 @@ end negateOptExp;
 protected function addSubstitutionOption "author: Frenkel TUD 2012-12"
  input Option<DAE.Exp> optExp;
  input DAE.Exp exp;
- input DAE.ElementSource iSource;
- output DAE.ElementSource oSource;
+ input output DAE.ElementSource source;
+protected
+  DAE.Exp e;
 algorithm
-  oSource := match(optExp, exp, iSource)
-    local DAE.Exp e;
-    case (NONE(), _, _) then iSource;
-    case (SOME(e), _, _) then ElementSource.addSymbolicTransformationSubstitution(true, iSource, exp, e);
-  end match;
+  if isSome(optExp) then
+    SOME(e) := optExp;
+    source := ElementSource.addSymbolicTransformationSubstitution(true, source, exp, e);
+  end if;
 end addSubstitutionOption;
 
 protected function addVarSetAttributes "author: Frenkel TUD 2012-12"
   input BackendDAE.Var inVar;
   input Boolean negate;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input VarSetAttributes iAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
   output VarSetAttributes oAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
@@ -2869,7 +2852,7 @@ protected function addStartValue "author: Frenkel TUD 2012-12"
   input Option<DAE.Exp> start;
   input Option<DAE.Exp> origin;
   input Boolean negate;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> iStartvalues;
   output Boolean oFixed;
@@ -2935,7 +2918,7 @@ algorithm
       list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> values;
       list<tuple<DAE.Exp, DAE.ComponentRef>> zerofreevalues;
       BackendDAE.Var v;
-      BackendDAE.Variables knVars;
+      BackendDAE.Variables globalKnownVars;
 
     // default value
     case (_, _, (_, {}), _) then inVar;
@@ -2946,10 +2929,10 @@ algorithm
     then BackendVariable.setVarStartValueOption(v, start);
 
     // fixed true several start values, this need some investigation
-    case (_, true, (_, (start, cr)::values), BackendDAE.SHARED(knownVars=knVars)) equation
+    case (_, true, (_, (start, cr)::values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) equation
       v = BackendVariable.setVarFixed(inVar, true);
-      start1 = optExpReplaceCrefWithBindExp(start, knVars);
-      ((_, start, _)) = equalNonFreeStartValues(values, knVars, (start1, start, cr));
+      start1 = optExpReplaceCrefWithBindExp(start, globalKnownVars);
+      ((_, start, _)) = equalNonFreeStartValues(values, globalKnownVars, (start1, start, cr));
     then BackendVariable.setVarStartValueOption(v, start);
 
     case (_, true, (_, values), BackendDAE.SHARED()) equation
@@ -2963,9 +2946,9 @@ algorithm
     then BackendVariable.setVarStartValueOption(inVar, start);
 
     // fixed false several start value, this need some investigation
-    case (_, false, (_, (start, cr)::values), BackendDAE.SHARED(knownVars=knVars)) equation
-      start1 = optExpReplaceCrefWithBindExp(start, knVars);
-      ((_, start, _)) = equalFreeStartValues(values, knVars, (start1, start, cr));
+    case (_, false, (_, (start, cr)::values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) equation
+      start1 = optExpReplaceCrefWithBindExp(start, globalKnownVars);
+      ((_, start, _)) = equalFreeStartValues(values, globalKnownVars, (start1, start, cr));
     then BackendVariable.setVarStartValueOption(inVar, start);
 
     case (_, false, (_, values), _) equation
@@ -2979,19 +2962,17 @@ protected function addNominalValue
   input BackendDAE.Var inVar;
   input list<tuple<DAE.Exp, DAE.ComponentRef>> iNominal;
   output list<tuple<DAE.Exp, DAE.ComponentRef>> oNominal;
+protected
+  DAE.Exp nominal;
+  DAE.ComponentRef cr;
 algorithm
-  (oNominal) := matchcontinue(inVar, iNominal)
-    local
-      DAE.Exp nominal, nominalset;
-      DAE.ComponentRef cr;
-
-    case(_, _) equation
-      nominal = BackendVariable.varNominalValue(inVar);
-      cr = BackendVariable.varCref(inVar);
-    then ((nominal, cr)::iNominal);
-
-    else (iNominal);
-  end matchcontinue;
+  try
+    nominal := BackendVariable.varNominalValue(inVar);
+    cr := BackendVariable.varCref(inVar);
+    oNominal := (nominal, cr)::iNominal;
+  else
+    oNominal := iNominal;
+  end try;
 end addNominalValue;
 
 protected function mergeNominalAttribute
@@ -3012,15 +2993,14 @@ algorithm
       {e} = List.uniqueOnTrue(allExp, Expression.expEqual);
     then BackendVariable.setVarNominalValue(inVar, e);
 
-    case (_, _)
-    then selectFreeValue1(nominalList, {}, "Alias set with different nominal values\n", "nominal", BackendVariable.setVarNominalValue, inVar);
+    else selectFreeValue1(nominalList, {}, "Alias set with different nominal values\n", "nominal", BackendVariable.setVarNominalValue, inVar);
   end matchcontinue;
 end mergeNominalAttribute;
 
 protected function addMinMaxAttribute "author: Frenkel TUD 2012-12"
   input BackendDAE.Var inVar;
   input Boolean negate;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>> iMinMax;
   output tuple<Option<DAE.Exp>, Option<DAE.Exp>> oMinMax;
@@ -3037,7 +3017,7 @@ protected function mergeMinMax "author: Frenkel TUD 2012-12"
   input Boolean negate;
   input list<Option<DAE.Exp>> ominmax;
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>> ominmax1;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   output tuple<Option<DAE.Exp>, Option<DAE.Exp>> outMinMax;
 algorithm
@@ -3095,21 +3075,26 @@ protected function mergeMinMax1 "author: Frenkel TUD 2012-12"
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>> ominmax1;
   output tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
 protected
-  Option<DAE.Exp> omin, omin1;
-  Option<DAE.Exp> omax, omax1;
+  Option<DAE.Exp> omin, omin1, omin2;
+  Option<DAE.Exp> omax, omax1, omax2;
 algorithm
   (omin, omax) := ominmax;
   (omin1, omax1) := ominmax1;
 
-  omin := Expression.expOptMaxScalar(omin, omin1);
-  omax := Expression.expOptMinScalar(omax, omax1);
-  minMax := (omin, omax);
-
+  omin2 := Expression.expOptMaxScalar(omin, omin1);
+  omax2 := Expression.expOptMinScalar(omax, omax1);
+  if referenceEq(omin2,omin) and referenceEq(omax2, omax) then
+    minMax := ominmax;
+  elseif referenceEq(omin2,omin1) and referenceEq(omax2, omax1) then
+    minMax := ominmax1;
+  else
+    minMax := (omin2, omax2);
+  end if;
 end mergeMinMax1;
 
 protected function checkMinMax "author: Frenkel TUD 2012-12"
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>> minmax;
-  input Integer mark;
+  input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
 algorithm
   _ :=
@@ -3174,30 +3159,30 @@ end handleVarSetAttributes;
 
 protected function optExpReplaceCrefWithBindExp "author: Frenkel TUD 2012-12"
   input Option<DAE.Exp> iOExp;
-  input BackendDAE.Variables knVars;
+  input BackendDAE.Variables globalKnownVars;
   output Option<DAE.Exp> oOExp;
 algorithm
-  oOExp := match(iOExp, knVars)
+  oOExp := match(iOExp, globalKnownVars)
     local
       DAE.Exp e;
       Boolean b;
-    case(NONE(), _) then iOExp;
     case(SOME(e), _)
       equation
-        (e, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
         (e, _) = ExpressionSimplify.condsimplify(b, e);
       then
         SOME(e);
+    else iOExp;
  end match;
 end optExpReplaceCrefWithBindExp;
 
 protected function equalNonFreeStartValues "author: Frenkel TUD 2012-12"
   input list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> iValues;
-  input BackendDAE.Variables knVars;
+  input BackendDAE.Variables globalKnownVars;
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>, DAE.ComponentRef> iValue;
   output tuple<Option<DAE.Exp>, Option<DAE.Exp>, DAE.ComponentRef> oValue;
 algorithm
-  oValue := match(iValues, knVars, iValue)
+  oValue := match(iValues, globalKnownVars, iValue)
     local
       list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> values;
       DAE.Exp e, e1, e2;
@@ -3206,32 +3191,32 @@ algorithm
     case ({}, _, _) then iValue;
     case (((NONE(), _))::values, _, _)
       then
-        equalNonFreeStartValues(values, knVars, iValue);
+        equalNonFreeStartValues(values, globalKnownVars, iValue);
     case (((NONE(), _))::values, _, (NONE(), _, _))
       then
-        equalNonFreeStartValues(values, knVars, iValue);
+        equalNonFreeStartValues(values, globalKnownVars, iValue);
     case (((NONE(), cr))::values, _, (SOME(e2), _, _))
       guard
         Expression.isZero(e2)
       then
-        equalNonFreeStartValues(values, knVars, (NONE(), NONE(), cr));
+        equalNonFreeStartValues(values, globalKnownVars, (NONE(), NONE(), cr));
     case (((SOME(e), _))::values, _, (SOME(e2), _, _))
       equation
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         true = Expression.expEqual(e1, e2);
       then
-        equalNonFreeStartValues(values, knVars, iValue);
+        equalNonFreeStartValues(values, globalKnownVars, iValue);
   end match;
 end equalNonFreeStartValues;
 
 protected function equalFreeStartValues "author: Frenkel TUD 2012-12"
   input list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> iValues;
-  input BackendDAE.Variables knVars;
+  input BackendDAE.Variables globalKnownVars;
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>, DAE.ComponentRef> iValue;
   output tuple<Option<DAE.Exp>, Option<DAE.Exp>, DAE.ComponentRef> oValue;
 algorithm
-  oValue := match(iValues, knVars, iValue)
+  oValue := match(iValues, globalKnownVars, iValue)
     local
       list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> values;
       DAE.Exp e, e1, e2;
@@ -3241,21 +3226,21 @@ algorithm
     // ignore default values
     case (((NONE(), _))::values, _, _)
       then
-        equalFreeStartValues(values, knVars, iValue);
+        equalFreeStartValues(values, globalKnownVars, iValue);
     case (((SOME(e), cr))::values, _, (NONE(), _, _))
       equation
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
       then
-        equalFreeStartValues(values, knVars, (SOME(e1), SOME(e), cr));
+        equalFreeStartValues(values, globalKnownVars, (SOME(e1), SOME(e), cr));
     // compare
     case (((SOME(e), _))::values, _, (SOME(e2), _, _))
       equation
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         true = Expression.expEqual(e1, e2);
       then
-        equalFreeStartValues(values, knVars, iValue);
+        equalFreeStartValues(values, globalKnownVars, iValue);
   end match;
 end equalFreeStartValues;
 
@@ -3273,15 +3258,19 @@ algorithm
       HashSet.HashSet hs;
     // true if crefs replaced in expression
     case (DAE.CREF(componentRef=cr), (vars, _, hs))
-      equation
+      guard
         // check for cyclic bindings in start value
-        false = BaseHashSet.has(cr, hs);
+        not BaseHashSet.has(cr, hs)
+      equation
         (BackendDAE.VAR(bindExp = SOME(e)), _) = BackendVariable.getVarSingle(cr, vars);
         hs = BaseHashSet.add(cr, hs);
         (e, (_, _, hs)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (vars, false, hs));
       then
         (e, (vars, true, hs));
     // true if crefs in expression
+    case (e as DAE.CREF(), (_, true, _))
+      then
+        (e, inTuple);
     case (e as DAE.CREF(), (vars, _, hs))
       then
         (e, (vars, true, hs));
@@ -3330,7 +3319,7 @@ algorithm
 
     case ((e, cr, i)::_) guard not Expression.isZero(e) then ((e, cr, i));
 
-    case ((e, cr, i)::rest)
+    case ((_, _, _)::rest)
       then
         selectNonZeroExpression(rest);
   end match;
@@ -3368,10 +3357,12 @@ algorithm
 
     // end of list analyse what we got
     case ({}, rest, _, _, _, _) equation
-      ((e, cr, i)) = selectNonZeroExpression(rest);
+      ((e, cr, _)) = selectNonZeroExpression(rest);
       crVar = BackendVariable.varCref(inVar);
       s = iStr + "=> select value from " +  ComponentReference.printComponentRefStr(cr) +  "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ") for variable: " +  ComponentReference.printComponentRefStr(crVar) + "\n";
-      Error.addMessage(Error.COMPILER_WARNING, {s});
+      if Flags.isSet(Flags.DEBUG_ALIAS) then
+        Error.addMessage(Error.COMPILER_WARNING, {s});
+      end if;
       v = inFunc(inVar, e);
     then v;
 
@@ -3510,7 +3501,7 @@ algorithm
   outDAE:=
   match (b, inDAE)
     local
-      BackendDAE.Variables knvars;
+      BackendDAE.Variables globalKnownVars;
       BackendDAE.Variables aliasVars;
       BackendDAE.EquationArray inieqns;
       list<DAE.Constraint> constraintsLst;
@@ -3523,7 +3514,7 @@ algorithm
       BackendDAE.Shared shared;
 
     case (false, _) then inDAE;
-    case (true, BackendDAE.DAE(systs, shared as BackendDAE.SHARED( knownVars=knvars, aliasVars=aliasVars, initialEqs=inieqns,
+    case (true, BackendDAE.DAE(systs, shared as BackendDAE.SHARED( globalKnownVars=globalKnownVars, aliasVars=aliasVars,
                                                                    constraints=constraintsLst, classAttrs=clsAttrsLst )))
       equation
         if Flags.isSet(Flags.DUMP_REPL) then
@@ -3531,12 +3522,12 @@ algorithm
           BackendVarTransform.dumpExtendReplacements(repl);
           BackendVarTransform.dumpDerConstReplacements(repl);
         end if;
-        // replace moved vars in knvars, remeqns
+        // replace moved vars in globalKnownVars, remeqns
         (_, (_, varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceAliasVarTraverser, (repl, {}));
         aliasVars = List.fold(varlst, fixAliasConstBindings, aliasVars);
         shared.aliasVars = aliasVars;
 
-        (_, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceVarTraverser, repl);
+        (_, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars, replaceVarTraverser, repl);
 
         ((_, eqnslst, b1)) = BackendEquation.traverseEquationArray(shared.initialEqs, replaceEquationTraverser, (repl, {}, false));
         shared.initialEqs = if b1 then BackendEquation.listEquation(eqnslst) else shared.initialEqs;
@@ -3850,7 +3841,7 @@ algorithm
     local
       BackendVarTransform.VariableReplacements repl;
     case (SOME(repl), _) then repl;
-    case (NONE(), _)
+    else
       equation
         repl = BackendVarTransform.emptyReplacementsSized(BackendVariable.varsSize(aliasVars));
         repl = BackendVariable.traverseBackendDAEVars(aliasVars, getAliasVarReplacements, repl);
@@ -4305,13 +4296,13 @@ main module for eliminating trivial equations
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
   input Boolean findAliases;
-  output BackendDAE.EqSystem outSystem = inSystem;
-  output BackendDAE.Shared outShared = inShared;
+  output BackendDAE.EqSystem outSystem;
+  output BackendDAE.Shared outShared;
 algorithm
   (outSystem,outShared) := matchcontinue(inSystem,inShared)
     local
       BackendDAE.Variables orderedVars;
-      BackendDAE.Variables knownVars;
+      BackendDAE.Variables globalKnownVars;
       BackendDAE.EquationArray orderedEqs;
       BackendDAE.EquationArray inieqns;
       BackendDAE.StateSets stateSets;
@@ -4332,7 +4323,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.EventInfo eventInfo;
-      BackendDAE.Variables knvars, exobj, knvars1;
+      BackendDAE.Variables globalKnownVars, exobj, globalKnownVars1;
       BackendDAE.Variables aliasVars;
       BackendDAE.EquationArray remeqns, inieqns, remeqns1;
       list<DAE.Constraint> constraintsLst;
@@ -4348,8 +4339,8 @@ algorithm
       Boolean b1;
       BackendVarTransform.VariableReplacements repl;
 
-    case ( syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, removedEqs=remeqns),
-           shared as BackendDAE.SHARED( knownVars=knvars, aliasVars=aliasVars, initialEqs=inieqns,
+    case ( syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs),
+           shared as BackendDAE.SHARED( globalKnownVars=globalKnownVars, aliasVars=aliasVars, initialEqs=inieqns,
                                        eventInfo=eventInfo) )
       equation
 
@@ -4365,7 +4356,7 @@ algorithm
       (_, HTCrToExp, HTCrToCrEqLst, eqList, simpleEqList) = BackendEquation.traverseEquationArray(orderedEqs, function findSimpleEquations(findAliases=findAliases),
       (orderedVars, HTCrToExp, HTCrToCrEqLst, {}, {}));
       (tplExp) = BaseHashTable.hashTableList(HTCrToExp);
-//    (knvars, orderedVars) = moveVars(tplExp, knvars, orderedVars);
+//    (globalKnownVars, orderedVars) = moveVars(tplExp, globalKnownVars, orderedVars);
       //SimCodeUtil.execStat("FINDSIMPLE1: ");
 
 
@@ -4412,7 +4403,7 @@ algorithm
       // Update Alias variables, some might be moved to known variables!!!
       (aliasVars, (_, varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceAliasVarTraverser, (repl, {}));
       aliasVars = List.fold(varlst, fixAliasConstBindings, aliasVars);
-      (knvars, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceVarTraverser, repl);
+      (globalKnownVars, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars, replaceVarTraverser, repl);
 
       // BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
       // BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
@@ -4438,7 +4429,7 @@ algorithm
       syst.orderedEqs = orderedEqs;
 
       shared.eventInfo = eventInfo;
-      shared.knownVars = knvars;
+      shared.globalKnownVars = globalKnownVars;
       shared.aliasVars = aliasVars;
       shared.initialEqs = inieqns;
 
@@ -4576,11 +4567,11 @@ algorithm
 
     case (eq ,(vars, HTCrToExp, HTCrToCrEqLst, eqList, simpleEqList)) equation
         res = BackendEquation.getEquationRHS(eq);
-       (_, (cr_lst,_,count,paramCount,true)) = Expression.traverseExpTopDown(res, findCrefs, ({},vars,0,0,true));
+        (_, (cr_lst,_,count,paramCount,true)) = Expression.traverseExpTopDown(res, findCrefs, ({},vars,0,0,true));
         res = BackendEquation.getEquationLHS(eq);
-       (_, (cr_lst,_,count,paramCount,true)) = Expression.traverseExpTopDown(res, findCrefs, (cr_lst,vars,count,paramCount,true));
-       keepEquation = true;
-       if (count == 1) then
+        (_, (cr_lst,_,count,paramCount,true)) = Expression.traverseExpTopDown(res, findCrefs, (cr_lst,vars,count,paramCount,true));
+        keepEquation = true;
+        if (count == 1) then
           if Flags.isSet(Flags.DEBUG_ALIAS) then
             print("Found Equation knw0: " + BackendDump.equationString(eq) + "\n");
           end if;
@@ -4615,9 +4606,9 @@ algorithm
           true = Types.isSimpleType(Expression.typeof(exp1));
           exp2 = Expression.crefExp(cr2);
 
-          eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp2,NONE());
+          BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp2,NONE());
           true = isSimple(res);
-          eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp1,NONE());
+          BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp1,NONE());
           true = isSimple(res);
           if Flags.isSet(Flags.DEBUG_ALIAS) then
             print("Found Equation al1: "  + BackendDump.equationString(eq) + "\n");
@@ -5009,7 +5000,7 @@ values of the alias variables.
 "
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystem outSystem = inSystem;
+  output BackendDAE.EqSystem outSystem;
   output BackendDAE.Shared outShared = inShared;
 protected
   BackendDAE.Variables orderedVars;
@@ -5139,7 +5130,7 @@ algorithm
     BackendDAE.EquationAttributes eqAttr;
 
     case ({}) then (outHTStartExpToInt,outHTNominalExpToInt);
-    case (cr1,eq)::cr_eq_rest equation
+    case (cr1,_)::cr_eq_rest equation
       (v,_) = BackendVariable.getVarSingle(cr1,inAliasVars);
       e = BackendVariable.varBindExp(v);
       if BackendVariable.varHasStartValue(v) then
@@ -5207,6 +5198,47 @@ algorithm
     end if;
   end for;
 end getDominantAttributeValue;
+
+
+protected function dumpSimpleContainer
+  input SimpleContainer container;
+  output String sOut;
+algorithm
+  sOut := matchcontinue(container)
+    local
+      DAE.ComponentRef cr1,cr2;
+      DAE.Exp e;
+      String s1,s2;
+      Boolean n1,n2;
+      Integer i1,i2;
+  case(ALIAS(cr1,n1,i1,cr2,n2,i2,_,_))
+    equation
+      s1 = if n1 then "(-)" else "" ;
+      s2 = if n2 then "(-)" else "" ;
+      s1 = s1 +ComponentReference.printComponentRefStr(cr1);
+      s2= s2 +ComponentReference.printComponentRefStr(cr2);
+    then "ALIASE: \t\t"+s1 + " = " +s2+"  ("+intString(i1)+", "+intString(i2)+")";
+  case(PARAMETERALIAS(cr1,n1,i1,cr2,n2,i2,_,_))
+    equation
+      s1 = if n1 then "(-)" else "" ;
+      s2 = if n2 then "(-)" else "" ;
+      s1 = s1 +ComponentReference.printComponentRefStr(cr1);
+      s2= s2 +ComponentReference.printComponentRefStr(cr2);
+    then "PARAMETERALIASE: \t"+s1 + " = " +s2+"  ("+intString(i1)+", "+intString(i2)+")";
+  case(TIMEALIAS(cr1,n1,i1,cr2,n2,i2,_,_))
+    equation
+      s1 = if n1 then "(-)" else "" ;
+      s2 = if n2 then "(-)" else "" ;
+      s1 = s1 +ComponentReference.printComponentRefStr(cr1);
+      s2= s2 +ComponentReference.printComponentRefStr(cr2);
+    then "TIMEALIASE: \t"+s1 + " = " +s2+"  ("+intString(i1)+", "+intString(i2)+")";
+  case(TIMEINDEPENTVAR(cr1,_,e,_,_))
+    equation
+    then "TIMEINDEPENT: \t"+ComponentReference.printComponentRefStr(cr1) + " = " +ExpressionDump.printExpStr(e);
+  else
+    then "----------";
+  end matchcontinue;
+end dumpSimpleContainer;
 
 annotation(__OpenModelica_Interface="backend");
 end RemoveSimpleEquations;

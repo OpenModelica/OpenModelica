@@ -218,7 +218,7 @@ protected function fixClassParts
   input list<Absyn.ClassPart> inClassParts;
   input Absyn.Ident inClassName;
   input list<String> typeVars;
-  output list<Absyn.ClassPart> outClassParts = {};
+  output list<Absyn.ClassPart> outClassParts;
   output list<Absyn.Class> outMetaClasses = {};
 protected
   list<Absyn.Class> meta_classes;

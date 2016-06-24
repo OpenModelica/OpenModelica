@@ -277,7 +277,7 @@ template Implementation()
       <Capabilities
         canHandleVariableCommunicationStepSize="true"
         canHandleEvents="true"
-        canBeInstantiatedOnlyOncePerProcess="true"
+        canBeInstantiatedOnlyOncePerProcess="false"
         canInterpolateInputs="true"
         maxOutputDerivativeOrder="1"/>
     </CoSimulation_StandAlone>
@@ -377,11 +377,15 @@ template ModelStructureDerivatives(FmiDerivatives fmiDerivatives)
 ::=
 match fmiDerivatives
 case FMIDERIVATIVES(__) then
+  if intGt(listLength(fmiUnknownsList), 0) then
   <<
   <Derivatives>
     <%ModelStructureUnknowns(fmiUnknownsList)%>
   </Derivatives>
   >>
+  else
+  // don't generate the element if model has none
+  <<>>
 end ModelStructureDerivatives;
 
 template ModelStructureDiscreteStates(FmiDiscreteStates fmiDiscreteStates)
@@ -405,11 +409,16 @@ template ModelStructureInitialUnknowns(FmiInitialUnknowns fmiInitialUnknowns)
 ::=
 match fmiInitialUnknowns
 case FMIINITIALUNKNOWNS(__) then
+  if listEmpty(fmiUnknownsList)
+  then
+  ''
+  else
   <<
   <InitialUnknowns>
     <%ModelStructureUnknowns(fmiUnknownsList)%>
   </InitialUnknowns>
   >>
+end match
 end ModelStructureInitialUnknowns;
 
 template ModelStructureUnknowns(list<FmiUnknown> fmiUnknownsList)

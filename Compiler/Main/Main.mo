@@ -728,7 +728,7 @@ public function setWindowsPaths
               changes you will need to change here!"
   input String inOMHome;
 algorithm
-  _ := matchcontinue(inOMHome)
+  _ := match(inOMHome)
     local
       String oldPath, newPath, omHome, omdevPath, mingwDir, binDir, libBinDir, msysBinDir;
       Boolean hasBinDir, hasLibBinDir;
@@ -765,7 +765,7 @@ algorithm
           end if;
         end if;
       then ();
-  end matchcontinue;
+  end match;
 end setWindowsPaths;
 
 protected function setDefaultCC "Reads the environment variable CC to change the default CC"
@@ -809,12 +809,17 @@ public function main
 protected
   list<String> args_1;
   GC.ProfStats stats;
+  Integer seconds;
 algorithm
   try
   try
     args_1 := init(args);
     if Flags.isSet(Flags.GC_PROF) then
       print(GC.profStatsStr(GC.getProfStats(), head="GC stats after initialization:") + "\n");
+    end if;
+    seconds := Flags.getConfigInt(Flags.ALARM);
+    if seconds > 0 then
+      System.alarm(seconds);
     end if;
     main2(args_1);
   else

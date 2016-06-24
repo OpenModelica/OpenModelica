@@ -39,7 +39,7 @@ encapsulated package NFInstDump
   structures, mostly wrappers for NFInstDumpTpl.
 "
 
-public import NFConnect2;
+//public import NFConnect2;
 public import NFInstTypes;
 
 protected import NFInstDumpTpl;
@@ -89,12 +89,12 @@ algorithm
   outString := Tpl.tplString(NFInstDumpTpl.dumpEquation, inEquation);
 end equationStr;
 
-public function connectionsStr
-  input NFConnect2.Connections inConnections;
-  output String outString;
-algorithm
-  outString := Tpl.tplString(NFInstDumpTpl.dumpConnections, inConnections);
-end connectionsStr;
+//public function connectionsStr
+//  input NFConnect2.Connections inConnections;
+//  output String outString;
+//algorithm
+//  outString := Tpl.tplString(NFInstDumpTpl.dumpConnections, inConnections);
+//end connectionsStr;
 
 public function dimensionStr
   input NFInstTypes.Dimension inDimension;

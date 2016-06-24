@@ -29,8 +29,9 @@
  */
 
 #include "util/omc_error.h"
-#include "simulation_result_mat.h"
 #include "util/rtclock.h"
+#include "simulation/options.h"
+#include "simulation_result_mat.h"
 
 #include <fstream>
 #include <iostream>
@@ -77,6 +78,7 @@ static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dat
 
 static const struct VAR_INFO timeValName = {0,-1,"time","Simulation time [s]",{"",-1,-1,-1,-1}};
 static const struct VAR_INFO cpuTimeValName = {0,-1,"$cpuTime","cpu time [s]",{"",-1,-1,-1,-1}};
+static const struct VAR_INFO solverStepsValName = {0,-1,"$solverSteps","number of steps taken by the integrator",{"",-1,-1,-1,-1}};
 
 static int calcDataSize(simulation_result *self,DATA *data)
 {
@@ -88,12 +90,21 @@ static int calcDataSize(simulation_result *self,DATA *data)
   if(self->cpuTime)
     sz++;
 
+  if(omc_flag[FLAG_SOLVER_STEPS])
+    sz++;
+
   for(int i = 0; i < modelData->nVariablesReal; i++)
     if(!modelData->realVarsData[i].filterOutput)
     {
        matData->r_indx_map[i] = sz;
        sz++;
     }
+
+  /* put sensitivity analysis also to the result file */
+  if (omc_flag[FLAG_IDAS])
+  {
+    sz += (data->modelData->nSensitivityVars-data->modelData->nSensitivityParamVars);
+  }
 
   for(int i = 0; i < modelData->nVariablesInteger; i++)
     if(!modelData->integerVarsData[i].filterOutput)
@@ -131,10 +142,24 @@ static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dat
   int curVar = 0;
   int sz = 1;
   names[curVar++] = &timeValName;
+
   if(self->cpuTime)
     names[curVar++] = &cpuTimeValName;
+
+  if(omc_flag[FLAG_SOLVER_STEPS])
+    names[curVar++] = &solverStepsValName;
+
   for(int i = 0; i < modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput)
     names[curVar++] = &(modelData->realVarsData[i].info);
+
+  /* put sensitivity analysis also to the result file */
+  if (omc_flag[FLAG_IDAS])
+  {
+    for(int i = data->modelData->nSensitivityParamVars; i < data->modelData->nSensitivityVars; i++)
+    {
+      names[curVar++] = &(modelData->realSensitivityData[i].info);
+    }
+  }
   for(int i = 0; i < modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput)
     names[curVar++] = &(modelData->integerVarsData[i].info);
   for(int i = 0; i < modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput)
@@ -207,6 +232,7 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
   int rows, cols;
   int32_t *intMatrix = NULL;
   double *doubleMatrix = NULL;
+  int nSensitivities = omc_flag[FLAG_IDAS] ? mData->nSensitivityVars-data->modelData->nSensitivityParamVars: 0;
   assert(sizeof(char) == 1);
   rt_tick(SIM_TIMER_OUTPUT);
   matData->numVars = calcDataSize(self,data);
@@ -255,7 +281,7 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
     /* remember data2HdrPos */
     matData->data2HdrPos = matData->fp.tellp();
     /* write `data_2' header */
-    mat_writeMatVer4MatrixHeader(self,data,threadData,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime, 0, sizeof(double));
+    mat_writeMatVer4MatrixHeader(self,data,threadData,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime + /* add one more for solverSteps*/ + omc_flag[FLAG_SOLVER_STEPS] + nSensitivities, 0, sizeof(double));
 
     free(doubleMatrix);
     free(intMatrix);
@@ -281,6 +307,7 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
 void mat4_free(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   mat_data *matData = (mat_data*) self->storage;
+  int nSensitivities = omc_flag[FLAG_IDAS] ? data->modelData->nSensitivityVars - data->modelData->nSensitivityParamVars : 0;
   rt_tick(SIM_TIMER_OUTPUT);
   /* this is a bad programming practice - closing file in destructor,
    * where a proper error reporting can't be done
@@ -291,7 +318,7 @@ void mat4_free(simulation_result *self,DATA *data, threadData_t *threadData)
     try
     {
       matData->fp.seekp(matData->data2HdrPos);
-      mat_writeMatVer4MatrixHeader(self,data,threadData,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime, matData->ntimepoints, sizeof(double));
+      mat_writeMatVer4MatrixHeader(self,data,threadData,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime + /* add one more for solverSteps*/ + omc_flag[FLAG_SOLVER_STEPS] + nSensitivities, matData->ntimepoints, sizeof(double));
       matData->fp.close();
     }
     catch (...)
@@ -318,10 +345,22 @@ void mat4_emit(simulation_result *self,DATA *data, threadData_t *threadData)
      although ofstream does have some buffering, but it is not enough and
      not for this purpose */
   matData->fp.write((char*)&(data->localData[0]->timeValue), sizeof(double));
+
   if(self->cpuTime)
     matData->fp.write((char*)&cpuTimeValue, sizeof(double));
+
+  if(omc_flag[FLAG_SOLVER_STEPS])
+    matData->fp.write((char*)&(data->simulationInfo->solverSteps), sizeof(double));
+
   for(int i = 0; i < data->modelData->nVariablesReal; i++) if(!data->modelData->realVarsData[i].filterOutput)
     matData->fp.write((char*)&(data->localData[0]->realVars[i]),sizeof(double));
+
+  /* put parameter sensitivity analysis also to the result file */
+  if (omc_flag[FLAG_IDAS])
+  {
+    for(int i = 0; i < data->modelData->nSensitivityVars-data->modelData->nSensitivityParamVars; i++)
+      matData->fp.write((char*)&(data->simulationInfo->sensitivityMatrix[i]),sizeof(double));
+  }
   for(int i = 0; i < data->modelData->nVariablesInteger; i++) if(!data->modelData->integerVarsData[i].filterOutput)
     {
       datPoint = (double) data->localData[0]->integerVars[i];
@@ -452,6 +491,7 @@ void generateDataInfo(simulation_result *self, DATA *data, threadData_t *threadD
 {
   mat_data *matData = (mat_data*) self->storage;
   const MODEL_DATA *mdl_data = data->modelData;
+  int nSensitivities = omc_flag[FLAG_IDAS] ? mdl_data->nSensitivityVars - data->modelData->nSensitivityParamVars : 0;
 
   /* size_t nVars = mdl_data->nStates*2+mdl_data->nAlgebraic;
     rows = 1+nVars+mdl_data->nParameters+mdl_data->nVarsAliases; */
@@ -466,7 +506,7 @@ void generateDataInfo(simulation_result *self, DATA *data, threadData_t *threadD
   dataInfo = (int*) calloc(rows*cols,sizeof(int));
   assertStreamPrint(threadData, 0!=dataInfo,"Cannot alloc memory");
   /* continuous and discrete variables, including time */
-  for(size_t i = 0; i < (size_t)(matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + 1 /* add one more for timeValue*/ + self->cpuTime); ++i) {
+  for(size_t i = 0; i < (size_t)(matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + 1 /* add one more for timeValue*/ + self->cpuTime /* add one more for solverSteps*/ + omc_flag[FLAG_SOLVER_STEPS] + nSensitivities); ++i) {
       /* row 1 - which table */
       dataInfo[ccol++] = 2;
       /* row 2 - index of var in table (variable 'Time' have index 1) */

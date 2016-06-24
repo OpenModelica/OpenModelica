@@ -78,12 +78,12 @@ public
 uniontype Severity "severity of message"
   record INTERNAL "Error because of a failure in the tool" end INTERNAL;
 
-  record ERROR "Error when tool can not succed in translation because of a user error" end ERROR;
+  record ERROR "Error when tool can not succeed in translation because of a user error" end ERROR;
 
-  record WARNING "Warning when tool succeds but with warning" end WARNING;
+  record WARNING "Warning when tool succeeds but with warning" end WARNING;
 
   record NOTIFICATION "Additional information to user, e.g. what
-             actions tool has taken to succed in translation" end NOTIFICATION;
+             actions tool has taken to succeed in translation" end NOTIFICATION;
 end Severity;
 
 public
@@ -702,6 +702,9 @@ public constant Message SCANNER_ERROR_LIMIT = MESSAGE(287, SYNTAX(), ERROR(),
   Util.gettext("Additional syntax errors were suppressed."));
 public constant Message INVALID_TIME_SCOPE = MESSAGE(288, TRANSLATION(), ERROR(),
   Util.gettext("Built-in variable 'time' may only be used in a model or block."));
+public constant Message NO_JACONIAN_TORNLINEAR_SYSTEM = MESSAGE(289, SYMBOLIC(), ERROR(),
+  Util.gettext("A torn linear system has no symbolic jacobian and currently there are no means to solve that numerically. Please compile with the module \"calculateStrongComponentJacobians\" to provide symbolic jacobians for torn linear systems."));
+
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
@@ -824,8 +827,6 @@ public constant Message CLOCKED_WHEN_IN_WHEN_EQ = MESSAGE(566, TRANSLATION(), ER
   Util.gettext("Clocked when equation inside the body of when equation."));
 public constant Message CONT_CLOCKED_PARTITION_CONFLICT_EQ = MESSAGE(567, TRANSLATION(), ERROR(),
   Util.gettext("Equation belongs to clocked and continuous partitions."));
-public constant Message CLOCKED_DSICRETE_CONT_CONFLICT = MESSAGE(568, TRANSLATION(), ERROR(),
-  Util.gettext("Clocked equation contains discrete and continuous expression."));
 public constant Message INVALID_CLOCK_EQUATION = MESSAGE(569, TRANSLATION(), ERROR(),
   Util.gettext("Invalid form of clock equation"));
 public constant Message SUBCLOCK_CONFLICT = MESSAGE(570, TRANSLATION(), ERROR(),
@@ -842,6 +843,8 @@ public constant Message NO_TEARING_FOR_COMPONENT = MESSAGE(575, SYMBOLIC(), NOTI
   Util.gettext("Tearing is skipped for strong component %s because of activated compiler flag 'noTearingForComponent=%1'.\n"));
 public constant Message WRONG_VALUE_OF_ARG = MESSAGE(576, TRANSLATION(), ERROR(),
   Util.gettext("Wrong value of argument to %s: %s = %s %s."));
+public constant Message USER_DEFINED_TEARING_ERROR = MESSAGE(577, SYMBOLIC(), ERROR(),
+  Util.gettext("Wrong usage of user defined tearing: %s Make sure you use user defined tearing as stated in the flag description."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

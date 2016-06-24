@@ -56,8 +56,6 @@
 #define boxptr_wrapper1Arg(boxptr,name) modelica_metatype boxptr(threadData_t *, void*);
 #endif
 
-#if !(defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME))
-
 boxptr_unOp(boxptr_boolNot,mmc_mk_bcon,mmc_unbox_boolean,!)
 boxptr_binOp(boxptr_boolAnd,mmc_mk_bcon,mmc_unbox_boolean,&&)
 boxptr_binOp(boxptr_boolOr,mmc_mk_bcon,mmc_unbox_boolean,||)
@@ -143,7 +141,5 @@ boxptr_wrapper2Args(boxptr_cons,mmc_mk_cons)
 #undef boxptr_wrapper1Arg
 #undef boxptr_wrapper2Args
 #undef boxptr_fn2ArgsThreadData
-
-#endif /* #if !(defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)) */
 
 #endif

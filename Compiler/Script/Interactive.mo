@@ -15638,7 +15638,7 @@ public function transformClassInProgram
   input String inName;
   input Absyn.Program inProgram;
   input FuncType inFunc;
-  output Absyn.Program outProgram = inProgram;
+  output Absyn.Program outProgram;
 
   partial function FuncType
     input Absyn.Class inClass;

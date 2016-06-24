@@ -8,7 +8,7 @@ OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 CC=gcc
 CXX=g++
 CFLAGS= -fPIC -O3 -Wall
-CPPFLAGS=$(CFLAGS) -I. -I"../../../c"
+CPPFLAGS=$(CFLAGS) -I. -I"../../../c" -I$(OPENMODELICA_INC)
 
 EXEEXT=.exe
 DLLEXT=.dll

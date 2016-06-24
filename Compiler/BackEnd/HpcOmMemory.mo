@@ -403,7 +403,7 @@ import Util;
         then(tmpMemoryMapOpt, varToArrayIndexMapping, varToIndexMapping);
       else
         equation
-          print("CreateMemoryMap failed!\n");
+          Error.addInternalError("CreateMemoryMap failed!", sourceInfo());
         then (NONE(), iVarToArrayIndexMapping, iVarToIndexMapping);
     end matchcontinue;
   end createMemoryMap;
@@ -2763,14 +2763,16 @@ import Util;
     array<list<Integer>> tmpSolvedVars, tmpNotSolvedVars;
     array<Integer> scVarMarks, scSolvedVarMarks; //mark the last task that read this variable to detect duplications
     list<Integer> nodeSccs, eqVars;
-    Integer nodeIdx, sccIdx, eqIdx, var, varTask, varMark, varType;
+    Integer nodeIdx, sccIdx, eqIdx, var, varTask, varMark, varType, nvar, var;
     list<tuple<Integer,Integer,Integer>> sccEqs;
     tuple<Integer,Integer,Integer> sccEq;
   algorithm
+    try
     tmpSolvedVars := arrayCreate(arrayLength(iNodeSccMapping), {});
     tmpNotSolvedVars := arrayCreate(arrayLength(iNodeSccMapping), {});
     scVarMarks := arrayCreate(arrayLength(iScVarTaskMapping), -1);
     scSolvedVarMarks := arrayCreate(arrayLength(iScVarTaskMapping), -1);
+    nvar := arrayLength(iScVarTaskMapping);
 
     for nodeIdx in 1:arrayLength(iNodeSccMapping) loop
       nodeSccs := arrayGet(iNodeSccMapping, nodeIdx);
@@ -2782,7 +2784,8 @@ import Util;
           (eqIdx,_,_) := sccEq;
           ((_,eqVars)) := arrayGet(iEqSimCodeVarMapping, eqIdx);
           //print("   - Equation '" + intString(eqIdx) + "' has variables {" + stringDelimitList(List.map(eqVars, intString), ",") + "}\n");
-          for var in eqVars loop
+          for v2 in eqVars loop
+            var := if v2>nvar then v2-nvar /* states */ else v2;
             varTask := arrayGet(iScVarTaskMapping, var);
             //print("     - Variable  '" + intString(var) + "' is solved by task " + intString(varTask) + "\n");
             varType := Util.tuple31(arrayGet(iSimCodeVarTypes, var));
@@ -2813,6 +2816,10 @@ import Util;
 
     oSolvedVars := tmpSolvedVars;
     oNotSolvedVars := tmpNotSolvedVars;
+    else
+      Error.addInternalError(getInstanceName() + " failed", sourceInfo());
+      fail();
+    end try;
   end getTaskSimVarMapping;
 
 

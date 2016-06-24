@@ -97,8 +97,8 @@ public function lower "This function translates a DAE, which is the result from 
   input BackendDAE.ExtraInfo inExtraInfo;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
-  list<BackendDAE.Var> varlst, knvarlst, extvarlst;
-  BackendDAE.Variables vars, knvars, vars_1, extVars, aliasVars;
+  list<BackendDAE.Var> varlst, globalKnownVarLst, extvarlst;
+  BackendDAE.Variables vars, globalKnownVars, localKnownVars, vars_1, extVars, aliasVars;
   list<BackendDAE.Equation> eqns, reqns, ieqns, algeqns, algeqns1, ialgeqns, multidimeqns, imultidimeqns, eqns_1, ceeqns, iceeqns;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;
@@ -115,13 +115,15 @@ algorithm
   // reset dumped file sequence number
   System.tmpTickResetIndex(0, Global.backendDAE_fileSequence);
   System.tmpTickResetIndex(1, Global.backendDAE_cseIndex);
+  System.tmpTickResetIndex(0, Global.strongComponent_index);
   functionTree := FCore.getFunctionTree(inCache);
   //deactivated because of some codegen errors: functionTree := renameFunctionParameter(functionTree);
   (DAE.DAE(elems), functionTree, timeEvents) := processBuiltinExpressions(lst, functionTree);
-  (varlst, knvarlst, extvarlst, eqns, reqns, ieqns, constrs, clsAttrs, extObjCls, aliaseqns, _) :=
+  (varlst, globalKnownVarLst, extvarlst, eqns, reqns, ieqns, constrs, clsAttrs, extObjCls, aliaseqns, _) :=
     lower2(listReverse(elems), functionTree, HashTableExpToExp.emptyHashTable());
   vars := BackendVariable.listVar(varlst);
-  knvars := BackendVariable.listVar(knvarlst);
+  globalKnownVars := BackendVariable.listVar(globalKnownVarLst);
+  localKnownVars := BackendVariable.emptyVars();
   extVars := BackendVariable.listVar(extvarlst);
   aliasVars := BackendVariable.emptyVars();
   if Flags.isSet(Flags.VECTORIZE) then
@@ -129,16 +131,16 @@ algorithm
     vars := BackendVariable.listVar(varlst);
   end if;
   // handle alias equations
-  (vars, knvars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, knvars, extVars, aliasVars, eqns, reqns, ieqns);
-  vars_1 := detectImplicitDiscrete(vars, knvars, eqns);
-  (vars_1, eqns, clsAttrs) := DynamicOptimization.addOptimizationVarsEqns(vars_1, eqns, Config.acceptOptimicaGrammar(), clsAttrs, constrs, knvars,Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM));
+  (vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns);
+  vars_1 := detectImplicitDiscrete(vars, globalKnownVars, eqns);
   eqnarr := BackendEquation.listEquation(eqns);
   reqnarr := BackendEquation.listEquation(reqns);
   ieqnarr := BackendEquation.listEquation(ieqns);
   einfo := BackendDAE.EVENT_INFO(timeEvents, {}, {}, {}, 0);
   symjacs := {(NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {})};
   outBackendDAE := BackendDAE.DAE(BackendDAEUtil.createEqSystem(vars_1, eqnarr, {}, BackendDAE.UNKNOWN_PARTITION(), reqnarr)::{},
-                                  BackendDAE.SHARED(knvars,
+                                  BackendDAE.SHARED(globalKnownVars,
+                                                    localKnownVars,
                                                     extVars,
                                                     aliasVars,
                                                     ieqnarr,
@@ -165,7 +167,7 @@ protected function lower2
   input DAE.FunctionTree inFunctions;
   input HashTableExpToExp.HashTable inInlineHT "Workaround to speed up inlining of array parameters.";
   input list<BackendDAE.Var> inVars = {};
-  input list<BackendDAE.Var> inKnVars = {};
+  input list<BackendDAE.Var> inGlobalKnownVars = {};
   input list<BackendDAE.Var> inExVars = {};
   input list<BackendDAE.Equation> inEqns = {};
   input list<BackendDAE.Equation> inREqns = {};
@@ -175,7 +177,7 @@ protected function lower2
   input list<BackendDAE.ExternalObjectClass> inExtObjClasses = {};
   input list<DAE.Element> inAliasEqns = {};
   output list<BackendDAE.Var> outVars = inVars "Time dependent variables.";
-  output list<BackendDAE.Var> outKnVars = inKnVars "Time independent variables.";
+  output list<BackendDAE.Var> outGlobalKnownVars = inGlobalKnownVars "Time independent variables.";
   output list<BackendDAE.Var> outExVars = inExVars "External variables.";
   output list<BackendDAE.Equation> outEqns  = inEqns "Dynamic equations/algorithms.";
   output list<BackendDAE.Equation> outREqns = inREqns "Algebraic equations.";
@@ -210,8 +212,8 @@ algorithm
       // variables
       case DAE.VAR()
         algorithm
-          (outVars, outKnVars, outExVars, outEqns, outREqns, outInlineHT) :=
-            lowerVar(el, inFunctions, outVars, outKnVars, outExVars, outEqns, outREqns, outInlineHT);
+          (outVars, outGlobalKnownVars, outExVars, outEqns, outREqns, outInlineHT) :=
+            lowerVar(el, inFunctions, outVars, outGlobalKnownVars, outExVars, outEqns, outREqns, outInlineHT);
         then
           ();
 
@@ -286,9 +288,9 @@ algorithm
             (outEqns, outVars, eq_attrs) := createWhenClock(whenClkCnt, e, outEqns, outVars);
             whenClkCnt := whenClkCnt + 1;
 
-            ( outVars, outKnVars, outExVars, eqns, reqns, outIEqns, outConstraints, outClassAttributes,
+            ( outVars, outGlobalKnownVars, outExVars, eqns, reqns, outIEqns, outConstraints, outClassAttributes,
               outExtObjClasses, outAliasEqns, outInlineHT ) :=
-                  lower2( dae_elts, inFunctions, outInlineHT, outVars, outKnVars, outExVars, {}, {}, outIEqns,
+                  lower2( dae_elts, inFunctions, outInlineHT, outVars, outGlobalKnownVars, outExVars, {}, {}, outIEqns,
                           outConstraints, outClassAttributes, outExtObjClasses, outAliasEqns );
 
             outEqns := listAppend(List.map1(eqns, BackendEquation.setEquationAttributes, eq_attrs), outEqns);
@@ -334,10 +336,10 @@ algorithm
       // flat class / COMP
       case DAE.COMP(dAElist = dae_elts)
         algorithm
-          (outVars, outKnVars, outExVars, outEqns, outREqns, outIEqns, outConstraints,
+          (outVars, outGlobalKnownVars, outExVars, outEqns, outREqns, outIEqns, outConstraints,
            outClassAttributes, outExtObjClasses, outAliasEqns, outInlineHT)
           := lower2(listReverse(dae_elts), inFunctions, outInlineHT, outVars,
-            outKnVars, outExVars, outEqns, outREqns, outIEqns, outConstraints,
+            outGlobalKnownVars, outExVars, outEqns, outREqns, outIEqns, outConstraints,
             outClassAttributes, outExtObjClasses, outAliasEqns);
         then
           ();
@@ -419,7 +421,7 @@ protected
   HashTableExpToIndex.HashTable ht;
 algorithm
   ht := HashTableExpToIndex.emptyHashTable();
-  (outDAE, outTree, (_, (ht, _, _, outTimeEvents))) := DAEUtil.traverseDAE(inDAE, functionTree, Expression.traverseSubexpressionsHelper, (transformBuiltinExpression, (ht, 0, 0, {})));
+  (outDAE, outTree, (_, (_, _, _, outTimeEvents))) := DAEUtil.traverseDAE(inDAE, functionTree, Expression.traverseSubexpressionsHelper, (transformBuiltinExpression, (ht, 0, 0, {})));
 end processBuiltinExpressions;
 
 protected function transformBuiltinExpression "author: lochel
@@ -449,7 +451,7 @@ algorithm
     then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample, timeEvents));
 
     // sample [already in ht]
-    case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, timeEvents))
+    case (DAE.CALL(Absyn.IDENT("sample"), es as {_, interval}, attr), (ht, iDelay, iSample, timeEvents))
     guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) equation
       i = BaseHashTable.get(inExp, ht);
     then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample, timeEvents));
@@ -474,12 +476,12 @@ public function lowerVars
   input list<DAE.Element> inElements;
   input DAE.FunctionTree functionTree;
   input list<BackendDAE.Var> inVars = {} "The time depend Variables";
-  input list<BackendDAE.Var> inKnVars = {} "The time independend Variables";
+  input list<BackendDAE.Var> inGlobalKnownVars = {} "The time independend Variables";
   input list<BackendDAE.Var> inExVars = {} "The external Variables";
   input list<BackendDAE.Equation> inEqns = {} "The dynamic Equations/Algoritms";
   input list<BackendDAE.Equation> inREqns = {};
   output list<BackendDAE.Var> outVars = inVars;
-  output list<BackendDAE.Var> outKnVars = inKnVars;
+  output list<BackendDAE.Var> outGlobalKnownVars = inGlobalKnownVars;
   output list<BackendDAE.Var> outExVars = inExVars;
   output list<BackendDAE.Equation> outEqns = inEqns;
   output list<BackendDAE.Equation> outREqns = inREqns;
@@ -496,11 +498,11 @@ algorithm
       crefs := ComponentReference.expandCref(cr, false);
       el := DAEUtil.replaceTypeInVar(arr_ty, el);
       new_vars := list(DAEUtil.replaceCrefInVar(c, el) for c in crefs);
-      (outVars, outKnVars, outExVars, outEqns, outREqns) :=
-        lowerVars(new_vars, functionTree, outVars, outKnVars, outExVars, outEqns, outREqns);
+      (outVars, outGlobalKnownVars, outExVars, outEqns, outREqns) :=
+        lowerVars(new_vars, functionTree, outVars, outGlobalKnownVars, outExVars, outEqns, outREqns);
     else
-      (outVars, outKnVars, outExVars, outEqns, outREqns) := lowerVar(el, functionTree,
-        outVars, outKnVars, outExVars, outEqns, outREqns, inline_ht);
+      (outVars, outGlobalKnownVars, outExVars, outEqns, outREqns) := lowerVar(el, functionTree,
+        outVars, outGlobalKnownVars, outExVars, outEqns, outREqns, inline_ht);
     end try;
   end for;
 end lowerVars;
@@ -509,13 +511,13 @@ protected function lowerVar
   input DAE.Element inElement;
   input DAE.FunctionTree inFunctions;
   input list<BackendDAE.Var> inVars;
-  input list<BackendDAE.Var> inKnVars;
+  input list<BackendDAE.Var> inGlobalKnownVars;
   input list<BackendDAE.Var> inExVars;
   input list<BackendDAE.Equation> inEqns;
   input list<BackendDAE.Equation> inREqns;
   input HashTableExpToExp.HashTable inInlineHT;
   output list<BackendDAE.Var> outVars = inVars;
-  output list<BackendDAE.Var> outKnVars = inKnVars;
+  output list<BackendDAE.Var> outGlobalKnownVars = inGlobalKnownVars;
   output list<BackendDAE.Var> outExVars = inExVars;
   output list<BackendDAE.Equation> outEqns = inEqns;
   output list<BackendDAE.Equation> outREqns = inREqns;
@@ -560,7 +562,7 @@ algorithm
       algorithm
         (var, outInlineHT, outREqns) :=
           lowerKnownVar(inElement, inFunctions, outInlineHT, outREqns);
-        outKnVars := var :: outKnVars;
+        outGlobalKnownVars := var :: outGlobalKnownVars;
       then
         ();
 
@@ -695,7 +697,6 @@ algorithm
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr, b);
         dae_var_attr = setMinMaxFromEnumeration(t, dae_var_attr);
-        fnstpl = (SOME(functionTree), {DAE.NORM_INLINE()});
         // build algorithms for the inlined asserts
         eqLst = buildAssertAlgorithms({},source,assrtEqIn);
         // building an algorithm of the assert
@@ -1095,7 +1096,7 @@ algorithm
         (eqns,inREquations,inIEquations);
 
     // Only succeds for initial tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c)
-    case(DAE.INITIALEQUATION(e1 as DAE.TUPLE(explst),e2 as DAE.CALL(),source),_,_,_,_)
+    case(DAE.INITIALEQUATION(e1 as DAE.TUPLE(_),e2 as DAE.CALL(),source),_,_,_,_)
       equation
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
         eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.INITIAL_EQUATION(),functionTree,inIEquations);
@@ -1700,7 +1701,7 @@ protected function lowerWhenEqn
   output list<BackendDAE.Equation> outEquationLst;
   output list<BackendDAE.Equation> outREquationLst;
 protected
-  Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
+  //Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
 algorithm
   (outEquationLst, outREquationLst):= matchcontinue inElement
     local
@@ -1715,7 +1716,7 @@ algorithm
 
     case DAE.WHEN_EQUATION(condition = cond, equations = eqnl, elsewhen_ = NONE(), source = source)
       equation
-        (DAE.PARTIAL_EQUATION(cond), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(cond),source);
+        (DAE.PARTIAL_EQUATION(cond), _) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(cond),source);
         (res, rEqns) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
         res = mergeWhenEqns(inEquationLst, res, {});
         rEqns = mergeWhenEqns(inREquationLst, rEqns, {});
@@ -1725,7 +1726,7 @@ algorithm
 
     case DAE.WHEN_EQUATION(condition = cond, equations = eqnl, elsewhen_ = SOME(elsePart), source = source)
       equation
-        (DAE.PARTIAL_EQUATION(cond), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(cond),source);
+        (DAE.PARTIAL_EQUATION(cond), _) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(cond),source);
         (trueEqnLst, trueREqns) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
         res = mergeWhenEqns(inEquationLst, trueEqnLst, {});
         rEqns = mergeWhenEqns(inREquationLst, trueREqns, {});
@@ -1754,7 +1755,7 @@ protected function lowerWhenEqn2
   output list<BackendDAE.Equation> outEquationLst;
   output list<BackendDAE.Equation> outREquationLst;
 protected
-  Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
+  //Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
 algorithm
   (outEquationLst, outREquationLst) := matchcontinue inDAEElementLst
     local
@@ -1799,7 +1800,7 @@ algorithm
       then
         (eqnl, reqnl);
 
-    case DAE.EQUATION(exp = cre as DAE.TUPLE(PR=expl), scalar = e, source = source)::xs
+    case DAE.EQUATION(exp = DAE.TUPLE(PR=expl), scalar = e, source = source)::xs
       equation
         eqnl = lowerWhenTupleEqn(expl, inCond, e, source, 1, iEquationLst);
         (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, eqnl, iREquationLst);
@@ -2187,7 +2188,7 @@ algorithm
         ht = BaseHashTable.add((cr, (e, source)), iHt);
       then
         lowerWhenIfEqnsElse(rest, functionTree, ht);
-    case (DAE.IF_EQUATION(condition1=expl, equations2=eqnslst, equations3=eqns, source = source)::rest, _, _)
+    case (DAE.IF_EQUATION(condition1=expl, equations2=eqnslst, equations3=eqns)::rest, _, _)
       equation
         ht = lowerWhenIfEqnsElse(eqns, functionTree, iHt);
         ht = lowerWhenIfEqns(listReverse(expl), listReverse(eqnslst), functionTree, ht);
@@ -2442,31 +2443,31 @@ protected function handleAliasEquations
 "author Frenkel TUD 2012-09"
   input list<DAE.Element> iAliasEqns;
   input BackendDAE.Variables iVars;
-  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables inGlobalKnownVars;
   input BackendDAE.Variables iExtVars;
   input BackendDAE.Variables iAVars;
   input list<BackendDAE.Equation> iEqns;
   input list<BackendDAE.Equation> iREqns;
   input list<BackendDAE.Equation> iIEqns;
   output BackendDAE.Variables oVars;
-  output BackendDAE.Variables oKnVars;
+  output BackendDAE.Variables outGlobalKnownVars;
   output BackendDAE.Variables oExtVars;
   output BackendDAE.Variables oAVars;
   output list<BackendDAE.Equation> oEqns;
   output list<BackendDAE.Equation> oREqns;
   output list<BackendDAE.Equation> oIEqns;
 algorithm
-  (oVars, oKnVars, oExtVars, oAVars, oEqns, oREqns, oIEqns) :=
-  match (iAliasEqns, iVars, iKnVars, iExtVars, iAVars, iEqns, iREqns, iIEqns)
+  (oVars, outGlobalKnownVars, oExtVars, oAVars, oEqns, oREqns, oIEqns) :=
+  match (iAliasEqns, iVars, inGlobalKnownVars, iExtVars, iAVars, iEqns, iREqns, iIEqns)
     local
-      BackendDAE.Variables vars, knvars, extvars, avars;
+      BackendDAE.Variables vars, globalKnownVars, extvars, avars;
       list<BackendDAE.Equation> eqns, reqns, ieqns;
-    case ({}, _, _, _, _, _, _, _) then (iVars, iKnVars, iExtVars, iAVars, iEqns, iREqns, iIEqns);
+    case ({}, _, _, _, _, _, _, _) then (iVars, inGlobalKnownVars, iExtVars, iAVars, iEqns, iREqns, iIEqns);
     case (_, _, _, _, _, _, _, _)
       equation
-        (vars, knvars, extvars, avars, eqns, reqns, ieqns) = handleAliasEquations1(iAliasEqns, iVars, iKnVars, iExtVars, iAVars, iEqns, iREqns, iIEqns);
+        (vars, globalKnownVars, extvars, avars, eqns, reqns, ieqns) = handleAliasEquations1(iAliasEqns, iVars, inGlobalKnownVars, iExtVars, iAVars, iEqns, iREqns, iIEqns);
       then
-        (vars, knvars, extvars, avars, eqns, reqns, ieqns);
+        (vars, globalKnownVars, extvars, avars, eqns, reqns, ieqns);
   end match;
 end handleAliasEquations;
 
@@ -2474,14 +2475,14 @@ protected function handleAliasEquations1
 "author Frenkel TUD 2012-09"
   input list<DAE.Element> iAliasEqns;
   input BackendDAE.Variables iVars;
-  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables inGlobalKnownVars;
   input BackendDAE.Variables iExtVars;
   input BackendDAE.Variables iAVars;
   input list<BackendDAE.Equation> iEqns;
   input list<BackendDAE.Equation> iREqns;
   input list<BackendDAE.Equation> iIEqns;
   output BackendDAE.Variables oVars;
-  output BackendDAE.Variables oKnVars;
+  output BackendDAE.Variables outGlobalKnownVars;
   output BackendDAE.Variables oExtVars;
   output BackendDAE.Variables oAVars;
   output list<BackendDAE.Equation> oEqns;
@@ -2492,7 +2493,7 @@ protected
 algorithm
   repl := BackendVarTransform.emptyReplacements();
   // get alias vars and replacements
-  (oVars, oKnVars, oExtVars, oAVars, repl, oEqns) := handleAliasEquations2(iAliasEqns, iVars, iKnVars, iExtVars, iAVars, repl, iEqns);
+  (oVars, outGlobalKnownVars, oExtVars, oAVars, repl, oEqns) := handleAliasEquations2(iAliasEqns, iVars, inGlobalKnownVars, iExtVars, iAVars, repl, iEqns);
   // replace alias bindings
   (oAVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(oAVars, replaceAliasVarTraverser, repl);
   // compress vars array
@@ -2528,28 +2529,28 @@ protected function handleAliasEquations2
 "author Frenkel TUD 2012-09"
   input list<DAE.Element> iAliasEqns;
   input BackendDAE.Variables iVars;
-  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables inGlobalKnownVars;
   input BackendDAE.Variables iExtVars;
   input BackendDAE.Variables iAVars;
   input BackendVarTransform.VariableReplacements iRepl;
   input list<BackendDAE.Equation> iEqns;
   output BackendDAE.Variables oVars;
-  output BackendDAE.Variables oKnVars;
+  output BackendDAE.Variables outGlobalKnownVars;
   output BackendDAE.Variables oExtVars;
   output BackendDAE.Variables oAVars;
   output BackendVarTransform.VariableReplacements oRepl;
   output list<BackendDAE.Equation> oEqns;
 algorithm
-  (oVars, oKnVars, oExtVars, oAVars, oRepl, oEqns) := match (iAliasEqns, iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns)
+  (oVars, outGlobalKnownVars, oExtVars, oAVars, oRepl, oEqns) := match (iAliasEqns, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns)
     local
-      BackendDAE.Variables vars, knvars, extvars, avars;
+      BackendDAE.Variables vars, globalKnownVars, extvars, avars;
       list<DAE.Element> aliaseqns;
       BackendVarTransform.VariableReplacements repl;
       DAE.ComponentRef cr1, cr2;
       DAE.ElementSource source;
       list<BackendDAE.Equation> eqns;
       DAE.Exp ecr1, ecr2;
-    case ({}, _, _, _, _, _, _) then (iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns);
+    case ({}, _, _, _, _, _, _) then (iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns);
     case (DAE.EQUEQUATION(cr1=cr1, cr2=cr2, source=source)::aliaseqns, _, _, _, _, _, _)
       equation
         // perform replacements
@@ -2558,11 +2559,11 @@ algorithm
         ecr2 = Expression.crefExp(cr2);
         (ecr2, _) = BackendVarTransform.replaceExp(ecr2, iRepl, NONE());
         // select alias
-        (vars, knvars, extvars, avars, repl, eqns) = selectAlias(ecr1, ecr2, source, iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns) = selectAlias(ecr1, ecr2, source, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns);
         // next
-        (vars, knvars, extvars, avars, repl, eqns) = handleAliasEquations2(aliaseqns, vars, knvars, extvars, avars, repl, eqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns) = handleAliasEquations2(aliaseqns, vars, globalKnownVars, extvars, avars, repl, eqns);
       then
-        (vars, knvars, extvars, avars, repl, eqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns);
   end match;
 end handleAliasEquations2;
 
@@ -2571,21 +2572,21 @@ protected function selectAlias
   input DAE.Exp exp2;
   input DAE.ElementSource source;
   input BackendDAE.Variables iVars;
-  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables inGlobalKnownVars;
   input BackendDAE.Variables iExtVars;
   input BackendDAE.Variables iAVars;
   input BackendVarTransform.VariableReplacements iRepl;
   input list<BackendDAE.Equation> iEqns;
   output BackendDAE.Variables oVars;
-  output BackendDAE.Variables oKnVars;
+  output BackendDAE.Variables outGlobalKnownVars;
   output BackendDAE.Variables oExtVars;
   output BackendDAE.Variables oAVars;
   output BackendVarTransform.VariableReplacements oRepl;
   output list<BackendDAE.Equation> oEqns;
 algorithm
-  (oVars, oKnVars, oExtVars, oAVars, oRepl, oEqns) := matchcontinue (exp1, exp2, source, iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns)
+  (oVars, outGlobalKnownVars, oExtVars, oAVars, oRepl, oEqns) := matchcontinue (exp1, exp2, source, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns)
     local
-      BackendDAE.Variables vars, knvars, extvars, avars;
+      BackendDAE.Variables vars, globalKnownVars, extvars, avars;
       BackendVarTransform.VariableReplacements repl;
       list<BackendDAE.Equation> eqns;
       DAE.ComponentRef cr1, cr2;
@@ -2598,25 +2599,25 @@ algorithm
     // array array case
     case (DAE.ARRAY(array=explst1), DAE.ARRAY(array=explst2), _, _, _, _, _, _, _)
       equation
-        (vars, knvars, extvars, avars, repl, eqns) = selectAliasLst(explst1, explst2, source, iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns) = selectAliasLst(explst1, explst2, source, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns);
       then
-        (vars, knvars, extvars, avars, repl, eqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns);
     // cref-array array case
     case (DAE.CREF(componentRef=cr1, ty=DAE.T_ARRAY(dims = dims1)), DAE.ARRAY(array=explst2), _, _, _, _, _, _, _)
       equation
         crefs1 = ComponentReference.expandArrayCref(cr1, dims1);
         explst1 = List.map(crefs1, Expression.crefExp);
-        (vars, knvars, extvars, avars, repl, eqns) = selectAliasLst(explst1, explst2, source, iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns) = selectAliasLst(explst1, explst2, source, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns);
       then
-        (vars, knvars, extvars, avars, repl, eqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns);
     // array cref-array case
     case (DAE.ARRAY(array=explst1), DAE.CREF(componentRef=cr2, ty=DAE.T_ARRAY(dims = dims2)), _, _, _, _, _, _, _)
       equation
         crefs2 = ComponentReference.expandArrayCref(cr2, dims2);
         explst2 = List.map(crefs2, Expression.crefExp);
-        (vars, knvars, extvars, avars, repl, eqns) = selectAliasLst(explst1, explst2, source, iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns) = selectAliasLst(explst1, explst2, source, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns);
       then
-        (vars, knvars, extvars, avars, repl, eqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns);
     // cref-array cref-array case
     case (DAE.CREF(componentRef=cr1, ty=DAE.T_ARRAY(dims = dims1)), DAE.CREF(componentRef=cr2, ty=DAE.T_ARRAY(dims = dims2)), _, _, _, _, _, _, _)
       equation
@@ -2624,50 +2625,50 @@ algorithm
         explst1 = List.map(crefs1, Expression.crefExp);
         crefs2 = ComponentReference.expandArrayCref(cr2, dims2);
         explst2 = List.map(crefs2, Expression.crefExp);
-        (vars, knvars, extvars, avars, repl, eqns) = selectAliasLst(explst1, explst2, source, iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns) = selectAliasLst(explst1, explst2, source, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns);
       then
-        (vars, knvars, extvars, avars, repl, eqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns);
 
     // matrix matrix case
     case (DAE.MATRIX(matrix=explstlst1), DAE.MATRIX(matrix=explstlst2), _, _, _, _, _, _, _)
       equation
-        (vars, knvars, extvars, avars, repl, eqns) = selectAliasLst(List.flatten(explstlst1), List.flatten(explstlst2), source, iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns) = selectAliasLst(List.flatten(explstlst1), List.flatten(explstlst2), source, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns);
       then
-        (vars, knvars, extvars, avars, repl, eqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns);
     // scalar case
     case (DAE.CREF(componentRef=cr1),
           DAE.CREF(componentRef=cr2), _, _, _, _, _, _, _)
       equation
-        (v1, i1, arrayTyp1) = getVar(cr1, iVars, iKnVars, iExtVars);
-        (v2, i2, arrayTyp2) = getVar(cr2, iVars, iKnVars, iExtVars);
-        (vars, knvars, extvars, avars, repl) = selectAliasVar(v1, i1, arrayTyp1, exp1, v2, i2, arrayTyp2, exp2, source, iVars, iKnVars, iExtVars, iAVars, iRepl);
+        (v1, i1, arrayTyp1) = getVar(cr1, iVars, inGlobalKnownVars, iExtVars);
+        (v2, i2, arrayTyp2) = getVar(cr2, iVars, inGlobalKnownVars, iExtVars);
+        (vars, globalKnownVars, extvars, avars, repl) = selectAliasVar(v1, i1, arrayTyp1, exp1, v2, i2, arrayTyp2, exp2, source, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl);
       then
-        (vars, knvars, extvars, avars, repl, iEqns);
+        (vars, globalKnownVars, extvars, avars, repl, iEqns);
     // complex
     case (_, _, _, _, _, _, _, _, _)
       equation
         // Create a list of crefs from names
         explst1 = Expression.splitRecord(exp1, Expression.typeof(exp1));
         explst2 = Expression.splitRecord(exp2, Expression.typeof(exp2));
-        (vars, knvars, extvars, avars, repl, eqns) = selectAliasLst(explst1, explst2, source, iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns) = selectAliasLst(explst1, explst2, source, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns);
       then
-        (vars, knvars, extvars, avars, repl, eqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns);
     // if no alias selectable add as equation
     case (_, _, _, _, _, _, _, _, _)
-      then (iVars, iKnVars, iExtVars, iAVars, iRepl, BackendDAE.EQUATION(exp1, exp2, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::iEqns);
+      then (iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, BackendDAE.EQUATION(exp1, exp2, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::iEqns);
   end matchcontinue;
 end selectAlias;
 
 protected function getVar
   input DAE.ComponentRef cr;
   input BackendDAE.Variables iVars;
-  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables inGlobalKnownVars;
   input BackendDAE.Variables iExtVars;
   output BackendDAE.Var oVar;
   output Integer index;
   output Integer varrArray;
 algorithm
-  (oVar, index, varrArray) := matchcontinue(cr, iVars, iKnVars, iExtVars)
+  (oVar, index, varrArray) := matchcontinue(cr, iVars, inGlobalKnownVars, iExtVars)
     local
       BackendDAE.Var v;
       Integer i;
@@ -2678,7 +2679,7 @@ algorithm
         (v, i, 1);
     case(_, _, _, _)
       equation
-        (v, i) = BackendVariable.getVarSingle(cr, iKnVars);
+        (v, i) = BackendVariable.getVarSingle(cr, inGlobalKnownVars);
       then
         (v, i, 2);
     case(_, _, _, _)
@@ -2694,39 +2695,39 @@ protected function selectAliasLst
   input list<DAE.Exp> iexplst2;
   input DAE.ElementSource source;
   input BackendDAE.Variables iVars;
-  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables inGlobalKnownVars;
   input BackendDAE.Variables iExtVars;
   input BackendDAE.Variables iAVars;
   input BackendVarTransform.VariableReplacements iRepl;
   input list<BackendDAE.Equation> iEqns;
   output BackendDAE.Variables oVars;
-  output BackendDAE.Variables oKnVars;
+  output BackendDAE.Variables outGlobalKnownVars;
   output BackendDAE.Variables oExtVars;
   output BackendDAE.Variables oAVars;
   output BackendVarTransform.VariableReplacements oRepl;
   output list<BackendDAE.Equation> oEqns;
 algorithm
-  (oVars, oKnVars, oExtVars, oAVars, oRepl, oEqns) := match (iexplst1, iexplst2, source, iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns)
+  (oVars, outGlobalKnownVars, oExtVars, oAVars, oRepl, oEqns) := match (iexplst1, iexplst2, source, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns)
     local
-      BackendDAE.Variables vars, knvars, extvars, avars;
+      BackendDAE.Variables vars, globalKnownVars, extvars, avars;
       BackendVarTransform.VariableReplacements repl;
       list<BackendDAE.Equation> eqns;
       DAE.Exp e1, e2;
       list<DAE.Exp> explst1, explst2;
     case ({}, {}, _, _, _, _, _, _, _)
       then
-        (iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns);
+        (iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns);
     case (e1::explst1, e2::explst2, _, _, _, _, _, _, _)
       equation
         // perform replacements
         (e1, _) = BackendVarTransform.replaceExp(e1, iRepl, NONE());
         (e2, _) = BackendVarTransform.replaceExp(e2, iRepl, NONE());
         // select alias
-        (vars, knvars, extvars, avars, repl, eqns) = selectAlias(e1, e2, source, iVars, iKnVars, iExtVars, iAVars, iRepl, iEqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns) = selectAlias(e1, e2, source, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns);
         // next
-        (vars, knvars, extvars, avars, repl, eqns) = selectAliasLst(explst1, explst2, source, vars, knvars, extvars, avars, repl, eqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns) = selectAliasLst(explst1, explst2, source, vars, globalKnownVars, extvars, avars, repl, eqns);
       then
-        (vars, knvars, extvars, avars, repl, eqns);
+        (vars, globalKnownVars, extvars, avars, repl, eqns);
   end match;
 end selectAliasLst;
 
@@ -2741,20 +2742,20 @@ protected function selectAliasVar
   input DAE.Exp e2;
   input DAE.ElementSource source;
   input BackendDAE.Variables iVars;
-  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables inGlobalKnownVars;
   input BackendDAE.Variables iExtVars;
   input BackendDAE.Variables iAVars;
   input BackendVarTransform.VariableReplacements iRepl;
   output BackendDAE.Variables oVars;
-  output BackendDAE.Variables oKnVars;
+  output BackendDAE.Variables outGlobalKnownVars;
   output BackendDAE.Variables oExtVars;
   output BackendDAE.Variables oAVars;
   output BackendVarTransform.VariableReplacements oRepl;
 algorithm
-  (oVars, oKnVars, oExtVars, oAVars, oRepl) :=
-   match (v1, index1, arrayIndx1, e1, v2, index2, arrayIndx2, e2, source, iVars, iKnVars, iExtVars, iAVars, iRepl)
+  (oVars, outGlobalKnownVars, oExtVars, oAVars, oRepl) :=
+   match (v1, index1, arrayIndx1, e1, v2, index2, arrayIndx2, e2, source, iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl)
     local
-      BackendDAE.Variables vars, knvars, extvars, avars;
+      BackendDAE.Variables vars, globalKnownVars, extvars, avars;
       BackendVarTransform.VariableReplacements repl;
       list<DAE.SymbolicOperation> ops;
       BackendDAE.Var var, avar;
@@ -2770,7 +2771,7 @@ algorithm
         false = BackendVariable.isStateVar(v2);
         replaceableAlias(v2);
         // merge fixed, start, nominal
-        var = BackendVariable.mergeAliasVars(v1, v2, false, iKnVars);
+        var = BackendVariable.mergeAliasVars(v1, v2, false, inGlobalKnownVars);
         // setAliasType
         ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2, DAE.SOLVED(cr2, e1)::ops);
@@ -2787,7 +2788,7 @@ algorithm
           BackendDump.debugStrCrefStrExpStr("Alias Equation ", cr2, " = ", e1, " found (4).\n");
         end if;
       then
-        (vars, iKnVars, iExtVars, avars, repl);
+        (vars, inGlobalKnownVars, iExtVars, avars, repl);
     // state variable
     case (BackendDAE.VAR(varName=cr1), _, 1, _,
           BackendDAE.VAR(varKind=BackendDAE.STATE()), _, 1, _, _, _, _, _, _, _)
@@ -2796,7 +2797,7 @@ algorithm
         false = BackendVariable.isStateVar(v1);
         replaceableAlias(v1);
         // merge fixed, start, nominal
-        var = BackendVariable.mergeAliasVars(v2, v1, false, iKnVars);
+        var = BackendVariable.mergeAliasVars(v2, v1, false, inGlobalKnownVars);
         // setAliasType
         ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr1, e2)::ops);
@@ -2813,7 +2814,7 @@ algorithm
           BackendDump.debugStrCrefStrExpStr("Alias Equation ", cr1, " = ", e2, " found (4).\n");
         end if;
       then
-        (vars, iKnVars, iExtVars, avars, repl);
+        (vars, inGlobalKnownVars, iExtVars, avars, repl);
     // var var / state state
     case (BackendDAE.VAR(varName=cr1), _, 1, _,
           BackendDAE.VAR(varName=cr2), _, 1, _, _, _, _, _, _, _)
@@ -2831,7 +2832,7 @@ algorithm
         // select alias
         ((acr, avar, aindx, _, _, var, e)) = if b then (cr2, v2, index2, e2, cr1, v1, e1) else (cr1, v1, index1, e1, cr2, v2, e2);
         // merge fixed, start, nominal
-        var = BackendVariable.mergeAliasVars(var, avar, false, iKnVars);
+        var = BackendVariable.mergeAliasVars(var, avar, false, inGlobalKnownVars);
         // setAliasType
         ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(avar, DAE.SOLVED(acr, e)::ops);
@@ -2849,7 +2850,7 @@ algorithm
           BackendDump.debugStrCrefStrExpStr("Alias Equation ", acr, " = ", e, " found (4).\n");
         end if;
       then
-        (vars, iKnVars, iExtVars, avars, repl);
+        (vars, inGlobalKnownVars, iExtVars, avars, repl);
     // var/state parameter
     case (BackendDAE.VAR(varName=cr1), _, 1, _,
           BackendDAE.VAR(), _, 2, _, _, _, _, _, _, _)
@@ -2857,7 +2858,7 @@ algorithm
         // check if replacable
         replaceableAlias(v1);
         // merge fixed, start, nominal
-        var = BackendVariable.mergeAliasVars(v2, v1, false, iKnVars);
+        var = BackendVariable.mergeAliasVars(v2, v1, false, inGlobalKnownVars);
         // setAliasType
         ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr1, e2)::ops);
@@ -2867,15 +2868,15 @@ algorithm
         (vars, _) = BackendVariable.removeVar(index1, iVars);
         // add to alias
         avars = BackendVariable.addVar(avar, iAVars);
-        // add to knvars
-        knvars = BackendVariable.addVar(var, iKnVars);
+        // add to globalKnownVars
+        globalKnownVars = BackendVariable.addVar(var, inGlobalKnownVars);
         // add replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr1, e2, NONE());
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           BackendDump.debugStrCrefStrExpStr("Alias Equation ", cr1, " = ", e2, " found (4).\n");
         end if;
       then
-        (vars, knvars, iExtVars, avars, repl);
+        (vars, globalKnownVars, iExtVars, avars, repl);
     // parameter var/state
     case (BackendDAE.VAR(), _, 2, _,
           BackendDAE.VAR(varName=cr2), _, 1, _, _, _, _, _, _, _)
@@ -2883,7 +2884,7 @@ algorithm
         // check if replacable
         replaceableAlias(v2);
         // merge fixed, start, nominal
-        var = BackendVariable.mergeAliasVars(v1, v2, false, iKnVars);
+        var = BackendVariable.mergeAliasVars(v1, v2, false, inGlobalKnownVars);
         // setAliasType
         ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2, DAE.SOLVED(cr2, e1)::ops);
@@ -2893,15 +2894,15 @@ algorithm
         (vars, _) = BackendVariable.removeVar(index2, iVars);
         // add to alias
         avars = BackendVariable.addVar(avar, iAVars);
-        // add to knvars
-        knvars = BackendVariable.addVar(var, iKnVars);
+        // add to globalKnownVars
+        globalKnownVars = BackendVariable.addVar(var, inGlobalKnownVars);
         // add replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr2, e1, NONE());
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           BackendDump.debugStrCrefStrExpStr("Alias Equation ", cr2, " = ", e1, " found (4).\n");
         end if;
       then
-        (vars, knvars, iExtVars, avars, repl);
+        (vars, globalKnownVars, iExtVars, avars, repl);
     // var/state extvar
     case (BackendDAE.VAR(varName=cr1), _, 1, _,
           BackendDAE.VAR(), _, 3, _, _, _, _, _, _, _)
@@ -2909,7 +2910,7 @@ algorithm
         // check if replacable
         replaceableAlias(v1);
         // merge fixed, start, nominal
-        var = BackendVariable.mergeAliasVars(v2, v1, false, iKnVars);
+        var = BackendVariable.mergeAliasVars(v2, v1, false, inGlobalKnownVars);
         // setAliasType
         ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr1, e2)::ops);
@@ -2927,7 +2928,7 @@ algorithm
           BackendDump.debugStrCrefStrExpStr("Alias Equation ", cr1, " = ", e2, " found (4).\n");
         end if;
       then
-        (vars, iKnVars, extvars, avars, repl);
+        (vars, inGlobalKnownVars, extvars, avars, repl);
     // extvar var/state
     case (BackendDAE.VAR(), _, 3, _,
           BackendDAE.VAR(varName=cr2), _, 1, _, _, _, _, _, _, _)
@@ -2935,7 +2936,7 @@ algorithm
         // check if replacable
         replaceableAlias(v2);
         // merge fixed, start, nominal
-        var = BackendVariable.mergeAliasVars(v1, v2, false, iKnVars);
+        var = BackendVariable.mergeAliasVars(v1, v2, false, inGlobalKnownVars);
         // setAliasType
         ops = ElementSource.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2, DAE.SOLVED(cr2, e1)::ops);
@@ -2945,7 +2946,7 @@ algorithm
         (vars, _) = BackendVariable.removeVar(index2, iVars);
         // add to alias
         avars = BackendVariable.addVar(avar, iAVars);
-        // add to knvars
+        // add to globalKnownVars
         extvars = BackendVariable.addVar(var, iExtVars);
         // add replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr2, e1, NONE());
@@ -2953,7 +2954,7 @@ algorithm
           BackendDump.debugStrCrefStrExpStr("Alias Equation ", cr2, " = ", e1, " found (4).\n");
         end if;
       then
-        (vars, iKnVars, extvars, avars, repl);
+        (vars, inGlobalKnownVars, extvars, avars, repl);
   end match;
 end selectAliasVar;
 
@@ -2981,22 +2982,22 @@ protected function detectImplicitDiscrete
 "This function updates the variable kind to discrete
   for variables set in when equations."
   input BackendDAE.Variables inVariables;
-  input BackendDAE.Variables inKnVariables;
+  input BackendDAE.Variables inGlobalKnownVars;
   input list<BackendDAE.Equation> inEquationLst;
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := List.fold1(inEquationLst, detectImplicitDiscreteFold, inKnVariables, inVariables);
+  outVariables := List.fold1(inEquationLst, detectImplicitDiscreteFold, inGlobalKnownVars, inVariables);
 end detectImplicitDiscrete;
 
 protected function detectImplicitDiscreteFold
 "This function updates the variable kind to discrete
   for variables set in when equations."
   input BackendDAE.Equation inEquation;
-  input BackendDAE.Variables inKnVariables;
+  input BackendDAE.Variables inGlobalKnownVars;
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := matchcontinue (inEquation, inKnVariables, inVariables)
+  outVariables := matchcontinue (inEquation, inGlobalKnownVars, inVariables)
     local
       DAE.ComponentRef cr;
       list<BackendDAE.Var> vars;
@@ -3008,7 +3009,7 @@ algorithm
         vars = List.map1(vars, BackendVariable.setVarKind, BackendDAE.DISCRETE());
       then BackendVariable.addVars(vars, inVariables);
     case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst = statementLst)), _, _)
-      then detectImplicitDiscreteAlgsStatemens(inVariables, inKnVariables, statementLst, false);
+      then detectImplicitDiscreteAlgsStatemens(inVariables, inGlobalKnownVars, statementLst, false);
     else inVariables;
   end matchcontinue;
 end detectImplicitDiscreteFold;
@@ -3040,14 +3041,14 @@ protected function detectImplicitDiscreteAlgsStatemens
 "This function updates the variable kind to discrete
   for variables set in when equations."
   input BackendDAE.Variables inVariables;
-  input BackendDAE.Variables inKnVariables;
+  input BackendDAE.Variables inGlobalKnownVars;
   input list<DAE.Statement> inStatementLst;
   input Boolean insideWhen "true if its called from a when statement";
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := matchcontinue (inVariables, inKnVariables, inStatementLst, insideWhen)
+  outVariables := matchcontinue (inVariables, inGlobalKnownVars, inStatementLst, insideWhen)
     local
-      BackendDAE.Variables v, v_1, v_2, v_3, knv;
+      BackendDAE.Variables v, v_1, v_2, v_3, globalKnownVars;
       DAE.ComponentRef cr;
       list<DAE.Statement> xs, statementLst;
       BackendDAE.Var var;
@@ -3061,132 +3062,131 @@ algorithm
       list<DAE.Subscript> subs;
 
     case (v, _, {}, _) then v;
-    case (v, knv, ((DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr)))::xs), true)
+    case (v, globalKnownVars, ((DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr)))::xs), true)
       equation
         ((var::_), _) = BackendVariable.getVar(cr, v);
         var = BackendVariable.setVarKind(var, BackendDAE.DISCRETE());
         v_1 = BackendVariable.addVar(var, v);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, xs, true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, globalKnownVars, xs, true);
       then
         v_2;
 
-    case (v, knv, ((DAE.STMT_ASSIGN(exp1 = DAE.ASUB(exp = DAE.CREF(componentRef = cr), sub= expExpLst)))::xs), true)
+    case (v, globalKnownVars, ((DAE.STMT_ASSIGN(exp1 = DAE.ASUB(exp = DAE.CREF(componentRef = cr), sub= expExpLst)))::xs), true)
       equation
         subs = List.map(expExpLst, Expression.makeIndexSubscript);
         cr = ComponentReference.subscriptCref(cr, subs);
         (vars, _) = BackendVariable.getVar(cr, v);
         vars = List.map1(vars, BackendVariable.setVarKind, BackendDAE.DISCRETE());
         v_1 = BackendVariable.addVars(vars, v);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, xs, true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, globalKnownVars, xs, true);
       then
         v_2;
 
-      case(v, knv, (DAE.STMT_TUPLE_ASSIGN(expExpLst=expExpLst)::xs), true) equation
+      case(v, globalKnownVars, (DAE.STMT_TUPLE_ASSIGN(expExpLst=expExpLst)::xs), true) equation
         vars = getVarsFromExp(expExpLst, v);
         vars = List.map1(vars, BackendVariable.setVarKind, BackendDAE.DISCRETE());
         v_1 = BackendVariable.addVars(vars, v);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, xs, true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, globalKnownVars, xs, true);
       then v_2;
 
-    case (v, knv, (DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef=cr))::xs), true)
+    case (v, globalKnownVars, (DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef=cr))::xs), true)
       equation
         (vars, _) = BackendVariable.getVar(cr, v);
         vars = List.map1(vars, BackendVariable.setVarKind, BackendDAE.DISCRETE());
         v_1 = BackendVariable.addVars(vars, v);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, xs, true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, globalKnownVars, xs, true);
       then
         v_2;
-    case (v, knv, (DAE.STMT_IF(statementLst = statementLst)::xs), true)
+    case (v, globalKnownVars, (DAE.STMT_IF(statementLst = statementLst)::xs), true)
       equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, statementLst, true);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, xs, true);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, globalKnownVars, statementLst, true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, globalKnownVars, xs, true);
       then
         v_2;
-    case (v, knv, (DAE.STMT_FOR(type_= tp, iter = iteratorName, range = e, statementLst = statementLst)::xs), true)
+    case (v, globalKnownVars, (DAE.STMT_FOR(type_= tp, iter = iteratorName, range = e, statementLst = statementLst)::xs), true)
       equation
         /* use the range for the componentreferences */
         cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
         iteratorExp = Expression.crefExp(cr);
-        iteratorexps = BackendDAEUtil.extendRange(e, knv);
-        v_1 = detectImplicitDiscreteAlgsStatemensFor(iteratorExp, iteratorexps, v, knv, statementLst, true);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, xs, true);
+        iteratorexps = BackendDAEUtil.extendRange(e, globalKnownVars);
+        v_1 = detectImplicitDiscreteAlgsStatemensFor(iteratorExp, iteratorexps, v, globalKnownVars, statementLst, true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, globalKnownVars, xs, true);
       then
         v_2;
 
 /*
-    case (v, knv, (DAE.STMT_PARFOR(type_= tp, iter = iteratorName, range = e, statementLst = statementLst, loopPrlVars=loopPrlVars)::xs), true)
+    case (v, globalKnownVars, (DAE.STMT_PARFOR(type_= tp, iter = iteratorName, range = e, statementLst = statementLst, loopPrlVars=loopPrlVars)::xs), true)
       equation
         cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
         iteratorExp = Expression.crefExp(cr);
-        iteratorexps = BackendDAEUtil.extendRange(e, knv);
-        v_1 = detectImplicitDiscreteAlgsStatemensFor(iteratorExp, iteratorexps, v, knv, statementLst, true);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, xs, true);
+        iteratorexps = BackendDAEUtil.extendRange(e, globalKnownVars);
+        v_1 = detectImplicitDiscreteAlgsStatemensFor(iteratorExp, iteratorexps, v, globalKnownVars, statementLst, true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, globalKnownVars, xs, true);
       then
         v_2;
 */
 
-    case (v, knv, (DAE.STMT_WHEN(statementLst=statementLst, elseWhen=NONE())::xs), _)
+    case (v, globalKnownVars, (DAE.STMT_WHEN(statementLst=statementLst, elseWhen=NONE())::xs), _)
       equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, statementLst, true);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, xs, false);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, globalKnownVars, statementLst, true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, globalKnownVars, xs, false);
       then
         v_2;
-    case (v, knv, (DAE.STMT_WHEN(statementLst=statementLst, elseWhen=SOME(statement))::xs), _)
+    case (v, globalKnownVars, (DAE.STMT_WHEN(statementLst=statementLst, elseWhen=SOME(statement))::xs), _)
       equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, statementLst, true);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, {statement}, true);
-        v_3 = detectImplicitDiscreteAlgsStatemens(v_2, knv, xs, false);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, globalKnownVars, statementLst, true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, globalKnownVars, {statement}, true);
+        v_3 = detectImplicitDiscreteAlgsStatemens(v_2, globalKnownVars, xs, false);
       then
         v_3;
-    case (v, knv, (_::xs), b)
+    case (v, globalKnownVars, (_::xs), b)
       equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, xs, b);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, globalKnownVars, xs, b);
       then
         v_1;
   end matchcontinue;
 end detectImplicitDiscreteAlgsStatemens;
 
 protected function detectImplicitDiscreteAlgsStatemensFor
-""
   input DAE.Exp inIteratorExp;
   input list<DAE.Exp> inExplst;
   input BackendDAE.Variables inVariables;
-  input BackendDAE.Variables inKnVariables;
+  input BackendDAE.Variables inGlobalKnownVars;
   input list<DAE.Statement> inStatementLst;
   input Boolean insideWhen "true if its called from a when statement";
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := matchcontinue (inIteratorExp, inExplst, inVariables, inKnVariables, inStatementLst, insideWhen)
+  outVariables := matchcontinue (inIteratorExp, inExplst, inVariables, inGlobalKnownVars, inStatementLst, insideWhen)
     local
-      BackendDAE.Variables v, v_1, v_2, knv;
+      BackendDAE.Variables v, v_1, v_2, globalKnownVars;
       list<DAE.Statement> statementLst, statementLst1;
       Boolean b;
       DAE.Exp e, ie;
       list<DAE.Exp> rest;
 
     // case if the loop range can't extend, some vaiables
-    case (_, {}, v, knv, _, _)
+    case (_, {}, v, globalKnownVars, _, _)
       equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, inStatementLst, true);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, globalKnownVars, inStatementLst, true);
       then v_1;
-    case (ie, e::{}, v, knv, statementLst, _)
+    case (ie, e::{}, v, globalKnownVars, statementLst, _)
       equation
         (statementLst1, _) = DAEUtil.traverseDAEEquationsStmts(statementLst, Expression.replaceExpTpl, ((ie, e)));
-        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, statementLst1, true);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, globalKnownVars, statementLst1, true);
       then
         v_1;
-    case (ie, e::rest, v, knv, statementLst, b)
+    case (ie, e::rest, v, globalKnownVars, statementLst, b)
       equation
         (statementLst1, _) = DAEUtil.traverseDAEEquationsStmts(statementLst, Expression.replaceExpTpl, ((ie, e)));
-        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, statementLst1, true);
-        v_2 = detectImplicitDiscreteAlgsStatemensFor(ie, rest, v_1, knv, statementLst, b);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, globalKnownVars, statementLst1, true);
+        v_2 = detectImplicitDiscreteAlgsStatemensFor(ie, rest, v_1, globalKnownVars, statementLst, b);
       then
         v_2;
-    case (ie, e::rest, v, knv, statementLst, b)
+    case (ie, e::rest, v, globalKnownVars, statementLst, b)
       equation
         (statementLst1, _) = DAEUtil.traverseDAEEquationsStmts(statementLst, Expression.replaceExpTpl, ((ie, e)));
-        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, statementLst1, true);
-        v_2 = detectImplicitDiscreteAlgsStatemensFor(ie, rest, v_1, knv, statementLst, b);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, globalKnownVars, statementLst1, true);
+        v_2 = detectImplicitDiscreteAlgsStatemensFor(ie, rest, v_1, globalKnownVars, statementLst, b);
       then
         v_2;
     case (_, _, _, _, _, _)

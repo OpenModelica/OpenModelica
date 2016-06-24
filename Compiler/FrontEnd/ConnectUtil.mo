@@ -1662,8 +1662,8 @@ algorithm
     case SetTrieNode.SET_TRIE_LEAF(insideElement = ie, outsideElement = oe,
         flowAssociation = flow_cr)
       algorithm
-        ie := insertFlowAssociationInStreamElement(sets.insideElement, flow_cr);
-        oe := insertFlowAssociationInStreamElement(sets.outsideElement, flow_cr);
+        ie := insertFlowAssociationInStreamElement(ie, flow_cr);
+        oe := insertFlowAssociationInStreamElement(oe, flow_cr);
         prefix_cr := buildElementPrefix(prefix);
         setArray := setArrayAddElement(ie, prefix_cr, setArray);
         setArray := setArrayAddElement(oe, prefix_cr, setArray);
@@ -1833,10 +1833,10 @@ algorithm
           DAE;
 
       case Set.SET(ty = ConnectorType.FLOW(), elements = eql)
-        then DAEUtil.joinDaes(generateFlowEquations(set.elements), DAE);
+        then DAEUtil.joinDaes(generateFlowEquations(eql), DAE);
 
       case Set.SET(ty = ConnectorType.STREAM(), elements = eql)
-        then DAEUtil.joinDaes(generateStreamEquations(set.elements, flowThreshold), DAE);
+        then DAEUtil.joinDaes(generateStreamEquations(eql, flowThreshold), DAE);
 
       // Should never happen.
       case Set.SET(ty = ConnectorType.NO_TYPE())

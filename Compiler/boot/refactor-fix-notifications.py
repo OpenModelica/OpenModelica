@@ -53,7 +53,7 @@ NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|UNUSED_
 
 def runOMC(arg):
   try:
-    res = subprocess.check_output(['../../build/bin/omc','+d=patternmAllInfo',arg],stderr=subprocess.STDOUT)
+    res = subprocess.check_output(['../../../build/bin/omc','-d=patternmAllInfo,-listAppendWrongOrder',arg],stderr=subprocess.STDOUT)
   except subprocess.CalledProcessError as e:
     print e.output,e
     raise
@@ -100,6 +100,11 @@ def fixFileIter(stamp,moFile,logFile):
   except:
     return # It's ok; there were no messages
   allLines = log.readlines()
+  for l in allLines:
+    try:
+      NOTIFICATION.parseString(l.strip())
+    except:
+      print("Notification failed for",l)
   lst = [NOTIFICATION.parseString(line.strip()) for line in allLines]
   len1 = len(lst)
   lst = [n for n in lst if n[0]['fileName'] == moFile]
@@ -284,4 +289,8 @@ def runStamp(arg):
   fixFile(arg,logFile,moFile)
 
 for arg in args:
-  runStamp(arg)
+  try:
+    runStamp(arg)
+  except:
+    print("Failed for",arg)
+    raise

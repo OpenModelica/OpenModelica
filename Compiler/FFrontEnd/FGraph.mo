@@ -634,19 +634,21 @@ public function openScope
   input Name inName;
   input Option<FCore.ScopeType> inScopeType;
   output Graph outGraph;
+protected
+  Ref p;
 algorithm
+  p := lastScopeRef(inGraph);
   outGraph := matchcontinue(inGraph, encapsulatedPrefix, inName, inScopeType)
     local
       Graph g, gComp;
       Name n;
       Node no;
-      Ref r, p;
+      Ref r;
       Scope sc;
 
     // see if we have it as a class instance
     case (g, _, n, _)
       equation
-        p = lastScopeRef(g);
         r = FNode.child(p, n);
         FCore.CL(status = FCore.CLS_INSTANCE(_)) = FNode.refData(r);
         FNode.addChildRef(p, n, r);
@@ -657,7 +659,6 @@ algorithm
     // see if we have a child with the same name!
     case (g, _, n, _)
       equation
-        p = lastScopeRef(g);
         r = FNode.child(p, n);
         r = FNode.copyRefNoUpdate(r);
         // FNode.addChildRef(p, n, r);
@@ -668,7 +669,6 @@ algorithm
     // else open a new scope!
     case (g, _, n, _)
       equation
-        p = lastScopeRef(g);
         (g, no) = node(g, n, {p}, FCore.ND(inScopeType));
         r = FNode.toRef(no);
         // FNode.addChildRef(p, n, r);
@@ -1355,6 +1355,8 @@ protected function getGraphPathNoImplicitScope_dispatch
  NONE() is returned."
   input Scope inScope;
   output Option<Absyn.Path> outAbsynPathOption;
+protected
+  Option<Absyn.Path> opath;
 algorithm
   outAbsynPathOption := matchcontinue (inScope)
     local
@@ -1364,31 +1366,24 @@ algorithm
       Ref ref;
 
     case (ref :: rest)
-      equation
-        false = FNode.isRefTop(ref);
-        id = FNode.refName(ref);
-        true = isImplicitScope(id);
+      guard
+        not FNode.isRefTop(ref)
+      algorithm
+        id := FNode.refName(ref);
+        if isImplicitScope(id) then
+          opath := getGraphPathNoImplicitScope_dispatch(rest);
+        else
+          opath := getGraphPathNoImplicitScope_dispatch(rest);
+          if isSome(opath) then
+            SOME(path) := opath;
+            path_1 := Absyn.joinPaths(path, Absyn.IDENT(id));
+            opath := SOME(path_1);
+          else
+            opath := SOME(Absyn.IDENT(id));
+          end if;
+        end if;
       then
-        getGraphPathNoImplicitScope_dispatch(rest);
-
-    case (ref :: rest)
-      equation
-        false = FNode.isRefTop(ref);
-        id = FNode.refName(ref);
-        false = isImplicitScope(id);
-        SOME(path) = getGraphPathNoImplicitScope_dispatch(rest);
-        path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
-      then
-        SOME(path_1);
-
-    case (ref ::rest)
-      equation
-        false = FNode.isRefTop(ref);
-        id = FNode.refName(ref);
-        false = isImplicitScope(id);
-        NONE() = getGraphPathNoImplicitScope_dispatch(rest);
-      then
-        SOME(Absyn.IDENT(id));
+        opath;
 
     else NONE();
 
@@ -1406,24 +1401,17 @@ public function joinScopePath "Used to join an Graph scope with an Absyn.Path (p
   input Graph inGraph;
   input Absyn.Path inPath;
   output Absyn.Path outPath;
+protected
+  Option<Absyn.Path> opath;
+  Absyn.Path envPath;
 algorithm
-  outPath := matchcontinue(inGraph,inPath)
-    local
-      Absyn.Path envPath;
-
-    case (_,_)
-      equation
-        SOME(envPath) = getScopePath(inGraph);
-        //envPath = Absyn.makeFullyQualified(Absyn.joinPaths(envPath,inPath));
-        envPath = Absyn.joinPaths(envPath,inPath);
-      then envPath;
-
-    case (_,_)
-      equation
-        NONE() = getScopePath(inGraph);
-      then inPath;
-
-  end matchcontinue;
+  opath := getScopePath(inGraph);
+  if isSome(opath) then
+    SOME(envPath) := opath;
+    outPath := Absyn.joinPaths(envPath,inPath);
+  else
+    outPath := inPath;
+  end if;
 end joinScopePath;
 
 public function splitGraphScope
@@ -1442,7 +1430,7 @@ public function splitGraphScope_dispatch
   output Graph outRealGraph;
   output Scope outForScope;
 algorithm
-  (outRealGraph, outForScope) := matchcontinue(inGraph, inAcc)
+  (outRealGraph, outForScope) := match(inGraph, inAcc)
     local
       Graph g;
       Ref r;
@@ -1452,19 +1440,17 @@ algorithm
 
     case (FCore.G(scope = r::_), _)
       equation
-        true = FNode.isImplicitRefName(r);
-        (g, _) = stripLastScopeRef(inGraph);
-        (g, s) = splitGraphScope_dispatch(g, r::inAcc);
+        if FNode.isImplicitRefName(r) then
+          (g, _) = stripLastScopeRef(inGraph);
+          (g, s) = splitGraphScope_dispatch(g, r::inAcc);
+        else
+          g = inGraph;
+          s = listReverse(inAcc);
+        end if;
       then
         (g, s);
 
-    case (FCore.G(scope = r::_), _)
-      equation
-        false = FNode.isImplicitRefName(r);
-      then
-        (inGraph, listReverse(inAcc));
-
-  end matchcontinue;
+  end match;
 end splitGraphScope_dispatch;
 
 public function getVariablesFromGraphScope
@@ -1858,36 +1844,23 @@ algorithm
       Node n;
       Ref ref, refParent;
 
-    // child does not exist, do nothing, is an import or extends
     case (g, _, _)
       equation
         refParent = lastScopeRef(g);
-        false = FNode.refHasChild(refParent, inName);
-      then
-        g;
-
-    // child exists and has a status node
-    case (g, _, _)
-      equation
-        refParent = lastScopeRef(g);
-        true = FNode.refHasChild(refParent, inName);
-        ref = FNode.child(refParent, inName);
-        true = FNode.refHasChild(ref, FNode.statusNodeName);
-        ref = FNode.child(ref, FNode.statusNodeName);
-        n = FNode.setData(FNode.fromRef(ref), inStatus);
-        ref = FNode.updateRef(ref, n);
-      then
-        g;
-
-    // child exists but has no status node
-    case (g, _, _)
-      equation
-        refParent = lastScopeRef(g);
-        true = FNode.refHasChild(refParent, inName);
-        ref = FNode.child(refParent, inName);
-        false = FNode.refHasChild(ref, FNode.statusNodeName);
-        (g, n) = node(g, FNode.statusNodeName, {ref}, inStatus);
-        FNode.addChildRef(ref, FNode.statusNodeName, FNode.toRef(n));
+        if FNode.refHasChild(refParent, inName) then
+          ref = FNode.child(refParent, inName);
+          if FNode.refHasChild(ref, FNode.statusNodeName) then
+            // child exists and has a status node
+            ref = FNode.child(ref, FNode.statusNodeName);
+            n = FNode.setData(FNode.fromRef(ref), inStatus);
+            ref = FNode.updateRef(ref, n);
+          else
+            // child exists but has no status node
+            (g, n) = node(g, FNode.statusNodeName, {ref}, inStatus);
+            FNode.addChildRef(ref, FNode.statusNodeName, FNode.toRef(n));
+          end if;
+        //else child does not exist, do nothing, is an import or extends
+        end if;
       then
         g;
 

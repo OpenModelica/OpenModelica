@@ -593,5 +593,11 @@ algorithm
   outString := Flags.getConfigString(Flags.DYNAMIC_TEARING);
 end dynamicTearing;
 
+public function ignoreCommandLineOptionsAnnotation
+  output Boolean outBoolean;
+algorithm
+  outBoolean := Flags.getConfigBool(Flags.IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION);
+end ignoreCommandLineOptionsAnnotation;
+
 annotation(__OpenModelica_Interface="util");
 end Config;

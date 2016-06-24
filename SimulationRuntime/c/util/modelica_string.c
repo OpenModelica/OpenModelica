@@ -30,7 +30,7 @@
 
 
 #include "modelica_string.h"
-#include "memory_pool.h"
+#include "gc/omc_gc.h"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>

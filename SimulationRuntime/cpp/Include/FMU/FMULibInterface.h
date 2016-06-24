@@ -35,7 +35,7 @@
 //#include "FMU/log.hpp"
 #include <iostream>
 
-using namespace std;
+
 
 //#define LOG_FMI()   EmptyLog()
 //#define DO_LOG_FMI  false

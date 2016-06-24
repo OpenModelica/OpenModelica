@@ -99,12 +99,12 @@ match equation
     let lhs_ty_str = ExpressionDumpTpl.dumpType(Expression.typeof(lhs))
     let rhs_ty_str = ExpressionDumpTpl.dumpType(Expression.typeof(rhs))
     '<%lhs_str%> {<%lhs_ty_str%>} = {<%rhs_ty_str%>} <%rhs_str%>;'
-  case CONNECT_EQUATION(__) then
-    let lhs_str = ExpressionDumpTpl.dumpCref(lhs)
-    let rhs_str = ExpressionDumpTpl.dumpCref(rhs)
-    let lhs_face_str = dumpFace(lhsFace)
-    let rhs_face_str = dumpFace(rhsFace)
-    'connect(<%lhs_str%> <<%lhs_face_str%>>, <%rhs_str%> <<%rhs_face_str%>>);'
+  //case CONNECT_EQUATION(__) then
+  //  let lhs_str = ExpressionDumpTpl.dumpCref(lhs)
+  //  let rhs_str = ExpressionDumpTpl.dumpCref(rhs)
+  //  let lhs_face_str = dumpFace(lhsFace)
+  //  let rhs_face_str = dumpFace(rhsFace)
+  //  'connect(<%lhs_str%> <<%lhs_face_str%>>, <%rhs_str%> <<%rhs_face_str%>>);'
   case FOR_EQUATION(__) then
     let ty_str = ExpressionDumpTpl.dumpType(indexType)
     let range_str = match range case SOME(range_exp) then
@@ -157,39 +157,39 @@ match prefix
     '<%pre_str%><%name%><%dims_str%>'
 end dumpPrefix;
 
-template dumpConnections(Connections conn)
-::=
-match conn
-  case CONNECTIONS(__) then
-    let conn_str = (connections |> c => dumpConnection(c) ;separator="\n")
-    '<%conn_str%>'
-end dumpConnections;
-
-template dumpConnection(Connection connection)
-::=
-match connection
-  case CONNECTION(__) then
-    let lhs_str = dumpConnector(lhs)
-    let rhs_str = dumpConnector(rhs)
-    'connect(<%lhs_str%>, <%rhs_str%>)'
-end dumpConnection;
-
-template dumpConnector(Connector connector)
-::=
-match connector
-  case CONNECTOR(__) then
-    let name_str = ExpressionDumpTpl.dumpCref(name)
-    let face_str = dumpFace(face)
-    '<%name_str%> <<%face_str%>>'
-end dumpConnector;
-
-template dumpFace(Face face)
-::=
-match face
-  case INSIDE() then 'inside'
-  case OUTSIDE() then 'outside'
-  case NO_FACE() then 'no_face'
-end dumpFace;
+//template dumpConnections(Connections conn)
+//::=
+//match conn
+//  case CONNECTIONS(__) then
+//    let conn_str = (connections |> c => dumpConnection(c) ;separator="\n")
+//    '<%conn_str%>'
+//end dumpConnections;
+//
+//template dumpConnection(Connection connection)
+//::=
+//match connection
+//  case CONNECTION(__) then
+//    let lhs_str = dumpConnector(lhs)
+//    let rhs_str = dumpConnector(rhs)
+//    'connect(<%lhs_str%>, <%rhs_str%>)'
+//end dumpConnection;
+//
+//template dumpConnector(Connector connector)
+//::=
+//match connector
+//  case CONNECTOR(__) then
+//    let name_str = ExpressionDumpTpl.dumpCref(name)
+//    let face_str = dumpFace(face)
+//    '<%name_str%> <<%face_str%>>'
+//end dumpConnector;
+//
+//template dumpFace(Face face)
+//::=
+//match face
+//  case INSIDE() then 'inside'
+//  case OUTSIDE() then 'outside'
+//  case NO_FACE() then 'no_face'
+//end dumpFace;
 
 template dumpDimension(NFInstTypes.Dimension dim)
 ::=

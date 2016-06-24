@@ -51,16 +51,16 @@ encapsulated package SimCode
 "
 
 // public imports
-public import Absyn;
-public import BackendDAE;
-public import DAE;
-public import HashTableCrILst;
-public import HashTableCrIListArray;
-public import HpcOmSimCode;
-public import SimCodeVar;
-public import SCode;
+import Absyn;
+import BackendDAE;
+import DAE;
+import HashTableCrILst;
+import HashTableCrIListArray;
+import HashTableCrefSimVar;
+import HpcOmSimCode;
+import SimCodeVar;
+import SCode;
 
-public
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
@@ -74,8 +74,8 @@ type JacobianMatrix = tuple<list<JacobianColumn>,                         // col
                             Integer>;                                     // jacobian index
 
 
-public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
-public constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL(),DAE.VARIABLE())::{} "For CodegenC.tpl";
+constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
+constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL(),DAE.VARIABLE())::{} "For CodegenC.tpl";
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
 
@@ -87,11 +87,11 @@ uniontype SimCode
     list<DAE.Exp> literals "shared literals";
     list<RecordDeclaration> recordDecls;
     list<String> externalFunctionIncludes;
+    list<SimEqSystem> localKnownVars "state and input dependent variables, that are not inserted into any partion";
     list<SimEqSystem> allEquations;
     list<list<SimEqSystem>> odeEquations;
     list<list<SimEqSystem>> algebraicEquations;
     list<ClockedPartition> clockedPartitions;
-    list<list<SimEqSystem>> daeEquations;
     Boolean useHomotopy "true if homotopy(...) is used during initialization";
     list<SimEqSystem> initialEquations;
     list<SimEqSystem> initialEquations_lambda0;
@@ -131,6 +131,7 @@ uniontype SimCode
     //FMI 2.0 data for model structure
     Option<FmiModelStructure> modelStructure;
     PartitionData partitionData;
+    Option<DaeModeData> daeModeData;
   end SIMCODE;
 end SimCode;
 
@@ -144,7 +145,6 @@ end ClockedPartition;
 public uniontype SubPartition
   record SUBPARTITION
     list<tuple<SimCodeVar.SimVar, Boolean /*previous*/>> vars;
-    list<SimEqSystem> previousAssignments;  //equations to assign the $CLKPRE_* variables
     list<SimEqSystem> equations;
     list<SimEqSystem> removedEquations;
     BackendDAE.SubClock subClock;
@@ -260,8 +260,19 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numJacobians;
     Integer numOptimizeConstraints;
     Integer numOptimizeFinalConstraints;
+    Integer numSensitivityParameters;
   end VARINFO;
 end VarInfo;
+
+uniontype DaeModeData
+  "contains data that belongs to the dae mode"
+  record DAEMODEDATA
+    list<list<SimEqSystem>> daeEquations "daeModel residuals equations";
+    Option<JacobianMatrix> sparsityPattern "contains the sparsity pattern for the daeMode";
+    list<SimCodeVar.SimVar> residualVars;  // variable used to calculate residuals of a DAE form, they are real
+    list<SimCodeVar.SimVar> algebraicDAEVars;  // variable used to calculate residuals of a DAE form, they are real
+  end DAEMODEDATA;
+end DaeModeData;
 
 // TODO: I believe some of these fields can be removed. Check to see what is
 //       used in templates.
@@ -484,7 +495,6 @@ uniontype NonlinearSystem
     list<DAE.ComponentRef> crefs;
     Integer indexNonLinearSystem;
     Option<JacobianMatrix> jacobianMatrix;
-    Boolean linearTearing;
     Boolean homotopySupport;
     Boolean mixedSystem;
   end NONLINEARSYSTEM;
@@ -594,33 +604,10 @@ public constant Context contextOptimization           = OPTIMIZATION_CONTEXT();
 public constant Context contextFMI                    = FMI_CONTEXT();
 
 /****** HashTable ComponentRef -> SimCodeVar.SimVar ******/
-/* a workaround to enable "cross public import" */
 
-/* HashTable instance specific code */
-public
-type Key = DAE.ComponentRef;
-type Value = SimCodeVar.SimVar;
-/* end of HashTable instance specific code */
-
-/* Generic hashtable code below!! */
-public
-uniontype HashTableCrefToSimVar
-  record HASHTABLE
-    array<list<tuple<Key,Integer>>> hashTable " hashtable to translate Key to array indx";
-    ValueArray valueArr "Array of values";
-    Integer bucketSize "bucket size";
-    Integer numberOfEntries "number of entries in hashtable";
-  end HASHTABLE;
-end HashTableCrefToSimVar;
-
-uniontype ValueArray "array of values are expandable, to amortize the cost of adding elements in a more
-efficient manner"
-  record VALUE_ARRAY
-    Integer numberOfElements "number of elements in hashtable";
-    Integer arrSize "size of crefArray";
-    array<Option<tuple<Key,Value>>> valueArray "array of values";
-  end VALUE_ARRAY;
-end ValueArray;
+type Key = HashTableCrefSimVar.Key;
+type Value = HashTableCrefSimVar.Value;
+type HashTableCrefToSimVar = HashTableCrefSimVar.HashTable;
 
 /* FMI 2.0 Export */
 public uniontype FmiUnknown

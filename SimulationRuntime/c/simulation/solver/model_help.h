@@ -77,6 +77,8 @@ extern "C" {
 extern int maxEventIterations;
 extern double linearSparseSolverMaxDensity;
 extern int linearSparseSolverMinSize;
+extern double newtonXTol;
+extern double newtonFTol;
 extern const size_t SIZERINGBUFFER;
 extern int compiledInDAEMode;
 

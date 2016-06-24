@@ -45,7 +45,13 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_EMIT_PROTECTED */        "emit_protected",
   /* FLAG_F */                     "f",
   /* FLAG_HELP */                  "help",
+  /* FLAG_IDA_MAXERRORTESTFAIL */  "idaMaxErrorTestFails",
+  /* FLAG_IDA_MAXNONLINITERS */    "idaMaxNonLinIters",
+  /* FLAG_IDA_MAXCONVFAILS */      "idaMaxConvFails",
+  /* FLAG_IDA_NONLINCONVCOEF */    "idaNonLinConvCoef",
   /* FLAG_IDA_LS */                "idaLS",
+  /* FLAG_IDAS */                  "idaSensitivity",
+  /* FLAG_IDA_SUPPRESS_ALG */      "idaSupressAlg",
   /* FLAG_IGNORE_HIDERESULT */     "ignoreHideResult",
   /* FLAG_IIF */                   "iif",
   /* FLAG_IIM */                   "iim",
@@ -75,6 +81,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_MAX_ORDER */             "maxIntegrationOrder",
   /* FLAG_MAX_STEP_SIZE */         "maxStepSize",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "measureTimePlotFormat",
+  /* FLAG_NEWTON_FTOL */           "newtonFTol",
+  /* FLAG_NEWTON_XTOL */           "newtonXTol",
   /* FLAG_NEWTON_STRATEGY */       "newton",
   /* FLAG_NLS */                   "nls",
   /* FLAG_NLS_INFO */              "nlsInfo",
@@ -93,6 +101,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_R */                     "r",
   /* FLAG_RT */                    "rt",
   /* FLAG_S */                     "s",
+  /* FLAG_SOLVER_STEPS */          "steps",
   /* FLAG_UP_HESSIAN */            "keepHessian",
   /* FLAG_W */                     "w",
 
@@ -105,7 +114,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_ABORT_SLOW */            "aborts if the simulation chatters",
   /* FLAG_ALARM */                 "aborts after the given number of seconds (0 disables)",
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU",
-  /* FLAG_CPU */                   "dumps the cpu-time into the results-file",
+  /* FLAG_CPU */                   "dumps the cpu-time into the result file",
   /* FLAG_CSV_OSTEP */             "value specifies csv-files for debuge values for optimizer step",
   /* FLAG_DASSL_NO_RESTART */      "flag deactivates the restart of dassl after an event is performed.",
   /* FLAG_DASSL_NO_ROOTFINDING */  "flag deactivates the internal root finding procedure of dassl.",
@@ -114,7 +123,13 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_EMIT_PROTECTED */        "emits protected variables to the result-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get detailed information that specifies the command-line flag",
+  /* FLAG_IDA_MAXERRORTESTFAIL */  "value specifies the maximum number of error test failures in attempting one step. The default value is 7.",
+  /* FLAG_IDA_MAXNONLINITERS */    "value specifies the maximum number of nonlinear solver iterations at one step. The default value is 3.",
+  /* FLAG_IDA_MAXCONVFAILS */      "value specifies the maximum number of nonlinear solver convergence failures at one step. The default value is 10.",
+  /* FLAG_IDA_NONLINCONVCOEF */    "value specifies the safety factor in the nonlinear convergence test. The default value is 0.33.",
   /* FLAG_IDA_LS */                "selects the linear solver used by ida",
+  /* FLAG_IDAS */                  "flag to add sensitivity information to the result files",
+  /* FLAG_IDA_SUPPRESS_ALG */      "flag to to suppress algebraic variables in the local error of ida solver in daeMode",
   /* FLAG_IGNORE_HIDERESULT */     "ignore HideResult=true annotation",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
   /* FLAG_IIM */                   "value specifies the initialization method",
@@ -144,6 +159,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_MAX_ORDER */             "value specifies maximum integration order, used by dassl solver",
   /* FLAG_MAX_STEP_SIZE */         "value specifies maximum absolute step size, used by dassl solver",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality",
+  /* FLAG_NEWTON_FTOL */           "[double (default 1e-12)] tolerance respecting residuals for updating solution vector in Newton solver",
+  /* FLAG_NEWTON_XTOL */           "[double (default 1e-12)] tolerance respecting newton correction (delta_x) for updating solution vector in Newton solver",
   /* FLAG_NEWTON_STRATEGY */       "value specifies the damping strategy for the newton solver",
   /* FLAG_NLS */                   "value specifies the nonlinear solver",
   /* FLAG_NLS_INFO */              "outputs detailed information about solving process of non-linear systems into csv files.",
@@ -162,6 +179,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
   /* FLAG_RT */                    "value specifies the scaling factor for real-time synchronization (0 disables)",
   /* FLAG_S */                     "value specifies the solver",
+  /* FLAG_SOLVER_STEPS */          "dumps the number of integration steps into the result file",
   /* FLAG_UP_HESSIAN */            "value specifies the number of steps, which keep hessian matrix constant",
   /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
 
@@ -180,15 +198,15 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * CYC (cpu cycles measured with RDTSC)\n"
   "  * CPU (process-based CPU-time)",
   /* FLAG_CPU */
-  "  Dumps the cpu-time into the result-file using the variable named $cpuTime",
+  "  Dumps the cpu-time into the result file using the variable named $cpuTime",
   /* FLAG_CSV_OSTEP */
-  "value specifies csv-files for debuge values for optimizer step",
+  "  Value specifies csv-files for debuge values for optimizer step",
   /* FLAG_DASSL_NO_RESTART */
   "  Deactivates the restart of dassl after an event is performed.",
   /* FLAG_DASSL_NO_ROOTFINDING */
   "  Deactivates the internal root finding procedure of dassl.",
   /* FLAG_DAE_MODE */
-  "flag to let the integrator use daeMode",
+  "  Enables daeMode simulation if the model was compiled with the omc flag --daeMode and the IDA integrator is used.",
   /* FLAG_EMBEDDED_SERVER */
   "  Enables an embedded server. Valid values:\n\n"
   "  * none - default, run without embedded server\n"
@@ -202,8 +220,25 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_HELP */
   "  Get detailed information that specifies the command-line flag\n"
   "  For example, -help=f prints detailed information for command-line flag f.",
+  /* FLAG_IDA_MAXERRORTESTFAIL */
+  "  value specifies the maximum number of error test failures in attempting one step. The default value is 7.",
+  /* FLAG_IDA_MAXNONLINITERS */
+  "  value specifies the maximum number of nonlinear solver iterations at one step. The default value is 3.",
+  /* FLAG_IDA_MAXCONVFAILS */
+  "  value specifies the maximum number of nonlinear solver convergence failures at one step. The default value is 10.",
+  /* FLAG_IDA_NONLINCONVCOEF */
+  "  value specifies the safety factor in the nonlinear convergence test. The default value is 0.33.",
   /* FLAG_IDA_LS */
-  "  Value specifies the IDA solver linear solver.",
+  "  Value specifies the linear solver of the IDA integrator. Valid values:\n\n"
+  "  * klu - default, fast sparse linear solver\n"
+  "  * dense - dense linear solver, sundials default method\n"
+  "  * spgmr - sparse iterative linear solver based on generalized minimal residual method, convergance is not guaranteed, sundials method\n"
+  "  * spbcg - sparse iterative linear solver based on biconjugate gradient method, convergance is not guaranteed, sundials method\n"
+  "  * spgmr - sparse iterative linear solver based on transpose free quasi-minimal residual method, convergance is not guaranteed, sundials method\n",
+  /* FLAG_IDAS */
+  "  Enables sensitivity analysis with respect to parameters if the model is compiled with omc flag --calculateSensitivities.",
+  /* FLAG_IDA_SUPPRESS_ALG */
+  "  flag to to suppress algebraic variables in the local error of ida solver in daeMode",
   /* FLAG_IGNORE_HIDERESULT */
   "  Emits also variables with HideResult=true annotation.",
   /* FLAG_IIF */
@@ -221,7 +256,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies an csv-file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE */
   "  Value specifies an external file with inputs for the simulation/optimization of the model.",
- /* FLAG_INPUT_FILE_STATES */
+  /* FLAG_INPUT_FILE_STATES */
   "  Value specifies an file with states start values for the optimization of the model.",
   /* FLAG_IPOPT_HESSE */
   "  Value specifies the hessematrix for Ipopt(OMC, BFGS, const).",
@@ -281,6 +316,14 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * ps\n"
   "  * gif\n"
   "  * ...",
+  /* FLAG_NEWTON_FTOL */
+  "  Tolerance respecting residuals for updating solution vector in Newton solver."
+  "  Solution is accepted if the (scaled) 2-norm of the residuals is smaller than the tolerance newtonFTol and the (scaled) newton correction (delta_x) is smaller than the tolerance newtonXTol."
+  "  The value is a Double with default value 1e-12.",
+  /* FLAG_NEWTON_XTOL */
+  "  Tolerance respecting newton correction (delta_x) for updating solution vector in Newton solver."
+  "  Solution is accepted if the (scaled) 2-norm of the residuals is smaller than the tolerance newtonFTol and the (scaled) newton correction (delta_x) is smaller than the tolerance newtonXTol."
+  "  The value is a Double with default value 1e-12.",
   /* FLAG_NEWTON_STRATEGY */
   "  Value specifies the damping strategy for the newton solver.",
   /* FLAG_NLS */
@@ -335,6 +378,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  A value > 1 means the simulation takes a longer time to simulate.\n",
   /* FLAG_S */
   "  Value specifies the solver (integration method).",
+  /* FLAG_SOLVER_STEPS */
+  "  dumps the number of integration steps into the result file",
   /* FLAG_UP_HESSIAN */
   "  Value specifies the number of steps, which keep hessian matrix constant.",
   /* FLAG_W */
@@ -358,7 +403,13 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_EMIT_PROTECTED */        FLAG_TYPE_FLAG,
   /* FLAG_F */                     FLAG_TYPE_OPTION,
   /* FLAG_HELP */                  FLAG_TYPE_OPTION,
+  /* FLAG_IDA_MAXERRORTESTFAIL */  FLAG_TYPE_OPTION,
+  /* FLAG_IDA_MAXNONLINITERS */    FLAG_TYPE_OPTION,
+  /* FLAG_IDA_MAXCONVFAILS */      FLAG_TYPE_OPTION,
+  /* FLAG_IDA_NONLINCONVCOEF */    FLAG_TYPE_OPTION,
   /* FLAG_IDA_LS */                FLAG_TYPE_OPTION,
+  /* FLAG_IDAS */                  FLAG_TYPE_FLAG,
+  /* FLAG_IDA_SUPPRESS_ALG */      FLAG_TYPE_FLAG,
   /* FLAG_IGNORE_HIDERESULT */     FLAG_TYPE_FLAG,
   /* FLAG_IIF */                   FLAG_TYPE_OPTION,
   /* FLAG_IIM */                   FLAG_TYPE_OPTION,
@@ -388,6 +439,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_MAX_ORDER */             FLAG_TYPE_OPTION,
   /* FLAG_MAX_STEP_SIZE */         FLAG_TYPE_OPTION,
   /* FLAG_MEASURETIMEPLOTFORMAT */ FLAG_TYPE_OPTION,
+  /* FLAG_NEWTON_FTOL */           FLAG_TYPE_OPTION,
+  /* FLAG_NEWTON_XTOL */           FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_STRATEGY */       FLAG_TYPE_OPTION,
   /* FLAG_NLS */                   FLAG_TYPE_OPTION,
   /* FLAG_NLS_INFO */              FLAG_TYPE_FLAG,
@@ -406,6 +459,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_R */                     FLAG_TYPE_OPTION,
   /* FLAG_RT */                    FLAG_TYPE_OPTION,
   /* FLAG_S */                     FLAG_TYPE_OPTION,
+  /* FLAG_SOLVER_STEPS */          FLAG_TYPE_FLAG,
   /* FLAG_UP_HESSIAN */            FLAG_TYPE_OPTION,
   /* FLAG_W */                     FLAG_TYPE_FLAG
 };
@@ -578,7 +632,6 @@ const char *JACOBIAN_METHOD[JAC_MAX+1] = {
   "numerical",
   "symbolical",
   "kluSparse",
-  "kluColored",
 
   "JAC_MAX"
 };
@@ -592,7 +645,6 @@ const char *JACOBIAN_METHOD_DESC[JAC_MAX+1] = {
   "numerical jacobian.",
   "symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization.",
   "sparse jacobian for KLU",
-  "colored jacobian for KLU",
 
   "JAC_MAX"
  };

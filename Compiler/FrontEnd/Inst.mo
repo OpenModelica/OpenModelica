@@ -5254,6 +5254,7 @@ algorithm
     case "edge" then Absyn.FULLYQUALIFIED(Absyn.IDENT("edge"));
     case "exp" then Absyn.FULLYQUALIFIED(Absyn.IDENT("exp"));
     case "fill" then Absyn.FULLYQUALIFIED(Absyn.IDENT("fill"));
+    case "firstTick" then Absyn.FULLYQUALIFIED(Absyn.IDENT("firstTick"));
     case "floor" then Absyn.FULLYQUALIFIED(Absyn.IDENT("floor"));
     case "getInstanceName" then Absyn.FULLYQUALIFIED(Absyn.IDENT("getInstanceName"));
     case "hold" then Absyn.FULLYQUALIFIED(Absyn.IDENT("hold"));
@@ -5466,8 +5467,17 @@ algorithm
 end opaqVal;
 
 public function initInstHashTable
+protected
+  InstHashTable ht;
 algorithm
-  setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
+  /* adrpo: reuse it if is already there! */
+  try
+    ht := getGlobalRoot(Global.instHashIndex);
+	ht := BaseHashTable.clear(ht);
+	setGlobalRoot(Global.instHashIndex, ht);
+  else
+    setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
+  end try;
 end initInstHashTable;
 
 public function releaseInstHashTable

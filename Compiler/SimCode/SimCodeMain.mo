@@ -587,6 +587,7 @@ protected
     output Boolean res;
   end PartialRunTpl;
 algorithm
+  setGlobalRoot(Global.optionSimCode, SOME(simCode));
   _ := match target
     local
       String str, guid;
@@ -638,6 +639,7 @@ algorithm
           (CodegenC.simulationFile_lnz, "_14lnz.c"),
           (CodegenC.simulationFile_syn, "_15syn.c"),
           (CodegenC.simulationFile_dae, "_16dae.c"),
+          (CodegenC.simulationFile_dae_header, "_16dae.h"),
           (CodegenC.simulationHeaderFile, "_model.h")
         } loop
           (func,str) := f;
@@ -655,6 +657,7 @@ algorithm
         else
           true := max(l for l in System.launchParallelTasks(numThreads, codegenFuncs, runCodegenFunc));
         end if;
+
       then ();
 
     case "JavaScript" equation
@@ -682,6 +685,7 @@ algorithm
       Error.addMessage(Error.INTERNAL_ERROR, {str});
     then fail();
   end match;
+  setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplates;
 
 protected function dumpTaskSystemIfFlag
@@ -709,6 +713,7 @@ protected function callTargetTemplatesFMU
   input String FMUVersion;
   input String FMUType;
 algorithm
+  setGlobalRoot(Global.optionSimCode, SOME(simCode));
   _ := match (simCode,target)
     local
       String str;
@@ -743,6 +748,7 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
+  setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplatesFMU;
 
 
@@ -832,7 +838,6 @@ algorithm
       dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
 
       GC.free(dae);
-      graph = FCore.EG("<EMPTY>");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
         serializeNotify(dlow, filenameprefix, "dlow");

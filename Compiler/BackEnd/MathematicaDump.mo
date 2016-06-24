@@ -104,7 +104,7 @@ public function printMmaEqnStr "help function to printMmaEqnsStr"
   input tuple<BackendDAE.Variables,BackendDAE.Variables> inTuple "required to find array eqns and algorithms";
   output String str;
 algorithm
-  str := matchcontinue(eqn,inTuple)
+  str := match(eqn,inTuple)
   local DAE.Exp e1,e2;
     DAE.ComponentRef cr;
     BackendDAE.Variables vars,knvars;
@@ -144,7 +144,7 @@ algorithm
       s2 = printExpMmaStr(e2,vars,knvars);
       str = stringAppendList({s1,"==",s2});
       then str;
-  end matchcontinue;
+  end match;
 end printMmaEqnStr;
 
 

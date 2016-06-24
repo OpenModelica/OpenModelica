@@ -47,7 +47,7 @@ extern "C" {
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
-#include "gc/mmc_gc.h"
+#include "gc/omc_gc.h"
 #include "omc_inline.h"
 #include "openmodelica.h"
 #include "meta_modelica_data.h"
@@ -57,8 +57,6 @@ static inline void* mmc_mk_icon(mmc_sint_t i)
 {
     return MMC_IMMEDIATE(MMC_TAGFIXNUM(i));
 }
-
-void* mmc_mk_rcon(double d);
 
 union mmc_double_as_words {
     double d;
@@ -128,9 +126,17 @@ static inline void *mmc_mk_some(void *x)
 }
 
 extern void *mmc_mk_box_arr(mmc_sint_t _slots, mmc_uint_t ctor, void** args);
-static inline void *mmc_mk_box_no_assign(mmc_sint_t _slots, mmc_uint_t ctor)
+static inline void *mmc_mk_box_no_assign(mmc_sint_t _slots, mmc_uint_t ctor, int is_atomic)
 {
-    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(_slots+1);
+    struct mmc_struct *p = NULL;
+    if (is_atomic)
+    {
+      p = (struct mmc_struct*)mmc_alloc_words_atomic(_slots+1);
+    }
+    else
+    {
+      p = (struct mmc_struct*)mmc_alloc_words(_slots+1);
+    }
     p->header = MMC_STRUCTHDR(_slots, ctor);
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "STRUCT NO ASSIGN slots%d ctor %u\n", _slots, ctor); fflush(NULL);
@@ -155,7 +161,7 @@ modelica_metatype mmc_gdb_listGet(threadData_t* threadData, modelica_metatype ls
 modelica_metatype mmc_gdb_arrayGet(threadData_t* threadData, modelica_metatype arr, modelica_integer i); /* For debugging */
 extern void printAny(void*any); /* For debugging */
 extern void printTypeOfAny(void*any); /* For debugging */
-extern char* getTypeOfAny(void*any); /* For debugging */
+extern char* getTypeOfAny(void*any, int inRecord); /* For debugging */
 extern char* getRecordElementName(void*any, int element); /* For debugging */
 extern int isOptionNone(void*any); /* For debugging */
 extern void changeStdStreamBuffer(void); /* For debugging */
@@ -186,6 +192,21 @@ struct record_description {
   const char* name; /* package.record_X */
   const char** fieldNames;
 };
+
+#if defined(OMC_MINIMAL_RUNTIME)
+static void* mmc_mk_rcon(double d)
+{
+    struct mmc_real *p = (struct mmc_real*)mmc_alloc_words_atomic(MMC_SIZE_DBL/MMC_SIZE_INT + 1);
+    mmc_prim_set_real(p, d);
+    p->header = MMC_REALHDR;
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "REAL size: %u\n", MMC_SIZE_DBL/MMC_SIZE_INT+1); fflush(NULL);
+#endif
+    return MMC_TAGPTR(p);
+}
+#else
+void* mmc_mk_rcon(double d);
+#endif
 
 #include "openmodelica.h"
 #include "meta_modelica_segv.h"

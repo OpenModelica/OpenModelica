@@ -528,7 +528,7 @@ static void *value_to_mmc(void* value)
     while (MMC_GETHDR(tmp) != MMC_NILHDR) {
       len++; tmp = MMC_CDR(tmp);
     }
-    res = mmc_mk_box_no_assign(len, 0);
+    res = mmc_mk_box_no_assign(len, 0, 0);
     len = 0;
     tmp = data;
     while (MMC_GETHDR(tmp) != MMC_NILHDR) {

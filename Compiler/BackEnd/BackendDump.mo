@@ -257,7 +257,8 @@ algorithm
   printBackendDAEType(inShared.backendDAEType);
   print("\n\n");
 
-  dumpVariables(inShared.knownVars, "Known Variables (constants)");
+  dumpVariables(inShared.globalKnownVars, "Known variables only depending on parameters and constants - globalKnownVars");
+  dumpVariables(inShared.localKnownVars, "Known variables only depending on states and inputs - localKnownVars");
   dumpVariables(inShared.externalObjects, "External Objects");
   dumpExternalObjectClasses(inShared.extObjClasses, "Classes of External Objects");
   dumpVariables(inShared.aliasVars, "Alias Variables");
@@ -899,7 +900,7 @@ algorithm
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation=weqn,  attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation
+    case (BackendDAE.WHEN_EQUATION(whenEquation=weqn,  attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::_, _) equation
       print("WHEN_EQUATION: ");
       str = whenEquationString(weqn, true);
       print(str);
@@ -1501,7 +1502,7 @@ public function equationString "Helper function to e.g. dump."
   input BackendDAE.Equation inEquation;
   output String outString;
 algorithm
-  outString := matchcontinue (inEquation)
+  outString := match (inEquation)
     local
       String s1,s2,s3,s4,res;
       DAE.Exp e1,e2,e,cond, start, stop, iter;
@@ -1514,7 +1515,7 @@ algorithm
       list<list<BackendDAE.Equation>> eqnstrue;
       list<BackendDAE.Equation> eqnsfalse,eqns;
       list<BackendDAE.WhenOperator> whenStmtLst;
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2, attr=attr))
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2))
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1573,7 +1574,7 @@ algorithm
         res = stringAppendList({"for ",s1," loop \n    ",s2, "; end for; "});
       then
         res;
-  end matchcontinue;
+  end match;
 end equationString;
 
 protected function zeroCrossingString "Dumps a zerocrossing into a string, for debugging purposes."
@@ -2324,6 +2325,13 @@ algorithm
             + ") " + optExpressionString(inVar.bindExp, "") + DAEDump.dumpCommentAnnotationStr(inVar.comment)
             + stringDelimitList(paths_lst, ", ") + " type: " + DAEDump.daeTypeStr(inVar.varType) + dimensions + unreplaceableStr;
 end varString;
+
+public function varStringShort "prints the cref name of the var only"
+  input BackendDAE.Var inVar;
+  output String outStr;
+algorithm
+  outStr := ComponentReference.printComponentRefStr(inVar.varName);
+end varStringShort;
 
 public function dumpKind
 "Helper function to dump."
@@ -3593,6 +3601,11 @@ algorithm
       e = listLength(innerEquations);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,(d,e)::te_nl),(te_l2,(0,0)::te_nl2)));
 
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.EMPTY_JACOBIAN()),NONE(),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
+      d = listLength(ilst);
+      e = listLength(innerEquations);
+    then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,((d,e,0)::te_l,te_nl),((0,0,0)::te_l2,te_nl2)));
+
     // dynamic tearing
     case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz),_)),SOME(BackendDAE.TEARINGSET(tearingvars=ilst2,innerEquations=innerEquations2,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz2),_))),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
       d = listLength(ilst);
@@ -3683,22 +3696,79 @@ algorithm
   end matchcontinue;
 end printCompInfo;
 
+
 // =============================================================================
-// section for all garphML dumping function functions
+// section for all html-dumping functions
 //
-// These are functions, that print directly to the standard-stream.
-//   - printBackendDAE
-//   - printEqSystem
-//   - printEquation
-//   - printEquationArray
-//   - printEquationList
-//   - printEquations
-//   - printClassAttributes
-//   - printShared
-//   - printStateSets
-//   - printVar
-//   - printVariables
-//   - printVarList
+// =============================================================================
+
+public function dumpEqSystemMatrixHTML"dumps the incidence matrix for the eqsystem as html file.
+author: waurich TUD 2016-05"
+  input BackendDAE.EqSystem sys;
+protected
+  BackendDAE.IncidenceMatrix m;
+algorithm
+  if Util.isSome(sys.m) then
+    m := Util.getOption(sys.m);
+  else
+    (_,m,_) := BackendDAEUtil.getIncidenceMatrix(sys,BackendDAE.NORMAL(),NONE());
+  end if;
+  BackendDump.dumpEqSystem(sys,"SYS");
+  BackendDump.dumpMatrixHTML(m,List.map(List.intRange(BackendDAEUtil.systemSize(sys)),intString),
+                               List.map(BackendVariable.varList(sys.orderedVars),BackendDump.varStringShort),
+                               "MATRIX_"+intString(BackendDAEUtil.systemSize(sys)));
+end dumpEqSystemMatrixHTML;
+
+public function dumpEqSystemBLTmatrixHTML"dumps the incidence matrix for the eqsystem as html file.
+author: waurich TUD 2016-05"
+  input BackendDAE.EqSystem sys;
+algorithm
+  _ := matchcontinue(sys)
+    local
+      BackendDAE.StrongComponents comps;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.EquationArray eqs;
+      BackendDAE.Variables vars;
+      list<BackendDAE.Var> varLst;
+      list<BackendDAE.Equation> eqLst;
+      list<Integer> vIdxs, eIdxs;
+  case(BackendDAE.EQSYSTEM(vars,eqs,_,_,BackendDAE.MATCHING(comps=comps),_,_,_))
+    algorithm
+      (varLst,vIdxs,eqLst,eIdxs) := BackendDAEUtil.getStrongComponentsVarsAndEquations(comps, vars, eqs);
+      eqs := BackendEquation.listEquation(eqLst);
+      vars := BackendVariable.listVar1(varLst);
+      (m, _) := BackendDAEUtil.incidenceMatrixDispatch(vars, eqs, BackendDAE.NORMAL(), NONE());
+      BackendDump.dumpMatrixHTML(m,List.map(eIdxs,intString),
+                                    List.map(vIdxs,intString),
+                                   "BLT_MATRIX_"+intString(BackendDAEUtil.systemSize(sys)));
+    then ();
+  else
+    algorithm
+      print("dumpEqSystemBLTmatrixHTML does not output anything since there is no BLT sorting.");
+    then ();
+  end matchcontinue;
+end dumpEqSystemBLTmatrixHTML;
+
+
+public function dumpMatrixHTML
+  input BackendDAE.IncidenceMatrix m;
+  input list<String> rowNames;
+  input list<String> columNames;
+  input String fileName;
+protected
+  Integer size;
+algorithm
+  size := arrayLength(m);
+  if listLength(rowNames)==size and listLength(columNames)==size then
+    DumpHTML.dumpMatrixHTML(m,rowNames,columNames,fileName);
+  else
+    DumpHTML.dumpMatrixHTML(m,List.fill("?",size),List.fill("?",size),fileName);
+  end if;
+end dumpMatrixHTML;
+
+// =============================================================================
+// section for all graphML dumping functions
+//
 // =============================================================================
 
 public function dumpBipartiteGraphDAE" Dumps a *.graphml of the complete BackendDAE.BackendDAE as a bipartite graph. Can be opened with yEd.
@@ -4078,6 +4148,86 @@ author:Waurich TUD 2013-12"
 algorithm
   eqString := "eqNode"+intString(intAbs(idx));
 end getEqNodeIdx;
+
+public function SSSHandlerArgString"
+author:Waurich"
+  input  Option<BackendDAE.StructurallySingularSystemHandlerArg> arg;
+protected
+  BackendDAE.StateOrder stateorder;
+  BackendDAE.ConstraintEquations constraints;
+  array<list<Integer>> eqs2EqIdxs;
+  array<Integer> eqIdx2Eq;
+  Integer numEqs;
+algorithm
+  if Util.isSome(arg) then
+    SOME((stateorder,constraints,eqs2EqIdxs,eqIdx2Eq,numEqs)) := arg;
+    print(intString(numEqs)+"eqs before IR\n");
+    dumpStateOrder(stateorder);
+    print("Constraints:\n"+constraintEquationString(constraints)+"\n");
+  else
+    print("Empty StructurallySingularSystemHandlerArg\n");
+  end if;
+end SSSHandlerArgString;
+
+public function constraintEquationString"
+author:Waurich"
+  input BackendDAE.ConstraintEquations constraints;
+  output String s = "";
+protected
+  Integer i;
+  String s1;
+algorithm
+  for i in List.intRange(arrayLength(constraints)) loop
+    s1 := stringDelimitList(List.map(arrayGet(constraints,i),BackendDump.equationString),"\n")+"\n------------------\n";
+    if listEmpty(arrayGet(constraints,i)) then
+      s1 := "empty Constraints\n";
+    end if;
+    s := "eq "+intString(i) +": "+ s1 + s;
+  end for;
+end constraintEquationString;
+
+public function dumpStateOrder
+"author: Frenkel TUD 2011-05
+  Prints the state order"
+  input BackendDAE.StateOrder inStateOrder;
+algorithm
+  _:=
+  match (inStateOrder)
+    local
+      String str,len_str;
+      Integer len;
+      HashTableCG.HashTable ht;
+      HashTable3.HashTable dht;
+      list<tuple<DAE.ComponentRef,DAE.ComponentRef>> tplLst;
+    case (BackendDAE.STATEORDER(ht,_))
+      equation
+        print("State Order: (");
+        (tplLst) = BaseHashTable.hashTableList(ht);
+        str = stringDelimitList(List.map(tplLst,printStateOrderStr),"\n");
+        len = listLength(tplLst);
+        len_str = intString(len);
+        print(len_str);
+        print(")\n");
+        print("=============\n");
+        print(str);
+        print("\n");
+      then
+        ();
+    case (BackendDAE.NOSTATEORDER())
+      equation
+        print("no stateorder\n");
+        print("=============\n");
+      then ();
+  end match;
+end dumpStateOrder;
+
+protected function printStateOrderStr "help function to dumpStateOrder"
+  input tuple<DAE.ComponentRef,DAE.ComponentRef> tpl;
+  output String str;
+algorithm
+  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ComponentReference.printComponentRefStr(Util.tuple22(tpl));
+end printStateOrderStr;
+
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDump;

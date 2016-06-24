@@ -67,6 +67,14 @@ enum OUTPUT
 /// store attributes of a variable
 struct AlgloopVarAttributes
 {
+  AlgloopVarAttributes() {};
+  AlgloopVarAttributes(const char *name,double nominal,double min,double max)
+  :name(name)
+  ,nominal(nominal)
+  ,min(min)
+  ,max(max)
+  {}
+
   const char *name;
   double nominal;
   double min;

@@ -274,6 +274,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   void (*residualFunc)(void**, const double*, double*, const int*);
   void (*initializeStaticNLSData)(void*, threadData_t *threadData, void*);
   int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
+  void (*getIterationVars)(struct DATA*, double*);
 
   void *solverData;
   modelica_real *nlsx;                 /* x */
@@ -281,8 +282,8 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_real *nlsxExtrapolation;    /* extrapolated values for x from old and old2 - used as initial guess */
 
   void *oldValueList;                  /* old values organized in a sorted list for extrapolation and interpolate, respectively */
+  modelica_real *resValues;            /* memory space for evaluated residual values */
 
-  modelica_integer method;             /* used for linear tearing system if 1: Newton step is done otherwise 0 */
   modelica_real residualError;         /* not used */
   modelica_boolean solved;             /* 1: solved in current step - else not */
 
@@ -312,7 +313,6 @@ typedef struct LINEAR_SYSTEM_DATA
   void (*residualFunc)(void**, const double*, double*, const int*);
   void (*initializeStaticLSData)(void*, threadData_t *threadData, void*);
   int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
-
 
   /* attributes of iteration variables */
   modelica_real *min;
@@ -384,6 +384,35 @@ typedef struct STATE_SET_DATA
   modelica_integer jacobianIndex;
 }STATE_SET_DATA;
 
+typedef struct DAEMODE_DATA
+{
+  /* number of dae residual variables */
+  long nResidualVars;
+
+  /* number of algebraic variables */
+  long nAlgebraicDAEVars;
+
+  /* workspace for the residual variables */
+  modelica_real* residualVars;
+
+  /* daeMode sparse pattern */
+  SPARSE_PATTERN* sparsePattern;
+
+  /* function to evaluate dynamic equations for DAE solver*/
+  int (*evaluateDAEResiduals)(struct DATA*, threadData_t*);
+
+  /* function to set algebraic DAE Variable form solver*/
+  int (*setAlgebraicDAEVars)(struct DATA*, threadData_t*, double*);
+
+  /* function to get algebraic DAE Variable form solver*/
+  int (*getAlgebraicDAEVars)(struct DATA*, threadData_t*, double*);
+
+  /* function to get algebraic DAE nominal values*/
+  int (*getAlgebraicDAEVarNominals)(struct DATA*, threadData_t*, double*);
+
+} DAEMODE_DATA;
+
+
 typedef struct MODEL_DATA_XML
 {
   const char *fileName;
@@ -425,6 +454,8 @@ typedef struct MODEL_DATA
   DATA_INTEGER_ALIAS* integerAlias;
   DATA_BOOLEAN_ALIAS* booleanAlias;
   DATA_STRING_ALIAS* stringAlias;
+
+  STATIC_REAL_DATA* realSensitivityData;
 
   MODEL_DATA_XML modelDataXml;         /* TODO: Rename me? */
 
@@ -475,8 +506,9 @@ typedef struct MODEL_DATA
   long nAliasString;
 
   long nJacobians;
-  long nResidualVars;
-  long nAlgebraicDAEVars;
+
+  long nSensitivityVars;
+  long nSensitivityParamVars;
 }MODEL_DATA;
 
 typedef struct CLOCK_DATA {
@@ -534,6 +566,8 @@ typedef struct SIMULATION_INFO
   modelica_boolean solveContinuous;    /* =1 during the continuous integration to avoid zero-crossings jumps,  0 otherwise. */
   modelica_boolean noThrowDivZero;     /* =1 if solving nonlinear system to avoid THROW for division by zero,  0 otherwise. */
 
+  double solverSteps;                  /* Number of integration steps so far for writing to the result file*/
+
   void** extObjs;                      /* External objects */
 
   double nextSampleEvent;              /* point in time of next sample-call */
@@ -572,7 +606,9 @@ typedef struct SIMULATION_INFO
   modelica_real* inputVars;
   modelica_real* outputVars;
   EXTERNAL_INPUT external_input;
-  modelica_real* residualVars;         /* used by integrators in dae solver mode */
+
+  modelica_real* sensitivityMatrix;    /* used by integrator for sensitivity mode  */
+  int* sensitivityParList;             /* used by integrator for sensitivity mode  */
 
   ANALYTIC_JACOBIAN* analyticJacobians;
 
@@ -585,6 +621,8 @@ typedef struct SIMULATION_INFO
   MIXED_SYSTEM_DATA* mixedSystemData;
 
   STATE_SET_DATA* stateSetData;
+
+  DAEMODE_DATA* daeModeData;
 
   /* delay vars */
   double tStart;

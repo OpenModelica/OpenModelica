@@ -8,7 +8,6 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${SimulationSettings} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 endif(NOT BUILD_SHARED_LIBS)
 
-include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 target_link_libraries(${SimulationSettings} ${OMCFactoryName} ${Boost_LIBRARIES})
 add_precompiled_header(${SimulationSettings} Include/Core/Modelica.h)
 

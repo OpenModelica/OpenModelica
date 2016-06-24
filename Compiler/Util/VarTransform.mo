@@ -854,7 +854,7 @@ algorithm
      // then
      //   fail();
 
-    case ((REPLACEMENTS(_,_)),src,dst)
+    case ((REPLACEMENTS()),src,dst)
       equation
         (REPLACEMENTS(ht,invHt),src_1,dst_1) = makeTransitive(repl, src, dst);
         /*s1 = ComponentReference.printComponentRefStr(src);

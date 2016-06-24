@@ -28,28 +28,29 @@ INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 .PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc $(MINGW_EXTRA_LIBS)
 
 mkbuilddirs:
-	@echo Making build directories under $(OMBUILDDIR)
-	@if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
-	@mkdir -p $(builddir_bin)
-	@mkdir -p $(OMBUILDDIR)/lib/omc/emcc
-	@mkdir -p $(builddir_lib_omc)
-	@mkdir -p $(builddir_inc)/c/
-	@mkdir -p $(builddir_inc)/c/linearization/
-	@mkdir -p $(builddir_inc)/c/optimization/
-	@mkdir -p $(builddir_inc)/c/simulation/
-	@mkdir -p $(builddir_inc)/c/simulation/results/
-	@mkdir -p $(builddir_inc)/c/simulation/solver/
-	@mkdir -p $(builddir_inc)/c/simulation/solver/initialization/
-	@mkdir -p $(builddir_inc)/c/meta/
-	@mkdir -p $(builddir_inc)/c/meta/gc/
-	@mkdir -p $(builddir_inc)/c/util/
-	@mkdir -p $(builddir_inc)/c/fmi1/
-	@mkdir -p $(builddir_inc)/c/fmi2/
-	@mkdir -p $(builddir_inc)/scripting-API
-	@mkdir -p $(builddir_java)
-	@mkdir -p $(builddir_share)/omc/scripts/OpenTurns/
-	@mkdir -p $(builddir_doc)/omc/testmodels
-	@mkdir -p $(builddir_man)/man1/
+	echo Making build directories under $(OMBUILDDIR)
+	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
+	mkdir -p $(builddir_bin)
+	mkdir -p $(OMBUILDDIR)/lib/omc/emcc
+	mkdir -p $(builddir_lib_omc)
+	mkdir -p $(builddir_inc)/c/
+	mkdir -p $(builddir_inc)/c/gc/
+	mkdir -p $(builddir_inc)/c/linearization/
+	mkdir -p $(builddir_inc)/c/optimization/
+	mkdir -p $(builddir_inc)/c/simulation/
+	mkdir -p $(builddir_inc)/c/simulation/results/
+	mkdir -p $(builddir_inc)/c/simulation/solver/
+	mkdir -p $(builddir_inc)/c/simulation/solver/initialization/
+	mkdir -p $(builddir_inc)/c/meta/
+	mkdir -p $(builddir_inc)/c/meta/
+	mkdir -p $(builddir_inc)/c/util/
+	mkdir -p $(builddir_inc)/c/fmi1/
+	mkdir -p $(builddir_inc)/c/fmi2/
+	mkdir -p $(builddir_inc)/scripting-API
+	mkdir -p $(builddir_java)
+	mkdir -p $(builddir_share)/omc/scripts/OpenTurns/
+	mkdir -p $(builddir_doc)/omc/testmodels
+	mkdir -p $(builddir_man)/man1/
 
 release: omc
 
@@ -76,7 +77,7 @@ interactive-short: .testvariables interactive-common
 interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs $(SUNDIALS_TARGET) $(IPOPT_TARGET) $(UMFPACK_TARGET) $(MINGW_EXTRA_LIBS)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
-opc: .testvariables mkbuilddirs
+opc: .testvariables mkbuilddirs boehm-gc
 	$(MAKE) -C SimulationRuntime/opc/ua -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 docs:
@@ -134,6 +135,10 @@ $(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT): 3rdParty/SuiteSparse/CMakeLists.tx
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libklu.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libklu$(SHREXT)"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libbtf.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libbtf$(SHREXT)"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libcolamd.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libcolamd$(SHREXT)"
+	test ! `uname` = Darwin || install_name_tool -change libamd.dylib @rpath/libamd.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libklu$(SHREXT)"
+	test ! `uname` = Darwin || install_name_tool -change libbtf.dylib @rpath/libbtf.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libklu$(SHREXT)"
+	test ! `uname` = Darwin || install_name_tool -change libcolamd.dylib @rpath/libcolamd.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libklu$(SHREXT)"
+	test ! `uname` = Darwin || install_name_tool -change libamd.dylib @rpath/libamd.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT)"
 	#cp -au 3rdParty/SuiteSparse/build/*.$(STATIC_EXT) build/$(LIB_OMC)
 	#mkdir --parent build/include/omc/c/suitesparse
 	#cp -a 3rdParty/SuiteSparse/UMFPACK/Include/*.h build/include/omc/c/suitesparse
@@ -156,7 +161,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 PREFIX=$(OMBUILDDIR) OPENBLAS_LIBRARY_DIR="$(OMBUILDDIR)/$(LIB_OMC) OPENBLAS_INCLUDE_DIR="$(OMBUILDDIR)/3rdParty/build/install-includes/ NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica install
 openblas: $(OMBUILDDIR)/$(LIB_OMC)/libopenblas_openmodelica.a
 
-opencl_rt:
+opencl_rt: boehm-gc
 ifeq ("$(OPENCL)","Yes")
 	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 endif
@@ -209,7 +214,7 @@ runtimeCPPclean:
 fmil:
 	test -d 3rdParty/FMIL
 	mkdir -p 3rdParty/FMIL/build
-	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DFMILIB_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DFMILIB_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
 	@# Pass CC/CFLAGS/CPPFLAGS because FMIL does not configure subprojects with the selected CC. Shocking; a cmake project not working the way it should.
 	test -f 3rdParty/FMIL/build/$(LIBFMILIB) || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(MAKE) -C 3rdParty/FMIL/build
 	test -d 3rdParty/FMIL/install || $(MAKE) -C 3rdParty/FMIL/build install
@@ -399,10 +404,13 @@ graphstream-clean:
 # build lpsolve
 lpsolve: 3rdParty/lpsolve/Makefile
 	$(MAKE) -C 3rdParty/lpsolve/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"
+	cp -pf 3rdParty/lpsolve/build/lib/liblpsolve55* $(builddir_lib_omc)
+	cp -prf 3rdParty/lpsolve/build/include/* $(builddir_inc)/
 3rdParty/lpsolve/Makefile: 3rdParty/lpsolve/configure.ac
 	(cd 3rdParty/lpsolve && autoreconf -vif && ./configure --prefix=`pwd`/build "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)")
 clean-lpsolve:
 	rm -rf 3rdParty/lpsolve/build
+	rm -rf $(builddir_lib_omc)/lpsolve*
 # build sqlite3
 sqlite3: 3rdParty/sqlite3/Makefile
 	$(MAKE) -C 3rdParty/sqlite3/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"
@@ -413,15 +421,22 @@ clean-sqlite3:
 # build sundials
 sundials: 3rdParty/sundials/CMakeLists.txt umfpack
 	mkdir -p 3rdParty/sundials/build
-	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX=`pwd` -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="../SuiteSparse/build/" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" -DKLU_LIBRARY="libklu$(SHREXT)" -DAMD_LIBRARY="libamd$(SHREXT)" -DCOLAMD_LIBRARY="libcolamd$(SHREXT)" -DBTF_LIBRARY="libbtf$(SHREXT)" -DCMAKE_C_FLAGS="-lm" -DSUITESPARSECONFIG_LIBRARY=""
+	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX=`pwd` -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DSUITESPARSECONFIG_LIBRARY=""
 	$(MAKE) -C 3rdParty/sundials/build install
 	# adrpo: do not copy the headers as they are not needed!
 	mkdir -p $(OMBUILDDIR)/include/omc/c/sundials
-	(cp -pufr 3rdParty/sundials/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
+	(cp -pfr 3rdParty/sundials/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
 	# copy the libs to the build/lib/omc directory
-	(cp -puf 3rdParty/sundials/build/lib/* $(builddir_lib_omc))
+	(cp -pf 3rdParty/sundials/build/lib/* $(builddir_lib_omc))
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
 	# copy the dlls to the build bin directory
-	(cp -puf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
+	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
 clean-sundials:
 	if test -d 3rdParty/sundials/build ; then cd 3rdParty/sundials/build && make clean ; fi
 	rm -rf $(OMBUILDDIR)/include/omc/cpp/sundials
@@ -443,7 +458,7 @@ $(LIBMODELICASTANDARDTABLES): $(LIBMODELICAEXTERNALC)
 	test ! `uname` = Darwin || (install_name_tool -id @rpath/libModelicaStandardTables.0.dylib "$@" && install_name_tool -change "$(LIBMODELICAMATIO:%.dylib=%.0.dylib)" @rpath/libModelicaMatIO.0.dylib "$@" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$@")
 	@test -f "$@"
 $(LIBMODELICAZLIB): $(LIBMODELICAEXTERNALC)
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libzlib.0.dylib "$@"
+	test ! `uname` = Darwin || (install_name_tool -id @rpath/libzlib.0.dylib "$@" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$@")
 	@test -f "$@"
 $(LIBMODELICAIO): $(LIBMODELICAEXTERNALC)
 	test ! `uname` = Darwin || (install_name_tool -id @rpath/libModelicaIO.0.dylib "$@" && install_name_tool -change "$(LIBMODELICAMATIO:%.dylib=%.0.dylib)" @rpath/libModelicaMatIO.0.dylib "$@" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$@")

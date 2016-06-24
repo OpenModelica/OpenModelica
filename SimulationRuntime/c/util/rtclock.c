@@ -34,7 +34,7 @@
 #include <limits.h>
 #include <string.h>
 #include "omc_msvc.h"
-#include "memory_pool.h"
+#include "gc/omc_gc.h"
 #include <errno.h>
 #include "util/omc_error.h"
 #define NSEC_PER_SEC 1000000000L

@@ -747,7 +747,7 @@ algorithm
     case (MEM_TEXT(
             tokens = {},
             blocksStack = (itertoks, bt as BT_ITER(
-                                       options = iopts as ITER_OPTIONS(
+                                       options = ITER_OPTIONS(
                                                             empty = SOME(emptok)),
                                        index0 = i0)) :: blstack
             ))

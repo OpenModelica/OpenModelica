@@ -1,6 +1,6 @@
 CC=gcc
 override CFLAGS +=-O0 -g -std=c99
-CPPFLAGS=-I../../c
+CPPFLAGS=-I../../c -I$(OMBUILDDIR)/include/omc/c
 LDFLAGS=-lpthread -lwsock32
 DLLEXT=.dll
 builddir_lib=$(OMBUILDDIR)/lib/omc

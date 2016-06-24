@@ -100,12 +100,14 @@ public constant String rightBraketStr = "$rB";
 public constant String leftParStr = "$lP";
 public constant String rightParStr = "$rP";
 public constant String commaStr = "$c";
+public constant String appostrophStr = "$a";
 
 protected constant list<ReplacePattern> replaceStringPatterns=
          {REPLACEPATTERN(".",pointStr),
           REPLACEPATTERN("[",leftBraketStr),REPLACEPATTERN("]",rightBraketStr),
           REPLACEPATTERN("(",leftParStr),REPLACEPATTERN(")",rightParStr),
-          REPLACEPATTERN(",",commaStr)};
+          REPLACEPATTERN(",",commaStr),
+          REPLACEPATTERN("'",appostrophStr)};
 
 public function isIntGreater "Author: BZ"
   input Integer lhs;

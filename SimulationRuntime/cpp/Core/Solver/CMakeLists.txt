@@ -8,7 +8,6 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${SolverName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 endif(NOT BUILD_SHARED_LIBS)
 
-include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 target_link_libraries(${SolverName} ${MathName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName})
 add_precompiled_header(${SolverName} Include/Core/Modelica.h)
 

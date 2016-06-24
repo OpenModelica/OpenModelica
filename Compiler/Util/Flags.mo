@@ -304,8 +304,8 @@ constant DebugFlag TPL_PERF_TIMES = DEBUG_FLAG(66, "tplPerfTimes", false,
   Util.gettext("Enables output of template performance data for rendering text to file."));
 constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(67, "checkSimplify", false,
   Util.gettext("Enables checks for expression simplification and prints a notification whenever an undesirable transformation has been performed."));
-constant DebugFlag SCODE_INST = DEBUG_FLAG(68, "scodeInst", false,
-  Util.gettext("Enables experimental SCode instantiation phase."));
+constant DebugFlag SCODE_INST = DEBUG_FLAG(68, "newInst", false,
+  Util.gettext("Enables experimental new instantiation phase."));
 constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(69, "writeToBuffer", false,
   Util.gettext("Enables writing simulation results to buffer."));
 constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(70, "backenddaeinfo", false,
@@ -429,8 +429,8 @@ constant DebugFlag NO_START_CALC = DEBUG_FLAG(127, "disableStartCalc", false,
   Util.gettext("Deactivates the pre-calculation of start values during compile-time."));
 constant DebugFlag NO_PARTITIONING = DEBUG_FLAG(128, "disablePartitioning", false,
   Util.gettext("Deactivates partitioning of entire equation system.\nDeprecated flag: Use --preOptModules-=clockPartitioning instead."));
-constant DebugFlag ADVANCE_TEARING = DEBUG_FLAG(129, "advanceTearing", false,
-  Util.gettext("Using ExpressionSolve in adjacencyRowEnhanced"));
+constant DebugFlag ALLOW_IMPOSSIBLE_ASSIGNMENTS = DEBUG_FLAG(129, "allowImpossibleAssignments", false,
+  Util.gettext("Using ExpressionSolve in adjacencyRowEnhanced instead of considering the partial derivative. This could lead to singularities during simulation."));
 constant DebugFlag CONSTJAC = DEBUG_FLAG(130, "constjac", false,
   Util.gettext("solves linear systems with constant Jacobian and variable b-Vector symbolically"));
 constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(131, "reduceDynOpt", false,
@@ -503,6 +503,10 @@ constant DebugFlag DUMPBACKENDINLINE = DEBUG_FLAG(164, "dumpBackendInline", fals
   Util.gettext("Dumps debug output while inline function."));
 constant DebugFlag DUMPBACKENDINLINE_VERBOSE = DEBUG_FLAG(165, "dumpBackendInlineVerbose", false,
   Util.gettext("Dumps debug output while inline function."));
+constant DebugFlag BLT_MATRIX_DUMP = DEBUG_FLAG(166, "bltmatrixdump", false,
+  Util.gettext("Dumps the blt matrix in html file. IE seems to be very good in displaying large matrices."));
+constant DebugFlag LIST_REVERSE_WRONG_ORDER = DEBUG_FLAG(167, "listAppendWrongOrder", true,
+  Util.gettext("Print notifications about bad usage of listAppend."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -638,7 +642,7 @@ constant list<DebugFlag> allDebugFlags = {
   DISABLE_COMSUBEXP,
   NO_START_CALC,
   NO_PARTITIONING,
-  ADVANCE_TEARING,
+  ALLOW_IMPOSSIBLE_ASSIGNMENTS,
   CONSTJAC,
   REDUCE_DYN_OPT,
   VISUAL_XML,
@@ -674,7 +678,9 @@ constant list<DebugFlag> allDebugFlags = {
   SERIALIZED_SIZE,
   BACKEND_KEEP_ENV_GRAPH,
   DUMPBACKENDINLINE,
-  DUMPBACKENDINLINE_VERBOSE
+  DUMPBACKENDINLINE_VERBOSE,
+  BLT_MATRIX_DUMP,
+  LIST_REVERSE_WRONG_ORDER
 };
 
 public
@@ -865,6 +871,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("extendDynamicOptimization", Util.gettext("Move loops to constraints.")),
     ("generateSymbolicJacobian", Util.gettext("Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac.")),
     ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t:math:`ty = Cx +Du`")),
+    ("generateSymbolicSensitivities", Util.gettext("Generates symbolic Sensivities matrix, where der(x) is differentiated w.r.t. param.")),
     ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")),
     ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
     ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")),
@@ -1007,8 +1014,7 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(44, "tearingMethod",
   SOME(STRING_DESC_OPTION({
     ("noTearing", Util.gettext("Skip tearing.")),
     ("omcTearing", Util.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
-    ("cellier", Util.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick")),
-    ("totalTearing", Util.gettext("Total Tearing (Determination of all possible tearing sets): Täuber, Patrick"))})),
+    ("cellier", Util.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"))})),
     Util.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
 
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(45, "tearingHeuristic",
@@ -1029,7 +1035,7 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(45, "tearingHeuristic",
 
 constant ConfigFlag DISABLE_LINEAR_TEARING = CONFIG_FLAG(46, "disableLinearTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Disables the tearing of linear systems. That might improve the performance of large linear systems(N>1000) in combination with a sparse solver (e.g. umfpack) at runtime (usage with: -ls umfpack)."));
+  Util.gettext("Disables the tearing of linear systems. That might improve the performance of large linear systems(N>1000) in combination with a sparse solver (e.g. umfpack) at runtime (usage with: -ls umfpack).\nDeprecated flag: Use --maxSizeLinearTearing=0 instead."));
 
 constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(47, "scalarizeMinMax",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
@@ -1280,8 +1286,28 @@ constant ConfigFlag INLINE_METHOD = CONFIG_FLAG(96, "inlineMethod",
   SOME(STRING_OPTION({"replace", "append"})),
   Util.gettext("Sets the inline method to use.\n"+
                "replace : This method inlines by replacing in place all expressions. Might lead to very long expression.\n"+
-               "append  : This method inlines by adding additional variables to the whole system. Might lead to much bigger system.")
-        );
+               "append  : This method inlines by adding additional variables to the whole system. Might lead to much bigger system."));
+constant ConfigFlag SET_TEARING_VARS = CONFIG_FLAG(97, "setTearingVars",
+  NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
+  Util.gettext("Sets the tearing variables by its strong component indexes. Use '+d=tearingdump' to find out the relevant indexes.\nUse following format: '--setTearingVars=(sci,n,t1,...,tn)*', with sci = strong component index, n = number of tearing variables, t1,...tn = tearing variables.\nE.g.: '--setTearingVars=4,2,3,5' would select variables 3 and 5 in strong component 4.\nOnly works in combination with 'setResidualEqns'."));
+constant ConfigFlag SET_RESIDUAL_EQNS = CONFIG_FLAG(98, "setResidualEqns",
+  NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
+  Util.gettext("Sets the residual equations by its strong component indexes. Use '+d=tearingdump' to find out the relevant indexes for the collective equations.\nUse following format: '--setResidualEqns=(sci,n,r1,...,rn)*', with sci = strong component index, n = number of residual equations, r1,...rn = residual equations.\nE.g.: '--setResidualEqns=4,2,3,5' would select equations 3 and 5 in strong component 4.\nOnly works in combination with 'setTearingVars'."));
+constant ConfigFlag IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION = CONFIG_FLAG(99, "ignoreCommandLineOptionsAnnotation",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Ignores the command line options specified as annotation in the class."));
+constant ConfigFlag CALCULATE_SENSITIVITIES = CONFIG_FLAG(100, "calculateSensitivities",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Generates sensitivities variables and matrixes."));
+constant ConfigFlag ALARM = CONFIG_FLAG(101, "alarm",
+  SOME("r"), EXTERNAL(), INT_FLAG(0), NONE(),
+  Util.gettext("Sets the number seconds until omc timeouts and exits. Used by the testing framework to terminate infinite running processes."));
+constant ConfigFlag TOTAL_TEARING = CONFIG_FLAG(102, "totalTearing",
+  NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
+  Util.gettext("Activates total tearing (determination of all possible tearing sets) for the specified components.\nUse '+d=tearingdump' to find out the relevant indexes."));
+constant ConfigFlag IGNORE_SIMULATION_FLAGS_ANNOTATION = CONFIG_FLAG(103, "ignoreSimulationFlagsAnnotation",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Ignores the simulation flags specified as annotation in the class."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1383,7 +1409,14 @@ constant list<ConfigFlag> allConfigFlags = {
   NO_TEARING_FOR_COMPONENT,
   CT_STATE_MACHINES,
   DAE_MODE,
-  INLINE_METHOD
+  INLINE_METHOD,
+  SET_TEARING_VARS,
+  SET_RESIDUAL_EQNS,
+  IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION,
+  CALCULATE_SENSITIVITIES,
+  ALARM,
+  TOTAL_TEARING,
+  IGNORE_SIMULATION_FLAGS_ANNOTATION
 };
 
 public function new
@@ -1395,7 +1428,7 @@ algorithm
   outArgs := readArgs(inArgs);
 end new;
 
-protected function saveFlags
+public function saveFlags
   "Saves the flags with setGlobalRoot."
   input Flags inFlags;
 algorithm
@@ -1418,7 +1451,7 @@ algorithm
   outDebugFlags := listArray(List.map(allDebugFlags, defaultDebugFlag));
 end createDebugFlags;
 
-protected function loadFlags
+public function loadFlags
   "Loads the flags with getGlobalRoot. Creates a new flags structure if it
    hasn't been created yet."
   output Flags outFlags;
@@ -1448,6 +1481,17 @@ algorithm
 
   end matchcontinue;
 end loadFlags;
+
+public function backupFlags
+  "Creates a copy of the existing flags."
+  output Flags outFlags;
+protected
+  array<Boolean> debug_flags;
+  array<FlagData> config_flags;
+algorithm
+  FLAGS(debug_flags, config_flags) := loadFlags();
+  outFlags := FLAGS(arrayCopy(debug_flags), arrayCopy(config_flags));
+end backupFlags;
 
 public function resetDebugFlags
   "Resets all debug flags to their default values."

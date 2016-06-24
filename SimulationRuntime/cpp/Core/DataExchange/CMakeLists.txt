@@ -12,7 +12,6 @@ if(NOT BOOST_STATIC_LINKING)
   target_link_libraries (${DataExchangeName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName})
 endif(NOT BOOST_STATIC_LINKING)
 
-include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 add_precompiled_header(${DataExchangeName} Include/Core/Modelica.h)
 
 install(TARGETS ${DataExchangeName} DESTINATION ${LIBINSTALLEXT})

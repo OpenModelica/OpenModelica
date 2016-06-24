@@ -43,7 +43,7 @@ extern "C" {
 #include "util/omc_error.h"
 #include "util/varinfo.h"
 #include "model_help.h"
-#include "util/memory_pool.h"
+#include "gc/omc_gc.h"
 #include "meta/meta_modelica.h"
 
 #include "nonlinearSystem.h"

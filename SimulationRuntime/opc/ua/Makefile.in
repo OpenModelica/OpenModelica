@@ -1,6 +1,6 @@
 CC=@CC@
 CFLAGS=-O0 -g -fPIC -fvisibility=hidden -std=c99
-CPPFLAGS=-I../../c
+CPPFLAGS=-I../../c -I$(OMBUILDDIR)/include/omc/c
 DLLEXT=@DLLEXT@
 LDFLAGS=-lpthread
 OMBUILDDIR=@OMBUILDDIR@

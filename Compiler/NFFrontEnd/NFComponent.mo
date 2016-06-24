@@ -29,60 +29,61 @@
  *
  */
 
-encapsulated package NFRedeclare
-" file:        NFRedeclare.mo
-  package:     NFRedeclare
-  description: Utility functions for redeclare.
+encapsulated package NFComponent
 
+import SCode.Element;
+import DAE.Type;
+import NFInstNode.InstNode;
+import NFBinding.Binding;
+import NFMod.Modifier;
 
-"
+uniontype Component
+  uniontype Attributes
+    record ATTRIBUTES
+      DAE.VarKind variability;
+      DAE.VarDirection direction;
+      DAE.VarVisibility visibility;
+      DAE.ConnectorType connectorType;
+    end ATTRIBUTES;
+  end Attributes;
 
-public import NFInstTypes;
-public import NFEnv;
-public import NFMod;
-public import SCode;
+  record COMPONENT_DEF
+    Element definition;
+    Modifier modifier;
+    Integer scope;
+  end COMPONENT_DEF;
 
-protected import Error;
+  record COMPONENT
+    String name;
+    InstNode classInst;
+    Type ty;
+    Binding binding;
+    Component.Attributes attributes;
+  end COMPONENT;
 
-public type Env = NFEnv.Env;
-public type Modifier = NFMod.Modifier;
+  function name
+    input Component component;
+    output String name;
+  algorithm
+    name := match component
+      case COMPONENT_DEF(definition = SCode.COMPONENT(name = name)) then name;
+      case COMPONENT() then component.name;
+    end match;
+  end name;
 
-//public function applyRedeclares
-//  input ModTable inMods;
-//  input Env inEnv;
-//  output Env outEnv;
-//protected
-//  list<Modifier> redecl;
-//algorithm
-//  redecl := NFMod.getRedeclaresFromTable(inMods);
-//  outEnv := List.fold(redecl, applyRedeclare, inEnv);
-//end applyRedeclares;
-//
-protected function applyRedeclare
-  input Modifier inMod;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := match(inMod, inEnv)
-    local
-      SCode.Element elem;
-      Env env;
-
-    case (NFInstTypes.REDECLARE(element = elem, env = env), _)
-      equation
-        (env, _) = NFEnv.replaceElement(elem, env, inEnv);
-      then
-        env;
-
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"NFRedeclare.applyRedeclare failed on non-redeclare modifier."});
-      then
-        fail();
-
-  end match;
-end applyRedeclare;
+  function setModifier
+    input Modifier modifier;
+    input output Component component;
+  algorithm
+    _ := match component
+      case COMPONENT_DEF()
+        algorithm
+          component.modifier := modifier;
+        then
+          ();
+    end match;
+  end setModifier;
+end Component;
 
 annotation(__OpenModelica_Interface="frontend");
-end NFRedeclare;
+end NFComponent;

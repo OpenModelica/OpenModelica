@@ -446,7 +446,7 @@ protected
   BackendDAE.EqSystem isyst;
   BackendDAE.Shared ishared;
   BackendDAE.Variables orderedVars;
-  BackendDAE.Variables knownVars;
+  BackendDAE.Variables globalKnownVars;
   BackendDAE.EquationArray orderedEqs;
   TaskGraph graphIn;
   TaskGraph graphTmp;
@@ -468,7 +468,7 @@ protected
   array<list<Integer>> compParamMapping;
 algorithm
   (incidenceMatrix,isyst,ishared,numberOfComps) := iSystInfo;
-  BackendDAE.SHARED(knownVars=knownVars) := ishared;
+  BackendDAE.SHARED(globalKnownVars=globalKnownVars) := ishared;
   BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs) := isyst;
   (varCompMapping,eqCompMapping,eventVarLst) := iVarInfo;
   (graphIn,inComps,compParamMapping,commCosts,compNames,nodeMark,componentIndex) := graphInfoIn;
@@ -477,7 +477,7 @@ algorithm
   compNames := arrayUpdate(compNames,componentIndex,compName);
   _ := HpcOmBenchmark.benchSystem();
 
-  (unsolvedVars,paramVars) := getUnsolvedVarsBySCC(iComponent,incidenceMatrix,orderedVars,knownVars,orderedEqs,eventVarLst,iAnalyzeParameters);
+  (unsolvedVars,paramVars) := getUnsolvedVarsBySCC(iComponent,incidenceMatrix,orderedVars,globalKnownVars,orderedEqs,eventVarLst,iAnalyzeParameters);
   compParamMapping := arrayUpdate(compParamMapping, componentIndex, paramVars);
   requiredSccs := arrayCreate(numberOfComps,({},{},{},{})); //create a ref-counter for each component
   requiredSccs := List.fold2(List.map1(Util.tuple41(unsolvedVars),Util.makeTuple,1),fillSccList,1,varCompMapping,requiredSccs);
@@ -4640,7 +4640,7 @@ algorithm
         costs = offset + 12*numAdds + 32*numMul + 37*numDiv + 236*numTrig + 2*numRel + 4*numLog + 110*numOth + 375*numFuncs;
      then (ops,intReal(costs));
 
-    case(BackendDAE.SYSTEM(allOperations=_,size=size,density=dens))// density is in procent
+    case(BackendDAE.SYSTEM(size=size,density=dens))// density is in procent
       equation
         allOpCosts = realMul(0.049, realPow(realMul(intReal(size),(realAdd(1.0,realMul(dens,19.0)))),3.0));
       then (1, allOpCosts);
@@ -6074,7 +6074,7 @@ algorithm
       array<ComponentInfo> compInformations1, compInformations2;
   case(_,_,_)
     equation
-      BackendDAE.DAE(eqs = systs, shared = shared) = dae;
+      BackendDAE.DAE(eqs = _, shared = shared) = dae;
       remEqs = BackendDAEUtil.collapseRemovedEqs(dae);
       TASKGRAPHMETA(varCompMapping=varCompMap) = graphDataIn;
       eqLst = BackendEquation.equationList(remEqs);

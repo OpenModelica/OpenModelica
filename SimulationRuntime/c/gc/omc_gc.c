@@ -37,7 +37,7 @@
  *
  */
 
-#include "mmc_gc.h"
+#include "omc_gc.h"
 
 static mmc_GC_state_type x_mmc_GC_state;
 mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;

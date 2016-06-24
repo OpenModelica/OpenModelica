@@ -127,7 +127,7 @@ algorithm
       list<list<Integer>> partitions, activatorsForPartitions;
       list<Integer> stateToActivators;
 
-    case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
+    case (BackendDAE.DAE(eqs=_), _, _, _, _,_, _, _, _, _, _, _, _) equation
       // DO MULTI-RATE-PARTITIONING
       true =  Flags.isSet(Flags.MULTIRATE_PARTITION);
       print("DO MULTIRATE\n");
@@ -140,7 +140,7 @@ algorithm
 
       //get simCode-backendDAE mappings
       //----------------------------
-      simVarMapping = SimCodeUtil.getSimVarMappingOfBackendMapping(simCode.backendMapping);
+      _ = SimCodeUtil.getSimVarMappingOfBackendMapping(simCode.backendMapping);
       (simeqCompMapping, sccSimEqMapping, daeSccSimEqMapping) = HpcOmTaskGraph.setUpHpcOmMapping(inBackendDAE, simCode, lastEqMappingIdx, equationSccMapping);
       ExecStat.execStat("hpcom setup");
 
@@ -318,7 +318,7 @@ algorithm
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       (numProc,_) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);//in case n-flag is not set
 
-      (scheduleDae,simCode,taskGraphDaeScheduled,taskGraphDataDaeScheduled,sccSimEqMapping) = createSchedule(taskGraphDaeSimplified,taskGraphDataDaeSimplified,daeSccSimEqMapping,simVarMapping,filenamePrefix,numProc,numProc,simCode,scheduledTasksDae,"DAE system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
+      (scheduleDae,simCode,_,_,sccSimEqMapping) = createSchedule(taskGraphDaeSimplified,taskGraphDataDaeSimplified,daeSccSimEqMapping,simVarMapping,filenamePrefix,numProc,numProc,simCode,scheduledTasksDae,"DAE system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
            //HpcOmScheduler.printSchedule(scheduleDae);
            //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleDae,arrayLength(taskGraphDaeScheduled));
            //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDaeScheduled, taskGraphDataDaeScheduled, "taskGraph"+filenamePrefix+"DAE_scheduled.graphml", "", HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
@@ -328,7 +328,7 @@ algorithm
            //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleOde,arrayLength(taskGraphOdeScheduled));
            //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOdeScheduled, taskGraphDataOdeScheduled, "taskGraph"+filenamePrefix+"ODE_scheduled.graphml", "", HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
 
-      (scheduleZeroFunc,simCode,taskGraphZeroFuncScheduled,taskGraphDataZeroFuncScheduled,sccSimEqMapping) = createSchedule(taskGraphZeroFuncSimplified,taskGraphDataZeroFuncSimplified,daeSccSimEqMapping,simVarMapping,filenamePrefix,numProc,numProc,simCode,scheduledTasksZeroFunc,"ZeroFunc system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
+      (scheduleZeroFunc,simCode,_,_,sccSimEqMapping) = createSchedule(taskGraphZeroFuncSimplified,taskGraphDataZeroFuncSimplified,daeSccSimEqMapping,simVarMapping,filenamePrefix,numProc,numProc,simCode,scheduledTasksZeroFunc,"ZeroFunc system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
            //HpcOmScheduler.printSchedule(scheduleZeroFunc);
            //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleZeroFunc,arrayLength(taskGraphZeroFuncScheduled));
            //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphZeroFuncScheduled, taskGraphDataZeroFuncScheduled, "taskGraph"+filenamePrefix+"ZF_scheduled.graphml", "", HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));

@@ -682,29 +682,33 @@ function: inlineExp
   output DAE.ElementSource outSource;
   output Boolean inlineperformed;
 algorithm
-  (outExp,outSource,inlineperformed) := matchcontinue (inExp,inElementList,inSource)
+  (outExp,outSource,inlineperformed) := match (inExp,inElementList,inSource)
     local
       Functiontuple fns;
       DAE.Exp e,e_1,e_2;
       DAE.ElementSource source;
       list<DAE.Statement> assrtLst;
       DAE.FunctionTree functionTree;
+      Boolean b;
     case (e,(SOME(functionTree),_),source)
+      guard
+        Expression.isConst(inExp)
       equation
-        true = Expression.isConst(inExp);
         e_1 = Ceval.cevalSimpleWithFunctionTreeReturnExp(inExp, functionTree);
         source = ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
       then (e_1,source,true);
     case (e,fns,source)
       equation
         (e_1,_) = Expression.traverseExpBottomUp(e,function forceInlineCall(fns=fns),{});
-        false = referenceEq(e, e_1);
+        b = not referenceEq(e, e_1);
+        if b then
         source = ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
-        (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
+        (DAE.PARTIAL_EQUATION(e_1),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
+        end if;
       then
-        (e_2,source,true);
+        (e_1,source,b);
     else (inExp,inSource,false);
-  end matchcontinue;
+  end match;
 end forceInlineExp;
 
 public function inlineExps "

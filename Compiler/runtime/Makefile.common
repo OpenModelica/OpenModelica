@@ -11,7 +11,7 @@ builddir_inc=$(OMBUILDDIR)/include
 builddir_doc=$(OMBUILDDIR)/doc
 builddir_share=$(OMBUILDDIR)/share
 
-SimRuntimeCDir = $(top_builddir)/SimulationRuntime/c/util/
+SimRuntimeCDir = $(top_builddir)/SimulationRuntime/c/
 
 ifndef OMDEV
 	configUnix = config.unix.h
@@ -94,10 +94,10 @@ UnitParserExt_omc.o : unitparserext.cpp unitparser.h
 BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT) matching.c matchmaker.h matching_cheap.c
 
 # Objects depending on BOOTH
-Dynload_omc$(OBJEXT): systemimpl.h errorext.h $(BOOTH) $(SimRuntimeCDir)/read_write.h $(SimRuntimeCDir)/memory_pool.h Dynload.cpp $(RML_COMPAT)
+Dynload_omc$(OBJEXT): systemimpl.h errorext.h $(BOOTH) $(SimRuntimeCDir)/util/read_write.h $(SimRuntimeCDir)/gc/omc_gc.h Dynload.cpp $(RML_COMPAT)
 Error_omc$(OBJEXT) : errorext.cpp ErrorMessage.hpp $(BOOTH)
 System_omc$(OBJEXT) : System_omc.c systemimpl.c omc_config.h errorext.h printimpl.h $(configUnix) $(RML_COMPAT) $(BOOTH)
-SimulationResults_omc$(OBJEXT) : SimulationResults.c SimulationResultsCmp.c SimulationResultsCmpTubes.c errorext.h $(SimRuntimeCDir)/read_matlab4.h $(BOOTH)
+SimulationResults_omc$(OBJEXT) : SimulationResults.c SimulationResultsCmp.c SimulationResultsCmpTubes.c errorext.h $(SimRuntimeCDir)/util/read_matlab4.h $(BOOTH)
 TaskGraphResults_omc$(OBJEXT) : TaskGraphResultsCmp.h TaskGraphResultsCmp.cpp $(BOOTH)
 HpcOmBenchmarkExt_omc$(OBJEXT) : HpcOmBenchmarkExt.cpp $(BOOTH)
 HpcOmSchedulerExt_omc$(OBJEXT) : TaskGraphResultsCmp.h HpcOmSchedulerExt.cpp $(BOOTH)

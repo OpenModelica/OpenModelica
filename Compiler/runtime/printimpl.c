@@ -401,17 +401,20 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
 #endif
   char *modelicaFileName = NULL;
   char* strtmp = NULL;
-  str[nfilled] = '\0';
 
-  /* First, compile the regular expressions */
-  if (regcomp(&re_begin, re_str[0], REG_EXTENDED) || regcomp(&re_end, re_str[1], 0)) {
-    c_add_message(NULL,21, /* WRITING_FILE_ERROR */
-      ErrorType_scripting,
-      ErrorLevel_error,
-      gettext("Error compiling regular expression: %s or %s."),
-      re_str,
-      2);
-    return 1;
+  if (str!=NULL && nfilled!=0) {
+    str[nfilled] = '\0';
+
+    /* First, compile the regular expressions */
+    if (regcomp(&re_begin, re_str[0], REG_EXTENDED) || regcomp(&re_end, re_str[1], 0)) {
+      c_add_message(NULL,21, /* WRITING_FILE_ERROR */
+        ErrorType_scripting,
+        ErrorLevel_error,
+        gettext("Error compiling regular expression: %s or %s."),
+        re_str,
+        2);
+      return 1;
+    }
   }
 
   /* check if we have something to write */
@@ -432,8 +435,6 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
   }
   if (str == NULL || str[0]=='\0') {
     /* nothing to write to file, just close it and return ! */
-    regfree(&re_begin);
-    regfree(&re_end);
     fclose(file);
     return 1;
   }

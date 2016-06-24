@@ -685,7 +685,7 @@ package CompareWithGenericSubscript "Package that can be modified to do differen
   constant CompareWithSubsType compareSubscript=CompareWithSubsType.WithGenericSubscript;
   function compare
     input DAE.ComponentRef cr1, cr2;
-    output Integer res=0;
+    output Integer res;
   algorithm
     res := match (cr1, cr2)
       case (DAE.CREF_IDENT(),DAE.CREF_IDENT())

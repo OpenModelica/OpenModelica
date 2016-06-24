@@ -16,7 +16,6 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${SystemName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 endif(NOT BUILD_SHARED_LIBS)
 
-include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR}/kinsol ${SUNDIALS_INCLUDE_DIR})
 target_link_libraries(${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} ${SimulationSettings} ${ExtensionUtilitiesName})
 add_precompiled_header(${SystemName} Include/Core/Modelica.h)
 

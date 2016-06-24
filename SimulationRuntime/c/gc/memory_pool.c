@@ -29,10 +29,12 @@
  */
 
 
-#include "memory_pool.h"
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+#define OMC_NO_GC_MAPPING
+#endif
+#include "gc/omc_gc.h"
 #include <string.h>
 #include <pthread.h>
-#include <gc.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -143,7 +145,7 @@ omc_alloc_interface_t omc_alloc_interface_pooled = {
 };
 
 #if defined(OMC_RECORD_ALLOC_WORDS)
-#include "meta/gc/mmc_gc.h"
+#include "gc/omc_gc.h"
 
 static void* OMC_record_malloc(size_t sz)
 {

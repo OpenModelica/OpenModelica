@@ -109,7 +109,7 @@ algorithm
     eqs := inBackendDAE.eqs;
     tpl := (SOME(shared.functionTree), inITLst);
     eqs := List.map1(eqs, inlineEquationSystem, tpl);
-    shared.knownVars := inlineVariables(shared.knownVars, tpl);
+    shared.globalKnownVars := inlineVariables(shared.globalKnownVars, tpl);
     shared.externalObjects := inlineVariables(shared.externalObjects, tpl);
     shared.initialEqs := inlineEquationArray(shared.initialEqs, tpl);
     shared.removedEqs := inlineEquationArray(shared.removedEqs, tpl);
@@ -344,7 +344,7 @@ protected function inlineWhenEq
   output DAE.ElementSource outSource;
   output Boolean inlined;
 algorithm
-  (outWhenEquation,outSource,inlined) := matchcontinue(inWhenEquation)
+  (outWhenEquation,outSource,inlined) := match(inWhenEquation)
     local
       DAE.ComponentRef cref;
       DAE.Exp e,e_1,cond;
@@ -371,7 +371,7 @@ algorithm
         end if;
       then (BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelsewe), source, b1 or b2 or b3);
 
-  end matchcontinue;
+  end match;
 end inlineWhenEq;
 
 protected function inlineWhenOps
@@ -394,14 +394,14 @@ algorithm
     case BackendDAE.ASSIGN(left = cr, right = e2, source = source)
       equation
         (e2, source, b,_) = Inline.inlineExp(e2, fns, source);
-        outWhenOps = BackendDAE.ASSIGN(cr, e2, source)::outWhenOps;
+        outWhenOps = (if b then BackendDAE.ASSIGN(cr, e2, source) else whenOp)::outWhenOps;
         inlined = inlined or b;
       then ();
 
     case BackendDAE.REINIT(stateVar = cr, value = e2,  source = source)
       equation
         (e2, source, b,_) = Inline.inlineExp(e2, fns, source);
-        outWhenOps = BackendDAE.REINIT(cr, e2, source)::outWhenOps;
+        outWhenOps = (if b then BackendDAE.REINIT(cr, e2, source) else whenOp)::outWhenOps;
         inlined = inlined or b;
       then ();
 
@@ -409,21 +409,21 @@ algorithm
       equation
         (e1, source, b,_) = Inline.inlineExp(e1, fns, source);
         (e2, source, b2,_) = Inline.inlineExp(e2, fns, source);
-        outWhenOps = BackendDAE.ASSERT(e1, e2, level, source)::outWhenOps;
+        outWhenOps = (if b or b2 then BackendDAE.ASSERT(e1, e2, level, source) else whenOp)::outWhenOps;
         inlined = inlined or b or b2;
       then ();
 
     case BackendDAE.TERMINATE(message = e1,  source = source)
       equation
         (e1, source, b,_) = Inline.inlineExp(e1, fns, source);
-        outWhenOps = BackendDAE.TERMINATE(e1, source)::outWhenOps;
+        outWhenOps = (if b then BackendDAE.TERMINATE(e1, source) else whenOp)::outWhenOps;
         inlined = inlined or b;
       then ();
 
     case BackendDAE.NORETCALL(exp = e1,  source = source)
       equation
         (e1, source, b,_) = Inline.inlineExp(e1, fns, source);
-        outWhenOps = BackendDAE.NORETCALL(e1, source)::outWhenOps;
+        outWhenOps = (if b then BackendDAE.NORETCALL(e1, source) else whenOp)::outWhenOps;
         inlined = inlined or b;
       then ();
   end match;
@@ -730,7 +730,7 @@ algorithm
       BackendDump.dumpEqSystems(eqs, "Result DAE after Inline.");
     end if;
     // TODO: use new BackendInline also for other parts
-    shared.knownVars := BackendInline.inlineVariables(shared.knownVars, tpl);
+    shared.globalKnownVars := BackendInline.inlineVariables(shared.globalKnownVars, tpl);
     shared.externalObjects := BackendInline.inlineVariables(shared.externalObjects, tpl);
     shared.initialEqs := BackendInline.inlineEquationArray(shared.initialEqs, tpl);
     shared.removedEqs := BackendInline.inlineEquationArray(shared.removedEqs, tpl);
@@ -1147,12 +1147,11 @@ protected
   DAE.Type tp;
   list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
   HashTableCG.HashTable checkcr;
-  list<DAE.ComponentRef> tmpOutput = {};
   DAE.ComponentRef cr;
   BackendDAE.Var var;
   BackendDAE.IncidenceMatrix m;
   array<Integer> ass1, ass2;
-  list<BackendDAE.Equation> eqlst = {};
+  list<BackendDAE.Equation> eqlst;
 algorithm
   if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
     print("\ncreate EqnSys from function: "+funcname);
@@ -1196,7 +1195,7 @@ algorithm
     guard not Expression.isRecordType(ComponentReference.crefTypeFull(cr))
       algorithm
         // create variables
-        (crVar, varLst, repl) := createReplacementVariables(cr, funcname, repl);
+        (_, varLst, repl) := createReplacementVariables(cr, funcname, repl);
         varLst := list(BackendVariable.setVarTS(_var, SOME(BackendDAE.AVOID())) for _var in varLst);
         outEqs := BackendVariable.addVarsDAE(varLst, outEqs);
     then ();

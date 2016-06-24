@@ -738,19 +738,21 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     TRIPLET=<%getTriple()%>
     CC=<%makefileParams.ccompiler%>
     CXX=<%makefileParams.cxxcompiler%>
+    ABI_CFLAG=
     DLLEXT=<%makefileParams.dllext%>
     PLATFORM=<%platformstr%>
   else
     TRIPLET=$(TARGET_TRIPLET)
     CC=$(TRIPLET)-gcc
     CXX=$(TRIPLET)-g++
+    ABI_CFLAG=-D_GLIBCXX_USE_CXX11_ABI=0
     DLLEXT=$(if $(findstring mingw,$(TRIPLET)),.dll,.so)
     WORDSIZE=$(if $(findstring x86_64,$(TRIPLET)),64,32)
     PLATFORM=$(if $(findstring darwin,$(TRIPLET)),darwin,$(if $(findstring mingw,$(TRIPLET)),win,linux))$(WORDSIZE)
   endif
 
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-  FMU_CFLAGS=$(subst -DUSE_THREAD,,$(subst -O0,$(SIM_OPT_LEVEL),$(SYSTEM_CFLAGS)))
+  FMU_CFLAGS=$(subst -DUSE_THREAD,,$(subst -O0,$(SIM_OPT_LEVEL),$(SYSTEM_CFLAGS))) $(ABI_CFLAG)
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(FMU_CFLAGS) -DFMU_BUILD -DRUNTIME_STATIC_LINKING -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%additionalCFlags_GCC%>
 
   ifeq ($(USE_LOGGER),ON)
@@ -785,13 +787,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     $(eval BINARIES=$(BINARIES) <%lapackbins%>)
   endif
 
-  # need boost system lib prior to C++11
+  # need boost system lib prior to C++11, forcing also dynamic libs
   ifeq ($(findstring USE_CPP_03,$(CFLAGS)),USE_CPP_03)
     $(eval LIBS=$(LIBS) -L"$(BOOST_LIBS)" -l$(BOOST_SYSTEM_LIB))
     $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT) <%platformbins%>)
-  # link static gcc libs to avoid dependencies
+  # link static libs to avoid dependencies; can't link all static under Linux
   else ifeq ($(findstring gcc,$(CC)),gcc)
-    $(eval LIBS=$(LIBS) -static-libstdc++ -static-libgcc)
+    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc,-static))
   endif
 
   CPPFILES=$(CALCHELPERMAINFILE)

@@ -76,7 +76,6 @@ function diff<T>
 protected
   Integer start1, end1, start2, end2, len1, len2;
   array<T> arr1, arr2;
-  list<tuple<Diff,list<T>>> prefixes = {}, suffixes = {};
 algorithm
   arr1 := listArray(seq1);
   arr2 := listArray(seq2);
@@ -84,7 +83,7 @@ algorithm
   start2 := 1;
   end1 := arrayLength(arr1);
   end2 := arrayLength(arr2);
-  out := diffSeq(arr1, arr2, equals, isWhitespace, toString, 1, arrayLength(arr1), 1, arrayLength(arr2));
+  out := diffSeq(arr1, arr2, equals, isWhitespace, toString, start1, end1, start2, end2);
 end diff;
 
 partial function partialPrintDiff<T>

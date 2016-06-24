@@ -3052,7 +3052,6 @@ algorithm
       equation
         s = unparseType(ty);
         cs = DAEUtil.constStrFriendly(c);
-        _ = DAEUtil.dumpVarParallelismStr(p);
         // res = stringAppendList({ps,cs,s," ",n});
         res = stringAppendList({cs,s," ",n});
       then

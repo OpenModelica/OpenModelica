@@ -56,7 +56,7 @@ impure function fromList
   output DoubleEndedList<T> delst;
 protected
   list<T> head,tail,tmp;
-  Integer length=0;
+  Integer length;
   T t;
 algorithm
   if listEmpty(lst) then
@@ -172,7 +172,7 @@ function push_list_back
   input list<T> lst;
 protected
   Integer length=arrayGet(delst.length,1), lstLength;
-  list<T> tail={}, tmp;
+  list<T> tail, tmp;
   T t;
 algorithm
   lstLength := listLength(lst);

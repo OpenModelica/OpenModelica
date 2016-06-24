@@ -35,8 +35,14 @@ CMAKE_TARGET = "MSYS Makefiles"
 
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 BOOST_PATH = $(OMDEVMSYS)/tools/msys/mingw32/include
+IS_MINGW32 = -DIS_MINGW32=ON
+IS_MINGW64 = -DIS_MINGW64=OFF
+MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win32
 else # mingw64
 BOOST_PATH = $(OMDEVMSYS)/tools/msys/mingw64/include
+IS_MINGW32 = -DIS_MINGW32=OFF
+IS_MINGW64 = -DIS_MINGW64=ON
+MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win64
 endif
 BOOST_PATH_MSVC = $(OMDEVMSYS)/lib/3rdParty/boost-1_55/
 
@@ -45,7 +51,7 @@ LINK = cp -rl
 AR = ar
 # LIBGC configuration is different for Windows (this file) and Linux (Makefile.in)
 MINGW_EXTRA_LIBS=lpsolve sundials
-LIBGC_EXTRA_CONFIGURATION=--enable-threads=posix --enable-munmap=1 --disable-parallel-mark
+LIBGC_EXTRA_CONFIGURATION=--enable-threads=posix --enable-munmap=1 #--disable-parallel-mark
 MSL321_CONFIG_EXTRA_FLAGS=--enable-static --disable-shared
 LIBFMILIB=libfmilib.a
 LIBCMINPACKLIB=libcminpack.a
@@ -64,6 +70,7 @@ IDLFILE=$(top_builddir)/Compiler/runtime/omc_communication.idl
 LIB_OMC=lib/omc
 LIBMODELICAEXTERNALC=$(OMBUILDDIR)/lib/omc/libModelicaExternalC.a
 LIBMODELICASTANDARDTABLES=$(OMBUILDDIR)/lib/omc/libModelicaStandardTables.a
+SUITESPARSE_LIBS=
 
 defaultMakefileTarget = Makefile.omdev.mingw
 MAKEFILE_BOOT = LinkMain.makefile.mingw
@@ -181,6 +188,8 @@ ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libopenblas.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniORB420_rt.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omnithread40_rt.dll $(builddir_bin)/)
+	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniORB420_rt.dll $(builddir_lib)/omc/)
+	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omnithread40_rt.dll $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials/lib/release/mingw/libsundials_kinsol.a $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials/lib/release/mingw/libsundials_nvecserial.a $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/lis/liblis.la $(builddir_lib)/omc/)
@@ -200,6 +209,8 @@ else # mingw64
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libopenblas.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniORB420_rt.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omnithread40_rt.dll $(builddir_bin)/)
+	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniORB420_rt.dll $(builddir_lib)/omc/)
+	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omnithread40_rt.dll $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials64/lib/release/mingw/libsundials_kinsol.a $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials64/lib/release/mingw/libsundials_nvecserial.a $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/lis64/liblis.la $(builddir_lib)/omc/)

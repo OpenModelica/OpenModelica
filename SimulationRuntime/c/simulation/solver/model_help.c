@@ -39,6 +39,7 @@
 #include "util/omc_error.h"
 #include "util/varinfo.h"
 #include "model_help.h"
+#include "simulation/options.h"
 #include "simulation/simulation_info_json.h"
 #include "util/omc_msvc.h" /* for freaking round! */
 #include "nonlinearSystem.h"
@@ -46,11 +47,14 @@
 #include "mixedSystem.h"
 #include "delay.h"
 #include "epsilon.h"
+#include "simulation/solver/stateset.h"
 #include "meta/meta_modelica.h"
 
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = 0.2;
 int linearSparseSolverMinSize = 4001;
+double newtonXTol = 1e-12;
+double newtonFTol = 1e-12;
 const size_t SIZERINGBUFFER = 3;
 int compiledInDAEMode = 0;
 
@@ -951,8 +955,6 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* buffer for inputs and outputs values */
   data->simulationInfo->inputVars = (modelica_real*) calloc(data->modelData->nInputVars, sizeof(modelica_real));
   data->simulationInfo->outputVars = (modelica_real*) calloc(data->modelData->nOutputVars, sizeof(modelica_real));
-  /* buffer for residual values of DAE solver*/
-  data->simulationInfo->residualVars = (modelica_real*) calloc(data->modelData->nResidualVars, sizeof(modelica_real));
 
   /* buffer for mixed systems */
   data->simulationInfo->mixedSystemData = (MIXED_SYSTEM_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nMixedSystems*sizeof(MIXED_SYSTEM_DATA));
@@ -969,6 +971,10 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* buffer for state sets */
   data->simulationInfo->stateSetData = (STATE_SET_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nStateSets*sizeof(STATE_SET_DATA));
   data->callback->initializeStateSets(data->modelData->nStateSets, data->simulationInfo->stateSetData, data);
+
+  /* buffer for daeMode */
+  data->simulationInfo->daeModeData = (DAEMODE_DATA*) omc_alloc_interface.malloc_uncollectable(sizeof(DAEMODE_DATA));
+  data->callback->initializeDAEmodeData(data, data->simulationInfo->daeModeData);
 
   /* buffer for analytical jacobians */
   data->simulationInfo->analyticJacobians = (ANALYTIC_JACOBIAN*) omc_alloc_interface.malloc_uncollectable(data->modelData->nJacobians*sizeof(ANALYTIC_JACOBIAN));
@@ -1018,6 +1024,18 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
   for(i=0; i<data->modelData->nDelayExpressions; i++)
     data->simulationInfo->delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
+
+  /* allocate memory for state selection */
+  initializeStateSetJacobians(data, threadData);
+
+  /* allocate memory for sensitivity analysis */
+  if (omc_flag[FLAG_IDAS])
+  {
+    data->simulationInfo->sensitivityParList = (int*) calloc(data->modelData->nSensitivityParamVars, sizeof(int));
+    data->simulationInfo->sensitivityMatrix = (modelica_real*) calloc(data->modelData->nSensitivityVars-data->modelData->nSensitivityParamVars, sizeof(modelica_real));
+    data->modelData->realSensitivityData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nSensitivityVars * sizeof(STATIC_REAL_DATA));
+  }
+
 
   TRACE_POP
 }
@@ -1118,6 +1136,9 @@ void deInitializeDataStruc(DATA *data)
   /* free buffer jacobians */
   omc_alloc_interface.free_uncollectable(data->simulationInfo->analyticJacobians);
 
+  /* free buffer for state sets */
+  omc_alloc_interface.free_uncollectable(data->simulationInfo->daeModeData);
+
   /* free inputs and output */
   free(data->simulationInfo->inputVars);
   free(data->simulationInfo->outputVars);
@@ -1134,6 +1155,17 @@ void deInitializeDataStruc(DATA *data)
     freeRingBuffer(data->simulationInfo->delayStructure[i]);
 
   free(data->simulationInfo->delayStructure);
+
+  /* free stateset data */
+  freeStateSetData(data);
+
+  /* free parameter sensitivities */
+  if (omc_flag[FLAG_IDAS])
+  {
+    free(data->simulationInfo->sensitivityParList);
+    free(data->simulationInfo->sensitivityMatrix);
+    FREE_VARS(nSensitivityVars, realSensitivityData)
+  }
 
   TRACE_POP
 }

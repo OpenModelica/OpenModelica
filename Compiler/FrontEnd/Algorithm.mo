@@ -288,7 +288,7 @@ algorithm
             guard Expression.expEqual(lhs, e1)
             algorithm
               print(stringDelimitList(list(SCodeDump.printCommentAndAnnotationStr(comment) for comment in ElementSource.getCommentsFromSource(source)), "\n"));
-              if not max(SCode.commentHasBooleanNamedAnnotation(comment, "__OpenModelica_DisableListAppendWarning") for comment in ElementSource.getCommentsFromSource(source)) then
+              if Flags.isSet(Flags.LIST_REVERSE_WRONG_ORDER) and not max(SCode.commentHasBooleanNamedAnnotation(comment, "__OpenModelica_DisableListAppendWarning") for comment in ElementSource.getCommentsFromSource(source)) then
                 Error.addSourceMessage(Error.LIST_REVERSE_WRONG_ORDER, {ExpressionDump.printExpStr(e1)}, ElementSource.getElementSourceFileInfo(source));
                 fail();
               end if;

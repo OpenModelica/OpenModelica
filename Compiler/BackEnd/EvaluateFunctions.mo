@@ -329,16 +329,16 @@ author:Waurich TUD 2014-04"
   input BackendDAE.Shared sharedIn;
   output BackendDAE.Shared sharedOut;
 protected
-  BackendDAE.Variables knVars;
+  BackendDAE.Variables globalKnownVars;
   DAE.FunctionTree funcTree;
   list<BackendDAE.Var> varLst;
 algorithm
-  knVars := BackendDAEUtil.getknvars(sharedIn);
+  globalKnownVars := BackendDAEUtil.getGlobalKnownVarsFromShared(sharedIn);
   funcTree := BackendDAEUtil.getFunctions(sharedIn);
-  varLst := BackendVariable.varList(knVars);
+  varLst := BackendVariable.varList(globalKnownVars);
   varLst := List.map1(varLst,evaluateParameter,funcTree);
-  knVars := BackendVariable.listVar(varLst);
-  sharedOut := BackendDAEUtil.setSharedKnVars(sharedIn,knVars);
+  globalKnownVars := BackendVariable.listVar(varLst);
+  sharedOut := BackendDAEUtil.setSharedGlobalKnownVars(sharedIn,globalKnownVars);
 end evaluateShared;
 
 protected function evaluateParameter "evaluates a parameter"
@@ -381,7 +381,7 @@ algorithm
   eqLst := BackendEquation.equationList(eqs);
 
   //traverse the eqSystem for function calls
-  (eqLst, (shared, addEqs, _, changed, callSign)) := List.mapFold(eqLst, evalFunctions_findFuncs, (sharedIn, {}, 1, changed, callSign));
+  (eqLst, shared, addEqs, _, changed, callSign) := List.mapFold5(eqLst, evalFunctions_findFuncs, sharedIn, {}, 1, changed, callSign);
   eqLst := listAppend(eqLst, addEqs);
   eqs := BackendEquation.listEquation(eqLst);
   eqSysOut := BackendDAEUtil.setEqSystEqs(eqSysIn, eqs);
@@ -390,30 +390,28 @@ algorithm
 end evalFunctions_main;
 
 protected function evalFunctions_findFuncs "traverses the lhs and rhs exps of an equation and tries to evaluate function calls "
-  input BackendDAE.Equation eqIn;
-  input tuple<BackendDAE.Shared,list<BackendDAE.Equation>,Integer,Boolean, list<CallSignature>> tplIn;
-  output BackendDAE.Equation eqOut;
-  output tuple<BackendDAE.Shared,list<BackendDAE.Equation>,Integer,Boolean, list<CallSignature>> tplOut;
+  input output BackendDAE.Equation eqIn;
+  input output BackendDAE.Shared shared;
+  input output list<BackendDAE.Equation> addEqs;
+  input output Integer idx;
+  input output Boolean changed;
+  input output list<CallSignature> callSign;
 algorithm
-  (eqOut,tplOut) := matchcontinue(eqIn,tplIn)
+  eqIn := matchcontinue(eqIn)
     local
-      Integer idx;
-      Boolean b1,b2,changed, changed1;
+      Boolean b1,b2, changed1;
       BackendDAE.Equation eq;
       BackendDAE.EquationAttributes attr;
-      BackendDAE.Shared shared;
       DAE.Exp exp1,exp2,lhsExp,rhsExp;
       DAE.ElementSource source;
       DAE.FunctionTree funcs;
-      list<BackendDAE.Equation> addEqs, addEqs1, addEqs2;
+      list<BackendDAE.Equation> addEqs1, addEqs2;
       list<DAE.Exp> lhs;
-      list<CallSignature> callSign;
-    case(BackendDAE.EQUATION(exp=exp1, scalar=exp2,source=source,attr=attr),_)
+    case(BackendDAE.EQUATION(exp=exp1, scalar=exp2,source=source,attr=attr))
       equation
         b1 = Expression.containFunctioncall(exp1);
         b2 = Expression.containFunctioncall(exp2);
         true = b1 or b2;
-        (shared,addEqs,idx,changed,callSign) = tplIn;
         funcs = BackendDAEUtil.getFunctions(shared);
         ((rhsExp,lhsExp,addEqs1,funcs,idx,changed1,callSign)) = if b1 then evaluateConstantFunction(exp1,exp2,funcs,idx,callSign) else (exp2,exp1,{},funcs,idx,changed,callSign);
         changed = changed1 or changed;
@@ -423,21 +421,21 @@ algorithm
         addEqs = listAppend(addEqs2,addEqs);
         eq = BackendEquation.generateEquation(lhsExp,rhsExp,source,attr);
         //if changed then print("FROM EQ "+BackendDump.equationString(eqIn)+"\n");print("GOT EQ "+BackendDump.equationString(eq)+"\n"); end if;
+        idx = idx+1;
       then
-        (eq,(shared,addEqs,idx+1,changed,callSign));
-    case(BackendDAE.ARRAY_EQUATION(),_)
+        eq;
+    case(BackendDAE.ARRAY_EQUATION())
       equation
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
           print("this is an array equation. update evalFunctions_findFuncs\n");
         end if;
       then
-        (eqIn,tplIn);
-    case(BackendDAE.COMPLEX_EQUATION(left=exp1, right=exp2, source=source, attr=attr),_)
+        eqIn;
+    case(BackendDAE.COMPLEX_EQUATION(left=exp1, right=exp2, source=source, attr=attr))
       equation
         b1 = Expression.containFunctioncall(exp1);
         b2 = Expression.containFunctioncall(exp2);
         true = b1 or b2;
-        (shared,addEqs,idx,changed,callSign) = tplIn;
         funcs = BackendDAEUtil.getFunctions(shared);
         ((rhsExp,lhsExp,addEqs1,funcs,idx,changed1,callSign)) = if b1 then evaluateConstantFunction(exp1,exp2,funcs,idx,callSign) else (exp2,exp1,{},funcs,idx,changed,callSign);
         changed = changed or changed1;
@@ -450,10 +448,11 @@ algorithm
         //since tuple=tuple is not supported, these equations are converted into a list of simple equations
         (eq,addEqs) = convertTupleEquations(eq,addEqs);
         //if changed then print("FROM EQ "+BackendDump.equationString(eqIn)+"\n");print("GOT EQ "+BackendDump.equationString(eq)+"\n"); end if;
+        idx = idx+1;
       then
-        (eq,(shared,addEqs,idx+1,changed,callSign));
+        eq;
     else
-        (eqIn,tplIn);
+        eqIn;
   end matchcontinue;
 end evalFunctions_findFuncs;
 
@@ -670,7 +669,7 @@ algorithm
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) and listEmpty(elements) then
           print("Its a Record!\n");
           false=true;
-        elseif Flags.isSet(Flags.EVAL_FUNC_DUMP) and (listLength(protectVars)+listLength(algs)==0) then
+        elseif Flags.isSet(Flags.EVAL_FUNC_DUMP) and (listEmpty(protectVars) and listEmpty(algs)) then
           print("Its a Built-In!\n");
           false=true;
         end if;
@@ -896,7 +895,7 @@ algorithm
         elements = DAEUtil.getFunctionElements(func);
         if listEmpty(elements) then
         // its a record
-          eLst = lst;
+          //eLst = lst;
         else
        // its a call, get the scalar outputs
         SOME(func) = DAE.AvlTreePathFunction.get(funcs,path);
@@ -1070,7 +1069,6 @@ algorithm
     case(DAE.CREF(componentRef=cref,ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(),varLst=varLst)))
       equation
         true = listLength(varLst)==1;
-        DAE.CREF(componentRef=cref) = expIn;
         crefs = getRecordScalars(cref);
         true = listLength(crefs)==1;
         cref = listHead(crefs);
@@ -1575,7 +1573,7 @@ algorithm
       Boolean b1,b2;
       DAE.Exp e1, e2;
       DAE.Statement stmt;
-    case(DAE.STMT_ASSIGN(exp1=e1,exp=e2),_)
+    case(DAE.STMT_ASSIGN(),_)
       equation
         ({stmt},_) = BackendVarTransform.replaceStatementLst({stmtIn},repl,NONE(),{},false);
         DAE.STMT_ASSIGN(exp1=e1,exp=e2) = stmt;

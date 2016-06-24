@@ -436,7 +436,7 @@ algorithm
           l::ll := ll;
         end while;
         ol := listAppend(l, inList) :: ol;
-        outListList := listReverseInPlace(ol);
+        ol := listReverseInPlace(ol);
       then ol;
 
   end match;
@@ -453,8 +453,8 @@ protected
   list<T> lst1, lst2;
 algorithm
   true := (inN > 0);
-  (lst1, lst2) := split(inList, inN-1);
-  outList := listAppend(lst1,inElement::lst2);
+  (lst1, lst2) := splitr(inList, inN-1);
+  outList := append_reverse(lst1,inElement::lst2);
 end insert;
 
 public function insertListSorted<T>
@@ -524,9 +524,9 @@ protected
   list<T> lst1, lst2;
 algorithm
   true := (inN > 0);
-  (lst1, lst2) := split(inList, inN-1);
+  (lst1, lst2) := splitr(inList, inN-1);
   lst2 := stripFirst(lst2);
-  outList := listAppend(lst1,inElement::lst2);
+  outList := append_reverse(lst1,inElement::lst2);
 end set;
 
 public function first<T>
@@ -736,32 +736,36 @@ public function sort<T>
       sort({2, 1, 3}, intLt) => {3, 2, 1}"
   input list<T> inList;
   input CompareFunc inCompFunc;
-  output list<T> outList;
+  output list<T> outList= {};
 
   partial function CompareFunc
     input T inElement1;
     input T inElement2;
     output Boolean inRes;
   end CompareFunc;
+protected
+  list<T> rest = inList;
+  T e1, e2;
+  list<T> left, right;
+  Integer middle;
 algorithm
-  outList := match(inList)
-    local
-      T e;
-      list<T> left, right;
-      Integer middle;
-
-    case {} then {};
-    case {e} then {e};
+  if not listEmpty(rest) then
+    e1 :: rest := rest;
+    if listEmpty(rest) then
+      outList := inList;
     else
-      equation
-        middle = intDiv(listLength(inList), 2);
-        (left, right) = split(inList, middle);
-        left = sort(left, inCompFunc);
-        right = sort(right, inCompFunc);
-      then
-        merge(left, right, inCompFunc, {});
-
-  end match;
+      e2 :: rest := rest;
+      if listEmpty(rest) then
+        outList := if inCompFunc(e2, e1) then inList else e2::{e1};
+      else
+        middle := intDiv(listLength(inList), 2);
+        (left, right) := split(inList, middle);
+        left := sort(left, inCompFunc);
+        right := sort(right, inCompFunc);
+        outList := merge(left, right, inCompFunc, {});
+      end if;
+    end if;
+  end if;
 end sort;
 
 public function sortedDuplicates<T>
@@ -810,7 +814,6 @@ algorithm
     rest := match rest
       local
         T e1,e2;
-      case {} then {};
       case {_} then {};
       case e1::(rest as e2::_)
         algorithm
@@ -1144,6 +1147,31 @@ algorithm
   outList1 := listReverseInPlace(l1);
   outList2 := l2;
 end split;
+
+public function splitr<T>
+  "Takes a list and a position, and splits the list at the position given. The first list is returned in reverse order.
+    Example: split({1, 2, 5, 7}, 2) => ({2, 1}, {5, 7})"
+  input list<T> inList;
+  input Integer inPosition;
+  output list<T> outList1;
+  output list<T> outList2;
+protected
+  Integer pos;
+  list<T> l1 = {}, l2 = inList;
+  T e;
+algorithm
+  true := inPosition >= 0;
+  pos := inPosition;
+
+  // Move elements from l2 to l1 until we reach the split position.
+  for i in 1:pos loop
+    e :: l2 := l2;
+    l1 := e :: l1;
+  end for;
+
+  outList1 := l1;
+  outList2 := l2;
+end splitr;
 
 public function splitOnTrue<T>
   "Splits a list into two sublists depending on predicate function."
@@ -1555,8 +1583,6 @@ protected function addPos
   input array<Integer> inArray;
   input Integer inIndex;
   output array<Integer> outArray;
-protected
-  Integer len = arrayLength(inArray);
 algorithm
   for i in inList loop
     _ := arrayUpdate(inArray, i, intAdd(arrayGet(inArray, i), inIndex));
@@ -1880,7 +1906,7 @@ public function mapCheckReferenceEq<TI>
    to each element of the list."
   input list<TI> inList;
   input MapFunc inFunc;
-  output list<TI> outList={};
+  output list<TI> outList;
 
   partial function MapFunc
     input TI inElement;
@@ -3054,6 +3080,74 @@ algorithm
   end for;
 end applyAndFold1;
 
+public function mapBoolOr<TI, ArgT1>
+  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value."
+  input list<TI> inList;
+  input MapFunc inFunc;
+  output Boolean res = false;
+
+  partial function MapFunc
+    input TI inElement;
+    output Boolean outBool;
+  end MapFunc;
+algorithm
+  for e in inList loop
+    if inFunc(e) then
+      res := true;
+      return;
+    end if;
+  end for;
+end mapBoolOr;
+
+
+public function map1BoolOr<TI, ArgT1>
+  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value.
+  inFunc takes one additional argument."
+  input list<TI> inList;
+  input MapFunc inFunc;
+  input ArgT1 inArg1;
+  output Boolean res = false;
+
+  partial function MapFunc
+    input TI inElement;
+    input ArgT1 inArg1;
+    output Boolean outBool;
+  end MapFunc;
+algorithm
+  for e in inList loop
+    if inFunc(e, inArg1) then
+      res := true;
+      return;
+    end if;
+  end for;
+end map1BoolOr;
+
+
+public function map1ListBoolOr<TI, ArgT1>
+  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value.
+  inFunc takes one additional argument."
+  input list<list<TI>> inListList;
+  input MapFunc inFunc;
+  input ArgT1 inArg1;
+  output Boolean res = false;
+
+  partial function MapFunc
+    input TI inElement;
+    input ArgT1 inArg1;
+    output Boolean outBool;
+  end MapFunc;
+algorithm
+  for el in inListList loop
+    for e in el loop
+      if inFunc(e, inArg1) then
+        res := true;
+        return;
+      end if;
+    end for;
+  end for;
+end map1ListBoolOr;
+
+
 public function mapList<TI, TO>
   "Takes a list of lists and a functions, and creates a new list of lists by
    applying the function to all elements in  the list of lists.
@@ -3251,12 +3345,9 @@ public function fold1<T, FT, ArgT1>
     output FT outFoldArg;
   end FoldFunc;
 algorithm
-/*
   for e in inList loop
     outResult := inFoldFunc(e, inExtraArg, outResult);
   end for;
- */
-  outResult := fold(inList, function inFoldFunc(inArg=inExtraArg), outResult);
 end fold1;
 
 public function fold1r<T, FT, ArgT1>
@@ -3620,6 +3711,34 @@ algorithm
   end for;
 end fold21;
 
+public function fold31<T, FT1, FT2, FT3, ArgT1>
+ "Takes a list and a function operating on list elements having three extra
+   argument that are 'updated', thus returned from the function, and one constant
+   argument that is not updated. fold will call the function for each element in
+   a sequence, updating the start value."
+  input list<T> inList;
+  input FoldFunc inFoldFunc;
+  input ArgT1 inExtraArg1;
+  input FT1 inStartValue1;
+  input FT2 inStartValue2;
+  input FT3 inStartValue3;
+  output FT1 outResult1 = inStartValue1;
+  output FT2 outResult2 = inStartValue2;
+  output FT3 outResult3 = inStartValue3;
+
+  partial function FoldFunc
+    input T inElement;
+    input ArgT1 inExtraArg1;
+    input output FT1 inFoldArg1;
+    input output FT2 inFoldArg2;
+    input output FT3 inFoldArg3;
+  end FoldFunc;
+algorithm
+  for e in inList loop
+    (outResult1, outResult2, outResult3) := inFoldFunc(e, inExtraArg1, outResult1, outResult2, outResult3);
+  end for;
+end fold31;
+
 
 public function fold5<T, FT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5>
   "Takes a list and a function operating on list elements having an extra
@@ -3708,6 +3827,96 @@ algorithm
   end for;
   outList := listReverseInPlace(outList);
 end mapFold2;
+
+public function mapFold3<TI, TO, FT1, FT2, FT3>
+  "Takes a list, a function, and three extra arguments. The function will be applied
+  to each element in the list, and the extra arguments will be passed to the
+  function and updated."
+  input list<TI> inList;
+  input FuncType inFunc;
+  output list<TO> outList = {};
+  input output FT1 inArg1;
+  input output FT2 inArg2;
+  input output FT3 inArg3;
+
+  partial function FuncType
+    input TI inElem;
+    output TO outResult;
+    input output FT1 inArg1;
+    input output FT2 inArg2;
+    input output FT3 inArg3;
+  end FuncType;
+protected
+  TO res;
+algorithm
+  for e in inList loop
+    (res, inArg1, inArg2, inArg3) := inFunc(e, inArg1, inArg2, inArg3);
+    outList := res::outList;
+  end for;
+  outList := listReverseInPlace(outList);
+end mapFold3;
+
+public function mapFold4<TI, TO, FT1, FT2, FT3, FT4>
+  "Takes a list, a function, and four extra arguments. The function will be applied
+  to each element in the list, and the extra arguments will be passed to the
+  function and updated."
+  input list<TI> inList;
+  input FuncType inFunc;
+  output list<TO> outList = {};
+  input output FT1 inArg1;
+  input output FT2 inArg2;
+  input output FT3 inArg3;
+  input output FT4 inArg4;
+
+  partial function FuncType
+    input TI inElem;
+    output TO outResult;
+    input output FT1 inArg1;
+    input output FT2 inArg2;
+    input output FT3 inArg3;
+    input output FT4 inArg4;
+  end FuncType;
+protected
+  TO res;
+algorithm
+  for e in inList loop
+    (res, inArg1, inArg2, inArg3, inArg4) := inFunc(e, inArg1, inArg2, inArg3, inArg4);
+    outList := res::outList;
+  end for;
+  outList := listReverseInPlace(outList);
+end mapFold4;
+
+public function mapFold5<TI, TO, FT1, FT2, FT3, FT4, FT5>
+  "Takes a list, a function, and five extra arguments. The function will be applied
+  to each element in the list, and the extra arguments will be passed to the
+  function and updated."
+  input list<TI> inList;
+  input FuncType inFunc;
+  output list<TO> outList = {};
+  input output FT1 inArg1;
+  input output FT2 inArg2;
+  input output FT3 inArg3;
+  input output FT4 inArg4;
+  input output FT5 inArg5;
+
+  partial function FuncType
+    input TI inElem;
+    output TO outResult;
+    input output FT1 inArg1;
+    input output FT2 inArg2;
+    input output FT3 inArg3;
+    input output FT4 inArg4;
+    input output FT5 inArg5;
+  end FuncType;
+protected
+  TO res;
+algorithm
+  for e in inList loop
+    (res, inArg1, inArg2, inArg3, inArg4, inArg5) := inFunc(e, inArg1, inArg2, inArg3, inArg4, inArg5);
+    outList := res::outList;
+  end for;
+  outList := listReverseInPlace(outList);
+end mapFold5;
 
 public function map1Fold<TI, TO, FT, ArgT1>
   "Takes a list, an extra argument, an extra constant argument, and a function.
@@ -5808,7 +6017,7 @@ public function replaceAt<T>
   input T inElement;
   input Integer inPosition "one-based index" ;
   input list<T> inList;
-  output list<T> outList = {};
+  output list<T> outList;
 protected
   T e;
   list<T> rest = inList;
@@ -6437,7 +6646,7 @@ public function combination<TI>
       {{1, 3, 4}, {1, 3, 5}, {2, 3, 4}, {2, 3, 5}}
   "
   input list<list<TI>> inElements;
-  output list<list<TI>> outElements = {};
+  output list<list<TI>> outElements;
 protected
   list<list<TI>> elems;
 algorithm
@@ -6480,7 +6689,7 @@ public function combinationMap<TI, TO>
   "
   input list<list<TI>> inElements;
   input MapFunc inMapFunc;
-  output list<TO> outElements = {};
+  output list<TO> outElements;
 
   partial function MapFunc
     input list<TI> inElements;

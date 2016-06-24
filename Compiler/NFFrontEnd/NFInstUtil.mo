@@ -1595,51 +1595,51 @@ public import SCode;
 //
 //  end match;
 //end translatePrefixes;
-//
-//public function translateVisibility
-//  input SCode.Visibility inVisibility;
-//  output DAE.VarVisibility outVisibility;
-//algorithm
-//  outVisibility := match(inVisibility)
-//    case SCode.PUBLIC() then DAE.PUBLIC();
-//    else DAE.PROTECTED();
-//  end match;
-//end translateVisibility;
-//
-//public function translateVariability
-//  input SCode.Variability inVariability;
-//  output DAE.VarKind outVariability;
-//algorithm
-//  outVariability := match(inVariability)
-//    case SCode.VAR() then DAE.VARIABLE();
-//    case SCode.PARAM() then DAE.PARAM();
-//    case SCode.CONST() then DAE.CONST();
-//    case SCode.DISCRETE() then DAE.DISCRETE();
-//  end match;
-//end translateVariability;
-//
-//public function translateDirection
-//  input Absyn.Direction inDirection;
-//  output DAE.VarDirection outDirection;
-//algorithm
-//  outDirection := match(inDirection)
-//    case Absyn.BIDIR() then DAE.BIDIR();
-//    case Absyn.OUTPUT() then DAE.OUTPUT();
-//    case Absyn.INPUT() then DAE.INPUT();
-//  end match;
-//end translateDirection;
-//
-//public function translateConnectorType
-//  input SCode.ConnectorType inConnectorType;
-//  output DAE.ConnectorType outConnectorType;
-//algorithm
-//  outConnectorType := match(inConnectorType)
-//    case SCode.FLOW() then DAE.FLOW();
-//    case SCode.STREAM() then DAE.STREAM();
-//    else DAE.NON_CONNECTOR();
-//  end match;
-//end translateConnectorType;
-//
+
+public function translateVisibility
+  input SCode.Visibility inVisibility;
+  output DAE.VarVisibility outVisibility;
+algorithm
+  outVisibility := match(inVisibility)
+    case SCode.PUBLIC() then DAE.PUBLIC();
+    else DAE.PROTECTED();
+  end match;
+end translateVisibility;
+
+public function translateVariability
+  input SCode.Variability inVariability;
+  output DAE.VarKind outVariability;
+algorithm
+  outVariability := match(inVariability)
+    case SCode.VAR() then DAE.VARIABLE();
+    case SCode.PARAM() then DAE.PARAM();
+    case SCode.CONST() then DAE.CONST();
+    case SCode.DISCRETE() then DAE.DISCRETE();
+  end match;
+end translateVariability;
+
+public function translateDirection
+  input Absyn.Direction inDirection;
+  output DAE.VarDirection outDirection;
+algorithm
+  outDirection := match(inDirection)
+    case Absyn.BIDIR() then DAE.BIDIR();
+    case Absyn.OUTPUT() then DAE.OUTPUT();
+    case Absyn.INPUT() then DAE.INPUT();
+  end match;
+end translateDirection;
+
+public function translateConnectorType
+  input SCode.ConnectorType inConnectorType;
+  output DAE.ConnectorType outConnectorType;
+algorithm
+  outConnectorType := match(inConnectorType)
+    case SCode.FLOW() then DAE.FLOW();
+    case SCode.STREAM() then DAE.STREAM();
+    else DAE.NON_CONNECTOR();
+  end match;
+end translateConnectorType;
+
 //public function conditionTrue
 //  input Condition inCondition;
 //  output Boolean outCondition;

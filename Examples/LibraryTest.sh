@@ -25,7 +25,7 @@ else
   REF_NAME_DELIMITER="$9"
 fi
 TESTMODELS="$OMHOME/share/doc/omc/testmodels/"
-HISTORY="$WWW/history"
+HISTORY="$WWW/history/$LIB_DIR"
 
 "$OMHOME/bin/omc" +version
 

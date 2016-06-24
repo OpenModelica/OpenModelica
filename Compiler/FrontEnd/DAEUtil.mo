@@ -2697,7 +2697,7 @@ algorithm
       equation
         true = Absyn.pathEqual(functionName(fn),path);
       then fn;
-    case (path,fn::fns) then getNamedFunctionFromList(path, fns);
+    case (path,_::fns) then getNamedFunctionFromList(path, fns);
     case (path,{})
       equation
         true = Flags.isSet(Flags.FAILTRACE);

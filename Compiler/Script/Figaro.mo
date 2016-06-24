@@ -187,16 +187,16 @@ algorithm
     case (fb, ft, program, _, SCode.CLASS(name = n, classDef = SCode.PARTS(elementLst = el)), e)
       equation
       then fcElementListExt(fb, ft, program, SOME(n), el, e);
-    case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
+    case (fb, _, _, SOME(_), SCode.EXTENDS(baseClassPath = bcp), _)
       equation
         true = fb == getLastIdent(bcp);
       then true;
-    case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
+    case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp), e)
       equation
         cdef = SCodeUtil.getElementWithPathCheckBuiltin(e, bcp);
       then fcExtends(fb, ft, program, SOME(cn), cdef, e);
     // Nested class of some sort.
-    case (fb, ft, program, _, _, e)
+    case (_, _, _, _, _, _)
       then false;
   end matchcontinue;
 end fcExtends;
@@ -222,7 +222,7 @@ algorithm
       list<FigaroClass> rf, rr;
     case (_, _, _, _, {}, _)
       then false;
-    case (fb, ft, program, cn, first :: rest, e)
+    case (fb, ft, program, cn, first :: _, e)
       equation
         true = fcExtends(fb, ft, program, cn, first, e);
       then true;
@@ -683,7 +683,7 @@ protected function truncateExtension
      newName := match name
       local String c;
         List<String> rest;
-     case "."::rest
+     case "."::_
         then "";
      case c::rest
       then stringAppend (c, truncateExtension(rest));

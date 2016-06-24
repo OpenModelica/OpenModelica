@@ -141,7 +141,7 @@ case SIMCODE(__) then
     canInterpolateInputs="false"
     maxOutputDerivativeOrder="1"
     canRunAsynchronuously = "false"
-    canBeInstantiatedOnlyOncePerProcess="true"
+    canBeInstantiatedOnlyOncePerProcess="false"
     canNotUseMemoryManagementFunctions="false"
     canGetAndSetFMUstate="false"
     canSerializeFMUstate="false"

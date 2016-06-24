@@ -500,10 +500,10 @@ algorithm
         str;
     case ((Values.STRING(string = sval) :: xs))
       equation
-        _ = unparseDescription(xs);
+        s1 = unparseDescription(xs);
         slen = stringLength(sval);
         slenstr = intString(slen);
-        str = stringAppendList({"# s! 1 ",slenstr,"\n"});
+        str = stringAppendList({"# s! 1 ",slenstr,"\n",s1});
       then
         str;
     case ((Values.ARRAY(valueLst = vallst) :: xs))

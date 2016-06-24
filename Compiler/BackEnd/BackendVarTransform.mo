@@ -256,8 +256,6 @@ public function performReplacementsEqSystem
   input VariableReplacements inRepl;
   output BackendDAE.EqSystem outEqs = inEqs;
 protected
-  list<BackendDAE.Equation> eqnslst = {};
-  Boolean b1 = false;
   BackendDAE.EquationArray eqArr;
 algorithm
   eqArr := inEqs.orderedEqs;

@@ -674,7 +674,7 @@ algorithm
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition, footer, autoScaleStr,scriptFile,logFile, simflags2, outputFile,
-             systemPath, gccVersion, gd, strlinearizeTime, suffix;
+             systemPath, gccVersion, gd, strlinearizeTime, suffix,cname;
       list<DAE.Exp> simOptions;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
@@ -711,7 +711,7 @@ algorithm
       list<FMI.ModelVariables> fmiModelVariablesList;
       FMI.ExperimentAnnotation fmiExperimentAnnotation;
       FMI.Info fmiInfo;
-      list<String> vars_1,args,strings,strs,strs1,strs2,visvars,postOptModStrings,postOptModStringsOrg,mps,files,dirs;
+      list<String> vars_1,args,strings,strs,strs1,strs2,visvars,postOptModStrings,postOptModStringsOrg,mps,files,dirs,modifiernamelst;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       GlobalScript.Statements istmts;
       list<GlobalScript.Statements> istmtss;
@@ -727,7 +727,7 @@ algorithm
       list<Absyn.Path> paths;
       list<Absyn.NamedArg> nargs;
       list<Absyn.Class> classes;
-      list<Absyn.ElementArg> eltargs;
+      list<Absyn.ElementArg> eltargs,annlst;
       Absyn.Within within_;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -744,7 +744,7 @@ algorithm
       list<Error.TotalMessage> messages;
       UnitAbsyn.Unit u1,u2;
       Real stoptime,starttime,tol,stepsize,interval;
-      String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description,prefix;
+      String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description,prefix,method,annotationname,modifiername,modifiervalue;
       list<String> interfaceType;
       list<tuple<String,list<String>>> interfaceTypeAssoc;
       list<tuple<String,String>> relocatableFunctionsTuple;
@@ -1451,10 +1451,16 @@ algorithm
       then (cache,v,st);
 
     case (cache,_,"saveModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
-      equation
-        absynClass = Interactive.getPathedClassInProgram(classpath, p);
-        str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP()),true);
-        System.writeFile(filename, str);
+      algorithm
+        b := false;
+        absynClass := Interactive.getPathedClassInProgram(classpath, p);
+        str := Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP()),true);
+        try
+          System.writeFile(filename, str);
+          b := true;
+        else
+          Error.addMessage(Error.WRITING_FILE_ERROR, {filename});
+        end try;
       then
         (cache,Values.BOOL(true),st);
 
@@ -1475,14 +1481,6 @@ algorithm
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);
-
-    case (cache,_,"saveModel",{Values.STRING(name),Values.CODE(Absyn.C_TYPENAME(classpath))},
-        (st as GlobalScript.SYMBOLTABLE(ast = p)),_)
-      equation
-        _ = Interactive.getPathedClassInProgram(classpath, p);
-        Error.addMessage(Error.WRITING_FILE_ERROR, {name});
-      then
-        (cache,Values.BOOL(false),st);
 
     case (cache,_,"saveModel",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(classpath))},st,_)
       equation
@@ -1709,6 +1707,23 @@ algorithm
         end if;
       then
         (cache,Values.TUPLE({Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)}),st);
+
+    case (cache,_,"getAnnotationNamedModifiers",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(annotationname)},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+          Absyn.CLASS(cname,_,_,_,_,cdef,_) =Interactive.getPathedClassInProgram(classpath,p);
+          annlst= getAnnotationList(cdef);
+          modifiernamelst=getElementArgsModifiers(annlst,annotationname);
+          v1 = ValuesUtil.makeArray(List.map(modifiernamelst, ValuesUtil.makeString));
+      then
+          (cache,v1,st);
+
+     case (cache,_,"getAnnotationModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(annotationname),Values.STRING(modifiername)},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+          Absyn.CLASS(cname,_,_,_,_,cdef,_) =Interactive.getPathedClassInProgram(classpath,p);
+          annlst= getAnnotationList(cdef);
+          modifiervalue=getElementArgsModifiersValue(annlst,annotationname,modifiername);
+      then
+          (cache,Values.STRING(modifiervalue),st);
 
     case (cache,_,"searchClassNames",{Values.STRING(str), Values.BOOL(b)},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
@@ -2068,9 +2083,9 @@ algorithm
         (cache,v,st);
 
     case (cache,_,"removeComponentModifiers",
-	      Values.CODE(Absyn.C_TYPENAME(path))::
-		  Values.STRING(str1)::
-		  Values.BOOL(keepRedeclares)::_,(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+        Values.CODE(Absyn.C_TYPENAME(path))::
+      Values.STRING(str1)::
+      Values.BOOL(keepRedeclares)::_,(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         (p,b) = Interactive.removeComponentModifiers(path, str1, p, keepRedeclares);
         st = GlobalScriptUtil.setSymbolTableAST(st, p);
@@ -2080,7 +2095,7 @@ algorithm
     case (cache,_,"removeExtendsModifiers",
           Values.CODE(Absyn.C_TYPENAME(classpath))::
           Values.CODE(Absyn.C_TYPENAME(baseClassPath))::
-		  Values.BOOL(keepRedeclares)::_,st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      Values.BOOL(keepRedeclares)::_,st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         (p,b) = Interactive.removeExtendsModifiers(classpath, baseClassPath, p, keepRedeclares);
         st = GlobalScriptUtil.setSymbolTableAST(st, p);
@@ -2517,7 +2532,7 @@ algorithm
       Boolean b;
     case (_, GlobalScript.SYMBOLTABLE(ast=p))
       equation
-        _ = Interactive.getPathedClassInProgram(className, p, true);
+        Interactive.getPathedClassInProgram(className, p, true);
       then inSt;
     case (_, GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf))
       equation
@@ -2597,11 +2612,10 @@ algorithm
        // ic_1 = Interactive.addInstantiatedClass(ic,
        //   GlobalScript.INSTCLASS(className, dae, env));
        // st = GlobalScript.SYMBOLTABLE(p, fp, ic_1, iv, cf, lf);
-        _ = NFInst.instClassInProgram(className, scodeP);
+        dae = NFInst.instClassInProgram(className, scodeP);
 
         cache = FCore.emptyCache();
         env = FGraph.empty();
-        dae = DAE.DAE({});
         st = inInteractiveSymbolTable;
       then
         (cache, env, dae, st);
@@ -2646,7 +2660,7 @@ algorithm
         _ = DAEUtil.getFunctionList(FCore.getFunctionTree(cache)); // Make sure that the functions are valid before returning success
       then (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
 
-    case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),_,_)
+    case (_,_,_,GlobalScript.SYMBOLTABLE(ast=p),_,_)
       equation
         str = Absyn.pathString(className);
         failure(_ = Interactive.getPathedClassInProgram(className, p));
@@ -2689,11 +2703,38 @@ algorithm
       list<String> libs;
       String file_dir, fileNamePrefix;
       Absyn.Program p;
+      Flags.Flags flags;
+      String commandLineOptions;
+      list<String> args;
+      Boolean haveAnnotation;
 
     case (cache,env,_,st as GlobalScript.SYMBOLTABLE(),fileNamePrefix,_,_)
-      equation
-        (cache, st, indexed_dlow, libs, file_dir, resultValues) =
-          SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
+      algorithm
+        if Config.ignoreCommandLineOptionsAnnotation() then
+          (cache, st, indexed_dlow, libs, file_dir, resultValues) :=
+            SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
+        else
+          // read the __OpenModelica_commandLineOptions
+          Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, st.ast, Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+          haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
+          // backup the flags.
+          flags := if haveAnnotation then Flags.backupFlags() else Flags.loadFlags();
+          try
+            // apply if there are any new flags
+            if haveAnnotation then
+              args := System.strtok(commandLineOptions, " ");
+              _ := Flags.readArgs(args);
+            end if;
+
+            (cache, st, indexed_dlow, libs, file_dir, resultValues) :=
+              SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
+            // reset to the original flags
+            Flags.saveFlags(flags);
+          else
+            Flags.saveFlags(flags);
+            fail();
+          end try;
+        end if;
       then
         (cache,st,indexed_dlow,libs,file_dir,resultValues);
 
@@ -5175,7 +5216,7 @@ algorithm
     // normal call
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),_,_,_,_, _,Values.STRING(filenameprefix),_},(st as GlobalScript.SYMBOLTABLE(ast = p  as Absyn.PROGRAM())),msg)
       equation
-        _ = Interactive.getPathedClassInProgram(classname,p);
+        Interactive.getPathedClassInProgram(classname,p);
         Error.clearMessages() "Clear messages";
         compileDir = System.pwd() + System.pathDelimiter();
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st,msg);
@@ -5194,7 +5235,6 @@ algorithm
           Debug.trace("buildModel: Compiling done.\n");
         end if;
         // SimCodegen.generateMakefileBeast(makefilename, filenameprefix, libs, file_dir);
-        _ = getWithinStatement(classname);
         CevalScript.compileModel(filenameprefix, libs);
         // (p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(r1,r2))) = Interactive.updateProgram2(p2,p,false);
         st2 = st; // Interactive.replaceSymbolTableProgram(st,p);
@@ -6734,5 +6774,176 @@ algorithm
   end match;
 end getComponentitemsName;
 
+
+// new functions added for getting vendorannotation modifiers names and their values
+function getAnnotationList
+   "@author arun Helper function which returns the list of annotation items as elementargs "
+   input Absyn.ClassDef inclassdef;
+   output list<Absyn.ElementArg> anninfo;
+algorithm
+   anninfo:=matchcontinue(inclassdef)
+   local
+     list<Absyn.Annotation> ann;
+     list<Absyn.ElementArg> annlst;
+
+   case(Absyn.PARTS(_,_,_,ann,_))
+     equation
+       annlst = List.flatten(List.map(ann,Absyn.annotationToElementArgs));
+     then
+      annlst;
+
+   case (Absyn.CLASS_EXTENDS(ann=ann))
+      equation
+        annlst = List.flatten(List.map(ann,Absyn.annotationToElementArgs));
+      then
+        annlst;
+
+    case (Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))))
+      then
+        annlst;
+
+    case (Absyn.ENUMERATION(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))))
+      then
+        annlst;
+
+    case (Absyn.OVERLOAD(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))))
+      then
+        annlst;
+
+    case(_)then {};
+
+  end matchcontinue;
+end getAnnotationList;
+
+
+function getElementArgsModifiers
+ "@author arun Helper function which parses list of elementargs,annotationname returns the list of modifiers name in the annotation"
+    input list<Absyn.ElementArg> inargs;
+    input String instring;
+    output list<String> outstring;
+algorithm
+    outstring:=match(inargs,instring)
+    local
+    list<Absyn.ElementArg> elt,eltarglst;
+    Option<Absyn.Modification> modification;
+    String name,name1, s;
+    list<String> modfiernamelist;
+    Absyn.ElementArg eltarg;
+  case (Absyn.MODIFICATION(_,_, Absyn.IDENT(name),modification,_)::eltarglst,name1)
+    guard stringEq(name, name1)
+    equation
+       elt=getElementArgsList(modification);
+       modfiernamelist =getModifiersNameList(elt);
+    then
+        modfiernamelist;
+
+  case((_::eltarglst),name1)
+    then
+        getElementArgsModifiers(eltarglst,name1);
+
+  case({},name1) then {"The searched annotation name not found"};
+ end match;
+end getElementArgsModifiers;
+
+
+function getElementArgsModifiersValue
+   "@author arun Helper function which parses list of elementargs,annotationname and modifiername and returns the value"
+    input list<Absyn.ElementArg> inargs;
+    input String instring;
+    input String instring1;
+    output String outstring;
+algorithm
+   outstring:=match(inargs,instring,instring1)
+    local
+      list<Absyn.ElementArg> elt,eltarglst;
+      Option<Absyn.Modification> modification;
+      String name,name1,name2,s;
+      String modfiername_value;
+      Absyn.ElementArg eltarg;
+
+    case (Absyn.MODIFICATION(_,_, Absyn.IDENT(name),modification,_)::eltarglst,name1,name2)
+      guard stringEq(name1, name)
+      equation
+        elt=getElementArgsList(modification);
+        modfiername_value =getModifierNamedValue(elt,name2);
+      then
+        modfiername_value;
+
+    case((_::eltarglst),name1,name2)
+      equation
+        modfiername_value=getElementArgsModifiersValue(eltarglst,name1,name2);
+      then
+        modfiername_value;
+
+    case({},name1,name2) then "The Searched value not Found";
+  end match;
+
+ end getElementArgsModifiersValue;
+
+function getElementArgsList
+  "@author arun Helper function which gives list of elementargs from modification"
+  input Option<Absyn.Modification> inmod;
+  output list<Absyn.ElementArg> outargs;
+algorithm
+  outargs:=match(inmod)
+   local
+   list<Absyn.ElementArg> elementargs;
+   case(SOME(Absyn.CLASSMOD(elementargs,_))) then elementargs;
+  end match;
+end getElementArgsList;
+
+
+function getModifiersNameList
+"@author arun Function which retrives vendor annotation modifiers name list"
+  input list<Absyn.ElementArg> eltArgs;
+  output list<String> strs;
+  protected
+  String name;
+algorithm
+  strs := list(match mod case (Absyn.MODIFICATION(_,_, Absyn.IDENT(name),_)) then name; end match for mod in eltArgs);
+end getModifiersNameList;
+
+function checkModifierName
+" @author arun Function which retrives vendor annotation modifiername value"
+  input Absyn.ElementArg eltArg;
+  input String inString;
+  output Boolean b;
+  algorithm
+    b:=match(eltArg,inString)
+    local
+      String name,name1;
+      case (Absyn.MODIFICATION(path=Absyn.IDENT(name)),name1) then stringEq(name,name1);
+      else false;
+     end match;
+end checkModifierName;
+
+function getModifierNamedValue
+" @author arun Function which retrives vendor annotation modifiername value"
+  input list<Absyn.ElementArg> eltArgs;
+  input String instring;
+  output String strs;
+  protected
+  Absyn.Exp e;
+  Boolean b;
+algorithm
+   strs:= match List.find1(eltArgs,checkModifierName, instring)
+    case (Absyn.MODIFICATION(modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(e)))))
+      then getExpValue(e);
+  end match;
+end getModifierNamedValue;
+
+function getExpValue
+  input Absyn.Exp inexp;
+  output String outstring;
+algorithm
+  outstring:=match(inexp)
+    local
+      String s;
+    case(Absyn.STRING(s)) then System.unescapedString(s);
+    case(_) then "";
+  end match;
+end getExpValue;
+
 annotation(__OpenModelica_Interface="backend");
+
 end CevalScriptBackend;

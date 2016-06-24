@@ -105,7 +105,8 @@ end BaseClockPartitionKind;
 public
 uniontype Shared "Data shared for all equation-systems"
   record SHARED
-    Variables knownVars                     "Known variables, i.e. constants and parameters";
+    Variables globalKnownVars               "variables only depending on parameters and constants [TODO: move stuff (like inputs) to localKnownVars]";
+    Variables localKnownVars                "variables only depending on locally constant variables in the simulation step, i.e. states, input variables";
     Variables externalObjects               "External object variables";
     Variables aliasVars                     "Data originating from removed simple equations needed to build
                                              variables' lookup table (in C output).
@@ -245,6 +246,7 @@ uniontype VarKind "variable kind"
   record DUMMY_STATE end DUMMY_STATE;
   record CLOCKED_STATE
     .DAE.ComponentRef previousName "the name of the previous variable";
+    Boolean isStartFixed "is fixed at first clock tick";
   end CLOCKED_STATE;
   record DISCRETE end DISCRETE;
   record PARAM end PARAM;
@@ -563,15 +565,15 @@ type StateSets = list<StateSet> "List of StateSets";
 public
 uniontype StateSet
   record STATESET
-    Integer rang;
+    Integer rang; // how many states are needed?
     list< .DAE.ComponentRef> state;
     .DAE.ComponentRef crA "set.x=A*states";
-    list< Var> varA;
-    list< Var> statescandidates;
-    list< Var> ovars;
-    list< Equation> eqns;
-    list< Equation> oeqns;
-    .DAE.ComponentRef crJ;
+    list< Var> varA; //the jacobian matrix entries
+    list< Var> statescandidates; //all state candidates
+    list< Var> ovars; //other variables to solve the eqns
+    list< Equation> eqns; //the constraint equations
+    list< Equation> oeqns; //other equations to solve the eqns
+    .DAE.ComponentRef crJ; // the jac vector
     list< Var> varJ;
     Jacobian jacobian;
   end STATESET;

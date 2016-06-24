@@ -43,13 +43,12 @@
 #include "ida_solver.h"
 #include "delay.h"
 #include "events.h"
-#include "external_input.h"
 #include "util/varinfo.h"
-#include "stateset.h"
 #include "radau.h"
 #include "model_help.h"
 #include "meta/meta_modelica.h"
 #include "simulation/solver/epsilon.h"
+#include "simulation/solver/external_input.h"
 #include "linearSystem.h"
 #include "sym_imp_euler.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -102,17 +101,23 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   {
   case S_EULER:
     retVal = euler_ex_step(data, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
   case S_HEUN:
   case S_RUNGEKUTTA:
     retVal = rungekutta_step(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   case S_DASSL:
     retVal = dassl_step(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
 #endif
@@ -125,6 +130,8 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       solverInfo->solverMethod = S_EULER;
       retVal = euler_ex_step(data, solverInfo);
     }
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
 #endif
@@ -136,18 +143,26 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   case S_LOBATTO4:
   case S_LOBATTO6:
     retVal = radau_lobatto_step(data, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
   case S_IDA:
     retVal = ida_solver_step(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
 #endif
   case S_SYM_EULER:
     retVal = sym_euler_im_step(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
   case S_SYM_IMP_EULER:
     retVal = sym_euler_im_with_step_size_control_step(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
   }
 
@@ -170,15 +185,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
 
   SIMULATION_INFO *simInfo = data->simulationInfo;
 
-  simInfo->useStopTime = 1;
-
-  /* if the given step size is too small redefine it */
-  if ((simInfo->stepSize < MINIMAL_STEP_SIZE) && (simInfo->stopTime > 0)){
-    warningStreamPrint(LOG_STDOUT, 0, "The step-size %g is too small. Adjust the step-size to %g.", simInfo->stepSize, MINIMAL_STEP_SIZE);
-    simInfo->stepSize = MINIMAL_STEP_SIZE;
-    simInfo->numSteps = round((simInfo->stopTime - simInfo->startTime)/simInfo->stepSize);
-  }
-
   /* initial solverInfo */
   solverInfo->currentTime = simInfo->startTime;
   solverInfo->currentStepSize = simInfo->stepSize;
@@ -198,9 +204,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   {
     solverInfo->integratorSteps = 1; /* TRUE */
   }
-
-  /* set tolerance for ZeroCrossings */
-  setZCtol(fmin(simInfo->stepSize, simInfo->tolerance));
 
   switch (solverInfo->solverMethod)
   {
@@ -330,14 +333,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     return 1;
   }
 
-  externalInputallocate(data);
-  if(measure_time_flag)
-  {
-    rt_accumulate(SIM_TIMER_PREINIT);
-    rt_tick(SIM_TIMER_INIT);
-    rt_tick(SIM_TIMER_TOTAL);
-  }
-
   TRACE_POP
   return retValue;
 }
@@ -354,6 +349,9 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   int retValue = 0;
   int i;
 
+  /* free solver statistics */
+  free(solverInfo->solverStats);
+  free(solverInfo->solverStatsTmp);
   /* deintialize solver related workspace */
   if (solverInfo->solverMethod == S_SYM_IMP_EULER)
   {
@@ -421,9 +419,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   {
     /* free other solver memory */
   }
-  externalInputFree(data);
-  /* free stateset data */
-  freeStateSetData(data);
 
   return retValue;
 }
@@ -448,6 +443,13 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
 
   SIMULATION_INFO *simInfo = data->simulationInfo;
 
+  if(measure_time_flag)
+  {
+    rt_accumulate(SIM_TIMER_PREINIT);
+    rt_tick(SIM_TIMER_INIT);
+    rt_tick(SIM_TIMER_TOTAL);
+  }
+
   copyStartValuestoInitValues(data);
 
   /* read input vars */
@@ -460,9 +462,6 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
 
   /* instance all external Objects */
   data->callback->callExternalObjectConstructors(data, threadData);
-
-  /* allocate memory for state selection */
-  initializeStateSetJacobians(data, threadData);
 
   threadData->currentErrorStage = ERROR_SIMULATION;
   /* try */
@@ -491,7 +490,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
 
   /* Initialization complete */
   if (measure_time_flag) {
-    rt_accumulate( SIM_TIMER_INIT);
+    rt_accumulate(SIM_TIMER_INIT);
   }
 
   TRACE_POP
@@ -638,7 +637,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
 {
   TRACE_PUSH
 
-  int i, retVal = 0;
+  int i, retVal = 0, initSolverInfo = 0;
   unsigned int ui;
   SOLVER_INFO solverInfo;
   SIMULATION_INFO *simInfo = data->simulationInfo;
@@ -670,15 +669,32 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
 
   }
 
-  /* allocate SolverInfo memory */
-  retVal = initializeSolverData(data, threadData, &solverInfo);
+  /* first initialize the model then allocate SolverData memory
+   * due to be able to use the initialized values for the integrator
+   */
+  simInfo->useStopTime = 1;
+
+  /* if the given step size is too small redefine it */
+  if ((simInfo->stepSize < MINIMAL_STEP_SIZE) && (simInfo->stopTime > 0)){
+    warningStreamPrint(LOG_STDOUT, 0, "The step-size %g is too small. Adjust the step-size to %g.", simInfo->stepSize, MINIMAL_STEP_SIZE);
+    simInfo->stepSize = MINIMAL_STEP_SIZE;
+    simInfo->numSteps = round((simInfo->stopTime - simInfo->startTime)/simInfo->stepSize);
+  }
+
+  /*  initialize external input structure */
+  externalInputallocate(data);
+  /* set tolerance for ZeroCrossings */
+  setZCtol(fmin(data->simulationInfo->stepSize, data->simulationInfo->tolerance));
+
+  omc_alloc_interface.collect_a_little();
+  /* initialize all parts of the model */
+  retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time, lambda_steps);
   omc_alloc_interface.collect_a_little();
 
-  /* initialize all parts of the model */
   if(0 == retVal) {
-    retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time, lambda_steps);
+    retVal = initializeSolverData(data, threadData, &solverInfo);
+    initSolverInfo = 1;
   }
-  omc_alloc_interface.collect_a_little();
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   dllHandle = embedded_server_load_functions(omc_flagValue[FLAG_EMBEDDED_SERVER]);
@@ -717,6 +733,8 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
       omc_alloc_interface.collect_a_little();
     } else {
       /* starts the simulation main loop - standard solver interface */
+      if(omc_flag[FLAG_SOLVER_STEPS])
+        data->simulationInfo->solverSteps = 0;
       if(solverInfo.solverMethod != S_OPTIMIZATION) {
         sim_result.emit(&sim_result,data,threadData);
       }
@@ -746,8 +764,14 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   embedded_server_deinit(data->embeddedServerState);
   embedded_server_unload_functions(dllHandle);
 #endif
+  /*  free external input data */
+  externalInputFree(data);
+
   /* free SolverInfo memory */
-  freeSolverData(data, &solverInfo);
+  if (initSolverInfo)
+  {
+    freeSolverData(data, &solverInfo);
+  }
 
   TRACE_POP
   return retVal;

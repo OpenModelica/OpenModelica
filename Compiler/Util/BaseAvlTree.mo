@@ -211,6 +211,27 @@ algorithm
   end match;
 end get;
 
+function fromList
+  "Creates a new tree from a list of key-value pairs."
+  input list<tuple<Key,Value>> inValues;
+  input ConflictFunc conflictFunc = addConflictDefault "Used to resolve conflicts.";
+  output Tree tree = EMPTY();
+
+  partial function ConflictFunc
+    input Value newValue "The value given by the caller.";
+    input Value oldValue "The value already in the tree.";
+    output Value value "The value that will replace the existing value.";
+  end ConflictFunc;
+protected
+  Key key;
+  Value value;
+algorithm
+  for t in inValues loop
+    (key, value) := t;
+    tree := add(tree, key, value, conflictFunc);
+  end for;
+end fromList;
+
 function toList
   "Converts the tree to a flat list of key-value tuples."
   input Tree inTree;

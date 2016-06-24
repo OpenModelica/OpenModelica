@@ -44,6 +44,7 @@ import SimCode;
 protected
 import BaseHashTable;
 import CodegenCFunctions;
+import Global;
 import SimCodeFunctionUtil;
 
 public function translateFunctions "
@@ -56,6 +57,7 @@ public function translateFunctions "
   input list<DAE.Type> metarecordTypes;
   input list<String> inIncludes;
 algorithm
+  setGlobalRoot(Global.optionSimCode, NONE());
   _ := match (program, name, optMainFunction, idaeElements, metarecordTypes, inIncludes)
     local
       DAE.Function daeMainFunction;
