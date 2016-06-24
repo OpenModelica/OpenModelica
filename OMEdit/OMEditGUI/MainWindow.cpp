@@ -152,10 +152,10 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   connect(pPlottingShortcut, SIGNAL(activated()), SLOT(switchToPlottingPerspectiveSlot()));
   mpPerspectiveTabbar->setTabToolTip(2, tr("Changes to plotting perspective (%1)").arg(pPlottingShortcut->key().toString()));
   // algorithmic debugging perspective
-  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/debugger.svg"), tr("Algorithmic Debugging"));
+  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/debugger.svg"), tr("Debugging"));
   QShortcut *pAlgorithmicDebuggingShortcut = new QShortcut(QKeySequence("Ctrl+f5"), this);
   connect(pAlgorithmicDebuggingShortcut, SIGNAL(activated()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
-  mpPerspectiveTabbar->setTabToolTip(3, tr("Changes to algorithmic debugging perspective (%1)").arg(pAlgorithmicDebuggingShortcut->key().toString()));
+  mpPerspectiveTabbar->setTabToolTip(3, tr("Changes to debugging perspective (%1)").arg(pAlgorithmicDebuggingShortcut->key().toString()));
   // change the perspective when perspective tab bar selection is changed
   connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
   // Create an object of QStatusBar
