@@ -3613,6 +3613,23 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
       bom = false;
       break;
   }
+  // set the line ending format
+  QString newContents;
+  QComboBox *pLineEndingComboBox = mpMainWindow->getOptionsDialog()->getTextEditorPage()->getLineEndingComboBox();
+  Utilities::LineEndingMode lineEndingMode = (Utilities::LineEndingMode)pLineEndingComboBox->itemData(pLineEndingComboBox->currentIndex()).toInt();
+  QTextStream crlfTextStream(&contents);
+  switch (lineEndingMode) {
+    case Utilities::CRLFLineEnding:
+      while (!crlfTextStream.atEnd()) {
+        newContents += crlfTextStream.readLine() + "\r\n";
+      }
+      break;
+    case Utilities::LFLineEnding:
+      newContents = contents;
+      newContents.replace(QLatin1String("\r\n"), QLatin1String("\n"));
+    default:
+      break;
+  }
   // open the file for writing
   QFile file(fileName);
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
@@ -3620,19 +3637,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     // set to UTF-8
     textStream.setCodec(Helper::utf8.toStdString().data());
     textStream.setGenerateByteOrderMark(bom);
-    // set the line ending format
-    QComboBox *pLineEndingComboBox = mpMainWindow->getOptionsDialog()->getTextEditorPage()->getLineEndingComboBox();
-    Utilities::LineEndingMode lineEndingMode = (Utilities::LineEndingMode)pLineEndingComboBox->itemData(pLineEndingComboBox->currentIndex()).toInt();
-    switch (lineEndingMode) {
-      case Utilities::CRLFLineEnding:
-        contents.replace(QLatin1String("\n"), QLatin1String("\r\n"));
-        break;
-      case Utilities::LFLineEnding:
-        contents.replace(QLatin1String("\r\n"), QLatin1String("\n"));
-      default:
-        break;
-    }
-    textStream << contents;
+    textStream << newContents;
     file.close();
     return true;
   } else {
