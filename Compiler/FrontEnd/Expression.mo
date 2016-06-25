@@ -1534,17 +1534,19 @@ public function getClockInterval
   input DAE.ClockKind inClk;
   output DAE.Exp outIntvl;
 protected
-  DAE.Exp e, er;
+  DAE.Exp e, e2;
   Integer res;
 algorithm
   outIntvl := match inClk
     case DAE.REAL_CLOCK(e)
       then e;
-    case DAE.INTEGER_CLOCK(e, er)
+    case DAE.INTEGER_CLOCK(e, e2)
       then DAE.BINARY(
              DAE.CAST(DAE.T_REAL_DEFAULT, e),
              DAE.DIV(DAE.T_REAL_DEFAULT),
-             DAE.CAST(DAE.T_REAL_DEFAULT, er));
+             DAE.CAST(DAE.T_REAL_DEFAULT, e2));
+    case DAE.BOOLEAN_CLOCK(e, e2)
+      then e2; // startInterval
     else
       then DAE.RCONST(0.0);
   end match;
