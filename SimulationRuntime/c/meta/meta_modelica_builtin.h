@@ -158,7 +158,7 @@ static inline modelica_metatype arrayCreateNoInit(modelica_integer nelts, modeli
   if (nelts < 0) {
     MMC_THROW();
   } else {
-    return (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG, MMC_IS_IMMEDIATE(dummy));
+    return (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG, 0);
   }
 }
 #define arrayGetNoBoundsChecking(arr,ix) (MMC_STRUCTDATA((arr))[(ix)-1])

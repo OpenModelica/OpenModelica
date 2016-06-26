@@ -99,6 +99,7 @@ protected
 import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
 import MetaModelica.Dangerous;
 import DoubleEndedList;
+import GC;
 
 public function create<T>
   "Creates a list from an element."
@@ -1044,6 +1045,7 @@ algorithm
 
     arrayUpdate(arr, i, false);
   end for;
+  GC.free(arr);
 end uniqueIntN;
 
 public function uniqueIntNArr

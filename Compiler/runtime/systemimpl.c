@@ -2232,9 +2232,6 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   char *buf;
   sz = strlen(str);
   buflen = sz*8;
-  buf = (char*) omc_alloc_interface.malloc_atomic(buflen);
-  assert(buf != 0);
-  *buf = 0;
   /* fprintf(stderr,"iconv(%s,to=%s,%s) of size %d, buflen %d\n",str,to,from,sz,buflen); */
   ic = iconv_open(to, from);
   if (ic == (iconv_t) -1) {
@@ -2242,9 +2239,13 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
       char *ignore = SystemImpl__iconv__ascii(str);
       const char *tokens[4] = {strerror(errno),from,to,ignore};
       c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
+      omc_alloc_interface.free_uncollectable(ignore);
     }
     return (char*) "";
   }
+  buf = (char*) omc_alloc_interface.malloc_atomic(buflen);
+  assert(buf != 0);
+  *buf = 0;
   in_str = (char*) str;
   out_sz = buflen-1;
   res = buf;
@@ -2255,13 +2256,21 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
       char *ignore = SystemImpl__iconv__ascii(str);
       const char *tokens[4] = {strerror(errno),from,to,ignore};
       c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
+      omc_alloc_interface.free_uncollectable(ignore);
     }
+    omc_alloc_interface.free_uncollectable(buf);
     return (char*) "";
   }
   buf[(buflen-1)-out_sz] = 0;
   if (strlen(buf) != (buflen-1)-out_sz) {
     if (printError) c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(to=%s) failed because the character set output null bytes in the middle of the string."),&to,1);
+    omc_alloc_interface.free_uncollectable(buf);
     return (char*) "";
+  }
+  if (!strcmp(from, to) && !strcmp(str, buf))
+  {
+    omc_alloc_interface.free_uncollectable(buf);
+    return (char*)str;
   }
   return buf;
 }
