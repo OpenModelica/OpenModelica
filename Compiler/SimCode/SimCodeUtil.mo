@@ -241,6 +241,7 @@ protected
   BackendDAE.EquationArray bdaeModeEqns;
   Option<SimCode.JacobianMatrix> daeModeSP;
   Option<SimCode.DaeModeData> daeModeData;
+  SimCode.DaeModeConfig daeModeConf;
   list<SimCodeVar.SimVar> sensitivityVars;
   Integer countSenParams;
   list<tuple<Integer, Integer>> equationSccMapping, eqBackendSimCodeMapping;
@@ -340,7 +341,7 @@ algorithm
     allEquations := List.append_reverse(allEquations, removedEquations);
 
     // create residuals equations from ode equations for daeMode
-    if Flags.getConfigBool(Flags.DAE_MODE) then
+    if Flags.getConfigEnum(Flags.DAE_MODE)>1 then
       (daeEquations, residualVars, algebraicVars, uniqueEqIndex, tempvars,
         bdaeModeVars, bdaeModeEqns) := createDAEEquations(contSysts, shared, uniqueEqIndex, tempvars);
     else
@@ -437,11 +438,12 @@ algorithm
     end if;
 
     // add residuals vars from DAE creation
-    if Flags.getConfigBool(Flags.DAE_MODE) then
+    if Flags.getConfigEnum(Flags.DAE_MODE)>1 then
       daeModeSP := createDaeModeSparsePattern(bdaeModeVars, bdaeModeEqns, shared, crefToSimVarHT);
       residualVars := rewriteIndex(residualVars, 0);
       algebraicVars := sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
-      daeModeData := SOME(SimCode.DAEMODEDATA(daeEquations, daeModeSP, residualVars, algebraicVars));
+      daeModeConf := match Flags.getConfigEnum(Flags.DAE_MODE) case 2 then SimCode.ALL_EQUATIONS(); case 3 then SimCode.DYNAMIC_EQUATIONS(); end match;
+      daeModeData := SOME(SimCode.DAEMODEDATA(daeEquations, daeModeSP, residualVars, algebraicVars, daeModeConf));
     else
       daeModeData := NONE();
     end if;
@@ -1901,7 +1903,7 @@ protected
   array<Integer> stateeqnsmark;
   Integer uniqueEqIndex;
   String message;
-  Boolean skip;
+  Boolean skip, skipEquations;
 
   list<SimCodeVar.SimVar> tempvars, resVars, algVars;
   list<list<SimCode.SimEqSystem>> daeEquations;
@@ -1933,9 +1935,11 @@ algorithm
     skip := Util.boolAndList(List.map(eqnlst, BackendEquation.isWhenEquation));
     // skip is discrete
     skip := Util.boolAndList(List.map(varlst, BackendVariable.isVarDiscrete)) or skip;
+    // skip algebraic equation if dynamic option is selected
+    skipEquations := match Flags.getConfigEnum(Flags.DAE_MODE) case 2 then true; case 3 then BackendDAEUtil.blockIsDynamic(eqnNums, stateeqnsmark); end match;
 
     // convert only dynamic block here
-    if BackendDAEUtil.blockIsDynamic(eqnNums, stateeqnsmark) and not skip  then
+    if skipEquations and not skip then
 
       // try as is should fallback case is a hack for complex record equations
       try

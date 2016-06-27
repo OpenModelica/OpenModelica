@@ -1281,9 +1281,15 @@ constant ConfigFlag NO_TEARING_FOR_COMPONENT = CONFIG_FLAG(93, "noTearingForComp
 constant ConfigFlag CT_STATE_MACHINES = CONFIG_FLAG(94, "ctStateMachines",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental: Enable continuous-time state machine prototype"));
+
 constant ConfigFlag DAE_MODE = CONFIG_FLAG(95, "daeMode",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Generates additional code for DAE mode, where dynamic equations are not causelized."));
+  NONE(), EXTERNAL(), ENUM_FLAG(1, {("none", 1), ("all",2), ("dynamic",3)}),
+  SOME(STRING_OPTION({"none", "all", "dynamic"})),
+  Util.gettext("Generates additional code for DAE mode, where the equations are not causelized, when one of the following option is selected:\n"+
+               "all    : In this mode all equations are passed to the integrator.\n"+
+               "dynamic : In this mode only the equation for the dynamic part of the system are passed to the integrator.")
+);
+
 constant ConfigFlag INLINE_METHOD = CONFIG_FLAG(96, "inlineMethod",
   NONE(), EXTERNAL(), ENUM_FLAG(1, {("replace",1), ("append",2)}),
   SOME(STRING_OPTION({"replace", "append"})),

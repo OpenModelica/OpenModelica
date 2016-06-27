@@ -264,6 +264,11 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
   end VARINFO;
 end VarInfo;
 
+uniontype DaeModeConfig
+  record ALL_EQUATIONS end ALL_EQUATIONS;
+  record DYNAMIC_EQUATIONS end DYNAMIC_EQUATIONS;
+end DaeModeConfig;
+
 uniontype DaeModeData
   "contains data that belongs to the dae mode"
   record DAEMODEDATA
@@ -271,6 +276,7 @@ uniontype DaeModeData
     Option<JacobianMatrix> sparsityPattern "contains the sparsity pattern for the daeMode";
     list<SimCodeVar.SimVar> residualVars;  // variable used to calculate residuals of a DAE form, they are real
     list<SimCodeVar.SimVar> algebraicDAEVars;  // variable used to calculate residuals of a DAE form, they are real
+    DaeModeConfig modeCreated; // indicates the mode in which
   end DAEMODEDATA;
 end DaeModeData;
 

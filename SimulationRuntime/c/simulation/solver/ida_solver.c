@@ -1051,7 +1051,11 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
   /* eval needed equations*/
-  data->callback->function_ZeroCrossingsEquations(data, threadData);
+  if (idaData->daeMode && compiledInDAEMode == 1){}
+  else
+  {
+    data->callback->function_ZeroCrossingsEquations(data, threadData);
+  }
 
   data->callback->function_ZeroCrossings(data, threadData, gout);
 

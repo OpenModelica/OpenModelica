@@ -613,6 +613,11 @@ package SimCode
       end VARINFO;
   end VarInfo;
 
+  uniontype DaeModeConfig
+    record ALL_EQUATIONS end ALL_EQUATIONS;
+    record DYNAMIC_EQUATIONS end DYNAMIC_EQUATIONS;
+  end DaeModeConfig;
+
   uniontype DaeModeData
     "contains data that belongs to the dae mode"
     record DAEMODEDATA
@@ -3321,6 +3326,11 @@ package Flags
     input ConfigFlag inFlag;
     output String outValue;
   end getConfigString;
+
+  function getConfigEnum
+    input ConfigFlag inFlag;
+    output Integer outValue;
+  end getConfigEnum;
 
   function getConfigStringList
     input ConfigFlag inFlag;

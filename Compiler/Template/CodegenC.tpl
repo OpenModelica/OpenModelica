@@ -1091,7 +1091,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
       data.modelData = &modelData;
       data.simulationInfo = &simInfo;
       measure_time_flag = <% if profileHtml() then "5" else if profileSome() then "1" else if profileAll() then "2" else "0" /* Would be good if this was not a global variable...*/ %>;
-      compiledInDAEMode = <% if Flags.getConfigBool(Flags.DAE_MODE) then '1' else '0' %>;
+      compiledInDAEMode = <%intSub(Flags.getConfigEnum(Flags.DAE_MODE), 1)%>;
       <%mainInit%>
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
 
