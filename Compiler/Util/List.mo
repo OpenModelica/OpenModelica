@@ -1011,6 +1011,7 @@ algorithm
       outSorted := i :: outSorted;
     end if;
   end for;
+  GC.free(a1);
 end sortIntN;
 
 public function unique<T>
@@ -1561,6 +1562,7 @@ algorithm
     a := addPos(inList1, a, 1);
     a := addPos(inList2, a, 1);
     outResult := intersectionIntVec(a, inList1);
+    GC.free(a);
   else
     outResult := {};
   end if;
@@ -1680,6 +1682,7 @@ algorithm
         outDifference := i :: outDifference;
       end if;
     end for;
+    GC.free(a);
   end if;
 end setDifferenceIntN;
 
@@ -1747,6 +1750,7 @@ algorithm
         outUnion := i :: outUnion;
       end if;
     end for;
+    GC.free(a);
   end if;
 end unionIntN;
 

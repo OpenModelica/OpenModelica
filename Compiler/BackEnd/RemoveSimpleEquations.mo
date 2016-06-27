@@ -50,32 +50,34 @@ public import BackendDAE;
 public import DAE;
 public import FCore;
 
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import BackendVarTransform;
-protected import BaseHashSet;
-protected import BaseHashTable;
-protected import Ceval;
-protected import ComponentReference;
-protected import Debug;
-protected import ElementSource;
-protected import Error;
-protected import EvaluateFunctions;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import ExpressionSolve;
-protected import Flags;
-protected import HashSet;
-protected import HashTableCrToCrEqLst;
-protected import HashTableCrToExp;
-protected import HashTableExpToIndex;
-protected import List;
-protected import SimCodeUtil;
-protected import Types;
-protected import Util;
+protected
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVariable;
+import BackendVarTransform;
+import BaseHashSet;
+import BaseHashTable;
+import Ceval;
+import ComponentReference;
+import Debug;
+import ElementSource;
+import Error;
+import EvaluateFunctions;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import ExpressionSolve;
+import Flags;
+import GC;
+import HashSet;
+import HashTableCrToCrEqLst;
+import HashTableCrToExp;
+import HashTableExpToIndex;
+import List;
+import SimCodeUtil;
+import Types;
+import Util;
 
 
 
@@ -491,6 +493,7 @@ algorithm
                       repl, unReplaceable, mT, {}, globalFindSimple );
     outSystem := updateSystem(b, eqnslst, vars, repl, outSystem);
     outTpl := ((repl, b, unReplaceable, maxTraversals));
+    GC.free(mT);
   else
     //Error.addCompilerWarning("The module removeSimpleEquations failed for a subsystem. The relevant subsystem get skipped and the transformation is proceeded.");
     outSystem := inSystem;

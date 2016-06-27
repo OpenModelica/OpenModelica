@@ -36,13 +36,14 @@ encapsulated package Initialization
                BackendDAE for the initial system.
 "
 
-public import Absyn;
-public import BackendDAE;
-public import BackendDAEFunc;
-public import DAE;
-public import FCore;
-public import HashSet;
-public import Util;
+public
+import Absyn;
+import BackendDAE;
+import BackendDAEFunc;
+import DAE;
+import FCore;
+import HashSet;
+import Util;
 
 protected
 import Array;
@@ -64,6 +65,7 @@ import Expression;
 import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
+import GC;
 import List;
 import Matching;
 import MetaModelica.Dangerous;
@@ -813,6 +815,7 @@ algorithm
       end if;
     end for;
 
+    GC.free(secondary);
     outPrimaryParameters := listReverse(outPrimaryParameters);
     outAllPrimaryParameters := listReverse(outAllPrimaryParameters);
   end if;

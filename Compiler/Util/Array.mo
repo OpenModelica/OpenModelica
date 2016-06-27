@@ -39,6 +39,7 @@ encapsulated package Array
 protected
 import MetaModelica.Dangerous.{arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
 import Error;
+import GC;
 
 public function mapNoCopy<T>
   "Takes an array and a function over the elements of the array, which is

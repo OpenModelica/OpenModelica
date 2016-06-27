@@ -41,29 +41,32 @@ encapsulated package BackendDAETransform
 
 "
 
-public import BackendDAE;
-public import DAE;
+public
+  import BackendDAE;
+  import DAE;
 
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import ComponentReference;
-protected import DAEUtil;
-protected import Debug;
-protected import ElementSource;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import Flags;
-protected import List;
-protected import SCode;
-protected import Sorting;
-protected import SymbolicJacobian;
-protected import System;
-protected import Util;
-protected import Values;
-protected import MetaModelica.Dangerous;
+protected
+  import BackendDAEUtil;
+  import BackendDump;
+  import BackendEquation;
+  import BackendVariable;
+  import ComponentReference;
+  import DAEUtil;
+  import Debug;
+  import ElementSource;
+  import Error;
+  import Expression;
+  import ExpressionDump;
+  import Flags;
+  import GC;
+  import List;
+  import SCode;
+  import Sorting;
+  import SymbolicJacobian;
+  import System;
+  import Util;
+  import Values;
+  import MetaModelica.Dangerous;
 
 // =============================================================================
 // strongComponents and stuff
@@ -95,6 +98,7 @@ algorithm
 
       markarray := arrayCreate(BackendDAEUtil.equationArraySize(inSystem.orderedEqs), -1);
       comps := analyseStrongComponentsScalar(comps_m, inSystem, inShared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray);
+      GC.free(markarray);
       ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);
 
       // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not

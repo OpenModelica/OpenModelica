@@ -72,6 +72,7 @@ import ExpressionSolve;
 import ExpressionSimplify;
 import Error;
 import Flags;
+import GC;
 import HashTableExpToIndex;
 import HpcOmTaskGraph;
 import List;
@@ -1669,6 +1670,8 @@ algorithm
         systs = if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i, syst, ixs, rixs, mT, rmT, throwNoError) else {syst};
         // print("Number of partitioned systems: " + intString(listLength(systs)) + "\n");
         // List.map1_0(systs, BackendDump.dumpEqSystem, "System");
+        GC.free(ixs);
+        GC.free(rixs);
       then (systs,shared);
     else
       equation
@@ -4189,6 +4192,8 @@ algorithm
           //(_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst1, BackendDAE.ABSOLUTE(), SOME(functionTree));
           //BackendDump.dumpIncidenceMatrix(m);
           //BackendDump.dumpIncidenceMatrixT(mT);
+          GC.free(w_vars);
+          GC.free(w_eqns);
         then BackendDAEUtil.clearEqSyst(syst1);
     end match;
     new_systlst := syst :: new_systlst;

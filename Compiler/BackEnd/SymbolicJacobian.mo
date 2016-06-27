@@ -65,6 +65,7 @@ import ExpressionDump;
 import ExpressionSimplify;
 import Error;
 import Flags;
+import GC;
 import Global;
 import Graph;
 import HashSet;
@@ -544,6 +545,8 @@ algorithm
 
   (bVarsOut,bEqsOut) := createBVecVars(sysIdxIn,compIdxIn,n,DAE.T_REAL_DEFAULT,beqs);
   sysEqsOut := createSysEquations(A,b,n,order,var_lst,bVarsOut);
+  GC.free(A);
+  GC.free(b);
   sysIdxOut := sysIdxIn+1;
   orderOut := order;
 end solveConstJacLinearSystem;

@@ -91,6 +91,7 @@ import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
 import FMI;
+import GC;
 import Graph;
 import HashSet;
 import HashTableStringToUnit;
@@ -654,6 +655,8 @@ algorithm
                                  sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping);
     sccOffset := listLength(comps) + sccOffset;
     //otempvars := listAppend(clockedVars, otempvars);
+    GC.free(stateeqnsmark);
+    GC.free(zceqnsmarks);
 
     (ouniqueEqIndex, removedEquations) := BackendEquation.traverseEquationArray(syst.removedEqs, traversedlowEqToSimEqSystem, (ouniqueEqIndex, {}));
 
@@ -683,6 +686,7 @@ algorithm
         ouniqueEqIndex := ouniqueEqIndex + 1;
       end if;
     end for;
+    GC.free(isPrevVar);
 
     //otempvars := listAppend(clockedVars, otempvars);
     simSubPartition := SimCode.SUBPARTITION(prevClockedVars,  equations, removedEquations, subPartition.clock, subPartition.holdEvents);
@@ -692,6 +696,7 @@ algorithm
 
   end for;
   outPartitions := createClockedSimPartitions(inShared.partitionsInfo.basePartitions, simSubPartitions);
+  GC.free(simSubPartitions);
 end translateClockedEquations;
 
 protected function createClockedSimPartitions
@@ -1270,6 +1275,9 @@ algorithm
             createEquationsForSystem(
                 stateeqnsmark, zceqnsmarks, syst, shared, comps, uniqueEqIndex, tempvars,
                 sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping);
+        GC.free(stateeqnsmark);
+        GC.free(zceqnsmarks);
+
 
         odeEquations = List.consOnTrue(not listEmpty(odeEquations1), odeEquations1, odeEquations);
         algebraicEquations = List.consOnTrue(not listEmpty(algebraicEquations1), algebraicEquations1, algebraicEquations);
@@ -1815,6 +1823,7 @@ algorithm
 
         (daeEquations1, resVars1, algVars1, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns) = createDAEEquation(
                 stateeqnsmark, syst, inShared, comps, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns);
+        GC.free(stateeqnsmark);
 
         daeEquations = List.consOnTrue(not listEmpty(daeEquations1), daeEquations1, daeEquations);
         resVars = listAppend(resVars1, resVars);
@@ -7094,6 +7103,7 @@ algorithm
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeFinalConstraints)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.sensitivity))
   );
+  GC.free(simVars);
 end createVars;
 
 protected function extractVarsFromList
@@ -12632,6 +12642,8 @@ algorithm
     getHighestDerivationVisit(i, ders, depth);
   end for;
   highestDerivation := max(i for i in depth);
+  GC.free(ders);
+  GC.free(depth);
 end getHighestDerivation;
 
 protected function getHighestDerivationVisit "Uses stack depth of at most max depth"
