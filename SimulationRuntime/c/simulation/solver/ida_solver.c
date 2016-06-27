@@ -230,11 +230,16 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
 
 
   /* set root function */
-  flag = IDARootInit(idaData->ida_mem, data->modelData->nZeroCrossings, rootsFunctionIDA);
-  if (checkIDAflag(flag)){
-    throwStreamPrint(threadData, "##IDA## Setting root function fails while initialize IDA solver!");
+  /* if FLAG_NO_ROOTFINDING is set, solve perform without internal root finding*/
+  if(!omc_flag[FLAG_NO_ROOTFINDING])
+  {
+    solverInfo->solverRootFinding = 1;
+    flag = IDARootInit(idaData->ida_mem, data->modelData->nZeroCrossings, rootsFunctionIDA);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## Setting root function fails while initialize IDA solver!");
+    }
   }
-
+  infoStreamPrint(LOG_SOLVER, 0, "ida uses internal root finding method %s", solverInfo->solverRootFinding?"YES":"NO");
 
   /* if FLAG_IDA_LS is set, choose ida linear solver method */
   if (omc_flag[FLAG_IDA_LS])

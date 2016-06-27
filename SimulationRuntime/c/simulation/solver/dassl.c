@@ -369,8 +369,8 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   }
   infoStreamPrint(LOG_SOLVER, 0, "jacobian is calculated by %s", JACOBIAN_METHOD_DESC[dasslData->dasslJacobian]);
 
-  /* if FLAG_DASSL_NO_ROOTFINDING is set, choose dassl with out internal root finding */
-  if(omc_flag[FLAG_DASSL_NO_ROOTFINDING])
+  /* if FLAG_NO_ROOTFINDING is set, choose dassl with out internal root finding */
+  if(omc_flag[FLAG_NO_ROOTFINDING])
   {
     dasslData->dasslRootFinding = 0;
     dasslData->zeroCrossingFunction = dummy_zeroCrossing;
@@ -385,8 +385,8 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   infoStreamPrint(LOG_SOLVER, 0, "dassl uses internal root finding method %s", dasslData->dasslRootFinding?"YES":"NO");
 
 
-  /* if FLAG_DASSL_NO_RESTART is set, choose dassl step method */
-  if (omc_flag[FLAG_DASSL_NO_RESTART])
+  /* if FLAG_NO_RESTART is set, choose dassl step method */
+  if (omc_flag[FLAG_NO_RESTART])
   {
     dasslData->dasslAvoidEventRestart = 1; /* TRUE */
   }

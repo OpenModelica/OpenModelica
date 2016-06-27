@@ -38,8 +38,6 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_CLOCK */                 "clock",
   /* FLAG_CPU */                   "cpu",
   /* FLAG_CSV_OSTEP */             "csvOstep",
-  /* FLAG_DASSL_NO_RESTART */      "dasslnoRestart",
-  /* FLAG_DASSL_NO_ROOTFINDING */  "dasslnoRootFinding",
   /* FLAG_DAE_MODE */              "daeMode",
   /* FLAG_EMBEDDED_SERVER */       "embeddedServer",
   /* FLAG_EMIT_PROTECTED */        "emit_protected",
@@ -91,6 +89,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/ "noEquidistantOutputFrequency",
   /* FLAG_NOEQUIDISTANT_OUT_TIME*/ "noEquidistantOutputTime",
   /* FLAG_NOEVENTEMIT */           "noEventEmit",
+  /* FLAG_NO_RESTART */            "noRestart",
+  /* FLAG_NO_ROOTFINDING */        "noRootFinding",
   /* FLAG_OPTDEBUGEJAC */          "optDebugeJac",
   /* FLAG_OPTIMIZER_NP */          "optimizerNP",
   /* FLAG_OPTIMIZER_TGRID */       "optimizerTimeGrid",
@@ -116,8 +116,6 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU",
   /* FLAG_CPU */                   "dumps the cpu-time into the result file",
   /* FLAG_CSV_OSTEP */             "value specifies csv-files for debuge values for optimizer step",
-  /* FLAG_DASSL_NO_RESTART */      "flag deactivates the restart of dassl after an event is performed.",
-  /* FLAG_DASSL_NO_ROOTFINDING */  "flag deactivates the internal root finding procedure of dassl.",
   /* FLAG_DAE_MODE */              "flag to let the integrator use daeResiduals",
   /* FLAG_EMBEDDED_SERVER */       "enables an embedded server. Valid values: none, opc-da [broken], opc-ua [experimental], or the path to a shared object.",
   /* FLAG_EMIT_PROTECTED */        "emits protected variables to the result-file",
@@ -169,6 +167,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/ "value controls the output frequency in noEquidistantTimeGrid mode",
   /* FLAG_NOEQUIDISTANT_OUT_TIME*/ "value controls the output time point in noEquidistantOutputTime mode",
   /* FLAG_NOEVENTEMIT */           "do not emit event points to the result file",
+  /* FLAG_NO_RESTART */            "flag deactivates the restart of dassl/ida after an event is performed.",
+  /* FLAG_NO_ROOTFINDING */        "flag deactivates the internal root finding procedure of dassl/ida.",
   /* FLAG_OPTDEBUGEJAC */          "value specifies the number of iter from the dyn. optimization, which will be debuge, creating *csv and *py file",
   /* FLAG_OPTIMIZER_NP */          "value specifies the number of points in a subinterval",
   /* FLAG_OPTIMIZER_TGRID */       "value specifies external file with time points.",
@@ -201,10 +201,6 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Dumps the cpu-time into the result file using the variable named $cpuTime",
   /* FLAG_CSV_OSTEP */
   "  Value specifies csv-files for debuge values for optimizer step",
-  /* FLAG_DASSL_NO_RESTART */
-  "  Deactivates the restart of dassl after an event is performed.",
-  /* FLAG_DASSL_NO_ROOTFINDING */
-  "  Deactivates the internal root finding procedure of dassl.",
   /* FLAG_DAE_MODE */
   "  Enables daeMode simulation if the model was compiled with the omc flag --daeMode and the IDA integrator is used.",
   /* FLAG_EMBEDDED_SERVER */
@@ -347,6 +343,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  mode and outputs every time>=k*timeValue, where k is an integer",
   /* FLAG_NOEVENTEMIT */
   "  Do not emit event points to the result file.",
+  /* FLAG_NO_RESTART */
+  "  Deactivates the restart of dassl/ida after an event is performed.",
+  /* FLAG_NO_ROOTFINDING */
+  "  Deactivates the internal root finding procedure of dassl/ida solver.",
   /* FLAG_OPTDEBUGEJAC */
   "  Value specifies the number of itereations from the dynamic optimization, which\n"
   "  will be debugged, creating .csv and .py files.",
@@ -396,8 +396,6 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_CLOCK */                 FLAG_TYPE_OPTION,
   /* FLAG_CPU */                   FLAG_TYPE_FLAG,
   /* FLAG_CSV_OSTEP */             FLAG_TYPE_OPTION,
-  /* FLAG_DASSL_NO_RESTART */      FLAG_TYPE_FLAG,
-  /* FLAG_DASSL_NO_ROOTFINDING */  FLAG_TYPE_FLAG,
   /* FLAG_DAE_SOLVING */           FLAG_TYPE_FLAG,
   /* FLAG_EMBEDDED_SERVER */       FLAG_TYPE_OPTION,
   /* FLAG_EMIT_PROTECTED */        FLAG_TYPE_FLAG,
@@ -448,6 +446,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_NOEQUIDISTANT_GRID*/     FLAG_TYPE_FLAG,
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/ FLAG_TYPE_OPTION,
   /* FLAG_NOEQUIDISTANT_OUT_TIME*/ FLAG_TYPE_OPTION,
+  /* FLAG_NO_RESTART */            FLAG_TYPE_FLAG,
+  /* FLAG_NO_ROOTFINDING */        FLAG_TYPE_FLAG,
   /* FLAG_NOEVENTEMIT */           FLAG_TYPE_FLAG,
   /* FLAG_OPTDEBUGEJAC */          FLAG_TYPE_OPTION,
   /* FLAG_OPTIZER_NP */            FLAG_TYPE_OPTION,
