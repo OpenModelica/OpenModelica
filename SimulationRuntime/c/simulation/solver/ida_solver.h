@@ -59,6 +59,10 @@ typedef struct IDA_SOLVER
   int setInitialSolution;
   int jacobianMethod;            /* specifices the method to calculate the jacobian matrix */
   int linearSolverMethod;        /* specifices the method to solve the linear problem */
+  int internalSteps;             /* if = 1 internal step of the integrator are used  */
+  unsigned int stepsFreq;        /* value specifies the output frequency regarding to time steps. Used in internal steps mode. */
+  double stepsTime;              /* value specifies the time increment when output happens. Used in internal steps mode. */
+
 
   /* ### work arrays ### */
   N_Vector y;

@@ -123,6 +123,9 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   long int i;
   double* tmp;
 
+  /* default max order */
+  int maxOrder = 5;
+
   /* sim data */
   idaData->simData = (IDA_USERDATA*)malloc(sizeof(IDA_USERDATA));
   idaData->simData->data = data;
@@ -240,6 +243,59 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     }
   }
   infoStreamPrint(LOG_SOLVER, 0, "ida uses internal root finding method %s", solverInfo->solverRootFinding?"YES":"NO");
+
+  /* define maximum integration order of dassl */
+  if (omc_flag[FLAG_MAX_ORDER])
+  {
+    maxOrder = atoi(omc_flagValue[FLAG_MAX_ORDER]);
+
+    flag = IDASetMaxOrd(idaData->ida_mem, maxOrder);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## Failed to set max integration order!");
+	  }
+  }
+  infoStreamPrint(LOG_SOLVER, 0, "maximum integration order %d", maxOrder);
+
+
+  /* if FLAG_NOEQUIDISTANT_GRID is set, choose ida step method */
+  if (omc_flag[FLAG_NOEQUIDISTANT_GRID])
+  {
+    idaData->internalSteps = 1; /* TRUE */
+    solverInfo->solverNoEquidistantGrid = 1;
+  }
+  else
+  {
+    idaData->internalSteps = 0; /* FALSE */
+  }
+  infoStreamPrint(LOG_SOLVER, 0, "use equidistant time grid %s", idaData->internalSteps?"NO":"YES");
+
+  /* check if Flags FLAG_NOEQUIDISTANT_OUT_FREQ or FLAG_NOEQUIDISTANT_OUT_TIME are set */
+  if (idaData->internalSteps){
+    if (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ])
+    {
+      idaData->stepsFreq = atoi(omc_flagValue[FLAG_NOEQUIDISTANT_OUT_FREQ]);
+    }
+    else if (omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME])
+    {
+      idaData->stepsTime = atof(omc_flagValue[FLAG_NOEQUIDISTANT_OUT_TIME]);
+      flag = IDASetMaxStep(idaData->ida_mem, idaData->stepsTime);
+      if (checkIDAflag(flag)){
+        throwStreamPrint(threadData, "##IDA## Setting max steps of the IDA solver!");
+      }
+      infoStreamPrint(LOG_SOLVER, 0, "maximum step size %g", idaData->stepsTime);
+    } else {
+      idaData->stepsFreq = 1;
+      idaData->stepsTime = 0.0;
+    }
+
+    if  (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ] && omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]){
+      warningStreamPrint(LOG_STDOUT, 0, "The flags are  \"noEquidistantOutputFrequency\" "
+                                     "and \"noEquidistantOutputTime\" are in opposition "
+                                     "to each other. The flag \"noEquidistantOutputFrequency\" superiors.");
+     }
+     infoStreamPrint(LOG_SOLVER, 0, "as the output frequency control is used: %d", idaData->stepsFreq);
+     infoStreamPrint(LOG_SOLVER, 0, "as the output frequency time step control is used: %f", idaData->stepsTime);
+  }
 
   /* if FLAG_IDA_LS is set, choose ida linear solver method */
   if (omc_flag[FLAG_IDA_LS])
@@ -589,10 +645,12 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   int retVal = 0, finished = FALSE;
   int saveJumpState;
   long int tmp;
+  static unsigned int stepsOutputCounter = 1;
+  int stepsMode;
 
   IDA_SOLVER *idaData = (IDA_SOLVER*) solverInfo->solverData;
 
-    SIMULATION_DATA *sData = data->localData[0];
+  SIMULATION_DATA *sData = data->localData[0];
   SIMULATION_DATA *sDataOld = data->localData[1];
   MODEL_DATA *mData = (MODEL_DATA*) data->modelData;
 
@@ -672,7 +730,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     /* linear extrapolation */
     for(i = 0; i < idaData->N; i++)
     {
-      idaData->states[i] = idaData->states[i] + idaData->statesDer[i] * solverInfo->currentStepSize;
+      NV_Ith_S(idaData->y, i) = NV_Ith_S(idaData->y, i) + NV_Ith_S(idaData->yp, i) * solverInfo->currentStepSize;
     }
     sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
     data->callback->functionODE(data, threadData);
@@ -684,26 +742,43 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
 
   /* Calculate steps until TOUT is reached */
-  tout = solverInfo->currentTime + solverInfo->currentStepSize;
+  if (idaData->internalSteps)
+  {
+    /* If dasslsteps is selected, the dassl run to stopTime or next sample event */
+    if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime)
+    {
+      tout = data->simulationInfo->nextSampleEvent;
+    }
+    else
+    {
+      tout = data->simulationInfo->stopTime;
+    }
+    stepsMode = IDA_ONE_STEP;
+  }
+  else
+  {
+    tout = solverInfo->currentTime + solverInfo->currentStepSize;
+    stepsMode = IDA_NORMAL;
+  }
 
 
   do
   {
-    infoStreamPrint(LOG_SOLVER, 1, "##IDA## new step at time = %.15g", solverInfo->currentTime);
+    infoStreamPrint(LOG_SOLVER, 1, "##IDA## new step from %.15g to %.15g", solverInfo->currentTime, tout);
 
     /* read input vars */
     externalInputUpdate(data);
     data->callback->input_function(data, threadData);
 
-    flag = IDASolve(idaData->ida_mem, tout, &solverInfo->currentTime, idaData->y, idaData->yp, IDA_NORMAL);
+    flag = IDASolve(idaData->ida_mem, tout, &solverInfo->currentTime, idaData->y, idaData->yp, stepsMode);
 
     /* set time to current time */
     sData->timeValue = solverInfo->currentTime;
 
     /* error handling */
-    if ( !checkIDAflag(flag) && solverInfo->currentTime >=tout)
+    if ( !checkIDAflag(flag) && solverInfo->currentTime >= tout)
     {
-      infoStreamPrint(LOG_SOLVER, 0, "##IDA## step to time = %.15g", solverInfo->currentTime);
+      infoStreamPrint(LOG_SOLVER, 0, "##IDA## step done to time = %.15g", solverInfo->currentTime);
       finished = TRUE;
     }
     else
@@ -731,6 +806,30 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
     /* closing new step message */
     messageClose(LOG_SOLVER);
+
+    /* emit step, if step mode is selected */
+    if (idaData->internalSteps)
+    {
+      infoStreamPrint(LOG_SOLVER, 0, "##IDA## noEquadistant stepsOutputCounter %d by freq %d at time = %.15g", stepsOutputCounter, idaData->stepsFreq, solverInfo->currentTime);
+      if (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ]){
+        /* output every n-th time step */
+        if (stepsOutputCounter >= idaData->stepsFreq){
+          stepsOutputCounter = 1; /* next line set it to one */
+          infoStreamPrint(LOG_SOLVER, 0, "##IDA## noEquadistant output %d by freq at time = %.15g", stepsOutputCounter, solverInfo->currentTime);
+          break;
+        }
+        stepsOutputCounter++;
+      } else if (omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]){
+        /* output when time>=k*timeValue */
+        if (solverInfo->currentTime > stepsOutputCounter * idaData->stepsTime){
+          stepsOutputCounter++;
+          infoStreamPrint(LOG_SOLVER, 0, "##IDA## noEquadistant output %d by time freq at time = %.15g", stepsOutputCounter, solverInfo->currentTime);
+          break;
+        }
+      } else {
+        break;
+			}
+    }
 
   } while(!finished);
 
