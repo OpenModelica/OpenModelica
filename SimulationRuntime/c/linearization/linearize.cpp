@@ -438,6 +438,7 @@ int functionJacD(DATA* data, threadData_t *threadData, double* jac){
 
 int linearize(DATA* data, threadData_t *threadData)
 {
+    TRACE_PUSH
     /* Check if data recovery is requested */
     int do_data_recovery = omc_flag[FLAG_L_DATA_RECOVERY] ? 1 : 0;
 
