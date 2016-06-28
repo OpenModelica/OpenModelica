@@ -701,22 +701,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: loadModel(ThermoSysPro)
 // true
 // Evaluating: getMessagesStringInternal()
-// {record OpenModelica.Scripting.ErrorMessage
-//     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/package.mo",
-//     readonly = false,
-//     lineStart = 132,
-//     columnStart = 31,
-//     lineEnd = 134,
-//     columnEnd = 169
-// end OpenModelica.Scripting.SourceInfo;,
-//     message = "ThermoSysPro is not yet fully operational with OpenModelica.
-// The authors suggest using Dymola for full benefit of the library, in particular if you are experiencing difficulties.
-// The current operational status with OpenModelica of the included examples can be found at https://test.openmodelica.org/libraries/ThermoSysPro/BuildModelRecursive.html",
-//     kind = .OpenModelica.Scripting.ErrorKind.scripting,
-//     level = .OpenModelica.Scripting.ErrorLevel.notification,
-//     id = 6002
-// end OpenModelica.Scripting.ErrorMessage;}
+// {}
 // Evaluating: translateModel(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution)
 // true
 // Evaluating: getMessagesStringInternal()
