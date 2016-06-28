@@ -1305,8 +1305,6 @@ end hasVarEvaluateAnnotationOrFinal;
 public function hasVarEvaluateAnnotationOrFinalOrProtected
   input BackendDAE.Var inVar;
   output Boolean select;
-protected
-  DAE.ComponentRef cref;
 algorithm
   select := isFinalOrProtectedVar(inVar) or hasVarEvaluateAnnotation(inVar);
 end hasVarEvaluateAnnotationOrFinalOrProtected;
@@ -1379,7 +1377,6 @@ public function createAliasDerVar
   input DAE.ComponentRef inCref;
   output BackendDAE.Var outVar;
 protected
-  BackendDAE.Var var;
   DAE.ComponentRef cr;
 algorithm
   cr := ComponentReference.prependStringCref(BackendDAE.derivativeNamePrefix, inCref);
@@ -1395,7 +1392,6 @@ public function createVar
   input String prependStringCref;
   output BackendDAE.Var outVar;
 protected
-  BackendDAE.Var var;
   DAE.ComponentRef cr;
 algorithm
   cr := ComponentReference.appendStringLastIdent(prependStringCref, inCref);
@@ -1522,38 +1518,9 @@ public function copyVarNewName "author: Frenkel TUD 2012-5
   Create variable with new name as cref from other var."
   input DAE.ComponentRef cr;
   input BackendDAE.Var inVar;
-  output BackendDAE.Var outVar;
-protected
-  BackendDAE.VarKind kind;
-  DAE.VarDirection dir;
-  DAE.VarParallelism prl;
-  BackendDAE.Type tp;
-  Option<DAE.Exp> bind;
-  Option<Values.Value> v;
-  list<DAE.Dimension> dim;
-  DAE.ElementSource source;
-  Option<DAE.VariableAttributes> attr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> comment;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
+  output BackendDAE.Var outVar=inVar;
 algorithm
-  BackendDAE.VAR(varKind=kind,
-                 varDirection=dir,
-                 varParallelism=prl,
-                 varType=tp,
-                 bindExp=bind,
-                 bindValue=v,
-                 arryDim=dim,
-                 source=source,
-                 values=attr,
-                 tearingSelectOption=ts,
-                 comment=comment,
-                 connectorType=ct,
-                 innerOuter=io,
-                 unreplaceable=unreplaceable) := inVar;
-  outVar := BackendDAE.VAR(cr, kind, dir, prl, tp, bind, v, dim, source, attr, ts, comment, ct, io, unreplaceable);
+  outVar.varName := cr;
 end copyVarNewName;
 
 public function setVarKindForVar"updates the varkind for an indexed var inside the variable-array.
@@ -3045,7 +3012,6 @@ protected function traversingVarIndexInFirstSetFinder
   output tuple<array<list<Integer>>,array<Integer>> outIndices;
 protected
   DAE.ComponentRef cr;
-  list<Integer> indices1,indices2;
   array<list<Integer>> l;
   array<Integer> i;
 algorithm
@@ -3214,7 +3180,7 @@ public function traverseBackendDAEVarsWithUpdate<ArgT>
   end FuncType;
 protected
   array<list<BackendDAE.CrefIndex>> indices;
-  Integer buckets, num_vars1, num_vars2, num_elems, arr_size;
+  Integer buckets, num_vars1, num_vars2, arr_size;
   array<Option<BackendDAE.Var>> vars;
 algorithm
   BackendDAE.VARIABLES(indices, BackendDAE.VARIABLE_ARRAY(num_vars1, arr_size, vars), buckets, num_vars2) := inVariables;
@@ -3342,7 +3308,6 @@ public function getAllStateDerVarIndexFromVariables
 protected
   array<list<BackendDAE.Var>> v_a;
   array<list<Integer>> i_a;
-  array<Integer> i;
 algorithm
   v_a := arrayCreate(1,{});
   i_a := arrayCreate(1,{});
@@ -3358,7 +3323,6 @@ public function getAllStateVarIndexFromVariables
 protected
   array<list<BackendDAE.Var>> v_a;
   array<list<Integer>> i_a;
-  array<Integer> i;
 algorithm
   v_a := arrayCreate(1,{});
   i_a := arrayCreate(1,{});
@@ -3374,7 +3338,6 @@ public function getAllAlgStateVarIndexFromVariables
 protected
   array<list<BackendDAE.Var>> v_a;
   array<list<Integer>> i_a;
-  array<Integer> i;
 algorithm
   v_a := arrayCreate(1,{});
   i_a := arrayCreate(1,{});
@@ -3420,8 +3383,8 @@ public function mergeAliasVars "author: Frenkel TUD 2011-04"
   input BackendDAE.Variables globalKnownVars "the globalKnownVars, need to report Warnings";
   output BackendDAE.Var outVar;
 protected
-  BackendDAE.Var v,va,v1,v2;
-  Boolean fixed,fixeda,f;
+  BackendDAE.Var v1,v2;
+  Boolean fixed,fixeda;
   Option<DAE.Exp> sv,sva,so,soa;
   DAE.Exp start;
 algorithm
