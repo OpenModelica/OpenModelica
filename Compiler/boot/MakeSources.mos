@@ -3,17 +3,17 @@ mkdir("build");
 workingDir := cd();
 relDir := cd("..");
 cd(workingDir);
-writeFile("Makefile.sources.tmp", "ALL_OBJECTS="+sum(typeNameString(cl) + ".o " for cl in getClassNames())+"
-ALL_SOURCES=" + sum(file + " " for file in files) + "
-ALL_INTERFACES=" + sum("$(GEN_DIR)" + typeNameString(cl) + ".stamp.mo " for cl in getClassNames()) + "
-" + sum("\n$(GEN_DIR)" + typeNameString(cl) + ".stamp.mo: " + stringReplace(getSourceFile(cl),relDir,"..") for cl in getClassNames()) + "\n"
-+ sum("$(GEN_DIR)" + typeNameString(cl) + ".o: $(GEN_DIR)" + typeNameString(cl) + ".h $(GEN_DIR)" + typeNameString(cl) + "_includes.h\n" for cl in getClassNames()) + "\n"
-+ sum("RELPATH_" + typeNameString(cl) + "=" + stringReplace(getSourceFile(cl),relDir,"..") + "\n" for cl in getClassNames())
+writeFile("Makefile.sources.tmp", "ALL_OBJECTS="+sum(typeNameString(cl) + ".o " for cl in getClassNames())+ "\n" +
+"ALL_SOURCES=" + sum(file + " " for file in files) + "\n" +
+"ALL_INTERFACES=" + sum("$(GEN_DIR)" + typeNameString(cl) + ".stamp.mo " for cl in getClassNames()) + "\n" +
+sum("\n$(GEN_DIR)" + typeNameString(cl) + ".stamp.mo: " + stringReplace(getSourceFile(cl),relDir,"..") for cl in getClassNames()) + "\n" +
+sum("$(GEN_DIR)" + typeNameString(cl) + ".o: $(GEN_DIR)" + typeNameString(cl) + ".h $(GEN_DIR)" + typeNameString(cl) + "_includes.h\n" for cl in getClassNames()) + "\n" +
+sum("RELPATH_" + typeNameString(cl) + "=" + stringReplace(getSourceFile(cl),relDir,"..") + "\n" for cl in getClassNames())
 /* Add this if we need the additional dependencies on the included header files. If the interface changed we did already recompile this file, so... Probably not needed. Probably.
-+ sum("
-ifeq ($(wildcard $(GEN_DIR)"+typeNameString(cl)+".deps),$(GEN_DIR)"+typeNameString(cl)+".deps)
-include $(GEN_DIR)"+typeNameString(cl)+".deps
-endif" for cl in getClassNames())
++ sum("\n" +
+"ifeq ($(wildcard $(GEN_DIR)"+typeNameString(cl)+".deps),$(GEN_DIR)"+typeNameString(cl)+".deps)" + "\n" +
+"include $(GEN_DIR)"+typeNameString(cl)+".deps" + "\n" +
+"endif" for cl in getClassNames())
 */
 );getErrorString();
 
