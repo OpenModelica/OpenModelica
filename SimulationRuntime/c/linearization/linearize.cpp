@@ -579,6 +579,7 @@ int linearize(DATA* data, threadData_t *threadData)
     fflush(fout);
     fclose(fout);
 
+    TRACE_POP
     return 0;
 }
 
