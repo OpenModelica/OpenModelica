@@ -6143,8 +6143,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      void <%modelname%>Algloop<%nls.index%>::initialize()
      {
        <%initAlgloopEquation(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
-       // Update the equations once before start of simulation
-       evaluate();
+       // Don't update the equations once before start of simulation
+       // evaluate();
      }
      >>
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
