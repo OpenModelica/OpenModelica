@@ -503,22 +503,22 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   /* configure algebraic variables as such */
   if (idaData->daeMode)
   {
-    if (omc_flag[FLAG_IDA_SUPPRESS_ALG])
+    if (!omc_flag[FLAG_NO_SUPPRESS_ALG])
     {
       flag = IDASetSuppressAlg(idaData->ida_mem, TRUE);
       if (checkIDAflag(flag)){
         throwStreamPrint(threadData, "##IDA## Suppress algebraic variables in the local error test failed");
       }
-    }
 
-    for(i=0; i<idaData->N; ++i)
-    {
-      tmp[i] = (i<data->modelData->nStates)? 1.0: 0.0;
-    }
+      for(i=0; i<idaData->N; ++i)
+      {
+        tmp[i] = (i<data->modelData->nStates)? 1.0: 0.0;
+      }
 
-    flag = IDASetId(idaData->ida_mem, N_VMake_Serial(idaData->N,tmp));
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## Mark algebraic variables as such failed!");
+      flag = IDASetId(idaData->ida_mem, N_VMake_Serial(idaData->N,tmp));
+      if (checkIDAflag(flag)){
+        throwStreamPrint(threadData, "##IDA## Mark algebraic variables as such failed!");
+      }
     }
   }
 

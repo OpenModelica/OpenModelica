@@ -49,7 +49,6 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_IDA_NONLINCONVCOEF */    "idaNonLinConvCoef",
   /* FLAG_IDA_LS */                "idaLS",
   /* FLAG_IDAS */                  "idaSensitivity",
-  /* FLAG_IDA_SUPPRESS_ALG */      "idaSupressAlg",
   /* FLAG_IGNORE_HIDERESULT */     "ignoreHideResult",
   /* FLAG_IIF */                   "iif",
   /* FLAG_IIM */                   "iim",
@@ -91,6 +90,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_NOEVENTEMIT */           "noEventEmit",
   /* FLAG_NO_RESTART */            "noRestart",
   /* FLAG_NO_ROOTFINDING */        "noRootFinding",
+  /* FLAG_NO_SUPPRESS_ALG */       "noSupressAlg",
   /* FLAG_OPTDEBUGEJAC */          "optDebugeJac",
   /* FLAG_OPTIMIZER_NP */          "optimizerNP",
   /* FLAG_OPTIMIZER_TGRID */       "optimizerTimeGrid",
@@ -127,7 +127,6 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IDA_NONLINCONVCOEF */    "value specifies the safety factor in the nonlinear convergence test. The default value is 0.33.",
   /* FLAG_IDA_LS */                "selects the linear solver used by ida",
   /* FLAG_IDAS */                  "flag to add sensitivity information to the result files",
-  /* FLAG_IDA_SUPPRESS_ALG */      "flag to to suppress algebraic variables in the local error of ida solver in daeMode",
   /* FLAG_IGNORE_HIDERESULT */     "ignore HideResult=true annotation",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
   /* FLAG_IIM */                   "value specifies the initialization method",
@@ -169,6 +168,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NOEVENTEMIT */           "do not emit event points to the result file",
   /* FLAG_NO_RESTART */            "flag deactivates the restart of dassl/ida after an event is performed.",
   /* FLAG_NO_ROOTFINDING */        "flag deactivates the internal root finding procedure of dassl/ida.",
+  /* FLAG_NO_SUPPRESS_ALG */       "flag to not suppress algebraic variables in the local error test of ida solver in daeMode",
   /* FLAG_OPTDEBUGEJAC */          "value specifies the number of iter from the dyn. optimization, which will be debuge, creating *csv and *py file",
   /* FLAG_OPTIMIZER_NP */          "value specifies the number of points in a subinterval",
   /* FLAG_OPTIMIZER_TGRID */       "value specifies external file with time points.",
@@ -233,8 +233,6 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * spgmr - sparse iterative linear solver based on transpose free quasi-minimal residual method, convergance is not guaranteed, sundials method\n",
   /* FLAG_IDAS */
   "  Enables sensitivity analysis with respect to parameters if the model is compiled with omc flag --calculateSensitivities.",
-  /* FLAG_IDA_SUPPRESS_ALG */
-  "  flag to to suppress algebraic variables in the local error of ida solver in daeMode",
   /* FLAG_IGNORE_HIDERESULT */
   "  Emits also variables with HideResult=true annotation.",
   /* FLAG_IIF */
@@ -347,6 +345,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Deactivates the restart of dassl/ida after an event is performed.",
   /* FLAG_NO_ROOTFINDING */
   "  Deactivates the internal root finding procedure of dassl/ida solver.",
+  /* FLAG_NO_SUPPRESS_ALG */
+  "  flag to not suppress algebraic variables in the local error test of the ida solver in daeMode.\n"
+  "  In general, the use of this option is discouraged when solving DAE systems of index 1,\n"
+  "  whereas it is generally encouraged for systems of index 2 or more.",
   /* FLAG_OPTDEBUGEJAC */
   "  Value specifies the number of itereations from the dynamic optimization, which\n"
   "  will be debugged, creating .csv and .py files.",
@@ -407,7 +409,6 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_IDA_NONLINCONVCOEF */    FLAG_TYPE_OPTION,
   /* FLAG_IDA_LS */                FLAG_TYPE_OPTION,
   /* FLAG_IDAS */                  FLAG_TYPE_FLAG,
-  /* FLAG_IDA_SUPPRESS_ALG */      FLAG_TYPE_FLAG,
   /* FLAG_IGNORE_HIDERESULT */     FLAG_TYPE_FLAG,
   /* FLAG_IIF */                   FLAG_TYPE_OPTION,
   /* FLAG_IIM */                   FLAG_TYPE_OPTION,
@@ -448,6 +449,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_NOEQUIDISTANT_OUT_TIME*/ FLAG_TYPE_OPTION,
   /* FLAG_NO_RESTART */            FLAG_TYPE_FLAG,
   /* FLAG_NO_ROOTFINDING */        FLAG_TYPE_FLAG,
+  /* FLAG_NO_SUPPRESS_ALG */       FLAG_TYPE_FLAG,
   /* FLAG_NOEVENTEMIT */           FLAG_TYPE_FLAG,
   /* FLAG_OPTDEBUGEJAC */          FLAG_TYPE_OPTION,
   /* FLAG_OPTIZER_NP */            FLAG_TYPE_OPTION,
