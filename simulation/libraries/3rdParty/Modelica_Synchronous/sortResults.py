@@ -37,7 +37,7 @@ Groups = [('_Flattening', 'Error occurred while flattening model', None), \
 		      ('_TableBug', ['n Table: NoName from File: NoName with Size', 'try to get', 'out of range!'], None), \
           ('_SimExecFailed', 'Simulation execution failed for model', None), \
           ('_UnknownVar', ['Get Data of Var', 'from file', 'failed'], None), \
-          ('_NotEqual', 'Files not Equal!', None), \
+          ('_NotEqual', 'Files not Equal', None), \
           ('_OK', 'Files Equal!', 'failed')]
 
 def checkFile(fileName, groups):

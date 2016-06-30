@@ -2,7 +2,7 @@
 cls
 
 rem get path to omc
-SET OMC=%OPENMODELICAHOME%\bin\omc.exe +locale=C +running-testsuite=dummy.out
+SET OMC=%OPENMODELICAHOME%\bin\omc.exe +simCodeTarget=Cpp +locale=C +running-testsuite=dummy.out
 
 rem try to simulate all *.mos files in current folder
 for %%f in (*.mos) do (
