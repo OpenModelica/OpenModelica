@@ -5732,7 +5732,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:Identifier>
 //             <exp:QualifiedNamePart name=\"heat\"/>
 //           </exp:Identifier> 
-//           <exp:Expression>
+//           <fun:Expression>
 //             <exp:FunctionCall>
 //               <exp:Name>
 //                 <exp:QualifiedNamePart name=\"computeHeat\" />
@@ -5749,7 +5749,7 @@ readFile("Bug3857.xml"); getErrorString();
 //                 </exp:Identifier>
 //               </exp:Arguments>
 //             </exp:FunctionCall>
-//           </exp:Expression>
+//           </fun:Expression>
 //         </fun:Assign>
 //       </fun:Algorithm>
 //     </fun:Function> 
