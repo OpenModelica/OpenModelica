@@ -13415,63 +13415,62 @@ public function getComponentsInClass
   output list<Absyn.Element> outAbsynElementLst;
 algorithm
   outAbsynElementLst:=
-  matchcontinue (inClass)
+  match (inClass)
     local
-      String a;
-      Boolean b,c,d;
-      Absyn.Restriction e;
-      list<Absyn.Annotation> ann;
-      Option<String> cmt;
-      list<Absyn.Element> lst1,lst2,res;
+      list<Absyn.Element> lst1,res;
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> lst;
-      SourceInfo file_info;
 
-    case (Absyn.CLASS(
-                      body = Absyn.PARTS(classParts = {}))) then {};
-
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elts) :: lst),ann=ann,comment = cmt),info = file_info)) /* Search in public list */
-      equation
-        lst1 = getComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
-        lst2 = getComponentsInElementitems(elts);
-        res = listAppend(lst2, lst1);
-      then
-        res;
-
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elts) :: lst),ann=ann,comment = cmt),info = file_info)) /* Search in protected list */
-      equation
-        lst1 = getComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
-        lst2 = getComponentsInElementitems(elts);
-        res = listAppend(lst2, lst1);
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then {};
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = lst)))
+      algorithm
+        res := {};
+        for elt in lst loop
+          _ := match elt
+              case Absyn.PUBLIC(contents = elts)
+                algorithm
+                  lst1 := getComponentsInElementitems(elts);
+                  res := List.append_reverse(lst1, res);
+                then ();
+                case Absyn.PROTECTED(contents = elts)
+                  algorithm
+                    lst1 := getComponentsInElementitems(elts);
+                    res := List.append_reverse(lst1, res);
+                  then ();
+              else ();
+            end match;
+        end for;
+        res := Dangerous.listReverseInPlace(res);
       then
         res;
 
     // adrpo: handle also the case model extends X end X;
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
-
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elts) :: lst),ann=ann,comment = cmt),info = file_info)) /* Search in public list */
-      equation
-        lst1 = getComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
-        lst2 = getComponentsInElementitems(elts);
-        res = listAppend(lst2, lst1);
-      then
-        res;
-
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elts) :: lst),ann=ann,comment = cmt),info = file_info)) /* Search in protected list */
-      equation
-        lst1 = getComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
-        lst2 = getComponentsInElementitems(elts);
-        res = listAppend(lst2, lst1);
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = lst)))
+      algorithm
+        res := {};
+        for elt in lst loop
+          _ := match elt
+              case Absyn.PUBLIC(contents = elts)
+                algorithm
+                  lst1 := getComponentsInElementitems(elts);
+                  res := List.append_reverse(lst1, res);
+                then ();
+                case Absyn.PROTECTED(contents = elts)
+                  algorithm
+                    lst1 := getComponentsInElementitems(elts);
+                    res := List.append_reverse(lst1, res);
+                  then ();
+              else ();
+            end match;
+        end for;
+        res := Dangerous.listReverseInPlace(res);
       then
         res;
 
     else {};
 
-  end matchcontinue;
+  end match;
 end getComponentsInClass;
 
 public function getPublicComponentsInClass
@@ -13480,56 +13479,51 @@ public function getPublicComponentsInClass
   output list<Absyn.Element> outAbsynElementLst;
 algorithm
   outAbsynElementLst:=
-  matchcontinue (inClass)
+  match (inClass)
     local
-      String a;
-      Boolean b,c,d;
-      Absyn.Restriction e;
-      Option<String> cmt;
-      list<Absyn.Annotation> ann;
-      list<Absyn.Element> lst1,lst2,res;
+      list<Absyn.Element> lst1,res;
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> lst;
-      SourceInfo file_info;
+
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then {};
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elts) :: lst),ann=ann,comment = cmt),
-                      info = file_info)) // Search in public list
-      equation
-        lst1 = getPublicComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
-        lst2 = getComponentsInElementitems(elts);
-        res = listAppend(lst2, lst1);
-      then
-        res;
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (_ :: lst),comment = cmt, ann = ann),
-                      info = file_info))
-      equation
-        res = getPublicComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = lst)))
+      algorithm
+        res := {};
+        for elt in lst loop
+          _ := match elt
+              case Absyn.PUBLIC(contents = elts)
+                algorithm
+                  lst1 := getComponentsInElementitems(elts);
+                  res := List.append_reverse(lst1, res);
+                then ();
+              else ();
+            end match;
+        end for;
+        res := Dangerous.listReverseInPlace(res);
       then
         res;
 
     // adrpo: handle also the case model extends X end X;
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elts) :: lst),ann = ann,comment = cmt),
-                      info = file_info)) // Search in public list
-      equation
-        lst1 = getPublicComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
-        lst2 = getComponentsInElementitems(elts);
-        res = listAppend(lst2, lst1);
-      then
-        res;
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann = ann,comment = cmt),
-                      info = file_info))
-      equation
-        res = getPublicComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = lst)))
+      algorithm
+        res := {};
+        for elt in lst loop
+          _ := match elt
+              case Absyn.PUBLIC(contents = elts)
+                algorithm
+                  lst1 := getComponentsInElementitems(elts);
+                  res := List.append_reverse(lst1, res);
+                then ();
+              else ();
+            end match;
+        end for;
+        res := Dangerous.listReverseInPlace(res);
       then
         res;
 
     else {};
-  end matchcontinue;
+  end match;
 end getPublicComponentsInClass;
 
 public function getProtectedComponentsInClass
@@ -13538,88 +13532,71 @@ public function getProtectedComponentsInClass
   output list<Absyn.Element> outAbsynElementLst;
 algorithm
   outAbsynElementLst:=
-  matchcontinue (inClass)
+  match (inClass)
     local
-      String a;
-      Boolean b,c,d;
-      Absyn.Restriction e;
-      Option<String> cmt;
-      list<Absyn.Element> lst1,lst2,res;
+      list<Absyn.Element> lst1,res;
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> lst;
-      SourceInfo file_info;
-      list<Absyn.Annotation> ann;
 
-    case (Absyn.CLASS(
-                      body = Absyn.PARTS(classParts = {}))) then {};
-
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elts) :: lst),ann = ann,comment = cmt),
-                      info = file_info)) // Search in protected list
-      equation
-        lst1 = getProtectedComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
-        lst2 = getComponentsInElementitems(elts);
-        res = listAppend(lst2, lst1);
-      then
-        res;
-
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (_ :: lst),ann = ann,comment = cmt),
-                      info = file_info))
-      equation
-        res = getProtectedComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then {};
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = lst)))
+      algorithm
+        res := {};
+        for elt in lst loop
+          _ := match elt
+              case Absyn.PROTECTED(contents = elts)
+                algorithm
+                  lst1 := getComponentsInElementitems(elts);
+                  res := List.append_reverse(lst1, res);
+                then ();
+              else ();
+            end match;
+        end for;
+        res := Dangerous.listReverseInPlace(res);
       then
         res;
 
     // adrpo: handle also the case model extends X end X;
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
-
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elts) :: lst),ann = ann,comment = cmt),
-                      info = file_info)) /* Search in protected list */
-      equation
-        lst1 = getProtectedComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
-        lst2 = getComponentsInElementitems(elts);
-        res = listAppend(lst2, lst1);
-      then
-        res;
-
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann = ann,comment = cmt),
-                      info = file_info))
-      equation
-        res = getProtectedComponentsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = lst)))
+      algorithm
+        res := {};
+        for elt in lst loop
+          _ := match elt
+              case Absyn.PROTECTED(contents = elts)
+                algorithm
+                  lst1 := getComponentsInElementitems(elts);
+                  res := List.append_reverse(lst1, res);
+                then ();
+              else ();
+            end match;
+        end for;
+        res := Dangerous.listReverseInPlace(res);
       then
         res;
 
     else {};
-
-  end matchcontinue;
+  end match;
 end getProtectedComponentsInClass;
 
 protected function getComponentsInElementitems
 "Helper function to getComponentsInClass."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output list<Absyn.Element> outAbsynElementLst;
+  output list<Absyn.Element> outAbsynElementLst = {};
 algorithm
-  outAbsynElementLst:=
-  match (inAbsynElementItemLst)
-    local
-      list<Absyn.Element> res;
-      Absyn.Element elt;
-      list<Absyn.ElementItem> rest;
-    case ({}) then {};
-    case ((Absyn.ELEMENTITEM(element = elt) :: rest))
-      equation
-        res = getComponentsInElementitems(rest);
-      then
-        (elt :: res);
-    case ((_ :: rest))
-      equation
-        res = getComponentsInElementitems(rest);
-      then
-        res;
-  end match;
+  for el in inAbsynElementItemLst loop
+    _ := match (el)
+        local
+          Absyn.Element elt;
+        case Absyn.ELEMENTITEM(element = elt)
+          algorithm
+            outAbsynElementLst := elt :: outAbsynElementLst;
+          then ();
+
+        else ();
+      end match;
+  end for;
+  outAbsynElementLst := Dangerous.listReverseInPlace(outAbsynElementLst);
 end getComponentsInElementitems;
 
 protected function getNthComponentInClass
@@ -13756,13 +13733,13 @@ algorithm
 end getNthComponentInClass;
 
 protected function getNthComponentInElementitems
-" This function takes an ElementItem list and and integer
+" This function takes an ElementItem list and an integer
    and returns the nth component in the list, indexed from 1..n."
   input list<Absyn.ElementItem> inElements;
   input Integer inInteger;
   output Absyn.Element outElement;
 algorithm
-  outElement:= matchcontinue (inElements, inInteger)
+  outElement:= match (inElements, inInteger)
     local
       Boolean a;
       Option<Absyn.RedeclareKeywords> b;
@@ -13805,7 +13782,7 @@ algorithm
 
     case ({},_) then fail();
 
-  end matchcontinue;
+  end match;
 end getNthComponentInElementitems;
 
 protected function getComponentInfo
