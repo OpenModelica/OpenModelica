@@ -3518,7 +3518,7 @@ algorithm
 end getIncidenceMatrixfromOption;
 
 public function getIncidenceMatrix "this function returns the incidence matrix,
-  if the system contains multidimensional equations and the scalare one is needed us getIncidenceMatrixScalar"
+  if the system contains multidimensional equations and the scalar one is needed use getIncidenceMatrixScalar"
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.IndexType inIndxType;
   input Option<DAE.FunctionTree> functionTree;
@@ -6875,7 +6875,7 @@ algorithm
   // do state selection
   BackendDAE.DAE(systs,shared) := stateDeselectionDAE(causalized,outDAE,args,stateDeselection);
   // sort assigned equations to blt form
-  systs := mapSortEqnsDAE(systs,shared,{});
+  systs := mapSortEqnsDAE(systs,shared);
   outDAE := BackendDAE.DAE(systs,shared);
 end causalizeDAE;
 
@@ -7001,26 +7001,12 @@ end stateDeselectionDAE;
 protected function mapSortEqnsDAE "Run Tarjan's Algorithm."
   input list<BackendDAE.EqSystem> inSystem;
   input BackendDAE.Shared inShared;
-  input list<BackendDAE.EqSystem> acc;
   output list<BackendDAE.EqSystem> outSystem;
 algorithm
-  outSystem := match (inSystem)
-    local
-      BackendDAE.EqSystem syst;
-      list<BackendDAE.EqSystem> systs;
-
-    case ({})
-    then listReverse(acc);
-
-    case ((syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_::_)))::systs) equation
-      systs = mapSortEqnsDAE(systs, inShared, syst::acc);
-    then systs;
-
-    case (syst::systs) equation
-      syst = sortEqnsDAEWork(syst, inShared);
-      systs = mapSortEqnsDAE(systs, inShared, syst::acc);
-    then systs;
-  end match;
+  outSystem := list(match (syst)
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_::_))) then syst;
+    else sortEqnsDAEWork(syst, inShared);
+  end match for syst in inSystem);
 end mapSortEqnsDAE;
 
 protected function sortEqnsDAEWork "Run Tarjans Algorithm."
