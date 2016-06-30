@@ -62,7 +62,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   /*! @note Register the RecentFile, FindTextOM and DebuggerConfiguration struct in the Qt's meta system
    * Don't remove/move the following lines.
    * Because RecentFile, FindTextOM and DebuggerConfiguration structs should be registered before reading the recentFilesList, FindTextOM and
-     DebuggerConfiguration section respectively from the settings file.
+   * DebuggerConfiguration section respectively from the settings file.
    */
   qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
   qRegisterMetaTypeStreamOperators<FindTextOM>("FindTextOM");
@@ -250,18 +250,17 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   createActions();
   createToolbars();
   createMenus();
-  // Create simulation dialog
-  mpSimulationDialog = new SimulationDialog(this);
-  // Create TLM co-simulation dialog
-  mpTLMCoSimulationDialog = new TLMCoSimulationDialog(this);
+  // Create simulation dialog when needed
+  mpSimulationDialog = 0;
+  // Create TLM co-simulation dialog when needed
+  mpTLMCoSimulationDialog = 0;
   // Create an object of ModelWidgetContainer
   mpModelWidgetContainer = new ModelWidgetContainer(this);
   // Create an object of WelcomePageWidget
   mpWelcomePageWidget = new WelcomePageWidget(this);
   updateRecentFileActions();
-  // create the OMEdit About widget
-  mpAboutOMEditDialog = new AboutOMEditWidget(this);
-  mpAboutOMEditDialog->hide();
+  // create the OMEdit About widget when needed
+  mpAboutOMEditDialog = 0;
   // create an instance of InfoBar
   mpInfoBar = new InfoBar(this);
   mpInfoBar->hide();
@@ -454,8 +453,15 @@ void MainWindow::beforeClosingMainWindow()
   }
   delete mpOMCProxy;
   delete mpModelWidgetContainer;
-  delete mpSimulationDialog;
-  delete mpTLMCoSimulationDialog;
+  if (mpSimulationDialog) {
+    delete mpSimulationDialog;
+  }
+  if (mpTLMCoSimulationDialog) {
+    delete mpTLMCoSimulationDialog;
+  }
+  if (mpAboutOMEditDialog) {
+    delete mpAboutOMEditDialog;
+  }
   /* save the TransformationsWidget last window geometry and splitters state. */
   QSettings *pSettings = Utilities::getApplicationSettings();
   QHashIterator<QString, TransformationsWidget*> transformationsWidgets(mTransformationsWidgetHash);
@@ -551,6 +557,9 @@ void MainWindow::openResultFiles(QStringList fileNames)
 
 void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
 {
+  if (!mpSimulationDialog) {
+    mpSimulationDialog = new SimulationDialog(this);
+  }
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
     if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
@@ -562,6 +571,9 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
 
 void MainWindow::simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem)
 {
+  if (!mpSimulationDialog) {
+    mpSimulationDialog = new SimulationDialog(this);
+  }
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
     if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
@@ -573,6 +585,9 @@ void MainWindow::simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryT
 
 void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem)
 {
+  if (!mpSimulationDialog) {
+    mpSimulationDialog = new SimulationDialog(this);
+  }
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
     if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
@@ -584,6 +599,9 @@ void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeIt
 
 void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
 {
+  if (!mpSimulationDialog) {
+    mpSimulationDialog = new SimulationDialog(this);
+  }
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
     if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
@@ -801,6 +819,9 @@ void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem)
  */
 void MainWindow::TLMSimulate(LibraryTreeItem *pLibraryTreeItem)
 {
+  if (!mpTLMCoSimulationDialog) {
+    mpTLMCoSimulationDialog = new TLMCoSimulationDialog(this);
+  }
   /* if MetaModel text is changed manually by user then validate it before starting the TLM co-simulation. */
   if (pLibraryTreeItem->getModelWidget()) {
     if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
@@ -2029,6 +2050,9 @@ void MainWindow::openModelicaWebReference()
 
 void MainWindow::openAboutOMEdit()
 {
+  if (!mpAboutOMEditDialog) {
+    mpAboutOMEditDialog = new AboutOMEditWidget(this);
+  }
   mpAboutOMEditDialog->setGeometry(QRect(rect().center() - QPoint(262, 235), rect().center() + QPoint(262, 235)));
   mpAboutOMEditDialog->setFocus(Qt::ActiveWindowFocusReason);
   mpAboutOMEditDialog->raise();
@@ -3292,15 +3316,14 @@ void InfoBar::showMessage(QString message)
 }
 
 /*!
-  \class AboutOMEditWidget
-  \brief Creates a widget that shows the about text of OMEdit.
-
-  Information about OpenModelica Connection Editor. Shows the list of OMEdit contributors.
-  */
-
+ * \class AboutOMEditWidget
+ * \brief Creates a widget that shows the about text of OMEdit.
+ * Information about OpenModelica Connection Editor. Shows the list of OMEdit contributors.
+ */
 /*!
-  \param pParent - pointer to MainWindow
-  */
+ * \brief AboutOMEditWidget::AboutOMEditWidget
+ * \param pParent - pointer to MainWindow
+ */
 AboutOMEditWidget::AboutOMEditWidget(MainWindow *pMainWindow)
   : QWidget(pMainWindow)
 {
@@ -3379,7 +3402,7 @@ AboutOMEditWidget::AboutOMEditWidget(MainWindow *pMainWindow)
   connect(pCloseButton, SIGNAL(clicked()), SLOT(hide()));
   // set the layout
   QGridLayout *pMainLayout = new QGridLayout;
-  pMainLayout->setContentsMargins(45, 200, 45, 20);
+  pMainLayout->setContentsMargins(25, 200, 25, 20);
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(pScrollArea, 0, 0);
   pMainLayout->addWidget(pCloseButton, 1, 0, 1, 1, Qt::AlignRight);
@@ -3387,10 +3410,11 @@ AboutOMEditWidget::AboutOMEditWidget(MainWindow *pMainWindow)
 }
 
 /*!
-  Reimplementation of paintEvent.\n
-  Draws the background image.
-  \param event - pointer to QPaintEvent
-  */
+ * \brief AboutOMEditWidget::paintEvent
+ * Reimplementation of paintEvent.\n
+ * Draws the background image.
+ * \param event - pointer to QPaintEvent
+ */
 void AboutOMEditWidget::paintEvent(QPaintEvent *pEvent)
 {
   QWidget::paintEvent(pEvent);
@@ -3400,12 +3424,15 @@ void AboutOMEditWidget::paintEvent(QPaintEvent *pEvent)
 }
 
 /*!
-  Reimplementation of keyPressEvent.\n
-  Hides the widget.
-  */
+ * \brief AboutOMEditWidget::keyPressEvent
+ * Reimplementation of keyPressEvent.\n
+ * Hides the widget when ESC key is pressed.
+ * \param pEvent
+ */
 void AboutOMEditWidget::keyPressEvent(QKeyEvent *pEvent)
 {
-  if (pEvent->key() == Qt::Key_Escape)
+  if (pEvent->key() == Qt::Key_Escape) {
     hide();
+  }
   QWidget::keyPressEvent(pEvent);
 }
