@@ -1283,7 +1283,7 @@ case EXTERNAL_FUNCTION(__) then
   <<
   <fun:Assign>
     <%returnAssign%>
-    <exp:Expression>
+    <fun:Expression>
       <exp:FunctionCall>
         <exp:Name>
           <exp:QualifiedNamePart name="<%extName%>" />
@@ -1292,7 +1292,7 @@ case EXTERNAL_FUNCTION(__) then
           <%args%>
         </exp:Arguments>
       </exp:FunctionCall>
-    </exp:Expression>
+    </fun:Expression>
   </fun:Assign>
   >>
 end extFunCallCXml;
@@ -1310,7 +1310,7 @@ case EXTERNAL_FUNCTION(__) then
   <<
   <fun:Assign>
     <%returnAssign%>
-    <exp:Expression>
+    <fun:Expression>
       <exp:FunctionCall>
         <exp:Name>
           <exp:QualifiedNamePart name="<%extName%>" />
@@ -1319,7 +1319,7 @@ case EXTERNAL_FUNCTION(__) then
           <%args%>
         </exp:Arguments>
       </exp:FunctionCall>
-    </exp:Expression>
+    </fun:Expression>
   </fun:Assign>
   >>
 end extFunCallF77Xml;
