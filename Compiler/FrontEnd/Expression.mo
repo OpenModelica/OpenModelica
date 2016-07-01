@@ -694,21 +694,20 @@ a *(b+c) => a*b + a*c"
   input DAE.Exp e;
   output DAE.Exp outE;
 algorithm
-  outE := matchcontinue(e)
+  outE := match(e)
     local
       DAE.Type tp;
       DAE.Operator op;
       DAE.Exp e1,e2,e21,e22;
 
-    case(DAE.BINARY(e1,DAE.MUL(tp),e2))
+    case(DAE.BINARY(e1,DAE.MUL(tp),e2 as DAE.BINARY(e21,op,e22))) guard isAddOrSub(op)
       equation
         DAE.BINARY(e21,op,e22) = expand(e2);
-        true = isAddOrSub(op);
       then
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e21),op,DAE.BINARY(e1,DAE.MUL(tp),e22));
 
     else e;
-  end matchcontinue;
+  end match;
 end expand;
 
 public function expDer
@@ -802,7 +801,7 @@ algorithm
 end addNoEventToRelationExp;
 
 public function addNoEventToRelationsAndConds
-"Function that adds a  noEvent() call to all relations in an expression"
+"Function that adds a noEvent() call to all relations in an expression"
   input DAE.Exp e;
   output DAE.Exp outE;
 algorithm
@@ -817,14 +816,14 @@ algorithm
   outExp := match e
     local
       DAE.Exp e1,e2,e3;
-    case DAE.RELATION() then  makeNoEvent(e);
+    case DAE.RELATION() then makeNoEvent(e);
     case DAE.IFEXP(e1,e2,e3) then DAE.IFEXP(makeNoEvent(e1),e2,e3);
     else e;
   end match;
 end addNoEventToRelationandCondExp;
 
 public function addNoEventToEventTriggeringFunctions
-" Function that adds a  noEvent() call to all event triggering functions in an expression"
+" Function that adds a noEvent() call to all event triggering functions in an expression"
   input DAE.Exp e;
   output DAE.Exp outE;
 algorithm
@@ -1311,6 +1310,7 @@ algorithm
     case DAE.SUB_SCALAR_ARRAY() then true;
     case DAE.DIV_SCALAR_ARRAY() then true;
     case DAE.POW_SCALAR_ARRAY() then true;
+  else false;
   end match;
 end isScalarArrayOp;
 
@@ -2054,7 +2054,7 @@ public function subscriptDimension
   input DAE.Subscript inSubscript;
   output DAE.Dimension outDimension;
 algorithm
-  outDimension := matchcontinue(inSubscript)
+  outDimension := match(inSubscript)
     local
       Integer x;
       DAE.Exp e;
@@ -2066,14 +2066,12 @@ algorithm
 
     // Special cases for non-expanded arrays
     case DAE.WHOLE_NONEXP(exp = DAE.ICONST(x))
-      equation
-        false = Config.splitArrays();
+      guard not Config.splitArrays()
       then
         DAE.DIM_INTEGER(x);
 
     case DAE.WHOLE_NONEXP(exp=e)
-      equation
-        false = Config.splitArrays();
+      guard not Config.splitArrays()
       then
         DAE.DIM_EXP(e);
 
@@ -2085,7 +2083,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end subscriptDimension;
 
 public function arrayEltType
@@ -2131,8 +2129,7 @@ algorithm
 
     case DAE.T_TUPLE(types=typs)
       equation
-        lstInt = List.map(typs,sizeOf);
-        nr = List.reduce(lstInt, intAdd);
+        nr = List.applyAndFold(typs, intAdd, sizeOf, 0);
       then
         nr;
 /* Size of Enumeration is 1 like a Integer
@@ -2398,7 +2395,7 @@ public function getRelations
   input DAE.Exp inExp;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := matchcontinue (inExp)
+  outExpLst := match (inExp)
     local
       DAE.Exp e,e1,e2,cond,tb,fb;
       list<DAE.Exp> rellst1,rellst2,rellst,rellst3,rellst4,xs;
@@ -2460,7 +2457,7 @@ algorithm
         rellst;
 
     else {};
-  end matchcontinue;
+  end match;
 end getRelations;
 
 public function getAllCrefs "author: lochel
@@ -2494,7 +2491,7 @@ public function allTerms
   input DAE.Exp inExp;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := matchcontinue (inExp)
+  outExpLst := match (inExp)
     local
       list<DAE.Exp> f1,f2,res,f2_1;
       DAE.Exp e1,e2,e;
@@ -2677,7 +2674,7 @@ algorithm
     case (e as DAE.REDUCTION()) then {e};
 */
     else {inExp};
-  end matchcontinue;
+  end match;
 end allTerms;
 
 public function allTermsForCref
@@ -4550,8 +4547,7 @@ algorithm
     case DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)) equation
       cr = DAE.CREF_IDENT("$TMP", inType, {});
       crefs = ComponentReference.expandCref(cr, true);
-      expLst = List.map(crefs, crefExp);
-      typeLst = List.map(expLst, typeof);
+      typeLst = List.mapMap(crefs, crefExp, typeof);
       expLst = List.map(typeLst, createZeroExpression);
       varNames = List.map(varLst, varName);
       e = DAE.RECORD(path, expLst, varNames, inType);

@@ -999,7 +999,7 @@ algorithm
         // BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
         expvars = BackendDAEUtil.incidenceRowExp(exp,vars,{},NONE(),BackendDAE.NORMAL());
         // print("expvars "); BackendDump.debuglst((expvars,intString," ","\n"));
-        (expvars1::expvarseqns) = List.map1(expvars,varEqns,(pos,mT));
+        (expvars1::expvarseqns) = List.map2(expvars,varEqns,pos,mT);
         // print("expvars1 "); BackendDump.debuglst((expvars1,intString," ","\n"));;
         controleqns = getControlEqns(expvars1,expvarseqns);
         // print("controleqns "); BackendDump.debuglst((controleqns,intString," ","\n"));
@@ -1059,15 +1059,12 @@ end functionCallEqn;
 protected function varEqns
 "author Frenkel TUD 2011-04"
   input Integer v;
-  input tuple<Integer,BackendDAE.IncidenceMatrixT> inTpl;
+  input Integer pos;
+  input BackendDAE.IncidenceMatrixT mT;
   output list<Integer> outVarEqns;
 protected
-  Integer pos;
   list<Integer> vareqns,vareqns1;
-  BackendDAE.IncidenceMatrix mT;
 algorithm
-  pos := Util.tuple21(inTpl);
-  mT := Util.tuple22(inTpl);
   vareqns := mT[intAbs(v)];
   vareqns1 := List.map(vareqns, intAbs);
   outVarEqns := List.removeOnTrue(intAbs(pos),intEq,vareqns1);

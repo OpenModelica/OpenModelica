@@ -1608,7 +1608,7 @@ protected function generateStateSets
 protected
  tuple<Integer,Integer,Integer,Integer,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>> tpl;
  list<BackendDAE.Var> setVars,aVars,varJ,otherVars,stateCandidates;
- list<DAE.ComponentRef> crstates,crset;
+ list<DAE.ComponentRef> crset;
  DAE.ComponentRef crA,set,crJ;
  DAE.Type tp, tyExpCrStates;
  Integer rang,nStates,nStateCandidates,nUnassignedEquations,setIndex,level;
@@ -1633,8 +1633,7 @@ algorithm
      // add Equations
      // set.x = set.A*set.statecandidates
      // der(set.x) = set.A*der(set.candidates)
-     crstates := List.map(stateCandidates,BackendVariable.varCref);
-     expcrstates := List.map(crstates,Expression.crefExp);
+     expcrstates := List.map(stateCandidates,BackendVariable.varExp);
      expcrstatesstart := List.map(expcrstates,makeStartExp);
      expcrdstates := List.map(expcrstates,makeder);
      expcrset := List.map(crset,Expression.crefExp);

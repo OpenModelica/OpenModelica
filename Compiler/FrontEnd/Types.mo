@@ -1194,8 +1194,7 @@ algorithm
 
     case Values.META_TUPLE(valueLst = vs)
       equation
-        ts = List.map(vs, typeOfValue);
-        ts = List.map(ts, boxIfUnboxedType);
+        ts = List.mapMap(vs, typeOfValue, boxIfUnboxedType);
       then
         DAE.T_METATUPLE(ts,DAE.emptyTypeSource);
 
@@ -5497,8 +5496,7 @@ algorithm
 
     case DAE.T_FUNCTION(funcArg = fargs,funcResultType = ty)
       equation
-        tys = List.map(fargs, funcArgType);
-        explists = List.map(tys, getAllExps);
+        explists = List.mapMap(fargs, funcArgType, getAllExps);
         tyexps = getAllExps(ty);
         exps = List.flatten((tyexps :: explists));
       then
@@ -5669,8 +5667,7 @@ algorithm
 
     case DAE.T_METATUPLE()
       equation
-        tys = List.map(ity.types, unboxedType);
-        tys = List.map(tys, boxIfUnboxedType);
+        tys = List.mapMap(ity.types, unboxedType, boxIfUnboxedType);
       then
         DAE.T_METATUPLE(tys,DAE.emptyTypeSource);
 
@@ -7308,8 +7305,7 @@ algorithm
 
     case (true,DAE.T_METATUPLE(tys,_))
       equation
-        tys = List.map(tys, unboxedType);
-        tys = List.map(tys, boxIfUnboxedType);
+        tys = List.mapMap(tys, unboxedType, boxIfUnboxedType);
         tys = List.map(tys, unboxedType); // Yes. Crazy
       then (DAE.T_TUPLE(tys,NONE(),DAE.emptyTypeSource));
 
@@ -7346,8 +7342,7 @@ algorithm
 
     case (DAE.T_FUNCTION(args1,ty1,functionAttributes,ts))
       equation
-        tys1 = List.map(args1, funcArgType);
-        tys1 = List.map(tys1, unboxedType);
+        tys1 = List.mapMap(args1, funcArgType, unboxedType);
         ty1 = unboxedType(ty1);
         args1 = List.threadMap(args1,tys1,setFuncArgType);
       then (DAE.T_FUNCTION(args1,ty1,functionAttributes,ts));
