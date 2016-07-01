@@ -916,10 +916,11 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(windowTitle));
   mpMainWindow = pMainWindow;
   // instantiate the model
-  QPlainTextEdit *pPlainTextEdit = new QPlainTextEdit(informationText);
+  TextEditor *pTextEditor = new TextEditor(pMainWindow);
+  pTextEditor->setPlainText(informationText);
   if (modelicaTextHighlighter) {
     ModelicaHighlighter *pModelicaHighlighter = new ModelicaHighlighter(mpMainWindow->getOptionsDialog()->getModelicaEditorPage(),
-                                                                        pPlainTextEdit);
+                                                                        pTextEditor->getPlainTextEdit());
     Q_UNUSED(pModelicaHighlighter);
   }
   // Create the button
@@ -930,7 +931,7 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   buttonLayout->setAlignment(Qt::AlignRight);
   buttonLayout->addWidget(pOkButton);
   QVBoxLayout *mainLayout = new QVBoxLayout;
-  mainLayout->addWidget(pPlainTextEdit);
+  mainLayout->addWidget(pTextEditor);
   mainLayout->addLayout(buttonLayout);
   setLayout(mainLayout);
   pOkButton->setFocus();

@@ -119,10 +119,14 @@ bool isComment(const QString &text,
 
 }
 
-//! @class ModelicaEditor
-//! @brief An editor for Modelica Text. Subclass QPlainTextEdit
-
-//! Constructor
+/*!
+ * \class ModelicaEditor
+ * \brief An editor for Modelica Text.
+ */
+/*!
+ * \brief ModelicaEditor::ModelicaEditor
+ * \param pParent
+ */
 ModelicaEditor::ModelicaEditor(ModelWidget *pParent)
   : BaseEditor(pParent), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
 {
