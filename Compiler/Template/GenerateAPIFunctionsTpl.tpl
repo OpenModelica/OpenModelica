@@ -384,24 +384,26 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
   <<
   <%getQtInterfaceHeader(name, '<%className%>', args, res, className, false)%>
   {
+    QTime commandTime;
+    commandTime.start();
+    emit logCommand("<%replaceDotAndUnderscore(name)%>("+<%if intGt(listLength(args), 0) then commandArgs else 'QString("")'%>+")", &commandTime);
+
     <%varDecl%>
 
     try {
       MMC_TRY_TOP_INTERNAL()
 
-      QTime commandTime;
-      commandTime.start();
-      emit logCommand("<%replaceDotAndUnderscore(name)%>("+<%if intGt(listLength(args), 0) then commandArgs else 'QString("")'%>+")", &commandTime);
       st = omc_OpenModelicaScriptingAPI_<%replaceDotAndUnderscore(name)%>(threadData, st<%inArgs%><%outArgs%>);
       <%postCall%>
-      QString responseLog;
-      <%responseLog%>
-      emit logResponse(responseLog, &commandTime);
 
       MMC_CATCH_TOP()
     } catch(std::exception &exception) {
       emit throwException(QString("<%replaceDotAndUnderscore(name)%> failed. %1").arg(exception.what()));
     }
+
+    QString responseLog;
+    <%responseLog%>
+    emit logResponse(responseLog, &commandTime);
 
     <%if outArgs then "return result;"%>
   }
