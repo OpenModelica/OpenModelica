@@ -94,6 +94,8 @@ public:
   QCheckBox* getCaseSensitiveCheckBox() {return mpCaseSensitiveCheckBox;}
   QPushButton* getExpandAllButton() {return mpExpandAllButton;}
   QPushButton* getCollapseAllButton() {return mpCollapseAllButton;}
+
+  bool eventFilter(QObject *pObject, QEvent *pEvent);
 private:
   QLineEdit *mpSearchTextBox;
   QToolButton *mpShowHideButton;

@@ -58,6 +58,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
 {
   // create the search text box
   mpSearchTextBox = new QLineEdit;
+  mpSearchTextBox->installEventFilter(this);
   // show hide button
   mpShowHideButton = new QToolButton;
   QString text = tr("Show/hide filters");
@@ -103,6 +104,29 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   pMainLayout->addWidget(mpShowHideButton, 0, 1);
   pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 2);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief TreeSearchFilters::eventFilter
+ * Handles the ESC key press for search text box
+ * \param pObject
+ * \param pEvent
+ * \return
+ */
+bool TreeSearchFilters::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+  /* Ticket #3987
+   * Clear contents of search field by clicking ESC key.
+   */
+  QLineEdit *pSearchTextBox = qobject_cast<QLineEdit*>(pObject);
+  if (pSearchTextBox && pEvent->type() == QEvent::KeyPress) {
+    QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
+    if (pKeyEvent && pKeyEvent->key() == Qt::Key_Escape) {
+      pSearchTextBox->clear();
+      return true;
+    }
+  }
+  return QWidget::eventFilter(pObject, pEvent);
 }
 
 void TreeSearchFilters::showHideFilters(bool On)
