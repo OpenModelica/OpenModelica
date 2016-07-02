@@ -170,9 +170,11 @@ algorithm
       BackendDump.printBackendDAE(initdae);
     end if;
 
-    (systs, shared) := BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
-    initdae := BackendDAE.DAE(systs, shared);
-    execStat("partitionIndependentBlocks (initialization)");
+    if Flags.isSet(Flags.PARTITION_INITIALIZATION) then
+      (systs, shared) := BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
+      initdae := BackendDAE.DAE(systs, shared);
+      execStat("partitionIndependentBlocks (initialization)");
+    end if;
 
     if Flags.isSet(Flags.OPT_DAE_DUMP) then
       print(stringAppendList({"\npartitioned initial system:\n\n"}));
