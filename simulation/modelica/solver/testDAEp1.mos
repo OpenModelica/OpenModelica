@@ -15,8 +15,9 @@ val(y,0.0);
 val(x,1.0);
 val(y,1.0);
 
-setCommandLineOptions("+daeMode");
-simulate(testDAE.p1, simflags="-daeMode");
+setCommandLineOptions("+daeMode=all");
+
+simulate(testDAE.p1, simflags="-daeMode", method="ida");
 getErrorString();
 
 val(x,0.0);
@@ -24,6 +25,8 @@ val(y,0.0);
 
 val(x,1.0);
 val(y,1.0);
+
+setCommandLineOptions("+daeMode=dynamic");
 
 simulate(testDAE.p1, simflags="-daeMode", method="ida");
 getErrorString();
@@ -53,15 +56,16 @@ val(y,1.0);
 // true
 // record SimulationResult
 //     resultFile = "testDAE.p1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testDAE.p1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // 0.0
 // 1.0
-// 0.4596999465126551
-// 0.4056181325701388
+// 0.459699946509931
+// 0.4056181325367908
+// true
 // record SimulationResult
 //     resultFile = "testDAE.p1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
@@ -72,5 +76,5 @@ val(y,1.0);
 // 0.0
 // 1.0
 // 0.459699946509931
-// 0.4056181325368085
+// 0.4056181325367908
 // endResult

@@ -6,14 +6,24 @@
 loadModel(Modelica,{"3.2.1"});
 getErrorString();
 
-setCommandLineOptions("+daeMode");
-simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, method="ida", simflags="-daeMode -idaSupressAlg");
+setCommandLineOptions("--daeMode=dynamic");
+simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, method="ida", simflags="-daeMode");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat",
   "NPendulum_diff.csv",0.01,0.0001,
   { "evaporator.p", "evaporator.V_l", "controller.x", "temperature.T"});
+
+setCommandLineOptions("--daeMode=all");
+simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, method="ida", simflags="-daeMode");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat",
+  "NPendulum_diff.csv",0.01,0.0001,
+  { "evaporator.p", "evaporator.V_l", "controller.x", "temperature.T"});
+
 
 
 // Result:
@@ -23,49 +33,19 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.
 // record SimulationResult
 //     resultFile = "Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
-//     messages = "assert            | warning | The following assertion has been violated at time 950.400000
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
+//     messages = "assert            | warning | The following assertion has been violated at time 1080.000000
 // |                 | |       | SteamValve.opening >= 0.0 and SteamValve.opening <= 1.0
-// assert            | warning | Variable SteamValve.opening out of [min, max] interval: SteamValve.opening >= 0.0 and SteamValve.opening <= 1.0 has value: 1
+// assert            | warning | Variable violating min/max constraint: 0.0 <= SteamValve.opening <= 1.0, has value: 1
 // "
 // end SimulationResult;
-// "Warning: Alias set with several free start values
-//  * candidate: evaporator.p(start = evaporator.p_start)
-//  * candidate: evaporator.port_b.p(start = 5000000.0)
-//  * candidate: temperature.port.p(start = 5000000.0)
-//  * candidate: pressure.port.p(start = 5000000.0)
-//  * candidate: massFlowRate.port_a.p(start = 5000000.0)
-//  * candidate: massFlowRate.port_b.p(start = 5000000.0)
-//  * candidate: SteamValve.port_a.p(start = 5000000.0)
-//  * candidate: SteamValve.state_a.p(start = 5000000.0)
-//  * candidate: evaporator.port_a.p(start = 5000000.0)
-//  * candidate: pump.ports[1].p(start = 5000000.0)
-//  * candidate: pump.medium.state.p(start = 5000000.0)
-//  * candidate: pump.medium.sat.psat(start = 5000000.0)
-//  * candidate: evaporator.sat.psat(start = 5000000.0)
-// => select value from evaporator.p(start = evaporator.p_start) for variable: evaporator.p
-// Warning: Alias set with different nominal values
-//  * candidate: evaporator.sat.psat(nominal = 1000000.0)
-//  * candidate: pump.medium.sat.psat(nominal = 1000000.0)
-//  * candidate: pump.medium.state.p(nominal = 1000000.0)
-//  * candidate: pump.medium.p(nominal = 100000.0)
-//  * candidate: pump.ports[1].p(nominal = 1000000.0)
-//  * candidate: evaporator.port_a.p(nominal = 1000000.0)
-//  * candidate: SteamValve.state_a.p(nominal = 1000000.0)
-//  * candidate: SteamValve.port_a.p(nominal = 1000000.0)
-//  * candidate: massFlowRate.port_b.p(nominal = 1000000.0)
-//  * candidate: massFlowRate.port_a.p(nominal = 1000000.0)
-//  * candidate: pressure.port.p(nominal = 1000000.0)
-//  * candidate: temperature.port.p(nominal = 1000000.0)
-//  * candidate: evaporator.port_b.p(nominal = 1000000.0)
-//  * candidate: evaporator.p(nominal = 1000000.0)
-// => select value from evaporator.p(nominal = 1000000.0) for variable: evaporator.p
-// Warning: Alias set with different nominal values
-//  * candidate: furnace.port.T(nominal = 300.0)
-//  * candidate: evaporator.heatPort.T(nominal = 300.0)
-//  * candidate: evaporator.sat.Tsat(nominal = 500.0)
-//  * candidate: evaporator.T(nominal = 500.0)
-//  * candidate: evaporator.T_D(nominal = 500.0)
-// => select value from evaporator.T_D(nominal = 500.0) for variable: evaporator.T_D
-// "
+// ""
 // {"Files Equal!"}
 // endResult

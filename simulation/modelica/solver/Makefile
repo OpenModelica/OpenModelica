@@ -44,7 +44,7 @@ Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
-.PHONY : test testDAE clean getdeps
+.PHONY : test clean getdeps
 
 test:
 	@echo
@@ -52,7 +52,7 @@ test:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	rm -rf externalInput.csv
-	@$(TEST) $(TESTFILES)
+	@$(TEST) $(TESTFILES) $(DAETESTFILES)
 
 testDAE:
 	@echo
