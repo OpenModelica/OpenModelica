@@ -286,6 +286,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
 
   modelica_real residualError;         /* not used */
   modelica_boolean solved;             /* 1: solved in current step - else not */
+  modelica_real lastTimeSolved;         /* save last successful solved point in time */
 
   /* statistics */
   unsigned long numberOfCall;           /* number of solving calls of this system */

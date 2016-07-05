@@ -372,6 +372,8 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     /* allocate value list*/
     nonlinsys[i].oldValueList = (void*) allocValueList(1);
 
+    nonlinsys[i].lastTimeSolved = 0.0;
+
     nonlinsys[i].nominal = (double*) malloc(size*sizeof(double));
     nonlinsys[i].min = (double*) malloc(size*sizeof(double));
     nonlinsys[i].max = (double*) malloc(size*sizeof(double));
@@ -610,6 +612,7 @@ int updateInitialGuessDB(NONLINEAR_SYSTEM_DATA *nonlinsys, double time, int cont
     }
   }
   messageClose(LOG_NLS_EXTRAPOLATE);
+  return 0;
 }
 
 /*! \fn updateInnerEquation
@@ -684,12 +687,21 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   data->simulationInfo->noThrowDivZero = 1;
   ((DATA*)data)->simulationInfo->solveContinuous = 1;
 
-  /* performace measuremeant */
+  /* performance measurement */
   rt_ext_tp_tick(&nonlinsys->totalTimeClock);
 
   /* grab the initial guess */
   infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "############ Start new iteration for system %d at time at %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
-  getInitialGuess(nonlinsys, data->localData[0]->timeValue);
+  /* if last solving is too long ago use just old values  */
+  if (fabs(data->localData[0]->timeValue - nonlinsys->lastTimeSolved) < 5*data->simulationInfo->stepSize)
+  {
+    getInitialGuess(nonlinsys, data->localData[0]->timeValue);
+  }
+  else
+  {
+    nonlinsys->getIterationVars(data, nonlinsys->nlsx);
+    memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
+  }
 
   /* update non continuous */
   if (data->simulationInfo->discreteCall)
@@ -770,16 +782,21 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
   /* update value list database */
   updateInitialGuessDB(nonlinsys, data->localData[0]->timeValue, data->simulationInfo->currentContext);
+  if (nonlinsys->solved == 1)
+  {
+    nonlinsys->lastTimeSolved = data->localData[0]->timeValue;
+  }
+
 
   /* enable to avoid division by zero */
   data->simulationInfo->noThrowDivZero = 0;
   ((DATA*)data)->simulationInfo->solveContinuous = 0;
 
-  /* performace measuremeant and statistics */
+  /* performance measurement and statistics */
   nonlinsys->totalTime += rt_ext_tp_tock(&(nonlinsys->totalTimeClock));
   nonlinsys->numberOfCall++;
 
-  /* write csv file for debuging */
+  /* write csv file for debugging */
 #if !defined(OMC_MINIMAL_RUNTIME)
   if (data->simulationInfo->nlsCsvInfomation)
   {
