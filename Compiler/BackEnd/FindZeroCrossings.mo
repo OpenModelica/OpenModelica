@@ -56,6 +56,7 @@ protected import ExpressionDump;
 protected import Flags;
 protected import HashTableExpToIndex;
 protected import List;
+protected import MetaModelica.Dangerous;
 protected import SynchronousFeatures;
 protected import Util;
 
@@ -870,8 +871,7 @@ algorithm
 
     case (DAE.CALL(path=Absyn.IDENT(name="sample")), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), tp1 as (eq_count, _, _))) equation
       zc = createZeroCrossing(inExp, {eq_count});
-      samples = listAppend(samples, {zc});
-      samples = mergeZeroCrossings(samples);
+      samples = mergeZeroCrossings(zc, samples);
       //itmp = (listLength(zc_lst)-listLength(zeroCrossings));
       //indx = indx + (listLength(zc_lst) - listLength(zeroCrossings));
       if Flags.isSet(Flags.RELIDX) then
@@ -1451,19 +1451,30 @@ protected function mergeZeroCrossings "
   Takes a list of zero crossings and if more than one have identical
   function expressions they are merged into one zerocrossing.
   In the resulting list all zerocrossing have uniq function expressions."
-  input list<BackendDAE.ZeroCrossing> inZeroCrossingLst;
-  output list<BackendDAE.ZeroCrossing> outZeroCrossingLst = {};
+  input BackendDAE.ZeroCrossing newZc;
+  input output list<BackendDAE.ZeroCrossing> zcs;
 protected
-  list<BackendDAE.ZeroCrossing> diff = inZeroCrossingLst, samezc;
-  BackendDAE.ZeroCrossing zc, same_1;
+  Integer matches;
+  list<BackendDAE.ZeroCrossing> samezc, diff;
+  BackendDAE.ZeroCrossing zc1, same_1;
 algorithm
-  while not listEmpty(diff) loop
-    zc::diff := diff;
-    (samezc, diff) := List.split1OnTrue(diff, zcEqual, zc);
-    same_1 := List.fold(samezc, mergeZeroCrossing, zc);
-    outZeroCrossingLst := same_1::outZeroCrossingLst;
-  end while;
-  listReverse(outZeroCrossingLst);
+  matches := sum(if zcEqual(zc, newZc) then 1 else 0 for zc in zcs);
+  if matches == 0 then
+    zcs := newZc :: zcs;
+  elseif matches == 1 then
+    zcs := list(if zcEqual(zc, newZc) then mergeZeroCrossing(zc,newZc) else zc for zc in zcs);
+  else
+    // Multiple matches, for some reason
+    diff := zcs;
+    zcs := {};
+    while not listEmpty(diff) loop
+      zc1::diff := diff;
+      (samezc, diff) := List.split1OnTrue(diff, zcEqual, zc1);
+      same_1 := List.fold(samezc, mergeZeroCrossing, zc1);
+      zcs := same_1::zcs;
+    end while;
+    zcs := Dangerous.listReverseInPlace(zcs);
+  end if;
 end mergeZeroCrossings;
 
 protected function mergeZeroCrossing "
