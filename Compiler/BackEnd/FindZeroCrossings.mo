@@ -37,28 +37,31 @@ encapsulated package FindZeroCrossings
 
 "
 
-public import Absyn;
-public import BackendDAE;
-public import DAE;
-public import FCore;
+import Absyn;
+import BackendDAE;
+import DAE;
+import FCore;
 
-protected import BackendDAEOptimize;
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import CheckModel;
-protected import ComponentReference;
-protected import DAEDump;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import Flags;
-protected import HashTableExpToIndex;
-protected import List;
-protected import MetaModelica.Dangerous;
-protected import SynchronousFeatures;
-protected import Util;
+protected
+import BackendDAEOptimize;
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVariable;
+import CheckModel;
+import ComponentReference;
+import DAEDump;
+import Error;
+import Expression;
+import ExpressionDump;
+import Flags;
+import HashTableExpToIndex;
+import List;
+import MetaModelica.Dangerous;
+import SynchronousFeatures;
+import Util;
+
+type ZCArgType = tuple<tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>;
 
 // =============================================================================
 // section for preOptModule >>encapsulateWhenConditions<<
@@ -220,7 +223,7 @@ protected function encapsulateWhenConditions_Equations "author: lochel"
   output Integer outIndex;
   output HashTableExpToIndex.HashTable outHT;
 algorithm
-  (outWhenEquation, outVars, outEqns, outIndex, outHT) := matchcontinue(inWhenEquation)
+  (outWhenEquation, outVars, outEqns, outIndex, outHT) := match (inWhenEquation)
     local
       Integer index;
       BackendDAE.WhenEquation elsewhenPart, whenEquation;
@@ -253,7 +256,7 @@ algorithm
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_Equations failed"});
     then fail();
-  end matchcontinue;
+  end match;
 end encapsulateWhenConditions_Equations;
 
 protected function encapsulateWhenConditions_Equations1 "author: lochel"
@@ -267,7 +270,7 @@ protected function encapsulateWhenConditions_Equations1 "author: lochel"
   output Integer outIndex;
   output HashTableExpToIndex.HashTable outHT;
 algorithm
-  (outCondition, outVars, outEqns, outIndex, outHT) := matchcontinue(inCondition)
+  (outCondition, outVars, outEqns, outIndex, outHT) := match(inCondition)
     local
       Integer index, localIndex;
       BackendDAE.Var var;
@@ -287,40 +290,42 @@ algorithm
 
     // we do not replace initial()
     case DAE.CALL(path=Absyn.IDENT(name="initial"))
-    then (inCondition, {}, {}, inIndex, inHT);
+      then (inCondition, {}, {}, inIndex, inHT);
 
     // we do not replace constant expressions
-    case _ guard(Expression.isConst(inCondition)) equation
-    then (inCondition, {}, {}, inIndex, inHT);
+    case _
+      guard Expression.isConst(inCondition)
+      then (inCondition, {}, {}, inIndex, inHT);
 
     // array-condition
-    case DAE.ARRAY(ty=ty, scalar=scalar, array=array) equation
-      (array, vars, eqns, index, ht) = encapsulateWhenConditions_EquationsWithArrayConditions(array, inSource, inIndex, inHT);
-    then (DAE.ARRAY(ty, scalar, array), vars, eqns, index, ht);
+    case DAE.ARRAY(ty=ty, scalar=scalar, array=array)
+      equation
+        (array, vars, eqns, index, ht) = encapsulateWhenConditions_EquationsWithArrayConditions(array, inSource, inIndex, inHT);
+      then (DAE.ARRAY(ty, scalar, array), vars, eqns, index, ht);
 
     // simple condition [already in ht]
-    case _ equation
-      localIndex = BaseHashTable.get(inCondition, inHT);
-      crStr = "$whenCondition" + intString(localIndex);
-      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
-    then (condition, {}, {}, inIndex, inHT);
+    case _
+      guard BaseHashTable.hasKey(inCondition, inHT)
+      equation
+        localIndex = BaseHashTable.get(inCondition, inHT);
+        crStr = "$whenCondition" + intString(localIndex);
+        condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+      then (condition, {}, {}, inIndex, inHT);
 
     // simple condition [not yet in ht]
-    case _ equation
-      ht = BaseHashTable.add((inCondition, inIndex), inHT);
-      crStr = "$whenCondition" + intString(inIndex);
+    else
+      algorithm
+        ht := BaseHashTable.add((inCondition, inIndex), inHT);
+        crStr := "$whenCondition" + intString(inIndex);
 
-      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
-      var = BackendVariable.setVarFixed(var, true);
-      eqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), inCondition, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+        var := BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+        var := BackendVariable.setVarFixed(var, true);
+        eqn := BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), inCondition, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
 
-      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
-    then (condition, {var}, {eqn}, inIndex+1, ht);
+        condition := DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+      then (condition, {var}, {eqn}, inIndex+1, ht);
 
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_Equations1 failed"});
-    then fail();
-  end matchcontinue;
+  end match;
 end encapsulateWhenConditions_Equations1;
 
 protected function encapsulateWhenConditions_EquationsWithArrayConditions "author: lochel"
@@ -334,7 +339,7 @@ protected function encapsulateWhenConditions_EquationsWithArrayConditions "autho
   output Integer outIndex;
   output HashTableExpToIndex.HashTable outHT;
 algorithm
-  (outConditionList, outVars, outEqns, outIndex, outHT) := matchcontinue(inConditionList)
+  (outConditionList, outVars, outEqns, outIndex, outHT) := match inConditionList
     local
       Integer index;
       list<BackendDAE.Var> vars1, vars2;
@@ -358,7 +363,7 @@ algorithm
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_EquationsWithArrayConditions failed"});
     then fail();
-  end matchcontinue;
+  end match;
 end encapsulateWhenConditions_EquationsWithArrayConditions;
 
 protected function encapsulateWhenConditions_Algorithms "author: lochel"
@@ -370,7 +375,7 @@ protected function encapsulateWhenConditions_Algorithms "author: lochel"
   output list<BackendDAE.Var> outVars;
   output Integer outIndex;
 algorithm
-  (outStmts, outPreStmts, outVars, outIndex) := matchcontinue(inStmts)
+  (outStmts, outPreStmts, outVars, outIndex) := matchcontinue inStmts
     local
       DAE.Exp condition;
       DAE.Statement stmt, elseWhen;
@@ -384,28 +389,22 @@ algorithm
     case {}
     then ({}, {}, inVars, inIndex);
 
-    // when statement (without outputs)
-    case DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=NONE(), source=source)::rest equation
-      (condition, vars, preStmts, index) = encapsulateWhenConditions_Algorithms1(condition, source, inIndex);
-      (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
-      vars = listAppend(vars, inVars);
-
-      {} = CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)}, DAE.EXPAND());
-
-      (stmts, preStmts2, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
-      preStmts = listAppend(preStmts, preStmts2);
-      stmts_ = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)::stmts;
-    then (stmts_, preStmts, vars, index);
-
     // when statement
     case DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=NONE(), source=source)::rest equation
       (condition, vars, preStmts, index) = encapsulateWhenConditions_Algorithms1(condition, source, inIndex);
       (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
       vars = listAppend(vars, inVars);
 
-      (stmts, stmts_, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
-      stmts_ = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)::stmts_;
-      stmts_ = listAppend(stmts_, stmts);
+      if listEmpty(CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)}, DAE.EXPAND())) then
+        // without outputs
+        (stmts, preStmts2, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
+        preStmts = listAppend(preStmts, preStmts2);
+        stmts_ = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)::stmts;
+      else
+        (stmts, stmts_, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
+        stmts_ = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)::stmts_;
+        stmts_ = listAppend(stmts_, stmts);
+      end if;
     then (stmts_, preStmts, vars, index);
 
     // when - elsewhen statement (without outputs)
@@ -461,7 +460,7 @@ protected function encapsulateWhenConditions_Algorithms1 "author: lochel"
   output list<DAE.Statement> outStmts;
   output Integer outIndex;
 algorithm
-  (outCondition, outVars, outStmts, outIndex) := matchcontinue(inCondition)
+  (outCondition, outVars, outStmts, outIndex) := match inCondition
     local
       Integer index;
       BackendDAE.Var var;
@@ -515,7 +514,7 @@ algorithm
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_Algorithms1 failed"});
     then fail();
-  end matchcontinue;
+  end match;
 end encapsulateWhenConditions_Algorithms1;
 
 protected function encapsulateWhenConditions_AlgorithmsWithArrayConditions "author: lochel"
@@ -527,7 +526,7 @@ protected function encapsulateWhenConditions_AlgorithmsWithArrayConditions "auth
   output list<DAE.Statement> outStmts;
   output Integer outIndex;
 algorithm
-  (outConditionList, outVars, outStmts, outIndex) := matchcontinue(inConditionList)
+  (outConditionList, outVars, outStmts, outIndex) := match inConditionList
     local
       Integer index;
       list<BackendDAE.Var> vars1, vars2;
@@ -549,7 +548,7 @@ algorithm
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_AlgorithmsWithArrayConditions failed"});
     then fail();
-  end matchcontinue;
+  end match;
 end encapsulateWhenConditions_AlgorithmsWithArrayConditions;
 
 
@@ -846,10 +845,10 @@ end findZeroCrossings3;
 protected function collectZC
   "Collects zero crossings in equations"
   input DAE.Exp inExp;
-  input tuple<tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> inTpl;
+  input ZCArgType inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> outTpl;
+  output ZCArgType outTpl;
 algorithm
   (outExp,cont,outTpl) := match (inExp, inTpl)
     local
@@ -1426,38 +1425,31 @@ protected
   list<BackendDAE.ZeroCrossing> duplicate;
 algorithm
   duplicate := List.select1(inZeroCrossings, zcEqual, inZeroCrossing);
-  (outRelation, outZeroCrossings, outIndex) := matchcontinue (inRelation)
+  (outRelation, outZeroCrossings, outIndex) := match (inRelation, duplicate)
     local
       DAE.Exp relation, e1, e2;
       DAE.Operator op;
       BackendDAE.ZeroCrossing newZeroCrossing;
       list<BackendDAE.ZeroCrossing> zcLst;
 
-    case DAE.RELATION() equation
-      {} = duplicate;
-      zcLst = listAppend(inZeroCrossings, {inZeroCrossing});
-    then (inRelation, zcLst, inIndex+1);
+    case (DAE.RELATION(), {})
+    then (inRelation, listAppend(inZeroCrossings, {inZeroCrossing}), inIndex+1);
 
     // math function with one argument and index
-    case DAE.CALL(expLst={_, _}) equation
-      {} = duplicate;
-      zcLst = listAppend(inZeroCrossings, {inZeroCrossing});
-    then (inRelation, zcLst, inIndex+1);
+    case (DAE.CALL(expLst={_, _}), {}) equation
+    then (inRelation, listAppend(inZeroCrossings, {inZeroCrossing}), inIndex+1);
 
     // math function with two arguments and index
-    case DAE.CALL(expLst={_, _, _}) equation
-      {} = duplicate;
-      zcLst = listAppend(inZeroCrossings, {inZeroCrossing});
-    then (inRelation, zcLst, inIndex+2);
+    case (DAE.CALL(expLst={_, _, _}), {})
+    then (inRelation, listAppend(inZeroCrossings, {inZeroCrossing}), inIndex+2);
 
-    case _ equation
-      BackendDAE.ZERO_CROSSING(relation_=relation)::_ = duplicate;
-    then (relation, inZeroCrossings, inIndex);
+    case (_, BackendDAE.ZERO_CROSSING(relation_=relation)::_)
+      then (relation, inZeroCrossings, inIndex);
 
     else equation
       Error.addInternalError("function zcIndex failed for: " + ExpressionDump.printExpStr(inRelation), sourceInfo());
     then fail();
-  end matchcontinue;
+  end match;
 end zcIndex;
 
 protected function mergeZeroCrossings "
@@ -1770,7 +1762,7 @@ protected function traverseStmtsForExps "modified: 2011-01 by wbraun
   output list<DAE.Statement> outStatements;
   output tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> outTpl;
 algorithm
-  (outStatements, outTpl) := matchcontinue (inExplst, inExtraArg)
+  (outStatements, outTpl) := match (inExplst, inExtraArg)
     local
       list<DAE.Statement> statementLst;
       tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer> tpl2;
@@ -1787,7 +1779,7 @@ algorithm
     else equation
       Error.addInternalError("function traverseStmtsForExps failed", sourceInfo());
     then fail();
-  end matchcontinue;
+  end match;
 end traverseStmtsForExps;
 
 protected function createZeroCrossings "
