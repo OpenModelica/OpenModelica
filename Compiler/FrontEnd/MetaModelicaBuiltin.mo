@@ -921,6 +921,12 @@ function listReverseInPlace<A> "O(n). A destructive listReverse. May cause segme
 external "builtin";
 end listReverseInPlace;
 
+function listSetFirst<A> "O(1). A destructive operation changing the \"first\" part of a cons-cell."
+  input list<A> inConsCell "A non-empty list";
+  input A inNewContent;
+external "builtin";
+end listSetFirst;
+
 function listSetRest<A> "O(1). A destructive operation changing the \"rest\" part of a cons-cell.
 NOTE: Make sure you do NOT create cycles as infinite lists are not handled well in the compiler."
   input list<A> inConsCell "A non-empty list";

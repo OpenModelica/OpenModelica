@@ -427,6 +427,14 @@ void boxptr_listSetRest(threadData_t *threadData, modelica_metatype cellToDestro
   MMC_CDR(cellToDestroy) = newRest;
 }
 
+void boxptr_listSetFirst(threadData_t *threadData, modelica_metatype cellToDestroy, modelica_metatype newContent)
+{
+  if (MMC_NILTEST(cellToDestroy)) {
+    MMC_THROW_INTERNAL();
+  }
+  MMC_CAR(cellToDestroy) = newContent;
+}
+
 modelica_metatype listAppend(modelica_metatype lst1,modelica_metatype lst2)
 {
   int length = 0, i = 0;

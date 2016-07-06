@@ -83,6 +83,13 @@ algorithm
   delst := LIST(arrayCreate(1,0),arrayCreate(1,{}),arrayCreate(1,{}));
 end empty;
 
+function length
+  input DoubleEndedList<T> delst;
+  output Integer length;
+algorithm
+  length := arrayGet(delst.length,1);
+end length;
+
 function pop_front
   input DoubleEndedList<T> delst;
   output T elt;
@@ -196,7 +203,7 @@ algorithm
   arrayUpdate(delst.back, 1, tail);
 end push_list_back;
 
-function toListAndClear
+impure function toListAndClear
   input DoubleEndedList<T> delst;
   input list<T> prependToList={};
   output list<T> res;
@@ -214,7 +221,14 @@ algorithm
   arrayUpdate(delst.length, 1, 0);
 end toListAndClear;
 
-function clear
+impure function toListNoCopyNoClear "Returns the working list, which may be changed later on!"
+  input DoubleEndedList<T> delst;
+  output list<T> res;
+algorithm
+  res := arrayGet(delst.front,1);
+end toListNoCopyNoClear;
+
+impure function clear
   input DoubleEndedList<T> delst;
 protected
   list<T> lst;
@@ -227,6 +241,24 @@ algorithm
     GC.free(l);
   end for;
 end clear;
+
+impure function mapNoCopy_1<ArgT1>
+  input DoubleEndedList<T> delst;
+  input MapFunc inMapFunc;
+  input ArgT1 inArg1;
+  partial function MapFunc
+    input T inElement;
+    input ArgT1 inArg1;
+    output T outElement;
+  end MapFunc;
+protected
+  list<T> lst=arrayGet(delst.front,1);
+algorithm
+  while not listEmpty(lst) loop
+    Dangerous.listSetFirst(lst, inMapFunc(listGet(lst,1), inArg1));
+    _::lst := lst;
+  end while;
+end mapNoCopy_1;
 
 annotation(__OpenModelica_Interface="util");
 end DoubleEndedList;
