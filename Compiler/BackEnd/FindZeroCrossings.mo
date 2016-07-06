@@ -375,10 +375,10 @@ protected function encapsulateWhenConditions_Algorithms "author: lochel"
   output list<BackendDAE.Var> outVars;
   output Integer outIndex;
 algorithm
-  (outStmts, outPreStmts, outVars, outIndex) := matchcontinue inStmts
+  (outStmts, outPreStmts, outVars, outIndex) := match inStmts
     local
       DAE.Exp condition;
-      DAE.Statement stmt, elseWhen;
+      DAE.Statement stmt, stmt2, elseWhen;
       list<DAE.Statement> stmts, rest, stmts1, stmts_, preStmts, preStmts2, elseWhenList;
       Integer index;
       DAE.ElementSource source;
@@ -407,36 +407,37 @@ algorithm
       end if;
     then (stmts_, preStmts, vars, index);
 
-    // when - elsewhen statement (without outputs)
-    case DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), source=source)::rest equation
-      (condition, vars, preStmts, index) = encapsulateWhenConditions_Algorithms1(condition, source, inIndex);
-      (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
-      vars = listAppend(vars, inVars);
-
-      (elseWhenList, _, vars, index) = encapsulateWhenConditions_Algorithms({elseWhen}, vars, index);
-      elseWhen = List.last(elseWhenList);
-      preStmts2 = List.stripLast(elseWhenList);
-      preStmts = listAppend(preStmts, preStmts2);
-
-      {} = CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)}, DAE.EXPAND());
-
-      (stmts, preStmts2, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
-      preStmts = listAppend(preStmts, preStmts2);
-      stmts_ = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)::stmts;
-    then (stmts_, preStmts, vars, index);
-
     // when - elsewhen statement
-    case DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), source=source)::rest equation
+    case (stmt as DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), source=source))::rest equation
       (condition, vars, preStmts, index) = encapsulateWhenConditions_Algorithms1(condition, source, inIndex);
       (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
       vars = listAppend(vars, inVars);
 
-      ({elseWhen}, preStmts2, vars, index) = encapsulateWhenConditions_Algorithms({elseWhen}, vars, index);
-      preStmts = listAppend(preStmts, preStmts2);
+      (elseWhenList, preStmts2, vars, index) = encapsulateWhenConditions_Algorithms({elseWhen}, vars, index);
+      elseWhen = List.last(elseWhenList);
 
-      (stmts, stmts_, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
-      stmts_ = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)::stmts_;
-      stmts_ = listAppend(stmts_, stmts);
+      if listEmpty(elseWhenList) then
+        (stmts, preStmts, vars, index) = encapsulateWhenConditions_Algorithms(rest, inVars, inIndex);
+        stmts_ = stmt::listAppend(preStmts, stmts);
+      else
+        elseWhen = List.last(elseWhenList);
+        stmt2 = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source);
+        if listEmpty(CheckModel.algorithmStatementListOutputs({stmt2}, DAE.EXPAND())) then
+          // without outputs
+          preStmts2 = List.stripLast(elseWhenList);
+          preStmts = listAppend(preStmts, preStmts2);
+          (stmts, preStmts2, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
+          preStmts = listAppend(preStmts, preStmts2);
+          stmts_ = stmt2::stmts;
+        elseif listLength(elseWhenList)==1 then
+          preStmts = listAppend(preStmts, preStmts2);
+          (stmts, stmts_, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
+          stmts_ = stmt2::listAppend(stmts_, stmts);
+        else
+          (stmts, preStmts, vars, index) = encapsulateWhenConditions_Algorithms(rest, inVars, inIndex);
+          stmts = listAppend(preStmts, stmts);
+        end if;
+      end if;
     then (stmts_, preStmts, vars, index);
 
     // no when statement
@@ -448,7 +449,7 @@ algorithm
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_Algorithms failed"});
     then fail();
-  end matchcontinue;
+  end match;
 end encapsulateWhenConditions_Algorithms;
 
 protected function encapsulateWhenConditions_Algorithms1 "author: lochel"
