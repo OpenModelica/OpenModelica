@@ -724,7 +724,7 @@ algorithm
     if Flags.getConfigEnum(Flags.INLINE_METHOD) == 1 then
       eqs := List.map1(eqs, BackendInline.inlineEquationSystem, tpl);
     elseif Flags.getConfigEnum(Flags.INLINE_METHOD) == 2 then
-      eqs := List.map1(eqs, inlineEquationSystemAppend, (tpl,shared));
+      eqs := List.map2(eqs, inlineEquationSystemAppend, tpl, shared);
     end if;
     if Flags.isSet(Flags.DUMPBACKENDINLINE) then
       BackendDump.dumpEqSystems(eqs, "Result DAE after Inline.");
@@ -750,22 +750,21 @@ end inlineCallsBDAE;
 
 protected function inlineEquationSystemAppend
   input BackendDAE.EqSystem eqs;
-  input tuple<Inline.Functiontuple,BackendDAE.Shared> tpl_shard;
+  input Inline.Functiontuple tpl;
+  input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem oeqs = eqs;
 protected
+  BackendDAE.Shared shared = ishared;
   BackendDAE.EqSystem new;
   Boolean inlined=true;
   BackendDAE.EquationArray eqnsArray;
-  BackendDAE.Shared shared;
-  Inline.Functiontuple tpl;
 algorithm
-  (tpl, shared) := tpl_shard;
   //inlineVariables(oeqs.orderedVars, tpl);
   (eqnsArray, new, inlined, shared) := inlineEquationArrayAppend(oeqs.orderedEqs, tpl, shared);
   //inlineEquationArray(oeqs.removedEqs, tpl);
   if inlined then
     oeqs.orderedEqs := eqnsArray;
-    new := inlineEquationSystemAppend(new, (tpl, shared));
+    new := inlineEquationSystemAppend(new, tpl, shared);
     oeqs := BackendDAEUtil.mergeEqSystems(new, oeqs);
   end if;
 end inlineEquationSystemAppend;

@@ -5336,11 +5336,11 @@ The extra argument is a tuple of the actul function to call on each subexpressio
   end FuncExpType;
 protected
   FuncExpType rel;
-  Type_a ext_arg;
+  Type_a ext_arg, ext_arg2;
 algorithm
   (rel,ext_arg) := itpl;
-  (outExp,ext_arg) := traverseExpBottomUp(inExp,rel,ext_arg);
-  otpl := (rel,ext_arg);
+  (outExp,ext_arg2) := traverseExpBottomUp(inExp,rel,ext_arg);
+  otpl := if referenceEq(ext_arg, ext_arg2) then itpl else (rel,ext_arg2);
 end traverseSubexpressionsHelper;
 
 public function traverseSubexpressionsDummyHelper
@@ -5377,11 +5377,11 @@ The extra argument is a tuple of the actual function to call on each subexpressi
   end FuncExpType2;
 protected
   FuncExpType2 rel;
-  Type_a ext_arg;
+  Type_a ext_arg, ext_arg2;
 algorithm
   (rel,ext_arg) := itpl;
-  (outExp,ext_arg) := traverseExpTopDown(inExp,rel,ext_arg);
-  otpl := (rel,ext_arg);
+  (outExp,ext_arg2) := traverseExpTopDown(inExp,rel,ext_arg);
+  otpl := if referenceEq(ext_arg, ext_arg2) then itpl else (rel,ext_arg2);
 end traverseSubexpressionsTopDownHelper;
 
 protected function traverseExpMatrix
@@ -6706,7 +6706,7 @@ algorithm
     case (DAE.CREF(cr,_),(func,arg))
       equation
         arg1 = func(cr,arg);
-      then (inExp, (func,arg1));
+      then (inExp, if referenceEq(arg, arg1) then inTpl else (func,arg1));
 
     else (inExp,inTpl);
 

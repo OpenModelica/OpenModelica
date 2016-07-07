@@ -5734,12 +5734,9 @@ public function reachableEquations "author: lochel
   output list<Integer> outEqNodes;
 protected
   Integer var;
-  list<Integer> reachable;
 algorithm
   var := ass2[eqn] "get the variable that is solved in given equation";
-  reachable := if var > 0 then mT[var] else {} "get the equations that depend on that variable";
-  reachable := List.select(reachable, Util.intGreaterZero) "just keep positive integers";
-  outEqNodes := List.removeOnTrue(eqn, intEq, reachable);
+  outEqNodes := if var > 0 then list(e for e guard(e > 0 and e <> eqn) in mT[var]) else {} "get the equations that depend on that variable";
 end reachableEquations;
 
 public function incomingEquations "author: lochel
@@ -5749,12 +5746,8 @@ public function incomingEquations "author: lochel
   input BackendDAE.IncidenceMatrix m;
   input array<Integer> ass1 "eqn := ass1[var]";
   output list<Integer> outEqNodes;
-protected
-  list<Integer> vars;
 algorithm
-  vars := List.select(m[eqn], Util.intGreaterZero) "just keep positive integers";
-  outEqNodes := list(ass1[var] for var guard(ass1[var] > 0) in vars);
-  outEqNodes := List.removeOnTrue(eqn, intEq, outEqNodes);
+  outEqNodes := list(ass1[var] for var guard(var > 0 and ass1[var] <> eqn and ass1[var] > 0) in m[eqn]);
 end incomingEquations;
 
 public function isAssigned

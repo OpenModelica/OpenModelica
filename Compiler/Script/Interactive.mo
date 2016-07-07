@@ -3944,7 +3944,7 @@ algorithm
   matchcontinue (path,inProgram)
     local
       Absyn.Class cdef;
-      list<Absyn.Element> comps,comps_1;
+      list<Absyn.Element> comps;
       list<list<Absyn.ComponentItem>> compelts;
       list<Absyn.ComponentItem> compelts_1;
       list<String> names;
@@ -3953,8 +3953,7 @@ algorithm
       equation
         cdef = getPathedClassInProgram(path, p);
         comps = getComponentsInClass(cdef);
-        comps_1 = List.select(comps, isParameterElement);
-        compelts = List.map(comps_1, getComponentitemsInElement);
+        compelts = list(getComponentitemsInElement(c) for c guard isParameterElement(c) in comps);
         compelts_1 = List.flatten(compelts);
         names = List.map(compelts_1, getComponentitemName);
       then
@@ -6285,22 +6284,18 @@ algorithm
     case ((Absyn.MODIFICATION(path = p,modification = SOME(Absyn.CLASSMOD(args,Absyn.EQMOD()))) :: rest))
       equation
         name = Absyn.pathString(p);
-        names2 = getModificationNames(args);
-        names2_1 = List.map1r(names2, stringAppend, ".");
-        names2_2 = List.map1r(names2_1, stringAppend, name);
+        names2 = list(stringAppend(stringAppend(name, "."), n) for n in getModificationNames(args));
         names = getModificationNames(rest);
-        res = listAppend(names2_2, names);
+        res = listAppend(names2, names);
       then
         name::res;
       // modifier with submodifiers, e.g. m(...)
     case ((Absyn.MODIFICATION(path = p,modification = SOME(Absyn.CLASSMOD(args,_))) :: rest))
       equation
         name = Absyn.pathString(p);
-        names2 = getModificationNames(args);
-        names2_1 = List.map1r(names2, stringAppend, ".");
-        names2_2 = List.map1r(names2_1, stringAppend, name);
+        names2 = list(stringAppend(stringAppend(name, "."), n) for n in getModificationNames(args));
         names = getModificationNames(rest);
-        res = listAppend(names2_2, names);
+        res = listAppend(names2, names);
       then
         res;
     case ((_ :: rest))

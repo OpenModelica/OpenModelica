@@ -396,7 +396,7 @@ algorithm
       (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
       DoubleEndedList.push_list_front(vars, vars1);
 
-      if listEmpty(CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)}, DAE.EXPAND())) then
+      if listEmpty(CheckModel.algorithmStatementListOutputs(stmts1, DAE.EXPAND())) then
         // without outputs
         (stmts, preStmts2, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
         preStmts = listAppend(preStmts, preStmts2);
