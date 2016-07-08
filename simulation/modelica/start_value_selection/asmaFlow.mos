@@ -522,16 +522,16 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //
 // Unreplaceable Crefs: (1)
 // ========================================
-// $res1.$pDERLSJac0.dummyVarLSJac0
+// $res_1_.$pDERLSJac0.dummyVarLSJac0
 //
 // Unreplaceable Crefs: (6)
 // ========================================
-// $res6.$pDERLSJac1.dummyVarLSJac1
-// $res5.$pDERLSJac1.dummyVarLSJac1
-// $res4.$pDERLSJac1.dummyVarLSJac1
-// $res3.$pDERLSJac1.dummyVarLSJac1
-// $res2.$pDERLSJac1.dummyVarLSJac1
-// $res1.$pDERLSJac1.dummyVarLSJac1
+// $res_6_.$pDERLSJac1.dummyVarLSJac1
+// $res_5_.$pDERLSJac1.dummyVarLSJac1
+// $res_4_.$pDERLSJac1.dummyVarLSJac1
+// $res_3_.$pDERLSJac1.dummyVarLSJac1
+// $res_2_.$pDERLSJac1.dummyVarLSJac1
+// $res_1_.$pDERLSJac1.dummyVarLSJac1
 //
 // Unreplaceable Crefs: (0)
 // ========================================
@@ -571,14 +571,14 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //
 // Unreplaceable Crefs: (1)
 // ========================================
-// $res1.$pDERLSJac2.dummyVarLSJac2
+// $res_1_.$pDERLSJac2.dummyVarLSJac2
 //
 // Unreplaceable Crefs: (4)
 // ========================================
-// $res4.$pDERLSJac3.dummyVarLSJac3
-// $res3.$pDERLSJac3.dummyVarLSJac3
-// $res2.$pDERLSJac3.dummyVarLSJac3
-// $res1.$pDERLSJac3.dummyVarLSJac3
+// $res_4_.$pDERLSJac3.dummyVarLSJac3
+// $res_3_.$pDERLSJac3.dummyVarLSJac3
+// $res_2_.$pDERLSJac3.dummyVarLSJac3
+// $res_1_.$pDERLSJac3.dummyVarLSJac3
 //
 // ########################################
 // dumpindxdae
