@@ -47,7 +47,7 @@ protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendVariable;
 protected import BaseHashTable;
-protected import BinaryTreeInt;
+protected import AvlSetInt;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -185,12 +185,15 @@ public function equationsLstVars
   input BackendDAE.Variables inVars;
   output list<BackendDAE.Var> outVars;
 protected
-  BinaryTreeInt.BinTree bt;
+  AvlSetInt.Tree indexes;
   list<Integer> keys;
 algorithm
-  bt := BinaryTreeInt.emptyBinTree;
-  (_, (_, bt)) := traverseExpsOfEquationList(inEquationLst, checkEquationsVarsExpTopDownTraverseHelper, (inVars, bt));
-  (keys, _) := BinaryTreeInt.bintreeToList(bt);
+  if listEmpty(inEquationLst) then
+    outVars := {};
+    return;
+  end if;
+  (_, indexes) := traverseExpsOfEquationList(inEquationLst, function checkEquationsVarsExpTopDownTraverseHelper(vars=inVars),  AvlSetInt.new());
+  keys := AvlSetInt.listKeys(indexes);
   outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
 end equationsLstVars;
 
@@ -202,31 +205,13 @@ public function equationsVars
   input BackendDAE.Variables inVars;
   output list<BackendDAE.Var> outVars;
 protected
-  BinaryTreeInt.BinTree bt;
+  AvlSetInt.Tree indexes;
   list<Integer> keys;
 algorithm
-  bt := BinaryTreeInt.emptyBinTree;
-  (_, bt) := BackendDAEUtil.traverseBackendDAEExpsEqns(inEquations, checkEquationsVarsExpTopDownTraverseHelper, (inVars, bt));
-  (keys, _) := BinaryTreeInt.bintreeToList(bt);
+  indexes := BackendDAEUtil.traverseBackendDAEExpsEqns(inEquations, function checkEquationsVarsExpTopDownTraverseHelper(vars=inVars),  AvlSetInt.new());
+  keys := AvlSetInt.listKeys(indexes);
   outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
 end equationsVars;
-
-public function equationsVars2
-"author: Frenkel TUD 2011-05
-  From the equations and a variable array return all
-  occurring variables form the array."
-  input BackendDAE.EquationArray inEquations;
-  input BackendDAE.Variables inVars;
-  output list<BackendDAE.Var> outVars;
-protected
-  BinaryTreeInt.BinTree bt;
-  list<Integer> keys;
-algorithm
-  bt := BinaryTreeInt.emptyBinTree;
-  (_, bt) := BackendDAEUtil.traverseBackendDAEExpsEqns(inEquations, checkEquationsVarsExpTopDownTraverseHelper, (inVars, bt) );
-  (keys, _) := BinaryTreeInt.bintreeToList(bt);
-  outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
-end equationsVars2;
 
 public function equationVars
 "author: Frenkel TUD 2012-03
@@ -236,12 +221,11 @@ public function equationVars
   input BackendDAE.Variables inVars;
   output list<BackendDAE.Var> outVars;
 protected
-  BinaryTreeInt.BinTree bt;
+  AvlSetInt.Tree indexes;
   list<Integer> keys;
 algorithm
-  bt := BinaryTreeInt.emptyBinTree;
-  (_, (_, bt)) := traverseExpsOfEquation(inEquation, checkEquationsVarsExpTopDownTraverseHelper,  (inVars, bt));
-  (keys, _) := BinaryTreeInt.bintreeToList(bt);
+  (_, indexes) := traverseExpsOfEquation(inEquation, function checkEquationsVarsExpTopDownTraverseHelper(vars=inVars),  AvlSetInt.new());
+  keys := AvlSetInt.listKeys(indexes);
   outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
 end equationVars;
 
@@ -250,67 +234,77 @@ public function expressionVars
   From the expression and a variable array return all
   variables in the expression."
   input DAE.Exp inExp;
-  input BackendDAE.Variables inVars;
+  input BackendDAE.Variables vars;
   output list<BackendDAE.Var> outVars;
 protected
-  BinaryTreeInt.BinTree bt;
+  AvlSetInt.Tree indexes;
   list<Integer> keys;
 algorithm
-  bt := BinaryTreeInt.emptyBinTree;
-  (_, (_, bt)) := Expression.traverseExpTopDown(inExp, checkEquationsVarsExpTopDown, (inVars, bt));
-  (keys, _) := BinaryTreeInt.bintreeToList(bt);
-  outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
+  (_, indexes) := Expression.traverseExpTopDown(inExp, function checkEquationsVarsExpTopDown(vars=vars), AvlSetInt.new());
+  keys := AvlSetInt.listKeys(indexes);
+  outVars := List.map1r(keys, BackendVariable.getVarAt, vars);
 end expressionVars;
+
+public function expressionVarsIndexes
+  "From the expression and a variable array return all variables in the expression."
+  input DAE.Exp exp;
+  input output AvlSetInt.Tree indexes;
+  input CheckEquationsVarsExpTopDownFunc func;
+
+  partial function CheckEquationsVarsExpTopDownFunc
+    input output DAE.Exp exp;
+    output Boolean cont;
+    input output AvlSetInt.Tree tree;
+  end CheckEquationsVarsExpTopDownFunc;
+algorithm
+  (_, indexes) := Expression.traverseExpTopDown(exp, func, indexes);
+end expressionVarsIndexes;
 
 public function checkEquationsVarsExpTopDownTraverseHelper
 "This function traverses expssions to-down to collect all
  variables that are involed into the expression."
-  input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, BinaryTreeInt.BinTree> itpl;
-  output DAE.Exp outExp;
-  output tuple<BackendDAE.Variables, BinaryTreeInt.BinTree> otpl;
+  input output DAE.Exp exp;
+  input output AvlSetInt.Tree tree;
+  input BackendDAE.Variables vars;
 algorithm
-  (outExp, otpl) := Expression.traverseExpTopDown(inExp,checkEquationsVarsExpTopDown,itpl);
+  (exp, tree) := Expression.traverseExpTopDown(exp,function checkEquationsVarsExpTopDown(vars=vars),tree);
 end checkEquationsVarsExpTopDownTraverseHelper;
 
-protected function checkEquationsVarsExpTopDown
-  input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, BinaryTreeInt.BinTree> inTuple;
-  output DAE.Exp outExp;
+public function checkEquationsVarsExpTopDown
+  input output DAE.Exp exp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables, BinaryTreeInt.BinTree> outTuple;
+  input output AvlSetInt.Tree tree;
+  input BackendDAE.Variables vars;
 algorithm
-  (outExp,cont,outTuple) := matchcontinue (inExp,inTuple)
+  (cont,tree) := matchcontinue exp
     local
-      DAE.Exp e;
-      BackendDAE.Variables vars;
-      BinaryTreeInt.BinTree bt;
       DAE.ComponentRef cr;
       list<Integer> ilst;
 
     // special case for time, it is never part of the equation system
-    case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), _)
-    then (e, true, inTuple);
+    case DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))
+    then (true, tree);
 
     // case for function pointers
-    case (e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC()), _)
-    then (e, true, inTuple);
+    case DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC())
+    then (true, tree);
 
     // case for pre vars
-    case (DAE.CALL(path = Absyn.IDENT(name = "pre")), _)
-    then (inExp, false, inTuple);
+    case DAE.CALL(path = Absyn.IDENT(name = "pre"))
+    then (false, tree);
 
     // case for previous vars
-    case (DAE.CALL(path = Absyn.IDENT(name = "previous")), _)
-    then (inExp, false, inTuple);
+    case DAE.CALL(path = Absyn.IDENT(name = "previous"))
+    then (false, tree);
 
     // add it
-    case (e as DAE.CREF(componentRef = cr), (vars, bt)) equation
-      (_, ilst) = BackendVariable.getVar(cr, vars);
-      bt = BinaryTreeInt.treeAddList(bt, ilst);
-    then (e, true, (vars, bt));
+    case DAE.CREF(componentRef = cr)
+      algorithm
+        (_, ilst) := BackendVariable.getVar(cr, vars);
+        tree := AvlSetInt.addList(tree, ilst);
+      then (true, tree);
 
-    else (inExp, true, inTuple);
+    else (true, tree);
   end matchcontinue;
 end checkEquationsVarsExpTopDown;
 

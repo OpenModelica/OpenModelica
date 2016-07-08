@@ -55,6 +55,7 @@ public import Util;
 protected
 import Algorithm;
 import Array;
+import AvlSetInt;
 import BackendDAEOptimize;
 import BackendDAETransform;
 import BackendDump;
@@ -1362,8 +1363,7 @@ algorithm
   else
     (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
   end if;
-  eqns := List.map1r(statevarindx_lst,arrayGet,ass1);
-  eqns := List.select(eqns, Util.intPositive);
+  eqns := list(arrayGet(ass1,i) for i guard arrayGet(ass1,i)>0 in statevarindx_lst);
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markStateEquations;
 
@@ -1390,30 +1390,37 @@ protected
   list<Integer> varindx_lst,eqns;
   BackendDAE.IncidenceMatrix m;
   BackendDAE.Variables v;
-  list<BackendDAE.Var> varlst;
+  AvlSetInt.Tree tree;
+  CheckEquationsVarsExpTopDownFunc func;
+  partial function CheckEquationsVarsExpTopDownFunc
+    input output DAE.Exp exp;
+    output Boolean cont;
+    input output AvlSetInt.Tree tree;
+  end CheckEquationsVarsExpTopDownFunc;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
-  (_, (_, varlst)) := traverseZeroCrossingExps(inZeroCross, varsCollector, (v,{}), {});
-  varindx_lst := BackendVariable.getVarIndexFromVars(varlst, v);
-  eqns := List.map1r(varindx_lst,arrayGet,ass1);
-  eqns := List.select(eqns, Util.intPositive);
+  tree := AvlSetInt.new();
+  func := function BackendEquation.checkEquationsVarsExpTopDown(vars=v);
+  for zc in inZeroCross loop
+    tree := varsCollector(zc.relation_, tree, func);
+  end for;
+  varindx_lst := AvlSetInt.listKeys(tree);
+  eqns := list(arrayGet(ass1,i) for i guard arrayGet(ass1,i)>0 in varindx_lst);
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markZeroCrossingEquations;
 
 protected function varsCollector
-  input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, list<BackendDAE.Var>> inTpl;
-  output DAE.Exp exp;
-  output tuple<BackendDAE.Variables, list<BackendDAE.Var>> outTpl;
-protected
-  BackendDAE.Variables vars;
-  list<BackendDAE.Var> varsLst, varLst2;
+  input DAE.Exp exp;
+  input output AvlSetInt.Tree tree;
+  input CheckEquationsVarsExpTopDownFunc func;
+
+  partial function CheckEquationsVarsExpTopDownFunc
+    input output DAE.Exp exp;
+    output Boolean cont;
+    input output AvlSetInt.Tree tree;
+  end CheckEquationsVarsExpTopDownFunc;
 algorithm
-  (vars, varsLst) := inTpl;
-  varLst2 := BackendEquation.expressionVars(inExp, vars);
-  varsLst := listAppend(varLst2, varsLst);
-  exp := inExp;
-  outTpl := (vars, varsLst);
+  tree := BackendEquation.expressionVarsIndexes(exp, tree, func);
 end varsCollector;
 
 protected function markStateEquationsWork
@@ -6621,12 +6628,12 @@ algorithm
   end match;
 end traverseAlgorithmExpsWithUpdate;
 
-public function traverseZeroCrossingExps
+protected function traverseZeroCrossingExps
   replaceable type Type_a subtypeof Any;
   input list<BackendDAE.ZeroCrossing> iZeroCrossing;
   input FuncExpType func;
   input Type_a inTypeA;
-  input list<BackendDAE.ZeroCrossing> iAcc;
+  input list<BackendDAE.ZeroCrossing> iAcc={};
   output list<BackendDAE.ZeroCrossing> oZeroCrossing;
   output Type_a outTypeA;
   partial function FuncExpType
@@ -6639,14 +6646,15 @@ algorithm
   (oZeroCrossing,outTypeA) := match(iZeroCrossing,func,inTypeA,iAcc)
     local
       list<BackendDAE.ZeroCrossing> zeroCrossing;
-      DAE.Exp relation_;
+      DAE.Exp relation1, relation2;
       list<Integer> occurEquLst;
       Type_a arg;
+      BackendDAE.ZeroCrossing zc;
     case({},_,_,_) then (listReverse(iAcc),inTypeA);
-    case(BackendDAE.ZERO_CROSSING(relation_,occurEquLst)::zeroCrossing,_,_,_)
+    case((zc as BackendDAE.ZERO_CROSSING(relation1,occurEquLst))::zeroCrossing,_,_,_)
       equation
-        (relation_,arg) = Expression.traverseExpBottomUp(relation_,func,inTypeA);
-        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,BackendDAE.ZERO_CROSSING(relation_,occurEquLst)::iAcc);
+        (relation2,arg) = Expression.traverseExpBottomUp(relation1,func,inTypeA);
+        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,(if referenceEq(relation1,relation2) then zc else BackendDAE.ZERO_CROSSING(relation2,occurEquLst))::iAcc);
       then
         (zeroCrossing,arg);
   end match;

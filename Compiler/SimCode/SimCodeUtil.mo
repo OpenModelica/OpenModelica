@@ -1228,7 +1228,6 @@ algorithm
   oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
   oequationsForZeroCrossings := Dangerous.listReverseInPlace(oequationsForZeroCrossings);
   ((ouniqueEqIndex, olocalKnownVars)) := BackendVariable.traverseBackendDAEVars(shared.localKnownVars, traverseKnVarsToSimEqSystem, (ouniqueEqIndex, {}));
-
 end createEquationsForSystems;
 
 protected function createEquationsForSystems1
@@ -1268,8 +1267,8 @@ algorithm
         (syst, _, _) = BackendDAEUtil.getIncidenceMatrixfromOption(inSyst, BackendDAE.ABSOLUTE(), SOME(funcs));
 
         stateeqnsmark = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
-        stateeqnsmark = BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
         zceqnsmarks = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
+        stateeqnsmark = BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
         zceqnsmarks = BackendDAEUtil.markZeroCrossingEquations(syst, zeroCrossings, zceqnsmarks, ass1);
 
         (odeEquations1, algebraicEquations1, allEquations1, equationsForZeroCrossings1, uniqueEqIndex,
@@ -1279,7 +1278,6 @@ algorithm
                 sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping);
         GC.free(stateeqnsmark);
         GC.free(zceqnsmarks);
-
 
         odeEquations = List.consOnTrue(not listEmpty(odeEquations1), odeEquations1, odeEquations);
         algebraicEquations = List.consOnTrue(not listEmpty(algebraicEquations1), algebraicEquations1, algebraicEquations);
@@ -1948,9 +1946,9 @@ algorithm
 
       // try as is should fallback case is a hack for complex record equations
       try
-	      // make residual equations => 0 = f(x,xd,y)
-	      eqnlst := List.flattenReverse(List.map(eqnlst, BackendEquation.equationToScalarResidualForm));
-	      tmpEqns := {};
+        // make residual equations => 0 = f(x,xd,y)
+        eqnlst := List.flattenReverse(List.map(eqnlst, BackendEquation.equationToScalarResidualForm));
+        tmpEqns := {};
       else
         (eqnlst, tmpEqns, uniqueEqIndex, tempvars) := createDAEResidualComplexEquation(eqnlst, uniqueEqIndex, tempvars);
       end try;
