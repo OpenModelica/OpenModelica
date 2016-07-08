@@ -1918,6 +1918,7 @@ protected
 
   list<BackendDAE.Equation> eqnlst, alglst;
   list<BackendDAE.Var> varlst, algVarlst, tmpVarsLst;
+  BackendDAE.Var dummyVar;
 
   BackendDAE.Variables bdaeVars;
   BackendDAE.EquationArray bdaeEqns;
@@ -1955,7 +1956,9 @@ algorithm
       end try;
 
       // add residual var => $DAEres = f(x,xd,y)
-      (eqnlst, tmpVarsLst, varIndex) := BackendEquation.convertResidualsIntoSolvedEquations(eqnlst, "$DAEres", BackendVariable.makeVar(DAE.emptyCref), varIndex);
+      dummyVar := BackendVariable.makeVar(DAE.emptyCref);
+      dummyVar := BackendVariable.setVarKind(dummyVar, BackendDAE.DAE_RESIDUAL_VAR());
+      (eqnlst, tmpVarsLst, varIndex) := BackendEquation.convertResidualsIntoSolvedEquations(eqnlst, "$DAEres", dummyVar, varIndex);
 
       // generate corresponding SimCode equations
       (daeEquationsTmp, uniqueEqIndex) := List.mapFold(eqnlst, makeSolved_SES_SIMPLE_ASSIGN, uniqueEqIndex);
