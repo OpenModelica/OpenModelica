@@ -481,7 +481,7 @@ protected
   array<Integer> subclksCnt;
   array<Integer> order;
   array<BackendDAE.SubClock> subclocks, subclocksOutArr;
-  array<Boolean> clockedEqsMask, clockedVarsMask;
+  array<Boolean> clockedEqsMask, clockedVarsMask, usedVars, usedRemovedVars;
 algorithm
   funcs := BackendDAEUtil.getFunctions(inShared);
   BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs) := inEqSystem;
@@ -494,7 +494,9 @@ algorithm
 
   reqsPartitions := arrayCreate(arrayLength(rm), 0);
   partitions := arrayCreate(arrayLength(m), 0);
-  partitionsCnt := partitionIndependentBlocksMasked(m, mT, rm, rmT, clockedEqsMask, partitions, reqsPartitions);
+  usedRemovedVars := arrayCreate(arrayLength(rmT), false);
+  usedVars := arrayCreate(arrayLength(mT), false);
+  partitionsCnt := partitionIndependentBlocksMasked(m, mT, rm, rmT, clockedEqsMask, partitions, reqsPartitions, usedVars, usedRemovedVars);
 
   //Detect clocked continuous partitions and create new subclock equations
   (newClockEqs, newClockVars, contPartitions, subclksCnt)
@@ -1749,6 +1751,7 @@ protected
   list<Integer> varIxs;
   BackendDAE.EqSystem syst;
   array<Integer> eqsPartition, reqsPartition;
+  array<Boolean> varsPartition, rvarsPartition;
   BackendDAE.Equation eq;
   list<tuple<DAE.ComponentRef, Boolean>> refsInfo;
   tuple<DAE.ComponentRef, Boolean> refInfo;
@@ -1765,8 +1768,10 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs) := syst;
   eqsPartition := arrayCreate(arrayLength(m), 0);
   reqsPartition := arrayCreate(arrayLength(rm), 0);
+  varsPartition := arrayCreate(arrayLength(mT), false);
+  rvarsPartition := arrayCreate(arrayLength(rmT), false);
 
-  partitionCnt := partitionIndependentBlocks0(m, mT, rm, rmT, eqsPartition, reqsPartition);
+  partitionCnt := partitionIndependentBlocks0(m, mT, rm, rmT, eqsPartition, reqsPartition, varsPartition, rvarsPartition);
 
   if partitionCnt > 1 then
     (systs, outUnpartRemEqs) := partitionIndependentBlocksSplitBlocks(partitionCnt, syst, eqsPartition, reqsPartition, mT, rmT, false);
@@ -2076,15 +2081,15 @@ public function partitionIndependentBlocks0
   input BackendDAE.IncidenceMatrixT mT;
   input BackendDAE.IncidenceMatrix rm;
   input BackendDAE.IncidenceMatrixT rmT;
-  input array<Integer> ixs;
-  input array<Integer> rixs;
+  input array<Integer> ixs, rixs;
+  input array<Boolean> vars, rvars;
   output Integer on = 0;
 algorithm
   for i in arrayLength(m):-1:1 loop
-    on := if partitionIndependentBlocksEq(i, on + 1, m, mT, rm, rmT, ixs, rixs) then on + 1 else on;
+    on := if partitionIndependentBlocksEq(i, on + 1, m, mT, rm, rmT, ixs, rixs, vars, rvars) then on + 1 else on;
   end for;
   for i in arrayLength(rm):-1:1 loop
-    on := if partitionIndependentBlocksReq(i, on + 1, m, mT, rm, rmT, ixs, rixs) then on + 1 else on;
+    on := if partitionIndependentBlocksReq(i, on + 1, m, mT, rm, rmT, ixs, rixs, vars, rvars) then on + 1 else on;
   end for;
 end partitionIndependentBlocks0;
 
@@ -2094,17 +2099,17 @@ protected function partitionIndependentBlocksMasked
   input BackendDAE.IncidenceMatrix rm;
   input BackendDAE.IncidenceMatrixT rmT;
   input array<Boolean> mask;
-  input array<Integer> ixs;
-  input array<Integer> rixs;
+  input array<Integer> ixs, rixs;
+  input array<Boolean> vars, rvars;
   output Integer on = 0;
 algorithm
   for i in arrayLength(m):-1:1 loop
     if mask[i] then
-      on := if partitionIndependentBlocksEq(i, on + 1, m, mT, rm, rmT, ixs, rixs) then on + 1 else on;
+      on := if partitionIndependentBlocksEq(i, on + 1, m, mT, rm, rmT, ixs, rixs, vars, rvars) then on + 1 else on;
     end if;
   end for;
   for i in arrayLength(rm):-1:1 loop
-    on := if partitionIndependentBlocksReq(i, on + 1, m, mT, rm, rmT, ixs, rixs) then on + 1 else on;
+    on := if partitionIndependentBlocksReq(i, on + 1, m, mT, rm, rmT, ixs, rixs, vars, rvars) then on + 1 else on;
   end for;
 end partitionIndependentBlocksMasked;
 
@@ -2115,8 +2120,8 @@ protected function partitionIndependentBlocksEq
   input BackendDAE.IncidenceMatrixT mT;
   input BackendDAE.IncidenceMatrix rm;
   input BackendDAE.IncidenceMatrixT rmT;
-  input array<Integer> ixs;
-  input array<Integer> rixs;
+  input array<Integer> ixs, rixs;
+  input array<Boolean> vars, rvars;
   output Boolean ochange;
 algorithm
   ochange := arrayGet(ixs, ix) == 0;
@@ -2124,12 +2129,15 @@ algorithm
   if ochange then
     arrayUpdate(ixs, ix, n);
     for i in arrayGet(m, ix) loop
-      for j in arrayGet(mT, intAbs(i)) loop
-        partitionIndependentBlocksEq(intAbs(j), n, m, mT, rm, rmT, ixs, rixs);
-      end for;
-      for j in arrayGet(rmT, intAbs(i)) loop
-        partitionIndependentBlocksReq(intAbs(j), n, m, mT, rm, rmT, ixs, rixs);
-      end for;
+      if not arrayGet(vars, intAbs(i)) then
+        arrayUpdate(vars, intAbs(i), true);
+        for j in arrayGet(mT, intAbs(i)) loop
+          partitionIndependentBlocksEq(intAbs(j), n, m, mT, rm, rmT, ixs, rixs, vars, rvars);
+        end for;
+        for j in arrayGet(rmT, intAbs(i)) loop
+          partitionIndependentBlocksReq(intAbs(j), n, m, mT, rm, rmT, ixs, rixs, vars, rvars);
+        end for;
+      end if;
     end for;
   end if;
 end partitionIndependentBlocksEq;
@@ -2141,8 +2149,8 @@ protected function partitionIndependentBlocksReq
   input BackendDAE.IncidenceMatrixT mT;
   input BackendDAE.IncidenceMatrix rm;
   input BackendDAE.IncidenceMatrixT rmT;
-  input array<Integer> ixs;
-  input array<Integer> rixs;
+  input array<Integer> ixs, rixs;
+  input array<Boolean> vars, rvars;
   output Boolean ochange;
 algorithm
   ochange := arrayGet(rixs, ix) == 0;
@@ -2150,12 +2158,15 @@ algorithm
   if ochange then
     arrayUpdate(rixs, ix, n);
     for i in arrayGet(rm, ix) loop
-      for j in arrayGet(mT, intAbs(i)) loop
-        partitionIndependentBlocksEq(intAbs(j), n, m, mT, rm, rmT, ixs, rixs);
-      end for;
-      for j in arrayGet(rmT, intAbs(i)) loop
-        partitionIndependentBlocksReq(intAbs(j), n, m, mT, rm, rmT, ixs, rixs);
-      end for;
+      if not arrayGet(rvars, intAbs(i)) then
+        arrayUpdate(rvars, intAbs(i), true);
+        for j in arrayGet(mT, intAbs(i)) loop
+          partitionIndependentBlocksEq(intAbs(j), n, m, mT, rm, rmT, ixs, rixs, vars, rvars);
+        end for;
+        for j in arrayGet(rmT, intAbs(i)) loop
+          partitionIndependentBlocksReq(intAbs(j), n, m, mT, rm, rmT, ixs, rixs, vars, rvars);
+        end for;
+      end if;
     end for;
   end if;
 end partitionIndependentBlocksReq;

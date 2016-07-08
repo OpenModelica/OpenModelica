@@ -1646,6 +1646,7 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m, mT, rm, rmT;
       array<Integer> ixs, rixs;
+      array<Boolean> vars, rvars;
       Boolean b;
       Integer i;
       BackendDAE.Shared shared;
@@ -1658,8 +1659,10 @@ algorithm
         (rm, rmT) = BackendDAEUtil.removedIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(funcs));
         ixs = arrayCreate(arrayLength(m), 0);
         rixs = arrayCreate(arrayLength(m), 0);
+        vars = arrayCreate(arrayLength(mT), false);
+        rvars = arrayCreate(arrayLength(rmT), false);
         // ixsT = arrayCreate(arrayLength(mT),0);
-        i = SynchronousFeatures.partitionIndependentBlocks0(m, mT, rm, rmT, ixs, rixs);
+        i = SynchronousFeatures.partitionIndependentBlocks0(m, mT, rm, rmT, ixs, rixs, vars, rvars);
         // i2 = SynchronousFeatures.partitionIndependentBlocks0(mT,m,ixsT);
         b = i > 1;
         // bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},shared), "partitionIndependentBlocksHelper");
