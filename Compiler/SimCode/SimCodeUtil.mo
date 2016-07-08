@@ -1757,6 +1757,7 @@ tuple<list<list<SimCode.SimEqSystem>> /* daeEquations */,
       list<SimCodeVar.SimVar> /* residualVars */,
       list<SimCodeVar.SimVar> /* algebraicVars*/,
       Integer /* uniqueEqIndex */,
+      Integer /* VariableIndex */,
       list<SimCodeVar.SimVar> /* tempvars */,
       /*BackendDAE stuff is also needed for sparsity and jacobian */
       BackendDAE.Variables /* daeMode variables */,
@@ -1784,8 +1785,8 @@ algorithm
   size := BackendDAEUtil.daeSize(BackendDAE.DAE(inSysts, shared));
   outDAEVars := BackendVariable.emptyVarsSized(size);
   outDAEEqns := BackendEquation.emptyEqnsSized(size);
-  foldArg := ({}, {}, {}, iuniqueEqIndex, itempvars, outDAEVars, outDAEEqns);
-  (odaeEquations, oresidualVars, oalgebraicVars, ouniqueEqIndex, otempvars, outDAEVars, outDAEEqns) :=
+  foldArg := ({}, {}, {}, iuniqueEqIndex, 1, itempvars, outDAEVars, outDAEEqns);
+  (odaeEquations, oresidualVars, oalgebraicVars, ouniqueEqIndex, _, otempvars, outDAEVars, outDAEEqns) :=
     List.fold1(inSysts, createDAEEqsPrepare, shared, foldArg);
   oresidualVars := listReverse(oresidualVars);
   oalgebraicVars := listReverse(oalgebraicVars);
@@ -1810,12 +1811,12 @@ algorithm
       list<SimCodeVar.SimVar> tempvars, resVars, resVars1, algVars, algVars1;
       DAE.FunctionTree funcs;
       BackendDAE.Shared shared;
-      Integer uniqueEqIndex;
+      Integer uniqueEqIndex, varIndex;
       BackendDAE.Variables bdaeVars;
       BackendDAE.EquationArray bdaeEqns;
     case BackendDAE.MATCHING(ass1=ass1, comps=comps)
       equation
-        (daeEquations, resVars, algVars, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns) = inFold;
+        (daeEquations, resVars, algVars, uniqueEqIndex, varIndex, tempvars, bdaeVars, bdaeEqns) = inFold;
 
         funcs = BackendDAEUtil.getFunctions(inShared);
         (syst, _, _) = BackendDAEUtil.getIncidenceMatrixfromOption(inSyst, BackendDAE.ABSOLUTE(), SOME(funcs));
@@ -1823,8 +1824,8 @@ algorithm
         stateeqnsmark = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         stateeqnsmark = BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
 
-        (daeEquations1, resVars1, algVars1, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns) = createDAEEquation(
-                stateeqnsmark, syst, inShared, comps, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns);
+        (daeEquations1, resVars1, algVars1, uniqueEqIndex, varIndex, tempvars, bdaeVars, bdaeEqns) = createDAEEquation(
+                stateeqnsmark, syst, inShared, comps, uniqueEqIndex, varIndex, tempvars, bdaeVars, bdaeEqns);
         GC.free(stateeqnsmark);
 
         daeEquations = List.consOnTrue(not listEmpty(daeEquations1), daeEquations1, daeEquations);
@@ -1840,7 +1841,7 @@ algorithm
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, algVars1));
         end if;
 
-      then (daeEquations, resVars, algVars, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns);
+      then (daeEquations, resVars, algVars, uniqueEqIndex, varIndex, tempvars, bdaeVars, bdaeEqns);
 
     else inFold;
   end match;
@@ -1851,6 +1852,7 @@ tuple<list<list<SimCode.SimEqSystem>> /*daeEquations*/,
       list<SimCodeVar.SimVar> /* residualVars*/,
       list<SimCodeVar.SimVar> /* algebraicVars*/,
       Integer /*uniqueEqIndex*/,
+      Integer /*variableIndex*/,
       list<SimCodeVar.SimVar> /*tempvars*/,
       /*BackendDAE stuff is also needed for sparsity and jacobian */
       BackendDAE.Variables /* daeMode variables */,
@@ -1865,6 +1867,7 @@ protected function createDAEEquation
   input BackendDAE.Shared shared;
   input BackendDAE.StrongComponents comps;
   input Integer iuniqueEqIndex;
+  input Integer ivarIndex;
   input list<SimCodeVar.SimVar> itempvars;
   input BackendDAE.Variables inDAEVars;
   input BackendDAE.EquationArray inDAEEqns;
@@ -1872,6 +1875,7 @@ protected function createDAEEquation
   output list<SimCodeVar.SimVar> oresvars;
   output list<SimCodeVar.SimVar> oalgvars;
   output Integer ouniqueEqIndex;
+  output Integer ovarIndex;
   output list<SimCodeVar.SimVar> otempvars;
   output BackendDAE.Variables outDAEVars;
   output BackendDAE.EquationArray outDAEEqns;
@@ -1881,9 +1885,9 @@ protected
   list<list<SimCode.SimEqSystem>> daeEquations;
 algorithm
   arg := (stateeqnsmark, syst, shared);
-  foldArg := ({}, {}, {}, iuniqueEqIndex, itempvars, inDAEVars, inDAEEqns);
+  foldArg := ({}, {}, {}, iuniqueEqIndex, ivarIndex, itempvars, inDAEVars, inDAEEqns);
   foldArg := List.fold1(comps, createDAEEquationForComp, arg, foldArg);
-  (daeEquations, oresvars, oalgvars, ouniqueEqIndex, otempvars, outDAEVars, outDAEEqns) := foldArg;
+  (daeEquations, oresvars, oalgvars, ouniqueEqIndex, ovarIndex, otempvars, outDAEVars, outDAEEqns) := foldArg;
   outDAEEquations := List.flattenReverse(daeEquations);
 end createDAEEquation;
 
@@ -1901,7 +1905,7 @@ protected
 
   list<Integer> varNums, eqnNums;
   array<Integer> stateeqnsmark;
-  Integer uniqueEqIndex;
+  Integer uniqueEqIndex, varIndex;
   String message;
   Boolean skip, skipEquations;
 
@@ -1920,7 +1924,7 @@ protected
 algorithm
   try
     (stateeqnsmark, syst, shared) := inArg;
-    (daeEquations, resVars, algVars, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns) := inFold;
+    (daeEquations, resVars, algVars, uniqueEqIndex, varIndex, tempvars, bdaeVars, bdaeEqns) := inFold;
     emptyVars := BackendVariable.emptyVars();
     (varlst,varNums,eqnlst,eqnNums) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp, syst.orderedVars, syst.orderedEqs);
     skip := false;
@@ -1951,7 +1955,7 @@ algorithm
       end try;
 
       // add residual var => $DAEres = f(x,xd,y)
-      (eqnlst, tmpVarsLst) := BackendEquation.convertResidualsIntoSolvedEquations(eqnlst, "$DAEres", BackendVariable.makeVar(DAE.emptyCref), uniqueEqIndex);
+      (eqnlst, tmpVarsLst, varIndex) := BackendEquation.convertResidualsIntoSolvedEquations(eqnlst, "$DAEres", BackendVariable.makeVar(DAE.emptyCref), varIndex);
 
       // generate corresponding SimCode equations
       (daeEquationsTmp, uniqueEqIndex) := List.mapFold(eqnlst, makeSolved_SES_SIMPLE_ASSIGN, uniqueEqIndex);
@@ -1982,7 +1986,7 @@ algorithm
     resVars := listAppend(resVarsTmp, resVars);
     algVars := listAppend(algVarsTmp, algVars);
 
-    outFold := (daeEquations, resVars, algVars, uniqueEqIndex, tempvars, bdaeVars, bdaeEqns);
+    outFold := (daeEquations, resVars, algVars, uniqueEqIndex, varIndex, tempvars, bdaeVars, bdaeEqns);
   else
     message := "function createDAEEquationForComp failed for component " + BackendDump.strongComponentString(comp);
     Error.addInternalError(message, sourceInfo());

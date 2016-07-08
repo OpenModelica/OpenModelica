@@ -1860,8 +1860,7 @@ public function convertResidualsIntoSolvedEquations
   input Integer inIndex;
   output list<BackendDAE.Equation> outEquationList = {};
   output list<BackendDAE.Var> outVariableList = {};
-protected
-  Integer index = inIndex;
+  output Integer outVarIndex = inIndex;
 algorithm
   for eq in inResidualList loop
     _ := match eq
@@ -1877,12 +1876,11 @@ algorithm
 
       case BackendDAE.RESIDUAL_EQUATION(exp=exp,source=source,attr=eqAttr)
         equation
-          varName = inName + intString(index);
-          componentRef = DAE.CREF_IDENT(varName, DAE.T_REAL_DEFAULT, {});
+          componentRef = DAE.CREF_IDENT(inName, DAE.T_REAL_DEFAULT, {DAE.INDEX(DAE.ICONST(outVarIndex))});
           currEquation = BackendDAE.SOLVED_EQUATION(componentRef, exp, source, eqAttr);
           currVariable = BackendVariable.copyVarNewName(componentRef, inTemplateVar);
 
-          index = index + 1;
+          outVarIndex = outVarIndex + 1;
           outEquationList = currEquation::outEquationList;
           outVariableList = currVariable::outVariableList;
         then ();
