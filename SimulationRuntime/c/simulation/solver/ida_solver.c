@@ -91,6 +91,7 @@ int checkIDAflag(int flag)
   switch(flag)
   {
   case IDA_SUCCESS:
+  case IDA_TSTOP_RETURN:
     retVal = 0;
     break;
   default:
@@ -754,6 +755,10 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
       tout = data->simulationInfo->stopTime;
     }
     stepsMode = IDA_ONE_STEP;
+    flag = IDASetStopTime(idaData->ida_mem, tout);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## Something goes wrong while set stopTime!");
+    }
   }
   else
   {
