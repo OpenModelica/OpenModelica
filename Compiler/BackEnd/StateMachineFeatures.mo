@@ -888,7 +888,6 @@ protected
   // Fields of EQUATION_ARRAY
   Integer orderedSize, removedSize;
   Integer orderedNumberOfElement, removedNumberOfElement;
-  Integer orderedArrSize, removedArrSize;
   array<Option<BackendDAE.Equation>> orderedEquOptArr, removedEquOptArr;
 algorithm
   AUTOMATA_EQS(vars, knowns, eqs) := automataEqs;
@@ -923,7 +922,6 @@ protected
   // Fields of EQUATION_ARRAY
   Integer orderedSize, removedSize;
   Integer orderedNumberOfElement, removedNumberOfElement;
-  Integer orderedArrSize, removedArrSize;
   array<Option<BackendDAE.Equation>> orderedEquOptArr, removedEquOptArr;
 algorithm
   AUTOMATA_EQS(vars, knowns, eqs) := automataEqs;
@@ -1473,21 +1471,20 @@ protected
   // Fields of EQUATION_ARRAY
   Integer orderedSize, removedSize;
   Integer orderedNumberOfElement, removedNumberOfElement;
-  Integer orderedArrSize, removedArrSize;
   array<Option<BackendDAE.Equation>> orderedEquOptArr, removedEquOptArr;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, removedEqs=removedEqs) := inSyst;
 
-  BackendDAE.EQUATION_ARRAY(orderedSize, orderedNumberOfElement, orderedArrSize, orderedEquOptArr) := orderedEqs;
-  BackendDAE.EQUATION_ARRAY(removedSize, removedNumberOfElement, removedArrSize, removedEquOptArr) := removedEqs;
+  BackendDAE.EQUATION_ARRAY(orderedSize, orderedNumberOfElement, orderedEquOptArr) := orderedEqs;
+  BackendDAE.EQUATION_ARRAY(removedSize, removedNumberOfElement, removedEquOptArr) := removedEqs;
   (orderedEquOptArr, modesOut) := Array.mapNoCopy_1(orderedEquOptArr, annotateMode, modesIn);
   (removedEquOptArr, modesOut) := Array.mapNoCopy_1(removedEquOptArr, annotateMode, modesOut);
 
   // New equation arrays (equations assigned to modes are replaced by NONE())
   orderedSize := Array.fold(orderedEquOptArr, incIfSome, 0); // FIXME: Correct to assume that any non-NONE equation has to be counted?
   orderedNumberOfElement := orderedSize; // FIXME: Correct to assume that orderedNumberOfElement = orderedSize?
-  orderedEqsNew := BackendDAE.EQUATION_ARRAY(orderedSize, orderedNumberOfElement, orderedArrSize, orderedEquOptArr);
-  removedEqsNew := BackendDAE.EQUATION_ARRAY(removedSize, removedNumberOfElement, removedArrSize, removedEquOptArr);
+  orderedEqsNew := BackendDAE.EQUATION_ARRAY(orderedSize, orderedNumberOfElement, orderedEquOptArr);
+  removedEqsNew := BackendDAE.EQUATION_ARRAY(removedSize, removedNumberOfElement, removedEquOptArr);
 
   BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)) := orderedVars;
   // add outer output variables to modes that declared them
@@ -1780,7 +1777,6 @@ protected
   // EQUATION_ARRAY
   Integer size "size of the Equations in scalar form";
   Integer numberOfElement "no. elements";
-  Integer arrSize "array size";
   array<Option<BackendDAE.Equation>> equOptArr;
   DAE.VarInnerOuter io1, io2;
   // EQSYSTEM
@@ -1789,7 +1785,7 @@ algorithm
   (modes,syst) := inModesSyst;
   (keyCref,mode) := inCrefMode;
   MODE(name, isInitial, edges, eqs, outgoing, outShared, outLocal, crefPrevious) := mode;
-  BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr) := eqs;
+  BackendDAE.EQUATION_ARRAY(size, numberOfElement, equOptArr) := eqs;
   BackendDAE.EQSYSTEM(orderedVars=orderedVars) := syst;
   outSharedNew := {};
 
@@ -1807,7 +1803,7 @@ algorithm
         arrayUpdate(equOptArr, i, NONE());
         size := size - 1;
         //numberOfElement := numberOfElement - 1;
-        eqs := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr);
+        eqs := BackendDAE.EQUATION_ARRAY(size, numberOfElement, equOptArr);
         // replace all outer crefs by their corresponding inner cref
         (eqs,_) := BackendEquation.traverseEquationArray_WithUpdate(eqs, subsOuterByInnerEq, (outCref,Util.getOption(innerOptCref)));
         // update outSharedNew and use that later to construct MODE
@@ -2587,14 +2583,13 @@ protected
   Integer numberOfVars "no. of vars";
   // VariableArray
   Integer numberOfElements "no. elements";
-  Integer arrSize "array size";
   array<Option<BackendDAE.Var>> varOptArr;
   list<Option<String>> sVarOptLst;
   list<String> sVarLst;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars) := inEqSystem;
   BackendDAE.VARIABLES(crefIdxLstArr, varArr, bucketSize, numberOfVars) := orderedVars;
-  BackendDAE.VARIABLE_ARRAY(numberOfElements, arrSize, varOptArr) := varArr;
+  BackendDAE.VARIABLE_ARRAY(numberOfElements, varOptArr) := varArr;
   sVarOptLst := arrayList(Array.map(varOptArr, dumpSomeVarStr));
   sVarLst := List.map(List.filterOnTrue(sVarOptLst, isSome), Util.getOption);
   outStr := stringDelimitList(sVarLst, "\n");

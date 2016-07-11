@@ -1902,7 +1902,7 @@ protected
   array<Option<BackendDAE.Var>> arr;
 algorithm
   arr := arrayCreate(inSize, NONE());
-  outArray := BackendDAE.VARIABLE_ARRAY(0, inSize, arr);
+  outArray := BackendDAE.VARIABLE_ARRAY(0, arr);
 end vararrayEmpty;
 
 protected function vararrayAdd
@@ -1913,15 +1913,14 @@ protected function vararrayAdd
   input BackendDAE.Var inVar;
   output BackendDAE.VariableArray outVariableArray;
 protected
-  Integer num_elems, size;
+  Integer num_elems;
   array<Option<BackendDAE.Var>> arr;
 algorithm
-  BackendDAE.VARIABLE_ARRAY(num_elems, size, arr) := inVariableArray;
+  BackendDAE.VARIABLE_ARRAY(num_elems, arr) := inVariableArray;
   num_elems := num_elems + 1;
   arr := Array.expandOnDemand(num_elems, arr, 1.4, NONE());
-  size := arrayLength(arr);
   arrayUpdate(arr, num_elems, SOME(inVar));
-  outVariableArray := BackendDAE.VARIABLE_ARRAY(num_elems, size, arr);
+  outVariableArray := BackendDAE.VARIABLE_ARRAY(num_elems, arr);
 end vararrayAdd;
 
 protected function vararraySetnth
@@ -3180,16 +3179,16 @@ public function traverseBackendDAEVarsWithUpdate<ArgT>
   end FuncType;
 protected
   array<list<BackendDAE.CrefIndex>> indices;
-  Integer buckets, num_vars1, num_vars2, arr_size;
+  Integer buckets, num_vars1, num_vars2;
   array<Option<BackendDAE.Var>> vars;
 algorithm
-  BackendDAE.VARIABLES(indices, BackendDAE.VARIABLE_ARRAY(num_vars1, arr_size, vars), buckets, num_vars2) := inVariables;
+  BackendDAE.VARIABLES(indices, BackendDAE.VARIABLE_ARRAY(num_vars1, vars), buckets, num_vars2) := inVariables;
   if num_vars1 <> num_vars2 then
     Error.addInternalError("function traverseBackendDAEVarsWithUpdate failed", sourceInfo());
     fail();
   end if;
   (vars, outArg) := BackendDAEUtil.traverseArrayNoCopyWithUpdate(vars, inFunc, traverseBackendDAEVarsWithUpdate2, inArg, num_vars1);
-  outVariables := BackendDAE.VARIABLES(indices, BackendDAE.VARIABLE_ARRAY(num_vars1, arr_size, vars), buckets, num_vars2);
+  outVariables := BackendDAE.VARIABLES(indices, BackendDAE.VARIABLE_ARRAY(num_vars1, vars), buckets, num_vars2);
 end traverseBackendDAEVarsWithUpdate;
 
 protected function traverseBackendDAEVarsWithUpdate2<ArgT>

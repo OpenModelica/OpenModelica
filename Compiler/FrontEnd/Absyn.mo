@@ -1235,21 +1235,16 @@ public function traverseEquationItemList
     replaceable type TypeA subtypeof Any;
   end FuncTplToTpl;
   replaceable type TypeA subtypeof Any;
+protected
+  TypeA arg2 = inTypeA;
 algorithm
-  outTpl := match (inEquationItemList,inFunc,inTypeA)
-    local
-      list<EquationItem> cdr,cdr_1;
-      FuncTplToTpl rel;
-      TypeA arg,arg_1,arg_2;
-      EquationItem ei,ei_1;
-    case({},_,arg) then (({},arg));
-    case(ei :: cdr,rel,arg)
-      equation
-        ((ei_1,arg_1)) = traverseEquationItem(ei,rel,arg);
-        ((cdr_1,arg_2)) = traverseEquationItemList(cdr,rel,arg_1);
-      then
-        ((ei_1 :: cdr_1,arg_2));
-  end match;
+  outTpl := (list(match el
+      local
+        EquationItem ei,ei_1;
+      case (ei) equation
+        ((ei_1,arg2)) = traverseEquationItem(ei,inFunc,arg2);
+      then ei_1;
+    end match for el in inEquationItemList), arg2);
 end traverseEquationItemList;
 
 // stefan
@@ -1266,22 +1261,17 @@ public function traverseExpEqItemTupleList
     replaceable type TypeA subtypeof Any;
   end FuncTplToTpl;
   replaceable type TypeA subtypeof Any;
+protected
+  TypeA arg2 = inTypeA;
 algorithm
-  outTpl := match (inList,inFunc,inTypeA)
-    local
-      FuncTplToTpl rel;
-      TypeA arg,arg_1,arg_2;
-      list<tuple<Exp, list<EquationItem>>> cdr,cdr_1;
-      Exp e;
-      list<EquationItem> eilst,eilst_1;
-    case({},_,arg) then (({},arg));
-    case((e,eilst) :: cdr,rel,arg)
-      equation
-        ((eilst_1,arg_1)) = traverseEquationItemList(eilst,rel,arg);
-        ((cdr_1,arg_2)) = traverseExpEqItemTupleList(cdr,rel,arg_1);
-      then
-        (((e,eilst_1) :: cdr_1,arg_2));
-  end match;
+  outTpl := (list(match el
+      local
+        Exp e;
+        list<EquationItem> eilst,eilst_1;
+      case (e,eilst) equation
+        ((eilst_1,arg2)) = traverseEquationItemList(eilst,inFunc,arg2);
+      then (e,eilst_1);
+    end match for el in inList), arg2);
 end traverseExpEqItemTupleList;
 
 // stefan

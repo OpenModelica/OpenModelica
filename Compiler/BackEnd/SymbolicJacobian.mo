@@ -885,7 +885,7 @@ algorithm
           //BackendDump.dumpComponents(sysComps);
         //build system
         syst.orderedVars = List.fold(bVars, BackendVariable.addVar, vars);
-        eqns = List.fold(bEqs, BackendEquation.addEquation, eqns);
+        eqns = BackendEquation.addEquations(bEqs, eqns);
         syst.orderedEqs = List.threadFold(eindex, sysEqs, BackendEquation.setAtIndexFirst, eqns);
         syst = BackendDAEUtil.setEqSystMatrices(syst);
         syst = replaceStrongComponent(syst,compIdxIn,sysComps,bComps);
@@ -2305,8 +2305,7 @@ protected
 algorithm
 try
   // get iteration vars
-  iterationvars := List.map1r(inIterationvarsInts, BackendVariable.getVarAt, inVars);
-  iterationvars := List.map(iterationvars, BackendVariable.transformXToXd);
+  iterationvars := list(BackendVariable.transformXToXd(BackendVariable.getVarAt(inVars, e)) for e in inIterationvarsInts);
   outDiffVars := BackendVariable.listVar1(iterationvars);
 
   // debug
@@ -2341,8 +2340,7 @@ try
 
   // get other vars
   otherVarsInts := List.flatten(otherVarsIntsLst);
-  ovarsLst := List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
-  ovarsLst := List.map(ovarsLst, BackendVariable.transformXToXd);
+  ovarsLst := list(BackendVariable.transformXToXd(BackendVariable.getVarAt(inVars, e)) for e in otherVarsInts);
   outOtherVars := BackendVariable.listVar1(ovarsLst);
 
   // debug

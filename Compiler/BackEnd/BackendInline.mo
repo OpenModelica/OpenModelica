@@ -144,13 +144,13 @@ algorithm
   (outEquationArray,oInlined) := matchcontinue(inEquationArray,inElementList)
     local
       Inline.Functiontuple fns;
-      Integer i1,i2,size;
+      Integer i1,size;
       array<Option<BackendDAE.Equation>> eqarr;
-    case(BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr),fns)
+    case(BackendDAE.EQUATION_ARRAY(size,i1,eqarr),fns)
       equation
-        oInlined = inlineEquationOptArray(eqarr,i2,fns);
+        oInlined = inlineEquationOptArray(eqarr,fns);
       then
-        (BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr),oInlined);
+        (BackendDAE.EQUATION_ARRAY(size,i1,eqarr),oInlined);
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -164,14 +164,13 @@ protected function inlineEquationOptArray
 "functio: inlineEquationrOptArray
   inlines calls in a equation option"
   input array<Option<BackendDAE.Equation>> inEqnArray;
-  input Integer arraysize;
   input Inline.Functiontuple fns;
   output Boolean oInlined = false;
 protected
   Option<BackendDAE.Equation> eqn;
   Boolean inlined;
 algorithm
-  for i in 1:arraysize loop
+  for i in 1:arrayLength(inEqnArray) loop
     (eqn, inlined) := inlineEqOpt(inEqnArray[i], fns);
 
     if inlined then
@@ -441,13 +440,13 @@ algorithm
     local
       Inline.Functiontuple fns;
       array<list<BackendDAE.CrefIndex>> crefind;
-      Integer i1,i2,i3,i4;
+      Integer i1,i2,i3;
       array<Option<BackendDAE.Var>> vararr;
-    case(BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),fns)
+    case(BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,vararr),i1,i2),fns)
       equation
-        inlined = inlineVarOptArray(1,vararr,i4,fns,false);
+        inlined = inlineVarOptArray(vararr,fns);
       then
-        (BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),inlined);
+        (BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,vararr),i1,i2),inlined);
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -457,61 +456,25 @@ algorithm
   end matchcontinue;
 end inlineVariables;
 
-protected function updateArrayCond
-  input Boolean cond;
-  input array<Type_a> inArr;
-  input Integer index;
-  input Type_a value;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  _ := match(cond,inArr,index,value)
-    case(false,_,_,_) then ();
-    case(true,_,_,_)
-      equation
-        arrayUpdate(inArr,index,value);
-      then
-        ();
-  end match;
-end updateArrayCond;
-
 protected function inlineVarOptArray
-"functio: inlineVarOptArray
+"function: inlineVarOptArray
   inlines calls in a variable option"
-  input Integer index;
   input array<Option<BackendDAE.Var>> inVarArray;
-  input Integer arraysize;
   input Inline.Functiontuple fns;
-  input Boolean iInlined;
-  output Boolean oInlined;
+  output Boolean oInlined = false;
+protected
+  Boolean b;
+  Option<BackendDAE.Var> var;
 algorithm
-  oInlined := inlineVarOptArrayWork(index > arraysize,index,inVarArray,arraysize,fns,iInlined);
+  for index in 1:arrayLength(inVarArray) loop
+    var := inVarArray[index];
+    (var,b) := inlineVarOpt(var,fns);
+    if b then
+      arrayUpdate(inVarArray,index,var);
+    end if;
+    oInlined := oInlined or b;
+  end for;
 end inlineVarOptArray;
-
-protected function inlineVarOptArrayWork
-"functio: inlineVarOptArray
-  inlines calls in a variable option"
-  input Boolean stop;
-  input Integer index;
-  input array<Option<BackendDAE.Var>> inVarArray;
-  input Integer arraysize;
-  input Inline.Functiontuple fns;
-  input Boolean iInlined;
-  output Boolean oInlined;
-algorithm
-  oInlined := match (stop,index,inVarArray,arraysize,fns,iInlined)
-    local
-      Option<BackendDAE.Var> var;
-      Boolean b;
-    case (true,_,_,_,_,_)
-      then iInlined;
-    else
-      equation
-        var = inVarArray[index];
-        (var,b) = inlineVarOpt(var,fns);
-        updateArrayCond(b,inVarArray,index,var);
-      then inlineVarOptArrayWork(index+1 > arraysize,index+1,inVarArray,arraysize,fns,b or iInlined);
-  end match;
-end inlineVarOptArrayWork;
 
 protected function inlineVarOpt
 "functio: inlineVarOpt
@@ -523,14 +486,14 @@ protected function inlineVarOpt
 algorithm
   (outVarOption,inlined) := match(inVarOption,fns)
     local
-      BackendDAE.Var var;
+      BackendDAE.Var var,var2;
       Boolean b;
     case(NONE(),_) then (NONE(),false);
     case(SOME(var),_)
       equation
-        (var,b) = inlineVar(var,fns);
+        (var2,b) = inlineVar(var,fns);
       then
-        (SOME(var),b);
+        (if referenceEq(var, var2) then inVarOption else SOME(var2),b);
   end match;
 end inlineVarOpt;
 
@@ -585,8 +548,8 @@ algorithm
       list<BackendDAE.TimeEvent> timeEvents;
 
     case(BackendDAE.EVENT_INFO(timeEvents, zclst, samples, relations, numberOfMathEvents), fns) equation
-      (zclst_1, b1) = inlineZeroCrossings(zclst, fns, {}, false);
-      (relations, b2) = inlineZeroCrossings(relations, fns, {}, false);
+      (zclst_1, b1) = inlineZeroCrossings(zclst, fns);
+      (relations, b2) = inlineZeroCrossings(relations, fns);
       ev = if b1 or b2 then BackendDAE.EVENT_INFO(timeEvents, zclst_1, samples, relations, numberOfMathEvents) else inEventInfo;
     then ev;
 
@@ -601,25 +564,19 @@ end inlineEventInfo;
 protected function inlineZeroCrossings "inlines function calls in zero crossings"
   input list<BackendDAE.ZeroCrossing> inStmts;
   input Inline.Functiontuple fns;
-  input list<BackendDAE.ZeroCrossing> iAcc;
-  input Boolean iInlined;
   output list<BackendDAE.ZeroCrossing> outStmts;
-  output Boolean oInlined;
+  output Boolean oInlined = false;
+protected
+  BackendDAE.ZeroCrossing zc;
 algorithm
-  (outStmts, oInlined) := match (inStmts, fns, iAcc, iInlined)
-    local
-      BackendDAE.ZeroCrossing zc;
-      list<BackendDAE.ZeroCrossing> rest, stmts;
-      Boolean b;
-
-    case ({}, _, _, _)
-    then (listReverse(iAcc), iInlined);
-
-    case (zc::rest, _, _, _) equation
-      (zc, b) = inlineZeroCrossing(zc, fns);
-      (stmts, b) = inlineZeroCrossings(rest, fns, zc::iAcc, b or iInlined);
-    then (stmts, b);
-  end match;
+  outStmts := list(match stmt
+      local
+        Boolean b;
+      case _ equation
+        (zc, b) = inlineZeroCrossing(stmt, fns);
+        oInlined = oInlined or b;
+      then zc;
+    end match for stmt in inStmts);
 end inlineZeroCrossings;
 
 protected function inlineZeroCrossing "inlines function calls in a zero crossing"
@@ -628,69 +585,21 @@ protected function inlineZeroCrossing "inlines function calls in a zero crossing
   output BackendDAE.ZeroCrossing outZeroCrossing;
   output Boolean oInlined;
 algorithm
-  (outZeroCrossing, oInlined) := matchcontinue(inZeroCrossing, inElementList)
+  (outZeroCrossing, oInlined) := match(inZeroCrossing, inElementList)
     local
       Inline.Functiontuple fns;
       DAE.Exp e, e_1;
       list<Integer> ilst1;
       list<DAE.Statement> assrtLst;
-
-    case(BackendDAE.ZERO_CROSSING(e, ilst1), fns) equation
-      (e_1, _, true, _) = Inline.inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
-    then (BackendDAE.ZERO_CROSSING(e_1, ilst1), true);
-
-    else (inZeroCrossing, false);
-  end matchcontinue;
-end inlineZeroCrossing;
-
-protected function inlineReinitStmts
-"inlines function calls in reinit statements"
-  input list<BackendDAE.WhenOperator> inStmts;
-  input Inline.Functiontuple fns;
-  input list<BackendDAE.WhenOperator> iAcc;
-  input Boolean iInlined;
-  output list<BackendDAE.WhenOperator> outStmts;
-  output Boolean oInlined;
-algorithm
-  (outStmts,oInlined) := match (inStmts,fns,iAcc,iInlined)
-    local
-      BackendDAE.WhenOperator re;
-      list<BackendDAE.WhenOperator> rest,stmts;
       Boolean b;
 
-    case ({},_,_,_) then (listReverse(iAcc),iInlined);
-    case (re::rest,_,_,_)
-      equation
-        (re,b) = inlineReinitStmt(re,fns);
-        (stmts,b) = inlineReinitStmts(rest,fns,re::iAcc,b or iInlined);
-      then
-        (stmts,b);
-  end match;
-end inlineReinitStmts;
+    case(BackendDAE.ZERO_CROSSING(e, ilst1), fns) equation
+      (e_1, _, b, _) = Inline.inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
+    then (BackendDAE.ZERO_CROSSING(e_1, ilst1), b);
 
-protected function inlineReinitStmt
-"inlines function calls in a reinit statement"
-  input BackendDAE.WhenOperator inReinitStatement;
-  input Inline.Functiontuple inElementList;
-  output BackendDAE.WhenOperator outReinitStatement;
-  output Boolean inlined;
-algorithm
-  (outReinitStatement,inlined) := matchcontinue(inReinitStatement,inElementList)
-    local
-      Inline.Functiontuple fns;
-      DAE.ComponentRef cref;
-      DAE.Exp e,e_1;
-      BackendDAE.WhenOperator rs;
-      DAE.ElementSource source;
-      list<DAE.Statement> assrtLst;
-    case (BackendDAE.REINIT(cref,e,source),fns)
-      equation
-        (e_1,source,true,_) = Inline.inlineExp(e,fns,source);
-      then
-        (BackendDAE.REINIT(cref,e_1,source),true);
-    case (rs,_) then (rs,false);
-  end matchcontinue;
-end inlineReinitStmt;
+    else (inZeroCrossing, false);
+  end match;
+end inlineZeroCrossing;
 
 // =============================================================================
 // inline append functions
@@ -780,13 +689,13 @@ function: inlineEquationArray
   output Boolean oInlined;
   output BackendDAE.Shared shared = iShared;
 protected
-  Integer i1,i2,size;
+  Integer i1,size;
   array<Option<BackendDAE.Equation>> eqarr;
 algorithm
   try
-    BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr) := inEquationArray;
+    BackendDAE.EQUATION_ARRAY(size,i1,eqarr) := inEquationArray;
     (outEqs, oInlined, shared) := inlineEquationOptArrayAppend(inEquationArray, fns, shared);
-    outEquationArray := BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr);
+    outEquationArray := BackendDAE.EQUATION_ARRAY(size,i1,eqarr);
  else
    if Flags.isSet(Flags.FAILTRACE) then
       Debug.trace("BackendInline.inlineEquationArrayAppend failed\n");

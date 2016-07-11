@@ -296,7 +296,6 @@ interface package GraphvizDumpTV
       record EQUATION_ARRAY
         Integer size "size of the Equations in scalar form";
         Integer numberOfElement "no. elements" ;
-        Integer arrSize "array size" ;
         array<Option<Equation>> equOptArr;
       end EQUATION_ARRAY;
     end EquationArray;

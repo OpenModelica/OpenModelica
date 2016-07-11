@@ -78,7 +78,7 @@ algorithm
   arrsize := realInt(rlen);
   optarr := arrayCreate(arrsize, NONE());
   (size, optarr) := listEquation1(inEquationList, optarr);
-  outEquationArray := BackendDAE.EQUATION_ARRAY(size, len, arrsize, optarr);
+  outEquationArray := BackendDAE.EQUATION_ARRAY(size, len, optarr);
 end listEquation;
 
 protected function listEquation1
@@ -111,7 +111,7 @@ protected
   array<Option<BackendDAE.Equation>> equOptArr;
 algorithm
   equOptArr := arrayCreate(size, NONE());
-  outEquationArray := BackendDAE.EQUATION_ARRAY(0, 0, size, equOptArr);
+  outEquationArray := BackendDAE.EQUATION_ARRAY(0, 0, equOptArr);
 end emptyEqnsSized;
 
 public function equationList "author: PA
@@ -334,14 +334,14 @@ algorithm
   (outTpl) := match (inExp,inTpl)
     local
       BackendDAE.Variables vars;
-      list<DAE.ComponentRef> crefs;
+      list<DAE.ComponentRef> crefs, crefs2;
       DAE.ComponentRef cr;
 
     case (DAE.CREF(componentRef=cr), (crefs, vars))
       guard BackendVariable.isState(cr, vars)
     equation
-      crefs = List.unionEltOnTrue(cr, crefs, ComponentReference.crefEqual);
-    then (crefs, vars);
+      crefs2 = List.unionEltOnTrue(cr, crefs, ComponentReference.crefEqual);
+    then if referenceEq(crefs, crefs2) then inTpl else (crefs2, vars);
 
     else inTpl;
   end match;
@@ -1333,13 +1333,35 @@ algorithm
   end match;
 end equationEqual;
 
-public function addEquations "author: wbraun
+public function addEquations "author: hkiel
   Adds a list of BackendDAE.Equation to BackendDAE.EquationArray."
   input list<BackendDAE.Equation> eqnlst;
-  input BackendDAE.EquationArray eqns;
-  output BackendDAE.EquationArray eqns_1;
+  input output BackendDAE.EquationArray eqns;
+protected
+  Integer len = listLength(eqnlst);
+  Integer numberOfElement, size, arrSize, expandsize;
+  array<Option<BackendDAE.Equation>> equOptArr;
+  Real rsize, rexpandsize;
 algorithm
-  eqns_1 := List.fold(eqnlst, addEquation, eqns);
+  if len == 0 then return; end if;
+
+  BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, equOptArr=equOptArr) := eqns;
+  arrSize := arrayLength(equOptArr);
+  if numberOfElement+len > arrSize then
+    rsize := intReal(arrSize);
+    rexpandsize := rsize * 0.4;
+    expandsize := intMax(realInt(rexpandsize), len);
+    arrSize := expandsize + arrSize;
+    equOptArr := Array.expand(expandsize, equOptArr, NONE());
+  end if;
+
+  for e in eqnlst loop
+    numberOfElement := numberOfElement + 1;
+    arrayUpdate(equOptArr, numberOfElement, SOME(e));
+    size := equationSize(e) + size;
+  end for;
+
+  eqns := BackendDAE.EQUATION_ARRAY(size, numberOfElement, equOptArr);
 end addEquations;
 
 public function mergeEquationArray "
@@ -1389,18 +1411,20 @@ algorithm
       array<Option<BackendDAE.Equation>> arr_1, equOptArr, arr_2;
       Real rsize, rexpandsize;
 
-    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) guard
-      (numberOfElement < arrSize) "Have space to add array elt."
+    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, equOptArr=equOptArr) guard
+      (numberOfElement < arrayLength(equOptArr)) "Have space to add array elt."
     equation
+      arrSize = arrayLength(equOptArr);
       n_1 = numberOfElement + 1;
       index = findFirstUnusedEquOptEntry(n_1, arrSize, equOptArr);
       arr_1 = arrayUpdate(equOptArr, index, SOME(inEquation));
       size = equationSize(inEquation) + size;
-    then BackendDAE.EQUATION_ARRAY(size, n_1, arrSize, arr_1);
+    then BackendDAE.EQUATION_ARRAY(size, n_1, arr_1);
 
-    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) guard /* Do NOT Have space to add array elt. Expand array 1.4 times */
-      not (numberOfElement < arrSize)
+    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, equOptArr=equOptArr) guard /* Do NOT Have space to add array elt. Expand array 1.4 times */
+      not (numberOfElement < arrayLength(equOptArr))
     equation
+      arrSize = arrayLength(equOptArr);
       rsize = intReal(arrSize);
       rexpandsize = rsize * 0.4;
       expandsize = realInt(rexpandsize);
@@ -1410,10 +1434,10 @@ algorithm
       n_1 = numberOfElement + 1;
       arr_2 = arrayUpdate(arr_1, n_1, SOME(inEquation));
       size = equationSize(inEquation) + size;
-    then BackendDAE.EQUATION_ARRAY(size, n_1, newsize, arr_2);
+    then BackendDAE.EQUATION_ARRAY(size, n_1, arr_2);
 
-    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) equation
-      print("- BackendEquation.addEquation failed\nArraySize: " + intString(arrSize) + "\nnumberOfElement " + intString(numberOfElement) + "\nSize " + intString(size) + "\narraySize " + intString(arrayLength(equOptArr)));
+    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, equOptArr=equOptArr) equation
+      print("- BackendEquation.addEquation failed\nArraySize: " + intString(arrayLength(equOptArr)) + "\nnumberOfElement " + intString(numberOfElement) + "\nSize " + intString(size) + "\narraySize " + intString(arrayLength(equOptArr)));
     then fail();
   end matchcontinue;
 end addEquation;
@@ -1444,7 +1468,7 @@ public function requationsAddDAE "author: Frenkel TUD 2012-10
   output BackendDAE.EqSystem outSyst;
 algorithm
   outSyst := if listEmpty(inEquations) then inSyst
-    else BackendDAEUtil.setEqSystRemovedEqns(inSyst, List.fold(inEquations, addEquation, inSyst.removedEqs));
+    else BackendDAEUtil.setEqSystRemovedEqns(inSyst, addEquations(inEquations, inSyst.removedEqs));
 end requationsAddDAE;
 
 public function removeRemovedEqs "remove removedEqs"
@@ -1568,7 +1592,7 @@ algorithm
 
     case _ equation
       equOptArr = List.fold1r(inIndices, arrayUpdate, NONE(), inEquationArray.equOptArr);
-      eqnlst = equationDelete1(inEquationArray.arrSize, equOptArr);
+      eqnlst = equationDelete1(arrayLength(inEquationArray.equOptArr), equOptArr);
     then listEquation(eqnlst);
 
     else equation
@@ -1601,16 +1625,16 @@ public function equationRemove "author: Frenkel TUD 2012-09
   input BackendDAE.EquationArray inEquationArray;
   output BackendDAE.EquationArray outEquationArray;
 protected
-  Integer numberOfElement, arrSize, size, eqnsize;
+  Integer numberOfElement, size, eqnsize;
   array<Option<BackendDAE.Equation>> equOptArr;
 algorithm
-  BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) := inEquationArray;
+  BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, equOptArr=equOptArr) := inEquationArray;
 
   if intLe(inPos, numberOfElement) then
     if isSome(equOptArr[inPos]) then
       eqnsize := equationSize(Util.getOption(equOptArr[inPos]));
       equOptArr := arrayUpdate(equOptArr, inPos, NONE());
-      outEquationArray := BackendDAE.EQUATION_ARRAY(size - eqnsize, numberOfElement, arrSize, equOptArr);
+      outEquationArray := BackendDAE.EQUATION_ARRAY(size - eqnsize, numberOfElement, equOptArr);
       return ;
     end if;
   end if;
@@ -1627,7 +1651,7 @@ public function compressEquations "author: Frenkel TUD 2012-11
 algorithm
   outEquationArray := matchcontinue (inEquationArray)
     local
-      Integer numberOfElement, arrSize;
+      Integer numberOfElement;
       array<Option<BackendDAE.Equation>> equOptArr;
 
     case BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfElement, equOptArr=equOptArr) equation

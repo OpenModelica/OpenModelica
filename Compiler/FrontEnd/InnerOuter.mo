@@ -1840,7 +1840,6 @@ uniontype ValueArray
  cost of adding elements in a more efficient manner"
   record VALUE_ARRAY
     Integer numberOfElements "number of elements in hashtable" ;
-    Integer arrSize "size of crefArray" ;
     array<Option<tuple<Key,Value>>> valueArray "array of values";
   end VALUE_ARRAY;
 end ValueArray;
@@ -1853,18 +1852,17 @@ output InstHierarchyHashTable outHash;
 algorithm outHash := match(inHash)
   local
     array<list<tuple<Key,Integer>>> arg1,arg1_2;
-    Integer arg3,arg4,arg3_2,arg4_2,arg21,arg21_2,arg22,arg22_2;
-    array<Option<tuple<Key,Value>>> arg23,arg23_2;
-  case(HASHTABLE(arg1,VALUE_ARRAY(arg21,arg22,arg23),arg3,arg4))
+    Integer arg3,arg4,arg3_2,arg4_2,arg21,arg21_2;
+    array<Option<tuple<Key,Value>>> arg22,arg22_2;
+  case(HASHTABLE(arg1,VALUE_ARRAY(arg21,arg22),arg3,arg4))
     equation
       arg1_2 = arrayCopy(arg1);
       arg21_2 = arg21;
-      arg22_2 = arg22;
-      arg23_2 = arrayCopy(arg23);
+      arg22_2 = arrayCopy(arg22);
       arg3_2 = arg3;
       arg4_2 = arg4;
       then
-        HASHTABLE(arg1_2,VALUE_ARRAY(arg21_2,arg22_2,arg23_2),arg3_2,arg4_2);
+        HASHTABLE(arg1_2,VALUE_ARRAY(arg21_2,arg22_2),arg3_2,arg4_2);
 end match;
 end cloneInstHierarchyHashTable;
 
@@ -1880,7 +1878,7 @@ protected
 algorithm
   arr := arrayCreate(1000, {});
   emptyarr := arrayCreate(100, NONE());
-  hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
+  hashTable := HASHTABLE(arr,VALUE_ARRAY(0,emptyarr),1000,0);
 end emptyInstHierarchyHashTable;
 
 public function isEmpty "Returns true if hashtable is empty"
@@ -2184,16 +2182,17 @@ algorithm
       Integer n_1,n,size,expandsize,expandsize_1,newsize;
       array<Option<tuple<Key,Value>>> arr_1,arr,arr_2;
       Real rsize,rexpandsize;
-    case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr),_)
+    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),_)
       equation
-        (n < size) = true "Have space to add array elt." ;
+        (n < arrayLength(arr)) = true "Have space to add array elt." ;
         n_1 = n + 1;
         arr_1 = arrayUpdate(arr, n + 1, SOME(entry));
       then
-        VALUE_ARRAY(n_1,size,arr_1);
+        VALUE_ARRAY(n_1,arr_1);
 
-    case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr),_)
+    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),_)
       equation
+        size = arrayLength(arr);
         (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4" ;
         rsize = intReal(size);
         rexpandsize = rsize * 0.4;
@@ -2204,7 +2203,7 @@ algorithm
         n_1 = n + 1;
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
       then
-        VALUE_ARRAY(n_1,newsize,arr_2);
+        VALUE_ARRAY(n_1,arr_2);
     else
       equation
         print("-InstHierarchyHashTable.valueArrayAdd failed\n");
@@ -2223,14 +2222,14 @@ public function valueArraySetnth
 algorithm
   outValueArray := matchcontinue (valueArray,pos,entry)
     local
-      array<Option<tuple<Key,Value>>> arr_1,arr;
+      array<Option<tuple<Key,Value>>> arr;
       Integer n,size;
-    case (VALUE_ARRAY(n,size,arr),_,_)
+    case (VALUE_ARRAY(n,arr),_,_)
       equation
-        (pos < size) = true;
-        arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
+        (pos < arrayLength(arr)) = true;
+        arrayUpdate(arr, pos + 1, SOME(entry));
       then
-        VALUE_ARRAY(n,size,arr_1);
+        valueArray;
     else
       equation
         print("-InstHierarchyHashTable.valueArraySetnth failed\n");
@@ -2248,14 +2247,14 @@ public function valueArrayClearnth
 algorithm
   outValueArray := matchcontinue (valueArray,pos)
     local
-      array<Option<tuple<Key,Value>>> arr_1,arr;
+      array<Option<tuple<Key,Value>>> arr;
       Integer n,size;
-    case (VALUE_ARRAY(n,size,arr),_)
+    case (VALUE_ARRAY(n,arr),_)
       equation
-        (pos < size) = true;
-        arr_1 = arrayUpdate(arr, pos + 1,NONE());
+        (pos < arrayLength(arr)) = true;
+        arrayUpdate(arr, pos + 1,NONE());
       then
-        VALUE_ARRAY(n,size,arr_1);
+        valueArray;
     else
       equation
         print("-InstHierarchyHashTable.valueArrayClearnth failed\n");

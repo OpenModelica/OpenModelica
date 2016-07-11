@@ -198,7 +198,6 @@ uniontype VariableArray "array of Equations are expandable, to amortize the cost
   equations in a more efficient manner"
   record VARIABLE_ARRAY
     Integer numberOfElements "no. elements";
-    Integer arrSize "array size";
     array<Option<Var>> varOptArr;
   end VARIABLE_ARRAY;
 end VariableArray;
@@ -208,7 +207,6 @@ uniontype EquationArray
   record EQUATION_ARRAY
     Integer size "size of the Equations in scalar form";
     Integer numberOfElement "no. elements";
-    Integer arrSize "array size";
     array<Option<Equation>> equOptArr;
   end EQUATION_ARRAY;
 end EquationArray;
