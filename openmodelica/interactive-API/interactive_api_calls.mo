@@ -41,4 +41,8 @@ model M1
   Modelica.Electrical.Analog.Basic.Resistor resistor1(phi(start = 1));
 end M1;
 
+model state1
+  annotation(__Dymola_state=true);
+end state1;
+
 
