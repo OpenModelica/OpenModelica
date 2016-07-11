@@ -509,6 +509,8 @@ constant DebugFlag LIST_REVERSE_WRONG_ORDER = DEBUG_FLAG(167, "listAppendWrongOr
   Util.gettext("Print notifications about bad usage of listAppend."));
 constant DebugFlag PARTITION_INITIALIZATION = DEBUG_FLAG(168, "partitionInitialization", true,
   Util.gettext("This flag controls if partitioning is applied to the initialization system."));
+constant DebugFlag EVAL_PARAM_DUMP = DEBUG_FLAG(169, "evalParameterDump", false,
+  Util.gettext("Dumps information for evaluating parameters."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -683,7 +685,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMPBACKENDINLINE_VERBOSE,
   BLT_MATRIX_DUMP,
   LIST_REVERSE_WRONG_ORDER,
-  PARTITION_INITIALIZATION
+  PARTITION_INITIALIZATION,
+  EVAL_PARAM_DUMP
 };
 
 public
