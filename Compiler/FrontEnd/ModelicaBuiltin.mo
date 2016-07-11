@@ -3692,6 +3692,7 @@ function getClassInformation
   output Boolean isDocumentationClass;
   output String version;
   output String preferredView;
+  output Boolean state;
 external "builtin";
 annotation(
   Documentation(info="<html>

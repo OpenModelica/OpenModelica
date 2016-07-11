@@ -851,7 +851,7 @@ algorithm
     case (cache,_,"getClassInformation",_,st,_)
       then (cache,Values.TUPLE({Values.STRING(""),Values.STRING(""),Values.BOOL(false),Values.BOOL(false),Values.BOOL(false),Values.STRING(""),
                                 Values.BOOL(false),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.ARRAY({},{0}),
-                                Values.BOOL(false),Values.BOOL(false),Values.STRING(""),Values.STRING("")}),st);
+                                Values.BOOL(false),Values.BOOL(false),Values.STRING(""),Values.STRING(""),Values.BOOL(false)}),st);
 
     case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       algorithm
@@ -6526,6 +6526,44 @@ algorithm
   System.writeFile(filename, str + str1);
 end saveTotalModel;
 
+protected function getDymolaStateAnnotation
+  "Returns the __Dymola_state annotation of a class.
+  This is annotated with the annotation:
+  annotation (__Dymola_state=true); in the class definition"
+  input Absyn.Path className;
+  input Absyn.Program p;
+  output Boolean isState;
+algorithm
+  isState := match(className,p)
+    local
+      String stateStr;
+    case(_,_)
+      equation
+        stateStr = Interactive.getNamedAnnotation(className, p, Absyn.IDENT("__Dymola_state"), SOME("false"), getDymolaStateAnnotationModStr);
+      then
+        stringEq(stateStr, "true");
+  end match;
+end getDymolaStateAnnotation;
+
+protected function getDymolaStateAnnotationModStr
+  "Extractor function for getDocumentationClassAnnotation"
+  input Option<Absyn.Modification> mod;
+  output String stateStr;
+algorithm
+  stateStr := matchcontinue(mod)
+    local Absyn.Exp e;
+
+    case(SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=e))))
+      equation
+        stateStr = Dump.printExpStr(e);
+      then
+        stateStr;
+
+    else "false";
+
+  end matchcontinue;
+end getDymolaStateAnnotationModStr;
+
 protected function getClassInformation
 "author: PA
   Returns all the possible class information.
@@ -6540,7 +6578,7 @@ protected function getClassInformation
 protected
   String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol,version,preferredView;
   String dim_str,lastIdent;
-  Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly,isProtectedClass,isDocClass;
+  Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly,isProtectedClass,isDocClass,isState;
   Absyn.Restriction restr;
   Absyn.ClassDef cdef;
   Integer sl,sc,el,ec;
@@ -6560,6 +6598,7 @@ algorithm
   isDocClass := Interactive.getDocumentationClassAnnotation(path, p);
   version := CevalScript.getPackageVersion(path, p);
   Absyn.STRING(preferredView) := Interactive.getNamedAnnotation(path, p, Absyn.IDENT("preferredView"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+  isState := getDymolaStateAnnotation(path, p);
   res_1 := Values.TUPLE({
     Values.STRING(res),
     Values.STRING(cmt),
@@ -6576,7 +6615,8 @@ algorithm
     Values.BOOL(isProtectedClass),
     Values.BOOL(isDocClass),
     Values.STRING(version),
-    Values.STRING(preferredView)
+    Values.STRING(preferredView),
+    Values.BOOL(isState)
   });
 end getClassInformation;
 
