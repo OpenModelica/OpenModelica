@@ -1015,6 +1015,397 @@ void DeleteConnectionCommand::undo()
   mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation);
 }
 
+AddTransitionCommand::AddTransitionCommand(LineAnnotation *pTransitionLineAnnotation, bool addTransition, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpTransitionLineAnnotation = pTransitionLineAnnotation;
+  mAddTransition = addTransition;
+  setText(QString("Add Transition transition(%1, %2)").arg(mpTransitionLineAnnotation->getStartComponentName(),
+                                                           mpTransitionLineAnnotation->getEndComponentName()));
+
+  mpTransitionLineAnnotation->setToolTip(QString("<b>transition</b>(%1, %2, %3, %4, %5, %6, %7)")
+                                         .arg(mpTransitionLineAnnotation->getStartComponentName())
+                                         .arg(mpTransitionLineAnnotation->getEndComponentName())
+                                         .arg(mpTransitionLineAnnotation->getCondition())
+                                         .arg(mpTransitionLineAnnotation->getImmediate() ? "true" : "false")
+                                         .arg(mpTransitionLineAnnotation->getReset() ? "true" : "false")
+                                         .arg(mpTransitionLineAnnotation->getSynchronize() ? "true" : "false")
+                                         .arg(mpTransitionLineAnnotation->getPriority()));
+  mpTransitionLineAnnotation->drawCornerItems();
+  mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();
+}
+
+/*!
+ * \brief AddTransitionCommand::redo
+ * Redo the AddTransitionCommand.
+ */
+void AddTransitionCommand::redo()
+{
+  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToList(mpTransitionLineAnnotation);
+  // Add the start component transition details.
+  Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
+  if (pStartComponent && pStartComponent->getRootParentComponent()) {
+    pStartComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->getRootParentComponent()->setHasTransition(true);
+  } else if (pStartComponent) {
+    pStartComponent->addConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->setHasTransition(true);
+  }
+  // Add the end component connection details.
+  Component *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
+  if (pEndComponent && pEndComponent->getRootParentComponent()) {
+    pEndComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
+    pEndComponent->getRootParentComponent()->setHasTransition(true);
+  } else if (pEndComponent) {
+    pEndComponent->addConnectionDetails(mpTransitionLineAnnotation);
+    pEndComponent->setHasTransition(true);
+  }
+  mpTransitionLineAnnotation->getTextAnnotation()->setTextString("%condition");
+  mpTransitionLineAnnotation->getTextAnnotation()->updateTextString();
+  mpTransitionLineAnnotation->updateTransitionTextPosition();
+  mpTransitionLineAnnotation->getGraphicsView()->addItem(mpTransitionLineAnnotation);
+  mpTransitionLineAnnotation->emitAdded();
+  if (mAddTransition) {
+    mpTransitionLineAnnotation->getGraphicsView()->addTransitionToClass(mpTransitionLineAnnotation);
+  }
+}
+
+/*!
+ * \brief AddTransitionCommand::undo
+ * Undo the AddTransitionCommand.
+ */
+void AddTransitionCommand::undo()
+{
+  mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromList(mpTransitionLineAnnotation);
+  // Remove the start component connection details.
+  Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
+  if (pStartComponent && pStartComponent->getRootParentComponent()) {
+    pStartComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->getRootParentComponent()->setHasTransition(false);
+  } else if (pStartComponent) {
+    pStartComponent->removeConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->setHasTransition(false);
+  }
+  // Remove the end component connection details.
+  Component *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
+  if (pEndComponent && pEndComponent->getRootParentComponent()) {
+    pEndComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
+    pEndComponent->getRootParentComponent()->setHasTransition(false);
+  } else if (pEndComponent) {
+    pEndComponent->removeConnectionDetails(mpTransitionLineAnnotation);
+    pEndComponent->setHasTransition(false);
+  }
+  mpTransitionLineAnnotation->getTextAnnotation()->setTextString("%condition");
+  mpTransitionLineAnnotation->getTextAnnotation()->updateTextString();
+  mpTransitionLineAnnotation->updateTransitionTextPosition();
+  mpTransitionLineAnnotation->getGraphicsView()->removeItem(mpTransitionLineAnnotation);
+  mpTransitionLineAnnotation->emitDeleted();
+  mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromClass(mpTransitionLineAnnotation);
+}
+
+UpdateTransitionCommand::UpdateTransitionCommand(LineAnnotation *pTransitionLineAnnotation, QString oldCondition, bool oldImmediate,
+                                                 bool oldReset, bool oldSynchronize, int oldPriority, QString oldAnnotaton,
+                                                 QString newCondition, bool newImmediate, bool newReset, bool newSynchronize, int newPriority,
+                                                 QString newAnnotation, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpTransitionLineAnnotation = pTransitionLineAnnotation;
+  mOldCondition = oldCondition;
+  mOldImmediate = oldImmediate;
+  mOldReset = oldReset;
+  mOldSynchronize = oldSynchronize;
+  mOldPriority = oldPriority;
+  mOldAnnotation = oldAnnotaton;
+  mNewCondition = newCondition;
+  mNewImmediate = newImmediate;
+  mNewReset = newReset;
+  mNewSynchronize = newSynchronize;
+  mNewPriority = newPriority;
+  mNewAnnotation = newAnnotation;
+  setText(QString("Update Transition transition(%1, %2)").arg(mpTransitionLineAnnotation->getStartComponentName(),
+                                                              mpTransitionLineAnnotation->getEndComponentName()));
+}
+
+/*!
+ * \brief UpdateTransitionCommand::redo
+ * Redo the UpdateTransitionCommand.
+ */
+void UpdateTransitionCommand::redo()
+{
+  mpTransitionLineAnnotation->parseShapeAnnotation(mNewAnnotation);
+  mpTransitionLineAnnotation->initializeTransformation();
+  mpTransitionLineAnnotation->removeCornerItems();
+  mpTransitionLineAnnotation->drawCornerItems();
+  mpTransitionLineAnnotation->adjustGeometries();
+  mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();
+  mpTransitionLineAnnotation->update();
+  mpTransitionLineAnnotation->emitChanged();
+  mpTransitionLineAnnotation->setCondition(mNewCondition);
+  mpTransitionLineAnnotation->setImmediate(mNewImmediate);
+  mpTransitionLineAnnotation->setReset(mNewReset);
+  mpTransitionLineAnnotation->setSynchronize(mNewSynchronize);
+  mpTransitionLineAnnotation->setPriority(mNewPriority);
+  mpTransitionLineAnnotation->getTextAnnotation()->setTextString("%condition");
+  mpTransitionLineAnnotation->getTextAnnotation()->updateTextString();
+  mpTransitionLineAnnotation->updateTransitionTextPosition();
+  mpTransitionLineAnnotation->updateTransitionAnnotation(mOldCondition, mOldImmediate, mOldReset, mOldSynchronize, mOldPriority);
+  mpTransitionLineAnnotation->setToolTip(QString("<b>transition</b>(%1, %2, %3, %4, %5, %6, %7)")
+                                         .arg(mpTransitionLineAnnotation->getStartComponentName())
+                                         .arg(mpTransitionLineAnnotation->getEndComponentName())
+                                         .arg(mpTransitionLineAnnotation->getCondition())
+                                         .arg(mpTransitionLineAnnotation->getImmediate() ? "true" : "false")
+                                         .arg(mpTransitionLineAnnotation->getReset() ? "true" : "false")
+                                         .arg(mpTransitionLineAnnotation->getSynchronize() ? "true" : "false")
+                                         .arg(mpTransitionLineAnnotation->getPriority()));
+}
+
+/*!
+ * \brief UpdateTransitionCommand::undo
+ * Undo the UpdateTransitionCommand.
+ */
+void UpdateTransitionCommand::undo()
+{
+  mpTransitionLineAnnotation->parseShapeAnnotation(mOldAnnotation);
+  mpTransitionLineAnnotation->initializeTransformation();
+  mpTransitionLineAnnotation->removeCornerItems();
+  mpTransitionLineAnnotation->drawCornerItems();
+  mpTransitionLineAnnotation->adjustGeometries();
+  mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();
+  mpTransitionLineAnnotation->update();
+  mpTransitionLineAnnotation->emitChanged();
+  mpTransitionLineAnnotation->setCondition(mOldCondition);
+  mpTransitionLineAnnotation->setImmediate(mOldImmediate);
+  mpTransitionLineAnnotation->setReset(mOldReset);
+  mpTransitionLineAnnotation->setSynchronize(mOldSynchronize);
+  mpTransitionLineAnnotation->setPriority(mOldPriority);
+  mpTransitionLineAnnotation->getTextAnnotation()->setTextString("%condition");
+  mpTransitionLineAnnotation->getTextAnnotation()->updateTextString();
+  mpTransitionLineAnnotation->updateTransitionTextPosition();
+  mpTransitionLineAnnotation->updateTransitionAnnotation(mNewCondition, mNewImmediate, mNewReset, mNewSynchronize, mNewPriority);
+  mpTransitionLineAnnotation->setToolTip(QString("<b>transition</b>(%1, %2, %3, %4, %5, %6, %7)")
+                                         .arg(mpTransitionLineAnnotation->getStartComponentName())
+                                         .arg(mpTransitionLineAnnotation->getEndComponentName())
+                                         .arg(mpTransitionLineAnnotation->getCondition())
+                                         .arg(mpTransitionLineAnnotation->getImmediate() ? "true" : "false")
+                                         .arg(mpTransitionLineAnnotation->getReset() ? "true" : "false")
+                                         .arg(mpTransitionLineAnnotation->getSynchronize() ? "true" : "false")
+                                         .arg(mpTransitionLineAnnotation->getPriority()));
+}
+
+DeleteTransitionCommand::DeleteTransitionCommand(LineAnnotation *pTransitionLineAnnotation, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpTransitionLineAnnotation = pTransitionLineAnnotation;
+}
+
+/*!
+ * \brief DeleteTransitionCommand::redo
+ * Redo the DeleteTransitionCommand.
+ */
+void DeleteTransitionCommand::redo()
+{
+  mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromList(mpTransitionLineAnnotation);
+  // Remove the start component connection details.
+  Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
+  if (pStartComponent && pStartComponent->getRootParentComponent()) {
+    pStartComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->getRootParentComponent()->setHasTransition(false);
+  } else if (pStartComponent) {
+    pStartComponent->removeConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->setHasTransition(false);
+  }
+  // Remove the end component connection details.
+  Component *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
+  if (pEndComponent && pEndComponent->getRootParentComponent()) {
+    pEndComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
+    pEndComponent->getRootParentComponent()->setHasTransition(false);
+  } else if (pEndComponent) {
+    pEndComponent->removeConnectionDetails(mpTransitionLineAnnotation);
+    pEndComponent->setHasTransition(false);
+  }
+  mpTransitionLineAnnotation->getGraphicsView()->removeItem(mpTransitionLineAnnotation);
+  mpTransitionLineAnnotation->emitDeleted();
+  mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromClass(mpTransitionLineAnnotation);
+}
+
+/*!
+ * \brief DeleteTransitionCommand::undo
+ * Undo the DeleteTransitionCommand.
+ */
+void DeleteTransitionCommand::undo()
+{
+  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToList(mpTransitionLineAnnotation);
+  // Add the start component connection details.
+  Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
+  if (pStartComponent && pStartComponent->getRootParentComponent()) {
+    pStartComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->getRootParentComponent()->setHasTransition(true);
+  } else if (pStartComponent) {
+    pStartComponent->addConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->setHasTransition(true);
+  }
+  // Add the end component connection details.
+  Component *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
+  if (pEndComponent && pEndComponent->getRootParentComponent()) {
+    pEndComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
+    pEndComponent->getRootParentComponent()->setHasTransition(true);
+  } else if (pEndComponent) {
+    pEndComponent->addConnectionDetails(mpTransitionLineAnnotation);
+    pEndComponent->setHasTransition(true);
+  }
+  mpTransitionLineAnnotation->getGraphicsView()->addItem(mpTransitionLineAnnotation);
+  mpTransitionLineAnnotation->emitAdded();
+  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToClass(mpTransitionLineAnnotation);
+}
+
+AddInitialStateCommand::AddInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, bool addInitialState, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpInitialStateLineAnnotation = pInitialStateLineAnnotation;
+  mAddInitialState = addInitialState;
+  setText(QString("Add InitialState initialState(%1)").arg(mpInitialStateLineAnnotation->getStartComponentName()));
+
+  mpInitialStateLineAnnotation->setToolTip(QString("<b>initialState</b>(%1)").arg(mpInitialStateLineAnnotation->getStartComponentName()));
+  mpInitialStateLineAnnotation->drawCornerItems();
+  mpInitialStateLineAnnotation->setCornerItemsActiveOrPassive();
+}
+
+/*!
+ * \brief AddInitialStateCommand::redo
+ * Redo the AddInitialStateCommand.
+ */
+void AddInitialStateCommand::redo()
+{
+  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToList(mpInitialStateLineAnnotation);
+  // Add the start component transition details.
+  Component *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
+  if (pStartComponent && pStartComponent->getRootParentComponent()) {
+    pStartComponent->getRootParentComponent()->addConnectionDetails(mpInitialStateLineAnnotation);
+    pStartComponent->getRootParentComponent()->setIsInitialState(true);
+  } else if (pStartComponent) {
+    pStartComponent->addConnectionDetails(mpInitialStateLineAnnotation);
+    pStartComponent->setIsInitialState(true);
+  }
+  mpInitialStateLineAnnotation->getGraphicsView()->addItem(mpInitialStateLineAnnotation);
+  mpInitialStateLineAnnotation->emitAdded();
+  if (mAddInitialState) {
+    mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToClass(mpInitialStateLineAnnotation);
+  }
+}
+
+/*!
+ * \brief AddInitialStateCommand::undo
+ * Undo the AddInitialStateCommand.
+ */
+void AddInitialStateCommand::undo()
+{
+  mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromList(mpInitialStateLineAnnotation);
+  // Remove the start component connection details.
+  Component *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
+  if (pStartComponent && pStartComponent->getRootParentComponent()) {
+    pStartComponent->getRootParentComponent()->removeConnectionDetails(mpInitialStateLineAnnotation);
+    pStartComponent->getRootParentComponent()->setIsInitialState(false);
+  } else if (pStartComponent) {
+    pStartComponent->removeConnectionDetails(mpInitialStateLineAnnotation);
+    pStartComponent->setIsInitialState(false);
+  }
+  mpInitialStateLineAnnotation->getGraphicsView()->removeItem(mpInitialStateLineAnnotation);
+  mpInitialStateLineAnnotation->emitDeleted();
+  mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromClass(mpInitialStateLineAnnotation);
+}
+
+UpdateInitialStateCommand::UpdateInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, QString oldAnnotaton, QString newAnnotation,
+                                                     QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpInitialStateLineAnnotation = pInitialStateLineAnnotation;
+  mOldAnnotation = oldAnnotaton;
+  mNewAnnotation = newAnnotation;
+  setText(QString("Update InitialState initialState(%1)").arg(mpInitialStateLineAnnotation->getStartComponentName()));
+}
+
+/*!
+ * \brief UpdateInitialStateCommand::redo
+ * Redo the UpdateInitialStateCommand.
+ */
+void UpdateInitialStateCommand::redo()
+{
+  mpInitialStateLineAnnotation->parseShapeAnnotation(mNewAnnotation);
+  mpInitialStateLineAnnotation->initializeTransformation();
+  mpInitialStateLineAnnotation->removeCornerItems();
+  mpInitialStateLineAnnotation->drawCornerItems();
+  mpInitialStateLineAnnotation->adjustGeometries();
+  mpInitialStateLineAnnotation->setCornerItemsActiveOrPassive();
+  mpInitialStateLineAnnotation->update();
+  mpInitialStateLineAnnotation->emitChanged();
+  mpInitialStateLineAnnotation->updateInitialStateAnnotation();
+}
+
+/*!
+ * \brief UpdateInitialStateCommand::undo
+ * Undo the UpdateInitialStateCommand.
+ */
+void UpdateInitialStateCommand::undo()
+{
+  mpInitialStateLineAnnotation->parseShapeAnnotation(mOldAnnotation);
+  mpInitialStateLineAnnotation->initializeTransformation();
+  mpInitialStateLineAnnotation->removeCornerItems();
+  mpInitialStateLineAnnotation->drawCornerItems();
+  mpInitialStateLineAnnotation->adjustGeometries();
+  mpInitialStateLineAnnotation->setCornerItemsActiveOrPassive();
+  mpInitialStateLineAnnotation->update();
+  mpInitialStateLineAnnotation->emitChanged();
+  mpInitialStateLineAnnotation->updateInitialStateAnnotation();
+}
+
+DeleteInitialStateCommand::DeleteInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpInitialStateLineAnnotation = pInitialStateLineAnnotation;
+}
+
+/*!
+ * \brief DeleteInitialStateCommand::redo
+ * Redo the DeleteInitialStateCommand.
+ */
+void DeleteInitialStateCommand::redo()
+{
+  mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromList(mpInitialStateLineAnnotation);
+  // Remove the start component connection details.
+  Component *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
+  if (pStartComponent && pStartComponent->getRootParentComponent()) {
+//    pStartComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->getRootParentComponent()->setIsInitialState(false);
+  } else if (pStartComponent) {
+    //pStartComponent->removeConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->setIsInitialState(false);
+  }
+  mpInitialStateLineAnnotation->getGraphicsView()->removeItem(mpInitialStateLineAnnotation);
+  mpInitialStateLineAnnotation->emitDeleted();
+  mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromClass(mpInitialStateLineAnnotation);
+}
+
+/*!
+ * \brief DeleteInitialStateCommand::undo
+ * Undo the DeleteInitialStateCommand.
+ */
+void DeleteInitialStateCommand::undo()
+{
+  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToList(mpInitialStateLineAnnotation);
+  // Add the start component connection details.
+  Component *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
+  if (pStartComponent && pStartComponent->getRootParentComponent()) {
+//    pStartComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->getRootParentComponent()->setIsInitialState(true);
+  } else if (pStartComponent) {
+//    pStartComponent->addConnectionDetails(mpTransitionLineAnnotation);
+    pStartComponent->setIsInitialState(true);
+  }
+  mpInitialStateLineAnnotation->getGraphicsView()->addItem(mpInitialStateLineAnnotation);
+  mpInitialStateLineAnnotation->emitAdded();
+  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToClass(mpInitialStateLineAnnotation);
+}
+
 UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem,
                                                              CoOrdinateSystem newCoOrdinateSystem, bool copyProperties, QString oldVersion,
                                                              QString newVersion, QString oldUsesAnnotationString,

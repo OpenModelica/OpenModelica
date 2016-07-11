@@ -116,6 +116,7 @@ public:
   StringHandler::ModelicaClasses getRestriction() const {return StringHandler::getModelicaClassType(mClassInformation.restriction);}
   bool isConnector() {return (getRestriction() == StringHandler::ExpandableConnector || getRestriction() == StringHandler::Connector);}
   bool isPartial() {return mClassInformation.partialPrefix;}
+  bool isState() {return mClassInformation.state;}
   void setSaveContentsType(LibraryTreeItem::SaveContentsType saveContentsType) {mSaveContentsType = saveContentsType;}
   SaveContentsType getSaveContentsType() {return mSaveContentsType;}
   void setPixmap(QPixmap pixmap) {mPixmap = pixmap;}

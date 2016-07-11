@@ -223,6 +223,8 @@ public:
   void applyRotation(qreal angle);
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
   void removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
+  void setHasTransition(bool hasTransition);
+  void setIsInitialState(bool isInitialState);
   void removeChildren();
   void emitAdded();
   void emitTransformChange() {emit transformChange();}
@@ -258,6 +260,7 @@ private:
   LineAnnotation *mpNonExistingComponentLine;
   RectangleAnnotation *mpDefaultComponentRectangle;
   TextAnnotation *mpDefaultComponentText;
+  RectangleAnnotation *mpStateComponentRectangle;
   QAction *mpParametersAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAttributesAction;
@@ -281,8 +284,11 @@ private:
   QList<Component*> mComponentsList;
   QPointF mOldScenePosition;
   QPointF mOldPosition;
+  bool mHasTransition;
+  bool mIsInitialState;
   void createNonExistingComponent();
   void createDefaultComponent();
+  void createStateComponent();
   void drawInterfacePoints();
   void drawComponent();
   void drawInheritedComponentsAndShapes();

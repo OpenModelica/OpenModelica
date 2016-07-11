@@ -502,6 +502,10 @@ QString ShapePropertiesDialog::getTitle()
   if (mpLineAnnotation) {
     if (mpLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
       return "Connection";
+    } else if (mpLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+      return "Transition";
+    } else if (mpLineAnnotation->getLineType() == LineAnnotation::InitialStateType) {
+      return "Initial State";
     } else {
       return "Line";
     }
@@ -580,12 +584,15 @@ void ShapePropertiesDialog::movePointUp()
 {
   LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
   if (mpLineAnnotation) lineType = mpLineAnnotation->getLineType();
+  if (lineType == LineAnnotation::InitialStateType) {
+    return;
+  }
   if (mpPointsTableWidget->selectedItems().size() > 0) {
     int row = mpPointsTableWidget->selectedItems().at(0)->row();
     if (row == 0) {
       return;
     }
-    if (row == 1 && lineType == LineAnnotation::ConnectionType) {
+    if (row == 1 && (lineType == LineAnnotation::ConnectionType || lineType == LineAnnotation::TransitionType)) {
       return;
     }
     QTableWidgetItem *pSourceItemX = mpPointsTableWidget->takeItem(row, 0);
@@ -604,12 +611,15 @@ void ShapePropertiesDialog::movePointDown()
 {
   LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
   if (mpLineAnnotation) lineType = mpLineAnnotation->getLineType();
+  if (lineType == LineAnnotation::InitialStateType) {
+    return;
+  }
   if (mpPointsTableWidget->selectedItems().size() > 0) {
     int row = mpPointsTableWidget->selectedItems().at(0)->row();
     if (row == mpPointsTableWidget->rowCount() - 1) {
       return;
     }
-    if (row == mpPointsTableWidget->rowCount() - 2 && lineType == LineAnnotation::ConnectionType) {
+    if (row == mpPointsTableWidget->rowCount() - 2 && (lineType == LineAnnotation::ConnectionType || lineType == LineAnnotation::TransitionType)) {
       return;
     }
     QTableWidgetItem *pSourceItemX = mpPointsTableWidget->takeItem(row, 0);
@@ -627,6 +637,11 @@ void ShapePropertiesDialog::movePointDown()
 void ShapePropertiesDialog::addPoint()
 {
   if (mpPointsTableWidget->selectedItems().size() > 0) {
+    LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
+    if (mpLineAnnotation) lineType = mpLineAnnotation->getLineType();
+    if (lineType == LineAnnotation::InitialStateType) {
+      return;
+    }
     int row = mpPointsTableWidget->selectedItems().at(0)->row();
     if (row == mpPointsTableWidget->rowCount() - 1) {
       /* insert a new row which is similar to last row. */
@@ -653,22 +668,22 @@ void ShapePropertiesDialog::addPoint()
       mpPointsTableWidget->setItem(row + 1, 1, pTableWidgetItemY);
       mpPointsTableWidget->setCurrentCell(row + 1, 0);
     }
-  } else if (mpLineAnnotation && mpPointsTableWidget->rowCount() == 2) {
-    if (mpLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
-      /* get middle of two surronding points */
-      QPointF point1(mpPointsTableWidget->item(0, 0)->text().toFloat(), mpPointsTableWidget->item(0, 1)->text().toFloat());
-      QPointF point2(mpPointsTableWidget->item(1, 0)->text().toFloat(), mpPointsTableWidget->item(1, 1)->text().toFloat());
-      QPointF point3 = (point1 + point2) / 2;
-      /* insert new row */
-      mpPointsTableWidget->insertRow(1);
-      QTableWidgetItem *pTableWidgetItemX = new QTableWidgetItem(QString::number(point3.x()));
-      pTableWidgetItemX->setFlags(pTableWidgetItemX->flags() | Qt::ItemIsEditable);
-      mpPointsTableWidget->setItem(1, 0, pTableWidgetItemX);
-      QTableWidgetItem *pTableWidgetItemY = new QTableWidgetItem(QString::number(point3.y()));
-      pTableWidgetItemX->setFlags(pTableWidgetItemX->flags() | Qt::ItemIsEditable);
-      mpPointsTableWidget->setItem(1, 1, pTableWidgetItemY);
-      mpPointsTableWidget->setCurrentCell(1, 0);
-    }
+  } else if (mpLineAnnotation && mpPointsTableWidget->rowCount() == 2 &&
+             (mpLineAnnotation->getLineType() == LineAnnotation::ConnectionType ||
+              mpLineAnnotation->getLineType() == LineAnnotation::TransitionType)) {
+    /* get middle of two surronding points */
+    QPointF point1(mpPointsTableWidget->item(0, 0)->text().toFloat(), mpPointsTableWidget->item(0, 1)->text().toFloat());
+    QPointF point2(mpPointsTableWidget->item(1, 0)->text().toFloat(), mpPointsTableWidget->item(1, 1)->text().toFloat());
+    QPointF point3 = (point1 + point2) / 2;
+    /* insert new row */
+    mpPointsTableWidget->insertRow(1);
+    QTableWidgetItem *pTableWidgetItemX = new QTableWidgetItem(QString::number(point3.x()));
+    pTableWidgetItemX->setFlags(pTableWidgetItemX->flags() | Qt::ItemIsEditable);
+    mpPointsTableWidget->setItem(1, 0, pTableWidgetItemX);
+    QTableWidgetItem *pTableWidgetItemY = new QTableWidgetItem(QString::number(point3.y()));
+    pTableWidgetItemX->setFlags(pTableWidgetItemX->flags() | Qt::ItemIsEditable);
+    mpPointsTableWidget->setItem(1, 1, pTableWidgetItemY);
+    mpPointsTableWidget->setCurrentCell(1, 0);
   }
 }
 
@@ -676,7 +691,13 @@ void ShapePropertiesDialog::removePoint()
 {
   if (mpPointsTableWidget->selectedItems().size() > 0) {
     if ((mpLineAnnotation && mpPointsTableWidget->rowCount() > 2) || (mpPolygonAnnotation && mpPointsTableWidget->rowCount() > 4)) {
-      mpPointsTableWidget->removeRow(mpPointsTableWidget->selectedItems().at(0)->row());
+      LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
+      if (mpLineAnnotation) lineType = mpLineAnnotation->getLineType();
+      int row = mpPointsTableWidget->selectedItems().at(0)->row();
+      if (lineType == LineAnnotation::InitialStateType && row == 0) {
+        return;
+      }
+      mpPointsTableWidget->removeRow(row);
     }
   }
 }
@@ -829,7 +850,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
   LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
   if (mpLineAnnotation) {
     lineType = mpLineAnnotation->getLineType();
-    if (lineType == LineAnnotation::ConnectionType) {
+    if (lineType == LineAnnotation::ConnectionType || lineType == LineAnnotation::TransitionType) {
       mpLineAnnotation->adjustGeometries();
     }
   }
@@ -841,6 +862,23 @@ bool ShapePropertiesDialog::applyShapeProperties()
     UpdateConnectionCommand *pUpdateConnectionCommand;
     pUpdateConnectionCommand = new UpdateConnectionCommand(mpLineAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation());
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateConnectionCommand);
+    mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelText();
+  } else if (mpLineAnnotation && lineType == LineAnnotation::TransitionType) {
+    // create a UpdateTransitionCommand object and push it to the undo stack.
+    UpdateTransitionCommand *pUpdateTransitionCommand;
+    pUpdateTransitionCommand = new UpdateTransitionCommand(mpLineAnnotation, mpLineAnnotation->getCondition(), mpLineAnnotation->getImmediate(),
+                                                           mpLineAnnotation->getReset(), mpLineAnnotation->getSynchronize(),
+                                                           mpLineAnnotation->getPriority(), mOldAnnotation, mpLineAnnotation->getCondition(),
+                                                           mpLineAnnotation->getImmediate(), mpLineAnnotation->getReset(),
+                                                           mpLineAnnotation->getSynchronize(), mpLineAnnotation->getPriority(),
+                                                           mpShapeAnnotation->getOMCShapeAnnotation());
+    mpShapeAnnotation->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateTransitionCommand);
+    mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelText();
+  } else if (mpLineAnnotation && lineType == LineAnnotation::InitialStateType) {
+    // create a UpdateInitialStateCommand object and push it to the undo stack.
+    UpdateInitialStateCommand *pUpdateInitialStateCommand;
+    pUpdateInitialStateCommand = new UpdateInitialStateCommand(mpLineAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation());
+    mpShapeAnnotation->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateInitialStateCommand);
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelText();
   } else {
     // create a UpdateShapeCommand object and push it to the undo stack.

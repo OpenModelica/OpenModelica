@@ -87,6 +87,7 @@ private:
   bool mIsCustomScale;
   bool mAddClassAnnotationNeeded;
   bool mIsCreatingConnection;
+  bool mIsCreatingTransition;
   bool mIsCreatingLineShape;
   bool mIsCreatingPolygonShape;
   bool mIsCreatingRectangleShape;
@@ -96,15 +97,19 @@ private:
   bool mIsPanning;
   QPoint mLastMouseEventPos;
   Component *mpClickedComponent;
+  Component *mpClickedState;
   bool mIsMovingComponentsAndShapes;
   bool mRenderingLibraryPixmap;
   QList<Component*> mComponentsList;
   QList<LineAnnotation*> mConnectionsList;
+  QList<LineAnnotation*> mTransitionsList;
+  QList<LineAnnotation*> mInitialStatesList;
   QList<ShapeAnnotation*> mShapesList;
   QList<Component*> mInheritedComponentsList;
   QList<LineAnnotation*> mInheritedConnectionsList;
   QList<ShapeAnnotation*> mInheritedShapesList;
   LineAnnotation *mpConnectionLineAnnotation;
+  LineAnnotation *mpTransitionLineAnnotation;
   LineAnnotation *mpLineShapeAnnotation;
   PolygonAnnotation *mpPolygonShapeAnnotation;
   RectangleAnnotation *mpRectangleShapeAnnotation;
@@ -140,6 +145,8 @@ public:
   bool isAddClassAnnotationNeeded() {return mAddClassAnnotationNeeded;}
   void setIsCreatingConnection(bool enable);
   bool isCreatingConnection() {return mIsCreatingConnection;}
+  void setIsCreatingTransition(bool enable);
+  bool isCreatingTransition() {return mIsCreatingTransition;}
   void setIsCreatingLineShape(bool enable);
   bool isCreatingLineShape() {return mIsCreatingLineShape;}
   void setIsCreatingPolygonShape(bool enable);
@@ -198,6 +205,16 @@ public:
   void addInheritedConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.append(pConnectionLineAnnotation);}
   void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
   void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
+  QList<LineAnnotation*> getTransitionsList() {return mTransitionsList;}
+  void addTransitionToClass(LineAnnotation *pTransitionLineAnnotation);
+  void deleteTransitionFromClass(LineAnnotation *pTransitionLineAnnotation);
+  void addTransitionToList(LineAnnotation *pTransitionLineAnnotation) {mTransitionsList.append(pTransitionLineAnnotation);}
+  void deleteTransitionFromList(LineAnnotation *pTransitionLineAnnotation) {mTransitionsList.removeOne(pTransitionLineAnnotation);}
+  QList<LineAnnotation*> getInitialStatesList() {return mInitialStatesList;}
+  void addInitialStateToClass(LineAnnotation *pInitialStateLineAnnotation);
+  void deleteInitialStateFromClass(LineAnnotation *pInitialStateLineAnnotation);
+  void addInitialStateToList(LineAnnotation *pInitialStateLineAnnotation) {mInitialStatesList.append(pInitialStateLineAnnotation);}
+  void deleteInitialStateFromList(LineAnnotation *pInitialStateLineAnnotation) {mInitialStatesList.removeOne(pInitialStateLineAnnotation);}
   void addShapeToList(ShapeAnnotation *pShape, int index = -1);
   void addInheritedShapeToList(ShapeAnnotation *pShape) {mInheritedShapesList.append(pShape);}
   void deleteShape(ShapeAnnotation *pShapeAnnotation);
@@ -230,6 +247,7 @@ private:
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
   bool isAnyItemSelectedAndEditable(int key);
   Component* connectorComponentAtPosition(QPoint position);
+  Component* stateComponentAtPosition(QPoint position);
 signals:
   void mouseManhattanize();
   void mouseDelete();
@@ -260,6 +278,10 @@ public slots:
   void addConnection(Component *pComponent);
   void removeCurrentConnection();
   void deleteConnection(LineAnnotation *pConnectionLineAnnotation);
+  void addTransition(Component *pComponent);
+  void removeCurrentTransition();
+  void deleteTransition(LineAnnotation *pTransitionLineAnnotation);
+  void deleteInitialState(LineAnnotation *pInitialLineAnnotation);
   void resetZoom();
   void zoomIn();
   void zoomOut();
@@ -432,6 +454,10 @@ private:
   void drawModelInheritedClassConnections(ModelWidget *pModelWidget);
   void removeInheritedClassConnections();
   void getModelConnections();
+  void getModelTransitions();
+  void getModelInitialStates();
+  void getMetaModelSubModels();
+  void getMetaModelConnections();
   void detectMultipleDeclarations();
   QString getCompositeModelName();
   void getCompositeModelSubModels();

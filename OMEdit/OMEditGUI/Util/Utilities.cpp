@@ -900,3 +900,107 @@ qreal Utilities::convertMMToPixel(qreal value)
 {
   return (QApplication::desktop()->screen()->logicalDpiX() * value) / 25.4;
 }
+
+/*!
+ * \brief Utilities::maxi
+ * This function gives the maximum
+ * \param arr
+ * \param n
+ * \return
+ */
+float Utilities::maxi(float arr[],int n) {
+  float m = 0;
+  for (int i = 0; i < n; ++i)
+    if (m < arr[i])
+      m = arr[i];
+  return m;
+}
+
+/*!
+ * \brief Utilities::mini
+ * This function gives the minimum
+ * \param arr
+ * \param n
+ * \return
+ */
+float Utilities::mini(float arr[], int n) {
+  float m = 1;
+  for (int i = 0; i < n; ++i)
+    if (m > arr[i])
+      m = arr[i];
+  return m;
+}
+
+/*!
+ * \brief liang_barsky_clipper
+ * Liang–Barsky algorithm to find the intersection point.
+ * Returns a list of points. The first point is when line is coming from outside and intersects the rectangle.
+ * The second point in the list is when line is comming from inside and intersects the rectangle.
+ * \param xmin
+ * \param ymin
+ * \param xmax
+ * \param ymax
+ * \param x1
+ * \param y1
+ * \param x2
+ * \param y2
+ * \return
+ */
+QList<QPointF> Utilities::liangBarskyClipper(float xmin, float ymin, float xmax, float ymax, float x1, float y1, float x2, float y2) {
+  // defining variables
+  float p1 = -(x2 - x1);
+  float p2 = -p1;
+  float p3 = -(y2 - y1);
+  float p4 = -p3;
+
+  float q1 = x1 - xmin;
+  float q2 = xmax - x1;
+  float q3 = y1 - ymin;
+  float q4 = ymax - y1;
+
+  float posarr[5], negarr[5];
+  int posind = 1, negind = 1;
+  posarr[0] = 1;
+  negarr[0] = 0;
+
+  if ((p1 == 0 && q1 < 0) || (p3 == 0 && q3 < 0)) {
+      qDebug() << "Line is parallel to clipping window!";
+      return QList<QPointF>();
+  }
+  if (p1 != 0) {
+    float r1 = q1 / p1;
+    float r2 = q2 / p2;
+    if (p1 < 0) {
+      negarr[negind++] = r1; // for negative p1, add it to negative array
+      posarr[posind++] = r2; // and add p2 to positive array
+    } else {
+      negarr[negind++] = r2;
+      posarr[posind++] = r1;
+    }
+  }
+  if (p3 != 0) {
+    float r3 = q3 / p3;
+    float r4 = q4 / p4;
+    if (p3 < 0) {
+      negarr[negind++] = r3;
+      posarr[posind++] = r4;
+    } else {
+      negarr[negind++] = r4;
+      posarr[posind++] = r3;
+    }
+  }
+
+  float xn1, yn1, xn2, yn2;
+  float rn1, rn2;
+  rn1 = maxi(negarr, negind); // maximum of negative array
+  rn2 = mini(posarr, posind); // minimum of positive array
+
+  xn1 = x1 + p2 * rn1;
+  yn1 = y1 + p4 * rn1; // computing new points
+
+  xn2 = x1 + p2 * rn2;
+  yn2 = y1 + p4 * rn2;
+
+//  qDebug() << x1 << y1 << xn1 << yn1 << x2 << y2 << xn2 << yn2;
+  return QList<QPointF>() << QPointF(xn1, yn1) << QPointF(xn2, yn2);
+}

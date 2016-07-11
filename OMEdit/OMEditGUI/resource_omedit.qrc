@@ -106,6 +106,7 @@
         <file>Resources/icons/flip-horizontal.svg</file>
         <file>Resources/icons/flip-vertical.svg</file>
         <file>Resources/icons/connect-mode.svg</file>
+        <file>Resources/icons/transition-mode.svg</file>
         <file>Resources/icons/export-xml.svg</file>
         <file>Resources/icons/optimization-icon.svg</file>
         <file>Resources/icons/refresh.svg</file>

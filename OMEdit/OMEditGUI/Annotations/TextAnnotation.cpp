@@ -102,6 +102,29 @@ TextAnnotation::TextAnnotation(Component *pParent)
   setRotation(mRotation);
 }
 
+TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotation)
+  : ShapeAnnotation(pLineAnnotation)
+{
+  mpComponent = 0;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  parseShapeAnnotation(annotation);
+  updateTextString();
+  /* From Modelica Spec 33revision1,
+   * The extent of the Text is interpreted relative to either the first point of the Line, in the case of immediate=false,
+   * or the last point (immediate=true).
+   */
+  if (pLineAnnotation->getPoints().size() > 0) {
+    if (pLineAnnotation->getImmediate()) {
+      setPos(pLineAnnotation->getPoints().last());
+    } else {
+      setPos(pLineAnnotation->getPoints().first());
+    }
+  }
+}
+
 /*!
  * \brief TextAnnotation::parseShapeAnnotation
  * Parses the text annotation string
@@ -518,26 +541,38 @@ void TextAnnotation::updateTextString()
    * - %name replaced by the name of the component (i.e. the identifier for it in in the enclosing class).
    * - %class replaced by the name of the class.
    */
-  mTextString = mOriginalTextString;
-  if (!mTextString.contains("%")) {
-    return;
-  }
-  if (mOriginalTextString.toLower().contains("%name")) {
-    mTextString.replace(QRegExp("%name"), mpComponent->getName());
-  }
-  if (mOriginalTextString.toLower().contains("%class")) {
-    mTextString.replace(QRegExp("%class"), mpComponent->getLibraryTreeItem()->getNameStructure());
-  }
-  if (!mTextString.contains("%")) {
-    return;
-  }
-  /* handle variables now */
-  updateTextStringHelper(QRegExp("(%%|%\\w*)"));
-  /* call again with non-word characters so invalid % can be removed. */
-  updateTextStringHelper(QRegExp("(%%|%\\W*)"));
-  /* handle %% */
-  if (mOriginalTextString.toLower().contains("%%")) {
-    mTextString.replace(QRegExp("%%"), "%");
+  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(parentItem());
+  if (pLineAnnotation) {
+    if (mOriginalTextString.toLower().contains("%condition")) {
+      if (!pLineAnnotation->getCondition().isEmpty()) {
+        mTextString.replace(QRegExp("%condition"), pLineAnnotation->getCondition());
+      }
+      if (pLineAnnotation->getPriority() > 1) {
+        mTextString.prepend(QString("%1: ").arg(pLineAnnotation->getPriority()));
+      }
+    }
+  } else if (mpComponent) {
+    mTextString = mOriginalTextString;
+    if (!mTextString.contains("%")) {
+      return;
+    }
+    if (mOriginalTextString.toLower().contains("%name")) {
+      mTextString.replace(QRegExp("%name"), mpComponent->getName());
+    }
+    if (mOriginalTextString.toLower().contains("%class")) {
+      mTextString.replace(QRegExp("%class"), mpComponent->getLibraryTreeItem()->getNameStructure());
+    }
+    if (!mTextString.contains("%")) {
+      return;
+    }
+    /* handle variables now */
+    updateTextStringHelper(QRegExp("(%%|%\\w*)"));
+    /* call again with non-word characters so invalid % can be removed. */
+    updateTextStringHelper(QRegExp("(%%|%\\W*)"));
+    /* handle %% */
+    if (mOriginalTextString.toLower().contains("%%")) {
+      mTextString.replace(QRegExp("%%"), "%");
+    }
   }
 }
 

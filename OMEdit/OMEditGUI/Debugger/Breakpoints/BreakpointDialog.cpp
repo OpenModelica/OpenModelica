@@ -85,7 +85,7 @@ BreakpointDialog::BreakpointDialog(BreakpointTreeItem *pBreakpointTreeItem, Brea
   mpIgnoreCountSpinBox = new QSpinBox;
   mpIgnoreCountSpinBox->setRange(0, std::numeric_limits<int>::max());
   // create the condition label and text box
-  mpConditionLabel = new Label(tr("Condition:"));
+  mpConditionLabel = new Label(Helper::condition);
   mpConditionTextBox = new QLineEdit;
   mpConditionHintLabel = new Label(tr("* Use \"%1\" to set condition on simulation time.").arg("data->localData[0]->timeValue"));
   // if edit case then set the existing values

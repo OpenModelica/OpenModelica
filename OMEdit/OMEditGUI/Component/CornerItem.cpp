@@ -150,6 +150,18 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         QString newAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
         pModelWidget->getUndoStack()->push(new UpdateConnectionCommand(pLineAnnotation, mOldAnnotation, newAnnotation));
         pModelWidget->updateModelText();
+      } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+        mpShapeAnnotation->manhattanizeShape(false);
+        mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
+        QString newAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
+        pModelWidget->getUndoStack()->push(new UpdateTransitionCommand(pLineAnnotation, pLineAnnotation->getCondition(),
+                                                                       pLineAnnotation->getImmediate(), pLineAnnotation->getReset(),
+                                                                       pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(),
+                                                                       mOldAnnotation, pLineAnnotation->getCondition(),
+                                                                       pLineAnnotation->getImmediate(), pLineAnnotation->getReset(),
+                                                                       pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(),
+                                                                       newAnnotation));
+        pModelWidget->updateModelText();
       } else {
         QString newAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
         pModelWidget->getUndoStack()->push(new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, newAnnotation));

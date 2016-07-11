@@ -453,6 +453,9 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
   setComponentFlags(true);
   createNonExistingComponent();
   createDefaultComponent();
+  createStateComponent();
+  mHasTransition = false;
+  mIsInitialState = false;
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     mpDefaultComponentRectangle->setVisible(true);
     mpDefaultComponentText->setVisible(true);
@@ -520,6 +523,9 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
+  mpStateComponentRectangle = 0;
+  mHasTransition = false;
+  mIsInitialState = false;
   drawInheritedComponentsAndShapes();
   setDialogAnnotation(QStringList());
   mpOriginItem = 0;
@@ -550,6 +556,9 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
+  mpStateComponentRectangle = 0;
+  mHasTransition = false;
+  mIsInitialState = false;
   drawInheritedComponentsAndShapes();
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
@@ -596,6 +605,9 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   setComponentFlags(true);
   createNonExistingComponent();
   createDefaultComponent();
+  createStateComponent();
+  mHasTransition = false;
+  mIsInitialState = false;
   drawComponent();
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
@@ -637,6 +649,9 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mpResizerRectangle = 0;
   createNonExistingComponent();
   createDefaultComponent();
+  mpStateComponentRectangle = 0;
+  mHasTransition = false;
+  mIsInitialState = false;
 
   if (mpComponentInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
     if (mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Mechanical)) {
@@ -804,6 +819,26 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
   Q_UNUSED(widget);
   if (mTransformation.isValid()) {
     setVisible(mTransformation.getVisible());
+    if (mpStateComponentRectangle) {
+      if (isVisible() && mpLibraryTreeItem && mpLibraryTreeItem->isState()) {
+        if (mHasTransition && mIsInitialState) {
+          mpStateComponentRectangle->setLinePattern(StringHandler::LineSolid);
+          mpStateComponentRectangle->setLineThickness(0.5);
+        } else if (mHasTransition && !mIsInitialState) {
+          mpStateComponentRectangle->setLinePattern(StringHandler::LineSolid);
+          mpStateComponentRectangle->setLineThickness(0.25);
+        } else if (!mHasTransition && mIsInitialState) {
+          mpStateComponentRectangle->setLinePattern(StringHandler::LineSolid);
+          mpStateComponentRectangle->setLineThickness(0.5);
+        } else if (!mHasTransition && !mIsInitialState) {
+          mpStateComponentRectangle->setLinePattern(StringHandler::LineDash);
+          mpStateComponentRectangle->setLineThickness(0.25);
+        }
+        mpStateComponentRectangle->setVisible(true);
+      } else {
+        mpStateComponentRectangle->setVisible(false);
+      }
+    }
   }
 }
 
@@ -1065,6 +1100,53 @@ void Component::removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation
   disconnect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()));
   if (!pConnectorLineAnnotation->isInheritedShape()) {
     disconnect(this, SIGNAL(transformChanging(QUndoCommand*)), pConnectorLineAnnotation, SLOT(updateConnectionTransformation(QUndoCommand*)));
+  }
+}
+
+/*!
+ * \brief Component::setHasTransition
+ * \param hasTransition
+ */
+void Component::setHasTransition(bool hasTransition)
+{
+  if (hasTransition) {
+    mHasTransition = true;
+    update();
+  } else {
+    foreach (LineAnnotation *pTransitionLineAnnotation, mpGraphicsView->getTransitionsList()) {
+      Component *pStartComponent = pTransitionLineAnnotation->getStartComponent();
+      Component *pEndComponent = pTransitionLineAnnotation->getEndComponent();
+      if (pStartComponent->getRootParentComponent() == this || pEndComponent->getRootParentComponent() == this) {
+        mHasTransition = true;
+        update();
+        return;
+      }
+    }
+    mHasTransition = false;
+    update();
+  }
+}
+
+/*!
+ * \brief Component::setIsInitialState
+ * \param isInitialState
+ */
+void Component::setIsInitialState(bool isInitialState)
+{
+  if (isInitialState) {
+    mIsInitialState = true;
+    update();
+  } else {
+    foreach (LineAnnotation *pInitialStateLineAnnotation, mpGraphicsView->getInitialStatesList()) {
+      Component *pStartComponent = pInitialStateLineAnnotation->getStartComponent();
+      if (pStartComponent->getRootParentComponent() == this) {
+        mIsInitialState = true;
+        update();
+        return;
+      }
+    }
+    mIsInitialState = false;
+    update();
   }
 }
 
@@ -1355,6 +1437,24 @@ void Component::createDefaultComponent()
   mpDefaultComponentRectangle->setVisible(false);
   mpDefaultComponentText = new TextAnnotation(this);
   mpDefaultComponentText->setVisible(false);
+}
+
+/*!
+ * \brief Component::createStateComponent
+ * Creates a state component.
+ */
+void Component::createStateComponent()
+{
+  mpStateComponentRectangle = new RectangleAnnotation(this);
+  mpStateComponentRectangle->setVisible(false);
+  // create a state rectangle
+  mpStateComponentRectangle->setLineColor(QColor(95, 95, 95));
+  mpStateComponentRectangle->setLinePattern(StringHandler::LineDash);
+  mpStateComponentRectangle->setRadius(40);
+  mpStateComponentRectangle->setFillColor(QColor(255, 255, 255));
+  QList<QPointF> extents;
+  extents << QPointF(-100, -100) << QPointF(100, 100);
+  mpStateComponentRectangle->setExtents(extents);
 }
 
 /*!

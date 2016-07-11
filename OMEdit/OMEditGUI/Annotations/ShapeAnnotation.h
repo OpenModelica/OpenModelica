@@ -112,6 +112,7 @@ private:
   QAction *mpShapePropertiesAction;
   QAction *mpAlignInterfacesAction;
   QAction *mpShapeAttributesAction;
+  QAction *mpEditTransitionAction;
 public:
   enum LineGeometryType {VerticalLine, HorizontalLine};
   Transformation mTransformation;
@@ -198,7 +199,6 @@ signals:
   void changed();
   void deleted();
 public slots:
-  void deleteConnection();
   void deleteMe();
   virtual void duplicate();
   void bringToFront();
@@ -227,6 +227,7 @@ public slots:
   void showShapeProperties();
   void alignInterfaces();
   void showShapeAttributes();
+  void editTransition();
   void manhattanizeShape(bool addToStack = true);
   void referenceShapeAdded();
   void referenceShapeChanged();

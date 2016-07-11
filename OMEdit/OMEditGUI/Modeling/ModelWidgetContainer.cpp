@@ -105,6 +105,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   setIsCustomScale(false);
   setAddClassAnnotationNeeded(false);
   setIsCreatingConnection(false);
+  setIsCreatingTransition(false);
   mIsCreatingLineShape = false;
   mIsCreatingPolygonShape = false;
   mIsCreatingRectangleShape = false;
@@ -114,8 +115,17 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   mIsPanning = false;
   mLastMouseEventPos = QPoint(0, 0);
   mpClickedComponent = 0;
+  mpClickedState = 0;
   setIsMovingComponentsAndShapes(false);
   setRenderingLibraryPixmap(false);
+  mpConnectionLineAnnotation = 0;
+  mpTransitionLineAnnotation = 0;
+  mpLineShapeAnnotation = 0;
+  mpPolygonShapeAnnotation = 0;
+  mpRectangleShapeAnnotation = 0;
+  mpEllipseShapeAnnotation = 0;
+  mpTextShapeAnnotation = 0;
+  mpBitmapShapeAnnotation = 0;
   createActions();
 }
 
@@ -134,6 +144,17 @@ void GraphicsView::setIsCreatingConnection(bool enable)
 {
   mIsCreatingConnection = enable;
   setDragModeInternal(enable);
+  setItemsFlags(!enable);
+}
+
+void GraphicsView::setIsCreatingTransition(bool enable)
+{
+  mIsCreatingTransition = enable;
+  if (enable) {
+    setDragMode(QGraphicsView::NoDrag);
+  } else {
+    setDragMode(QGraphicsView::RubberBandDrag);
+  }
   setItemsFlags(!enable);
 }
 
@@ -582,8 +603,8 @@ void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
 }
 
 /*!
- * \brief GraphicsView::deleteConnectionFromOMC
- * Deletes the connection from OMC.
+ * \brief GraphicsView::deleteConnectionFromClass
+ * Deletes the connection from class.
  * \param pConnectionLineAnnotation - the connection to delete.
  */
 void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation)
@@ -612,6 +633,62 @@ void GraphicsView::updateConnectionInClass(LineAnnotation *pConnectionLineAnnota
       pCompositeModelEditor->updateConnection(pConnectionLineAnnotation);
     }
   }
+}
+
+/*!
+ * \brief GraphicsView::addTransitionToClass
+ * Adds the transition to class.
+ * \param pTransitionLineAnnotation - the transition to add.
+ */
+void GraphicsView::addTransitionToClass(LineAnnotation *pTransitionLineAnnotation)
+{
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  if (pOMCProxy->addTransition(mpModelWidget->getLibraryTreeItem()->getNameStructure(), pTransitionLineAnnotation->getStartComponentName(),
+                               pTransitionLineAnnotation->getEndComponentName(), pTransitionLineAnnotation->getCondition(),
+                               pTransitionLineAnnotation->getImmediate(), pTransitionLineAnnotation->getReset(),
+                               pTransitionLineAnnotation->getSynchronize(), pTransitionLineAnnotation->getPriority(),
+                               QString("annotate=$annotation(%1,%2)").arg(pTransitionLineAnnotation->getShapeAnnotation())
+                               .arg(pTransitionLineAnnotation->getTextAnnotation()->getShapeAnnotation()))) {
+  }
+}
+
+/*!
+ * \brief GraphicsView::deleteTransitionFromClass
+ * Deletes the transition from class.
+ * \param pTransitionLineAnnotation - the transition to delete.
+ */
+void GraphicsView::deleteTransitionFromClass(LineAnnotation *pTransitionLineAnnotation)
+{
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  pOMCProxy->deleteTransition(mpModelWidget->getLibraryTreeItem()->getNameStructure(), pTransitionLineAnnotation->getStartComponentName(),
+                              pTransitionLineAnnotation->getEndComponentName(), pTransitionLineAnnotation->getCondition(),
+                              pTransitionLineAnnotation->getImmediate(), pTransitionLineAnnotation->getReset(),
+                              pTransitionLineAnnotation->getSynchronize(), pTransitionLineAnnotation->getPriority());
+}
+
+/*!
+ * \brief GraphicsView::addInitialStateToClass
+ * Adds the initial state to class.
+ * \param pInitialStateLineAnnotation - the initial state to add.
+ */
+void GraphicsView::addInitialStateToClass(LineAnnotation *pInitialStateLineAnnotation)
+{
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  if (pOMCProxy->addInitialState(mpModelWidget->getLibraryTreeItem()->getNameStructure(),
+                                 pInitialStateLineAnnotation->getStartComponentName(),
+                                 QString("annotate=").append(pInitialStateLineAnnotation->getShapeAnnotation()))) {
+  }
+}
+
+/*!
+ * \brief GraphicsView::deleteInitialStateFromClass
+ * Deletes the initial state from class.
+ * \param pInitialStateLineAnnotation - the initial state to delete.
+ */
+void GraphicsView::deleteInitialStateFromClass(LineAnnotation *pInitialStateLineAnnotation)
+{
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  pOMCProxy->deleteInitialState(mpModelWidget->getLibraryTreeItem()->getNameStructure(), pInitialStateLineAnnotation->getStartComponentName());
 }
 
 /*!
@@ -1226,12 +1303,39 @@ Component* GraphicsView::connectorComponentAtPosition(QPoint position)
   return 0;
 }
 
+/*!
+ * \brief GraphicsView::stateComponentAtPosition
+ * Returns the state component at the position.
+ * \param position
+ * \return
+ */
+Component* GraphicsView::stateComponentAtPosition(QPoint position)
+{
+  QList<QGraphicsItem*> graphicsItems = items(position);
+  foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
+    if (pGraphicsItem && pGraphicsItem->parentItem()) {
+      Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
+      if (pComponent) {
+        Component *pRootComponent = pComponent->getRootParentComponent();
+        if (pRootComponent && !pRootComponent->isSelected()) {
+          if (MainWindow::instance()->getTransitionModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
+              !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
+              ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isState()))) {
+            return pComponent;
+          }
+        }
+      }
+    }
+  }
+  return 0;
+}
+
 void GraphicsView::addConnection(Component *pComponent)
 {
   // When clicking the start component
   if (!isCreatingConnection()) {
     QPointF startPos = snapPointToGrid(pComponent->mapToScene(pComponent->boundingRect().center()));
-    mpConnectionLineAnnotation = new LineAnnotation(pComponent, this);
+    mpConnectionLineAnnotation = new LineAnnotation(LineAnnotation::ConnectionType, pComponent, this);
     setIsCreatingConnection(true);
     mpConnectionLineAnnotation->addPoint(startPos);
     mpConnectionLineAnnotation->addPoint(startPos);
@@ -1331,6 +1435,109 @@ void GraphicsView::removeCurrentConnection()
   }
 }
 
+void GraphicsView::addTransition(Component *pComponent)
+{
+  // When clicking the start state
+  if (!isCreatingTransition()) {
+    QPointF startPos = snapPointToGrid(pComponent->mapToScene(pComponent->boundingRect().center()));
+    mpTransitionLineAnnotation = new LineAnnotation(LineAnnotation::TransitionType, pComponent, this);
+    mpTransitionLineAnnotation->getTextAnnotation()->setVisible(false);
+    setIsCreatingTransition(true);
+    mpTransitionLineAnnotation->addPoint(startPos);
+    mpTransitionLineAnnotation->addPoint(startPos);
+    mpTransitionLineAnnotation->addPoint(startPos);
+  } else if (isCreatingTransition()) { // When clicking the end state
+    mpTransitionLineAnnotation->setEndComponent(pComponent);
+    // Remove reduntant points so that Liang Barsky algorithm can work well.
+    mpTransitionLineAnnotation->removeRedundantPointsGeometriesAndCornerItems();
+    QList<QPointF> points = mpTransitionLineAnnotation->getPoints();
+    // Find the start state intersection point.
+    QRectF sceneRectF = mpTransitionLineAnnotation->getStartComponent()->sceneBoundingRect();
+    QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
+                                                          sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
+                                                          points.at(0).x(), points.at(0).y(),
+                                                          points.at(1).x(), points.at(1).y());
+    mpTransitionLineAnnotation->updateStartPoint(snapPointToGrid(newPos.at(1)));
+    // Find the end state intersection point.
+    sceneRectF = pComponent->sceneBoundingRect();
+    newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
+                                           sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
+                                           points.at(points.size() - 2).x(), points.at(points.size() - 2).y(),
+                                           points.at(points.size() - 1).x(), points.at(points.size() - 1).y());
+    mpTransitionLineAnnotation->updateEndPoint(snapPointToGrid(newPos.at(0)));
+    mpTransitionLineAnnotation->update();
+    // check if connection is valid
+    Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
+    if (pStartComponent == pComponent) {
+      QMessageBox::information(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::information),
+                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
+      removeCurrentTransition();
+    } else {
+      // check of any of starting or ending components are array
+      //      bool showConnectionArrayDialog = false;
+      //      if ((pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
+      //          (!pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getLibraryTreeItem() && pStartComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+      //          (pStartComponent->getParentComponent() && pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+      //          (pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray()) ||
+      //          (pComponent->getParentComponent() && pComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
+      //          (!pComponent->getParentComponent() && pComponent->getRootParentComponent()->getLibraryTreeItem() && pComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+      //          (pComponent->getParentComponent() && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+      //          (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray())) {
+      //        showConnectionArrayDialog = true;
+      //      }
+      //      if (showConnectionArrayDialog) {
+      //        CreateConnectionDialog *pConnectionArray = new CreateConnectionDialog(this, mpConnectionLineAnnotation,
+      //                                                                              mpModelWidget->getModelWidgetContainer()->getMainWindow());
+      //        // if user cancels the array connection
+      //        if (!pConnectionArray->exec()) {
+      //          removeCurrentConnection();
+      //        }
+      //      } else {
+      QString startComponentName, endComponentName;
+      if (pStartComponent->getParentComponent()) {
+        startComponentName = QString(pStartComponent->getRootParentComponent()->getName()).append(".").append(pStartComponent->getName());
+      } else {
+        startComponentName = pStartComponent->getName();
+      }
+      if (pComponent->getParentComponent()) {
+        endComponentName = QString(pComponent->getRootParentComponent()->getName()).append(".").append(pComponent->getName());
+      } else {
+        endComponentName = pComponent->getName();
+      }
+      mpTransitionLineAnnotation->setStartComponentName(startComponentName);
+      mpTransitionLineAnnotation->setEndComponentName(endComponentName);
+      CreateOrEditTransitionDialog *pCreateOrEditTransitionDialog = new CreateOrEditTransitionDialog(this, mpTransitionLineAnnotation, false,
+                                                                                                     MainWindow::instance());
+      if (!pCreateOrEditTransitionDialog->exec()) {
+        removeCurrentTransition();
+      }
+      //        if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+      //          MetaModelConnectionAttributes *pMetaModelConnectionAttributes;
+      //          pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(this, mpConnectionLineAnnotation,
+      //                                                                             mpModelWidget->getModelWidgetContainer()->getMainWindow(), false);
+      //          // if user cancels the metamodel connection
+      //          if (!pMetaModelConnectionAttributes->exec()) {
+      //            removeCurrentConnection();
+      //          }
+      //        } else {
+    }
+    setIsCreatingTransition(false);
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeCurrentTransition
+ * Removes the current connecting transition from the model.
+ */
+void GraphicsView::removeCurrentTransition()
+{
+  if (isCreatingTransition()) {
+    setIsCreatingTransition(false);
+    delete mpTransitionLineAnnotation;
+    mpTransitionLineAnnotation = 0;
+  }
+}
+
 /*!
  * \brief GraphicsView::deleteConnection
  * Deletes the connection from the class.
@@ -1340,6 +1547,28 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
 {
   pConnectionLineAnnotation->setSelected(false);
   mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation));
+}
+
+/*!
+ * \brief GraphicsView::deleteTransition
+ * Deletes the transition from the class.
+ * \param pTransitionLineAnnotation - is a pointer to the transition to delete.
+ */
+void GraphicsView::deleteTransition(LineAnnotation *pTransitionLineAnnotation)
+{
+  pTransitionLineAnnotation->setSelected(false);
+  mpModelWidget->getUndoStack()->push(new DeleteTransitionCommand(pTransitionLineAnnotation));
+}
+
+/*!
+ * \brief GraphicsView::deleteInitialState
+ * Deletes an initial state from the class.
+ * \param pInitialLineAnnotation - is a pointer to the initial state to delete.
+ */
+void GraphicsView::deleteInitialState(LineAnnotation *pInitialLineAnnotation)
+{
+  pInitialLineAnnotation->setSelected(false);
+  mpModelWidget->getUndoStack()->push(new DeleteInitialStateCommand(pInitialLineAnnotation));
 }
 
 //! Resets zoom factor to 100%.
@@ -1739,6 +1968,9 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   if (isCreatingConnection()) {
     mpConnectionLineAnnotation->addPoint(snappedPoint);
     eventConsumed = true;
+  } else if (isCreatingTransition()) {
+    mpTransitionLineAnnotation->addPoint(snappedPoint);
+    eventConsumed = true;
   } else if (pMainWindow->getLineShapeAction()->isChecked()) {
     /* if line shape tool button is checked then create a line */
     createLineShape(snappedPoint);
@@ -1777,6 +2009,14 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
       pConnectionLineAnnotation->setOldAnnotation(pConnectionLineAnnotation->getOMCShapeAnnotation());
     }
+    // save annotations of all transitions
+    foreach (LineAnnotation *pTransitionLineAnnotation, mTransitionsList) {
+      pTransitionLineAnnotation->setOldAnnotation(pTransitionLineAnnotation->getOMCShapeAnnotation());
+    }
+    // save annotations of all initial states
+    foreach (LineAnnotation *pInitialStateLineAnnotation, mInitialStatesList) {
+      pInitialStateLineAnnotation->setOldAnnotation(pInitialStateLineAnnotation->getOMCShapeAnnotation());
+    }
   }
   // if some item is clicked
   if (Component *pComponent = connectorComponentAtPosition(event->pos())) {
@@ -1785,6 +2025,13 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     } else if (isCreatingConnection()) {
       addConnection(pComponent);  // end the connection
       eventConsumed = true; // consume the event so that connection line or end component will not become selected
+    }
+  } else if (Component *pComponent = stateComponentAtPosition(event->pos())) {
+    if (!isCreatingTransition()) {
+      mpClickedState = pComponent;
+    } else if (isCreatingTransition()) {
+      addTransition(pComponent);  // end the transition
+      eventConsumed = true; // consume the event so that transition line or end component will not become selected
     }
   }
   if (!eventConsumed) {
@@ -1823,7 +2070,7 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   // if user mouse over connector show Qt::CrossCursor.
   bool setCrossCursor = false;
-  if (connectorComponentAtPosition(event->pos())) {
+  if (connectorComponentAtPosition(event->pos()) || stateComponentAtPosition(event->pos())) {
     setCrossCursor = true;
     /* If setOverrideCursor() has been called twice, calling restoreOverrideCursor() will activate the first cursor set.
    * Calling this function a second time restores the original widgets' cursors.
@@ -1841,6 +2088,9 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
   if (isCreatingConnection()) {
     mpConnectionLineAnnotation->updateEndPoint(snappedPoint);
     mpConnectionLineAnnotation->update();
+  } else if (isCreatingTransition()) {
+    mpTransitionLineAnnotation->updateEndPoint(snappedPoint);
+    mpTransitionLineAnnotation->update();
   } else if (isCreatingLineShape()) {
     mpLineShapeAnnotation->updateEndPoint(snappedPoint);
     mpLineShapeAnnotation->update();
@@ -1864,6 +2114,11 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     if (mpClickedComponent) { // if we creating a connection then don't select the starting component.
       mpClickedComponent->setSelected(false);
     }
+  } else if (mpClickedState) {
+    addTransition(mpClickedState);  // start the transition
+    if (mpClickedState) { // if we creating a transition then don't select the starting state.
+      mpClickedState->setSelected(false);
+    }
   }
   QGraphicsView::mouseMoveEvent(event);
 }
@@ -1875,6 +2130,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
   }
   setIsPanning(false);
   mpClickedComponent = 0;
+  mpClickedState = 0;
   if (isMovingComponentsAndShapes()) {
     setIsMovingComponentsAndShapes(false);
     bool hasComponentMoved = false;
@@ -1980,9 +2236,14 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
   /* Double click on Component also end up here.
    * But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
    */
-  if (!isCreatingConnection() && pShapeAnnotation && pShapeAnnotation->getGraphicsView()) {
+  if (!isCreatingConnection() && !isCreatingTransition() && pShapeAnnotation && pShapeAnnotation->getGraphicsView()) {
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-      pShapeAnnotation->showShapeProperties();
+      LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
+      if (pTransitionLineAnnotation && pTransitionLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+        pShapeAnnotation->editTransition();
+      } else {
+        pShapeAnnotation->showShapeProperties();
+      }
       return;
     } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
       pShapeAnnotation->showShapeAttributes();
@@ -2001,6 +2262,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
           return;
         } else {
           removeCurrentConnection();
+          removeCurrentTransition();
           /* ticket:4401 Open component class with shift + double click */
           if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
             pRootComponent->openClass();
@@ -2123,6 +2385,8 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     }
   } else if (event->key() == Qt::Key_Escape && isCreatingConnection()) {
     removeCurrentConnection();
+  } else if (event->key() == Qt::Key_Escape && isCreatingTransition()) {
+    removeCurrentTransition();
   } else {
     QGraphicsView::keyPressEvent(event);
   }
@@ -2848,6 +3112,8 @@ void ModelWidget::loadConnections()
   if (!mConnectionsLoaded) {
     drawModelInheritedClassConnections(this);
     getModelConnections();
+    getModelTransitions();
+    getModelInitialStates();
     mConnectionsLoaded = true;
   }
 }
@@ -4556,7 +4822,7 @@ void ModelWidget::getModelConnections()
     // show error message if start component is not found.
     if (!pStartConnectorComponent) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT)
+                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                             .arg(connectionList.at(0)).arg(connectionString),
                                                             Helper::scriptingKind, Helper::errorLevel));
       continue;
@@ -4593,7 +4859,7 @@ void ModelWidget::getModelConnections()
     // show error message if end component is not found.
     if (!pEndConnectorComponent) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT)
+                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                             .arg(connectionList.at(1)).arg(connectionString),
                                                             Helper::scriptingKind, Helper::errorLevel));
       continue;
@@ -4619,6 +4885,95 @@ void ModelWidget::getModelConnections()
 }
 
 /*!
+ * \brief ModelWidget::getModelTransitions
+ * Gets the transitions of the model and place them in the diagram GraphicsView.
+ */
+void ModelWidget::getModelTransitions()
+{
+  QList<QList<QString>> transitions = MainWindow::instance()->getOMCProxy()->getTransitions(mpLibraryTreeItem->getNameStructure());
+  for (int i = 0 ; i < transitions.size() ; i++) {
+    QList<QString> transition = transitions.at(i);
+    // get start component
+    Component *pStartComponent = mpDiagramGraphicsView->getComponentObject(transition.at(0));
+    // show error message if start component is not found.
+    if (!pStartComponent) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_TRANSITION)
+                                                            .arg(transition.at(0)).arg(transition.join(",")),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+    // get end component
+    Component *pEndComponent = mpDiagramGraphicsView->getComponentObject(transition.at(1));
+    // show error message if end component is not found.
+    if (!pEndComponent) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_TRANSITION)
+                                                            .arg(transition.at(1)).arg(transition.join(",")),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+    // get the transition annotations
+    QStringList shapesList = StringHandler::getStrings(transition.at(7), '(', ')');
+    // Now parse the shapes available in list
+    QString lineShape, textShape = "";
+    foreach (QString shape, shapesList) {
+      if (shape.startsWith("Line")) {
+        lineShape = shape.mid(QString("Line").length());
+        lineShape = StringHandler::removeFirstLastBrackets(lineShape);
+      } else if (shape.startsWith("Text")) {
+        textShape = shape.mid(QString("Text").length());
+        textShape = StringHandler::removeFirstLastBrackets(textShape);
+      }
+    }
+    LineAnnotation *pTransitionLineAnnotation;
+    pTransitionLineAnnotation = new LineAnnotation(lineShape, textShape, pStartComponent, pEndComponent, transition.at(2), transition.at(3),
+                                                   transition.at(4), transition.at(5), transition.at(6), mpDiagramGraphicsView);
+    pTransitionLineAnnotation->setStartComponentName(transition.at(0));
+    pTransitionLineAnnotation->setEndComponentName(transition.at(1));
+    mpUndoStack->push(new AddTransitionCommand(pTransitionLineAnnotation, false));
+  }
+}
+
+/*!
+ * \brief ModelWidget::getModelInitialStates
+ * Gets the initial states of the model and place them in the diagram GraphicsView.
+ */
+void ModelWidget::getModelInitialStates()
+{
+  QList<QList<QString>> initialStates = MainWindow::instance()->getOMCProxy()->getInitialStates(mpLibraryTreeItem->getNameStructure());
+  for (int i = 0 ; i < initialStates.size() ; i++) {
+    QList<QString> initialState = initialStates.at(i);
+    // get initial state component
+    Component *pInitialStateComponent = mpDiagramGraphicsView->getComponentObject(initialState.at(0));
+    // show error message if initial state component is not found.
+    if (!pInitialStateComponent) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_INITIALSTATE)
+                                                            .arg(initialState.at(0)).arg(initialState.join(",")),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+    // get the transition annotations
+    QStringList shapesList = StringHandler::getStrings(initialState.at(1), '(', ')');
+    // Now parse the shapes available in list
+    QString lineShape = "";
+    foreach (QString shape, shapesList) {
+      if (shape.startsWith("Line")) {
+        lineShape = shape.mid(QString("Line").length());
+        lineShape = StringHandler::removeFirstLastBrackets(lineShape);
+      }
+    }
+    LineAnnotation *pInitialStateLineAnnotation;
+    pInitialStateLineAnnotation = new LineAnnotation(lineShape, pInitialStateComponent, mpDiagramGraphicsView);
+    pInitialStateLineAnnotation->setStartComponentName(initialState.at(0));
+    pInitialStateLineAnnotation->setEndComponentName("");
+    mpUndoStack->push(new AddInitialStateCommand(pInitialStateLineAnnotation, false));
+  }
+}
+
+/*!
+ * \brief ModelWidget::getMetaModelSubModels
  * \brief ModelWidget::detectMultipleDeclarations
  * detect multiple declarations of a component instance
  */
@@ -4743,7 +5098,7 @@ void ModelWidget::getCompositeModelConnections()
     Component *pStartSubModelComponent = mpDiagramGraphicsView->getComponentObject(startConnectionList.at(0));
     if (!pStartSubModelComponent) {
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT).arg(startConnectionList.at(0))
+                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION).arg(startConnectionList.at(0))
                                                  .arg(connection.attribute("From")), Helper::scriptingKind, Helper::errorLevel));
       continue;
     }
@@ -4751,7 +5106,7 @@ void ModelWidget::getCompositeModelConnections()
     Component *pStartInterfacePointComponent = getConnectorComponent(pStartSubModelComponent, startConnectionList.at(1));
     if (!pStartInterfacePointComponent) {
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT).arg(startConnectionList.at(1))
+                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION).arg(startConnectionList.at(1))
                                                  .arg(connection.attribute("From")), Helper::scriptingKind, Helper::errorLevel));
       continue;
     }
@@ -4763,7 +5118,7 @@ void ModelWidget::getCompositeModelConnections()
     Component *pEndSubModelComponent = mpDiagramGraphicsView->getComponentObject(endConnectionList.at(0));
     if (!pEndSubModelComponent) {
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT).arg(endConnectionList.at(0))
+                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION).arg(endConnectionList.at(0))
                                                  .arg(connection.attribute("To")), Helper::scriptingKind, Helper::errorLevel));
       continue;
     }
@@ -4771,7 +5126,7 @@ void ModelWidget::getCompositeModelConnections()
     Component *pEndInterfacePointComponent = getConnectorComponent(pEndSubModelComponent, endConnectionList.at(1));
     if (!pEndInterfacePointComponent) {
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT).arg(endConnectionList.at(1))
+                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION).arg(endConnectionList.at(1))
                                                  .arg(connection.attribute("To")), Helper::scriptingKind, Helper::errorLevel));
       continue;
     }
@@ -5527,6 +5882,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getTextShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getBitmapShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getConnectModeAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked());
+  MainWindow::instance()->getTransitionModeAction()->setEnabled(enabled && (modelica) && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getSimulateModelAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   MainWindow::instance()->getSimulateWithTransformationalDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   MainWindow::instance()->getSimulateWithAlgorithmicDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());

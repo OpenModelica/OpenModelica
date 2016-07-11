@@ -92,6 +92,7 @@ private:
   QPushButton *mpParentClassBrowseButton;
   QCheckBox *mpPartialCheckBox;
   QCheckBox *mpEncapsulatedCheckBox;
+  QCheckBox *mpStateCheckBox;
   QCheckBox *mpSaveContentsInOneFileCheckBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;

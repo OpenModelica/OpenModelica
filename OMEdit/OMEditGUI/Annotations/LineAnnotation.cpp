@@ -36,12 +36,20 @@
 #include "LineAnnotation.h"
 #include "Modeling/Commands.h"
 
+#include <QMessageBox>
+
 LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
 {
   setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
   setEndComponent(0);
+  setCondition("");
+  setImmediate(true);
+  setReset(true);
+  setSynchronize(false);
+  setPriority(1);
+  mpTextAnnotation = 0;
   setOldAnnotation("");
   setDelay("");
   setZf("");
@@ -64,6 +72,12 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
   setEndComponent(0);
+  setCondition("");
+  setImmediate(true);
+  setReset(true);
+  setSynchronize(false);
+  setPriority(1);
+  mpTextAnnotation = 0;
   setOldAnnotation("");
   setDelay("");
   setZf("");
@@ -89,25 +103,41 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *
   connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
-LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphicsView)
+LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pStartComponent, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
-  mLineType = LineAnnotation::ConnectionType;
+  mLineType = lineType;
   setZValue(1000);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
-  // use the linecolor of start component for the connection line.
-  if (pStartComponent->getShapesList().size() > 0) {
-    ShapeAnnotation *pShapeAnnotation = pStartComponent->getShapesList().at(0);
-    mLineColor = pShapeAnnotation->getLineColor();
-  }
-  // set the graphics view
-  mpGraphicsView->addItem(this);
   // set the start component
   setStartComponent(pStartComponent);
   setEndComponent(0);
+  setCondition("");
+  setImmediate(true);
+  setReset(true);
+  setSynchronize(false);
+  setPriority(1);
+  if (mLineType == LineAnnotation::ConnectionType) {
+    // use the linecolor of start component for the connection line.
+    if (pStartComponent->getShapesList().size() > 0) {
+      ShapeAnnotation *pShapeAnnotation = pStartComponent->getShapesList().at(0);
+      mLineColor = pShapeAnnotation->getLineColor();
+    }
+    mpTextAnnotation = 0;
+  } else if (mLineType == LineAnnotation::TransitionType) {
+    /* From Modelica Spec 33revision1,
+     * The recommended color is {175,175,175} for transition lines.
+     */
+    mLineColor = QColor(175, 175, 175);
+    mSmooth = StringHandler::SmoothBezier;
+    QString textShape = "true, {0.0, 0.0}, 0, {95, 95, 95}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-4, 4}, {-4, 10}}, \"%condition\", 10, {TextStyle.Bold}, TextAlignment.Right";
+    mpTextAnnotation = new TextAnnotation(textShape, this);
+  }
+  // set the graphics view
+  mpGraphicsView->addItem(this);
   setOldAnnotation("");
 
   ComponentInfo *pInfo = getStartComponent()->getComponentInfo();
@@ -145,6 +175,89 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, C
   setStartComponent(pStartComponent);
   // set the end component
   setEndComponent(pEndComponent);
+  setCondition("");
+  setImmediate(true);
+  setReset(true);
+  setSynchronize(false);
+  setPriority(1);
+  mpTextAnnotation = 0;
+  setOldAnnotation("");
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
+  parseShapeAnnotation(annotation);
+  /* make the points relative to origin */
+  QList<QPointF> points;
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    QPointF point = mOrigin + mPoints[i];
+    points.append(point);
+  }
+  mPoints = points;
+  mOrigin = QPointF(0, 0);
+  // set the graphics view
+  mpGraphicsView->addItem(this);
+}
+
+LineAnnotation::LineAnnotation(QString annotation, QString text, Component *pStartComponent, Component *pEndComponent, QString condition,
+                               QString immediate, QString reset, QString synchronize, QString priority, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
+{
+  setFlag(QGraphicsItem::ItemIsSelectable);
+  mLineType = LineAnnotation::TransitionType;
+  setZValue(1000);
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set the start component
+  setStartComponent(pStartComponent);
+  // set the end component
+  setEndComponent(pEndComponent);
+  setCondition(condition);
+  setImmediate(immediate.contains("true"));
+  setReset(reset.contains("true"));
+  setSynchronize(synchronize.contains("true"));
+  setPriority(priority.toInt());
+  setOldAnnotation("");
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
+  parseShapeAnnotation(annotation);
+  /* make the points relative to origin */
+  QList<QPointF> points;
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    QPointF point = mOrigin + mPoints[i];
+    points.append(point);
+  }
+  mPoints = points;
+  mOrigin = QPointF(0, 0);
+  if (!text.isEmpty()) {
+    mpTextAnnotation = new TextAnnotation(text, this);
+  }
+  // set the graphics view
+  mpGraphicsView->addItem(this);
+}
+
+LineAnnotation::LineAnnotation(QString annotation, Component *pComponent, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
+{
+  setFlag(QGraphicsItem::ItemIsSelectable);
+  mLineType = LineAnnotation::InitialStateType;
+  setZValue(1000);
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set the start component
+  setStartComponent(pComponent);
+  // set the end component
+  setEndComponent(0);
+  setCondition("");
+  setImmediate(true);
+  setReset(true);
+  setSynchronize(false);
+  setPriority(1);
+  mpTextAnnotation = 0;
   setOldAnnotation("");
   setDelay("");
   setZf("");
@@ -169,6 +282,12 @@ LineAnnotation::LineAnnotation(Component *pParent)
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
   setEndComponent(0);
+  setCondition("");
+  setImmediate(true);
+  setReset(true);
+  setSynchronize(false);
+  setPriority(1);
+  mpTextAnnotation = 0;
   setOldAnnotation("");
   setDelay("");
   setZf("");
@@ -198,6 +317,12 @@ LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
   setEndComponent(0);
+  setCondition("");
+  setImmediate(true);
+  setReset(true);
+  setSynchronize(false);
+  setPriority(1);
+  mpTextAnnotation = 0;
   setOldAnnotation("");
   setDelay("");
   setZf("");
@@ -325,15 +450,82 @@ void LineAnnotation::drawLineAnnotaion(QPainter *painter)
   applyLinePattern(painter);
   // draw start arrow
   if (mPoints.size() > 1) {
-    drawArrow(painter, mPoints.at(0), mPoints.at(1), mArrowSize, mArrow.at(0));
+    /* If line is a initial state then we need to draw filled arrow.
+     * From Modelica Spec 33revision1,
+     * The initialState line has a filled arrow head and a bullet at the opposite end of the initial state [ as shown above ].
+     */
+    if (mLineType == LineAnnotation::InitialStateType) {
+      drawArrow(painter, mPoints.at(0), mPoints.at(1), mArrowSize, StringHandler::ArrowFilled);
+    } else {
+      /* If line is a transition then we need to draw starting fork if needed.
+       * From Modelica Spec 33revision1,
+       * For synchronize=true, an inverse "fork" symbol is used in the beginning of the arrow [ See the rightmost transition above. ].
+       */
+      if (mLineType == LineAnnotation::TransitionType) {
+        if (mSynchronize) {
+          painter->save();
+          QPolygonF polygon1 = perpendicularLine(mPoints.at(0), mPoints.at(1), 4.0);
+          QPointF midPoint = (polygon1.at(0) +  polygon1.at(1)) / 2;
+          QPolygonF polygon2 = perpendicularLine(midPoint, mPoints.at(0), 4.0);
+          QPolygonF polygon;
+          polygon << polygon1 << polygon2 << polygon1.at(0);
+          painter->drawPolygon(polygon);
+          painter->restore();
+        }
+        /* From Modelica Spec 33revision1,
+         * In addition to the line defined by the points of the Line annotation, a perpendicular line is used to represent the transition.
+         * This line is closer to the first point if immediate=false otherwise closer to the last point.
+         */
+        painter->save();
+        QPolygonF polygon;
+        if (mImmediate) {
+          polygon = perpendicularLine(mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), 5.0);
+        } else {
+          polygon = perpendicularLine(mPoints.at(0), mPoints.at(1), 5.0);
+        }
+        QPen pen = painter->pen();
+        pen.setWidth(2);
+        painter->setPen(pen);
+        painter->drawLine(polygon.at(0), polygon.at(1));
+        painter->restore();
+      }
+      drawArrow(painter, mPoints.at(0), mPoints.at(1), mArrowSize, mArrow.at(0));
+    }
   }
   painter->drawPath(getShape());
   // draw end arrow
   if (mPoints.size() > 1) {
-    drawArrow(painter, mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), mArrowSize, mArrow.at(1));
+    /* If line is a transition then we need to draw ending arrow in any case.
+     * From Modelica Spec 33revision1,
+     * If reset=true, a filled arrow head is used otherwise an open arrow head.
+     */
+    if (mLineType == LineAnnotation::TransitionType) {
+      drawArrow(painter, mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), mArrowSize,
+                mReset ? StringHandler::ArrowFilled : StringHandler::ArrowOpen);
+    } else if (mLineType == LineAnnotation::InitialStateType) {
+      /* If line is a initial state then we need to draw bullet.
+       * From Modelica Spec 33revision1,
+       * The initialState line has a filled arrow head and a bullet at the opposite end of the initial state [ as shown above ].
+       */
+      painter->save();
+      painter->setBrush(QBrush(mLineColor, Qt::SolidPattern));
+      painter->drawEllipse(mPoints.at(mPoints.size() - 1), 2, 2);
+      painter->restore();
+    } else {
+      drawArrow(painter, mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), mArrowSize, mArrow.at(1));
+    }
   }
 }
 
+/*!
+ * \brief LineAnnotation::drawArrow
+ * Draws the arrow according to the arrow type.
+ * \param painter
+ * \param startPos
+ * \param endPos
+ * \param size
+ * \param arrowType
+ */
 void LineAnnotation::drawArrow(QPainter *painter, QPointF startPos, QPointF endPos, qreal size, int arrowType) const
 {
   double xA = size / 2;
@@ -401,6 +593,54 @@ void LineAnnotation::drawArrow(QPainter *painter, QPointF startPos, QPointF endP
     default:
       break;
   }
+}
+
+/*!
+ * \brief LineAnnotation::perpendicularLine
+ * Returns a polygon which represents a prependicular line.
+ * \param painter
+ * \param startPos
+ * \param endPos
+ * \param size
+ */
+QPolygonF LineAnnotation::perpendicularLine(QPointF startPos, QPointF endPos, qreal size) const
+{
+  double xA = size / 2;
+  double yA = size * sqrt(3) / 2;
+  double xB = -xA;
+  double yB = yA;
+  double angle = 0.0f;
+  if (endPos.x() - startPos.x() == 0) {
+    if (endPos.y() - startPos.y() >= 0) {
+      angle = 0;
+    } else {
+      angle = M_PI;
+    }
+  } else {
+    angle = -(M_PI / 2 - (atan((endPos.y() - startPos.y())/(endPos.x() - startPos.x()))));
+    if(startPos.x() > endPos.x()) {
+      angle += M_PI;
+    }
+  }
+  qreal m11, m12, m13, m21, m22, m23, m31, m32, m33;
+  m11 = cos(angle);
+  m22 = m11;
+  m21 = sin(angle);
+  m12 = -m21;
+  m13 = startPos.x();
+  m23 = startPos.y();
+  m31 = 0;
+  m32 = 0;
+  m33 = 1;
+  QTransform t1(m11, m12, m13, m21, m22, m23, m31, m32, m33);
+  QTransform t2(xA, 1, 1, yA, 1, 1, 1, 1, 1);
+  QTransform t3 = t1 * t2;
+  QPolygonF polygon;
+  polygon << QPointF(t3.m11(), t3.m21());
+  t2.setMatrix(xB, 1, 1, yB, 1, 1, 1, 1, 1);
+  t3 = t1 * t2;
+  polygon << QPointF(t3.m11(), t3.m21());
+  return polygon;
 }
 
 /*!
@@ -636,8 +876,8 @@ void LineAnnotation::updateStartPoint(QPointF point)
 void LineAnnotation::updateEndPoint(QPointF point)
 {
   prepareGeometryChange();
-  if (mLineType == LineAnnotation::ConnectionType) {
-    if (!mpGraphicsView->isCreatingConnection()) {
+  if (mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::TransitionType) {
+    if (!mpGraphicsView->isCreatingConnection() && !mpGraphicsView->isCreatingTransition()) {
       manhattanizeShape();
       removeRedundantPointsGeometriesAndCornerItems();
     }
@@ -673,7 +913,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
       }
       updateCornerItem(secondLastIndex);
     }
-    if (!mpGraphicsView->isCreatingConnection()) {
+    if (!mpGraphicsView->isCreatingConnection() && !mpGraphicsView->isCreatingTransition()) {
       removeRedundantPointsGeometriesAndCornerItems();
     }
   } else {
@@ -698,17 +938,40 @@ void LineAnnotation::moveAllPoints(qreal offsetX, qreal offsetY)
 }
 
 /*!
+ * \brief LineAnnotation::updateTransitionTextPosition
+ * Updates the position of the transition text.
+ */
+void LineAnnotation::updateTransitionTextPosition()
+{
+  /* From Modelica Spec 33revision1,
+   * The extent of the Text is interpreted relative to either the first point of the Line, in the case of immediate=false,
+   * or the last point (immediate=true).
+   */
+  if (mpTextAnnotation) {
+    if (mPoints.size() > 0) {
+      if (mImmediate) {
+        mpTextAnnotation->setPos(mPoints.last());
+      } else {
+        mpTextAnnotation->setPos(mPoints.first());
+      }
+    }
+  }
+}
+
+/*!
   Sets the shape flags.
   */
 void LineAnnotation::setShapeFlags(bool enable)
 {
-  if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::ShapeType) && mpGraphicsView) {
+  if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::TransitionType || mLineType == LineAnnotation::ShapeType)
+      && mpGraphicsView) {
     /*
       Only set the ItemIsMovable & ItemSendsGeometryChanges flags on Line if the class is not a system library class
       AND Line is not an inherited Line AND Line type is not ConnectionType.
       */
     bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
-    if (!isSystemLibrary && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType) {
+    if (!isSystemLibrary && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType &&
+        mLineType != LineAnnotation::TransitionType && mLineType != LineAnnotation::InitialStateType) {
       setFlag(QGraphicsItem::ItemIsMovable, enable);
       setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
     }
@@ -725,6 +988,12 @@ void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   setStartComponentName(pLineAnnotation->getStartComponentName());
   setEndComponent(pLineAnnotation->getEndComponent());
   setEndComponentName(pLineAnnotation->getEndComponentName());
+  setCondition(pLineAnnotation->getCondition());
+  setImmediate(pLineAnnotation->getImmediate());
+  setReset(pLineAnnotation->getReset());
+  setSynchronize(pLineAnnotation->getSynchronize());
+  setPriority(pLineAnnotation->getPriority());
+  mpTextAnnotation = pLineAnnotation->getTextAnnotation();
   setOldAnnotation(pLineAnnotation->getOldAnnotation());
   setDelay(pLineAnnotation->getDelay());
   setZf(pLineAnnotation->getZf());
@@ -783,19 +1052,56 @@ void LineAnnotation::handleComponentMoved()
   prepareGeometryChange();
   if (mpStartComponent && mpStartComponent->getRootParentComponent()->isSelected() &&
       mpEndComponent && mpEndComponent->getRootParentComponent()->isSelected()) {
-    moveAllPoints(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).x() - mPoints[0].x(),
-        mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).y() - mPoints[0].y());
+    if (mLineType == LineAnnotation::TransitionType) {
+      QPointF centerPos = mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
+      QRectF sceneRectF = mpStartComponent->sceneBoundingRect();
+      QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
+                                                            sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
+                                                            centerPos.x(), centerPos.y(),
+                                                            mPoints.at(1).x(), mPoints.at(1).y());
+      moveAllPoints(mpGraphicsView->roundPoint(newPos.at(1)).x() - mPoints[0].x(),
+          mpGraphicsView->roundPoint(newPos.at(1)).y() - mPoints[0].y());
+      updateTransitionTextPosition();
+    } else {
+      moveAllPoints(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).x() - mPoints[0].x(),
+          mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).y() - mPoints[0].y());
+    }
   } else {
     if (mpStartComponent) {
       Component *pComponent = qobject_cast<Component*>(sender());
       if (pComponent == mpStartComponent->getRootParentComponent()) {
         updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
+        if (mLineType == LineAnnotation::TransitionType) {
+          QRectF sceneRectF = mpStartComponent->sceneBoundingRect();
+          QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
+                                                                sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
+                                                                mPoints.at(0).x(), mPoints.at(0).y(),
+                                                                mPoints.at(1).x(), mPoints.at(1).y());
+          updateStartPoint(mpGraphicsView->roundPoint(newPos.at(1)));
+          updateTransitionTextPosition();
+        } else if (mLineType == LineAnnotation::InitialStateType) {
+          QRectF sceneRectF = mpStartComponent->sceneBoundingRect();
+          QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
+                                                                sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
+                                                                mPoints.at(0).x(), mPoints.at(0).y(),
+                                                                mPoints.at(1).x(), mPoints.at(1).y());
+          updateStartPoint(mpGraphicsView->roundPoint(newPos.at(1)));
+        }
       }
     }
     if (mpEndComponent) {
       Component *pComponent = qobject_cast<Component*>(sender());
       if (pComponent == mpEndComponent->getRootParentComponent()) {
         updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
+        if (mLineType == LineAnnotation::TransitionType) {
+          QRectF sceneRectF = mpEndComponent->sceneBoundingRect();
+          QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
+                                                                sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
+                                                                mPoints.at(mPoints.size() - 2).x(), mPoints.at(mPoints.size() - 2).y(),
+                                                                mPoints.at(mPoints.size() - 1).x(), mPoints.at(mPoints.size() - 1).y());
+          updateEndPoint(mpGraphicsView->roundPoint(newPos.at(0)));
+          updateTransitionTextPosition();
+        }
       }
     }
   }
@@ -823,7 +1129,43 @@ void LineAnnotation::updateConnectionAnnotation()
 void LineAnnotation::updateConnectionTransformation(QUndoCommand *pUndoCommand)
 {
   assert(!mOldAnnotation.isEmpty());
-  new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation(), pUndoCommand);
+  if (mLineType == LineAnnotation::ConnectionType) {
+    new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation(), pUndoCommand);
+  } else if (mLineType == LineAnnotation::TransitionType) {
+    new UpdateTransitionCommand(this, mCondition, mImmediate, mReset, mSynchronize, mPriority, mOldAnnotation,
+                                mCondition, mImmediate, mReset, mSynchronize, mPriority, getOMCShapeAnnotation(), pUndoCommand);
+  } else if (mLineType == LineAnnotation::InitialStateType) {
+    new UpdateInitialStateCommand(this, mOldAnnotation, getOMCShapeAnnotation(), pUndoCommand);
+  }
+}
+
+/*!
+ * \brief LineAnnotation::updateTransitionAnnotation
+ * Updates the transition annotation.
+ */
+void LineAnnotation::updateTransitionAnnotation(QString oldCondition, bool oldImmediate, bool oldReset, bool oldSynchronize, int oldPriority)
+{
+  // get the transition line and text annotation.
+  QString annotationString = QString("annotate=$annotation(%1,%2)").arg(getShapeAnnotation()).arg(mpTextAnnotation->getShapeAnnotation());
+  // update the transition
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  pOMCProxy->updateTransition(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getStartComponentName(),
+                              getEndComponentName(), oldCondition, oldImmediate, oldReset, oldSynchronize, oldPriority, getCondition(),
+                              getImmediate(), getReset(), getSynchronize(), getPriority(), annotationString);
+}
+
+/*!
+ * \brief LineAnnotation::updateInitialStateAnnotation
+ * Updates the initial state annotation.
+ */
+void LineAnnotation::updateInitialStateAnnotation()
+{
+  // get the initial state line annotation.
+  QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
+  // update the initial state
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  pOMCProxy->updateInitialState(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getStartComponentName(),
+                                annotationString);
 }
 
 /*!
@@ -1406,7 +1748,7 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
 }
 
 /*!
- * \brief ConnectionArray::createSpinBox
+ * \brief CreateConnectionDialog::createSpinBox
  * Creates a QSpinBox with arrayIndex limit.
  * \param arrayIndex
  * \return
@@ -1554,7 +1896,7 @@ void CreateConnectionDialog::endConnectorChanged(const QModelIndex &current, con
 }
 
 /*!
- * \brief ConnectionArray::createArrayConnection
+ * \brief CreateConnectionDialog::createConnection
  * Slot activated when mpOkButton clicked SIGNAL is raised. Creates an array connection.
  */
 void CreateConnectionDialog::createConnection()
@@ -1604,6 +1946,123 @@ void CreateConnectionDialog::createConnection()
   mpConnectionLineAnnotation->setEndComponentName(endComponentName);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
+  mpGraphicsView->getModelWidget()->updateModelText();
+  accept();
+}
+
+/*!
+ * \class CreateOrEditTransitionDialog
+ * \brief A dialog interface for creating and editing transitions.
+ */
+/*!
+ * \brief CreateOrEditTransitionDialog::CreateOrEditTransitionDialog
+ * \param pGraphicsView
+ * \param pTransitionLineAnnotation
+ * \param editCase
+ * \param pParent
+ */
+CreateOrEditTransitionDialog::CreateOrEditTransitionDialog(GraphicsView *pGraphicsView, LineAnnotation *pTransitionLineAnnotation,
+                                                           bool editCase, QWidget *pParent)
+  : QDialog(pParent), mpGraphicsView(pGraphicsView), mpTransitionLineAnnotation(pTransitionLineAnnotation), mEditCase(editCase)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  // heading
+  if (mEditCase) {
+    setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::editTransition));
+    mpHeading = Utilities::getHeadingLabel(Helper::editTransition);
+  } else {
+    setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::createTransition));
+    mpHeading = Utilities::getHeadingLabel(Helper::createTransition);
+  }
+  // horizontal line
+  mpHorizontalLine = Utilities::getHeadingLine();
+  // properties groupbox
+  mpPropertiesGroupBox = new QGroupBox(Helper::properties);
+  // condition
+  mpConditionLabel = new Label(Helper::condition);
+  mpConditionTextBox = new QLineEdit(mpTransitionLineAnnotation->getCondition());
+  // immediate
+  mpImmediateCheckBox = new QCheckBox(Helper::immediate);
+  mpImmediateCheckBox->setChecked(mpTransitionLineAnnotation->getImmediate());
+  // reset
+  mpResetCheckBox = new QCheckBox(Helper::reset);
+  mpResetCheckBox->setChecked(mpTransitionLineAnnotation->getReset());
+  // synchronize
+  mpSynchronizeCheckBox = new QCheckBox(Helper::synchronize);
+  mpSynchronizeCheckBox->setChecked(mpTransitionLineAnnotation->getSynchronize());
+  // priority
+  mpPriorityLabel = new Label(Helper::priority);
+  mpPrioritySpinBox = new QSpinBox;
+  mpPrioritySpinBox->setMinimum(1);
+  mpPrioritySpinBox->setValue(mpTransitionLineAnnotation->getPriority());
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(createOrEditTransition()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // properties groupbox layout
+  QGridLayout *pPropertiesGridLayout = new QGridLayout;
+  pPropertiesGridLayout->addWidget(mpConditionLabel, 0, 0);
+  pPropertiesGridLayout->addWidget(mpConditionTextBox, 0, 1);
+  pPropertiesGridLayout->addWidget(mpImmediateCheckBox, 1, 1);
+  pPropertiesGridLayout->addWidget(mpResetCheckBox, 2, 1);
+  pPropertiesGridLayout->addWidget(mpSynchronizeCheckBox, 3, 1);
+  pPropertiesGridLayout->addWidget(mpPriorityLabel, 4, 0);
+  pPropertiesGridLayout->addWidget(mpPrioritySpinBox, 4, 1);
+  mpPropertiesGroupBox->setLayout(pPropertiesGridLayout);
+  // main layout
+  QGridLayout *pMainGridLayout = new QGridLayout;
+  pMainGridLayout->setAlignment(Qt::AlignTop);
+  pMainGridLayout->addWidget(mpHeading, 0, 0);
+  pMainGridLayout->addWidget(mpHorizontalLine, 1, 0);
+  pMainGridLayout->addWidget(mpPropertiesGroupBox, 2, 0);
+  pMainGridLayout->addWidget(mpButtonBox, 3, 0, Qt::AlignRight);
+  setLayout(pMainGridLayout);
+}
+
+/*!
+ * \brief CreateOrEditTransitionDialog::createOrEditTransition
+ * Slot activated when mpOkButton clicked SIGNAL is raised. Creates a transition.
+ */
+void CreateOrEditTransitionDialog::createOrEditTransition()
+{
+  if (mpConditionTextBox->text().isEmpty()) {
+    QMessageBox::critical(mpGraphicsView, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::INVALID_TRANSITION_CONDITION), Helper::ok);
+    mpConditionTextBox->setFocus(Qt::ActiveWindowFocusReason);
+    return;
+  }
+  QString oldCondition = mpTransitionLineAnnotation->getCondition();
+  mpTransitionLineAnnotation->setCondition(mpConditionTextBox->text());
+  bool oldImmediate = mpTransitionLineAnnotation->getImmediate();
+  mpTransitionLineAnnotation->setImmediate(mpImmediateCheckBox->isChecked());
+  bool oldReset = mpTransitionLineAnnotation->getReset();
+  mpTransitionLineAnnotation->setReset(mpResetCheckBox->isChecked());
+  bool oldSynchronize = mpTransitionLineAnnotation->getSynchronize();
+  mpTransitionLineAnnotation->setSynchronize(mpSynchronizeCheckBox->isChecked());
+  int oldPriority = mpTransitionLineAnnotation->getPriority();
+  mpTransitionLineAnnotation->setPriority(mpPrioritySpinBox->value());
+  mpTransitionLineAnnotation->getTextAnnotation()->setVisible(true);
+  if (mEditCase) {
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateTransitionCommand(mpTransitionLineAnnotation, oldCondition, oldImmediate,
+                                                                                       oldReset, oldSynchronize, oldPriority,
+                                                                                       mpTransitionLineAnnotation->getOMCShapeAnnotation(),
+                                                                                       mpConditionTextBox->text(),
+                                                                                       mpImmediateCheckBox->isChecked(),
+                                                                                       mpResetCheckBox->isChecked(),
+                                                                                       mpSynchronizeCheckBox->isChecked(),
+                                                                                       mpPrioritySpinBox->value(),
+                                                                                       mpTransitionLineAnnotation->getOMCShapeAnnotation()));
+  } else {
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddTransitionCommand(mpTransitionLineAnnotation, true));
+    //mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpTransitionLineAnnotation);
+  }
   mpGraphicsView->getModelWidget()->updateModelText();
   accept();
 }

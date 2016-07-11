@@ -205,6 +205,86 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
+class AddTransitionCommand : public QUndoCommand
+{
+public:
+  AddTransitionCommand(LineAnnotation *pTransitionLineAnnotation, bool addTransition, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LineAnnotation *mpTransitionLineAnnotation;
+  bool mAddTransition;
+};
+
+class UpdateTransitionCommand : public QUndoCommand
+{
+public:
+  UpdateTransitionCommand(LineAnnotation *pTransitionLineAnnotation, QString oldCondition, bool oldImmediate, bool oldReset,
+                          bool oldSynchronize, int oldPriority, QString oldAnnotaton, QString newCondition, bool newImmediate, bool newReset,
+                          bool newSynchronize, int newPriority, QString newAnnotation, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LineAnnotation *mpTransitionLineAnnotation;
+  QString mOldCondition;
+  bool mOldImmediate;
+  bool mOldReset;
+  bool mOldSynchronize;
+  int mOldPriority;
+  QString mOldAnnotation;
+  QString mNewCondition;
+  bool mNewImmediate;
+  bool mNewReset;
+  bool mNewSynchronize;
+  int mNewPriority;
+  QString mNewAnnotation;
+};
+
+class DeleteTransitionCommand : public QUndoCommand
+{
+public:
+  DeleteTransitionCommand(LineAnnotation *pTransitionLineAnnotation, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LineAnnotation *mpTransitionLineAnnotation;
+  GraphicsView *mpGraphicsView;
+};
+
+class AddInitialStateCommand : public QUndoCommand
+{
+public:
+  AddInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, bool addInitialState, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LineAnnotation *mpInitialStateLineAnnotation;
+  bool mAddInitialState;
+};
+
+class UpdateInitialStateCommand : public QUndoCommand
+{
+public:
+  UpdateInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, QString oldAnnotaton, QString newAnnotation, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LineAnnotation *mpInitialStateLineAnnotation;
+  QString mOldAnnotation;
+  QString mNewAnnotation;
+};
+
+class DeleteInitialStateCommand : public QUndoCommand
+{
+public:
+  DeleteInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LineAnnotation *mpInitialStateLineAnnotation;
+  GraphicsView *mpGraphicsView;
+};
+
 class UpdateCoOrdinateSystemCommand : public QUndoCommand
 {
 public:

@@ -2307,6 +2307,9 @@ void MainWindow::toggleShapesButton()
     if (pGraphicsView->isCreatingConnection()) {
       pGraphicsView->removeCurrentConnection();
     }
+    if (pGraphicsView->isCreatingTransition()) {
+      pGraphicsView->removeCurrentTransition();
+    }
   }
 }
 
@@ -3074,6 +3077,11 @@ void MainWindow::createActions()
   mpConnectModeAction->setCheckable(true);
   mpConnectModeAction->setChecked(true);
   connect(mpConnectModeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+  // transition mode action
+  mpTransitionModeAction = new QAction(QIcon(":/Resources/icons/transition-mode.svg"), tr("Transition Mode"), this);
+  mpTransitionModeAction->setStatusTip(tr("Changes to/from transition mode"));
+  mpTransitionModeAction->setCheckable(true);
+  mpTransitionModeAction->setChecked(true);
   // model switcher actions
   for (int i = 0; i < MaxRecentFiles; ++i) {
     mpModelSwitcherActions[i] = new QAction(this);
@@ -3674,6 +3682,20 @@ void MainWindow::createToolbars()
   mpShapesToolBar->addAction(mpBitmapShapeAction);
   mpShapesToolBar->addSeparator();
   mpShapesToolBar->addAction(mpConnectModeAction);
+  mpShapesToolBar->addSeparator();
+  mpShapesToolBar->addAction(mpTransitionModeAction);
+  // Simulation Toolbar
+  mpSimulationToolBar = addToolBar(tr("Simulation Toolbar"));
+  mpSimulationToolBar->setObjectName("Simulation Toolbar");
+  mpSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
+  // add actions to Simulation Toolbar
+  mpSimulationToolBar->addAction(mpInstantiateModelAction);
+  mpSimulationToolBar->addAction(mpCheckModelAction);
+  mpSimulationToolBar->addAction(mpCheckAllModelsAction);
+  mpSimulationToolBar->addAction(mpSimulateModelAction);
+  mpSimulationToolBar->addAction(mpSimulateWithTransformationalDebuggerAction);
+  mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);
+  mpSimulationToolBar->addAction(mpSimulationSetupAction);
   // Model Swithcer Toolbar
   mpModelSwitcherToolBar = addToolBar(tr("ModelSwitcher Toolbar"));
   mpModelSwitcherToolBar->setObjectName("ModelSwitcher Toolbar");

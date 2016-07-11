@@ -200,6 +200,8 @@ ModelicaClassDialog::ModelicaClassDialog(QWidget *pParent)
   mpPartialCheckBox = new QCheckBox(tr("Partial"));
   // create encapsulated checkbox
   mpEncapsulatedCheckBox = new QCheckBox(tr("Encapsulated"));
+  // create state checkbox
+  mpStateCheckBox = new QCheckBox(tr("State"));
   // create save contents of package in one file checkbox
   mpSaveContentsInOneFileCheckBox = new QCheckBox(tr("Save contents in one file"));
   mpSaveContentsInOneFileCheckBox->setChecked(true);
@@ -231,7 +233,8 @@ ModelicaClassDialog::ModelicaClassDialog(QWidget *pParent)
   pMainLayout->addWidget(mpPartialCheckBox, 4, 0);
   pMainLayout->addWidget(mpSaveContentsInOneFileCheckBox, 4, 1, 1, 2);
   pMainLayout->addWidget(mpEncapsulatedCheckBox, 5, 0, 1, 3);
-  pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 3, Qt::AlignRight);
+  pMainLayout->addWidget(mpStateCheckBox, 6, 0, 1, 3);
+  pMainLayout->addWidget(mpButtonBox, 7, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -336,6 +339,18 @@ void ModelicaClassDialog::createModelicaClass()
                             append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
       return;
     }
+  }
+  // if state
+  if (mpStateCheckBox->isChecked()) {
+    QString nameStructure;
+    if (pParentLibraryTreeItem->getNameStructure().isEmpty()) {
+      nameStructure = mpNameTextBox->text().trimmed();
+    } else {
+      nameStructure = pParentLibraryTreeItem->getNameStructure() + "." + mpNameTextBox->text().trimmed();
+    }
+    MainWindow::instance()->getOMCProxy()->addClassAnnotation(nameStructure, "annotate=Icon(graphics={Text(extent={{-100,100},{100,-100}},textString=\"%name\")})");
+    MainWindow::instance()->getOMCProxy()->addClassAnnotation(nameStructure, "annotate=__Dymola_state(true)");
+    MainWindow::instance()->getOMCProxy()->addClassAnnotation(nameStructure, "annotate=singleInstance(true)");
   }
   // open the new tab in central widget and add the model to library tree.
   LibraryTreeItem *pLibraryTreeItem;

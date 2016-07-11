@@ -1126,6 +1126,32 @@ QString OMCProxy::getNthConnectionAnnotation(QString className, int num)
 }
 
 /*!
+ * \brief OMCProxy::getTransitions
+ * Returns the list of transitions in a class.
+ * \param className
+ * \return
+ */
+QList<QList<QString> > OMCProxy::getTransitions(QString className)
+{
+  QList<QList<QString> > transitions = mpOMCInterface->getTransitions(className);
+  printMessagesStringInternal();
+  return transitions;
+}
+
+/*!
+ * \brief OMCProxy::getInitialStates
+ * Returns the list of initial states in a class.
+ * \param className
+ * \return
+ */
+QList<QList<QString> > OMCProxy::getInitialStates(QString className)
+{
+  QList<QList<QString> > initialStates = mpOMCInterface->getInitialStates(className);
+  printMessagesStringInternal();
+  return initialStates;
+}
+
+/*!
  * \brief OMCProxy::getInheritanceCount
  * Returns the inheritance count of a model.
  * \param className - is the name of the model.
@@ -1894,6 +1920,146 @@ bool OMCProxy::deleteConnection(QString from, QString to, QString className)
 {
   sendCommand("deleteConnection(" + from + "," + to + "," + className + ")");
   if (getResult().toLower().compare("ok") == 0) {
+    return true;
+  } else {
+    printMessagesStringInternal();
+    return false;
+  }
+}
+
+/*!
+ * \brief OMCProxy::addTransition
+ * Adds a transition
+ * \param className - the name of the class.
+ * \param from - the connection start component name.
+ * \param to - the connection end component name.
+ * \param condition
+ * \param immediate
+ * \param reset
+ * \param synchronize
+ * \param priority
+ * \param annotation
+ * \return true on success.
+ */
+bool OMCProxy::addTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize,
+                             int priority, QString annotation)
+{
+  sendCommand(QString("addTransition(%1, \"%2\", \"%3\", \"%4\", %5, %6, %7, %8, %9)").arg(className).arg(from).arg(to)
+              .arg(StringHandler::escapeString(condition)).arg(immediate ? "true" : "false").arg(reset ? "true" : "false")
+              .arg(synchronize ? "true" : "false").arg(priority).arg(annotation));
+  if (StringHandler::unparseBool(getResult())) {
+    return true;
+  } else {
+    printMessagesStringInternal();
+    return false;
+  }
+}
+
+/*!
+ * \brief OMCProxy::deleteTransition
+ * Deletes a transition
+ * \param className - the name of the class.
+ * \param from - the connection start component name.
+ * \param to - the connection end component name.
+ * \param immediate
+ * \param reset
+ * \param synchronize
+ * \param priority
+ * \return true on success.
+ */
+bool OMCProxy::deleteTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize,
+                                int priority)
+{
+  bool result = mpOMCInterface->deleteTransition(className, from, to, condition, immediate, reset, synchronize, priority);
+  if (!result) {
+    printMessagesStringInternal();
+  }
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::updateTransition
+ * Updates a transition
+ * \param className - the name of the class.
+ * \param from - the connection start component name.
+ * \param to - the connection end component name.
+ * \param oldCondition
+ * \param oldImmediate
+ * \param oldReset
+ * \param oldSynchronize
+ * \param oldPriority
+ * \param condition
+ * \param immediate
+ * \param reset
+ * \param synchronize
+ * \param priority
+ * \param annotation
+ * \return true on success.
+ */
+bool OMCProxy::updateTransition(QString className, QString from, QString to, QString oldCondition, bool oldImmediate, bool oldReset,
+                                bool oldSynchronize, int oldPriority, QString condition, bool immediate, bool reset, bool synchronize,
+                                int priority, QString annotation)
+{
+  sendCommand(QString("updateTransition(%1, \"%2\", \"%3\", \"%4\", %5, %6, %7, %8, \"%9\", %10, %11, %12, %13, %14)").arg(className).arg(from)
+              .arg(to).arg(StringHandler::escapeString(oldCondition)).arg(oldImmediate ? "true" : "false").arg(oldReset ? "true" : "false")
+              .arg(oldSynchronize ? "true" : "false").arg(oldPriority).arg(StringHandler::escapeString(condition))
+              .arg(immediate ? "true" : "false").arg(reset ? "true" : "false").arg(synchronize ? "true" : "false")
+              .arg(priority).arg(annotation));
+  if (StringHandler::unparseBool(getResult())) {
+    return true;
+  } else {
+    printMessagesStringInternal();
+    return false;
+  }
+}
+
+/*!
+ * \brief OMCProxy::addInitialState
+ * Adds an initial state to the class.
+ * \param className
+ * \param state
+ * \param annotation
+ * \return true on success.
+ */
+bool OMCProxy::addInitialState(QString className, QString state, QString annotation)
+{
+  sendCommand(QString("addInitialState(%1, \"%2\", %3)").arg(className).arg(state).arg(annotation));
+  if (StringHandler::unparseBool(getResult())) {
+    return true;
+  } else {
+    printMessagesStringInternal();
+    return false;
+  }
+}
+
+/*!
+ * \brief OMCProxy::deleteInitialState
+ * Deletes an initial state from the class.
+ * \param className
+ * \param state
+ * \return true on success.
+ */
+bool OMCProxy::deleteInitialState(QString className, QString state)
+{
+  bool result = mpOMCInterface->deleteInitialState(className, state);
+  if (!result) {
+    printMessagesStringInternal();
+  }
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::updateInitialState
+ * Updates an initial state.
+ * \param className
+ * \param state
+ * \param annotation
+ * \return true on success.
+ */
+bool OMCProxy::updateInitialState(QString className, QString state, QString annotation)
+{
+  sendCommand(QString("updateInitialState(%1, \"%2\", %9)").arg(className).arg(state).arg(annotation));
+  if (StringHandler::unparseBool(getResult())) {
     return true;
   } else {
     printMessagesStringInternal();

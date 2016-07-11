@@ -265,6 +265,9 @@ public:
   static QString right;
   static QString createConnection;
   static QString connectionAttributes;
+  static QString createTransition;
+  static QString editTransition;
+  static QString findVariables;
   static QString filterVariables;
   static QString openClass;
   static QString openClassTip;
@@ -348,6 +351,10 @@ public:
   static QString bold;
   static QString italic;
   static QString underline;
+  static QString condition;
+  static QString immediate;
+  static QString synchronize;
+  static QString priority;
 };
 
 class GUIMessages : public QObject
@@ -409,8 +416,11 @@ public:
     COMPOSITEMODEL_UNSAVED,
     TLMCOSIMULATION_ALREADY_RUNNING,
     TERMINAL_COMMAND_NOT_SET,
-    UNABLE_FIND_COMPONENT,
+    UNABLE_FIND_COMPONENT_IN_CONNECTION,
+    UNABLE_FIND_COMPONENT_IN_TRANSITION,
+    UNABLE_FIND_COMPONENT_IN_INITIALSTATE,
     SELECT_SIMULATION_OPTION,
+    INVALID_TRANSITION_CONDITION,
     MULTIPLE_DECLARATIONS_COMPONENT,
     GDB_ERROR
   };

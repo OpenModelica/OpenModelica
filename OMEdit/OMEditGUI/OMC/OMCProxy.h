@@ -136,6 +136,8 @@ public:
   int getConnectionCount(QString className);
   QList<QString> getNthConnection(QString className, int index);
   QString getNthConnectionAnnotation(QString className, int num);
+  QList<QList<QString> > getTransitions(QString className);
+  QList<QList<QString> > getInitialStates(QString className);
   int getInheritanceCount(QString className);
   QString getNthInheritedClass(QString className, int num);
   QList<QString> getInheritedClasses(QString className);
@@ -181,6 +183,16 @@ public:
   bool setComponentDimensions(QString className, QString componentName, QString dimensions);
   bool addConnection(QString from, QString to, QString className, QString annotation);
   bool deleteConnection(QString from, QString to, QString className);
+  bool addTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize,
+                     int priority, QString annotation);
+  bool deleteTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize,
+                        int priority);
+  bool updateTransition(QString className, QString from, QString to, QString oldCondition, bool oldImmediate, bool oldReset,
+                        bool oldSynchronize, int oldPriority, QString condition, bool immediate, bool reset, bool synchronize, int priority,
+                        QString annotation);
+  bool addInitialState(QString className, QString state, QString annotation);
+  bool deleteInitialState(QString className, QString state);
+  bool updateInitialState(QString className, QString state, QString annotation);
   bool simulate(QString className, QString simualtionParameters);
   bool buildModel(QString className, QString simualtionParameters);
   bool translateModel(QString className, QString simualtionParameters);

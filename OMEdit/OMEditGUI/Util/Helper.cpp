@@ -263,6 +263,9 @@ QString Helper::center;
 QString Helper::right;
 QString Helper::createConnection;
 QString Helper::connectionAttributes;
+QString Helper::createTransition;
+QString Helper::editTransition;
+QString Helper::findVariables;
 QString Helper::filterVariables;
 QString Helper::openClass;
 QString Helper::openClassTip;
@@ -346,6 +349,10 @@ QString Helper::item;
 QString Helper::bold;
 QString Helper::italic;
 QString Helper::underline;
+QString Helper::condition;
+QString Helper::immediate;
+QString Helper::synchronize;
+QString Helper::priority;
 
 void Helper::initHelperVariables()
 {
@@ -502,6 +509,9 @@ void Helper::initHelperVariables()
   Helper::right = tr("Right");
   Helper::createConnection = tr("Create Connection");
   Helper::connectionAttributes = tr("Connection Attributes");
+  Helper::createTransition = tr("Create Transition");
+  Helper::editTransition = tr("Edit Transition");
+  Helper::findVariables = tr("Find Variables");
   Helper::filterVariables = tr("Filter Variables");
   Helper::openClass = tr("Open Class");
   Helper::openClassTip = tr("Opens the class details");
@@ -585,6 +595,10 @@ void Helper::initHelperVariables()
   Helper::bold = tr("Bold");
   Helper::italic = tr("Italic");
   Helper::underline = tr("Underline");
+  Helper::condition = tr("Condition:");
+  Helper::immediate = tr("Immediate");
+  Helper::synchronize = tr("Synchronize");
+  Helper::priority = tr("Priority:");
 }
 
 QString GUIMessages::getMessage(int type)
@@ -699,13 +713,19 @@ QString GUIMessages::getMessage(int type)
       return tr("TLM co-simulation session is already running. Only one session is allowed.");
     case TERMINAL_COMMAND_NOT_SET:
       return tr("Terminal command is not set. You can define a new terminal command in <b>%1->General->Terminal Command</b>.");
-    case UNABLE_FIND_COMPONENT:
+    case UNABLE_FIND_COMPONENT_IN_CONNECTION:
       return tr("Unable to find component %1 while parsing connection %2.");
+    case UNABLE_FIND_COMPONENT_IN_TRANSITION:
+      return tr("Unable to find component %1 while parsing transition(%2).");
+    case UNABLE_FIND_COMPONENT_IN_INITIALSTATE:
+      return tr("Unable to find component %1 while parsing initialState(%2).");
     case SELECT_SIMULATION_OPTION:
       return tr("Select at least one of the following options, <br /><br />* %1<br />* %2<br />* %3")
           .arg(Helper::saveExperimentAnnotation)
           .arg(Helper::saveOpenModelicaSimulationFlagsAnnotation)
           .arg(Helper::simulate);
+    case INVALID_TRANSITION_CONDITION:
+      return tr("Please enter a valid condition e.g., x >=0.");
     case MULTIPLE_DECLARATIONS_COMPONENT:
       return tr("Multiple declarations of component <b>%1</b> are found.");
     case GDB_ERROR:

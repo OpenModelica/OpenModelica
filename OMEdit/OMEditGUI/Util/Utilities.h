@@ -471,6 +471,9 @@ namespace Utilities {
 
   bool containsWord(QString text, int index, QString keyword, bool checkParenthesis = false);
   qreal convertMMToPixel(qreal value);
+  float maxi(float arr[],int n);
+  float mini(float arr[], int n);
+  QList<QPointF> liangBarskyClipper(float xmin, float ymin, float xmax, float ymax, float x1, float y1, float x2, float y2);
 
 } // namespace Utilities
 
