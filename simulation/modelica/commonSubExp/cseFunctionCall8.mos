@@ -70,9 +70,9 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 //
 // ########### Updated Variable List (jacobian) ########### (5)
 // ========================================
-// 1: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: i.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
 // 2: $DER.u2.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
-// 3: i.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 3: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
 // 4: $cse2:VARIABLE()  type: Real  unreplaceable
 // 5: $cse1:VARIABLE()  type: Real  unreplaceable
 //

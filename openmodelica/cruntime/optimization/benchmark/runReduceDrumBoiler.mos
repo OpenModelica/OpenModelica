@@ -64,7 +64,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 1.49979e-06 for the constraint $con$conSigma_con(time = 216)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.49983e-06 for the constraint $con$conSigma_con(time = 216)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.5e-06 for the constraint $con$conSigma_con(time = 360)
-// LOG_IPOPT_ERROR   | info    | max violation is 1.5e-06 for the constraint $con$conSigma_con(time = 216)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.5e-06 for the constraint $con$conSigma_con(time = 576)
 // "
 // end SimulationResult;
 // ""

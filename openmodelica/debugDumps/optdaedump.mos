@@ -2059,10 +2059,10 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (4)
 // ========================================
-// 1: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: uL.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
 // 2: i2.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
 // 3: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
-// 4: uL.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 4: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (4, 4)
@@ -2084,18 +2084,18 @@ buildModel(testOptdaedump); getErrorString();
 // Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 4
-// 1: 4 2 1
-// 2: 4 3
+// 1: 1 2 4
+// 2: 1 3
 // 3: 2
 // 4: 3
 //
 // Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 4
-// 1: 1
+// 1: 2 1
 // 2: 3 1
 // 3: 4 2
-// 4: 2 1
+// 4: 1
 //
 // no matching
 //
@@ -2106,12 +2106,12 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
-// 1: input $res[1]:VARIABLE()  type: Real 
+// 1: input uL:VARIABLE()  type: Real 
 // 2: input i2:VARIABLE()  type: Real 
 // 3: input u1:VARIABLE()  type: Real 
-// 4: input uL:VARIABLE()  type: Real 
-// 5: input iL:VARIABLE()  type: Real 
-// 6: input uC:DUMMY_STATE()  type: Real 
+// 4: input $res[1]:VARIABLE()  type: Real 
+// 5: input uC:DUMMY_STATE()  type: Real 
+// 6: input iL:VARIABLE()  type: Real 
 // 7: input i1SeedLSJac0:STATE_DER()  type: Real 
 //
 //
@@ -2171,8 +2171,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -2199,12 +2199,12 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:VARIABLE()  type: Real 
-// 4: input uL:VARIABLE()  type: Real 
+// 2: input iL:VARIABLE()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
+// 4: input $res[1]:VARIABLE()  type: Real 
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
-// 7: input $res[1]:VARIABLE()  type: Real 
+// 7: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -2265,8 +2265,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -2293,12 +2293,12 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:VARIABLE()  type: Real 
-// 4: input uL:VARIABLE()  type: Real 
+// 2: input iL:VARIABLE()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
+// 4: input $res[1]:VARIABLE()  type: Real 
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
-// 7: input $res[1]:VARIABLE()  type: Real 
+// 7: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -2360,8 +2360,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -2381,14 +2381,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -2398,12 +2398,12 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:VARIABLE()  type: Real 
-// 4: input uL:VARIABLE()  type: Real 
+// 2: input iL:VARIABLE()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
+// 4: input $res[1]:VARIABLE()  type: Real 
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
-// 7: input $res[1]:VARIABLE()  type: Real 
+// 7: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -2464,8 +2464,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -2485,14 +2485,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -2502,12 +2502,12 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:VARIABLE()  type: Real 
-// 4: input uL:VARIABLE()  type: Real 
+// 2: input iL:VARIABLE()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
+// 4: input $res[1]:VARIABLE()  type: Real 
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
-// 7: input $res[1]:VARIABLE()  type: Real 
+// 7: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -2568,8 +2568,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -2589,14 +2589,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -2606,12 +2606,12 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:VARIABLE()  type: Real 
-// 4: input uL:VARIABLE()  type: Real 
+// 2: input iL:VARIABLE()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
+// 4: input $res[1]:VARIABLE()  type: Real 
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
-// 7: input $res[1]:VARIABLE()  type: Real 
+// 7: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -2672,8 +2672,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -2693,14 +2693,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -2710,12 +2710,12 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:VARIABLE()  type: Real 
-// 4: input uL:VARIABLE()  type: Real 
+// 2: input iL:VARIABLE()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
+// 4: input $res[1]:VARIABLE()  type: Real 
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
-// 7: input $res[1]:VARIABLE()  type: Real 
+// 7: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -2776,8 +2776,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -2797,14 +2797,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -2814,12 +2814,12 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:VARIABLE()  type: Real 
-// 4: input uL:VARIABLE()  type: Real 
+// 2: input iL:VARIABLE()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
+// 4: input $res[1]:VARIABLE()  type: Real 
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
-// 7: input $res[1]:VARIABLE()  type: Real 
+// 7: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -2880,8 +2880,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -2901,14 +2901,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -2918,12 +2918,12 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:VARIABLE()  type: Real 
-// 4: input uL:VARIABLE()  type: Real 
+// 2: input iL:VARIABLE()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
+// 4: input $res[1]:VARIABLE()  type: Real 
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
-// 7: input $res[1]:VARIABLE()  type: Real 
+// 7: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -2984,8 +2984,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -3005,14 +3005,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -3022,12 +3022,12 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:VARIABLE()  type: Real 
-// 4: input uL:VARIABLE()  type: Real 
+// 2: input iL:VARIABLE()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
+// 4: input $res[1]:VARIABLE()  type: Real 
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
-// 7: input $res[1]:VARIABLE()  type: Real 
+// 7: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -3088,8 +3088,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -3109,14 +3109,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -3126,12 +3126,12 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1SeedLSJac0:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:VARIABLE()  type: Real 
-// 4: input uL:VARIABLE()  type: Real 
+// 2: input iL:VARIABLE()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
+// 4: input $res[1]:VARIABLE()  type: Real 
 // 5: input u1:VARIABLE()  type: Real 
 // 6: input i2:VARIABLE()  type: Real 
-// 7: input $res[1]:VARIABLE()  type: Real 
+// 7: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -4828,10 +4828,10 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (4)
 // ========================================
-// 1: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: uL.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
 // 2: i2.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
 // 3: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
-// 4: uL.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 4: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (4, 4)
@@ -4853,18 +4853,18 @@ buildModel(testOptdaedump); getErrorString();
 // Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 4
-// 1: 4 2 1
-// 2: 4 3
+// 1: 1 2 4
+// 2: 1 3
 // 3: 2
 // 4: 3
 //
 // Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 4
-// 1: 1
+// 1: 2 1
 // 2: 3 1
 // 3: 4 2
-// 4: 2 1
+// 4: 1
 //
 // no matching
 //
@@ -4875,14 +4875,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input $res[1]:VARIABLE()  type: Real 
+// 1: input uL:VARIABLE()  type: Real 
 // 2: input i2:VARIABLE()  type: Real 
 // 3: input u1:VARIABLE()  type: Real 
-// 4: input uL:VARIABLE()  type: Real 
+// 4: input $res[1]:VARIABLE()  type: Real 
 // 5: input R1:PARAM()  = 1.0  type: Real 
 // 6: input R2:PARAM()  = 2.0  type: Real 
-// 7: input iL:STATE(1)()  type: Real 
-// 8: input uC:DUMMY_STATE()  type: Real 
+// 7: input uC:DUMMY_STATE()  type: Real 
+// 8: input iL:STATE(1)()  type: Real 
 // 9: input i1SeedLSJac1:STATE_DER()  type: Real 
 //
 //
@@ -4942,8 +4942,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -4970,14 +4970,14 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:STATE(1)()  type: Real 
+// 2: input iL:STATE(1)()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
 // 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input uL:VARIABLE()  type: Real 
+// 6: input $res[1]:VARIABLE()  type: Real 
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
-// 9: input $res[1]:VARIABLE()  type: Real 
+// 9: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5038,8 +5038,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -5066,14 +5066,14 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:STATE(1)()  type: Real 
+// 2: input iL:STATE(1)()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
 // 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input uL:VARIABLE()  type: Real 
+// 6: input $res[1]:VARIABLE()  type: Real 
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
-// 9: input $res[1]:VARIABLE()  type: Real 
+// 9: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5135,8 +5135,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -5156,14 +5156,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -5173,14 +5173,14 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:STATE(1)()  type: Real 
+// 2: input iL:STATE(1)()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
 // 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input uL:VARIABLE()  type: Real 
+// 6: input $res[1]:VARIABLE()  type: Real 
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
-// 9: input $res[1]:VARIABLE()  type: Real 
+// 9: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5241,8 +5241,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -5262,14 +5262,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -5279,14 +5279,14 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:STATE(1)()  type: Real 
+// 2: input iL:STATE(1)()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
 // 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input uL:VARIABLE()  type: Real 
+// 6: input $res[1]:VARIABLE()  type: Real 
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
-// 9: input $res[1]:VARIABLE()  type: Real 
+// 9: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5347,8 +5347,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -5368,14 +5368,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -5385,14 +5385,14 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:STATE(1)()  type: Real 
+// 2: input iL:STATE(1)()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
 // 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input uL:VARIABLE()  type: Real 
+// 6: input $res[1]:VARIABLE()  type: Real 
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
-// 9: input $res[1]:VARIABLE()  type: Real 
+// 9: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5453,8 +5453,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -5474,14 +5474,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -5491,14 +5491,14 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:STATE(1)()  type: Real 
+// 2: input iL:STATE(1)()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
 // 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input uL:VARIABLE()  type: Real 
+// 6: input $res[1]:VARIABLE()  type: Real 
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
-// 9: input $res[1]:VARIABLE()  type: Real 
+// 9: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5559,8 +5559,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -5580,14 +5580,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -5597,14 +5597,14 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:STATE(1)()  type: Real 
+// 2: input iL:STATE(1)()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
 // 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input uL:VARIABLE()  type: Real 
+// 6: input $res[1]:VARIABLE()  type: Real 
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
-// 9: input $res[1]:VARIABLE()  type: Real 
+// 9: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5665,8 +5665,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -5686,14 +5686,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -5703,14 +5703,14 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:STATE(1)()  type: Real 
+// 2: input iL:STATE(1)()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
 // 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input uL:VARIABLE()  type: Real 
+// 6: input $res[1]:VARIABLE()  type: Real 
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
-// 9: input $res[1]:VARIABLE()  type: Real 
+// 9: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5771,8 +5771,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -5792,14 +5792,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -5809,14 +5809,14 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:STATE(1)()  type: Real 
+// 2: input iL:STATE(1)()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
 // 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input uL:VARIABLE()  type: Real 
+// 6: input $res[1]:VARIABLE()  type: Real 
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
-// 9: input $res[1]:VARIABLE()  type: Real 
+// 9: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5877,8 +5877,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real 
+// 2: $res_1_.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Equations (2, 2)
@@ -5898,14 +5898,14 @@ buildModel(testOptdaedump); getErrorString();
 // Matching
 // ========================================
 // 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
-// {1:2}
-// {2:1}
+// {1:1}
+// {2:2}
 //
 //
 //
@@ -5915,14 +5915,14 @@ buildModel(testOptdaedump); getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
 // 1: input i1SeedLSJac1:STATE_DER()  type: Real 
-// 2: input uC:DUMMY_STATE()  type: Real 
-// 3: input iL:STATE(1)()  type: Real 
+// 2: input iL:STATE(1)()  type: Real 
+// 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
 // 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input uL:VARIABLE()  type: Real 
+// 6: input $res[1]:VARIABLE()  type: Real 
 // 7: input u1:VARIABLE()  type: Real 
 // 8: input i2:VARIABLE()  type: Real 
-// 9: input $res[1]:VARIABLE()  type: Real 
+// 9: input uL:VARIABLE()  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
