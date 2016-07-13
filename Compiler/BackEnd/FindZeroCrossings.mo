@@ -590,8 +590,7 @@ algorithm
       BackendDAE.EventInfo einfo;
       list<BackendDAE.Equation> eqs_lst, eqs_lst1;
       list<BackendDAE.TimeEvent> timeEvents;
-      list<BackendDAE.ZeroCrossing> zero_crossings, relations, sampleLst;
-      DoubleEndedList<BackendDAE.ZeroCrossing> de_zero_crossings, de_relations, de_sampleLst;
+      DoubleEndedList<BackendDAE.ZeroCrossing> zero_crossings, relations, sampleLst;
       Integer countMathFunctions, numRelations;
       Option<String> solver;
     //No zero crossing for clocked discrete partitions;
@@ -605,16 +604,13 @@ algorithm
                                sampleLst=sampleLst, relationsLst=relations,
                                numberMathEvents=countMathFunctions ) := einfo;
         eqs_lst := BackendEquation.equationList(eqns);
-        (de_zero_crossings, eqs_lst1, numRelations, countMathFunctions, de_relations, de_sampleLst) :=
-        findZeroCrossings2( vars, globalKnownVars, eqs_lst, 0, listLength(relations),
-                            countMathFunctions, DoubleEndedList.fromList(zero_crossings), DoubleEndedList.fromList(relations), DoubleEndedList.fromList(sampleLst), {});
-        zero_crossings := DoubleEndedList.toListAndClear(de_zero_crossings);
-        sampleLst := DoubleEndedList.toListAndClear(de_sampleLst);
-        relations := DoubleEndedList.toListAndClear(de_relations);
+        (zero_crossings, eqs_lst1, numRelations, countMathFunctions, relations, sampleLst) :=
+        findZeroCrossings2( vars, globalKnownVars, eqs_lst, 0, DoubleEndedList.length(relations),
+                            countMathFunctions, zero_crossings, relations, sampleLst, {});
         eqs_lst1 := listReverse(eqs_lst1);
         if Flags.isSet(Flags.RELIDX) then
-          print("findZeroCrossings1 number of relations: " + intString(listLength(relations)) + " " + intString(numRelations) + "\n");
-          print("findZeroCrossings1 sample index: " + intString(listLength(sampleLst)) + "\n");
+          print("findZeroCrossings1 number of relations: " + intString(DoubleEndedList.length(relations)) + " " + intString(numRelations) + "\n");
+          print("findZeroCrossings1 sample index: " + intString(DoubleEndedList.length(sampleLst)) + "\n");
         end if;
         eqns1 := BackendEquation.listEquation(eqs_lst1);
         einfo := BackendDAE.EVENT_INFO( timeEvents, zero_crossings, sampleLst, relations,

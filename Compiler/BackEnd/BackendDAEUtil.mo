@@ -570,9 +570,9 @@ public function numberOfZeroCrossings "author: lochel"
 protected
   BackendDAE.EventInfo eventInfo = inBackendDAE.shared.eventInfo;
 algorithm
-  outNumZeroCrossings := listLength(eventInfo.zeroCrossingLst);
+  outNumZeroCrossings := DoubleEndedList.length(eventInfo.zeroCrossingLst);
   outNumTimeEvents := listLength(eventInfo.timeEvents);
-  outNumRelations := listLength(eventInfo.relationsLst);
+  outNumRelations := DoubleEndedList.length(eventInfo.relationsLst);
   outNumMathEventFunctions := eventInfo.numberMathEvents;
 end numberOfZeroCrossings;
 
@@ -8544,7 +8544,7 @@ end collapseRemovedEqs1;
 public function emptyEventInfo
   output BackendDAE.EventInfo info;
 algorithm
-  info := BackendDAE.EVENT_INFO({}, {}, {}, {}, 0);
+  info := BackendDAE.EVENT_INFO({}, DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), 0);
 end emptyEventInfo;
 
 public function getSubClock

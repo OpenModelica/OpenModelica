@@ -264,10 +264,10 @@ algorithm
   dumpVariables(inShared.aliasVars, "Alias Variables");
   dumpEquationArray(inShared.removedEqs, "Simple Shared Equations");
   dumpEquationArray(inShared.initialEqs, "Initial Equations");
-  dumpZeroCrossingList(inShared.eventInfo.zeroCrossingLst, "Zero Crossings");
-  dumpZeroCrossingList(inShared.eventInfo.relationsLst, "Relations");
+  dumpZeroCrossingList(DoubleEndedList.toListNoCopyNoClear(inShared.eventInfo.zeroCrossingLst), "Zero Crossings");
+  dumpZeroCrossingList(DoubleEndedList.toListNoCopyNoClear(inShared.eventInfo.relationsLst), "Relations");
   if stringEqual(Config.simCodeTarget(), "Cpp") then
-    dumpZeroCrossingList(inShared.eventInfo.sampleLst, "Samples");
+    dumpZeroCrossingList(DoubleEndedList.toListNoCopyNoClear(inShared.eventInfo.sampleLst), "Samples");
   else
     dumpTimeEvents(inShared.eventInfo.timeEvents, "Time Events");
   end if;

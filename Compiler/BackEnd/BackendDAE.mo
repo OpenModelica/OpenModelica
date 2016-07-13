@@ -35,14 +35,15 @@ encapsulated package BackendDAE
   description: BackendDAE contains the data-types used by the back end.
 "
 
-public import Absyn;
-public import DAE;
-public import FCore;
-public import SCode;
-public import Values;
-public import HashTable3;
-public import HashTableCG;
-public import MMath;
+import Absyn;
+import DAE;
+import DoubleEndedList;
+import FCore;
+import HashTable3;
+import HashTableCG;
+import MMath;
+import SCode;
+import Values;
 
 public
 type Type = .DAE.Type
@@ -586,9 +587,9 @@ public
 uniontype EventInfo
   record EVENT_INFO
     list<TimeEvent> timeEvents         "stores all information related to time events";
-    list<ZeroCrossing> zeroCrossingLst "list of zero crossing conditions";
-    list<ZeroCrossing> sampleLst       "[deprecated] list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
-    list<ZeroCrossing> relationsLst    "list of zero crossing function as before";
+    DoubleEndedList<ZeroCrossing> zeroCrossingLst "list of zero crossing conditions";
+    DoubleEndedList<ZeroCrossing> sampleLst       "[deprecated] list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
+    DoubleEndedList<ZeroCrossing> relationsLst    "list of zero crossing function as before";
     Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
   end EVENT_INFO;
 end EventInfo;

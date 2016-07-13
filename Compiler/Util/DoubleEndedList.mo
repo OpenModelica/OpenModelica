@@ -260,5 +260,24 @@ algorithm
   end while;
 end mapNoCopy_1;
 
+impure function mapFoldNoCopy<ArgT1>
+  input DoubleEndedList<T> delst;
+  input MapFunc inMapFunc;
+  input output ArgT1 arg;
+  partial function MapFunc
+    input output T element;
+    input output ArgT1 arg;
+  end MapFunc;
+protected
+  T element;
+  list<T> lst=arrayGet(delst.front,1);
+algorithm
+  while not listEmpty(lst) loop
+    (element,arg) := inMapFunc(listGet(lst,1), arg);
+    Dangerous.listSetFirst(lst, element);
+    _::lst := lst;
+  end while;
+end mapFoldNoCopy;
+
 annotation(__OpenModelica_Interface="util");
 end DoubleEndedList;

@@ -279,11 +279,9 @@ algorithm
 end simplifyTimeIndepFuncCallsShared;
 
 protected function traverseEventInfoExps<T>
-  input BackendDAE.EventInfo iEventInfo;
+  input output BackendDAE.EventInfo eventInfo;
   input FuncExpType func;
-  input T inTypeA;
-  output BackendDAE.EventInfo oEventInfo;
-  output T outTypeA;
+  input output T arg;
   partial function FuncExpType
     input DAE.Exp inExp;
     input T inTypeA;
@@ -292,23 +290,19 @@ protected function traverseEventInfoExps<T>
   end FuncExpType;
 protected
   list<BackendDAE.TimeEvent> timeEvents;
-  list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
+  DoubleEndedList<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
   Integer numberMathEvents;
 algorithm
-  BackendDAE.EVENT_INFO(timeEvents, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents) := iEventInfo;
-  (zeroCrossingLst, outTypeA) := traverseZeroCrossingExps(zeroCrossingLst, func, inTypeA, {});
-  (sampleLst, outTypeA) := traverseZeroCrossingExps(sampleLst, func, outTypeA, {});
-  (relationsLst, outTypeA) := traverseZeroCrossingExps(relationsLst, func, outTypeA, {});
-  oEventInfo := BackendDAE.EVENT_INFO(timeEvents, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents);
+  BackendDAE.EVENT_INFO(timeEvents, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents) := eventInfo;
+  arg := DoubleEndedList.mapFoldNoCopy(zeroCrossingLst, function traverseZeroCrossingExps(func=func), arg);
+  arg := DoubleEndedList.mapFoldNoCopy(sampleLst, function traverseZeroCrossingExps(func=func), arg);
+  arg := DoubleEndedList.mapFoldNoCopy(relationsLst, function traverseZeroCrossingExps(func=func), arg);
 end traverseEventInfoExps;
 
 protected function traverseZeroCrossingExps<T>
-  input list<BackendDAE.ZeroCrossing> iZeroCrossing;
+  input output BackendDAE.ZeroCrossing zc;
   input FuncExpType func;
-  input T inTypeA;
-  input list<BackendDAE.ZeroCrossing> iAcc;
-  output list<BackendDAE.ZeroCrossing> oZeroCrossing;
-  output T outTypeA;
+  input output T arg;
   partial function FuncExpType
     input DAE.Exp inExp;
     input T inTypeA;
@@ -316,20 +310,15 @@ protected function traverseZeroCrossingExps<T>
     output T outA;
   end FuncExpType;
 algorithm
-  (oZeroCrossing, outTypeA) := match (iZeroCrossing)
+  (zc, arg) := match zc
     local
-      list<BackendDAE.ZeroCrossing> zeroCrossing;
-      DAE.Exp relation_;
+      DAE.Exp relation1, relation2;
       list<Integer> occurEquLst;
-      T arg;
 
-    case {}
-    then (listReverse(iAcc), inTypeA);
-
-    case BackendDAE.ZERO_CROSSING(relation_, occurEquLst)::zeroCrossing equation
-      (relation_, arg) = Expression.traverseExpBottomUp(relation_, func, inTypeA);
-      (zeroCrossing, arg) = traverseZeroCrossingExps(zeroCrossing, func, arg, BackendDAE.ZERO_CROSSING(relation_, occurEquLst)::iAcc);
-    then (zeroCrossing, arg);
+    case BackendDAE.ZERO_CROSSING(relation1, occurEquLst)
+      equation
+        (relation2, arg) = Expression.traverseExpBottomUp(relation1, func, arg);
+      then (if referenceEq(relation1, relation2) then BackendDAE.ZERO_CROSSING(relation2, occurEquLst) else zc, arg);
   end match;
 end traverseZeroCrossingExps;
 

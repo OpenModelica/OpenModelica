@@ -113,7 +113,7 @@ algorithm
     shared.externalObjects := inlineVariables(shared.externalObjects, tpl);
     shared.initialEqs := inlineEquationArray(shared.initialEqs, tpl);
     shared.removedEqs := inlineEquationArray(shared.removedEqs, tpl);
-    shared.eventInfo := inlineEventInfo(shared.eventInfo, tpl);
+    inlineEventInfo(shared.eventInfo, tpl);
     outBackendDAE := BackendDAE.DAE(eqs, shared);
   else
     if Flags.isSet(Flags.FAILTRACE) then
@@ -535,23 +535,16 @@ end inlineVar;
 
 protected function inlineEventInfo "inlines function calls in event info"
   input BackendDAE.EventInfo inEventInfo;
-  input Inline.Functiontuple inElementList;
-  output BackendDAE.EventInfo outEventInfo;
+  input Inline.Functiontuple fns;
 algorithm
-  outEventInfo := matchcontinue(inEventInfo, inElementList)
+  _ := matchcontinue inEventInfo
     local
-      Inline.Functiontuple fns;
-      list<BackendDAE.ZeroCrossing> zclst, zclst_1, relations, samples;
-      Integer numberOfMathEvents;
-      BackendDAE.EventInfo ev;
-      Boolean b1, b2, b3;
-      list<BackendDAE.TimeEvent> timeEvents;
+      DoubleEndedList<BackendDAE.ZeroCrossing> zclst, relations, samples;
 
-    case(BackendDAE.EVENT_INFO(timeEvents, zclst, samples, relations, numberOfMathEvents), fns) equation
-      (zclst_1, b1) = inlineZeroCrossings(zclst, fns);
-      (relations, b2) = inlineZeroCrossings(relations, fns);
-      ev = if b1 or b2 then BackendDAE.EVENT_INFO(timeEvents, zclst_1, samples, relations, numberOfMathEvents) else inEventInfo;
-    then ev;
+    case BackendDAE.EVENT_INFO(_, zclst, samples, relations, _) equation
+      inlineZeroCrossings(zclst, fns);
+      inlineZeroCrossings(relations, fns);
+    then ();
 
     else
       equation
@@ -562,42 +555,30 @@ algorithm
 end inlineEventInfo;
 
 protected function inlineZeroCrossings "inlines function calls in zero crossings"
-  input list<BackendDAE.ZeroCrossing> inStmts;
+  input DoubleEndedList<BackendDAE.ZeroCrossing> inStmts;
   input Inline.Functiontuple fns;
-  output list<BackendDAE.ZeroCrossing> outStmts;
-  output Boolean oInlined = false;
 protected
   BackendDAE.ZeroCrossing zc;
 algorithm
-  outStmts := list(match stmt
-      local
-        Boolean b;
-      case _ equation
-        (zc, b) = inlineZeroCrossing(stmt, fns);
-        oInlined = oInlined or b;
-      then zc;
-    end match for stmt in inStmts);
+  DoubleEndedList.mapNoCopy_1(inStmts, inlineZeroCrossing, fns);
 end inlineZeroCrossings;
 
 protected function inlineZeroCrossing "inlines function calls in a zero crossing"
-  input BackendDAE.ZeroCrossing inZeroCrossing;
-  input Inline.Functiontuple inElementList;
-  output BackendDAE.ZeroCrossing outZeroCrossing;
-  output Boolean oInlined;
+  input output BackendDAE.ZeroCrossing zc;
+  input Inline.Functiontuple fns;
 algorithm
-  (outZeroCrossing, oInlined) := match(inZeroCrossing, inElementList)
+  zc := match zc
     local
-      Inline.Functiontuple fns;
       DAE.Exp e, e_1;
       list<Integer> ilst1;
-      list<DAE.Statement> assrtLst;
       Boolean b;
 
-    case(BackendDAE.ZERO_CROSSING(e, ilst1), fns) equation
-      (e_1, _, b, _) = Inline.inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
-    then (BackendDAE.ZERO_CROSSING(e_1, ilst1), b);
+    case BackendDAE.ZERO_CROSSING(e, ilst1)
+      equation
+        (e_1, _, b, _) = Inline.inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
+      then if not referenceEq(e,e_1) then BackendDAE.ZERO_CROSSING(e_1, ilst1) else zc;
 
-    else (inZeroCrossing, false);
+    else zc;
   end match;
 end inlineZeroCrossing;
 
@@ -1091,12 +1072,12 @@ algorithm
     //fns.outputs
     case DAE.VAR(componentRef=cr,direction=DAE.OUTPUT(),kind=DAE.VARIABLE())
     guard (not Expression.isRecordType(ComponentReference.crefTypeFull(cr))) and ComponentReference.crefDepth(cr) > 0
-	    algorithm
-	      // create variables
-	      (crVar, varLst, repl) := createReplacementVariables(cr, funcname, repl);
-	      outEqs := BackendVariable.addVarsDAE(varLst, outEqs);
-	      // collect output variables
-	      oOutput := crVar::oOutput;
+      algorithm
+        // create variables
+        (crVar, varLst, repl) := createReplacementVariables(cr, funcname, repl);
+        outEqs := BackendVariable.addVarsDAE(varLst, outEqs);
+        // collect output variables
+        oOutput := crVar::oOutput;
       then ();
 
     case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),binding=NONE()))
@@ -1112,20 +1093,20 @@ algorithm
     guard not Expression.isRecordType(ComponentReference.crefTypeFull(cr))
       algorithm
         // create variables
-	      (crVar, varLst, repl) := createReplacementVariables(cr, funcname, repl);
-	      // add variables
-	      eVar := Expression.crefExp(crVar);
-	      varLst := list(BackendVariable.setVarTS(_var, SOME(BackendDAE.AVOID())) for _var in varLst);
+        (crVar, varLst, repl) := createReplacementVariables(cr, funcname, repl);
+        // add variables
+        eVar := Expression.crefExp(crVar);
+        varLst := list(BackendVariable.setVarTS(_var, SOME(BackendDAE.AVOID())) for _var in varLst);
         outEqs := BackendVariable.addVarsDAE(varLst, outEqs);
         // add equation for binding
-	      eq := BackendEquation.generateEquation(eVar,eBind);
-	      outEqs := BackendEquation.equationAddDAE(eq, outEqs);
+        eq := BackendEquation.generateEquation(eVar,eBind);
+        outEqs := BackendEquation.equationAddDAE(eq, outEqs);
       then ();
 
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(st)))
       equation
-	      eqlst = List.map(st, BackendEquation.statementEq);
-	      outEqs = BackendEquation.equationsAddDAE(eqlst, outEqs);
+        eqlst = List.map(st, BackendEquation.statementEq);
+        outEqs = BackendEquation.equationsAddDAE(eqlst, outEqs);
       then ();
     end match;
   end for;

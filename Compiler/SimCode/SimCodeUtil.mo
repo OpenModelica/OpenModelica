@@ -207,6 +207,7 @@ protected
   list<BackendDAE.TimeEvent> timeEvents;
   list<BackendDAE.Var> allPrimaryParameters "already sorted";
   list<BackendDAE.Var> primaryParameters "already sorted";
+  DoubleEndedList<BackendDAE.ZeroCrossing> de_zeroCrossings, de_sampleZC, de_relations;
   list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
   list<DAE.ClassAttributes> classAttributes;
   list<DAE.ComponentRef> discreteModelVars;
@@ -285,10 +286,13 @@ algorithm
 
     // created event suff e.g. zeroCrossings, samples, ...
     timeEvents := eventInfo.timeEvents;
-    zeroCrossings := if ifcpp then eventInfo.relationsLst else eventInfo.zeroCrossingLst;
-    relations := eventInfo.relationsLst;
-    sampleZC := eventInfo.sampleLst;
-    zeroCrossings := if ifcpp then listAppend(zeroCrossings, sampleZC) else zeroCrossings;
+    (zeroCrossings,relations,sampleZC) := match eventInfo
+      case BackendDAE.EVENT_INFO(zeroCrossingLst=de_zeroCrossings, relationsLst=de_relations, sampleLst=de_sampleZC)
+      then (DoubleEndedList.toListNoCopyNoClear(de_zeroCrossings), DoubleEndedList.toListNoCopyNoClear(de_relations), DoubleEndedList.toListNoCopyNoClear(de_sampleZC));
+    end match;
+    if ifcpp then
+      zeroCrossings := listAppend(relations, sampleZC);
+    end if;
 
     (clockedSysts, contSysts) := List.splitOnTrue(dlow.eqs, BackendDAEUtil.isClockedSyst);
     execStat("simCode: created event and clocks part");
@@ -2270,14 +2274,14 @@ protected function zeroCrossingsEquations "
   input BackendDAE.Shared shared;
   output list<Integer> eqns;
 protected
-  list<BackendDAE.ZeroCrossing> zeroCrossingLst;
+  DoubleEndedList<BackendDAE.ZeroCrossing> zeroCrossingLst;
   list<list<Integer>> zcEqns;
   list<Integer> wcEqns;
   BackendDAE.EquationArray orderedEqs;
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := syst;
   BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=zeroCrossingLst)) := shared;
-  zcEqns := List.map(zeroCrossingLst, zeroCrossingEquations);
+  zcEqns := List.map(DoubleEndedList.toListNoCopyNoClear(zeroCrossingLst), zeroCrossingEquations);
   wcEqns := whenEquationsIndices(orderedEqs);
   eqns := List.unionList(listAppend(zcEqns, {wcEqns}));
 end zeroCrossingsEquations;

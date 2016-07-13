@@ -1126,13 +1126,13 @@ algorithm
   _ := match(inEventInfo, addMML)
     local
       list<BackendDAE.TimeEvent> timeEvents;
-      list<BackendDAE.ZeroCrossing> zc;
+      DoubleEndedList<BackendDAE.ZeroCrossing> zc;
 
     case (BackendDAE.EVENT_INFO(timeEvents=timeEvents,
                                 zeroCrossingLst=zc), _)
       equation
         dumpTimeEvents(timeEvents, stringAppend(SAMPLES, LIST_), addMML);
-        dumpZeroCrossing(zc, stringAppend(ZERO_CROSSING, LIST_), addMML);
+        dumpZeroCrossing(DoubleEndedList.toListNoCopyNoClear(zc), stringAppend(ZERO_CROSSING, LIST_), addMML);
       then
         ();
 

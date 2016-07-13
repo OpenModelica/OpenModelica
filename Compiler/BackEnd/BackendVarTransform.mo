@@ -2738,13 +2738,19 @@ public function replaceEventInfo
 protected
   Integer numberMathEvents;
   list<BackendDAE.TimeEvent> timeEvents;
-  list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
+  DoubleEndedList<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
+  protected partial function Func
+    input output BackendDAE.ZeroCrossing zc;
+    input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
+  end Func;
+  Func zc;
 algorithm
   BackendDAE.EVENT_INFO(timeEvents,zeroCrossingLst, sampleLst, relationsLst,numberMathEvents) := eInfoIn;
   timeEvents := List.map2(timeEvents, replaceTimeEvents, inVariableReplacements, inFuncTypeExpExpToBooleanOption);
-  zeroCrossingLst := List.map2(zeroCrossingLst, replaceZeroCrossing, inVariableReplacements, inFuncTypeExpExpToBooleanOption);
-  sampleLst := List.map2(sampleLst, replaceZeroCrossing, inVariableReplacements, inFuncTypeExpExpToBooleanOption);
-  relationsLst := List.map2(relationsLst, replaceZeroCrossing, inVariableReplacements, inFuncTypeExpExpToBooleanOption);
+  zc := function replaceZeroCrossing(inVariableReplacements=inVariableReplacements);
+  DoubleEndedList.mapNoCopy_1(zeroCrossingLst, zc, inFuncTypeExpExpToBooleanOption);
+  DoubleEndedList.mapNoCopy_1(sampleLst, zc, inFuncTypeExpExpToBooleanOption);
+  DoubleEndedList.mapNoCopy_1(relationsLst, zc, inFuncTypeExpExpToBooleanOption);
   eInfoOut := BackendDAE.EVENT_INFO(timeEvents,zeroCrossingLst, sampleLst, relationsLst,numberMathEvents);
 end replaceEventInfo;
 

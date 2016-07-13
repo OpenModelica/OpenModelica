@@ -136,7 +136,7 @@ algorithm
   eqnarr := BackendEquation.listEquation(eqns);
   reqnarr := BackendEquation.listEquation(reqns);
   ieqnarr := BackendEquation.listEquation(ieqns);
-  einfo := BackendDAE.EVENT_INFO(timeEvents, {}, {}, {}, 0);
+  einfo := BackendDAE.EVENT_INFO(timeEvents, DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), 0);
   symjacs := {(NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {})};
   outBackendDAE := BackendDAE.DAE(BackendDAEUtil.createEqSystem(vars_1, eqnarr, {}, BackendDAE.UNKNOWN_PARTITION(), reqnarr)::{},
                                   BackendDAE.SHARED(globalKnownVars,
