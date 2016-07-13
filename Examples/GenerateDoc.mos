@@ -113,8 +113,12 @@ function filename \"Replace characters that mess with filesystems and shell expa
   input String str;
   output String ostr =
         OpenModelica.Scripting.stringReplace(
-          OpenModelica.Scripting.stringReplace(str,\"/\",\"Division\"),
-          \"*\",\"Multiplication\")
+        OpenModelica.Scripting.stringReplace(
+        OpenModelica.Scripting.stringReplace(
+        OpenModelica.Scripting.stringReplace(str,\"/\",\"Division\"),
+        \"*\",\"Multiplication\"),
+        \"<\",\"x3C\"),
+        \">\",\"x3E\")
 ;
 end filename;
 
@@ -124,6 +128,8 @@ function uriEncode
 algorithm
   uri := OpenModelica.Scripting.stringReplace(str,\"'\",\"%27\");
   uri := OpenModelica.Scripting.stringReplace(uri,\" \",\"%20\");
+  uri := OpenModelica.Scripting.stringReplace(uri,\"<\",\"x3C\");
+  uri := OpenModelica.Scripting.stringReplace(uri,\">\",\"x3E\");
 end uriEncode;
 
 function notLast
