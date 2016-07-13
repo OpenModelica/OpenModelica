@@ -2291,7 +2291,9 @@ algorithm
       then res;
 */
     case (DAE.T_METARECORD(source = {p}))
-      then Absyn.pathStringNoQual(p);
+      equation
+        res = Absyn.pathStringNoQual(p);
+      then if listEmpty(inType.typeVars) then res else (res+"<"+stringDelimitList(list(unparseType(tv) for tv in inType.typeVars), ",")+">");
 
     // MetaModelica boxed type
     case (DAE.T_METABOXED(ty = ty))
@@ -8929,11 +8931,11 @@ algorithm
     local
       DAE.EvaluateSingletonTypeFunction fun;
     case DAE.T_METAUNIONTYPE(knownSingleton=false) then ty;
-    case DAE.T_METAUNIONTYPE(singletonType=DAE.EVAL_SINGLETON_KNOWN_TYPE(ty=oty)) then oty;
+    case DAE.T_METAUNIONTYPE(singletonType=DAE.EVAL_SINGLETON_KNOWN_TYPE(ty=oty)) then setTypeVariables(oty, ty.typeVars);
     case DAE.T_METAUNIONTYPE(singletonType=DAE.EVAL_SINGLETON_TYPE_FUNCTION(fun=fun))
       algorithm
         oty := fun();
-      then oty;
+      then setTypeVariables(oty, ty.typeVars);
     else ty;
   end match;
 end getMetaRecordIfSingleton;
