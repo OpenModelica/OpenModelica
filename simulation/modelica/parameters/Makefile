@@ -3,6 +3,7 @@ TEST = ../../../rtest -v
 TESTFILES = \
 Engine1a_output.mos \
 revoluteConstraint.mos \
+parameterTest.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing

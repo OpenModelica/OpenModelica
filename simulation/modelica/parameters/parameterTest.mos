@@ -1,0 +1,511 @@
+// name:      parameterTest
+// keywords:  parameter evaluation function evaluation
+// status:    correct
+
+loadString("
+model parameterTest
+  Real x;
+  // Real y;
+  final parameter Real p1 = 1;
+  parameter Real p2 = 2 annotation(Evaluate=true);
+  final parameter Boolean b1 = false;
+  final parameter Boolean b2 = true;
+  parameter Real p3 = add(p1,p2);
+  parameter Real p4 = if b1 then p3 else sub(p3,p1,p5,b2);
+  parameter Real p5 = 5;
+
+  function add
+    input Real a;
+    input Real b;
+    output Real out;
+  algorithm
+    out := add2(a,b);
+  end add;
+
+  function add2
+    input Real a;
+    input Real b;
+    output Real out;
+  algorithm
+    out := a+b;
+  end add2;
+
+  function sub
+    input Real a;
+    input Real d;
+    input Real c;
+    input Boolean b;
+    output Real out;
+  algorithm
+    out := c;
+    
+    if b then
+      out:= sub2(a,out);
+    else
+      out:= sub2(a,c);
+    end if;
+    
+    // out := if b then sub2(a,out) else sub2(a,c);
+  end sub;
+
+  function sub2
+    input Real a;
+    input Real b;
+    output Real out;
+  algorithm
+    assert(a<=b,\"Error in function sub2: a>b.\");
+    out := a-b;
+  end sub2;
+
+equation
+  x = sub(p3,p1,p5,b2);
+  // 2*y + add(x,time) -1 = 0;
+  // sub(x,y,2,true) = 10;
+end parameterTest;
+"); getErrorString();
+
+setCommandLineOptions("+d=evalParameterDump"); getErrorString();
+simulate(parameterTest); getErrorString();
+val(p1, 0.0);
+val(p2, 0.0);
+val(p3, 0.0);
+val(p4, 0.0);
+val(p5, 0.0);
+val(b1, 0.0);
+val(b2, 0.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// ########################################
+// DAE before evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): x = parameterTest.sub(p3, p1, p5, b2)   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (7)
+// ========================================
+// 1: p5:PARAM()  = 5.0  type: Real 
+// 2: p4:PARAM()  = if b1 then p3 else parameterTest.sub(p3, p1, p5, b2)  type: Real 
+// 3: p3:PARAM()  = parameterTest.add(p1, p2)  type: Real 
+// 4: b2:PARAM(final = true )  = true  type: Boolean 
+// 5: b1:PARAM(final = true )  = false  type: Boolean 
+// 6: p2:PARAM()  = 2.0  type: Real 
+// 7: p1:PARAM(final = true )  = 1.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+//
+// size: 7
+//
+// selectedParameter: 7,6,5,4
+// nselect: 0
+// ass2: 1,2,3,4,5,6,7
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 7
+// 1:
+// 2: 4 1 7 3 5
+// 3: 6 7
+// 4:
+// 5:
+// 6:
+// 7:
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 7
+// 1: 2 1
+// 2: 2
+// 3: 3 2
+// 4: 4 2
+// 5: 5 2
+// 6: 6 3
+// 7: 7 3 2
+//
+// After evaluate selected parameters
+//
+// size: 2053
+// nselect: 2053
+// repl:
+// Replacements: (4)
+// ========================================
+// p1 -> 1.0
+// p2 -> 2.0
+// b1 -> false
+// b2 -> true
+//
+// oRepl:
+// Replacements: (4)
+// ========================================
+// p1 -> 1.0
+// p2 -> 2.0
+// b1 -> false
+// b2 -> true
+//
+// globalKnownVars (7)
+// ========================================
+// 1: p5:PARAM()  = 5.0  type: Real 
+// 2: p4:PARAM()  = if b1 then p3 else parameterTest.sub(p3, p1, p5, b2)  type: Real 
+// 3: p3:PARAM()  = parameterTest.add(p1, p2)  type: Real 
+// 4: b2:PARAM(final = true )  = true  type: Boolean 
+// 5: b1:PARAM(final = true )  = false  type: Boolean 
+// 6: p2:PARAM(final = true )  = 2.0  type: Real 
+// 7: p1:PARAM(final = true )  = 1.0  type: Real 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,1,1,1,1
+//
+// comps:
+// 7
+// 6
+// 5
+// 4
+// 3
+// 1
+// 2
+//
+// After evaluate vars with bind expression consists of evaluated vars
+// repl:
+// Replacements: (5)
+// ========================================
+// p1 -> 1.0
+// p2 -> 2.0
+// b1 -> false
+// b2 -> true
+// p3 -> 3.0
+//
+// oRepl:
+// Replacements: (5)
+// ========================================
+// p1 -> 1.0
+// p2 -> 2.0
+// b1 -> false
+// b2 -> true
+// p3 -> 3.0
+//
+// globalKnownVars (7)
+// ========================================
+// 1: p5:PARAM()  = 5.0  type: Real 
+// 2: p4:PARAM()  = parameterTest.sub(3.0, 1.0, p5, true)  type: Real 
+// 3: p3:PARAM(final = true )  = 3.0  type: Real 
+// 4: b2:PARAM(final = true )  = true  type: Boolean 
+// 5: b1:PARAM(final = true )  = false  type: Boolean 
+// 6: p2:PARAM(final = true )  = 2.0  type: Real 
+// 7: p1:PARAM(final = true )  = 1.0  type: Real 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,1,1,1,1
+//
+// After replace evaluated parameter in variables
+// repl:
+// Replacements: (5)
+// ========================================
+// p1 -> 1.0
+// p2 -> 2.0
+// b1 -> false
+// b2 -> true
+// p3 -> 3.0
+//
+// oRepl:
+// Replacements: (5)
+// ========================================
+// p1 -> 1.0
+// p2 -> 2.0
+// b1 -> false
+// b2 -> true
+// p3 -> 3.0
+//
+// globalKnownVars (7)
+// ========================================
+// 1: p5:PARAM()  = 5.0  type: Real 
+// 2: p4:PARAM()  = parameterTest.sub(3.0, 1.0, p5, true)  type: Real 
+// 3: p3:PARAM(final = true )  = 3.0  type: Real 
+// 4: b2:PARAM(final = true )  = true  type: Boolean 
+// 5: b1:PARAM(final = true )  = false  type: Boolean 
+// 6: p2:PARAM(final = true )  = 2.0  type: Real 
+// 7: p1:PARAM(final = true )  = 1.0  type: Real 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,1,1,1,1
+//
+// ########################################
+// DAE after evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): x = parameterTest.sub(p3, p1, p5, b2)   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (7)
+// ========================================
+// 1: p5:PARAM()  = 5.0  type: Real 
+// 2: p4:PARAM()  = parameterTest.sub(3.0, 1.0, p5, true)  type: Real 
+// 3: p3:PARAM(final = true )  = 3.0  type: Real 
+// 4: b2:PARAM(final = true )  = true  type: Boolean 
+// 5: b1:PARAM(final = true )  = false  type: Boolean 
+// 6: p2:PARAM(final = true )  = 2.0  type: Real 
+// 7: p1:PARAM(final = true )  = 1.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+//
+// ########################################
+// DAE after replacing parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): x = parameterTest.sub(3.0, 1.0, p5, true)   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (7)
+// ========================================
+// 1: p5:PARAM()  = 5.0  type: Real 
+// 2: p4:PARAM()  = parameterTest.sub(3.0, 1.0, p5, true)  type: Real 
+// 3: p3:PARAM(final = true )  = 3.0  type: Real 
+// 4: b2:PARAM(final = true )  = true  type: Boolean 
+// 5: b1:PARAM(final = true )  = false  type: Boolean 
+// 6: p2:PARAM(final = true )  = 2.0  type: Real 
+// 7: p1:PARAM(final = true )  = 1.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+// record SimulationResult
+//     resultFile = "parameterTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 1.0
+// 2.0
+// 3.0
+// -2.0
+// 5.0
+// 0.0
+// 1.0
+// endResult
