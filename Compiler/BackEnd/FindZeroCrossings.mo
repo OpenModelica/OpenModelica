@@ -1471,14 +1471,8 @@ algorithm
   elseif matches == 1 then
     DoubleEndedList.mapNoCopy_1(zcs, mergeZeroCrossingIfEqual, newZc);
   else
-    // Multiple matches, for some reason
-    diff := DoubleEndedList.toListAndClear(zcs);
-    while not listEmpty(diff) loop
-      zc1::diff := diff;
-      (samezc, diff) := List.split1OnTrue(diff, zcEqual, zc1);
-      same_1 := List.fold(samezc, mergeZeroCrossing, zc1);
-      DoubleEndedList.push_front(zcs, same_1);
-    end while;
+    Error.addInternalError("mergeZeroCrossings got matches="+String(matches)+" (should be 0 or 1)", sourceInfo());
+    fail();
   end if;
 end mergeZeroCrossings;
 
