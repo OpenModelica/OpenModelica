@@ -78,6 +78,7 @@ protected import Matching;
 protected import SCode;
 protected import System;
 protected import Util;
+protected import ZeroCrossings;
 
 // =============================================================================
 // section for all print* functions
@@ -264,10 +265,10 @@ algorithm
   dumpVariables(inShared.aliasVars, "Alias Variables");
   dumpEquationArray(inShared.removedEqs, "Simple Shared Equations");
   dumpEquationArray(inShared.initialEqs, "Initial Equations");
-  dumpZeroCrossingList(DoubleEndedList.toListNoCopyNoClear(inShared.eventInfo.zeroCrossingLst), "Zero Crossings");
-  dumpZeroCrossingList(DoubleEndedList.toListNoCopyNoClear(inShared.eventInfo.relationsLst), "Relations");
+  dumpZeroCrossingList(ZeroCrossings.toList(inShared.eventInfo.zeroCrossings), "Zero Crossings");
+  dumpZeroCrossingList(DoubleEndedList.toListNoCopyNoClear(inShared.eventInfo.relations), "Relations");
   if stringEqual(Config.simCodeTarget(), "Cpp") then
-    dumpZeroCrossingList(DoubleEndedList.toListNoCopyNoClear(inShared.eventInfo.sampleLst), "Samples");
+    dumpZeroCrossingList(ZeroCrossings.toList(inShared.eventInfo.samples), "Samples");
   else
     dumpTimeEvents(inShared.eventInfo.timeEvents, "Time Events");
   end if;

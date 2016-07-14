@@ -271,6 +271,7 @@ if true then /* Suppress output */
     "../BackEnd/Vectorization.mo",
     "../BackEnd/VisualXML.mo",
     "../BackEnd/XMLDump.mo",
+    "../BackEnd/ZeroCrossings.mo",
 
     "../FFrontEnd/FGraphDump.mo",
     "../FFrontEnd/FGraphStream.mo",
@@ -345,7 +346,6 @@ if true then /* Suppress output */
     "../Util/Serializer.mo",
         "../Util/SimulationResults.mo",
     "../Util/TaskGraphResults.mo"
-
   };
   files := cat(1, alwaysfiles, backendfiles);
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));

@@ -112,6 +112,7 @@ import TaskSystemDump;
 import Util;
 import ValuesUtil;
 import VisualXML;
+import ZeroCrossings;
 
 protected constant String UNDERLINE = "========================================";
 
@@ -207,7 +208,8 @@ protected
   list<BackendDAE.TimeEvent> timeEvents;
   list<BackendDAE.Var> allPrimaryParameters "already sorted";
   list<BackendDAE.Var> primaryParameters "already sorted";
-  DoubleEndedList<BackendDAE.ZeroCrossing> de_zeroCrossings, de_sampleZC, de_relations;
+  BackendDAE.ZeroCrossingSet zeroCrossingsSet, sampleZCSet;
+  DoubleEndedList<BackendDAE.ZeroCrossing> de_relations;
   list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
   list<DAE.ClassAttributes> classAttributes;
   list<DAE.ComponentRef> discreteModelVars;
@@ -287,8 +289,8 @@ algorithm
     // created event suff e.g. zeroCrossings, samples, ...
     timeEvents := eventInfo.timeEvents;
     (zeroCrossings,relations,sampleZC) := match eventInfo
-      case BackendDAE.EVENT_INFO(zeroCrossingLst=de_zeroCrossings, relationsLst=de_relations, sampleLst=de_sampleZC)
-      then (DoubleEndedList.toListNoCopyNoClear(de_zeroCrossings), DoubleEndedList.toListNoCopyNoClear(de_relations), DoubleEndedList.toListNoCopyNoClear(de_sampleZC));
+      case BackendDAE.EVENT_INFO(zeroCrossings=zeroCrossingsSet, relations=de_relations, samples=sampleZCSet)
+      then (ZeroCrossings.toList(zeroCrossingsSet), DoubleEndedList.toListNoCopyNoClear(de_relations), ZeroCrossings.toList(sampleZCSet));
     end match;
     if ifcpp then
       zeroCrossings := listAppend(relations, sampleZC);
@@ -2274,14 +2276,14 @@ protected function zeroCrossingsEquations "
   input BackendDAE.Shared shared;
   output list<Integer> eqns;
 protected
-  DoubleEndedList<BackendDAE.ZeroCrossing> zeroCrossingLst;
+  BackendDAE.ZeroCrossingSet zeroCrossingLst;
   list<list<Integer>> zcEqns;
   list<Integer> wcEqns;
   BackendDAE.EquationArray orderedEqs;
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := syst;
-  BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=zeroCrossingLst)) := shared;
-  zcEqns := List.map(DoubleEndedList.toListNoCopyNoClear(zeroCrossingLst), zeroCrossingEquations);
+  BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossings=zeroCrossingLst)) := shared;
+  zcEqns := List.map(ZeroCrossings.toList(zeroCrossingLst), zeroCrossingEquations);
   wcEqns := whenEquationsIndices(orderedEqs);
   eqns := List.unionList(listAppend(zcEqns, {wcEqns}));
 end zeroCrossingsEquations;

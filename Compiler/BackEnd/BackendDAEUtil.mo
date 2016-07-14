@@ -113,6 +113,7 @@ import Types;
 import UnitCheck;
 import Values;
 import XMLDump;
+import ZeroCrossings;
 
 public function isInitializationDAE
   input BackendDAE.Shared inShared;
@@ -570,9 +571,9 @@ public function numberOfZeroCrossings "author: lochel"
 protected
   BackendDAE.EventInfo eventInfo = inBackendDAE.shared.eventInfo;
 algorithm
-  outNumZeroCrossings := DoubleEndedList.length(eventInfo.zeroCrossingLst);
+  outNumZeroCrossings := ZeroCrossings.length(eventInfo.zeroCrossings);
   outNumTimeEvents := listLength(eventInfo.timeEvents);
-  outNumRelations := DoubleEndedList.length(eventInfo.relationsLst);
+  outNumRelations := DoubleEndedList.length(eventInfo.relations);
   outNumMathEventFunctions := eventInfo.numberMathEvents;
 end numberOfZeroCrossings;
 
@@ -8544,7 +8545,7 @@ end collapseRemovedEqs1;
 public function emptyEventInfo
   output BackendDAE.EventInfo info;
 algorithm
-  info := BackendDAE.EVENT_INFO({}, DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), 0);
+  info := BackendDAE.EVENT_INFO({}, ZeroCrossings.new(), DoubleEndedList.fromList({}), ZeroCrossings.new(), 0);
 end emptyEventInfo;
 
 public function getSubClock

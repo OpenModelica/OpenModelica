@@ -288,15 +288,10 @@ protected function traverseEventInfoExps<T>
     output DAE.Exp outExp;
     output T outA;
   end FuncExpType;
-protected
-  list<BackendDAE.TimeEvent> timeEvents;
-  DoubleEndedList<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
-  Integer numberMathEvents;
 algorithm
-  BackendDAE.EVENT_INFO(timeEvents, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents) := eventInfo;
-  arg := DoubleEndedList.mapFoldNoCopy(zeroCrossingLst, function traverseZeroCrossingExps(func=func), arg);
-  arg := DoubleEndedList.mapFoldNoCopy(sampleLst, function traverseZeroCrossingExps(func=func), arg);
-  arg := DoubleEndedList.mapFoldNoCopy(relationsLst, function traverseZeroCrossingExps(func=func), arg);
+  arg := DoubleEndedList.mapFoldNoCopy(eventInfo.zeroCrossings.zc, function traverseZeroCrossingExps(func=func), arg);
+  arg := DoubleEndedList.mapFoldNoCopy(eventInfo.samples.zc, function traverseZeroCrossingExps(func=func), arg);
+  arg := DoubleEndedList.mapFoldNoCopy(eventInfo.relations, function traverseZeroCrossingExps(func=func), arg);
 end traverseEventInfoExps;
 
 protected function traverseZeroCrossingExps<T>

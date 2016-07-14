@@ -105,6 +105,7 @@ protected import DAEDump;
 protected import ValuesUtil;
 protected import ClassInf;
 protected import System;        // for stringReplace
+import ZeroCrossings;
 
 
   protected constant String HEADER        = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
@@ -1126,13 +1127,13 @@ algorithm
   _ := match(inEventInfo, addMML)
     local
       list<BackendDAE.TimeEvent> timeEvents;
-      DoubleEndedList<BackendDAE.ZeroCrossing> zc;
+      BackendDAE.ZeroCrossingSet zc;
 
     case (BackendDAE.EVENT_INFO(timeEvents=timeEvents,
-                                zeroCrossingLst=zc), _)
+                                zeroCrossings=zc), _)
       equation
         dumpTimeEvents(timeEvents, stringAppend(SAMPLES, LIST_), addMML);
-        dumpZeroCrossing(DoubleEndedList.toListNoCopyNoClear(zc), stringAppend(ZERO_CROSSING, LIST_), addMML);
+        dumpZeroCrossing(ZeroCrossings.toList(zc), stringAppend(ZERO_CROSSING, LIST_), addMML);
       then
         ();
 

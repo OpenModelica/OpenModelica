@@ -587,12 +587,18 @@ public
 uniontype EventInfo
   record EVENT_INFO
     list<TimeEvent> timeEvents         "stores all information related to time events";
-    DoubleEndedList<ZeroCrossing> zeroCrossingLst "list of zero crossing conditions";
-    DoubleEndedList<ZeroCrossing> sampleLst       "[deprecated] list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
-    DoubleEndedList<ZeroCrossing> relationsLst    "list of zero crossing function as before";
+    ZeroCrossingSet zeroCrossings "list of zero crossing conditions";
+    DoubleEndedList<ZeroCrossing> relations    "list of zero crossing function as before";
+    ZeroCrossingSet samples       "[deprecated] list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
     Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
   end EVENT_INFO;
 end EventInfo;
+
+uniontype ZeroCrossingSet
+  record ZERO_CROSSING_SET
+    DoubleEndedList<ZeroCrossing> zc;
+  end ZERO_CROSSING_SET;
+end ZeroCrossingSet;
 
 public
 uniontype ZeroCrossing
