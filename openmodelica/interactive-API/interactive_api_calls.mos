@@ -69,6 +69,7 @@ getInitialEquationCount(Modelica.Mechanics.MultiBody.Parts.Body); getErrorString
 getNthInitialEquation(Modelica.Mechanics.MultiBody.Parts.Body, 1); getErrorString();
 getEquationCount(Modelica.Mechanics.MultiBody.Parts.Body); getErrorString();
 getNthEquation(Modelica.Mechanics.MultiBody.Parts.Body, 1); getErrorString();
+getTransitions(SimpleSMwithAnnotations); getErrorString();
 
 getShortDefinitionBaseClassInformation(RealInput); getErrorString();
 getShortDefinitionBaseClassInformation(RealInput3); getErrorString();
@@ -448,6 +449,10 @@ getMessagesStringInternal(unique = false); // not unique
 //   */
 // frame_a.f = m * (Frames.resolve2(frame_a.R, a_0 - g_0) + cross(z_a, r_CM) + cross(w_a, cross(w_a, r_CM)));
 // frame_a.t = I * z_a + cross(w_a, I * w_a) + cross(r_CM, frame_a.f);"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getTransitions(SimpleSMwithAnnotations)
+// {{"state1","state2","i > 10","false","true","false","1","Line(true, {0.0, 0.0}, 0, {{-24, 58}, {-16, 50}, {-24, 11}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.Bezier), Text(true, {0.0, 0.0}, 0, {95, 95, 95}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{12, -2}, {12, -8}}, \"%condition\", 10, {TextStyle.Bold}, TextAlignment.Left)"},{"state2","state1","i < 1","false","true","false","1","Line(true, {0.0, 0.0}, 0, {{-66, 11}, {-76, 42}, {-64, 58}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.Bezier), Text(true, {0.0, 0.0}, 0, {95, 95, 95}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-6, 4}, {-6, 10}}, \"%condition\", 10, {TextStyle.Bold}, TextAlignment.Right)"}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getShortDefinitionBaseClassInformation(RealInput)
