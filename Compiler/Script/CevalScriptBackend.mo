@@ -853,6 +853,14 @@ algorithm
                                 Values.BOOL(false),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.ARRAY({},{0}),
                                 Values.BOOL(false),Values.BOOL(false),Values.STRING(""),Values.STRING(""),Values.BOOL(false)}),st);
 
+    case (cache,_,"getTransitions",{Values.CODE(Absyn.C_TYPENAME(className))},st as GlobalScript.SYMBOLTABLE(),_)
+      equation
+        v = getTransitions(className, st.ast);
+      then (cache, v, st);
+
+    case (cache,_,"getTransitions",_,st,_)
+      then (cache, Values.ARRAY({},{}), st);
+
     case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       algorithm
         ExecStat.execStatReset();
@@ -6658,6 +6666,258 @@ algorithm
     else "";
   end matchcontinue;
 end getClassComment;
+
+protected function getTransitions
+  input Absyn.Path path;
+  input Absyn.Program p;
+  output Values.Value res;
+protected
+  list<list<String>> transitions;
+  Absyn.Class cdef;
+algorithm
+  cdef := Interactive.getPathedClassInProgram(path, p);
+  transitions := listReverse(getTransitionsInClass(cdef));
+  res := ValuesUtil.makeArray(List.map(transitions, ValuesUtil.makeStringArray));
+end getTransitions;
+
+protected function getTransitionsInClass
+  "Gets the list of transitions in a class."
+  input Absyn.Class inClass;
+  output list<list<String>> outTransitions;
+algorithm
+  outTransitions := match (inClass)
+    local
+      list<list<String>> transitions;
+      list<Absyn.ClassPart> parts;
+
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
+      equation
+        transitions = getTransitionsInClassParts(parts);
+      then
+        transitions;
+
+    // handle also the case model extends X end X;
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
+      equation
+        transitions = getTransitionsInClassParts(parts);
+      then
+        transitions;
+
+    case Absyn.CLASS(body = Absyn.DERIVED()) then {};
+
+  end match;
+end getTransitionsInClass;
+
+protected function getTransitionsInClassParts
+  "Helper function for getTransitionsInClass."
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  output list<list<String>> outTransitions;
+algorithm
+  outTransitions := matchcontinue (inAbsynClassPartLst)
+    local
+      list<list<String>> transitions1, transitions2;
+      list<Absyn.EquationItem> eqlist;
+      list<Absyn.ClassPart> xs;
+
+    case ((Absyn.EQUATIONS(contents = eqlist) :: xs))
+      equation
+        transitions1 = getTransitionsInEquations(eqlist, {});
+        transitions2 = getTransitionsInClassParts(xs);
+      then
+        listAppend(transitions1, transitions2);
+
+    case ((_ :: xs))
+      equation
+        transitions1 = getTransitionsInClassParts(xs);
+      then
+        transitions1;
+
+    case ({})
+      then {};
+
+  end matchcontinue;
+end getTransitionsInClassParts;
+
+protected function getTransitionsInEquations
+  "Helper function for getTransitionsInClass."
+  input list<Absyn.EquationItem> inAbsynEquationItemLst;
+  input list<list<String>> inTransitions;
+  output list<list<String>> outTransitions;
+algorithm
+  outTransitions := match (inAbsynEquationItemLst, inTransitions)
+    local
+      list<list<String>> transitions;
+      list<String> transition;
+      Absyn.EquationItem eqItem;
+      Absyn.Equation eq;
+      list<Absyn.EquationItem> xs;
+
+    case (((eqItem as Absyn.EQUATIONITEM(equation_ = eq as Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "transition")))) :: xs),transitions)
+      equation
+        transition = getTransitionInEquation(eq);
+        transition = List.insert(transition, listLength(transition) + 1, getTransitionAnnotation(eqItem));
+        transitions = listAppend({transition}, transitions);
+      then
+        getTransitionsInEquations(xs, transitions);
+
+    case ((_ :: xs), _)
+      then
+        getTransitionsInEquations(xs, inTransitions);
+
+    case ({}, _)
+      then
+        inTransitions;
+
+  end match;
+end getTransitionsInEquations;
+
+protected function getTransitionInEquation
+  "Transition is a Absyn.EQ_NORETCALL.
+  So we read the function arguments and named arguments.
+  This function should always return a list with 7 values."
+  input Absyn.Equation inEquation;
+  output list<String> outTransition;
+algorithm
+  outTransition := match (inEquation)
+    local
+      list<Absyn.Exp> expArgs;
+      list<Absyn.NamedArg> namedArgs;
+      list<String> transition;
+
+    case Absyn.EQ_NORETCALL(functionArgs = Absyn.FUNCTIONARGS(args = expArgs, argNames = namedArgs))
+      equation
+        transition = List.map(expArgs, Dump.printExpStr);
+        // if we have named args then give them preference
+        transition = addOrUpdateNamedArg(namedArgs, "immediate", "true", transition, 4);
+        transition = addOrUpdateNamedArg(namedArgs, "reset", "true", transition, 5);
+        transition = addOrUpdateNamedArg(namedArgs, "synchronize", "false", transition, 6);
+        transition = addOrUpdateNamedArg(namedArgs, "priority", "1", transition, 7);
+      then
+        transition;
+
+    else {"", "", "", "true", "true", "false", "1"};
+
+  end match;
+end getTransitionInEquation;
+
+protected function addOrUpdateNamedArg
+  "Applies the named argument value if it exists.
+  The named argument override the value of argument if its on same position."
+  input list<Absyn.NamedArg> inNamedArgLst;
+  input String namedArg;
+  input String defaultValue;
+  input list<String> inTransition;
+  input Integer position;
+  output list<String> outTransition;
+protected
+  String namedArgValue;
+  Boolean isDefault;
+algorithm
+  (namedArgValue, isDefault) := namedArgValueAsString(inNamedArgLst, namedArg, defaultValue);
+  if listLength(inTransition) < position then
+    outTransition := List.insert(inTransition, position, namedArgValue);
+  elseif boolAnd((listLength(inTransition) >= position), boolNot(isDefault)) then
+    outTransition := List.replaceAt(namedArgValue, position, inTransition);
+  else
+    outTransition := inTransition;
+  end if;
+end addOrUpdateNamedArg;
+
+protected function namedArgValueAsString
+  "Returns the named argument value as string."
+  input list<Absyn.NamedArg> inAbsynNamedArgLst;
+  input String inNamedArg;
+  input String inDefaultValue;
+  output String outNamedArg;
+  output Boolean outDefault;
+algorithm
+  (outNamedArg, outDefault) := match (inAbsynNamedArgLst)
+    local
+      Absyn.NamedArg namedArg;
+      list<Absyn.NamedArg> al;
+      Absyn.Ident namedArgName;
+      Absyn.Exp namedArgValue;
+
+    case ({}) then (inDefaultValue,true);
+
+    case (((namedArg as Absyn.NAMEDARG(argName = namedArgName, argValue = namedArgValue)) :: _))
+      guard stringEq(namedArgName, inNamedArg)
+      then
+        (Dump.printNamedArgValueStr(namedArg), false);
+
+    case ((_ :: al))
+      then
+        namedArgValueAsString(al, inNamedArg, inDefaultValue);
+
+  end match;
+end namedArgValueAsString;
+
+protected function getTransitionAnnotation
+  "This function takes an `EquationItem\' and returns a comma separated
+  string of values  from the flat record of a connection annotation that
+  is found in the `EquationItem\'."
+  input Absyn.EquationItem inEquationItem;
+  output String outString;
+algorithm
+  outString := match (inEquationItem)
+    local
+      String annotationStr;
+      list<String> annotationList;
+      list<Absyn.ElementArg> annotations;
+
+    case (Absyn.EQUATIONITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annotations)),_))))
+      equation
+        annotationList = getTransitionAnnotationElArgs(annotations);
+        annotationStr = stringDelimitList(annotationList, ", ");
+      then
+        annotationStr;
+    case (Absyn.EQUATIONITEM(comment = NONE()))
+      then
+        "";
+  end match;
+end getTransitionAnnotation;
+
+protected function getTransitionAnnotationElArgs
+  input list<Absyn.ElementArg> inElArgLst;
+  output list<String> outStringLst;
+algorithm
+  outStringLst := matchcontinue (inElArgLst)
+    local
+      Absyn.FunctionArgs fargs;
+      list<SCode.Element> p_1;
+      FCore.Graph env;
+      DAE.Exp newexp;
+      String gexpstr, gexpstr_1, annName;
+      list<String> res;
+      list<Absyn.ElementArg>  mod, rest;
+      FCore.Cache cache;
+      DAE.Properties prop;
+      Absyn.Program lineProgram;
+
+    // handle empty
+    case ({}) then {};
+
+    case (Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = SOME(Absyn.CLASSMOD(mod,_))) :: rest)
+      equation
+        lineProgram = Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
+        fargs = Interactive.createFuncargsFromElementargs(mod);
+        p_1 = SCodeUtil.translateAbsyn2SCode(lineProgram);
+        (cache,env) = Inst.makeEnvFromProgram(p_1);
+        (_,newexp,prop) = StaticScript.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT(annName,{}),fargs), false,Prefix.NOPRE(), sourceInfo()) "impl" ;
+        (cache, newexp, prop) = Ceval.cevalIfConstant(cache, env, newexp, prop, false, sourceInfo());
+        Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
+        gexpstr = ExpressionDump.printExpStr(newexp);
+        res = getTransitionAnnotationElArgs(rest);
+      then
+        (gexpstr :: res);
+    case (Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = SOME(Absyn.CLASSMOD(_,Absyn.NOMOD()))) :: rest)
+      equation
+        gexpstr_1 = stringAppendList({annName,"(error)"});
+        res = getTransitionAnnotationElArgs(rest);
+      then
+        (gexpstr_1 :: res);
+  end matchcontinue;
+end getTransitionAnnotationElArgs;
 
 function getComponentInfo
   input Absyn.Element comp;

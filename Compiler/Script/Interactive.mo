@@ -12599,7 +12599,7 @@ algorithm
   end match;
 end getConnectionAnnotationStr;
 
-protected function createFuncargsFromElementargs
+public function createFuncargsFromElementargs
 "Trasform an ElementArg list to function argments. This is used when
   translating a graphical annotation to a record constructor."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
@@ -13043,7 +13043,7 @@ algorithm
   end matchcontinue;
 end getComponentAnnotation;
 
-protected function modelicaAnnotationProgram
+public function modelicaAnnotationProgram
    input String annotationVersion "1.x or 2.x or 3.x";
    output Absyn.Program annotationProgram;
 algorithm

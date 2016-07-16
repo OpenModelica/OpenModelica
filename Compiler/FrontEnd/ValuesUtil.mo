@@ -1936,6 +1936,14 @@ algorithm
   end matchcontinue;
 end makeArray;
 
+public function makeStringArray
+  "Creates a Values.ARRAY from a list of Strings."
+  input list<String> inReals;
+  output Values.Value outArray;
+algorithm
+  outArray := makeArray(List.map(inReals, makeString));
+end makeStringArray;
+
 public function makeIntArray
   "Creates a Value.ARRAY from a list of integers."
   input list<Integer> inInts;

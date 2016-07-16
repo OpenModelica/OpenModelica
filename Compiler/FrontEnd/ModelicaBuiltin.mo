@@ -3701,6 +3701,17 @@ annotation(
 </html>"), preferredView="text");
 end getClassInformation;
 
+function getTransitions
+  input TypeName cl;
+  output String[:,:] transitions;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns list of transitions for the given class.</p>
+<p>Each transition item contains 8 values i.e, from, to, condition, immediate, reset, synchronize, priority.</p>
+</html>"), preferredView="text");
+end getTransitions;
+
 function generateScriptingAPI
   input TypeName cl;
   input String name;

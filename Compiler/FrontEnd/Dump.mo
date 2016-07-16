@@ -2375,6 +2375,23 @@ algorithm
   end match;
 end printNamedArgStr;
 
+public function printNamedArgValueStr
+  "Prettyprint NamedArg value to a string."
+  input Absyn.NamedArg inNamedArg;
+  output String outString;
+algorithm
+  outString:=
+  match (inNamedArg)
+    local
+      String str;
+      Absyn.Exp e;
+    case Absyn.NAMEDARG(argValue = e)
+      equation
+        str = printExpStr(e);
+      then
+        str;
+  end match;
+end printNamedArgValueStr;
 
 protected function printRow "
   Print an Expression list to the Print buffer.
