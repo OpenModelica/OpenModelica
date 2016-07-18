@@ -6624,7 +6624,7 @@ algorithm
     equation
       if isSome(o1) then
         startValue = Util.getOption(o1);
-        startValue_ = EvaluateFunctions.evaluateConstantFunctionCallExp(startValue,funcTreeIn);
+        startValue_ = EvaluateFunctions.evaluateConstantFunctionCallExp(startValue, funcTreeIn, Flags.getConfigBool(Flags.EVAL_CONST_ARGS_ONLY));
         if not referenceEq(startValue, startValue_) then
           inVar.bindExp = SOME(startValue_);
         end if;
@@ -6654,7 +6654,7 @@ algorithm
       DAE.Exp exp, exp_;
   case(DAE.VAR_ATTR_REAL(start=SOME(exp)),_)
     equation
-      exp_ = EvaluateFunctions.evaluateConstantFunctionCallExp(exp,funcTree);
+      exp_ = EvaluateFunctions.evaluateConstantFunctionCallExp(exp, funcTree, Flags.getConfigBool(Flags.EVAL_CONST_ARGS_ONLY));
       if not referenceEq(exp, exp_) then
         attrIn.start = SOME(exp);
       end if;

@@ -868,7 +868,7 @@ algorithm
       // apply replacements
       (e, true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
       (e, _) = ExpressionSimplify.simplify(e);
-      e = EvaluateFunctions.evaluateConstantFunctionCallExp(e, FCore.getFunctionTree(iCache));
+      e = EvaluateFunctions.evaluateConstantFunctionCallExp(e, FCore.getFunctionTree(iCache), Flags.getConfigBool(Flags.EVAL_CONST_ARGS_ONLY));
       v = BackendVariable.setBindExp(var, SOME(e));
       (repl, repleval) = addConstExpReplacement(e, cr, iRepl, iReplEvaluate);
       (attr, (repleval, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (repleval, false));
@@ -889,7 +889,7 @@ algorithm
       // apply replacements
       (e, true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
       (e, _) = ExpressionSimplify.simplify(e);
-      e = EvaluateFunctions.evaluateConstantFunctionCallExp(e, FCore.getFunctionTree(iCache));
+      e = EvaluateFunctions.evaluateConstantFunctionCallExp(e, FCore.getFunctionTree(iCache), Flags.getConfigBool(Flags.EVAL_CONST_ARGS_ONLY));
       v = BackendVariable.setVarStartValue(var, e);
       (repl, repleval) = addConstExpReplacement(e, cr, iRepl, iReplEvaluate);
       (attr, (repleval, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (repleval, false));
@@ -909,7 +909,7 @@ algorithm
       // apply replacements
       (e, true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
       (e, _) = ExpressionSimplify.simplify(e);
-      e = EvaluateFunctions.evaluateConstantFunctionCallExp(e, FCore.getFunctionTree(iCache));
+      e = EvaluateFunctions.evaluateConstantFunctionCallExp(e, FCore.getFunctionTree(iCache), Flags.getConfigBool(Flags.EVAL_CONST_ARGS_ONLY));
       v = BackendVariable.setBindExp(var, SOME(e));
       (attr, (repleval, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (iReplEvaluate, false));
       v = BackendVariable.setVarAttributes(v, attr);

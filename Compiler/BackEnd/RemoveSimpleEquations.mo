@@ -1841,7 +1841,7 @@ algorithm
         not Expression.isImpure(exp) // lochel: this is at least needed for impure functions
       equation
         //exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
-        exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp,functions);
+        exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp, functions, false);
         if not Expression.isConst(exp2) then
           exp2 = exp;
         end if;

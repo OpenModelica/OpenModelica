@@ -460,6 +460,7 @@ public function evaluateConstantFunctionCallExp"checks if the expression is a ca
 the output is either a constant expression or the input exp. no partial evaluation is performed in here."
   input DAE.Exp expIn;
   input DAE.FunctionTree funcsIn;
+  input Boolean evalConstArgsOnly;
   output DAE.Exp expOut;
 algorithm
   expOut := matchcontinue(expIn,funcsIn)
@@ -484,13 +485,17 @@ algorithm
           print("\nStart constant evaluation of expression: "+ExpressionDump.printExpStr(expIn)+"\n\n");
         end if;
 
+        if evalConstArgsOnly then
+          true = Expression.isConstWorkList(exps0);
+        end if;
+
         // get the elements of the function and the algorithms
         SOME(func) = DAE.AvlTreePathFunction.get(funcsIn,path);
         elements = DAEUtil.getFunctionElements(func);
 
         // get the input exps from the call
-        exps = List.map1(exps0,evaluateConstantFunctionCallExp,funcsIn);
-        scalarExp = List.map1(exps,expandComplexEpressions,funcsIn);
+        exps = List.map2(exps0, evaluateConstantFunctionCallExp, funcsIn, evalConstArgsOnly);
+        scalarExp = List.map1(exps, expandComplexEpressions, funcsIn);
         allInputExps = List.flatten(scalarExp);
           //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
 
@@ -587,7 +592,7 @@ algorithm
   case(DAE.ASUB(DAE.CALL(path=path, expLst=exps, attr=attr1),sub),_)
     equation
       //this ASUB stuff occurs in the flattened DAE, check this special case because of removeSimpleEquations
-     exp = evaluateConstantFunctionCallExp(DAE.CALL(path=path, expLst=exps, attr=attr1),funcsIn);
+     exp = evaluateConstantFunctionCallExp(DAE.CALL(path=path, expLst=exps, attr=attr1), funcsIn, evalConstArgsOnly);
      (exp,_) = ExpressionSimplify.simplify(DAE.ASUB(exp,sub));
      if not Expression.isConst(exp) then exp = expIn; end if;
     then exp;
@@ -678,7 +683,7 @@ algorithm
         false = listEmpty(algs); // its a built in function
 
         // get the input exps from the call
-        exps = List.map1(expsIn,evaluateConstantFunctionCallExp,funcsIn);
+        exps = List.map2(expsIn, evaluateConstantFunctionCallExp, funcsIn, false);
         scalarExp = List.map1(exps,expandComplexEpressions,funcsIn);//these exps are evaluated as well
         allInputExps = List.flatten(scalarExp);
           //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
@@ -851,7 +856,7 @@ algorithm
       if not continueEval then fail(); end if;
 
       //this ASUB stuff occurs in the flattened DAE, check this special case because of removeSimpleEquations
-      exp = evaluateConstantFunctionCallExp(exp,funcsIn);
+      exp = evaluateConstantFunctionCallExp(exp,funcsIn, false);
       (exp,_) = ExpressionSimplify.simplify(DAE.ASUB(exp,sub));
 
       changed = true;
@@ -2109,10 +2114,10 @@ algorithm
       case(DAE.STMT_ASSERT(cond=cond,msg=msg,level=lvl))
         equation
           (cond,_) = BackendVarTransform.replaceExp(cond,repl,NONE());
-          (cond) = evaluateConstantFunctionCallExp(cond,funcTree);
+          (cond) = evaluateConstantFunctionCallExp(cond,funcTree, false);
           (cond,_) = ExpressionSimplify.simplify(cond);
           (msg,_) = BackendVarTransform.replaceExp(msg,repl,NONE());
-          (msg) = evaluateConstantFunctionCallExp(msg,funcTree);
+          (msg) = evaluateConstantFunctionCallExp(msg,funcTree, false);
           (msg,_) = ExpressionSimplify.simplify(msg);
           if Expression.expEqual(cond,DAE.BCONST(false)) and Expression.sconstEnumNameString(lvl)=="AssertionLevel.error" then
             if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("ERROR: "+ExpressionDump.printExpStr(msg)+"\n"); end if;

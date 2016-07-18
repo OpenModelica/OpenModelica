@@ -2929,7 +2929,7 @@ protected
 algorithm
   (crefs,exps) := getAllReplacements(replIn);
   (exps,_) := List.map_2(exps,ExpressionSimplify.simplify);
-  exps := List.map1(exps, EvaluateFunctions.evaluateConstantFunctionCallExp,functions);
+  exps := List.map2(exps, EvaluateFunctions.evaluateConstantFunctionCallExp, functions, false);
   replOut := addReplacements(replIn,crefs,exps,NONE());
 end simplifyReplacements;
 
