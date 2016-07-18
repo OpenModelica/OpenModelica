@@ -94,6 +94,10 @@ static void va_omc_assert_simulation_withEquationIndexes(threadData_t *threadDat
     }
     longjmp(*threadData->simulationJumpBuffer,1);
     break;
+  case ERROR_EVENTHANDLING:
+    va_errorStreamPrintWithEquationIndexes(LOG_ASSERT, 0, indexes, msg, args);
+    longjmp(threadData->globalJumpBuffer ? *threadData->globalJumpBuffer : *threadData->mmc_jumper, 1);
+    break;
   case ERROR_OPTIMIZE:
   default:
     va_errorStreamPrintWithEquationIndexes(LOG_ASSERT, 0, indexes, msg, args);
