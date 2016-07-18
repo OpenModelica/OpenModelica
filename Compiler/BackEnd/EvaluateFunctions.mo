@@ -1827,6 +1827,8 @@ algorithm
         end if;
       end if;
     then (DAEUtil.replaceBindungInVar(exp,element));
+  else
+   then element;
   end match;
 end evaluateFunctions_updateAlgElements;
 
