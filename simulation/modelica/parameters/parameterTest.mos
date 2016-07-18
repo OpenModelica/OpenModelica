@@ -64,7 +64,7 @@ equation
 end parameterTest;
 "); getErrorString();
 
-setCommandLineOptions("+d=evalParameterDump"); getErrorString();
+setCommandLineOptions("+d=evalParameterDump, --evalConstArgsOnly=false"); getErrorString();
 simulate(parameterTest); getErrorString();
 val(p1, 0.0);
 val(p2, 0.0);
