@@ -98,43 +98,62 @@ char* mmc_mk_scon_len_ret_ptr(size_t nbytes)
 
 modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
 {
+  return 0==valueCompare(lhs, rhs);
+}
+
+static int intCompare(int i1, int i2)
+{
+  return i1==i2 ? 0 : i1>i2 ? 1 : -1;
+}
+
+static double realCompare(double r1, double r2)
+{
+  return r1==r2 ? 0 : r1>r2 ? 1 : -1;
+}
+
+modelica_integer valueCompare(modelica_metatype lhs, modelica_metatype rhs)
+{
   mmc_uint_t h_lhs;
   mmc_uint_t h_rhs;
   mmc_sint_t numslots;
   mmc_uint_t ctor;
   mmc_sint_t i;
+  int res;
 
   if (lhs == rhs) {
-    return 1;
+    return 0;
   }
 
-  if (MMC_IS_INTEGER(lhs) != MMC_IS_INTEGER(rhs)) {
+  res = intCompare(MMC_IS_INTEGER(lhs), MMC_IS_INTEGER(rhs));
+  if (0 != res) {
     /* Should trigger an assertion for most code */
-    return 0;
+    return res;
   }
 
   if (MMC_IS_INTEGER(lhs)) {
-    return 0;
+    return intCompare(mmc_unbox_integer(lhs), mmc_unbox_integer(rhs));
   }
 
   h_lhs = MMC_GETHDR(lhs);
   h_rhs = MMC_GETHDR(rhs);
 
-  if (h_lhs != h_rhs)
-    return 0;
+  res = intCompare(h_lhs, h_rhs);
+
+  if (0 != res) {
+    return res;
+  }
 
   if (h_lhs == MMC_NILHDR) {
-    return 1;
+    return 0;
   }
 
   if (h_lhs == MMC_REALHDR) {
-    double d1,d2;
-    d1 = mmc_prim_get_real(lhs);
-    d2 = mmc_prim_get_real(rhs);
-    return d1 == d2;
+    return realCompare(mmc_prim_get_real(lhs), mmc_prim_get_real(rhs));
   }
+
   if (MMC_HDRISSTRING(h_lhs)) {
-    return MMC_STRLEN(lhs)==MMC_STRLEN(rhs) && 0 == strcmp(MMC_STRINGDATA(lhs),MMC_STRINGDATA(rhs));
+    res = intCompare(MMC_STRLEN(lhs), MMC_STRLEN(rhs));
+    return res==0 ? strcmp(MMC_STRINGDATA(lhs),MMC_STRINGDATA(rhs)) : res;
   }
 
   numslots = MMC_HDRSLOTS(h_lhs);
@@ -150,11 +169,12 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
     for (i = 2; i <= numslots; i++) {
       void * lhs_data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i));
       void * rhs_data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i));
-      if (0 == valueEq(lhs_data,rhs_data)) {
-        return 0;
+      res = valueCompare(lhs_data,rhs_data);
+      if (0 != res) {
+        return res;
       }
     }
-    return 1;
+    return 0;
   }
 
   if (numslots>0 && ctor == 0) { /* TUPLE */
@@ -162,35 +182,37 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
       void *tlhs, *trhs;
       tlhs = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i+1));
       trhs = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i+1));
-      if (0 == valueEq(tlhs,trhs)) {
-        return 0;
+      res = valueCompare(tlhs,trhs);
+      if (0 != res) {
+        return res;
       }
     }
-    return 1;
+    return 0;
   }
 
   if (numslots==0 && ctor==1) /* NONE() */ {
-    return 1;
+    return 0;
   }
 
   if (numslots==1 && ctor==1) /* SOME(x) */ {
-    return valueEq(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),1)),MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),1)));
+    return valueCompare(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),1)),MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),1)));
   }
 
   if (numslots==2 && ctor==1) { /* CONS-PAIR */
     while (!MMC_NILTEST(lhs) && !MMC_NILTEST(rhs)) {
-      if (!valueEq(MMC_CAR(lhs),MMC_CAR(rhs)))
-        return 0;
+      res = valueCompare(MMC_CAR(lhs),MMC_CAR(rhs));
+      if (0 != res) {
+        return res;
+      }
       lhs = MMC_CDR(lhs);
       rhs = MMC_CDR(rhs);
     }
-    return MMC_NILTEST(lhs) == MMC_NILTEST(rhs);
+    return intCompare(MMC_NILTEST(lhs), MMC_NILTEST(rhs));
   }
 
   if (numslots==0 && ctor == MMC_ARRAY_TAG) /* zero size array??!! */ {
-    return 1;
+    return 0;
   }
-
 
   fprintf(stderr, "%s:%d: %ld slots; ctor %lu - FAILED to detect the type\n", __FILE__, __LINE__, (long) numslots, (unsigned long) ctor);
   EXIT(1);

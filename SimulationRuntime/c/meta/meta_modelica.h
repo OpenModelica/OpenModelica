@@ -145,6 +145,7 @@ static inline void *mmc_mk_box_no_assign(mmc_sint_t _slots, mmc_uint_t ctor, int
 }
 
 extern modelica_boolean valueEq(modelica_metatype lhs,modelica_metatype rhs);
+extern modelica_integer valueCompare(modelica_metatype lhs,modelica_metatype rhs);
 
 extern modelica_integer valueHashMod(modelica_metatype p,modelica_integer mod);
 extern void* boxptr_valueHashMod(threadData_t *,void *p, void *mod);

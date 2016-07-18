@@ -779,6 +779,14 @@ function valueEq<A>
 external "builtin";
 end valueEq;
 
+function valueCompare<A>
+  "a1 > a2?"
+  input A a1;
+  input A a2;
+  output Integer i "-1, 0, 1";
+external "builtin";
+end valueCompare;
+
 function valueHashMod<A>
   input A value;
   input Integer mod;
