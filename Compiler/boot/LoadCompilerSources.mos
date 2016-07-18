@@ -216,7 +216,8 @@ if true then /* Suppress output */
     "../Stubs/SimCodeMain.mo",
     "../Stubs/SimCodeUtil.mo",
     "../Stubs/UnitAbsynBuilder.mo",
-    "../Stubs/UnitChecker.mo"
+    "../Stubs/UnitChecker.mo",
+    "../Stubs/ZeroCrossings.mo"
   }
   else {
     "../BackEnd/BackendDAEFunc.mo",

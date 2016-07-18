@@ -108,6 +108,13 @@ algorithm
   arrayUpdate(delst.front, 1, lst);
 end pop_front;
 
+function currentBackCell
+  input DoubleEndedList<T> delst;
+  output list<T> last;
+algorithm
+  last := arrayGet(delst.back,1);
+end currentBackCell;
+
 function push_front
   input DoubleEndedList<T> delst;
   input T elt;

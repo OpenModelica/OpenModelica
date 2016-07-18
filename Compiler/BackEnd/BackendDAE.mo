@@ -44,6 +44,7 @@ import HashTableCG;
 import MMath;
 import SCode;
 import Values;
+import ZeroCrossings;
 
 public
 type Type = .DAE.Type
@@ -597,6 +598,7 @@ end EventInfo;
 uniontype ZeroCrossingSet
   record ZERO_CROSSING_SET
     DoubleEndedList<ZeroCrossing> zc;
+    array<ZeroCrossings.Tree> tree;
   end ZERO_CROSSING_SET;
 end ZeroCrossingSet;
 

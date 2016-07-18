@@ -1408,36 +1408,33 @@ protected function zcIndex
 protected
   list<BackendDAE.ZeroCrossing> duplicate;
 algorithm
-  duplicate := List.select1(ZeroCrossings.toList(zeroCrossings), ZeroCrossings.equals, zc);
-  if listLength(duplicate)>1 then
-    Error.addInternalError("Got >1 matching zero crossings", sourceInfo());
+  if ZeroCrossings.contains(zeroCrossings, zc) then
+    BackendDAE.ZERO_CROSSING(relation_=relation) := ZeroCrossings.get(zeroCrossings, zc);
+    return;
   end if;
-  (relation, index) := match (relation, duplicate)
+  (relation, index) := match relation
     local
       DAE.Exp rel;
       DAE.Operator op;
       BackendDAE.ZeroCrossing newZeroCrossing;
       list<BackendDAE.ZeroCrossing> zcLst;
 
-    case (DAE.RELATION(), {})
+    case DAE.RELATION()
       algorithm
         ZeroCrossings.add(zeroCrossings, zc);
       then (relation, index+1);
 
     // math function with one argument and index
-    case (DAE.CALL(expLst={_, _}), {})
+    case DAE.CALL(expLst={_, _})
       algorithm
         ZeroCrossings.add(zeroCrossings, zc);
       then (relation, index+1);
 
     // math function with two arguments and index
-    case (DAE.CALL(expLst={_, _, _}), {})
+    case DAE.CALL(expLst={_, _, _})
       algorithm
         ZeroCrossings.add(zeroCrossings, zc);
       then (relation, index+2);
-
-    case (_, BackendDAE.ZERO_CROSSING(relation_=rel)::_)
-      then (rel, index);
 
     else equation
       Error.addInternalError("function zcIndex failed for: " + ExpressionDump.printExpStr(relation), sourceInfo());
@@ -1499,7 +1496,7 @@ protected
   BackendDAE.ZeroCrossing zc1, same_1;
 algorithm
   if not ZeroCrossings.contains(zcs, newZc) then
-    ZeroCrossings.add_front(zcs, newZc);
+    ZeroCrossings.add(zcs, newZc);
   else
     DoubleEndedList.mapNoCopy_1(zcs.zc, mergeZeroCrossingIfEqual, newZc);
   end if;

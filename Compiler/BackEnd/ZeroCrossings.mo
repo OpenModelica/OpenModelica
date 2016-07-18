@@ -45,13 +45,37 @@ protected
 import DE=DoubleEndedList;
 import DoubleEndedList.toListNoCopyNoClear;
 import Expression;
+import ExpressionDump;
 
 public
+
+type Tree = ZeroCrossingTree.Tree;
+
+package ZeroCrossingTree "Lookup ZeroCrossing -> list<ZeroCrossing> (the cons-cell storing the ZC)"
+  extends BaseAvlTree;
+  redeclare type Key = ZeroCrossing;
+  redeclare type Value = list<ZeroCrossing>;
+  redeclare function extends keyStr
+  algorithm
+    outString := ExpressionDump.printExpStr(inKey.relation_);
+  end keyStr;
+  redeclare function extends valueStr
+  protected
+    ZeroCrossing zc;
+  algorithm
+    zc := listGet(inValue,1);
+    outString := ExpressionDump.printExpStr(zc.relation_);
+  end valueStr;
+  redeclare function extends keyCompare
+  algorithm
+    outResult := ZeroCrossings.compare(inKey1, inKey2);
+  end keyCompare;
+end ZeroCrossingTree;
 
 function new
   output ZeroCrossingSet zc_set;
 algorithm
-  zc_set := ZERO_CROSSING_SET(DoubleEndedList.fromList({}));
+  zc_set := ZERO_CROSSING_SET(DoubleEndedList.fromList({}), arrayCreate(1, ZeroCrossingTree.new()));
 end new;
 
 function length
@@ -64,20 +88,15 @@ end length;
 function add
   input ZeroCrossingSet zc_set;
   input ZeroCrossing zc;
+protected
+  list<ZeroCrossing> addedCell;
 algorithm
   if not contains(zc_set, zc) then
     DE.push_back(zc_set.zc, zc);
+    addedCell := DE.currentBackCell(zc_set.zc);
+    arrayUpdate(zc_set.tree, 1, ZeroCrossingTree.add(arrayGet(zc_set.tree, 1), zc, addedCell));
   end if;
 end add;
-
-function add_front
-  input ZeroCrossingSet zc_set;
-  input ZeroCrossing zc;
-algorithm
-  if not contains(zc_set, zc) then
-    DE.push_front(zc_set.zc, zc);
-  end if;
-end add_front;
 
 function add_list
   input ZeroCrossingSet zc_set;
@@ -98,52 +117,62 @@ end toList;
 function contains
   input ZeroCrossingSet zc_set;
   input ZeroCrossing zc;
-  output Boolean matches=true;
+  output Boolean matches;
 algorithm
-  matches := 0<>sum(match equals(zc, zc1) case true algorithm return; then 1; else 0; end match for zc1 in toListNoCopyNoClear(zc_set.zc));
+  matches := ZeroCrossingTree.hasKey(arrayGet(zc_set.tree,1), zc);
 end contains;
 
+function get
+  input ZeroCrossingSet zc_set;
+  input ZeroCrossing zc;
+  output ZeroCrossing outZc;
+algorithm
+  outZc::_ := ZeroCrossingTree.get(arrayGet(zc_set.tree,1), zc);
+end get;
+
 function equals "Returns true if both zero crossings have the same function expression"
-  input ZeroCrossing inZeroCrossing1;
-  input ZeroCrossing inZeroCrossing2;
+  input ZeroCrossing zc1;
+  input ZeroCrossing zc2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inZeroCrossing1, inZeroCrossing2)
+  outBoolean := 0==compare(zc1, zc2);
+end equals;
+
+function compare "Returns true if both zero crossings have the same function expression"
+  input ZeroCrossing zc1;
+  input ZeroCrossing zc2;
+  output Integer comp;
+algorithm
+  comp := match (zc1, zc2)
     local
-      Boolean res, res2;
       DAE.Exp e1, e2, e3, e4;
 
-    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("sample"), expLst={e1, _, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("sample"), expLst={e2, _, _}))) equation
-      res = Expression.expEqual(e1, e2);
-    then res;
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("sample"), expLst={e1, _, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("sample"), expLst={e2, _, _})))
+      then Expression.compare(e1,e2);
 
-    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("integer"), expLst={e2, _}))) equation
-      res = Expression.expEqual(e1, e2);
-    then res;
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("integer"), expLst={e2, _})))
+      then Expression.compare(e1,e2);
 
-    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("floor"), expLst={e2, _}))) equation
-      res = Expression.expEqual(e1, e2);
-    then res;
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("floor"), expLst={e2, _})))
+      then Expression.compare(e1,e2);
 
-    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e2, _}))) equation
-      res = Expression.expEqual(e1, e2);
-    then res;
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e2, _})))
+      then Expression.compare(e1,e2);
 
-    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("mod"), expLst={e3, e4, _}))) equation
-      res = Expression.expEqual(e1, e3);
-      res2 = Expression.expEqual(e2, e4);
-    then (res and res2);
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("mod"), expLst={e3, e4, _})))
+      algorithm
+        comp := Expression.compare(e1,e2);
+      then if comp==0 then Expression.compare(e2, e4) else comp;
 
-    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("div"), expLst={e3, e4, _}))) equation
-      res = Expression.expEqual(e1, e3);
-      res2 = Expression.expEqual(e2, e4);
-    then (res and res2);
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("div"), expLst={e3, e4, _})))
+      algorithm
+        comp := Expression.compare(e1,e2);
+      then if comp==0 then Expression.compare(e2, e4) else comp;
 
-    case (BackendDAE.ZERO_CROSSING(relation_=e1), BackendDAE.ZERO_CROSSING(relation_=e2)) equation
-      res = Expression.expEqual(e1, e2);
-    then res;
+    case (BackendDAE.ZERO_CROSSING(relation_=e1), BackendDAE.ZERO_CROSSING(relation_=e2))
+      then Expression.compare(e1, e2);
   end match;
-end equals;
+end compare;
 
 annotation(__OpenModelica_Interface="backend");
 end ZeroCrossings;
