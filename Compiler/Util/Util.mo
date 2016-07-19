@@ -912,6 +912,22 @@ public function intCompare
   output Integer outResult = if inN == inM then 0 elseif inN > inM then 1 else -1;
 end intCompare;
 
+public function realCompare
+  "Compares two reals and return -1 if the first is smallest, 1 if the second
+   is smallest, or 0 if they are equal."
+  input Real inN;
+  input Real inM;
+  output Integer outResult = if inN == inM then 0 elseif inN > inM then 1 else -1;
+end realCompare;
+
+public function boolCompare
+  "Compares two booleans and return -1 if the first is smallest, 1 if the second
+   is smallest, or 0 if they are equal."
+  input Boolean inN;
+  input Boolean inM;
+  output Integer outResult = if inN == inM then 0 elseif inN > inM then 1 else -1;
+end boolCompare;
+
 public function isEmptyString
   "Returns true if string is the empty string."
   input String inString;

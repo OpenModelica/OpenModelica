@@ -785,6 +785,14 @@ algorithm
   greaterThan := CompareWithGenericSubscript.compare(cr1,cr2) > 0;
 end crefSortFunc;
 
+public function crefCompareGeneric "A sorting function for crefs"
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  output Integer comp;
+algorithm
+  comp := CompareWithGenericSubscript.compare(cr1,cr2);
+end crefCompareGeneric;
+
 public function crefLexicalGreaterSubsAtEnd
 "mahge:
   Compares two crefs lexically. Subscripts are treated as if they are
