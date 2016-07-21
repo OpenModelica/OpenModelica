@@ -8,7 +8,7 @@ CMAKE_POLICY(SET CMP0003 NEW)
 
 # Do not link against qtmain on Windows
 if(POLICY CMP0020)
-	cmake_policy(SET CMP0020 OLD)
+  cmake_policy(SET CMP0020 OLD)
 endif()
 
 set(CMAKE_INSTALL_NAME_DIR ${LIB_INSTALL_DIR})
@@ -40,12 +40,7 @@ SET(FRAMEWORK_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/Library/Frameworks"
 # (This will have no effect with CMake < 2.8)
 SET(QT_USE_IMPORTED_TARGETS TRUE)
 
-option(QT4_BUILD "Force building with Qt4 even if Qt5 is found")
-IF (WIN32)
-# set(QT4_BUILD ON)
-ELSE(WIN32)
-set(QT4_BUILD ON)
-ENDIF(WIN32)
+option(QT4_BUILD "Force building with Qt4 even if Qt5 is found" ON)
 
 IF (NOT QT4_BUILD)
   FIND_PACKAGE( Qt5Core QUIET )

@@ -9,6 +9,7 @@ AC_SUBST(IDLCMD)
 AC_SUBST(RPATH_QMAKE)
 AC_SUBST(host_short)
 AC_SUBST(SOURCE_REVISION)
+AC_SUBST(QT4BUILD)
 
 m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
