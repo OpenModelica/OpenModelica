@@ -10,7 +10,7 @@ elif test -f $QTDIR/bin/qmake; then
   AC_MSG_RESULT([$QMAKE])
 else
   AC_MSG_RESULT([no])
-  AC_CHECK_PROGS(QMAKE,qmake-qt4 qmake-mac qmake,"")
+  AC_CHECK_PROGS(QMAKE,qmake qmake-mac qmake-qt4,"")
 fi
 
 AC_MSG_CHECKING([for lrelease in env.vars LRELEASE and QTDIR])
@@ -26,6 +26,21 @@ fi
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qmake arguments])
+
+  if "$QMAKE" -qt5 -v > /dev/null 2>&1; then
+    QMAKE="$QMAKE -qt5"
+  elif "$QMAKE" -qt4 -v > /dev/null 2>&1; then
+    QMAKE="$QMAKE -qt4"
+    QT4BUILD="-DQT4_BUILD:Boolean=OFF"
+  elif "$QMAKE" -v 2>&1 | grep "Qt version 5"; then
+    true
+  elif "$QMAKE" -v 2>&1 | grep "Qt version 4"; then
+    QT4BUILD="-DQT4_BUILD:Boolean=OFF"
+  else
+    QMAKE_VERSION=`"$QMAKE" -v`
+    AC_MSG_ERROR([qmake does not report qt version 4 or 5: $QMAKE_VERSION])
+  fi
+
   if echo $host | grep darwin; then
     echo "#!/bin/sh -x" > ./qmake.sh
     echo "$QMAKE \$*" >> ./qmake.sh
