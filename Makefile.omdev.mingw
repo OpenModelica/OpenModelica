@@ -33,7 +33,7 @@ clean:
 qjson-build:
 	test -d qjson
 	mkdir -p qjson/build/include/qjson
-	(cd qjson/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" .. -G $(CMAKE_TARGET) -DCMAKE_INSTALL_PREFIX:PATH=`pwd`)
+	(cd qjson/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" .. -DQT4_BUILD:Boolean=OFF -G $(CMAKE_TARGET) -DCMAKE_INSTALL_PREFIX:PATH=`pwd`)
 	test -f qjson/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson/build install
 	cp -a qjson/build/lib/libqjson*$(SHREXT)* $(OMBUILDDIR)/lib/omc/
 	cp -a qjson/build/bin/libqjson*$(SHREXT)* $(OMBUILDDIR)/lib/omc/
