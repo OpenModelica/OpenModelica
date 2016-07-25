@@ -76,6 +76,7 @@ AC_SUBST(RPATH)
 AC_SUBST(RPATH_QMAKE)
 AC_SUBST(MSL_EXTRA_ARGS)
 AC_SUBST(WITH_HWLOC)
+AC_SUBST(WITH_UUID)
 AC_SUBST(OS_TARGET)
 AC_SUBST(LIS_LDFLAGS)
 AC_SUBST(LAPACK_TARGET)
@@ -575,6 +576,14 @@ AC_CHECK_HEADERS(hwloc.h,
     [WITH_HWLOC="#define WITH_HWLOC 1";OMC_LIBS="$OMC_LIBS -lhwloc"],
     [WITH_HWLOC="/* Without hwloc */"])],
   [WITH_HWLOC="/* Without hwloc */"]
+)
+
+LIBS=""
+AC_CHECK_HEADERS(uuid/uuid.h,
+  [AC_CHECK_LIB(uuid,uuid_unparse,
+    [WITH_UUID="#define WITH_LIBUUID 1";OMC_LIBS="$OMC_LIBS -luuid"],
+    [WITH_UUID="/* Without libuuid */"])],
+  [WITH_UUID="/* Without libuuid */"]
 )
 
 LIBS=""

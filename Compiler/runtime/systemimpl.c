@@ -1182,6 +1182,10 @@ int setenv(const char* envname, const char* envvalue, int overwrite)
 }
 #endif
 
+#if defined(WITH_LIBUUID)
+#include <uuid/uuid.h>
+#endif
+
 // Do not free the result
 static const char* SystemImpl__getUUIDStr(void)
 {
@@ -1194,6 +1198,10 @@ static const char* SystemImpl__getUUIDStr(void)
   tmp[36] = '\0';
   memcpy(uuidStr, strlwr((char*)tmp), 36);
   RpcStringFree(&tmp);
+#elif defined(WITH_LIBUUID)
+  uuid_t uu;
+  uuid_generate(&uu);
+  uuid_unparse_lower(uu, uuidStr);
 #endif
   return uuidStr;
 }

@@ -48,6 +48,7 @@
 #define WITH_IPOPT
 @WITH_UMFPACK@
 @WITH_HWLOC@
+@WITH_UUID@
 #endif
 #if !defined(OMC_MINIMAL_RUNTIME)
 #define WITH_DASSL
