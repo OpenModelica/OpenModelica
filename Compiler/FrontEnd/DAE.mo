@@ -523,7 +523,7 @@ end Distribution;
 public uniontype ExtArg
   record EXTARG
     ComponentRef componentRef;
-    Attributes attributes;
+    Absyn.Direction direction;
     Type type_;
   end EXTARG;
 
@@ -534,7 +534,6 @@ public uniontype ExtArg
 
   record EXTARGSIZE
     ComponentRef componentRef;
-    Attributes attributes;
     Type type_;
     Exp exp;
   end EXTARGSIZE;

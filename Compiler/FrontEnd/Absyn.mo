@@ -5370,6 +5370,17 @@ algorithm
   end match;
 end isInput;
 
+public function isOutput
+  input Direction inDirection;
+  output Boolean outIsOutput;
+algorithm
+  outIsOutput := match(inDirection)
+    case OUTPUT() then true;
+    case INPUT_OUTPUT() then true;
+    else false;
+  end match;
+end isOutput;
+
 public function directionEqual
   input Direction inDirection1;
   input Direction inDirection2;

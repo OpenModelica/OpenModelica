@@ -324,7 +324,7 @@ algorithm
       DAE.Attributes attr;
 
     case DAE.NOEXTARG() then "";
-    case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR())
+    case DAE.EXTARG(componentRef = cr)
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
       then

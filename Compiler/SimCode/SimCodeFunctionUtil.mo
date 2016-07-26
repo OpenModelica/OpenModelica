@@ -891,7 +891,7 @@ algorithm
   match (extArg)
     local
       DAE.ComponentRef componentRef;
-      DAE.Attributes attributes;
+      Absyn.Direction dir;
       DAE.Type type_;
       Boolean isInput;
       Boolean isOutput;
@@ -899,10 +899,10 @@ algorithm
       DAE.Exp exp_;
       Integer outputIndex;
 
-    case DAE.EXTARG(componentRef, attributes, type_)
+    case DAE.EXTARG(componentRef, dir, type_)
       equation
-        isInput = Types.isInputAttr(attributes);
-        isOutput = Types.isOutputAttr(attributes);
+        isInput = Absyn.isInput(dir);
+        isOutput = Absyn.isOutput(dir);
         outputIndex = if isOutput then -1 else 0; // correct output index is added later by fixOutputIndex
         isArray = Types.isArray(type_);
         type_ = Types.simplifyType(type_);
@@ -913,13 +913,10 @@ algorithm
         type_ = Types.simplifyType(type_);
       then SimCode.SIMEXTARGEXP(exp_, type_);
 
-    case DAE.EXTARGSIZE(componentRef, attributes, type_, exp_)
+    case DAE.EXTARGSIZE(componentRef, type_, exp_)
       equation
-        isInput = Types.isInputAttr(attributes);
-        isOutput = Types.isOutputAttr(attributes);
-        outputIndex = if isOutput then -1 else 0; // correct output index is added later by fixOutputIndex
         type_ = Types.simplifyType(type_);
-      then SimCode.SIMEXTARGSIZE(componentRef, isInput, outputIndex, type_, exp_);
+      then SimCode.SIMEXTARGSIZE(componentRef, true, 0, type_, exp_);
 
     case DAE.NOEXTARG() then SimCode.SIMNOEXTARG();
   end match;

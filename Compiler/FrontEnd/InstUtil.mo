@@ -5411,16 +5411,15 @@ algorithm
         // using qualified crefs in external function definitions.
         fcr = ComponentReference.crefFirstCref(cref);
         (cache, fattr, _, _, _, _, _, _, _) = Lookup.lookupVarLocal(cache, inEnv, fcr);
-        attr = DAEUtil.setAttrDirection(attr, DAEUtil.getAttrDirection(fattr));
       then
-        (cache, SOME(DAE.EXTARG(cref, attr, ty)));
+        (cache, SOME(DAE.EXTARG(cref, DAEUtil.getAttrDirection(fattr), ty)));
 
     case (_, _, _, DAE.CREF(componentRef = cref as DAE.CREF_IDENT()),
         DAE.PROP(constFlag = DAE.C_VAR()), _, _)
       equation
         (cache, attr, ty,_, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
       then
-        (cache,SOME(DAE.EXTARG(cref, attr, ty)));
+        (cache,SOME(DAE.EXTARG(cref, DAEUtil.getAttrDirection(attr), ty)));
 
     case (cache,env,_,DAE.CREF(componentRef = cref),DAE.PROP(),_,_)
       equation
@@ -5433,9 +5432,9 @@ algorithm
 
     case (cache,env,_,DAE.SIZE(exp = DAE.CREF(componentRef = cref),sz = SOME(dim)),DAE.PROP(),_,_)
       equation
-        (cache,attr,varty,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
+        (cache,_,varty,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
       then
-        (cache,SOME(DAE.EXTARGSIZE(cref,attr,varty,dim)));
+        (cache,SOME(DAE.EXTARGSIZE(cref,varty,dim)));
 
     // adrpo: these can be non-local if they are constants or parameters!
     case (cache,env,_,_,DAE.PROP(type_ = ty,constFlag = DAE.C_CONST()),_,_)
