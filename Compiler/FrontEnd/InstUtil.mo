@@ -4801,6 +4801,9 @@ public function checkExternalFunction "
 protected
   Integer i;
 algorithm
+  if decl.language == "builtin" then
+    return;
+  end if;
   List.map2_0(els,checkExternalFunctionOutputAssigned,decl,name);
   checkFunctionInputUsed(els,SOME(decl),name);
 end checkExternalFunction;
@@ -5005,68 +5008,13 @@ public function isExtExplicitCall
 "If the external function id is present, then a function call must
   exist, i.e. explicit call was written in the external clause."
   input SCode.ExternalDecl inExternalDecl;
+  output Boolean isExplicit;
 algorithm
-  _ := match (inExternalDecl)
-    local String id;
-    case SCode.EXTERNALDECL(funcName = SOME(_)) then ();
+  isExplicit := match (inExternalDecl)
+    case SCode.EXTERNALDECL(funcName = SOME(_)) then true;
+    else false;
   end match;
 end isExtExplicitCall;
-
-public function instExtMakeExternaldecl
-"author: LS
-   This function generates a default explicit function call,
-  when it is omitted. If only one output variable exists,
-  the implicit call is equivalent to:
-       external \"C\" output_var=func(input_var1, input_var2,...)
-  with the input_vars in their declaration order. If several output
-  variables exists, the implicit call is equivalent to:
-      external \"C\" func(var1, var2, ...)
-  where each var can be input or output."
-  input String inIdent;
-  input list<SCode.Element> inSCodeElementLst;
-  input SCode.ExternalDecl inExternalDecl;
-  output SCode.ExternalDecl outExternalDecl;
-algorithm
-  outExternalDecl := matchcontinue (inIdent,inSCodeElementLst,inExternalDecl)
-    local
-      SCode.Element outvar;
-      list<SCode.Element> invars,els,inoutvars;
-      list<list<Absyn.Exp>> explists;
-      list<Absyn.Exp> exps;
-      Absyn.ComponentRef retcref;
-      SCode.ExternalDecl extdecl;
-      String id;
-      Option<String> lang;
-
-    /* the case with only one output var, and that cannot be
-     * array, otherwise instExtMakeCrefs outvar will fail
-     */
-    case (id,els,SCode.EXTERNALDECL(lang = lang))
-      equation
-        (outvar :: {}) = List.filterOnTrue(els, isOutputVar);
-        invars = List.filterOnTrue(els, isInputVar);
-        explists = List.map(invars, instExtMakeCrefs);
-        exps = List.flatten(explists);
-        {Absyn.CREF(retcref)} = instExtMakeCrefs(outvar);
-        extdecl = SCode.EXTERNALDECL(SOME(id),lang,SOME(retcref),exps,NONE());
-      then
-        extdecl;
-    case (id,els,SCode.EXTERNALDECL(lang = lang))
-      equation
-        inoutvars = List.filterOnTrue(els, isInoutVar);
-        explists = List.map(inoutvars, instExtMakeCrefs);
-        exps = List.flatten(explists);
-        extdecl = SCode.EXTERNALDECL(SOME(id),lang,NONE(),exps,NONE());
-      then
-        extdecl;
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("#-- Inst.instExtMakeExternaldecl failed");
-      then
-        fail();
-  end matchcontinue;
-end instExtMakeExternaldecl;
 
 protected function isInoutVar
 "Succeds for Elements that are input or output components"
@@ -5097,64 +5045,6 @@ algorithm
     else false;
   end match;
 end isInputVar;
-
-protected function instExtMakeCrefs
-"author: LS
-  This function is used in external function declarations.
-  It collects the component identifier and the dimension
-  sizes and returns as a Absyn.Exp list"
-  input SCode.Element inElement;
-  output list<Absyn.Exp> outAbsynExpLst;
-algorithm
-  outAbsynExpLst := match (inElement)
-    local
-      list<Absyn.Exp> sizelist,crlist;
-      String id;
-      SCode.Final fi;
-      SCode.Replaceable re;
-      SCode.Visibility pr;
-      list<Absyn.Subscript> dims;
-      Absyn.TypeSpec path;
-      SCode.Mod mod;
-
-    case SCode.COMPONENT(name = id, attributes = SCode.ATTR(arrayDims = dims))
-      equation
-        sizelist = instExtMakeCrefs2(id, dims, 1);
-        crlist = (Absyn.CREF(Absyn.CREF_IDENT(id,{})) :: sizelist);
-      then
-        crlist;
-  end match;
-end instExtMakeCrefs;
-
-protected function instExtMakeCrefs2
-"Helper function to instExtMakeCrefs, collects array dimension sizes."
-  input SCode.Ident inIdent;
-  input Absyn.ArrayDim inArrayDim;
-  input Integer inInteger;
-  output list<Absyn.Exp> outAbsynExpLst;
-algorithm
-  outAbsynExpLst := match (inIdent,inArrayDim,inInteger)
-    local
-      String id;
-      Integer nextdimno,dimno;
-      list<Absyn.Exp> restlist,exps;
-      Absyn.Subscript dim;
-      list<Absyn.Subscript> restdim;
-
-    case (_,{},_) then {};
-
-    case (id,(_ :: restdim),dimno)
-      equation
-        nextdimno = dimno + 1;
-        restlist = instExtMakeCrefs2(id, restdim, nextdimno);
-        exps = (Absyn.CALL(Absyn.CREF_IDENT("size",{}),
-          Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(id,{})),
-          Absyn.INTEGER(dimno)},{})) :: restlist);
-      then
-        exps;
-
-  end match;
-end instExtMakeCrefs2;
 
 public function instExtGetFname
 "Returns the function name of the externally defined function."

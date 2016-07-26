@@ -54,6 +54,7 @@ public import UnitAbsyn;
 
 protected import Lookup;
 protected import Inst;
+import DAEDump;
 protected import InstUtil;
 protected import UnitAbsynBuilder;
 protected import ElementSource;
@@ -322,6 +323,7 @@ algorithm
       SCode.Visibility vis;
       SCode.Partial partialPrefix;
       SCode.Encapsulated encapsulatedPrefix;
+      SCode.ExternalDecl scExtdecl;
       DAE.ExternalDecl extdecl;
       SCode.Restriction restr;
       SCode.ClassDef parts;
@@ -385,7 +387,7 @@ algorithm
 
     // External functions should also have their type in env, but no dae.
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix, prefixes=SCode.PREFIXES(visibility=visibility), name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))),
-        classDef = cd as (parts as SCode.PARTS()), cmt=cmt, info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
+        classDef = cd as (parts as SCode.PARTS(externalDecl=SOME(scExtdecl))), cmt=cmt, info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
       equation
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
           Inst.instClass(cache,env,ih, UnitAbsynBuilder.emptyInstStore(),mod, pre,
@@ -410,7 +412,7 @@ algorithm
             ClassInf.FUNCTION(fpath,isImpure), n,parts, restr, vis, partialPrefix,
             encapsulatedPrefix, inst_dims, true, InstTypes.INNER_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet, NONE(), cmt, info) "how to get this? impl" ;
-        (cache,ih,extdecl) = instExtDecl(cache, tempenv,ih, n, parts, true, pre,info) "impl" ;
+        (cache,ih,extdecl) = instExtDecl(cache, tempenv, ih, n, scExtdecl, daeElts, ty1, true, pre,info) "impl" ;
 
         // set the source of this element
         source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
@@ -679,66 +681,105 @@ protected function instExtDecl
   that type. If no explicit call and only one output parameter exists, then
   this will be the return type of the function, otherwise the return type
   will be void."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input String inIdent;
-  input SCode.ClassDef inClassDef;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input output InnerOuter.InstHierarchy iH;
+  input String name;
+  input SCode.ExternalDecl inScExtDecl;
+  input list<DAE.Element> inElements;
+  input DAE.Type funcType;
+  input Boolean impl;
+  input Prefix.Prefix pre;
   input SourceInfo info;
-  output FCore.Cache outCache;
-  output InnerOuter.InstHierarchy outIH;
-  output DAE.ExternalDecl outExternalDecl;
+  output DAE.ExternalDecl daeextdecl;
+protected
+  String fname,lang;
+  list<DAE.ExtArg> fargs;
+  DAE.ExtArg rettype;
+  Option<SCode.Annotation> ann;
+  SCode.ExternalDecl extdecl=inScExtDecl;
 algorithm
-  (outCache,outIH,outExternalDecl) := matchcontinue (inCache,inEnv,inIH,inIdent,inClassDef,inBoolean,inPrefix,info)
-    local
-      String fname,lang,n;
-      list<DAE.ExtArg> fargs;
-      DAE.ExtArg rettype;
-      Option<SCode.Annotation> ann;
-      DAE.ExternalDecl daeextdecl;
-      FCore.Graph env;
-      SCode.ExternalDecl extdecl,orgextdecl;
-      Boolean impl;
-      list<SCode.Element> els;
-      FCore.Cache cache;
-      InstanceHierarchy ih;
-      Prefix.Prefix pre;
-
-    case (cache,env,ih,n,SCode.PARTS(externalDecl = SOME(extdecl)),impl,pre,_) /* impl */
-      equation
-        InstUtil.isExtExplicitCall(extdecl);
-        fname = InstUtil.instExtGetFname(extdecl, n);
-        (cache,fargs) = InstUtil.instExtGetFargs(cache,env, extdecl, impl,pre,info);
-        (cache,rettype) = InstUtil.instExtGetRettype(cache,env, extdecl, impl,pre,info);
-        lang = InstUtil.instExtGetLang(extdecl);
-        ann = InstUtil.instExtGetAnnotation(extdecl);
-        daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang,ann);
-      then
-        (cache,ih,daeextdecl);
-
-    case (cache,env,ih,n,SCode.PARTS(elementLst = els,externalDecl = SOME(orgextdecl)),impl,pre,_)
-      equation
-        failure(InstUtil.isExtExplicitCall(orgextdecl));
-        extdecl = InstUtil.instExtMakeExternaldecl(n, els, orgextdecl);
-        (fname) = InstUtil.instExtGetFname(extdecl, n);
-        (cache,fargs) = InstUtil.instExtGetFargs(cache,env, extdecl, impl,pre,info);
-        (cache,rettype) = InstUtil.instExtGetRettype(cache,env, extdecl, impl,pre,info);
-        lang = InstUtil.instExtGetLang(extdecl);
-        ann = InstUtil.instExtGetAnnotation(orgextdecl);
-        daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang,ann);
-      then
-        (cache,ih,daeextdecl);
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("#-- Inst.instExtDecl failed\n");
-      then
-        fail();
-
-  end matchcontinue;
+  ann := InstUtil.instExtGetAnnotation(extdecl);
+  lang := InstUtil.instExtGetLang(extdecl);
+  fname := InstUtil.instExtGetFname(extdecl, name);
+  if not InstUtil.isExtExplicitCall(extdecl) then
+    (fargs,rettype) := instExtMakeDefaultExternalCall(inElements, funcType, lang, info);
+  else
+    (cache,fargs) := InstUtil.instExtGetFargs(cache,env,extdecl,impl,pre,info);
+    (cache,rettype) := InstUtil.instExtGetRettype(cache,env,extdecl,impl,pre,info);
+  end if;
+  daeextdecl := DAE.EXTERNALDECL(fname,fargs,rettype,lang,ann);
 end instExtDecl;
+
+protected function instExtMakeDefaultExternalCall
+" This function generates a default explicit function call,
+  when it is omitted. If only one output variable exists,
+  the implicit call is equivalent to:
+       external \"C\" output_var=func(input_var1, input_var2,...)
+  with the input_vars in their declaration order. If several output
+  variables exists, the implicit call is equivalent to:
+      external \"C\" func(var1, var2, ...)
+  where each var can be input or output."
+  input list<DAE.Element> elements;
+  input DAE.Type funcType;
+  input String lang;
+  input SourceInfo info;
+  output list<DAE.ExtArg> fargs;
+  output DAE.ExtArg rettype;
+protected
+  DAE.Type ty;
+  Boolean singleOutput;
+  DAE.ComponentRef cr;
+  DAE.Element e;
+algorithm
+  fargs := {};
+  if lang=="builtin" then
+    rettype := DAE.NOEXTARG();
+    return;
+  end if;
+  (rettype,singleOutput) := match funcType
+    case DAE.T_FUNCTION(funcResultType=DAE.T_ARRAY())
+      algorithm
+        if lang<>"builtin" then
+          Error.addSourceMessage(Error.EXT_FN_SINGLE_RETURN_ARRAY, {lang}, info);
+        end if;
+      then (DAE.NOEXTARG(),false);
+    case DAE.T_FUNCTION(funcResultType=DAE.T_TUPLE())
+      then (DAE.NOEXTARG(),false);
+    case DAE.T_FUNCTION(funcResultType=DAE.T_NORETCALL())
+      then (DAE.NOEXTARG(),false);
+    case DAE.T_FUNCTION(funcResultType=ty)
+      then (DAE.EXTARG(DAEUtil.varCref(List.find(elements, DAEUtil.isOutputVar)), Absyn.OUTPUT(), ty), true);
+    else
+      algorithm
+        Error.addInternalError("instExtMakeDefaultExternalCall failed for " + Types.unparseType(funcType), info);
+      then fail();
+  end match;
+  for elt in elements loop
+    fargs := match elt
+      case DAE.VAR(direction=DAE.OUTPUT()) guard not singleOutput
+        then addExtVarToCall(elt.componentRef, Absyn.OUTPUT(), elt.dims, fargs);
+      case DAE.VAR(direction=DAE.INPUT())
+        then addExtVarToCall(elt.componentRef, Absyn.INPUT(), elt.dims, fargs);
+      case DAE.VAR(direction=DAE.BIDIR())
+        then addExtVarToCall(elt.componentRef, Absyn.OUTPUT(), elt.dims, fargs);
+      else fargs;
+    end match;
+  end for;
+  fargs := listReverse(fargs);
+end instExtMakeDefaultExternalCall;
+
+protected function addExtVarToCall
+  input DAE.ComponentRef cr;
+  input Absyn.Direction dir;
+  input DAE.Dimensions dims;
+  input output list<DAE.ExtArg> fargs;
+algorithm
+  fargs := DAE.EXTARG(cr, dir, ComponentReference.crefTypeFull(cr))::fargs;
+  for dim in 1:listLength(dims) loop
+    fargs := DAE.EXTARGSIZE(cr, ComponentReference.crefTypeFull(cr), DAE.ICONST(dim))::fargs;
+  end for;
+end addExtVarToCall;
 
 public function getRecordConstructorFunction
   input FCore.Cache inCache;

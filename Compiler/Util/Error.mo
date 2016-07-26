@@ -704,6 +704,8 @@ public constant Message INVALID_TIME_SCOPE = MESSAGE(288, TRANSLATION(), ERROR()
   Util.gettext("Built-in variable 'time' may only be used in a model or block."));
 public constant Message NO_JACONIAN_TORNLINEAR_SYSTEM = MESSAGE(289, SYMBOLIC(), ERROR(),
   Util.gettext("A torn linear system has no symbolic jacobian and currently there are no means to solve that numerically. Please compile with the module \"calculateStrongComponentJacobians\" to provide symbolic jacobians for torn linear systems."));
+public constant Message EXT_FN_SINGLE_RETURN_ARRAY = MESSAGE(290, TRANSLATION(), WARNING(),
+  Util.gettext("An external declaration with a single output without explicit mapping is defined as having the output as the lhs, but language %s does not support this for array variables. OpenModelica will put the output as an input (as is done when there is more than 1 output), but this is not according to the Modelica Specification. Use an explicit mapping instead of the implicit one to suppress this warning."));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
