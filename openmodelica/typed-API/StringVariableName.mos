@@ -4,7 +4,7 @@ loadString("model M
   Real r(fixed=true) = r + der(r) - 1.0;
 end M;");
 simulate(M);getErrorString();
-v:=stringVariableName("r");getErrorString();
+v:=OpenModelica.Scripting.stringVariableName("r");getErrorString();
 val(v,0.1);getErrorString();
 val(OpenModelica.Scripting.stringVariableName("r"),0.1);getErrorString();
 
