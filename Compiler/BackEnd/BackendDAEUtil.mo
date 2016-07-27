@@ -7252,7 +7252,13 @@ protected function allPreOptimizationModules
     (UnitCheck.unitChecking, "unitChecking"),
     (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
     (BackendInline.normalInlineFunction, "normalInlineFunction"),
-    (EvaluateParameter.evaluateAllParameters, "evaluateAllParameters"),
+    (EvaluateParameter.evaluateEvaluateParameters, "evaluateEvaluateParameters"),
+    (EvaluateParameter.evaluateFinalEvaluateParameters, "evaluateFinalEvaluateParameters"),
+    (EvaluateParameter.evaluateFinalParameters, "evaluateFinalParameters"),
+    (EvaluateParameter.evaluateReplaceFinalEvaluateParameters, "evaluateReplaceFinalEvaluateParameters"),
+    (EvaluateParameter.evaluateReplaceFinalParameters, "evaluateReplaceFinalParameters"),
+   	(EvaluateParameter.evaluateAllParameters, "evaluateAllParameters"),
+    (EvaluateParameter.evaluateReplaceEvaluateParameters, "evaluateReplaceEvaluateParameters"),
     (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters"),
     (RemoveSimpleEquations.removeVerySimpleEquations, "removeVerySimpleEquations"),
     (StateMachineFeatures.stateMachineElab, "stateMachineElab"),
@@ -7280,13 +7286,7 @@ protected function allPreOptimizationModules
     (BackendDAEOptimize.residualForm, "residualForm"),
     (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions"),
     (BackendDump.dumpDAE, "dumpDAE"),
-    (EvaluateParameter.evaluateEvaluateParameters, "evaluateEvaluateParameters"),
-    (EvaluateParameter.evaluateFinalEvaluateParameters, "evaluateFinalEvaluateParameters"),
-    (EvaluateParameter.evaluateFinalParameters, "evaluateFinalParameters"),
-    (EvaluateParameter.evaluateReplaceEvaluateParameters, "evaluateReplaceEvaluateParameters"),
-    (EvaluateParameter.evaluateReplaceFinalEvaluateParameters, "evaluateReplaceFinalEvaluateParameters"),
-    (EvaluateParameter.evaluateReplaceFinalParameters, "evaluateReplaceFinalParameters"),
-    (XMLDump.dumpDAEXML, "dumpDAEXML")
+      (XMLDump.dumpDAEXML, "dumpDAEXML")
   };
 end allPreOptimizationModules;
 
