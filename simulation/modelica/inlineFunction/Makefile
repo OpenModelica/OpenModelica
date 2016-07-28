@@ -16,6 +16,10 @@ inlineFunction8.mos \
 inlineFunction9.mos \
 inlineFunction10.mos \
 inlineFunction11.mos \
+forceComplexEq.mos \
+forceComplexEq2.mos \
+forceComplexEq3.mos \
+forceComplexEq4.mos \
 testBug3687.mos \
 testComplexMath.mos \
 

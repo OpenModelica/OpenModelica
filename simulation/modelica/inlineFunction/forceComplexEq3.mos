@@ -1,0 +1,125 @@
+//name: forceInlineComplexEq3
+// status: correct
+
+setCommandLineOptions("--postOptModules+=forceInlineFunctionInLoops --initOptModules+=forceInlineFunctionInLoops +d=backenddaeinfo,dumpLoops +inlineMethod=append");
+loadString("
+model foo
+  function f
+     input Real x1;
+     input Real x2;
+     output Real y1;
+     output Real y2;
+    protected
+     Real a = x1 - x2 + 10;
+     Real b = 23*a; 
+    algorithm
+     y1 := b*x2 - a;
+     y2 := 3*x2-5;
+  end f;
+
+  Real x1, x2, x3, x4;
+equation
+  (x1, x2) = f(3*x1 + cos(time), 3*x2 +1+x3-5*x4);
+  (x4, x3) = f(sin(time), x1 + x3 - x2);
+end foo;
+");
+getErrorString();
+
+simulate(foo);
+getErrorString();
+
+val(x1,{0,1});
+val(x2,{0,1});
+val(x3,{0,1});
+// Result:
+// true
+// true
+// ""
+//
+// system 1
+// torn nonlinear Equationsystem:
+//
+// internal vars
+// 1: y2$$Pfoo$Pf9:VARIABLE()  type: Real 
+// 2: x1:VARIABLE()  type: Real 
+// 3: y2$$Pfoo$Pf13:VARIABLE()  type: Real 
+// 4: y1$$Pfoo$Pf12:VARIABLE()  type: Real 
+// 5: a$$Pfoo$Pf10:VARIABLE()  type: Real 
+// 6: x4:VARIABLE()  type: Real 
+// 7: b$$Pfoo$Pf11:VARIABLE()  type: Real 
+// 8: a$$Pfoo$Pf14:VARIABLE()  type: Real 
+// 9: y1$$Pfoo$Pf8:VARIABLE()  type: Real 
+// 10: b$$Pfoo$Pf15:VARIABLE()  type: Real 
+//
+// residual vars
+// 1: x2:VARIABLE()  type: Real 
+// 2: x3:VARIABLE()  type: Real 
+//
+// internal equation
+// 1/1 (1): x3 = y2$$Pfoo$Pf9   [dynamic]
+// 2/2 (1): y2$$Pfoo$Pf9 = -5.0 + 3.0 * (x1 + x3 - x2)   [unknown]
+// 3/3 (1): x2 = y2$$Pfoo$Pf13   [dynamic]
+// 4/4 (1): x1 = y1$$Pfoo$Pf12   [dynamic]
+// 5/5 (1): a$$Pfoo$Pf10 = 10.0 + sin(time) - (x1 + x3 - x2)   [unknown]
+// 6/6 (1): y2$$Pfoo$Pf13 = -5.0 + 3.0 * (1.0 + 3.0 * x2 + x3 + -5.0 * x4)   [unknown]
+// 7/7 (1): b$$Pfoo$Pf11 = 23.0 * a$$Pfoo$Pf10   [unknown]
+// 8/8 (1): a$$Pfoo$Pf14 = 10.0 + 3.0 * x1 + cos(time) - (1.0 + 3.0 * x2 + x3 + -5.0 * x4)   [unknown]
+// 9/9 (1): x4 = y1$$Pfoo$Pf8   [dynamic]
+// 10/10 (1): b$$Pfoo$Pf15 = 23.0 * a$$Pfoo$Pf14   [unknown]
+//
+// residual equations
+// 1/1 (1): y1$$Pfoo$Pf8 = b$$Pfoo$Pf11 * (x1 + x3 - x2) - a$$Pfoo$Pf10   [unknown]
+// 2/2 (1): y1$$Pfoo$Pf12 = b$$Pfoo$Pf15 * (1.0 + 3.0 * x2 + x3 + -5.0 * x4) - a$$Pfoo$Pf14   [unknown]
+//
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 4
+//  * Number of variables: 4
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('+d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (1):
+//  * Single equations (assignments): 0
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {2 10}
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('+d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (1):
+//  * Single equations (assignments): 0
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {2 10}
+// "
+// {0.07675361072941289,0.07423981665119772}
+// {-4.868670267708994,-4.868661846237771}
+// {-4.91813581765761,-4.914352494333452}
+// endResult
