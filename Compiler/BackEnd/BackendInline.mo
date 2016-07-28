@@ -180,7 +180,7 @@ algorithm
   end for;
 end inlineEquationOptArray;
 
-protected function inlineEqOpt "
+public function inlineEqOpt "
 function: inlineEqOpt
   inlines function calls in equations"
   input Option<BackendDAE.Equation> inEquationOption;
@@ -711,7 +711,7 @@ algorithm
   end for;
 end inlineEquationOptArrayAppend;
 
-protected function inlineEqOptAppend "
+public function inlineEqOptAppend "
 function: inlineEqOpt
   inlines function calls in equations"
   input Option<BackendDAE.Equation> inEquationOption;

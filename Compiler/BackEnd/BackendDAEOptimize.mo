@@ -55,6 +55,7 @@ import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
 import BackendDAEEXT;
+import BackendInline;
 import BackendVarTransform;
 import BackendVariable;
 import BaseHashTable;
@@ -4591,6 +4592,96 @@ algorithm
           else iExp;
           end match;
 end hetsSplitExp;
+
+// =============================================================================
+// section inlineFunctionInLoops
+// force inlining function of loop
+// author: Vitalij Ruge
+// motivation see #3997 library devs introduce annotation(Inline=true) for simplify loops
+// =============================================================================
+public function inlineFunctionInLoops
+  input output BackendDAE.BackendDAE dae;
+algorithm
+  dae := inlineFunctionInLoopsMain(dae);
+end inlineFunctionInLoops;
+
+protected function inlineFunctionInLoopsMain
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.Shared shared;
+  DAE.FunctionTree functionTree;
+  BackendDAE.EqSystems eqs;
+  BackendDAE.EqSystem _syst;
+algorithm
+  shared := inDAE.shared;
+  functionTree := shared.functionTree;
+  eqs := {};
+  for syst in inDAE.eqs loop
+    (_syst, shared) :=  inlineFunctionInLoopsWork(syst, functionTree, shared);
+     eqs := _syst :: eqs;
+  end for;
+  outDAE := BackendDAE.DAE(eqs, shared);
+end inlineFunctionInLoopsMain;
+
+protected function inlineFunctionInLoopsWork
+  input output BackendDAE.EqSystem syst;
+  input DAE.FunctionTree functionTree;
+  input output BackendDAE.Shared shared;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.StrongComponents comps;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets;
+  Inline.Functiontuple fns = (SOME(functionTree),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE(), DAE.DEFAULT_INLINE()});
+  Boolean inlined;
+  BackendDAE.Equation eq, eqNew;
+  Option<BackendDAE.Equation> eqn;
+  BackendDAE.EqSystem tmpEqs, tmpEqs1;
+  list<Integer> idEqns;
+  Boolean inlined1;
+  Integer id;
+algorithm
+  inlined := false;
+  inlined1 := false;
+  tmpEqs1 := BackendDAEUtil.createEqSystem( BackendVariable.listVar({}), BackendEquation.listEquation({}));
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching as BackendDAE.MATCHING(comps=comps),stateSets=stateSets,partitionKind=partitionKind) := syst;
+  //BackendDAE.EQUATION_ARRAY(equOptArr=equOptArr) := eqns;
+  for comp in comps
+  loop
+      if BackendEquation.isEquationsSystem(comp) or BackendEquation.isTornSystem(comp)  or
+      (match comp case BackendDAE.SINGLECOMPLEXEQUATION() then true; else false; end match)
+      then
+         idEqns := match comp
+                   case BackendDAE.EQUATIONSYSTEM(eqns=idEqns) then idEqns;
+                   case BackendDAE.SINGLECOMPLEXEQUATION(eqn = id) then {id};
+                   end match;
+         for id in idEqns
+         loop
+           eq := BackendEquation.equationNth1(eqns, id);
+           //eqn := BackendInline.inlineEqOpt(SOME(eq), fns);
+           //eqns := BackendEquation.setAtIndexFirst(id, eq, eqns);
+           (eqn, tmpEqs, inlined, shared) := BackendInline.inlineEqOptAppend(SOME(eq), fns, shared);
+           SOME(eqNew) := eqn;
+           if inlined or not BackendEquation.equationEqual(eq, eqNew)
+           then
+             tmpEqs1 := BackendDAEUtil.mergeEqSystems(tmpEqs, tmpEqs1);
+             eqns := BackendEquation.setAtIndexFirst(id, eqNew, eqns);
+             //BackendDump.printEquation(BackendEquation.equationNth1(eqns, id));
+             inlined1 := true;
+           end if;
+         end for;
+      end if;
+  end for;
+  syst.orderedEqs := eqns;
+  if inlined1 then
+    syst := BackendDAEUtil.clearEqSyst(syst);
+    syst := BackendDAEUtil.mergeEqSystems(tmpEqs1, syst);
+  end if;
+end inlineFunctionInLoopsWork;
 
 // =============================================================================
 // section for simplifyLoops

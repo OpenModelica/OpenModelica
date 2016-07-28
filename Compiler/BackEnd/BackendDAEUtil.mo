@@ -7305,6 +7305,7 @@ protected function allPostOptimizationModules
     (BackendDAEOptimize.addedScaledVars_states, "addScaledVars_states"),
     (BackendDAEOptimize.addedScaledVars_inputs, "addScaledVars_inputs"),
     (RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations"),
+    (BackendDAEOptimize.inlineFunctionInLoops, "forceInlineFunctionInLoops"), // before simplifyComplexFunction
     (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction"),
     (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations"),
     (BackendDAEOptimize.symEuler, "symEuler"),
@@ -7339,6 +7340,7 @@ protected function allInitOptimizationModules
   "This list contains all back end init-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allInitOptimizationModules = {
     (SymbolicJacobian.constantLinearSystem, "constantLinearSystem"),
+    (BackendDAEOptimize.inlineFunctionInLoops, "forceInlineFunctionInLoops"), // before simplifyComplexFunction
     (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction"),
     (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization"), // before tearing
     (Tearing.tearingSystem, "tearingSystem"),
