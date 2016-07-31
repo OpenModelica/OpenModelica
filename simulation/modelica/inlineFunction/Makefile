@@ -21,6 +21,7 @@ forceComplexEq2.mos \
 forceComplexEq3.mos \
 forceComplexEq4.mos \
 testBug3687.mos \
+testBug3997.mos \
 testComplexMath.mos \
 
 
