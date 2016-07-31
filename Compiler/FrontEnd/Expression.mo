@@ -948,8 +948,13 @@ protected
 algorithm
   for sub in inSubs loop
     // Apply one subscript at a time, so simplify works fine on it.
-    s := subscriptIndexExp(sub);
-    (exp,_) := ExpressionSimplify.simplify(makeASUB(exp,{s}));
+    //s := subscriptIndexExp(sub);
+    try
+      s := getSubscriptExp(sub);
+      (exp,_) := ExpressionSimplify.simplify(makeASUB(exp,{s}));
+    else
+      // skipped DAE.WHOLEDIM
+    end try;
   end for;
 end applyExpSubscripts;
 
