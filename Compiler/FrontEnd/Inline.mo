@@ -842,9 +842,11 @@ algorithm
           // depend on detection of assert or not
           if (listEmpty(assrtStmts))
           then // no assert detected
+            // output
             newExp = Expression.makeTuple(list( getReplacementCheckComplex(repl,cr,ty) for cr in lst_cr));
             // compare types
             true = checkExpsTypeEquiv(e1, newExp);
+            // input map cref again function args
             argmap = List.threadTuple(crefs,args);
             (checkcr,_) = getInlineHashTableVarTransform();
             (argmap,checkcr) = extendCrefRecords(argmap,checkcr);
@@ -1134,10 +1136,10 @@ algorithm
     local
       DAE.Type tp;
     case (DAE.CREF_IDENT(identType=tp),_,_)
-      equation
-        false = Expression.isArrayType(tp);
-        false = Expression.isRecordType(tp);
+      guard
+        not Expression.isArrayType(tp) and not Expression.isRecordType(tp)
       then VarTransform.addReplacement(iRepl, iCr, iExp);
+    else fail();
   end match;
 end addReplacement;
 
@@ -1390,6 +1392,7 @@ algorithm
       DAE.TailCall tc;
       HashTableCG.HashTable checkcr;
       Boolean replacedfailed;
+
     case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
       equation
         e = getExpFromArgMap(argmap,cref);
@@ -1397,8 +1400,8 @@ algorithm
       then (e,(argmap,checkcr,true));
 
     case (e as DAE.CREF(componentRef = cref),(argmap,checkcr,true))
-      equation
-        true = BaseHashTable.hasKey(cref,checkcr);
+      guard
+        BaseHashTable.hasKey(cref,checkcr)
       then (e,(argmap,checkcr,false));
 
     case (DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc)),ty),(argmap,checkcr,true))
@@ -1488,33 +1491,32 @@ protected function getExpFromArgMap
   input list<tuple<DAE.ComponentRef, DAE.Exp>> inArgMap;
   input DAE.ComponentRef inComponentRef;
   output DAE.Exp outExp;
+protected
+  tuple<DAE.ComponentRef, DAE.Exp> arg;
+  list<DAE.Subscript> subs;
+  DAE.ComponentRef key,cref;
+  DAE.Exp exp;
 algorithm
-  outExp := matchcontinue(inArgMap,inComponentRef)
-    local
-      DAE.ComponentRef key,cref;
-      DAE.Exp exp,e;
-      list<tuple<DAE.ComponentRef, DAE.Exp>> cdr;
-      list<DAE.Subscript> subs;
-    case({},_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("Inline.getExpFromArgMap failed with empty argmap and cref: " + ComponentReference.printComponentRefStr(inComponentRef));
-      then
-        fail();
-    case((cref,exp) :: _,key)
-      equation
-        subs = ComponentReference.crefSubs(key);
-        key = ComponentReference.crefStripSubs(key);
-        true = ComponentReference.crefEqual(cref,key);
-        e = Expression.applyExpSubscripts(exp,subs);
-      then
-        e;
-    case(_ :: cdr,key)
-      equation
-        exp = getExpFromArgMap(cdr,key);
-      then
-        exp;
-  end matchcontinue;
+  subs := ComponentReference.crefSubs(inComponentRef);
+  key := ComponentReference.crefStripSubs(inComponentRef);
+
+  for arg in inArgMap loop
+    (cref, exp) := arg;
+    if ComponentReference.crefEqual(cref,key) then
+      try
+        outExp := Expression.applyExpSubscripts(exp,subs);
+      else
+        continue;
+      end try;
+      return ;
+    end if;
+  end for;
+
+  if  Flags.isSet(Flags.FAILTRACE) then
+    Debug.traceln("Inline.getExpFromArgMap failed with empty argmap and cref: " + ComponentReference.printComponentRefStr(inComponentRef));
+  end if;
+  fail();
+
 end getExpFromArgMap;
 
 protected function getInputCrefs
