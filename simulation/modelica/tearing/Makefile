@@ -29,8 +29,8 @@ Tearing16-celMC3.mos \
 Algorithm1-celMC3.mos \
 Algorithm2-celMC3.mos \
 MixedTearing1-celMC3.mos \
-AnnotationTest-celMC3.mos \
-AnnotationTest2-celMC3.mos \
+tearingSelect-celMC3.mos \
+tearingSelect2-celMC3.mos \
 dynamicTearing1.mos \
 dynamicTearing2.mos \
 dynamicTearing3.mos \
@@ -73,8 +73,8 @@ Tearing16-omc.mos \
 Algorithm1-omc.mos \
 Algorithm2-omc.mos \
 MixedTearing1-omc.mos \
-AnnotationTest-omc.mos \
-AnnotationTest2-omc.mos \
+tearingSelect-omc.mos \
+tearingSelect2-omc.mos \
 totalTearing1.mos \
 totalTearing2.mos \
 totalTearing3.mos \

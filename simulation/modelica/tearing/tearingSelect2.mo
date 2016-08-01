@@ -1,4 +1,4 @@
-model AnnotationTest2
+model tearingSelect2
    Real x1 annotation(tearingSelect = avoid);
    Real x2;
    Real x3;
@@ -12,4 +12,4 @@ equation
    0 = x1*x1 + x4 + x5;
    0 = x1*x1 + x5 + x6;
    0 = x1 + x6*x6;
-end AnnotationTest2;
+end tearingSelect2;

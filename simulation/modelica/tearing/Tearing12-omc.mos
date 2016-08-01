@@ -8,10 +8,12 @@ loadFile("Tearing12.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("omcTearing"); getErrorString();
+setCommandLineOptions("+preferTVarsWithStartValue=false"); getErrorString();
 simulate(Tearing12); getErrorString();
-// buildModel(Tearing12); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true

@@ -1,13 +1,13 @@
-// name:      AnnotationTest-celMC3
+// name:      tearingSelect-celMC3
 // keywords:  tearing, linear
 // status:    correct
 
-loadFile("AnnotationTest.mo"); getErrorString();
+loadFile("tearingSelect.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC3"); getErrorString();
-simulate(AnnotationTest); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC3 +preferTVarsWithStartValue=true"); getErrorString();
+simulate(tearingSelect); getErrorString();
 
 val(u1,0.0); getErrorString();
 val(u2,0.0); getErrorString();
@@ -26,8 +26,8 @@ val(i3,0.0); getErrorString();
 // true
 // ""
 // record SimulationResult
-//     resultFile = "AnnotationTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AnnotationTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "tearingSelect_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'tearingSelect', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:

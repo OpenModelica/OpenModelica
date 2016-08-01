@@ -1,12 +1,20 @@
-// name:      AnnotationTest2-omc
+// name:      tearingSelect-omc
 // keywords:  tearing, linear
 // status:    correct
 
-loadFile("AnnotationTest2.mo"); getErrorString();
+loadFile("tearingSelect.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("omcTearing"); getErrorString();
-simulate(AnnotationTest2); getErrorString();
+setCommandLineOptions("+preferTVarsWithStartValue=true"); getErrorString();
+simulate(tearingSelect); getErrorString();
+
+val(u1,0.0); getErrorString();
+val(u2,0.0); getErrorString();
+val(u3,0.0); getErrorString();
+val(i1,0.0); getErrorString();
+val(i2,0.0); getErrorString();
+val(i3,0.0); getErrorString();
 
 // Result:
 // true
@@ -15,24 +23,24 @@ simulate(AnnotationTest2); getErrorString();
 // ""
 // true
 // ""
+// true
+// ""
 // record SimulationResult
-//     resultFile = "AnnotationTest2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AnnotationTest2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "tearingSelect_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'tearingSelect', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
-//  * Number of equations: 6
-//  * Number of variables: 6
-// Warning: The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use +d=tearingdump and +d=tearingdumpV for more information.
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+//  * Number of equations: 7
+//  * Number of variables: 7
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('+d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (1):
-//  * Single equations (assignments): 0
+// Notification: Strong component statistics for initialization (2):
+//  * Single equations (assignments): 1
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -42,17 +50,16 @@ simulate(AnnotationTest2); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {1 5}
-// Warning: The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use +d=tearingdump and +d=tearingdumpV for more information.
+//  * Linear torn systems: 1 {(2,100.0%) 3}
+//  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('+d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1):
-//  * Single equations (assignments): 0
+// Notification: Strong component statistics for simulation (2):
+//  * Single equations (assignments): 1
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -62,7 +69,19 @@ simulate(AnnotationTest2); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {1 5}
+//  * Linear torn systems: 1 {(1,100.0%) 4}
+//  * Non-linear torn systems: 0
 // "
+// 0.0
+// ""
+// 0.0
+// ""
+// 0.0
+// ""
+// 0.0
+// ""
+// 0.0
+// ""
+// 0.0
+// ""
 // endResult

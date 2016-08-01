@@ -15,6 +15,5 @@ buildModel(OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureA
 // {"OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperature","OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperature_init.xml"}
 // "Notification: The following equation is consistent and got removed from the initialization problem: $DER.V2.medium.p = 0.0
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
 // endResult
