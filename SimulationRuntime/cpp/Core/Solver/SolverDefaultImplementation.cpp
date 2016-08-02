@@ -120,11 +120,14 @@ void SolverDefaultImplementation::initialize()
   if(_settings->getGlobalSettings()->getOutputPointType() != OPT_NONE)
     writeoutput_system->writeOutput(IWriteOutput::HEAD_LINE);
 
-  // Allocate array with values of zero functions
-  if (_dimZeroFunc != event_system->getDimZeroFunc())
-  {
-    // Number (dimension) of zero functions
+
+  // Number (dimension) of zero functions
     _dimZeroFunc = event_system->getDimZeroFunc();
+	_dimClock  = event_system->getDimClock();
+  // Allocate array with values of zero functions
+  if (_dimZeroFunc +_dimClock > 0)
+  {
+
 
     if(_zeroVal)
       delete [] _zeroVal;
@@ -135,15 +138,16 @@ void SolverDefaultImplementation::initialize()
     if(_events)
       delete [] _events;
 
-    _zeroVal = new double[_dimZeroFunc];
-    _zeroValLastSuccess = new double[_dimZeroFunc];
-    _events = new bool[_dimZeroFunc];
-    _zeroValInit = new double[_dimZeroFunc];
+    _zeroVal = new double[_dimZeroFunc+_dimClock];
+    _zeroValLastSuccess = new double[_dimZeroFunc+_dimClock];
+    _events = new bool[_dimZeroFunc+_dimClock];
+    _zeroValInit = new double[_dimZeroFunc+_dimClock];
     continous_system->evaluateZeroFuncs(IContinuous::CONTINUOUS);
+
     event_system->getZeroFunc(_zeroVal);
-    memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
-    memcpy(_zeroValInit,_zeroVal,_dimZeroFunc*sizeof(double));
-    memset(_events,false,_dimZeroFunc*sizeof(bool));
+    memcpy(_zeroValLastSuccess,_zeroVal,(_dimZeroFunc+_dimClock)*sizeof(double));
+    memcpy(_zeroValInit,_zeroVal,(_dimZeroFunc+_dimClock)*sizeof(double));
+    memset(_events,false,(_dimZeroFunc+_dimClock)*sizeof(bool));
   }
 
   // Set flags
@@ -166,12 +170,17 @@ void SolverDefaultImplementation::setZeroState()
   // Reset Zero-State
   _zeroStatus = ISolver::UNCHANGED_SIGN;;
 
+
+
   // Alle Elemente im ZeroFunction-Array durchgehen
-  for (int i=0; i<_dimZeroFunc; ++i)
+  for (int i=0; i<(_dimZeroFunc+_dimClock); ++i)
   {
+	  if (i < _dimZeroFunc)
+
     // Überprüfung auf Vorzeichenwechsel
     if ((_zeroVal[i] < 0 && _zeroValLastSuccess[i] > 0) || (_zeroVal[i] > 0 && _zeroValLastSuccess[i] < 0))
     {
+
       // Vorzeichenwechsel, aber Eintrag ist größer (oder kleiner) als Toleranzbereich
       _zeroStatus = ISolver::EQUAL_ZERO;
 

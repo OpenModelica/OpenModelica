@@ -143,7 +143,7 @@ void Cvode::initialize()
   _event_n = 0;
   SolverDefaultImplementation::initialize();
   _dimSys = _continuous_system->getDimContinuousStates();
-  _dimZeroFunc = _event_system->getDimZeroFunc();
+  _dimZeroFunc = _event_system->getDimZeroFunc()+_event_system->getDimClock();
 
   if (_dimSys == 0)
     _dimSys = 1; // introduce dummy state
@@ -328,6 +328,7 @@ void Cvode::initialize()
 
 void Cvode::solve(const SOLVERCALL action)
 {
+
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
   bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == OPT_NONE);
 
@@ -470,7 +471,6 @@ void Cvode::CVodeCore()
 
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
   bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == OPT_NONE);
-
   while ((_solverStatus & ISolver::CONTINUE) && !_interrupt )
   {
     _cv_rt = CVode(_cvodeMem, _tEnd, _CV_y, &_tCurrent, CV_ONE_STEP);
@@ -614,6 +614,13 @@ void Cvode::CVodeCore()
       //Solver has finished calculation - calculate the final values
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
       _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+
+      //check for state events at end time ( it is needed by clock ticks at end time. It is not needed anymore if the clock's treated again as time events later)
+	  _event_system->getZeroFunc(_zeroVal);
+       for (int i = 0; i < _dimZeroFunc; i++)
+        _events[i] = _zeroVal[i]<0.0;
+      _mixed_system->handleSystemEvents(_events);
+
       if(writeOutput)
          writeToFile(0, _tEnd, _h);
 
