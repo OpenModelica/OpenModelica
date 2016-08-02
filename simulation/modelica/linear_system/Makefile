@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v 
 
 TESTFILES = \
+EngineV6_partlintorn.mos \
 MissV.mos \
 linSymSol.mos \
 linSymSolConstA.mos \
