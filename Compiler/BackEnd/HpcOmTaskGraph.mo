@@ -446,7 +446,7 @@ protected
   BackendDAE.EqSystem isyst;
   BackendDAE.Shared ishared;
   BackendDAE.Variables orderedVars;
-  BackendDAE.Variables globalKnownVars;
+  BackendDAE.Variables globalKnownVars, localKnownVars;
   BackendDAE.EquationArray orderedEqs;
   TaskGraph graphIn;
   TaskGraph graphTmp;
@@ -468,7 +468,7 @@ protected
   array<list<Integer>> compParamMapping;
 algorithm
   (incidenceMatrix,isyst,ishared,numberOfComps) := iSystInfo;
-  BackendDAE.SHARED(globalKnownVars=globalKnownVars) := ishared;
+  BackendDAE.SHARED(globalKnownVars=globalKnownVars, localKnownVars=localKnownVars) := ishared;
   BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs) := isyst;
   (varCompMapping,eqCompMapping,eventVarLst) := iVarInfo;
   (graphIn,inComps,compParamMapping,commCosts,compNames,nodeMark,componentIndex) := graphInfoIn;
@@ -477,7 +477,7 @@ algorithm
   compNames := arrayUpdate(compNames,componentIndex,compName);
   _ := HpcOmBenchmark.benchSystem();
 
-  (unsolvedVars,paramVars) := getUnsolvedVarsBySCC(iComponent,incidenceMatrix,orderedVars,globalKnownVars,orderedEqs,eventVarLst,iAnalyzeParameters);
+  (unsolvedVars,paramVars) := getUnsolvedVarsBySCC(iComponent,incidenceMatrix,orderedVars,BackendVariable.addVariables(globalKnownVars,localKnownVars),orderedEqs,eventVarLst,iAnalyzeParameters);
   compParamMapping := arrayUpdate(compParamMapping, componentIndex, paramVars);
   requiredSccs := arrayCreate(numberOfComps,({},{},{},{})); //create a ref-counter for each component
   requiredSccs := List.fold2(List.map1(Util.tuple41(unsolvedVars),Util.makeTuple,1),fillSccList,1,varCompMapping,requiredSccs);
@@ -6238,6 +6238,7 @@ protected
   Integer eqSysIdx,varIdx,nodeIdx;
   BackendDAE.EqSystems eqSystems;
 algorithm
+  //print("get Cref "+ComponentReference.crefStr(iCref)+"\n");
   BackendDAE.DAE(eqs=eqSystems) := iDae;
   (eqSysIdx,varIdx,_) := getNodeForCref1(eqSystems,iCref,1);
   //print("got var "+intString(varIdx)+" in eqSys "+intString(eqSysIdx)+"\n");
@@ -6285,7 +6286,7 @@ algorithm
   end matchcontinue;
 end getNodeForCref1;
 
-protected function getNodeForVarIdx
+protected function getNodeForVarIdx"traverse the whole varCompMapping from eqSystem to eqSystem until we get the correct eqSystem."
   input Integer varIdx;
   input Integer eqSysIdx;
   input array<tuple<Integer,Integer,Integer>> varCompMapping;
@@ -6300,10 +6301,7 @@ algorithm
       equation
         ((node,eqSys,offset)) = arrayGet(varCompMapping,tryThisIndex);
         eqSysNeq = intNe(eqSys,eqSysIdx);
-        if(intEq(offset, 0)) then
-          offset = 1;
-        end if;
-        node = if eqSysNeq then getNodeForVarIdx(varIdx,eqSysIdx,varCompMapping,tryThisIndex+offset) else node;
+        node = if eqSysNeq then getNodeForVarIdx(varIdx,eqSysIdx,varCompMapping,offset+2) else node+varIdx-1;
       then node;
     case(-1,-1,_,_)
       then -1;
