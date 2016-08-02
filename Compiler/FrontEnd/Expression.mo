@@ -2497,7 +2497,7 @@ public function allTerms
   input DAE.Exp inExp;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := match (inExp)
+  outExpLst := matchcontinue(inExp)
     local
       list<DAE.Exp> f1,f2,res,f2_1;
       DAE.Exp e1,e2,e;
@@ -2680,7 +2680,7 @@ algorithm
     case (e as DAE.REDUCTION()) then {e};
 */
     else {inExp};
-  end match;
+  end matchcontinue;
 end allTerms;
 
 public function allTermsForCref

@@ -1594,8 +1594,8 @@ algorithm
   end matchcontinue;
 end getCallExpLst;
 
-protected function getSummands "
-  gets all sum-terms in the equation"
+protected function getSummands "gets all sum-terms in the equation.
+author: Waurich TUD"
   input BackendDAE.Equation eq;
   output list<DAE.Exp> exps;
 algorithm
@@ -1606,15 +1606,20 @@ algorithm
       list<DAE.Exp> expLst1, expLst2;
   case(BackendDAE.EQUATION(exp=lhs,scalar=rhs))
     equation
+      print("LHS "+ExpressionDump.printExpStr(lhs)+"\n");
+      print("RHS "+ExpressionDump.printExpStr(rhs)+"\n");
       expLst1 = Expression.allTerms(lhs);
+      print("test1\n");
       expLst1 = List.map(expLst1,Expression.negate);
+      print("test2\n");
       expLst2 = Expression.allTerms(rhs);
+      print("test3\n");
       expLst1 = listAppend(expLst1,expLst2);
-        //print("the expLst: "+ExpressionDump.printExpListStr(expLst1)+"\n");
+        print("the expLst: "+ExpressionDump.printExpListStr(expLst1)+"\n");
     then expLst1;
   else
     equation
-      print("getSummands failed!\n");
+      print("getSummands failed! for"+BackendDump.equationString(eq)+"\n\n");
     then {};
   end matchcontinue;
 end getSummands;
