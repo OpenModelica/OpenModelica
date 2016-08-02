@@ -1606,16 +1606,10 @@ algorithm
       list<DAE.Exp> expLst1, expLst2;
   case(BackendDAE.EQUATION(exp=lhs,scalar=rhs))
     equation
-      print("LHS "+ExpressionDump.printExpStr(lhs)+"\n");
-      print("RHS "+ExpressionDump.printExpStr(rhs)+"\n");
       expLst1 = Expression.allTerms(lhs);
-      print("test1\n");
       expLst1 = List.map(expLst1,Expression.negate);
-      print("test2\n");
       expLst2 = Expression.allTerms(rhs);
-      print("test3\n");
       expLst1 = listAppend(expLst1,expLst2);
-        print("the expLst: "+ExpressionDump.printExpListStr(expLst1)+"\n");
     then expLst1;
   else
     equation
