@@ -9810,17 +9810,20 @@ case SIMCODE(modelInfo = MODELINFO(__), modelStructure = fmims) then
         'ModelicaMessage("Using default Clock(1.0)!");'
       let subClocks = (subPartitions |> subPartition =>
         match subPartition
-        case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
+        case SUBPARTITION(idx=idx, subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
+          let startTime =if isBooleanClock(baseClock) then <<-1>> else <<_simTime + _clockShift[<%idx%>-1] * _clockInterval[<%idx%>-1]>>
+          let startCondition = if isBooleanClock(baseClock) then <<false>> else <<true>>
+
           <<
           <%preExp%>
-          _clockInterval[<%i%>] = <%interval%> * <%fnom%>.0 / <%fres%>.0;
-          _clockShift[<%i%>] = <%snom%>.0 / <%sres%>.0;
-		  _clockTime[<%i%>] = _simTime + _clockShift[<%i%>] * _clockInterval[<%i%>];
-		  if( _clockShift[<%i%>]>0)
-			_clockCondition[<%i%>] = false;
+          _clockInterval[<%idx%>-1] = <%interval%> * <%fnom%>.0 / <%fres%>.0;
+          _clockShift[<%idx%>-1] = <%snom%>.0 / <%sres%>.0;
+		  _clockTime[<%idx%>-1] = <%startTime%>;
+		  if( _clockShift[<%idx%>-1]>0)
+			_clockCondition[<%idx%>-1] = false;
 		  else
-			_clockCondition[<%i%>] =true;
-	      _clockStart[<%i%>] = true;
+			_clockCondition[<%idx%>-1] = <%startCondition%>;
+	      _clockStart[<%idx%>-1] = true;
 
           <%i%> ++;
           >>
@@ -12473,7 +12476,8 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings, SimCode simCode ,T
 	//if there is a single clock event, update all clock conditions
 	if (clock_event_detected){
         for(int i =0;i< _dimClock;i++){
-        	if(_simTime +1e-9 > _clockTime[i]){
+        //check if a deterministic clockTime is reached, boolean clocks have clockTime -1
+        	if(_simTime +1e-9 > _clockTime[i] and _clockTime[i]!= -1){
                 _clockCondition[i]=true;
             }
         }
@@ -12806,9 +12810,11 @@ template clockedPartFunctions(Integer i, list<SimEqSystem> previousAssignments, 
         case SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))
 		then
 		<<
+		//compute new clock tick
 		 _clockInterval[<%idx%>] = <%intvl%> * <%fnom%>.0 / <%fres%>.0;
          _clockTime[<%idx%>] = _simTime +_clockInterval[<%idx%>] ;
 		>>
+  let newClockTime = if isBooleanClock(baseClock) then <<_clockTime[<%idx%>] = -1;>> else clockvals
 
   let funcs = listAppend(previousAssignments,equations) |> eq =>
     equation_function_create_single_func(eq, context/*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "evaluate", "", stateDerVectorName, useFlatArrayNotation, enableMeasureTime, false, false, 'const int clockIndex = <%i%>;<%\n%>')
@@ -12824,22 +12830,26 @@ template clockedPartFunctions(Integer i, list<SimEqSystem> previousAssignments, 
                    createEvaluateWithSplit(i0, context, eqs, funcName, className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
                    ; separator="\n")
   let idx = intAdd(i, -1)
+
+
   <<
   <%funcs%>
 
   void <%className%>::<%funcName%>(const UPDATETYPE command)
   {
 
-    <%varDecls%>
+   <%varDecls%>
    <%preExp%>
+
+   // do we still need _clockStart?
    if (_simTime > _clockTime[<%idx%>]) {
       _clockStart[<%idx%>] = false;
     }
+
     //evaluate clock partition equations
 	<%funcCalls%>
 
-    //compute new clock tick
-     <%clockvals%>
+    <%newClockTime%>
 
     //assign the previous-vars since the step is completed
     <%funcCallsPrev%>

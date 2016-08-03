@@ -6042,6 +6042,18 @@ algorithm
   end match;
 end getAssertConditionCrefs;
 
+public function isBooleanClock
+  input DAE.ClockKind clkKind;
+  output Boolean isBooleanClk;
+algorithm
+  isBooleanClk := match(clkKind)
+  case(DAE.BOOLEAN_CLOCK(_))
+    then true;
+  else
+    then false;
+  end match;
+end isBooleanClock;
+
 public function getSubscriptIndex "author: marcusw
   Get the index of the given subscript as Integer. If the subscript is not a constant integer, the function returns -1."
   input DAE.Subscript iSubscript;

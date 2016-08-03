@@ -3419,6 +3419,11 @@ package DAEUtil
     output Boolean b;
   end statementsContainTryBlock;
 
+	function isBooleanClock
+	  input DAE.ClockKind clkKind;
+	  output Boolean isBooleanClk;
+	end isBooleanClock;
+
 end DAEUtil;
 
 package Types
