@@ -23,6 +23,7 @@ template translateModel(SimCode simCode)
       let target  = simulationCodeTarget()
       let &extraFuncs = buffer "" /*BUFD*/
       let &extraFuncsDecl = buffer "" /*BUFD*/
+	  let &extraResidualsFuncsDecl = buffer "" /*BUFD*/
       let &dummyTypeElemCreation = buffer "" //remove this workaround if GCC > 4.4 is the default compiler
       let stateDerVectorName = "__zDot"
       let useMemoryOptimization = Flags.isSet(Flags.HPCOM_MEMORY_OPT)
@@ -86,9 +87,10 @@ template translateModel(SimCode simCode)
       let() = textFile(simulationJacobianCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", &jacobianVarsInit, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Jacobian.cpp')
       let() = textFile(simulationStateSelectionCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
       let() = textFile(simulationStateSelectionHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>StateSelection.h')
-      let() = textFile(simulationMixedSystemHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Mixed.h')
-      let()= textFile(simulationMixedSystemCppFile(simCode ,updateResiduals(simCode,extraFuncs,extraFuncsDecl,className,stateDerVectorName /*=__zDot*/, false)
+
+      let()= textFile(simulationMixedSystemCppFile(simCode ,updateResiduals(simCode,extraFuncs,extraResidualsFuncsDecl,className,stateDerVectorName /*=__zDot*/, false)
                    	                               , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Mixed.cpp')
+	  let() = textFile(simulationMixedSystemHeaderFile(simCode, &extraFuncs, &extraResidualsFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Mixed.h')
       let() = textFile(simulationWriteOutputHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>WriteOutput.h')
       let() = textFile(simulationWriteOutputCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
       let() = textFile(simulationFactoryFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
