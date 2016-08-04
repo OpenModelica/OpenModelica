@@ -421,9 +421,14 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   : QGraphicsItem(pParentComponent), mpReferenceComponent(0), mpParentComponent(pParentComponent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
-  mpComponentInfo = new ComponentInfo;
-  mpComponentInfo->setName(mpParentComponent->getComponentInfo()->getName());
-  mpComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
+  mpComponentInfo = mpParentComponent->getComponentInfo();
+  /* Ticket #4013
+   * We should have one ComponentInfo for each Component.
+   * Creating a new ComponentInfo here for inherited classes gives wrong display of text names.
+   */
+//  mpComponentInfo = new ComponentInfo;
+//  mpComponentInfo->setName(mpParentComponent->getComponentInfo()->getName());
+//  mpComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
   mpGraphicsView = mpParentComponent->getGraphicsView();
   mIsInheritedComponent = mpParentComponent->isInheritedComponent();
   mComponentType = Component::Extend;
