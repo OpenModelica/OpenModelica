@@ -39,6 +39,8 @@ public:
 
     /// Provide number (dimension) of states
     virtual int getDimContinuousStates() const = 0;
+    /// Provide number (dimension) of states
+    virtual int getDimAE() const = 0;
 
     /// Provide number (dimension) of integer variables
     virtual int getDimInteger() const = 0;
@@ -86,7 +88,7 @@ public:
     virtual void setString(const std::string* z) = 0;
 
     /// Provide the right hand side
-    virtual void setRHS(const double* f) = 0;
+    virtual void setStateDerivatives(const double* f) = 0;
     ///Restores all algloop variables for a output step
      virtual void restoreOldValues() = 0;
      ///Restores all algloop variables for last output step
@@ -97,7 +99,7 @@ public:
     virtual void evaluateODE(const UPDATETYPE command = UNDEF_UPDATE) = 0;  // vxworks
     virtual void evaluateZeroFuncs(const UPDATETYPE command = UNDEF_UPDATE) = 0;
     virtual bool evaluateConditions(const UPDATETYPE command = UNDEF_UPDATE) = 0;
-
+    virtual void evaluateDAE(const UPDATETYPE command = UNDEF_UPDATE) =0;
     virtual bool stepCompleted(double time) = 0;
     virtual bool stepStarted(double time) = 0;
 

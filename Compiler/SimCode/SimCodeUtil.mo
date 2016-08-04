@@ -446,8 +446,10 @@ algorithm
     // add residuals vars from DAE creation
     if Flags.getConfigEnum(Flags.DAE_MODE)>1 then
       daeModeSP := createDaeModeSparsePattern(bdaeModeVars, bdaeModeEqns, shared, crefToSimVarHT);
+
       residualVars := rewriteIndex(residualVars, 0);
-      algebraicVars := sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
+      crefToSimVarHT:= List.fold(residualVars,addSimVarToHashTable,crefToSimVarHT);
+	  algebraicVars := sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
       daeModeConf := match Flags.getConfigEnum(Flags.DAE_MODE) case 2 then SimCode.ALL_EQUATIONS(); case 3 then SimCode.DYNAMIC_EQUATIONS(); end match;
       daeModeData := SOME(SimCode.DAEMODEDATA(daeEquations, daeModeSP, residualVars, algebraicVars, daeModeConf));
     else

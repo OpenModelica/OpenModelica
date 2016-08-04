@@ -392,7 +392,7 @@ void CppDASSL::writeCppDASSLOutput(const double &time, const double &h, const in
       {
         _time_system->setTime(time);
         _continuous_system->setContinuousStates(_z);
-        _continuous_system->setRHS(oldValues);
+        _continuous_system->setStateDerivatives(oldValues);
         delete[] oldValues;
         //_continuous_system->evaluateAll(IContinuous::CONTINUOUS);
       }

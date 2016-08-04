@@ -38,6 +38,10 @@ public:
   virtual bool handleSystemEvents(bool* events) = 0;
 
   //virtual void saveAll() = 0;
+   virtual void getAlgebraicDAEVars(double* y) = 0;
+   virtual void setAlgebraicDAEVars(const double* y) = 0;
+   virtual void getResidual(double* f) = 0;
+
 
   virtual string getModelName() = 0;
 

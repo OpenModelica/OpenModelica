@@ -227,11 +227,13 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
       '__z[<%i%>]'
     case STATE_DER() then
       '__zDot[<%i%>]'
+	 case DAE_RESIDUAL_VAR() then
+	 '__daeResidual[<%i%>]'
     case VARIABLE() then
       match var
         case SIMVAR(index=-2) then
           // unknown in cref2simvar, e.g. local in a function, iterator or time
-          localCref(inCref, useFlatArrayNotation)
+          '<%localCref(inCref, useFlatArrayNotation)%>'
         else
           match context
             case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=false) then
@@ -241,7 +243,7 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
             case JACOBIAN_CONTEXT() then
               '_<%crefToCStr(inCref, false)%>'
             else
-              cref(inCref, useFlatArrayNotation)
+              '<%cref(inCref, useFlatArrayNotation)%>'
     else
         match context
           case ALGLOOP_CONTEXT(genInitialisation = false) then

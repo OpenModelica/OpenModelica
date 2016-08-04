@@ -1102,6 +1102,7 @@ package BackendDAE
     record ALG_STATE "algebraic state"
       VarKind oldKind;
     end ALG_STATE;
+	record DAE_RESIDUAL_VAR end DAE_RESIDUAL_VAR; // variable kind used for DAEmode
   end VarKind;
 
   uniontype SubClock

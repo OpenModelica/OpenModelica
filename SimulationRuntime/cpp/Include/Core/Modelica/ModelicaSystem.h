@@ -69,7 +69,7 @@ public:
   virtual void setString(const std::string* z);
 
   /// Provide the right hand side
-  virtual void setRHS(const double* f);
+  virtual void setStateDerivatives(const double* f);
 
   // Update transfer behavior of the system of equations according to command given by solver
   virtual bool evaluateAll(const UPDATETYPE command = IContinuous::UNDEF_UPDATE);

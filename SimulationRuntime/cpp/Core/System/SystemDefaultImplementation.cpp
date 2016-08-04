@@ -39,6 +39,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , _simObjects (simObjects)
   , __z          (_simObjects->getSimVars(modelName)->getStateVector())
   , __zDot        (_simObjects->getSimVars(modelName)->getDerStateVector())
+  , __daeResidual(NULL)
   , _conditions      (NULL)
   , _time_conditions    (NULL)
   , _dimContinuousStates  (0)
@@ -76,6 +77,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementa
   , _simObjects (shared_ptr<ISimObjects>(instance.getSimObjects()->clone()))
   , __z          (_simObjects->getSimVars(instance.getModelName())->getStateVector())
   , __zDot        (_simObjects->getSimVars(instance.getModelName())->getDerStateVector())
+  , __daeResidual(NULL)
   , _conditions      (NULL)
   , _time_conditions    (NULL)
   , _dimContinuousStates  (0)
@@ -138,6 +140,7 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
   if(_clockTime) delete [] _clockTime;
   if(_clockCondition) delete [] _clockCondition;
   if(_clockStart) delete [] _clockStart;
+  if(__daeResidual) delete [] __daeResidual;
 }
 
 void SystemDefaultImplementation::Assert(bool cond,const string& msg)
@@ -161,6 +164,11 @@ int SystemDefaultImplementation::getDimBoolean() const
 int SystemDefaultImplementation::getDimContinuousStates() const
 {
   return _dimContinuousStates;
+}
+
+int SystemDefaultImplementation::getDimAE() const
+{
+  return _dimAE;
 }
 
 int SystemDefaultImplementation::getDimInteger() const
@@ -210,6 +218,7 @@ void SystemDefaultImplementation::initialize()
     memset(__zDot,0,(_dimContinuousStates)*sizeof(double));
   }
   */
+
   if(_dimZeroFunc > 0)
   {
     if(_conditions) delete [] _conditions ;
@@ -245,6 +254,11 @@ void SystemDefaultImplementation::initialize()
     memset(_clockCondition,false,(_dimClock)*sizeof(bool));
     if (_clockStart) delete [] _clockStart;
     _clockStart = new bool [_dimClock];
+  }
+  if(_dimRHS>0)
+  {
+	   if (__daeResidual) delete [] __daeResidual;
+          __daeResidual = new double [_dimRHS];
   }
   _start_time = 0.0;
   _terminal = false;
@@ -431,9 +445,9 @@ void SystemDefaultImplementation::setContinuousStates(const double* z)
 
 };
 
-void SystemDefaultImplementation::setRHS(const double* f)
+void SystemDefaultImplementation::setStateDerivatives(const double* f)
 {
-  std::copy(f ,f + _dimRHS, __zDot);
+  std::copy(f ,f + _dimContinuousStates, __zDot);
   /*for(int i=0; i<_dimRHS; ++i)
   {
   __zDot[i] = f[i];
@@ -444,10 +458,15 @@ void SystemDefaultImplementation::setRHS(const double* f)
 /// Provide the right hand side (according to the index)
 void SystemDefaultImplementation::getRHS(double* f)
 {
-  std::copy(__zDot, __zDot+_dimRHS, f);
+  std::copy(__zDot, __zDot+_dimContinuousStates, f);
   //     for(int i=0; i<_dimRHS; ++i)
   //      f[i] = __zDot[i];
 };
+
+void SystemDefaultImplementation::getResidual(double* f)
+{
+	 std::copy(__daeResidual, __daeResidual+_dimRHS, f);
+}
 
 void  SystemDefaultImplementation::intDelay(vector<unsigned int> expr, vector<double> delay_max)
 {

@@ -143,9 +143,9 @@ void Modelica::setContinuousStates(const double* z)
   SystemDefaultImplementation::setContinuousStates(z);
 }
 
-void Modelica::setRHS(const double* f)
+void Modelica::setStateDerivatives(const double* f)
 {
-  SystemDefaultImplementation::setRHS(f);
+  SystemDefaultImplementation::setStateDerivatives(f);
 }
 
 void Modelica::evaluateZeroFuncs(const UPDATETYPE command)

@@ -81,25 +81,25 @@ private:
   void IDACore();
 
   /// Kapselung der Berechnung der rechten Seite
-  int calcFunction(const double& time, const double* y, double* yd);
+  int calcFunction(const double& time, const double* y,double *yp, double* res);
 
   // Callback für die rechte Seite
-  static int CV_fCallback(double t, N_Vector y, N_Vector ydot, N_Vector, void *user_data);
-
+  static int rhsFunctionCB(double t, N_Vector y, N_Vector ydot, N_Vector, void *user_data);
+  static void errOutputIDA(int error_code, const char *module, const char *function,    char *msg, void *userData);
   // Checks error flags of SUNDIALS
   int check_flag(void *flagvalue, const char *funcname, int opt);
 
   // Nulltellenfunktion
-  void giveZeroVal(const double &t,const double *y,double *zeroValue);
+  void giveZeroVal(const double &t,const double *y,const double *yp,double *zeroValue);
   void writeIDAOutput(const double &time,const double &h,const int &stp);
   bool isInterrupted();
   // Callback der Nullstellenfunktion
-  static int CV_ZerofCallback(double t, N_Vector y, N_Vector yp, double *zeroval, void *user_data);
+  static int zeroFunctionCB(double t, N_Vector y, N_Vector yp, double *zeroval, void *user_data);
 
   // Functions for Coloured Jacobian
-  static int CV_JCallback(long int N, realtype t, N_Vector y, N_Vector fy, DlsMat Jac,void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
+  static int jacobianFunctionCB(long int N, realtype t, N_Vector y, N_Vector fy, DlsMat Jac,void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
   int calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthcol, double* y, N_Vector fy, DlsMat Jac);
-  void initializeColoredJac();
+
 
 
 
@@ -112,6 +112,8 @@ private:
 
   long int
     _dimSys,                  ///< Input       - (total) Dimension of system (=number of ODE)
+	_dimStates,
+	_dimAE,
     _idid,                    ///< Input, Output  - Status Flag
     _locStps,                  ///< Output      - Number of Steps between two events
      _cv_rt;            ///< Temp    - ida return flag
@@ -122,15 +124,21 @@ private:
 
 
   double
-    *_z,            ///< Output      - (Current) State vector
+    /*old state vector
+	*_z,               ///< Output      - (Current) State vector
     *_zInit,          ///< Temp      - Initial state vector
-    *_zWrite,                   ///< Temp      - Zustand den das System rausschreibt
-    *_absTol,          ///         - Vektor für absolute Toleranzen
-  *_delta,
-  *_deltaInv,
-  *_ysave;
-
-
+    *_zWrite,         ///< Temp      - Zustand den das System rausschreibt
+	*/
+    *_absTol,         ///         - Vektor für absolute Toleranzen
+    *_delta,
+    *_deltaInv,
+    *_ysave,
+    *_y,                  ///< Output      - (Current) State vector and dae vars vector
+	*_yInit,
+	*_yWrite,
+	*_ypWrite,
+    *_yp,   			     ///< Output      - (Current) Derivatives for State vector and dae vars vector
+	*_dae_res;
   double
     _hOut;            ///< Temp      - Ouput step size for dense output
 

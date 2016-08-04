@@ -51,7 +51,7 @@ public:
 
   /// Provide number (dimension) of states
   virtual int getDimContinuousStates() const;
-
+  virtual int getDimAE() const;
   /// Provide number (dimension) of integer variables
   virtual int getDimInteger() const;
 
@@ -93,7 +93,7 @@ public:
 
   /// Provide the right hand side
   virtual void getRHS(double* f);
-
+  virtual void getResidual(double* f);
   virtual void  setConditions(bool* c);
   virtual void getConditions(bool* c);
   virtual void getClockConditions(bool* c);
@@ -116,7 +116,7 @@ public:
   virtual void setClock(const bool* z);
 
   /// Provide the right hand side
-  virtual void setRHS(const double* f);
+  virtual void setStateDerivatives(const double* f);
 
   /// (Re-) initialize the system of equations
   void initialize();
@@ -198,8 +198,8 @@ protected:
     InitVars<string> _string_start_values;
    double
         *__z,                 ///< "Extended state vector", containing all states and algebraic variables of all types
-        *__zDot;              ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
-
+        *__zDot,              ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
+	    *__daeResidual;
     typedef std::deque<double> buffer_type;
     typedef std::iterator_traits<buffer_type::iterator>::difference_type difference_type;
     map<unsigned int, buffer_type> _delay_buffer;
