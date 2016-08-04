@@ -1302,7 +1302,8 @@ public function createDiffedCrefName
 protected
  String str;
 algorithm
-  outCref := ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, inCref);
+  outCref := ComponentReference.replaceSubsWithString(inCref);
+  outCref := ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, outCref);
   outCref := ComponentReference.prependStringCref(inMatrixName, outCref);
 end createDiffedCrefName;
 

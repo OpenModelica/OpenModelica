@@ -59,6 +59,7 @@ protected import System;
 protected import Types;
 protected import Util;
 
+
 // do not make this public. instead use the function below.
 protected constant DAE.ComponentRef dummyCref = DAE.CREF_IDENT("dummy", DAE.T_UNKNOWN_DEFAULT, {});
 
@@ -3247,20 +3248,20 @@ algorithm
       equation
         identType = Expression.unliftArrayTypeWithSubs(subscriptLst,identType);
         cr1 = replaceSubsWithString(cr);
-        str = ExpressionDump.printListStr(subscriptLst, ExpressionDump.printSubscriptStr, "_");
-        ident1 = stringAppendList({ident, "_", str, "_"});
+        cr = makeCrefsFromSubScriptLst(subscriptLst, DAE.CREF_IDENT(ident, identType, {}));
       then
-        DAE.CREF_QUAL(ident1,identType,{},cr1);
+        joinCrefs(cr, cr1);
+
     case DAE.CREF_IDENT(subscriptLst={})
       then
         inCref;
     case DAE.CREF_IDENT(ident=ident,identType=identType,subscriptLst=subscriptLst)
       equation
         identType = Expression.unliftArrayTypeWithSubs(subscriptLst,identType);
-        str = ExpressionDump.printListStr(subscriptLst, ExpressionDump.printSubscriptStr, "_");
-        ident1 = stringAppendList({ident, "_", str, "_"});
+        cr = makeCrefsFromSubScriptLst(subscriptLst, DAE.CREF_IDENT(ident, identType, {}));
       then
-        DAE.CREF_IDENT(ident1,identType,{});
+        cr;
+
     case DAE.CREF_ITER()
       then
         inCref;
@@ -3269,6 +3270,75 @@ algorithm
         inCref;
   end match;
 end replaceSubsWithString;
+
+public function makeCrefsFromSubScriptLst
+  input list<DAE.Subscript> inSubscriptLst;
+  input DAE.ComponentRef inPreCref;
+  output DAE.ComponentRef outCref = inPreCref;
+algorithm
+  for subScript in inSubscriptLst loop
+    outCref := match(subScript)
+	    local
+	      DAE.ComponentRef cr;
+	      DAE.Exp e;
+	      String str;
+	    case DAE.INDEX(exp = e) equation
+	      cr = makeCrefsFromSubScriptExp(e);
+	    then
+	      joinCrefs(outCref, cr);
+
+	    // all other should probably fails or evaluated before
+	    else equation
+	      str = ExpressionDump.printSubscriptStr(subScript);
+        Error.addInternalError("function ComponentReference.makeCrefsFromSubScriptLst for:" + str + "\n", sourceInfo());
+      then
+        fail();
+    end match;
+  end for;
+end makeCrefsFromSubScriptLst;
+
+public function makeCrefsFromSubScriptExp
+  input DAE.Exp inExp;
+  output DAE.ComponentRef outCref;
+algorithm
+    outCref := match(inExp)
+    local
+      DAE.Operator op;
+      DAE.ComponentRef cr1, cr2;
+      String str;
+      DAE.Exp e1, e2;
+      Absyn.Path enum_lit;
+
+    case DAE.ICONST() equation
+      str = ExpressionDump.printExpStr(inExp);
+    then
+      DAE.CREF_IDENT(str,DAE.T_UNKNOWN_DEFAULT,{});
+
+    case DAE.CREF()
+    then
+      Expression.expCref(inExp);
+
+    case DAE.BINARY(operator=op, exp1=e1, exp2=e2) equation
+      str = ExpressionDump.binopSymbol(op);
+      cr1 = makeCrefsFromSubScriptExp(e1);
+      cr2 = makeCrefsFromSubScriptExp(e2);
+      outCref = prependStringCref(str, cr1);
+      outCref = joinCrefs(outCref, cr2);
+    then
+      outCref;
+
+    case DAE.ENUM_LITERAL(name = enum_lit) equation
+      str = System.stringReplace(Absyn.pathString(enum_lit), ".", "$P");
+    then
+      DAE.CREF_IDENT(str,DAE.T_UNKNOWN_DEFAULT,{});
+
+    else equation
+      str = ExpressionDump.dumpExpStr(inExp, 0);
+      Error.addInternalError("function ComponentReference.makeCrefsFromSubScriptExp for:" + str + "\n", sourceInfo());
+    then
+      fail();
+  end match;
+end makeCrefsFromSubScriptExp;
 
 public function replaceLast
   "Replaces the last part of a cref with a new cref."
