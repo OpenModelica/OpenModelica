@@ -19,7 +19,7 @@ end EventClock;
 getErrorString();
 
 simulate(EventClock);
-val(nextInterval, 0.0);
+val(nextInterval, 1e-9); //the event is not triggered at time=0, only on the right limit of time=0, at time=0 the start value should be set
 val(nextInterval, 1.0);
 getErrorString();
 
