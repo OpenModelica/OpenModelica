@@ -415,8 +415,12 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 2.22045e-16 for the constraint $EqCon$x2(time = 0.642857)
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Notification: Following iteration variables are selected by the user for strong component 1 (DAE kind: initialization):
+//   x2:VARIABLE(min = -1.0 max = 1.0 )  type: Real
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Notification: Following iteration variables are selected by the user for strong component 2 (DAE kind: simulation):
+//   x2:VARIABLE(min = -1.0 max = 1.0 )  type: Real
 // "
 // {"Files Equal!"}
 // ""
