@@ -847,6 +847,8 @@ public constant Message WRONG_VALUE_OF_ARG = MESSAGE(576, TRANSLATION(), ERROR()
   Util.gettext("Wrong value of argument to %s: %s = %s %s."));
 public constant Message USER_DEFINED_TEARING_ERROR = MESSAGE(577, SYMBOLIC(), ERROR(),
   Util.gettext("Wrong usage of user defined tearing: %s Make sure you use user defined tearing as stated in the flag description."));
+public constant Message USER_TEARING_VARS = MESSAGE(578, SYMBOLIC(), NOTIFICATION(),
+  Util.gettext("Following iteration variables are selected by the user for strong component %s (DAE kind: %s):\n%s"));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

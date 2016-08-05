@@ -3050,6 +3050,20 @@ algorithm
   outS := stringAppendList({s2,"(",s3,")"});
 end dumpMarkedVars1;
 
+public function dumpMarkedVarList
+"Dumps the variables given as list of indexes to a string."
+  input list<BackendDAE.Var> varList;
+  input list<Integer> selList;
+  output String outString = "";
+protected
+  BackendDAE.Var var;
+algorithm
+  for sel in selList loop
+    var := listGet(varList, sel);
+    outString := outString + "  " + varString(var) + "\n";
+  end for;
+end dumpMarkedVarList;
+
 public function dumpComponentsGraphStr
 "Dumps the assignment graph used to determine strong
  components to format suitable for Mathematica"

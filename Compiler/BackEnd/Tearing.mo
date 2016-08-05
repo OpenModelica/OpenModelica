@@ -175,7 +175,7 @@ algorithm
     (userTVars, userResiduals) := getUserTearingSet(userTVars, userResiduals, strongComponentIndex);
 
     // Check for user defined tearing for this component
-    if not listEmpty(userTVars) then
+    if not listEmpty(userTVars) and not listEmpty(userResiduals) then
       tearingMethod := USER_DEFINED_TEARING();
     end if;
   end if;
@@ -196,7 +196,7 @@ algorithm
           if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
             print("\nTearing type: heuristic\n");
           end if;
-          (ocomp,outRunMatching) := CellierTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
+          (ocomp,outRunMatching) := CellierTearing(isyst, ishared, eindex, vindx, userTVars, ojac, jacType, mixedSystem, strongComponentIndex);
           if debug then execStat("Tearing.CellierTearing"); end if;
         then (ocomp,outRunMatching);
 
@@ -396,10 +396,6 @@ algorithm
           i := i + 2 + listGet(userResiduals, i+1);
         end if;
     end while;
-    if listEmpty(userResidualsThisComponent) then
-      Error.addMessage(Error.USER_DEFINED_TEARING_ERROR, {"The corresponding residual equations to the selected tearing variables for strong component " + intString(strongComponentIndex) + " can not be found."});
-      fail();
-    end if;
   end if;
 end getUserTearingSet;
 
@@ -484,7 +480,7 @@ algorithm
   columark := arrayCreate(size,-1);
 
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
-  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst);
+  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst, {});
 
   // determine tvars and do cheap matching until a maximum matching is there
   // if cheap matching stucks select additional tearing variable and continue
@@ -1708,9 +1704,11 @@ author: ptaeuber FHB 2013-2016"
   input BackendDAE.Shared ishared;
   input list<Integer> eindex;
   input list<Integer> vindx;
+  input list<Integer> tearingSelect_always;
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
   input BackendDAE.JacobianType jacType;
   input Boolean mixedSystem;
+  input Integer strongComponentIndex;
   output BackendDAE.StrongComponent ocomp;
   output Boolean outRunMatching;
 protected
@@ -1736,11 +1734,6 @@ protected
   String s,modelName;
   constant Boolean debug = false;
 algorithm
-
-  userTVars := Flags.getConfigIntList(Flags.SET_TEARING_VARS);
-  userResiduals := Flags.getConfigIntList(Flags.SET_RESIDUAL_EQNS);
-  // print("\nUsers tearing vars: " + stringDelimitList(List.map(userTVars,intString),",") + "\n");
-  // print("\nUsers residual equations: " + stringDelimitList(List.map(userResiduals,intString),",") + "\n");
 
   linear := getLinearfromJacType(jacType);
   BackendDAE.EQSYSTEM(stateSets = stateSets) := isyst;
@@ -1817,7 +1810,11 @@ algorithm
   end if;
 
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
-  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst);
+  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst, tearingSelect_always);
+  if not listEmpty(tSel_always) then
+    Error.addMessage(Error.USER_TEARING_VARS, {intString(strongComponentIndex), BackendDump.printBackendDAEType2String(DAEtype), BackendDump.dumpMarkedVarList(var_lst, tSel_always)});
+  end if;
+
   if debug then execStat("Tearing.CellierTearing -> 3"); end if;
 
   // Initialize matching
@@ -2000,7 +1997,7 @@ protected function tearingSelect
  "collects variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
   author: ptaeuber FHB 2014-05"
   input list<BackendDAE.Var> var_lstIn;
-  output list<Integer> always = {};
+  input output list<Integer> always;
   output list<Integer> prefer = {};
   output list<Integer> avoid = {};
   output list<Integer> never = {};
@@ -2015,7 +2012,7 @@ algorithm
 
       // Add the variable's index to the appropriate list.
       _ := match(ts)
-        case SOME(BackendDAE.ALWAYS()) algorithm always := index :: always; then ();
+        case SOME(BackendDAE.ALWAYS()) guard not listMember(index, always) algorithm always := index :: always; then ();
         case SOME(BackendDAE.PREFER()) algorithm prefer := index :: prefer; then ();
         case SOME(BackendDAE.AVOID()) algorithm avoid  := index :: avoid;  then ();
         case SOME(BackendDAE.NEVER()) algorithm never  := index :: never;  then ();

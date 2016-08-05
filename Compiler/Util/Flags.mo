@@ -1301,7 +1301,7 @@ constant ConfigFlag INLINE_METHOD = CONFIG_FLAG(96, "inlineMethod",
                "append  : This method inlines by adding additional variables to the whole system. Might lead to much bigger system."));
 constant ConfigFlag SET_TEARING_VARS = CONFIG_FLAG(97, "setTearingVars",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
-  Util.gettext("Sets the tearing variables by its strong component indexes. Use '+d=tearingdump' to find out the relevant indexes.\nUse following format: '--setTearingVars=(sci,n,t1,...,tn)*', with sci = strong component index, n = number of tearing variables, t1,...tn = tearing variables.\nE.g.: '--setTearingVars=4,2,3,5' would select variables 3 and 5 in strong component 4.\nOnly works in combination with 'setResidualEqns'."));
+  Util.gettext("Sets the tearing variables by its strong component indexes. Use '+d=tearingdump' to find out the relevant indexes.\nUse following format: '--setTearingVars=(sci,n,t1,...,tn)*', with sci = strong component index, n = number of tearing variables, t1,...tn = tearing variables.\nE.g.: '--setTearingVars=4,2,3,5' would select variables 3 and 5 in strong component 4."));
 constant ConfigFlag SET_RESIDUAL_EQNS = CONFIG_FLAG(98, "setResidualEqns",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
   Util.gettext("Sets the residual equations by its strong component indexes. Use '+d=tearingdump' to find out the relevant indexes for the collective equations.\nUse following format: '--setResidualEqns=(sci,n,r1,...,rn)*', with sci = strong component index, n = number of residual equations, r1,...rn = residual equations.\nE.g.: '--setResidualEqns=4,2,3,5' would select equations 3 and 5 in strong component 4.\nOnly works in combination with 'setTearingVars'."));
