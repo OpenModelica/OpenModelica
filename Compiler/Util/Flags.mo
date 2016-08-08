@@ -1323,6 +1323,9 @@ constant ConfigFlag IGNORE_SIMULATION_FLAGS_ANNOTATION = CONFIG_FLAG(103, "ignor
 constant ConfigFlag EVAL_CONST_ARGS_ONLY = CONFIG_FLAG(104, "evalConstArgsOnly",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Util.gettext("Only evaluate parameter function-bindings if the arguments could be evaluated to constants."));
+constant ConfigFlag DYNAMIC_TEARING_FOR_INITIALIZATION = CONFIG_FLAG(105, "dynamicTearingForInitialization",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Enable Dynamic Tearing also for the initialization system."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1432,7 +1435,8 @@ constant list<ConfigFlag> allConfigFlags = {
   ALARM,
   TOTAL_TEARING,
   IGNORE_SIMULATION_FLAGS_ANNOTATION,
-  EVAL_CONST_ARGS_ONLY
+  EVAL_CONST_ARGS_ONLY,
+  DYNAMIC_TEARING_FOR_INITIALIZATION
 };
 
 public function new

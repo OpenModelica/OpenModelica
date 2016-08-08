@@ -1725,12 +1725,13 @@ protected
   BackendDAE.AdjacencyMatrixEnhanced me;
   BackendDAE.AdjacencyMatrixTEnhanced meT;
   BackendDAE.BackendDAEType DAEtype;
+  String DAEtypeStr;
   BackendDAE.TearingSet strictTearingSet;
   BackendDAE.StateSets stateSets;
   Option<BackendDAE.TearingSet> casualTearingSet;
   list<BackendDAE.Equation> eqn_lst;
   list<BackendDAE.Var> var_lst;
-  Boolean linear,simulation,b,noDynamicStateSelection,dynamicTearing;
+  Boolean linear,b,noDynamicStateSelection,dynamicTearing;
   String s,modelName;
   constant Boolean debug = false;
 algorithm
@@ -1739,13 +1740,16 @@ algorithm
   BackendDAE.EQSYSTEM(stateSets = stateSets) := isyst;
   noDynamicStateSelection := listEmpty(stateSets);
   BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
-  simulation := stringEq(BackendDump.printBackendDAEType2String(DAEtype), "simulation");
+  DAEtypeStr := BackendDump.printBackendDAEType2String(DAEtype);
 
   // check if dynamic tearing is enabled for linear/nonlinear system
-  dynamicTearing := match (Config.dynamicTearing(),linear,noDynamicStateSelection,simulation)
-    case ("true",_,true,true) then true;
-    case ("linear",true,true,true) then true;
-    case ("nonlinear",false,true,true) then true;
+  dynamicTearing := match (Config.dynamicTearing(),linear,noDynamicStateSelection,DAEtypeStr,Flags.getConfigBool(Flags.DYNAMIC_TEARING_FOR_INITIALIZATION))
+    case ("true",_,true,"simulation",_) then true;
+    case ("true",_,true,"initialization",true) then true;
+    case ("linear",true,true,"simulation",_) then true;
+    case ("linear",true,true,"initialization",true) then true;
+    case ("nonlinear",false,true,"simulation",_) then true;
+    case ("nonlinear",false,true,"initialization",true) then true;
     else false;
   end match;
 
