@@ -1877,8 +1877,12 @@ end functionSetupMixedSystemsTemp;
 template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> initialEquations_lambda0, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<JacobianMatrix> jacobianMatrixes, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
-  let &tempeqns = buffer ""
-  let &tempeqns += (allEquations |> eq => match eq case eq as SES_LINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
+  let &tempeqns1 = buffer ""
+  let &tempeqns1 += (initialEquations |> eq => match eq case eq as SES_LINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
+  let &tempeqns2 = buffer ""
+  let &tempeqns2 += (initialEquations_lambda0 |> eq => match eq case eq as SES_LINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
+  let &tempeqns3 = buffer ""
+  let &tempeqns3 += (allEquations |> eq => match eq case eq as SES_LINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
   let initbody = functionInitialLinearSystemsTemp(initialEquations, modelNamePrefix)
   let initbody_lambda0 = functionInitialLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix)
   let parambody = functionInitialLinearSystemsTemp(parameterEquations, modelNamePrefix)
@@ -1886,7 +1890,9 @@ template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<S
   let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionInitialLinearSystemsTemp(jacobianEquations, modelNamePrefix);separator="\n\n")
   <<
   /* function initialize linear systems */
-  <%tempeqns%>
+  <%tempeqns1%>
+  <%tempeqns2%>
+  <%tempeqns3%>
 
   void <%symbolName(modelNamePrefix,"initialLinearSystem")%>(int nLinearSystems, LINEAR_SYSTEM_DATA* linearSystemData)
   {
@@ -2374,7 +2380,9 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
   let &tempeqns1 = buffer ""
   let &tempeqns1 += (initialEquations |> eq => match eq case eq as SES_NONLINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*, threadData_t*);' ; separator = "\n")
   let &tempeqns2 = buffer ""
-  let &tempeqns2 += (allEquations |> eq => match eq case eq as SES_NONLINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*, threadData_t*);' ; separator = "\n")
+  let &tempeqns2 += (initialEquations_lambda0 |> eq => match eq case eq as SES_NONLINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*, threadData_t*);' ; separator = "\n")
+  let &tempeqns3 = buffer ""
+  let &tempeqns3 += (allEquations |> eq => match eq case eq as SES_NONLINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*, threadData_t*);' ; separator = "\n")
   let initbody = functionInitialNonLinearSystemsTemp(initialEquations, modelNamePrefix)
   let initbody_lambda0 = functionInitialNonLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix)
   let parambody = functionInitialNonLinearSystemsTemp(parameterEquations,modelNamePrefix)
@@ -2384,6 +2392,7 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
   /* function initialize non-linear systems */
   <%tempeqns1%>
   <%tempeqns2%>
+  <%tempeqns3%>
 
   void <%symbolName(modelNamePrefix,"initialNonLinearSystem")%>(int nNonLinearSystems, NONLINEAR_SYSTEM_DATA* nonLinearSystemData)
   {
