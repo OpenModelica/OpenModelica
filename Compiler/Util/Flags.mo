@@ -1326,6 +1326,9 @@ constant ConfigFlag EVAL_CONST_ARGS_ONLY = CONFIG_FLAG(104, "evalConstArgsOnly",
 constant ConfigFlag DYNAMIC_TEARING_FOR_INITIALIZATION = CONFIG_FLAG(105, "dynamicTearingForInitialization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Enable Dynamic Tearing also for the initialization system."));
+constant ConfigFlag PREFER_TVARS_WITH_START_VALUE = CONFIG_FLAG(106, "preferTVarsWithStartValue",
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  Util.gettext("Prefer tearing variables with start value for initialization."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1436,7 +1439,8 @@ constant list<ConfigFlag> allConfigFlags = {
   TOTAL_TEARING,
   IGNORE_SIMULATION_FLAGS_ANNOTATION,
   EVAL_CONST_ARGS_ONLY,
-  DYNAMIC_TEARING_FOR_INITIALIZATION
+  DYNAMIC_TEARING_FOR_INITIALIZATION,
+  PREFER_TVARS_WITH_START_VALUE
 };
 
 public function new

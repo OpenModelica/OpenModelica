@@ -439,10 +439,12 @@ protected
   DAE.FunctionTree funcs;
   list<Integer> asslst1, asslst2;
   list<Integer> tSel_always, tSel_prefer, tSel_avoid, tSel_never;
+  String DAEtypeStr;
 algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\n" + BORDER + "\nBEGINNING of omcTearing\n\n");
   end if;
+  DAEtypeStr := BackendDump.printBackendDAEType2String(ishared.backendDAEType);
   // generate Subsystem to get the incidence matrix
   size := listLength(vindx);
   eqn_lst := BackendEquation.getEqns(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
@@ -480,7 +482,7 @@ algorithm
   columark := arrayCreate(size,-1);
 
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
-  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst, {});
+  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst, {}, DAEtypeStr);
 
   // determine tvars and do cheap matching until a maximum matching is there
   // if cheap matching stucks select additional tearing variable and continue
@@ -1712,10 +1714,10 @@ author: ptaeuber FHB 2013-2016"
   output BackendDAE.StrongComponent ocomp;
   output Boolean outRunMatching;
 protected
-  Integer size,tornsize;
-  array<Integer> ass1,ass2,mapIncRowEqn;
+  Integer size, tornsize;
+  array<Integer> ass1, ass2, mapIncRowEqn;
   array<list<Integer>> mapEqnIncRow;
-  list<Integer> OutTVars,residual,residual_coll,order,unsolvables,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,userTVars,userResiduals;
+  list<Integer> OutTVars, residual, residual_coll, order, unsolvables, discreteVars, tSel_always, tSel_prefer, tSel_avoid,tSel_never;
   BackendDAE.InnerEquations innerEquations;
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
@@ -1814,11 +1816,10 @@ algorithm
   end if;
 
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
-  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst, tearingSelect_always);
+  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst, tearingSelect_always, DAEtypeStr);
   if not listEmpty(tSel_always) then
     Error.addMessage(Error.USER_TEARING_VARS, {intString(strongComponentIndex), BackendDump.printBackendDAEType2String(DAEtype), BackendDump.dumpMarkedVarList(var_lst, tSel_always)});
   end if;
-
   if debug then execStat("Tearing.CellierTearing -> 3"); end if;
 
   // Initialize matching
@@ -2002,6 +2003,7 @@ protected function tearingSelect
   author: ptaeuber FHB 2014-05"
   input list<BackendDAE.Var> var_lstIn;
   input output list<Integer> always;
+  input String DAEtypeStr;
   output list<Integer> prefer = {};
   output list<Integer> avoid = {};
   output list<Integer> never = {};
@@ -2009,7 +2011,9 @@ protected
   BackendDAE.Var var;
   Integer index = 1;
   Option<BackendDAE.TearingSelect> ts;
+  Boolean preferTVarsWithStartValue;
 algorithm
+  preferTVarsWithStartValue := Flags.getConfigBool(Flags.PREFER_TVARS_WITH_START_VALUE) and stringEq(DAEtypeStr, "initialization");
   for var in var_lstIn loop
       // Get the value of the variable's tearingSelect attribute.
     BackendDAE.VAR(tearingSelectOption = ts) := var;
@@ -2023,11 +2027,18 @@ algorithm
         else ();
       end match;
 
+      // Also prefer variables with start value
+      if preferTVarsWithStartValue then
+        if BackendVariable.varHasStartValue(var) then
+          prefer := index :: prefer;
+        end if;
+      end if;
+
       index := index + 1;
   end for;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("\nManual selection of iteration variables by variable annotations:\n");
+    print("\nExternal influence on selection of iteration variables by variable annotations (tearingSelect)" + (if preferTVarsWithStartValue then " and preference of variables with start attribute" else "") + ":\n");
     print("Always: " + stringDelimitList(List.map(always, intString), ",") + "\n");
     print("Prefer: " + stringDelimitList(List.map(prefer, intString), ",")+ "\n");
     print("Avoid: " + stringDelimitList(List.map(avoid, intString), ",")+ "\n");
@@ -3072,22 +3083,19 @@ protected function preferAvoidVariables
  "multiplies points of variables with annotation attribute 'tearingSelect=prefer' or 'tearingSelect=avoid' with factor
   author: ptaeuber FHB 2014-05"
   input list<Integer> varsIn;
-  input list<Integer> pointsIn;
+  input output list<Integer> points;
   input list<Integer> preferAvoidIn;
   input Real factor;
-  output list<Integer> pointsOut=pointsIn;
 protected
-  Integer index=1, preferAvoidInLenght, pos;
+  Integer preferAvoidVar, pos;
 algorithm
-  preferAvoidInLenght := listLength(preferAvoidIn);
-  while intLe(index, preferAvoidInLenght) loop
+  for preferAvoidVar in preferAvoidIn loop
     try
-      pos := List.position(listGet(preferAvoidIn,index),varsIn);
-      pointsOut := List.set(pointsIn,pos,realInt(realMul(factor,intReal(listGet(pointsIn,pos)))));
+      pos := List.position(preferAvoidVar,varsIn);
+      points := List.set(points,pos,realInt(realMul(factor,intReal(listGet(points,pos)))));
     else
     end try;
-    index := index + 1;
-  end while;
+  end for;
 end preferAvoidVariables;
 
 
