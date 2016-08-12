@@ -1585,55 +1585,20 @@ protected function createEquations
   input list<SimCodeVar.SimVar> itempvars;
   output list<SimCode.SimEqSystem> equations;
   output list<SimCode.SimEqSystem> noDiscEquations;
-  output Integer ouniqueEqIndex;
-  output list<SimCodeVar.SimVar> otempvars;
+  output Integer ouniqueEqIndex = iuniqueEqIndex;
+  output list<SimCodeVar.SimVar> otempvars = itempvars;
+protected
+  list<list<SimCode.SimEqSystem>> accEquations = {};
+  list<list<SimCode.SimEqSystem>> accNoDiscEquations = {};
 algorithm
-  (equations, noDiscEquations, ouniqueEqIndex, otempvars) := createEquations1(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, syst, shared, comps, iuniqueEqIndex, itempvars, {}, {});
+  for comp in comps loop
+    (equations, noDiscEquations, ouniqueEqIndex, otempvars) := createEquationsWork(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, syst, shared, comp, ouniqueEqIndex, otempvars);
+    accEquations := equations::accEquations;
+    accNoDiscEquations := noDiscEquations::accNoDiscEquations;
+  end for;
+  equations := List.flattenReverse(accEquations);
+  noDiscEquations := List.flattenReverse(accNoDiscEquations);
 end createEquations;
-
-protected function createEquations1
-  input Boolean includeWhen;
-  input Boolean skipDiscInZc;
-  input Boolean genDiscrete;
-  input Boolean skipDiscInAlgorithm;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  input BackendDAE.StrongComponents comps;
-  input Integer iuniqueEqIndex;
-  input list<SimCodeVar.SimVar> itempvars;
-  input list<list<SimCode.SimEqSystem>> accEquations;
-  input list<list<SimCode.SimEqSystem>> accNoDiscEquations;
-  output list<SimCode.SimEqSystem> equations;
-  output list<SimCode.SimEqSystem> noDiscEquations;
-  output Integer ouniqueEqIndex;
-  output list<SimCodeVar.SimVar> otempvars;
-algorithm
-  (equations, noDiscEquations, ouniqueEqIndex, otempvars) := match (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, syst, shared, comps, iuniqueEqIndex, itempvars, accEquations, accNoDiscEquations)
-    local
-      BackendDAE.StrongComponent comp;
-      BackendDAE.StrongComponents restComps;
-      Integer index, vindex, uniqueEqIndex;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
-      BackendDAE.Var v;
-      list<BackendDAE.Equation> eqnlst;
-      list<BackendDAE.Var> varlst;
-      list<Integer> zcEqns;
-      list<SimCode.SimEqSystem> equations_, equations1, noDiscEquations1;
-      list<SimCodeVar.SimVar> tempvars;
-      BackendDAE.ExtraInfo ei;
-
-      // handle empty
-    case (_, _, _, _, _, _, {}, _, _, _, _) then (List.flattenReverse(accEquations), List.flattenReverse(accNoDiscEquations), iuniqueEqIndex, itempvars);
-
-      // ignore when equations if we should not generate them
-    case (_, _, _, _, _, _, comp :: restComps, _, _, _, _)
-      equation
-        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquationsWork(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, syst, shared, comp, iuniqueEqIndex, itempvars);
-        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations1(false, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, syst, shared, restComps, uniqueEqIndex, tempvars, equations::accEquations, noDiscEquations::accNoDiscEquations);
-      then (equations, noDiscEquations, uniqueEqIndex, tempvars);
-  end match;
-end createEquations1;
 
 protected function createEquationsWork
   input Boolean includeWhen;
@@ -1650,54 +1615,46 @@ protected function createEquationsWork
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
 algorithm
-  (equations, noDiscEquations, ouniqueEqIndex, otempvars) := matchcontinue (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, syst, shared, comp, iuniqueEqIndex, itempvars)
+  (equations, noDiscEquations, ouniqueEqIndex, otempvars) := match(includeWhen, skipDiscInZc, genDiscrete, syst, shared, comp)
     local
       Integer index, vindex, uniqueEqIndex;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      BackendDAE.Var v;
       list<BackendDAE.Equation> eqnlst;
       list<BackendDAE.Var> varlst;
-      list<Integer> zcEqns;
-      list<SimCode.SimEqSystem> equations_, equations1, noDiscEquations1;
+      list<SimCode.SimEqSystem> equations1, noDiscEquations1;
       list<SimCodeVar.SimVar> tempvars;
       BackendDAE.ExtraInfo ei;
 
       // ignore when equations if we should not generate them
-    case (false, _, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index), _, _)
-      equation
-        BackendDAE.WHEN_EQUATION() = BackendEquation.equationNth1(eqns, index);
-      then ({}, {}, iuniqueEqIndex, itempvars);
+    case (false, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index))
+      guard(BackendEquation.isWhenEquation(BackendEquation.equationNth1(eqns, index)))
+     then ({}, {}, iuniqueEqIndex, itempvars);
 
-    case (false, _, _, _, BackendDAE.EQSYSTEM(), _, BackendDAE.SINGLEWHENEQUATION(), _, _)
+    case (false, _, _, BackendDAE.EQSYSTEM(), _, BackendDAE.SINGLEWHENEQUATION())
       then ({}, {}, iuniqueEqIndex, itempvars);
 
         // ignore discrete if we should not generate them
-    case (_, _, false, _, BackendDAE.EQSYSTEM(orderedVars=vars), _, BackendDAE.SINGLEEQUATION(var=index), _, _)
-      equation
-        v = BackendVariable.getVarAt(vars, index);
-        true = BackendVariable.isVarDiscrete(v);
-      then ({}, {}, iuniqueEqIndex, itempvars);
-    case (_, _, false, _, BackendDAE.EQSYSTEM(), _, BackendDAE.SINGLEWHENEQUATION(), _, _)
+    case (_, _, false, BackendDAE.EQSYSTEM(orderedVars=vars), _, BackendDAE.SINGLEEQUATION(var=index))
+      guard(BackendVariable.isVarDiscrete(BackendVariable.getVarAt(vars, index)))
+     then ({}, {}, iuniqueEqIndex, itempvars);
+
+    case (_, _, false, BackendDAE.EQSYSTEM(), _, BackendDAE.SINGLEWHENEQUATION())
       then ({}, {}, iuniqueEqIndex, itempvars);
 
         // ignore discrete in zero crossing if we should not generate them
-    case (_, true, _, _, BackendDAE.EQSYSTEM(orderedVars=vars), _, BackendDAE.SINGLEEQUATION(eqn=index, var=vindex), _, _)
-      equation
-        v = BackendVariable.getVarAt(vars, vindex);
-        true = BackendVariable.isVarDiscrete(v);
-        zcEqns = zeroCrossingsEquations(syst, shared);
-        true = listMember(index, zcEqns);
-      then ({}, {}, iuniqueEqIndex, itempvars);
+    case (_, true, _, BackendDAE.EQSYSTEM(orderedVars=vars), _, BackendDAE.SINGLEEQUATION(eqn=index, var=vindex))
+      guard(BackendVariable.isVarDiscrete(BackendVariable.getVarAt(vars, vindex)) and listMember(index, zeroCrossingsEquations(syst, shared)))
+     then ({}, {}, iuniqueEqIndex, itempvars);
 
         // single equation
-    case (_, _, _, _, _, _, BackendDAE.SINGLEEQUATION(eqn=index, var=vindex), _, _)
+    case (_, _, _, _, _, BackendDAE.SINGLEEQUATION(eqn=index, var=vindex))
       equation
         (equations1, uniqueEqIndex, tempvars) = createEquation(index, vindex, syst, shared, skipDiscInAlgorithm, iuniqueEqIndex, itempvars);
       then (equations1, equations1, uniqueEqIndex, tempvars);
 
       // A single array equation
-    case (_, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(info = ei), BackendDAE.SINGLEARRAY(), _, _)
+    case (_, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(info = ei), BackendDAE.SINGLEARRAY())
       equation
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
@@ -1706,7 +1663,7 @@ algorithm
       then (equations1, noDiscEquations1, uniqueEqIndex, tempvars);
 
         // A single algorithm section for several variables.
-    case (_, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEALGORITHM(), _, _)
+    case (_, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEALGORITHM())
       equation
         (eqnlst, varlst, _) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         varlst = List.map(varlst, BackendVariable.transformXToXd);
@@ -1714,7 +1671,7 @@ algorithm
       then (equations1, equations1, uniqueEqIndex, itempvars);
 
       // A single complex equation
-    case (_, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(info = ei), BackendDAE.SINGLECOMPLEXEQUATION(), _, _)
+    case (_, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(info = ei), BackendDAE.SINGLECOMPLEXEQUATION())
       equation
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
@@ -1723,7 +1680,7 @@ algorithm
       then (equations1, equations1, uniqueEqIndex, tempvars);
 
     // A single when equation
-    case (_, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEWHENEQUATION(), _, _)
+    case (_, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEWHENEQUATION())
       equation
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
@@ -1732,7 +1689,7 @@ algorithm
       then (equations1, equations1, uniqueEqIndex, tempvars);
 
     // A single if equation
-    case (_, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEIFEQUATION(), _, _)
+    case (_, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEIFEQUATION())
       equation
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
@@ -1741,16 +1698,17 @@ algorithm
       then (equations1, equations1, uniqueEqIndex, tempvars);
 
     // a system of equations
-    case (_, _, _, _, _, _, _, _, _)
+    case (_, _, _, _, _, _)
       equation
         (equations1, noDiscEquations1, uniqueEqIndex, tempvars, _, _) = createOdeSystem(genDiscrete, skipDiscInAlgorithm, syst, shared, comp, iuniqueEqIndex, itempvars, 1, {}, SimCode.NO_MAPPING());
       then (equations1, noDiscEquations1, uniqueEqIndex, tempvars);
 
     // failure
-    else equation
-      Error.addInternalError("createEquation failed", sourceInfo());
-    then fail();
-  end matchcontinue;
+    else
+      equation
+        Error.addInternalError("createEquation failed", sourceInfo());
+     then fail();
+  end match;
 end createEquationsWork;
 
 // =============================================================================
@@ -3905,9 +3863,7 @@ algorithm
     eqn := BackendEquation.equationNth1(eqns, eqnindx);
     // generate comp
     comp := createTornSystemInnerEqns1(eqn, eqnindx, vars);
-    (simequations, _, ouniqueEqIndex, otempvars) :=
-      createEquations(true, false, true, skipDiscInAlgorithm, isyst, ishared,
-        {comp}, ouniqueEqIndex, otempvars);
+    (simequations, _, ouniqueEqIndex, otempvars) := createEquations(true, false, true, skipDiscInAlgorithm, isyst, ishared, {comp}, ouniqueEqIndex, otempvars);
     DoubleEndedList.push_list_back(equations, simequations);
   end for;
 
@@ -5492,8 +5448,7 @@ algorithm
       (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) =
           BackendDAEUtil.transformBackendDAE( subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(),
                                               BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE() );
-      (equations_, _, uniqueEqIndex, tempvars) =
-          createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
+      (equations_, _, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
     then (equations_, uniqueEqIndex, tempvars);
 
     else equation
