@@ -91,8 +91,8 @@ protected:
 
   int
     _dimSys,                  ///< Number of equations (=dimension of the system)
-    _dimZeroFunc,             ///< Number of zero functions
-	_dimClock;		 	      ///< Number of Clocks
+    _dimZeroFunc;             ///< Number of zero functions
+
   bool*
     _events;                  ///< Vector (of dimension _dimZeroF) indicating which zero function caused an event
 

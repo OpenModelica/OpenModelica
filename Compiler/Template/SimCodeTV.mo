@@ -337,9 +337,7 @@ package SimCode
 
   uniontype SubPartition
     record SUBPARTITION
-      Integer idx;  //a unique index among all subpartitions
       list<tuple<SimCodeVar.SimVar, Boolean>> vars;
-      list<SimEqSystem> previousAssignments;
       list<SimEqSystem> equations;
       list<SimEqSystem> removedEquations;
       BackendDAE.SubClock subClock;
@@ -885,11 +883,6 @@ package SimCodeUtil
     input list<SimCode.ClockedPartition> inPartitions;
     output list<SimCode.SubPartition> outSubPartitions;
   end getSubPartitions;
-
-  function getSubPartitionIdx
-    input SimCode.SubPartition sub;
-    output Integer idx;
-  end getSubPartitionIdx;
 
   function getClockIndex
     input SimCodeVar.SimVar simVar;
@@ -3419,11 +3412,6 @@ package DAEUtil
     input list<DAE.Statement> stmts;
     output Boolean b;
   end statementsContainTryBlock;
-
-	function isBooleanClock
-	  input DAE.ClockKind clkKind;
-	  output Boolean isBooleanClk;
-	end isBooleanClock;
 
 end DAEUtil;
 

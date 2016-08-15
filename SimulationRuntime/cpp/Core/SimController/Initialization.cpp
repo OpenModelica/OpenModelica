@@ -22,7 +22,9 @@ void Initialization::initializeSystem()
   shared_ptr<IContinuous> continous_system = dynamic_pointer_cast<IContinuous>(_system);
   shared_ptr<IEvent> event_system = dynamic_pointer_cast<IEvent>(_system);
   shared_ptr<IMixedSystem> mixed_system = dynamic_pointer_cast<IMixedSystem>(_system);
-
+  int dim = event_system->getDimZeroFunc();
+  bool* conditions0 = new bool[dim];
+  bool* conditions1 = new bool[dim];
 
   _system->setInitial(true);
   //Initialization of continous equations and bounded parameters
@@ -56,6 +58,7 @@ void Initialization::initializeSystem()
     if(_solver->stateSelection())
       cout << "Cannot initialize the dynamic state selection in an unique way." << std::endl;
   }
-
+  delete[] conditions0;
+  delete[] conditions1;
 }
 /** @} */ // end of coreSimcontroller

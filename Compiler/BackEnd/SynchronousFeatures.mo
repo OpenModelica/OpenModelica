@@ -145,9 +145,7 @@ protected function createBoolClockWhenClauses
   output list<BackendDAE.Equation> outRemovedEqs = inRemovedEqs;
 protected
   BackendDAE.BasePartition basePartition;
-  Integer subPartIdx; // this is the index of the base clock subpartitions in the flattened list of all subpartitions
 algorithm
-  subPartIdx := 1;
   for i in 1:arrayLength(inShared.partitionsInfo.basePartitions) loop
     basePartition := inShared.partitionsInfo.basePartitions[i];
     outRemovedEqs := match basePartition.clock
@@ -157,13 +155,12 @@ algorithm
         BackendDAE.Equation eq;
       case DAE.BOOLEAN_CLOCK(c, _)
         equation
-          e = DAE.CALL(Absyn.IDENT("$_clkfire"), {DAE.ICONST(subPartIdx)}, DAE.callAttrBuiltinOther);
+          e = DAE.CALL(Absyn.IDENT("$_clkfire"), {DAE.ICONST(i)}, DAE.callAttrBuiltinOther);
           whenEq = BackendDAE.WHEN_STMTS(c, {BackendDAE.NORETCALL(e, DAE.emptyElementSource)}, NONE());
           eq = BackendDAE.WHEN_EQUATION(0, whenEq, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
         then eq::outRemovedEqs;
       else outRemovedEqs;
     end match;
-    subPartIdx := subPartIdx + basePartition.nSubClocks; // the condition triggers the first clock in the list of subpartitions, i.e. the base clock
   end for;
 end createBoolClockWhenClauses;
 

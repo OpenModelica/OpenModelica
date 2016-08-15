@@ -103,7 +103,7 @@ void CppDASSL::initialize()
     IGlobalSettings* global_settings = dynamic_cast<ISolverSettings*>(_cppdasslsettings)->getGlobalSettings();
     _hOut = global_settings->gethOutput();
     std::cout<<"Using output step size "<<_hOut<<std::endl;
-    _dimZeroFunc = _event_system->getDimZeroFunc()+_event_system->getDimClock();
+    _dimZeroFunc = _event_system->getDimZeroFunc();
     _y = new double[_dimSys];
     _yp = new double[_dimSys];
     for(int i=0; i<_numThreads; ++i) {

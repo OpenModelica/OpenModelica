@@ -37,8 +37,7 @@ private:
     std::vector<std::vector<std::pair<double,int> > > _tStops;            ///< - Stopzeitpunkte aufgrund von Time-Events
     shared_ptr<ISolver>                        _solver;            ///< - Solver
     int                                               _dimtimeevent,      ///< Temp - Timeevent-Dimensionen-Array
-                                                      _dimZeroFunc,       ///< - Number of zero functions
-													  _dimClock;          ///< - Number of clocks
+                                                      _dimZeroFunc;       ///< - Number of zero functions
     int*                                              _timeEventCounter;  ///< Temp - Timeevent-Counter-Array
     int                                               _cycleCounter,
                                                       _resetCycle;

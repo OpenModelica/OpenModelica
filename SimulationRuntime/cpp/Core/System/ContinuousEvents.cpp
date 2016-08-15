@@ -64,13 +64,13 @@ void ContinuousEvents::initialize(IEvent* system)
 
    if(dimZero> 0)
   {
-	_conditions0 = new bool[dimZero];
-	_conditions1 = new bool[dimZero];
+	_conditions0 = new bool[_event_system->getDimZeroFunc()];
+	_conditions1 = new bool[_event_system->getDimZeroFunc()];
   }
   if(dimClock > 0)
   {
-	_clockconditions0 = new bool[dimClock];
-	_clockconditions1 = new bool[dimClock];
+	_clockconditions0 = new bool[_event_system->getDimClock()];
+	_clockconditions1 = new bool[_event_system->getDimClock()];
   }
 }
 
@@ -85,10 +85,10 @@ bool ContinuousEvents::startEventIteration(bool& state_vars_reinitialized)
   //Deactivated: _event_system->saveDiscreteVars(); // store values of discrete vars vor next check
 
   unsigned int dim = _event_system->getDimZeroFunc();
-  unsigned int dimClock = _event_system->getDimClock();
+  //unsigned int dimClock = _event_system->getDimClock();
 
   _event_system->getConditions(_conditions0);
-  _event_system->getClockConditions(_clockconditions0);
+  //_event_system->getClockConditions(_clockconditions0);
 
   //Handle all events
 
@@ -100,22 +100,17 @@ bool ContinuousEvents::startEventIteration(bool& state_vars_reinitialized)
 
 
   _event_system->getConditions(_conditions1);
-  _event_system->getClockConditions(_clockconditions1);
-  //check for continuous events
-  bool crestart = false;
-  if(dim>0)
-  {
-	  crestart=!std::equal (_conditions1, _conditions1+dim,_conditions0);
-  }
+  //_event_system->getClockConditions(_clockconditions1);
+
+  bool crestart = !std::equal (_conditions1, _conditions1+dim,_conditions0);
   //check for event clocks
-  bool eventclocksrestart =  false;
+  /*bool eventclocksrestart =  false;
   if(dimClock>0)
   {
     eventclocksrestart = !std::equal (_clockconditions1, _clockconditions1+dimClock,_clockconditions0);
   }
-
-
-  return((drestart||crestart||eventclocksrestart)); //returns true if new events occurred
+*/
+  return((drestart||crestart)); //returns true if new events occurred
 }
 /** @} */ // end of coreSystem
 /*
