@@ -1,7 +1,6 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
-MultipleBaseClocks.mos \
 tearnonlin1.mos \
 WhenStatement1.mos \
 BouncingBall.mos \
