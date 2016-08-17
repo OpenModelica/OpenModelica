@@ -166,7 +166,7 @@ void Newton::solve()
     }
     if (_iterationStatus == CONTINUE) {
       if (totSteps < _newtonSettings->getNewtMax()) {
-        // Determination of Jacobian (Fortran-format)
+        // Determination of Jacobian for linear, non-torn system (Fortran-format)
         if (_algLoop->isLinear() && !_algLoop->isLinearTearing()) {
           const matrix_t& A = _algLoop->getSystemMatrix();
           const double* jac = A.data().begin();
@@ -180,6 +180,8 @@ void Newton::solve()
           else
             _iterationStatus = DONE;
         }
+
+        // Determination of Jacobian for linear, torn system
         else if (_algLoop->isLinearTearing()) {
           _algLoop->setReal(_zeroVec);
           _algLoop->evaluate();
@@ -200,6 +202,8 @@ void Newton::solve()
           else
             _iterationStatus = DONE;
         }
+
+        // Determination of Jacobian for non-linear system
         else {
           LogSysVec(_algLoop, "y" + to_string(totSteps), _y);
           LogSysVec(_algLoop, "f" + to_string(totSteps), _f);
@@ -207,7 +211,7 @@ void Newton::solve()
           for (int i = 0; i < _dimSys; ++i) {
             phi += _f[i] * _f[i];
           }
-          calcJacobian();
+          calcJacobian(false);
 
           // Solve linear System
           dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
@@ -324,7 +328,7 @@ void Newton::solve()
         throw ModelicaSimulationError(ALGLOOP_SOLVER,
           "error solving nonlinear system (iteration limit: " + to_string(totSteps) + ")");
     }
-  }
+  } // end while
   LogSysVec(_algLoop, "y*", _y);
 }
 
@@ -345,32 +349,35 @@ void Newton::stepCompleted(double time)
 
 }
 
-void Newton::calcJacobian()
+void Newton::calcJacobian(bool getSymbolicJac)
 {
   // Use analytic Jacobian if available
-  matrix_t A = _algLoop->getSystemMatrix();
-  if (A.size1() == _dimSys && A.size2() == _dimSys) {
-    const double* jac = A.data().begin();
-    std::copy(jac, jac + _dimSys*_dimSys, _jac);
-    return;
+  if (getSymbolicJac){
+    matrix_t A = _algLoop->getSystemMatrix();
+	if (A.size1() == _dimSys && A.size2() == _dimSys) {
+      const double* jac = A.data().begin();
+      std::copy(jac, jac + _dimSys*_dimSys, _jac);
+	  return;
+	  }
   }
+  else {
+	  // Alternatively apply finite differences
+	  for (int j = 0; j < _dimSys; ++j) {
+		// Reset variables for every column
+		std::copy(_y, _y + _dimSys, _yHelp);
+		double stepsize = 1e-6 * _yNominal[j];
 
-  // Alternatively apply finite differences
-  for (int j = 0; j < _dimSys; ++j) {
-    // Reset variables for every column
-    std::copy(_y, _y + _dimSys, _yHelp);
-    double stepsize = 1e-6 * _yNominal[j];
+		// Finite differences
+		_yHelp[j] += stepsize;
 
-    // Finite differences
-    _yHelp[j] += stepsize;
+		calcFunction(_yHelp, _fHelp);
 
-    calcFunction(_yHelp, _fHelp);
+		// Build Jacobian in Fortran format
+		for (int i = 0; i < _dimSys; ++i)
+		  _jac[i + j * _dimSys] = (_fHelp[i] - _f[i]) / stepsize;
 
-    // Build Jacobian in Fortran format
-    for (int i = 0; i < _dimSys; ++i)
-      _jac[i + j * _dimSys] = (_fHelp[i] - _f[i]) / stepsize;
-
-    _yHelp[j] -= stepsize;
+		_yHelp[j] -= stepsize;
+	}
   }
 }
 

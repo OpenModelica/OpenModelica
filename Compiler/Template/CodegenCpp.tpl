@@ -9983,7 +9983,7 @@ template equationString(SimEqSystem eq, Context context, Text &varDecls, SimCode
               catch(ModelicaSimulationError& ex)
               {
 
-                   string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                   string error = add_error_info("Nonlinear solver <%ls.index%> stopped",ex.what(),ex.getErrorID(),_simTime);
                     throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
               }
               >>
@@ -10033,7 +10033,7 @@ template equationString(SimEqSystem eq, Context context, Text &varDecls, SimCode
                        }
                        catch(ModelicaSimulationError& ex)
                        {
-                           string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                           string error = add_error_info("Nonlinear solver <%ls.index%> stopped",ex.what(),ex.getErrorID(),_simTime);
                            throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
 
                        }
@@ -10064,7 +10064,7 @@ template equationString(SimEqSystem eq, Context context, Text &varDecls, SimCode
               catch(ModelicaSimulationError& ex)
               {
 
-                   string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                   string error = add_error_info("Nonlinear solver <%nls.index%> stopped",ex.what(),ex.getErrorID(),_simTime);
                     throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
               }
               >>
@@ -10114,7 +10114,7 @@ template equationString(SimEqSystem eq, Context context, Text &varDecls, SimCode
                        }
                        catch(ModelicaSimulationError& ex)
                        {
-                           string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                           string error = add_error_info("Nonlinear solver <%nls.index%> stopped",ex.what(),ex.getErrorID(),_simTime);
                            throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
 
                        }
@@ -11692,7 +11692,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
               }
               catch(ModelicaSimulationError& ex)
               {
-                string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                string error = add_error_info("Nonlinear solver <%ls.index%> stopped",ex.what(),ex.getErrorID(),_simTime);
                 throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
               }
 
@@ -11721,7 +11721,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
            }
            catch(ModelicaSimulationError&  ex)
            {
-                string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                string error = add_error_info("Nonlinear solver <%nls.index%> stopped",ex.what(),ex.getErrorID(),_simTime);
                 throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
            }
            >>
@@ -11772,7 +11772,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
               }
               catch(ModelicaSimulationError& ex)
               {
-                string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                string error = add_error_info("Nonlinear solver <%nls.index%> stopped",ex.what(),ex.getErrorID(),_simTime);
                 throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
               }
 

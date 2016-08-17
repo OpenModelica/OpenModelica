@@ -54,7 +54,7 @@ class Newton : public IAlgLoopSolver
   void calcFunction(const double* y, double* residual);
 
   /// Encapsulation of determination of Jacobian
-  void calcJacobian();
+  void calcJacobian(bool getSymbolicJac);
 
 
   // Member variables
