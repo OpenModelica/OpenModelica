@@ -10358,6 +10358,75 @@ algorithm
   end match;
 end deleteEquationInEqlist;
 
+public function addTransition
+"Adds a transition to the model, i.e., transition(state1, state2, i > 10)"
+  input Absyn.ComponentRef inComponentRef;
+  input String from;
+  input String to;
+  input String condition;
+  input Boolean immediate;
+  input Boolean reset;
+  input Boolean synchronize;
+  input Integer priority;
+  input list<Absyn.NamedArg> inAbsynNamedArgLst;
+  input Absyn.Program inProgram;
+  output Boolean b;
+  output Absyn.Program outProgram;
+algorithm
+  (b,outProgram) := addTransitionWithAnnotation(inComponentRef, from, to, condition, immediate, reset, synchronize, priority, annotationListToAbsyn(inAbsynNamedArgLst), inProgram);
+end addTransition;
+
+public function addTransitionWithAnnotation
+"Adds a transition to the model, i.e., transition(state1, state2, i > 10)"
+  input Absyn.ComponentRef inComponentRef;
+  input String from;
+  input String to;
+  input String condition;
+  input Boolean immediate;
+  input Boolean reset;
+  input Boolean synchronize;
+  input Integer priority;
+  input Absyn.Annotation inAnnotation;
+  input Absyn.Program inProgram;
+  output Boolean b;
+  output Absyn.Program outProgram;
+algorithm
+  (b,outProgram) := match (inComponentRef, from, to, condition, immediate, reset, synchronize, priority, inAnnotation, inProgram)
+    local
+      Absyn.Path modelpath,package_;
+      Absyn.Class cdef,newcdef;
+      Absyn.Program newp,p;
+      Absyn.ComponentRef model_;
+      String from_, to_, condition_;
+      Boolean immediate_, reset_, synchronize_;
+      Integer priority_;
+      Absyn.Within w;
+      Absyn.Annotation ann;
+      Option<Absyn.Comment> cmt;
+
+    case ((model_ as Absyn.CREF_IDENT()), from_, to_, condition_, immediate_, reset_, synchronize_, priority_, ann,(p as Absyn.PROGRAM()))
+      equation
+        modelpath = Absyn.crefToPath(model_);
+        cdef = getPathedClassInProgram(modelpath, p);
+        cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}), Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})), Absyn.CREF(Absyn.CREF_IDENT(condition_, {})), Absyn.BOOL(immediate_), Absyn.BOOL(reset_), Absyn.BOOL(synchronize_), Absyn.INTEGER(priority_)}, {})), cmt, Absyn.dummyInfo));
+        newp = updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
+      then
+        (true, newp);
+
+    case ((model_ as Absyn.CREF_QUAL()), from_, to_, condition_, immediate_, reset_, synchronize_, priority_, ann,(p as Absyn.PROGRAM()))
+      equation
+        modelpath = Absyn.crefToPath(model_);
+        cdef = getPathedClassInProgram(modelpath, p);
+        package_ = Absyn.stripLast(modelpath);
+        cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}), Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})), Absyn.CREF(Absyn.CREF_IDENT(condition_, {})), Absyn.BOOL(immediate_), Absyn.BOOL(reset_), Absyn.BOOL(synchronize_), Absyn.INTEGER(priority_)}, {})), cmt, Absyn.dummyInfo));
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
+      then
+        (true, newp);
+  end match;
+end addTransitionWithAnnotation;
+
 protected function getComponentComment
 "Get the component commment."
   input Absyn.ComponentRef inComponentRef1;
@@ -12630,7 +12699,7 @@ algorithm
 end createFuncargsFromElementargs;
 
 protected function getNthConnectionitemInClass
-" This function takes a Class and  an int ane returns the nth
+" This function takes a Class and  an int ane returns the nth
    `EquationItem\' containing a connect statement in that class."
   input Absyn.Class inClass;
   input Integer inInteger;

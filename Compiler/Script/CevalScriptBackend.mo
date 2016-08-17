@@ -861,6 +861,29 @@ algorithm
     case (cache,_,"getTransitions",_,st,_)
       then (cache, Values.ARRAY({},{}), st);
 
+    case (cache,_,"addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
+                                   Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i), Values.CODE(Absyn.C_EXPRESSION(aexp))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        (bval, p) = Interactive.addTransition(Absyn.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, Absyn.NAMEDARG("annotate",aexp)::{}, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(bval),st);
+
+    case (cache,_,"addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
+                                   Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i),
+                                   Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        (bval, p) = Interactive.addTransitionWithAnnotation(Absyn.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, Absyn.ANNOTATION(eltargs), p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,_,"addTransition",{_,_,_,_,_,_,_,_,v},st as GlobalScript.SYMBOLTABLE(),_)
+      then
+        (cache,Values.BOOL(false),st);
+
     case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       algorithm
         ExecStat.execStatReset();

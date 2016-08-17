@@ -2829,7 +2829,6 @@ and the annotation to set.</p>
 </html>"));
 end addClassAnnotation;
 
-
 function getParameterNames
   input TypeName class_;
   output String[:] parameters;
@@ -3711,6 +3710,23 @@ annotation(
 <p>Each transition item contains 8 values i.e, from, to, condition, immediate, reset, synchronize, priority.</p>
 </html>"), preferredView="text");
 end getTransitions;
+
+function addTransition
+  input TypeName cl;
+  input String from;
+  input String to;
+  input String condition;
+  input Boolean immediate = true;
+  input Boolean reset = true;
+  input Boolean synchronize = false;
+  input Integer priority = 1;
+  input ExpressionOrModification annotate;
+  output Boolean bool;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Adds the transition to the class.</p>
+</html>"));
+end addTransition;
 
 function generateScriptingAPI
   input TypeName cl;
