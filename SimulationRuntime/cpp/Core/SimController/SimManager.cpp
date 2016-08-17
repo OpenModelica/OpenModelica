@@ -441,12 +441,19 @@ void SimManager::writeProperties()
      */
 }
 
+/**
+    Computes all stops for the time events before starting the simulation
+
+    @param A vector of all time event stop times.
+*/
 void SimManager::computeEndTimes(std::vector<std::pair<double, int> > &tStopsSub)
 {
-    int counterTimes = 0, counterEvents = 0;
-    time_event_type timeEventPairs;                        ///< - Beinhaltet Frequenzen und Startzeit der Time-Events
+	int counterTimes = 0;
+    int counterEvents = 0;
+    time_event_type timeEventPairs;// <startTime, intervalLength> of the time events
     _writeFinalState = true;
 
+    //calculate time event stops till stopTime
     if (tStopsSub.size() == 0)
     {
         _timeevent_system->getTimeEvent(timeEventPairs);
@@ -463,7 +470,8 @@ void SimManager::computeEndTimes(std::vector<std::pair<double, int> > &tStopsSub
                     counterTimes++;
                     _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECALL);
                 }
-                while (iter->first + counterTimes * (iter->second) <= _tEnd)
+                //compute time event times for the whole simulation including the end time
+                while (iter->first + counterTimes * (iter->second) <= _tEnd+UROUND)
                 {
                     tStopsSub.push_back(std::make_pair(iter->first + counterTimes * (iter->second), counterEvents));
                     counterTimes++;
