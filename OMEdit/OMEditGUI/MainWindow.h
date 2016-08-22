@@ -67,6 +67,7 @@
 #include "SimulationDialog.h"
 #include "TLMCoSimulationDialog.h"
 #include "Plotting/PlotWindowContainer.h"
+#include "Animation/AnimationWindowContainer.h"
 #include "ModelWidgetContainer.h"
 #include "GDBAdapter.h"
 #include "StackFramesWidget.h"
@@ -90,6 +91,7 @@ class GDBLoggerWidget;
 class SimulationDialog;
 class TLMCoSimulationDialog;
 class PlotWindowContainer;
+class AnimationWindowContainer;
 class ModelWidgetContainer;
 class InfoBar;
 class WelcomePageWidget;
@@ -121,6 +123,7 @@ public:
   SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
   TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
   PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
+  AnimationWindowContainer* getAnimationWindowContainer() {return mpAnimationWindowContainer;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
   InfoBar* getInfoBar() {return mpInfoBar;}
@@ -230,6 +233,7 @@ private:
   SimulationDialog *mpSimulationDialog;
   TLMCoSimulationDialog *mpTLMCoSimulationDialog;
   PlotWindowContainer *mpPlotWindowContainer;
+  AnimationWindowContainer *mpAnimationWindowContainer;
   QList<Qt::WindowStates> mPlotWindowsStatesList;
   QList<QByteArray> mPlotWindowsGeometriesList;
   ModelWidgetContainer *mpModelWidgetContainer;
@@ -432,6 +436,7 @@ private slots:
   void switchToModelingPerspectiveSlot();
   void switchToPlottingPerspectiveSlot();
   void switchToAlgorithmicDebuggingPerspectiveSlot();
+  void switchToAnimationPerspectiveSlot();
   void showConfigureDialog();
   void showAttachToProcessDialog();
 private:
@@ -444,6 +449,7 @@ private:
   void switchToModelingPerspective();
   void switchToPlottingPerspective();
   void switchToAlgorithmicDebuggingPerspective();
+  void switchToAnimationPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem);

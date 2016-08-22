@@ -121,6 +121,7 @@ SOURCES += main.cpp \
   Editors/MetaModelEditor.cpp \
   Editors/MetaModelicaEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
+	Animation/AnimationWindowContainer.cpp \
   Component/Component.cpp \
   Annotations/ShapeAnnotation.cpp \
   Component/CornerItem.cpp \
@@ -183,6 +184,7 @@ HEADERS  += Util/Helper.h \
   Editors/CEditor.h \
   Editors/MetaModelEditor.h \
   Editors/MetaModelicaEditor.h \
+	Animation/AnimationWindowContainer.h \
   Plotting/PlotWindowContainer.h \
   Component/Component.h \
   Annotations/ShapeAnnotation.h \
