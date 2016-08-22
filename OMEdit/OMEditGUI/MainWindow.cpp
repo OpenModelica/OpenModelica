@@ -156,6 +156,11 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   QShortcut *pAlgorithmicDebuggingShortcut = new QShortcut(QKeySequence("Ctrl+f5"), this);
   connect(pAlgorithmicDebuggingShortcut, SIGNAL(activated()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
   mpPerspectiveTabbar->setTabToolTip(3, tr("Changes to debugging perspective (%1)").arg(pAlgorithmicDebuggingShortcut->key().toString()));
+  // 3d animation perspective
+  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/debugger.svg"), tr("Animation"));
+  QShortcut *pAnimationShortcut = new QShortcut(QKeySequence("Ctrl+f6"), this);
+  connect(pAnimationShortcut, SIGNAL(activated()), SLOT(switchToAnimationPerspectiveSlot()));
+  mpPerspectiveTabbar->setTabToolTip(4, tr("Changes to animation perspective (%1)").arg(pAnimationShortcut->key().toString()));
   // change the perspective when perspective tab bar selection is changed
   connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
   // Create an object of QStatusBar
@@ -229,6 +234,8 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   addDockWidget(Qt::RightDockWidgetArea, mpDocumentationDockWidget);
   mpDocumentationDockWidget->hide();
   connect(mpDocumentationDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(documentationDockWidgetVisibilityChanged(bool)));
+  // Create an object of AnimationWindowContainer
+  mpAnimationWindowContainer = new AnimationWindowContainer(this);
   // Create an object of PlotWindowContainer
   mpPlotWindowContainer = new PlotWindowContainer(this);
   // create an object of VariablesWidget
@@ -270,6 +277,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpCentralStackedWidget->addWidget(mpWelcomePageWidget);
   mpCentralStackedWidget->addWidget(mpModelWidgetContainer);
   mpCentralStackedWidget->addWidget(mpPlotWindowContainer);
+  mpCentralStackedWidget->addWidget(mpAnimationWindowContainer);
   // set the layout
   QGridLayout *pCentralgrid = new QGridLayout;
   pCentralgrid->setVerticalSpacing(4);
@@ -2205,6 +2213,9 @@ void MainWindow::perspectiveTabChanged(int tabIndex)
     case 3:
       switchToAlgorithmicDebuggingPerspective();
       break;
+    case 4:
+      switchToAnimationPerspective();
+      break;
     default:
       switchToWelcomePerspective();
       break;
@@ -2277,6 +2288,16 @@ void MainWindow::switchToPlottingPerspectiveSlot()
 void MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot()
 {
   mpPerspectiveTabbar->setCurrentIndex(3);
+}
+
+/*!
+ * \brief MainWindow::switchToAnimationPerspectiveSlot
+ * Slot activated when Ctrl+f6 is clicked.
+ * Switches to animation perspective.
+ */
+void MainWindow::switchToAnimationPerspectiveSlot()
+{
+  mpPerspectiveTabbar->setCurrentIndex(4);
 }
 
 /*!
@@ -3058,6 +3079,17 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpLocalsDockWidget->show();
   mpTargetOutputDockWidget->show();
   mpGDBLoggerDockWidget->show();
+}
+
+
+/*!
+ * \brief MainWindow::switchToAnimationPerspective
+ * Switches to animation perspective.
+ */
+void MainWindow::switchToAnimationPerspective()
+{
+	storePlotWindowsStateAndGeometry();
+	mpCentralStackedWidget->setCurrentWidget(mpAnimationWindowContainer);
 }
 
 /*!
