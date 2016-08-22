@@ -82,6 +82,7 @@ public:
   void readLineStyleSettings();
   void readFillStyleSettings();
   void readPlottingSettings();
+  void readAnimationSettings();
   void readFigaroSettings();
   void readDebuggerSettings();
   void readFMISettings();

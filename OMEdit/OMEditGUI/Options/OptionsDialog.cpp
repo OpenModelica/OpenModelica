@@ -589,6 +589,16 @@ void OptionsDialog::readPlottingSettings()
   }
 }
 
+//! Reads the Animation section settings from omedit.ini
+void OptionsDialog::readAnimationSettings()
+{
+  // read the auto scale
+  if (mpSettings->contains("animation/autoScale")) {
+    mpPlottingPage->getAutoScaleCheckBox()->setChecked(mpSettings->value("animation/autoScale").toBool());
+  }
+}
+
+
 //! Reads the Fiagro section settings from omedit.ini
 void OptionsDialog::readFigaroSettings()
 {

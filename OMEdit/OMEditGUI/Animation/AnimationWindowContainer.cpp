@@ -34,7 +34,6 @@
 
 #include "AnimationWindowContainer.h"
 
-
 /*!
   \class AnimationWindowContainer
   \brief A MDI area for animation windows.
@@ -44,16 +43,56 @@
  * \param pParent
  */
 AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
-  : MdiArea(pParent)
+  : MdiArea(pParent),
+	osgViewer::CompositeViewer()
 {
   if (mpMainWindow->getOptionsDialog()->getAnimationPage()->getAnimationViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
   } else {
     setViewMode(QMdiArea::TabbedView);
   }
+
+  //time slider
+  _timeSlider = new QSlider(Qt::Horizontal, this);
+  _timeSlider->setFixedHeight(30);
+  _timeSlider->setMinimum(0);
+  _timeSlider->setMaximum(100);
+  _timeSlider->setSliderPosition(50);
+
+  //osg::ref_ptr<osgQt::GraphicsWindowQt> window = createGraphicsWindow(0, 0, 100, 100);
+  _sceneView = new osgViewer::View();
+  osgViewer::CompositeViewer::addView(_sceneView);
+  osg::ref_ptr<osg::Camera> camera = _sceneView->getCamera();
+
+  osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits();
+
+
+
   // dont show this widget at startup
   setVisible(false);
 }
+
+/*
+osg::ref_ptr<osgQt::GraphicsWindowQt> AnimationWindowContainer::createGraphicsWindow(int x, int y, int w, int h,
+                                                                        const std::string& name, bool windowDecoration)
+{
+    osg::ref_ptr<osg::DisplaySettings> ds = osg::DisplaySettings::instance().get();
+    osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits();
+    traits->windowName = name;
+    traits->windowDecoration = windowDecoration;
+    traits->x = x;
+    traits->y = y;
+    traits->width = w;
+    traits->height = h;
+    traits->doubleBuffer = true;
+    traits->alpha = ds->getMinimumNumAlphaBits();
+    traits->stencil = ds->getMinimumNumStencilBits();
+    traits->sampleBuffers = ds->getMultiSamples();
+    traits->samples = ds->getNumMultiSamples();
+
+    return new osgQt::GraphicsWindowQt(traits.get());
+}
+*/
 
 /*!
  * \brief AnimationWindowContainer::getUniqueName

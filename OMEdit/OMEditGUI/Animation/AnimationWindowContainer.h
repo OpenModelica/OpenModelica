@@ -37,14 +37,34 @@
 
 #include "MainWindow.h"
 
+#include <osgViewer/CompositeViewer>
+#include <osgViewer/View>
+#include <osgDB/ReadFile>
+#include <osgGA/MultiTouchTrackballManipulator>
+#include <osgViewer/ViewerEventHandlers>
+#include <osg/Vec3>
+#include <osg/io_utils>
+#include <osg/MatrixTransform>
+#include <osg/GraphicsContext>
+
+#include <QtOpenGL/QGLWidget>
+//#include <osgQt/GraphicsWindowQt>
+
+
+
 class MainWindow;
 
-class AnimationWindowContainer : public MdiArea
+class AnimationWindowContainer : public MdiArea, public osgViewer::CompositeViewer
 {
   Q_OBJECT
 public:
   AnimationWindowContainer(MainWindow *pParent);
   QString getUniqueName(QString name = QString("Animation"), int number = 4);
+  QSlider* _timeSlider;
+  //osg::ref_ptr<osgQt::GraphicsWindowQt> createGraphicsWindow(int x, int y, int w, int h, const std::string& name, bool windowDecoration)
+
+  osgViewer::View* _sceneView;
+  osg::ref_ptr<osg::GraphicsContext::Traits> traits;
 };
 
 #endif // ANIMATIONWINDOWCONTAINER_H
