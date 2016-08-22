@@ -76,7 +76,8 @@ win32 {
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \
     -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread \
-    -lws2_32
+    -lws2_32 \
+		-L$$(OMDEV)/tools/msys/mingw32/lib -llibosg.dll -llibosgViewer.dll -llibosgQt.dll -llibOpenThreads.dll
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
     $$(OMBUILDDIR)/include/omplot/qwt \
     $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c
