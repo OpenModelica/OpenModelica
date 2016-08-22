@@ -10391,7 +10391,7 @@ public function addTransitionWithAnnotation
   output Boolean b;
   output Absyn.Program outProgram;
 algorithm
-  (b,outProgram) := match (inComponentRef, from, to, condition, immediate, reset, synchronize, priority, inAnnotation, inProgram)
+  (b,outProgram) := matchcontinue (inComponentRef, from, to, condition, immediate, reset, synchronize, priority, inAnnotation, inProgram)
     local
       Absyn.Path modelpath,package_;
       Absyn.Class cdef,newcdef;
@@ -10424,8 +10424,202 @@ algorithm
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
       then
         (true, newp);
-  end match;
+  end matchcontinue;
 end addTransitionWithAnnotation;
+
+public function deleteTransition
+"Delete the transition transition(c1,c2) from a model."
+  input Absyn.ComponentRef inComponentRef1;
+  input String from;
+  input String to;
+  input String condition;
+  input Boolean immediate;
+  input Boolean reset;
+  input Boolean synchronize;
+  input Integer priority;
+  input Absyn.Program inProgram;
+  output Boolean b;
+  output Absyn.Program outProgram;
+algorithm
+  (b,outProgram) := matchcontinue (inComponentRef1, from, to, condition, immediate, reset, synchronize, priority, inProgram)
+    local
+      Absyn.Path modelpath,modelwithin;
+      Absyn.Class cdef,newcdef;
+      Absyn.Program newp,p;
+      Absyn.ComponentRef model_,c1,c2;
+      String from_, to_, condition_;
+      Boolean immediate_, reset_, synchronize_;
+      Integer priority_;
+      Absyn.Within w;
+
+    case (model_, from_, to_, condition_, immediate_, reset_, synchronize_, priority_ ,(p as Absyn.PROGRAM()))
+      equation
+        modelpath = Absyn.crefToPath(model_);
+        modelwithin = Absyn.stripLast(modelpath);
+        cdef = getPathedClassInProgram(modelpath, p);
+        newcdef = deleteTransitionInClass(cdef, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
+      then
+        (true, newp);
+    case (model_, from_, to_, condition_, immediate_, reset_, synchronize_, priority_ ,(p as Absyn.PROGRAM()))
+      equation
+        modelpath = Absyn.crefToPath(model_);
+        cdef = getPathedClassInProgram(modelpath, p);
+        newcdef = deleteTransitionInClass(cdef, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+      then
+        (true, newp);
+    case (_,_,_,_,_,_,_,_,(p as Absyn.PROGRAM())) then (false, p);
+  end matchcontinue;
+end deleteTransition;
+
+protected function deleteTransitionInClass
+"Helper function to deleteTransition."
+  input Absyn.Class inClass;
+  input String from;
+  input String to;
+  input String condition;
+  input Boolean immediate;
+  input Boolean reset;
+  input Boolean synchronize;
+  input Integer priority;
+  output Absyn.Class outClass;
+algorithm
+  outClass := match (inClass, from, to, condition, immediate, reset, synchronize, priority)
+    local
+      list<Absyn.EquationItem> eqlst,eqlst_1;
+      list<Absyn.ClassPart> parts2,parts;
+      String i, bcname;
+      Boolean p,f,e;
+      Absyn.Restriction r;
+      Option<String> cmt;
+      SourceInfo file_info;
+      String from_, to_, condition_;
+      Boolean immediate_, reset_, synchronize_;
+      Integer priority_;
+      list<Absyn.ElementArg> modif;
+      list<String> typeVars;
+      list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
+    /* a class with parts */
+    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),
+                      info = file_info), from_, to_, condition_, immediate_, reset_, synchronize_, priority_)
+      equation
+        eqlst = getEquationList(parts);
+        eqlst_1 = deleteTransitionInEqlist(eqlst, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
+        parts2 = replaceEquationList(parts, eqlst_1);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+    /* an extended class with parts: model extends M end M;  */
+    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                      body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt)
+                      ,info = file_info), from_, to_, condition_, immediate_, reset_, synchronize_, priority_)
+      equation
+        eqlst = getEquationList(parts);
+        eqlst_1 = deleteTransitionInEqlist(eqlst, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
+        parts2 = replaceEquationList(parts, eqlst_1);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+  end match;
+end deleteTransitionInClass;
+
+protected function deleteTransitionInEqlist
+"Helper function to deleteTransition."
+  input list<Absyn.EquationItem> inAbsynEquationItemLst;
+  input String from;
+  input String to;
+  input String condition;
+  input Boolean immediate;
+  input Boolean reset;
+  input Boolean synchronize;
+  input Integer priority;
+  output list<Absyn.EquationItem> outAbsynEquationItemLst;
+algorithm
+  outAbsynEquationItemLst := matchcontinue (inAbsynEquationItemLst, from, to, condition, immediate, reset, synchronize, priority)
+    local
+      list<Absyn.EquationItem> res,xs;
+      String from_, to_, condition_;
+      Boolean immediate_, reset_, synchronize_;
+      Integer priority_;
+      Absyn.ComponentRef name;
+      list<Absyn.Exp> expArgs;
+      list<Absyn.NamedArg> namedArgs;
+      list<String> args, args1;
+      Absyn.EquationItem x;
+
+    case ({},_,_,_,_,_,_,_) then {};
+    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_NORETCALL(name, Absyn.FUNCTIONARGS(expArgs, namedArgs))) :: xs), from_, to_, condition_, immediate_, reset_, synchronize_, priority_)
+      guard Absyn.crefEqual(name, Absyn.CREF_IDENT("transition", {}))
+      equation
+        args = List.map(expArgs, Dump.printExpStr);
+        args1 = List.map(namedArgs, Dump.printNamedArgValueStr);
+        args1 = listAppend(args, args1);
+        true = compareTransitionFuncArgs(args1, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
+      then
+        deleteTransitionInEqlist(xs, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
+    case ((x :: xs), from_, to_, condition_, immediate_, reset_, synchronize_, priority_)
+      equation
+        res = deleteTransitionInEqlist(xs, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
+      then
+        (x :: res);
+  end matchcontinue;
+end deleteTransitionInEqlist;
+
+protected function compareTransitionFuncArgs
+"Helper function to deleteTransition."
+  input list<String> args;
+  input String from;
+  input String to;
+  input String condition;
+  input Boolean immediate;
+  input Boolean reset;
+  input Boolean synchronize;
+  input Integer priority;
+  output Boolean b;
+algorithm
+  b := matchcontinue (args, from, to, condition, immediate, reset, synchronize, priority)
+    local
+      String from1, to1, condition1, immediate1, reset1, synchronize1, priority1, from2, to2, condition2;
+      Boolean immediate2, reset2, synchronize2;
+      Integer priority2;
+
+    case ({from1, to1, condition1}, from2, to2, condition2, immediate2, reset2, synchronize2, priority2)
+      guard
+        stringEq(from1, from2) and stringEq(to1, to2) and stringEq(condition1, condition2)
+      then
+        true;
+
+    case ({from1, to1, condition1, immediate1}, from2, to2, condition2, immediate2, reset2, synchronize2, priority2)
+      guard
+        stringEq(from1, from2) and stringEq(to1, to2) and stringEq(condition1, condition2) and stringEq(immediate1, boolString(immediate2))
+      then
+        true;
+
+    case ({from1, to1, condition1, immediate1, reset1}, from2, to2, condition2, immediate2, reset2, synchronize2, priority2)
+      guard
+        stringEq(from1, from2) and stringEq(to1, to2) and stringEq(condition1, condition2) and stringEq(immediate1, boolString(immediate2))
+        and stringEq(reset1, boolString(reset2))
+      then
+        true;
+
+    case ({from1, to1, condition1, immediate1, reset1, synchronize1}, from2, to2, condition2, immediate2, reset2, synchronize2, priority2)
+      guard
+        stringEq(from1, from2) and stringEq(to1, to2) and stringEq(condition1, condition2) and stringEq(immediate1, boolString(immediate2))
+        and stringEq(reset1, boolString(reset2)) and stringEq(synchronize1, boolString(synchronize2))
+      then
+        true;
+
+    case ({from1, to1, condition1, immediate1, reset1, synchronize1, priority1}, from2, to2, condition2, immediate2, reset2, synchronize2, priority2)
+      guard
+        stringEq(from1, from2) and stringEq(to1, to2) and stringEq(condition1, condition2) and stringEq(immediate1, boolString(immediate2))
+        and stringEq(reset1, boolString(reset2)) and stringEq(synchronize1, boolString(synchronize2)) and stringEq(priority1, intString(priority2))
+      then
+        true;
+
+    else false;
+  end matchcontinue;
+end compareTransitionFuncArgs;
 
 protected function getComponentComment
 "Get the component commment."

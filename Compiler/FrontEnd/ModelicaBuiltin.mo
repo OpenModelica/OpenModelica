@@ -3728,6 +3728,22 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end addTransition;
 
+function deleteTransition
+  input TypeName cl;
+  input String from;
+  input String to;
+  input String condition;
+  input Boolean immediate;
+  input Boolean reset;
+  input Boolean synchronize;
+  input Integer priority;
+  output Boolean bool;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Deletes the transition from the class.</p>
+</html>"));
+end deleteTransition;
+
 function generateScriptingAPI
   input TypeName cl;
   input String name;
