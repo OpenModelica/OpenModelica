@@ -28,9 +28,9 @@
  #
  #/
 
-QT += network core gui webkit xml xmlpatterns svg
+QT += network core gui webkit xml xmlpatterns svg opengl
 greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += printsupport widgets webkitwidgets
+  QT += printsupport widgets webkitwidgets opengl
 }
 
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
@@ -77,7 +77,7 @@ win32 {
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \
     -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread \
     -lws2_32 \
-		-L$$(OMDEV)/tools/msys/mingw32/lib -llibosg.dll -llibosgViewer.dll -llibosgQt.dll -llibOpenThreads.dll
+		-L$$(OMDEV)/tools/msys/mingw32/lib -llibosg.dll -llibosgViewer.dll -llibosgQt.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
     $$(OMBUILDDIR)/include/omplot/qwt \
     $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c

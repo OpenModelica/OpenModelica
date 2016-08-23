@@ -44,7 +44,16 @@
  */
 AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
   : MdiArea(pParent),
-	osgViewer::CompositeViewer()
+	osgViewer::CompositeViewer(),
+	_sceneView(new osgViewer::View()),
+	viewerWidget(nullptr),
+    topWidget(nullptr),
+    _playButton(nullptr),
+    _pauseButton(nullptr),
+    _initButton(nullptr),
+    _timeSlider(nullptr),
+	_timeDisplay(nullptr),
+	_RTFactorDisplay(nullptr)
 {
   if (mpMainWindow->getOptionsDialog()->getAnimationPage()->getAnimationViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
@@ -52,47 +61,100 @@ AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
     setViewMode(QMdiArea::TabbedView);
   }
 
-  //time slider
-  _timeSlider = new QSlider(Qt::Horizontal, this);
-  _timeSlider->setFixedHeight(30);
-  _timeSlider->setMinimum(0);
-  _timeSlider->setMaximum(100);
-  _timeSlider->setSliderPosition(50);
-
-  //osg::ref_ptr<osgQt::GraphicsWindowQt> window = createGraphicsWindow(0, 0, 100, 100);
-  _sceneView = new osgViewer::View();
-  osgViewer::CompositeViewer::addView(_sceneView);
-  osg::ref_ptr<osg::Camera> camera = _sceneView->getCamera();
-
-  osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits();
-
-
+  //the viewer widget
+  osg::ref_ptr<osg::Node> rootNode = osgDB::readNodeFile("D:/Programming/OPENMODELICA_GIT/OpenModelica/build/bin/dumptruck.osg");
+  setupViewWidget(rootNode);
+  topWidget = AnimationWindowContainer::setupAnimationWidgets();
 
   // dont show this widget at startup
-  setVisible(false);
+  setVisible(true);
 }
 
-/*
-osg::ref_ptr<osgQt::GraphicsWindowQt> AnimationWindowContainer::createGraphicsWindow(int x, int y, int w, int h,
-                                                                        const std::string& name, bool windowDecoration)
+/*!
+ * \brief AnimationWindowContainer::setupViewWidget
+ * creates the widget for the osg viewer
+ * \return the widget
+ */
+void AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootNode)
 {
+	//get context
     osg::ref_ptr<osg::DisplaySettings> ds = osg::DisplaySettings::instance().get();
     osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits();
-    traits->windowName = name;
-    traits->windowDecoration = windowDecoration;
-    traits->x = x;
-    traits->y = y;
-    traits->width = w;
-    traits->height = h;
+    traits->windowName = "";
+    traits->windowDecoration = false;
+    traits->x = 100;
+    traits->y = 100;
+    traits->width = 300;
+    traits->height = 500;
     traits->doubleBuffer = true;
     traits->alpha = ds->getMinimumNumAlphaBits();
     traits->stencil = ds->getMinimumNumStencilBits();
     traits->sampleBuffers = ds->getMultiSamples();
     traits->samples = ds->getNumMultiSamples();
+    osg::ref_ptr<osgQt::GraphicsWindowQt> gw = new osgQt::GraphicsWindowQt(traits.get(),this);
 
-    return new osgQt::GraphicsWindowQt(traits.get());
+	//add a scene to viewer
+    osgViewer::CompositeViewer::addView(_sceneView);
+
+    //get the viewer widget
+    osg::ref_ptr<osg::Camera> camera = _sceneView->getCamera();
+    camera->setGraphicsContext(gw);
+    camera->setClearColor(osg::Vec4(0.2, 0.2, 0.6, 1.0));
+    camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
+    camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits->width) / static_cast<double>(traits->height), 1.0f, 10000.0f);
+    _sceneView->setSceneData(rootNode);
+    _sceneView->addEventHandler(new osgViewer::StatsHandler());
+    _sceneView->setCameraManipulator(new osgGA::MultiTouchTrackballManipulator());
+    gw->setTouchEventsEnabled(true);
+    viewerWidget = gw->getGLWidget();
 }
-*/
+
+
+/*!
+ * \brief AnimationWindowContainer::setupAnimationWidgets
+ * creates the widgets for the animation
+ * \return void
+ */
+QWidget* AnimationWindowContainer::setupAnimationWidgets()
+{
+    _timeSlider = new QSlider(Qt::Horizontal,this);
+    _timeSlider->setFixedHeight(30);
+    _timeSlider->setMinimum(0);
+    _timeSlider->setMaximum(100);
+    _timeSlider->setSliderPosition(50);
+    _playButton = new QPushButton("Play",this);
+    _pauseButton = new QPushButton("Pause",this);
+    _initButton = new QPushButton("Initialize",this);
+    _timeDisplay = new QLabel(this);
+    _timeDisplay->setText(QString("Time [s]: ").append(QString::fromStdString("0.000")));
+    _RTFactorDisplay = new QLabel(this);
+    _RTFactorDisplay->setText(QString("RT-Factor: ").append(QString::fromStdString("0.000")));
+
+    //make a row layout
+    QHBoxLayout* rowLayOut = new QHBoxLayout();
+    rowLayOut->addWidget(_initButton);
+    rowLayOut->addWidget(_playButton);
+    rowLayOut->addWidget(_pauseButton);
+    rowLayOut->addWidget(_timeSlider);
+    rowLayOut->addWidget(_RTFactorDisplay);
+    rowLayOut->addWidget(_timeDisplay);
+    QGroupBox* widgetRowBox = new QGroupBox(this);
+    widgetRowBox->setLayout(rowLayOut);
+    widgetRowBox->setFixedHeight(40);
+
+    topWidget = new QWidget(this);
+    QVBoxLayout* mainRowLayout = new QVBoxLayout(this);
+    //mainRowLayout->addWidget(viewerWidget);
+    mainRowLayout->addWidget(widgetRowBox);
+    topWidget->setLayout(mainRowLayout);
+
+    // Connect the buttons to the corresponding slot functions.
+    //QObject::connect(playButton, SIGNAL(clicked()), this, SLOT(playSlotFunction()));
+    //QObject::connect(pauseButton, SIGNAL(clicked()), this, SLOT(pauseSlotFunction()));
+    //QObject::connect(initButton, SIGNAL(clicked()), this, SLOT(initSlotFunction()));
+    return topWidget;
+}
+
 
 /*!
  * \brief AnimationWindowContainer::getUniqueName
