@@ -668,7 +668,7 @@ protected
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
     local
-      String omdev,simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,token,varid,cmd,executable,executable1,encoding,method_str,
+      String omdev,simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,str4,token,varid,cmd,executable,executable1,encoding,method_str,
              outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
@@ -715,7 +715,7 @@ algorithm
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       GlobalScript.Statements istmts;
       list<GlobalScript.Statements> istmtss;
-      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, keepRedeclares;
+      Boolean have_corba, bval, anyCode, b, b1, b2, b3, b4, b5, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, keepRedeclares;
       FCore.Cache cache;
       list<GlobalScript.LoadedFile> lf;
       Absyn.ComponentRef  crefCName;
@@ -881,6 +881,18 @@ algorithm
         (cache,Values.BOOL(false),st);
 
     case (cache,_,"addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
+                                   Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i),
+                                   Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        cr_1 = Absyn.pathToCref(classpath);
+        false = Interactive.existClass(cr_1, p);
+        str = Absyn.pathString(classpath);
+        Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,_,"addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
                                    Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i), Values.CODE(Absyn.C_EXPRESSION(aexp))},
           st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
@@ -924,6 +936,58 @@ algorithm
         (cache,Values.BOOL(bval),st);
 
     case (cache,_,"deleteTransition",{_,_,_,_,_,_,_,_},st as GlobalScript.SYMBOLTABLE(),_)
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,_,"updateTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
+                                      Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i), Values.STRING(str4),
+                                      Values.BOOL(b3), Values.BOOL(b4), Values.BOOL(b5), Values.INTEGER(i1), Values.CODE(Absyn.C_EXPRESSION(aexp))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        cr_1 = Absyn.pathToCref(classpath);
+        false = Interactive.existClass(cr_1, p);
+        str = Absyn.pathString(classpath);
+        Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,_,"updateTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
+                                      Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i), Values.STRING(str4),
+                                      Values.BOOL(b3), Values.BOOL(b4), Values.BOOL(b5), Values.INTEGER(i1),
+                                      Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        cr_1 = Absyn.pathToCref(classpath);
+        false = Interactive.existClass(cr_1, p);
+        str = Absyn.pathString(classpath);
+        Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,_,"updateTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
+                                      Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i), Values.STRING(str4),
+                                      Values.BOOL(b3), Values.BOOL(b4), Values.BOOL(b5), Values.INTEGER(i1), Values.CODE(Absyn.C_EXPRESSION(aexp))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        (bval, p) = Interactive.deleteTransition(Absyn.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, p);
+        (bval, p) = Interactive.addTransition(Absyn.pathToCref(classpath), str1, str2, str4, b3, b4, b5, i1, Absyn.NAMEDARG("annotate",aexp)::{}, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(bval),st);
+
+    case (cache,_,"updateTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
+                                      Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i), Values.STRING(str4),
+                                      Values.BOOL(b3), Values.BOOL(b4), Values.BOOL(b5), Values.INTEGER(i1),
+                                      Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        (bval, p) = Interactive.deleteTransition(Absyn.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, p);
+        (bval, p) = Interactive.addTransitionWithAnnotation(Absyn.pathToCref(classpath), str1, str2, str4, b3, b4, b5, i1, Absyn.ANNOTATION(eltargs), p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(bval),st);
+
+    case (cache,_,"updateTransition",{_,_,_,_,_,_,_,_,_,_,_,_,_,v},st as GlobalScript.SYMBOLTABLE(),_)
       then
         (cache,Values.BOOL(false),st);
 

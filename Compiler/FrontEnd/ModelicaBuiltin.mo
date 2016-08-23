@@ -3744,6 +3744,28 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end deleteTransition;
 
+function updateTransition
+  input TypeName cl;
+  input String from;
+  input String to;
+  input String oldCondition;
+  input Boolean oldImmediate;
+  input Boolean oldReset;
+  input Boolean oldSynchronize;
+  input Integer oldPriority;
+  input String newCondition;
+  input Boolean newImmediate;
+  input Boolean newReset;
+  input Boolean newSynchronize;
+  input Integer newPriority;
+  input ExpressionOrModification annotate;
+  output Boolean bool;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Updates the transition in the class.</p>
+</html>"));
+end updateTransition;
+
 function generateScriptingAPI
   input TypeName cl;
   input String name;
