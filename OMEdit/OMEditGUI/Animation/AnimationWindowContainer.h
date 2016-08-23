@@ -37,6 +37,8 @@
 
 #include "MainWindow.h"
 
+#include <iostream>
+
 #include <osgViewer/CompositeViewer>
 #include <osgViewer/View>
 #include <osgDB/ReadFile>
@@ -47,8 +49,8 @@
 #include <osg/MatrixTransform>
 #include <osg/GraphicsContext>
 
-#include <QtOpenGL/QGLWidget>
-//#include <osgQt/GraphicsWindowQt>
+//#include <QtOpenGL/QGLWidget>
+#include <osgQt/GraphicsWindowQt>
 
 
 
@@ -60,11 +62,22 @@ class AnimationWindowContainer : public MdiArea, public osgViewer::CompositeView
 public:
   AnimationWindowContainer(MainWindow *pParent);
   QString getUniqueName(QString name = QString("Animation"), int number = 4);
-  QSlider* _timeSlider;
-  //osg::ref_ptr<osgQt::GraphicsWindowQt> createGraphicsWindow(int x, int y, int w, int h, const std::string& name, bool windowDecoration)
+  QWidget* setupAnimationWidgets();
+  void setupViewWidget(osg::ref_ptr<osg::Node> rootNode);
 
+  //osg viewer
   osgViewer::View* _sceneView;
-  osg::ref_ptr<osg::GraphicsContext::Traits> traits;
+  QWidget* viewerWidget;
+
+  //widgets
+  QWidget* topWidget;
+  QPushButton* _playButton;
+  QPushButton* _pauseButton;
+  QPushButton* _initButton;
+  QSlider* _timeSlider;
+  QLabel* _timeDisplay;
+  QLabel* _RTFactorDisplay;
+
 };
 
 #endif // ANIMATIONWINDOWCONTAINER_H
