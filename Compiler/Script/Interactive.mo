@@ -10403,13 +10403,15 @@ algorithm
       Absyn.Within w;
       Absyn.Annotation ann;
       Option<Absyn.Comment> cmt;
+      Absyn.Exp conditionExp;
 
     case ((model_ as Absyn.CREF_IDENT()), from_, to_, condition_, immediate_, reset_, synchronize_, priority_, ann,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}), Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})), Absyn.CREF(Absyn.CREF_IDENT(condition_, {})), Absyn.BOOL(immediate_), Absyn.BOOL(reset_), Absyn.BOOL(synchronize_), Absyn.INTEGER(priority_)}, {})), cmt, Absyn.dummyInfo));
+        GlobalScript.ISTMTS({GlobalScript.IEXP(conditionExp, _)}, _) = Parser.parsestringexp(condition_);
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}), Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})), conditionExp, Absyn.BOOL(immediate_), Absyn.BOOL(reset_), Absyn.BOOL(synchronize_), Absyn.INTEGER(priority_)}, {})), cmt, Absyn.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
       then
         (true, newp);
@@ -10420,7 +10422,8 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         package_ = Absyn.stripLast(modelpath);
         cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}), Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})), Absyn.CREF(Absyn.CREF_IDENT(condition_, {})), Absyn.BOOL(immediate_), Absyn.BOOL(reset_), Absyn.BOOL(synchronize_), Absyn.INTEGER(priority_)}, {})), cmt, Absyn.dummyInfo));
+        GlobalScript.ISTMTS({GlobalScript.IEXP(conditionExp, _)}, _) = Parser.parsestringexp(condition_);
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}), Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})), conditionExp, Absyn.BOOL(immediate_), Absyn.BOOL(reset_), Absyn.BOOL(synchronize_), Absyn.INTEGER(priority_)}, {})), cmt, Absyn.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
       then
         (true, newp);
@@ -10546,6 +10549,7 @@ algorithm
       list<Absyn.Exp> expArgs;
       list<Absyn.NamedArg> namedArgs;
       list<String> args, args1;
+      Absyn.Exp conditionExp;
       Absyn.EquationItem x;
 
     case ({},_,_,_,_,_,_,_) then {};
@@ -10555,6 +10559,8 @@ algorithm
         args = List.map(expArgs, Dump.printExpStr);
         args1 = List.map(namedArgs, Dump.printNamedArgValueStr);
         args1 = listAppend(args, args1);
+        GlobalScript.ISTMTS({GlobalScript.IEXP(conditionExp, _)}, _) = Parser.parsestringexp(condition_);
+        condition_ = Dump.printExpStr(conditionExp);
         true = compareTransitionFuncArgs(args1, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
       then
         deleteTransitionInEqlist(xs, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
