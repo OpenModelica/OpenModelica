@@ -65,6 +65,7 @@ stringSplit.mos \
 strings.mos  \
 variables.mos \
 getDefinitions.mos \
+StateMachine.mos \
 
 
 # test that currently fail. Move up when fixed.
