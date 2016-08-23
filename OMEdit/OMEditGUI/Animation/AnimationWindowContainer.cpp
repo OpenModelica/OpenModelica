@@ -43,31 +43,32 @@
  * \param pParent
  */
 AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
-  : MdiArea(pParent),
+  : QWidget(pParent),
 	osgViewer::CompositeViewer(),
 	_sceneView(new osgViewer::View()),
 	viewerWidget(nullptr),
     topWidget(nullptr),
+	_visFileButton(nullptr),
     _playButton(nullptr),
     _pauseButton(nullptr),
     _initButton(nullptr),
     _timeSlider(nullptr),
 	_timeDisplay(nullptr),
-	_RTFactorDisplay(nullptr)
+	_RTFactorDisplay(nullptr),
+	_renderTimer()
 {
-  if (mpMainWindow->getOptionsDialog()->getAnimationPage()->getAnimationViewMode().compare(Helper::subWindow) == 0) {
-    setViewMode(QMdiArea::SubWindowView);
-  } else {
-    setViewMode(QMdiArea::TabbedView);
-  }
-
+  setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
   //the viewer widget
-  osg::ref_ptr<osg::Node> rootNode = osgDB::readNodeFile("D:/Programming/OPENMODELICA_GIT/OpenModelica/build/bin/dumptruck.osg");
-  setupViewWidget(rootNode);
+  osg::ref_ptr<osg::Node> rootNode = osgDB::readRefNodeFile("D:/Programming/OPENMODELICA_GIT/OpenModelica/build/bin/dumptruck.osg");
+  viewerWidget = setupViewWidget(rootNode);
+  //the control widgets
   topWidget = AnimationWindowContainer::setupAnimationWidgets();
+}
 
-  // dont show this widget at startup
-  setVisible(true);
+void AnimationWindowContainer::renderSlotFunction()
+{
+  //update();
+  frame();
 }
 
 /*!
@@ -75,7 +76,7 @@ AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
  * creates the widget for the osg viewer
  * \return the widget
  */
-void AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootNode)
+QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootNode)
 {
 	//get context
     osg::ref_ptr<osg::DisplaySettings> ds = osg::DisplaySettings::instance().get();
@@ -85,7 +86,7 @@ void AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootNode)
     traits->x = 100;
     traits->y = 100;
     traits->width = 300;
-    traits->height = 500;
+    traits->height = 300;
     traits->doubleBuffer = true;
     traits->alpha = ds->getMinimumNumAlphaBits();
     traits->stencil = ds->getMinimumNumStencilBits();
@@ -94,19 +95,20 @@ void AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootNode)
     osg::ref_ptr<osgQt::GraphicsWindowQt> gw = new osgQt::GraphicsWindowQt(traits.get(),this);
 
 	//add a scene to viewer
-    osgViewer::CompositeViewer::addView(_sceneView);
+    addView(_sceneView);
 
     //get the viewer widget
     osg::ref_ptr<osg::Camera> camera = _sceneView->getCamera();
     camera->setGraphicsContext(gw);
+    const osg::GraphicsContext::Traits* traits2 = gw->getTraits();
     camera->setClearColor(osg::Vec4(0.2, 0.2, 0.6, 1.0));
-    camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
-    camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits->width) / static_cast<double>(traits->height), 1.0f, 10000.0f);
+    camera->setViewport(new osg::Viewport(0, 0, traits2->width, traits2->height));
+    camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits2->width) / static_cast<double>(traits2->height), 1.0f, 10000.0f);
     _sceneView->setSceneData(rootNode);
     _sceneView->addEventHandler(new osgViewer::StatsHandler());
     _sceneView->setCameraManipulator(new osgGA::MultiTouchTrackballManipulator());
     gw->setTouchEventsEnabled(true);
-    viewerWidget = gw->getGLWidget();
+    return gw->getGLWidget();
 }
 
 
@@ -117,11 +119,13 @@ void AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootNode)
  */
 QWidget* AnimationWindowContainer::setupAnimationWidgets()
 {
+	// control widgets
     _timeSlider = new QSlider(Qt::Horizontal,this);
     _timeSlider->setFixedHeight(30);
     _timeSlider->setMinimum(0);
     _timeSlider->setMaximum(100);
     _timeSlider->setSliderPosition(50);
+    _visFileButton = new QPushButton("Choose File",this);
     _playButton = new QPushButton("Play",this);
     _pauseButton = new QPushButton("Pause",this);
     _initButton = new QPushButton("Initialize",this);
@@ -130,8 +134,9 @@ QWidget* AnimationWindowContainer::setupAnimationWidgets()
     _RTFactorDisplay = new QLabel(this);
     _RTFactorDisplay->setText(QString("RT-Factor: ").append(QString::fromStdString("0.000")));
 
-    //make a row layout
+    //layout for all control widgets
     QHBoxLayout* rowLayOut = new QHBoxLayout();
+    rowLayOut->addWidget(_visFileButton);
     rowLayOut->addWidget(_initButton);
     rowLayOut->addWidget(_playButton);
     rowLayOut->addWidget(_pauseButton);
@@ -143,39 +148,44 @@ QWidget* AnimationWindowContainer::setupAnimationWidgets()
     widgetRowBox->setFixedHeight(40);
 
     topWidget = new QWidget(this);
-    QVBoxLayout* mainRowLayout = new QVBoxLayout(this);
-    //mainRowLayout->addWidget(viewerWidget);
-    mainRowLayout->addWidget(widgetRowBox);
-    topWidget->setLayout(mainRowLayout);
+    QVBoxLayout* mainVLayout = new QVBoxLayout(this);
+    //mainVLayout->addWidget(viewerWidget);
+    mainVLayout->addWidget(widgetRowBox);
+    topWidget->setLayout(mainVLayout);
 
     // Connect the buttons to the corresponding slot functions.
-    //QObject::connect(playButton, SIGNAL(clicked()), this, SLOT(playSlotFunction()));
-    //QObject::connect(pauseButton, SIGNAL(clicked()), this, SLOT(pauseSlotFunction()));
-    //QObject::connect(initButton, SIGNAL(clicked()), this, SLOT(initSlotFunction()));
+    QObject::connect(_visFileButton, SIGNAL(clicked()), this, SLOT(animationFileSlotFunction()));
+    QObject::connect(_playButton, SIGNAL(clicked()), this, SLOT(playSlotFunction()));
+    QObject::connect(_pauseButton, SIGNAL(clicked()), this, SLOT(pauseSlotFunction()));
+    QObject::connect(_initButton, SIGNAL(clicked()), this, SLOT(initSlotFunction()));
     return topWidget;
 }
 
 
-/*!
- * \brief AnimationWindowContainer::getUniqueName
- * Returns a unique name for new animation window.
- * \param name
- * \param number
- * \return
- */
-QString AnimationWindowContainer::getUniqueName(QString name, int number)
-{
-  QString newName;
-  newName = name + QString::number(number);
-
-  foreach (QMdiSubWindow *pWindow, subWindowList()) {
-    if (pWindow->widget()->windowTitle().compare(newName) == 0) {
-      newName = getUniqueName(name, ++number);
-      break;
-    }
-  }
-  return newName;
+void AnimationWindowContainer::showWidgets(){
+	viewerWidget->show();
+	show();
 }
+
+
+void AnimationWindowContainer::playSlotFunction(){
+	std::cout<<"playSlotFunction "<<std::endl;
+}
+
+void AnimationWindowContainer::pauseSlotFunction(){
+	std::cout<<"pauseSlotFunction "<<std::endl;
+}
+
+void AnimationWindowContainer::initSlotFunction(){
+	std::cout<<"initSlotFunction "<<std::endl;
+}
+
+void AnimationWindowContainer::animationFileSlotFunction(){
+	std::cout<<"animationFileSlotFunction "<<std::endl;
+	QFileDialog dialog(this);
+	QString fileName = dialog.getOpenFileName(this,tr("Open Visualiation File"), "./", tr("Visualization Files (*.mat *.fmu)"));
+}
+
 
 
 
