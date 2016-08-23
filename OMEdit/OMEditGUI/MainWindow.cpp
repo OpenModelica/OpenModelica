@@ -220,8 +220,12 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   addDockWidget(Qt::RightDockWidgetArea, mpDocumentationDockWidget);
   mpDocumentationDockWidget->hide();
   connect(mpDocumentationDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(documentationDockWidgetVisibilityChanged(bool)));
-  // Create an object of AnimationWindowContainer
+  // Create an object of AnimationWindowContainer and render it periodically
   mpAnimationWindowContainer = new AnimationWindowContainer(this);
+  renderTimer = new QTimer();
+  QObject::connect(renderTimer, SIGNAL(timeout()), mpAnimationWindowContainer, SLOT(renderSlotFunction()));
+  renderTimer->start(10);
+
   // Create an object of PlotWindowContainer
   mpPlotWindowContainer = new PlotWindowContainer(this);
   // create an object of VariablesWidget
@@ -3074,6 +3078,8 @@ void MainWindow::switchToAnimationPerspective()
 {
 	storePlotWindowsStateAndGeometry();
 	mpCentralStackedWidget->setCurrentWidget(mpAnimationWindowContainer);
+	mpAnimationWindowContainer->showWidgets();
+	//mpAnimationWindowContainer->viewerWidget->show();
 }
 
 /*!

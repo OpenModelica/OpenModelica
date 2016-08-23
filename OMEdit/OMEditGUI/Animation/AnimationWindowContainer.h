@@ -49,35 +49,42 @@
 #include <osg/MatrixTransform>
 #include <osg/GraphicsContext>
 
-//#include <QtOpenGL/QGLWidget>
 #include <osgQt/GraphicsWindowQt>
-
+#include <string>
 
 
 class MainWindow;
 
-class AnimationWindowContainer : public MdiArea, public osgViewer::CompositeViewer
+class AnimationWindowContainer : public QWidget, public osgViewer::CompositeViewer
 {
   Q_OBJECT
-public:
-  AnimationWindowContainer(MainWindow *pParent);
-  QString getUniqueName(QString name = QString("Animation"), int number = 4);
-  QWidget* setupAnimationWidgets();
-  void setupViewWidget(osg::ref_ptr<osg::Node> rootNode);
+  public:
+    AnimationWindowContainer(MainWindow *pParent);
+    QWidget* setupAnimationWidgets();
+    QWidget* setupViewWidget(osg::ref_ptr<osg::Node> rootNode);
+    void showWidgets();
 
-  //osg viewer
-  osgViewer::View* _sceneView;
-  QWidget* viewerWidget;
+  public slots:
+    void playSlotFunction();
+    void pauseSlotFunction();
+    void initSlotFunction();
+    void renderSlotFunction();
+    void animationFileSlotFunction();
 
-  //widgets
-  QWidget* topWidget;
-  QPushButton* _playButton;
-  QPushButton* _pauseButton;
-  QPushButton* _initButton;
-  QSlider* _timeSlider;
-  QLabel* _timeDisplay;
-  QLabel* _RTFactorDisplay;
-
+  private:
+    //osg viewer
+    osgViewer::View* _sceneView;
+    //widgets
+    QWidget* viewerWidget;
+    QWidget* topWidget;
+    QPushButton* _visFileButton;
+    QPushButton* _playButton;
+    QPushButton* _pauseButton;
+    QPushButton* _initButton;
+    QSlider* _timeSlider;
+    QLabel* _timeDisplay;
+    QLabel* _RTFactorDisplay;
+    QTimer _renderTimer;
 };
 
 #endif // ANIMATIONWINDOWCONTAINER_H

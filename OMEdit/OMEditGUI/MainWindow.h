@@ -363,6 +363,7 @@ private:
   QToolBar *mpPlotToolBar;
   QToolBar *mpTLMSimulationToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
+  QTimer *renderTimer;
 public slots:
   void createNewModelicaClass();
   void openModelicaFile();
