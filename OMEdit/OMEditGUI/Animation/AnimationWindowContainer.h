@@ -29,13 +29,15 @@
  *
  */
 /*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+ * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
 #ifndef ANIMATIONWINDOWCONTAINER_H
 #define ANIMATIONWINDOWCONTAINER_H
 
 #include "MainWindow.h"
+#include "AnimationUtil.h"
+#include "Visualizer.h"
 
 #include <iostream>
 
@@ -63,6 +65,7 @@ class AnimationWindowContainer : public QWidget, public osgViewer::CompositeView
     QWidget* setupAnimationWidgets();
     QWidget* setupViewWidget(osg::ref_ptr<osg::Node> rootNode);
     void showWidgets();
+    void loadVisualization();
 
   public slots:
     void playSlotFunction();
@@ -72,6 +75,9 @@ class AnimationWindowContainer : public QWidget, public osgViewer::CompositeView
     void animationFileSlotFunction();
 
   private:
+    //to be animated
+    std::string _pathName;
+    std::string _fileName;
     //osg viewer
     osgViewer::View* _sceneView;
     //widgets

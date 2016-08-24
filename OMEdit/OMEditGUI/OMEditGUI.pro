@@ -118,6 +118,9 @@ SOURCES += main.cpp \
   Editors/MetaModelicaEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
 	Animation/AnimationWindowContainer.cpp \
+	Animation/Visualizer.cpp \
+	Animation/Shapes.cpp \
+	Animation/TimeManager.cpp \
   Component/Component.cpp \
   Annotations/ShapeAnnotation.cpp \
   Component/CornerItem.cpp \
@@ -180,7 +183,14 @@ HEADERS  += Util/Helper.h \
   Editors/CEditor.h \
   Editors/MetaModelEditor.h \
   Editors/MetaModelicaEditor.h \
+	$$OPENMODELICAHOME/../OMCompiler/SimulationRuntime/c/util/read_matlab4.h \
+	D:/Programming/OPENMODELICA_GIT/OpenModelica/OMCompiler/3rdParty/FMIL/build/fmilib.h \
 	Animation/AnimationWindowContainer.h \
+	Animation/AnimationUtil.h \
+	Animation/Visualizer.h \
+	Animation/Shapes.h \
+	Animation/TimeManager.h \
+	Animation/rapidxml.hpp \
   Plotting/PlotWindowContainer.h \
   Component/Component.h \
   Annotations/ShapeAnnotation.h \
@@ -231,6 +241,7 @@ INCLUDEPATH += ../../qjson/build/include
 
 INCLUDEPATH += . \
   Annotations \
+	Animation \
   Component \
   CrashReport \
   Debugger \
@@ -251,7 +262,7 @@ INCLUDEPATH += . \
   TransformationalDebugger \
   Util \
   $$OPENMODELICAHOME/include/omc/scripting-API \
-  $$OPENMODELICAHOME/include/omc/c/util
+  $$OPENMODELICAHOME/include/omc/c/util \
 
 OTHER_FILES += Resources/css/stylesheet.qss \
   Resources/XMLSchema/tlmModelDescription.xsd \

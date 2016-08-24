@@ -33,7 +33,7 @@
  */
 
 #include "AnimationWindowContainer.h"
-
+#include "AnimationUtil.h"
 /*!
   \class AnimationWindowContainer
   \brief A MDI area for animation windows.
@@ -45,6 +45,8 @@
 AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
   : QWidget(pParent),
 	osgViewer::CompositeViewer(),
+	_pathName(""),
+	_fileName(""),
 	_sceneView(new osgViewer::View()),
 	viewerWidget(nullptr),
     topWidget(nullptr),
@@ -115,7 +117,6 @@ QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootN
 /*!
  * \brief AnimationWindowContainer::setupAnimationWidgets
  * creates the widgets for the animation
- * \return void
  */
 QWidget* AnimationWindowContainer::setupAnimationWidgets()
 {
@@ -161,29 +162,79 @@ QWidget* AnimationWindowContainer::setupAnimationWidgets()
     return topWidget;
 }
 
-
+/*!
+ * \brief AnimationWindowContainer::showWidgets
+ * overwrite show method to explicitly show the viewer as well
+ */
 void AnimationWindowContainer::showWidgets(){
 	viewerWidget->show();
 	show();
 }
 
-
+/*!
+ * \brief AnimationWindowContainer::playSlotFunction
+ * slot function for the play button
+ */
 void AnimationWindowContainer::playSlotFunction(){
 	std::cout<<"playSlotFunction "<<std::endl;
 }
 
+/*!
+ * \brief AnimationWindowContainer::pauseSlotFunction
+ * slot function for the pause button
+ */
 void AnimationWindowContainer::pauseSlotFunction(){
 	std::cout<<"pauseSlotFunction "<<std::endl;
 }
 
+/*!
+ * \brief AnimationWindowContainer::initSlotFunction
+ * slot function for the init button
+ */
 void AnimationWindowContainer::initSlotFunction(){
 	std::cout<<"initSlotFunction "<<std::endl;
+}
+
+/*!
+ * \brief AnimationWindowContainer::loadVisualization
+ * loads the data and the xml scene description
+ */
+void AnimationWindowContainer::loadVisualization(){
+	VisType visType = VisType::NONE;
+    // Get visualization type.
+    if (isFMU(_fileName))
+        visType = VisType::FMU;
+    else if (isMAT(_fileName))
+        visType = VisType::MAT;
+    else
+    	std::cout<<"doof "<<std::endl;
+
+
+    //init
+    if (visType == VisType::FMU){
+		//result = std::shared_ptr<VisualizerAbstract>(new VisualizerFMU(cP->modelFile, cP->path));
+	}
+	// MAT file based visualization
+	else if (visType == VisType::MAT)
+	{
+		VisualizerMAT* result = new VisualizerMAT(_fileName, _pathName);
+	}
+	else
+	{
+		std::cout<<"could not init "<<_pathName<<_fileName<<std::endl;
+	}
+
 }
 
 void AnimationWindowContainer::animationFileSlotFunction(){
 	std::cout<<"animationFileSlotFunction "<<std::endl;
 	QFileDialog dialog(this);
-	QString fileName = dialog.getOpenFileName(this,tr("Open Visualiation File"), "./", tr("Visualization Files (*.mat *.fmu)"));
+	std::string file = dialog.getOpenFileName(this,tr("Open Visualiation File"), "./", tr("Visualization FMU(*.fmu);; Visualization MAT(*.mat)")).toStdString();;
+    std::size_t pos = file.find_last_of("/\\");
+    _pathName = file.substr(0, pos + 1);
+    _fileName = file.substr(pos + 1, file.length());
+	std::cout<<"file "<<_fileName<<"   path "<<_pathName<<std::endl;
+	loadVisualization();
 }
 
 
