@@ -33,7 +33,8 @@
  */
 
 #include "AnimationWindowContainer.h"
-#include "AnimationUtil.h"
+
+
 /*!
   \class AnimationWindowContainer
   \brief A MDI area for animation windows.
@@ -48,8 +49,9 @@ AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
 	_pathName(""),
 	_fileName(""),
 	_sceneView(new osgViewer::View()),
-	viewerWidget(nullptr),
-    topWidget(nullptr),
+	_visualizer(),
+	_viewerWidget(nullptr),
+    _topWidget(nullptr),
 	_visFileButton(nullptr),
     _playButton(nullptr),
     _pauseButton(nullptr),
@@ -57,21 +59,16 @@ AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
     _timeSlider(nullptr),
 	_timeDisplay(nullptr),
 	_RTFactorDisplay(nullptr),
-	_renderTimer()
+	_updateTimer(nullptr)
 {
   setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
   //the viewer widget
   osg::ref_ptr<osg::Node> rootNode = osgDB::readRefNodeFile("D:/Programming/OPENMODELICA_GIT/OpenModelica/build/bin/dumptruck.osg");
-  viewerWidget = setupViewWidget(rootNode);
+  _viewerWidget = setupViewWidget(rootNode);
   //the control widgets
-  topWidget = AnimationWindowContainer::setupAnimationWidgets();
+  _topWidget = AnimationWindowContainer::setupAnimationWidgets();
 }
 
-void AnimationWindowContainer::renderSlotFunction()
-{
-  //update();
-  frame();
-}
 
 /*!
  * \brief AnimationWindowContainer::setupViewWidget
@@ -148,18 +145,77 @@ QWidget* AnimationWindowContainer::setupAnimationWidgets()
     widgetRowBox->setLayout(rowLayOut);
     widgetRowBox->setFixedHeight(40);
 
-    topWidget = new QWidget(this);
+    _topWidget = new QWidget(this);
     QVBoxLayout* mainVLayout = new QVBoxLayout(this);
     //mainVLayout->addWidget(viewerWidget);
     mainVLayout->addWidget(widgetRowBox);
-    topWidget->setLayout(mainVLayout);
+    _topWidget->setLayout(mainVLayout);
 
     // Connect the buttons to the corresponding slot functions.
-    QObject::connect(_visFileButton, SIGNAL(clicked()), this, SLOT(animationFileSlotFunction()));
+    QObject::connect(_visFileButton, SIGNAL(clicked()), this, SLOT(chooseAnimationFileSlotFunction()));
     QObject::connect(_playButton, SIGNAL(clicked()), this, SLOT(playSlotFunction()));
     QObject::connect(_pauseButton, SIGNAL(clicked()), this, SLOT(pauseSlotFunction()));
     QObject::connect(_initButton, SIGNAL(clicked()), this, SLOT(initSlotFunction()));
-    return topWidget;
+    return _topWidget;
+}
+
+
+/*!
+ * \brief AnimationWindowContainer::loadVisualization
+ * loads the data and the xml scene description
+ */
+void AnimationWindowContainer::loadVisualization(){
+	VisType visType = VisType::NONE;
+
+    // Get visualization type.
+    if (isFMU(_fileName))
+        visType = VisType::FMU;
+    else if (isMAT(_fileName))
+        visType = VisType::MAT;
+    else
+    	std::cout<<"unknown visualization type. "<<std::endl;
+
+    //init visualizer
+    if (visType == VisType::MAT){
+		_visualizer = new VisualizerMAT(_fileName, _pathName);
+	}
+	else{
+		std::cout<<"could not init "<<_pathName<<_fileName<<std::endl;
+	}
+
+    //load the XML File, build osgTree, get initial values for the shapes
+    bool xmlExists = checkForXMLFile(_fileName, _pathName);
+    if (!xmlExists){
+        std::cout<<"Could not find the visual XML file "<<assembleXMLFileName(_fileName, _pathName)<<std::endl;
+    }
+    _visualizer->initData();
+    _visualizer->setUpScene();
+    _visualizer->initVisualization();
+
+    //add
+    _sceneView->setSceneData(_visualizer->getOMVisScene()->getScene().getRootNode());
+
+    std::cout<<"start timer"<<std::endl;
+    _updateTimer = new QTimer();
+    QObject::connect(_updateTimer, SIGNAL(timeout()), this, SLOT(updateSceneFunction()));
+    _updateTimer->start(100);
+}
+
+
+/*!
+ * \brief AnimationWindowContainer::animationFileSlotFunction
+ * opens a file dialog to chooes an animation
+ */
+void AnimationWindowContainer::chooseAnimationFileSlotFunction(){
+	std::cout<<"animationFileSlotFunction "<<std::endl;
+	QFileDialog dialog(this);
+	std::string file = dialog.getOpenFileName(this,tr("Open Visualiation File"), "./", tr("Visualization FMU(*.fmu);; Visualization MAT(*.mat)")).toStdString();;
+    std::size_t pos = file.find_last_of("/\\");
+    _pathName = file.substr(0, pos + 1);
+    _fileName = file.substr(pos + 1, file.length());
+	std::cout<<"file "<<_fileName<<"   path "<<_pathName<<std::endl;
+	loadVisualization();
+
 }
 
 /*!
@@ -167,7 +223,7 @@ QWidget* AnimationWindowContainer::setupAnimationWidgets()
  * overwrite show method to explicitly show the viewer as well
  */
 void AnimationWindowContainer::showWidgets(){
-	viewerWidget->show();
+	_viewerWidget->show();
 	show();
 }
 
@@ -177,6 +233,7 @@ void AnimationWindowContainer::showWidgets(){
  */
 void AnimationWindowContainer::playSlotFunction(){
 	std::cout<<"playSlotFunction "<<std::endl;
+	_visualizer->getTimeManager()->setPause(false);
 }
 
 /*!
@@ -185,6 +242,7 @@ void AnimationWindowContainer::playSlotFunction(){
  */
 void AnimationWindowContainer::pauseSlotFunction(){
 	std::cout<<"pauseSlotFunction "<<std::endl;
+	_visualizer->getTimeManager()->setPause(true);
 }
 
 /*!
@@ -196,45 +254,20 @@ void AnimationWindowContainer::initSlotFunction(){
 }
 
 /*!
- * \brief AnimationWindowContainer::loadVisualization
- * loads the data and the xml scene description
+ * \brief AnimationWindowContainer::updateSceneFunction
+ * updates the visualization objects
  */
-void AnimationWindowContainer::loadVisualization(){
-	VisType visType = VisType::NONE;
-    // Get visualization type.
-    if (isFMU(_fileName))
-        visType = VisType::FMU;
-    else if (isMAT(_fileName))
-        visType = VisType::MAT;
-    else
-    	std::cout<<"doof "<<std::endl;
-
-
-    //init
-    if (visType == VisType::FMU){
-		//result = std::shared_ptr<VisualizerAbstract>(new VisualizerFMU(cP->modelFile, cP->path));
-	}
-	// MAT file based visualization
-	else if (visType == VisType::MAT)
-	{
-		VisualizerMAT* result = new VisualizerMAT(_fileName, _pathName);
-	}
-	else
-	{
-		std::cout<<"could not init "<<_pathName<<_fileName<<std::endl;
-	}
-
+void AnimationWindowContainer::updateSceneFunction(){
+	_visualizer->sceneUpdate();
 }
 
-void AnimationWindowContainer::animationFileSlotFunction(){
-	std::cout<<"animationFileSlotFunction "<<std::endl;
-	QFileDialog dialog(this);
-	std::string file = dialog.getOpenFileName(this,tr("Open Visualiation File"), "./", tr("Visualization FMU(*.fmu);; Visualization MAT(*.mat)")).toStdString();;
-    std::size_t pos = file.find_last_of("/\\");
-    _pathName = file.substr(0, pos + 1);
-    _fileName = file.substr(pos + 1, file.length());
-	std::cout<<"file "<<_fileName<<"   path "<<_pathName<<std::endl;
-	loadVisualization();
+/*!
+ * \brief AnimationWindowContainer::renderSlotFunction
+ * renders the osg viewer
+ */
+void AnimationWindowContainer::renderSlotFunction()
+{
+  frame();
 }
 
 

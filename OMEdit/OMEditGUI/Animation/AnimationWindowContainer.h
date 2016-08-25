@@ -35,24 +35,24 @@
 #ifndef ANIMATIONWINDOWCONTAINER_H
 #define ANIMATIONWINDOWCONTAINER_H
 
-#include "MainWindow.h"
 #include "AnimationUtil.h"
+#include "MainWindow.h"
 #include "Visualizer.h"
 
 #include <iostream>
+#include <string>
 
-#include <osgViewer/CompositeViewer>
-#include <osgViewer/View>
-#include <osgDB/ReadFile>
-#include <osgGA/MultiTouchTrackballManipulator>
-#include <osgViewer/ViewerEventHandlers>
-#include <osg/Vec3>
+#include <osg/GraphicsContext>
 #include <osg/io_utils>
 #include <osg/MatrixTransform>
-#include <osg/GraphicsContext>
-
+#include <osg/Vec3>
+#include <osgDB/ReadFile>
+#include <osgGA/MultiTouchTrackballManipulator>
 #include <osgQt/GraphicsWindowQt>
-#include <string>
+#include <osgViewer/CompositeViewer>
+#include <osgViewer/View>
+#include <osgViewer/ViewerEventHandlers>
+
 
 
 class MainWindow;
@@ -66,23 +66,24 @@ class AnimationWindowContainer : public QWidget, public osgViewer::CompositeView
     QWidget* setupViewWidget(osg::ref_ptr<osg::Node> rootNode);
     void showWidgets();
     void loadVisualization();
-
   public slots:
     void playSlotFunction();
     void pauseSlotFunction();
     void initSlotFunction();
     void renderSlotFunction();
-    void animationFileSlotFunction();
-
+    void chooseAnimationFileSlotFunction();
+    void updateSceneFunction();
   private:
     //to be animated
     std::string _pathName;
     std::string _fileName;
-    //osg viewer
+    //osg viewer scene
     osgViewer::View* _sceneView;
+    //stores the data for the shapes, time management, functionality for updating the values(mat/fmu) etc.
+    VisualizerAbstract* _visualizer;
     //widgets
-    QWidget* viewerWidget;
-    QWidget* topWidget;
+    QWidget* _viewerWidget;
+    QWidget* _topWidget;
     QPushButton* _visFileButton;
     QPushButton* _playButton;
     QPushButton* _pauseButton;
@@ -90,7 +91,7 @@ class AnimationWindowContainer : public QWidget, public osgViewer::CompositeView
     QSlider* _timeSlider;
     QLabel* _timeDisplay;
     QLabel* _RTFactorDisplay;
-    QTimer _renderTimer;
+    QTimer* _updateTimer;
 };
 
 #endif // ANIMATIONWINDOWCONTAINER_H
