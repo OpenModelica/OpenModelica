@@ -343,6 +343,24 @@ void divide_array(const BaseArray<T>& inputArray, const T &b, BaseArray<T>& outp
 }
 
 template <typename T>
+void divide_array_elem_wise(const BaseArray<T> &leftArray, const BaseArray<T> &rightArray, BaseArray<T> &resultArray)
+{
+  size_t dimLeft = leftArray.getNumElems();
+  size_t dimRight = rightArray.getNumElems();
+
+  if(dimLeft != dimRight)
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+      "Right and left array must have the same size for element wise division");
+
+  resultArray.setDims(leftArray.getDims());
+  const T* leftData = leftArray.getData();
+  const T* rightData = rightArray.getData();
+  T* result = resultArray.getData();
+
+  std::transform (leftData, leftData + leftArray.getNumElems(), rightData, result, std::divides<T>());
+}
+
+template <typename T>
 void fill_array(BaseArray<T>& inputArray, T b)
 {
   T* data = inputArray.getData();
@@ -411,6 +429,19 @@ void add_array(const BaseArray<T>& leftArray, const BaseArray<T>& rightArray, Ba
   T* aim = resultArray.getData();
 
   std::transform(data1, data1 + leftArray.getNumElems(), data2, aim, std::plus<T>());
+}
+
+template <typename T>
+void add_array_scalar(const BaseArray<T>& inputArray, T b, BaseArray<T>& outputArray)
+{
+  size_t dim = inputArray.getNumElems();
+  if (dim > 0) {
+    outputArray.setDims(inputArray.getDims());
+    const T* data = inputArray.getData();
+    T* result = outputArray.getData();
+    std::transform (data, data + inputArray.getNumElems(),
+                    result, std::bind2nd(std::plus<T>(), b));
+  }
 }
 
 template <typename T>
@@ -605,6 +636,13 @@ template void BOOST_EXTENSION_EXPORT_DECL
 divide_array(const BaseArray<bool>& inputArray, const bool &b, BaseArray<bool>& outputArray);
 
 template void BOOST_EXTENSION_EXPORT_DECL
+divide_array_elem_wise(const BaseArray<double> &leftArray, const BaseArray<double> &rightArray, BaseArray<double> &resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+divide_array_elem_wise(const BaseArray<int> &leftArray, const BaseArray<int> &rightArray, BaseArray<int> &resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+divide_array_elem_wise(const BaseArray<bool> &leftArray, const BaseArray<bool> &rightArray, BaseArray<bool> &resultArray);
+
+template void BOOST_EXTENSION_EXPORT_DECL
 fill_array(BaseArray<double>& inputArray, double b);
 template void BOOST_EXTENSION_EXPORT_DECL
 fill_array(BaseArray<int>& inputArray, int b);
@@ -636,6 +674,13 @@ template void BOOST_EXTENSION_EXPORT_DECL
 add_array(const BaseArray<int>& leftArray, const BaseArray<int>& rightArray, BaseArray<int>& resultArray);
 template void BOOST_EXTENSION_EXPORT_DECL
 add_array(const BaseArray<bool>& leftArray, const BaseArray<bool>& rightArray, BaseArray<bool>& resultArray);
+
+template void BOOST_EXTENSION_EXPORT_DECL
+add_array_scalar(const BaseArray<double>& inputArray, double b, BaseArray<double>& outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+add_array_scalar(const BaseArray<int>& inputArray, int b, BaseArray<int>& outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+add_array_scalar(const BaseArray<bool>& inputArray, bool b, BaseArray<bool>& outputArray);
 
 template void BOOST_EXTENSION_EXPORT_DECL
 usub_array(const BaseArray<double>& a, BaseArray<double>& b);

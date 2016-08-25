@@ -2319,8 +2319,16 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
     let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
     let &preExp += 'multiply_array_elem_wise<<%type%>>(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
     '<%tvar%>'
-  case DIV_ARR(__) then "daeExpBinary:ERR DIV_ARR not supported"
-  case ADD_ARRAY_SCALAR(__) then "daeExpBinary:ERR ADD_ARRAY_SCALAR not supported"
+  case DIV_ARR(ty=T_ARRAY(dims=dims)) then
+    let type = expTypeShort(ty.ty)
+    let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
+    let &preExp += 'divide_array_elem_wise<<%type%>>(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
+    '<%tvar%>'
+  case ADD_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
+    let type = expTypeShort(ty.ty)
+    let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
+    let &preExp += 'add_array_scalar<<%type%>>(<%e2%>, <%e1%>, <%tvar%>);<%\n%>'
+    '<%tvar%>'
   case SUB_SCALAR_ARRAY(ty=T_ARRAY(dims=dims)) then
     let type = expTypeShort(ty.ty)
     let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
