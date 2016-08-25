@@ -157,7 +157,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   connect(pAlgorithmicDebuggingShortcut, SIGNAL(activated()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
   mpPerspectiveTabbar->setTabToolTip(3, tr("Changes to debugging perspective (%1)").arg(pAlgorithmicDebuggingShortcut->key().toString()));
   // 3d animation perspective
-  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/debugger.svg"), tr("Animation"));
+  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/animation.png"), tr("Animation"));
   QShortcut *pAnimationShortcut = new QShortcut(QKeySequence("Ctrl+f6"), this);
   connect(pAnimationShortcut, SIGNAL(activated()), SLOT(switchToAnimationPerspectiveSlot()));
   mpPerspectiveTabbar->setTabToolTip(4, tr("Changes to animation perspective (%1)").arg(pAnimationShortcut->key().toString()));
@@ -3095,7 +3095,13 @@ void MainWindow::switchToAnimationPerspective()
 	storePlotWindowsStateAndGeometry();
 	mpCentralStackedWidget->setCurrentWidget(mpAnimationWindowContainer);
 	mpAnimationWindowContainer->showWidgets();
-	//mpAnimationWindowContainer->viewerWidget->show();
+	mpVariablesDockWidget->hide();
+	mpStackFramesDockWidget->hide();
+	mpBreakpointsDockWidget->hide();
+	mpLocalsDockWidget->hide();
+	mpTargetOutputDockWidget->hide();
+	mpGDBLoggerDockWidget->hide();
+	mpWelcomePageWidget->hide();
 }
 
 /*!

@@ -99,7 +99,7 @@ void OMVisualBase::initVisObjects()
 		}
 		else
 		{
-			std::cout<<"shape._id "<<shape._id;
+			//std::cout<<"shape._id "<<shape._id;
 
 			shape._type = std::string(expNode->value());
 
@@ -391,12 +391,10 @@ void VisualizerMAT::updateVisAttributes(const double time)
 
         for (auto& shape : _baseData->_shapes)
         {
-        	std::cout<<"shape "<<shape._id <<std::endl;
+        	//std::cout<<"shape "<<shape._id <<std::endl;
 
             // Get the values for the scene graph objects
             updateObjectAttributeMAT(&shape._length, time, tmpReaderPtr);
-        	std::cout<<"shape "<<shape._id <<" done"<<std::endl;
-
             updateObjectAttributeMAT(&shape._width, time, tmpReaderPtr);
             updateObjectAttributeMAT(&shape._height, time, tmpReaderPtr);
 
@@ -431,7 +429,6 @@ void VisualizerMAT::updateVisAttributes(const double time)
             updateObjectAttributeMAT(&shape._color[2], time, tmpReaderPtr);
 
             updateObjectAttributeMAT(&shape._specCoeff, time, tmpReaderPtr);
-        	std::cout<<"shape "<<shape._id <<" done2"<<std::endl;
 
             rT = rotateModelica2OSG(osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
                                 osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
@@ -441,26 +438,15 @@ void VisualizerMAT::updateVisAttributes(const double time)
                                 osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
                                 osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
                                 shape._length.exp, shape._width.exp, shape._height.exp, shape._type);
-        	std::cout<<"shape "<<shape._id <<" done3"<<std::endl;
 
             assemblePokeMatrix(shape._mat, rT._T, rT._r);
-        	std::cout<<"shape "<<shape._id <<" done4"<<std::endl;
-
             // Update the shapes.
             _nodeUpdater->_shape = shape;
             //shape.dumpVisAttributes();
-        	std::cout<<"shape "<<shape._id <<" done5"<<std::endl;
-
             // Get the scene graph nodes and stuff.
             child = _viewerStuff->getScene().getRootNode()->getChild(shapeIdx);  // the transformation
-        	std::cout<<"shape "<<shape._id <<" done6"<<std::endl;
-
             child->accept(*_nodeUpdater);
-        	std::cout<<"shape "<<shape._id <<" done7"<<std::endl;
-
             ++shapeIdx;
-        	std::cout<<"shape "<<shape._id <<" done8"<<std::endl;
-
         }
     }
     catch (std::exception& ex)
@@ -497,7 +483,7 @@ double VisualizerMAT::omcGetVarValue(ModelicaMatReader* reader, const char* varN
     ModelicaMatVariable_t* var = nullptr;
     var = omc_matlab4_find_var(reader, varName);
     if (var == nullptr)
-        std::cout<<"Did not get variable from result file. Variable name is "<<std::endl;
+        std::cout<<"Did not get variable from result file. Variable name is "<<std::string(varName)<<std::endl;
     else
         omc_matlab4_val(&val, reader, var, time);
 
