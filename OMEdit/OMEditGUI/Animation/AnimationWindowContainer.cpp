@@ -35,6 +35,8 @@
 #include "AnimationWindowContainer.h"
 
 
+const double HEIGHT_CONTROLWIDGETS = 40;
+
 /*!
   \class AnimationWindowContainer
   \brief A MDI area for animation windows.
@@ -65,6 +67,9 @@ AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
   //the viewer widget
   osg::ref_ptr<osg::Node> rootNode = osgDB::readRefNodeFile("D:/Programming/OPENMODELICA_GIT/OpenModelica/build/bin/dumptruck.osg");
   _viewerWidget = setupViewWidget(rootNode);
+  _viewerWidget->setParent(this);
+  _viewerWidget->setWindowFlags(Qt::SubWindow);
+  //_viewerWidget->setWindowState(Qt::WindowMaximized);
   //the control widgets
   _topWidget = AnimationWindowContainer::setupAnimationWidgets();
 }
@@ -82,16 +87,17 @@ QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootN
     osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits();
     traits->windowName = "";
     traits->windowDecoration = false;
-    traits->x = 100;
-    traits->y = 100;
-    traits->width = 300;
-    traits->height = 300;
+    traits->x = 0;
+    traits->y = 0;
+
+    traits->width = this->parentWidget()->width();
+    traits->height = this->parentWidget()->height();
     traits->doubleBuffer = true;
     traits->alpha = ds->getMinimumNumAlphaBits();
     traits->stencil = ds->getMinimumNumStencilBits();
     traits->sampleBuffers = ds->getMultiSamples();
     traits->samples = ds->getNumMultiSamples();
-    osg::ref_ptr<osgQt::GraphicsWindowQt> gw = new osgQt::GraphicsWindowQt(traits.get(),this);
+    osg::ref_ptr<osgQt::GraphicsWindowQt> gw = new osgQt::GraphicsWindowQt(traits.get());
 
 	//add a scene to viewer
     addView(_sceneView);
@@ -99,10 +105,9 @@ QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootN
     //get the viewer widget
     osg::ref_ptr<osg::Camera> camera = _sceneView->getCamera();
     camera->setGraphicsContext(gw);
-    const osg::GraphicsContext::Traits* traits2 = gw->getTraits();
     camera->setClearColor(osg::Vec4(0.2, 0.2, 0.6, 1.0));
-    camera->setViewport(new osg::Viewport(0, 0, traits2->width, traits2->height));
-    camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits2->width) / static_cast<double>(traits2->height), 1.0f, 10000.0f);
+    camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
+    camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits->width) / static_cast<double>(traits->height), 1.0f, 10000.0f);
     _sceneView->setSceneData(rootNode);
     _sceneView->addEventHandler(new osgViewer::StatsHandler());
     _sceneView->setCameraManipulator(new osgGA::MultiTouchTrackballManipulator());
@@ -141,13 +146,13 @@ QWidget* AnimationWindowContainer::setupAnimationWidgets()
     rowLayOut->addWidget(_timeSlider);
     rowLayOut->addWidget(_RTFactorDisplay);
     rowLayOut->addWidget(_timeDisplay);
-    QGroupBox* widgetRowBox = new QGroupBox(this);
+    QGroupBox* widgetRowBox = new QGroupBox();
     widgetRowBox->setLayout(rowLayOut);
-    widgetRowBox->setFixedHeight(40);
+    widgetRowBox->setFixedHeight(HEIGHT_CONTROLWIDGETS);
 
     _topWidget = new QWidget(this);
-    QVBoxLayout* mainVLayout = new QVBoxLayout(this);
-    //mainVLayout->addWidget(viewerWidget);
+    QVBoxLayout* mainVLayout = new QVBoxLayout();
+    //mainVLayout->addWidget(_viewerWidget);
     mainVLayout->addWidget(widgetRowBox);
     _topWidget->setLayout(mainVLayout);
 
@@ -209,12 +214,16 @@ void AnimationWindowContainer::loadVisualization(){
 void AnimationWindowContainer::chooseAnimationFileSlotFunction(){
 	std::cout<<"animationFileSlotFunction "<<std::endl;
 	QFileDialog dialog(this);
-	std::string file = dialog.getOpenFileName(this,tr("Open Visualiation File"), "./", tr("Visualization FMU(*.fmu);; Visualization MAT(*.mat)")).toStdString();;
+	std::string file = dialog.getOpenFileName(this,tr("Open Visualiation File"), "./", tr("Visualization MAT(*.mat)")).toStdString();
+	if (file.compare("")){
     std::size_t pos = file.find_last_of("/\\");
     _pathName = file.substr(0, pos + 1);
     _fileName = file.substr(pos + 1, file.length());
 	std::cout<<"file "<<_fileName<<"   path "<<_pathName<<std::endl;
 	loadVisualization();
+	}
+	else
+		std::cout<<"No Visualization selected!"<<std::endl;
 
 }
 
@@ -251,6 +260,8 @@ void AnimationWindowContainer::pauseSlotFunction(){
  */
 void AnimationWindowContainer::initSlotFunction(){
 	std::cout<<"initSlotFunction "<<std::endl;
+    _visualizer->initVisualization();
+
 }
 
 /*!
