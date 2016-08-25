@@ -35,29 +35,21 @@
 #ifndef TIMEMANAGER_H
 #define TIMEMANAGER_H
 
+#include <cmath>
 
 #include <osg/Timer>
-#include <cmath>
 
 
 class TimeManager
 {
  public:
-
 	TimeManager() = delete;
 	TimeManager(const double simTime, const double realTime, const double realTimeFactor, const double visTime,
 				const double hVisual, const double startTime, const double endTime);
-
 	~TimeManager() = default;
-	TimeManager(const TimeManager& omvm) = delete;
-	TimeManager& operator=(const TimeManager& omvm) = delete;
-
 	void updateTick();
-
 	int getSliderPosition() const;
-
 	void setSliderRange(const int min, const int max);
-
 	/*! \brief Returns the end time of the simulation. */
 	double getEndTime() const;
 	/*! \brief Sets the end time of the simulation to the given value. */

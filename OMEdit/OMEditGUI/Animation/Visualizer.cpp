@@ -68,6 +68,8 @@ void OMVisualBase::initXMLDoc()
 		buff2.append("</visualization>");
 		char* buff3 = strdup(buff2.c_str());  // cast to char*
 		_xmlDoc.parse<0>(buff3);
+		std::cout<<"laoded XML"<<std::endl;
+
 }
 
 void OMVisualBase::initVisObjects()
@@ -97,6 +99,8 @@ void OMVisualBase::initVisObjects()
 		}
 		else
 		{
+			std::cout<<"shape._id "<<shape._id;
+
 			shape._type = std::string(expNode->value());
 
 			expNode = shapeNode->first_node((const char*) "length")->first_node();
@@ -164,6 +168,7 @@ void OMVisualBase::initVisObjects()
 			shape._specCoeff = getObjectAttributeForNode(expNode);
 
 			_shapes.push_back(shape);
+			std::cout<<" done"<<std::endl;
 		}
 	} // end for-loop
 }
@@ -225,19 +230,54 @@ VisualizerAbstract::VisualizerAbstract(const std::string& modelFile, const std::
 {
 	_baseData = new OMVisualBase(modelFile, path);
 	_viewerStuff->getScene().setPath(path);
+	std::cout<<"INITED VisualizerAbstract"<<std::endl;
 }
 
 void VisualizerAbstract::initData()
 {
+	std::cout<<"initData 1"<<std::endl;
+
     // In case of reloading, we need to make sure, that we have empty members.
     _baseData->clearXMLDoc();
+	std::cout<<"initData 2"<<std::endl;
 
     // Initialize XML file and get visAttributes.
     _baseData->initXMLDoc();
+	std::cout<<"initData 3"<<std::endl;
 
     _baseData->initVisObjects();
+	std::cout<<"initData 4"<<std::endl;
 }
-/*
+
+void VisualizerAbstract::initVisualization()
+{
+    std::cout<<"Initialize visualization."<<std::endl;
+    initializeVisAttributes(_timeManager->getStartTime());
+    _timeManager->setVisTime(_timeManager->getStartTime());
+    _timeManager->setRealTimeFactor(0.0);
+    _timeManager->setPause(true);
+}
+
+TimeManager* VisualizerAbstract::getTimeManager() const
+{
+    return _timeManager;
+}
+
+void VisualizerAbstract::sceneUpdate()
+{
+    _timeManager->updateTick();
+
+    if (!_timeManager->isPaused())
+    {
+        updateScene(_timeManager->getVisTime());
+        _timeManager->setVisTime(_timeManager->getVisTime() + _timeManager->getHVisual());
+        if (_timeManager->getVisTime() >= _timeManager->getEndTime() - 1.e-6)
+        {
+            _timeManager->setPause(true);
+        }
+    }
+}
+
 void VisualizerAbstract::setUpScene()
 {
     // Build scene graph.
@@ -254,10 +294,7 @@ OMVisualBase* VisualizerAbstract::getBaseData() const
     return _baseData;
 }
 
-TimeManager* VisualizerAbstract::getTimeManager() const
-{
-    return _timeManager;
-}
+
 
 OMVisScene* VisualizerAbstract::getOMVisScene() const
 {
@@ -284,30 +321,7 @@ void VisualizerAbstract::pauseVisualization()
     _timeManager->setPause(true);
 }
 
-void VisualizerAbstract::initVisualization()
-{
-    std::cout<<"Initialize visualization."<<std::endl;
-    initializeVisAttributes(_timeManager->getStartTime());
-    _timeManager->setVisTime(_timeManager->getStartTime());
-    _timeManager->setRealTimeFactor(0.0);
-    _timeManager->setPause(true);
-}
 
-void VisualizerAbstract::sceneUpdate()
-{
-    _timeManager->updateTick();
-
-    if (!_timeManager->isPaused())
-    {
-        updateScene(_timeManager->getVisTime());
-        _timeManager->setVisTime(_timeManager->getVisTime() + _timeManager->getHVisual());
-        if (_timeManager->getVisTime() >= _timeManager->getEndTime() - 1.e-6)
-        {
-            _timeManager->setPause(true);
-        }
-    }
-}
-*/
 ///--------------------------------------------------///
 ///MAT VISUALIZER CLASS------------------------------///
 ///--------------------------------------------------///
@@ -365,6 +379,7 @@ void VisualizerMAT::readMat(const std::string& modelFile, const std::string& pat
 
 void VisualizerMAT::updateVisAttributes(const double time)
 {
+	std::cout<<"updateVisAttributes at "<<time <<std::endl;
     // Update all shapes.
     unsigned int shapeIdx = 0;
     rAndT rT;
@@ -372,10 +387,16 @@ void VisualizerMAT::updateVisAttributes(const double time)
     ModelicaMatReader* tmpReaderPtr = &_matReader;
     try
     {
+    	std::cout<<"try at "<<time <<std::endl;
+
         for (auto& shape : _baseData->_shapes)
         {
+        	std::cout<<"shape "<<shape._id <<std::endl;
+
             // Get the values for the scene graph objects
             updateObjectAttributeMAT(&shape._length, time, tmpReaderPtr);
+        	std::cout<<"shape "<<shape._id <<" done"<<std::endl;
+
             updateObjectAttributeMAT(&shape._width, time, tmpReaderPtr);
             updateObjectAttributeMAT(&shape._height, time, tmpReaderPtr);
 
@@ -410,6 +431,7 @@ void VisualizerMAT::updateVisAttributes(const double time)
             updateObjectAttributeMAT(&shape._color[2], time, tmpReaderPtr);
 
             updateObjectAttributeMAT(&shape._specCoeff, time, tmpReaderPtr);
+        	std::cout<<"shape "<<shape._id <<" done2"<<std::endl;
 
             rT = rotateModelica2OSG(osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
                                 osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
@@ -419,17 +441,26 @@ void VisualizerMAT::updateVisAttributes(const double time)
                                 osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
                                 osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
                                 shape._length.exp, shape._width.exp, shape._height.exp, shape._type);
+        	std::cout<<"shape "<<shape._id <<" done3"<<std::endl;
 
             assemblePokeMatrix(shape._mat, rT._T, rT._r);
+        	std::cout<<"shape "<<shape._id <<" done4"<<std::endl;
 
             // Update the shapes.
             _nodeUpdater->_shape = shape;
-            ///shape.dumpVisAttributes();
+            //shape.dumpVisAttributes();
+        	std::cout<<"shape "<<shape._id <<" done5"<<std::endl;
 
             // Get the scene graph nodes and stuff.
             child = _viewerStuff->getScene().getRootNode()->getChild(shapeIdx);  // the transformation
+        	std::cout<<"shape "<<shape._id <<" done6"<<std::endl;
+
             child->accept(*_nodeUpdater);
+        	std::cout<<"shape "<<shape._id <<" done7"<<std::endl;
+
             ++shapeIdx;
+        	std::cout<<"shape "<<shape._id <<" done8"<<std::endl;
+
         }
     }
     catch (std::exception& ex)
@@ -506,9 +537,11 @@ OSGScene::OSGScene()
 
 int OSGScene::setUpScene(std::vector<ShapeObject> allShapes)
 {
+	std::cout<<"SETUPSCENE"<<std::endl;
     int isOk(0);
 	for (std::vector<ShapeObject>::size_type i = 0; i != allShapes.size(); i++)
     {
+
 		ShapeObject shape = allShapes[i];
 
 		osg::ref_ptr<osg::Geode> geode;

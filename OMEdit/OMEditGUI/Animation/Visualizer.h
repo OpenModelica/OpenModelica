@@ -132,6 +132,7 @@ class OMVisualBase
 	const std::string getPath() const;
 	rapidxml::xml_node<>* getFirstXMLNode() const;
 	const std::string getXMLFileName() const;
+
 private:
     void appendVisVariable(const rapidxml::xml_node<>* node, std::vector<std::string>& visVariables) const;
 
@@ -153,28 +154,24 @@ class VisualizerAbstract
 	VisualizerAbstract();
 	VisualizerAbstract(const std::string& modelFile, const std::string& path, const VisType visType = VisType::NONE);
 	virtual ~VisualizerAbstract() = default;
-	VisualizerAbstract(const VisualizerAbstract& omv) = delete;
-	VisualizerAbstract& operator=(const VisualizerAbstract& omv) = delete;
     virtual void updateVisAttributes(const double time) = 0;
+
 	virtual void initData();
-	/*
-
-
-	void setUpScene();
-	virtual void initializeVisAttributes(const double time) = 0;
 	void initVisualization();
-	VisType getVisType() const;
-	OMVisualBase* getBaseData() const;
+	virtual void initializeVisAttributes(const double time) = 0;
 	TimeManager* getTimeManager() const;
+	void sceneUpdate();
+	void setUpScene();
+	OMVisualBase* getBaseData() const;
+	VisType getVisType() const;
+
 	OMVisScene* getOMVisScene() const;
 	std::string getModelFile() const;
 	//virtual void setSimulationSettings(const UserSimSettingsFMU& simSetFMU) { };
-	virtual void simulate(TimeManager& omvm) = 0;
+	//virtual void simulate(TimeManager& omvm) = 0;
 	virtual void updateScene(const double time) = 0;
 	virtual void startVisualization();
 	virtual void pauseVisualization();
-	void sceneUpdate();
-	*/
  protected:
 	const VisType _visType;
 	OMVisualBase* _baseData;
