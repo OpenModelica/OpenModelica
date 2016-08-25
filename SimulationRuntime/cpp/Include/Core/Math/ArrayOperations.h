@@ -67,6 +67,9 @@ template <typename T>
 void divide_array(const BaseArray<T>& inputArray, const T &b, BaseArray<T>& outputArray);
 
 template <typename T>
+void divide_array_elem_wise(const BaseArray<T> &leftArray, const BaseArray<T> &rightArray, BaseArray<T> &resultArray);
+
+template <typename T>
 void fill_array(BaseArray<T>& inputArray, T b);
 
 /**
@@ -83,6 +86,9 @@ void subtract_array_scalar(const BaseArray<T>& inputArray, T b, BaseArray<T>& ou
 
 template <typename T>
 void add_array(const BaseArray<T>& leftArray, const BaseArray<T>& rightArray, BaseArray<T>& resultArray);
+
+template <typename T>
+void add_array_scalar(const BaseArray<T>& inputArray, T b, BaseArray<T>& outputArray);
 
 template <typename T>
 void usub_array(const BaseArray<T>& a , BaseArray<T>& b);
