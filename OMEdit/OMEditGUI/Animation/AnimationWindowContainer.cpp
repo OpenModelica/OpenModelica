@@ -53,14 +53,6 @@ AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
 	_sceneView(new osgViewer::View()),
 	_visualizer(nullptr),
 	_viewerWidget(nullptr),
-    _topWidget(nullptr),
-	_visFileButton(nullptr),
-    _playButton(nullptr),
-    _pauseButton(nullptr),
-    _initButton(nullptr),
-    _timeSlider(nullptr),
-	_timeDisplay(nullptr),
-	_RTFactorDisplay(nullptr),
 	_updateTimer(nullptr)
 {
   setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
@@ -70,8 +62,6 @@ AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
   _viewerWidget->setParent(this);
   _viewerWidget->setWindowFlags(Qt::SubWindow);
   //_viewerWidget->setWindowState(Qt::WindowMaximized);
-  //the control widgets
-  _topWidget = AnimationWindowContainer::setupAnimationWidgets();
 }
 
 
@@ -90,8 +80,8 @@ QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootN
     traits->x = 0;
     traits->y = 0;
 
-    traits->width = 1000;
-    traits->height = 600;
+    traits->width = 2000;
+    traits->height = 1000;
     traits->doubleBuffer = true;
     traits->alpha = ds->getMinimumNumAlphaBits();
     traits->stencil = ds->getMinimumNumStencilBits();
@@ -114,57 +104,6 @@ QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootN
     gw->setTouchEventsEnabled(true);
     return gw->getGLWidget();
 }
-
-
-/*!
- * \brief AnimationWindowContainer::setupAnimationWidgets
- * creates the widgets for the animation
- */
-QWidget* AnimationWindowContainer::setupAnimationWidgets()
-{
-	// control widgets
-    _timeSlider = new QSlider(Qt::Horizontal,this);
-    _timeSlider->setFixedHeight(30);
-    _timeSlider->setMinimum(0);
-    _timeSlider->setMaximum(100);
-    _timeSlider->setSliderPosition(50);
-    _visFileButton = new QPushButton("Choose File",this);
-    _playButton = new QPushButton("Play",this);
-    _pauseButton = new QPushButton("Pause",this);
-    _initButton = new QPushButton("Initialize",this);
-    _timeDisplay = new QLabel(this);
-    _timeDisplay->setText(QString("Time [s]: ").append(QString::fromStdString("0.000")));
-    _RTFactorDisplay = new QLabel(this);
-    _RTFactorDisplay->setText(QString("RT-Factor: ").append(QString::fromStdString("0.000")));
-
-    //layout for all control widgets
-    QHBoxLayout* rowLayOut = new QHBoxLayout();
-    rowLayOut->addWidget(_visFileButton);
-    rowLayOut->addWidget(_initButton);
-    rowLayOut->addWidget(_playButton);
-    rowLayOut->addWidget(_pauseButton);
-    rowLayOut->addWidget(_timeSlider);
-    rowLayOut->addWidget(_RTFactorDisplay);
-    rowLayOut->addWidget(_timeDisplay);
-    QGroupBox* widgetRowBox = new QGroupBox();
-    widgetRowBox->setLayout(rowLayOut);
-    widgetRowBox->setFixedHeight(HEIGHT_CONTROLWIDGETS);
-
-    _topWidget = new QWidget(this);
-    QVBoxLayout* mainVLayout = new QVBoxLayout();
-    //mainVLayout->addWidget(_viewerWidget);
-    mainVLayout->addWidget(widgetRowBox);
-    _topWidget->setLayout(mainVLayout);
-
-    // Connect the buttons to the corresponding slot functions.
-    QObject::connect(_visFileButton, SIGNAL(clicked()), this, SLOT(chooseAnimationFileSlotFunction()));
-    QObject::connect(_timeSlider, SIGNAL(sliderMoved(int)), this, SLOT(sliderSetTimeSlotFunction(int)));
-    QObject::connect(_playButton, SIGNAL(clicked()), this, SLOT(playSlotFunction()));
-    QObject::connect(_pauseButton, SIGNAL(clicked()), this, SLOT(pauseSlotFunction()));
-    QObject::connect(_initButton, SIGNAL(clicked()), this, SLOT(initSlotFunction()));
-    return _topWidget;
-}
-
 
 /*!
  * \brief AnimationWindowContainer::loadVisualization
@@ -214,14 +153,13 @@ void AnimationWindowContainer::loadVisualization(){
  * opens a file dialog to chooes an animation
  */
 void AnimationWindowContainer::chooseAnimationFileSlotFunction(){
-	std::cout<<"animationFileSlotFunction "<<std::endl;
 	QFileDialog dialog(this);
 	std::string file = dialog.getOpenFileName(this,tr("Open Visualiation File"), "./", tr("Visualization MAT(*.mat)")).toStdString();
 	if (file.compare("")){
     std::size_t pos = file.find_last_of("/\\");
     _pathName = file.substr(0, pos + 1);
     _fileName = file.substr(pos + 1, file.length());
-	std::cout<<"file "<<_fileName<<"   path "<<_pathName<<std::endl;
+	//std::cout<<"file "<<_fileName<<"   path "<<_pathName<<std::endl;
 	loadVisualization();
 	}
 	else
@@ -253,7 +191,6 @@ void AnimationWindowContainer::sliderSetTimeSlotFunction(int value){
 	int time = (_visualizer->getTimeManager()->getEndTime()
             - _visualizer->getTimeManager()->getStartTime())
             * (float) (value / 100.0);
-	std::cout<<"moveSliderSlotFunction "<<value<<" : "<<time<<std::endl;
 	_visualizer->getTimeManager()->setVisTime(time);
 	_visualizer->sceneUpdate();
 }
@@ -264,7 +201,6 @@ void AnimationWindowContainer::sliderSetTimeSlotFunction(int value){
  * slot function for the play button
  */
 void AnimationWindowContainer::playSlotFunction(){
-	std::cout<<"playSlotFunction "<<std::endl;
 	_visualizer->getTimeManager()->setPause(false);
 }
 
@@ -273,7 +209,6 @@ void AnimationWindowContainer::playSlotFunction(){
  * slot function for the pause button
  */
 void AnimationWindowContainer::pauseSlotFunction(){
-	std::cout<<"pauseSlotFunction "<<std::endl;
 	_visualizer->getTimeManager()->setPause(true);
 }
 
@@ -282,7 +217,6 @@ void AnimationWindowContainer::pauseSlotFunction(){
  * slot function for the init button
  */
 void AnimationWindowContainer::initSlotFunction(){
-	std::cout<<"initSlotFunction "<<std::endl;
     _visualizer->initVisualization();
 
 }
