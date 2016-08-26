@@ -6918,10 +6918,10 @@ algorithm
       equation
         transition = List.map(expArgs, Dump.printExpStr);
         // if we have named args then give them preference
-        transition = addOrUpdateNamedArg(namedArgs, "immediate", "true", transition, 4);
-        transition = addOrUpdateNamedArg(namedArgs, "reset", "true", transition, 5);
-        transition = addOrUpdateNamedArg(namedArgs, "synchronize", "false", transition, 6);
-        transition = addOrUpdateNamedArg(namedArgs, "priority", "1", transition, 7);
+        transition = Interactive.addOrUpdateNamedArg(namedArgs, "immediate", "true", transition, 4);
+        transition = Interactive.addOrUpdateNamedArg(namedArgs, "reset", "true", transition, 5);
+        transition = Interactive.addOrUpdateNamedArg(namedArgs, "synchronize", "false", transition, 6);
+        transition = Interactive.addOrUpdateNamedArg(namedArgs, "priority", "1", transition, 7);
       then
         transition;
 
@@ -6929,58 +6929,6 @@ algorithm
 
   end match;
 end getTransitionInEquation;
-
-protected function addOrUpdateNamedArg
-  "Applies the named argument value if it exists.
-  The named argument override the value of argument if its on same position."
-  input list<Absyn.NamedArg> inNamedArgLst;
-  input String namedArg;
-  input String defaultValue;
-  input list<String> inTransition;
-  input Integer position;
-  output list<String> outTransition;
-protected
-  String namedArgValue;
-  Boolean isDefault;
-algorithm
-  (namedArgValue, isDefault) := namedArgValueAsString(inNamedArgLst, namedArg, defaultValue);
-  if listLength(inTransition) < position then
-    outTransition := List.insert(inTransition, position, namedArgValue);
-  elseif boolAnd((listLength(inTransition) >= position), boolNot(isDefault)) then
-    outTransition := List.replaceAt(namedArgValue, position, inTransition);
-  else
-    outTransition := inTransition;
-  end if;
-end addOrUpdateNamedArg;
-
-protected function namedArgValueAsString
-  "Returns the named argument value as string."
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input String inNamedArg;
-  input String inDefaultValue;
-  output String outNamedArg;
-  output Boolean outDefault;
-algorithm
-  (outNamedArg, outDefault) := match (inAbsynNamedArgLst)
-    local
-      Absyn.NamedArg namedArg;
-      list<Absyn.NamedArg> al;
-      Absyn.Ident namedArgName;
-      Absyn.Exp namedArgValue;
-
-    case ({}) then (inDefaultValue,true);
-
-    case (((namedArg as Absyn.NAMEDARG(argName = namedArgName, argValue = namedArgValue)) :: _))
-      guard stringEq(namedArgName, inNamedArg)
-      then
-        (Dump.printNamedArgValueStr(namedArg), false);
-
-    case ((_ :: al))
-      then
-        namedArgValueAsString(al, inNamedArg, inDefaultValue);
-
-  end match;
-end namedArgValueAsString;
 
 protected function getTransitionAnnotation
   "This function takes an `EquationItem\' and returns a comma separated

@@ -10411,7 +10411,11 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
         GlobalScript.ISTMTS({GlobalScript.IEXP(conditionExp, _)}, _) = Parser.parsestringexp(condition_);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}), Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})), conditionExp, Absyn.BOOL(immediate_), Absyn.BOOL(reset_), Absyn.BOOL(synchronize_), Absyn.INTEGER(priority_)}, {})), cmt, Absyn.dummyInfo));
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}),
+                                Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})),
+                                conditionExp}, {Absyn.NAMEDARG("immediate", Absyn.BOOL(immediate_)),
+                                Absyn.NAMEDARG("reset", Absyn.BOOL(reset_)), Absyn.NAMEDARG("synchronize", Absyn.BOOL(synchronize_)),
+                                Absyn.NAMEDARG("priority", Absyn.INTEGER(priority_))})), cmt, Absyn.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
       then
         (true, newp);
@@ -10423,7 +10427,11 @@ algorithm
         package_ = Absyn.stripLast(modelpath);
         cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
         GlobalScript.ISTMTS({GlobalScript.IEXP(conditionExp, _)}, _) = Parser.parsestringexp(condition_);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}), Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})), conditionExp, Absyn.BOOL(immediate_), Absyn.BOOL(reset_), Absyn.BOOL(synchronize_), Absyn.INTEGER(priority_)}, {})), cmt, Absyn.dummyInfo));
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}),
+                                Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})),
+                                conditionExp}, {Absyn.NAMEDARG("immediate", Absyn.BOOL(immediate_)),
+                                Absyn.NAMEDARG("reset", Absyn.BOOL(reset_)), Absyn.NAMEDARG("synchronize", Absyn.BOOL(synchronize_)),
+                                Absyn.NAMEDARG("priority", Absyn.INTEGER(priority_))})), cmt, Absyn.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
       then
         (true, newp);
@@ -10548,7 +10556,7 @@ algorithm
       Absyn.ComponentRef name;
       list<Absyn.Exp> expArgs;
       list<Absyn.NamedArg> namedArgs;
-      list<String> args, args1;
+      list<String> args;
       Absyn.Exp conditionExp;
       Absyn.EquationItem x;
 
@@ -10557,11 +10565,14 @@ algorithm
       guard Absyn.crefEqual(name, Absyn.CREF_IDENT("transition", {}))
       equation
         args = List.map(expArgs, Dump.printExpStr);
-        args1 = List.map(namedArgs, Dump.printNamedArgValueStr);
-        args1 = listAppend(args, args1);
+        args = addOrUpdateNamedArg(namedArgs, "immediate", "true", args, 4);
+        args = addOrUpdateNamedArg(namedArgs, "reset", "true", args, 5);
+        args = addOrUpdateNamedArg(namedArgs, "synchronize", "false", args, 6);
+        args = addOrUpdateNamedArg(namedArgs, "priority", "1", args, 7);
+        // parse the condition string to make it EXP.
         GlobalScript.ISTMTS({GlobalScript.IEXP(conditionExp, _)}, _) = Parser.parsestringexp(condition_);
         condition_ = Dump.printExpStr(conditionExp);
-        true = compareTransitionFuncArgs(args1, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
+        true = compareTransitionFuncArgs(args, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
       then
         deleteTransitionInEqlist(xs, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
     case ((x :: xs), from_, to_, condition_, immediate_, reset_, synchronize_, priority_)
@@ -10571,6 +10582,58 @@ algorithm
         (x :: res);
   end matchcontinue;
 end deleteTransitionInEqlist;
+
+public function addOrUpdateNamedArg
+  "Applies the named argument value if it exists.
+  The named argument override the value of argument if its on same position."
+  input list<Absyn.NamedArg> inNamedArgLst;
+  input String namedArg;
+  input String defaultValue;
+  input list<String> inTransition;
+  input Integer position;
+  output list<String> outTransition;
+protected
+  String namedArgValue;
+  Boolean isDefault;
+algorithm
+  (namedArgValue, isDefault) := namedArgValueAsString(inNamedArgLst, namedArg, defaultValue);
+  if listLength(inTransition) < position then
+    outTransition := List.insert(inTransition, position, namedArgValue);
+  elseif boolAnd((listLength(inTransition) >= position), boolNot(isDefault)) then
+    outTransition := List.replaceAt(namedArgValue, position, inTransition);
+  else
+    outTransition := inTransition;
+  end if;
+end addOrUpdateNamedArg;
+
+protected function namedArgValueAsString
+  "Returns the named argument value as string."
+  input list<Absyn.NamedArg> inAbsynNamedArgLst;
+  input String inNamedArg;
+  input String inDefaultValue;
+  output String outNamedArg;
+  output Boolean outDefault;
+algorithm
+  (outNamedArg, outDefault) := match (inAbsynNamedArgLst)
+    local
+      Absyn.NamedArg namedArg;
+      list<Absyn.NamedArg> al;
+      Absyn.Ident namedArgName;
+      Absyn.Exp namedArgValue;
+
+    case ({}) then (inDefaultValue,true);
+
+    case (((namedArg as Absyn.NAMEDARG(argName = namedArgName, argValue = namedArgValue)) :: _))
+      guard stringEq(namedArgName, inNamedArg)
+      then
+        (Dump.printNamedArgValueStr(namedArg), false);
+
+    case ((_ :: al))
+      then
+        namedArgValueAsString(al, inNamedArg, inDefaultValue);
+
+  end match;
+end namedArgValueAsString;
 
 protected function compareTransitionFuncArgs
 "Helper function to deleteTransition."
