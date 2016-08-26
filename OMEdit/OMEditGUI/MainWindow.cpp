@@ -224,8 +224,16 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpAnimationWindowContainer = new AnimationWindowContainer(this);
   renderTimer = new QTimer();
   QObject::connect(renderTimer, SIGNAL(timeout()), mpAnimationWindowContainer, SLOT(renderSlotFunction()));
+  QObject::connect(renderTimer, SIGNAL(timeout()), this, SLOT(updateAnimationTimeContent()));
   renderTimer->start(10);
-
+  // some widgets for the animation toolbar
+  mpAnimationSlider = new QSlider(Qt::Horizontal,this);
+  mpAnimationSlider->setFixedWidth(100);
+  mpAnimationSlider->setMinimum(0);
+  mpAnimationSlider->setMaximum(100);
+  mpAnimationSlider->setSliderPosition(50);
+  mpAnimationTimeLabel = new QLabel(this);
+  mpAnimationTimeLabel->setText(QString("Time [s]: ").append(QString::fromStdString("0.000")));
   // Create an object of PlotWindowContainer
   mpPlotWindowContainer = new PlotWindowContainer(this);
   // create an object of VariablesWidget
@@ -3301,6 +3309,10 @@ void MainWindow::createToolbars()
   mpAnimationToolBar->addAction(mpAnimationPlayAction);
   mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addAction(mpAnimationPauseAction);
+  mpAnimationToolBar->addSeparator();
+  mpAnimationToolBar->addWidget(mpAnimationSlider);
+  mpAnimationToolBar->addWidget(mpAnimationTimeLabel);
+  connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),mpAnimationWindowContainer, SLOT(sliderSetTimeSlotFunction(int)));
 }
 
 
@@ -3505,4 +3517,20 @@ void AboutOMEditWidget::keyPressEvent(QKeyEvent *pEvent)
     hide();
   }
   QWidget::keyPressEvent(pEvent);
+}
+
+
+/*!
+ * \brief MainWindow::updateAnimationTimeContent
+ * Displays the animation in mpAnimationTimeLabel and moves mpAnimationSlider
+ * Hides the widget when ESC key is pressed.
+ * \param pEvent
+ */
+void MainWindow::updateAnimationTimeContent(){
+	double time = mpAnimationWindowContainer->getVisTime();
+	double timeFrac = mpAnimationWindowContainer->getTimeFraction();
+	double sliderPos = timeFrac*(mpAnimationSlider->maximum() - mpAnimationSlider->minimum());
+	//std::cout<<"time "<<time<<" timeFrac "<<timeFrac<<" sliderPos "<<sliderPos<<std::endl;
+	mpAnimationTimeLabel->setText(QString("Time [s]: ").append(QString::number(time)));
+	mpAnimationSlider->setSliderPosition(sliderPos);
 }
