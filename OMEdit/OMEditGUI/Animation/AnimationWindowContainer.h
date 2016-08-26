@@ -38,6 +38,7 @@
 #include "AnimationUtil.h"
 #include "MainWindow.h"
 #include "Visualizer.h"
+#include "VisualizerMAT.h"
 
 #include <iostream>
 #include <string>

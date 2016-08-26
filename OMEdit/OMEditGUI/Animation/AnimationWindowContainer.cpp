@@ -29,7 +29,7 @@
  *
  */
 /*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+ * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
 #include "AnimationWindowContainer.h"
