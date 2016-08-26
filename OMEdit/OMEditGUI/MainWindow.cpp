@@ -2706,6 +2706,23 @@ void MainWindow::createActions()
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   mpTLMCoSimulationAction->setEnabled(false);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
+  // animation action
+  mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::animationChooseFile, this);
+  mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
+  mpAnimationChooseFileAction->setEnabled(true);
+  mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::animationInitialize, this);
+  mpAnimationInitializeAction->setStatusTip(Helper::animationInitializeTip);
+  mpAnimationInitializeAction->setEnabled(true);
+  mpAnimationPlayAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::animationPlay, this);
+  mpAnimationPlayAction->setStatusTip(Helper::animationPlayTip);
+  mpAnimationPlayAction->setEnabled(true);
+  mpAnimationPauseAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::animationPause, this);
+  mpAnimationPauseAction->setStatusTip(Helper::animationPauseTip);
+  mpAnimationPauseAction->setEnabled(true);
+  connect(mpAnimationChooseFileAction, SIGNAL(triggered()),mpAnimationWindowContainer, SLOT(chooseAnimationFileSlotFunction()));
+  connect(mpAnimationInitializeAction, SIGNAL(triggered()),mpAnimationWindowContainer, SLOT(initSlotFunction()));
+  connect(mpAnimationPlayAction, SIGNAL(triggered()),mpAnimationWindowContainer, SLOT(playSlotFunction()));
+  connect(mpAnimationPauseAction, SIGNAL(triggered()),mpAnimationWindowContainer, SLOT(pauseSlotFunction()));
 }
 
 //! Creates the menus
@@ -2967,6 +2984,8 @@ void MainWindow::switchToWelcomePerspective()
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
+  mpAnimationToolBar->setEnabled(false);
+
 }
 
 /*!
@@ -2981,6 +3000,8 @@ void MainWindow::switchToModelingPerspective()
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
+  mpAnimationToolBar->setEnabled(false);
+
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -3025,6 +3046,7 @@ void MainWindow::switchToPlottingPerspective()
   mpModelWidgetContainer->currentModelWidgetChanged(0);
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
+  mpAnimationToolBar->setEnabled(false);
   mpModelSwitcherToolButton->setEnabled(false);
   // if not plotwindow is opened then open one for user
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
@@ -3057,6 +3079,7 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
+  mpAnimationToolBar->setEnabled(false);
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -3079,6 +3102,12 @@ void MainWindow::switchToAnimationPerspective()
 	storePlotWindowsStateAndGeometry();
 	mpCentralStackedWidget->setCurrentWidget(mpAnimationWindowContainer);
 	mpAnimationWindowContainer->showWidgets();
+	mpAnimationToolBar->setEnabled(true);
+
+	mpPlotToolBar->setEnabled(false);
+	mpUndoAction->setEnabled(false);
+	mpRedoAction->setEnabled(false);
+    mpModelSwitcherToolButton->setEnabled(false);
 	mpVariablesDockWidget->hide();
 	mpStackFramesDockWidget->hide();
 	mpBreakpointsDockWidget->hide();
@@ -3260,7 +3289,20 @@ void MainWindow::createToolbars()
   mpTLMSimulationToolbar->addAction(mpAlignInterfacesAction);
   mpTLMSimulationToolbar->addSeparator();
   mpTLMSimulationToolbar->addAction(mpTLMCoSimulationAction);
+  // Animation Toolbar
+  mpAnimationToolBar = addToolBar(tr("Animation Toolbar"));
+  mpAnimationToolBar->setObjectName("Animation Toolbar");
+  mpAnimationToolBar->setAllowedAreas(Qt::TopToolBarArea);
+  // add actions to TLM Simulation Toolbar
+  mpAnimationToolBar->addAction(mpAnimationChooseFileAction);
+  mpAnimationToolBar->addSeparator();
+  mpAnimationToolBar->addAction(mpAnimationInitializeAction);
+  mpAnimationToolBar->addSeparator();
+  mpAnimationToolBar->addAction(mpAnimationPlayAction);
+  mpAnimationToolBar->addSeparator();
+  mpAnimationToolBar->addAction(mpAnimationPauseAction);
 }
+
 
 //! when the dragged object enters the main window
 //! @param event contains information of the drag operation.

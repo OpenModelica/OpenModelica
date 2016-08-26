@@ -308,6 +308,14 @@ public:
   static QString tlmCoSimulationSetup;
   static QString tlmCoSimulationSetupTip;
   static QString tlmCoSimulation;
+  static QString animationChooseFile;
+  static QString animationChooseFileTip;
+  static QString animationInitialize;
+  static QString animationInitializeTip;
+  static QString animationPlay;
+  static QString animationPlayTip;
+  static QString animationPause;
+  static QString animationPauseTip;
   static QString simulationParams;
   static QString simulationParamsTip;
   static QString running;
