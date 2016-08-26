@@ -48,8 +48,6 @@ class TimeManager
 				const double hVisual, const double startTime, const double endTime);
 	~TimeManager() = default;
 	void updateTick();
-	int getSliderPosition() const;
-	void setSliderRange(const int min, const int max);
 	/*! \brief Returns the end time of the simulation. */
 	double getEndTime() const;
 	/*! \brief Sets the end time of the simulation to the given value. */
@@ -88,6 +86,8 @@ class TimeManager
 	/*! \brief Sets pause status to new value. */
 	void setPause(const bool status);
 
+	double getTimeFraction();
+
  private:
 	//! Time of the current simulation step.
 	double _simTime;
@@ -108,8 +108,6 @@ class TimeManager
 
 	osg::Timer _visualTimer;
 
-	//! Range of the slider widget.
-	int _sliderRange;
 };
 
 

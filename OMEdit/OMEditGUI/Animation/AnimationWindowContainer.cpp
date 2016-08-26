@@ -51,7 +51,7 @@ AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
 	_pathName(""),
 	_fileName(""),
 	_sceneView(new osgViewer::View()),
-	_visualizer(),
+	_visualizer(nullptr),
 	_viewerWidget(nullptr),
     _topWidget(nullptr),
 	_visFileButton(nullptr),
@@ -90,8 +90,8 @@ QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootN
     traits->x = 0;
     traits->y = 0;
 
-    traits->width = this->parentWidget()->width();
-    traits->height = this->parentWidget()->height();
+    traits->width = 1000;
+    traits->height = 600;
     traits->doubleBuffer = true;
     traits->alpha = ds->getMinimumNumAlphaBits();
     traits->stencil = ds->getMinimumNumStencilBits();
@@ -198,13 +198,12 @@ void AnimationWindowContainer::loadVisualization(){
     _visualizer->setUpScene();
     _visualizer->initVisualization();
 
-    //add
+    //add scene for the chosen visualization
     _sceneView->setSceneData(_visualizer->getOMVisScene()->getScene().getRootNode());
-
-    std::cout<<"start timer"<<std::endl;
     _updateTimer = new QTimer();
+    // do a scene update at every tick
     QObject::connect(_updateTimer, SIGNAL(timeout()), this, SLOT(updateSceneFunction()));
-    QObject::connect(_updateTimer, SIGNAL(timeout()), this, SLOT(moveTimeSliderSlotFunction()));
+    QObject::connect(_updateTimer, SIGNAL(timeout()), parentWidget(), SLOT(doSomething()));
 
     _updateTimer->start(100);
 }
@@ -239,14 +238,11 @@ void AnimationWindowContainer::showWidgets(){
 	show();
 }
 
-
-/*!
- * \brief AnimationWindowContainer::moveTiemSliderSlotFunction
- * slot function to move the time slider
- */
-void AnimationWindowContainer::moveTimeSliderSlotFunction(){
-	//std::cout<<"moveTimeSliderSlotFunction "<<_visualizer->getTimeManager()->getSliderPosition()<<std::endl;
-    _timeSlider->setSliderPosition(_visualizer->getTimeManager()->getSliderPosition());
+double AnimationWindowContainer::getTimeFraction(){
+	if (_visualizer==NULL)
+		return 0.0;
+	else
+		return _visualizer->getTimeManager()->getTimeFraction();
 }
 
 /*!
@@ -257,7 +253,7 @@ void AnimationWindowContainer::sliderSetTimeSlotFunction(int value){
 	int time = (_visualizer->getTimeManager()->getEndTime()
             - _visualizer->getTimeManager()->getStartTime())
             * (float) (value / 100.0);
-	std::cout<<"moveSliderSlotFunction "<<time<<std::endl;
+	std::cout<<"moveSliderSlotFunction "<<value<<" : "<<time<<std::endl;
 	_visualizer->getTimeManager()->setVisTime(time);
 	_visualizer->sceneUpdate();
 }
@@ -308,6 +304,16 @@ void AnimationWindowContainer::renderSlotFunction()
   frame();
 }
 
+/*!
+ * \brief AnimationWindowContainer::getVisTime
+ * returns the current visualization time
+ */
+double AnimationWindowContainer::getVisTime(){
+	if (_visualizer==NULL)
+		return -1.0;
+	else
+		return _visualizer->getTimeManager()->getVisTime();
+}
 
 
 

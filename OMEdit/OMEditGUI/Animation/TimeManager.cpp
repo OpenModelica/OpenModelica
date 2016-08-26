@@ -44,8 +44,7 @@ TimeManager::TimeManager(const double simTime, const double realTime, const doub
 		  _startTime(startTime),
 		  _endTime(endTime),
 		  _pause(true),
-		  _visualTimer(),
-		  _sliderRange(0)
+		  _visualTimer()
 {
 }
 
@@ -55,14 +54,9 @@ void TimeManager::updateTick()
 	_realTime = _visualTimer.time_m() / 1000.0;
 }
 
-int TimeManager::getSliderPosition() const
+double TimeManager::getTimeFraction()
 {
-	return std::round(_visTime * _sliderRange / (_endTime - _startTime));
-}
-
-void TimeManager::setSliderRange(const int min, const int max)
-{
-	_sliderRange = max - min;
+	return _visTime / (_endTime - _startTime);
 }
 
 double TimeManager::getEndTime() const

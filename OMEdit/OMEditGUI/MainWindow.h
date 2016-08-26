@@ -372,6 +372,8 @@ private:
   QToolBar *mpAnimationToolBar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
   QTimer *renderTimer;
+  QSlider *mpAnimationSlider;
+  QLabel * mpAnimationTimeLabel;
 public slots:
   void createNewModelicaClass();
   void openModelicaFile();
@@ -437,6 +439,7 @@ public slots:
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
   void toggleAutoSave();
   void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
+  void updateAnimationTimeContent();
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);

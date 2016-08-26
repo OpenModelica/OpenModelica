@@ -216,9 +216,9 @@ VisualizerAbstract::VisualizerAbstract()
 		: _visType(VisType::NONE),
 		  _baseData(nullptr),
 		  _viewerStuff(nullptr),
-		  _nodeUpdater(nullptr),
-		  _timeManager(nullptr)
+		  _nodeUpdater(nullptr)
 {
+	_timeManager = new TimeManager(0.0, 0.0, 1.0, 0.0, 0.1, 0.0, 1.0);
 }
 
 VisualizerAbstract::VisualizerAbstract(const std::string& modelFile, const std::string& path, const VisType visType)
