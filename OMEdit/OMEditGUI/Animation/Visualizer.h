@@ -180,28 +180,6 @@ class VisualizerAbstract
 	TimeManager* _timeManager;
 };
 
-class VisualizerMAT : public VisualizerAbstract
-{
- public:
-	VisualizerMAT() = delete;
-	VisualizerMAT(const std::string& fileName, const std::string& path);
-	virtual ~VisualizerMAT() = default;
-	VisualizerMAT(const VisualizerMAT& omvm) = delete;
-	VisualizerMAT& operator=(const VisualizerMAT& omvm) = delete;
-	void initData();
-	void initializeVisAttributes(const double time = -1.0);
-	void readMat(const std::string& modelFile, const std::string& path);
-	void setSimulationSettings(const UserSimSettingsMAT& simSetMAT);
-	//void simulate(TimeManager& omvm){ };
-	void updateVisAttributes(const double time) override;
-	void updateScene(const double time);
-	void updateObjectAttributeMAT(ShapeObjectAttribute* attr, double time, ModelicaMatReader* reader);
-	double omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time);
- private:
-	ModelicaMatReader _matReader;
-};
-
-
 osg::Vec3f Mat3mulV3(osg::Matrix3 M, osg::Vec3f V);
 osg::Vec3f V3mulMat3(osg::Vec3f V, osg::Matrix3 M);
 osg::Matrix3 Mat3mulMat3(osg::Matrix3 M1, osg::Matrix3 M2);

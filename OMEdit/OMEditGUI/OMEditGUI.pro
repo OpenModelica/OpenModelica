@@ -119,6 +119,7 @@ SOURCES += main.cpp \
   Plotting/PlotWindowContainer.cpp \
 	Animation/AnimationWindowContainer.cpp \
 	Animation/Visualizer.cpp \
+	Animation/VisualizerMAT.cpp \
 	Animation/Shapes.cpp \
 	Animation/TimeManager.cpp \
   Component/Component.cpp \
@@ -188,6 +189,7 @@ HEADERS  += Util/Helper.h \
 	Animation/AnimationWindowContainer.h \
 	Animation/AnimationUtil.h \
 	Animation/Visualizer.h \
+  Animation/VisualizerMAT.h \
 	Animation/Shapes.h \
 	Animation/TimeManager.h \
 	Animation/rapidxml.hpp \
