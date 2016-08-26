@@ -68,7 +68,6 @@ void OMVisualBase::initXMLDoc()
 		buff2.append("</visualization>");
 		char* buff3 = strdup(buff2.c_str());  // cast to char*
 		_xmlDoc.parse<0>(buff3);
-		std::cout<<"laoded XML"<<std::endl;
 
 }
 
@@ -168,7 +167,6 @@ void OMVisualBase::initVisObjects()
 			shape._specCoeff = getObjectAttributeForNode(expNode);
 
 			_shapes.push_back(shape);
-			std::cout<<" done"<<std::endl;
 		}
 	} // end for-loop
 }
@@ -230,28 +228,19 @@ VisualizerAbstract::VisualizerAbstract(const std::string& modelFile, const std::
 {
 	_baseData = new OMVisualBase(modelFile, path);
 	_viewerStuff->getScene().setPath(path);
-	std::cout<<"INITED VisualizerAbstract"<<std::endl;
 }
 
 void VisualizerAbstract::initData()
 {
-	std::cout<<"initData 1"<<std::endl;
-
     // In case of reloading, we need to make sure, that we have empty members.
     _baseData->clearXMLDoc();
-	std::cout<<"initData 2"<<std::endl;
-
     // Initialize XML file and get visAttributes.
     _baseData->initXMLDoc();
-	std::cout<<"initData 3"<<std::endl;
-
     _baseData->initVisObjects();
-	std::cout<<"initData 4"<<std::endl;
 }
 
 void VisualizerAbstract::initVisualization()
 {
-    std::cout<<"Initialize visualization."<<std::endl;
     initializeVisAttributes(_timeManager->getStartTime());
     _timeManager->setVisTime(_timeManager->getStartTime());
     _timeManager->setRealTimeFactor(0.0);
@@ -379,7 +368,7 @@ void VisualizerMAT::readMat(const std::string& modelFile, const std::string& pat
 
 void VisualizerMAT::updateVisAttributes(const double time)
 {
-	std::cout<<"updateVisAttributes at "<<time <<std::endl;
+	//std::cout<<"updateVisAttributes at "<<time <<std::endl;
     // Update all shapes.
     unsigned int shapeIdx = 0;
     rAndT rT;
@@ -387,8 +376,6 @@ void VisualizerMAT::updateVisAttributes(const double time)
     ModelicaMatReader* tmpReaderPtr = &_matReader;
     try
     {
-    	std::cout<<"try at "<<time <<std::endl;
-
         for (auto& shape : _baseData->_shapes)
         {
         	//std::cout<<"shape "<<shape._id <<std::endl;
@@ -523,7 +510,6 @@ OSGScene::OSGScene()
 
 int OSGScene::setUpScene(std::vector<ShapeObject> allShapes)
 {
-	std::cout<<"SETUPSCENE"<<std::endl;
     int isOk(0);
 	for (std::vector<ShapeObject>::size_type i = 0; i != allShapes.size(); i++)
     {

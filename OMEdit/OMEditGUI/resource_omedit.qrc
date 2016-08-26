@@ -137,5 +137,10 @@
         <file>Resources/icons/align-interfaces.svg</file>
         <file>Resources/icons/tlm-simulate.svg</file>
         <file>Resources/XMLSchema/tlmModelDescription.xsd</file>
+				<file>Resources/icons/animation.png</file>
+				<file>Resources/icons/openFile.png</file>
+				<file>Resources/icons/play.png</file>
+				<file>Resources/icons/pause.png</file>
+				<file>Resources/icons/initialize.png</file>
     </qresource>
 </RCC>

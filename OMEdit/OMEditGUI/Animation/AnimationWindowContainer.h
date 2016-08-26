@@ -62,7 +62,6 @@ class AnimationWindowContainer : public QWidget, public osgViewer::CompositeView
   Q_OBJECT
   public:
     AnimationWindowContainer(MainWindow *pParent);
-    QWidget* setupAnimationWidgets();
     QWidget* setupViewWidget(osg::ref_ptr<osg::Node> rootNode);
     void showWidgets();
     void loadVisualization();
@@ -87,14 +86,6 @@ class AnimationWindowContainer : public QWidget, public osgViewer::CompositeView
     VisualizerAbstract* _visualizer;
     //widgets
     QWidget* _viewerWidget;
-    QWidget* _topWidget;
-    QPushButton* _visFileButton;
-    QPushButton* _playButton;
-    QPushButton* _pauseButton;
-    QPushButton* _initButton;
-    QSlider* _timeSlider;
-    QLabel* _timeDisplay;
-    QLabel* _RTFactorDisplay;
     QTimer* _updateTimer;
 };
 
