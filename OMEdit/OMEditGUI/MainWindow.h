@@ -351,6 +351,11 @@ private:
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAlignInterfacesAction;
   QAction *mpTLMCoSimulationAction;
+  // Animation Action
+  QAction* mpAnimationChooseFileAction;
+  QAction* mpAnimationInitializeAction;
+  QAction* mpAnimationPlayAction;
+  QAction* mpAnimationPauseAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
@@ -364,6 +369,7 @@ private:
   QMenu *mpModelSwitcherMenu;
   QToolBar *mpPlotToolBar;
   QToolBar *mpTLMSimulationToolbar;
+  QToolBar *mpAnimationToolBar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
   QTimer *renderTimer;
 public slots:

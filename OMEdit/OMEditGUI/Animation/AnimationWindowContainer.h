@@ -67,6 +67,8 @@ class AnimationWindowContainer : public QWidget, public osgViewer::CompositeView
     void showWidgets();
     void loadVisualization();
   public slots:
+    void sliderSetTimeSlotFunction(int value);
+    void moveTimeSliderSlotFunction();
     void playSlotFunction();
     void pauseSlotFunction();
     void initSlotFunction();

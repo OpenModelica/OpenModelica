@@ -158,6 +158,7 @@ QWidget* AnimationWindowContainer::setupAnimationWidgets()
 
     // Connect the buttons to the corresponding slot functions.
     QObject::connect(_visFileButton, SIGNAL(clicked()), this, SLOT(chooseAnimationFileSlotFunction()));
+    QObject::connect(_timeSlider, SIGNAL(sliderMoved(int)), this, SLOT(sliderSetTimeSlotFunction(int)));
     QObject::connect(_playButton, SIGNAL(clicked()), this, SLOT(playSlotFunction()));
     QObject::connect(_pauseButton, SIGNAL(clicked()), this, SLOT(pauseSlotFunction()));
     QObject::connect(_initButton, SIGNAL(clicked()), this, SLOT(initSlotFunction()));
@@ -203,6 +204,8 @@ void AnimationWindowContainer::loadVisualization(){
     std::cout<<"start timer"<<std::endl;
     _updateTimer = new QTimer();
     QObject::connect(_updateTimer, SIGNAL(timeout()), this, SLOT(updateSceneFunction()));
+    QObject::connect(_updateTimer, SIGNAL(timeout()), this, SLOT(moveTimeSliderSlotFunction()));
+
     _updateTimer->start(100);
 }
 
@@ -235,6 +238,30 @@ void AnimationWindowContainer::showWidgets(){
 	_viewerWidget->show();
 	show();
 }
+
+
+/*!
+ * \brief AnimationWindowContainer::moveTiemSliderSlotFunction
+ * slot function to move the time slider
+ */
+void AnimationWindowContainer::moveTimeSliderSlotFunction(){
+	//std::cout<<"moveTimeSliderSlotFunction "<<_visualizer->getTimeManager()->getSliderPosition()<<std::endl;
+    _timeSlider->setSliderPosition(_visualizer->getTimeManager()->getSliderPosition());
+}
+
+/*!
+ * \brief AnimationWindowContainer::sliderSetTimeSlotFunction
+ * slot function for the time slider
+ */
+void AnimationWindowContainer::sliderSetTimeSlotFunction(int value){
+	int time = (_visualizer->getTimeManager()->getEndTime()
+            - _visualizer->getTimeManager()->getStartTime())
+            * (float) (value / 100.0);
+	std::cout<<"moveSliderSlotFunction "<<time<<std::endl;
+	_visualizer->getTimeManager()->setVisTime(time);
+	_visualizer->sceneUpdate();
+}
+
 
 /*!
  * \brief AnimationWindowContainer::playSlotFunction

@@ -437,7 +437,7 @@ void VisualizerMAT::updateVisAttributes(const double time)
                                              shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
                                 osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
                                 osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
-                                shape._length.exp, shape._width.exp, shape._height.exp, shape._type);
+                                shape._length.exp,/* shape._width.exp, shape._height.exp,*/ shape._type);
 
             assemblePokeMatrix(shape._mat, rT._T, rT._r);
             // Update the shapes.
@@ -796,7 +796,7 @@ void assemblePokeMatrix(osg::Matrix& M, const osg::Matrix3& T, const osg::Vec3f&
 }
 
 
-rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::Vec3f lDirIn, osg::Vec3f wDirIn, float length, float width, float height, std::string type)
+rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::Vec3f lDirIn, osg::Vec3f wDirIn, float length,/* float width, float height,*/ std::string type)
 {
 	rAndT res;
 
