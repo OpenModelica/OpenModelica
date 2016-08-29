@@ -58,6 +58,11 @@ package testDAE
     der(y) = x^2-y*w;
   end p5;
 
-
+  model p6
+    Real x[2];
+    Real A[2,2] = [3,1;2,1];
+  equation
+    A*der(x)={1,2};
+  end p6;
 
 end testDAE;

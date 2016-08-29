@@ -23,14 +23,12 @@ problem2-symEuler.mos \
 problem2-ida.mos \
 problem2-idaLinearSolver.mos \
 problem3-symEuler.mos
-
-#runonly DAE tests
-DAETESTFILES = \
 testDAEp1.mos \
 testDAEp2.mos \
 testDAEp3.mos \
 testDAEp4.mos \
 testDAEp5.mos \
+testDAEp6.mos \
 testDAEmodeDrumBoiler.mos
 
 
@@ -52,14 +50,7 @@ test:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	rm -rf externalInput.csv
-	@$(TEST) $(TESTFILES) $(DAETESTFILES)
-
-testDAE:
-	@echo
-	@echo Running DAE tests...
-	@echo
-	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
-	@$(TEST) $(DAETESTFILES)
+	@$(TEST) $(TESTFILES)
 
 # Cleans all files that are not listed as dependencies 
 clean :

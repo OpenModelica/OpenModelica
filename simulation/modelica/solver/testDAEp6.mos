@@ -1,0 +1,82 @@
+// name: testDAE.p5
+// status: correct
+// teardown_command: rm -f testDAE.p5* output.log
+
+
+loadFile("./testDAEPackage.mo");
+getErrorString();
+
+simulate(testDAE.p6);
+getErrorString();
+
+val(x[1],0.0);
+val(x[2],0.0);
+
+val(x[1],1.0);
+val(x[2],1.0);
+
+setCommandLineOptions("+daeMode=dynamic");
+simulate(testDAE.p6, simflags="-daeMode", method="ida");
+getErrorString();
+
+val(x[1],0.0);
+val(x[2],0.0);
+
+val(x[1],1.0);
+val(x[2],1.0);
+
+setCommandLineOptions("+daeMode=all");
+simulate(testDAE.p6, simflags="-daeMode", method="ida");
+getErrorString();
+
+val(x[1],0.0);
+val(x[2],0.0);
+
+val(x[1],1.0);
+val(x[2],1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testDAE.p5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testDAE.p5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 0.0
+// 1.0
+// -3.0
+// 0.2519655435313273
+// 0.7318517148672625
+// -3.0
+// true
+// record SimulationResult
+//     resultFile = "testDAE.p5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 0.0
+// 1.0
+// -3.0
+// 0.2519641224122206
+// 0.7318508241807287
+// -3.0
+// true
+// record SimulationResult
+//     resultFile = "testDAE.p5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 0.0
+// 1.0
+// -3.0
+// 0.2519641224122206
+// 0.7318508241807287
+// -3.0
+// endResult
