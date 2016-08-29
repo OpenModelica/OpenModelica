@@ -1,4 +1,4 @@
-// name: testDAE.p5
+// name: testDAE.p6
 // status: correct
 // teardown_command: rm -f testDAE.p5* output.log
 
@@ -39,44 +39,38 @@ val(x[2],1.0);
 // true
 // ""
 // record SimulationResult
-//     resultFile = "testDAE.p5_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testDAE.p5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "testDAE.p6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testDAE.p6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // 0.0
-// 1.0
-// -3.0
-// 0.2519655435313273
-// 0.7318517148672625
-// -3.0
+// 0.0
+// -1.0
+// 4.0
 // true
 // record SimulationResult
-//     resultFile = "testDAE.p5_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
+//     resultFile = "testDAE.p6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // 0.0
-// 1.0
-// -3.0
-// 0.2519641224122206
-// 0.7318508241807287
-// -3.0
+// 0.0
+// -1.0
+// 4.0
 // true
 // record SimulationResult
-//     resultFile = "testDAE.p5_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
+//     resultFile = "testDAE.p6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // 0.0
-// 1.0
-// -3.0
-// 0.2519641224122206
-// 0.7318508241807287
-// -3.0
+// 0.0
+// -1.0
+// 4.0
 // endResult
