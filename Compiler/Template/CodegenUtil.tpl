@@ -223,6 +223,7 @@ template variabilityString(VarKind varKind)
     case OPT_TGRID()  then "OPT_TGRID"
     case OPT_LOOP_INPUT()  then "OPT_LOOP_INPUT"
     case ALG_STATE()  then "ALG_STATE"
+    case DAE_RESIDUAL_VAR() then "DAE_RESIDUAL_VAR"
     else "#UNKNOWN_VARKIND"
   end match
 end variabilityString;
