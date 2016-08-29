@@ -261,7 +261,7 @@ algorithm
 
     backendMapping := setUpBackendMapping(inBackendDAE);
     if Flags.isSet(Flags.VISUAL_XML) then
-      VisualXML.visualizationInfoXML(dlow, filenamePrefix);
+      dlow := VisualXML.visualizationInfoXML(dlow, filenamePrefix);
     end if;
 
     if Flags.isSet(Flags.ITERATION_VARS) then

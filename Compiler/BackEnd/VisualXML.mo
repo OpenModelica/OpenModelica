@@ -48,6 +48,7 @@ import BackendEquation;
 import BackendVariable;
 import ComponentReference;
 import DAE;
+import DAEUtil;
 import ElementSource;
 import ExpressionDump;
 import ExpressionSolve;
@@ -86,6 +87,7 @@ public function visualizationInfoXML"dumps an xml containing information about v
 author:Waurich TUD 2015-04"
   input BackendDAE.BackendDAE daeIn;
   input String fileName;
+  output BackendDAE.BackendDAE daeOut;
 protected
   BackendDAE.EqSystems eqs, eqs0;
   BackendDAE.Shared shared;
@@ -106,9 +108,9 @@ algorithm
   allVarLst := List.flatten(List.mapMap(eqs, BackendVariable.daeVars,BackendVariable.varList));
 
   //collect all visualization objects
-  (globalKnownVarLst,allVisuals) := List.fold(globalKnownVarLst,isVisualizationVar,({},{}));
-  (allVarLst,allVisuals) := List.fold(allVarLst,isVisualizationVar,({},allVisuals));
-  (aliasVarLst,allVisuals) := List.fold(aliasVarLst,isVisualizationVar,({},allVisuals));
+  (globalKnownVarLst,allVisuals) := List.fold(globalKnownVarLst,isVisualizationVarFold,({},{}));
+  (allVarLst,allVisuals) := List.fold(allVarLst,isVisualizationVarFold,({},allVisuals));
+  (aliasVarLst,allVisuals) := List.fold(aliasVarLst,isVisualizationVarFold,({},allVisuals));
     //print("ALL VISUALS "+stringDelimitList(List.map(allVisuals,ComponentReference.printComponentRefStr)," |")+"\n");
 
   //fill theses visualization objects with information
@@ -118,7 +120,36 @@ algorithm
 
   //dump xml file
   dumpVis(listArray(visuals), fileName+"_visual.xml");
+
+  //update the variabels
+  (globalKnownVars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars, setVisVarsPublic,"");
+  (aliasVars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, setVisVarsPublic,"");
+  daeOut := BackendDAE.DAE(eqs=eqs, shared=shared);
 end visualizationInfoXML;
+
+public function setVisVarsPublic"Sets the VariableAttributes of protected visualization vars to public.
+author: waurich TUD 08-2016"
+  input BackendDAE.Var inVar;
+  input String dummyArgIn;
+  output BackendDAE.Var outVar = inVar;
+  output String dummyArgOut = dummyArgIn;
+algorithm
+  if isVisualizationVar(inVar) then
+    outVar := makeVarPublic(inVar);
+  end if;
+end setVisVarsPublic;
+
+protected function makeVarPublic"Sets the VariableAttributes to public.
+author: waurich TUD 08-2016"
+  input BackendDAE.Var inVar;
+  output BackendDAE.Var outVar;
+protected
+    Option<DAE.VariableAttributes> vals;
+algorithm
+  vals := inVar.values;
+  vals := DAEUtil.setProtectedAttr(vals,false);
+  outVar := BackendVariable.setVarAttributes(inVar,vals);
+end makeVarPublic;
 
 protected function setBindingForProtectedVars"searches for protected vars and sets the binding exp with their equation.
 This is needed since protected, time-dependent variables are not stored in result files (in OMC and Dymola)"
@@ -153,14 +184,21 @@ algorithm
       DAE.Exp exp1, exp2;
   case(BackendDAE.VAR(bindExp=NONE(), values=SOME(_)),(idx,ass1,eqs))
     equation
-      true = BackendVariable.isProtectedVar(varIn);
+      true = (BackendVariable.isProtectedVar(varIn) and isVisualizationVar(varIn));
       eq = BackendEquation.equationNth1(eqs,arrayGet(ass1,idx));
       BackendDAE.EQUATION(exp=exp1, scalar=exp2) = eq;
       (exp1,_) =  ExpressionSolve.solve(exp1,exp2,BackendVariable.varExp(varIn));
       var = BackendVariable.setBindExp(varIn,SOME(exp1));
+      var = makeVarPublic(var);
     then (var,(idx+1,ass1,eqs));
   case(_,(idx,ass1,eqs))
-    then (varIn,(idx+1,ass1,eqs));
+    equation
+      if (BackendVariable.isProtectedVar(varIn) and isVisualizationVar(varIn)) then
+        var = makeVarPublic(varIn);
+      else
+        var = varIn;
+      end if;
+    then (var,(idx+1,ass1,eqs));
   end matchcontinue;
 end setBindingForProtectedVars1;
 
@@ -429,6 +467,31 @@ end printVisualization;
 protected function isVisualizationVar"the var inherits from an visualization object. Therefore, the paths are checked.
 author:Waurich TUD 2015-04"
   input BackendDAE.Var var;
+  output Boolean isVisVar;
+algorithm
+  isVisVar := matchcontinue(var)
+  local
+    Boolean b;
+    DAE.ElementSource source;
+    String obj;
+    list<Absyn.Path> paths;
+    list<String> paths_lst;
+    case(BackendDAE.VAR(source=source))
+      algorithm
+       paths := ElementSource.getElementSourceTypes(source);
+       _ := list(Absyn.pathString(p) for p in paths);
+         //print("paths_lst "+stringDelimitList(paths_lst, "; ")+"\n");
+       (obj,_) := hasVisPath(paths,1);
+    then Util.stringNotEqual(obj,"");
+    else
+      then false;
+  end matchcontinue;
+end isVisualizationVar;
+
+
+protected function isVisualizationVarFold"the var inherits from an visualization object. Therefore, the paths are checked.
+author:Waurich TUD 2015-04"
+  input BackendDAE.Var var;
   input tuple<list<BackendDAE.Var>,list<DAE.ComponentRef>> tplIn;//visualizationVars, visualization Identifiers
   output tuple<list<BackendDAE.Var>,list<DAE.ComponentRef>> tplOut;
 algorithm
@@ -458,7 +521,7 @@ algorithm
     else
       then tplIn;
   end matchcontinue;
-end isVisualizationVar;
+end isVisualizationVarFold;
 
 protected function hasVisPath"checks if the path is Modelica.Mechanics.MultiBody.Visualizers.Advanced.* and outputs * if true. outputs which path is the vis path
 author:Waurich TUD 2015-04"
