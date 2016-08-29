@@ -459,7 +459,7 @@ function addElementSourcePartOf
   input output DAE.ElementSource source;
   input Absyn.Within withinPath;
 algorithm
-  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+  if not (Flags.isSet(Flags.INFO_XML_OPERATIONS) or Flags.isSet(Flags.VISUAL_XML)) then
     return;
   end if;
   source.partOfLst := withinPath::source.partOfLst;
@@ -469,7 +469,7 @@ function addElementSourcePartOfOpt
   input output DAE.ElementSource source;
   input Option<Absyn.Path> classPathOpt;
 algorithm
-  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+  if not (Flags.isSet(Flags.INFO_XML_OPERATIONS) or Flags.isSet(Flags.VISUAL_XML)) then
     return;
   end if;
   source := match(source, classPathOpt)
@@ -516,7 +516,7 @@ function addElementSourceType
   input output DAE.ElementSource source;
   input Absyn.Path classPath;
 algorithm
-  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+  if not (Flags.isSet(Flags.INFO_XML_OPERATIONS) or Flags.isSet(Flags.VISUAL_XML)) then
     return;
   end if;
   source := match(source, classPath)

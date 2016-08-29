@@ -4902,7 +4902,7 @@ public function addComponentType "
   input output DAE.DAElist dae;
   input Absyn.Path newtype;
 algorithm
-  if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+  if not (Flags.isSet(Flags.INFO_XML_OPERATIONS) or Flags.isSet(Flags.VISUAL_XML)) then
     return;
   end if;
   dae := match dae
