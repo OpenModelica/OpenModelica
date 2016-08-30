@@ -737,6 +737,7 @@ public:
   DebuggerPage(OptionsDialog *pOptionsDialog);
   void setGDBPath(QString path);
   QString getGDBPath();
+  QString getGDBPathForSettings() {return mpGDBPathTextBox->text();}
   QSpinBox* getGDBCommandTimeoutSpinBox() {return mpGDBCommandTimeoutSpinBox;}
   QSpinBox* getGDBOutputLimitSpinBox() {return mpGDBOutputLimitSpinBox;}
   QCheckBox* getDisplayCFramesCheckBox() {return mpDisplayCFramesCheckBox;}
