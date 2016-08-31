@@ -36,6 +36,7 @@
 #define VISUALIZER_H
 
 #include "AnimationUtil.h"
+#include "ExtraShapes.h"
 #include "rapidxml.hpp"
 #include "Shapes.h"
 #include "TimeManager.h"

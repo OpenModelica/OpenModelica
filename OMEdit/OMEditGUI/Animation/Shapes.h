@@ -81,6 +81,7 @@ class ShapeObject
 	ShapeObjectAttribute _T[9];
 	ShapeObjectAttribute _specCoeff;
 	osg::Matrix _mat;
+	ShapeObjectAttribute _extra;
 };
 
 struct rAndT
