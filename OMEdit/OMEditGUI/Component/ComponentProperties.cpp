@@ -783,7 +783,10 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
       // get the group value
       groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
       // get the enable value
-      enable = (dialogAnnotation.at(2).compare("true") == 0);
+      /* Ticket #4008
+       * For now just display all parameters as enabled.
+       */
+      //enable = (dialogAnnotation.at(2).compare("true") == 0);
       // get the showStartAttribute value
       if (dialogAnnotation.at(3).compare("-") != 0) {
         showStartAttribute = (dialogAnnotation.at(3).compare("true") == 0);
