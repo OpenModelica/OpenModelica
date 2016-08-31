@@ -3009,7 +3009,7 @@ void MainWindow::switchToWelcomePerspective()
   mpGDBLoggerDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
   mpAnimationToolBar->setEnabled(false);
-
+  mpAnimationWindowContainer->hide();
 }
 
 /*!
@@ -3025,6 +3025,7 @@ void MainWindow::switchToModelingPerspective()
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
   mpAnimationToolBar->setEnabled(false);
+  mpAnimationWindowContainer->hide();
 
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
@@ -3071,6 +3072,7 @@ void MainWindow::switchToPlottingPerspective()
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
   mpAnimationToolBar->setEnabled(false);
+  mpAnimationWindowContainer->hide();
   mpModelSwitcherToolButton->setEnabled(false);
   // if not plotwindow is opened then open one for user
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
@@ -3104,6 +3106,7 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
   mpAnimationToolBar->setEnabled(false);
+  mpAnimationWindowContainer->hide();
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
