@@ -166,6 +166,9 @@ void OMVisualBase::initVisObjects()
 			expNode = shapeNode->first_node((const char*) "specCoeff")->first_node();
 			shape._specCoeff = getObjectAttributeForNode(expNode);
 
+			expNode = shapeNode->first_node((const char*) "extra")->first_node();
+			shape._extra = getObjectAttributeForNode(expNode);
+
 			_shapes.push_back(shape);
 		}
 	} // end for-loop
@@ -455,8 +458,10 @@ void UpdateVisitor::apply(osg::Geode& node)
         //osg::ref_ptr<osg::ShapeDrawable> shapeDraw = dynamic_cast<osg::ShapeDrawable*>(draw.get());
         //shapeDraw->setColor(osg::Vec4(visAttr.color,1.0));
 
-        if (_shape._type == "pipecylinder")
-            draw->setShape(new osg::Cylinder(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp / 2.0, _shape._length.exp));
+        if (_shape._type == "pipe")
+			draw = (new Pipecylinder((_shape._width.exp * _shape._extra.exp )/2 , (_shape._width.exp)/2, _shape._length.exp))->asDrawable();
+        else if (_shape._type == "pipecylinder")
+			draw = (new Pipecylinder((_shape._width.exp * _shape._extra.exp )/2 , (_shape._width.exp)/2, _shape._length.exp))->asDrawable();
         else if (_shape._type == "cylinder")
             draw->setShape(new osg::Cylinder(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp / 2.0, _shape._length.exp));
         else if (_shape._type == "box")
@@ -467,7 +472,7 @@ void UpdateVisitor::apply(osg::Geode& node)
             draw->setShape(new osg::Sphere(osg::Vec3f(0.0, 0.0, 0.0), _shape._length.exp / 2.0));
         else
         {
-            std::cout<<"Unknown type, we make a capsule."<<std::endl;
+            std::cout<<"Unknown type "<<_shape._type<<", we make a capsule."<<std::endl;
             //string id = string(visAttr.type.begin(), visAttr.type.begin()+11);
             draw->setShape(new osg::Capsule(osg::Vec3f(0.0, 0.0, 0.0), 0.1, 0.5));
         }
@@ -627,12 +632,6 @@ rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::
 
 	if (type == "cylinder")
 	{
-		/*
-		 r = r + r_shape;
-		 r_offset = dirs.lDir*length/2.0;
-		 r_offset = V3mulMat3(r_offset,T);
-		 res.r = r+r_offset;
-		 */
 		r_offset = dirs._lDir * length / 2.0;
 		res._r = V3mulMat3(r_shape + r_offset, T);
 		res._r = res._r + r;
@@ -666,6 +665,12 @@ rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::
 		res._T = T;
 		res._r = r;
 		//r_offset = dirs.lDir*length/2.0;
+	}
+	else if (type == "pipecylinder")
+	{
+		res._r = V3mulMat3(r_shape , T);
+		res._r = res._r + r;
+		res._T = Mat3mulMat3(T0, T);
 	}
 	else
 	{

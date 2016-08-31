@@ -134,6 +134,7 @@ void VisualizerMAT::updateVisAttributes(const double time)
             updateObjectAttributeMAT(&shape._color[2], time, tmpReaderPtr);
 
             updateObjectAttributeMAT(&shape._specCoeff, time, tmpReaderPtr);
+            updateObjectAttributeMAT(&shape._extra, time, tmpReaderPtr);
 
             rT = rotateModelica2OSG(osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
                                 osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),

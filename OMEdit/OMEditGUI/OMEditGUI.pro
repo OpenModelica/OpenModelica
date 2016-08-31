@@ -123,6 +123,7 @@ SOURCES += main.cpp \
   Editors/MetaModelicaEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
 	Animation/AnimationWindowContainer.cpp \
+  Animation/ExtraShapes.cpp \
 	Animation/Visualizer.cpp \
 	Animation/VisualizerMAT.cpp \
 	Animation/Shapes.cpp \
@@ -193,6 +194,7 @@ HEADERS  += Util/Helper.h \
 	D:/Programming/OPENMODELICA_GIT/OpenModelica/OMCompiler/3rdParty/FMIL/build/fmilib.h \
 	Animation/AnimationWindowContainer.h \
 	Animation/AnimationUtil.h \
+	Animation/ExtraShapes.h \
 	Animation/Visualizer.h \
   Animation/VisualizerMAT.h \
 	Animation/Shapes.h \
