@@ -149,6 +149,7 @@ public:
   void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void emitComponentAdded(Component *pComponent);
   void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(pConnectionLineAnnotation);}
+  void emitCoOrdinateSystemUpdated(GraphicsView *pGraphicsView) {emit coOrdinateSystemUpdated(pGraphicsView);}
 
   OMCInterface::getClassInformation_res mClassInformation;
 private:
@@ -184,6 +185,7 @@ signals:
   void componentAddedForComponent();
   void connectionAdded(LineAnnotation *pConnectionLineAnnotation);
   void iconUpdated();
+  void coOrdinateSystemUpdated(GraphicsView *pGraphicsView);
 public slots:
   void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
   void handleUnloaded();
@@ -191,6 +193,7 @@ public slots:
   void handleComponentAdded(Component *pComponent);
   void handleConnectionAdded(LineAnnotation *pConnectionLineAnnotation);
   void handleIconUpdated();
+  void handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView);
 };
 
 class LibraryWidget;

@@ -984,7 +984,8 @@ void UpdateCoOrdinateSystemCommand::redo()
   qreal top = mNewCoOrdinateSystem.getExtent().at(1).y();
   mpGraphicsView->setExtentRectangle(left, bottom, right, top);
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->scene()->update();
+  mpGraphicsView->fitInViewInternal();
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(mpGraphicsView);
   // if copy properties is true
   if (mCopyProperties) {
     GraphicsView *pGraphicsView;
@@ -996,7 +997,8 @@ void UpdateCoOrdinateSystemCommand::redo()
     pGraphicsView->mCoOrdinateSystem = mNewCoOrdinateSystem;
     pGraphicsView->setExtentRectangle(left, bottom, right, top);
     pGraphicsView->addClassAnnotation();
-    pGraphicsView->scene()->update();
+    pGraphicsView->fitInViewInternal();
+    pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(pGraphicsView);
   }
   // version
   OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
@@ -1022,9 +1024,15 @@ void UpdateCoOrdinateSystemCommand::undo()
   qreal bottom = mOldCoOrdinateSystem.getExtent().at(0).y();
   qreal right = mOldCoOrdinateSystem.getExtent().at(1).x();
   qreal top = mOldCoOrdinateSystem.getExtent().at(1).y();
-  mpGraphicsView->setExtentRectangle(left, bottom, right, top);
+
+  if (!mpGraphicsView->mCoOrdinateSystem.isValid()) {
+    mpGraphicsView->getModelWidget()->drawBaseCoOrdinateSystem(mpGraphicsView->getModelWidget(), mpGraphicsView);
+  } else {
+    mpGraphicsView->setExtentRectangle(left, bottom, right, top);
+  }
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->scene()->update();
+  mpGraphicsView->fitInViewInternal();
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(mpGraphicsView);
   // if copy properties is true
   if (mCopyProperties) {
     GraphicsView *pGraphicsView;
@@ -1034,9 +1042,14 @@ void UpdateCoOrdinateSystemCommand::undo()
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
     }
     pGraphicsView->mCoOrdinateSystem = mOldCoOrdinateSystem;
-    pGraphicsView->setExtentRectangle(left, bottom, right, top);
+    if (!pGraphicsView->mCoOrdinateSystem.isValid()) {
+      pGraphicsView->getModelWidget()->drawBaseCoOrdinateSystem(pGraphicsView->getModelWidget(), pGraphicsView);
+    } else {
+      pGraphicsView->setExtentRectangle(left, bottom, right, top);
+    }
     pGraphicsView->addClassAnnotation();
-    pGraphicsView->scene()->update();
+    pGraphicsView->fitInViewInternal();
+    pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(pGraphicsView);
   }
   // version
   OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();

@@ -950,6 +950,23 @@ void GraphicsView::removeItem(QGraphicsItem *pGraphicsItem)
 }
 
 /*!
+ * \brief GraphicsView::fitInView
+ * Fits the view.
+ */
+void GraphicsView::fitInViewInternal()
+{
+  // only resize the view if user has not set any custom scaling like zoom in and zoom out.
+  if (!isCustomScale()) {
+    // make the fitInView rectangle bigger so that the scene rectangle will show up properly on the screen.
+    QRectF extentRectangle = getExtentRectangle();
+    qreal x1, y1, x2, y2;
+    extentRectangle.getCoords(&x1, &y1, &x2, &y2);
+    extentRectangle.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
+    fitInView(extentRectangle, Qt::KeepAspectRatio);
+  }
+}
+
+/*!
  * \brief GraphicsView::createActions
  * Creates the actions for the GraphicsView.
  */
@@ -2024,15 +2041,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
 
 void GraphicsView::resizeEvent(QResizeEvent *event)
 {
-  // only resize the view if user has not set any custom scaling like zoom in and zoom out.
-  if (!isCustomScale()) {
-    // make the fitInView rectangle bigger so that the scene rectangle will show up properly on the screen.
-    QRectF extentRectangle = getExtentRectangle();
-    qreal x1, y1, x2, y2;
-    extentRectangle.getCoords(&x1, &y1, &x2, &y2);
-    extentRectangle.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
-    fitInView(extentRectangle, Qt::KeepAspectRatio);
-  }
+  fitInViewInternal();
   QGraphicsView::resizeEvent(event);
 }
 
@@ -2438,6 +2447,36 @@ void ModelWidget::reDrawModelWidgetInheritedClasses()
   if (mConnectionsLoaded) {
     removeInheritedClassConnections();
     drawModelInheritedClassConnections(this);
+  }
+}
+
+/*!
+ * \brief ModelWidget::drawBaseCoOrdinateSystem
+ * Draws the coordinate system from base class.
+ * \param pModelWidget
+ * \param pGraphicsView
+ */
+void ModelWidget::drawBaseCoOrdinateSystem(ModelWidget *pModelWidget, GraphicsView *pGraphicsView)
+{
+  foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
+    if (!pLibraryTreeItem->isNonExisting()) {
+      GraphicsView *pInheritedGraphicsView;
+      if (pGraphicsView->getViewType() == StringHandler::Icon) {
+        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
+      } else {
+        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+      }
+      if (pInheritedGraphicsView->mCoOrdinateSystem.isValid()) {
+        qreal left = pInheritedGraphicsView->mCoOrdinateSystem.getExtent().at(0).x();
+        qreal bottom = pInheritedGraphicsView->mCoOrdinateSystem.getExtent().at(0).y();
+        qreal right = pInheritedGraphicsView->mCoOrdinateSystem.getExtent().at(1).x();
+        qreal top = pInheritedGraphicsView->mCoOrdinateSystem.getExtent().at(1).y();
+        pGraphicsView->setExtentRectangle(left, bottom, right, top);
+        break;
+      } else {
+        drawBaseCoOrdinateSystem(pLibraryTreeItem->getModelWidget(), pGraphicsView);
+      }
+    }
   }
 }
 
@@ -3247,11 +3286,13 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
   }
   annotationString = StringHandler::removeFirstLastCurlBrackets(annotationString);
   if (annotationString.isEmpty()) {
+    drawBaseCoOrdinateSystem(this, pGraphicsView);
     return;
   }
   QStringList list = StringHandler::getStrings(annotationString);
   // read the coordinate system
   if (list.size() < 8) {
+    drawBaseCoOrdinateSystem(this, pGraphicsView);
     return;
   }
 
@@ -3267,6 +3308,7 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
   qreal horizontal = list.at(6).toFloat();
   qreal vertical = list.at(7).toFloat();
   pGraphicsView->mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
+  pGraphicsView->mCoOrdinateSystem.setValid(true);
   pGraphicsView->setExtentRectangle(left, bottom, right, top);
   pGraphicsView->resize(pGraphicsView->size());
   // read the shapes

@@ -48,6 +48,7 @@ CoOrdinateSystem::CoOrdinateSystem()
   setPreserveAspectRatio(true);
   setInitialScale(0.1);
   setGrid(QPointF(2, 2));
+  setValid(false);
 }
 
 /*!
@@ -60,6 +61,7 @@ CoOrdinateSystem::CoOrdinateSystem(const CoOrdinateSystem &coOrdinateSystem)
   setPreserveAspectRatio(coOrdinateSystem.getPreserveAspectRatio());
   setInitialScale(coOrdinateSystem.getInitialScale());
   setGrid(coOrdinateSystem.getGrid());
+  setValid(coOrdinateSystem.isValid());
 }
 
 /*!

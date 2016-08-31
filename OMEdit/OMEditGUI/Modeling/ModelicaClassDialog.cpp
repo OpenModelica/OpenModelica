@@ -1289,6 +1289,7 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
   qreal horizontal = mpHorizontalSpinBox->value();
   qreal vertical = mpVerticalSpinBox->value();
   newCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
+  newCoOrdinateSystem.setValid(true);
   // save old version
   QString oldVersion = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version;
   // save the old uses annotation

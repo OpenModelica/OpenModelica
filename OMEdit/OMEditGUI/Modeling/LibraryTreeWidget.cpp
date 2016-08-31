@@ -636,6 +636,8 @@ void LibraryTreeItem::addInheritedClass(LibraryTreeItem *pLibraryTreeItem)
   connect(pLibraryTreeItem, SIGNAL(connectionAdded(LineAnnotation*)),
           this, SLOT(handleConnectionAdded(LineAnnotation*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()), Qt::UniqueConnection);
+  connect(pLibraryTreeItem, SIGNAL(coOrdinateSystemUpdated(GraphicsView*)),
+          this, SLOT(handleCoOrdinateSystemUpdated(GraphicsView*)), Qt::UniqueConnection);
 }
 
 /*!
@@ -652,6 +654,7 @@ void LibraryTreeItem::removeInheritedClasses()
     disconnect(pLibraryTreeItem, SIGNAL(componentAdded(Component*)), this, SLOT(handleComponentAdded(Component*)));
     disconnect(pLibraryTreeItem, SIGNAL(connectionAdded(LineAnnotation*)), this, SLOT(handleConnectionAdded(LineAnnotation*)));
     disconnect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()));
+    disconnect(pLibraryTreeItem, SIGNAL(coOrdinateSystemUpdated(GraphicsView*)), this, SLOT(handleCoOrdinateSystemUpdated(GraphicsView*)));
   }
   mInheritedClasses.clear();
 }
@@ -894,6 +897,22 @@ void LibraryTreeItem::handleIconUpdated()
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
     emit iconUpdated();
   }
+}
+
+void LibraryTreeItem::handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
+{
+  if (mpModelWidget) {
+    if (pGraphicsView->getViewType() == StringHandler::Icon) {
+      if (!mpModelWidget->getIconGraphicsView()->mCoOrdinateSystem.isValid()) {
+        mpModelWidget->drawBaseCoOrdinateSystem(mpModelWidget, mpModelWidget->getIconGraphicsView());
+      }
+    } else {
+      if (!mpModelWidget->getDiagramGraphicsView()->mCoOrdinateSystem.isValid()) {
+        mpModelWidget->drawBaseCoOrdinateSystem(mpModelWidget, mpModelWidget->getDiagramGraphicsView());
+      }
+    }
+  }
+  emit coOrdinateSystemUpdated(pGraphicsView);
 }
 
 /*!

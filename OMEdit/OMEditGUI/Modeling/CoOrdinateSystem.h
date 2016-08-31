@@ -52,11 +52,14 @@ public:
   QPointF getGrid() const {return mGrid;}
   qreal getHorizontalGridStep();
   qreal getVerticalGridStep();
+  void setValid(bool valid) {mValid = valid;}
+  bool isValid() const {return mValid;}
 private:
   QList<QPointF> mExtent;
   bool mPreserveAspectRatio;
   qreal mInitialScale;
   QPointF mGrid;      // horizontal and vertical spacing for grid
+  bool mValid;
 };
 
 #endif // COORDINATESYSTEM_H
