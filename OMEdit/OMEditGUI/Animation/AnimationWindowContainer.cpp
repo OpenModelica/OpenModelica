@@ -53,7 +53,7 @@ AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
 	_sceneView(new osgViewer::View()),
 	_visualizer(nullptr),
 	_viewerWidget(nullptr),
-	_updateTimer(nullptr)
+	_updateTimer(new QTimer())
 {
   setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
   //the viewer widget
@@ -62,6 +62,10 @@ AnimationWindowContainer::AnimationWindowContainer(MainWindow *pParent)
   _viewerWidget->setParent(this);
   _viewerWidget->setWindowFlags(Qt::SubWindow);
   //_viewerWidget->setWindowState(Qt::WindowMaximized);
+
+  // do a scene update at every tick
+  QObject::connect(_updateTimer, SIGNAL(timeout()), this, SLOT(updateSceneFunction()));
+  _updateTimer->start(100);
 }
 
 
@@ -139,12 +143,6 @@ void AnimationWindowContainer::loadVisualization(){
 
     //add scene for the chosen visualization
     _sceneView->setSceneData(_visualizer->getOMVisScene()->getScene().getRootNode());
-    _updateTimer = new QTimer();
-    // do a scene update at every tick
-    QObject::connect(_updateTimer, SIGNAL(timeout()), this, SLOT(updateSceneFunction()));
-    QObject::connect(_updateTimer, SIGNAL(timeout()), parentWidget(), SLOT(doSomething()));
-
-    _updateTimer->start(100);
 }
 
 
@@ -226,7 +224,8 @@ void AnimationWindowContainer::initSlotFunction(){
  * updates the visualization objects
  */
 void AnimationWindowContainer::updateSceneFunction(){
-	_visualizer->sceneUpdate();
+	if (!(_visualizer==NULL))
+		_visualizer->sceneUpdate();
 }
 
 /*!
