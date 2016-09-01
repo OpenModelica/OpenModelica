@@ -151,6 +151,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   QShortcut *pPlottingShortcut = new QShortcut(QKeySequence("Ctrl+f3"), this);
   connect(pPlottingShortcut, SIGNAL(activated()), SLOT(switchToPlottingPerspectiveSlot()));
   mpPerspectiveTabbar->setTabToolTip(2, tr("Changes to plotting perspective (%1)").arg(pPlottingShortcut->key().toString()));
+
   // algorithmic debugging perspective
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/debugger.svg"), tr("Debugging"));
   QShortcut *pAlgorithmicDebuggingShortcut = new QShortcut(QKeySequence("Ctrl+f5"), this);
@@ -1042,7 +1043,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
                                       const char *x1, const char *x2, const char *y1, const char *y2, const char *curveWidth,
                                       const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale,
                                       const char *variables)
-{
+{/*
   MainWindow *pMainWindow = (MainWindow*)p;
   if (pMainWindow) {
     QFileInfo fileInfo(filename);
@@ -1126,6 +1127,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
     }
     pVariablesTreeModel->blockSignals(state);
   }
+  */
 }
 
 //! Opens the new model widget.
@@ -2292,6 +2294,8 @@ void MainWindow::switchToPlottingPerspectiveSlot()
   mpPerspectiveTabbar->setCurrentIndex(2);
 }
 
+
+
 /*!
  * \brief MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot
  * Slot activated when Ctrl+f5 is clicked.
@@ -2697,6 +2701,10 @@ void MainWindow::createActions()
   mpNewParametricPlotWindowAction = new QAction(QIcon(":/Resources/icons/parametric-plot-window.svg"), tr("New Parametric Plot Window"), this);
   mpNewParametricPlotWindowAction->setStatusTip(tr("Inserts new parametric plot window"));
   connect(mpNewParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addParametricPlotWindow()));
+  // new mpAnimationWindowAction plot action
+  mpAnimationWindowAction = new QAction(QIcon(":/Resources/icons/parametric-plot-window.svg"), tr("New Animation Window"), this);
+  mpAnimationWindowAction->setStatusTip(tr("Inserts new animation window"));
+  connect(mpAnimationWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addAnimationWindow()));
   // export variables action
   mpExportVariablesAction = new QAction(QIcon(":/Resources/icons/export-variables.svg"), Helper::exportVariables, this);
   mpExportVariablesAction->setStatusTip(tr("Exports the plotted variables to a CSV file"));
@@ -2969,13 +2977,13 @@ void MainWindow::autoSaveHelper(LibraryTreeItem *pLibraryTreeItem)
  * the plot windows states & geometry and then restore it when switching back to plotting view.
  */
 void MainWindow::storePlotWindowsStateAndGeometry()
-{
+{/*
   if (mPlotWindowsStatesList.isEmpty() && mPlotWindowsGeometriesList.isEmpty()) {
     foreach (QMdiSubWindow *pWindow, mpPlotWindowContainer->subWindowList()) {
       mPlotWindowsStatesList.append(pWindow->windowState());
       mPlotWindowsGeometriesList.append(pWindow->saveGeometry());
     }
-  }
+  }*/
 }
 
 /*!
@@ -3058,6 +3066,7 @@ void MainWindow::switchToPlottingPerspective()
   }
   mpCentralStackedWidget->setCurrentWidget(mpPlotWindowContainer);
   int i = 0;
+  /*
   foreach (QMdiSubWindow *pWindow, mpPlotWindowContainer->subWindowList()) {
     // sanity check
     if (mPlotWindowsStatesList.size() > i && mPlotWindowsGeometriesList.size() > i) {
@@ -3066,9 +3075,11 @@ void MainWindow::switchToPlottingPerspective()
     }
     i++;
   }
+
   mPlotWindowsStatesList.clear();
   mPlotWindowsGeometriesList.clear();
   mpModelWidgetContainer->currentModelWidgetChanged(0);
+    */
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
   mpAnimationToolBar->setEnabled(false);
@@ -3082,10 +3093,12 @@ void MainWindow::switchToPlottingPerspective()
   mpPlotToolBar->setEnabled(true);
   // In case user has tabbed the dock widgets then make VariablesWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpVariablesDockWidget);
+  /*
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpVariablesDockWidget);
   }
   mpVariablesDockWidget->show();
+  */
   mpStackFramesDockWidget->hide();
   mpBreakpointsDockWidget->hide();
   mpLocalsDockWidget->hide();
@@ -3143,6 +3156,7 @@ void MainWindow::switchToAnimationPerspective()
 	mpGDBLoggerDockWidget->hide();
 	mpWelcomePageWidget->hide();
 }
+
 
 /*!
  * \brief MainWindow::closeAllWindowsButThis
@@ -3301,6 +3315,8 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpNewPlotWindowAction);
   mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);
+  mpPlotToolBar->addAction(mpButtonWindowAction);
+  mpPlotToolBar->addAction(mpAnimationWindowAction);
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpExportVariablesAction);
   mpPlotToolBar->addSeparator();

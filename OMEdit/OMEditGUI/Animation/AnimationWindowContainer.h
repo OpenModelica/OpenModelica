@@ -37,6 +37,7 @@
 
 #include "AnimationUtil.h"
 #include "MainWindow.h"
+#include "OMPlot.h"
 #include "Visualizer.h"
 #include "VisualizerMAT.h"
 
@@ -55,14 +56,13 @@
 #include <osgViewer/ViewerEventHandlers>
 
 
-
 class MainWindow;
 
-class AnimationWindowContainer : public QWidget, public osgViewer::CompositeViewer
+class AnimationWindowContainer : public QMainWindow, public osgViewer::CompositeViewer
 {
   Q_OBJECT
   public:
-    AnimationWindowContainer(MainWindow *pParent);
+    AnimationWindowContainer(QWidget *pParent);
     QWidget* setupViewWidget(osg::ref_ptr<osg::Node> rootNode);
     void showWidgets();
     void loadVisualization();
@@ -79,15 +79,28 @@ class AnimationWindowContainer : public QWidget, public osgViewer::CompositeView
     void updateSceneFunction();
   private:
     //to be animated
-    std::string _pathName;
-    std::string _fileName;
+    std::string mPathName;
+    std::string mFileName;
     //osg viewer scene
-    osgViewer::View* _sceneView;
+    osgViewer::View* mpSceneView;
     //stores the data for the shapes, time management, functionality for updating the values(mat/fmu) etc.
-    VisualizerAbstract* _visualizer;
+    VisualizerAbstract* mpVisualizer;
     //widgets
-    QWidget* _viewerWidget;
-    QTimer* _updateTimer;
+    QWidget* mpViewerWidget;
+    QTimer* mpUpdateTimer;
+    QToolBar* mpAnimationToolBar;
+    QWidget* topWidget;
+    QSlider* mpAnimationSlider;
+    QLabel *mpAnimationTimeLabel;
+    //actions
+    QVBoxLayout* mainLayout;
+    QHBoxLayout* buttonsLayout;
+    QVBoxLayout* mainRowLayout;
+
+    QAction *mpAnimationChooseFileAction;
+    QAction *mpAnimationInitializeAction;
+    QAction *mpAnimationPlayAction;
+    QAction *mpAnimationPauseAction;
 };
 
 #endif // ANIMATIONWINDOWCONTAINER_H

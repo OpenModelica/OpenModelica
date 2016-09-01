@@ -92,6 +92,7 @@ class SimulationDialog;
 class TLMCoSimulationDialog;
 class PlotWindowContainer;
 class AnimationWindowContainer;
+
 class ModelWidgetContainer;
 class InfoBar;
 class WelcomePageWidget;
@@ -124,6 +125,7 @@ public:
   TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
   PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
   AnimationWindowContainer* getAnimationWindowContainer() {return mpAnimationWindowContainer;}
+
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
   InfoBar* getInfoBar() {return mpInfoBar;}
@@ -236,6 +238,7 @@ private:
   TLMCoSimulationDialog *mpTLMCoSimulationDialog;
   PlotWindowContainer *mpPlotWindowContainer;
   AnimationWindowContainer *mpAnimationWindowContainer;
+
   QList<Qt::WindowStates> mPlotWindowsStatesList;
   QList<QByteArray> mPlotWindowsGeometriesList;
   ModelWidgetContainer *mpModelWidgetContainer;
@@ -341,6 +344,8 @@ private:
   QAction *mpReSimulateSetupAction;
   QAction *mpNewPlotWindowAction;
   QAction *mpNewParametricPlotWindowAction;
+  QAction *mpButtonWindowAction;
+  QAction *mpAnimationWindowAction;
   QAction *mpClearPlotWindowAction;
   QAction *mpExportVariablesAction;
   // Other Actions

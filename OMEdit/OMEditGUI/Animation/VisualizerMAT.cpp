@@ -86,7 +86,7 @@ void VisualizerMAT::readMat(const std::string& modelFile, const std::string& pat
 
 void VisualizerMAT::updateVisAttributes(const double time)
 {
-	//std::cout<<"updateVisAttributes at "<<time <<std::endl;
+	std::cout<<"updateVisAttributes at "<<time <<std::endl;
     // Update all shapes.
     unsigned int shapeIdx = 0;
     rAndT rT;
