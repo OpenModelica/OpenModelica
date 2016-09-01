@@ -868,6 +868,7 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
 
 void VariablesWidget::variablesUpdated()
 {
+	/*
   foreach (QMdiSubWindow *pSubWindow, mpMainWindow->getPlotWindowContainer()->subWindowList(QMdiArea::StackingOrder))
   {
     PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
@@ -926,10 +927,11 @@ void VariablesWidget::variablesUpdated()
     }
   }
   updateVariablesTreeHelper(mpMainWindow->getPlotWindowContainer()->currentSubWindow());
+  */
 }
 
 void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
-{
+{/*
   if (!pSubWindow)
     return;
   // first clear all the check boxes in the tree
@@ -969,9 +971,9 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
         mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
     }
   }
-  mpVariablesTreeModel->blockSignals(state);
+  mpVariablesTreeModel->blockSignals(state);*/
   /* invalidate the view so that the items show the updated values. */
-  mpVariableTreeProxyModel->invalidate();
+  //mpVariableTreeProxyModel->invalidate();
 }
 
 void VariablesWidget::readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
@@ -1090,7 +1092,7 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
 
 void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, PlotCurve *pPlotCurve,
                                     PlotWindow *pPlotWindow)
-{
+{/*
   if (index.column() > 0) {
     return;
   }
@@ -1306,6 +1308,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
   } catch (PlotException &e) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), Helper::ok);
   }
+  */
 }
 
 /*!
@@ -1316,6 +1319,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
  */
 void VariablesWidget::unitChanged(const QModelIndex &index)
 {
+	/*
   if (index.column() != 3) {
     return;
   }
@@ -1349,6 +1353,7 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
   } catch (PlotException &e) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), Helper::ok);
   }
+  */
 }
 
 /*!
@@ -1359,6 +1364,7 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
  */
 void VariablesWidget::timeUnitChanged(QString unit)
 {
+	/*
   try {
     OMPlot::PlotWindow *pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
     // if still pPlotWindow is 0 then return.
@@ -1380,19 +1386,22 @@ void VariablesWidget::timeUnitChanged(QString unit)
   } catch (PlotException &e) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), Helper::ok);
   }
+  */
 }
 
 void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
-{
+{/*
   if (!pSubWindow && mpMainWindow->getPlotWindowContainer()->subWindowList().size() != 0)
     return;
+    */
   /* if the same sub window is activated again then just return */
-  if (mpLastActiveSubWindow == pSubWindow) {
+  /*if (mpLastActiveSubWindow == pSubWindow) {
     mpLastActiveSubWindow = pSubWindow;
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
   updateVariablesTreeHelper(pSubWindow);
+  */
 }
 
 void VariablesWidget::showContextMenu(QPoint point)

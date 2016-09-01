@@ -994,7 +994,7 @@ void OptionsDialog::saveFillStyleSettings()
 
 //! Saves the Plotting section settings to omedit.ini
 void OptionsDialog::savePlottingSettings()
-{
+{/*
   // save the auto scale
   mpSettings->setValue("plotting/autoScale", mpPlottingPage->getAutoScaleCheckBox()->isChecked());
   // save plotting view mode
@@ -1009,8 +1009,9 @@ void OptionsDialog::savePlottingSettings()
   } else {
     mpMainWindow->getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
   }
+
   mpSettings->setValue("curvestyle/pattern", mpPlottingPage->getCurvePattern());
-  mpSettings->setValue("curvestyle/thickness", mpPlottingPage->getCurveThickness());
+  mpSettings->setValue("curvestyle/thickness", mpPlottingPage->getCurveThickness());*/
 }
 
 //! Saves the Figaro section settings to omedit.ini
