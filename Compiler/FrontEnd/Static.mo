@@ -288,18 +288,7 @@ function: elabExp
   DAE.Properties type, and include the type and the variability of the
   expression.  This function performs analysis, and returns an
   DAE.Exp and the properties."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Exp inExp;
-  input Boolean inImplicit;
-  input Option<GlobalScript.SymbolTable> inST;
-  input Boolean inDoVect;
-  input Prefix.Prefix inPrefix;
-  input SourceInfo inInfo;
-  output FCore.Cache outCache = inCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-  output Option<GlobalScript.SymbolTable> outST = inST;
+  extends PartialElabExpFunc;
 protected
   Absyn.Exp e;
   Integer num_errmsgs;
@@ -354,7 +343,7 @@ algorithm
   end try;
 end elabExp;
 
-protected partial function PartialElabExpFunc
+public partial function PartialElabExpFunc
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Exp inExp;
@@ -642,6 +631,13 @@ end elabExp_PartEvalFunction;
 
 protected function elabExp_Tuple
   extends PartialElabExpFunc;
+algorithm
+  (outCache, outExp, outProperties, outST) := elabExp_Tuple_LHS_RHS(inCache, inEnv, inExp, inImplicit, inST, inDoVect, inPrefix, inInfo);
+end elabExp_Tuple;
+
+protected function elabExp_Tuple_LHS_RHS
+  extends PartialElabExpFunc;
+  input Boolean isLhs=false;
 protected
   list<Absyn.Exp> el;
   list<DAE.Exp> expl;
@@ -651,10 +647,25 @@ protected
 algorithm
   Absyn.TUPLE(expressions = el) := inExp;
   (outCache, expl, props) := elabTuple(outCache, inEnv, el, inImplicit,
-    inDoVect, inPrefix, inInfo);
+    inDoVect, inPrefix, inInfo, isLhs);
   (types, consts) := splitProps(props);
   (outExp, outProperties) := fixTupleMetaModelica(expl, types, consts);
-end elabExp_Tuple;
+end elabExp_Tuple_LHS_RHS;
+
+public function elabExpLHS "Special check for tuples, which only occur on the LHS"
+  extends PartialElabExpFunc;
+algorithm
+  (outCache, outExp, outProperties, outST) := match inExp
+    case Absyn.TUPLE()
+      algorithm
+       (outCache, outExp, outProperties, outST) := elabExp_Tuple_LHS_RHS(inCache, inEnv, inExp, inImplicit, inST, inDoVect, inPrefix, inInfo, isLhs=true);
+      then (outCache, outExp, outProperties, outST);
+    else
+      algorithm
+       (outCache, outExp, outProperties, outST) := elabExp(inCache, inEnv, inExp, inImplicit, inST, inDoVect, inPrefix, inInfo);
+      then (outCache, outExp, outProperties, outST);
+  end match;
+end elabExpLHS;
 
 protected function elabExp_Range
   "Elaborates a range expression on the form start:stop or start:step:stop."
@@ -2287,7 +2298,7 @@ algorithm
     // The output from functions does just have one const flag. Fix this!!
     case (cache,env,Absyn.TUPLE(expressions = (es as (_ :: _))),impl,pre,_)
       equation
-        (cache,es_1,props) = elabTuple(cache,env,es,impl,false,pre,info);
+        (cache,es_1,props) = elabTuple(cache,env,es,impl,false,pre,info,false);
         (types,consts) = splitProps(props);
       then
         (cache,DAE.TUPLE(es_1),DAE.PROP_TUPLE(DAE.T_TUPLE(types,NONE(),DAE.emptyTypeSource),DAE.TUPLE_CONST(consts)));
@@ -2534,6 +2545,7 @@ protected function elabTuple
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
+  input Boolean isLhs;
   output FCore.Cache outCache = inCache;
   output list<DAE.Exp> outExpl = {};
   output list<DAE.Properties> outProperties = {};
@@ -2541,6 +2553,12 @@ protected
   DAE.Exp exp;
   DAE.Properties prop;
 algorithm
+
+  if if not isLhs then not Config.acceptMetaModelicaGrammar() else false then
+    Error.addSourceMessage(Error.RHS_TUPLE_EXPRESSION, {Dump.printExpStr(Absyn.TUPLE(inExpl))}, inInfo);
+    fail();
+  end if;
+
   for e in inExpl loop
     (outCache, exp, prop) :=
       elabExp(outCache, inEnv, e, inImplicit, NONE(), inDoVect, inPrefix, inInfo);

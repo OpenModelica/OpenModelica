@@ -334,8 +334,7 @@ algorithm
         // Check that the equation is valid if the lhs is a tuple.
         checkTupleCallEquationMessage(lhs_aexp, rhs_aexp, info);
 
-        (outCache, lhs_exp, lhs_prop) :=
-          Static.elabExp(inCache, inEnv, lhs_aexp, inImpl, NONE(), true, inPrefix, info);
+        (outCache, lhs_exp, lhs_prop) := Static.elabExpLHS(inCache, inEnv, lhs_aexp, inImpl, NONE(), true, inPrefix, info);
         (outCache, rhs_exp, rhs_prop) :=
           Static.elabExp(inCache, inEnv, rhs_aexp, inImpl, NONE(), true, inPrefix, info);
 
@@ -1112,7 +1111,7 @@ algorithm
       true = boolOr(b3,b4);
       true = Expression.containFunctioncall(elabedE2);
       (e1,prop) = expandTupleEquationWithWild(e1,prop2,prop);
-      (cache,elabedE1_2,prop1,_) = Static.elabExp(cache,env, e1, impl,NONE(),false,pre,info);
+      (cache,elabedE1_2,prop1,_) = Static.elabExpLHS(cache,env, e1, impl,NONE(),false,pre,info);
       (cache, elabedE1_2, prop1) = Ceval.cevalIfConstant(cache, env, elabedE1_2, prop1, impl, info);
       (cache,elabedE2_2,prop2,_) = Static.elabExp(cache,env, e2, impl,NONE(),false,pre,info);
       (cache, elabedE2_2, prop2) = Ceval.cevalIfConstant(cache, env, elabedE2_2, prop2, impl, info);
@@ -5099,7 +5098,7 @@ algorithm
       equation
         Absyn.CALL() = inRhs;
         true = List.all(expl, Absyn.isCref);
-        (cache,e_1,prop1,_) = Static.elabExp(cache,inEnv,e1,inImpl,NONE(),false,inPre,info);
+        (cache,e_1,prop1,_) = Static.elabExpLHS(cache,inEnv,e1,inImpl,NONE(),false,inPre,info);
         lt = Types.getPropType(prop1);
         rt = Types.getPropType(prop2);
         false = Types.subtype(lt, rt);
