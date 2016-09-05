@@ -195,6 +195,8 @@ QString Helper::simulateWithTransformationalDebugger;
 QString Helper::simulateWithTransformationalDebuggerTip;
 QString Helper::simulateWithAlgorithmicDebugger;
 QString Helper::simulateWithAlgorithmicDebuggerTip;
+QString Helper::simulateWithAnimation;
+QString Helper::simulateWithAnimationTip;
 QString Helper::simulationSetup;
 QString Helper::simulationSetupTip;
 QString Helper::simulation;

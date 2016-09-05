@@ -157,11 +157,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   QShortcut *pAlgorithmicDebuggingShortcut = new QShortcut(QKeySequence("Ctrl+f5"), this);
   connect(pAlgorithmicDebuggingShortcut, SIGNAL(activated()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
   mpPerspectiveTabbar->setTabToolTip(3, tr("Changes to debugging perspective (%1)").arg(pAlgorithmicDebuggingShortcut->key().toString()));
-  // 3d animation perspective
-  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/animation.png"), tr("Animation"));
-  QShortcut *pAnimationShortcut = new QShortcut(QKeySequence("Ctrl+f6"), this);
-  connect(pAnimationShortcut, SIGNAL(activated()), SLOT(switchToAnimationPerspectiveSlot()));
-  mpPerspectiveTabbar->setTabToolTip(4, tr("Changes to animation perspective (%1)").arg(pAnimationShortcut->key().toString()));
   // change the perspective when perspective tab bar selection is changed
   connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
   // Create an object of QStatusBar
@@ -235,20 +230,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   addDockWidget(Qt::RightDockWidgetArea, mpDocumentationDockWidget);
   mpDocumentationDockWidget->hide();
   connect(mpDocumentationDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(documentationDockWidgetVisibilityChanged(bool)));
-  // Create an object of AnimationWindowContainer and render it periodically
-  mpAnimationWindowContainer = new AnimationWindowContainer(this);
-  renderTimer = new QTimer();
-  QObject::connect(renderTimer, SIGNAL(timeout()), mpAnimationWindowContainer, SLOT(renderSlotFunction()));
-  QObject::connect(renderTimer, SIGNAL(timeout()), this, SLOT(updateAnimationTimeContent()));
-  renderTimer->start(10);
-  // some widgets for the animation toolbar
-  mpAnimationSlider = new QSlider(Qt::Horizontal,this);
-  mpAnimationSlider->setFixedWidth(100);
-  mpAnimationSlider->setMinimum(0);
-  mpAnimationSlider->setMaximum(100);
-  mpAnimationSlider->setSliderPosition(50);
-  mpAnimationTimeLabel = new QLabel(this);
-  mpAnimationTimeLabel->setText(QString("Time [s]: ").append(QString::fromStdString("0.000")));
   // Create an object of PlotWindowContainer
   mpPlotWindowContainer = new PlotWindowContainer(this);
   // create an object of VariablesWidget
@@ -290,7 +271,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpCentralStackedWidget->addWidget(mpWelcomePageWidget);
   mpCentralStackedWidget->addWidget(mpModelWidgetContainer);
   mpCentralStackedWidget->addWidget(mpPlotWindowContainer);
-  mpCentralStackedWidget->addWidget(mpAnimationWindowContainer);
   // set the layout
   QGridLayout *pCentralgrid = new QGridLayout;
   pCentralgrid->setVerticalSpacing(4);
@@ -2226,9 +2206,6 @@ void MainWindow::perspectiveTabChanged(int tabIndex)
     case 3:
       switchToAlgorithmicDebuggingPerspective();
       break;
-    case 4:
-      switchToAnimationPerspective();
-      break;
     default:
       switchToWelcomePerspective();
       break;
@@ -2303,16 +2280,6 @@ void MainWindow::switchToPlottingPerspectiveSlot()
 void MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot()
 {
   mpPerspectiveTabbar->setCurrentIndex(3);
-}
-
-/*!
- * \brief MainWindow::switchToAnimationPerspectiveSlot
- * Slot activated when Ctrl+f6 is clicked.
- * Switches to animation perspective.
- */
-void MainWindow::switchToAnimationPerspectiveSlot()
-{
-  mpPerspectiveTabbar->setCurrentIndex(4);
 }
 
 /*!
@@ -2528,6 +2495,11 @@ void MainWindow::createActions()
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   mpSimulateWithAlgorithmicDebuggerAction->setEnabled(false);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateModelWithAlgorithmicDebugger()));
+  // simulate with animation action
+  mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.png"), Helper::simulateWithAnimation, this);
+  mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
+  mpSimulateWithAnimationAction->setEnabled(false);
+  //connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateModelWithAlgorithmicDebugger()));
   // simulation setup action
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
@@ -2737,23 +2709,6 @@ void MainWindow::createActions()
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   mpTLMCoSimulationAction->setEnabled(false);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
-  // animation action
-  mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/openFile.png"), Helper::animationChooseFile, this);
-  mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
-  mpAnimationChooseFileAction->setEnabled(true);
-  mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.png"), Helper::animationInitialize, this);
-  mpAnimationInitializeAction->setStatusTip(Helper::animationInitializeTip);
-  mpAnimationInitializeAction->setEnabled(true);
-  mpAnimationPlayAction = new QAction(QIcon(":/Resources/icons/play.png"), Helper::animationPlay, this);
-  mpAnimationPlayAction->setStatusTip(Helper::animationPlayTip);
-  mpAnimationPlayAction->setEnabled(true);
-  mpAnimationPauseAction = new QAction(QIcon(":/Resources/icons/pause.png"), Helper::animationPause, this);
-  mpAnimationPauseAction->setStatusTip(Helper::animationPauseTip);
-  mpAnimationPauseAction->setEnabled(true);
-  connect(mpAnimationChooseFileAction, SIGNAL(triggered()),mpAnimationWindowContainer, SLOT(chooseAnimationFileSlotFunction()));
-  connect(mpAnimationInitializeAction, SIGNAL(triggered()),mpAnimationWindowContainer, SLOT(initSlotFunction()));
-  connect(mpAnimationPlayAction, SIGNAL(triggered()),mpAnimationWindowContainer, SLOT(playSlotFunction()));
-  connect(mpAnimationPauseAction, SIGNAL(triggered()),mpAnimationWindowContainer, SLOT(pauseSlotFunction()));
 }
 
 //! Creates the menus
@@ -2881,6 +2836,7 @@ void MainWindow::createMenus()
   pSimulationMenu->addAction(mpSimulateModelAction);
   pSimulationMenu->addAction(mpSimulateWithTransformationalDebuggerAction);
   pSimulationMenu->addAction(mpSimulateWithAlgorithmicDebuggerAction);
+  pSimulationMenu->addAction(mpSimulateWithAnimationAction);
   pSimulationMenu->addAction(mpSimulationSetupAction);
   // add Simulation menu to menu bar
   menuBar()->addAction(pSimulationMenu->menuAction());
@@ -3015,8 +2971,6 @@ void MainWindow::switchToWelcomePerspective()
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
-  mpAnimationToolBar->setEnabled(false);
-  mpAnimationWindowContainer->hide();
 }
 
 /*!
@@ -3031,8 +2985,6 @@ void MainWindow::switchToModelingPerspective()
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
-  mpAnimationToolBar->setEnabled(false);
-  mpAnimationWindowContainer->hide();
 
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
@@ -3081,8 +3033,6 @@ void MainWindow::switchToPlottingPerspective()
     */
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
-  mpAnimationToolBar->setEnabled(false);
-  mpAnimationWindowContainer->hide();
   mpModelSwitcherToolButton->setEnabled(false);
   // if not plotwindow is opened then open one for user
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
@@ -3117,8 +3067,6 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
-  mpAnimationToolBar->setEnabled(false);
-  mpAnimationWindowContainer->hide();
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -3129,31 +3077,6 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpLocalsDockWidget->show();
   mpTargetOutputDockWidget->show();
   mpGDBLoggerDockWidget->show();
-}
-
-
-/*!
- * \brief MainWindow::switchToAnimationPerspective
- * Switches to animation perspective.
- */
-void MainWindow::switchToAnimationPerspective()
-{
-	storePlotWindowsStateAndGeometry();
-	mpCentralStackedWidget->setCurrentWidget(mpAnimationWindowContainer);
-	mpAnimationWindowContainer->showWidgets();
-	mpAnimationToolBar->setEnabled(true);
-
-	mpPlotToolBar->setEnabled(false);
-	mpUndoAction->setEnabled(false);
-	mpRedoAction->setEnabled(false);
-    mpModelSwitcherToolButton->setEnabled(false);
-	mpVariablesDockWidget->hide();
-	mpStackFramesDockWidget->hide();
-	mpBreakpointsDockWidget->hide();
-	mpLocalsDockWidget->hide();
-	mpTargetOutputDockWidget->hide();
-	mpGDBLoggerDockWidget->hide();
-	mpWelcomePageWidget->hide();
 }
 
 
@@ -3286,6 +3209,7 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->addAction(mpSimulateModelAction);
   mpSimulationToolBar->addAction(mpSimulateWithTransformationalDebuggerAction);
   mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);
+  mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
   mpSimulationToolBar->addAction(mpSimulationSetupAction);
   // Model Swithcer Toolbar
   mpModelSwitcherToolBar = addToolBar(tr("ModelSwitcher Toolbar"));
@@ -3314,7 +3238,6 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpNewPlotWindowAction);
   mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);
-  mpPlotToolBar->addAction(mpButtonWindowAction);
   mpPlotToolBar->addAction(mpAnimationWindowAction);
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpExportVariablesAction);
@@ -3331,22 +3254,6 @@ void MainWindow::createToolbars()
   mpTLMSimulationToolbar->addAction(mpAlignInterfacesAction);
   mpTLMSimulationToolbar->addSeparator();
   mpTLMSimulationToolbar->addAction(mpTLMCoSimulationAction);
-  // Animation Toolbar
-  mpAnimationToolBar = addToolBar(tr("Animation Toolbar"));
-  mpAnimationToolBar->setObjectName("Animation Toolbar");
-  mpAnimationToolBar->setAllowedAreas(Qt::TopToolBarArea);
-  // add actions to TLM Simulation Toolbar
-  mpAnimationToolBar->addAction(mpAnimationChooseFileAction);
-  mpAnimationToolBar->addSeparator();
-  mpAnimationToolBar->addAction(mpAnimationInitializeAction);
-  mpAnimationToolBar->addSeparator();
-  mpAnimationToolBar->addAction(mpAnimationPlayAction);
-  mpAnimationToolBar->addSeparator();
-  mpAnimationToolBar->addAction(mpAnimationPauseAction);
-  mpAnimationToolBar->addSeparator();
-  mpAnimationToolBar->addWidget(mpAnimationSlider);
-  mpAnimationToolBar->addWidget(mpAnimationTimeLabel);
-  connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),mpAnimationWindowContainer, SLOT(sliderSetTimeSlotFunction(int)));
 }
 
 
@@ -3553,18 +3460,3 @@ void AboutOMEditWidget::keyPressEvent(QKeyEvent *pEvent)
   QWidget::keyPressEvent(pEvent);
 }
 
-
-/*!
- * \brief MainWindow::updateAnimationTimeContent
- * Displays the animation in mpAnimationTimeLabel and moves mpAnimationSlider
- * Hides the widget when ESC key is pressed.
- * \param pEvent
- */
-void MainWindow::updateAnimationTimeContent(){
-	double time = mpAnimationWindowContainer->getVisTime();
-	double timeFrac = mpAnimationWindowContainer->getTimeFraction();
-	double sliderPos = timeFrac*(mpAnimationSlider->maximum() - mpAnimationSlider->minimum());
-	//std::cout<<"time "<<time<<" timeFrac "<<timeFrac<<" sliderPos "<<sliderPos<<std::endl;
-	mpAnimationTimeLabel->setText(QString("Time [s]: ").append(QString::number(time)));
-	mpAnimationSlider->setSliderPosition(sliderPos);
-}
