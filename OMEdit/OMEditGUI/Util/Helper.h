@@ -202,6 +202,8 @@ public:
   static QString simulateWithTransformationalDebuggerTip;
   static QString simulateWithAlgorithmicDebugger;
   static QString simulateWithAlgorithmicDebuggerTip;
+  static QString simulateWithAnimation;
+  static QString simulateWithAnimationTip;
   static QString simulationSetup;
   static QString simulationSetupTip;
   static QString simulation;

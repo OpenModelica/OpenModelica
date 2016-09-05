@@ -151,6 +151,7 @@ public:
   QAction* getSimulateModelAction() {return mpSimulateModelAction;}
   QAction* getSimulateWithTransformationalDebuggerAction() {return mpSimulateWithTransformationalDebuggerAction;}
   QAction* getSimulateWithAlgorithmicDebuggerAction() {return mpSimulateWithAlgorithmicDebuggerAction;}
+  QAction* getSimulateWithAnimationAction() {return mpSimulateWithAnimationAction;}
   QAction* getSimulationSetupAction() {return mpSimulationSetupAction;}
   QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
   QAction* getCheckModelAction() {return mpCheckModelAction;}
@@ -296,6 +297,7 @@ private:
   QAction *mpSimulateModelAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
+  QAction *mpSimulateWithAnimationAction;
   QAction *mpSimulationSetupAction;
   // FMI Menu
   QAction *mpExportFMUAction;
@@ -342,7 +344,6 @@ private:
   QAction *mpReSimulateSetupAction;
   QAction *mpNewPlotWindowAction;
   QAction *mpNewParametricPlotWindowAction;
-  QAction *mpButtonWindowAction;
   QAction *mpAnimationWindowAction;
   QAction *mpClearPlotWindowAction;
   QAction *mpExportVariablesAction;
@@ -354,11 +355,6 @@ private:
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAlignInterfacesAction;
   QAction *mpTLMCoSimulationAction;
-  // Animation Action
-  QAction* mpAnimationChooseFileAction;
-  QAction* mpAnimationInitializeAction;
-  QAction* mpAnimationPlayAction;
-  QAction* mpAnimationPauseAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
@@ -372,11 +368,7 @@ private:
   QMenu *mpModelSwitcherMenu;
   QToolBar *mpPlotToolBar;
   QToolBar *mpTLMSimulationToolbar;
-  QToolBar *mpAnimationToolBar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
-  QTimer *renderTimer;
-  QSlider *mpAnimationSlider;
-  QLabel * mpAnimationTimeLabel;
 public slots:
   void createNewModelicaClass();
   void openModelicaFile();
@@ -442,7 +434,6 @@ public slots:
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
   void toggleAutoSave();
   void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
-  void updateAnimationTimeContent();
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
@@ -451,7 +442,6 @@ private slots:
   void switchToModelingPerspectiveSlot();
   void switchToPlottingPerspectiveSlot();
   void switchToAlgorithmicDebuggingPerspectiveSlot();
-  void switchToAnimationPerspectiveSlot();
   void showConfigureDialog();
   void showAttachToProcessDialog();
 private:
@@ -464,7 +454,6 @@ private:
   void switchToModelingPerspective();
   void switchToPlottingPerspective();
   void switchToAlgorithmicDebuggingPerspective();
-  void switchToAnimationPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem);
