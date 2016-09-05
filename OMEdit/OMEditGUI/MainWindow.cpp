@@ -1598,6 +1598,28 @@ void MainWindow::simulateModel()
 }
 
 /*!
+  Simualtes the model directly with animation flag.
+  */
+//!
+void MainWindow::simulateModelWithAnimation()
+{
+  mpOMCProxy->setCommandLineOptions("+d=visxml +n=1");
+
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    simulate(pModelWidget->getLibraryTreeItem());
+  }
+
+  //QDir dir = QDir(QString("."));
+  //std::cout<<"SIMULATED WITH ANIMATION "<<dir.absolutePath().toStdString().append("/").append(pModelWidget->getLibraryTreeItem()->getNameStructure().toStdString()).append("_visual.xml")<<std::endl;
+  //mpPlotWindowContainer->addAnimationWindow();
+  //AnimationWindowContainer* animation = mpPlotWindowContainer->getCurrentAnimationWindow();
+  //animation->setPathName(dir.absolutePath().toStdString().append("/"));
+  //animation->setFileName(pModelWidget->getLibraryTreeItem()->getNameStructure().toStdString().append("_res.mat"));
+  //animation->loadVisualization();
+}
+
+/*!
   Simualtes the model with transformational debugger
   */
 void MainWindow::simulateModelWithTransformationalDebugger()
@@ -2483,7 +2505,7 @@ void MainWindow::createActions()
   mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.png"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
   mpSimulateWithAnimationAction->setEnabled(false);
-  //connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateModelWithAlgorithmicDebugger()));
+  connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateModelWithAnimation()));
   // simulation setup action
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
@@ -3001,7 +3023,7 @@ void MainWindow::switchToPlottingPerspective()
   }
   mpCentralStackedWidget->setCurrentWidget(mpPlotWindowContainer);
   int i = 0;
-  /*
+
   foreach (QMdiSubWindow *pWindow, mpPlotWindowContainer->subWindowList()) {
     // sanity check
     if (mPlotWindowsStatesList.size() > i && mPlotWindowsGeometriesList.size() > i) {
@@ -3014,7 +3036,6 @@ void MainWindow::switchToPlottingPerspective()
   mPlotWindowsStatesList.clear();
   mPlotWindowsGeometriesList.clear();
   mpModelWidgetContainer->currentModelWidgetChanged(0);
-    */
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
   mpModelSwitcherToolButton->setEnabled(false);
@@ -3026,12 +3047,10 @@ void MainWindow::switchToPlottingPerspective()
   mpPlotToolBar->setEnabled(true);
   // In case user has tabbed the dock widgets then make VariablesWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpVariablesDockWidget);
-  /*
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpVariablesDockWidget);
   }
   mpVariablesDockWidget->show();
-  */
   mpStackFramesDockWidget->hide();
   mpBreakpointsDockWidget->hide();
   mpLocalsDockWidget->hide();

@@ -81,7 +81,7 @@ QString PlotWindowContainer::getUniqueName(QString name, int number)
 
 /*!
  * \brief PlotWindowContainer::getCurrentWindow
- * Returns the current plot window.
+ * Returns the current plot window, if the last window is animation, return null
  * \return
  */
 PlotWindow* PlotWindowContainer::getCurrentWindow()
@@ -94,6 +94,29 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
 	//std::cout<<"isPlotWidget "<<isPlotWidget<<std::endl;
 	if (isPlotWidget)
       return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
+	else
+	  return 0;
+  }
+}
+
+/*!
+ * \brief PlotWindowContainer::getCurrentAnimationWindow
+ * Returns the current animation window, if the last window is plot, return null
+ * \return
+ */
+AnimationWindowContainer* PlotWindowContainer::getCurrentAnimationWindow()
+{
+  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
+    return 0;
+  }
+  else {
+	bool isAnimationWidget = (0 == subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
+	std::cout<<"isAnimationWidget "<<isAnimationWidget<<std::endl;
+	if (isAnimationWidget)
+	{
+      std::cout<<"this was good\n"<<std::endl;
+      return qobject_cast<AnimationWindowContainer*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
+	}
 	else
 	  return 0;
   }

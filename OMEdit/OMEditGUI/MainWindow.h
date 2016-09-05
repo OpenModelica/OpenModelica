@@ -46,6 +46,7 @@
 #include <QItemDelegate>
 #include <QDomDocument>
 #else
+#include <QDir>
 #include <QtGui>
 #include <QtWebKit>
 #include <QtCore>
@@ -187,6 +188,7 @@ public:
   void simulate(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem);
+  void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
   void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
@@ -404,6 +406,7 @@ public slots:
   void simulateModel();
   void simulateModelWithTransformationalDebugger();
   void simulateModelWithAlgorithmicDebugger();
+  void simulateModelWithAnimation();
   void openSimulationDialog();
   void exportModelFMU();
   void importModelFMU();
