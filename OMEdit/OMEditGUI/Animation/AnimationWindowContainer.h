@@ -68,6 +68,8 @@ class AnimationWindowContainer : public QMainWindow, public osgViewer::Composite
     void loadVisualization();
     double getTimeFraction();
     double getVisTime();
+    void setPathName(std::string name);
+    void setFileName(std::string name);
   public slots:
     void sliderSetTimeSlotFunction(int value);
     void playSlotFunction();
@@ -96,11 +98,6 @@ class AnimationWindowContainer : public QMainWindow, public osgViewer::Composite
     QAction *mpAnimationInitializeAction;
     QAction *mpAnimationPlayAction;
     QAction *mpAnimationPauseAction;
-
-    //QVBoxLayout* mpMainLayout;
-    //QHBoxLayout* mpButtonsLayout;
-    ////QVBoxLayout* mpMainRowLayout;
-
 };
 
 #endif // ANIMATIONWINDOWCONTAINER_H

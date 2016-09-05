@@ -111,17 +111,9 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
  	//connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),mpAnimationWindowContainer, SLOT(sliderSetTimeSlotFunction(int)));
     addToolBar(Qt::TopToolBarArea,mpAnimationToolBar);
 
-
-
-    //QVBoxLayout* mainLayout = new QVBoxLayout();
-    //mainLayout->addWidget(mpViewerWidget);
-    //QWidget* topWidget = new QWidget();
-    //topWidget->setLayout(mainLayout);
     mpViewerWidget->setParent(this);//important!!
-
-    //mpViewerWidget->setParent(topWidget);//kein Einfluss
-
-      //setCentralWidget(topWidget); //kein Einfluss
+    //mpViewerWidget->setParent(topWidget);//no influence
+    //setCentralWidget(topWidget);//no influence
 
     connect(mpAnimationChooseFileAction, SIGNAL(triggered()),this, SLOT(chooseAnimationFileSlotFunction()));
     connect(mpAnimationInitializeAction, SIGNAL(triggered()),this, SLOT(initSlotFunction()));
@@ -143,7 +135,6 @@ QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootN
     traits->windowDecoration = false;
     traits->x = 0;
     traits->y = 0;
-
     traits->width = 2000;
     traits->height = 1000;
     traits->doubleBuffer = true;
@@ -160,7 +151,8 @@ QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootN
     osg::ref_ptr<osg::Camera> camera = mpSceneView->getCamera();
     camera->setGraphicsContext(gw);
     camera->setClearColor(osg::Vec4(0.2, 0.2, 0.6, 1.0));
-    camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
+    //camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
+    camera->setViewport(new osg::Viewport(0, 0, 2000, 1000));
     camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits->width/2) / static_cast<double>(traits->height/2), 1.0f, 10000.0f);
     mpSceneView->setSceneData(rootNode);
     mpSceneView->addEventHandler(new osgViewer::StatsHandler());
@@ -185,24 +177,29 @@ void AnimationWindowContainer::loadVisualization(){
     	std::cout<<"unknown visualization type. "<<std::endl;
 
     //init visualizer
-    if (visType == VisType::MAT){
+    if (visType == VisType::MAT)
+    {
 		mpVisualizer = new VisualizerMAT(mFileName, mPathName);
 	}
-	else{
+	else
+	{
 		std::cout<<"could not init "<<mPathName<<mFileName<<std::endl;
 	}
 
     //load the XML File, build osgTree, get initial values for the shapes
     bool xmlExists = checkForXMLFile(mFileName, mPathName);
-    if (!xmlExists){
+    if (!xmlExists)
+    {
         std::cout<<"Could not find the visual XML file "<<assembleXMLFileName(mFileName, mPathName)<<std::endl;
     }
-    mpVisualizer->initData();
-    mpVisualizer->setUpScene();
-    mpVisualizer->initVisualization();
-
-    //add scene for the chosen visualization
-    mpSceneView->setSceneData(mpVisualizer->getOMVisScene()->getScene().getRootNode());
+    else
+    {
+		mpVisualizer->initData();
+		mpVisualizer->setUpScene();
+		mpVisualizer->initVisualization();
+		//add scene for the chosen visualization
+		mpSceneView->setSceneData(mpVisualizer->getOMVisScene()->getScene().getRootNode());
+    }
 }
 
 
@@ -217,7 +214,7 @@ void AnimationWindowContainer::chooseAnimationFileSlotFunction(){
     std::size_t pos = file.find_last_of("/\\");
     mPathName = file.substr(0, pos + 1);
     mFileName = file.substr(pos + 1, file.length());
-	//std::cout<<"file "<<mFileName<<"   path "<<mPathName<<std::endl;
+	std::cout<<"file "<<mFileName<<"   path "<<mPathName<<std::endl;
 	loadVisualization();
 	}
 	else
@@ -311,4 +308,22 @@ double AnimationWindowContainer::getVisTime(){
 	else
 		return mpVisualizer->getTimeManager()->getVisTime();
 }
+
+/*!
+ * \brief AnimationWindowContainer::setPathName
+ * sets mpPathName
+ */
+void AnimationWindowContainer::setPathName(std::string pathName){
+	mPathName = pathName;
+}
+
+
+/*!
+ * \brief AnimationWindowContainer::setFileName
+ * sets mpFileName
+ */
+void AnimationWindowContainer::setFileName(std::string fileName){
+	mFileName = fileName;
+}
+
 

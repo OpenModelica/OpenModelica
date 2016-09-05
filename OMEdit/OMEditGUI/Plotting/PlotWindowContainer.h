@@ -37,9 +37,10 @@
 
 #include "MainWindow.h"
 #include "OMPlot.h"
-#include "AnimationWindowContainer.h"
+#include "Animation/AnimationWindowContainer.h"
 
 class MainWindow;
+class AnimationWindowContainer;
 
 class PlotWindowContainer : public MdiArea
 {
@@ -48,6 +49,7 @@ public:
   PlotWindowContainer(MainWindow *pParent);
   QString getUniqueName(QString name = QString("Plot"), int number = 1);
   OMPlot::PlotWindow* getCurrentWindow();
+  AnimationWindowContainer* getCurrentAnimationWindow();
   bool eventFilter(QObject *pObject, QEvent *pEvent);
 public slots:
   void addAnimationWindow();
