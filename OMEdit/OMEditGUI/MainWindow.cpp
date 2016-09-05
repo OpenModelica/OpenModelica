@@ -1043,7 +1043,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
                                       const char *x1, const char *x2, const char *y1, const char *y2, const char *curveWidth,
                                       const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale,
                                       const char *variables)
-{/*
+{
   MainWindow *pMainWindow = (MainWindow*)p;
   if (pMainWindow) {
     QFileInfo fileInfo(filename);
@@ -1127,7 +1127,6 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
     }
     pVariablesTreeModel->blockSignals(state);
   }
-  */
 }
 
 //! Opens the new model widget.
@@ -2702,7 +2701,7 @@ void MainWindow::createActions()
   mpNewParametricPlotWindowAction->setStatusTip(tr("Inserts new parametric plot window"));
   connect(mpNewParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addParametricPlotWindow()));
   // new mpAnimationWindowAction plot action
-  mpAnimationWindowAction = new QAction(QIcon(":/Resources/icons/parametric-plot-window.svg"), tr("New Animation Window"), this);
+  mpAnimationWindowAction = new QAction(QIcon(":/Resources/icons/animation.png"), tr("New Animation Window"), this);
   mpAnimationWindowAction->setStatusTip(tr("Inserts new animation window"));
   connect(mpAnimationWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addAnimationWindow()));
   // export variables action

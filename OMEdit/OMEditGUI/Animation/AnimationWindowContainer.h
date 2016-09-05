@@ -68,7 +68,6 @@ class AnimationWindowContainer : public QMainWindow, public osgViewer::Composite
     void loadVisualization();
     double getTimeFraction();
     double getVisTime();
-
   public slots:
     void sliderSetTimeSlotFunction(int value);
     void playSlotFunction();
@@ -93,14 +92,15 @@ class AnimationWindowContainer : public QMainWindow, public osgViewer::Composite
     QSlider* mpAnimationSlider;
     QLabel *mpAnimationTimeLabel;
     //actions
-    QVBoxLayout* mainLayout;
-    QHBoxLayout* buttonsLayout;
-    QVBoxLayout* mainRowLayout;
-
     QAction *mpAnimationChooseFileAction;
     QAction *mpAnimationInitializeAction;
     QAction *mpAnimationPlayAction;
     QAction *mpAnimationPauseAction;
+
+    //QVBoxLayout* mpMainLayout;
+    //QHBoxLayout* mpButtonsLayout;
+    ////QVBoxLayout* mpMainRowLayout;
+
 };
 
 #endif // ANIMATIONWINDOWCONTAINER_H

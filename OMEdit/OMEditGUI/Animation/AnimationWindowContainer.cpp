@@ -60,45 +60,46 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
     mpAnimationPlayAction(nullptr),
     mpAnimationPauseAction(nullptr)
 {
-  setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
-  //the viewer widget
-  osg::ref_ptr<osg::Node> rootNode = osgDB::readRefNodeFile("D:/Programming/OPENMODELICA_GIT/OpenModelica/build/bin/dumptruck.osg");
-  mpViewerWidget = setupViewWidget(rootNode);
+   this->setObjectName(QString("animationWidget"));
+   setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
+   //the viewer widget
+   osg::ref_ptr<osg::Node> rootNode = osgDB::readRefNodeFile("D:/Programming/OPENMODELICA_GIT/OpenModelica/build/bin/dumptruck.osg");
+   mpViewerWidget = setupViewWidget(rootNode);
 
-  //mpViewerWidget->setParent(this);
-  //mpViewerWidget->setWindowFlags(Qt::SubWindow);
-  //mpViewerWidget->setWindowState(Qt::WindowMaximized);
-  mpViewerWidget->setBaseSize(QSize(2000,1000));
-  //mpViewerWidget->move(100,100);
-  // do a scene update at every tick
-  QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(updateSceneFunction()));
-  QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(renderSlotFunction()));
-  mpUpdateTimer->start(100);
+   //mpViewerWidget->setParent(this);
+   //mpViewerWidget->setWindowFlags(Qt::SubWindow);
+   //mpViewerWidget->setWindowState(Qt::WindowMaximized);
+   mpViewerWidget->setBaseSize(QSize(2000,1000));
+   //mpViewerWidget->move(100,100);
+   // do a scene update at every tick
+   QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(updateSceneFunction()));
+   QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(renderSlotFunction()));
+   mpUpdateTimer->start(100);
 
-   // animation action
-   mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/openFile.png"), Helper::animationChooseFile, this);
-   mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
-   mpAnimationChooseFileAction->setEnabled(true);
-   mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.png"), Helper::animationInitialize, this);
-   mpAnimationInitializeAction->setStatusTip(Helper::animationInitializeTip);
-   mpAnimationInitializeAction->setEnabled(true);
-   mpAnimationPlayAction = new QAction(QIcon(":/Resources/icons/play.png"), Helper::animationPlay, this);
-   mpAnimationPlayAction->setStatusTip(Helper::animationPlayTip);
-   mpAnimationPlayAction->setEnabled(true);
-   mpAnimationPauseAction = new QAction(QIcon(":/Resources/icons/pause.png"), Helper::animationPause, this);
-   mpAnimationPauseAction->setStatusTip(Helper::animationPauseTip);
-   mpAnimationPauseAction->setEnabled(true);
+    // animation action
+    mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/openFile.png"), Helper::animationChooseFile, this);
+    mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
+    mpAnimationChooseFileAction->setEnabled(true);
+    mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.png"), Helper::animationInitialize, this);
+    mpAnimationInitializeAction->setStatusTip(Helper::animationInitializeTip);
+    mpAnimationInitializeAction->setEnabled(true);
+    mpAnimationPlayAction = new QAction(QIcon(":/Resources/icons/play.png"), Helper::animationPlay, this);
+    mpAnimationPlayAction->setStatusTip(Helper::animationPlayTip);
+    mpAnimationPlayAction->setEnabled(true);
+    mpAnimationPauseAction = new QAction(QIcon(":/Resources/icons/pause.png"), Helper::animationPause, this);
+    mpAnimationPauseAction->setStatusTip(Helper::animationPauseTip);
+    mpAnimationPauseAction->setEnabled(true);
 
-   mpAnimationSlider = new QSlider(Qt::Horizontal);
-   //mpAnimationSlider->setFixedWidth(200);
-   mpAnimationSlider->setMinimum(0);
-   mpAnimationSlider->setMaximum(100);
-   mpAnimationSlider->setSliderPosition(50);
-   mpAnimationTimeLabel = new QLabel();
-   mpAnimationTimeLabel->setText(QString(" Time [s]: ").append(QString::fromStdString("0.000")));
+    mpAnimationSlider = new QSlider(Qt::Horizontal);
+    //mpAnimationSlider->setFixedWidth(200);
+    mpAnimationSlider->setMinimum(0);
+    mpAnimationSlider->setMaximum(100);
+    mpAnimationSlider->setSliderPosition(50);
+    mpAnimationTimeLabel = new QLabel();
+    mpAnimationTimeLabel->setText(QString(" Time [s]: ").append(QString::fromStdString("0.000")));
 
-   mpAnimationToolBar->addAction(mpAnimationChooseFileAction);
-   mpAnimationToolBar->addSeparator();
+    mpAnimationToolBar->addAction(mpAnimationChooseFileAction);
+    mpAnimationToolBar->addSeparator();
  	mpAnimationToolBar->addAction(mpAnimationInitializeAction);
  	mpAnimationToolBar->addSeparator();
  	mpAnimationToolBar->addAction(mpAnimationPlayAction);
@@ -126,10 +127,8 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
     connect(mpAnimationInitializeAction, SIGNAL(triggered()),this, SLOT(initSlotFunction()));
     connect(mpAnimationPlayAction, SIGNAL(triggered()),this, SLOT(playSlotFunction()));
     connect(mpAnimationPauseAction, SIGNAL(triggered()),this, SLOT(pauseSlotFunction()));
-
-
-
 }
+
 /*!
  * \brief AnimationWindowContainer::setupViewWidget
  * creates the widget for the osg viewer
@@ -235,6 +234,10 @@ void AnimationWindowContainer::showWidgets(){
 	show();
 }
 
+/*!
+ * \brief AnimationWindowContainer::getTimeFraction
+ * gets the fraction of the complete simulation time to move the slider
+ */
 double AnimationWindowContainer::getTimeFraction(){
 	if (mpVisualizer==NULL)
 		return 0.0;
@@ -295,7 +298,6 @@ void AnimationWindowContainer::updateSceneFunction(){
  */
 void AnimationWindowContainer::renderSlotFunction()
 {
-	std::cout<<"render"<<std::endl;
   frame();
 }
 
