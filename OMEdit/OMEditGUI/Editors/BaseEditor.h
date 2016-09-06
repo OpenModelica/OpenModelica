@@ -155,6 +155,28 @@ private:
   int mLeadingSpaces;
 };
 
+class CommentDefinition
+{
+public:
+  CommentDefinition();
+  CommentDefinition &setAfterWhiteSpaces(const bool);
+  CommentDefinition &setSingleLine(const QString &singleLine);
+  CommentDefinition &setMultiLineStart(const QString &multiLineStart);
+  CommentDefinition &setMultiLineEnd(const QString &multiLineEnd);
+  bool isAfterWhiteSpaces() const;
+  const QString &singleLine() const;
+  const QString &multiLineStart() const;
+  const QString &multiLineEnd() const;
+  bool hasSingleLineStyle() const;
+  bool hasMultiLineStyle() const;
+  void clearCommentStyles();
+private:
+  bool m_afterWhiteSpaces;
+  QString m_singleLine;
+  QString m_multiLineStart;
+  QString m_multiLineEnd;
+};
+
 class BaseEditorDocumentLayout : public QPlainTextDocumentLayout
 {
   Q_OBJECT
@@ -262,7 +284,7 @@ public slots:
   void showGotoLineNumberDialog();
   void showTabsAndSpaces(bool On);
   void toggleBreakpoint();
-  virtual void toggleCommentSelection() = 0;
+  virtual void toggleCommentSelection();
   void foldAll();
   void unFoldAll();
 };

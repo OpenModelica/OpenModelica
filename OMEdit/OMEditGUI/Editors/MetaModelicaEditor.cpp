@@ -63,6 +63,8 @@ void MetaModelicaEditor::setPlainText(const QString &text)
 void MetaModelicaEditor::showContextMenu(QPoint point)
 {
   QMenu *pMenu = BaseEditor::createStandardContextMenu();
+  pMenu->addSeparator();
+  pMenu->addAction(mpToggleCommentSelectionAction);
   pMenu->exec(mapToGlobal(point));
   delete pMenu;
 }
@@ -79,6 +81,14 @@ void MetaModelicaEditor::contentsHasChanged(int position, int charsRemoved, int 
       mpModelWidget->updateModelText();
     }
   }
+}
+
+/*!
+ * \brief MetaModelicaEditor::toggleCommentSelection
+ */
+void MetaModelicaEditor::toggleCommentSelection()
+{
+  BaseEditor::toggleCommentSelection();
 }
 
 /*!
