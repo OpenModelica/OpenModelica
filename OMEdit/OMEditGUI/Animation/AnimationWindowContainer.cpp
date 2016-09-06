@@ -60,8 +60,12 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
     mpAnimationPlayAction(nullptr),
     mpAnimationPauseAction(nullptr)
 {
+   // to distinguish this widget as a subwindow among the plotwindows
    this->setObjectName(QString("animationWidget"));
+
+   // the osg threading model
    setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
+
    //the viewer widget
    osg::ref_ptr<osg::Node> rootNode = osgDB::readRefNodeFile("D:/Programming/OPENMODELICA_GIT/OpenModelica/build/bin/dumptruck.osg");
    mpViewerWidget = setupViewWidget(rootNode);
@@ -71,12 +75,13 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
    //mpViewerWidget->setWindowState(Qt::WindowMaximized);
    mpViewerWidget->setBaseSize(QSize(2000,1000));
    //mpViewerWidget->move(100,100);
-   // do a scene update at every tick
+
+   // let timer do a scene update at every tick
    QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(updateSceneFunction()));
    QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(renderSlotFunction()));
    mpUpdateTimer->start(100);
 
-    // animation action
+    // actions and widgets for the toolbar
     mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/openFile.png"), Helper::animationChooseFile, this);
     mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
     mpAnimationChooseFileAction->setEnabled(true);
@@ -89,15 +94,19 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
     mpAnimationPauseAction = new QAction(QIcon(":/Resources/icons/pause.png"), Helper::animationPause, this);
     mpAnimationPauseAction->setStatusTip(Helper::animationPauseTip);
     mpAnimationPauseAction->setEnabled(true);
-
     mpAnimationSlider = new QSlider(Qt::Horizontal);
-    //mpAnimationSlider->setFixedWidth(200);
     mpAnimationSlider->setMinimum(0);
     mpAnimationSlider->setMaximum(100);
     mpAnimationSlider->setSliderPosition(50);
     mpAnimationTimeLabel = new QLabel();
     mpAnimationTimeLabel->setText(QString(" Time [s]: ").append(QString::fromStdString("0.000")));
+    mpPerspectiveDropDownBox = new QComboBox(this);
+    mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.png"), QString("to home position"));
+    mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.png"),QString("normal to x-y plane"));
+    mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective1.png"),QString("normal to y-z plane"));
+    mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective3.png"),QString("normal to x-z plane"));
 
+    //assemble the animation toolbar
     mpAnimationToolBar->addAction(mpAnimationChooseFileAction);
     mpAnimationToolBar->addSeparator();
  	mpAnimationToolBar->addAction(mpAnimationInitializeAction);
@@ -108,6 +117,8 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
  	mpAnimationToolBar->addSeparator();
  	mpAnimationToolBar->addWidget(mpAnimationSlider);
  	mpAnimationToolBar->addWidget(mpAnimationTimeLabel);
+ 	mpAnimationToolBar->addWidget(mpPerspectiveDropDownBox);
+
  	//connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),mpAnimationWindowContainer, SLOT(sliderSetTimeSlotFunction(int)));
     addToolBar(Qt::TopToolBarArea,mpAnimationToolBar);
 
@@ -115,10 +126,13 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
     //mpViewerWidget->setParent(topWidget);//no influence
     //setCentralWidget(topWidget);//no influence
 
+    //connections
     connect(mpAnimationChooseFileAction, SIGNAL(triggered()),this, SLOT(chooseAnimationFileSlotFunction()));
     connect(mpAnimationInitializeAction, SIGNAL(triggered()),this, SLOT(initSlotFunction()));
     connect(mpAnimationPlayAction, SIGNAL(triggered()),this, SLOT(playSlotFunction()));
     connect(mpAnimationPauseAction, SIGNAL(triggered()),this, SLOT(pauseSlotFunction()));
+    connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
+
 }
 
 /*!
@@ -327,3 +341,91 @@ void AnimationWindowContainer::setFileName(std::string fileName){
 }
 
 
+/*!
+ * \brief AnimationWindowContainer::cameraPositionXY
+ * sets the camera position to XY
+ */
+void AnimationWindowContainer::cameraPositionXY()
+{
+    resetCamera();
+    //the new orientation
+    osg::Matrix3 newOrient = osg::Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
+
+    osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
+    osg::Matrixd mat = manipulator->getMatrix();
+
+    //assemble
+    mat = osg::Matrixd(newOrient(0, 0), newOrient(0, 1), newOrient(0, 2), 0,
+                       newOrient(1, 0), newOrient(1, 1), newOrient(1, 2), 0,
+                       newOrient(2, 0), newOrient(2, 1), newOrient(2, 2), 0,
+                       abs(mat(3, 0)), abs(mat(3, 2)), abs(mat(3, 1)), 1);
+    manipulator->setByMatrix(mat);
+}
+
+/*!
+ * \brief AnimationWindowContainer::cameraPositionYZ
+ * sets the camera position to YZ
+ */
+void AnimationWindowContainer::cameraPositionYZ()
+{
+    //to get the correct distance of the bodies, reset to home position and use the values of this camera position
+    resetCamera();
+    //the new orientation
+    osg::Matrix3 newOrient = osg::Matrix3(0, 1, 0, 0, 0, 1, 1, 0, 0);
+
+    osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
+    osg::Matrixd mat = manipulator->getMatrix();
+
+    //assemble
+    mat = osg::Matrixd(newOrient(0, 0), newOrient(0, 1), newOrient(0, 2), 0,
+                       newOrient(1, 0), newOrient(1, 1), newOrient(1, 2), 0,
+                       newOrient(2, 0), newOrient(2, 1), newOrient(2, 2), 0,
+                       abs(mat(3, 1)), abs(mat(3, 2)), abs(mat(3, 0)), 1);
+    manipulator->setByMatrix(mat);
+}
+
+/*!
+ * \brief AnimationWindowContainer::cameraPositionXZ
+ * sets the camera position to XZ
+ */
+void AnimationWindowContainer::cameraPositionXZ()
+{
+	//to get the correct distance of the bodies, reset to home position and use the values of this camera position
+    resetCamera();
+    //the new orientation
+    osg::Matrix3 newOrient = osg::Matrix3(1, 0, 0, 0, 0, 1, 0, -1, 0);
+
+    osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
+    osg::Matrixd mat = manipulator->getMatrix();
+
+    //assemble
+    mat = osg::Matrixd(newOrient(0, 0), newOrient(0, 1), newOrient(0, 2), 0,
+                       newOrient(1, 0), newOrient(1, 1), newOrient(1, 2), 0,
+                       newOrient(2, 0), newOrient(2, 1), newOrient(2, 2), 0,
+                       abs(mat(3, 0)), -abs(mat(3, 1)), abs(mat(3, 2)), 1);
+    manipulator->setByMatrix(mat);
+}
+
+/*!
+ * \brief AnimationWindowContainer::resetCamera
+ * resets the camera position
+ */
+void AnimationWindowContainer::resetCamera()
+{
+	mpSceneView->home();
+}
+
+/*!
+ * \brief AnimationWindowContainer::setPerspective
+ * gets the identifier for the chosen perspective and calls the functions
+ */
+void AnimationWindowContainer::setPerspective(int value)
+{
+	switch(value) {
+	case(0): resetCamera();break;
+	case(1): cameraPositionXY();break;
+	case(2): cameraPositionYZ();break;
+	case(3): cameraPositionXZ();break;
+	}
+
+}

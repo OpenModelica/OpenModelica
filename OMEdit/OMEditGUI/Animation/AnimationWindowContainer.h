@@ -78,6 +78,11 @@ class AnimationWindowContainer : public QMainWindow, public osgViewer::Composite
     void renderSlotFunction();
     void chooseAnimationFileSlotFunction();
     void updateSceneFunction();
+    void resetCamera();
+    void cameraPositionXY();
+    void cameraPositionXZ();
+    void cameraPositionYZ();
+    void setPerspective(int value);
   private:
     //to be animated
     std::string mPathName;
@@ -93,6 +98,7 @@ class AnimationWindowContainer : public QMainWindow, public osgViewer::Composite
     QWidget* topWidget;
     QSlider* mpAnimationSlider;
     QLabel *mpAnimationTimeLabel;
+    QComboBox *mpPerspectiveDropDownBox;
     //actions
     QAction *mpAnimationChooseFileAction;
     QAction *mpAnimationInitializeAction;

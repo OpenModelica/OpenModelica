@@ -143,5 +143,9 @@
 				<file>Resources/icons/play.png</file>
 				<file>Resources/icons/pause.png</file>
 				<file>Resources/icons/initialize.png</file>
+				<file>Resources/icons/perspective0.png</file>
+				<file>Resources/icons/perspective1.png</file>
+				<file>Resources/icons/perspective2.png</file>
+				<file>Resources/icons/perspective3.png</file>
     </qresource>
 </RCC>
