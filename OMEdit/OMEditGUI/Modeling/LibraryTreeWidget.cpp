@@ -3257,6 +3257,13 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
       } else  if (isTopLevel) {
         unloadMetaModelOrTextFile();
       }
+    } else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
+      if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+        QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+        if (fileInfo.isFile()) {
+          mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+        }
+      }
     } else {
       QTreeView::keyPressEvent(event);
     }
