@@ -4198,7 +4198,11 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
             for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
               ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
               QListWidgetItem *listItem = new QListWidgetItem(mpRecentModelsList);
-              listItem->setText(pModelWidget->getLibraryTreeItem()->getNameStructure());
+              if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+                listItem->setText(pModelWidget->getLibraryTreeItem()->getNameStructure());
+              } else {
+                listItem->setText(pModelWidget->getLibraryTreeItem()->getName());
+              }
               listItem->setData(Qt::UserRole, pModelWidget->getLibraryTreeItem()->getNameStructure());
             }
           } else {
