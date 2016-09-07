@@ -474,7 +474,7 @@ algorithm
   ass1 := arrayCreate(size,-1);
   ass2 := arrayCreate(size,-1);
   // get all unsolvable variables
-  unsolvables := getUnsolvableVars(1,size,meT,{});
+  unsolvables := getUnsolvableVars(size,meT);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\n\nUnsolvable Vars:\n");
      BackendDump.debuglst(unsolvables,intString,", ","\n");
@@ -553,36 +553,25 @@ end omcTearing;
 
 protected function getUnsolvableVars
 "  author: Frenkel TUD 2012-08"
-  input Integer index;
   input Integer size;
   input BackendDAE.AdjacencyMatrixTEnhanced meT;
-  input list<Integer> iAcc;
-  output list<Integer> oAcc;
+  output list<Integer> unsolvables = {};
+protected
+  Boolean isUnsolvable;
 algorithm
-  oAcc := matchcontinue(index,size,meT,iAcc)
-    local
-      BackendDAE.AdjacencyMatrixElementEnhanced elem;
-      list<Integer> acc;
-      Boolean b;
-    case(_,_,_,_)
-      equation
-        true = intLe(index,size);
-        elem = meT[index];
-        b = unsolvable(elem);
-        acc = List.consOnTrue(b, index, iAcc);
-      then
-       getUnsolvableVars(index+1,size,meT,acc);
-    case(_,_,_,_)
-      then
-       iAcc;
-  end matchcontinue;
+  for index in 1:size loop
+    isUnsolvable := unsolvable(meT[index]);
+    if isUnsolvable then
+      unsolvables := index::unsolvables;
+    end if;
+  end for;
 end getUnsolvableVars;
 
 
 public function unsolvable
 "  author: Frenkel TUD 2012-08"
   input BackendDAE.AdjacencyMatrixElementEnhanced elem;
-  output Boolean b = true;
+  output Boolean isUnsolvable = true;
 protected
   Integer e;
   BackendDAE.Solvability s;
@@ -591,7 +580,7 @@ algorithm
     (e,s,_) := el;
     if solvable(s) then
       if e > 0 then
-        b := false;
+        isUnsolvable := false;
         return;
       end if;
     end if;
@@ -1018,7 +1007,7 @@ algorithm
     // if there is a variable unsolvable select it
     case(_,_,_,_,_,_,_,_)
       equation
-        unsolvables = getUnsolvableVarsConsiderMatching(1,BackendVariable.varsSize(vars),mt,ass1,ass2,{});
+        unsolvables = getUnsolvableVarsConsiderMatching(BackendVariable.varsSize(vars),mt,ass1,ass2);
         false = listEmpty(unsolvables);
         tvar = listHead(unsolvables);
         if listMember(tvar,tSel_never) then
@@ -1100,47 +1089,27 @@ end omcTearingSelectTearingVar;
 protected function getUnsolvableVarsConsiderMatching
 " returns one unsolvable var with respect to the current matching
   author: Frenkel TUD 2012-08"
-  input Integer index;
   input Integer size;
   input BackendDAE.AdjacencyMatrixTEnhanced meT;
   input array<Integer> ass1;
   input array<Integer> ass2;
-  input list<Integer> inUnsolvables;
-  output list<Integer> outUnsolvable;
+  output list<Integer> unsolvables = {};
+protected
+  BackendDAE.AdjacencyMatrixElementEnhanced elem;
+  Boolean isUnsolvable;
 algorithm
-  outUnsolvable := matchcontinue(index,size,meT,ass1,ass2,inUnsolvables)
-    local
-      BackendDAE.AdjacencyMatrixElementEnhanced elem;
-  case(_,_,_,_,_,_)
-      equation
-        true = intEq(index,size);
-        /* unmatched var */
-        true = intLt(ass1[index],0);
-        elem = meT[index];
-        /* consider only unmatched eqns */
-        elem = removeMatched(elem,ass2);
-        true = unsolvable(elem);
-      then
-       index::inUnsolvables;
-    case(_,_,_,_,_,_)
-      equation
-        true = intLt(index,size);
-        /* unmatched var */
-        true = intLt(ass1[index],0);
-        elem = meT[index];
-        /* consider only unmatched eqns */
-        elem = removeMatched(elem,ass2);
-        true = unsolvable(elem);
-      then
-       getUnsolvableVarsConsiderMatching(index+1,size,meT,ass1,ass2,index::inUnsolvables);
-    case(_,_,_,_,_,_)
-      equation
-        true = intLe(index,size);
-      then
-       getUnsolvableVarsConsiderMatching(index+1,size,meT,ass1,ass2,inUnsolvables);
-  else
-    then {};
-  end matchcontinue;
+  for index in 1:size loop
+    /* unmatched var */
+    if intLt(ass1[index],0) then
+      elem := meT[index];
+      /* consider only unmatched eqns */
+      elem := removeMatched(elem,ass2);
+      isUnsolvable := unsolvable(elem);
+      if isUnsolvable then
+        unsolvables := index::unsolvables;
+      end if;
+    end if;
+  end for;
 end getUnsolvableVarsConsiderMatching;
 
 
@@ -1156,7 +1125,7 @@ protected
 algorithm
   for el in elem loop
     (e,_,_) := el;
-    if intLt(ass2[e],0) then
+    if intGt(e,0) and intLt(ass2[e],0) then
       oAcc := el::oAcc;
     end if;
   end for;
@@ -1792,7 +1761,7 @@ algorithm
   if debug then execStat("Tearing.CellierTearing -> 1.5"); end if;
 
   // Determine unsolvable vars to consider solvability
-  unsolvables := getUnsolvableVars(1,size,meT,{});
+  unsolvables := getUnsolvableVars(size,meT);
   if debug then execStat("Tearing.CellierTearing -> 2"); end if;
 
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -1892,7 +1861,7 @@ algorithm
     (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,true);
 
     // Determine unsolvable vars to consider solvability
-    unsolvables := getUnsolvableVars(1,size,meT,{});
+    unsolvables := getUnsolvableVars(size,meT);
 
     if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nAdjacencyMatrixEnhanced:\n");
@@ -2152,7 +2121,7 @@ algorithm
       end if;
 
       // ascertain if there are new unsolvables now
-      unsolvables = getUnsolvableVarsConsiderMatching(1,arrayLength(meTIn),meTIn,ass1In,ass2In,{});
+      unsolvables = getUnsolvableVarsConsiderMatching(arrayLength(meTIn),meTIn,ass1In,ass2In);
       if debug then execStat("Tearing.CellierTearing2 - 1.3"); end if;
       (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
 
@@ -2213,7 +2182,7 @@ algorithm
       end if;
 
       // ascertain if there are new unsolvables now
-      unsolvables = getUnsolvableVarsConsiderMatching(1,arrayLength(meTIn),meTIn,ass1In,ass2In,{});
+      unsolvables = getUnsolvableVarsConsiderMatching(arrayLength(meTIn),meTIn,ass1In,ass2In);
       (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
 
       if debug then execStat("Tearing.CellierTearing2 - 2"); end if;
@@ -2237,59 +2206,51 @@ protected function selectTearingVar
   input list<Integer> discreteVars,tSel_prefer,tSel_avoid,tSel_never;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
-  output Integer OutTVars;
+  output Integer OutTVar;
+protected
+  list<Integer> potentials;
+  String heuristic;
+  TearingHeuristic tearingHeuristic;
 algorithm
- OutTVars := matchcontinue(me,meT,m,mt,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn)
-   local
-     list<Integer> potentials;
-     String heuristic;
-     TearingHeuristic potentialsFunc;
-   case(_,_,_,_,_,_,_,_,_,_,_,_)
-     equation
+  // get the function for the requested tearing heuristic
+  heuristic := Config.getTearingHeuristic();
+  tearingHeuristic := match heuristic
+    case "MC1" then ModifiedCellierHeuristic_1;
+    case "MC2" then ModifiedCellierHeuristic_2;
+    case "MC11" then ModifiedCellierHeuristic_1_1;
+    case "MC21" then ModifiedCellierHeuristic_2_1;
+    case "MC12" then ModifiedCellierHeuristic_1_2;
+    case "MC22" then ModifiedCellierHeuristic_2_2;
+    case "MC13" then ModifiedCellierHeuristic_1_3;
+    case "MC23" then ModifiedCellierHeuristic_2_3;
+    case "MC231" then ModifiedCellierHeuristic_2_3_1;
+    case "MC3" then ModifiedCellierHeuristic_3;
+    case "MC4" then ModifiedCellierHeuristic_4;
+    else
+      equation
+        Error.addInternalError("Unknown tearing heuristic: " + heuristic, sourceInfo());
+     then fail();
+  end match;
 
-       // get the funtion for the requested tearing heuristic
-       heuristic = Config.getTearingHeuristic();
-       potentialsFunc = match heuristic
-         case "MC1" then ModifiedCellierHeuristic_1;
-         case "MC2" then ModifiedCellierHeuristic_2;
-         case "MC11" then ModifiedCellierHeuristic_1_1;
-         case "MC21" then ModifiedCellierHeuristic_2_1;
-         case "MC12" then ModifiedCellierHeuristic_1_2;
-         case "MC22" then ModifiedCellierHeuristic_2_2;
-         case "MC13" then ModifiedCellierHeuristic_1_3;
-         case "MC23" then ModifiedCellierHeuristic_2_3;
-         case "MC231" then ModifiedCellierHeuristic_2_3_1;
-         case "MC3" then ModifiedCellierHeuristic_3;
-         case "MC4" then ModifiedCellierHeuristic_4;
-         else
-           equation
-             Error.addInternalError("Unknown tearing heuristic: " + heuristic, sourceInfo());
-          then fail();
-       end match;
+  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    print("\n" + BORDER + "\nBEGINNING of TearingHeuristic\n\n");
+    print("Chosen Heuristic: " + heuristic + "\n\n\n");
+  end if;
 
-       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-         print("\n" + BORDER + "\nBEGINNING of TearingHeuristic\n\n");
-         print("Chosen Heuristic: " + heuristic + "\n\n\n");
-       end if;
+  // get potential tearing variables
+  potentials := tearingHeuristic(m,mt,me,meT,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn);
 
-       // get potential tearing variables
-       potentials = potentialsFunc(m,mt,me,meT,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn);
-
-       // check if selection succeeded
-       true = intGe(listLength(potentials),1);
-
-       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-         print("\nEND of TearingHeuristic\n" + BORDER + "\n\n");
-       end if;
-    then listHead(potentials);
-
-   else
-     equation
-       print("\nThe selection of a new tearing variable failed.\n");
-       Error.addCompilerWarning("Function Tearing.selectTearingVar failed at least once. Use +d=tearingdump or +d=tearingdumpV for more information.");
-    then fail();
-
- end matchcontinue;
+  // check if selection succeeded
+  if intGe(listLength(potentials),1) then
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      print("\nEND of TearingHeuristic\n" + BORDER + "\n\n");
+    end if;
+    OutTVar := listHead(potentials);
+  else
+    print("\nThe selection of a new tearing variable failed.\n");
+    Error.addCompilerWarning("Function Tearing.selectTearingVar failed at least once. Use +d=tearingdump or +d=tearingdumpV for more information.");
+    fail();
+  end if;
 end selectTearingVar;
 
 
@@ -3305,10 +3266,11 @@ author: ptaeuber FHB 2013-2015"
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   output list<Integer> eqQueueOut;
-  output list<Integer> orderOut;
-  output Boolean assignable;
+  output list<Integer> orderOut = orderIn;
+  output Boolean assignable = false;
 protected
-  list<Integer> assEq,assEq_multi,assEq_single,assEq_coll,eqns,vars;
+  Integer eq_coll;
+  list<Integer> assEq, assEq_multi, assEq_single, assEq_coll, eqns = {}, vars = {};
 algorithm
   // find equations with one variable
   assEq := traverseEqnsforAssignable(ass2In,mIn,mapEqnIncRow,mapIncRowEqn,0);
@@ -3332,44 +3294,25 @@ algorithm
   // NOTE: For tearing of strong components with the same number of equations and variables and with a late choice of the
   //       residual equation it is not possible to match starting from the variables, so this case is not considered.
   //       For other tearing structures this case has to be added.
-  (eqQueueOut,eqns,vars,orderOut,assignable) := TarjanGetAssignable(eqQueueOut,mIn,mtIn,meIn,metIn,ass1In,mapEqnIncRow,mapIncRowEqn,orderIn);
-  makeAssignment(eqns,vars,ass1In,ass2In,mIn,mtIn);
+
+  // Get the next solvable equation from the equation queue
+  try
+    (eqQueueOut,eq_coll,eqns,vars) := getNextSolvableEqn(eqQueueOut,mIn,meIn,ass1In,mapEqnIncRow);
+    orderOut := eq_coll::orderOut;
+    assignable := true;
+  else
+  end try;
+
+  // Make the assignment if possible
+  if assignable then
+    makeAssignment(eqns,vars,ass1In,ass2In,mIn,mtIn);
+  end if;
+
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("order: "+stringDelimitList(List.map(listReverse(orderOut),intString),",")+"\n\n");
   end if;
 end TarjanAssignment;
 
-
-protected function TarjanGetAssignable " selects assignable Var and Equation.
-  author: ptaeuber FHB 2013-2015"
-  input list<Integer> eqQueueIn;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
-  input BackendDAE.AdjacencyMatrixEnhanced me;
-  input BackendDAE.AdjacencyMatrixTEnhanced met;
-  input array<Integer> ass1;
-  input array<list<Integer>> mapEqnIncRow;
-  input array<Integer> mapIncRowEqn;
-  input list<Integer> orderIn;
-  output list<Integer> eqQueueOut;
-  output list<Integer> eqnsOut,varsOut;
-  output list<Integer> orderOut;
-  output Boolean assignable;
-algorithm
-  (eqQueueOut,eqnsOut,varsOut,orderOut,assignable) := matchcontinue(eqQueueIn,m,mt,me,met,ass1,mapEqnIncRow,mapIncRowEqn,orderIn)
-  local
-    Integer eq_coll;
-    list<Integer> eqns,vars;
-    list<Integer> order,eqQueue;
-  case(_,_,_,_,_,_,_,_,_)
-    equation
-      ((eqQueue,eq_coll,eqns,vars)) = getNextSolvableEqn((eqQueueIn,m,me,ass1,mapEqnIncRow));
-      orderOut = eq_coll::orderIn;
-    then (eqQueue,eqns,vars,orderOut,true);
-  else
-    then ({},{},{},orderIn,false);
-  end matchcontinue;
-end TarjanGetAssignable;
 
 protected function traverseEqnsforAssignable
 " selects next equations that can be causalized without consideration of solvability
@@ -3410,31 +3353,22 @@ protected function makeAssignment
   input array<Integer> ass1In,ass2In;
   input BackendDAE.IncidenceMatrix mIn;
   input BackendDAE.IncidenceMatrixT mtIn;
+protected
+  Integer eq, var;
 algorithm
- _ := matchcontinue(eqns,vars,ass1In,ass2In,mIn,mtIn)
-   local
-     Integer eq,var;
-     list<Integer> rest1,rest2,ass1,ass2;
-   case({},{},_,_,_,_)
-     then ();
-   case(eq::rest1,var::rest2,_,_,_,_)
-    equation
+  for index in 1:listLength(eqns) loop
+    eq := listGet(eqns, index);
+    var := listGet(vars, index);
     arrayUpdate(ass1In,var,eq);
     arrayUpdate(ass2In,eq,var);
-      if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("assignment: Eq"+intString(eq)+" - Var"+intString(var)+"\n");
-      end if;
-      _ = Array.replaceAtWithFill(eq,{},{},mIn);
-      deleteEntriesFromIncidenceMatrix(mIn,mtIn,{var});
-      _ = Array.replaceAtWithFill(var,{},{},mtIn);
-      deleteEntriesFromIncidenceMatrix(mtIn,mIn,{eq});
-    makeAssignment(rest1,rest2,ass1In,ass2In,mIn,mtIn);
-    then ();
-   else
-    equation
-      print("\n\nAssignment failed in Tearing.makeAssignment\n\n");
-     then fail();
- end matchcontinue;
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      print("assignment: Eq " + intString(eq) + " - Var " + intString(var) + "\n");
+    end if;
+    _ := Array.replaceAtWithFill(eq,{},{},mIn);
+    deleteEntriesFromIncidenceMatrix(mIn,mtIn,{var});
+    _ := Array.replaceAtWithFill(var,{},{},mtIn);
+    deleteEntriesFromIncidenceMatrix(mtIn,mIn,{eq});
+  end for;
 end makeAssignment;
 
 
@@ -3500,27 +3434,24 @@ end findConstraintForInnerEquation;
 
 protected function getNextSolvableEqn " finds equation that can be matched with respect to solvability
   author: ptaeuber FHB 2013-08"
-  input tuple<list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.AdjacencyMatrixEnhanced,array<Integer>,array<list<Integer>>> inTpl;
-  output tuple<list<Integer>,Integer,list<Integer>,list<Integer>> EqnsAndVars;
+  input list<Integer> eqQueueIn;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  input array<Integer> ass1;
+  input array<list<Integer>> mapEqnIncRow;
+  output list<Integer> eqQueueOut = eqQueueIn;
+  output Integer eqOut;
+  output list<Integer> eqnsOut;
+  output list<Integer> varsOut;
+protected
+  Boolean solvable = false;
 algorithm
-  EqnsAndVars := match(inTpl)
-    local
-      Integer eqn,eqn_coll;
-      list<Integer> eqns,vars,rest;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.AdjacencyMatrixElementEnhanced vars_enh;
-      BackendDAE.AdjacencyMatrixEnhanced me;
-      array<Integer> ass1;
-      array<list<Integer>> mapEqnIncRow;
-      Boolean solvable;
-    case(({},_,_,_,_))
-      then fail();
-    case((eqn_coll::rest,m,me,ass1,mapEqnIncRow))
-      equation
-        (solvable, eqns, vars) = eqnSolvableCheck(eqn_coll, mapEqnIncRow, ass1, m, me);
-       then if solvable then (rest,eqn_coll,eqns,vars) else getNextSolvableEqn((rest,m,me,ass1,mapEqnIncRow));
-    else fail();
-   end match;
+  while not listEmpty(eqQueueOut) loop
+    eqOut::eqQueueOut := eqQueueOut;
+    (solvable, eqnsOut, varsOut) := eqnSolvableCheck(eqOut, mapEqnIncRow, ass1, m, me);
+    if solvable then break; end if;
+  end while;
+  if not solvable then fail(); end if;
 end getNextSolvableEqn;
 
 
@@ -4220,7 +4151,7 @@ algorithm
   (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,false);
 
   // Determine unsolvable vars to consider solvability
-  unsolvables := getUnsolvableVars(1,size,meT,{});
+  unsolvables := getUnsolvableVars(size,meT);
 
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nAdjacencyMatrixEnhanced:\n");
@@ -4609,7 +4540,7 @@ algorithm
   end if;
 
   // Determine unsolvable vars to consider solvability
-  unsolvables := getUnsolvableVars(1,size,meT,{});
+  unsolvables := getUnsolvableVars(size,meT);
 
   // Determine discrete vars
   discreteVars := findDiscrete(var_lst);
@@ -4731,7 +4662,7 @@ algorithm
   end if;
   while not listEmpty(causEq) loop
     try
-      ((_,e,e_exp,vars)) := getNextSolvableEqn((causEq,m,me,ass1,mapEqnIncRow));
+      (_,e,e_exp,vars) := getNextSolvableEqn(causEq,m,me,ass1,mapEqnIncRow);
     else
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nMatching failed, choose different tearing set!\n\n\n");
