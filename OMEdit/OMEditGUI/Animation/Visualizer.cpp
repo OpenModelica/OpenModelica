@@ -458,10 +458,18 @@ void UpdateVisitor::apply(osg::Geode& node)
         //osg::ref_ptr<osg::ShapeDrawable> shapeDraw = dynamic_cast<osg::ShapeDrawable*>(draw.get());
         //shapeDraw->setColor(osg::Vec4(visAttr.color,1.0));
 
-        if (_shape._type == "pipe")
-			draw = (new Pipecylinder((_shape._width.exp * _shape._extra.exp )/2 , (_shape._width.exp)/2, _shape._length.exp))->asDrawable();
-        else if (_shape._type == "pipecylinder")
-			draw = (new Pipecylinder((_shape._width.exp * _shape._extra.exp )/2 , (_shape._width.exp)/2, _shape._length.exp))->asDrawable();
+		if (_shape._type == "pipe") {
+			node.removeDrawable(draw);
+			draw = (new Pipecylinder((_shape._width.exp * _shape._extra.exp) / 2, (_shape._width.exp) / 2, _shape._length.exp))->asDrawable();
+		}
+		else if (_shape._type == "pipecylinder") {
+			node.removeDrawable(draw);
+			draw = (new Pipecylinder((_shape._width.exp * _shape._extra.exp) / 2, (_shape._width.exp) / 2, _shape._length.exp))->asDrawable();
+		}
+		else if (_shape._type == "spring") {
+			node.removeDrawable(draw);
+			draw = (new Spring(_shape._width.exp, _shape._height.exp, _shape._extra.exp, _shape._length.exp))->asDrawable();
+		}
         else if (_shape._type == "cylinder")
             draw->setShape(new osg::Cylinder(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp / 2.0, _shape._length.exp));
         else if (_shape._type == "box")
@@ -669,6 +677,12 @@ rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::
 	else if (type == "pipecylinder")
 	{
 		res._r = V3mulMat3(r_shape , T);
+		res._r = res._r + r;
+		res._T = Mat3mulMat3(T0, T);
+	}
+	else if (type == "spring")
+	{
+		res._r = V3mulMat3(r_shape, T);
 		res._r = res._r + r;
 		res._T = Mat3mulMat3(T0, T);
 	}
