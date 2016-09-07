@@ -11,7 +11,7 @@ package CSE
     Real C = time+1.0;
     Real D;
     Real E;
-    
+
     function f
       input Real s;
       output Real a;
@@ -22,7 +22,7 @@ package CSE
     end f;
 
   equation
-    f(time) = (x,y);
+    (x,y) = f(time);
     A = B*C;
     D = log(B*C);
     E = B*C + log(log(log(B*C)));
