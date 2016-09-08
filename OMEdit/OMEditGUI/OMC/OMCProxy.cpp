@@ -1278,6 +1278,9 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
       infoHeader.append(docElement);
       continue;
     }
+    if (!Qt::mightBeRichText(docElement)) {
+      docElement = Qt::convertFromPlainText(docElement);
+    }
     docElement = docElement.trimmed();
     docElement.remove(QRegExp("<html>|</html>|<HTML>|</HTML>|<head>|</head>|<HEAD>|</HEAD>|<body>|</body>|<BODY>|</BODY>"));
     doc += docElement;
