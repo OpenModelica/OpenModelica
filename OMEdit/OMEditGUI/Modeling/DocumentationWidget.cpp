@@ -187,8 +187,8 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
   mZoomFactor = 1.;
   setZoomFactor(mZoomFactor);
   // set DocumentationViewer settings
-  settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
-  settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
+  settings()->setFontFamily(QWebSettings::StandardFont, Helper::systemFontInfo.family());
+  settings()->setFontSize(QWebSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
   settings()->setAttribute(QWebSettings::LocalStorageEnabled, true);
   settings()->setDefaultTextEncoding(Helper::utf8.toStdString().data());
   // set DocumentationViewer web page policy

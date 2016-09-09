@@ -1278,8 +1278,28 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
       infoHeader.append(docElement);
       continue;
     }
-    if (!Qt::mightBeRichText(docElement)) {
-      docElement = Qt::convertFromPlainText(docElement);
+    /* Anything within the HTML tags should be shown with standard font. So we put html tag inside a div with special style.
+     * Otherwise we use monospaced font and put the text inside a div with special style.
+     */
+    int startPos = docElement.indexOf("<html>", 0, Qt::CaseInsensitive);
+    int endPos = docElement.indexOf("</html>", startPos, Qt::CaseInsensitive);
+    QString startNonHtml, endNonHtml = "";
+    if (startPos > -1 || endPos > -1) {
+      if (endPos > -1) {
+        endPos += 7;  // include </html>
+      }
+      if (startPos < docElement.length()) {
+        startNonHtml = Qt::convertFromPlainText(docElement.left(startPos));
+      }
+      if (endPos < docElement.length()) {
+        endNonHtml = Qt::convertFromPlainText(docElement.right(endPos));
+      }
+      docElement = QString("<div class=\"textDoc\">%1</div><div class=\"htmlDoc\">%2</div><div class=\"textDoc\">%3</div>")
+          .arg(startNonHtml)
+          .arg(docElement.mid(startPos, endPos - startPos))
+          .arg(endNonHtml);
+    } else {  // if we have just plain text
+      docElement = QString("<div class=\"textDoc\">%1</div>").arg(Qt::convertFromPlainText(docElement));
     }
     docElement = docElement.trimmed();
     docElement.remove(QRegExp("<html>|</html>|<HTML>|</HTML>|<head>|</head>|<HEAD>|</HEAD>|<body>|</body>|<BODY>|</BODY>"));
@@ -1287,12 +1307,24 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
   }
   QString documentation = QString("<html>\n"
                                   "  <head>\n"
-                                  "    %1\n"
+                                  "    <style>\n"
+                                  "      div.htmlDoc {font-family:\"%1\";\n"
+                                  "                   font-size:%2px;}\n"
+                                  "      pre div.textDoc, div.textDoc p {font-family:\"%3\";\n"
+                                  "                   font-size:%4px;}\n"
+                                  "    </style>\n"
+                                  "    %5\n"
                                   "  </head>\n"
                                   "  <body>\n"
-                                  "    %2\n"
+                                  "    %6\n"
                                   "  </body>\n"
-                                  "</html>").arg(infoHeader).arg(doc);
+                                  "</html>")
+      .arg(Helper::systemFontInfo.family())
+      .arg(Helper::systemFontInfo.pointSize())
+      .arg(Helper::monospacedFontInfo.family())
+      .arg(Helper::monospacedFontInfo.pointSize())
+      .arg(infoHeader)
+      .arg(doc);
   documentation = makeDocumentationUriToFileName(documentation);
   /*! @note We convert modelica:// to modelica:///.
     * This tells QWebview that these links doesn't have any host.
