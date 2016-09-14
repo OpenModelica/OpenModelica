@@ -238,7 +238,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_IIF */
   "  Value specifies an external file for the initialization of the model.",
   /* FLAG_IIM */
-  "  Value specifies the initialization method.", /* TODO: Fill me in */
+  "  Value specifies the initialization method.\n  Following options are available: 'symbolic' (default) and 'none'.",
   /* FLAG_IIT */
   "  Value [Real] specifies a time for the initialization of the model.",
   /* FLAG_ILS */
