@@ -67,12 +67,14 @@ public:
   bool validateText();
   QString getXmlDocumentContent() {return mXmlDocument.toString();}
   void setXmlDocumentContent(QString content) {mXmlDocument.setContent(content);}
+  QString getMetaModelName();
   QDomElement getSubModelsElement();
   QDomNodeList getSubModels();
   QDomElement getInterfacePoint(QString subModelName, QString interfaceName);
   QDomElement getConnectionsElement();
   QDomNodeList getConnections();
   QDomElement getSubModelElement(QString name);
+  void setMetaModelName(QString name);
   bool addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin, QString extent,
                    QString rotation);
   void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);

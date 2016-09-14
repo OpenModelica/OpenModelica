@@ -290,4 +290,16 @@ private:
   LineAnnotation *mpConnectionLineAnnotation;
 };
 
+class RenameMetaModelCommand : public QUndoCommand
+{
+public:
+  RenameMetaModelCommand(MetaModelEditor *pMetaModelEditor, QString oldMetaModelName, QString newMetaModelName, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  MetaModelEditor *mpMetaModelEditor;
+  QString mOldMetaModelName;
+  QString mNewMetaModelName;
+};
+
 #endif // COMMANDS_H

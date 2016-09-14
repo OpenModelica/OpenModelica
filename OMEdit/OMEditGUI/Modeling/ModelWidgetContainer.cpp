@@ -976,6 +976,10 @@ void GraphicsView::createActions()
   // Graphics View Properties Action
   mpPropertiesAction = new QAction(Helper::properties, this);
   connect(mpPropertiesAction, SIGNAL(triggered()), SLOT(showGraphicsViewProperties()));
+  // rename Action
+  mpRenameAction = new QAction(Helper::rename, this);
+  mpRenameAction->setStatusTip(Helper::renameTip);
+  connect(mpRenameAction, SIGNAL(triggered()), SLOT(showRenameDialog()));
   // Simulation Params Action
   mpSimulationParamsAction = new QAction(QIcon(":/Resources/icons/simulation-parameters.svg"), Helper::simulationParams, this);
   mpSimulationParamsAction->setStatusTip(Helper::simulationParamsTip);
@@ -1359,6 +1363,17 @@ void GraphicsView::showSimulationParamsDialog()
 {
   MetaModelSimulationParamsDialog *pMetaModelSimulationParamsDialog = new MetaModelSimulationParamsDialog(this);
   pMetaModelSimulationParamsDialog->exec();
+}
+
+/*!
+ * \brief GraphicsView::showRenameDialog
+ * Opens the RenameItemDialog.
+ */
+void GraphicsView::showRenameDialog()
+{
+  RenameItemDialog *pRenameItemDialog;
+  pRenameItemDialog = new RenameItemDialog(mpModelWidget->getLibraryTreeItem(), mpModelWidget->getModelWidgetContainer()->getMainWindow());
+  pRenameItemDialog->exec();
 }
 
 /*!
@@ -2030,6 +2045,8 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       menu.addSeparator();
       menu.addAction(mpPropertiesAction);
     } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+      menu.addSeparator();
+      menu.addAction(mpRenameAction);
       menu.addSeparator();
       menu.addAction(mpSimulationParamsAction);
     }
@@ -2888,6 +2905,12 @@ void ModelWidget::reDrawModelWidget()
   mpDiagramGraphicsView->scene()->clear();
   /* get model components, connection and shapes. */
   if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    // read new metamodel anem
+    QString metaModelName = getMetaModelName();
+    mpLibraryTreeItem->setName(metaModelName);
+    mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
+    setWindowTitle(metaModelName);
+    // get the submodels and connections
     getMetaModelSubModels();
     getMetaModelConnections();
     // clear the undo stack
@@ -3664,6 +3687,17 @@ void ModelWidget::getModelConnections()
     pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
     mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
   }
+}
+
+/*!
+ * \brief ModelWidget::getMetaModelName
+ * Gets the MetaModel name.
+ * \return
+ */
+QString ModelWidget::getMetaModelName()
+{
+  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
+  return pMetaModelEditor->getMetaModelName();
 }
 
 /*!

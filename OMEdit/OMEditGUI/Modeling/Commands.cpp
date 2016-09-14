@@ -1241,3 +1241,35 @@ void AlignInterfacesCommand::undo()
     mpConnectionLineAnnotation->setAligned(mpMetaModelEditor->interfacesAligned(mFromInterface, mToInterface));
   }
 }
+
+RenameMetaModelCommand::RenameMetaModelCommand(MetaModelEditor *pMetaModelEditor, QString oldMetaModelName, QString newMetaModelName,
+                                               QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpMetaModelEditor = pMetaModelEditor;
+  mOldMetaModelName = oldMetaModelName;
+  mNewMetaModelName = newMetaModelName;
+  setText(QString("Rename metamodel %1").arg(mpMetaModelEditor->getModelWidget()->getLibraryTreeItem()->getName()));
+}
+
+/*!
+ * \brief RenameMetaModelCommand::redo
+ * Redo the rename metamodel command
+ */
+void RenameMetaModelCommand::redo()
+{
+  mpMetaModelEditor->setMetaModelName(mNewMetaModelName);
+  mpMetaModelEditor->getModelWidget()->getLibraryTreeItem()->setName(mNewMetaModelName);
+  mpMetaModelEditor->getModelWidget()->setWindowTitle(mNewMetaModelName);
+}
+
+/*!
+ * \brief RenameMetaModelCommand::undo
+ * Undo the rename metamodel command
+ */
+void RenameMetaModelCommand::undo()
+{
+  mpMetaModelEditor->setMetaModelName(mOldMetaModelName);
+  mpMetaModelEditor->getModelWidget()->getLibraryTreeItem()->setName(mOldMetaModelName);
+  mpMetaModelEditor->getModelWidget()->setWindowTitle(mOldMetaModelName);
+}

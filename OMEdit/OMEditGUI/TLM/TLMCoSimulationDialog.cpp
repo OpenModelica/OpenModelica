@@ -400,7 +400,7 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
                  .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   // set heading
   mpSimulationParamsHeading = Utilities::getHeadingLabel(QString("%1 - %2").arg(Helper::simulationParams)
-                                                         .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+                                                         .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getName()));
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
   mpGraphicsView = pGraphicsView;

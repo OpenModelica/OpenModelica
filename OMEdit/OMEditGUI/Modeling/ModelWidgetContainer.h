@@ -106,6 +106,7 @@ private:
   TextAnnotation *mpTextShapeAnnotation;
   BitmapAnnotation *mpBitmapShapeAnnotation;
   QAction *mpPropertiesAction;
+  QAction *mpRenameAction;
   QAction *mpSimulationParamsAction;
   QAction *mpManhattanizeAction;
   QAction *mpDeleteAction;
@@ -256,6 +257,7 @@ public slots:
   void clearSelection();
   void addClassAnnotation(bool alwaysAdd = true);
   void showGraphicsViewProperties();
+  void showRenameDialog();
   void showSimulationParamsDialog();
   void manhattanizeItems();
   void deleteItems();
@@ -412,6 +414,7 @@ private:
   void drawModelInheritedClassConnections(ModelWidget *pModelWidget);
   void removeInheritedClassConnections();
   void getModelConnections();
+  QString getMetaModelName();
   void getMetaModelSubModels();
   void getMetaModelConnections();
 private slots:

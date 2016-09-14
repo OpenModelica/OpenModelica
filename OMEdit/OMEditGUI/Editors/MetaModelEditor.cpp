@@ -121,6 +121,21 @@ QDomElement MetaModelEditor::getSubModelElement(QString name)
 }
 
 /*!
+ * \brief MetaModelEditor::getMetaModelName
+ * Gets the MetaModel name.
+ * \return
+ */
+QString MetaModelEditor::getMetaModelName()
+{
+  QDomNodeList nodes = mXmlDocument.elementsByTagName("Model");
+  for (int i = 0; i < nodes.size(); i++) {
+    QDomElement node = nodes.at(i).toElement();
+    return node.attribute("Name");
+  }
+  return "";
+}
+
+/*!
  * \brief MetaModelEditor::getSubModelsElement
  * Returns the SubModels element tag.
  * \return
@@ -190,6 +205,22 @@ QDomElement MetaModelEditor::getConnectionsElement()
 QDomNodeList MetaModelEditor::getConnections()
 {
   return mXmlDocument.elementsByTagName("Connection");
+}
+
+/*!
+ * \brief MetaModelEditor::setMetaModelName
+ * Sets the MetaModel name.
+ * \param name
+ */
+void MetaModelEditor::setMetaModelName(QString name)
+{
+  QDomNodeList nodes = mXmlDocument.elementsByTagName("Model");
+  for (int i = 0; i < nodes.size(); i++) {
+    QDomElement node = nodes.at(i).toElement();
+    node.setAttribute("Name", name);
+    setPlainText(mXmlDocument.toString());
+    break;
+  }
 }
 
 /*!

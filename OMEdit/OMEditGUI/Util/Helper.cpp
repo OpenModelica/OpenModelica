@@ -148,6 +148,7 @@ QString Helper::path;
 QString Helper::type;
 QString Helper::information;
 QString Helper::rename;
+QString Helper::renameTip;
 QString Helper::checkModel;
 QString Helper::checkModelTip;
 QString Helper::checkAllModels;
@@ -315,6 +316,7 @@ QString Helper::OMCFlags;
 QString Helper::OMCFlagsTip;
 QString Helper::saveExperimentAnnotation;
 QString Helper::saveOpenModelicaSimulationFlagsAnnotation;
+QString Helper::item;
 
 void Helper::initHelperVariables()
 {
@@ -359,6 +361,7 @@ void Helper::initHelperVariables()
   Helper::type = tr("Type");
   Helper::information = tr("Information");
   Helper::rename = tr("Rename");
+  Helper::renameTip = tr("Renames an item");
   Helper::checkModel = tr("Check Model");
   Helper::checkModelTip = tr("Check the Modelica class");
   Helper::checkAllModels = tr("Check All Models");
@@ -526,6 +529,7 @@ void Helper::initHelperVariables()
   Helper::OMCFlagsTip = tr("Space separated list of flags e.g., +d=initialization +cheapmatchingAlgorithm=3");
   Helper::saveExperimentAnnotation = tr("Save experiment annotation inside model");
   Helper::saveOpenModelicaSimulationFlagsAnnotation = tr("Save __OpenModelica_simulationFlags annotation inside model");
+  Helper::item = tr("item");
 }
 
 QString GUIMessages::getMessage(int type)

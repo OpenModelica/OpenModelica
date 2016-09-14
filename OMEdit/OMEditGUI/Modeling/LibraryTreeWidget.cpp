@@ -2616,8 +2616,8 @@ void LibraryTreeView::createActions()
   connect(mpNewFolderAction, SIGNAL(triggered()), SLOT(createNewFolder()));
   // rename Action
   mpRenameAction = new QAction(Helper::rename, this);
-  mpRenameAction->setStatusTip(tr("Renames a file/folder"));
-  connect(mpRenameAction, SIGNAL(triggered()), SLOT(renameFileOrFolder()));
+  mpRenameAction->setStatusTip(Helper::renameTip);
+  connect(mpRenameAction, SIGNAL(triggered()), SLOT(renameLibraryTreeItem()));
   // Delete Action
   mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
   mpDeleteAction->setStatusTip(tr("Deletes the file"));
@@ -3078,16 +3078,16 @@ void LibraryTreeView::createNewFolder()
 }
 
 /*!
- * \brief LibraryTreeView::renameFileOrFolder
- * Renames the file/folder.
+ * \brief LibraryTreeView::renameLibraryTreeItem
+ * Renames the LibraryTreeItem.
  */
-void LibraryTreeView::renameFileOrFolder()
+void LibraryTreeView::renameLibraryTreeItem()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (!pLibraryTreeItem) {
     return;
   }
-  RenameItemDialog *pRenameItemDialog = new RenameItemDialog(pLibraryTreeItem->getFileName(), false, mpLibraryWidget->getMainWindow());
+  RenameItemDialog *pRenameItemDialog = new RenameItemDialog(pLibraryTreeItem, mpLibraryWidget->getMainWindow());
   pRenameItemDialog->exec();
 }
 
@@ -3469,9 +3469,10 @@ void LibraryWidget::openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgres
   }
   // create a LibraryTreeItem for new loaded file.
   LibraryTreeItem *pLibraryTreeItem = 0;
+  QString metaModelName;
   if (fileInfo.suffix().compare("xml") == 0) {
-    if (parseMetaModelFile(fileInfo)) {
-      pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::MetaModel, fileInfo.completeBaseName(),
+    if (parseMetaModelFile(fileInfo, &metaModelName)) {
+      pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::MetaModel, metaModelName,
                                                                    fileInfo.absoluteFilePath(), fileInfo.absoluteFilePath(), true,
                                                                    mpLibraryTreeModel->getRootLibraryTreeItem());
     }
@@ -3534,7 +3535,7 @@ void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress)
  * \param fileInfo
  * \return
  */
-bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo)
+bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo, QString *pMetaModelName)
 {
   QString contents = "";
   QFile file(fileInfo.absoluteFilePath());
@@ -3559,6 +3560,19 @@ bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo)
       delete pMessageHandler;
       return false;
     } else {
+      // if there are no errors with the document then read the Model Name attribute.
+      QDomDocument xmlDocument;
+      if (!xmlDocument.setContent(&file)) {
+        QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                              tr("Error reading the xml file"), Helper::ok);
+      }
+      // read the file
+      QDomNodeList nodes = xmlDocument.elementsByTagName("Model");
+      for (int i = 0; i < nodes.size(); i++) {
+        QDomElement node = nodes.at(i).toElement();
+        *pMetaModelName = node.attribute("Name");
+        break;
+      }
       delete pMessageHandler;
       return true;
     }
