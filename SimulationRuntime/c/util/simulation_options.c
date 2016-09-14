@@ -242,7 +242,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_IIT */
   "  Value [Real] specifies a time for the initialization of the model.",
   /* FLAG_ILS */
-  "  Value specifies the number of steps for homotopy method (required: -iim=symbolic) or 'start value homotopy' method (required: -iim=numeric -iom=nelder_mead_ex).\n"
+  "  Value specifies the number of steps for homotopy method (required: -iim=symbolic).\n"
   "  The value is an Integer with default value 1.",
   /* FLAG_INITIAL_STEP_SIZE */
   "  Value specifies an initial stepsize for the dassl solver.",
@@ -674,5 +674,3 @@ const char *IDA_LS_METHOD_DESC[IDA_LS_MAX+1] = {
 
   "IDA_LS_MAX"
 };
-
-
