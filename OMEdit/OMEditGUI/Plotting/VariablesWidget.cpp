@@ -1383,27 +1383,30 @@ void VariablesWidget::timeUnitChanged(QString unit)
 
 }
 
+/*!
+ * \brief VariablesWidget::updateVariablesTree
+ * Updates the VariablesTreeView when the subwindow is changed in PlotWindowContainer
+ * \param pSubWindow
+ */
 void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
 {
-  if (!pSubWindow && mpMainWindow->getPlotWindowContainer()->subWindowList().size() != 0)
+  if (!pSubWindow && mpMainWindow->getPlotWindowContainer()->subWindowList().size() != 0) {
     return;
-
-  //check if its an animation window
-  if (! pSubWindow->widget()->objectName().compare(QString("animationWidget")))
-  {
-	  // we could distinguish with dynamic_cast as well, but objectString is probably better
-	  //if (dynamic_cast<const AnimationWindowContainer*>(pSubWindow->widget()) != 0)
-	  //  std::cout<<"its an animation widget"<<std::endl;
-	  std::cout<<"Its an "<<pSubWindow->widget()->objectName().toStdString()<<std::endl;
-	  return;
   }
-
   /* if the same sub window is activated again then just return */
   if (mpLastActiveSubWindow == pSubWindow) {
     mpLastActiveSubWindow = pSubWindow;
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
+  //check if its an animation window
+  if (!pSubWindow->widget()->objectName().compare(QString("animationWidget"))) {
+    // we could distinguish with dynamic_cast as well, but objectString is probably better
+    //if (dynamic_cast<const AnimationWindowContainer*>(pSubWindow->widget()) != 0)
+    //  std::cout<<"its an animation widget"<<std::endl;
+    //std::cout<<"Its an "<<pSubWindow->widget()->objectName().toStdString()<<std::endl;
+    return;
+  }
   updateVariablesTreeHelper(pSubWindow);
 }
 

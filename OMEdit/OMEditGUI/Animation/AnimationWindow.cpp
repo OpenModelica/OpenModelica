@@ -64,6 +64,8 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
   //the viewer widget
   mpViewerWidget = setupViewWidget();
+  // we need to set the minimum height so that visualization window is still shown when we cascade windows.
+  mpViewerWidget->setMinimumHeight(100);
   // let timer do a scene update at every tick
   QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(updateSceneFunction()));
   QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(renderSlotFunction()));
@@ -71,20 +73,20 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   // actions and widgets for the toolbar
   mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/openFile.png"), Helper::animationChooseFile, this);
   mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
-  mpAnimationChooseFileAction->setEnabled(true);
   mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.png"), Helper::animationInitialize, this);
   mpAnimationInitializeAction->setStatusTip(Helper::animationInitializeTip);
-  mpAnimationInitializeAction->setEnabled(true);
+  mpAnimationInitializeAction->setEnabled(false);
   mpAnimationPlayAction = new QAction(QIcon(":/Resources/icons/play.png"), Helper::animationPlay, this);
   mpAnimationPlayAction->setStatusTip(Helper::animationPlayTip);
-  mpAnimationPlayAction->setEnabled(true);
+  mpAnimationPlayAction->setEnabled(false);
   mpAnimationPauseAction = new QAction(QIcon(":/Resources/icons/pause.png"), Helper::animationPause, this);
   mpAnimationPauseAction->setStatusTip(Helper::animationPauseTip);
-  mpAnimationPauseAction->setEnabled(true);
+  mpAnimationPauseAction->setEnabled(false);
   mpAnimationSlider = new QSlider(Qt::Horizontal);
   mpAnimationSlider->setMinimum(0);
   mpAnimationSlider->setMaximum(100);
   mpAnimationSlider->setSliderPosition(50);
+  mpAnimationSlider->setEnabled(false);
   mpAnimationTimeLabel = new QLabel();
   mpAnimationTimeLabel->setText(QString(" Time [s]: ").append(QString::fromStdString("0.000")));
   mpPerspectiveDropDownBox = new QComboBox(this);
@@ -202,27 +204,21 @@ void AnimationWindow::loadVisualization()
  */
 void AnimationWindow::chooseAnimationFileSlotFunction()
 {
-  QFileDialog dialog(this);
-  std::string file = dialog.getOpenFileName(this,tr("Open Visualiation File"), "./", tr("Visualization MAT(*.mat)")).toStdString();
+  std::string file = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+                                                    NULL, Helper::matFileTypes, NULL).toStdString();
   if (file.compare("")) {
     std::size_t pos = file.find_last_of("/\\");
     mPathName = file.substr(0, pos + 1);
     mFileName = file.substr(pos + 1, file.length());
     std::cout<<"file "<<mFileName<<"   path "<<mPathName<<std::endl;
     loadVisualization();
+    mpAnimationInitializeAction->setEnabled(true);
+    mpAnimationPlayAction->setEnabled(true);
+    mpAnimationPauseAction->setEnabled(true);
+    mpAnimationSlider->setEnabled(true);
   } else {
     std::cout<<"No Visualization selected!"<<std::endl;
   }
-}
-
-/*!
- * \brief AnimationWindow::showWidgets
- * overwrite show method to explicitly show the viewer as well
- */
-void AnimationWindow::showWidgets()
-{
-  mpViewerWidget->show();
-  show();
 }
 
 /*!
