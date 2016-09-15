@@ -60,13 +60,13 @@ private:
    osg::Vec3f rotateX(osg::Vec3f vec, float phi);
    osg::Vec3f rotateY(osg::Vec3f vec, float phi);
    osg::Vec3f rotateZ(osg::Vec3f vec, float phi);
-   osg::Vec3f rotateArbitraryAxes_expensive(osg::Vec3f vec, osg::Vec3f axes, float phi);
-   osg::Vec3f rotateArbitraryAxes(osg::Vec3f vec, osg::Vec3f axes, float phi);
+   osg::Vec3f rotateArbitraryAxis_expensive(osg::Vec3f vec, osg::Vec3f axis, float phi);
+   osg::Vec3f rotateArbitraryAxis(osg::Vec3f vec, osg::Vec3f axis, float phi);
    float absoluteVector(osg::Vec3f vec);
    float angleBetweenVectors(osg::Vec3f vec1, osg::Vec3f vec2);
 
-   osg::Vec3Array* outerVertices;
-   osg::Vec3Array* splineVertices;
+   osg::Vec3Array* mpOuterVertices;
+   osg::Vec3Array* mpSplineVertices;
 };
 
 #endif //end EXTRASHAPES_H
