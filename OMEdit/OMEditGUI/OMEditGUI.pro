@@ -54,9 +54,15 @@ evil_hack_to_fool_lupdate {
 # Windows libraries and includes
 win32 {
   OPENMODELICAHOME = $$(OPENMODELICAHOME)
-
+  # define used for OpenModelica C-API
   DEFINES += IMPORT_INTO=1
-
+  # win32 vs. win64
+  contains(QT_ARCH, i386) { # 32-bit
+    QMAKE_LFLAGS += -Wl,--stack,16777216,--enable-auto-import,--large-address-aware
+  } else { # 64-bit
+    QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
+  }
+  # release vs debug
   CONFIG(release, debug|release) {
     # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
     # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
@@ -66,12 +72,11 @@ win32 {
     # required for backtrace
     # win32 vs. win64
     contains(QT_ARCH, i386) { # 32-bit
-      QMAKE_LFLAGS += -Wl,--stack,16777216,--enable-auto-import,--large-address-aware
-      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin -limagehlp -lbfd -lintl -liberty
+      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin
     } else { # 64-bit
-      QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
-      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -limagehlp -lbfd -lintl -liberty
+      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin
     }
+    LIBS += -limagehlp -lbfd -lintl -liberty
   }
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \
