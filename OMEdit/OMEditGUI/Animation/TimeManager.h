@@ -86,7 +86,7 @@ class TimeManager
 	/*! \brief Sets pause status to new value. */
 	void setPause(const bool status);
 
-	double getTimeFraction();
+	int getTimeFraction();
 
  private:
 	//! Time of the current simulation step.

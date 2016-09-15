@@ -54,9 +54,9 @@ void TimeManager::updateTick()
 	_realTime = _visualTimer.time_m() / 1000.0;
 }
 
-double TimeManager::getTimeFraction()
+int TimeManager::getTimeFraction()
 {
-	return _visTime / (_endTime - _startTime);
+	return int(_visTime / (_endTime - _startTime)*100);
 }
 
 double TimeManager::getEndTime() const
