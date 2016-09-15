@@ -197,7 +197,6 @@ HEADERS  += Util/Helper.h \
   Editors/CEditor.h \
   Editors/MetaModelEditor.h \
   Editors/MetaModelicaEditor.h \
-  $$OPENMODELICAHOME/../OMCompiler/SimulationRuntime/c/util/read_matlab4.h \
   #$$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/build/fmilib.h \
   Animation/AnimationWindowContainer.h \
   Animation/AnimationUtil.h \
