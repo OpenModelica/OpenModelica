@@ -35,7 +35,7 @@
 #include "AnimationWindowContainer.h"
 
 
-const double HEIGHT_CONTROLWIDGETS = 40;
+const double TOOLBAR_DIMENSION = 16;
 
 /*!
   \class AnimationWindowContainer
@@ -73,7 +73,7 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
    //mpViewerWidget->setParent(this);
    //mpViewerWidget->setWindowFlags(Qt::SubWindow);
    //mpViewerWidget->setWindowState(Qt::WindowMaximized);
-   mpViewerWidget->setBaseSize(QSize(2000,1000));
+   mpViewerWidget->setBaseSize(QSize(2000,1000));// we need any basesize here to see widget properly
    //mpViewerWidget->move(100,100);
 
    // let timer do a scene update at every tick
@@ -119,6 +119,7 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
  	mpAnimationToolBar->addWidget(mpAnimationTimeLabel);
  	mpAnimationToolBar->addWidget(mpPerspectiveDropDownBox);
 
+ 	mpAnimationToolBar->setIconSize(QSize(TOOLBAR_DIMENSION,TOOLBAR_DIMENSION));
     addToolBar(Qt::TopToolBarArea,mpAnimationToolBar);
 
     mpViewerWidget->setParent(this);//important!!
@@ -141,6 +142,13 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
  */
 QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootNode)
 {
+	//desktop resolution
+	 QRect rec = QApplication::desktop()->screenGeometry();
+	 int height = rec.height();
+	 int width = rec.width();
+	 //int height = 1000;
+	 //int width = 2000;
+
 	//get context
     osg::ref_ptr<osg::DisplaySettings> ds = osg::DisplaySettings::instance().get();
     osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits();
@@ -148,8 +156,8 @@ QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootN
     traits->windowDecoration = false;
     traits->x = 0;
     traits->y = 0;
-    traits->width = 2000;
-    traits->height = 1000;
+    traits->width = width;
+    traits->height = height;
     traits->doubleBuffer = true;
     traits->alpha = ds->getMinimumNumAlphaBits();
     traits->stencil = ds->getMinimumNumStencilBits();
@@ -165,7 +173,7 @@ QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootN
     camera->setGraphicsContext(gw);
     camera->setClearColor(osg::Vec4(0.2, 0.2, 0.6, 1.0));
     //camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
-    camera->setViewport(new osg::Viewport(0, 0, 2000, 1000));
+    camera->setViewport(new osg::Viewport(0, 0, width, height));
     camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits->width/2) / static_cast<double>(traits->height/2), 1.0f, 10000.0f);
     mpSceneView->setSceneData(rootNode);
     mpSceneView->addEventHandler(new osgViewer::StatsHandler());
