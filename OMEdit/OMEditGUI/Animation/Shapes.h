@@ -36,7 +36,7 @@
 
 #include <iostream>
 
-#include "read_matlab4.h"
+#include "util/read_matlab4.h"
 #include "rapidxml.hpp"
 //#include "fmilib.h"
 #include <osg/Vec3f>
