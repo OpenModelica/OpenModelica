@@ -81,8 +81,15 @@ win32 {
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \
     -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread \
-    -lws2_32 \
-		-L$$(OMDEV)/tools/msys/mingw32/lib -llibosg.dll -llibosgViewer.dll -llibosgQt.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
+    -lws2_32
+  # win32 vs. win64
+  contains(QT_ARCH, i386) { # 32-bit
+    LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib
+  } else { # 64-bit
+    LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib
+  }
+  LIBS += -llibosg.dll -llibosgViewer.dll -llibosgQt.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
+
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
     $$(OMBUILDDIR)/include/omplot/qwt \
     $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c
@@ -122,12 +129,12 @@ SOURCES += main.cpp \
   Editors/MetaModelEditor.cpp \
   Editors/MetaModelicaEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
-	Animation/AnimationWindowContainer.cpp \
+  Animation/AnimationWindowContainer.cpp \
   Animation/ExtraShapes.cpp \
-	Animation/Visualizer.cpp \
-	Animation/VisualizerMAT.cpp \
-	Animation/Shapes.cpp \
-	Animation/TimeManager.cpp \
+  Animation/Visualizer.cpp \
+  Animation/VisualizerMAT.cpp \
+  Animation/Shapes.cpp \
+  Animation/TimeManager.cpp \
   Component/Component.cpp \
   Annotations/ShapeAnnotation.cpp \
   Component/CornerItem.cpp \
@@ -190,16 +197,16 @@ HEADERS  += Util/Helper.h \
   Editors/CEditor.h \
   Editors/MetaModelEditor.h \
   Editors/MetaModelicaEditor.h \
-	$$OPENMODELICAHOME/../OMCompiler/SimulationRuntime/c/util/read_matlab4.h \
-	D:/Programming/OPENMODELICA_GIT/OpenModelica/OMCompiler/3rdParty/FMIL/build/fmilib.h \
-	Animation/AnimationWindowContainer.h \
-	Animation/AnimationUtil.h \
-	Animation/ExtraShapes.h \
-	Animation/Visualizer.h \
+  $$OPENMODELICAHOME/../OMCompiler/SimulationRuntime/c/util/read_matlab4.h \
+  #$$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/build/fmilib.h \
+  Animation/AnimationWindowContainer.h \
+  Animation/AnimationUtil.h \
+  Animation/ExtraShapes.h \
+  Animation/Visualizer.h \
   Animation/VisualizerMAT.h \
-	Animation/Shapes.h \
-	Animation/TimeManager.h \
-	Animation/rapidxml.hpp \
+  Animation/Shapes.h \
+  Animation/TimeManager.h \
+  Animation/rapidxml.hpp \
   Plotting/PlotWindowContainer.h \
   Component/Component.h \
   Annotations/ShapeAnnotation.h \
@@ -250,7 +257,7 @@ INCLUDEPATH += ../../qjson/build/include
 
 INCLUDEPATH += . \
   Annotations \
-	Animation \
+  Animation \
   Component \
   CrashReport \
   Debugger \
