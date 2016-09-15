@@ -34,14 +34,12 @@
 
 #include "Visualizer.h"
 
-
 OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path)
-		: _modelFile(modelFile),
-		  _path(path),
-		  _shapes(),
+        : _shapes(),
+          _modelFile(modelFile),
+          _path(path),
 		  _xmlFileName(assembleXMLFileName(modelFile, path)),
 		  _xmlDoc()
-
 {
 }
 
