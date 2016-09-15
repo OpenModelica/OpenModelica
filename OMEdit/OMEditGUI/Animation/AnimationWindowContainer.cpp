@@ -214,6 +214,8 @@ void AnimationWindowContainer::loadVisualization(){
 		//add scene for the chosen visualization
 		mpSceneView->setSceneData(mpVisualizer->getOMVisScene()->getScene().getRootNode());
     }
+    //add window title
+    this->setWindowTitle(QString::fromStdString(mFileName));
 }
 
 
