@@ -64,7 +64,6 @@ class AnimationWindow : public QMainWindow, public osgViewer::CompositeViewer
 public:
   AnimationWindow(PlotWindowContainer *pPlotWindowContainer);
   QWidget* setupViewWidget();
-  void showWidgets();
   void loadVisualization();
   double getTimeFraction();
   double getVisTime();
