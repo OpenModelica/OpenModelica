@@ -119,7 +119,6 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
  	mpAnimationToolBar->addWidget(mpAnimationTimeLabel);
  	mpAnimationToolBar->addWidget(mpPerspectiveDropDownBox);
 
- 	//connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),mpAnimationWindowContainer, SLOT(sliderSetTimeSlotFunction(int)));
     addToolBar(Qt::TopToolBarArea,mpAnimationToolBar);
 
     mpViewerWidget->setParent(this);//important!!
@@ -132,7 +131,7 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
     connect(mpAnimationPlayAction, SIGNAL(triggered()),this, SLOT(playSlotFunction()));
     connect(mpAnimationPauseAction, SIGNAL(triggered()),this, SLOT(pauseSlotFunction()));
     connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
-
+ 	connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),this, SLOT(sliderSetTimeSlotFunction(int)));
 }
 
 /*!
@@ -260,14 +259,14 @@ double AnimationWindowContainer::getTimeFraction(){
 
 /*!
  * \brief AnimationWindowContainer::sliderSetTimeSlotFunction
- * slot function for the time slider
+ * slot function for the time slider to jump to the adjusted point of time
  */
 void AnimationWindowContainer::sliderSetTimeSlotFunction(int value){
-	int time = (mpVisualizer->getTimeManager()->getEndTime()
+	float time = (mpVisualizer->getTimeManager()->getEndTime()
             - mpVisualizer->getTimeManager()->getStartTime())
             * (float) (value / 100.0);
 	mpVisualizer->getTimeManager()->setVisTime(time);
-	mpVisualizer->sceneUpdate();
+	mpVisualizer->updateScene(time);
 }
 
 
@@ -301,8 +300,15 @@ void AnimationWindowContainer::initSlotFunction(){
  * updates the visualization objects
  */
 void AnimationWindowContainer::updateSceneFunction(){
-	if (!(mpVisualizer==NULL))
+	if (!(mpVisualizer == NULL))
+	{
+		//update the scene
 		mpVisualizer->sceneUpdate();
+
+		// set time slider
+		int time = mpVisualizer->getTimeManager()->getTimeFraction();
+		mpAnimationSlider->setValue(time);
+	}
 }
 
 /*!
