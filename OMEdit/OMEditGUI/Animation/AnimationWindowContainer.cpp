@@ -67,8 +67,7 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
    setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
 
    //the viewer widget
-   osg::ref_ptr<osg::Node> rootNode = osgDB::readRefNodeFile("D:/Programming/OPENMODELICA_GIT/OpenModelica/build/bin/dumptruck.osg");
-   mpViewerWidget = setupViewWidget(rootNode);
+   mpViewerWidget = setupViewWidget();
 
    //mpViewerWidget->setParent(this);
    //mpViewerWidget->setWindowFlags(Qt::SubWindow);
@@ -140,7 +139,7 @@ AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
  * creates the widget for the osg viewer
  * \return the widget
  */
-QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootNode)
+QWidget* AnimationWindowContainer::setupViewWidget()
 {
 	//desktop resolution
 	 QRect rec = QApplication::desktop()->screenGeometry();
@@ -175,7 +174,6 @@ QWidget* AnimationWindowContainer::setupViewWidget(osg::ref_ptr<osg::Node> rootN
     //camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
     camera->setViewport(new osg::Viewport(0, 0, width, height));
     camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits->width/2) / static_cast<double>(traits->height/2), 1.0f, 10000.0f);
-    mpSceneView->setSceneData(rootNode);
     mpSceneView->addEventHandler(new osgViewer::StatsHandler());
     mpSceneView->setCameraManipulator(new osgGA::MultiTouchTrackballManipulator());
     gw->setTouchEventsEnabled(true);

@@ -63,7 +63,7 @@ class AnimationWindowContainer : public QMainWindow, public osgViewer::Composite
   Q_OBJECT
   public:
     AnimationWindowContainer(QWidget *pParent);
-    QWidget* setupViewWidget(osg::ref_ptr<osg::Node> rootNode);
+    QWidget* setupViewWidget();
     void showWidgets();
     void loadVisualization();
     double getTimeFraction();
