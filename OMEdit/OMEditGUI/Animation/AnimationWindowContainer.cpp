@@ -47,91 +47,75 @@ const double TOOLBAR_DIMENSION = 16;
  */
 AnimationWindowContainer::AnimationWindowContainer(QWidget *pParent)
   : QMainWindow(pParent),
-	osgViewer::CompositeViewer(),
-	mPathName(""),
-	mFileName(""),
-	mpSceneView(new osgViewer::View()),
-	mpVisualizer(nullptr),
-	mpViewerWidget(nullptr),
-	mpUpdateTimer(new QTimer()),
-	mpAnimationToolBar(new QToolBar(QString("Animation Toolbar"),this)),
+    osgViewer::CompositeViewer(),
+    mPathName(""),
+    mFileName(""),
+    mpSceneView(new osgViewer::View()),
+    mpVisualizer(nullptr),
+    mpViewerWidget(nullptr),
+    mpUpdateTimer(new QTimer()),
+    mpAnimationToolBar(new QToolBar(QString("Animation Toolbar"),this)),
     mpAnimationChooseFileAction(nullptr),
     mpAnimationInitializeAction(nullptr),
     mpAnimationPlayAction(nullptr),
     mpAnimationPauseAction(nullptr)
 {
-   // to distinguish this widget as a subwindow among the plotwindows
-   this->setObjectName(QString("animationWidget"));
-
-   // the osg threading model
-   setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
-
-   //the viewer widget
-   mpViewerWidget = setupViewWidget();
-
-   //mpViewerWidget->setParent(this);
-   //mpViewerWidget->setWindowFlags(Qt::SubWindow);
-   //mpViewerWidget->setWindowState(Qt::WindowMaximized);
-   mpViewerWidget->setBaseSize(QSize(2000,1000));// we need any basesize here to see widget properly
-   //mpViewerWidget->move(100,100);
-
-   // let timer do a scene update at every tick
-   QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(updateSceneFunction()));
-   QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(renderSlotFunction()));
-   mpUpdateTimer->start(100);
-
-    // actions and widgets for the toolbar
-    mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/openFile.png"), Helper::animationChooseFile, this);
-    mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
-    mpAnimationChooseFileAction->setEnabled(true);
-    mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.png"), Helper::animationInitialize, this);
-    mpAnimationInitializeAction->setStatusTip(Helper::animationInitializeTip);
-    mpAnimationInitializeAction->setEnabled(true);
-    mpAnimationPlayAction = new QAction(QIcon(":/Resources/icons/play.png"), Helper::animationPlay, this);
-    mpAnimationPlayAction->setStatusTip(Helper::animationPlayTip);
-    mpAnimationPlayAction->setEnabled(true);
-    mpAnimationPauseAction = new QAction(QIcon(":/Resources/icons/pause.png"), Helper::animationPause, this);
-    mpAnimationPauseAction->setStatusTip(Helper::animationPauseTip);
-    mpAnimationPauseAction->setEnabled(true);
-    mpAnimationSlider = new QSlider(Qt::Horizontal);
-    mpAnimationSlider->setMinimum(0);
-    mpAnimationSlider->setMaximum(100);
-    mpAnimationSlider->setSliderPosition(50);
-    mpAnimationTimeLabel = new QLabel();
-    mpAnimationTimeLabel->setText(QString(" Time [s]: ").append(QString::fromStdString("0.000")));
-    mpPerspectiveDropDownBox = new QComboBox(this);
-    mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.png"), QString("to home position"));
-    mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.png"),QString("normal to x-y plane"));
-    mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective1.png"),QString("normal to y-z plane"));
-    mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective3.png"),QString("normal to x-z plane"));
-
-    //assemble the animation toolbar
-    mpAnimationToolBar->addAction(mpAnimationChooseFileAction);
-    mpAnimationToolBar->addSeparator();
- 	mpAnimationToolBar->addAction(mpAnimationInitializeAction);
- 	mpAnimationToolBar->addSeparator();
- 	mpAnimationToolBar->addAction(mpAnimationPlayAction);
- 	mpAnimationToolBar->addSeparator();
- 	mpAnimationToolBar->addAction(mpAnimationPauseAction);
- 	mpAnimationToolBar->addSeparator();
- 	mpAnimationToolBar->addWidget(mpAnimationSlider);
- 	mpAnimationToolBar->addWidget(mpAnimationTimeLabel);
- 	mpAnimationToolBar->addWidget(mpPerspectiveDropDownBox);
-
- 	mpAnimationToolBar->setIconSize(QSize(TOOLBAR_DIMENSION,TOOLBAR_DIMENSION));
-    addToolBar(Qt::TopToolBarArea,mpAnimationToolBar);
-
-    mpViewerWidget->setParent(this);//important!!
-    //mpViewerWidget->setParent(topWidget);//no influence
-    //setCentralWidget(topWidget);//no influence
-
-    //connections
-    connect(mpAnimationChooseFileAction, SIGNAL(triggered()),this, SLOT(chooseAnimationFileSlotFunction()));
-    connect(mpAnimationInitializeAction, SIGNAL(triggered()),this, SLOT(initSlotFunction()));
-    connect(mpAnimationPlayAction, SIGNAL(triggered()),this, SLOT(playSlotFunction()));
-    connect(mpAnimationPauseAction, SIGNAL(triggered()),this, SLOT(pauseSlotFunction()));
-    connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
- 	connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),this, SLOT(sliderSetTimeSlotFunction(int)));
+  // to distinguish this widget as a subwindow among the plotwindows
+  this->setObjectName(QString("animationWidget"));
+  // the osg threading model
+  setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
+  //the viewer widget
+  mpViewerWidget = setupViewWidget();
+  // let timer do a scene update at every tick
+  QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(updateSceneFunction()));
+  QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(renderSlotFunction()));
+  mpUpdateTimer->start(100);
+  // actions and widgets for the toolbar
+  mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/openFile.png"), Helper::animationChooseFile, this);
+  mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
+  mpAnimationChooseFileAction->setEnabled(true);
+  mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.png"), Helper::animationInitialize, this);
+  mpAnimationInitializeAction->setStatusTip(Helper::animationInitializeTip);
+  mpAnimationInitializeAction->setEnabled(true);
+  mpAnimationPlayAction = new QAction(QIcon(":/Resources/icons/play.png"), Helper::animationPlay, this);
+  mpAnimationPlayAction->setStatusTip(Helper::animationPlayTip);
+  mpAnimationPlayAction->setEnabled(true);
+  mpAnimationPauseAction = new QAction(QIcon(":/Resources/icons/pause.png"), Helper::animationPause, this);
+  mpAnimationPauseAction->setStatusTip(Helper::animationPauseTip);
+  mpAnimationPauseAction->setEnabled(true);
+  mpAnimationSlider = new QSlider(Qt::Horizontal);
+  mpAnimationSlider->setMinimum(0);
+  mpAnimationSlider->setMaximum(100);
+  mpAnimationSlider->setSliderPosition(50);
+  mpAnimationTimeLabel = new QLabel();
+  mpAnimationTimeLabel->setText(QString(" Time [s]: ").append(QString::fromStdString("0.000")));
+  mpPerspectiveDropDownBox = new QComboBox(this);
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.png"), QString("to home position"));
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.png"),QString("normal to x-y plane"));
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective1.png"),QString("normal to y-z plane"));
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective3.png"),QString("normal to x-z plane"));
+  //assemble the animation toolbar
+  mpAnimationToolBar->addAction(mpAnimationChooseFileAction);
+  mpAnimationToolBar->addSeparator();
+  mpAnimationToolBar->addAction(mpAnimationInitializeAction);
+  mpAnimationToolBar->addSeparator();
+  mpAnimationToolBar->addAction(mpAnimationPlayAction);
+  mpAnimationToolBar->addSeparator();
+  mpAnimationToolBar->addAction(mpAnimationPauseAction);
+  mpAnimationToolBar->addSeparator();
+  mpAnimationToolBar->addWidget(mpAnimationSlider);
+  mpAnimationToolBar->addWidget(mpAnimationTimeLabel);
+  mpAnimationToolBar->addWidget(mpPerspectiveDropDownBox);
+  mpAnimationToolBar->setIconSize(QSize(TOOLBAR_DIMENSION,TOOLBAR_DIMENSION));
+  addToolBar(Qt::TopToolBarArea,mpAnimationToolBar);
+  setCentralWidget(mpViewerWidget);
+  //connections
+  connect(mpAnimationChooseFileAction, SIGNAL(triggered()),this, SLOT(chooseAnimationFileSlotFunction()));
+  connect(mpAnimationInitializeAction, SIGNAL(triggered()),this, SLOT(initSlotFunction()));
+  connect(mpAnimationPlayAction, SIGNAL(triggered()),this, SLOT(playSlotFunction()));
+  connect(mpAnimationPauseAction, SIGNAL(triggered()),this, SLOT(pauseSlotFunction()));
+  connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
+  connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),this, SLOT(sliderSetTimeSlotFunction(int)));
 }
 
 /*!
