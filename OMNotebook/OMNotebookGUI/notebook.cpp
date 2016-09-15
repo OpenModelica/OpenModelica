@@ -3561,8 +3561,10 @@ void NotebookWindow::insertLink()
       {
         // 2006-03-01 AF, Update linkDir_
         linkDir_ = QFileInfo( filepath ).absolutePath();
-
+        // change the link color to blue
+        subject_->textcursorChangeFontColor(Qt::blue);
         subject_->textcursorInsertLink( filepath, cursor );
+
       }
     }
     else
