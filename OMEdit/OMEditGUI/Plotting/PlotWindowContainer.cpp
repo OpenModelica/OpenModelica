@@ -104,7 +104,7 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
  * Returns the current animation window, if the last window is plot, return null
  * \return
  */
-AnimationWindowContainer* PlotWindowContainer::getCurrentAnimationWindow()
+AnimationWindow* PlotWindowContainer::getCurrentAnimationWindow()
 {
   if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
@@ -115,7 +115,7 @@ AnimationWindowContainer* PlotWindowContainer::getCurrentAnimationWindow()
 	if (isAnimationWidget)
 	{
       std::cout<<"this was good\n"<<std::endl;
-      return qobject_cast<AnimationWindowContainer*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
+      return qobject_cast<AnimationWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
 	}
 	else
 	  return 0;
@@ -279,24 +279,21 @@ void PlotWindowContainer::exportVariables()
 void PlotWindowContainer::updatePlotWindows(QString variable)
 {
   foreach (QMdiSubWindow *pSubWindow, subWindowList()) {
-	  bool isPlotWidget = (0 != pSubWindow->widget()->objectName().compare(QString("animationWidget")));
-	  if (isPlotWidget){
-
-		PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
-		foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
-		  if (variable.compare(pPlotCurve->getFileName()) == 0) {
-			pPlotWindow->getPlot()->removeCurve(pPlotCurve);
-			pPlotCurve->detach();
-			if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-			  pPlotWindow->fitInView();
-			}
-			else {
-			  pPlotWindow->getPlot()->replot();
-			}
-		  }
-
-		}
-	  } // is plotWidget
+    bool isPlotWidget = (0 != pSubWindow->widget()->objectName().compare(QString("animationWidget")));
+    if (isPlotWidget) {
+      PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
+      foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+        if (variable.compare(pPlotCurve->getFileName()) == 0) {
+          pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+          pPlotCurve->detach();
+          if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+            pPlotWindow->fitInView();
+          } else {
+            pPlotWindow->getPlot()->replot();
+          }
+        }
+      }
+    } // is plotWidget
   }
 }
 
@@ -305,8 +302,8 @@ void PlotWindowContainer::updatePlotWindows(QString variable)
  * Adds an animation widget as subwindow
  */
 void PlotWindowContainer::addAnimationWindow(){
-	AnimationWindowContainer *pAnimation = new AnimationWindowContainer(this);
-	QMdiSubWindow *pSubWindow = addSubWindow(pAnimation);
-	pSubWindow->setWindowIcon(QIcon(":/Resources/icons/animation.png"));
-	pAnimation->show();
+  AnimationWindow *pAnimation = new AnimationWindow(this);
+  QMdiSubWindow *pSubWindow = addSubWindow(pAnimation);
+  pSubWindow->setWindowIcon(QIcon(":/Resources/icons/animation.png"));
+  pAnimation->show();
 }
