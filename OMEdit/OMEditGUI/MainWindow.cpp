@@ -137,7 +137,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   QShortcut *pPlottingShortcut = new QShortcut(QKeySequence("Ctrl+f3"), this);
   connect(pPlottingShortcut, SIGNAL(activated()), SLOT(switchToPlottingPerspectiveSlot()));
   mpPerspectiveTabbar->setTabToolTip(2, tr("Changes to plotting perspective (%1)").arg(pPlottingShortcut->key().toString()));
-
   // algorithmic debugging perspective
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/debugger.svg"), tr("Debugging"));
   QShortcut *pAlgorithmicDebuggingShortcut = new QShortcut(QKeySequence("Ctrl+f5"), this);
@@ -1970,8 +1969,8 @@ void MainWindow::openUsersGuide()
                        .append("/share/doc/omc/OpenModelicaUsersGuide/index.html"));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                  GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
-                                                  Helper::scriptingKind, Helper::errorLevel));
+                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+                                                Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -1986,8 +1985,8 @@ void MainWindow::openUsersGuidePdf()
                        .append("/share/doc/omc/OpenModelicaUsersGuide-latest.pdf"));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                  GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
-                                                  Helper::scriptingKind, Helper::errorLevel));
+                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+                                                Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -2002,8 +2001,8 @@ void MainWindow::openUsersGuideOldPdf()
                        .append("/share/doc/omc/OpenModelicaUsersGuide.pdf"));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                  GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
-                                                  Helper::scriptingKind, Helper::errorLevel));
+                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+                                                Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -2275,8 +2274,6 @@ void MainWindow::switchToPlottingPerspectiveSlot()
 {
   mpPerspectiveTabbar->setCurrentIndex(2);
 }
-
-
 
 /*!
  * \brief MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot
@@ -2565,7 +2562,7 @@ void MainWindow::createActions()
   mpImportFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.svg"), Helper::importFromOMNotebook, this);
   mpImportFromOMNotebookAction->setStatusTip(Helper::importFromOMNotebookTip);
   connect(mpImportFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
-    // import ngspice netlist action
+  // import ngspice netlist action
   mpImportNgspiceNetlistAction = new QAction(Helper::importNgspiceNetlist, this);
   mpImportNgspiceNetlistAction->setStatusTip(Helper::importNgspiceNetlistTip);
   connect(mpImportNgspiceNetlistAction, SIGNAL(triggered()), SLOT(importNgspiceNetlist()));
@@ -2679,9 +2676,9 @@ void MainWindow::createActions()
   mpNewParametricPlotWindowAction->setStatusTip(tr("Inserts new parametric plot window"));
   connect(mpNewParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addParametricPlotWindow()));
   // new mpAnimationWindowAction plot action
-  mpAnimationWindowAction = new QAction(QIcon(":/Resources/icons/animation.png"), tr("New Animation Window"), this);
-  mpAnimationWindowAction->setStatusTip(tr("Inserts new animation window"));
-  connect(mpAnimationWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addAnimationWindow()));
+  mpNewAnimationWindowAction = new QAction(QIcon(":/Resources/icons/animation.png"), tr("New Animation Window"), this);
+  mpNewAnimationWindowAction->setStatusTip(tr("Inserts new animation window"));
+  connect(mpNewAnimationWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addAnimationWindow()));
   // export variables action
   mpExportVariablesAction = new QAction(QIcon(":/Resources/icons/export-variables.svg"), Helper::exportVariables, this);
   mpExportVariablesAction->setStatusTip(tr("Exports the plotted variables to a CSV file"));
@@ -2780,9 +2777,9 @@ void MainWindow::createMenus()
   pEditMenu->addAction(mpRedoAction);
   pEditMenu->addSeparator();
   pEditMenu->addAction(mpSearchClassesAction);
-//  pEditMenu->addAction(mpCutAction);
-//  pEditMenu->addAction(mpCopyAction);
-//  pEditMenu->addAction(mpPasteAction);
+  //  pEditMenu->addAction(mpCutAction);
+  //  pEditMenu->addAction(mpCopyAction);
+  //  pEditMenu->addAction(mpPasteAction);
   // add Edit menu to menu bar
   menuBar()->addAction(pEditMenu->menuAction());
   // View menu
@@ -2938,13 +2935,13 @@ void MainWindow::autoSaveHelper(LibraryTreeItem *pLibraryTreeItem)
  * the plot windows states & geometry and then restore it when switching back to plotting view.
  */
 void MainWindow::storePlotWindowsStateAndGeometry()
-{/*
+{
   if (mPlotWindowsStatesList.isEmpty() && mPlotWindowsGeometriesList.isEmpty()) {
     foreach (QMdiSubWindow *pWindow, mpPlotWindowContainer->subWindowList()) {
       mPlotWindowsStatesList.append(pWindow->windowState());
       mPlotWindowsGeometriesList.append(pWindow->saveGeometry());
     }
-  }*/
+  }
 }
 
 /*!
@@ -2991,7 +2988,6 @@ void MainWindow::switchToModelingPerspective()
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
-
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -3023,7 +3019,6 @@ void MainWindow::switchToPlottingPerspective()
   }
   mpCentralStackedWidget->setCurrentWidget(mpPlotWindowContainer);
   int i = 0;
-
   foreach (QMdiSubWindow *pWindow, mpPlotWindowContainer->subWindowList()) {
     // sanity check
     if (mPlotWindowsStatesList.size() > i && mPlotWindowsGeometriesList.size() > i) {
@@ -3032,7 +3027,6 @@ void MainWindow::switchToPlottingPerspective()
     }
     i++;
   }
-
   mPlotWindowsStatesList.clear();
   mPlotWindowsGeometriesList.clear();
   mpModelWidgetContainer->currentModelWidgetChanged(0);
@@ -3081,7 +3075,6 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpTargetOutputDockWidget->show();
   mpGDBLoggerDockWidget->show();
 }
-
 
 /*!
  * \brief MainWindow::closeAllWindowsButThis
@@ -3175,9 +3168,9 @@ void MainWindow::createToolbars()
   // add actions to edit toolbar
   mpEditToolBar->addAction(mpUndoAction);
   mpEditToolBar->addAction(mpRedoAction);
-//  mpEditToolBar->addAction(mpCutAction);
-//  mpEditToolBar->addAction(mpCopyAction);
-//  mpEditToolBar->addAction(mpPasteAction);
+  //  mpEditToolBar->addAction(mpCutAction);
+  //  mpEditToolBar->addAction(mpCopyAction);
+  //  mpEditToolBar->addAction(mpPasteAction);
   // View Toolbar
   mpViewToolBar = addToolBar(tr("View Toolbar"));
   mpViewToolBar->setObjectName("View Toolbar");
@@ -3241,7 +3234,7 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpNewPlotWindowAction);
   mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);
-  mpPlotToolBar->addAction(mpAnimationWindowAction);
+  mpPlotToolBar->addAction(mpNewAnimationWindowAction);
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpExportVariablesAction);
   mpPlotToolBar->addSeparator();
@@ -3258,7 +3251,6 @@ void MainWindow::createToolbars()
   mpTLMSimulationToolbar->addSeparator();
   mpTLMSimulationToolbar->addAction(mpTLMCoSimulationAction);
 }
-
 
 //! when the dragged object enters the main window
 //! @param event contains information of the drag operation.
@@ -3462,4 +3454,3 @@ void AboutOMEditWidget::keyPressEvent(QKeyEvent *pEvent)
   }
   QWidget::keyPressEvent(pEvent);
 }
-

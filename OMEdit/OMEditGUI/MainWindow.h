@@ -339,7 +339,7 @@ private:
   QAction *mpReSimulateSetupAction;
   QAction *mpNewPlotWindowAction;
   QAction *mpNewParametricPlotWindowAction;
-  QAction *mpAnimationWindowAction;
+  QAction *mpNewAnimationWindowAction;
   QAction *mpClearPlotWindowAction;
   QAction *mpExportVariablesAction;
   // Other Actions
