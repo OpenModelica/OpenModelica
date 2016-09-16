@@ -76,6 +76,7 @@ public slots:
   void initSlotFunction();
   void renderSlotFunction();
   void chooseAnimationFileSlotFunction();
+  void setSpeedUpSlotFunction();
   void updateSceneFunction();
   void resetCamera();
   void cameraPositionXY();
@@ -98,6 +99,8 @@ private:
   QWidget* topWidget;
   QSlider* mpAnimationSlider;
   QLabel *mpAnimationTimeLabel;
+  QLabel *mpAnimationSpeedUpLabel;
+  QTextEdit * mpSpeedUpEdit;
   QComboBox *mpPerspectiveDropDownBox;
   //actions
   QAction *mpAnimationChooseFileAction;
