@@ -71,6 +71,7 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(renderSlotFunction()));
   mpUpdateTimer->start(100);
   // actions and widgets for the toolbar
+  int toolbarIconSize = mpPlotWindowContainer->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
   mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/openFile.png"), Helper::animationChooseFile, this);
   mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
   mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.png"), Helper::animationInitialize, this);
@@ -85,10 +86,14 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpAnimationSlider = new QSlider(Qt::Horizontal);
   mpAnimationSlider->setMinimum(0);
   mpAnimationSlider->setMaximum(100);
-  mpAnimationSlider->setSliderPosition(50);
+  mpAnimationSlider->setSliderPosition(0);
   mpAnimationSlider->setEnabled(false);
   mpAnimationTimeLabel = new QLabel();
   mpAnimationTimeLabel->setText(QString(" Time [s]: ").append(QString::fromStdString("0.000")));
+  mpAnimationSpeedUpLabel = new QLabel();
+  mpAnimationSpeedUpLabel->setText(QString(" speedUp: "));
+  mpSpeedUpEdit = new QTextEdit("1.0",this);
+  mpSpeedUpEdit->setMaximumSize(QSize(toolbarIconSize*3,toolbarIconSize));
   mpPerspectiveDropDownBox = new QComboBox(this);
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.png"), QString("to home position"));
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.png"),QString("normal to x-y plane"));
@@ -104,9 +109,13 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpAnimationToolBar->addAction(mpAnimationPauseAction);
   mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addWidget(mpAnimationSlider);
+  mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addWidget(mpAnimationTimeLabel);
+  mpAnimationToolBar->addSeparator();
+  mpAnimationToolBar->addWidget(mpAnimationSpeedUpLabel);
+  mpAnimationToolBar->addWidget(mpSpeedUpEdit);
+  mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addWidget(mpPerspectiveDropDownBox);
-  int toolbarIconSize = mpPlotWindowContainer->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
   mpAnimationToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
   addToolBar(Qt::TopToolBarArea,mpAnimationToolBar);
   setCentralWidget(mpViewerWidget);
@@ -117,6 +126,23 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   connect(mpAnimationPauseAction, SIGNAL(triggered()),this, SLOT(pauseSlotFunction()));
   connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
   connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),this, SLOT(sliderSetTimeSlotFunction(int)));
+  connect(mpSpeedUpEdit, SIGNAL(textChanged()),this, SLOT(setSpeedUpSlotFunction()));
+}
+
+
+void AnimationWindow::setSpeedUpSlotFunction()
+{
+	QString str = mpSpeedUpEdit->toPlainText();
+	bool isFloat = true;
+	double value = str.toFloat(&isFloat);
+	if (isFloat && value > 0.0)
+	  {
+		mpVisualizer->getTimeManager()->setSpeedUp(value);
+	  }
+	else
+	{
+	  std::cout<<"The speedUp has to be a positive real value. "<<std::endl;
+	}
 }
 
 /*!
@@ -204,19 +230,19 @@ void AnimationWindow::loadVisualization()
  */
 void AnimationWindow::chooseAnimationFileSlotFunction()
 {
-  QString *dir = new QString("./");
   std::string file = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-		  dir, Helper::matFileTypes, NULL).toStdString();
+		  NULL, Helper::matFileTypes, NULL).toStdString();
   if (file.compare("")) {
     std::size_t pos = file.find_last_of("/\\");
     mPathName = file.substr(0, pos + 1);
     mFileName = file.substr(pos + 1, file.length());
-    std::cout<<"file "<<mFileName<<"   path "<<mPathName<<std::endl;
+    //std::cout<<"file "<<mFileName<<"   path "<<mPathName<<std::endl;
     loadVisualization();
     mpAnimationInitializeAction->setEnabled(true);
     mpAnimationPlayAction->setEnabled(true);
     mpAnimationPauseAction->setEnabled(true);
     mpAnimationSlider->setEnabled(true);
+    mpSpeedUpEdit->setPlainText(QString("1.0"));
   } else {
     std::cout<<"No Visualization selected!"<<std::endl;
   }
@@ -287,6 +313,8 @@ void AnimationWindow::updateSceneFunction()
     // set time slider
     int time = mpVisualizer->getTimeManager()->getTimeFraction();
     mpAnimationSlider->setValue(time);
+    //set time label
+    mpAnimationTimeLabel->setText(QString(" Time [s]: ").append(QString::number(mpVisualizer->getTimeManager()->getVisTime())));
   }
 }
 
