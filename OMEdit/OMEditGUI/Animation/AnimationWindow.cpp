@@ -178,7 +178,7 @@ QWidget* AnimationWindow::setupViewWidget()
   //get the viewer widget
   osg::ref_ptr<osg::Camera> camera = mpSceneView->getCamera();
   camera->setGraphicsContext(gw);
-  camera->setClearColor(osg::Vec4(0.2, 0.2, 0.6, 1.0));
+  camera->setClearColor(osg::Vec4(0.95, 0.95, 0.95, 1.0));
   //camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
   camera->setViewport(new osg::Viewport(0, 0, width, height));
   camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits->width/2) / static_cast<double>(traits->height/2), 1.0f, 10000.0f);
