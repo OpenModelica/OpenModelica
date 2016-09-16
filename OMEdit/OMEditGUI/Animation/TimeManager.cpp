@@ -44,6 +44,7 @@ TimeManager::TimeManager(const double simTime, const double realTime, const doub
 		  _startTime(startTime),
 		  _endTime(endTime),
 		  _pause(true),
+		  mSpeedUp(1.0),
 		  _visualTimer()
 {
 }
@@ -134,3 +135,13 @@ void TimeManager::setPause(const bool status)
 {
 	_pause = status;
 }
+void TimeManager::setSpeedUp(double value)
+{
+	mSpeedUp = value;
+}
+
+double TimeManager::getSpeedUp()
+{
+	return mSpeedUp;
+}
+

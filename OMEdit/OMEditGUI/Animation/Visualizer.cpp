@@ -260,7 +260,7 @@ void VisualizerAbstract::sceneUpdate()
     if (!_timeManager->isPaused())
     {
         updateScene(_timeManager->getVisTime());
-        _timeManager->setVisTime(_timeManager->getVisTime() + _timeManager->getHVisual());
+        _timeManager->setVisTime(_timeManager->getVisTime() + (_timeManager->getHVisual()*_timeManager->getSpeedUp()));
         if (_timeManager->getVisTime() >= _timeManager->getEndTime() - 1.e-6)
         {
             _timeManager->setPause(true);

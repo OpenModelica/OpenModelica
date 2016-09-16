@@ -85,8 +85,9 @@ class TimeManager
 	bool isPaused() const;
 	/*! \brief Sets pause status to new value. */
 	void setPause(const bool status);
-
 	int getTimeFraction();
+	void setSpeedUp(double value);
+	double getSpeedUp();
 
  private:
 	//! Time of the current simulation step.
@@ -105,7 +106,7 @@ class TimeManager
 	double _endTime;
 	//! This variable indicates if the simulation/visualization currently pauses.
 	bool _pause;
-
+	double mSpeedUp;
 	osg::Timer _visualTimer;
 
 };
