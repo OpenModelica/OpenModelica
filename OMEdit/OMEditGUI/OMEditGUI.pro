@@ -63,32 +63,32 @@ win32 {
     QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
   }
   # release vs debug
-  CONFIG(release, debug|release) {
+  CONFIG(release, debug|release) { # release
+    # required for backtrace
     # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
     # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
     # -s will remove all symbol table and relocation information from the executable.
     QMAKE_CXXFLAGS += -g
     QMAKE_LFLAGS_RELEASE =
-    # required for backtrace
     # win32 vs. win64
     contains(QT_ARCH, i386) { # 32-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin
+      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin -L$$(OMDEV)/tools/msys/mingw32/lib
     } else { # 64-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin
+      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -L$$(OMDEV)/tools/msys/mingw64/lib
     }
-    LIBS += -limagehlp -lbfd -lintl -liberty
+    LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibosgQt.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
+  } else { # debug
+    contains(QT_ARCH, i386) { # 32-bit
+      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib
+    } else { # 64-bit
+      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib
+    }
+    LIBS += -llibosgd.dll -llibosgViewerd.dll -llibosgQtd.dll -llibOpenThreadsd.dll -llibosgDBd.dll -llibosgGAd.dll
   }
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \
     -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread \
     -lws2_32
-  # win32 vs. win64
-  contains(QT_ARCH, i386) { # 32-bit
-    LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib
-  } else { # 64-bit
-    LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib
-  }
-  LIBS += -llibosg.dll -llibosgViewer.dll -llibosgQt.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
 
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
     $$(OMBUILDDIR)/include/omplot/qwt \
