@@ -90,8 +90,9 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpAnimationSlider->setEnabled(false);
   mpAnimationTimeLabel = new QLabel();
   mpAnimationTimeLabel->setText(QString(" Time [s]: ").append(QString::fromStdString("0.000")));
+  mpAnimationTimeLabel->setFixedWidth(toolbarIconSize*3);
   mpAnimationSpeedUpLabel = new QLabel();
-  mpAnimationSpeedUpLabel->setText(QString(" speedUp: "));
+  mpAnimationSpeedUpLabel->setText(QString(" SpeedUp: "));
   mpSpeedUpEdit = new QTextEdit("1.0",this);
   mpSpeedUpEdit->setMaximumSize(QSize(toolbarIconSize*3,toolbarIconSize));
   mpPerspectiveDropDownBox = new QComboBox(this);
