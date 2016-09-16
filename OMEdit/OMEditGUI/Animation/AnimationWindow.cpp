@@ -204,8 +204,9 @@ void AnimationWindow::loadVisualization()
  */
 void AnimationWindow::chooseAnimationFileSlotFunction()
 {
+  QString *dir = new QString("./");
   std::string file = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                    NULL, Helper::matFileTypes, NULL).toStdString();
+		  dir, Helper::matFileTypes, NULL).toStdString();
   if (file.compare("")) {
     std::size_t pos = file.find_last_of("/\\");
     mPathName = file.substr(0, pos + 1);
