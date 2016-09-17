@@ -3397,10 +3397,13 @@ annotation(Documentation(info="<html>
 </html>"));
 end getComponentsTest;
 
-function isExperiment "An experiment is defined as having annotation Experiment(stopTime=...)"
+function isExperiment
   input TypeName name;
   output Boolean res;
 external "builtin";
+annotation(Documentation(info="<html>
+<p>An experiment is defined as having annotation experiment(StopTime=...)</p>
+</html>"));
 end isExperiment;
 
 function getSimulationOptions
