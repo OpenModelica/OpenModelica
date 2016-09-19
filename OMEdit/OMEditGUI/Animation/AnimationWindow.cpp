@@ -89,12 +89,15 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpAnimationSlider->setSliderPosition(0);
   mpAnimationSlider->setEnabled(false);
   mpAnimationTimeLabel = new QLabel();
-  mpAnimationTimeLabel->setText(QString(" Time [s]: ").append(QString::fromStdString("0.000")));
-  mpAnimationTimeLabel->setFixedWidth(toolbarIconSize*3);
+  mpAnimationTimeLabel->setText(QString(" Time [s]: "));
+  mpTimeEdit = new QTextEdit("0.0",this);
+  mpTimeEdit->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
+  mpTimeEdit->setEnabled(false);
   mpAnimationSpeedUpLabel = new QLabel();
   mpAnimationSpeedUpLabel->setText(QString(" SpeedUp: "));
   mpSpeedUpEdit = new QTextEdit("1.0",this);
-  mpSpeedUpEdit->setMaximumSize(QSize(toolbarIconSize*3,toolbarIconSize));
+  mpSpeedUpEdit->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
+  mpSpeedUpEdit->setEnabled(false);
   mpPerspectiveDropDownBox = new QComboBox(this);
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.png"), QString("to home position"));
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.png"),QString("normal to x-y plane"));
@@ -112,6 +115,7 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpAnimationToolBar->addWidget(mpAnimationSlider);
   mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addWidget(mpAnimationTimeLabel);
+  mpAnimationToolBar->addWidget(mpTimeEdit);
   mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addWidget(mpAnimationSpeedUpLabel);
   mpAnimationToolBar->addWidget(mpSpeedUpEdit);
@@ -128,22 +132,56 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
   connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),this, SLOT(sliderSetTimeSlotFunction(int)));
   connect(mpSpeedUpEdit, SIGNAL(textChanged()),this, SLOT(setSpeedUpSlotFunction()));
+  connect(mpTimeEdit, SIGNAL(textChanged()),this, SLOT(jumpToTimeSlotFunction()));
 }
 
+/*!
+ * \brief AnimationWindow::jumpToTimeSlotFunction
+ * slot function to jump to the user input point of time
+ */
+void AnimationWindow::jumpToTimeSlotFunction()
+{
+  QString str = mpTimeEdit->toPlainText();
+  bool isFloat = true;
+  double start = mpVisualizer->getTimeManager()->getStartTime();
+  double end = mpVisualizer->getTimeManager()->getEndTime();
+  double value = str.toFloat(&isFloat);
+  if (isFloat && value >= 0.0)
+    {
+    if (start <= value && value <= end)
+    {
+      mpVisualizer->getTimeManager()->setVisTime(value);
+      mpAnimationSlider->setValue(mpVisualizer->getTimeManager()->getTimeFraction());
+      mpVisualizer->updateScene(value);
+    }
+    else
+    {
+      std::cout<<"The point of time has to be between start ("<<start<<") and end time("<<end<<")."<<std::endl;
+    }
+    }
+  else
+  {
+    std::cout<<"The point of time has to be a positive real value. "<<std::endl;
+  }
+}
 
+/*!
+ * \brief AnimationWindow::setSpeedUpSlotFunction
+ * slot function to set the user input speed up
+ */
 void AnimationWindow::setSpeedUpSlotFunction()
 {
-	QString str = mpSpeedUpEdit->toPlainText();
-	bool isFloat = true;
-	double value = str.toFloat(&isFloat);
-	if (isFloat && value > 0.0)
-	  {
-		mpVisualizer->getTimeManager()->setSpeedUp(value);
-	  }
-	else
-	{
-	  std::cout<<"The speedUp has to be a positive real value. "<<std::endl;
-	}
+  QString str = mpSpeedUpEdit->toPlainText();
+  bool isFloat = true;
+  double value = str.toFloat(&isFloat);
+  if (isFloat && value > 0.0)
+    {
+    mpVisualizer->getTimeManager()->setSpeedUp(value);
+    }
+  else
+    {
+    std::cout<<"The speedUp has to be a positive real value. "<<std::endl;
+    }
 }
 
 /*!
@@ -232,19 +270,27 @@ void AnimationWindow::loadVisualization()
 void AnimationWindow::chooseAnimationFileSlotFunction()
 {
   std::string file = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-		  NULL, Helper::matFileTypes, NULL).toStdString();
-  if (file.compare("")) {
+      NULL, Helper::matFileTypes, NULL).toStdString();
+  if (file.compare(""))
+  {
     std::size_t pos = file.find_last_of("/\\");
     mPathName = file.substr(0, pos + 1);
     mFileName = file.substr(pos + 1, file.length());
     //std::cout<<"file "<<mFileName<<"   path "<<mPathName<<std::endl;
     loadVisualization();
+    // start the widgets
     mpAnimationInitializeAction->setEnabled(true);
     mpAnimationPlayAction->setEnabled(true);
     mpAnimationPauseAction->setEnabled(true);
     mpAnimationSlider->setEnabled(true);
+    mpAnimationSlider->setValue(0);
+    mpSpeedUpEdit->setEnabled(true);
     mpSpeedUpEdit->setPlainText(QString("1.0"));
-  } else {
+    mpTimeEdit->setEnabled(true);
+    mpTimeEdit->setPlainText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
+  }
+  else
+  {
     std::cout<<"No Visualization selected!"<<std::endl;
   }
 }
@@ -300,6 +346,8 @@ void AnimationWindow::pauseSlotFunction()
 void AnimationWindow::initSlotFunction()
 {
   mpVisualizer->initVisualization();
+  mpAnimationSlider->setValue(0);
+  mpTimeEdit->setPlainText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
 }
 
 /*!
@@ -309,13 +357,18 @@ void AnimationWindow::initSlotFunction()
 void AnimationWindow::updateSceneFunction()
 {
   if (!(mpVisualizer == NULL)) {
+    //set time label
+    if (!mpVisualizer->getTimeManager()->isPaused())
+    {
+      mpTimeEdit->blockSignals(true);
+      mpTimeEdit->setPlainText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
+      mpTimeEdit->blockSignals(false);
+      // set time slider
+      int time = mpVisualizer->getTimeManager()->getTimeFraction();
+      mpAnimationSlider->setValue(time);
+    }
     //update the scene
     mpVisualizer->sceneUpdate();
-    // set time slider
-    int time = mpVisualizer->getTimeManager()->getTimeFraction();
-    mpAnimationSlider->setValue(time);
-    //set time label
-    mpAnimationTimeLabel->setText(QString(" Time [s]: ").append(QString::number(mpVisualizer->getTimeManager()->getVisTime())));
   }
 }
 
