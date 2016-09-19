@@ -462,34 +462,45 @@ void UpdateVisitor::apply(osg::Geode& node)
         //osg::ref_ptr<osg::ShapeDrawable> shapeDraw = dynamic_cast<osg::ShapeDrawable*>(draw.get());
         //shapeDraw->setColor(osg::Vec4(visAttr.color,1.0));
 
-    if (_shape._type == "pipe") {
-      node.removeDrawable(draw);
-      draw = (new Pipecylinder((_shape._width.exp * _shape._extra.exp) / 2, (_shape._width.exp) / 2, _shape._length.exp))->asDrawable();
-    }
-    else if (_shape._type == "pipecylinder") {
-      node.removeDrawable(draw);
-      draw = (new Pipecylinder((_shape._width.exp * _shape._extra.exp) / 2, (_shape._width.exp) / 2, _shape._length.exp))->asDrawable();
-    }
-    else if (_shape._type == "spring") {
-      node.removeDrawable(draw);
-      draw = (new Spring(_shape._width.exp, _shape._height.exp, _shape._extra.exp, _shape._length.exp))->asDrawable();
-    }
-        else if (_shape._type == "cylinder")
-            draw->setShape(new osg::Cylinder(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp / 2.0, _shape._length.exp));
-        else if (_shape._type == "box")
-            draw->setShape(new osg::Box(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp, _shape._height.exp, _shape._length.exp));
-        else if (_shape._type == "cone")
-            draw->setShape(new osg::Cone(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp / 2.0, _shape._length.exp));
-        else if (_shape._type == "sphere")
-            draw->setShape(new osg::Sphere(osg::Vec3f(0.0, 0.0, 0.0), _shape._length.exp / 2.0));
-        else
-        {
-            std::cout<<"Unknown type "<<_shape._type<<", we make a capsule."<<std::endl;
-            //string id = string(visAttr.type.begin(), visAttr.type.begin()+11);
-            draw->setShape(new osg::Capsule(osg::Vec3f(0.0, 0.0, 0.0), 0.1, 0.5));
-        }
-        //std::cout<<"SHAPE "<<draw->getShape()->className()<<std::endl;
-        node.addDrawable(draw.get());
+      if (_shape._type == "pipe")
+      {
+        node.removeDrawable(draw);
+        draw = new Pipecylinder((_shape._width.exp * _shape._extra.exp) / 2, (_shape._width.exp) / 2, _shape._length.exp);
+      }
+      else if (_shape._type == "pipecylinder")
+      {
+        node.removeDrawable(draw);
+        draw = new Pipecylinder((_shape._width.exp * _shape._extra.exp) / 2, (_shape._width.exp) / 2, _shape._length.exp);
+      }
+      else if (_shape._type == "spring")
+      {
+        node.removeDrawable(draw);
+        draw = new Spring(_shape._width.exp, _shape._height.exp, _shape._extra.exp, _shape._length.exp);
+      }
+      else if (_shape._type == "cylinder")
+      {
+        draw->setShape(new osg::Cylinder(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp / 2.0, _shape._length.exp));
+      }
+      else if (_shape._type == "box")
+      {
+        draw->setShape(new osg::Box(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp, _shape._height.exp, _shape._length.exp));
+      }
+      else if (_shape._type == "cone")
+      {
+        draw->setShape(new osg::Cone(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp / 2.0, _shape._length.exp));
+      }
+      else if (_shape._type == "sphere")
+      {
+        draw->setShape(new osg::Sphere(osg::Vec3f(0.0, 0.0, 0.0), _shape._length.exp / 2.0));
+      }
+      else
+      {
+        std::cout<<"Unknown type "<<_shape._type<<", we make a capsule."<<std::endl;
+        //string id = string(visAttr.type.begin(), visAttr.type.begin()+11);
+        draw->setShape(new osg::Capsule(osg::Vec3f(0.0, 0.0, 0.0), 0.1, 0.5));
+      }
+    //std::cout<<"SHAPE "<<draw->getShape()->className()<<std::endl;
+    node.addDrawable(draw.get());
     }
     //osg::Material *material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
     osg::ref_ptr<osg::Material> material = new osg::Material;
