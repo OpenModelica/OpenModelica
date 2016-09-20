@@ -35,7 +35,8 @@ resolveLoops.log \
 evalConstFuncs.log \
 flatteningBuildings.log \
 buildings.log \
-requirements.log
+requirements.log \
+scalable.log
 
 SIMULATIONLOGS = \
 linearization.log \
@@ -556,6 +557,9 @@ hummod.log: omc-diff
 	@echo $@ done
 openmodelicadiff.log: omc-diff
 	$(MAKE) -C openmodelica/diff -f Makefile test > $@
+	@echo $@ done
+scalable.log: omc-diff
+	$(MAKE) -C simulation/libraries/3rdParty/ScalableTestSuite -f Makefile test > $@
 	@echo $@ done
 requirements.log: omc-diff
 	$(MAKE) -C openmodelica/requirements -f Makefile test > $@
