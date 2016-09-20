@@ -167,7 +167,7 @@ simulate(PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv); getErrorString();
 //   output Real[0] residue \"No constraints\";
 // algorithm
 //   for i in 1:size(theta1, 1) loop
-//     assert(abs(theta1[i] - theta2[i]) < 1e-015, \"angles theta1 and theta2 not equal over connection!\");
+//     assert(abs(theta1[i] - theta2[i]) < 1e-15, \"angles theta1 and theta2 not equal over connection!\");
 //   end for;
 // end PowerSystems.Basic.Types.ReferenceAngle.equalityConstraint;
 //
@@ -397,8 +397,8 @@ simulate(PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv); getErrorString();
 //   final parameter Real sm_ctrl.motor.par.x_o(quantity = \"Reactance\", unit = \"Ohm/(V.V/VA)\") = 0.1 \"reactance o-axis\";
 //   final parameter Real sm_ctrl.motor.par.r_s(quantity = \"Resistance\", unit = \"Ohm/(V.V/VA)\", min = 0.0) = 0.03 \"resistance armature\";
 //   final parameter Real sm_ctrl.motor.par.r_n(quantity = \"Resistance\", unit = \"Ohm/(V.V/VA)\", min = 0.0) = 1.0 \"resistance neutral to grd (if Y)\";
-//   protected final parameter Real sm_ctrl.motor.c.L_s[1](quantity = \"Inductance\", unit = \"H\") = 0.006790610905254201 \"L matrix stator dq0\";
-//   protected final parameter Real sm_ctrl.motor.c.L_s[2](quantity = \"Inductance\", unit = \"H\") = 0.006790610905254201 \"L matrix stator dq0\";
+//   protected final parameter Real sm_ctrl.motor.c.L_s[1](quantity = \"Inductance\", unit = \"H\") = 0.0067906109052542 \"L matrix stator dq0\";
+//   protected final parameter Real sm_ctrl.motor.c.L_s[2](quantity = \"Inductance\", unit = \"H\") = 0.0067906109052542 \"L matrix stator dq0\";
 //   protected final parameter Real sm_ctrl.motor.c.L_s[3](quantity = \"Inductance\", unit = \"H\") = 0.00169765272631355 \"L matrix stator dq0\";
 //   protected final parameter Real sm_ctrl.motor.c.R_s(quantity = \"Resistance\", unit = \"Ohm\") = 0.16 \"R stator (armature)\";
 //   protected final parameter Real sm_ctrl.motor.c.R_n(quantity = \"Resistance\", unit = \"Ohm\") = 5.333333333333333 \"resistance neutral to grd (if Y)\";
@@ -471,14 +471,14 @@ simulate(PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv); getErrorString();
 //   Real PI_i_q.controlError = PI_i_q.u_s - PI_i_q.u_m \"Control error (set point - measurement)\";
 //   parameter enumeration(P, PI, PD, PID) PI_i_q.controllerType = Modelica.Blocks.Types.SimpleController.PI \"Type of controller\";
 //   parameter Real PI_i_q.k(unit = \"1\", min = 0.0) = 1.0 \"Gain of controller\";
-//   parameter Real PI_i_q.Ti(quantity = \"Time\", unit = \"s\", min = 1e-060) = 0.2 \"Time constant of Integrator block\";
+//   parameter Real PI_i_q.Ti(quantity = \"Time\", unit = \"s\", min = 1e-60) = 0.2 \"Time constant of Integrator block\";
 //   parameter Real PI_i_q.Td(quantity = \"Time\", unit = \"s\", min = 0.0) = 0.1 \"Time constant of Derivative block\";
 //   parameter Real PI_i_q.yMax(start = 1.0) = 1.0 \"Upper limit of output\";
 //   parameter Real PI_i_q.yMin = -PI_i_q.yMax \"Lower limit of output\";
 //   parameter Real PI_i_q.wp(min = 0.0) = 1.0 \"Set-point weight for Proportional block (0..1)\";
 //   parameter Real PI_i_q.wd(min = 0.0) = 0.0 \"Set-point weight for Derivative block (0..1)\";
-//   parameter Real PI_i_q.Ni(min = 1e-013) = 0.9 \"Ni*Ti is time constant of anti-windup compensation\";
-//   parameter Real PI_i_q.Nd(min = 1e-013) = 10.0 \"The higher Nd, the more ideal the derivative block\";
+//   parameter Real PI_i_q.Ni(min = 1e-13) = 0.9 \"Ni*Ti is time constant of anti-windup compensation\";
+//   parameter Real PI_i_q.Nd(min = 1e-13) = 10.0 \"The higher Nd, the more ideal the derivative block\";
 //   parameter enumeration(NoInit, SteadyState, InitialState, InitialOutput, DoNotUse_InitialIntegratorState) PI_i_q.initType = Modelica.Blocks.Types.InitPID.SteadyState \"Type of initialization (1: no init, 2: steady state, 3: initial state, 4: initial output)\";
 //   parameter Boolean PI_i_q.limitsAtInit = true \"= false, if limits are ignored during initialization\";
 //   parameter Real PI_i_q.xi_start = 0.0 \"Initial or guess value value for integrator output (= integrator state)\";
@@ -760,9 +760,8 @@ simulate(PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// "
+// ""
 // endResult

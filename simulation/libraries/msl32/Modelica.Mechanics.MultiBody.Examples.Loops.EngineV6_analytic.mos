@@ -37,13 +37,13 @@ runScript(modelTesting);getErrorString();
 //  * Number of equations: 9016
 //  * Number of variables: 9016
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 1801
+//  * Number of independent subsystems: 1513
 //  * Number of states: 0 ()
-//  * Number of discrete variables: 369 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete variables: 333 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (3713):
-//  * Single equations (assignments): 3706
+// Notification: Strong component statistics for initialization (2897):
+//  * Single equations (assignments): 2890
 //  * Array equations: 6
 //  * Algorithm blocks: 0
 //  * Record equations: 0

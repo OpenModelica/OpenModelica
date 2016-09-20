@@ -44,8 +44,8 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (39):
-//  * Single equations (assignments): 35
+// Notification: Strong component statistics for initialization (32):
+//  * Single equations (assignments): 28
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0

@@ -17,7 +17,7 @@ simulate(OverdeterminedInitialization.Fluid.DynamicPipeInitialValues); getErrorS
 //     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'OverdeterminedInitialization.Fluid.DynamicPipeInitialValues', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: pipe.mediums[1].p = 10000000.0 (system.p_start = 10000000.0)
+// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: pipe.mediums[1].p = 10000000.0 (source.p = 10000000.0)
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
 // "

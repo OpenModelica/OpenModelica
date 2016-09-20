@@ -33,8 +33,6 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit6_res.m
 // Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 171
 //  * Number of variables: 171
-// [Modelica 3.2.1/Electrical/Analog/Sources.mo:359:5-359:61:writable] Warning: Parameter sineVoltage.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.2.1/Electrical/Analog/Sources.mo:361:5-361:68:writable] Warning: Parameter sineVoltage.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 2
@@ -42,8 +40,8 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit6_res.m
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (79):
-//  * Single equations (assignments): 72
+// Notification: Strong component statistics for initialization (60):
+//  * Single equations (assignments): 53
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0

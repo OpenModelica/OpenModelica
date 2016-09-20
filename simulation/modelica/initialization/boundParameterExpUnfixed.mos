@@ -36,6 +36,6 @@ res := readSimulationResult("initializationTests.boundParameterExpUnfixed_res.ma
 // end SimulationResult;
 // "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
-// {{0.0,0.0},{-0.7267604516483235,-0.7267604516483235},{2.0,2.0},{1.570796322333202,1.570796322333202},{1.273239548351677,1.273239548351677}}
+// {{0.0,0.0},{-0.726760455264837,-0.726760455264837},{2.0,2.0},{1.570796326794896,1.570796326794896},{1.273239544735163,1.273239544735163}}
 // ""
 // endResult

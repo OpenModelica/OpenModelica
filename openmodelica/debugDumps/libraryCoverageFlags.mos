@@ -18,13 +18,13 @@ buildModel(Modelica.Utilities.Examples.readRealParameterModel); getErrorString()
 //  * Number of equations: 0
 //  * Number of variables: 0
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 3
+//  * Number of independent subsystems: 1
 //  * Number of states: 0 ()
 //  * Number of discrete variables: 0 ()
 //  * Number of discrete states: 0 ()
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (3):
-//  * Single equations (assignments): 3
+// Notification: Strong component statistics for initialization (0):
+//  * Single equations (assignments): 0
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0

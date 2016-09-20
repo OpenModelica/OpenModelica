@@ -59,7 +59,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"4.0\" tolerance=\"1e-006\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"4.0\" tolerance=\"1e-06\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"PI.I.y\" description=\"Connector of Real output signal\" valueReference=\"0\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
@@ -1215,7 +1215,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable> 
 //
 //     <ScalarVariable name=\"PI.Nd\" description=\"The higher Nd, the more ideal the derivative block\" valueReference=\"91\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"10.0\" fixed=\"true\" min=\"1e-013\"   />
+//       <Real start=\"10.0\" fixed=\"true\" min=\"1e-13\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
 //         <exp:QualifiedNamePart name=\"Nd\"/>
@@ -1227,7 +1227,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable> 
 //
 //     <ScalarVariable name=\"PI.Ni\" description=\"Ni*Ti is time constant of anti-windup compensation\" valueReference=\"92\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"0.1\" fixed=\"true\" min=\"1e-013\"   />
+//       <Real start=\"0.1\" fixed=\"true\" min=\"1e-13\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
 //         <exp:QualifiedNamePart name=\"Ni\"/>
@@ -1264,7 +1264,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable> 
 //
 //     <ScalarVariable name=\"PI.Ti\" description=\"Time constant of Integrator block\" valueReference=\"95\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"0.1\" fixed=\"true\" min=\"1e-060\"  unit=\"s\" />
+//       <Real start=\"0.1\" fixed=\"true\" min=\"1e-60\"  unit=\"s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
 //         <exp:QualifiedNamePart name=\"Ti\"/>
@@ -1685,7 +1685,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable> 
 //
 //     <ScalarVariable name=\"kinematicPTP.qd_max[1]\" description=\"Maximum velocities der(q)\" valueReference=\"127\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"1.0\" fixed=\"true\" min=\"1e-060\"   />
+//       <Real start=\"1.0\" fixed=\"true\" min=\"1e-60\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"qd_max\">
@@ -1703,7 +1703,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable> 
 //
 //     <ScalarVariable name=\"kinematicPTP.qdd_max[1]\" description=\"Maximum accelerations der(qd)\" valueReference=\"128\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"1.0\" fixed=\"true\" min=\"1e-060\"   />
+//       <Real start=\"1.0\" fixed=\"true\" min=\"1e-60\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"qdd_max\">
@@ -3608,8 +3608,27 @@ readFile("Bug3857.xml"); getErrorString();
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"loadTorque\"/>
+//           <exp:QualifiedNamePart name=\"phi_support\"/>
+//         </exp:Identifier>
+//         <exp:RealLiteral>0.0</exp:RealLiteral>
+//       </exp:Sub>
+//     </equ:Equation>  
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"speedSensor\"/>
+//           <exp:QualifiedNamePart name=\"flange\"/>
+//           <exp:QualifiedNamePart name=\"tau\"/>
+//         </exp:Identifier>
+//         <exp:RealLiteral>0.0</exp:RealLiteral>
+//       </exp:Sub>
+//     </equ:Equation>  
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"deltaq\">
+//           <exp:QualifiedNamePart name=\"aux2\">
 //             <exp:ArraySubscripts>
 //               <exp:IndexExpression>
 //                 <exp:IntegerLiteral>1</exp:IntegerLiteral>
@@ -3617,113 +3636,67 @@ readFile("Bug3857.xml"); getErrorString();
 //             </exp:ArraySubscripts>
 //           </exp:QualifiedNamePart>
 //         </exp:Identifier>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"driveAngle\"/>
-//         </exp:Identifier>
+//         <exp:RealLiteral>1.57</exp:RealLiteral>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"gainTrack\"/>
-//           <exp:QualifiedNamePart name=\"k\"/>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"aux1\">
+//             <exp:ArraySubscripts>
+//               <exp:IndexExpression>
+//                 <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//               </exp:IndexExpression>
+//             </exp:ArraySubscripts>
+//           </exp:QualifiedNamePart>
 //         </exp:Identifier>
-//         <exp:Div>
-//           <exp:RealLiteral>1.0</exp:RealLiteral>
-//           <exp:Mul>
-//             <exp:Identifier>
-//               <exp:QualifiedNamePart name=\"PI\"/>
-//               <exp:QualifiedNamePart name=\"Ni\"/>
-//             </exp:Identifier>
-//             <exp:Identifier>
-//               <exp:QualifiedNamePart name=\"PI\"/>
-//               <exp:QualifiedNamePart name=\"k\"/>
-//             </exp:Identifier>
-//           </exp:Mul>
-//         </exp:Div>
+//         <exp:RealLiteral>1.57</exp:RealLiteral>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"I\"/>
-//           <exp:QualifiedNamePart name=\"k\"/>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"sd_max\"/>
 //         </exp:Identifier>
-//         <exp:Div>
-//           <exp:RealLiteral>1.0</exp:RealLiteral>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"PI\"/>
-//             <exp:QualifiedNamePart name=\"Ti\"/>
-//           </exp:Identifier>
-//         </exp:Div>
+//         <exp:RealLiteral>0.6369426751592356</exp:RealLiteral>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"limiter\"/>
-//           <exp:QualifiedNamePart name=\"uMax\"/>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"sdd_max\"/>
 //         </exp:Identifier>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"yMax\"/>
-//         </exp:Identifier>
+//         <exp:RealLiteral>0.6369426751592356</exp:RealLiteral>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"gainPID\"/>
-//           <exp:QualifiedNamePart name=\"k\"/>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"Ta2\"/>
 //         </exp:Identifier>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"k\"/>
-//         </exp:Identifier>
+//         <exp:RealLiteral>1.0</exp:RealLiteral>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"addP\"/>
-//           <exp:QualifiedNamePart name=\"k1\"/>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"Ta1\"/>
 //         </exp:Identifier>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"wp\"/>
-//         </exp:Identifier>
+//         <exp:RealLiteral>1.252996408614167</exp:RealLiteral>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"yMin\"/>
+//           <exp:QualifiedNamePart name=\"torque\"/>
+//           <exp:QualifiedNamePart name=\"phi_support\"/>
 //         </exp:Identifier>
-//           <exp:Neg>
-//             <exp:Identifier>
-//               <exp:QualifiedNamePart name=\"PI\"/>
-//               <exp:QualifiedNamePart name=\"yMax\"/>
-//             </exp:Identifier>
-//           </exp:Neg>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"limiter\"/>
-//           <exp:QualifiedNamePart name=\"uMin\"/>
-//         </exp:Identifier>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"yMin\"/>
-//         </exp:Identifier>
+//         <exp:RealLiteral>0.0</exp:RealLiteral>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -4406,113 +4379,6 @@ readFile("Bug3857.xml"); getErrorString();
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"I\"/>
-//           <exp:QualifiedNamePart name=\"y_start\"/>
-//         </exp:Identifier>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"PI\"/>
-//           <exp:QualifiedNamePart name=\"xi_start\"/>
-//         </exp:Identifier>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"loadTorque\"/>
-//           <exp:QualifiedNamePart name=\"phi_support\"/>
-//         </exp:Identifier>
-//         <exp:RealLiteral>0.0</exp:RealLiteral>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"speedSensor\"/>
-//           <exp:QualifiedNamePart name=\"flange\"/>
-//           <exp:QualifiedNamePart name=\"tau\"/>
-//         </exp:Identifier>
-//         <exp:RealLiteral>0.0</exp:RealLiteral>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"aux2\">
-//             <exp:ArraySubscripts>
-//               <exp:IndexExpression>
-//                 <exp:IntegerLiteral>1</exp:IntegerLiteral>
-//               </exp:IndexExpression>
-//             </exp:ArraySubscripts>
-//           </exp:QualifiedNamePart>
-//         </exp:Identifier>
-//         <exp:RealLiteral>1.57</exp:RealLiteral>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"aux1\">
-//             <exp:ArraySubscripts>
-//               <exp:IndexExpression>
-//                 <exp:IntegerLiteral>1</exp:IntegerLiteral>
-//               </exp:IndexExpression>
-//             </exp:ArraySubscripts>
-//           </exp:QualifiedNamePart>
-//         </exp:Identifier>
-//         <exp:RealLiteral>1.57</exp:RealLiteral>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"sd_max\"/>
-//         </exp:Identifier>
-//         <exp:RealLiteral>0.6369426751592356</exp:RealLiteral>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"sdd_max\"/>
-//         </exp:Identifier>
-//         <exp:RealLiteral>0.6369426751592356</exp:RealLiteral>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"Ta2\"/>
-//         </exp:Identifier>
-//         <exp:RealLiteral>1.0</exp:RealLiteral>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"Ta1\"/>
-//         </exp:Identifier>
-//         <exp:RealLiteral>1.252996408614167</exp:RealLiteral>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"torque\"/>
-//           <exp:QualifiedNamePart name=\"phi_support\"/>
-//         </exp:Identifier>
-//         <exp:RealLiteral>0.0</exp:RealLiteral>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"noWphase\"/>
 //         </exp:Identifier>
@@ -4838,7 +4704,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-006\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"h\"  valueReference=\"0\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
@@ -4957,7 +4823,7 @@ readFile("Bug3857.xml"); getErrorString();
 //             <exp:QualifiedNamePart name=\"v\"/>
 //           </exp:Identifier>
 //         </exp:Der>
-//         <exp:RealLiteral>-9.810000000000001</exp:RealLiteral>
+//         <exp:RealLiteral>-9.81</exp:RealLiteral>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -5043,7 +4909,7 @@ readFile("Bug3857.xml"); getErrorString();
 //             <exp:QualifiedNamePart name=\"v\"/>
 //           </exp:Identifier>
 //         </exp:Der>
-//         <exp:RealLiteral>-9.810000000000001</exp:RealLiteral>
+//         <exp:RealLiteral>-9.81</exp:RealLiteral>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -5099,7 +4965,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-006\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"T\" description=\"Temperature\" valueReference=\"0\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
@@ -5421,7 +5287,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-006\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"T\"  valueReference=\"0\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
