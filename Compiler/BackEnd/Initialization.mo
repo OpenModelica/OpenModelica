@@ -116,7 +116,7 @@ algorithm
     //end if;
     execStat("inlineWhenForInitialization (initialization)");
 
-    (initVars, outPrimaryParameters, outAllPrimaryParameters) := selectInitializationVariablesDAE(dae);
+    (dae, initVars, outPrimaryParameters, outAllPrimaryParameters) := selectInitializationVariablesDAE(dae);
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpVariables(initVars, "selected initialization variables");
     //end if;
@@ -742,13 +742,14 @@ end warnAboutEqns2;
 // =============================================================================
 
 protected function selectInitializationVariablesDAE "author: lochel
-  This function wraps selectInitializationVariables."
-  input BackendDAE.BackendDAE inDAE;
+  This function wraps selectInitializationVariables.
+  All primary parameters get removed from the dae."
+  input output BackendDAE.BackendDAE dae;
   output BackendDAE.Variables outVars;
   output list<BackendDAE.Var> outPrimaryParameters = {};
   output list<BackendDAE.Var> outAllPrimaryParameters = {};
 protected
-  BackendDAE.Variables allParameters;
+  BackendDAE.Variables allParameters, otherVariables;
   BackendDAE.EquationArray allParameterEqns;
   BackendDAE.EqSystem paramSystem;
   BackendDAE.IncidenceMatrix m, mT;
@@ -761,14 +762,15 @@ protected
   BackendDAE.Var p;
   DAE.Exp bindExp;
 algorithm
-  outVars := selectInitializationVariables(inDAE.eqs);
-  outVars := BackendVariable.traverseBackendDAEVars(inDAE.shared.globalKnownVars, selectInitializationVariables2, outVars);
-  outVars := BackendVariable.traverseBackendDAEVars(inDAE.shared.aliasVars, selectInitializationVariables2, outVars);
+  outVars := selectInitializationVariables(dae.eqs);
+  outVars := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, selectInitializationVariables2, outVars);
+  outVars := BackendVariable.traverseBackendDAEVars(dae.shared.aliasVars, selectInitializationVariables2, outVars);
 
   // select all parameters
   allParameters := BackendVariable.emptyVars();
   allParameterEqns := BackendEquation.emptyEqns();
-  (allParameters, allParameterEqns) := BackendVariable.traverseBackendDAEVars(inDAE.shared.globalKnownVars, selectParameter2, (allParameters, allParameterEqns));
+  otherVariables := BackendVariable.emptyVars();
+  (allParameters, allParameterEqns, otherVariables) := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, selectParameter2, (allParameters, allParameterEqns, otherVariables));
   nParam := BackendVariable.varsSize(allParameters);
 
   if nParam > 0 then
@@ -804,6 +806,8 @@ algorithm
     for i in flatComps loop
       p := BackendVariable.getVarAt(allParameters, i);
       if 1 == secondary[i] then
+        otherVariables := BackendVariable.addVar(p, otherVariables);
+        p := BackendVariable.setVarFixed(p, false);
         outVars := BackendVariable.addVar(p, outVars);
       else
         outAllPrimaryParameters := p::outAllPrimaryParameters;
@@ -820,6 +824,7 @@ algorithm
     GC.free(secondary);
     outPrimaryParameters := listReverse(outPrimaryParameters);
     outAllPrimaryParameters := listReverse(outAllPrimaryParameters);
+    dae := BackendDAEUtil.setKnownVars(dae, otherVariables);
   end if;
 end selectInitializationVariablesDAE;
 
@@ -902,20 +907,20 @@ end selectInitializationVariables1;
 
 protected function selectParameter2 "author: lochel"
   input BackendDAE.Var inVar;
-  input tuple<BackendDAE.Variables, BackendDAE.EquationArray> inTpl;
+  input tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.Variables> inTpl;
   output BackendDAE.Var outVar = inVar;
-  output tuple<BackendDAE.Variables, BackendDAE.EquationArray> outTpl;
+  output tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.Variables> outTpl;
 algorithm
   outTpl := match (inVar, inTpl)
     local
-      BackendDAE.Variables vars;
+      BackendDAE.Variables vars, otherVars;
       BackendDAE.EquationArray eqns;
       DAE.Exp bindExp, crefExp, startValue;
       BackendDAE.Equation eqn;
       DAE.ComponentRef cref;
 
     // parameter without binding
-    case (BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, eqns)) equation
+    case (BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, eqns, otherVars)) equation
       vars = BackendVariable.addVar(inVar, vars);
 
       cref = BackendVariable.varCref(inVar);
@@ -923,19 +928,22 @@ algorithm
       startValue = BackendVariable.varStartValue(inVar);
       eqn = BackendDAE.EQUATION(crefExp, startValue, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
       eqns = BackendEquation.addEquation(eqn, eqns);
-    then ((vars, eqns));
+    then ((vars, eqns, otherVars));
 
     // parameter with binding
-    case (BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, eqns)) equation
+    case (BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, eqns, otherVars)) equation
       vars = BackendVariable.addVar(inVar, vars);
 
       cref = BackendVariable.varCref(inVar);
       crefExp = Expression.crefExp(cref);
       eqn = BackendDAE.EQUATION(crefExp, bindExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
       eqns = BackendEquation.addEquation(eqn, eqns);
-    then ((vars, eqns));
+    then ((vars, eqns, otherVars));
 
-    else inTpl;
+    else equation
+      (vars, eqns, otherVars) = inTpl;
+      otherVars = BackendVariable.addVar(inVar, otherVars);
+    then ((vars, eqns, otherVars));
   end match;
 end selectParameter2;
 
@@ -2164,15 +2172,9 @@ algorithm
       vars = BackendVariable.addVar(var, vars);
     then (var, (vars, fixvars, eqns, hs, allPrimaryParameters));
 
-    // parameter with constant binding
-    // skip these parameters (#3050)
-    case (var as BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, fixvars, eqns, hs, allPrimaryParameters)) equation
-      true = Expression.isConst(bindExp);
-      //fixvars = BackendVariable.addVar(var, fixvars);
-    then (var, (vars, fixvars, eqns, hs, allPrimaryParameters));
-
-    // parameter
+    // secondary parameter
     case (var as BackendDAE.VAR(varKind=BackendDAE.PARAM()), (vars, fixvars, eqns, hs, allPrimaryParameters)) equation
+      //true = BackendVariable.varFixed(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       vars = BackendVariable.addVar(var, vars);
     then (var, (vars, fixvars, eqns, hs, allPrimaryParameters));
