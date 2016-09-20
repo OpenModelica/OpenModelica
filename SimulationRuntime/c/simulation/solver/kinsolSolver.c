@@ -185,6 +185,8 @@ int nonlinearSolve_kinsol(DATA *data, threadData_t *threadData, int sysNumber)
   void *kmem = NULL;
   int error_code = -1;
 
+  infoStreamPrintWithEquationIndexes(LOG_NLS_V, 1, indexes, "Start solving non-linear system >>%d<< using Kinsol solver at time %g", eqSystemNumber, data->localData[0]->timeValue);
+
   z = N_VNew_Serial(3*size);
   assertStreamPrint(threadData, 0 != z, "out of memory");
 

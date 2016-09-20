@@ -1740,7 +1740,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   vecConst(solverData->m,1.0,solverData->ones);
 
   debugString(LOG_NLS_V, "------------------------------------------------------");
-  debugString(LOG_NLS_V, "SOLVING NON-LINEAR SYSTEM USING HOMOTOPY SOLVER");
+  debugString(LOG_NLS_V, "SOLVING NON-LINEAR SYSTEM USING MIXED SOLVER (Newton/Homotopy solver)");
   debugInt(LOG_NLS_V, "EQUATION NUMBER:", eqSystemNumber);
   debugDouble(LOG_NLS_V, "TIME:", solverData->timeValue);
   debugInt(LOG_NLS_V,   "number of function calls (so far!): ",numberOfFunctionEvaluationsOld);

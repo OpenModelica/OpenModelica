@@ -444,7 +444,7 @@ int solveHybrd(DATA *data, threadData_t *threadData, int sysNumber)
   if(ACTIVE_STREAM(LOG_NLS_V))
   {
     int indexes[2] = {1,eqSystemNumber};
-    infoStreamPrintWithEquationIndexes(LOG_NLS_V, 1, indexes, "start solving non-linear system >>%d<< at time %g", eqSystemNumber, data->localData[0]->timeValue);
+    infoStreamPrintWithEquationIndexes(LOG_NLS_V, 1, indexes, "Start solving non-linear system >>%d<< using Hybrd solver at time %g", eqSystemNumber, data->localData[0]->timeValue);
     for(i=0; i<solverData->n; i++)
     {
       infoStreamPrint(LOG_NLS_V, 1, "%d. %s = %f", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], systemData->nlsx[i]);
