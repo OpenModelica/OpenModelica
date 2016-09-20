@@ -257,11 +257,27 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
   tlmCoSimulationOptions.setNumberOfSteps(mpNumberOfStepsTextBox->text().toInt());
   tlmCoSimulationOptions.setTimeStepSize(mpTimeStepSizeTextBox->text().toDouble());
   tlmCoSimulationOptions.setMonitorDebugMode(mpMonitorDebugModeCheckBox->isChecked());
-
+  // manager args
   QStringList managerArgs;
-  QStringList monitorArgs;
   if (mpManagerDebugModeCheckBox->isChecked()) {
     managerArgs.append("-d");
+  }
+  if (!mpServerPortTextBox->text().isEmpty()) {
+    managerArgs.append("-p");
+    managerArgs.append(mpServerPortTextBox->text());
+  }
+  // monitor args
+  QStringList monitorArgs;
+  if (mpMonitorDebugModeCheckBox->isChecked()) {
+    monitorArgs.append("-d");
+  }
+  if (!mpNumberOfStepsTextBox->text().isEmpty()) {
+    monitorArgs.append("-n");
+    monitorArgs.append(mpNumberOfStepsTextBox->text());
+  }
+  if (!mpTimeStepSizeTextBox->text().isEmpty()) {
+    monitorArgs.append("-t");
+    monitorArgs.append(mpTimeStepSizeTextBox->text());
   }
   if (!mpMonitorPortTextBox->text().isEmpty()) {
     // set monitor port for manager process
@@ -290,21 +306,6 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
     char* localIP = inet_ntoa (*(struct in_addr *)*hp->h_addr_list);
     QString monitorPort = QString(localIP) + ":" + mpMonitorPortTextBox->text();
     monitorArgs.append(monitorPort);
-  }
-  if (!mpServerPortTextBox->text().isEmpty()) {
-    managerArgs.append("-p");
-    managerArgs.append(mpServerPortTextBox->text());
-  }
-  if (mpMonitorDebugModeCheckBox->isChecked()) {
-    monitorArgs.append("-d");
-  }
-  if (!mpNumberOfStepsTextBox->text().isEmpty()) {
-    monitorArgs.append("-n");
-    monitorArgs.append(mpNumberOfStepsTextBox->text());
-  }
-  if (!mpTimeStepSizeTextBox->text().isEmpty()) {
-    monitorArgs.append("-t");
-    monitorArgs.append(mpTimeStepSizeTextBox->text());
   }
   tlmCoSimulationOptions.setManagerArgs(managerArgs);
   tlmCoSimulationOptions.setMonitorArgs(monitorArgs);
