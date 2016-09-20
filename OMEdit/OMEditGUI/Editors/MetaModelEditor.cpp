@@ -227,7 +227,6 @@ void MetaModelEditor::setMetaModelName(QString name)
  * \brief MetaModelEditor::addSubModel
  * Adds a SubModel tag with Annotation tag as child of it.
  * \param name
- * \param exactStep
  * \param modelFile
  * \param startCommand
  * \param visible
@@ -236,14 +235,13 @@ void MetaModelEditor::setMetaModelName(QString name)
  * \param rotation
  * \return
  */
-bool MetaModelEditor::addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin,
-                            QString extent, QString rotation)
+bool MetaModelEditor::addSubModel(QString name, QString modelFile, QString startCommand, QString visible, QString origin,
+                                  QString extent, QString rotation)
 {
   QDomElement subModels = getSubModelsElement();
   if (!subModels.isNull()) {
     QDomElement subModel = mXmlDocument.createElement("SubModel");
     subModel.setAttribute("Name", name);
-    subModel.setAttribute("ExactStep", exactStep);
     subModel.setAttribute("ModelFile", modelFile);
     subModel.setAttribute("StartCommand", startCommand);
     // create Annotation Element
@@ -328,7 +326,11 @@ void MetaModelEditor::updateSubModelParameters(QString name, QString startComman
     QDomElement subModel = subModelList.at(i).toElement();
     if (subModel.attribute("Name").compare(name) == 0) {
       subModel.setAttribute("StartCommand", startCommand);
-      subModel.setAttribute("ExactStep", exactStepFlag);
+      if (exactStepFlag.compare("true") == 0) {
+        subModel.setAttribute("ExactStep", exactStepFlag);
+      } else if (subModel.hasAttribute("ExactStep")) {
+        subModel.removeAttribute("ExactStep");
+      }
       setPlainText(mXmlDocument.toString());
       return;
      }

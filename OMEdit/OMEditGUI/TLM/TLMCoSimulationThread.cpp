@@ -53,7 +53,7 @@ void TLMCoSimulationThread::run()
 
 /*!
  * \brief TLMCoSimulationThread::removeGeneratedFiles
- * Removes the files that TLMPlugin generates during co-simulation.
+ * Removes the generated files before each new TLM co-simulation.
  */
 void TLMCoSimulationThread::removeGeneratedFiles()
 {

@@ -401,7 +401,7 @@ void GraphicsView::addComponentToClass(Component *pComponent)
     QString visible = pComponent->mTransformation.getVisible() ? "true" : "false";
     // add SubModel Element
     MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
-    pMetaModelEditor->addSubModel(pComponent->getName(), "false", pComponent->getComponentInfo()->getModelFile(),
+    pMetaModelEditor->addSubModel(pComponent->getName(), pComponent->getComponentInfo()->getModelFile(),
                                   pComponent->getComponentInfo()->getStartCommand(), visible, pComponent->getTransformationOrigin(),
                                   pComponent->getTransformationExtent(), QString::number(pComponent->mTransformation.getRotateAngle()));
   }
@@ -3733,9 +3733,8 @@ void ModelWidget::getMetaModelSubModels()
     pComponentInfo->setName(subModel.attribute("Name"));
     pComponentInfo->setStartCommand(subModel.attribute("StartCommand"));
     bool exactStep;
-    if (subModel.attribute("ExactStep").toLower().compare("1") == 0) {
-      exactStep = true;
-    } else if (subModel.attribute("ExactStep").toLower().compare("true") == 0) {
+    if ((subModel.attribute("ExactStep").toLower().compare("1") == 0)
+        || (subModel.attribute("ExactStep").toLower().compare("true") == 0)) {
       exactStep = true;
     } else {
       exactStep = false;

@@ -75,7 +75,7 @@ public:
   QDomNodeList getConnections();
   QDomElement getSubModelElement(QString name);
   void setMetaModelName(QString name);
-  bool addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin, QString extent,
+  bool addSubModel(QString name, QString modelFile, QString startCommand, QString visible, QString origin, QString extent,
                    QString rotation);
   void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);
   void updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
