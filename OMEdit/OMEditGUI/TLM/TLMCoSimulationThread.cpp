@@ -46,8 +46,35 @@ TLMCoSimulationThread::TLMCoSimulationThread(TLMCoSimulationOutputWidget *pTLMCo
 
 void TLMCoSimulationThread::run()
 {
+  removeGeneratedFiles();
   runManager();
   exec();
+}
+
+/*!
+ * \brief TLMCoSimulationThread::removeGeneratedFiles
+ * Removes the files that TLMPlugin generates during co-simulation.
+ */
+void TLMCoSimulationThread::removeGeneratedFiles()
+{
+  TLMCoSimulationOptions tlmCoSimulationOptions = mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions();
+  QFileInfo fileInfo(tlmCoSimulationOptions.getFileName());
+  // remove result file
+  if (QFile::exists(QString("%1/%2.csv").arg(fileInfo.absoluteDir().absolutePath()).arg(fileInfo.completeBaseName()))) {
+    QFile::remove(QString("%1/%2.csv").arg(fileInfo.absoluteDir().absolutePath()).arg(fileInfo.completeBaseName()));
+  }
+  // remove run file
+  if (QFile::exists(QString("%1/%2.run").arg(fileInfo.absoluteDir().absolutePath()).arg(fileInfo.completeBaseName()))) {
+    QFile::remove(QString("%1/%2.run").arg(fileInfo.absoluteDir().absolutePath()).arg(fileInfo.completeBaseName()));
+  }
+  // remove TLM log file
+  if (QFile::exists(QString("%1/TLMlogfile.log").arg(fileInfo.absoluteDir().absolutePath()))) {
+    QFile::remove(QString("%1/TLMlogfile.log").arg(fileInfo.absoluteDir().absolutePath()));
+  }
+  // remove monitor log file
+  if (QFile::exists(QString("%1/monitor.log").arg(fileInfo.absoluteDir().absolutePath()))) {
+    QFile::remove(QString("%1/monitor.log").arg(fileInfo.absoluteDir().absolutePath()));
+  }
 }
 
 void TLMCoSimulationThread::runManager()
