@@ -41,32 +41,31 @@
 #include <osg/Geometry>
 #include <osg/Shape>
 
+
 class Pipecylinder : public osg::Geometry
 {
 public:
-	Pipecylinder(float rI, float rO, float l);
-	~Pipecylinder() {};
+  Pipecylinder(float rI, float rO, float l);
+  ~Pipecylinder() {};
 };
 
 
 class Spring : public osg::Geometry
 {
 public:
-	Spring(float r, float rCoil, float nWindings,  float l);
-	~Spring() {};
+  Spring(float r, float rCoil, float nWindings,  float l);
+  ~Spring() {};
 private:
-   osg::Vec3f getNormal(osg::Vec3f vec, float length = 1);
-   osg::Vec3f normalize(osg::Vec3f vec);
-   osg::Vec3f rotateX(osg::Vec3f vec, float phi);
-   osg::Vec3f rotateY(osg::Vec3f vec, float phi);
-   osg::Vec3f rotateZ(osg::Vec3f vec, float phi);
-   osg::Vec3f rotateArbitraryAxis_expensive(osg::Vec3f vec, osg::Vec3f axis, float phi);
-   osg::Vec3f rotateArbitraryAxis(osg::Vec3f vec, osg::Vec3f axis, float phi);
-   float absoluteVector(osg::Vec3f vec);
-   float angleBetweenVectors(osg::Vec3f vec1, osg::Vec3f vec2);
+  osg::Vec3f getNormal(osg::Vec3f vec, float length = 1);
+  osg::Vec3f rotateX(osg::Vec3f vec, float phi);
+  osg::Vec3f rotateY(osg::Vec3f vec, float phi);
+  osg::Vec3f rotateZ(osg::Vec3f vec, float phi);
+  osg::Vec3f rotateArbitraryAxis_expensive(osg::Vec3f vec, osg::Vec3f axis, float phi);
+  osg::Vec3f rotateArbitraryAxis(osg::Vec3f vec, osg::Vec3f axis, float phi);
+  float angleBetweenVectors(osg::Vec3f vec1, osg::Vec3f vec2);
 
-   osg::Vec3Array* mpOuterVertices;
-   osg::Vec3Array* mpSplineVertices;
+  osg::Vec3Array* mpOuterVertices;
+  osg::Vec3Array* mpSplineVertices;
 };
 
 #endif //end EXTRASHAPES_H
