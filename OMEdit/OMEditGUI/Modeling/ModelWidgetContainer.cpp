@@ -3583,6 +3583,7 @@ void ModelWidget::removeInheritedClassConnections()
 void ModelWidget::getModelConnections()
 {
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
+  LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
   int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(mpLibraryTreeItem->getNameStructure());
   for (int i = 1 ; i <= connectionCount ; i++) {
     // get the connection from OMC
@@ -3613,9 +3614,12 @@ void ModelWidget::getModelConnections()
     if (pStartComponent) {
       // if a component type is connector then we only get one item in startComponentList
       // check the startcomponentlist
-      if (startComponentList.size() < 2 || pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) {
+      if (startComponentList.size() < 2
+          || (pStartComponent->getLibraryTreeItem()
+              && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
         pStartConnectorComponent = pStartComponent;
-      } else if (!pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
+      } else if (pStartComponent->getLibraryTreeItem()
+                 && !pLibraryTreeModel->findLibraryTreeItem(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
         /* if class doesn't exist then connect with the red cross box */
         pStartConnectorComponent = pStartComponent;
       } else {
@@ -3648,9 +3652,12 @@ void ModelWidget::getModelConnections()
     if (pEndComponent) {
       // if a component type is connector then we only get one item in endComponentList
       // check the endcomponentlist
-      if (endComponentList.size() < 2 || pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) {
+      if (endComponentList.size() < 2
+          || (pEndComponent->getLibraryTreeItem()
+              && pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
         pEndConnectorComponent = pEndComponent;
-      } else if (!pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
+      } else if (pEndComponent->getLibraryTreeItem()
+                 && !pLibraryTreeModel->findLibraryTreeItem(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
         /* if class doesn't exist then connect with the red cross box */
         pEndConnectorComponent = pEndComponent;
       } else {
