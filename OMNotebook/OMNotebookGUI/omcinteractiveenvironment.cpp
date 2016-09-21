@@ -96,21 +96,24 @@ namespace IAEX
   */
   OmcInteractiveEnvironment::OmcInteractiveEnvironment():result_(""),error_("")
   {
+    // set the language by reading the OMEdit settings file.
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
+    QLocale settingsLocale = QLocale(settings.value("language").toString());
+    settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
+    void *args = mmc_mk_nil();
+    QString locale = "+locale=" + settingsLocale.name();
+    args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
+    // initialize threadData
     threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
     void *st = 0;
     MMC_TRY_TOP_INTERNAL()
-    omc_Main_init(threadData, mmc_mk_nil());
+    omc_Main_init(threadData, args);
     st = omc_Main_readSettings(threadData, mmc_mk_nil());
     MMC_CATCH_TOP()
     threadData_ = threadData;
     symbolTable_ = st;
     threadData_->plotClassPointer = 0;
     threadData_->plotCB = 0;
-    // set the language by reading the OMEdit settings file.
-    QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
-    QLocale settingsLocale = QLocale(settings.value("language").toString());
-    settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
-    evalExpression(QString("setCommandLineOptions(\"+locale=" + settingsLocale.name() + "\")"));
     // set the +d=initialization flag default.
     evalExpression(QString("setCommandLineOptions(\"+d=initialization\")"));
 #ifdef WIN32
