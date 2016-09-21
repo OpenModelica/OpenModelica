@@ -47,3 +47,7 @@ noTearingForComponent
 jacobian
 jacobians
 calculateStrongComponentJacobians
+OMCFlags
+OMEdit
+OMNotebook
+setCommandLineOptions
