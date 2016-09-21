@@ -1029,7 +1029,7 @@ void OptionsDialog::saveFigaroSettings()
 void OptionsDialog::saveDebuggerSettings()
 {
   mpSettings->beginGroup("algorithmicDebugger");
-  mpSettings->setValue("GDBPath", mpDebuggerPage->getGDBPath());
+  mpSettings->setValue("GDBPath", mpDebuggerPage->getGDBPathForSettings());
   mpSettings->setValue("GDBCommandTimeout", mpDebuggerPage->getGDBCommandTimeoutSpinBox()->value());
   mpSettings->setValue("GDBOutputLimit", mpDebuggerPage->getGDBOutputLimitSpinBox()->value());
   mpSettings->setValue("displayCFrames", mpDebuggerPage->getDisplayCFramesCheckBox()->isChecked());
@@ -3911,6 +3911,7 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   mpAlgorithmicDebuggerGroupBox = new QGroupBox(Helper::algorithmicDebugger);
   // GDB Path
   mpGDBPathLabel = new Label(tr("GDB Path:"));
+  mpGDBPathTextBox = new QLineEdit;
 #ifdef WIN32
 #if defined(__MINGW32__) && !defined(__MINGW64__)
   const char *sgdb = "/tools/msys/mingw32/bin/gdb.exe";
@@ -3920,13 +3921,13 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
 #endif
   const char *OMDEV = getenv("OMDEV");
   if (QString(OMDEV).isEmpty()) {
-    mpGDBPathTextBox = new QLineEdit(QString(Helper::OpenModelicaHome).append(sgdb));
+    mpGDBPathTextBox->setPlaceholderText(QString(Helper::OpenModelicaHome).append(sgdb));
   } else {
     QString qOMDEV = QString(OMDEV).replace("\\", "/");
-    mpGDBPathTextBox = new QLineEdit(QString(qOMDEV).append(sgdb));
+    mpGDBPathTextBox->setPlaceholderText(QString(qOMDEV).append(sgdb));
   }
 #else
-  mpGDBPathTextBox = new QLineEdit("gdb");
+  mpGDBPathTextBox->setPlaceholderText("gdb");
 #endif
   mpGDBPathBrowseButton = new QPushButton(Helper::browse);
   mpGDBPathBrowseButton->setAutoDefault(false);
@@ -3963,14 +3964,16 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   pDebuggerLayout->addWidget(mpGDBPathLabel, 0, 0);
   pDebuggerLayout->addWidget(mpGDBPathTextBox, 0, 1);
   pDebuggerLayout->addWidget(mpGDBPathBrowseButton, 0, 2);
-  pDebuggerLayout->addWidget(mpGDBCommandTimeoutLabel, 1, 0);
-  pDebuggerLayout->addWidget(mpGDBCommandTimeoutSpinBox, 1, 1, 1, 2);
-  pDebuggerLayout->addWidget(mpGDBOutputLimitLabel, 2, 0);
-  pDebuggerLayout->addWidget(mpGDBOutputLimitSpinBox, 2, 1, 1, 2);
-  pDebuggerLayout->addWidget(mpDisplayCFramesCheckBox, 3, 0, 1, 2);
-  pDebuggerLayout->addWidget(mpDisplayUnknownFramesCheckBox, 4, 0, 1, 2);
-  pDebuggerLayout->addWidget(mpClearOutputOnNewRunCheckBox, 5, 0, 1, 2);
-  pDebuggerLayout->addWidget(mpClearLogOnNewRunCheckBox, 6, 0, 1, 2);
+  pDebuggerLayout->addItem(new QSpacerItem(1, 1), 1, 0);
+  pDebuggerLayout->addWidget(new Label(tr("Default GDB path is used if above field is empty.")), 1, 1, 1, 2);
+  pDebuggerLayout->addWidget(mpGDBCommandTimeoutLabel, 2, 0);
+  pDebuggerLayout->addWidget(mpGDBCommandTimeoutSpinBox, 2, 1, 1, 2);
+  pDebuggerLayout->addWidget(mpGDBOutputLimitLabel, 3, 0);
+  pDebuggerLayout->addWidget(mpGDBOutputLimitSpinBox, 3, 1, 1, 2);
+  pDebuggerLayout->addWidget(mpDisplayCFramesCheckBox, 4, 0, 1, 2);
+  pDebuggerLayout->addWidget(mpDisplayUnknownFramesCheckBox, 5, 0, 1, 2);
+  pDebuggerLayout->addWidget(mpClearOutputOnNewRunCheckBox, 6, 0, 1, 2);
+  pDebuggerLayout->addWidget(mpClearLogOnNewRunCheckBox, 7, 0, 1, 2);
   mpAlgorithmicDebuggerGroupBox->setLayout(pDebuggerLayout);
   /* Transformational Debugger */
   mpTransformationalDebuggerGroupBox = new QGroupBox(Helper::transformationalDebugger);
@@ -3991,25 +3994,43 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   setLayout(pMainLayout);
 }
 
+/*!
+ * \brief DebuggerPage::setGDBPath
+ * Sets the GDB path. Only set the path if its not empty.
+ * \param path
+ */
 void DebuggerPage::setGDBPath(QString path)
 {
-  mpGDBPathTextBox->setText(path.isEmpty() ? "gdb" : path);
+  if (!path.isEmpty()) {
+    mpGDBPathTextBox->setText(path);
+  }
 }
 
+/*!
+ * \brief DebuggerPage::getGDBPath
+ * Returns the GDB path. If path is empty then return the default path which is stored in placeholderText.
+ * \return
+ */
 QString DebuggerPage::getGDBPath()
 {
-  if (mpGDBPathTextBox->text().isEmpty())
-    return "gdb";
-  else
+  if (mpGDBPathTextBox->text().isEmpty()) {
+    return mpGDBPathTextBox->placeholderText();
+  } else {
     return mpGDBPathTextBox->text();
+  }
 }
 
+/*!
+ * \brief DebuggerPage::browseGDBPath
+ * Browse a path for GDB.
+ */
 void DebuggerPage::browseGDBPath()
 {
   QString GDBPath = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
                                                    NULL, "", NULL);
-  if (GDBPath.isEmpty())
+  if (GDBPath.isEmpty()) {
     return;
+  }
   mpGDBPathTextBox->setText(GDBPath);
 }
 

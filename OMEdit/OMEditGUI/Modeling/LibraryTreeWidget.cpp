@@ -636,6 +636,8 @@ void LibraryTreeItem::addInheritedClass(LibraryTreeItem *pLibraryTreeItem)
   connect(pLibraryTreeItem, SIGNAL(connectionAdded(LineAnnotation*)),
           this, SLOT(handleConnectionAdded(LineAnnotation*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()), Qt::UniqueConnection);
+  connect(pLibraryTreeItem, SIGNAL(coOrdinateSystemUpdated(GraphicsView*)),
+          this, SLOT(handleCoOrdinateSystemUpdated(GraphicsView*)), Qt::UniqueConnection);
 }
 
 /*!
@@ -652,6 +654,7 @@ void LibraryTreeItem::removeInheritedClasses()
     disconnect(pLibraryTreeItem, SIGNAL(componentAdded(Component*)), this, SLOT(handleComponentAdded(Component*)));
     disconnect(pLibraryTreeItem, SIGNAL(connectionAdded(LineAnnotation*)), this, SLOT(handleConnectionAdded(LineAnnotation*)));
     disconnect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()));
+    disconnect(pLibraryTreeItem, SIGNAL(coOrdinateSystemUpdated(GraphicsView*)), this, SLOT(handleCoOrdinateSystemUpdated(GraphicsView*)));
   }
   mInheritedClasses.clear();
 }
@@ -894,6 +897,22 @@ void LibraryTreeItem::handleIconUpdated()
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
     emit iconUpdated();
   }
+}
+
+void LibraryTreeItem::handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
+{
+  if (mpModelWidget) {
+    if (pGraphicsView->getViewType() == StringHandler::Icon) {
+      if (!mpModelWidget->getIconGraphicsView()->mCoOrdinateSystem.isValid()) {
+        mpModelWidget->drawBaseCoOrdinateSystem(mpModelWidget, mpModelWidget->getIconGraphicsView());
+      }
+    } else {
+      if (!mpModelWidget->getDiagramGraphicsView()->mCoOrdinateSystem.isValid()) {
+        mpModelWidget->drawBaseCoOrdinateSystem(mpModelWidget, mpModelWidget->getDiagramGraphicsView());
+      }
+    }
+  }
+  emit coOrdinateSystemUpdated(pGraphicsView);
 }
 
 /*!
@@ -2601,8 +2620,8 @@ void LibraryTreeView::createActions()
   connect(mpNewFolderAction, SIGNAL(triggered()), SLOT(createNewFolder()));
   // rename Action
   mpRenameAction = new QAction(Helper::rename, this);
-  mpRenameAction->setStatusTip(tr("Renames a file/folder"));
-  connect(mpRenameAction, SIGNAL(triggered()), SLOT(renameFileOrFolder()));
+  mpRenameAction->setStatusTip(Helper::renameTip);
+  connect(mpRenameAction, SIGNAL(triggered()), SLOT(renameLibraryTreeItem()));
   // Delete Action
   mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
   mpDeleteAction->setStatusTip(tr("Deletes the file"));
@@ -3079,16 +3098,16 @@ void LibraryTreeView::createNewFolder()
 }
 
 /*!
- * \brief LibraryTreeView::renameFileOrFolder
- * Renames the file/folder.
+ * \brief LibraryTreeView::renameLibraryTreeItem
+ * Renames the LibraryTreeItem.
  */
-void LibraryTreeView::renameFileOrFolder()
+void LibraryTreeView::renameLibraryTreeItem()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (!pLibraryTreeItem) {
     return;
   }
-  RenameItemDialog *pRenameItemDialog = new RenameItemDialog(pLibraryTreeItem->getFileName(), false, mpLibraryWidget->getMainWindow());
+  RenameItemDialog *pRenameItemDialog = new RenameItemDialog(pLibraryTreeItem, mpLibraryWidget->getMainWindow());
   pRenameItemDialog->exec();
 }
 
@@ -3257,6 +3276,13 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
         unloadClass();
       } else  if (isTopLevel) {
         unloadMetaModelOrTextFile();
+      }
+    } else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
+      if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+        QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+        if (fileInfo.isFile()) {
+          mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+        }
       }
     } else {
       QTreeView::keyPressEvent(event);
@@ -3463,9 +3489,10 @@ void LibraryWidget::openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgres
   }
   // create a LibraryTreeItem for new loaded file.
   LibraryTreeItem *pLibraryTreeItem = 0;
+  QString metaModelName;
   if (fileInfo.suffix().compare("xml") == 0) {
-    if (parseMetaModelFile(fileInfo)) {
-      pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::MetaModel, fileInfo.completeBaseName(),
+    if (parseMetaModelFile(fileInfo, &metaModelName)) {
+      pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::MetaModel, metaModelName,
                                                                    fileInfo.absoluteFilePath(), fileInfo.absoluteFilePath(), true,
                                                                    mpLibraryTreeModel->getRootLibraryTreeItem());
     }
@@ -3528,7 +3555,7 @@ void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress)
  * \param fileInfo
  * \return
  */
-bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo)
+bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo, QString *pMetaModelName)
 {
   QString contents = "";
   QFile file(fileInfo.absoluteFilePath());
@@ -3553,6 +3580,19 @@ bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo)
       delete pMessageHandler;
       return false;
     } else {
+      // if there are no errors with the document then read the Model Name attribute.
+      QDomDocument xmlDocument;
+      if (!xmlDocument.setContent(&file)) {
+        QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                              tr("Error reading the xml file"), Helper::ok);
+      }
+      // read the file
+      QDomNodeList nodes = xmlDocument.elementsByTagName("Model");
+      for (int i = 0; i < nodes.size(); i++) {
+        QDomElement node = nodes.at(i).toElement();
+        *pMetaModelName = node.attribute("Name");
+        break;
+      }
       delete pMessageHandler;
       return true;
     }

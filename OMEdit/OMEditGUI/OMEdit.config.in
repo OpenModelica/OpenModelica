@@ -10,5 +10,5 @@ LIBS += -L @OPENMODELICAHOME@/lib/@host_short@/omc -lOMPlot -lomqwt -L../OMEditG
 INCLUDEPATH += @OPENMODELICAHOME@/include/omc/scripting-API @OPENMODELICAHOME@/include/omplot @OPENMODELICAHOME@/include/omplot/qwt @OPENMODELICAHOME@/include/@host_short@/omc/antlr3 @OPENMODELICAHOME@/include/omc/c ../../qjson-0.8.1/build/include
 
 QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
-QMAKE_CXXFLAGS = @CFLAGS@ @CPPFLAGS@
+QMAKE_CXXFLAGS = @CXXFLAGS@ @CPPFLAGS@
 QMAKE_LFLAGS += @LDFLAGS@

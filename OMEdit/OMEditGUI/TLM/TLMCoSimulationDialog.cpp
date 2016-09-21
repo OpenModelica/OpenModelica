@@ -159,7 +159,7 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   setLayout(pMainLayout);
   // create TLMCoSimulationOutputWidget
   mpTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget(mpMainWindow);
-  int xPos = QApplication::desktop()->availableGeometry().width() - mpTLMCoSimulationOutputWidget->frameSize().width() - 20;
+  int xPos = QApplication::desktop()->availableGeometry().width() - mpTLMCoSimulationOutputWidget->frameSize().width() - 90;
   int yPos = QApplication::desktop()->availableGeometry().height() - mpTLMCoSimulationOutputWidget->frameSize().height() - 20;
   mpTLMCoSimulationOutputWidget->setGeometry(xPos, yPos, mpTLMCoSimulationOutputWidget->width(), mpTLMCoSimulationOutputWidget->height());
 }
@@ -257,11 +257,27 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
   tlmCoSimulationOptions.setNumberOfSteps(mpNumberOfStepsTextBox->text().toInt());
   tlmCoSimulationOptions.setTimeStepSize(mpTimeStepSizeTextBox->text().toDouble());
   tlmCoSimulationOptions.setMonitorDebugMode(mpMonitorDebugModeCheckBox->isChecked());
-
+  // manager args
   QStringList managerArgs;
-  QStringList monitorArgs;
   if (mpManagerDebugModeCheckBox->isChecked()) {
     managerArgs.append("-d");
+  }
+  if (!mpServerPortTextBox->text().isEmpty()) {
+    managerArgs.append("-p");
+    managerArgs.append(mpServerPortTextBox->text());
+  }
+  // monitor args
+  QStringList monitorArgs;
+  if (mpMonitorDebugModeCheckBox->isChecked()) {
+    monitorArgs.append("-d");
+  }
+  if (!mpNumberOfStepsTextBox->text().isEmpty()) {
+    monitorArgs.append("-n");
+    monitorArgs.append(mpNumberOfStepsTextBox->text());
+  }
+  if (!mpTimeStepSizeTextBox->text().isEmpty()) {
+    monitorArgs.append("-t");
+    monitorArgs.append(mpTimeStepSizeTextBox->text());
   }
   if (!mpMonitorPortTextBox->text().isEmpty()) {
     // set monitor port for manager process
@@ -290,21 +306,6 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
     char* localIP = inet_ntoa (*(struct in_addr *)*hp->h_addr_list);
     QString monitorPort = QString(localIP) + ":" + mpMonitorPortTextBox->text();
     monitorArgs.append(monitorPort);
-  }
-  if (!mpServerPortTextBox->text().isEmpty()) {
-    managerArgs.append("-p");
-    managerArgs.append(mpServerPortTextBox->text());
-  }
-  if (mpMonitorDebugModeCheckBox->isChecked()) {
-    monitorArgs.append("-d");
-  }
-  if (!mpNumberOfStepsTextBox->text().isEmpty()) {
-    monitorArgs.append("-n");
-    monitorArgs.append(mpNumberOfStepsTextBox->text());
-  }
-  if (!mpTimeStepSizeTextBox->text().isEmpty()) {
-    monitorArgs.append("-t");
-    monitorArgs.append(mpTimeStepSizeTextBox->text());
   }
   tlmCoSimulationOptions.setManagerArgs(managerArgs);
   tlmCoSimulationOptions.setMonitorArgs(monitorArgs);
@@ -400,7 +401,7 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
                  .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   // set heading
   mpSimulationParamsHeading = Utilities::getHeadingLabel(QString("%1 - %2").arg(Helper::simulationParams)
-                                                         .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+                                                         .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getName()));
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
   mpGraphicsView = pGraphicsView;

@@ -62,6 +62,7 @@ private:
   QFile mProgressFile;
   QTimer *mpProgressFileTimer;
 
+  void removeGeneratedFiles();
   void runManager();
   void runMonitor();
 private slots:

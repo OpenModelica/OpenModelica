@@ -401,7 +401,7 @@ void GraphicsView::addComponentToClass(Component *pComponent)
     QString visible = pComponent->mTransformation.getVisible() ? "true" : "false";
     // add SubModel Element
     MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
-    pMetaModelEditor->addSubModel(pComponent->getName(), "false", pComponent->getComponentInfo()->getModelFile(),
+    pMetaModelEditor->addSubModel(pComponent->getName(), pComponent->getComponentInfo()->getModelFile(),
                                   pComponent->getComponentInfo()->getStartCommand(), visible, pComponent->getTransformationOrigin(),
                                   pComponent->getTransformationExtent(), QString::number(pComponent->mTransformation.getRotateAngle()));
   }
@@ -950,6 +950,23 @@ void GraphicsView::removeItem(QGraphicsItem *pGraphicsItem)
 }
 
 /*!
+ * \brief GraphicsView::fitInView
+ * Fits the view.
+ */
+void GraphicsView::fitInViewInternal()
+{
+  // only resize the view if user has not set any custom scaling like zoom in and zoom out.
+  if (!isCustomScale()) {
+    // make the fitInView rectangle bigger so that the scene rectangle will show up properly on the screen.
+    QRectF extentRectangle = getExtentRectangle();
+    qreal x1, y1, x2, y2;
+    extentRectangle.getCoords(&x1, &y1, &x2, &y2);
+    extentRectangle.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
+    fitInView(extentRectangle, Qt::KeepAspectRatio);
+  }
+}
+
+/*!
  * \brief GraphicsView::createActions
  * Creates the actions for the GraphicsView.
  */
@@ -959,6 +976,10 @@ void GraphicsView::createActions()
   // Graphics View Properties Action
   mpPropertiesAction = new QAction(Helper::properties, this);
   connect(mpPropertiesAction, SIGNAL(triggered()), SLOT(showGraphicsViewProperties()));
+  // rename Action
+  mpRenameAction = new QAction(Helper::rename, this);
+  mpRenameAction->setStatusTip(Helper::renameTip);
+  connect(mpRenameAction, SIGNAL(triggered()), SLOT(showRenameDialog()));
   // Simulation Params Action
   mpSimulationParamsAction = new QAction(QIcon(":/Resources/icons/simulation-parameters.svg"), Helper::simulationParams, this);
   mpSimulationParamsAction->setStatusTip(Helper::simulationParamsTip);
@@ -1342,6 +1363,17 @@ void GraphicsView::showSimulationParamsDialog()
 {
   MetaModelSimulationParamsDialog *pMetaModelSimulationParamsDialog = new MetaModelSimulationParamsDialog(this);
   pMetaModelSimulationParamsDialog->exec();
+}
+
+/*!
+ * \brief GraphicsView::showRenameDialog
+ * Opens the RenameItemDialog.
+ */
+void GraphicsView::showRenameDialog()
+{
+  RenameItemDialog *pRenameItemDialog;
+  pRenameItemDialog = new RenameItemDialog(mpModelWidget->getLibraryTreeItem(), mpModelWidget->getModelWidgetContainer()->getMainWindow());
+  pRenameItemDialog->exec();
 }
 
 /*!
@@ -2014,6 +2046,8 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       menu.addAction(mpPropertiesAction);
     } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
       menu.addSeparator();
+      menu.addAction(mpRenameAction);
+      menu.addSeparator();
       menu.addAction(mpSimulationParamsAction);
     }
     menu.exec(event->globalPos());
@@ -2024,15 +2058,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
 
 void GraphicsView::resizeEvent(QResizeEvent *event)
 {
-  // only resize the view if user has not set any custom scaling like zoom in and zoom out.
-  if (!isCustomScale()) {
-    // make the fitInView rectangle bigger so that the scene rectangle will show up properly on the screen.
-    QRectF extentRectangle = getExtentRectangle();
-    qreal x1, y1, x2, y2;
-    extentRectangle.getCoords(&x1, &y1, &x2, &y2);
-    extentRectangle.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
-    fitInView(extentRectangle, Qt::KeepAspectRatio);
-  }
+  fitInViewInternal();
   QGraphicsView::resizeEvent(event);
 }
 
@@ -2438,6 +2464,36 @@ void ModelWidget::reDrawModelWidgetInheritedClasses()
   if (mConnectionsLoaded) {
     removeInheritedClassConnections();
     drawModelInheritedClassConnections(this);
+  }
+}
+
+/*!
+ * \brief ModelWidget::drawBaseCoOrdinateSystem
+ * Draws the coordinate system from base class.
+ * \param pModelWidget
+ * \param pGraphicsView
+ */
+void ModelWidget::drawBaseCoOrdinateSystem(ModelWidget *pModelWidget, GraphicsView *pGraphicsView)
+{
+  foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
+    if (!pLibraryTreeItem->isNonExisting()) {
+      GraphicsView *pInheritedGraphicsView;
+      if (pGraphicsView->getViewType() == StringHandler::Icon) {
+        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
+      } else {
+        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+      }
+      if (pInheritedGraphicsView->mCoOrdinateSystem.isValid()) {
+        qreal left = pInheritedGraphicsView->mCoOrdinateSystem.getExtent().at(0).x();
+        qreal bottom = pInheritedGraphicsView->mCoOrdinateSystem.getExtent().at(0).y();
+        qreal right = pInheritedGraphicsView->mCoOrdinateSystem.getExtent().at(1).x();
+        qreal top = pInheritedGraphicsView->mCoOrdinateSystem.getExtent().at(1).y();
+        pGraphicsView->setExtentRectangle(left, bottom, right, top);
+        break;
+      } else {
+        drawBaseCoOrdinateSystem(pLibraryTreeItem->getModelWidget(), pGraphicsView);
+      }
+    }
   }
 }
 
@@ -2849,6 +2905,12 @@ void ModelWidget::reDrawModelWidget()
   mpDiagramGraphicsView->scene()->clear();
   /* get model components, connection and shapes. */
   if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    // read new metamodel anem
+    QString metaModelName = getMetaModelName();
+    mpLibraryTreeItem->setName(metaModelName);
+    mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
+    setWindowTitle(metaModelName);
+    // get the submodels and connections
     getMetaModelSubModels();
     getMetaModelConnections();
     // clear the undo stack
@@ -3247,11 +3309,13 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
   }
   annotationString = StringHandler::removeFirstLastCurlBrackets(annotationString);
   if (annotationString.isEmpty()) {
+    drawBaseCoOrdinateSystem(this, pGraphicsView);
     return;
   }
   QStringList list = StringHandler::getStrings(annotationString);
   // read the coordinate system
   if (list.size() < 8) {
+    drawBaseCoOrdinateSystem(this, pGraphicsView);
     return;
   }
 
@@ -3267,6 +3331,7 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
   qreal horizontal = list.at(6).toFloat();
   qreal vertical = list.at(7).toFloat();
   pGraphicsView->mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
+  pGraphicsView->mCoOrdinateSystem.setValid(true);
   pGraphicsView->setExtentRectangle(left, bottom, right, top);
   pGraphicsView->resize(pGraphicsView->size());
   // read the shapes
@@ -3625,6 +3690,17 @@ void ModelWidget::getModelConnections()
 }
 
 /*!
+ * \brief ModelWidget::getMetaModelName
+ * Gets the MetaModel name.
+ * \return
+ */
+QString ModelWidget::getMetaModelName()
+{
+  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
+  return pMetaModelEditor->getMetaModelName();
+}
+
+/*!
  * \brief ModelWidget::getMetaModelSubModels
  * Gets the submodels of the TLM and place them in the diagram GraphicsView.
  */
@@ -3657,9 +3733,8 @@ void ModelWidget::getMetaModelSubModels()
     pComponentInfo->setName(subModel.attribute("Name"));
     pComponentInfo->setStartCommand(subModel.attribute("StartCommand"));
     bool exactStep;
-    if (subModel.attribute("ExactStep").toLower().compare("1") == 0) {
-      exactStep = true;
-    } else if (subModel.attribute("ExactStep").toLower().compare("true") == 0) {
+    if ((subModel.attribute("ExactStep").toLower().compare("1") == 0)
+        || (subModel.attribute("ExactStep").toLower().compare("true") == 0)) {
       exactStep = true;
     } else {
       exactStep = false;
@@ -4156,7 +4231,11 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
             for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
               ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
               QListWidgetItem *listItem = new QListWidgetItem(mpRecentModelsList);
-              listItem->setText(pModelWidget->getLibraryTreeItem()->getNameStructure());
+              if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+                listItem->setText(pModelWidget->getLibraryTreeItem()->getNameStructure());
+              } else {
+                listItem->setText(pModelWidget->getLibraryTreeItem()->getName());
+              }
               listItem->setData(Qt::UserRole, pModelWidget->getLibraryTreeItem()->getNameStructure());
             }
           } else {

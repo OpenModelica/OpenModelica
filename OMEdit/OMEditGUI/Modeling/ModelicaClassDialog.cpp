@@ -1289,6 +1289,7 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
   qreal horizontal = mpHorizontalSpinBox->value();
   qreal vertical = mpVerticalSpinBox->value();
   newCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
+  newCoOrdinateSystem.setValid(true);
   // save old version
   QString oldVersion = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version;
   // save the old uses annotation
@@ -1644,23 +1645,26 @@ void CreateNewItemDialog::createNewFileOrFolder()
 /*!
  * \brief RenameItemDialog::RenameItemDialog
  * \param path
- * \param isCreateFile
+ * \param isFile
  * \param pMainWindow
  */
-RenameItemDialog::RenameItemDialog(QString path, bool isCreateFile, MainWindow *pMainWindow)
-  : QDialog(pMainWindow), mPath(path), mIsCreateFile(isCreateFile), mpMainWindow(pMainWindow)
+RenameItemDialog::RenameItemDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow)
+  : QDialog(pMainWindow), mpLibraryTreeItem(pLibraryTreeItem), mpMainWindow(pMainWindow)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(Helper::rename).arg(mIsCreateFile ? Helper::file : Helper::folder));
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(Helper::rename).arg(mpLibraryTreeItem->getNameStructure()));
+  } else {
+    setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(Helper::rename).arg(mpLibraryTreeItem->getName()));
+  }
   setMinimumWidth(400);
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
-  QFileInfo fileInfo(mPath);
-  mpNameTextBox = new QLineEdit(fileInfo.fileName());
+  mpNameTextBox = new QLineEdit(mpLibraryTreeItem->getName());
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(renameFileOrFolder()));
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(renameItem()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
@@ -1700,45 +1704,55 @@ void RenameItemDialog::updateChildrenPath(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
- * \brief RenameItemDialog::renameFileOrFolder
- * Renames a file/folder.\n
+ * \brief RenameItemDialog::renameItem
+ * Renames a LibraryTreeItem.\n
  * Slot activated when mpOkButton clicked signal is raised.
  */
-void RenameItemDialog::renameFileOrFolder()
+void RenameItemDialog::renameItem()
 {
   // check name
   if (mpNameTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error), GUIMessages::getMessage(
-                            GUIMessages::ENTER_NAME).arg(mIsCreateFile ? Helper::file : Helper::folder), Helper::ok);
+                            GUIMessages::ENTER_NAME).arg(Helper::item), Helper::ok);
     return;
   }
-  // check if file/folder already exists
-  QFileInfo oldFileInfo(mPath);
-  QString fileOrFolderPath = QString("%1/%2").arg(oldFileInfo.absoluteDir().absolutePath()).arg(mpNameTextBox->text());
-  QFileInfo fileInfo(fileOrFolderPath);
-  if (fileInfo.exists()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(mIsCreateFile ? Helper::file : Helper::folder)
-                          .arg(mpNameTextBox->text()).arg(fileInfo.absoluteDir().absolutePath()), Helper::ok);
-    return;
-  }
-  // find the LibraryTreeItem based on path
-  LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
-  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mPath);
-  if (pLibraryTreeItem) {
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+    // check if file/folder already exists
+    QFileInfo oldFileInfo(mpLibraryTreeItem->getFileName());
+    QString fileOrFolderPath = QString("%1/%2").arg(oldFileInfo.absoluteDir().absolutePath()).arg(mpNameTextBox->text());
+    QFileInfo fileInfo(fileOrFolderPath);
+    if (fileInfo.exists()) {
+
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(Helper::item)
+                            .arg(mpNameTextBox->text()).arg(fileInfo.absoluteDir().absolutePath()), Helper::ok);
+      return;
+    }
     if (QFile::rename(oldFileInfo.absoluteFilePath(), fileInfo.absoluteFilePath())) {
-      pLibraryTreeItem->setName(mpNameTextBox->text());
-      pLibraryTreeItem->setNameStructure(fileInfo.absoluteFilePath());
-      pLibraryTreeItem->setFileName(fileInfo.absoluteFilePath());
-      if (pLibraryTreeItem->getModelWidget()) {
-        pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileInfo.absoluteFilePath());
-        pLibraryTreeItem->getModelWidget()->setWindowTitle(mpNameTextBox->text());
+      mpLibraryTreeItem->setName(mpNameTextBox->text());
+      mpLibraryTreeItem->setNameStructure(fileInfo.absoluteFilePath());
+      mpLibraryTreeItem->setFileName(fileInfo.absoluteFilePath());
+      if (mpLibraryTreeItem->getModelWidget()) {
+        mpLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileInfo.absoluteFilePath());
+        mpLibraryTreeItem->getModelWidget()->setWindowTitle(mpNameTextBox->text());
       }
       // if we have renamed a directory then we need to update the file paths of the nested files.
       if (fileInfo.isDir()) {
-        updateChildrenPath(pLibraryTreeItem);
+        updateChildrenPath(mpLibraryTreeItem);
       }
     }
+  } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
+    if (mpLibraryTreeItem->getModelWidget()) {
+      MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
+      RenameMetaModelCommand *pRenameMetaModelCommand = new RenameMetaModelCommand(pMetaModelEditor, mpLibraryTreeItem->getName(),
+                                                                                   mpNameTextBox->text());
+      mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pRenameMetaModelCommand);
+      mpLibraryTreeItem->getModelWidget()->updateModelText();
+    }
+  } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    qDebug() << "Rename feature not implemented for Modelica library type.";
+  } else {
+    qDebug() << "Unable to rename, unknown library type.";
   }
   accept();
 }

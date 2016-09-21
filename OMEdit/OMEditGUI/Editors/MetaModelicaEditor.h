@@ -49,7 +49,7 @@ private slots:
   virtual void showContextMenu(QPoint point);
 public slots:
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
-  virtual void toggleCommentSelection() {}
+  virtual void toggleCommentSelection();
 };
 
 class MetaModelicaEditorPage;

@@ -314,10 +314,9 @@ class RenameItemDialog : public QDialog
 {
   Q_OBJECT
 public:
-  RenameItemDialog(QString path, bool isCreateFile, MainWindow *pMainWindow);
+  RenameItemDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow);
 private:
-  QString mPath;
-  bool mIsCreateFile;
+  LibraryTreeItem *mpLibraryTreeItem;
   MainWindow *mpMainWindow;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
@@ -327,7 +326,7 @@ private:
 
   void updateChildrenPath(LibraryTreeItem *pLibraryTreeItem);
 private slots:
-  void renameFileOrFolder();
+  void renameItem();
 };
 
 #endif // MODELICACLASSDIALOG_H

@@ -154,6 +154,7 @@ public:
   static QString type;
   static QString information;
   static QString rename;
+  static QString renameTip;
   static QString checkModel;
   static QString checkModelTip;
   static QString checkAllModels;
@@ -331,6 +332,7 @@ public:
   static QString OMCFlagsTip;
   static QString saveExperimentAnnotation;
   static QString saveOpenModelicaSimulationFlagsAnnotation;
+  static QString item;
 };
 
 class GUIMessages : public QObject

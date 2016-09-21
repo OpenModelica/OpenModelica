@@ -106,6 +106,7 @@ private:
   TextAnnotation *mpTextShapeAnnotation;
   BitmapAnnotation *mpBitmapShapeAnnotation;
   QAction *mpPropertiesAction;
+  QAction *mpRenameAction;
   QAction *mpSimulationParamsAction;
   QAction *mpManhattanizeAction;
   QAction *mpDeleteAction;
@@ -214,6 +215,7 @@ public:
   bool hasAnnotation();
   void addItem(QGraphicsItem *pGraphicsItem);
   void removeItem(QGraphicsItem *pGraphicsItem);
+  void fitInViewInternal();
 private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
@@ -255,6 +257,7 @@ public slots:
   void clearSelection();
   void addClassAnnotation(bool alwaysAdd = true);
   void showGraphicsViewProperties();
+  void showRenameDialog();
   void showSimulationParamsDialog();
   void manhattanizeItems();
   void deleteItems();
@@ -349,6 +352,7 @@ public:
   QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();
+  void drawBaseCoOrdinateSystem(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
   ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   Component* createInheritedComponent(Component *pComponent, GraphicsView *pGraphicsView);
@@ -410,6 +414,7 @@ private:
   void drawModelInheritedClassConnections(ModelWidget *pModelWidget);
   void removeInheritedClassConnections();
   void getModelConnections();
+  QString getMetaModelName();
   void getMetaModelSubModels();
   void getMetaModelConnections();
 private slots:
