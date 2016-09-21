@@ -106,6 +106,11 @@ namespace IAEX
     symbolTable_ = st;
     threadData_->plotClassPointer = 0;
     threadData_->plotCB = 0;
+    // set the language by reading the OMEdit settings file.
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
+    QLocale settingsLocale = QLocale(settings.value("language").toString());
+    settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
+    evalExpression(QString("setCommandLineOptions(\"+locale=" + settingsLocale.name() + "\")"));
 #ifdef WIN32
     evalExpression(QString("getInstallationDirectoryPath()"));
     QString result = getResult();
