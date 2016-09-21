@@ -709,6 +709,12 @@ public constant Message EXT_FN_SINGLE_RETURN_ARRAY = MESSAGE(290, TRANSLATION(),
 public constant Message RHS_TUPLE_EXPRESSION = MESSAGE(291, TRANSLATION(), ERROR(),
   Util.gettext("Tuple expressions may only occur on the left side of an assignment or equation with a single function call on the right side. Got the following expression: %s."));
 
+public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
+  Util.gettext("The initial conditions are not fully specified. %s."));
+public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),
+  Util.gettext("The initial conditions are over specified. %s."));
+public constant Message INITIALIZATION_ITERATION_VARIABLES = MESSAGE(498, TRANSLATION(), WARNING(),
+  Util.gettext("There are iteration variables with default zero start attribute. %s."));
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),

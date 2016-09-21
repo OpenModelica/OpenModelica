@@ -97,6 +97,7 @@ protected
   BackendDAE.Variables initVars;
   BackendDAE.Variables vars, fixvars;
   Boolean b, b1, b2, useHomotopy;
+  String msg;
   HashSet.HashSet hs "contains all pre variables";
   list<BackendDAE.Equation> removedEqns;
   list<BackendDAE.Var> dumpVars, dumpVars2;
@@ -228,6 +229,7 @@ algorithm
     // warn about selected default initial conditions
     b1 := not listEmpty(dumpVars);
     b2 := not listEmpty(removedEqns);
+    msg := System.gettext("For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"+d=initialization\")");
     if Flags.isSet(Flags.INITIALIZATION) then
       if b1 then
         Error.addCompilerWarning("Assuming fixed start value for the following " + intString(listLength(dumpVars)) + " variables:\n" + warnAboutVars2(dumpVars));
@@ -237,17 +239,17 @@ algorithm
       end if;
     else
       if b1 then
-        Error.addCompilerWarning("The initial conditions are not fully specified. Use +d=initialization for more information.");
+        Error.addMessage(Error.INITIALIZATION_NOT_FULLY_SPECIFIED, {msg});
       end if;
       if b2 then
-        Error.addCompilerWarning("The initial conditions are over specified. Use +d=initialization for more information.");
+        Error.addMessage(Error.INITIALIZATION_OVER_SPECIFIED, {msg});
       end if;
     end if;
 
     // warn about iteration variables with default zero start attribute
     b := warnAboutIterationVariablesWithDefaultZeroStartAttribute(initdae);
     if b and (not Flags.isSet(Flags.INITIALIZATION)) then
-      Error.addCompilerWarning("There are iteration variables with default zero start attribute. Use +d=initialization for more information.");
+      Error.addMessage(Error.INITIALIZATION_ITERATION_VARIABLES, {msg});
     end if;
 
     if Flags.isSet(Flags.DUMP_EQNINORDER) and Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
