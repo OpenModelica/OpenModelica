@@ -111,6 +111,8 @@ namespace IAEX
     QLocale settingsLocale = QLocale(settings.value("language").toString());
     settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
     evalExpression(QString("setCommandLineOptions(\"+locale=" + settingsLocale.name() + "\")"));
+    // set the +d=initialization flag default.
+    evalExpression(QString("setCommandLineOptions(\"+d=initialization\")"));
 #ifdef WIN32
     evalExpression(QString("getInstallationDirectoryPath()"));
     QString result = getResult();
