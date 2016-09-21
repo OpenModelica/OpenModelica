@@ -55,7 +55,7 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 //          Candidate singularPressureLossFlueGases4.T(start = 290.0)
 //          Candidate singularPressureLossFlueGases2.T(start = 290.0)
 //          Select value from volumeFlueGasesATh.T(start = 500.0)
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // {"Files not Equal!","\"volumeFlueGasesCTh.Cs.Q\"","\"volumeFlueGasesCTh.Ce3.Q\"","\"volumeFlueGasesCTh.Ce1.Q\"","\"volumeFlueGasesATh.Cs2.Q\"","\"volumeFlueGasesATh.Cs1.Q\"","\"volumeFlueGasesATh.Ce2.Q\"","\"volumeFlueGasesATh.Ce1.Q\""}
 // endResult

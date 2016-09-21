@@ -35,7 +35,7 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Brake', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Mechanics.Translational.Examples.Brake_res.mat
 // Files Equal!
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 //
 // "true
 // "

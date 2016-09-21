@@ -38,7 +38,7 @@ val(J4_w1, 1);
 // Using level Scheduler for the ZeroFunc system
 // HpcOm is still under construction.
 // "SimCode: The model CoupledClutches has been translated to FMU"
-// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // "CoupledClutches_me_FMU.mo"
 // ""

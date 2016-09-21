@@ -440,7 +440,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 9.99964e-08 for the final constraint $finalCon$final_con2(time = 5)
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // {"Files Equal!"}
 // ""

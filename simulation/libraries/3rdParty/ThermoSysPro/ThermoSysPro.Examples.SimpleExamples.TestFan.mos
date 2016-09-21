@@ -96,7 +96,7 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 //          Candidate singularPressureLossFlueGases4.Q(start = 11.0)
 //          Candidate singularPressureLossFlueGases3.Q(start = 10.0)
 //          Select value from singularPressureLossFlueGases4.Q(start = 11.0)
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // {"Files not Equal!","\"staticFan1.deltaP\"","\"staticFan1.deltaH\"","\"staticFan.deltaP\"","\"staticFan.deltaH\"","File[41]=76.000000
 // ","Reffile[505]=1000.000000

@@ -94,7 +94,7 @@ runScript(modelTesting);getErrorString();
 // SUNDIALS_ERROR: CVode() failed with flag = -3
 //
 //
-// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 //
 // "true
 // "

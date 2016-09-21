@@ -64,7 +64,7 @@ runScript(modelTesting);getErrorString();
 //          Candidate pipe7.m_flows[1](start = 0.0)
 //          Candidate valve1.m_flow(start = valve1.m_flow_start)
 //          Select value from pipe2.m_flows[3](start = 0.0)
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // 
 // "true
 // "

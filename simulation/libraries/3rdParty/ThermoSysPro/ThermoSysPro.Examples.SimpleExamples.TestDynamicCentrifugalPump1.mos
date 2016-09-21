@@ -80,8 +80,8 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 //          Candidate DynamicCentrifugalPump1.C2.P(start = 300000.0)
 //          Candidate Tank.Ce2.P(start = 100000.0)
 //          Select value from DynamicCentrifugalPump1.C2.P(start = 300000.0)
-// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // {"Error opening file: ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1_res.mat"}
 // endResult

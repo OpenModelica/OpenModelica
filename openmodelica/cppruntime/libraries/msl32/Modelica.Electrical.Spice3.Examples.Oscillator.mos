@@ -45,8 +45,8 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 0.025, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Oscillator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Spice3.Examples.Oscillator_res.mat
 // [lib/omlibrary/Modelica 3.2.1/Electrical/Spice3.mo:11425:17-11425:45:writable] Warning: temp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // 
 // "true
 // "

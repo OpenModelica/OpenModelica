@@ -60,7 +60,7 @@ val(der(y[8]), stopTime);
 //     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 12000, tolerance = 1e-06, method = 'symEuler', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // Error: Too few equations, under-determined system. The model has 2 equation(s) and 5 variable(s).
 // Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
 // [BackEnd/SymbolicJacobian.mo:0:0-0:0:writable] Error: Internal error function createJacobian failed

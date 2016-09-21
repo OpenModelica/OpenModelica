@@ -15,6 +15,6 @@ simulate(Transformer_total);getErrorString(); //dont handle equations like scala
 //     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 7500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'Transformer_total', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // endResult

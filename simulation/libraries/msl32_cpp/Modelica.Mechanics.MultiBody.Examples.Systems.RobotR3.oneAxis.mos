@@ -43,7 +43,7 @@ runScript(modelTesting);getErrorString();
 // Messages: Model terminate() at 1.49813
 // Message: ... End condition reached
 //
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 //
 // "true
 // "

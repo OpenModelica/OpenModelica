@@ -32,7 +32,7 @@ val(dm.watch_dog.battery_level,150);
 // assert            | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // [SimCode/SimCodeUtil.mo:6364:9-6364:54:writable] Error: Internal error Inverse Algorithm needs to be solved for {test_scenario.Region_0.turn_off.active,test_scenario.Region_0.turn_on.active,$whenCondition2,$whenCondition4,$whenCondition7,$whenCondition8,$whenCondition13,dm.sensor.alarm_detected,test_scenario.Region_0.simulate_alarm.active,test_scenario.Region_0.numberOfActiveStates,$whenCondition9,dm.watch_dog.on,$whenCondition11,$whenCondition1,test_scenario.Region_0.simulate_alarm.stime,test_scenario.Region_0.init.active,test_scenario.Region_0.Initial_0.stime,$whenCondition12,$whenCondition10,test_scenario.Region_0.turn_on.stime,$whenCondition3,test_scenario.Region_0.init.stime,test_scenario.Region_0.turn_off.stime,test_scenario.stime,test_scenario.startBehaviour,$whenCondition5,$PRE.test_scenario.Region_0.init.active,$whenCondition6} in 
 // algorithm
 //   test_scenario.startBehaviour := true;

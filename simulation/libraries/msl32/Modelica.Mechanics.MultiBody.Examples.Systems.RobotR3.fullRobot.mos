@@ -67,7 +67,7 @@ runScript(modelTesting);getErrorString();
 // |                 | |       | Message : ... End condition reached
 //
 // Files Equal!
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 //
 // "true
 // "

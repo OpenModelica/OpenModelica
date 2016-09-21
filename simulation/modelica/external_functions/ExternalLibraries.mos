@@ -46,6 +46,6 @@ getErrorString();
 // 1.1293206068860426
 // 1.069620804542244
 // 1.0378159722502363
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // endResult

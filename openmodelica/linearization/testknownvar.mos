@@ -38,7 +38,7 @@ readFile("linear_TestKV.log"); // Check that output log is empty
 // stdout            | info    | Linear model is created!
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // true
 // "model linear_TestKV
@@ -68,7 +68,7 @@ readFile("linear_TestKV.log"); // Check that output log is empty
 //     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
 // "
@@ -80,7 +80,7 @@ readFile("linear_TestKV.log"); // Check that output log is empty
 // stdout            | info    | Linear model is created!
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // true
 // "model linear_TestKV
@@ -118,7 +118,7 @@ readFile("linear_TestKV.log"); // Check that output log is empty
 //     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
 // "

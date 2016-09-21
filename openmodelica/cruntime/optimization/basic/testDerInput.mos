@@ -62,7 +62,7 @@ val(cost,1.0);
 // LOG_IPOPT_ERROR   | info    | max error is 5.52509e-16 for the approximation of the state x1(time = 3.1)
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // 0.008073035973890481
 // 1.627087932407617e-21

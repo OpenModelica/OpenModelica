@@ -19,6 +19,6 @@ simulate(OverdeterminedInitialization.Mechanical.TwoMassesFullInitial); getError
 // end SimulationResult;
 // "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mass1.v = 0.0 ($_start(mass2.v) = 0.0)
 // Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mass1.s = 1.0 ($_start(mass2.s) + -0.5 * (mass2.L + mass1.L) = 1.0)
-// Warning: The initial conditions are over specified. Use +d=initialization for more information.
+// Warning: The initial conditions are over specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // endResult

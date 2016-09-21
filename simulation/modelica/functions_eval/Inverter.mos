@@ -33,7 +33,7 @@ getErrorString();
 // [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mn.p: Duplicate modification of element  {start  =(untyped) 2e-05}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
 // Error: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
 // Error: Duplicate modification of element  {start  =(untyped) 2e-05}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
-// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // {"Files Equal!"}
 // ""

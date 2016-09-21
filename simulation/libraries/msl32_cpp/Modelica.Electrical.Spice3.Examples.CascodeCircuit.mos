@@ -33,7 +33,7 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 0.2, numberOfIntervals = 1000, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.CascodeCircuit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Spice3.Examples.CascodeCircuit_res.mat
 // Files Equal!
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 //
 // "true
 // "

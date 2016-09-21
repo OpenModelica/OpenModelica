@@ -32,8 +32,8 @@ runScript(modelTesting);getErrorString();
 // Modelica.Fluid.Examples.PumpingSystem
 // {"PT1.y","pumps.medium.T","reservoir.level","reservoir.medium.T"}
 // Compilation succeeded
-// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "true
 // "
 // ""

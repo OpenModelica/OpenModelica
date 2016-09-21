@@ -6757,6 +6757,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 // post-optimization done.
 // {"testOptdaedump","testOptdaedump_init.xml"}
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // endResult

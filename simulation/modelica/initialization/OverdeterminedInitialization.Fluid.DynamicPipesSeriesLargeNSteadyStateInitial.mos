@@ -15,6 +15,6 @@ buildModel(OverdeterminedInitialization.Fluid.DynamicPipesSeriesLargeNSteadyStat
 // {"OverdeterminedInitialization.Fluid.DynamicPipesSeriesLargeNSteadyStateInitial","OverdeterminedInitialization.Fluid.DynamicPipesSeriesLargeNSteadyStateInitial_init.xml"}
 // "Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe1.mediums[1].p = 0.0
 // Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe1.mediums[50].p = 0.0
-// Warning: The initial conditions are over specified. Use +d=initialization for more information.
+// Warning: The initial conditions are over specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // endResult

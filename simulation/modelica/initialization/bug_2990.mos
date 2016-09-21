@@ -50,7 +50,7 @@ simulate(initializationTests.bug_2990, simflags="-lv=LOG_INIT -iim=none"); getEr
 // LOG_INIT          | info    | ### END INITIALIZATION ###
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // record SimulationResult
 //     resultFile = "initializationTests.bug_2990_res.mat",
@@ -77,6 +77,6 @@ simulate(initializationTests.bug_2990, simflags="-lv=LOG_INIT -iim=none"); getEr
 // LOG_INIT          | info    | ### END INITIALIZATION ###
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // endResult

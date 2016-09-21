@@ -33,7 +33,7 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 0.001, numberOfIntervals = 2000, tolerance = 0.000000000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.SimpleTriacCircuit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Analog.Examples.SimpleTriacCircuit_res.mat
 // Files Equal!
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // 
 // "true
 // "

@@ -53,7 +53,7 @@ val(x8,0.0); getErrorString();
 // Notification: Torn system details:
 //  * Linear torn systems: 0
 //  * Non-linear torn systems: 1 {1 5}
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // 
 // 

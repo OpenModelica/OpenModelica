@@ -81,8 +81,8 @@ runScript(modelTesting);getErrorString();
 //          Candidate V23.m_flow(start = V23.m_flow_start)
 //          Candidate P1.port_a.m_flow(start = P1.m_flow_start)
 //          Select value from V23.m_flow(start = V23.m_flow_start)
-// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "true
 // "
 // ""

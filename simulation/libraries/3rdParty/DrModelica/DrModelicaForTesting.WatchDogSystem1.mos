@@ -28,7 +28,7 @@ res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Wat
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.WatchDogSystem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // {"Files Equal!"}
 // endResult

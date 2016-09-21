@@ -24,6 +24,6 @@ buildModel(ConPNlib.Examples.Test4); getErrorString();
 // true
 // ""
 // {"ConPNlib.Examples.Test4","ConPNlib.Examples.Test4_init.xml"}
-// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // endResult

@@ -75,7 +75,7 @@ val(x, 0.9);
 // |                 | |       | Message : Terminate the model.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // 1.0
 // 1.224156088965564

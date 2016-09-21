@@ -58,8 +58,8 @@ val(s, 1);
 // assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2], has value: -0.0885635
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // 127.2093118472222
 // -1.473673372208095
@@ -68,8 +68,8 @@ val(s, 1);
 // 0.0
 // -0.5326917977046294
 // "SimCode: The model JuliansBib.Connector_Hebelarm_einfach has been translated to FMU"
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // "JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo"
 // ""

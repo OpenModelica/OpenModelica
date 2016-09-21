@@ -28,5 +28,5 @@ getErrorString();
 // "mat"
 // {"referenceSystem.pointMass1.frame_a.r_0[1]","referenceSystem.pointMass1.frame_a.r_0[2]","referenceSystem.pointMass1.frame_a.r_0[3]","referenceSystem.pointMass1.v_0[1]","referenceSystem.pointMass1.v_0[2]","referenceSystem.pointMass1.v_0[3]","referenceSystem.pointMass6.w_a[1]","referenceSystem.pointMass6.w_a[2]","referenceSystem.pointMass6.w_a[3]","freeMotion.r_rel_a[1]","freeMotion.r_rel_a[2]","freeMotion.r_rel_a[3]","freeMotion.v_rel_a[1]","freeMotion.v_rel_a[2]","freeMotion.v_rel_a[3]","freeMotion.w_rel_b[1]","freeMotion.w_rel_b[2]","freeMotion.w_rel_b[3]"}
 // Compilation succeeded
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // endResult

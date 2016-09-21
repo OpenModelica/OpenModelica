@@ -45,7 +45,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: volume.port.p(nominal = 1000000.0)
 //  * candidate: volume.medium.p(nominal = 100000.0)
 // => select value from volume.medium.p(nominal = 100000.0) for variable: volume.medium.p
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 //
 // "true
 // "

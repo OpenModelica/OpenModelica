@@ -40,7 +40,7 @@ getErrorString();
 // "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation.
 // Notification: Automatically loaded package Complex 3.2.2 due to uses annotation.
 // Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation.
-// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // {"Files Equal!"}
 // ""

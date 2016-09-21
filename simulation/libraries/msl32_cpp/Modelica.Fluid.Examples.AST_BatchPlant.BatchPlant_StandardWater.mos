@@ -744,7 +744,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: volume5.medium.T(start = volume5.T_start)
 //  * candidate: volume5.medium.state.T(start = 500.0)
 // => select value from volume5.medium.T(start = volume5.T_start) for variable: volume5.medium.T
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "true
 // "
 // ""

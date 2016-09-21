@@ -42,7 +42,7 @@ runScript(modelTesting);getErrorString();
 // Files Equal!
 // [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:2830:14-2830:24:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
 // [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:2863:14-2863:24:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // 
 // "true
 // "
