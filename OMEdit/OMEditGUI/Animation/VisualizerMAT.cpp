@@ -32,7 +32,7 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#include "VisualizerMat.h"
+#include "VisualizerMAT.h"
 
 VisualizerMAT::VisualizerMAT(const std::string& modelFile, const std::string& path)
         : VisualizerAbstract(modelFile, path, VisType::MAT),
