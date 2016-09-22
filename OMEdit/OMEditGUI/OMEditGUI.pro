@@ -105,6 +105,7 @@ win32 {
   CONFIG(release, debug|release) {
     QMAKE_LFLAGS_RELEASE += -rdynamic
   }
+  LIBS += -losgDB -losgViewer -losgUtil -losgGA -losgQt -losg -lOpenThreads
 }
 
 SOURCES += main.cpp \
