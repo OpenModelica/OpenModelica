@@ -44,6 +44,7 @@
 #include <QtCore/QProcess>
 #include <QtCore/QThread>
 #include <QtCore/QMutex>
+#include <QtCore/QSettings>
 #include <QtGui/QMessageBox>
 #endif
 
