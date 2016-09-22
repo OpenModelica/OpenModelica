@@ -1,0 +1,14 @@
+// name:     Bug3979.mos [BUG #3979]
+// keywords: check that we don't die on import A.B; in package A!
+// status:   correct
+// 
+
+loadFile("Bug3979.mo"); getErrorString();
+getComponents(TestPackage.Connectors.ACPower); getErrorString();
+
+// Result:
+// true
+// ""
+// {{TestPackage.Types.AC.Voltage,V,"complex AC voltage", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{TestPackage.Types.AC.Current,i,"complex AC current (positive when entering the device)", "public", false, true, false, false, "unspecified", "none", "unspecified",{}}}
+// ""
+// endResult

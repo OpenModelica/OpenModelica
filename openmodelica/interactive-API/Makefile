@@ -13,6 +13,7 @@ Bug3417.mos \
 Bug3520.mos \
 Bug3783.mos \
 Bug3974.mos \
+Bug3979.mos \
 ConvertUnits.mos \
 CopyClass.mos \
 choicesAllMatching.mos \
