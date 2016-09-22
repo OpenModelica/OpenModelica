@@ -290,17 +290,31 @@ bool GraphicsView::addComponent(QString className, QPointF position)
           name = defaultName;
         } else {
           name = getUniqueComponentName(defaultName);
-          // show the information to the user if we have changed the name of some inner component.
-          if (defaultPrefix.contains("inner")) {
-            if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked()) {
-              NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged,
-                                                                                  NotificationsDialog::InformationIcon,
-                                                                                  mpModelWidget->getModelWidgetContainer()->getMainWindow());
-              pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED)
-                                                               .arg(defaultName).arg(name));
-              if (!pNotificationsDialog->exec()) {
-                return false;
-              }
+        }
+      }
+      // Allow user to change the component name if always ask for component name settings is true.
+      if (pOptionsDialog->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->isChecked()) {
+        ComponentNameDialog *pComponentNameDialog = new ComponentNameDialog(name, this, pMainWindow);
+        if (pComponentNameDialog->exec()) {
+          name = pComponentNameDialog->getComponentName();
+          pComponentNameDialog->deleteLater();
+        } else {
+          pComponentNameDialog->deleteLater();
+          return false;
+        }
+      }
+      // if we or user has changed the default name
+      if (!defaultName.isEmpty() && name.compare(defaultName) != 0) {
+        // show the information to the user if we have changed the name of some inner component.
+        if (defaultPrefix.contains("inner")) {
+          if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked()) {
+            NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged,
+                                                                                NotificationsDialog::InformationIcon,
+                                                                                mpModelWidget->getModelWidgetContainer()->getMainWindow());
+            pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED)
+                                                             .arg(defaultName).arg(name));
+            if (!pNotificationsDialog->exec()) {
+              return false;
             }
           }
         }
@@ -475,14 +489,19 @@ Component* GraphicsView::getComponentObject(QString componentName)
   return 0;
 }
 
+/*!
+ * \brief GraphicsView::getUniqueComponentName
+ * Creates a unique component name.
+ * \param componentName
+ * \param number
+ * \return
+ */
 QString GraphicsView::getUniqueComponentName(QString componentName, int number)
 {
   QString name;
   name = QString(componentName).append(QString::number(number));
-  foreach (Component *pComponent, mComponentsList)
-  {
-    if (pComponent->getName().compare(name, Qt::CaseSensitive) == 0)
-    {
+  foreach (Component *pComponent, mComponentsList) {
+    if (pComponent->getName().compare(name, Qt::CaseSensitive) == 0) {
       name = getUniqueComponentName(componentName, ++number);
       break;
     }
@@ -490,11 +509,19 @@ QString GraphicsView::getUniqueComponentName(QString componentName, int number)
   return name;
 }
 
+/*!
+ * \brief GraphicsView::checkComponentName
+ * Checks if the component with the same name already exists or not.
+ * \param componentName
+ * \return
+ */
 bool GraphicsView::checkComponentName(QString componentName)
 {
-  foreach (Component *pComponent, mComponentsList)
-    if (pComponent->getName().compare(componentName, Qt::CaseSensitive) == 0)
+  foreach (Component *pComponent, mComponentsList) {
+    if (pComponent->getName().compare(componentName, Qt::CaseSensitive) == 0) {
       return false;
+    }
+  }
   return true;
 }
 

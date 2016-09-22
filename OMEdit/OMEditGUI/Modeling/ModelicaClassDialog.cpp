@@ -1644,8 +1644,7 @@ void CreateNewItemDialog::createNewFileOrFolder()
  */
 /*!
  * \brief RenameItemDialog::RenameItemDialog
- * \param path
- * \param isFile
+ * \param pLibraryTreeItem
  * \param pMainWindow
  */
 RenameItemDialog::RenameItemDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow)
@@ -1753,6 +1752,78 @@ void RenameItemDialog::renameItem()
     qDebug() << "Rename feature not implemented for Modelica library type.";
   } else {
     qDebug() << "Unable to rename, unknown library type.";
+  }
+  accept();
+}
+
+/*!
+ * \class ComponentNameDialog
+ * \brief Creates a dialog to allow users to specify a component name.
+ */
+/*!
+ * \brief ComponentNameDialog::ComponentNameDialog
+ * \param name
+ * \param pGraphicsView
+ * \param pMainWindow
+ */
+ComponentNameDialog::ComponentNameDialog(QString name, GraphicsView *pGraphicsView, MainWindow *pMainWindow)
+  : QDialog(pMainWindow), mpGraphicsView(pGraphicsView), mpMainWindow(pMainWindow)
+{
+  setWindowTitle(tr("%1 - Enter Component Name").arg(Helper::applicationName));
+  setMinimumWidth(400);
+  Label *pNoteLabel = new Label(tr("Please choose a meaningful name for this component, to improve the readability of simulation results."));
+  pNoteLabel->setElideMode(Qt::ElideMiddle);
+  // Create the name label and text box
+  mpNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit(name);
+  // don't show this message again checkbox.
+  mpDontShowThisMessageAgainCheckBox = new QCheckBox(Helper::dontShowThisMessageAgain);
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(updateComponentName()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(pNoteLabel, 0, 0, 1, 2);
+  pMainLayout->addWidget(mpNameLabel, 1, 0);
+  pMainLayout->addWidget(mpNameTextBox, 1, 1);
+  QHBoxLayout *pHorizontalLayout = new QHBoxLayout;
+  pHorizontalLayout->addWidget(mpDontShowThisMessageAgainCheckBox, 0, Qt::AlignLeft);
+  pHorizontalLayout->addWidget(mpButtonBox, 0, Qt::AlignRight);
+  pMainLayout->addLayout(pHorizontalLayout, 2, 0, 1, 2);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief ComponentNameDialog::updateComponentName
+ * Specifies a name for a component.\n
+ * Slot activated when mpOkButton clicked signal is raised.
+ */
+void ComponentNameDialog::updateComponentName()
+{
+  // check name
+  if (mpNameTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error), GUIMessages::getMessage(
+                            GUIMessages::ENTER_NAME).arg(Helper::item), Helper::ok);
+    return;
+  }
+  if (!mpGraphicsView->checkComponentName(mpNameTextBox->text())) {
+    QMessageBox::information(mpMainWindow, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
+                             GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), Helper::ok);
+    return;
+  }
+  if (mpDontShowThisMessageAgainCheckBox->isChecked()) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    pSettings->setValue("notifications/alwaysAskForDraggedComponentName", false);
+    mpMainWindow->getOptionsDialog()->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->setChecked(false);
   }
   accept();
 }

@@ -596,11 +596,12 @@ class NotificationsPage : public QWidget
   Q_OBJECT
 public:
   NotificationsPage(OptionsDialog *pOptionsDialog);
-  QCheckBox* getQuitApplicationCheckBox();
-  QCheckBox* getItemDroppedOnItselfCheckBox();
-  QCheckBox* getReplaceableIfPartialCheckBox();
-  QCheckBox* getInnerModelNameChangedCheckBox();
-  QCheckBox* getSaveModelForBitmapInsertionCheckBox();
+  QCheckBox* getQuitApplicationCheckBox() {return mpQuitApplicationCheckBox;}
+  QCheckBox* getItemDroppedOnItselfCheckBox() {return mpItemDroppedOnItselfCheckBox;}
+  QCheckBox* getReplaceableIfPartialCheckBox() {return mpReplaceableIfPartialCheckBox;}
+  QCheckBox* getInnerModelNameChangedCheckBox() {return mpInnerModelNameChangedCheckBox;}
+  QCheckBox* getSaveModelForBitmapInsertionCheckBox() {return mpSaveModelForBitmapInsertionCheckBox;}
+  QCheckBox* getAlwaysAskForDraggedComponentName() {return mpAlwaysAskForDraggedComponentName;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpNotificationsGroupBox;
@@ -609,6 +610,7 @@ private:
   QCheckBox *mpReplaceableIfPartialCheckBox;
   QCheckBox *mpInnerModelNameChangedCheckBox;
   QCheckBox *mpSaveModelForBitmapInsertionCheckBox;
+  QCheckBox *mpAlwaysAskForDraggedComponentName;
 };
 
 class LineStylePage : public QWidget
