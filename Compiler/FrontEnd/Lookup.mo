@@ -1746,6 +1746,10 @@ algorithm
             equation
               cr = lookupQualifiedImportedVarInFrame(qimports, id);
               Util.setStatefulBoolean(inState,true);
+			  // if the first name of the import A.B is equal with the scope we are in, skip it!
+			  cr = if FNode.name(FNode.fromRef(FGraph.lastScopeRef(env))) == ComponentReference.crefFirstIdent(cr)
+			       then ComponentReference.crefStripFirstIdent(cr)
+				   else cr;
               f::prevFrames = listReverse(FGraph.currentScope(env));
               env = FGraph.setScope(env, {f});
               (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env,cr,prevFrames,inState);
