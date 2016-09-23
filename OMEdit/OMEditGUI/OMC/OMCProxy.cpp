@@ -193,10 +193,18 @@ bool OMCProxy::initializeOMC()
     mCommandsLogFileTextStream.setCodec(Helper::utf8.toStdString().data());
     mCommandsLogFileTextStream.setGenerateByteOrderMark(false);
   }
+  // read the locale
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QLocale settingsLocale = QLocale(pSettings->value("language").toString());
+  settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
+  void *args = mmc_mk_nil();
+  QString locale = "+locale=" + settingsLocale.name();
+  args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
+  // initialize threadData
   threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
   void *st = 0;
   MMC_TRY_TOP_INTERNAL()
-  omc_Main_init(threadData, mmc_mk_nil());
+  omc_Main_init(threadData, args);
   st = omc_Main_readSettings(threadData, mmc_mk_nil());
   threadData->plotClassPointer = mpMainWindow;
   threadData->plotCB = MainWindow::PlotCallbackFunction;
@@ -206,11 +214,6 @@ bool OMCProxy::initializeOMC()
   connect(mpOMCInterface, SIGNAL(logResponse(QString,QTime*)), this, SLOT(logResponse(QString,QTime*)));
   connect(mpOMCInterface, SIGNAL(throwException(QString)), SLOT(showException(QString)));
   mHasInitialized = true;
-  // set the locale
-  QSettings *pSettings = Utilities::getApplicationSettings();
-  QLocale settingsLocale = QLocale(pSettings->value("language").toString());
-  settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
-  setCommandLineOptions("+locale=" + settingsLocale.name());
   // get OpenModelica version
   Helper::OpenModelicaVersion = getVersion();
 #ifdef WIN32

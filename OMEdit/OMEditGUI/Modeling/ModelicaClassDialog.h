@@ -329,4 +329,23 @@ private slots:
   void renameItem();
 };
 
+class ComponentNameDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  ComponentNameDialog(QString name, GraphicsView *pGraphicsView, MainWindow *pMainWindow);
+  QString getComponentName() {return mpNameTextBox->text();}
+private:
+  GraphicsView *mpGraphicsView;
+  MainWindow *mpMainWindow;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  QCheckBox *mpDontShowThisMessageAgainCheckBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void updateComponentName();
+};
+
 #endif // MODELICACLASSDIALOG_H

@@ -440,14 +440,14 @@ QTransform Transformation::getTransformationMatrixIcon()
 void Transformation::adjustPositionIcon(qreal x, qreal y)
 {
   // determine X position
-  if (mExtent1Icon.x() + mExtent2Icon.x() == 0) {
+  if (mHasOriginIconX) {
     mOriginIcon.setX(mOriginIcon.x() +  x);
   } else {
     mExtent1Icon.setX(mExtent1Icon.x() +  x);
     mExtent2Icon.setX(mExtent2Icon.x() +  x);
   }
   // determine Y position
-  if (mExtent1Icon.y() + mExtent2Icon.y() == 0) {
+  if (mHasOriginIconY) {
     mOriginIcon.setY(mOriginIcon.y() +  y);
   } else {
     mExtent1Icon.setY(mExtent1Icon.y() +  y);

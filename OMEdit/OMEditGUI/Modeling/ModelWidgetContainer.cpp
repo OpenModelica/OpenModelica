@@ -290,17 +290,31 @@ bool GraphicsView::addComponent(QString className, QPointF position)
           name = defaultName;
         } else {
           name = getUniqueComponentName(defaultName);
-          // show the information to the user if we have changed the name of some inner component.
-          if (defaultPrefix.contains("inner")) {
-            if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked()) {
-              NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged,
-                                                                                  NotificationsDialog::InformationIcon,
-                                                                                  mpModelWidget->getModelWidgetContainer()->getMainWindow());
-              pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED)
-                                                               .arg(defaultName).arg(name));
-              if (!pNotificationsDialog->exec()) {
-                return false;
-              }
+        }
+      }
+      // Allow user to change the component name if always ask for component name settings is true.
+      if (pOptionsDialog->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->isChecked()) {
+        ComponentNameDialog *pComponentNameDialog = new ComponentNameDialog(name, this, pMainWindow);
+        if (pComponentNameDialog->exec()) {
+          name = pComponentNameDialog->getComponentName();
+          pComponentNameDialog->deleteLater();
+        } else {
+          pComponentNameDialog->deleteLater();
+          return false;
+        }
+      }
+      // if we or user has changed the default name
+      if (!defaultName.isEmpty() && name.compare(defaultName) != 0) {
+        // show the information to the user if we have changed the name of some inner component.
+        if (defaultPrefix.contains("inner")) {
+          if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked()) {
+            NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged,
+                                                                                NotificationsDialog::InformationIcon,
+                                                                                mpModelWidget->getModelWidgetContainer()->getMainWindow());
+            pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED)
+                                                             .arg(defaultName).arg(name));
+            if (!pNotificationsDialog->exec()) {
+              return false;
             }
           }
         }
@@ -475,14 +489,19 @@ Component* GraphicsView::getComponentObject(QString componentName)
   return 0;
 }
 
+/*!
+ * \brief GraphicsView::getUniqueComponentName
+ * Creates a unique component name.
+ * \param componentName
+ * \param number
+ * \return
+ */
 QString GraphicsView::getUniqueComponentName(QString componentName, int number)
 {
   QString name;
   name = QString(componentName).append(QString::number(number));
-  foreach (Component *pComponent, mComponentsList)
-  {
-    if (pComponent->getName().compare(name, Qt::CaseSensitive) == 0)
-    {
+  foreach (Component *pComponent, mComponentsList) {
+    if (pComponent->getName().compare(name, Qt::CaseSensitive) == 0) {
       name = getUniqueComponentName(componentName, ++number);
       break;
     }
@@ -490,11 +509,19 @@ QString GraphicsView::getUniqueComponentName(QString componentName, int number)
   return name;
 }
 
+/*!
+ * \brief GraphicsView::checkComponentName
+ * Checks if the component with the same name already exists or not.
+ * \param componentName
+ * \return
+ */
 bool GraphicsView::checkComponentName(QString componentName)
 {
-  foreach (Component *pComponent, mComponentsList)
-    if (pComponent->getName().compare(componentName, Qt::CaseSensitive) == 0)
+  foreach (Component *pComponent, mComponentsList) {
+    if (pComponent->getName().compare(componentName, Qt::CaseSensitive) == 0) {
       return false;
+    }
+  }
   return true;
 }
 
@@ -3583,6 +3610,7 @@ void ModelWidget::removeInheritedClassConnections()
 void ModelWidget::getModelConnections()
 {
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
+  LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
   int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(mpLibraryTreeItem->getNameStructure());
   for (int i = 1 ; i <= connectionCount ; i++) {
     // get the connection from OMC
@@ -3613,9 +3641,12 @@ void ModelWidget::getModelConnections()
     if (pStartComponent) {
       // if a component type is connector then we only get one item in startComponentList
       // check the startcomponentlist
-      if (startComponentList.size() < 2 || pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) {
+      if (startComponentList.size() < 2
+          || (pStartComponent->getLibraryTreeItem()
+              && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
         pStartConnectorComponent = pStartComponent;
-      } else if (!pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
+      } else if (pStartComponent->getLibraryTreeItem()
+                 && !pLibraryTreeModel->findLibraryTreeItem(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
         /* if class doesn't exist then connect with the red cross box */
         pStartConnectorComponent = pStartComponent;
       } else {
@@ -3648,9 +3679,12 @@ void ModelWidget::getModelConnections()
     if (pEndComponent) {
       // if a component type is connector then we only get one item in endComponentList
       // check the endcomponentlist
-      if (endComponentList.size() < 2 || pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) {
+      if (endComponentList.size() < 2
+          || (pEndComponent->getLibraryTreeItem()
+              && pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
         pEndConnectorComponent = pEndComponent;
-      } else if (!pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
+      } else if (pEndComponent->getLibraryTreeItem()
+                 && !pLibraryTreeModel->findLibraryTreeItem(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
         /* if class doesn't exist then connect with the red cross box */
         pEndConnectorComponent = pEndComponent;
       } else {

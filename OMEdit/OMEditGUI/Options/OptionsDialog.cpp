@@ -508,25 +508,23 @@ void OptionsDialog::readMessagesSettings()
 //! Reads the Notifications section settings from omedit.ini
 void OptionsDialog::readNotificationsSettings()
 {
-  if (mpSettings->contains("notifications/promptQuitApplication"))
-  {
+  if (mpSettings->contains("notifications/promptQuitApplication")) {
     mpNotificationsPage->getQuitApplicationCheckBox()->setChecked(mpSettings->value("notifications/promptQuitApplication").toBool());
   }
-  if (mpSettings->contains("notifications/itemDroppedOnItself"))
-  {
+  if (mpSettings->contains("notifications/itemDroppedOnItself")) {
     mpNotificationsPage->getItemDroppedOnItselfCheckBox()->setChecked(mpSettings->value("notifications/itemDroppedOnItself").toBool());
   }
-  if (mpSettings->contains("notifications/replaceableIfPartial"))
-  {
+  if (mpSettings->contains("notifications/replaceableIfPartial")) {
     mpNotificationsPage->getReplaceableIfPartialCheckBox()->setChecked(mpSettings->value("notifications/replaceableIfPartial").toBool());
   }
-  if (mpSettings->contains("notifications/innerModelNameChanged"))
-  {
+  if (mpSettings->contains("notifications/innerModelNameChanged")) {
     mpNotificationsPage->getInnerModelNameChangedCheckBox()->setChecked(mpSettings->value("notifications/innerModelNameChanged").toBool());
   }
-  if (mpSettings->contains("notifications/saveModelForBitmapInsertion"))
-  {
+  if (mpSettings->contains("notifications/saveModelForBitmapInsertion")) {
     mpNotificationsPage->getSaveModelForBitmapInsertionCheckBox()->setChecked(mpSettings->value("notifications/saveModelForBitmapInsertion").toBool());
+  }
+  if (mpSettings->contains("notifications/alwaysAskForDraggedComponentName")) {
+    mpNotificationsPage->getAlwaysAskForDraggedComponentName()->setChecked(mpSettings->value("notifications/alwaysAskForDraggedComponentName").toBool());
   }
 }
 
@@ -972,6 +970,7 @@ void OptionsDialog::saveNotificationsSettings()
   mpSettings->setValue("notifications/replaceableIfPartial", mpNotificationsPage->getReplaceableIfPartialCheckBox()->isChecked());
   mpSettings->setValue("notifications/innerModelNameChanged", mpNotificationsPage->getInnerModelNameChangedCheckBox()->isChecked());
   mpSettings->setValue("notifications/saveModelForBitmapInsertion", mpNotificationsPage->getSaveModelForBitmapInsertionCheckBox()->isChecked());
+  mpSettings->setValue("notifications/alwaysAskForDraggedComponentName", mpNotificationsPage->getAlwaysAskForDraggedComponentName()->isChecked());
 }
 
 //! Saves the LineStyle section settings to omedit.ini
@@ -3272,11 +3271,14 @@ void MessagesPage::pickErrorColor()
   setErrorPickColorButtonIcon();
 }
 
-//! @class NotificationsPage
-//! @brief Creates an interface for Notifications settings.
-
-//! Constructor
-//! @param pOptionsDialog is the pointer to OptionsDialog
+/*!
+ * \class NotificationsPage
+ * \brief Creates an interface for Notifications settings.
+ */
+/*!
+ * \brief NotificationsPage::NotificationsPage
+ * \param pOptionsDialog is the pointer to OptionsDialog
+ */
 NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
@@ -3297,6 +3299,9 @@ NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
   // create the save model for bitmap insertion checkbox
   mpSaveModelForBitmapInsertionCheckBox = new QCheckBox(tr("Show save model for bitmap insertion message"));
   mpSaveModelForBitmapInsertionCheckBox->setChecked(true);
+  // create the save model for bitmap insertion checkbox
+  mpAlwaysAskForDraggedComponentName = new QCheckBox(tr("Always ask for the dragged component name"));
+  mpAlwaysAskForDraggedComponentName->setChecked(true);
   // set the layout of notifications group
   QGridLayout *pNotificationsLayout = new QGridLayout;
   pNotificationsLayout->setAlignment(Qt::AlignTop);
@@ -3305,6 +3310,7 @@ NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
   pNotificationsLayout->addWidget(mpReplaceableIfPartialCheckBox, 2, 0);
   pNotificationsLayout->addWidget(mpInnerModelNameChangedCheckBox, 3, 0);
   pNotificationsLayout->addWidget(mpSaveModelForBitmapInsertionCheckBox, 4, 0);
+  pNotificationsLayout->addWidget(mpAlwaysAskForDraggedComponentName, 5, 0);
   mpNotificationsGroupBox->setLayout(pNotificationsLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;
@@ -3312,31 +3318,6 @@ NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
   pLayout->setContentsMargins(0, 0, 0, 0);
   pLayout->addWidget(mpNotificationsGroupBox);
   setLayout(pLayout);
-}
-
-QCheckBox* NotificationsPage::getQuitApplicationCheckBox()
-{
-  return mpQuitApplicationCheckBox;
-}
-
-QCheckBox* NotificationsPage::getItemDroppedOnItselfCheckBox()
-{
-  return mpItemDroppedOnItselfCheckBox;
-}
-
-QCheckBox* NotificationsPage::getReplaceableIfPartialCheckBox()
-{
-  return mpReplaceableIfPartialCheckBox;
-}
-
-QCheckBox* NotificationsPage::getInnerModelNameChangedCheckBox()
-{
-  return mpInnerModelNameChangedCheckBox;
-}
-
-QCheckBox* NotificationsPage::getSaveModelForBitmapInsertionCheckBox()
-{
-  return mpSaveModelForBitmapInsertionCheckBox;
 }
 
 //! @class LineStylePage

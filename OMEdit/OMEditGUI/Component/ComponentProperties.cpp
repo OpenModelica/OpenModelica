@@ -1294,7 +1294,7 @@ void ComponentAttributes::updateComponentAttributes()
     if (!mpComponent->getGraphicsView()->checkComponentName(mpNameTextBox->text())) {
       QMessageBox::information(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                                QString(Helper::applicationName).append(" - ").append(Helper::information),
-                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME), Helper::ok);
+                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), Helper::ok);
       return;
     }
   }
