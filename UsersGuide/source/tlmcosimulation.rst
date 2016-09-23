@@ -130,7 +130,7 @@ To create a new MetaModel,select **File > New MetaModel** from the menu.
 
 Your new MetaModel will appear in the in the **Libraries Browser** once created.
 To facilitate the process of textual metamodeling and to provide users with a
-starting point, the **Text View** (see :numref:`tlm-new-meta-model-textview`)
+starting point, the **Text View** (see :numref:`tlm-new-metamodel-textview`)
 includes the MetaModel XML elements and the default simulation parameters.
 
 .. figure :: media/tlm-new-metamodel-textview.png
@@ -267,4 +267,3 @@ which you will be able to specify the simulation parameters.
   :name: tlm-change-cosimulation-parameters-dialog
 
   Changing Co-Simulation Parameters Dialog.
-
