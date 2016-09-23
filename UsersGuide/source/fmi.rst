@@ -2,7 +2,7 @@ Functional Mock-up Interface - FMI
 ==================================
 
 The new standard for model exchange and co-simulation with Functional
-Mockup Interface (FMI) allows export of pre-compiled models, i.e.,
+Mockup Interface (`FMI <http://www.fmi-standard.org>`_) allows export of pre-compiled models, i.e.,
 C-code or binary code, from a tool for import in another tool, and vice
 versa. The FMI standard is Modelica independent. Import and export works
 both between different Modelica tools, or between certain non-Modelica
@@ -16,9 +16,10 @@ FMI Export
 ----------
 
 To export the FMU use the OpenModelica command
-translateModelFMU(ModelName) from command line interface, OMShell,
-OMNotebook or MDT. The export FMU command is also integrated with
-OMEdit. Select FMI > Export FMU the FMU package is generated in the
+`translateModelFMU(ModelName) <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.translateModelFMU.html>`_ 
+from command line interface, OMShell, OMNotebook or MDT. 
+The export FMU command is also integrated with OMEdit. 
+Select FMI > Export FMU the FMU package is generated in the
 current directory of omc. You can use the cd() command to see the
 current location. You can set which version of FMI to export through
 OMEdit settings, see section :ref:`omedit-fmi-settings`.
@@ -45,6 +46,14 @@ On the machine generating this documentation, the contents in
 A log file for FMU creation is also generated named ModelName\_FMU.log.
 If there are some errors while creating FMU they will be shown in the
 command line window and logged in this log file as well.
+
+By default an FMU that can be used for both Model Exchange and 
+Co-Simulation is generated. We only support FMI 2.0 for Co-Simulation FMUs.
+
+Currently the Co-Simulation FMU supports only the forward Euler solver 
+with root finding which does an Euler step of communicationStepSize 
+in fmi2DoStep. Events are checked for before and after the call to
+fmi2GetDerivatives.
 
 FMI Import
 ----------
