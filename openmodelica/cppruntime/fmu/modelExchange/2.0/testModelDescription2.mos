@@ -2031,9 +2031,9 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"9\"
 //     description=\"Number of ports\"
 //     variability=\"fixed\"
-//     causality=\"parameter\"
-//     initial=\"exact\">
-//     <Integer start=\"1\"/>
+//     causality=\"calculatedParameter\"
+//     initial=\"calculated\">
+//     <Integer/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"197\" -->
 //   <ScalarVariable

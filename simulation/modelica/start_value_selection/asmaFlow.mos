@@ -1238,12 +1238,12 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 40: aimc.spacePhasorS.ground.v:VARIABLE(flow=false unit = "V" )  = 0.0  "Potential at the pin" type: Real 
 // 41: ground.p.v:VARIABLE(flow=false unit = "V" )  = 0.0  "Potential at the pin" type: Real 
 // 42: DeltaOmEl:PARAM(unit = "rad/s" )  = 25.0  "Controller Delta Omega" type: Real 
-// 43: terminalBox.m:PARAM()  = 3  "Number of phases" type: Integer 
+// 43: terminalBox.m:PARAM(final = true )  = 3  "Number of phases" type: Integer 
 // 44: terminalBox.terminalConnection:PARAM(start = "Y" final = true )  "Choose Y=star/D=delta" type: String 
 // 45: terminalBox.plug_sp.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
 // 46: terminalBox.plug_sn.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
 // 47: terminalBox.plugSupply.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
-// 48: terminalBox.star.m:PARAM(min = 1 )  = terminalBox.m  "Number of phases" type: Integer 
+// 48: terminalBox.star.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 
 // 49: terminalBox.star.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
 // 50: aimc.m:PARAM(final = true )  = 3  "Number of phases" type: Integer 
 // 51: aimc.p:PARAM(min = 1 start = 2 )  = 2  "Number of pole pairs (Integer)" type: Integer 
@@ -1259,7 +1259,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 61: aimc.useSupport:PARAM(final = true )  = false  "Enable / disable (=fixed stator) support" type: Boolean 
 // 62: aimc.Js:PARAM(start = aimc.Jr unit = "kg.m2" )  "Stator's moment of inertia" type: Real 
 // 63: aimc.useThermalPort:PARAM(final = true )  = false  "Enable / disable (=fixed temperatures) thermal port" type: Boolean 
-// 64: aimc.frictionParameters.PRef:PARAM(min = 0.0 unit = "W" )  = 0.0  "Reference friction losses at wRef" type: Real 
+// 64: aimc.frictionParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference friction losses at wRef" type: Real 
 // 65: aimc.frictionParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = 6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p)  "Reference angular velocity that the PRef refer to" type: Real 
 // 66: aimc.frictionParameters.power_w:PARAM(min = 1e-60 )  = 2.0  "Exponent of friction torque w.r.t. angular velocity" type: Real 
 // 67: aimc.frictionParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference friction torque at reference angular velocity" type: Real 
@@ -1271,7 +1271,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 73: aimc.inertiaStator.J:PARAM(min = 0.0 start = 1.0 unit = "kg.m2" )  = aimc.Js  "Moment of inertia" type: Real 
 // 74: aimc.inertiaStator.stateSelect:PARAM(min = StateSelect.never max = StateSelect.always )  = StateSelect.default  "Priority to use phi and w as states" type: enumeration(never, avoid, default, prefer, always) 
 // 75: aimc.friction.useHeatPort:PARAM(final = true )  = true  "=true, if heatPort is enabled" type: Boolean 
-// 76: aimc.friction.frictionParameters.PRef:PARAM(min = 0.0 unit = "W" )  = aimc.frictionParameters.PRef  "Reference friction losses at wRef" type: Real 
+// 76: aimc.friction.frictionParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference friction losses at wRef" type: Real 
 // 77: aimc.friction.frictionParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = aimc.frictionParameters.wRef  "Reference angular velocity that the PRef refer to" type: Real 
 // 78: aimc.friction.frictionParameters.power_w:PARAM(min = 1e-60 )  = aimc.frictionParameters.power_w  "Exponent of friction torque w.r.t. angular velocity" type: Real 
 // 79: aimc.friction.frictionParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference friction torque at reference angular velocity" type: Real 
@@ -1285,7 +1285,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 87: aimc.statorCoreParameters.ratioHysteresis:PARAM(min = 0.0 max = 1.0 start = 0.775 final = true )  = 0.0  "Ratio of hysteresis losses with respect to the total core losses at VRef and fRef" type: Real 
 // 88: aimc.statorCoreParameters.GcRef:PARAM(unit = "S" final = true )  = 0.0  "Reference conductance at reference frequency and voltage" type: Real 
 // 89: aimc.statorCoreParameters.wMin:PARAM(unit = "rad/s" final = true )  = 0.0003141592653589793  type: Real 
-// 90: aimc.strayLoadParameters.PRef:PARAM(min = 0.0 unit = "W" )  = 0.0  "Reference stray load losses at IRef and wRef" type: Real 
+// 90: aimc.strayLoadParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference stray load losses at IRef and wRef" type: Real 
 // 91: aimc.strayLoadParameters.IRef:PARAM(min = 1e-60 start = 100.0 unit = "A" )  "Reference RMS current that PRef refers to" type: Real 
 // 92: aimc.strayLoadParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = 6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p)  "Reference angular velocity that PRef refers to" type: Real 
 // 93: aimc.strayLoadParameters.power_w:PARAM(min = 1e-60 )  = 1.0  "Exponent of stray load loss torque w.r.t. angular velocity" type: Real 
@@ -1358,7 +1358,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 160: aimc.strayLoad.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
 // 161: aimc.strayLoad.plug_n.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
 // 162: aimc.strayLoad.useHeatPort:PARAM(final = true )  = true  "=true, if heatPort is enabled" type: Boolean 
-// 163: aimc.strayLoad.strayLoadParameters.PRef:PARAM(min = 0.0 unit = "W" )  = aimc.strayLoadParameters.PRef  "Reference stray load losses at IRef and wRef" type: Real 
+// 163: aimc.strayLoad.strayLoadParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference stray load losses at IRef and wRef" type: Real 
 // 164: aimc.strayLoad.strayLoadParameters.IRef:PARAM(min = 1e-60 unit = "A" )  = aimc.strayLoadParameters.IRef  "Reference RMS current that PRef refers to" type: Real 
 // 165: aimc.strayLoad.strayLoadParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = aimc.strayLoadParameters.wRef  "Reference angular velocity that PRef refers to" type: Real 
 // 166: aimc.strayLoad.strayLoadParameters.power_w:PARAM(min = 1e-60 )  = aimc.strayLoadParameters.power_w  "Exponent of stray load loss torque w.r.t. angular velocity" type: Real 
