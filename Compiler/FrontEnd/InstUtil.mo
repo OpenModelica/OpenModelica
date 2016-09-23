@@ -7759,21 +7759,12 @@ protected function prefixAndAddCrefsToHt
   input HashTable.HashTable iht;
   input Prefix.Prefix pre;
   input list<DAE.ComponentRef> icrs;
-  output HashTable.HashTable oht;
+  output HashTable.HashTable oht=iht;
 algorithm
-  oht := match (cache,iht,pre,icrs)
-    local
-      DAE.ComponentRef cr;
-      HashTable.HashTable ht;
-      list<DAE.ComponentRef> crs;
-
-    case (_,ht,_,{}) then ht;
-    case (_,ht,_,cr::_)
-      equation
-        (_,cr) = PrefixUtil.prefixCref(cache, FGraph.empty(), InnerOuter.emptyInstHierarchy, pre, cr);
-        ht = BaseHashTable.add((cr,1),ht);
-      then ht;
-  end match;
+  for cr in icrs loop
+    (_,cr) := PrefixUtil.prefixCref(cache, FGraph.empty(), InnerOuter.emptyInstHierarchy, pre, cr);
+    oht := BaseHashTable.add((cr,1),oht);
+  end for;
 end prefixAndAddCrefsToHt;
 
 protected function numStructuralParameterScopes
