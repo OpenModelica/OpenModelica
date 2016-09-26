@@ -106,6 +106,8 @@ win32 {
     QMAKE_LFLAGS_RELEASE += -rdynamic
   }
   LIBS += -losgDB -losgViewer -losgUtil -losgGA -losgQt -losg -lOpenThreads
+	HEADERS +=  ../../osgQt/GraphicsWindowQt ../../osgQt/Export
+	SOURCES +=  ../../osgQt/GraphicsWindowQt.cpp
 }
 
 SOURCES += main.cpp \
