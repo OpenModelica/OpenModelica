@@ -3330,13 +3330,13 @@ algorithm
   dstStr := intString(dst);
   statesStr := if Flags.isSet(Flags.DUMP_STATESELECTION_INFO)
     then " (" + stringDelimitList(List.map(states, ComponentReference.printComponentRefStr),",") + ")"
-    else " ('+d=stateselection' for list of states)";
+    else " ('-d=stateselection' for list of states)";
   discvarsStr := if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)
     then " (" + stringDelimitList(List.map(discvars, ComponentReference.printComponentRefStr),",") + ")"
-    else " ('+d=discreteinfo' for list of discrete vars)";
+    else " ('-d=discreteinfo' for list of discrete vars)";
   discstatesStr := if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)
      then " (" + stringDelimitList(List.map(discstates, ComponentReference.printComponentRefStr),",") + ")"
-     else " ('+d=discreteinfo' for list of discrete states)";
+     else " ('-d=discreteinfo' for list of discrete states)";
   inpStr := intString(inp);
   stStr := stStr+statesStr;
   dvarStr := dvarStr+discvarsStr;

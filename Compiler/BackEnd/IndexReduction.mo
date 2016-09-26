@@ -233,7 +233,7 @@ algorithm
        (syst,shared,ass1,ass2,arg,notDiffableMSS);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction1 failed! Use +d=bltdump to get more information."});
+        Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction1 failed! Use -d=bltdump to get more information."});
       then
         fail();
   end matchcontinue;
@@ -301,7 +301,7 @@ algorithm
         (syst,shared,ass1,ass2,(so,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,noofeqns),notDiffableMSS);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReductionMSS failed! Use +d=bltdump to get more information."});
+        Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReductionMSS failed! Use -d=bltdump to get more information."});
       then
         fail();
   end matchcontinue;
@@ -440,7 +440,7 @@ algorithm
       if Flags.isSet(Flags.BLT_DUMP) then
         BackendDump.printBackendDAE(BackendDAE.DAE({syst}, inShared));
       end if;
-      Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continues equations. Use +d=bltdump to get more information."});
+      Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continues equations. Use -d=bltdump to get more information."});
     then fail();
 
     case (false, _::_, (_, _, _, mapIncRowEqn, _)) equation
@@ -463,7 +463,7 @@ algorithm
       if Flags.isSet(Flags.BLT_DUMP) then
         BackendDump.printBackendDAE(BackendDAE.DAE({syst}, inShared));
       end if;
-      Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states. Use +d=bltdump to get more information."});
+      Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states. Use -d=bltdump to get more information."});
     then fail();
   end match;
 end singulareSystemError;

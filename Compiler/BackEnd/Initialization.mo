@@ -229,7 +229,7 @@ algorithm
     // warn about selected default initial conditions
     b1 := not listEmpty(dumpVars);
     b2 := not listEmpty(removedEqns);
-    msg := System.gettext("For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"+d=initialization\")");
+    msg := System.gettext("For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\")");
     if Flags.isSet(Flags.INITIALIZATION) then
       if b1 then
         Error.addCompilerWarning("Assuming fixed start value for the following " + intString(listLength(dumpVars)) + " variables:\n" + warnAboutVars2(dumpVars));
@@ -610,7 +610,7 @@ algorithm
     outWarning := outWarning or warn;
 
     // If we found an iteration variable with default zero start attribute but
-    // +d=initialization wasn't given, we don't need to continue searching.
+    // -d=initialization wasn't given, we don't need to continue searching.
     if warn and not inShowWarnings then
       return;
     end if;
@@ -659,7 +659,7 @@ algorithm
         if inShowWarnings then
           Error.addCompilerWarning("Iteration variables with default zero start attribute in " + err + warnAboutVars2(vars));
         else
-          // If +d=initialization wasn't given we don't need to continue searching
+          // If -d=initialization wasn't given we don't need to continue searching
           // once we've found one.
           return;
         end if;

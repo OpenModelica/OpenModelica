@@ -315,7 +315,7 @@ algorithm
         fail();
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\nTearing of LINEAR component\nUse Flag '+d=tearingdumpV' for more details\n\n");
+        print("\nTearing of LINEAR component\nUse Flag '-d=tearingdumpV' for more details\n\n");
       end if;
       // TODO: Remove when cpp runtime ready for doLinearTearing
       //false = stringEqual(Config.simCodeTarget(), "Cpp");
@@ -342,7 +342,7 @@ algorithm
         fail();
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\nTearing of NONLINEAR component\nUse Flag '+d=tearingdumpV' for more details\n\n");
+        print("\nTearing of NONLINEAR component\nUse Flag '-d=tearingdumpV' for more details\n\n");
       end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
@@ -896,7 +896,7 @@ algorithm
     case (tvar::rest,{})
       equation
         if listMember(tvar,tSel_never) then
-          Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+          Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
         end if;
         if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nForced selection of Tearing Variable:\n" + UNDERLINE + "\n");
@@ -1011,7 +1011,7 @@ algorithm
         false = listEmpty(unsolvables);
         tvar = listHead(unsolvables);
         if listMember(tvar,tSel_never) then
-          Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+          Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
         end if;
         if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nForced selection of Tearing Variable:\n" + UNDERLINE + "\n");
@@ -1073,7 +1073,7 @@ algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("tVar: " + intString(tvar) + " (" + intString(listGet(pointsLst,tvar)) + " points)\n\n");
         elseif listMember(tvar,tSel_avoid) then
-          Error.addCompilerWarning("The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+          Error.addCompilerWarning("The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.");
         end if;
       then
         tvar;
@@ -2141,7 +2141,7 @@ algorithm
       tVar_never = List.intersectionOnTrue(tSel_never,tvars,intEq);
       tVar_discrete = List.intersectionOnTrue(discreteVars,tvars,intEq);
       if not listEmpty(tVar_never) then
-        Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+        Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
       end if;
       if not listEmpty(tVar_discrete) then
         Error.addCompilerWarning("There are discrete tearing variables because otherwise the system could not have been torn (unsolvables). This may lead to problems during simulation.");
@@ -2248,7 +2248,7 @@ algorithm
     OutTVar := listHead(potentials);
   else
     print("\nThe selection of a new tearing variable failed.\n");
-    Error.addCompilerWarning("Function Tearing.selectTearingVar failed at least once. Use +d=tearingdump or +d=tearingdumpV for more information.");
+    Error.addCompilerWarning("Function Tearing.selectTearingVar failed at least once. Use -d=tearingdump or -d=tearingdumpV for more information.");
     fail();
   end if;
 end selectTearingVar;
@@ -2945,7 +2945,7 @@ algorithm
     print("6th: "+ stringDelimitList(List.map(potentials,intString),",")+"\n(Variables from (5th) with most occurrence in equations (" + intString(edges) +" times))\n\nChosen tearing variable: " + intString(tVar) + "\n\n");
   end if;
   if listMember(tVar,tSel_avoid) then
-    Error.addCompilerWarning("The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+    Error.addCompilerWarning("The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.");
   end if;
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - done"); end if;
 end ModifiedCellierHeuristic_3;

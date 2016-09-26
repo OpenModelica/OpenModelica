@@ -84,7 +84,7 @@ end EqSys;
 //-------------------------------------------------//
 
 public function partitionLinearTornSystem "checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and a reduced EquationSystem.
-This is useful in order to reduce the execution costs of the equationsystem and generate a bunch of parallel singleEquations. use +d=doLienarTearing +partlintorn=x to activate it.
+This is useful in order to reduce the execution costs of the equationsystem and generate a bunch of parallel singleEquations. use -d=doLienarTearing +partlintorn=x to activate it.
 Remark: this is still under development
 
 idea:
@@ -114,7 +114,7 @@ end partitionLinearTornSystem;
 protected function reduceLinearTornSystem "author: Waurich TUD 2013-09
   Checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and
   a reduced EquationSystem. This is useful in order to reduce the execution costs of the equationsystem
-  and generate a bunch of parallel singleEquations. use +d=doLienarTearing +partlintorn=x to activate it.
+  and generate a bunch of parallel singleEquations. use -d=doLienarTearing +partlintorn=x to activate it.
   Remark: this is still under development"
   input BackendDAE.EqSystem systIn;
   input BackendDAE.Shared sharedIn;

@@ -1392,7 +1392,7 @@ function setDebugFlags "example input: failtrace,-noevalfunc"
   input String debugFlags;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+d=" + debugFlags);
+  success := setCommandLineOptions("-d=" + debugFlags);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setDebugFlags;
 
@@ -1485,7 +1485,7 @@ annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setTearingMethod;
 
 function setCommandLineOptions
-  "The input is a regular command-line flag given to OMC, e.g. +d=failtrace or +g=MetaModelica"
+  "The input is a regular command-line flag given to OMC, e.g. -d=failtrace or -g=MetaModelica"
   input String option;
   output Boolean success;
 external "builtin";
