@@ -29,22 +29,22 @@ val(y,{0.0,1.0,2.0});
 // ""
 // record SimulationResult
 //     resultFile = "nonlinear_system.problem1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
-// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
-// {0.4044646785222299,0.24848571356013516,0.15120913598834024}
-// {0.16359167617209078,0.061745149843489534,0.02286420280634037}
-// {0.026762236512794215,0.003812463529194976,0.0005227717699694629}
-// {0.0007162173031667359,0.000014534878161441812,0.000000273290323477005}
-// {0.0000005129672253554321,0.00000000021126268316795802,0.00000000000007468760090616605}
-// {0.0000000000002631353742888507,0.00000000000000000004463192129932146,0.000000000000000000000000005578237729267646}
-// {0.00000000000000000000000006924022520666855,1.1982654570470876e-34,1.4883007689896122e-37}
-// {4.566382293211876e-36,-7.1864849255085e-35,1.478138350341489e-37}
-// {4.561007764292192e-36,1.2384406215739104e-34,1.4869144109770497e-37}
-// {4.5686387200510704e-36,8.45641914145634e-35,1.4865637843431058e-37}
-// {0.5955353214777701,0.3140578620222438,0.17459638385504822}
-// {0.0,0.43745642441762095,0.6741944801566115}
+// {0.4044646785222299,0.2484857135628876,0.1512091359516147}
+// {0.1635916761720908,0.06174514984485742,0.0228642027952339}
+// {0.02676223651279421,0.003812463529363896,0.0005227717694615816}
+// {0.0007162173031667356,1.453487816272982e-05,2.73290322945993e-07}
+// {5.129672253554318e-07,2.112626832054001e-10,7.468760061592511e-14}
+// {2.631353742888503e-13,4.463192131514525e-20,5.578237685763905e-27}
+// {6.924022520213336e-26,1.992008400281317e-39,3.111673567882764e-53}
+// {4.794208786042143e-51,3.968097466791333e-78,9.682512388653211e-106}
+// {2.298443788416368e-101,1.574579750595579e-155,9.37510322567177e-211}
+// {5.282843821694882e-202,2.479301390985575e-310,0.0}
+// {0.5955353214777701,0.3140578620265343,0.1745963838067078}
+// {0.0,0.4374564244105781,0.6741944802416775}
 // endResult

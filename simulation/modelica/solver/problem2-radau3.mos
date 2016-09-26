@@ -55,19 +55,19 @@ val(der(y[8]), stopTime);
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 0.000001, method = 'radau3', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-06, method = 'radau3', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
 // ""
-// 0.0007381528144364192
-// 0.000143258642319571
-// 0.0000578796625072562
-// 0.0011767447332909817
-// 0.0023868266983112433
-// 0.006240371320623088
-// 0.0028503274597216116
-// 0.0028496726051504525
+// 0.0007382386484938062
+// 0.0001431732275594896
+// 5.779273470313308e-05
+// 0.001176835233606544
+// 0.002386804119002478
+// 0.006240283613513193
+// 0.002850316425385123
+// 0.002849683549375506
 // endResult

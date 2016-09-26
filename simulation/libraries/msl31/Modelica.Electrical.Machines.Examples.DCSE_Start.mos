@@ -37,7 +37,7 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCSE_Start', options = '', outputFormat = 'mat', variableFilter = 'time|dcse.inertiaRotor.phi|dcse.inertiaRotor.w|dcse.la.i|der[(]dcse.inertiaRotor.w[)]|der[(]dcse.la.i[)]', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.DCSE_Start_res.mat
 // Files Equal!
-// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 //
 // "true
 // "

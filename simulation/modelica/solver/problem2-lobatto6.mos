@@ -55,19 +55,19 @@ val(der(y[8]), stopTime);
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 0.000001, method = 'lobatto6', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-06, method = 'lobatto6', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
 // ""
-// 0.0007376455270638846
-// 0.00014375174766802164
-// 0.00005838157466709012
-// 0.0011762027313932005
-// 0.002386634522904797
-// 0.006239808604908443
-// 0.0028501913000968473
-// 0.0028498087654113256
+// 0.0007351162614649294
+// 0.0001462434315378179
+// 6.091744097580993e-05
+// 0.001173521501911586
+// 0.002386557923683728
+// 0.006239796219225906
+// 0.002850123368601758
+// 0.002849876567916714
 // endResult

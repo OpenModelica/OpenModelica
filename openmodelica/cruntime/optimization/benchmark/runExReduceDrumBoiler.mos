@@ -39,7 +39,7 @@ getErrorString();
 // "
 // end SimulationResult;
 // true
-// "Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // record SimulationResult
 //     resultFile = "drumBoiler.optDrumBoiler_res.mat",
@@ -88,14 +88,14 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 61.2227 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 15.3174 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 3.83254 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.958954 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.958957 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.240159 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.060028 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.0149908 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.0037337 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000922331 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000216782 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 4.53796e-05 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0600279 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0149909 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00373376 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000924962 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000214146 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 4.53237e-05 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // "
 // end SimulationResult;
 // ""

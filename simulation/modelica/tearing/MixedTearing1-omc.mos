@@ -58,9 +58,9 @@ simulate(mixedTest1); getErrorString();
 //  * Number of variables: 3
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
-//  * Number of states: 0 ('+d=stateselection' for list of states)
-//  * Number of discrete variables: 2 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 2 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for initialization (1):
 //  * Single equations (assignments): 0
@@ -77,9 +77,9 @@ simulate(mixedTest1); getErrorString();
 //  * Non-linear torn systems: 1 {1 2}
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
-//  * Number of states: 0 ('+d=stateselection' for list of states)
-//  * Number of discrete variables: 2 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 2 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for simulation (1):
 //  * Single equations (assignments): 0

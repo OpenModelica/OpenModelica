@@ -37,12 +37,12 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 // Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 89
 //  * Number of variables: 89
-// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 2
 //  * Number of states: 0 ()
-//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for initialization (32):
 //  * Single equations (assignments): 28
@@ -60,8 +60,8 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 7
 //  * Number of states: 2 (C2.v,C3.v)
-//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for simulation (23):
 //  * Single equations (assignments): 19

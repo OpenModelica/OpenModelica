@@ -23,7 +23,7 @@ val(x,0.6);
 // Result:
 // true
 // "SimCode: The model EnumerationTest has been translated to FMU"
-// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "EnumerationTest_me_FMU.mo"
 // ""
@@ -35,7 +35,7 @@ val(x,0.6);
 //     messages = ""
 // end SimulationResult;
 // ""
-// 0.8186898836446118
-// 0.6702829055836635
-// 0.5487798731028724
+// 0.8186898836203428
+// 0.6702829055553423
+// 0.5487798730887792
 // endResult

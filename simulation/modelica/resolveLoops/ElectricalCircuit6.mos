@@ -33,12 +33,12 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit6_res.m
 // Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 171
 //  * Number of variables: 171
-// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 2
 //  * Number of states: 0 ()
-//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for initialization (60):
 //  * Single equations (assignments): 53
@@ -56,8 +56,8 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit6_res.m
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 6 (c1.v,c2.v,c3.v,c4.v,c5.v,c6.v)
-//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for simulation (39):
 //  * Single equations (assignments): 32

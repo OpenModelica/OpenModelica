@@ -64,17 +64,17 @@ val(b1,1.0);
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 40, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'testnoEventsFlag', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
-// 1.216073858109536
+// 1.21550625
 // 1.0
-// 1.216073858109536
+// 1.21550625
 // 1.0
-// 1.216073858109536
-// 1.479013399752991
-// 1.216073858109536
+// 1.21550625
+// 1.477455443789062
+// 1.21550625
 // 1.0
-// 1.216073858109536
+// 1.21550625
 // 1.0
 // 1.0
 // 0.0

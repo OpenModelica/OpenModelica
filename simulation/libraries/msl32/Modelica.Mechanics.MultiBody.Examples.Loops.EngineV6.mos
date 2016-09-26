@@ -39,8 +39,8 @@ runScript(modelTesting);getErrorString();
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1942
 //  * Number of states: 0 ()
-//  * Number of discrete variables: 390 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Number of discrete variables: 390 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for initialization (3430):
 //  * Single equations (assignments): 3405
@@ -63,8 +63,8 @@ runScript(modelTesting);getErrorString();
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 690
 //  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
-//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for simulation (1653):
 //  * Single equations (assignments): 1628

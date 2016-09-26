@@ -23,7 +23,7 @@ val(J4_w1, 1);
 // true
 // ""
 // "SimCode: The model CoupledClutches has been translated to FMU"
-// "Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "CoupledClutches_me_FMU.mo"
 // ""
@@ -35,8 +35,8 @@ val(J4_w1, 1);
 //     messages = ""
 // end SimulationResult;
 // ""
-// 3.235521366901101
-// 3.382300587654443
-// 3.382300487654553
+// 3.235521367082613
+// 3.38230058783599
+// 3.38230048783602
 // 0.0
 // endResult

@@ -50,7 +50,7 @@ getErrorString();
 // ""
 // true
 // "SimCode: The model test_ChangeParam has been translated to FMU"
-// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "test_ChangeParam_me_FMU.mo"
 // true
@@ -65,12 +65,12 @@ getErrorString();
 // end SimulationResult;
 // 7.389089930122227
 // 2.0
-// 6.389089930122227
+// 6.389089930122228
 // ""
 // [<interactive>:14:7-14:43:writable]
 // stdout            | info    | Simulation call terminate() at time 1.000000
 // |                 | |       | Message : Simulation done by bar
 // 0
-// {{1.0,1.0,1.0,0.1353363211567342,0.1353363211567342,0.1353363211567342},{-2.0,-2.0,-2.0,-2.0,-2.0,-2.0},{-11.0,-11.0,-11.0,-10.13533632115674,-10.13533632115674,-10.13533632115674}}
+// {{1.0,1.0,1.0,0.1353363211567342,0.1353363211567342,0.1353363211567342},{-2.0,-2.0,-2.0,-2.0,-2.0,-2.0},{-11.0,-11.0,-11.0,-10.13533632115673,-10.13533632115673,-10.13533632115673}}
 // ""
 // endResult

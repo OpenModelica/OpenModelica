@@ -43,7 +43,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // To disable tearing of this component use '--noTearingForComponent=1'.
 //
 // Tearing of NONLINEAR component
-// Use Flag '+d=tearingdumpV' for more details
+// Use Flag '-d=tearingdumpV' for more details
 //
 //
 // Tearing type: heuristic
@@ -179,7 +179,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // To disable tearing of this component use '--noTearingForComponent=2'.
 //
 // Tearing of NONLINEAR component
-// Use Flag '+d=tearingdumpV' for more details
+// Use Flag '-d=tearingdumpV' for more details
 //
 //
 // Tearing type: heuristic
@@ -361,6 +361,6 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'dynamicTearing3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // endResult

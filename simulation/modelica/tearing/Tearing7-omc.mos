@@ -33,9 +33,9 @@ val(R1.v,0.2); getErrorString();
 //  * Number of variables: 81
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 2
-//  * Number of states: 0 ('+d=stateselection' for list of states)
-//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for initialization (21):
 //  * Single equations (assignments): 20
@@ -52,9 +52,9 @@ val(R1.v,0.2); getErrorString();
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
-//  * Number of states: 0 ('+d=stateselection' for list of states)
-//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for simulation (12):
 //  * Single equations (assignments): 11
