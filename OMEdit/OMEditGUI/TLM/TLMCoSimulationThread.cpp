@@ -47,7 +47,7 @@ TLMCoSimulationThread::TLMCoSimulationThread(TLMCoSimulationOutputWidget *pTLMCo
 void TLMCoSimulationThread::run()
 {
   removeGeneratedFiles();
-  runMonitor();
+  runManager();
   exec();
 }
 
@@ -145,6 +145,7 @@ void TLMCoSimulationThread::managerProcessStarted()
 {
   setIsManagerProcessRunning(true);
   emit sendManagerStarted();
+  runMonitor();
 }
 
 /*!
@@ -196,7 +197,6 @@ void TLMCoSimulationThread::monitorProcessStarted()
 {
   setIsMonitorProcessRunning(true);
   emit sendMonitorStarted();
-  runManager();
   QFileInfo fileInfo(mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions().getFileName());
   // give 5 secs to tlmmonitor to create .run file
   mProgressFile.setFileName(fileInfo.absoluteDir().absolutePath() + "/" + fileInfo.completeBaseName() + ".run");
