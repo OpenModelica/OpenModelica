@@ -1,0 +1,348 @@
+// name:      parameterTest11
+// keywords:  parameter evaluation
+// status:    correct
+
+loadString("
+package ParameterTest11
+  model parameterTest11
+    parameter Integer s1 = 3;
+    parameter Boolean b1 = true;
+    parameter Boolean b2 = false;
+    B obj (s1=s1, b1=b1, b2=b2);
+  equation
+
+  end parameterTest11;
+  
+  model B
+    parameter Integer s1 = 5;
+    parameter Boolean b1 = true;
+    parameter Boolean b2 = false;
+    Real x[s1];
+  equation
+    if b1 then
+      x = ones(s1);
+    elseif b2 then
+      x = zeros(s1);
+    else
+      x = ones(s1) + ones(s1);
+    end if;
+  end B;
+end ParameterTest11;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules-=evaluateReplaceProtectedFinalEvaluateParameters --preOptModules+=evaluateReplaceEvaluateParameters -d=evalParameterDump");
+simulate(ParameterTest11.parameterTest11); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+//
+// ########################################
+// DAE before evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: obj.x[3]:VARIABLE()  type: Real  [3]
+// 2: obj.x[2]:VARIABLE()  type: Real  [3]
+// 3: obj.x[1]:VARIABLE()  type: Real  [3]
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): obj.x[1] = 1.0   [dynamic]
+// 2/2 (1): obj.x[2] = 1.0   [dynamic]
+// 3/3 (1): obj.x[3] = 1.0   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (6)
+// ========================================
+// 1: obj.b2:PARAM()  = b2  type: Boolean 
+// 2: obj.b1:PARAM()  = b1  type: Boolean 
+// 3: obj.s1:PARAM(final = true )  = s1  type: Integer 
+// 4: b2:PARAM()  = false  type: Boolean 
+// 5: b1:PARAM(final = true )  = true  type: Boolean 
+// 6: s1:PARAM(final = true )  = 3  type: Integer 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+//
+// size: 6
+//
+// selectedParameter: 
+// nselect: 0
+// ass2: 1,2,3,4,5,6
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 6
+// 1: 4
+// 2: 5
+// 3: 6
+// 4:
+// 5:
+// 6:
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 6
+// 1: 1
+// 2: 2
+// 3: 3
+// 4: 4 1
+// 5: 5 2
+// 6: 6 3
+//
+// After evaluate selected parameters
+//
+// size: 2053
+// nselect: 2053
+// repl:
+// Replacements: (0)
+// ========================================
+//
+//
+// oRepl:
+// Replacements: (0)
+// ========================================
+//
+//
+// globalKnownVars (6)
+// ========================================
+// 1: obj.b2:PARAM()  = b2  type: Boolean 
+// 2: obj.b1:PARAM()  = b1  type: Boolean 
+// 3: obj.s1:PARAM(final = true )  = s1  type: Integer 
+// 4: b2:PARAM()  = false  type: Boolean 
+// 5: b1:PARAM(final = true )  = true  type: Boolean 
+// 6: s1:PARAM(final = true )  = 3  type: Integer 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,-1,-1,-1
+//
+// comps:
+// 6
+// 5
+// 4
+// 3
+// 2
+// 1
+//
+// After evaluate vars with bind expression consists of evaluated vars
+// repl:
+// Replacements: (0)
+// ========================================
+//
+//
+// oRepl:
+// Replacements: (0)
+// ========================================
+//
+//
+// globalKnownVars (6)
+// ========================================
+// 1: obj.b2:PARAM()  = b2  type: Boolean 
+// 2: obj.b1:PARAM()  = b1  type: Boolean 
+// 3: obj.s1:PARAM(final = true )  = s1  type: Integer 
+// 4: b2:PARAM()  = false  type: Boolean 
+// 5: b1:PARAM(final = true )  = true  type: Boolean 
+// 6: s1:PARAM(final = true )  = 3  type: Integer 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,-1,-1,-1
+//
+// After replace evaluated parameter in variables
+// repl:
+// Replacements: (0)
+// ========================================
+//
+//
+// oRepl:
+// Replacements: (0)
+// ========================================
+//
+//
+// globalKnownVars (6)
+// ========================================
+// 1: obj.b2:PARAM()  = b2  type: Boolean 
+// 2: obj.b1:PARAM()  = b1  type: Boolean 
+// 3: obj.s1:PARAM(final = true )  = s1  type: Integer 
+// 4: b2:PARAM()  = false  type: Boolean 
+// 5: b1:PARAM(final = true )  = true  type: Boolean 
+// 6: s1:PARAM(final = true )  = 3  type: Integer 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,-1,-1,-1
+//
+// ########################################
+// DAE after evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: obj.x[3]:VARIABLE()  type: Real  [3]
+// 2: obj.x[2]:VARIABLE()  type: Real  [3]
+// 3: obj.x[1]:VARIABLE()  type: Real  [3]
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): obj.x[1] = 1.0   [dynamic]
+// 2/2 (1): obj.x[2] = 1.0   [dynamic]
+// 3/3 (1): obj.x[3] = 1.0   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (6)
+// ========================================
+// 1: obj.b2:PARAM()  = b2  type: Boolean 
+// 2: obj.b1:PARAM()  = b1  type: Boolean 
+// 3: obj.s1:PARAM(final = true )  = s1  type: Integer 
+// 4: b2:PARAM()  = false  type: Boolean 
+// 5: b1:PARAM(final = true )  = true  type: Boolean 
+// 6: s1:PARAM(final = true )  = 3  type: Integer 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+// record SimulationResult
+//     resultFile = "ParameterTest11.parameterTest11_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ParameterTest11.parameterTest11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult

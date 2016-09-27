@@ -1,0 +1,325 @@
+// name:      parameterTest8
+// keywords:  parameter evaluation
+// status:    correct
+
+// Problem: state is not marked final in the Frontend
+
+loadString("
+model parameterTest8
+  parameter Boolean state = true;
+  Real v;
+  Real r;
+equation
+  if state then // code which is removed during symbolic
+    der(v) = 1; // processing, if state=false
+    der(r) = 2;
+  else
+    v = time;
+    r = 2*time;
+  end if;
+end parameterTest8;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules-=evaluateReplaceProtectedFinalEvaluateParameters --preOptModules+=evaluateReplaceEvaluateParameters -d=evalParameterDump");
+simulate(parameterTest8); getErrorString();
+print("--state--"); val(state, 0.0, "parameterTest8_res.mat");
+print("-----v---"); val(v, 0.0);
+print("-----r---"); val(r, 0.0);
+
+print("\n");
+system("./parameterTest8 -override state=false");
+print("\n");
+
+print("--state--"); val(state, 0.0, "parameterTest8_res.mat");
+print("-----v---"); val(v, 0.0);
+print("-----r---"); val(r, 0.0);
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+//
+// ########################################
+// DAE before evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: r:VARIABLE()  type: Real 
+// 2: v:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): der(v) = 1.0   [dynamic]
+// 2/2 (1): der(r) = 2.0   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (1)
+// ========================================
+// 1: state:PARAM()  = true  type: Boolean 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+//
+// size: 1
+//
+// selectedParameter: 
+// nselect: 0
+// ass2: 1
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 1
+// 1:
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 1
+// 1: 1
+//
+// After evaluate selected parameters
+//
+// size: 2053
+// nselect: 2053
+// repl:
+// Replacements: (0)
+// ========================================
+//
+//
+// oRepl:
+// Replacements: (0)
+// ========================================
+//
+//
+// globalKnownVars (1)
+// ========================================
+// 1: state:PARAM()  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: -1
+//
+// comps:
+// 1
+//
+// After evaluate vars with bind expression consists of evaluated vars
+// repl:
+// Replacements: (0)
+// ========================================
+//
+//
+// oRepl:
+// Replacements: (0)
+// ========================================
+//
+//
+// globalKnownVars (1)
+// ========================================
+// 1: state:PARAM()  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: -1
+//
+// After replace evaluated parameter in variables
+// repl:
+// Replacements: (0)
+// ========================================
+//
+//
+// oRepl:
+// Replacements: (0)
+// ========================================
+//
+//
+// globalKnownVars (1)
+// ========================================
+// 1: state:PARAM()  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: -1
+//
+// ########################################
+// DAE after evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: r:VARIABLE()  type: Real 
+// 2: v:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): der(v) = 1.0   [dynamic]
+// 2/2 (1): der(r) = 2.0   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (1)
+// ========================================
+// 1: state:PARAM()  = true  type: Boolean 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+// record SimulationResult
+//     resultFile = "parameterTest8_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// --state--
+// 1.0
+// -----v---
+// 0.0
+// -----r---
+// 0.0
+//
+//
+// 0
+//
+//
+// --state--
+// 1.0
+// -----v---
+// 0.0
+// -----r---
+// 0.0
+// ""
+// endResult
