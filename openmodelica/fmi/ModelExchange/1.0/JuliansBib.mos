@@ -80,10 +80,10 @@ val(s, 1);
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'JuliansBib_Connector_Hebelarm_einfach_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// 127.2093118472222
-// -1.473681007769134
-// 12720.93118472221
-// -2.525875185738147
+// 29.87032083226751
+// -2.843354040235435
+// 2987.032083226751
+// -1.180467185324341
 // 0.0
-// -0.5326885425096911
+// 2.726903938445847
 // endResult

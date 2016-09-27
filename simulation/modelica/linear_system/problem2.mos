@@ -151,9 +151,9 @@ val(i2, 1.0);
 //     messages = ""
 // end SimulationResult;
 // ""
-// 8.881784197001252e-16
+// 0.0
 // 2.804903282692988
-// 8.881784197001253e-17
+// 0.0
 // 0.2804903282692989
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
@@ -166,6 +166,19 @@ val(i2, 1.0);
 // 0.0
 // 0.2804903282692989
 // true
+// INeqn => u1 = u0 - u2[1]
+// INeqn => i3 = u2 / r3[2]
+// INeqn => i1 = u1 / r1[3]
+// INeqn => i2 = u2 / r2[4]
+// INres => i1 + (-i2) - i3 = 0.0[1]
+// OUTeqn => u1 = u0 - u2[0]
+// OUTeqn => i3 = u2 / r3[1]
+// OUTeqn => i1 = (u0 - u2) / r1[2]
+// OUTeqn => i2 = u2 / r2[3]
+// OUTres => (u0 - u2) / r1 - __OMC__1$RTEARINGF * u2 = 0.0[0]
+// ****************
+// TearVar: u2[0]
+// ****************
 // INeqn => i2 = u2 / r2[1]
 // INeqn => i3 = u2 / r3[2]
 // INeqn => u1 = u0 - u2[3]

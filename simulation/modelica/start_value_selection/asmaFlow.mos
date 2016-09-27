@@ -524,10 +524,8 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // ========================================
 // $res_1_.$pDERLSJac0.dummyVarLSJac0
 //
-// Unreplaceable Crefs: (6)
+// Unreplaceable Crefs: (4)
 // ========================================
-// $res_6_.$pDERLSJac1.dummyVarLSJac1
-// $res_5_.$pDERLSJac1.dummyVarLSJac1
 // $res_4_.$pDERLSJac1.dummyVarLSJac1
 // $res_3_.$pDERLSJac1.dummyVarLSJac1
 // $res_2_.$pDERLSJac1.dummyVarLSJac1

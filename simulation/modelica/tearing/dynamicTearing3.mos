@@ -115,22 +115,22 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // ====================================
 // number of rows: 4
 // 1:(4,unsolvable) (3,solved) 
-// 2:(3,variable(true)) (4,variable(true)) (1,nonlinear) 
-// 3:(3,constone) (1,const(true)) (2,variable(true)) 
-// 4:(3,variable(true)) (4,variable(true)) (2,variable(true)) (1,constone) 
+// 2:(3,variable(false)) (4,variable(false)) (1,nonlinear) 
+// 3:(3,constone) (1,const(true)) (2,param(true)) 
+// 4:(3,param(false)) (4,variable(true)) (2,variable(true)) (1,constone) 
 //
 // AdjacencyMatrixTransposedEnhanced:
 // Transpose Adjacency Matrix Enhanced (row == var)
 // =====================================
 // number of rows: 4
 // 1:(4,constone) (3,const(true)) (2,nonlinear) 
-// 2:(4,variable(true)) (3,variable(true)) 
-// 3:(4,variable(true)) (3,constone) (2,variable(true)) (1,solved) 
-// 4:(4,variable(true)) (2,variable(true)) (1,unsolvable) 
+// 2:(4,variable(true)) (3,param(true)) 
+// 3:(4,param(false)) (3,constone) (2,variable(false)) (1,solved) 
+// 4:(4,variable(true)) (2,variable(false)) (1,unsolvable) 
 //
 // Forced selection of Tearing Variables:
 // ========================================
-// Unsolvables as tVars: 4,2
+// Unsolvables as tVars: 4
 // Variables with annotation attribute 'always' as tVars: 
 //
 // Matching
@@ -152,7 +152,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // * No of equations in strong component: 4
 // * No of tVars: 2
 // *
-// * tVars: 2,4
+// * tVars: 4,2
 // *
 // * resEq: 4,2
 // *
