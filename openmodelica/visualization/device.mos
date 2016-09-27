@@ -1,0 +1,13 @@
+// name:     device
+// keywords: visualization
+// status:   correct
+// A test to check the proper generation of the visualization xml.
+//
+
+loadModel(Modelica,{"3.2.1"}); getErrorString();
+loadModel(Modelica_DeviceDrivers);getErrorString();
+
+loadFile("device.mo");getErrorString();
+setDebugFlags("visxml"); getErrorString();
+setCommandLineOptions("+n=1"); getErrorString();
+translateModelFMU(device, version = "1.0", fmuType = "me");getErrorString();
