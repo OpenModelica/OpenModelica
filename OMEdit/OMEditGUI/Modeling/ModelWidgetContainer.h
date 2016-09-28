@@ -414,6 +414,7 @@ private:
   void drawModelInheritedClassConnections(ModelWidget *pModelWidget);
   void removeInheritedClassConnections();
   void getModelConnections();
+  void detectMultipleDeclarations();
   QString getMetaModelName();
   void getMetaModelSubModels();
   void getMetaModelConnections();

@@ -329,8 +329,7 @@ class GUIMessages : public QObject
 {
   Q_OBJECT
 public:
-  enum MessagesTypes
-  {
+  enum MessagesTypes {
     CHECK_MESSAGES_BROWSER,
     SAME_COMPONENT_NAME,
     SAME_COMPONENT_CONNECT,
@@ -385,7 +384,8 @@ public:
     TLMCOSIMULATION_ALREADY_RUNNING,
     TERMINAL_COMMAND_NOT_SET,
     UNABLE_FIND_COMPONENT,
-    SELECT_SIMULATION_OPTION
+    SELECT_SIMULATION_OPTION,
+    MULTIPLE_DECLARATIONS_COMPONENT
   };
 
   static QString getMessage(int type);

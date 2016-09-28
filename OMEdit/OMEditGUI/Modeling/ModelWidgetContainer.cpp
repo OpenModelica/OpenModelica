@@ -3609,6 +3609,9 @@ void ModelWidget::removeInheritedClassConnections()
  */
 void ModelWidget::getModelConnections()
 {
+  // detect multiple declarations of a component instance
+  detectMultipleDeclarations();
+  // get the connections
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
   LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
   int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(mpLibraryTreeItem->getNameStructure());
@@ -3720,6 +3723,30 @@ void ModelWidget::getModelConnections()
     pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
     pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
     mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
+  }
+}
+
+/*!
+ * \brief ModelWidget::detectMultipleDeclarations
+ * detect multiple declarations of a component instance
+ */
+void ModelWidget::detectMultipleDeclarations()
+{
+  MessagesWidget *pMessagesWidget = mpModelWidgetContainer->getMainWindow()->getMessagesWidget();
+  for (int i = 0 ; i < mComponentsList.size() ; i++) {
+    for (int j = 0 ; j < mComponentsList.size() ; j++) {
+      if (i == j) {
+        j++;
+        continue;
+      }
+      if (mComponentsList[i]->getName().compare(mComponentsList[j]->getName()) == 0) {
+        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                   GUIMessages::getMessage(GUIMessages::MULTIPLE_DECLARATIONS_COMPONENT)
+                                                   .arg(mComponentsList[i]->getName()),
+                                                   Helper::scriptingKind, Helper::errorLevel));
+        return;
+      }
+    }
   }
 }
 

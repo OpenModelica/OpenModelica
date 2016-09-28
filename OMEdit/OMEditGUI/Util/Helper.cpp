@@ -649,6 +649,8 @@ QString GUIMessages::getMessage(int type)
           .arg(Helper::saveExperimentAnnotation)
           .arg(Helper::saveOpenModelicaSimulationFlagsAnnotation)
           .arg(Helper::simulate);
+    case MULTIPLE_DECLARATIONS_COMPONENT:
+      return tr("Multiple declarations of component <b>%1</b> are found.");
     default:
       return "";
   }
