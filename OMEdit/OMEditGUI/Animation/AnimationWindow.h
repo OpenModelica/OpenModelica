@@ -58,7 +58,7 @@
 #if OPENSCENEGRAPH_MAJOR_VERSION>=3 && OPENSCENEGRAPH_MINOR_VERSION>=4
   #include <osgQt/GraphicsWindowQt>
 #else
-  #include <../../osgQt/osgQt/GraphicsWindowQt>
+  #include <../../osgQt/GraphicsWindowQt>
 #endif
 
 
