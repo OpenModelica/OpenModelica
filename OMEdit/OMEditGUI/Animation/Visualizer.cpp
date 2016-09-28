@@ -34,6 +34,7 @@
 
 #include "Visualizer.h"
 
+
 OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path)
         : _shapes(),
           _modelFile(modelFile),

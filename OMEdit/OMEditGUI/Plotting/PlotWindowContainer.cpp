@@ -90,12 +90,12 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
     return 0;
   }
   else {
-	bool isPlotWidget = (0 != subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
-	//std::cout<<"isPlotWidget "<<isPlotWidget<<std::endl;
-	if (isPlotWidget)
+  bool isPlotWidget = (0 != subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
+  //std::cout<<"isPlotWidget "<<isPlotWidget<<std::endl;
+  if (isPlotWidget)
       return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
-	else
-	  return 0;
+  else
+    return 0;
   }
 }
 
@@ -110,15 +110,15 @@ AnimationWindow* PlotWindowContainer::getCurrentAnimationWindow()
     return 0;
   }
   else {
-	bool isAnimationWidget = (0 == subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
-	std::cout<<"isAnimationWidget "<<isAnimationWidget<<std::endl;
-	if (isAnimationWidget)
-	{
+  bool isAnimationWidget = (0 == subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
+  std::cout<<"isAnimationWidget "<<isAnimationWidget<<std::endl;
+  if (isAnimationWidget)
+  {
       std::cout<<"this was good\n"<<std::endl;
       return qobject_cast<AnimationWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
-	}
-	else
-	  return 0;
+  }
+  else
+    return 0;
   }
 }
 
@@ -132,16 +132,16 @@ bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
 {
   bool isPlotWidget = (0 != pObject->objectName().compare(QString("animationWidget")));
   if (isPlotWidget){
-	  PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pObject);
-	  if (pPlotWindow && pEvent->type() == QEvent::Paint) {
-		QPainter painter (pPlotWindow);
-		painter.setPen(Qt::gray);
-		QRect rectangle = pPlotWindow->rect();
-		rectangle.setWidth(pPlotWindow->rect().width() - 1);
-		rectangle.setHeight(pPlotWindow->rect().height() - 1);
-		painter.drawRect(rectangle);
-		return true;
-	  }
+    PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pObject);
+    if (pPlotWindow && pEvent->type() == QEvent::Paint) {
+    QPainter painter (pPlotWindow);
+    painter.setPen(Qt::gray);
+    QRect rectangle = pPlotWindow->rect();
+    rectangle.setWidth(pPlotWindow->rect().width() - 1);
+    rectangle.setHeight(pPlotWindow->rect().height() - 1);
+    painter.drawRect(rectangle);
+    return true;
+    }
   }
   return QMdiArea::eventFilter(pObject, pEvent);
 }
@@ -304,6 +304,6 @@ void PlotWindowContainer::updatePlotWindows(QString variable)
 void PlotWindowContainer::addAnimationWindow(){
   AnimationWindow *pAnimation = new AnimationWindow(this);
   QMdiSubWindow *pSubWindow = addSubWindow(pAnimation);
-  pSubWindow->setWindowIcon(QIcon(":/Resources/icons/animation.png"));
+  pSubWindow->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
   pAnimation->show();
 }

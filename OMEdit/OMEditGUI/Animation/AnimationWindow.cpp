@@ -72,15 +72,15 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpUpdateTimer->start(100);
   // actions and widgets for the toolbar
   int toolbarIconSize = mpPlotWindowContainer->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
-  mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/openFile.png"), Helper::animationChooseFile, this);
+  mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::animationChooseFile, this);
   mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
-  mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.png"), Helper::animationInitialize, this);
+  mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.svg"), Helper::animationInitialize, this);
   mpAnimationInitializeAction->setStatusTip(Helper::animationInitializeTip);
   mpAnimationInitializeAction->setEnabled(false);
-  mpAnimationPlayAction = new QAction(QIcon(":/Resources/icons/play.png"), Helper::animationPlay, this);
+  mpAnimationPlayAction = new QAction(QIcon(":/Resources/icons/play_animation.svg"), Helper::animationPlay, this);
   mpAnimationPlayAction->setStatusTip(Helper::animationPlayTip);
   mpAnimationPlayAction->setEnabled(false);
-  mpAnimationPauseAction = new QAction(QIcon(":/Resources/icons/pause.png"), Helper::animationPause, this);
+  mpAnimationPauseAction = new QAction(QIcon(":/Resources/icons/pause.svg"), Helper::animationPause, this);
   mpAnimationPauseAction->setStatusTip(Helper::animationPauseTip);
   mpAnimationPauseAction->setEnabled(false);
   mpAnimationSlider = new QSlider(Qt::Horizontal);
@@ -99,10 +99,10 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpSpeedUpEdit->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
   mpSpeedUpEdit->setEnabled(false);
   mpPerspectiveDropDownBox = new QComboBox(this);
-  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.png"), QString("to home position"));
-  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.png"),QString("normal to x-y plane"));
-  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective1.png"),QString("normal to y-z plane"));
-  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective3.png"),QString("normal to x-z plane"));
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.svg"), QString("to home position"));
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.svg"),QString("normal to x-y plane"));
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective1.svg"),QString("normal to y-z plane"));
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective3.svg"),QString("normal to x-z plane"));
   //assemble the animation toolbar
   mpAnimationToolBar->addAction(mpAnimationChooseFileAction);
   mpAnimationToolBar->addSeparator();
