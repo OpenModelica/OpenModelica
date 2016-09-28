@@ -105,7 +105,7 @@ void TLMCoSimulationThread::runManager()
   // start the executable
   mpManagerProcess->start(fileName, args);
   mManagerProcessId = Utilities::getProcessId(mpManagerProcess);
-  emit sendManagerOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo);
+  emit sendManagerOutput(QString("%1 %2\n").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo);
 }
 
 void TLMCoSimulationThread::runMonitor()
@@ -134,7 +134,7 @@ void TLMCoSimulationThread::runMonitor()
   environment.insert("TLMPluginPath", tlmCoSimulationOptions.getTLMPluginPath());
   mpMonitorProcess->setProcessEnvironment(environment);
   mpMonitorProcess->start(fileName, args);
-  emit sendMonitorOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo);
+  emit sendMonitorOutput(QString("%1 %2\n").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo);
 }
 
 /*!
@@ -174,9 +174,9 @@ void TLMCoSimulationThread::readManagerStandardError()
 void TLMCoSimulationThread::managerProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   setIsManagerProcessRunning(false);
-  QString exitCodeStr = tr("TLMManager process failed. Exited with code %1.").arg(QString::number(exitCode));
+  QString exitCodeStr = tr("TLMManager process failed. Exited with code %1.\n").arg(QString::number(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    emit sendManagerOutput(tr("TLMManager process finished successfully."), StringHandler::OMEditInfo);
+    emit sendManagerOutput(tr("TLMManager process finished successfully.\n"), StringHandler::OMEditInfo);
   } else if (mpManagerProcess->error() == QProcess::UnknownError) {
     emit sendManagerOutput(exitCodeStr, StringHandler::Error);
   } else {
@@ -243,9 +243,9 @@ void TLMCoSimulationThread::monitorProcessFinished(int exitCode, QProcess::ExitS
   if (mpProgressFileTimer) {
     mpProgressFileTimer->stop();
   }
-  QString exitCodeStr = tr("TLMMonitor process failed. Exited with code %1.").arg(QString::number(exitCode));
+  QString exitCodeStr = tr("TLMMonitor process failed. Exited with code %1.\n").arg(QString::number(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    emit sendMonitorOutput(tr("TLMMonitor process finished successfully."), StringHandler::OMEditInfo);
+    emit sendMonitorOutput(tr("TLMMonitor process finished successfully.\n"), StringHandler::OMEditInfo);
   } else if (mpMonitorProcess->error() == QProcess::UnknownError) {
     emit sendMonitorOutput(exitCodeStr, StringHandler::Error);
   } else {

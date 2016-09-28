@@ -211,19 +211,26 @@ void TLMCoSimulationOutputWidget::managerProcessStarted()
   */
 void TLMCoSimulationOutputWidget::writeManagerOutput(QString output, StringHandler::SimulationMessageType type)
 {
-  /* move the cursor down before adding to the logger. */
+  // move the cursor down before adding to the logger.
   QTextCursor textCursor = mpManagerOutputTextBox->textCursor();
-  textCursor.movePosition(QTextCursor::End);
-  mpManagerOutputTextBox->setTextCursor(textCursor);
-  /* set the text color */
-  QTextCharFormat charFormat = mpManagerOutputTextBox->currentCharFormat();
-  charFormat.setForeground(StringHandler::getSimulationMessageTypeColor(type));
-  mpManagerOutputTextBox->setCurrentCharFormat(charFormat);
-  /* append the output */
-  mpManagerOutputTextBox->insertPlainText(output + "\n");
-  /* move the cursor */
-  textCursor.movePosition(QTextCursor::End);
-  mpManagerOutputTextBox->setTextCursor(textCursor);
+  const bool atBottom = mpManagerOutputTextBox->verticalScrollBar()->value() == mpManagerOutputTextBox->verticalScrollBar()->maximum();
+  if (!textCursor.atEnd()) {
+    textCursor.movePosition(QTextCursor::End);
+  }
+  // set the text color
+  QTextCharFormat format;
+  format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
+  textCursor.beginEditBlock();
+  textCursor.insertText(output, format);
+  textCursor.endEditBlock();
+  // move the cursor
+  if (atBottom) {
+    mpManagerOutputTextBox->verticalScrollBar()->setValue(mpManagerOutputTextBox->verticalScrollBar()->maximum());
+    // QPlainTextEdit destroys the first calls value in case of multiline
+    // text, so make sure that the scroll bar actually gets the value set.
+    // Is a noop if the first call succeeded.
+    mpManagerOutputTextBox->verticalScrollBar()->setValue(mpManagerOutputTextBox->verticalScrollBar()->maximum());
+  }
 }
 
 /*!
@@ -254,19 +261,26 @@ void TLMCoSimulationOutputWidget::monitorProcessStarted()
   */
 void TLMCoSimulationOutputWidget::writeMonitorOutput(QString output, StringHandler::SimulationMessageType type)
 {
-  /* move the cursor down before adding to the logger. */
+  // move the cursor down before adding to the logger.
   QTextCursor textCursor = mpMonitorOutputTextBox->textCursor();
-  textCursor.movePosition(QTextCursor::End);
-  mpMonitorOutputTextBox->setTextCursor(textCursor);
-  /* set the text color */
-  QTextCharFormat charFormat = mpMonitorOutputTextBox->currentCharFormat();
-  charFormat.setForeground(StringHandler::getSimulationMessageTypeColor(type));
-  mpMonitorOutputTextBox->setCurrentCharFormat(charFormat);
-  /* append the output */
-  mpMonitorOutputTextBox->insertPlainText(output + "\n");
-  /* move the cursor */
-  textCursor.movePosition(QTextCursor::End);
-  mpMonitorOutputTextBox->setTextCursor(textCursor);
+  const bool atBottom = mpMonitorOutputTextBox->verticalScrollBar()->value() == mpMonitorOutputTextBox->verticalScrollBar()->maximum();
+  if (!textCursor.atEnd()) {
+    textCursor.movePosition(QTextCursor::End);
+  }
+  // set the text color
+  QTextCharFormat format;
+  format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
+  textCursor.beginEditBlock();
+  textCursor.insertText(output, format);
+  textCursor.endEditBlock();
+  // move the cursor
+  if (atBottom) {
+    mpMonitorOutputTextBox->verticalScrollBar()->setValue(mpManagerOutputTextBox->verticalScrollBar()->maximum());
+    // QPlainTextEdit destroys the first calls value in case of multiline
+    // text, so make sure that the scroll bar actually gets the value set.
+    // Is a noop if the first call succeeded.
+    mpMonitorOutputTextBox->verticalScrollBar()->setValue(mpManagerOutputTextBox->verticalScrollBar()->maximum());
+  }
 }
 
 /*!
