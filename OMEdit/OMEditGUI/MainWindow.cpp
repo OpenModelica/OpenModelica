@@ -2515,7 +2515,7 @@ void MainWindow::createActions()
   mpSimulateWithAlgorithmicDebuggerAction->setEnabled(false);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateModelWithAlgorithmicDebugger()));
   // simulate with animation action
-  mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.png"), Helper::simulateWithAnimation, this);
+  mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
   mpSimulateWithAnimationAction->setEnabled(false);
   connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateModelWithAnimation()));
@@ -2692,7 +2692,7 @@ void MainWindow::createActions()
   mpNewParametricPlotWindowAction->setStatusTip(tr("Inserts new parametric plot window"));
   connect(mpNewParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addParametricPlotWindow()));
   // new mpAnimationWindowAction plot action
-  mpNewAnimationWindowAction = new QAction(QIcon(":/Resources/icons/animation.png"), tr("New Animation Window"), this);
+  mpNewAnimationWindowAction = new QAction(QIcon(":/Resources/icons/animation.svg"), tr("New Animation Window"), this);
   mpNewAnimationWindowAction->setStatusTip(tr("Inserts new animation window"));
   connect(mpNewAnimationWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addAnimationWindow()));
   // export variables action
