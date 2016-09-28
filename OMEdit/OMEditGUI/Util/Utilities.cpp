@@ -164,6 +164,17 @@ void FileDataNotifier::exit(int retcode)
 }
 
 /*!
+ * \brief FileDataNotifier::read
+ * Reads the bytes from the file.
+ * \param maxlen
+ * \return
+ */
+QByteArray FileDataNotifier::read(qint64 maxlen)
+{
+  return mFile.read(maxlen);
+}
+
+/*!
  * \brief FileDataNotifier::run
  * Reimplentation of QThread::run().
  * Looks for when is new data available for reading on file.
@@ -172,7 +183,7 @@ void FileDataNotifier::exit(int retcode)
 void FileDataNotifier::run()
 {
   if (mFile.open(QIODevice::ReadOnly)) {
-    while(!mStop) {
+    while (!mStop) {
       // if file doesn't exist then break.
       if (!mFile.exists()) {
         break;

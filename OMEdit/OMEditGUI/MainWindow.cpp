@@ -97,31 +97,17 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   freopen(outputFileName.toStdString().c_str(), "w", stdout);
   setbuf(stdout, NULL); // used non-buffered stdout
   mpOutputFileDataNotifier = 0;
-  mOutputFile.setFileName(outputFileName);
-  if (mOutputFile.open(QIODevice::ReadOnly)) {
-    mpOutputFileDataNotifier = new FileDataNotifier(outputFileName);
-    connect(mpOutputFileDataNotifier, SIGNAL(bytesAvailable(qint64)), SLOT(readOutputFile(qint64)));
-    mpOutputFileDataNotifier->start();
-  } else {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Can't open file %1.").arg(outputFileName), Helper::scriptingKind,
-                                                Helper::errorLevel));
-
-  }
+  mpOutputFileDataNotifier = new FileDataNotifier(outputFileName);
+  connect(mpOutputFileDataNotifier, SIGNAL(bytesAvailable(qint64)), SLOT(readOutputFile(qint64)));
+  mpOutputFileDataNotifier->start();
   // Reopen the standard error stream.
   QString errorFileName = Utilities::tempDirectory() + "/omediterror.txt";
   freopen(errorFileName.toStdString().c_str(), "w", stderr);
   setbuf(stderr, NULL); // used non-buffered stderr
   mpErrorFileDataNotifier = 0;
-  mErrorFile.setFileName(errorFileName);
-  if (mErrorFile.open(QIODevice::ReadOnly)) {
-    mpErrorFileDataNotifier = new FileDataNotifier(errorFileName);
-    connect(mpErrorFileDataNotifier, SIGNAL(bytesAvailable(qint64)), SLOT(readErrorFile(qint64)));
-    mpErrorFileDataNotifier->start();
-  } else {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Can't open file %1.").arg(errorFileName), Helper::scriptingKind,
-                                                Helper::errorLevel));
-
-  }
+  mpErrorFileDataNotifier = new FileDataNotifier(errorFileName);
+  connect(mpErrorFileDataNotifier, SIGNAL(bytesAvailable(qint64)), SLOT(readErrorFile(qint64)));
+  mpErrorFileDataNotifier->start();
   // Create an object of QProgressBar
   mpProgressBar = new QProgressBar;
   mpProgressBar->setMaximumWidth(300);
@@ -440,13 +426,11 @@ void MainWindow::beforeClosingMainWindow()
 {
   mpOMCProxy->quitOMC();
   if (mpOutputFileDataNotifier) {
-    mOutputFile.close();
     mpOutputFileDataNotifier->exit();
     mpOutputFileDataNotifier->wait();
     delete mpOutputFileDataNotifier;
   }
   if (mpErrorFileDataNotifier) {
-    mErrorFile.close();
     mpErrorFileDataNotifier->exit();
     mpErrorFileDataNotifier->wait();
     delete mpErrorFileDataNotifier;
@@ -1333,7 +1317,7 @@ void MainWindow::loadSystemLibrary()
  */
 void MainWindow::readOutputFile(qint64 bytes)
 {
-  QString data = mOutputFile.read(bytes);
+  QString data = mpOutputFileDataNotifier->read(bytes);
   mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
 }
 
@@ -1344,7 +1328,7 @@ void MainWindow::readOutputFile(qint64 bytes)
  */
 void MainWindow::readErrorFile(qint64 bytes)
 {
-  QString data = mErrorFile.read(bytes);
+  QString data = mpErrorFileDataNotifier->read(bytes);
   mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
 }
 

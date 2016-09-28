@@ -208,9 +208,7 @@ private:
   OptionsDialog *mpOptionsDialog;
   MessagesWidget *mpMessagesWidget;
   QDockWidget *mpMessagesDockWidget;
-  QFile mOutputFile;
   FileDataNotifier *mpOutputFileDataNotifier;
-  QFile mErrorFile;
   FileDataNotifier *mpErrorFileDataNotifier;
   LibraryWidget *mpLibraryWidget;
   QDockWidget *mpLibraryDockWidget;
