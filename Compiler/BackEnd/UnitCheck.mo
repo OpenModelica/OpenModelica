@@ -639,7 +639,8 @@ algorithm
 
     case (DAE.BINARY(exp1, DAE.MUL(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
       (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), _) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      expListList = listAppend(expListList, expListList2);
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
     //DIV
