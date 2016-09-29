@@ -112,6 +112,7 @@ protected
   DAE.FunctionTree functionTree;
   list<BackendDAE.TimeEvent> timeEvents;
   String neqStr,nvarStr;
+  Integer varSize, eqnSize;
 algorithm
   // reset dumped file sequence number
   System.tmpTickResetIndex(0, Global.backendDAE_fileSequence);
@@ -157,8 +158,16 @@ algorithm
                                                     symjacs,inExtraInfo,
                                                     BackendDAEUtil.emptyPartitionsInfo()));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
-  neqStr := intString(BackendDAEUtil.equationSize(eqnarr));
-  nvarStr := intString(BackendVariable.varsSize(vars_1));
+  varSize := BackendVariable.varsSize(vars_1);
+  eqnSize := BackendDAEUtil.equationSize(eqnarr);
+  neqStr := intString(eqnSize);
+  nvarStr := intString(varSize);
+
+  if varSize <> eqnSize then
+    Error.addMessage(if varSize > eqnSize then Error.UNDERDET_EQN_SYSTEM else Error.OVERDET_EQN_SYSTEM, {neqStr, nvarStr});
+    fail();
+  end if;
+
   Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.DUMP_BACKENDDAE_INFO),Error.BACKENDDAEINFO_LOWER,{neqStr,nvarStr},Absyn.dummyInfo);
   execStat("Generate backend data structure");
 end lower;
