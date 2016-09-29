@@ -199,7 +199,7 @@ HEADERS  += Util/Helper.h \
   Editors/MetaModelEditor.h \
   Editors/MetaModelicaEditor.h \
   #$$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/build/fmilib.h \
-  ../../osgQt/GraphicsWindowQt \
+  ../../osgQt/OMEdit_GraphicsWindowQt.h \
   ../../osgQt/Export \
   Animation/AnimationWindow.h \
   Animation/AnimationUtil.h \

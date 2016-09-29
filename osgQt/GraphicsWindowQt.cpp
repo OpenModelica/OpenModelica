@@ -12,7 +12,7 @@
 */
 
 #include <osg/DeleteHandler>
-#include "GraphicsWindowQt"
+#include "OMEdit_GraphicsWindowQt.h"
 #include <osgViewer/ViewerBase>
 #include <QtGui/QInputEvent>
 #include <QtCore/QPointer>
@@ -23,14 +23,6 @@
 # include <QGesture>
 #endif
 
-/*
-
-#include <QtCore/QMutex>
-#include <QtCore/QEvent>
-#include <QtCore/QQueue>
-#include <QtCore/QSet>
-#include <QtCore/QGLWidget>
-*/
 using namespace osgQt;
 
 
