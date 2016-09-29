@@ -15,7 +15,6 @@ getErrorString(); // simulation failed, check error string.
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'DoubleWhenConflict', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: DoubleWhenConflict"
 // end SimulationResult;
-// "Error: Too many equations, over-determined system. The model has 4 equation(s) and 3 variable(s).
-// Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
+// "Error: Too many equations, over-determined system. The model has 2 equation(s) and 1 variable(s).
 // "
 // endResult

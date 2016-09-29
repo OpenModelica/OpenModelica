@@ -16,6 +16,5 @@ simulate(ModelBalance2);getErrorString();
 //     messages = "Failed to build model: ModelBalance2"
 // end SimulationResult;
 // "Error: Too few equations, under-determined system. The model has 1 equation(s) and 2 variable(s).
-// Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
 // "
 // endResult
