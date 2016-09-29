@@ -76,14 +76,14 @@ win32 {
     } else { # 64-bit
       LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -L$$(OMDEV)/tools/msys/mingw64/lib
     }
-    LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibosgQt.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
+    LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
   } else { # debug
     contains(QT_ARCH, i386) { # 32-bit
       LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib
     } else { # 64-bit
       LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib
     }
-    LIBS += -llibosgd.dll -llibosgViewerd.dll -llibosgQtd.dll -llibOpenThreadsd.dll -llibosgDBd.dll -llibosgGAd.dll
+    LIBS += -llibosgd.dll -llibosgViewerd.dll -llibOpenThreadsd.dll -llibosgDBd.dll -llibosgGAd.dll
   }
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \
@@ -105,9 +105,6 @@ win32 {
   CONFIG(release, debug|release) {
     QMAKE_LFLAGS_RELEASE += -rdynamic
   }
-  LIBS += -losgDB -losgViewer -losgUtil -losgGA -losgQt -losg -lOpenThreads
-	HEADERS +=  ../../osgQt/GraphicsWindowQt ../../osgQt/Export
-	SOURCES +=  ../../osgQt/GraphicsWindowQt.cpp
 }
 
 SOURCES += main.cpp \
@@ -132,6 +129,7 @@ SOURCES += main.cpp \
   Editors/MetaModelEditor.cpp \
   Editors/MetaModelicaEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
+  ../../osgQt/GraphicsWindowQt.cpp \
   Animation/AnimationWindow.cpp \
   Animation/ExtraShapes.cpp \
   Animation/Visualizer.cpp \
@@ -201,6 +199,8 @@ HEADERS  += Util/Helper.h \
   Editors/MetaModelEditor.h \
   Editors/MetaModelicaEditor.h \
   #$$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/build/fmilib.h \
+  ../../osgQt/GraphicsWindowQt \
+  ../../osgQt/Export \
   Animation/AnimationWindow.h \
   Animation/AnimationUtil.h \
   Animation/ExtraShapes.h \
