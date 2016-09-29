@@ -17,7 +17,7 @@
 #include <osgViewer/GraphicsWindow>
 #include "Export"
 
-#include <QMutex>
+#include <QtCore/QMutex>
 #include <QEvent>
 #include <QQueue>
 #include <QSet>
