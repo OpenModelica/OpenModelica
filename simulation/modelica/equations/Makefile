@@ -21,7 +21,7 @@ IfEquation4.mos \
 IfEquation5.mos \
 IfEquation6.mos \
 IfEquationUnbalanced.mos \
-ModelBalance1.mos ModelBalance2.mos ModelBalance3.mos \
+ModelBalance1.mos ModelBalance2.mos ModelBalance3.mos ModelBalance4.mos \
 ticket-2337.mos \
 WatchDog1AlgorithmWhen.mos WatchDog2EquationWhen.mos \
 WhenEquation.mos WhenEquation1.mos \
