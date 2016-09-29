@@ -9,7 +9,7 @@ model parameterTest6
   Integer y;
   Integer z;
   parameter Integer p1 = 2;
-  parameter Integer p2 = if b1 then e1 + p4 elseif b2 then p1 - p3 else e1 - p3;
+  parameter Integer p2 = if b1 then e1 + p4 elseif b2 then p1 - p3 else e1 - p3; // p2 = p1 - p3
   parameter Integer p3 = 5;
   parameter Integer p4 = f1 + p1;
   parameter Integer p5 = pr1;
@@ -17,7 +17,7 @@ model parameterTest6
   final parameter Integer f2 = 10;
   parameter Boolean b1 = false annotation(Evaluate=true);
   parameter Boolean b2 = true annotation(Evaluate=true);
-  parameter Integer e1 = if b1 then p3 + p1 else p2 + 7 annotation(Evaluate=true);
+  parameter Integer e1 = if b1 then p3 + p1 else p2 + 7 annotation(Evaluate=true); // e1 = p2 + 7
   parameter Integer s = 3;
   parameter Integer a[s] = ones(s) annotation(Evaluate=true);
 protected
@@ -30,49 +30,8 @@ end parameterTest6;
 "); getErrorString();
 
 setCommandLineOptions("--preOptModules-=evaluateReplaceProtectedFinalEvaluateParameters --preOptModules+=evaluateReplaceEvaluateParameters -d=evalParameterDump");
-simulate(parameterTest6); getErrorString();
-print("----p1--"); val(p1, 0.0, "parameterTest6_res.mat");
-print("----p2--"); val(p2, 0.0);
-print("----p3--"); val(p3, 0.0);
-print("----p4--"); val(p4, 0.0);
-print("----p5--"); val(p5, 0.0);
-print("----f1--"); val(f1, 0.0);
-print("----f2--"); val(f2, 0.0);
-print("----b1--"); val(b1, 0.0);
-print("----b2--"); val(b2, 0.0);
-print("----e1--"); val(e1, 0.0);
-print("----s---"); val(s, 0.0);
-print("----a[1]"); val(a[1], 0.0);
-print("----a[2]"); val(a[2], 0.0);
-print("----a[3]"); val(a[3], 0.0);
-print("----pr1-"); val(pr1, 0.0);
-print("----x---"); val(x, 0.0);
-print("----y---"); val(y, 0.0);
-print("----z---"); val(z, 0.0);
-
-print("\n");
-system("./parameterTest6 -override s=5");
-print("\n");
-
-print("----p1--"); val(p1, 0.0, "parameterTest6_res.mat");
-print("----p2--"); val(p2, 0.0);
-print("----p3--"); val(p3, 0.0);
-print("----p4--"); val(p4, 0.0);
-print("----p5--"); val(p5, 0.0);
-print("----f1--"); val(f1, 0.0);
-print("----f2--"); val(f2, 0.0);
-print("----b1--"); val(b1, 0.0);
-print("----b2--"); val(b2, 0.0);
-print("----e1--"); val(e1, 0.0);
-print("----s---"); val(s, 0.0);
-print("----a[1]"); val(a[1], 0.0);
-print("----a[2]"); val(a[2], 0.0);
-print("----a[3]"); val(a[3], 0.0);
-print("----pr1-"); val(pr1, 0.0);
-print("----x---"); val(x, 0.0);
-print("----y---"); val(y, 0.0);
-print("----z---"); val(z, 0.0);
-getErrorString();
+simulate(parameterTest6, simflags="-output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a[1],a[2],a[3],pr1,x,y,z"); getErrorString();
+system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a[1],a[2],a[3],pr1,x,y,z"); getErrorString();
 
 
 // Result:
@@ -498,86 +457,12 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "parameterTest6_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a[1],a[2],a[3],pr1,x,y,z'",
+//     messages = "time=1,p1=2,p2=-3,p3=5,p4=4,p5=100,f1=2,f2=10,b1=0,b2=1,e1=4,s=3,a[1]=1,a[2]=1,a[3]=1,pr1=100,x=-1,y=115,z=6
+// "
 // end SimulationResult;
 // ""
-// ----p1--
-// 2.0
-// ----p2--
-// -3.0
-// ----p3--
-// 5.0
-// ----p4--
-// 4.0
-// ----p5--
-// 100.0
-// ----f1--
-// 2.0
-// ----f2--
-// 10.0
-// ----b1--
-// 0.0
-// ----b2--
-// 1.0
-// ----e1--
-// 4.0
-// ----s---
-// 3.0
-// ----a[1]
-// 1.0
-// ----a[2]
-// 1.0
-// ----a[3]
-// 1.0
-// ----pr1-
-// 100.0
-// ----x---
-// -1.0
-// ----y---
-// 115.0
-// ----z---
-// 6.0
-//
-//
+// time=1,p1=2,p2=-3,p3=5,p4=4,p5=100,f1=2,f2=10,b1=0,b2=1,e1=4,s=5,a[1]=1,a[2]=1,a[3]=1,pr1=100,x=-1,y=115,z=8
 // 0
-//
-//
-// ----p1--
-// 2.0
-// ----p2--
-// -3.0
-// ----p3--
-// 5.0
-// ----p4--
-// 4.0
-// ----p5--
-// 100.0
-// ----f1--
-// 2.0
-// ----f2--
-// 10.0
-// ----b1--
-// 0.0
-// ----b2--
-// 1.0
-// ----e1--
-// 4.0
-// ----s---
-// 3.0
-// ----a[1]
-// 1.0
-// ----a[2]
-// 1.0
-// ----a[3]
-// 1.0
-// ----pr1-
-// 100.0
-// ----x---
-// -1.0
-// ----y---
-// 115.0
-// ----z---
-// 6.0
 // ""
 // endResult

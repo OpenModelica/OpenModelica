@@ -65,14 +65,7 @@ end parameterTest;
 "); getErrorString();
 
 setCommandLineOptions("-d=evalParameterDump, --evalConstArgsOnly=false"); getErrorString();
-simulate(parameterTest); getErrorString();
-val(p1, 0.0);
-val(p2, 0.0);
-val(p3, 0.0);
-val(p4, 0.0);
-val(p5, 0.0);
-val(b1, 0.0);
-val(b2, 0.0);
+simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString();
 
 // Result:
 // true
@@ -497,15 +490,9 @@ val(b2, 0.0);
 //
 // record SimulationResult
 //     resultFile = "parameterTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=p1,p2,p3,p4,p5,b1,b2'",
+//     messages = "time=1,p1=1,p2=2,p3=3,p4=-2,p5=5,b1=0,b2=1
+// "
 // end SimulationResult;
 // ""
-// 1.0
-// 2.0
-// 3.0
-// -2.0
-// 5.0
-// 0.0
-// 1.0
 // endResult
