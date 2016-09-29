@@ -19,8 +19,12 @@
 
 #if (QT_VERSION>=QT_VERSION_CHECK(4, 6, 0))
 # define USE_GESTURES
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include <QtWidgets/QGestureEvent>
 # include <QtWidgets/QGesture>
+#else
+# include <QGestureEvent>
+# include <QGesture>
 #endif
 
 /*
