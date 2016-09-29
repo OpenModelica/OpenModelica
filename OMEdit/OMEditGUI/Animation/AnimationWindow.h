@@ -50,19 +50,11 @@
 #include <osg/Vec3>
 #include <osgDB/ReadFile>
 #include <osgGA/MultiTouchTrackballManipulator>
+#include <../../osgQt/GraphicsWindowQt>
 #include <osg/Version>
 #include <osgViewer/CompositeViewer>
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
-
-#if OPENSCENEGRAPH_MAJOR_VERSION>=3 && OPENSCENEGRAPH_MINOR_VERSION>=4
-  #include <osgQt/GraphicsWindowQt>
-#else
-  #include <../../osgQt/GraphicsWindowQt>
-#endif
-
-
-
 
 class MainWindow;
 class PlotWindowContainer;

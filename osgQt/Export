@@ -29,13 +29,14 @@
 #endif
 
 #if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__) || defined( __BCPLUSPLUS__) || defined( __MWERKS__)
-    #  if defined( OSG_LIBRARY_STATIC )
-        #    define OSGQT_EXPORT
-        #  elif defined( OSGQT_LIBRARY )
-        #    define OSGQT_EXPORT   __declspec(dllexport)
-        #  else
-        #    define OSGQT_EXPORT   __declspec(dllimport)
-        #endif
+//    #  if defined( OSG_LIBRARY_STATIC )
+//        #    define OSGQT_EXPORT
+//        #  elif defined( OSGQT_LIBRARY )
+//        #    define OSGQT_EXPORT   __declspec(dllexport)
+//        #  else
+//        #    define OSGQT_EXPORT   __declspec(dllimport)
+//        #endif
+        #define OSGQT_EXPORT
 #else
         #define OSGQT_EXPORT
 #endif
