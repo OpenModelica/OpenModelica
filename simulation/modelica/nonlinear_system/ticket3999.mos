@@ -1,0 +1,35 @@
+// name: ticket3999
+// keywords: nonlinear system solver, enumeration, crefs
+// status: correct
+// cflags:
+// teardown_command: rm -rf ticket3999.nls* output.log
+
+loadString("
+within ;
+package ticket3999
+  encapsulated type et = enumeration(E1, E2);
+  model enumNls
+    Real z[et];
+  equation 
+    z[et.E2]^2+ z[et.E1]^2 = 1;
+    z[et.E1]^2+2*z[et.E2] = time;
+  end enumNls;
+end ticket3999;
+");
+getErrorString();
+
+simulate(ticket3999.enumNls);
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ticket3999.enumNls_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ticket3999.enumNls', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult
