@@ -223,7 +223,9 @@ QWidget* AnimationWindow::setupViewWidget()
   camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits->width/2) / static_cast<double>(traits->height/2), 1.0f, 10000.0f);
   mpSceneView->addEventHandler(new osgViewer::StatsHandler());
   mpSceneView->setCameraManipulator(new osgGA::MultiTouchTrackballManipulator());
+#if OSG_VERSION_GREATER_OR_EQUAL(3,4,0)
   gw->setTouchEventsEnabled(true);
+#endif
   return gw->getGLWidget();
 }
 
