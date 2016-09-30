@@ -28,9 +28,9 @@
  #
  #/
 
-QT += network core gui webkit xml xmlpatterns svg
+QT += network core gui webkit xml xmlpatterns svg opengl
 greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += printsupport widgets webkitwidgets
+  QT += printsupport widgets webkitwidgets opengl
 }
 
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
@@ -63,25 +63,33 @@ win32 {
     QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
   }
   # release vs debug
-  CONFIG(release, debug|release) {
+  CONFIG(release, debug|release) { # release
+    # required for backtrace
     # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
     # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
     # -s will remove all symbol table and relocation information from the executable.
     QMAKE_CXXFLAGS += -g
     QMAKE_LFLAGS_RELEASE =
-    # required for backtrace
     # win32 vs. win64
     contains(QT_ARCH, i386) { # 32-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin
+      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin -L$$(OMDEV)/tools/msys/mingw32/lib
     } else { # 64-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin
+      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -L$$(OMDEV)/tools/msys/mingw64/lib
     }
-    LIBS += -limagehlp -lbfd -lintl -liberty
+    LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
+  } else { # debug
+    contains(QT_ARCH, i386) { # 32-bit
+      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib
+    } else { # 64-bit
+      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib
+    }
+    LIBS += -llibosgd.dll -llibosgViewerd.dll -llibOpenThreadsd.dll -llibosgDBd.dll -llibosgGAd.dll
   }
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \
     -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread \
     -lws2_32
+
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
     $$(OMBUILDDIR)/include/omplot/qwt \
     $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c
@@ -121,6 +129,13 @@ SOURCES += main.cpp \
   Editors/MetaModelEditor.cpp \
   Editors/MetaModelicaEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
+  ../../osgQt/GraphicsWindowQt.cpp \
+  Animation/AnimationWindow.cpp \
+  Animation/ExtraShapes.cpp \
+  Animation/Visualizer.cpp \
+  Animation/VisualizerMAT.cpp \
+  Animation/Shapes.cpp \
+  Animation/TimeManager.cpp \
   Component/Component.cpp \
   Annotations/ShapeAnnotation.cpp \
   Component/CornerItem.cpp \
@@ -183,6 +198,17 @@ HEADERS  += Util/Helper.h \
   Editors/CEditor.h \
   Editors/MetaModelEditor.h \
   Editors/MetaModelicaEditor.h \
+  #$$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/build/fmilib.h \
+  ../../osgQt/OMEdit_GraphicsWindowQt.h \
+  ../../osgQt/Export \
+  Animation/AnimationWindow.h \
+  Animation/AnimationUtil.h \
+  Animation/ExtraShapes.h \
+  Animation/Visualizer.h \
+  Animation/VisualizerMAT.h \
+  Animation/Shapes.h \
+  Animation/TimeManager.h \
+  Animation/rapidxml.hpp \
   Plotting/PlotWindowContainer.h \
   Component/Component.h \
   Annotations/ShapeAnnotation.h \
@@ -233,6 +259,7 @@ INCLUDEPATH += ../../qjson/build/include
 
 INCLUDEPATH += . \
   Annotations \
+  Animation \
   Component \
   CrashReport \
   Debugger \
@@ -253,7 +280,7 @@ INCLUDEPATH += . \
   TransformationalDebugger \
   Util \
   $$OPENMODELICAHOME/include/omc/scripting-API \
-  $$OPENMODELICAHOME/include/omc/c/util
+  $$OPENMODELICAHOME/include/omc/c/util \
 
 OTHER_FILES += Resources/css/stylesheet.qss \
   Resources/XMLSchema/tlmModelDescription.xsd \

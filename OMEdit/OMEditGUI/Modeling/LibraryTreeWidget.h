@@ -313,6 +313,7 @@ private:
   QAction *mpSimulateAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
+  QAction *mpSimulateWithAnimationAction;
   QAction *mpSimulationSetupAction;
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
@@ -349,6 +350,7 @@ public slots:
   void simulate();
   void simulateWithTransformationalDebugger();
   void simulateWithAlgorithmicDebugger();
+  void simulateWithAnimation();
   void simulationSetup();
   void duplicateClass();
   void unloadClass();

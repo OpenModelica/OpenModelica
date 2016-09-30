@@ -29,35 +29,36 @@
  *
  */
 /*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+ * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#ifndef PLOTWINDOWCONTAINER_H
-#define PLOTWINDOWCONTAINER_H
+#ifndef VISUALIZERMAT_H
+#define VISUALIZERMAT_H
 
-#include "MainWindow.h"
-#include "OMPlot.h"
-#include "Animation/AnimationWindow.h"
+#include "Visualizer.h"
 
-class MainWindow;
-class AnimationWindow;
 
-class PlotWindowContainer : public MdiArea
+class VisualizerMAT : public VisualizerAbstract
 {
-  Q_OBJECT
-public:
-  PlotWindowContainer(MainWindow *pParent);
-  QString getUniqueName(QString name = QString("Plot"), int number = 1);
-  OMPlot::PlotWindow* getCurrentWindow();
-  AnimationWindow* getCurrentAnimationWindow();
-  bool eventFilter(QObject *pObject, QEvent *pEvent);
-public slots:
-  void addAnimationWindow();
-  void addPlotWindow(bool maximized = false);
-  void addParametricPlotWindow();
-  void clearPlotWindow();
-  void exportVariables();
-  void updatePlotWindows(QString variable);
+ public:
+	VisualizerMAT() = delete;
+	VisualizerMAT(const std::string& fileName, const std::string& path);
+	virtual ~VisualizerMAT() = default;
+	VisualizerMAT(const VisualizerMAT& omvm) = delete;
+	VisualizerMAT& operator=(const VisualizerMAT& omvm) = delete;
+	void initData();
+	void initializeVisAttributes(const double time = -1.0);
+	void readMat(const std::string& modelFile, const std::string& path);
+	void setSimulationSettings(const UserSimSettingsMAT& simSetMAT);
+	//void simulate(TimeManager& omvm){ };
+	void updateVisAttributes(const double time) override;
+	void updateScene(const double time);
+	void updateObjectAttributeMAT(ShapeObjectAttribute* attr, double time, ModelicaMatReader* reader);
+	double omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time);
+ private:
+	ModelicaMatReader _matReader;
 };
 
-#endif // PLOTWINDOWCONTAINER_H
+
+
+#endif // end VISUALIZERMAT_H

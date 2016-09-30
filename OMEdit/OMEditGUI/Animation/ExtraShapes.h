@@ -29,35 +29,43 @@
  *
  */
 /*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+ * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#ifndef PLOTWINDOWCONTAINER_H
-#define PLOTWINDOWCONTAINER_H
+#ifndef EXTRASHAPES_H
+#define EXTRASHAPES_H
 
-#include "MainWindow.h"
-#include "OMPlot.h"
-#include "Animation/AnimationWindow.h"
+#include <osg/Node>
+#include <osg/Group>
+#include <osg/Geode>
+#include <osg/Geometry>
+#include <osg/Shape>
 
-class MainWindow;
-class AnimationWindow;
 
-class PlotWindowContainer : public MdiArea
+class Pipecylinder : public osg::Geometry
 {
-  Q_OBJECT
 public:
-  PlotWindowContainer(MainWindow *pParent);
-  QString getUniqueName(QString name = QString("Plot"), int number = 1);
-  OMPlot::PlotWindow* getCurrentWindow();
-  AnimationWindow* getCurrentAnimationWindow();
-  bool eventFilter(QObject *pObject, QEvent *pEvent);
-public slots:
-  void addAnimationWindow();
-  void addPlotWindow(bool maximized = false);
-  void addParametricPlotWindow();
-  void clearPlotWindow();
-  void exportVariables();
-  void updatePlotWindows(QString variable);
+  Pipecylinder(float rI, float rO, float l);
+  ~Pipecylinder() {};
 };
 
-#endif // PLOTWINDOWCONTAINER_H
+
+class Spring : public osg::Geometry
+{
+public:
+  Spring(float r, float rCoil, float nWindings,  float l);
+  ~Spring() {};
+private:
+  osg::Vec3f getNormal(osg::Vec3f vec, float length = 1);
+  osg::Vec3f rotateX(osg::Vec3f vec, float phi);
+  osg::Vec3f rotateY(osg::Vec3f vec, float phi);
+  osg::Vec3f rotateZ(osg::Vec3f vec, float phi);
+  osg::Vec3f rotateArbitraryAxis_expensive(osg::Vec3f vec, osg::Vec3f axis, float phi);
+  osg::Vec3f rotateArbitraryAxis(osg::Vec3f vec, osg::Vec3f axis, float phi);
+  float angleBetweenVectors(osg::Vec3f vec1, osg::Vec3f vec2);
+
+  osg::Vec3Array* mpOuterVertices;
+  osg::Vec3Array* mpSplineVertices;
+};
+
+#endif //end EXTRASHAPES_H
