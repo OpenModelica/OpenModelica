@@ -106,7 +106,7 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
   mpBuildOnlyCheckBox->setChecked(false);
   mpLaunchTransformationalDebuggerCheckBox->setChecked(launchTransformationalDebugger);
   mpLaunchAlgorithmicDebuggerCheckBox->setChecked(launchAlgorithmicDebugger);
-  mpSimulateWithAnimationCheckBox->setChecked(launchAnimation);
+  mpLaunchAnimationCheckBox->setChecked(launchAnimation);
   simulate();
 }
 
@@ -252,8 +252,8 @@ void SimulationDialog::setUpForm()
   mpLaunchTransformationalDebuggerCheckBox = new QCheckBox(tr("Launch Transformational Debugger"));
   // Launch Algorithmic Debugger checkbox
   mpLaunchAlgorithmicDebuggerCheckBox = new QCheckBox(tr("Launch Algorithmic Debugger"));
-  // simulate with animation
-  mpSimulateWithAnimationCheckBox = new QCheckBox(Helper::simulateWithAnimation);
+  // Launch Animation
+  mpLaunchAnimationCheckBox = new QCheckBox(tr("Launch Animation"));
   // set General Tab Layout
   QGridLayout *pGeneralTabLayout = new QGridLayout;
   pGeneralTabLayout->setAlignment(Qt::AlignTop);
@@ -267,7 +267,7 @@ void SimulationDialog::setUpForm()
   pGeneralTabLayout->addWidget(mpBuildOnlyCheckBox, 4, 0, 1, 3);
   pGeneralTabLayout->addWidget(mpLaunchTransformationalDebuggerCheckBox, 5, 0, 1, 3);
   pGeneralTabLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 6, 0, 1, 3);
-  pGeneralTabLayout->addWidget(mpSimulateWithAnimationCheckBox, 7, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpLaunchAnimationCheckBox, 7, 0, 1, 3);
   mpGeneralTab->setLayout(pGeneralTabLayout);
   // add General Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpGeneralTab, Helper::general);
@@ -682,7 +682,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     // Launch Algorithmic Debugger checkbox
     mpLaunchAlgorithmicDebuggerCheckBox->setChecked(simulationOptions.getLaunchAlgorithmicDebugger());
     // Simulate with Animation checkbox
-    mpSimulateWithAnimationCheckBox->setChecked(simulationOptions.getSimulateWithAnimation());
+    mpLaunchAnimationCheckBox->setChecked(simulationOptions.getSimulateWithAnimation());
     // build only
     mpBuildOnlyCheckBox->setChecked(simulationOptions.getBuildOnly());
     // Number Of Intervals
@@ -787,7 +787,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
     mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=gendebugsymbols");
   }
   // set the visulation flag before translation
-  if (mpSimulateWithAnimationCheckBox->isChecked()) {
+  if (mpLaunchAnimationCheckBox->isChecked()) {
     mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=visxml");
   }
   bool result = mpMainWindow->getOMCProxy()->translateModel(mClassName, simulationParameters);
@@ -815,7 +815,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setBuildOnly(mpBuildOnlyCheckBox->isChecked());
   simulationOptions.setLaunchTransformationalDebugger(mpLaunchTransformationalDebuggerCheckBox->isChecked());
   simulationOptions.setLaunchAlgorithmicDebugger(mpLaunchAlgorithmicDebuggerCheckBox->isChecked());
-  simulationOptions.setSimulateWithAnimation(mpSimulateWithAnimationCheckBox->isChecked());
+  simulationOptions.setSimulateWithAnimation(mpLaunchAnimationCheckBox->isChecked());
   simulationOptions.setNumberofIntervals(mpNumberofIntervalsSpinBox->value());
   qreal startTime = mpStartTimeTextBox->text().toDouble();
   qreal stopTime = mpStopTimeTextBox->text().toDouble();
@@ -1271,6 +1271,14 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     pOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
       mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
+      // if simulated with animation then open the animation directly.
+      if (mpLaunchAnimationCheckBox->isChecked()) {
+        mpMainWindow->getPlotWindowContainer()->addAnimationWindow();
+        AnimationWindow *pAnimationWindow = mpMainWindow->getPlotWindowContainer()->getCurrentAnimationWindow();
+        if (pAnimationWindow) {
+          pAnimationWindow->openAnimationFile(simulationOptions.getResultFileName());
+        }
+      }
       pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getResultFileName(), workingDirectory, list, simulationOptions);
     }
   }
@@ -1374,7 +1382,7 @@ void SimulationDialog::updateJacobianToolTip(int index)
 void SimulationDialog::buildOnly(bool checked)
 {
   mpLaunchAlgorithmicDebuggerCheckBox->setEnabled(!checked);
-  mpSimulateWithAnimationCheckBox->setEnabled(!checked);
+  mpLaunchAnimationCheckBox->setEnabled(!checked);
   mpSimulationFlagsTab->setEnabled(!checked);
 }
 

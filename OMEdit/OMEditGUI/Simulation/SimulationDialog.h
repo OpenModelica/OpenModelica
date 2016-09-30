@@ -117,7 +117,7 @@ private:
   QCheckBox *mpBuildOnlyCheckBox;
   QCheckBox *mpLaunchTransformationalDebuggerCheckBox;
   QCheckBox *mpLaunchAlgorithmicDebuggerCheckBox;
-  QCheckBox *mpSimulateWithAnimationCheckBox;
+  QCheckBox *mpLaunchAnimationCheckBox;
   // Output Tab
   QWidget *mpOutputTab;
   Label *mpOutputFormatLabel;

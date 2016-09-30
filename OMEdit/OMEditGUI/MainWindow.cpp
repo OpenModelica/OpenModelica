@@ -3037,7 +3037,7 @@ void MainWindow::switchToPlottingPerspective()
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
   mpModelSwitcherToolButton->setEnabled(false);
-  // if not plotwindow is opened then open one for user
+  // if no plotwindow is opened then open one for user
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
     mpPlotWindowContainer->addPlotWindow(true);
   }

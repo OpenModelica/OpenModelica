@@ -70,6 +70,7 @@ public:
   double getVisTime();
   void setPathName(std::string name);
   void setFileName(std::string name);
+  void openAnimationFile(QString fileName);
 public slots:
   void sliderSetTimeSlotFunction(int value);
   void playSlotFunction();

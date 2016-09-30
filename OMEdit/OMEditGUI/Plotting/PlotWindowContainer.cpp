@@ -108,17 +108,13 @@ AnimationWindow* PlotWindowContainer::getCurrentAnimationWindow()
 {
   if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
-  }
-  else {
-  bool isAnimationWidget = (0 == subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
-  std::cout<<"isAnimationWidget "<<isAnimationWidget<<std::endl;
-  if (isAnimationWidget)
-  {
-      std::cout<<"this was good\n"<<std::endl;
+  } else {
+    bool isAnimationWidget = (0 == subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
+    if (isAnimationWidget) {
       return qobject_cast<AnimationWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
-  }
-  else
-    return 0;
+    } else {
+      return 0;
+    }
   }
 }
 

@@ -271,30 +271,12 @@ void AnimationWindow::loadVisualization()
  */
 void AnimationWindow::chooseAnimationFileSlotFunction()
 {
-  std::string file = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-      NULL, Helper::matFileTypes, NULL).toStdString();
-  if (file.compare(""))
-  {
-    std::size_t pos = file.find_last_of("/\\");
-    mPathName = file.substr(0, pos + 1);
-    mFileName = file.substr(pos + 1, file.length());
-    //std::cout<<"file "<<mFileName<<"   path "<<mPathName<<std::endl;
-    loadVisualization();
-    // start the widgets
-    mpAnimationInitializeAction->setEnabled(true);
-    mpAnimationPlayAction->setEnabled(true);
-    mpAnimationPauseAction->setEnabled(true);
-    mpAnimationSlider->setEnabled(true);
-    mpAnimationSlider->setValue(0);
-    mpSpeedUpEdit->setEnabled(true);
-    mpSpeedUpEdit->setPlainText(QString("1.0"));
-    mpTimeEdit->setEnabled(true);
-    mpTimeEdit->setPlainText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
+  QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile),
+                                                       NULL, Helper::matFileTypes, NULL);
+  if (fileName.isEmpty()) {
+    return;
   }
-  else
-  {
-    std::cout<<"No Visualization selected!"<<std::endl;
-  }
+  openAnimationFile(fileName);
 }
 
 /*!
@@ -412,6 +394,32 @@ void AnimationWindow::setPathName(std::string pathName)
 void AnimationWindow::setFileName(std::string fileName)
 {
   mFileName = fileName;
+}
+
+/*!
+ * \brief AnimationWindow::openAnimationFile
+ * \param fileName
+ */
+void AnimationWindow::openAnimationFile(QString fileName)
+{
+  std::string file = fileName.toStdString();
+  if (file.compare("")) {
+    std::size_t pos = file.find_last_of("/\\");
+    mPathName = file.substr(0, pos + 1);
+    mFileName = file.substr(pos + 1, file.length());
+    //std::cout<<"file "<<mFileName<<"   path "<<mPathName<<std::endl;
+    loadVisualization();
+    // start the widgets
+    mpAnimationInitializeAction->setEnabled(true);
+    mpAnimationPlayAction->setEnabled(true);
+    mpAnimationPauseAction->setEnabled(true);
+    mpAnimationSlider->setEnabled(true);
+    mpAnimationSlider->setValue(0);
+    mpSpeedUpEdit->setEnabled(true);
+    mpSpeedUpEdit->setPlainText(QString("1.0"));
+    mpTimeEdit->setEnabled(true);
+    mpTimeEdit->setPlainText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
+  }
 }
 
 /*!
