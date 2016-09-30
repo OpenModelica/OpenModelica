@@ -1597,28 +1597,6 @@ void MainWindow::simulateModel()
 }
 
 /*!
-  Simualtes the model directly with animation flag.
-  */
-//!
-void MainWindow::simulateModelWithAnimation()
-{
-  mpOMCProxy->setCommandLineOptions("+d=visxml +n=1");
-
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    simulate(pModelWidget->getLibraryTreeItem());
-  }
-
-  //QDir dir = QDir(QString("."));
-  //std::cout<<"SIMULATED WITH ANIMATION "<<dir.absolutePath().toStdString().append("/").append(pModelWidget->getLibraryTreeItem()->getNameStructure().toStdString()).append("_visual.xml")<<std::endl;
-  //mpPlotWindowContainer->addAnimationWindow();
-  //AnimationWindowContainer* animation = mpPlotWindowContainer->getCurrentAnimationWindow();
-  //animation->setPathName(dir.absolutePath().toStdString().append("/"));
-  //animation->setFileName(pModelWidget->getLibraryTreeItem()->getNameStructure().toStdString().append("_res.mat"));
-  //animation->loadVisualization();
-}
-
-/*!
   Simualtes the model with transformational debugger
   */
 void MainWindow::simulateModelWithTransformationalDebugger()
@@ -1969,8 +1947,8 @@ void MainWindow::openUsersGuide()
                        .append("/share/doc/omc/OpenModelicaUsersGuide/index.html"));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
-                                                Helper::scriptingKind, Helper::errorLevel));
+                                                  GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+                                                  Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -1985,8 +1963,8 @@ void MainWindow::openUsersGuidePdf()
                        .append("/share/doc/omc/OpenModelicaUsersGuide-latest.pdf"));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
-                                                Helper::scriptingKind, Helper::errorLevel));
+                                                  GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+                                                  Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -2001,8 +1979,8 @@ void MainWindow::openUsersGuideOldPdf()
                        .append("/share/doc/omc/OpenModelicaUsersGuide.pdf"));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
-                                                Helper::scriptingKind, Helper::errorLevel));
+                                                  GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+                                                  Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -2498,11 +2476,6 @@ void MainWindow::createActions()
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   mpSimulateWithAlgorithmicDebuggerAction->setEnabled(false);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateModelWithAlgorithmicDebugger()));
-  // simulate with animation action
-  mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
-  mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
-  mpSimulateWithAnimationAction->setEnabled(false);
-  connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateModelWithAnimation()));
   // simulation setup action
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
@@ -2562,7 +2535,7 @@ void MainWindow::createActions()
   mpImportFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.svg"), Helper::importFromOMNotebook, this);
   mpImportFromOMNotebookAction->setStatusTip(Helper::importFromOMNotebookTip);
   connect(mpImportFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
-  // import ngspice netlist action
+    // import ngspice netlist action
   mpImportNgspiceNetlistAction = new QAction(Helper::importNgspiceNetlist, this);
   mpImportNgspiceNetlistAction->setStatusTip(Helper::importNgspiceNetlistTip);
   connect(mpImportNgspiceNetlistAction, SIGNAL(triggered()), SLOT(importNgspiceNetlist()));
@@ -2675,10 +2648,6 @@ void MainWindow::createActions()
   mpNewParametricPlotWindowAction = new QAction(QIcon(":/Resources/icons/parametric-plot-window.svg"), tr("New Parametric Plot Window"), this);
   mpNewParametricPlotWindowAction->setStatusTip(tr("Inserts new parametric plot window"));
   connect(mpNewParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addParametricPlotWindow()));
-  // new mpAnimationWindowAction plot action
-  mpNewAnimationWindowAction = new QAction(QIcon(":/Resources/icons/animation.svg"), tr("New Animation Window"), this);
-  mpNewAnimationWindowAction->setStatusTip(tr("Inserts new animation window"));
-  connect(mpNewAnimationWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addAnimationWindow()));
   // export variables action
   mpExportVariablesAction = new QAction(QIcon(":/Resources/icons/export-variables.svg"), Helper::exportVariables, this);
   mpExportVariablesAction->setStatusTip(tr("Exports the plotted variables to a CSV file"));
@@ -2777,9 +2746,9 @@ void MainWindow::createMenus()
   pEditMenu->addAction(mpRedoAction);
   pEditMenu->addSeparator();
   pEditMenu->addAction(mpSearchClassesAction);
-  //  pEditMenu->addAction(mpCutAction);
-  //  pEditMenu->addAction(mpCopyAction);
-  //  pEditMenu->addAction(mpPasteAction);
+//  pEditMenu->addAction(mpCutAction);
+//  pEditMenu->addAction(mpCopyAction);
+//  pEditMenu->addAction(mpPasteAction);
   // add Edit menu to menu bar
   menuBar()->addAction(pEditMenu->menuAction());
   // View menu
@@ -2839,7 +2808,6 @@ void MainWindow::createMenus()
   pSimulationMenu->addAction(mpSimulateModelAction);
   pSimulationMenu->addAction(mpSimulateWithTransformationalDebuggerAction);
   pSimulationMenu->addAction(mpSimulateWithAlgorithmicDebuggerAction);
-  pSimulationMenu->addAction(mpSimulateWithAnimationAction);
   pSimulationMenu->addAction(mpSimulationSetupAction);
   // add Simulation menu to menu bar
   menuBar()->addAction(pSimulationMenu->menuAction());
@@ -3168,9 +3136,9 @@ void MainWindow::createToolbars()
   // add actions to edit toolbar
   mpEditToolBar->addAction(mpUndoAction);
   mpEditToolBar->addAction(mpRedoAction);
-  //  mpEditToolBar->addAction(mpCutAction);
-  //  mpEditToolBar->addAction(mpCopyAction);
-  //  mpEditToolBar->addAction(mpPasteAction);
+//  mpEditToolBar->addAction(mpCutAction);
+//  mpEditToolBar->addAction(mpCopyAction);
+//  mpEditToolBar->addAction(mpPasteAction);
   // View Toolbar
   mpViewToolBar = addToolBar(tr("View Toolbar"));
   mpViewToolBar->setObjectName("View Toolbar");
@@ -3205,7 +3173,6 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->addAction(mpSimulateModelAction);
   mpSimulationToolBar->addAction(mpSimulateWithTransformationalDebuggerAction);
   mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);
-  mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
   mpSimulationToolBar->addAction(mpSimulationSetupAction);
   // Model Swithcer Toolbar
   mpModelSwitcherToolBar = addToolBar(tr("ModelSwitcher Toolbar"));
@@ -3234,7 +3201,6 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpNewPlotWindowAction);
   mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);
-  mpPlotToolBar->addAction(mpNewAnimationWindowAction);
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpExportVariablesAction);
   mpPlotToolBar->addSeparator();

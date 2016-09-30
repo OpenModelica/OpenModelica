@@ -66,7 +66,6 @@ PlotWindowContainer::PlotWindowContainer(MainWindow *pParent)
  */
 QString PlotWindowContainer::getUniqueName(QString name, int number)
 {
-
   QString newName;
   newName = name + QString::number(number);
 
@@ -81,44 +80,15 @@ QString PlotWindowContainer::getUniqueName(QString name, int number)
 
 /*!
  * \brief PlotWindowContainer::getCurrentWindow
- * Returns the current plot window, if the last window is animation, return null
+ * Returns the current plot window.
  * \return
  */
 PlotWindow* PlotWindowContainer::getCurrentWindow()
 {
   if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
-  }
-  else {
-  bool isPlotWidget = (0 != subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
-  //std::cout<<"isPlotWidget "<<isPlotWidget<<std::endl;
-  if (isPlotWidget)
-      return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
-  else
-    return 0;
-  }
-}
-
-/*!
- * \brief PlotWindowContainer::getCurrentAnimationWindow
- * Returns the current animation window, if the last window is plot, return null
- * \return
- */
-AnimationWindow* PlotWindowContainer::getCurrentAnimationWindow()
-{
-  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
-    return 0;
-  }
-  else {
-  bool isAnimationWidget = (0 == subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
-  std::cout<<"isAnimationWidget "<<isAnimationWidget<<std::endl;
-  if (isAnimationWidget)
-  {
-      std::cout<<"this was good\n"<<std::endl;
-      return qobject_cast<AnimationWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
-  }
-  else
-    return 0;
+  } else {
+    return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
   }
 }
 
@@ -130,10 +100,8 @@ AnimationWindow* PlotWindowContainer::getCurrentAnimationWindow()
  */
 bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
 {
-  bool isPlotWidget = (0 != pObject->objectName().compare(QString("animationWidget")));
-  if (isPlotWidget){
-    PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pObject);
-    if (pPlotWindow && pEvent->type() == QEvent::Paint) {
+  PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pObject);
+  if (pPlotWindow && pEvent->type() == QEvent::Paint) {
     QPainter painter (pPlotWindow);
     painter.setPen(Qt::gray);
     QRect rectangle = pPlotWindow->rect();
@@ -141,7 +109,6 @@ bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
     rectangle.setHeight(pPlotWindow->rect().height() - 1);
     painter.drawRect(rectangle);
     return true;
-    }
   }
   return QMdiArea::eventFilter(pObject, pEvent);
 }
@@ -279,31 +246,17 @@ void PlotWindowContainer::exportVariables()
 void PlotWindowContainer::updatePlotWindows(QString variable)
 {
   foreach (QMdiSubWindow *pSubWindow, subWindowList()) {
-    bool isPlotWidget = (0 != pSubWindow->widget()->objectName().compare(QString("animationWidget")));
-    if (isPlotWidget) {
-      PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
-      foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
-        if (variable.compare(pPlotCurve->getFileName()) == 0) {
-          pPlotWindow->getPlot()->removeCurve(pPlotCurve);
-          pPlotCurve->detach();
-          if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-            pPlotWindow->fitInView();
-          } else {
-            pPlotWindow->getPlot()->replot();
-          }
+    PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
+    foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+      if (variable.compare(pPlotCurve->getFileName()) == 0) {
+        pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+        pPlotCurve->detach();
+        if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+          pPlotWindow->fitInView();
+        } else {
+          pPlotWindow->getPlot()->replot();
         }
       }
-    } // is plotWidget
+    }
   }
-}
-
-/*!
- * \brief PlotWindowContainer::addAnimationWindow
- * Adds an animation widget as subwindow
- */
-void PlotWindowContainer::addAnimationWindow(){
-  AnimationWindow *pAnimation = new AnimationWindow(this);
-  QMdiSubWindow *pSubWindow = addSubWindow(pAnimation);
-  pSubWindow->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
-  pAnimation->show();
 }

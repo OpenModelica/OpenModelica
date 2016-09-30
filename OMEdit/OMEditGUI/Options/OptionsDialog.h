@@ -54,7 +54,6 @@ class NotificationsPage;
 class LineStylePage;
 class FillStylePage;
 class PlottingPage;
-class AnimationPage;
 class FigaroPage;
 class DebuggerPage;
 class FMIPage;
@@ -82,7 +81,6 @@ public:
   void readLineStyleSettings();
   void readFillStyleSettings();
   void readPlottingSettings();
-  void readAnimationSettings();
   void readFigaroSettings();
   void readDebuggerSettings();
   void readFMISettings();
@@ -123,7 +121,6 @@ public:
   LineStylePage* getLineStylePage() {return mpLineStylePage;}
   FillStylePage* getFillStylePage() {return mpFillStylePage;}
   PlottingPage* getPlottingPage() {return mpPlottingPage;}
-  AnimationPage* getAnimationPage() {return mpAnimationPage;}
   FigaroPage* getFigaroPage() {return mpFigaroPage;}
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
@@ -157,7 +154,6 @@ private:
   LineStylePage *mpLineStylePage;
   FillStylePage *mpFillStylePage;
   PlottingPage *mpPlottingPage;
-  AnimationPage *mpAnimationPage;
   FigaroPage *mpFigaroPage;
   DebuggerPage *mpDebuggerPage;
   FMIPage *mpFMIPage;
@@ -688,32 +684,6 @@ public:
   PlottingPage(OptionsDialog *pOptionsDialog);
   void setPlottingViewMode(QString value);
   QString getPlottingViewMode();
-  QCheckBox* getAutoScaleCheckBox() {return mpAutoScaleCheckBox;}
-  void setCurvePattern(int pattern);
-  int getCurvePattern();
-  void setCurveThickness(qreal thickness);
-  qreal getCurveThickness();
-private:
-  OptionsDialog *mpOptionsDialog;
-  QGroupBox *mpGeneralGroupBox;
-  QCheckBox *mpAutoScaleCheckBox;
-  QGroupBox *mpPlottingViewModeGroupBox;
-  QRadioButton *mpPlottingTabbedViewRadioButton;
-  QRadioButton *mpPlottingSubWindowViewRadioButton;
-  QGroupBox *mpCurveStyleGroupBox;
-  Label *mpCurvePatternLabel;
-  QComboBox *mpCurvePatternComboBox;
-  Label *mpCurveThicknessLabel;
-  DoubleSpinBox *mpCurveThicknessSpinBox;
-};
-
-class AnimationPage : public QWidget
-{
-  Q_OBJECT
-public:
-  AnimationPage(OptionsDialog *pOptionsDialog);
-  void setAnimationViewMode(QString value);
-  QString getAnimationViewMode();
   QCheckBox* getAutoScaleCheckBox() {return mpAutoScaleCheckBox;}
   void setCurvePattern(int pattern);
   int getCurvePattern();

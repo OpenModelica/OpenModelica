@@ -35,8 +35,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#undef smooth
-
 #include <QtGlobal>
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
@@ -48,7 +46,6 @@
 #include <QItemDelegate>
 #include <QDomDocument>
 #else
-#include <QDir>
 #include <QtGui>
 #include <QtWebKit>
 #include <QtCore>
@@ -149,7 +146,6 @@ public:
   QAction* getSimulateModelAction() {return mpSimulateModelAction;}
   QAction* getSimulateWithTransformationalDebuggerAction() {return mpSimulateWithTransformationalDebuggerAction;}
   QAction* getSimulateWithAlgorithmicDebuggerAction() {return mpSimulateWithAlgorithmicDebuggerAction;}
-  QAction* getSimulateWithAnimationAction() {return mpSimulateWithAnimationAction;}
   QAction* getSimulationSetupAction() {return mpSimulationSetupAction;}
   QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
   QAction* getCheckModelAction() {return mpCheckModelAction;}
@@ -185,7 +181,6 @@ public:
   void simulate(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem);
-  void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
   void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
@@ -294,7 +289,6 @@ private:
   QAction *mpSimulateModelAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
-  QAction *mpSimulateWithAnimationAction;
   QAction *mpSimulationSetupAction;
   // FMI Menu
   QAction *mpExportFMUAction;
@@ -341,7 +335,6 @@ private:
   QAction *mpReSimulateSetupAction;
   QAction *mpNewPlotWindowAction;
   QAction *mpNewParametricPlotWindowAction;
-  QAction *mpNewAnimationWindowAction;
   QAction *mpClearPlotWindowAction;
   QAction *mpExportVariablesAction;
   // Other Actions
@@ -401,7 +394,6 @@ public slots:
   void simulateModel();
   void simulateModelWithTransformationalDebugger();
   void simulateModelWithAlgorithmicDebugger();
-  void simulateModelWithAnimation();
   void openSimulationDialog();
   void exportModelFMU();
   void importModelFMU();

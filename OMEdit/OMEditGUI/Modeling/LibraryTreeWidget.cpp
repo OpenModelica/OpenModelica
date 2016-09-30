@@ -2585,10 +2585,6 @@ void LibraryTreeView::createActions()
   mpSimulateWithAlgorithmicDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-debug.svg"), Helper::simulateWithAlgorithmicDebugger, this);
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateWithAlgorithmicDebugger()));
-  // simulate with animation Action
-  mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.png"), Helper::simulateWithAnimation, this);
-  mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
-  connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateWithAnimation()));
   // simulation setup Action
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
@@ -2756,7 +2752,6 @@ void LibraryTreeView::showContextMenu(QPoint point)
           menu.addAction(mpSimulateAction);
           menu.addAction(mpSimulateWithTransformationalDebuggerAction);
           menu.addAction(mpSimulateWithAlgorithmicDebuggerAction);
-          menu.addAction(mpSimulateWithAnimationAction);
           menu.addAction(mpSimulationSetupAction);
         }
         /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
@@ -2975,21 +2970,6 @@ void LibraryTreeView::checkAllModels()
  */
 void LibraryTreeView::simulate()
 {
-  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
-  if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->simulate(pLibraryTreeItem);
-  }
-}
-
-/*!
- * \brief LibraryTreeView::simulate
- * Simulates the selected LibraryTreeItem.
- */
-void LibraryTreeView::simulateWithAnimation()
-{
-	std::cout<<"THIS SIMULATE WITH ANIMATION"<<std::endl;
-  //mpOMCProxy->setCommandLineOptions("+d=visxml");
-
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getMainWindow()->simulate(pLibraryTreeItem);

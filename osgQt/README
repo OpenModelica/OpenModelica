@@ -1,8 +1,0 @@
-Based on OpenSceneGraph-3.4.0 (f4013a68daeeb00cee29e36d427ef2d9ec7a3ff1)
-
-Renamed the directory, namespace, etc to not cause clashes with the
-actual osgqt.
-
-Note: This copy of osgQt is part of OpenModelica because distributions
-ship with osg compiled against Qt4, whereas OMEdit uses Qt5 when
-available.
