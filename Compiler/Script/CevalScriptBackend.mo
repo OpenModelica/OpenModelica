@@ -674,7 +674,7 @@ algorithm
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition, footer, autoScaleStr,scriptFile,logFile, simflags2, outputFile,
-             systemPath, gccVersion, gd, strlinearizeTime, suffix,cname;
+             systemPath, gccVersion, gd, strlinearizeTime, suffix,cname, modeldescriptionfilename;
       list<DAE.Exp> simOptions;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
@@ -1548,6 +1548,32 @@ algorithm
     case (cache,_,"importFMU",{Values.STRING(_),Values.STRING(_),Values.INTEGER(_),Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)},st,_)
       then
         (cache,Values.STRING(""),st);
+
+    case (cache,_,"importFMUModelDescription",{Values.STRING(filename), Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors)},st,_)
+      equation
+        Error.clearMessages() "Clear messages";
+        true = System.regularFileExists(filename);
+        workdir = if System.directoryExists(workdir) then workdir else System.pwd();
+        modeldescriptionfilename="modelDescription.fmu";
+        System.systemCall("zip " +  modeldescriptionfilename + " " + filename);
+        true = System.regularFileExists(modeldescriptionfilename);
+        /* Initialize FMI objects */
+        (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) = FMIExt.initializeFMIImport(modeldescriptionfilename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
+        true = b; /* if something goes wrong while initializing */
+        fmiTypeDefinitionsList = listReverse(fmiTypeDefinitionsList);
+        fmiModelVariablesList = listReverse(fmiModelVariablesList);
+        s1 = System.tolower(System.platform());
+        str = Tpl.tplString(CodegenFMU.importFMUModelDescription, FMI.FMIIMPORT(s1, modeldescriptionfilename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
+        pd = System.pathDelimiter();
+        str1 = FMI.getFMIModelIdentifier(fmiInfo);
+        str3 = FMI.getFMIVersion(fmiInfo);
+        outputFile = stringAppendList({workdir,pd,str1,"_Input_Output_FMU.mo"});
+        filename_1 = if b1 then stringAppendList({workdir,pd,str1,"_Input_Output_FMU.mo"}) else stringAppendList({str1,"_Input_Output_FMU.mo"});
+        System.writeFile(outputFile, str);
+        /* Release FMI objects */
+        FMIExt.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext, str3);
+      then
+        (cache,Values.STRING(filename_1),st);
 
     case (cache,_,"getIndexReductionMethod",_,st,_)
       equation

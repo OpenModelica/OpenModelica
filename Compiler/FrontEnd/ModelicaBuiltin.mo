@@ -2348,6 +2348,21 @@ external "builtin";
 annotation(preferredView="text");
 end importFMU;
 
+function importFMUModelDescription "Imports modelDescription.xml
+  Example command:
+  importFMUModelDescription(\"A.xml\");"
+  input String filename "the fmu file name";
+  input String workdir = "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
+  input Integer loglevel = 3 "loglevel_nothing=0;loglevel_fatal=1;loglevel_error=2;loglevel_warning=3;loglevel_info=4;loglevel_verbose=5;loglevel_debug=6";
+  input Boolean fullPath = false "When true the full output path is returned otherwise only the file name.";
+  input Boolean debugLogging = false "When true the FMU's debug output is printed.";
+  input Boolean generateInputConnectors = true "When true creates the input connector pins.";
+  input Boolean generateOutputConnectors = true "When true creates the output connector pins.";
+  output String generatedFileName "Returns the full path of the generated file.";
+external "builtin";
+annotation(preferredView="text");
+end importFMUModelDescription;
+
 function translateModelFMU
 "translates a modelica model into a Functional Mockup Unit.
 The only required argument is the className, while all others have some default values.

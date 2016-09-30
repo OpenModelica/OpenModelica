@@ -1344,6 +1344,75 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   >>
 end fmudeffile;
 
+template importFMUModelDescription(FmiImport fmi)
+ "Generates Modelica code for FMU model description"
+::=
+match fmi
+case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
+  <<
+  model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
+    <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
+    <%dumpFMUModelDescriptionVariablesList("1.0", fmiModelVariablesList, fmiTypeDefinitionsList, generateInputConnectors, generateOutputConnectors)%>
+  end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
+  >>
+end importFMUModelDescription;
+
+template dumpFMUModelDescriptionVariablesList(String FMUVersion, list<ModelVariables> fmiModelVariablesList, list<TypeDefinitions> fmiTypeDefinitionsList, Boolean generateInputConnectors, Boolean generateOutputConnectors)
+ "Generates the Model Variables code."
+::=
+  <<
+  <%fmiModelVariablesList |> fmiModelVariable => dumpFMUModelDescriptionVariable(FMUVersion, fmiModelVariable, fmiTypeDefinitionsList, generateInputConnectors, generateOutputConnectors) ;separator="\n"%>
+  >>
+end dumpFMUModelDescriptionVariablesList;
+
+template dumpFMUModelDescriptionVariable(String FMUVersion, ModelVariables fmiModelVariable, list<TypeDefinitions> fmiTypeDefinitionsList, Boolean generateInputConnectors, Boolean generateOutputConnectors)
+::=
+match FMUVersion
+case "1.0" then
+  match fmiModelVariable
+  case REALVARIABLE(__) then
+    let isInputOrOutput = if boolOr(stringEq(causality, "input"), stringEq(causality, "output")) then true
+    if isInputOrOutput then
+    <<
+    <%dumpFMUModelDescriptionInputOutputVariable(name, causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
+    >>
+  case INTEGERVARIABLE(__) then
+    let isInputOrOutput = if boolOr(stringEq(causality, "input"), stringEq(causality, "output")) then true
+    if isInputOrOutput then
+    <<
+    <%dumpFMUModelDescriptionInputOutputVariable(name, causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
+    >>
+  case BOOLEANVARIABLE(__) then
+    let isInputOrOutput = if boolOr(stringEq(causality, "input"), stringEq(causality, "output")) then true
+    if isInputOrOutput then
+    <<
+    <%dumpFMUModelDescriptionInputOutputVariable(name, causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
+    >>
+  case STRINGVARIABLE(__) then
+    let isInputOrOutput = if boolOr(stringEq(causality, "input"), stringEq(causality, "output")) then true
+    if isInputOrOutput then
+    <<
+    <%dumpFMUModelDescriptionInputOutputVariable(name, causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
+    >>
+  case ENUMERATIONVARIABLE(__) then
+    let isInputOrOutput = if boolOr(stringEq(causality, "input"), stringEq(causality, "output")) then true
+    if isInputOrOutput then
+    <<
+    <%dumpFMUModelDescriptionInputOutputVariable(name, causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
+    >>
+  end match
+end dumpFMUModelDescriptionVariable;
+
+template dumpFMUModelDescriptionInputOutputVariable(String name, String causality, String baseType, Boolean generateInputConnectors, Boolean generateOutputConnectors)
+::=
+  if boolAnd(generateInputConnectors, boolAnd(stringEq(causality, "input"),stringEq(baseType, "Real"))) then "Modelica.Blocks.Interfaces.RealInput "+name+""
+  else if boolAnd(generateInputConnectors, boolAnd(stringEq(causality, "input"),stringEq(baseType, "Integer"))) then "Modelica.Blocks.Interfaces.IntegerInput "+name+""
+  else if boolAnd(generateInputConnectors, boolAnd(stringEq(causality, "input"),stringEq(baseType, "Boolean"))) then "Modelica.Blocks.Interfaces.BooleanInput "+name+""
+  else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Real"))) then "Modelica.Blocks.Interfaces.RealOutput "+name+""
+  else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Integer"))) then "Modelica.Blocks.Interfaces.IntegerOutput "+name+""
+  else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Boolean"))) then "Modelica.Blocks.Interfaces.BooleanOutput "+name+""
+end dumpFMUModelDescriptionInputOutputVariable;
+
 template importFMUModelica(FmiImport fmi)
  "Generates the Modelica code depending on the FMU type."
 ::=
@@ -2478,7 +2547,6 @@ template dumpFMIModelVariableCausalityAndBaseType(String causality, String baseT
   else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Real"))) then "Modelica.Blocks.Interfaces.RealOutput"
   else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Integer"))) then "Modelica.Blocks.Interfaces.IntegerOutput"
   else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Boolean"))) then "Modelica.Blocks.Interfaces.BooleanOutput"
-  else if stringEq(causality, "") then baseType else causality+" "+baseType
 end dumpFMIModelVariableCausalityAndBaseType;
 
 template dumpFMIModelVariableCausality(String causality)
