@@ -110,6 +110,13 @@ ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libpcre16-0.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libharfbuzz-0.dll $(builddir_bin)/
 	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/share/qt5/plugins/* $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libOpenThreads.dll $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libosg.dll $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgViewer.dll $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgDB.dll $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgUtil.dll $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgGA.dll $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgText.dll $(builddir_bin)/
 else # mingw64
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libgcc_s*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libintl-8.dll $(builddir_bin)/
@@ -153,6 +160,13 @@ else # mingw64
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libpcre16-0.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libharfbuzz-0.dll $(builddir_bin)/
 	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/share/qt5/plugins/* $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libOpenThreads.dll $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libosg.dll $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgViewer.dll $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgDB.dll $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgUtil.dll $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgGA.dll $(builddir_bin)/
+	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgText.dll $(builddir_bin)/
 endif
 
 clean-qtclients:
