@@ -222,7 +222,10 @@ QWidget* AnimationWindow::setupViewWidget()
   camera->setViewport(new osg::Viewport(0, 0, width, height));
   camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits->width/2) / static_cast<double>(traits->height/2), 1.0f, 10000.0f);
   mpSceneView->addEventHandler(new osgViewer::StatsHandler());
-  mpSceneView->setCameraManipulator(new osgGA::MultiTouchTrackballManipulator());
+  // reverse the mouse wheel zooming
+  osgGA::MultiTouchTrackballManipulator *pMultiTouchTrackballManipulator = new osgGA::MultiTouchTrackballManipulator();
+  pMultiTouchTrackballManipulator->setWheelZoomFactor(-pMultiTouchTrackballManipulator->getWheelZoomFactor());
+  mpSceneView->setCameraManipulator(pMultiTouchTrackballManipulator);
 #if OSG_VERSION_GREATER_OR_EQUAL(3,4,0)
   gw->setTouchEventsEnabled(true);
 #endif
