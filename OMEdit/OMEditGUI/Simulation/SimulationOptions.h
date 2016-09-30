@@ -58,6 +58,7 @@ public:
     setBuildOnly(false);
     setLaunchTransformationalDebugger(false);
     setLaunchAlgorithmicDebugger(false);
+    setSimulateWithAnimation(false);
     setNumberofIntervals(500);
     setStepSize(0.002);
     setOutputFormat("mat");
@@ -120,6 +121,8 @@ public:
   bool getLaunchTransformationalDebugger() {return mLaunchTransformationalDebugger;}
   void setLaunchAlgorithmicDebugger(bool launchAlgorithmicDebugger) {mLaunchAlgorithmicDebugger = launchAlgorithmicDebugger;}
   bool getLaunchAlgorithmicDebugger() {return mLaunchAlgorithmicDebugger;}
+  void setSimulateWithAnimation(bool simulateWithAnimation) {mSimulateWithAnimation = simulateWithAnimation;}
+  bool getSimulateWithAnimation() {return mSimulateWithAnimation;}
   void setNumberofIntervals(int numberofIntervals) {mNumberofIntervals = numberofIntervals;}
   int getNumberofIntervals() {return mNumberofIntervals;}
   void setStepSize(qreal stepSize) {mStepSize = stepSize;}
@@ -197,6 +200,7 @@ private:
   bool mBuildOnly;
   bool mLaunchTransformationalDebugger;
   bool mLaunchAlgorithmicDebugger;
+  bool mSimulateWithAnimation;
   int mNumberofIntervals;
   qreal mStepSize;
   QString mOutputFormat;

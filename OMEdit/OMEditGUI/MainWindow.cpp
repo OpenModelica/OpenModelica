@@ -550,7 +550,7 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
       return;
     }
   }
-  mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false);
+  mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false);
 }
 
 void MainWindow::simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem)
@@ -564,7 +564,7 @@ void MainWindow::simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryT
       return;
     }
   }
-  mpSimulationDialog->directSimulate(pLibraryTreeItem, true, false);
+  mpSimulationDialog->directSimulate(pLibraryTreeItem, true, false, false);
 }
 
 void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem)
@@ -578,7 +578,21 @@ void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeIt
       return;
     }
   }
-  mpSimulationDialog->directSimulate(pLibraryTreeItem, false, true);
+  mpSimulationDialog->directSimulate(pLibraryTreeItem, false, true, false);
+}
+
+void MainWindow::simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (!mpSimulationDialog) {
+    mpSimulationDialog = new SimulationDialog(this);
+  }
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, true);
 }
 
 void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
@@ -1602,20 +1616,10 @@ void MainWindow::simulateModel()
 //!
 void MainWindow::simulateModelWithAnimation()
 {
-  mpOMCProxy->setCommandLineOptions("+d=visxml +n=1");
-
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
-    simulate(pModelWidget->getLibraryTreeItem());
+    simulateWithAnimation(pModelWidget->getLibraryTreeItem());
   }
-
-  //QDir dir = QDir(QString("."));
-  //std::cout<<"SIMULATED WITH ANIMATION "<<dir.absolutePath().toStdString().append("/").append(pModelWidget->getLibraryTreeItem()->getNameStructure().toStdString()).append("_visual.xml")<<std::endl;
-  //mpPlotWindowContainer->addAnimationWindow();
-  //AnimationWindowContainer* animation = mpPlotWindowContainer->getCurrentAnimationWindow();
-  //animation->setPathName(dir.absolutePath().toStdString().append("/"));
-  //animation->setFileName(pModelWidget->getLibraryTreeItem()->getNameStructure().toStdString().append("_res.mat"));
-  //animation->loadVisualization();
 }
 
 /*!

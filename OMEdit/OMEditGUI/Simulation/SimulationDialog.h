@@ -74,7 +74,8 @@ public:
   ~SimulationDialog();
   QTreeWidget* getArchivedSimulationsTreeWidget() {return mpArchivedSimulationsTreeWidget;}
   void show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions);
-  void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger);
+  void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger,
+                      bool launchAnimation);
 private:
   MainWindow *mpMainWindow;
   Label *mpSimulationHeading;
@@ -116,6 +117,7 @@ private:
   QCheckBox *mpBuildOnlyCheckBox;
   QCheckBox *mpLaunchTransformationalDebuggerCheckBox;
   QCheckBox *mpLaunchAlgorithmicDebuggerCheckBox;
+  QCheckBox *mpSimulateWithAnimationCheckBox;
   // Output Tab
   QWidget *mpOutputTab;
   Label *mpOutputFormatLabel;

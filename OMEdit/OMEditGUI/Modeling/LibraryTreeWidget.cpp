@@ -2586,7 +2586,7 @@ void LibraryTreeView::createActions()
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateWithAlgorithmicDebugger()));
   // simulate with animation Action
-  mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.png"), Helper::simulateWithAnimation, this);
+  mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
   connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateWithAnimation()));
   // simulation setup Action
@@ -2982,21 +2982,6 @@ void LibraryTreeView::simulate()
 }
 
 /*!
- * \brief LibraryTreeView::simulate
- * Simulates the selected LibraryTreeItem.
- */
-void LibraryTreeView::simulateWithAnimation()
-{
-	std::cout<<"THIS SIMULATE WITH ANIMATION"<<std::endl;
-  //mpOMCProxy->setCommandLineOptions("+d=visxml");
-
-  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
-  if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->simulate(pLibraryTreeItem);
-  }
-}
-
-/*!
  * \brief LibraryTreeView::simulateWithTransformationalDebugger
  * Simulates the selected LibraryTreeItem with the Transformational Debugger.
  */
@@ -3017,6 +3002,18 @@ void LibraryTreeView::simulateWithAlgorithmicDebugger()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getMainWindow()->simulateWithAlgorithmicDebugger(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::simulate
+ * Simulates the selected LibraryTreeItem.
+ */
+void LibraryTreeView::simulateWithAnimation()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getMainWindow()->simulateWithAnimation(pLibraryTreeItem);
   }
 }
 
