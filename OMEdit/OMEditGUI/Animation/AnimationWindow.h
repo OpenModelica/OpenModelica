@@ -101,9 +101,9 @@ private:
   QToolBar* mpAnimationToolBar;
   QSlider* mpAnimationSlider;
   QLabel *mpAnimationTimeLabel;
-  QTextEdit *mpTimeEdit;
-  QLabel *mpAnimationSpeedUpLabel;
-  QTextEdit * mpSpeedUpEdit;
+  QLineEdit *mpTimeTextBox;
+  Label *mpAnimationSpeedLabel;
+  QLineEdit *mpSpeedTextBox;
   QComboBox *mpPerspectiveDropDownBox;
   //actions
   QAction *mpAnimationChooseFileAction;

@@ -89,15 +89,15 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpAnimationSlider->setSliderPosition(0);
   mpAnimationSlider->setEnabled(false);
   mpAnimationTimeLabel = new QLabel();
-  mpAnimationTimeLabel->setText(QString(" Time [s]: "));
-  mpTimeEdit = new QTextEdit("0.0",this);
-  mpTimeEdit->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
-  mpTimeEdit->setEnabled(false);
-  mpAnimationSpeedUpLabel = new QLabel();
-  mpAnimationSpeedUpLabel->setText(QString(" SpeedUp: "));
-  mpSpeedUpEdit = new QTextEdit("1.0",this);
-  mpSpeedUpEdit->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
-  mpSpeedUpEdit->setEnabled(false);
+  mpAnimationTimeLabel->setText(tr("Time [s]:"));
+  mpTimeTextBox = new QLineEdit("0.0", this);
+  mpTimeTextBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
+  mpTimeTextBox->setEnabled(false);
+  mpAnimationSpeedLabel = new Label;
+  mpAnimationSpeedLabel->setText(tr("Speed:"));
+  mpSpeedTextBox = new QLineEdit("1.0", this);
+  mpSpeedTextBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
+  mpSpeedTextBox->setEnabled(false);
   mpPerspectiveDropDownBox = new QComboBox(this);
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.svg"), QString("to home position"));
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.svg"),QString("normal to x-y plane"));
@@ -115,10 +115,10 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpAnimationToolBar->addWidget(mpAnimationSlider);
   mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addWidget(mpAnimationTimeLabel);
-  mpAnimationToolBar->addWidget(mpTimeEdit);
+  mpAnimationToolBar->addWidget(mpTimeTextBox);
   mpAnimationToolBar->addSeparator();
-  mpAnimationToolBar->addWidget(mpAnimationSpeedUpLabel);
-  mpAnimationToolBar->addWidget(mpSpeedUpEdit);
+  mpAnimationToolBar->addWidget(mpAnimationSpeedLabel);
+  mpAnimationToolBar->addWidget(mpSpeedTextBox);
   mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addWidget(mpPerspectiveDropDownBox);
   mpAnimationToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
@@ -131,8 +131,8 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   connect(mpAnimationPauseAction, SIGNAL(triggered()),this, SLOT(pauseSlotFunction()));
   connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
   connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),this, SLOT(sliderSetTimeSlotFunction(int)));
-  connect(mpSpeedUpEdit, SIGNAL(textChanged()),this, SLOT(setSpeedUpSlotFunction()));
-  connect(mpTimeEdit, SIGNAL(textChanged()),this, SLOT(jumpToTimeSlotFunction()));
+  connect(mpSpeedTextBox, SIGNAL(textChanged(QString)),this, SLOT(setSpeedUpSlotFunction()));
+  connect(mpTimeTextBox, SIGNAL(textChanged(QString)),this, SLOT(jumpToTimeSlotFunction()));
 }
 
 /*!
@@ -141,7 +141,7 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
  */
 void AnimationWindow::jumpToTimeSlotFunction()
 {
-  QString str = mpTimeEdit->toPlainText();
+  QString str = mpTimeTextBox->text();
   bool isFloat = true;
   double start = mpVisualizer->getTimeManager()->getStartTime();
   double end = mpVisualizer->getTimeManager()->getEndTime();
@@ -171,7 +171,7 @@ void AnimationWindow::jumpToTimeSlotFunction()
  */
 void AnimationWindow::setSpeedUpSlotFunction()
 {
-  QString str = mpSpeedUpEdit->toPlainText();
+  QString str = mpSpeedTextBox->text();
   bool isFloat = true;
   double value = str.toFloat(&isFloat);
   if (isFloat && value > 0.0)
@@ -334,7 +334,7 @@ void AnimationWindow::initSlotFunction()
 {
   mpVisualizer->initVisualization();
   mpAnimationSlider->setValue(0);
-  mpTimeEdit->setPlainText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
+  mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
 }
 
 /*!
@@ -347,9 +347,9 @@ void AnimationWindow::updateSceneFunction()
     //set time label
     if (!mpVisualizer->getTimeManager()->isPaused())
     {
-      mpTimeEdit->blockSignals(true);
-      mpTimeEdit->setPlainText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
-      mpTimeEdit->blockSignals(false);
+      bool state = mpTimeTextBox->blockSignals(true);
+      mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
+      mpTimeTextBox->blockSignals(state);
       // set time slider
       int time = mpVisualizer->getTimeManager()->getTimeFraction();
       mpAnimationSlider->setValue(time);
@@ -418,10 +418,17 @@ void AnimationWindow::openAnimationFile(QString fileName)
     mpAnimationPauseAction->setEnabled(true);
     mpAnimationSlider->setEnabled(true);
     mpAnimationSlider->setValue(0);
-    mpSpeedUpEdit->setEnabled(true);
-    mpSpeedUpEdit->setPlainText(QString("1.0"));
-    mpTimeEdit->setEnabled(true);
-    mpTimeEdit->setPlainText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
+    mpSpeedTextBox->setEnabled(true);
+    bool state = mpSpeedTextBox->blockSignals(true);
+    mpSpeedTextBox->setText(QString("1.0"));
+    mpSpeedTextBox->blockSignals(state);
+    mpTimeTextBox->setEnabled(true);
+    state = mpTimeTextBox->blockSignals(true);
+    mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
+    mpTimeTextBox->blockSignals(state);
+    state = mpPerspectiveDropDownBox->blockSignals(true);
+    mpPerspectiveDropDownBox->setCurrentIndex(0);
+    mpPerspectiveDropDownBox->blockSignals(state);
   }
 }
 
