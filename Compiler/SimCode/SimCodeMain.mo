@@ -718,7 +718,7 @@ algorithm
     local
       String str;
       String fmutmp;
-
+      Boolean b;
     case (SimCode.SIMCODE(),"C")
       algorithm
         fmutmp := simCode.fileNamePrefix + ".fmutmp";
@@ -731,7 +731,11 @@ algorithm
         Util.createDirectoryTree(fmutmp + "/sources/include/");
         SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
         str := fmutmp + "/sources/" + simCode.fileNamePrefix;
-        true := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", str+"_info.c", Flags.getConfigString(Flags.TARGET));
+        b := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", str+"_info.c", Flags.getConfigString(Flags.TARGET));
+        if not b then
+          Error.addMessage(Error.INTERNAL_ERROR, {"System.covertTextFileToCLiteral failed. Could not write "+str+"_info.c\n"});
+          fail();
+        end if;
         Tpl.tplNoret3(CodegenFMU.translateModel, simCode, FMUVersion, FMUType);
       then ();
     case (_,"Cpp")
