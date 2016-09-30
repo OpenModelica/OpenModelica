@@ -2547,6 +2547,7 @@ template dumpFMIModelVariableCausalityAndBaseType(String causality, String baseT
   else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Real"))) then "Modelica.Blocks.Interfaces.RealOutput"
   else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Integer"))) then "Modelica.Blocks.Interfaces.IntegerOutput"
   else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Boolean"))) then "Modelica.Blocks.Interfaces.BooleanOutput"
+  else if stringEq(causality, "") then baseType else causality+" "+baseType
 end dumpFMIModelVariableCausalityAndBaseType;
 
 template dumpFMIModelVariableCausality(String causality)
