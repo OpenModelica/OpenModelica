@@ -25,6 +25,7 @@
         <file>Resources/icons/simulate.svg</file>
         <file>Resources/icons/simulate-equation.svg</file>
         <file>Resources/icons/simulate-debug.svg</file>
+        <file>Resources/icons/simulate-animation.svg</file>
         <file>Resources/icons/simulation-center.svg</file>
         <file>Resources/css/stylesheet.qss</file>
         <file>Resources/icons/check.svg</file>
@@ -121,7 +122,7 @@
         <file>Resources/icons/plt.svg</file>
         <file>Resources/icons/csv.svg</file>
         <file>Resources/icons/debugger.svg</file>
-		<file>Resources/icons/equational-debugger.svg</file>
+        <file>Resources/icons/equational-debugger.svg</file>
         <file>Resources/icons/resume.svg</file>
         <file>Resources/icons/interrupt.svg</file>
         <file>Resources/icons/exit.svg</file>
@@ -137,5 +138,13 @@
         <file>Resources/icons/align-interfaces.svg</file>
         <file>Resources/icons/tlm-simulate.svg</file>
         <file>Resources/XMLSchema/tlmModelDescription.xsd</file>
+        <file>Resources/icons/initialize.svg</file>
+        <file>Resources/icons/play_animation.svg</file>
+        <file>Resources/icons/pause.svg</file>
+        <file>Resources/icons/animation.svg</file>
+        <file>Resources/icons/perspective0.svg</file>
+        <file>Resources/icons/perspective1.svg</file>
+        <file>Resources/icons/perspective2.svg</file>
+        <file>Resources/icons/perspective3.svg</file>
     </qresource>
 </RCC>
