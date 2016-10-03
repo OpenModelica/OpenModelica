@@ -981,10 +981,7 @@ static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 
   /* We calculate k[0] before returning from this function.
    * We only want to calculate f() 4 times per call */
-  for(i = 0; i < data->modelData->nStates; i++)
-  {
-    k[0][i] = stateDerOld[i];
-  }
+	memcpy(k[0], stateDerOld, data->modelData->nStates*sizeof(modelica_real));
 
   for (j = 1; j < rk->work_states_ndims; j++)
   {
@@ -998,10 +995,8 @@ static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
     data->callback->input_function(data, threadData);
     /* eval ode equations */
     data->callback->functionODE(data, threadData);
-    for(i = 0; i < data->modelData->nStates; i++)
-    {
-      k[j][i] = stateDer[i];
-    }
+	  memcpy(k[j], stateDer, data->modelData->nStates*sizeof(modelica_real));
+
   }
 
   for(i = 0; i < data->modelData->nStates; i++)
