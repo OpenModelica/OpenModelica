@@ -23,6 +23,7 @@ problem2-symEuler.mos \
 problem2-ida.mos \
 problem2-idaLinearSolver.mos \
 problem3-symEuler.mos \
+problem4-erk_ssc.mos \
 testDAEp1.mos \
 testDAEp2.mos \
 testDAEp3.mos \

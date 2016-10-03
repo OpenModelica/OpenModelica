@@ -67,5 +67,25 @@ package testSolver
     der(x2) = -x2;
   end problem3;
 
+  model problem4
+    Real x(start=1,fixed=true);
+    Real x1(start=1,fixed=true);
+    Real x2(start=1,fixed=true);
+    Real x3(start=1,fixed=true);
+    Real x4(start=1,fixed=true);
+    Real x5(start=1,fixed=true);
+    Real x6(start=1,fixed=true);
+    Real x7(start=1,fixed=true);
+    constant Real c = 5;
+  equation
+    der(x) = c;
+    der(x1) = 2*time;
+    der(x2) = -x2;
+    der(x3) = x3;
+    der(x4) = x3*x2;
+    der(x5) = x5-x4*sin(x3);
+    der(x6) = cos(x5)*sin(x6);
+    der(x7) = (10 +abs(x1) + abs(x2) + abs(x3) + abs(x4))*x7;
+  end problem4;
 
 end testSolver;
