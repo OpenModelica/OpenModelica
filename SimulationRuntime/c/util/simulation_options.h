@@ -149,6 +149,7 @@ enum SOLVER_METHOD
   S_SYM_IMP_EULER, /* 12 */
   S_HEUN,          /* 13 */
   S_IDA,           /* 14 */
+  S_ERKSSC,        /* 15 */
   S_QSS,
 
   S_MAX

@@ -482,6 +482,7 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   "symEulerSsc",
   "heun",
   "ida",
+  "rungekutta_ssc",
   "qss"
 };
 
@@ -501,6 +502,7 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   "symEulerSsc - symbolic implicit euler with step-size control, [compiler flag +symEuler needed]",
   "heun - Heun's method (Runge-Kutta fixed step, order 2)",
   "ida - Sundials ida solver",
+  "rungekutta_ssc - Runge-Kutta (with step size control, see. Novikov (2016), Solving Stiff Systems of ODEs...)",
   "qss - A QSS solver [experimental]"
 };
 
