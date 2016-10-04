@@ -1045,6 +1045,14 @@ algorithm
         isIterationVar(repl, ident)
       then
         (e,false);
+    case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
+        guard replaceExpCond(cond, e)
+      equation
+        (cr,_) = replaceCrefSubs(cr,repl,cond);
+        e1 = getReplacement(repl, cr);
+        e2 = avoidDoubleHashLookup(e1,t);
+      then
+        (e2,true);
     case ((e as DAE.CREF(componentRef = cr)),repl,cond)
         guard replaceExpCond(cond, e)
       equation
@@ -1054,14 +1062,6 @@ algorithm
         (e3,_) = replaceExp(e2,repl,cond);
       then
         (e3,true);
-    case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
-        guard replaceExpCond(cond, e)
-      equation
-        (cr,_) = replaceCrefSubs(cr,repl,cond);
-        e1 = getReplacement(repl, cr);
-        e2 = avoidDoubleHashLookup(e1,t);
-      then
-        (e2,true);
     case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
         guard replaceExpCond(cond, e)
       equation
