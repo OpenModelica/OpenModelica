@@ -77,7 +77,7 @@ typedef struct RK4_DATA
   int work_states_ndims;
   double *b;
   double *c;
-	double h;
+  double h;
 }RK4_DATA;
 
 
@@ -331,7 +331,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   case S_IDA:
   {
     IDA_SOLVER* idaData = NULL;
-	/* Allocate Lobatto6 IIIA work arrays */
+  /* Allocate Lobatto6 IIIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing IDA DAE Solver");
     idaData = (IDA_SOLVER*) malloc(sizeof(IDA_SOLVER));
     retValue = ida_solver_initial(data, threadData, solverInfo, idaData);
@@ -370,7 +370,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     freeSymEulerImp(solverInfo);
   }
   else if(solverInfo->solverMethod == S_RUNGEKUTTA || solverInfo->solverMethod == S_HEUN
-				 || solverInfo->solverMethod == S_ERKSSC)
+         || solverInfo->solverMethod == S_ERKSSC)
   {
     /* free RK work arrays */
     for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++)
@@ -819,122 +819,128 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
 static int rungekutta_step_ssc(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   // see.
-	// Solving Stiff Systems of ODEs by Explicit Methods with Conformed Stability
-	// Domains
-	// 2016 9th EUROSIM Congress on Modelling and Simulation
-	// A. E. Novikov...
+  // Solving Stiff Systems of ODEs by Explicit Methods with Conformed Stability
+  // Domains
+  // 2016 9th EUROSIM Congress on Modelling and Simulation
+  // A. E. Novikov...
 
   RK4_DATA *rk = ((RK4_DATA*)(solverInfo->solverData));
-	const double Atol = data->simulationInfo->tolerance;
+  const double Atol = data->simulationInfo->tolerance;
   const double Rtol = data->simulationInfo->tolerance;
   const int nx = data->modelData->nStates;
   modelica_real h = rk->h;
   double** k = rk->work_states;
   int j, i;
-	double sum;
+  double sum;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
   modelica_real* stateDer = sData->realVars + nx;
   modelica_real* stateDerOld = sDataOld->realVars + nx;
-	double t = sDataOld->timeValue;
+  double t = sDataOld->timeValue;
   const double targetTime = t + solverInfo->currentStepSize;
-	const short isMaxStepSizeSet = (short) omc_flagValue[FLAG_MAX_STEP_SIZE];
-	const double maxStepSize = isMaxStepSizeSet ? atof(omc_flagValue[FLAG_MAX_STEP_SIZE]) : -1;
-	double x0[nx];
+  const short isMaxStepSizeSet = (short) omc_flagValue[FLAG_MAX_STEP_SIZE];
+  const double maxStepSize = isMaxStepSizeSet ? atof(omc_flagValue[FLAG_MAX_STEP_SIZE]) : -1;
+#if defined(_MSC_VER)
+  /* handle stupid compilers */
+  double *x0 = (double*)malloc(nx*sizeof(double));
+#else
+  double x0[nx];
+#endif
 
   if(t + h > targetTime)
-	  h = solverInfo->currentStepSize;
+    h = solverInfo->currentStepSize;
 
   memcpy(k[0], stateDerOld, nx*sizeof(double));
   memcpy(x0, sDataOld->realVars, nx*sizeof(double));
-	while(t < targetTime && h > 0){
-		//printf("\nfrom %g to %g by %g\n", t, targetTime, h);
-	  for(j = 0; j < 5; ++j){
+  while(t < targetTime && h > 0){
+    //printf("\nfrom %g to %g by %g\n", t, targetTime, h);
+    for(j = 0; j < 5; ++j){
 
-			if(j > 0)
+      if(j > 0)
         memcpy(k[j], stateDer, nx*sizeof(double));
 
       switch(j){
          case 0:
-	       //yn + k1/3
-	         for(i = 0; i < nx; ++i)
+         //yn + k1/3
+           for(i = 0; i < nx; ++i)
              sData->realVars[i] = x0[i] + h * k[0][i]/3.0;
            sData->timeValue = t + h/3.0;
-				   break;
+           break;
 
-			   case 1:
-			   //yn + 1/6(k1 + k2)
-	         for(i = 0; i < nx; ++i)
+         case 1:
+         //yn + 1/6(k1 + k2)
+           for(i = 0; i < nx; ++i)
              sData->realVars[i] = x0[i] + h/6.0 * (k[0][i] + k[1][i]);
            sData->timeValue = t + h/3.0;
-				   break;
+           break;
 
-			   case 2:
-			   //yn + 1/8*(k1 + 3*k3)
-	         for(i = 0; i < nx; ++i)
+         case 2:
+         //yn + 1/8*(k1 + 3*k3)
+           for(i = 0; i < nx; ++i)
              sData->realVars[i] = x0[i] + h/8.0 * (k[0][i] + 3*k[2][i]);
            sData->timeValue = t + h/2.0;
-				   break;
+           break;
 
-			   case 3:
-			   //yn + 1/2*(k1 - 3*k3 + 4*k4)
-	         for(i = 0; i < nx; ++i)
+         case 3:
+         //yn + 1/2*(k1 - 3*k3 + 4*k4)
+           for(i = 0; i < nx; ++i)
              sData->realVars[i] = x0[i] + h/2.0 * (k[0][i] - 3*k[2][i] + 4*k[3][i]);
            sData->timeValue = t + h;
-				   break;
+           break;
 
-			   case 4:
-			   //yn + 1/6*(k1 + 4*k3 + k5)
-	         for(i = 0; i < nx; ++i){
+         case 4:
+         //yn + 1/6*(k1 + 4*k3 + k5)
+           for(i = 0; i < nx; ++i){
              sData->realVars[i] = x0[i] + h/6.0 * (k[0][i] + 4*k[3][i] + k[4][i]);
-					 }
+           }
            sData->timeValue = t + h;
-			  	 break;
+           break;
 
-		  }
-	    //f(yn + ...)
-	    /* read input vars */
+      }
+      //f(yn + ...)
+      /* read input vars */
       externalInputUpdate(data);
       data->callback->input_function(data, threadData);
       /* eval ode equations */
       data->callback->functionODE(data, threadData);
-	  }
-		t += h;
+    }
+    t += h;
     sData->timeValue = t;
-	  solverInfo->currentTime = t;
+    solverInfo->currentTime = t;
 
-	  /* save stats */
+    /* save stats */
     /* steps */
     solverInfo->solverStatsTmp[0] += 1;
     /* function ODE evaluation is done directly after this */
     solverInfo->solverStatsTmp[1] += 4;
 
 
-	  //stepsize
-	  for(i = 0, sum = 0.0; i < nx; ++i)
-	    sum = fmax(fabs(k[0][i] + 4*k[3][i] -(4.5*k[2][i] + k[4][i]))/(fabs(k[4][i]) + fabs(k[2][i]) + fabs(k[3][i])+ + fabs(k[0][i]) +  Atol), sum);
-	  sum *= 2.0/30.0;
+    //stepsize
+    for(i = 0, sum = 0.0; i < nx; ++i)
+      sum = fmax(fabs(k[0][i] + 4*k[3][i] -(4.5*k[2][i] + k[4][i]))/(fabs(k[4][i]) + fabs(k[2][i]) + fabs(k[3][i])+ + fabs(k[0][i]) +  Atol), sum);
+    sum *= 2.0/30.0;
 
 
     h = fmin(0.9*fmax(pow(sum,1/4.0)/(Atol ), 1e-12)*h + 1e-12, (targetTime - h));
-		if(isMaxStepSizeSet && h > maxStepSize) h = maxStepSize;
-	  if (h > 0) rk->h = h;
+    if(isMaxStepSizeSet && h > maxStepSize) h = maxStepSize;
+    if (h > 0) rk->h = h;
 
-	  if(t  < targetTime){
-			 memcpy(x0, sData->realVars, nx*sizeof(double));
-			 memcpy(k[0], k[4], nx*sizeof(double));
-			 sim_result.emit(&sim_result, data, threadData);
-		}
-	}
+    if(t  < targetTime){
+       memcpy(x0, sData->realVars, nx*sizeof(double));
+       memcpy(k[0], k[4], nx*sizeof(double));
+       sim_result.emit(&sim_result, data, threadData);
+    }
+  }
 
   //assert(sData->timeValue == targetTime);
-	//assert(solverInfo->currentTime == targetTime);
+  //assert(solverInfo->currentTime == targetTime);
+#if defined(_MSC_VER)
+  /* handle stupid compilers */
+  free(x0);
+#endif
 
   return 0;
 }
-
-
-
 
 /***************************************    SYM_EULER_IMP     *********************************/
 static int sym_euler_im_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
@@ -981,7 +987,7 @@ static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 
   /* We calculate k[0] before returning from this function.
    * We only want to calculate f() 4 times per call */
-	memcpy(k[0], stateDerOld, data->modelData->nStates*sizeof(modelica_real));
+  memcpy(k[0], stateDerOld, data->modelData->nStates*sizeof(modelica_real));
 
   for (j = 1; j < rk->work_states_ndims; j++)
   {
@@ -995,7 +1001,7 @@ static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
     data->callback->input_function(data, threadData);
     /* eval ode equations */
     data->callback->functionODE(data, threadData);
-	  memcpy(k[j], stateDer, data->modelData->nStates*sizeof(modelica_real));
+    memcpy(k[j], stateDer, data->modelData->nStates*sizeof(modelica_real));
 
   }
 
