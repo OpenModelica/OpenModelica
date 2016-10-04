@@ -43,13 +43,15 @@ import SCode;
 import Builtin = NFBuiltin;
 import NFBinding.Binding;
 import NFComponent.Component;
+import NFDimension.Dimension;
 import NFInstance.ClassTree;
-import NFInstance.ElementId;
 import NFInstance.Instance;
 import NFInstanceTree.InstanceTree;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFMod.ModifierScope;
+import NFEquation.Equation;
+import NFStatement.Statement;
 
 protected
 import Error;
@@ -59,6 +61,7 @@ import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous;
 import System;
+import Typing = NFTyping;
 
 public
 function instClassInProgram
@@ -75,7 +78,10 @@ algorithm
   (cls, inst_tree) := Lookup.lookupClassName(classPath, inst_tree, Absyn.dummyInfo);
   (cls, inst_tree) := instantiate(cls, Modifier.NOMOD(), inst_tree);
 
+  // TODO: Why is this a separate phase? Could be done in instComponent?
   (cls, inst_tree) := instBindings(cls, inst_tree);
+
+  (cls, inst_tree, _) := Typing.typeClass(cls, inst_tree);
 
   dae := NFFlatten.flattenClass(cls);
 
@@ -113,7 +119,7 @@ algorithm
   // Update the top scope with the added classes.
   top := InstanceTree.lookupNode(NFInstanceTree.TOP_SCOPE, tree);
   top := InstNode.setInstance(top,
-    Instance.INSTANCED_CLASS(scope, NFInstance.NO_COMPONENTS));
+    Instance.INSTANCED_CLASS(scope, NFInstance.NO_COMPONENTS, {}, {}, {}, {}));
   tree := InstanceTree.updateNode(top, tree);
 end makeTree;
 
@@ -144,7 +150,7 @@ algorithm
           idx := idx + 1;
           node := InstNode.new(e.name, e, idx, scope_id);
           il := node :: il;
-          scope := addElementIdToScope(e.name, ElementId.CLASS_ID(idx), e.info, scope);
+          scope := addElementIdToScope(e.name, ClassTree.Entry.CLASS(idx), e.info, scope);
         then
           ();
 
@@ -177,7 +183,7 @@ end makeScope;
 
 function addElementIdToScope
   input String name;
-  input ElementId id;
+  input ClassTree.Entry id;
   input SourceInfo info;
   input output ClassTree.Tree scope;
 algorithm
@@ -214,7 +220,7 @@ algorithm
         algorithm
           (node, tree) := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), tree, info);
           scope := ClassTree.add(scope, i.name,
-            ElementId.CLASS_ID(InstNode.index(node)));
+            ClassTree.Entry.CLASS(InstNode.index(node)));
         then
           ();
 
@@ -222,7 +228,7 @@ algorithm
         algorithm
           (node, tree) := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), tree, info);
           scope := ClassTree.add(scope, Absyn.pathLastIdent(i.path),
-            ElementId.CLASS_ID(InstNode.index(node)));
+            ClassTree.Entry.CLASS(InstNode.index(node)));
         then
           ();
 
@@ -311,37 +317,58 @@ algorithm
       array<Component> comp_array;
       Integer idx, scope_id;
       Instance i;
+      InstNode inode;
       SCode.Mod der_mod;
       Modifier mod;
+      SCode.ClassDef cdef;
+      list<Equation> eq, ieq;
+      list<list<Statement>> alg, ialg;
+      SCode.Element def, ext;
 
-    case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ty, modifications = der_mod))
+    case def as SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ty, modifications = der_mod))
       algorithm
-        // Derived classes have no scope of their own, use the parent scope.
-        scope_id := InstNode.parent(expandedNode);
-        tree := InstanceTree.setCurrentScope(tree, scope_id);
-
-        // Lookup and expand the derived class.
-        Absyn.TPATH(path = ty_path) := ty;
-        (expandedNode, tree) := Lookup.lookupClassName(ty_path, tree, definition.info);
-        (expandedNode, tree) := expand(expandedNode, tree);
-
-        // Process the modifier from the class.
-        mod := Modifier.create(der_mod, definition.name,
-          ModifierScope.CLASS_SCOPE(definition.name), scope_id);
-
-        // If we have a modifier, add it to the expanded instance.
-        if not Modifier.isEmpty(mod) then
-          expandedNode := InstNode.setInstance(expandedNode,
-            applyModifier(mod, InstNode.instance(expandedNode)));
-        end if;
-
-        // Update the expanded instance in the instance tree.
-        expandedNode := InstNode.setIndex(expandedNode, InstNode.index(node));
-        tree := InstanceTree.updateNode(expandedNode, tree);
+        def := definition;
+        ext := SCode.EXTENDS(Absyn.typeSpecPath(ty), SCode.PUBLIC(),
+          der_mod, NONE(), Absyn.dummyInfo);
+        def.classDef := SCode.PARTS({ext}, {}, {}, {}, {}, {}, {}, NONE());
+        i := Instance.PARTIAL_CLASS(ClassTree.new(), {ext});
+        inode := InstNode.setInstance(node, i);
+        (expandedNode, tree) := expandClass2(inode, def, tree);
       then
         ();
+//    case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ty, modifications = der_mod))
+//      algorithm
+//        // TODO: Maybe derived classes do need their own scope, with all their children knowing which their parent is?
+//
+//        // TODO: Maybe do transformation: class A = B => class A extends B; end A;
+//
+//        // Derived classes have no scope of their own, use the parent scope.
+//        scope_id := InstNode.parent(expandedNode);
+//        tree := InstanceTree.setCurrentScope(tree, scope_id);
+//
+//        // Lookup and expand the derived class.
+//        Absyn.TPATH(path = ty_path) := ty;
+//        (expandedNode, tree) := Lookup.lookupClassName(ty_path, tree, definition.info);
+//        (expandedNode, tree) := expand(expandedNode, tree);
+//
+//        // Process the modifier from the class.
+//        mod := Modifier.create(der_mod, definition.name,
+//          ModifierScope.CLASS_SCOPE(definition.name), scope_id);
+//
+//        // If we have a modifier, add it to the expanded instance.
+//        if not Modifier.isEmpty(mod) then
+//          expandedNode := InstNode.setInstance(expandedNode,
+//            applyModifier(mod, InstNode.instance(expandedNode),
+//              ModifierScope.CLASS_SCOPE(definition.name)));
+//        end if;
+//
+//        // Update the expanded instance in the instance tree.
+//        expandedNode := InstNode.setIndex(expandedNode, InstNode.index(node));
+//        tree := InstanceTree.updateNode(expandedNode, tree);
+//      then
+//        ();
 
-    case SCode.CLASS(classDef = SCode.PARTS())
+    case SCode.CLASS(classDef = cdef as SCode.PARTS())
       algorithm
         Instance.PARTIAL_CLASS(classes = scope, elements = elements) :=
           InstNode.instance(expandedNode);
@@ -351,21 +378,29 @@ algorithm
         tree := InstanceTree.updateNode(expandedNode, tree);
 
         // Expand all extends clauses.
-        (components, scope, tree) := expandExtends(elements, scope, tree);
+        (components, scope, tree) := expandExtends(elements, definition.name, scope, tree);
 
         // Add component ids to the scope.
         idx := 1;
         for c in components loop
-          // TODO: Handle components with the same name.
-          scope := ClassTree.add(scope, Component.name(c),
-              ElementId.COMPONENT_ID(idx), ClassTree.addConflictReplace);
+          if Component.isNamedComponent(c) then
+            // TODO: Handle components with the same name.
+            scope := ClassTree.add(scope, Component.name(c),
+                ClassTree.Entry.COMPONENT(idx), ClassTree.addConflictReplace);
+          end if;
+
           idx := idx + 1;
         end for;
 
-        i := Instance.setElements(scope, i);
+        (eq, tree) := instEquations(cdef.normalEquationLst, tree);
+        (ieq, tree) := instEquations(cdef.initialEquationLst, tree);
+        (alg, tree) := instAlgorithmSections(cdef.normalAlgorithmLst, tree);
+        (ialg, tree) := instAlgorithmSections(cdef.initialAlgorithmLst, tree);
 
-        // Add the components to the instance.
-        i := Instance.setComponents(listArray(components), i);
+        i := Instance.EXPANDED_CLASS(scope, listArray(components),
+          eq, ieq, alg, ialg);
+
+        // Update the instance in the tree.
         expandedNode := InstNode.setInstance(expandedNode, i);
         tree := InstanceTree.updateNode(expandedNode, tree);
       then
@@ -383,6 +418,7 @@ function expandExtends
    components, both local and inherited, as well as a scope filled with local
    and inherited components and classes."
   input list<SCode.Element> elements;
+  input String className;
         output list<Component> components = {};
   input output ClassTree.Tree scope;
   input output InstanceTree tree;
@@ -392,6 +428,7 @@ protected
   Integer scope_id = InstanceTree.currentScopeIndex(tree);
   Modifier mod;
   Instance ext_inst;
+  ModifierScope mod_scope;
 algorithm
   for e in elements loop
     _ := match e
@@ -399,19 +436,24 @@ algorithm
         algorithm
           // Look up the name and expand the class.
           (ext_node, tree) := Lookup.lookupBaseClassName(e.baseClassPath, tree, e.info);
+          ext_node := InstNode.setInstance(ext_node, Instance.NOT_INSTANTIATED());
+          ext_node := InstNode.setIndex(ext_node, InstanceTree.instanceCount(tree) + 1);
+          ext_node := InstNode.rename(ext_node, className);
+          tree := InstanceTree.addInstances({ext_node}, tree);
           (ext_node, tree) := expand(ext_node, tree);
 
           // Initialize the modifier from the extends clause.
-          mod := Modifier.create(e.modifications, "",
-            ModifierScope.EXTENDS_SCOPE(e.baseClassPath), InstNode.index(ext_node));
+          mod_scope := ModifierScope.EXTENDS_SCOPE(e.baseClassPath);
+          mod := Modifier.create(e.modifications, "", mod_scope, scope_id);
 
           // Apply the modifier to the expanded instance of the extended class.
           ext_inst := InstNode.instance(ext_node);
-          ext_inst := applyModifier(mod, ext_inst);
+          ext_inst := applyModifier(mod, ext_inst, mod_scope);
+          ext_node := InstNode.setInstance(ext_node, ext_inst);
 
-          // Add the inherited elements to the extending class.
-          (scope, components) := mergeInheritedElements(InstNode.instance(ext_node),
-            e.modifications, scope, components);
+          components := Component.EXTENDS_NODE(ext_node) :: components;
+          components := addInheritedComponentRefs(ext_inst, components);
+          scope := addInheritedClassRefs(ext_inst, scope);
         then
           ();
 
@@ -435,13 +477,15 @@ end expandExtends;
 function applyModifier
   input Modifier modifier;
   input output Instance instance;
+  input ModifierScope modifierScope;
 algorithm
   _ := match instance
     local
       list<Modifier> mods;
       ClassTree.Tree elements;
       array<Component> components;
-      ElementId idx;
+      ClassTree.Entry idx;
+      Component comp;
 
     case Instance.EXPANDED_CLASS(elements = elements, components = components)
       algorithm
@@ -454,18 +498,23 @@ algorithm
           end if;
 
           // Fetch the element id for the element with the same name as the modifier.
-          idx :=  ClassTree.get(elements, Modifier.name(m));
+          try
+            idx := ClassTree.get(elements, Modifier.name(m));
+          else
+            Error.addSourceMessageAndFail(Error.MISSING_MODIFIED_ELEMENT,
+              {Modifier.name(m), ModifierScope.name(modifierScope)}, Modifier.info(m));
+          end try;
 
           _ := match idx
             // Modifier is for a component, add it to the component in the array.
-            case ElementId.COMPONENT_ID()
+            case ClassTree.Entry.COMPONENT()
               algorithm
-                arrayUpdate(components, idx.id,
-                  Component.setModifier(m, arrayGet(components, idx.id)));
+                comp := components[idx.id];
+                components[idx.id] := Component.setModifier(m, comp);
               then
                 ();
 
-            case ElementId.CLASS_ID()
+            case ClassTree.Entry.CLASS()
               algorithm
                 print("IMPLEMENT ME: Class modifier.\n");
               then
@@ -485,43 +534,49 @@ algorithm
   end match;
 end applyModifier;
 
-function mergeInheritedElements
-  input Instance extClass;
-  input SCode.Mod modifier;
-  input output ClassTree.Tree scope;
+function addInheritedComponentRefs
+  input Instance extendsInstance;
   input output list<Component> components;
+protected
+  Integer node_idx = listLength(components);
+  Integer idx = 0;
 algorithm
-  (scope, components) := match extClass
-    local
-      String name;
-      Modifier mod;
-
+  _ := match extendsInstance
     case Instance.EXPANDED_CLASS()
       algorithm
-        // Copy the classes from the derived class into the deriving class' scope.
-        scope := ClassTree.fold(extClass.elements, mergeInheritedElements2, scope);
-
-
-        // Components are not added to the scope yet since they need to be
-        // given a unique array index, so just collect them for later.
-        components := listAppend(arrayList(extClass.components), components);
+        for c in extendsInstance.components loop
+          idx := idx + 1;
+          components := Component.COMPONENT_REF(Component.name(c), node_idx, idx) :: components;
+        end for;
       then
-        (scope, components);
-
+        ();
   end match;
-end mergeInheritedElements;
+end addInheritedComponentRefs;
 
-function mergeInheritedElements2
+function addInheritedClassRefs
+  input Instance extendsInstance;
+  input output ClassTree.Tree scope;
+algorithm
+  _ := match extendsInstance
+    case Instance.EXPANDED_CLASS()
+      algorithm
+        scope := ClassTree.fold(extendsInstance.elements, addInheritedClassRefs2, scope);
+      then
+        ();
+  end match;
+end addInheritedClassRefs;
+
+function addInheritedClassRefs2
   input String name;
-  input ElementId id;
+  input ClassTree.Entry id;
   input ClassTree.Tree inScope;
   output ClassTree.Tree scope;
 algorithm
   scope := match id
-    case ElementId.CLASS_ID() then ClassTree.add(inScope, name, id);
+    case ClassTree.Entry.CLASS() then ClassTree.add(inScope, name, id);
     else inScope;
   end match;
-end mergeInheritedElements2;
+end addInheritedClassRefs2;
 
 function instClass
   input output InstNode node;
@@ -542,14 +597,13 @@ algorithm
     case InstNode.INST_NODE(instance = i as Instance.EXPANDED_CLASS(elements = scope))
       algorithm
         comp_count := arrayLength(i.components);
+        tree := InstanceTree.setCurrentScope(tree, InstNode.index(node));
 
         if comp_count > 0 then
-          tree := InstanceTree.setCurrentScope(tree, InstNode.index(node));
-
           components := Dangerous.arrayCreateNoInit(comp_count,
             Dangerous.arrayGetNoBoundsChecking(i.components, 1));
 
-          i_mod := applyModifier(modifier, i);
+          i_mod := applyModifier(modifier, i, ModifierScope.CLASS_SCOPE(InstNode.name(node)));
           idx := 1;
           for c in Instance.components(i_mod) loop
             (c, tree) := instComponent(c, tree);
@@ -560,7 +614,8 @@ algorithm
           components := i.components;
         end if;
 
-        node.instance := Instance.INSTANCED_CLASS(scope, components);
+        node.instance := Instance.INSTANCED_CLASS(scope, components,
+            i.equations, i.initialEquations, i.algorithms, i.initialAlgorithms);
       then
         ();
 
@@ -611,6 +666,8 @@ protected
   DAE.Type ty;
   Component redecl_comp;
   Component.Attributes attr;
+  list<Dimension> dims;
+  Integer scope;
 algorithm
   (component, tree) := match component
     case Component.COMPONENT_DEF(modifier = comp_mod as Modifier.REDECLARE())
@@ -621,17 +678,29 @@ algorithm
 
     case Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT())
       algorithm
+        scope := InstanceTree.currentScopeIndex(tree);
         tree := InstanceTree.setCurrentScope(tree, component.scope);
         comp_mod := Modifier.create(comp.modifications, comp.name,
           ModifierScope.COMPONENT_SCOPE(comp.name), component.scope);
         comp_mod := Modifier.merge(component.modifier, comp_mod);
-        binding := Modifier.binding(comp_mod);
+        comp_mod := Modifier.propagate(comp_mod, listLength(comp.attributes.arrayDims));
         (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, comp.info, tree);
-        ty := makeType(cls);
+        (dims, tree) := instDimensions(comp.attributes.arrayDims, tree);
+        Modifier.checkEach(comp_mod, listEmpty(dims), comp.name);
         attr := instComponentAttributes(comp.attributes, comp.prefixes);
+        binding := Modifier.binding(comp_mod);
+        tree := InstanceTree.setCurrentScope(tree, scope);
       then
-        (Component.COMPONENT(comp.name, cls, ty, binding, attr), tree);
+        (Component.UNTYPED_COMPONENT(comp.name, cls, listArray(dims), binding, attr, comp.info), tree);
 
+    case Component.EXTENDS_NODE()
+      algorithm
+        (cls, tree) := instClass(component.node, Modifier.NOMOD(), tree);
+        component.node := cls;
+      then
+        (component, tree);
+
+    else (component, tree);
   end match;
 end instComponent;
 
@@ -683,58 +752,46 @@ algorithm
 
 end instModifier;
 
-function makeType
-  input InstNode node;
-  output DAE.Type ty;
+function instDimension
+  input Absyn.Subscript subscript;
+        output Dimension dimension;
+  input output InstanceTree tree;
 algorithm
-  ty := match node
+  dimension := match subscript
     local
-      list<Modifier> type_mods;
-      list<DAE.Var> type_attr;
+      Absyn.Exp exp;
+      DAE.Exp dim_exp;
+      DAE.Dimension dim;
 
-    case InstNode.INST_NODE(instance = Instance.INSTANCED_CLASS())
-      then DAE.T_COMPLEX_DEFAULT;
-
-    case InstNode.INST_NODE(instance = Instance.INSTANCED_BUILTIN(attributes = type_mods))
+    case Absyn.NOSUB() then Dimension.TYPED_DIM(DAE.Dimension.DIM_UNKNOWN());
+    case Absyn.SUBSCRIPT(subscript = exp)
       algorithm
-        type_attr := list(makeTypeAttribute(m) for m in type_mods);
+        (exp, tree) := instExp(exp, tree);
       then
-        match node.name
-          case "Real" then DAE.T_REAL(type_attr, DAE.emptyTypeSource);
-          case "Integer" then DAE.T_INTEGER(type_attr, DAE.emptyTypeSource);
-          case "Boolean" then DAE.T_BOOL(type_attr, DAE.emptyTypeSource);
-          case "String" then DAE.T_STRING(type_attr, DAE.emptyTypeSource);
-          else DAE.T_UNKNOWN_DEFAULT;
-        end match;
-
-    else DAE.T_UNKNOWN_DEFAULT;
+        Dimension.UNTYPED_DIM(exp, false);
+    //case Absyn.SUBSCRIPT(subscript = exp)
+    //  algorithm
+    //    dim := match exp
+    //      // Convert integer and boolean literals directly to the appropriate dimension.
+    //      case Absyn.Exp.INTEGER() then DAE.Dimension.DIM_INTEGER(exp.value);
+    //      else
+    //        algorithm // Any other expression needs to be instantiated.
+    //          (dim_exp, tree) := Inst.instExp(exp, tree);
+    //        then
+    //          DAE.Dimension.DIM_EXP(dim_exp);
+    //    end match;
+    //  then
+    //    new(dim);
   end match;
-end makeType;
+end instDimension;
 
-function makeTypeAttribute
-  input Modifier modifier;
-  output DAE.Var attribute;
+function instDimensions
+  input Absyn.ArrayDim absynDims;
+        output list<Dimension> dims;
+  input output InstanceTree tree;
 algorithm
-  attribute := match modifier
-    local
-      DAE.Exp exp;
-      DAE.Binding binding;
-
-    case Modifier.MODIFIER(binding = Binding.UNTYPED_BINDING(bindingExp = exp))
-      algorithm
-        binding := DAE.EQBOUND(exp, NONE(), DAE.C_UNKNOWN(),
-          DAE.BindingSource.BINDING_FROM_START_VALUE());
-      then
-        DAE.TYPES_VAR(modifier.name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT, binding, NONE());
-
-    else
-      algorithm
-        print("NFInst.makeTypeAttribute: Bad modifier\n");
-      then
-        fail();
-
-  end match;
-end makeTypeAttribute;
+  (dims, tree) := List.mapFold(absynDims, instDimension, tree);
+end instDimensions;
 
 function instBindings
   input output InstNode node;
@@ -768,7 +825,7 @@ algorithm
       InstNode cls;
       Binding binding;
 
-    case Component.COMPONENT(classInst = cls)
+    case Component.UNTYPED_COMPONENT(classInst = cls)
       algorithm
         (cls, tree) := instBindings(component.classInst, tree);
         component.classInst := cls;
@@ -777,6 +834,14 @@ algorithm
       then
         ();
 
+    case Component.EXTENDS_NODE()
+      algorithm
+        (cls, tree) := instBindings(component.node, tree);
+        component.node := cls;
+      then
+        ();
+
+    else ();
   end match;
 end instComponentBinding;
 
@@ -786,169 +851,403 @@ function instBinding
 algorithm
   binding := match binding
     local
-      DAE.Exp bind_exp;
+      Absyn.Exp bind_exp;
 
     case Binding.RAW_BINDING()
       algorithm
         (bind_exp, tree) := instExp(binding.bindingExp, tree);
       then
-        Binding.UNTYPED_BINDING(bind_exp, false, 0, binding.info);
+        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.propagatedDims, binding.info);
 
     else binding;
   end match;
 end instBinding;
 
-function instExp
-  input Absyn.Exp absynExp;
-  input InstanceTree inTree;
-  output DAE.Exp daeExp;
-  output InstanceTree tree = inTree;
+function instExpOpt
+  input output Option<Absyn.Exp> optExp;
+  input output InstanceTree tree;
 algorithm
-  daeExp := match absynExp
+  optExp := match optExp
     local
-      DAE.Exp exp1, exp2;
-      DAE.Operator op;
-      list<DAE.Exp> expl;
+      Absyn.Exp exp;
 
-    case Absyn.INTEGER() then DAE.ICONST(absynExp.value);
-    case Absyn.REAL() then DAE.RCONST(stringReal(absynExp.value));
-    case Absyn.STRING() then DAE.SCONST(absynExp.value);
-    case Absyn.BOOL() then DAE.BCONST(absynExp.value);
-    case Absyn.CREF()
+    case NONE() then NONE();
+    case SOME(exp)
       algorithm
-        (daeExp, tree) := instCref(absynExp.componentRef, tree);
+        (exp, tree) := instExp(exp, tree);
       then
-        daeExp;
+        SOME(exp);
 
-    case Absyn.BINARY()
-      algorithm
-        (exp1, tree) := instExp(absynExp.exp1, tree);
-        (exp2, tree) := instExp(absynExp.exp2, tree);
-        op := instOperator(absynExp.op);
-      then
-        DAE.BINARY(exp1, op, exp2);
-
-    case Absyn.UNARY()
-      algorithm
-        (exp1, tree) := instExp(absynExp.exp, tree);
-        op := instOperator(absynExp.op);
-      then
-        DAE.UNARY(op, exp1);
-
-    case Absyn.LBINARY()
-      algorithm
-        (exp1, tree) := instExp(absynExp.exp1, tree);
-        (exp2, tree) := instExp(absynExp.exp2, tree);
-        op := instOperator(absynExp.op);
-      then
-        DAE.LBINARY(exp1, op, exp2);
-
-    case Absyn.LUNARY()
-      algorithm
-        (exp1, tree) := instExp(absynExp.exp, tree);
-        op := instOperator(absynExp.op);
-      then
-        DAE.LUNARY(op, exp1);
-
-    case Absyn.RELATION()
-      algorithm
-        (exp1, tree) := instExp(absynExp.exp1, tree);
-        (exp2, tree) := instExp(absynExp.exp2, tree);
-        op := instOperator(absynExp.op);
-      then
-        DAE.RELATION(exp1, op, exp2, 0, NONE());
-
-    case Absyn.ARRAY()
-      algorithm
-        (expl, tree) := List.mapFold(absynExp.arrayExp, instExp, tree);
-      then
-        DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, expl);
-
-    case Absyn.MATRIX()
-      algorithm
-        (expl, tree) := List.mapFold(list(Absyn.ARRAY(e) for e in absynExp.matrix), instExp, tree);
-      then
-        DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, expl);
-
-    else DAE.SCONST("ERROR");
   end match;
+end instExpOpt;
+
+function instExp
+  input output Absyn.Exp absynExp;
+  input output InstanceTree tree;
+algorithm
+  //daeExp := match absynExp
+  //  local
+  //    DAE.Exp exp1, exp2;
+  //    DAE.Operator op;
+  //    list<DAE.Exp> expl;
+
+  //  case Absyn.INTEGER() then DAE.ICONST(absynExp.value);
+  //  case Absyn.REAL() then DAE.RCONST(stringReal(absynExp.value));
+  //  case Absyn.STRING() then DAE.SCONST(absynExp.value);
+  //  case Absyn.BOOL() then DAE.BCONST(absynExp.value);
+  //  case Absyn.CREF()
+  //    algorithm
+  //      (daeExp, tree) := instCref(absynExp.componentRef, tree);
+  //    then
+  //      daeExp;
+
+  //  case Absyn.BINARY()
+  //    algorithm
+  //      (exp1, tree) := instExp(absynExp.exp1, tree);
+  //      (exp2, tree) := instExp(absynExp.exp2, tree);
+  //      op := instOperator(absynExp.op);
+  //    then
+  //      DAE.BINARY(exp1, op, exp2);
+
+  //  case Absyn.UNARY()
+  //    algorithm
+  //      (exp1, tree) := instExp(absynExp.exp, tree);
+  //      op := instOperator(absynExp.op);
+  //    then
+  //      DAE.UNARY(op, exp1);
+
+  //  case Absyn.LBINARY()
+  //    algorithm
+  //      (exp1, tree) := instExp(absynExp.exp1, tree);
+  //      (exp2, tree) := instExp(absynExp.exp2, tree);
+  //      op := instOperator(absynExp.op);
+  //    then
+  //      DAE.LBINARY(exp1, op, exp2);
+
+  //  case Absyn.LUNARY()
+  //    algorithm
+  //      (exp1, tree) := instExp(absynExp.exp, tree);
+  //      op := instOperator(absynExp.op);
+  //    then
+  //      DAE.LUNARY(op, exp1);
+
+  //  case Absyn.RELATION()
+  //    algorithm
+  //      (exp1, tree) := instExp(absynExp.exp1, tree);
+  //      (exp2, tree) := instExp(absynExp.exp2, tree);
+  //      op := instOperator(absynExp.op);
+  //    then
+  //      DAE.RELATION(exp1, op, exp2, 0, NONE());
+
+  //  case Absyn.ARRAY()
+  //    algorithm
+  //      (expl, tree) := List.mapFold(absynExp.arrayExp, instExp, tree);
+  //    then
+  //      DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, expl);
+
+  //  case Absyn.MATRIX()
+  //    algorithm
+  //      (expl, tree) := List.mapFold(list(Absyn.ARRAY(e) for e in absynExp.matrix), instExp, tree);
+  //    then
+  //      DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, expl);
+
+  //  else DAE.SCONST("ERROR");
+  //end match;
 end instExp;
 
-protected function instOperator
-  input Absyn.Operator inOperator;
-  output DAE.Operator outOperator;
-algorithm
-  outOperator := match(inOperator)
-    case Absyn.ADD() then DAE.ADD(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.SUB() then DAE.SUB(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.MUL() then DAE.MUL(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.DIV() then DAE.DIV(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.POW() then DAE.POW(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.UPLUS() then DAE.ADD(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.UMINUS() then DAE.UMINUS(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.ADD_EW() then DAE.ADD_ARR(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.SUB_EW() then DAE.SUB_ARR(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.MUL_EW() then DAE.MUL_ARR(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.DIV_EW() then DAE.DIV_ARR(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.POW_EW() then DAE.POW_ARR2(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.UPLUS_EW() then DAE.ADD(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.UMINUS_EW() then DAE.UMINUS(DAE.T_UNKNOWN_DEFAULT);
-    // logical have boolean type
-    case Absyn.AND() then DAE.AND(DAE.T_BOOL_DEFAULT);
-    case Absyn.OR() then DAE.OR(DAE.T_BOOL_DEFAULT);
-    case Absyn.NOT() then DAE.NOT(DAE.T_BOOL_DEFAULT);
-    // relational have boolean type too
-    case Absyn.LESS() then DAE.LESS(DAE.T_BOOL_DEFAULT);
-    case Absyn.LESSEQ() then DAE.LESSEQ(DAE.T_BOOL_DEFAULT);
-    case Absyn.GREATER() then DAE.GREATER(DAE.T_BOOL_DEFAULT);
-    case Absyn.GREATEREQ() then DAE.GREATEREQ(DAE.T_BOOL_DEFAULT);
-    case Absyn.EQUAL() then DAE.EQUAL(DAE.T_BOOL_DEFAULT);
-    case Absyn.NEQUAL() then DAE.NEQUAL(DAE.T_BOOL_DEFAULT);
-  end match;
-end instOperator;
-
 function instCref
-  input Absyn.ComponentRef absynCref;
-  input InstanceTree inTree;
-  output DAE.Exp daeCref;
-  output InstanceTree tree;
-protected
-  DAE.ComponentRef cref;
+  input output Absyn.ComponentRef cref;
+  input output InstanceTree tree;
 algorithm
-  (cref, tree) := instCref2(absynCref, inTree);
-  daeCref := DAE.CREF(cref, DAE.T_UNKNOWN_DEFAULT);
+
+  //daeCref := match absynCref
+  //  local
+  //    DAE.ComponentRef cref;
+
+  //  case Absyn.CREF_IDENT()
+  //    then DAE.CREF_IDENT(absynCref.name, DAE.T_UNKNOWN_DEFAULT, {});
+
+  //  case Absyn.CREF_QUAL()
+  //    algorithm
+  //      (cref, tree) := instCref(absynCref.componentRef, tree);
+  //    then
+  //      DAE.CREF_QUAL(absynCref.name, DAE.T_UNKNOWN_DEFAULT, {}, cref);
+
+  //  case Absyn.CREF_FULLYQUALIFIED()
+  //    algorithm
+  //      (cref, tree) := instCref(absynCref.componentRef, tree);
+  //    then
+  //      cref;
+
+  //  case Absyn.WILD() then DAE.WILD();
+  //  case Absyn.ALLWILD() then DAE.WILD();
+
+  //end match;
 end instCref;
 
-function instCref2
-  input Absyn.ComponentRef absynCref;
-  input InstanceTree inTree;
-  output DAE.ComponentRef daeCref;
-  output InstanceTree tree = inTree;
+function instEquations
+  input list<SCode.Equation> scodeEql;
+        output list<Equation> instEql;
+  input output InstanceTree tree;
 algorithm
-  daeCref := match absynCref
+  (instEql, tree) := List.mapFold(scodeEql, instEquation, tree);
+end instEquations;
+
+function instEquation
+  input SCode.Equation scodeEq;
+        output Equation instEq;
+  input output InstanceTree tree;
+protected
+  SCode.EEquation eq;
+algorithm
+  SCode.EQUATION(eEquation = eq) := scodeEq;
+  instEq := instEEquation(eq, tree);
+end instEquation;
+
+function instEEquations
+  input list<SCode.EEquation> scodeEql;
+        output list<Equation> instEql;
+  input output InstanceTree tree;
+algorithm
+  (instEql, tree) := List.mapFold(scodeEql, instEEquation, tree);
+end instEEquations;
+
+function instEEquation
+  input SCode.EEquation scodeEq;
+        output Equation instEq;
+  input output InstanceTree tree;
+algorithm
+  instEq := match scodeEq
     local
-      DAE.ComponentRef cref;
+      Absyn.Exp exp1, exp2, exp3;
+      Absyn.ComponentRef cr1, cr2;
+      Option<Absyn.Exp> oexp;
+      list<Equation> eql;
+      list<Absyn.Exp> expl;
+      list<tuple<Absyn.Exp, list<Equation>>> branches;
 
-    case Absyn.CREF_IDENT()
-      then DAE.CREF_IDENT(absynCref.name, DAE.T_UNKNOWN_DEFAULT, {});
-
-    case Absyn.CREF_QUAL()
+    case SCode.EQ_EQUALS()
       algorithm
-        (cref, tree) := instCref2(absynCref.componentRef, tree);
+        (exp1, tree) := instExp(scodeEq.expLeft, tree);
+        (exp2, tree) := instExp(scodeEq.expRight, tree);
       then
-        DAE.CREF_QUAL(absynCref.name, DAE.T_UNKNOWN_DEFAULT, {}, cref);
+        Equation.UNTYPED_EQUALITY(exp1, exp2, scodeEq.info);
 
-    case Absyn.CREF_FULLYQUALIFIED()
+    case SCode.EQ_CONNECT()
       algorithm
-        (cref, tree) := instCref2(absynCref.componentRef, tree);
+        (cr1, tree) := instCref(scodeEq.crefLeft, tree);
+        (cr2, tree) := instCref(scodeEq.crefRight, tree);
       then
-        cref;
+        Equation.UNTYPED_CONNECT(cr1, cr2, scodeEq.info);
 
-    case Absyn.WILD() then DAE.WILD();
-    case Absyn.ALLWILD() then DAE.WILD();
+    case SCode.EQ_FOR()
+      algorithm
+        (oexp, tree) := instExpOpt(scodeEq.range, tree);
+        (eql, tree) := instEEquations(scodeEq.eEquationLst, tree);
+      then
+        Equation.UNTYPED_FOR(scodeEq.index, oexp, eql, scodeEq.info);
+
+    case SCode.EQ_IF()
+      algorithm
+        // Instantiate the conditions.
+        (expl, tree) := List.mapFold(scodeEq.condition, instExp, tree);
+
+        // Instantiate each branch and pair it up with a condition.
+        branches := {};
+        for branch in scodeEq.thenBranch loop
+          (eql, tree) := instEEquations(scodeEq.elseBranch, tree);
+          exp1 :: expl := expl;
+          branches := (exp1, eql) :: branches;
+        end for;
+
+        // Instantiate the else-branch, if there is one, and make it a branch
+        // with condition true.
+        if not listEmpty(scodeEq.elseBranch) then
+          (eql, tree) := instEEquations(scodeEq.elseBranch, tree);
+          branches := (Absyn.BOOL(true), eql) :: branches;
+        end if;
+      then
+        Equation.UNTYPED_IF(listReverse(branches), scodeEq.info);
+
+    case SCode.EQ_WHEN()
+      algorithm
+        (exp1, tree) := instExp(scodeEq.condition, tree);
+        (eql, tree) := instEEquations(scodeEq.eEquationLst, tree);
+        branches := {(exp1, eql)};
+
+        for branch in scodeEq.elseBranches loop
+          (exp1, tree) := instExp(Util.tuple21(branch), tree);
+          (eql, tree) := instEEquations(Util.tuple22(branch), tree);
+          branches := (exp1, eql) :: branches;
+        end for;
+      then
+        Equation.UNTYPED_WHEN(branches, scodeEq.info);
+
+    case SCode.EQ_ASSERT()
+      algorithm
+        (exp1, tree) := instExp(scodeEq.condition, tree);
+        (exp2, tree) := instExp(scodeEq.message, tree);
+        (exp3, tree) := instExp(scodeEq.level, tree);
+      then
+        Equation.UNTYPED_ASSERT(exp1, exp2, exp3, scodeEq.info);
+
+    case SCode.EQ_TERMINATE()
+      algorithm
+        (exp1, tree) := instExp(scodeEq.message, tree);
+      then
+        Equation.UNTYPED_TERMINATE(exp1, scodeEq.info);
+
+    case SCode.EQ_REINIT()
+      algorithm
+        (cr1, tree) := instCref(scodeEq.cref, tree);
+        (exp1, tree) := instExp(scodeEq.expReinit, tree);
+      then
+        Equation.UNTYPED_REINIT(cr1, exp1, scodeEq.info);
+
+    case SCode.EQ_NORETCALL()
+      algorithm
+        (exp1, tree) := instExp(scodeEq.exp, tree);
+      then
+        Equation.UNTYPED_NORETCALL(exp1, scodeEq.info);
+
+    else
+      algorithm
+        Error.addInternalError("NFInst.instEEquation: Unknown equation",
+          SCode.getEEquationInfo(scodeEq));
+      then
+        fail();
 
   end match;
-end instCref2;
+end instEEquation;
+
+function instAlgorithmSections
+  input list<SCode.AlgorithmSection> algorithmSections;
+        output list<list<Statement>> statements;
+  input output InstanceTree tree;
+algorithm
+  (statements, tree) := List.mapFold(algorithmSections, instAlgorithmSection, tree);
+end instAlgorithmSections;
+
+function instAlgorithmSection
+  input SCode.AlgorithmSection algorithmSection;
+        output list<Statement> statements;
+  input output InstanceTree tree;
+algorithm
+  (statements, tree) := instStatements(algorithmSection.statements, tree);
+end instAlgorithmSection;
+
+function instStatements
+  input list<SCode.Statement> scodeStmtl;
+        output list<Statement> statements;
+  input output InstanceTree tree;
+algorithm
+  (statements, tree) := List.mapFold(scodeStmtl, instStatement, tree);
+end instStatements;
+
+function instStatement
+  input SCode.Statement scodeStmt;
+        output Statement statement;
+  input output InstanceTree tree;
+algorithm
+  statement := match scodeStmt
+    local
+      Absyn.Exp exp1, exp2, exp3;
+      Absyn.ComponentRef cr;
+      Option<Absyn.Exp> oexp;
+      list<Statement> stmtl;
+      list<tuple<Absyn.Exp, list<Statement>>> branches;
+
+    case SCode.ALG_ASSIGN()
+      algorithm
+        (exp1, tree) := instExp(scodeStmt.assignComponent, tree);
+        (exp2, tree) := instExp(scodeStmt.value, tree);
+      then
+        Statement.UNTYPED_ASSIGNMENT(exp1, exp2, scodeStmt.info);
+
+    case SCode.ALG_FOR()
+      algorithm
+        (oexp, tree) := instExpOpt(scodeStmt.range, tree);
+        (stmtl, tree) := instStatements(scodeStmt.forBody, tree);
+      then
+        Statement.UNTYPED_FOR(scodeStmt.index, oexp, stmtl, scodeStmt.info);
+
+    case SCode.ALG_IF()
+      algorithm
+        branches := {};
+        for branch in (scodeStmt.boolExpr, scodeStmt.trueBranch) :: scodeStmt.elseIfBranch loop
+          (exp1, tree) := instExp(Util.tuple21(branch), tree);
+          (stmtl, tree) := instStatements(Util.tuple22(branch), tree);
+          branches := (exp1, stmtl) :: branches;
+        end for;
+
+        (stmtl, tree) := instStatements(scodeStmt.elseBranch, tree);
+        branches := listReverse((Absyn.BOOL(true), stmtl) :: branches);
+      then
+        Statement.UNTYPED_IF(branches, scodeStmt.info);
+
+    case SCode.ALG_WHEN_A()
+      algorithm
+        branches := {};
+        for branch in scodeStmt.branches loop
+          (exp1, tree) := instExp(Util.tuple21(branch), tree);
+          (stmtl, tree) := instStatements(Util.tuple22(branch), tree);
+          branches := (exp1, stmtl) :: branches;
+        end for;
+      then
+        Statement.UNTYPED_WHEN(listReverse(branches), scodeStmt.info);
+
+    case SCode.ALG_ASSERT()
+      algorithm
+        (exp1, tree) := instExp(scodeStmt.condition, tree);
+        (exp2, tree) := instExp(scodeStmt.message, tree);
+        (exp3, tree) := instExp(scodeStmt.level, tree);
+      then
+        Statement.UNTYPED_ASSERT(exp1, exp2, exp3, scodeStmt.info);
+
+    case SCode.ALG_TERMINATE()
+      algorithm
+        (exp1, tree) := instExp(scodeStmt.message, tree);
+      then
+        Statement.UNTYPED_TERMINATE(exp1, scodeStmt.info);
+
+    case SCode.ALG_REINIT()
+      algorithm
+        (cr, tree) := instCref(scodeStmt.cref, tree);
+        (exp1, tree) := instExp(scodeStmt.newValue, tree);
+      then
+        Statement.UNTYPED_REINIT(cr, exp1, scodeStmt.info);
+
+    case SCode.ALG_NORETCALL()
+      algorithm
+        (exp1, tree) := instExp(scodeStmt.exp, tree);
+      then
+        Statement.UNTYPED_NORETCALL(exp1, scodeStmt.info);
+
+    case SCode.ALG_WHILE()
+      algorithm
+        (exp1, tree) := instExp(scodeStmt.boolExpr, tree);
+        (stmtl, tree) := instStatements(scodeStmt.whileBody, tree);
+      then
+        Statement.UNTYPED_WHILE(exp1, stmtl, scodeStmt.info);
+
+    case SCode.ALG_RETURN() then Statement.RETURN(scodeStmt.info);
+    case SCode.ALG_BREAK() then Statement.BREAK(scodeStmt.info);
+
+    case SCode.ALG_FAILURE()
+      algorithm
+        (stmtl, tree) := instStatements(scodeStmt.stmts, tree);
+      then
+        Statement.FAILURE(stmtl, scodeStmt.info);
+
+    else
+      algorithm
+        Error.addInternalError("NFInst.instStatement: Unknown statement",
+          SCode.getStatementInfo(scodeStmt));
+      then
+        fail();
+
+  end match;
+end instStatement;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;

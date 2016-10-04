@@ -708,7 +708,8 @@ public constant Message EXT_FN_SINGLE_RETURN_ARRAY = MESSAGE(290, TRANSLATION(),
   Util.gettext("An external declaration with a single output without explicit mapping is defined as having the output as the lhs, but language %s does not support this for array variables. OpenModelica will put the output as an input (as is done when there is more than 1 output), but this is not according to the Modelica Specification. Use an explicit mapping instead of the implicit one to suppress this warning."));
 public constant Message RHS_TUPLE_EXPRESSION = MESSAGE(291, TRANSLATION(), ERROR(),
   Util.gettext("Tuple expressions may only occur on the left side of an assignment or equation with a single function call on the right side. Got the following expression: %s."));
-
+public constant Message EACH_ON_NON_ARRAY = MESSAGE(292, TRANSLATION(), ERROR(),
+  Util.gettext("'each' used when modifying non-array element %s."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

@@ -34,6 +34,8 @@ encapsulated package NFInstanceTree
 import BasePVector;
 import NFInstNode.InstNode;
 import NFInstance.Instance;
+import NFComponent.Component;
+import NFPrefix.Prefix;
 
 encapsulated package InstVector
   import BasePVector;
@@ -49,7 +51,7 @@ uniontype InstanceTree
   record INST_TREE
     Integer currentScope;
     InstVector.Vector instances;
-    list<InstNode> hierarchy;
+    list<Component> hierarchy;
   end INST_TREE;
 
   function new
@@ -114,6 +116,91 @@ uniontype InstanceTree
   algorithm
     scope := InstVector.get(tree.instances, tree.currentScope);
   end currentScope;
+
+  function enterParentScope
+    input output InstanceTree tree;
+  protected
+    InstNode cur_scope;
+  algorithm
+    false := tree.currentScope == TOP_SCOPE;
+    cur_scope := InstVector.get(tree.instances, tree.currentScope);
+    tree.currentScope := InstNode.parent(cur_scope);
+  end enterParentScope;
+
+  function pushHierarchy
+    input Component instance;
+    input output InstanceTree tree;
+  algorithm
+    tree.hierarchy := instance :: tree.hierarchy;
+  end pushHierarchy;
+
+  function popHierarchy
+    input output InstanceTree tree;
+  algorithm
+    tree.hierarchy := listRest(tree.hierarchy);
+  end popHierarchy;
+
+  function hierarchy
+    input InstanceTree tree;
+    output list<Component> nodes = tree.hierarchy;
+  end hierarchy;
+
+  function currentInstance
+    input InstanceTree tree;
+    output Component instance = listHead(tree.hierarchy);
+  end currentInstance;
+
+  function enterHierarchy
+    input Integer scopeIndex;
+    input output InstanceTree tree;
+  protected
+    list<Component> nodes = tree.hierarchy;
+    InstNode node;
+  algorithm
+    //if InstNode.index(currentInstance(tree)) <> scopeIndex then
+    //  while true loop
+    //    node := listHead(nodes);
+    //    if InstNode.index(node) == scopeIndex then
+    //      tree.hierarchy := nodes;
+    //      break;
+    //    end if;
+    //    nodes := listRest(nodes);
+    //  end while;
+    //end if;
+  end enterHierarchy;
+
+  function hierarchyPrefix
+    input InstanceTree tree;
+    output Prefix prefix = Prefix.NO_PREFIX();
+  protected
+    list<Component> hierarchy = tree.hierarchy;
+    Component c;
+  algorithm
+    // Make a prefix out of all but the last (anonymous) instances in the hierarchy.
+    while listLength(hierarchy) > 1 loop
+      c :: hierarchy := hierarchy;
+      prefix := Prefix.add(Component.name(c), {}, DAE.T_UNKNOWN_DEFAULT, prefix);
+    end while;
+  end hierarchyPrefix;
+
+  function scopePrefix
+    input InstanceTree tree;
+    output Prefix prefix = Prefix.NO_PREFIX();
+  protected
+    InstNode node = currentScope(tree);
+    Integer parent = NO_SCOPE;
+    list<InstNode> nodes = {};
+  algorithm
+    while parent <> TOP_SCOPE loop
+      nodes := node :: nodes;
+      parent := InstNode.parent(node);
+      node := InstVector.get(tree.instances, parent);
+    end while;
+
+    for n in nodes loop
+      prefix := Prefix.add(InstNode.name(n), {}, DAE.T_UNKNOWN_DEFAULT, prefix);
+    end for;
+  end scopePrefix;
 end InstanceTree;
 
 annotation(__OpenModelica_Interface="frontend");

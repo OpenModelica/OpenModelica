@@ -60,6 +60,13 @@ uniontype InstNode
     INST_NODE(name = name) := node;
   end name;
 
+  function rename
+    input output InstNode node;
+    input String name;
+  algorithm
+    node.name := name;
+  end rename;
+
   function index
     input InstNode node;
     output Integer index;

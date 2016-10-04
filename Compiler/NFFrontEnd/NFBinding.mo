@@ -58,8 +58,9 @@ uniontype Binding
   end RAW_BINDING;
 
   record UNTYPED_BINDING
-    DAE.Exp bindingExp;
+    Absyn.Exp bindingExp;
     Boolean isProcessing;
+    Integer scope;
     Integer propagatedDims;
     SourceInfo info;
   end UNTYPED_BINDING;
@@ -73,54 +74,93 @@ uniontype Binding
 
 public
   function fromAbsyn
-    input Option<Absyn.Exp> inBinding;
-    input SCode.Final inFinal;
-    input SCode.Each inEach;
+    input Option<Absyn.Exp> bindingExp;
+    input SCode.Final finalPrefix;
+    input SCode.Each eachPrefix;
     input Integer scope;
-    input SourceInfo inInfo;
-    output Binding outBinding;
+    input Integer dimensions;
+    input SourceInfo info;
+    output Binding binding;
   algorithm
-    outBinding := match inBinding
+    binding := match bindingExp
       local
         Absyn.Exp exp;
+        Integer pd;
 
       case SOME(exp)
-        then RAW_BINDING(exp, inFinal, inEach, 0, scope, inInfo);
+        algorithm
+          pd := if SCode.eachBool(eachPrefix) then -1 else dimensions;
+        then
+          RAW_BINDING(exp, finalPrefix, eachPrefix, scope, pd, info);
 
       else UNBOUND();
     end match;
   end fromAbsyn;
 
   function isBound
-    input Binding inBinding;
-    output Boolean outIsBound;
+    input Binding binding;
+    output Boolean isBound;
   algorithm
-    outIsBound := match inBinding
+    isBound := match binding
       case UNBOUND() then false;
       else true;
     end match;
   end isBound;
 
   function untypedExp
-    input Binding inBinding;
-    output Option<DAE.Exp> outExp;
+    input Binding binding;
+    output Option<Absyn.Exp> exp;
   algorithm
-    outExp := match inBinding
-      case UNTYPED_BINDING() then SOME(inBinding.bindingExp);
+    exp := match binding
+      case UNTYPED_BINDING() then SOME(binding.bindingExp);
       else NONE();
     end match;
   end untypedExp;
 
-  function toString
-    input Binding inBinding;
-    input String inPrefix = "";
-    output String outString;
+  function typedExp
+    input Binding binding;
+    output Option<DAE.Exp> exp;
   algorithm
-    outString := match inBinding
+    exp := match binding
+      case TYPED_BINDING() then SOME(binding.bindingExp);
+      else NONE();
+    end match;
+  end typedExp;
+
+  function getInfo
+    input Binding binding;
+    output SourceInfo info;
+  algorithm
+    info := match binding
+      case UNBOUND() then Absyn.dummyInfo;
+      case RAW_BINDING() then binding.info;
+      case UNTYPED_BINDING() then binding.info;
+      case TYPED_BINDING() then binding.info;
+    end match;
+  end getInfo;
+
+  function isEach
+    input Binding binding;
+    output Boolean isEach;
+  algorithm
+    isEach := match binding
+      case RAW_BINDING() then binding.propagatedDims == -1;
+      case UNTYPED_BINDING() then binding.propagatedDims == -1;
+      case TYPED_BINDING() then binding.propagatedDims == -1;
+      else false;
+    end match;
+  end isEach;
+
+  function toString
+    input Binding binding;
+    input String prefix = "";
+    output String string;
+  algorithm
+    string := match binding
       case UNBOUND() then "";
-      case RAW_BINDING() then inPrefix + Dump.printExpStr(inBinding.bindingExp);
-      case UNTYPED_BINDING() then inPrefix + ExpressionDump.printExpStr(inBinding.bindingExp);
-      case TYPED_BINDING() then inPrefix + ExpressionDump.printExpStr(inBinding.bindingExp);
+      case RAW_BINDING() then prefix + Dump.printExpStr(binding.bindingExp);
+      case UNTYPED_BINDING() then prefix + Dump.printExpStr(binding.bindingExp);
+      case TYPED_BINDING() then prefix + ExpressionDump.printExpStr(binding.bindingExp);
     end match;
   end toString;
 

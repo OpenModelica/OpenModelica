@@ -38,16 +38,29 @@ encapsulated package NFFlatten
   New instantiation, enable with +d=newInst.
 "
 
-import NFBinding.Binding;
 import Inst = NFInst;
-import NFInst.InstanceTree;
-import NFInst.InstNode;
-import NFInst.Instance;
-import NFInst.Component;
+import NFBinding.Binding;
+import NFComponent.Component;
+import NFEquation.Equation;
+import NFInstance.Instance;
+import NFInstanceTree.InstanceTree;
+import NFInstNode.InstNode;
+import NFPrefix.Prefix;
+import NFStatement.Statement;
 
 import DAE;
+import Error;
+import Expression;
+import ExpressionDump;
 import SCode;
 import System;
+import Util;
+
+partial function ExpandScalarFunc<ElementT>
+  input ElementT element;
+  input Prefix prefix;
+  input output list<DAE.Element> elements;
+end ExpandScalarFunc;
 
 function flattenClass
   input InstNode classInst;
@@ -64,7 +77,7 @@ end flattenClass;
 
 function flattenNode
   input InstNode node;
-  input list<String> prefix = {};
+  input Prefix prefix = Prefix.NO_PREFIX();
   input list<DAE.Element> inElements = {};
   output list<DAE.Element> elements;
 protected
@@ -72,15 +85,13 @@ protected
   String name;
 algorithm
   InstNode.INST_NODE(name = name, instance = i) := node;
-  elements := flattenInstance(name, i, prefix, inElements);
+  elements := flattenInstance(i, prefix, inElements);
 end flattenNode;
 
 function flattenInstance
-  input String name;
   input Instance instance;
-  input list<String> prefix;
-  input list<DAE.Element> inElements;
-  output list<DAE.Element> elements = inElements;
+  input Prefix prefix;
+  input output list<DAE.Element> elements;
 algorithm
   _ := match instance
     case Instance.INSTANCED_CLASS()
@@ -88,13 +99,17 @@ algorithm
         for c in instance.components loop
           elements := flattenComponent(c, prefix, elements);
         end for;
+
+        elements := flattenEquations(instance.equations, prefix, elements);
+        elements := flattenInitialEquations(instance.initialEquations, prefix, elements);
+        elements := flattenAlgorithms(instance.algorithms, prefix, elements);
+        elements := flattenInitialAlgorithms(instance.initialAlgorithms, prefix, elements);
       then
         ();
 
     else
       algorithm
-        print("Got non-instantiated component " +
-          stringDelimitList(listReverse(prefix), ".") + "\n");
+        print("Got non-instantiated component " + Prefix.toString(prefix) + "\n");
       then
         ();
 
@@ -103,9 +118,114 @@ end flattenInstance;
 
 function flattenComponent
   input Component component;
-  input list<String> prefix;
-  input list<DAE.Element> inElements;
-  output list<DAE.Element> elements;
+  input Prefix prefix;
+  input output list<DAE.Element> elements;
+protected
+  Prefix new_pre;
+  DAE.Type ty;
+algorithm
+  _ := match component
+    case Component.TYPED_COMPONENT()
+      algorithm
+        ty := Component.getType(component);
+        new_pre := Prefix.add(Component.name(component), {}, ty, prefix);
+
+        elements := match ty
+          case DAE.T_ARRAY()
+            then flattenArray(Component.unliftType(component), ty.dims, new_pre, flattenScalar, elements);
+          else flattenScalar(component, new_pre, elements);
+        end match;
+      then
+        ();
+
+    case Component.EXTENDS_NODE()
+      algorithm
+        elements := flattenInstance(InstNode.instance(component.node), prefix, elements);
+      then
+        ();
+
+    case Component.COMPONENT_REF() then ();
+  end match;
+end flattenComponent;
+
+function flattenArray<ElementT>
+  input ElementT element;
+  input list<DAE.Dimension> dimensions;
+  input Prefix prefix;
+  input ExpandScalarFunc scalarFunc;
+  input output list<DAE.Element> elements;
+  input list<DAE.Subscript> subscripts = {};
+protected
+  DAE.Dimension dim;
+  list<DAE.Dimension> rest_dims;
+  Prefix sub_pre;
+algorithm
+  if listEmpty(dimensions) then
+    sub_pre := Prefix.setSubscripts(listReverse(subscripts), prefix);
+    elements := scalarFunc(element, sub_pre, elements);
+  else
+    dim :: rest_dims := dimensions;
+    elements := match dim
+      case DAE.DIM_INTEGER()
+        then flattenArrayIntDim(element, dim.integer, rest_dims, prefix,
+            subscripts, scalarFunc, elements);
+      case DAE.DIM_ENUM()
+        then flattenArrayEnumDim(element, dim.enumTypeName, dim.literals,
+            rest_dims, prefix, subscripts, scalarFunc, elements);
+      else
+        algorithm
+          print("Unknown dimension " + ExpressionDump.dimensionString(dim) +
+            " in NFFlatten.flattenArray\n");
+        then
+          fail();
+    end match;
+  end if;
+end flattenArray;
+
+function flattenArrayIntDim<ElementT>
+  input ElementT element;
+  input Integer dimSize;
+  input list<DAE.Dimension> restDims;
+  input Prefix prefix;
+  input list<DAE.Subscript> subscripts;
+  input ExpandScalarFunc scalarFunc;
+  input output list<DAE.Element> elements;
+protected
+  list<DAE.Subscript> subs;
+algorithm
+  for i in 1:dimSize loop
+    subs := DAE.INDEX(DAE.ICONST(i)) :: subscripts;
+    elements := flattenArray(element, restDims, prefix, scalarFunc, elements, subs);
+  end for;
+end flattenArrayIntDim;
+
+function flattenArrayEnumDim<ElementT>
+  input ElementT element;
+  input Absyn.Path typeName;
+  input list<String> literals;
+  input list<DAE.Dimension> restDims;
+  input Prefix prefix;
+  input list<DAE.Subscript> subscripts;
+  input ExpandScalarFunc scalarFunc;
+  input output list<DAE.Element> elements;
+protected
+  Integer i = 1;
+  DAE.Exp enum_exp;
+  list<DAE.Subscript> subs;
+algorithm
+  for l in literals loop
+    enum_exp := DAE.ENUM_LITERAL(Absyn.suffixPath(typeName, l), i);
+    i := i + 1;
+
+    subs := DAE.INDEX(enum_exp) :: subscripts;
+    elements := flattenArray(element, restDims, prefix, scalarFunc, elements, subs);
+  end for;
+end flattenArrayEnumDim;
+
+function flattenScalar
+  input Component component;
+  input Prefix prefix;
+  input output list<DAE.Element> elements;
 algorithm
   elements := match component
     local
@@ -113,14 +233,16 @@ algorithm
       DAE.Element var;
       DAE.ComponentRef cref;
       Component.Attributes attr;
+      list<DAE.Dimension> dims;
+      Option<DAE.Exp> binding_exp;
+      Prefix new_pre;
 
-    case Component.COMPONENT(classInst = InstNode.INST_NODE(instance = Instance.INSTANCED_BUILTIN()),
+    case Component.TYPED_COMPONENT(
+        classInst = InstNode.INST_NODE(instance = Instance.INSTANCED_BUILTIN()),
         attributes = attr as Component.Attributes.ATTRIBUTES())
       algorithm
-        cref := DAE.CREF_IDENT(component.name, DAE.T_UNKNOWN_DEFAULT, {});
-        for id in prefix loop
-          cref := DAE.CREF_QUAL(id, DAE.T_UNKNOWN_DEFAULT, {}, cref);
-        end for;
+        cref := Prefix.toCref(prefix);
+        binding_exp := flattenBinding(component.binding, prefix);
 
         var := DAE.VAR(
           cref,
@@ -129,7 +251,7 @@ algorithm
           DAE.NON_PARALLEL(),
           attr.visibility,
           component.ty,
-          Binding.untypedExp(component.binding),
+          binding_exp,
           {},
           attr.connectorType,
           DAE.emptyElementSource,
@@ -137,15 +259,176 @@ algorithm
           NONE(),
           Absyn.NOT_INNER_OUTER());
 
-        elements := var :: inElements;
       then
-        elements;
+        var :: elements;
 
-    case Component.COMPONENT(classInst = InstNode.INST_NODE(instance = i))
-      then flattenInstance(component.name, i, component.name :: prefix, inElements);
+    case Component.TYPED_COMPONENT(classInst = InstNode.INST_NODE(instance = i))
+      then flattenInstance(i, prefix, elements);
 
   end match;
-end flattenComponent;
+end flattenScalar;
+
+function flattenBinding
+  input Binding binding;
+  input Prefix prefix;
+  output Option<DAE.Exp> bindingExp;
+algorithm
+  bindingExp := match binding
+    local
+      list<DAE.Subscript> subs;
+
+    case Binding.UNBOUND() then NONE();
+
+    case Binding.TYPED_BINDING(propagatedDims = -1)
+      then SOME(binding.bindingExp);
+
+    case Binding.TYPED_BINDING()
+      algorithm
+        // TODO: Implement this in a saner way.
+        subs := List.lastN(List.flatten(Prefix.allSubscripts(prefix)),
+          binding.propagatedDims);
+      then
+        SOME(Expression.subscriptExp(binding.bindingExp, subs));
+
+    else
+      algorithm
+        Error.addInternalError("Flatten.flattenBinding got untyped binding.",
+          Absyn.dummyInfo);
+      then
+        fail();
+
+  end match;
+end flattenBinding;
+
+function flattenEquation
+  input Equation eq;
+  input Prefix prefix;
+  input output list<DAE.Element> elements = {};
+algorithm
+  elements := match eq
+    local
+      DAE.Exp lhs, rhs;
+
+    case Equation.EQUALITY()
+      algorithm
+        lhs := Prefix.prefixExp(eq.lhs, prefix);
+        rhs := Prefix.prefixExp(eq.rhs, prefix);
+      then
+        DAE.EQUATION(lhs, rhs, DAE.emptyElementSource) :: elements;
+
+    case Equation.IF()
+      then flattenIfEquation(eq.branches, false, prefix) :: elements;
+
+    else elements;
+  end match;
+end flattenEquation;
+
+function flattenEquations
+  input list<Equation> equations;
+  input Prefix prefix;
+  input output list<DAE.Element> elements = {};
+algorithm
+  elements := List.fold1(equations, flattenEquation, prefix, elements);
+end flattenEquations;
+
+function flattenInitialEquation
+  input Equation eq;
+  input Prefix prefix;
+  input output list<DAE.Element> elements;
+algorithm
+  elements := match eq
+    local
+      DAE.Exp lhs, rhs;
+
+    case Equation.EQUALITY()
+      algorithm
+        lhs := Prefix.prefixExp(eq.lhs, prefix);
+        rhs := Prefix.prefixExp(eq.rhs, prefix);
+      then
+        DAE.INITIALEQUATION(lhs, rhs, DAE.emptyElementSource) :: elements;
+
+    case Equation.IF()
+      then flattenIfEquation(eq.branches, true, prefix) :: elements;
+
+    else elements;
+  end match;
+end flattenInitialEquation;
+
+function flattenInitialEquations
+  input list<Equation> equations;
+  input Prefix prefix;
+  input output list<DAE.Element> elements = {};
+algorithm
+  elements := List.fold1(equations, flattenInitialEquation, prefix, elements);
+end flattenInitialEquations;
+
+function flattenIfEquation
+  input list<tuple<DAE.Exp, list<Equation>>> ifBranches;
+  input Boolean isInitial;
+  input Prefix prefix;
+  output DAE.Element ifEquation;
+protected
+  list<DAE.Exp> conditions = {};
+  list<DAE.Element> branch, else_branch;
+  list<list<DAE.Element>> branches = {};
+algorithm
+  for b in ifBranches loop
+    conditions := Util.tuple21(b) :: conditions;
+    branches := flattenEquations(Util.tuple22(b), prefix) :: branches;
+  end for;
+
+  // Transform the last branch to an else-branch if its condition is true.
+  if Expression.isConstTrue(listHead(conditions)) then
+    conditions := listRest(conditions);
+    else_branch := listHead(branches);
+    branches := listRest(branches);
+  else
+    else_branch := {};
+  end if;
+
+  conditions := listReverse(conditions);
+  branches := listReverse(branches);
+
+  if isInitial then
+    ifEquation := DAE.INITIAL_IF_EQUATION(conditions, branches, else_branch,
+      DAE.emptyElementSource);
+  else
+    ifEquation := DAE.IF_EQUATION(conditions, branches, else_branch,
+      DAE.emptyElementSource);
+  end if;
+end flattenIfEquation;
+
+function flattenAlgorithm
+  input list<Statement> algSection;
+  input Prefix prefix;
+  input output list<DAE.Element> elements;
+algorithm
+
+end flattenAlgorithm;
+
+function flattenAlgorithms
+  input list<list<Statement>> algorithms;
+  input Prefix prefix;
+  input output list<DAE.Element> elements = {};
+algorithm
+  elements := List.fold1(algorithms, flattenAlgorithm, prefix, elements);
+end flattenAlgorithms;
+
+function flattenInitialAlgorithm
+  input list<Statement> algSection;
+  input Prefix prefix;
+  input output list<DAE.Element> elements;
+algorithm
+
+end flattenInitialAlgorithm;
+
+function flattenInitialAlgorithms
+  input list<list<Statement>> algorithms;
+  input Prefix prefix;
+  input output list<DAE.Element> elements = {};
+algorithm
+  elements := List.fold1(algorithms, flattenInitialAlgorithm, prefix, elements);
+end flattenInitialAlgorithms;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;

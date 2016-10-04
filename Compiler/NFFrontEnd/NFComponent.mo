@@ -31,11 +31,12 @@
 
 encapsulated package NFComponent
 
-import SCode.Element;
 import DAE.Type;
-import NFInstNode.InstNode;
 import NFBinding.Binding;
+import NFDimension.Dimension;
+import NFInstNode.InstNode;
 import NFMod.Modifier;
+import SCode.Element;
 
 uniontype Component
   uniontype Attributes
@@ -53,13 +54,32 @@ uniontype Component
     Integer scope;
   end COMPONENT_DEF;
 
-  record COMPONENT
+  record UNTYPED_COMPONENT
+    String name;
+    InstNode classInst;
+    array<Dimension> dimensions;
+    Binding binding;
+    Component.Attributes attributes;
+    SourceInfo info;
+  end UNTYPED_COMPONENT;
+
+  record TYPED_COMPONENT
     String name;
     InstNode classInst;
     Type ty;
     Binding binding;
     Component.Attributes attributes;
-  end COMPONENT;
+  end TYPED_COMPONENT;
+
+  record EXTENDS_NODE
+    InstNode node;
+  end EXTENDS_NODE;
+
+  record COMPONENT_REF
+    String name;
+    Integer node;
+    Integer index;
+  end COMPONENT_REF;
 
   function name
     input Component component;
@@ -67,9 +87,31 @@ uniontype Component
   algorithm
     name := match component
       case COMPONENT_DEF(definition = SCode.COMPONENT(name = name)) then name;
-      case COMPONENT() then component.name;
+      case UNTYPED_COMPONENT() then component.name;
+      case TYPED_COMPONENT() then component.name;
+      case COMPONENT_REF() then component.name;
     end match;
   end name;
+
+  function isNamedComponent
+    input Component component;
+    output Boolean isNamed;
+  algorithm
+    isNamed := match component
+      case EXTENDS_NODE() then false;
+      else true;
+    end match;
+  end isNamedComponent;
+
+  function classInstance
+    input Component component;
+    output InstNode classInst;
+  algorithm
+    classInst := match component
+      case UNTYPED_COMPONENT() then component.classInst;
+      case TYPED_COMPONENT() then component.classInst;
+    end match;
+  end classInstance;
 
   function setModifier
     input Modifier modifier;
@@ -83,6 +125,59 @@ uniontype Component
           ();
     end match;
   end setModifier;
+
+  function getType
+    input Component component;
+    output DAE.Type ty;
+  algorithm
+    ty := match component
+      case TYPED_COMPONENT() then component.ty;
+    end match;
+  end getType;
+
+  function setType
+    input DAE.Type ty;
+    input output Component component;
+  algorithm
+    component := match component
+      case UNTYPED_COMPONENT()
+        then TYPED_COMPONENT(component.name, component.classInst, ty,
+          component.binding, component.attributes);
+
+      case TYPED_COMPONENT()
+        algorithm
+          component.ty := ty;
+        then
+          component;
+    end match;
+  end setType;
+
+  function unliftType
+    input output Component component;
+  algorithm
+    _ := match component
+      local
+        DAE.Type ty;
+
+      case TYPED_COMPONENT(ty = DAE.T_ARRAY(ty = ty))
+        algorithm
+          component.ty := ty;
+        then
+          ();
+
+      else ();
+    end match;
+  end unliftType;
+
+  function makeTopComponent
+    input InstNode inst;
+    output Component comp;
+  algorithm
+    comp := TYPED_COMPONENT(InstNode.name(inst), inst, DAE.T_UNKNOWN_DEFAULT,
+      Binding.UNBOUND(), Attributes.ATTRIBUTES(
+        DAE.VarKind.VARIABLE(), DAE.VarDirection.BIDIR(),
+        DAE.VarVisibility.PUBLIC(), DAE.ConnectorType.NON_CONNECTOR()));
+  end makeTopComponent;
 end Component;
 
 annotation(__OpenModelica_Interface="frontend");

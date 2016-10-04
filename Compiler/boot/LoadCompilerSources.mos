@@ -96,6 +96,8 @@ if true then /* Suppress output */
     //"../NFFrontEnd/NFConnectEquations.mo",
     //"../NFFrontEnd/NFConnectUtil2.mo",
     //"../NFFrontEnd/NFConnectionSets.mo",
+    "../NFFrontEnd/NFDimension.mo",
+    "../NFFrontEnd/NFEquation.mo",
     //"../NFFrontEnd/NFEvalFunction.mo",
     //"../NFFrontEnd/NFExpandableConnectors.mo",
     "../NFFrontEnd/NFFlatten.mo",
@@ -106,8 +108,10 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFInstUtil.mo",
     "../NFFrontEnd/NFLookup.mo",
     "../NFFrontEnd/NFMod.mo",
-    //"../NFFrontEnd/NFTypeCheck.mo",
-    //"../NFFrontEnd/NFTyping.mo",
+    "../NFFrontEnd/NFPrefix.mo",
+    "../NFFrontEnd/NFStatement.mo",
+    "../NFFrontEnd/NFTypeCheck.mo",
+    "../NFFrontEnd/NFTyping.mo",
 
   // "BackEnd";
     "../BackEnd/BackendDAE.mo",

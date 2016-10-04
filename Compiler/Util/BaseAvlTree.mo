@@ -304,6 +304,34 @@ algorithm
   end match;
 end join;
 
+function forEach
+  input Tree tree;
+  input EachFunc func;
+
+  partial function EachFunc
+    input Key key;
+    input Value value;
+  end EachFunc;
+algorithm
+  _ := match tree
+    case NODE()
+      algorithm
+        forEach(tree.left, func);
+        func(tree.key, tree.value);
+        forEach(tree.right, func);
+      then
+        ();
+
+    case LEAF()
+      algorithm
+        func(tree.key, tree.value);
+      then
+        ();
+
+    case EMPTY() then ();
+  end match;
+end forEach;
+
 function map
   "Traverses the tree in depth-first pre-order and applies the given function to
    each node, constructing a new tree with the resulting nodes."

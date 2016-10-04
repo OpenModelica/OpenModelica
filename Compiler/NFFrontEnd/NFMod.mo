@@ -40,6 +40,7 @@ encapsulated package NFMod
   "
 
 public
+import Absyn;
 import BaseAvlTree;
 import NFBinding.Binding;
 import SCode;
@@ -91,6 +92,17 @@ uniontype ModifierScope
     Absyn.Path path;
   end EXTENDS_SCOPE;
 
+  function name
+    input ModifierScope scope;
+    output String name;
+  algorithm
+    name := match scope
+      case COMPONENT_SCOPE() then scope.name;
+      case CLASS_SCOPE() then scope.name;
+      case EXTENDS_SCOPE() then Absyn.pathString(scope.path);
+    end match;
+  end name;
+
   function toString
     input ModifierScope scope;
     output String string;
@@ -125,7 +137,6 @@ public
     input SCode.Mod mod;
     input String name;
     input ModifierScope modScope;
-    //input Integer dimensions;
     input Integer scope;
     output Modifier newMod;
   algorithm
@@ -140,8 +151,8 @@ public
       case SCode.MOD()
         algorithm
           binding := Binding.fromAbsyn(mod.binding, mod.finalPrefix,
-            mod.eachPrefix, scope, mod.info);
-          submod_lst := list((m.ident, createSubMod(m, scope, modScope)) for m in mod.subModLst);
+            mod.eachPrefix, scope, 0, mod.info);
+          submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));
         then
@@ -174,6 +185,16 @@ public
       case REDECLARE(element = SCode.CLASS(name = name)) then name;
     end match;
   end name;
+
+  function info
+    input Modifier modifier;
+    output SourceInfo info;
+  algorithm
+    info := match modifier
+      case MODIFIER() then modifier.info;
+      else Absyn.dummyInfo;
+    end match;
+  end info;
 
   function binding
     input Modifier modifier;
@@ -243,6 +264,90 @@ public
     end match;
   end toList;
 
+  function propagate
+    "Saves information about how a modifier has been propagated. Since arrays are
+     not expanded during the instantiation we need to know where a binding comes
+     from, e.g:
+
+       model A
+         Real x;
+       end A;
+
+       model B
+         A a[3](x = {1, 2, 3});
+       end B;
+
+       model C
+         B b[2];
+       end C;
+
+     This results in a component b[2].a[3].x = {1, 2, 3}. Since x is a scalar we
+     need to add dimensions to it (or remove from the binding) when doing type
+     checking, so that it matches the binding. To do this we need to now how many
+     dimensions the binding has been propagated through. In this case it's been
+     propagated from B.a to A.x, and since B.a has one dimension we should add
+     that dimension to A.x to make it match the binding. The number of dimensions
+     that a binding is propagated through is therefore saved in a binding. A
+     binding can also have the 'each' prefix, meaning that the binding should be
+     applied as it is. In that case we set the dimension counter to -1 and don't
+     increment it when the binding is propagated.
+
+     This function simply goes through a modifier recursively and increments the
+     dimension counter by the number of dimensions that an element has."
+    input output Modifier modifier;
+    input Integer dimensions;
+  algorithm
+    if dimensions == 0 then
+      return;
+    end if;
+
+    _ := match modifier
+      case MODIFIER()
+        algorithm
+          modifier.binding := propagateBinding(modifier.binding, dimensions);
+          modifier.subModifiers := ModTable.map(modifier.subModifiers,
+            function propagateSubMod(dimensions = dimensions));
+        then
+          ();
+
+      else ();
+    end match;
+  end propagate;
+
+  function checkEach
+    input Modifier mod;
+    input Boolean isScalar;
+    input String elementName;
+  algorithm
+    _ := match mod
+      case MODIFIER() guard isScalar
+        algorithm
+          _ := ModTable.forEach(mod.subModifiers,
+           function checkEachBinding(elementName = elementName));
+        then
+          ();
+
+      else ();
+    end match;
+  end checkEach;
+
+  function checkEachBinding
+    input String modName;
+    input Modifier mod;
+    input String elementName;
+  algorithm
+    _ := match mod
+      case MODIFIER() guard Binding.isEach(mod.binding)
+        algorithm
+          Error.addSourceMessage(Error.EACH_ON_NON_ARRAY,
+            {elementName}, mod.info);
+        then
+          fail();
+
+      else ();
+    end match;
+  end checkEachBinding;
+
   function toString
     input Modifier mod;
     output String string;
@@ -271,8 +376,8 @@ public
 protected
   function createSubMod
     input SCode.SubMod subMod;
-    input Integer scope;
     input ModifierScope modScope;
+    input Integer scope;
     output Modifier mod = create(subMod.mod, subMod.ident, modScope, scope);
   end createSubMod;
 
@@ -338,6 +443,34 @@ protected
 
     end match;
   end mergeLocal;
+
+  function propagateSubMod
+    input String name;
+    input output Modifier modifier;
+    input Integer dimensions;
+  algorithm
+    modifier := propagate(modifier, dimensions);
+  end propagateSubMod;
+
+  function propagateBinding
+    input output Binding binding;
+    input Integer dimensions;
+  algorithm
+    _ := match binding
+      // Special case for the each prefix, don't do anything.
+      case Binding.RAW_BINDING(propagatedDims = -1) then ();
+
+      // A normal binding, increment with the dimension count.
+      case Binding.RAW_BINDING()
+        algorithm
+          binding.propagatedDims := binding.propagatedDims + dimensions;
+        then
+          ();
+
+      else ();
+    end match;
+  end propagateBinding;
+
 end Modifier;
 
 annotation(__OpenModelica_Interface="frontend");
