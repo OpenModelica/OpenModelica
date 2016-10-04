@@ -1,6 +1,9 @@
 TEST=../../../rtest -v
 
 TESTFILES=\
+# test that currently fail. Move up when fixed.
+# Run make testfailing
+FAILINGTESTFILES=\
 bindings5.mo \
 builtinmod2.mo \
 BuiltinTime.mo \
@@ -25,10 +28,6 @@ redeclare6.mo \
 redeclare13.mo \
 usertype1.mo \
 usertype2.mo \
-
-# test that currently fail. Move up when fixed.
-# Run make testfailing
-FAILINGTESTFILES=\
 arrfunc.mo \
 bindings1.mo \
 bindings2.mo \
