@@ -5,6 +5,7 @@
 
 Many software packages are included inside the repositories.
 To get everything running, you will need a few extras:
+- C++11 compiler (if you want a GUI)
 - autoconf, automake, libtool, g++, gfortran (pretty standard compilers)
 - boost (optional; used with configure --with-cppruntime)
 - [clang](http://clang.llvm.org/), clang++ (optional, but *highly recommended*)
@@ -18,7 +19,7 @@ To get everything running, you will need a few extras:
 - ncurses, readline (optional, used by OMShell-terminal)
 - omniORB (optional; CORBA is used by OMOptim and OMShell)
 - OpenSceneGraph
-- Qt4, Webkit
+- Qt5 or Qt4, Webkit, QtOpenGL
 - [Sundials](http://www.llnl.gov/CASC/sundials/) (optional; adds more numerical solvers to the simulation runtime)
 
 ## Compilation (Linux/OSX)
@@ -52,6 +53,8 @@ git submodule foreach --recursive "git checkout master"
 git submodule foreach --recursive "git pull"
 ```
 In order to push to the repository, you will push to your own fork of OMCompiler.git, OMEdit.git, etc. You will need to create a fork of each repository that you want to push to (by clicking the Fork button in the GitHub web interface).
+
+If you do not checkout the repositories for GUI clients (such as OMEdit.git), these directories will be ignored by autoconf and skipped during compilation.
 
 ### How to contribute to the OpenModelica Compiler
 
