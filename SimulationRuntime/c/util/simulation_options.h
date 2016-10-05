@@ -91,6 +91,7 @@ enum _FLAG
   FLAG_NEWTON_STRATEGY,
   FLAG_NLS,
   FLAG_NLS_INFO,
+  FLAG_NLS_LS,
   FLAG_NOEMIT,
   FLAG_NOEQUIDISTANT_GRID,
   FLAG_NOEQUIDISTANT_OUT_FREQ,
@@ -271,8 +272,18 @@ enum IDA_LS
 extern const char *IDA_LS_METHOD[IDA_LS_MAX+1];
 extern const char *IDA_LS_METHOD_DESC[IDA_LS_MAX+1];
 
+enum NLS_LS
+{
+  NLS_LS_UNKNOWN = 0,
 
+  NLS_LS_TOTALPIVOT,
+  NLS_LS_LAPACK,
 
+  NLS_LS_MAX
+};
+
+extern const char *NLS_LS_METHOD[NLS_LS_MAX+1];
+extern const char *NLS_LS_METHOD_DESC[NLS_LS_MAX+1];
 
 
 #if defined(__cplusplus)

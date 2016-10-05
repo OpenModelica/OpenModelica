@@ -49,6 +49,16 @@
 #include "nonlinearSolverHomotopy.h"
 #include "nonlinearSolverHybrd.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern int dgesv_(int *n, int *nrhs, doublereal *a, int *lda, int *ipiv, doublereal *b, int *ldb, int *info);
+
+#ifdef __cplusplus
+}
+#endif
+
 /*! \typedef DATA_HOMOTOPY
  * define memory structure for nonlinear system solver
  *  \author bbachmann
@@ -953,6 +963,7 @@ static int wrapper_fvec_homotopy_fixpoint_der(DATA_HOMOTOPY* solverData, double*
   return 0;
 }
 
+
 /*! \fn getIndicesOfPivotElement for calculating pivot element
  *
  *  \author bbachmann
@@ -976,6 +987,7 @@ static int wrapper_fvec_homotopy_fixpoint_der(DATA_HOMOTOPY* solverData, double*
   }
 }
 
+
 /*! \fn solveSystemWithTotalPivotSearch for solution of overdetermined linear system
  *  used for the homotopy solver, for calculating the direction
  *  used for the newton solver, for calculating the Newton step
@@ -994,6 +1006,7 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
    double *res;
 
    debugMatrixDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res]:",A, n, m);
+   debugVectorDouble(LOG_NLS_JAC,"vector b:", A+n*n, n);
 
    /* assume full rank of matrix [n x (n+1)] */
    *rank = n;
@@ -1077,20 +1090,85 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
     *pos=indCol[n];
   }
 
+  return 0;
+}
+
+
+/*! \fn linearSolverWrapper
+ */
+int linearSolverWrapper(int n, double* x, double* A, int* indRow, int* indCol, int *pos, int *rank, int method)
+{
+  /* First try to use lapack and if it fails then
+   * use solveSystemWithTotalPivotSearch */
+  int returnValue = -1;
+  int solverinfo;
+  int nrhs = 1;
+  int lda = n;
+
+  debugMatrixDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res]:", A, n, n+1);
+  debugVectorDouble(LOG_NLS_JAC,"vector b:", x, n);
+
+  switch(method){
+    case (1): /* NLS_LS_TOTALPIVOT */
+
+      solverinfo = solveSystemWithTotalPivotSearch(n, x, A, indRow, indCol, pos, rank);
+      /* in case of failing */
+      if (solverinfo != 0)
+      {
+        /* debug information */
+        debugString(LOG_NLS_V, "Linear total pivot solver failed!!!");
+        debugString(LOG_NLS_V, "******************************************************");
+      }
+      else
+      {
+        returnValue = 0;
+      }
+      break;
+    case 2: /* NLS_LS_LAPACK */
+      /* Solve system with lapack */
+      dgesv_((int*) &n,
+          (int*) &nrhs,
+          A,
+          (int*) &lda,
+          indRow,
+          x,
+          (int*) &n,
+          &solverinfo);
+
+      debugMatrixDouble(LOG_NLS_JAC,"Linear system matrix [Jac res] after decomposition:", A, n, n+1);
+      /* in case of failing */
+      if (solverinfo != 0)
+      {
+        /* debug information */
+        debugString(LOG_NLS_V, "Linear lapack solver failed!!!");
+        debugString(LOG_NLS_V, "******************************************************");
+      }
+      else
+      {
+        vecScalarMult(n, x, -1, x);
+        returnValue = 0;
+      }
+      break;
+    default:
+      warningStreamPrint(LOG_STDOUT, 0, "Non-Linear solver try to run with a unknown linear solver.");
+  }
+
   /* Debugging error of linear system */
   if(ACTIVE_STREAM(LOG_NLS_JAC))
   {
-    res = (double*) calloc(n,sizeof(double));
-    debugVectorDouble(LOG_NLS_JAC,"solution:", x, m);
-    matVecMult(n, m, A, x, res);
+    double* res = (double*) calloc(n,sizeof(double));
+    debugVectorDouble(LOG_NLS_JAC,"solution:", x, n);
+    matVecMult(n, n, A, x, res);
     debugVectorDouble(LOG_NLS_JAC,"test solution:", res, n);
     debugDouble(LOG_NLS_JAC,"error of linear system = ", vec2Norm(n, res));
     free(res);
     messageClose(LOG_NLS_JAC);
   }
 
-  return 0;
+  return returnValue;
 }
+
+
 /*! \fn solve system with damped Newton-Raphson
  *
  *  \author bbachmann
@@ -1114,6 +1192,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   int assert = 1;
   threadData_t *threadData = solverData->threadData;
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(solverData->data->simulationInfo->nonlinearSystemData[solverData->data->simulationInfo->currentNonlinearSystemIndex]);
+  int linearSolverMethod = solverData->data->simulationInfo->nlsLinearSolver;
 
   /* debug information */
   debugString(LOG_NLS_V, "******************************************************");
@@ -1135,7 +1214,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     debugInt(LOG_NLS_V, "Iteration:", numberOfIterations);
 
     /* solve jacobian and function value (both stored in hJac, last column is fvec), side effects: jacobian matrix is changed */
-    if ((numberOfIterations>1) && (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank) != 0))
+    if ((numberOfIterations>1) && linearSolverWrapper(solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank, linearSolverMethod) != 0)
     {
       /* report solver abortion */
       solverData->info=-1;
@@ -1392,6 +1471,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     matVecMultAbsBB(solverData->n, solverData->fJac, solverData->ones, solverData->resScaling);
     debugVectorDouble(LOG_NLS_JAC, "residuum scaling:", solverData->resScaling, solverData->n);
     scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
+    vecCopy(n, solverData->fJac + n*n, solverData->dy0);
   }
   return 0;
 }

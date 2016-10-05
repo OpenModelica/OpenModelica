@@ -301,6 +301,28 @@ static int getNewtonStrategy()
   return NEWTON_NONE;
 }
 
+static int getNlsLSSolver()
+{
+  int i;
+  const char *cflags = omc_flagValue[FLAG_NLS_LS];
+  const string *method = cflags ? new string(cflags) : NULL;
+
+  if(!method)
+    return NLS_LS_LAPACK; /* default method */
+
+  for(i=1; i<NLS_LS_MAX; ++i)
+    if(*method == NLS_LS_METHOD[i])
+      return i;
+
+  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -nls=%s, current options are:", method->c_str());
+  for(i=1; i<NLS_LS_MAX; ++i)
+    warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NLS_LS_METHOD[i], NLS_LS_METHOD_DESC[i]);
+  messageClose(LOG_STDOUT);
+  throwStreamPrint(NULL,"see last warning");
+
+  return NLS_LS_UNKNOWN;
+}
+
 static double getFlagReal(enum _FLAG flag, double res)
 {
   const char *flagStr = omc_flagValue[flag];
@@ -792,6 +814,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   data->simulationInfo->lssMethod = getlinearSparseSolverMethod();
   data->simulationInfo->newtonStrategy = getNewtonStrategy();
   data->simulationInfo->nlsCsvInfomation = omc_flag[FLAG_NLS_INFO];
+  data->simulationInfo->nlsLinearSolver = getNlsLSSolver();
 
   if(omc_flag[FLAG_LSS_MAX_DENSITY]) {
     linearSparseSolverMaxDensity = atof(omc_flagValue[FLAG_LSS_MAX_DENSITY]);

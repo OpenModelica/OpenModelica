@@ -547,6 +547,7 @@ typedef struct SIMULATION_INFO
   int nlsMethod;                       /* nonlinear solver */
   int newtonStrategy;                  /* newton damping strategy solver */
   int nlsCsvInfomation;                /* = 1 csv files with detailed nonlinear solver process are generated */
+  int nlsLinearSolver;                 /* nls linear solver setting =1 totalpivot, =2 lapack, =3=klu */
 
   /* current context evaluation, set by dassl and used for extrapolation
    * of next non-linear guess */
