@@ -7269,28 +7269,28 @@ algorithm
     SimCodeVar.AliasVariable aliasvar;
     String s1, s2, s3, sProt;
     list<String> numArrayElement;
-    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NOALIAS(), index = i, initialValue=init, arrayCref=arrCref,variable_index=variable_index, numArrayElement=numArrayElement, isProtected=isProtected))
+    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NOALIAS(), index = i, initialValue=init, arrayCref=arrCref, variable_index=variable_index, numArrayElement=numArrayElement, isProtected=isProtected))
     equation
         s1 = ComponentReference.printComponentRefStr(name);
         if Util.isSome(arrCref) then s3 = " \tarrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3="\tno arrCref"; end if;
         sProt = if isProtected then " protected " else "";
         s = "index: "+intString(i)+": "+s1+" (no alias) "+sProt+" initial: "+ExpressionDump.printOptExpStr(init) + s3 + " index:("+printVarIndx(variable_index)+")" +" [" + stringDelimitList(numArrayElement,",")+"] ";
      then s;
-    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.ALIAS(varName = name2), arrayCref=arrCref,variable_index=variable_index, numArrayElement=numArrayElement, isProtected=isProtected))
+    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.ALIAS(varName = name2), index = i, initialValue=init, arrayCref=arrCref, variable_index=variable_index, numArrayElement=numArrayElement, isProtected=isProtected))
     equation
         s1 = ComponentReference.printComponentRefStr(name);
         s2 = ComponentReference.printComponentRefStr(name2);
         sProt = if isProtected then " protected "else "";
-        if Util.isSome(arrCref) then s3 = " arrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3=""; end if;
-        s = "index: "+printVarIndx(variable_index) +": "+s1+" (alias: "+s2+s3+") "+sProt+" [" + stringDelimitList(numArrayElement,",")+"] ";
+        if Util.isSome(arrCref) then s3 = " \tarrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3="\tno arrCref"; end if;
+        s = "index: "+intString(i)+": "+s1+" (alias: "+s2+") "+sProt+" initial: "+ExpressionDump.printOptExpStr(init) + s3 + " index:("+printVarIndx(variable_index)+")" +" [" + stringDelimitList(numArrayElement,",")+"] ";
     then s;
-    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NEGATEDALIAS(varName = name2), arrayCref=arrCref,variable_index=variable_index, numArrayElement=numArrayElement, isProtected=isProtected))
+    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NEGATEDALIAS(varName = name2), index = i, initialValue=init, arrayCref=arrCref,variable_index=variable_index, numArrayElement=numArrayElement, isProtected=isProtected))
     equation
         s1 = ComponentReference.printComponentRefStr(name);
         s2 = ComponentReference.printComponentRefStr(name2);
         sProt = if isProtected then " protected "else "";
-        if Util.isSome(arrCref) then s3 = " arrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3=""; end if;
-        s = "index:("+printVarIndx(variable_index)+")"+s1+" (negated alias: "+s2+s3+") "+sProt+" [" + stringDelimitList(numArrayElement,",")+"] ";
+        if Util.isSome(arrCref) then s3 = " \tarrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3="\tno arrCref"; end if;
+        s = "index: "+intString(i)+": "+s1+" (negated alias: "+s2+") "+sProt+" initial: "+ExpressionDump.printOptExpStr(init) + s3 + " index:("+printVarIndx(variable_index)+")" +" [" + stringDelimitList(numArrayElement,",")+"] ";
      then s;
    end match;
 end simVarString;
@@ -7376,6 +7376,7 @@ protected
   list<SimCodeVar.SimVar> aliasVars;
   list<SimCodeVar.SimVar> intAliasVars;
   list<SimCodeVar.SimVar> paramVars;
+  list<SimCodeVar.SimVar> boolParamVars;
   list<SimCodeVar.SimVar> intParamVars;
   list<SimCodeVar.SimVar> extObjVars;
   list<SimCodeVar.SimVar> constVars;
@@ -7385,7 +7386,7 @@ protected
 algorithm
   SimCode.MODELINFO(vars=simVars, varInfo=varInfo, functions=functions) := modelInfo;
   SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,intAlgVars=intAlgVars,discreteAlgVars=discreteAlgVars,aliasVars=aliasVars,intAliasVars=intAliasVars,
-  paramVars=paramVars,intParamVars=intParamVars,extObjVars=extObjVars,constVars=constVars,intConstVars=intConstVars,stringConstVars=stringConstVars) := simVars;
+  paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars, extObjVars=extObjVars,constVars=constVars,intConstVars=intConstVars,stringConstVars=stringConstVars) := simVars;
   SimCode.VARINFO(numStateVars=nsv,numAlgVars=nalgv) := varInfo;
   dumpVarLst(stateVars,"stateVars ("+intString(nsv)+")");
   dumpVarLst(derivativeVars,"derivativeVars");
@@ -7396,6 +7397,7 @@ algorithm
   dumpVarLst(intAliasVars,"intAliasVars");
   dumpVarLst(paramVars,"paramVars");
   dumpVarLst(intParamVars,"intParamVars");
+  dumpVarLst(boolParamVars,"boolParamVars");
   dumpVarLst(extObjVars,"extObjVars");
   dumpVarLst(constVars,"constVars");
   dumpVarLst(intConstVars,"intConstVars");
@@ -7764,9 +7766,18 @@ protected function extObjInfoString
 protected
   list<SimCodeVar.SimVar> vars;
   list<SimCode.ExtAlias> aliases;
+  DAE.ComponentRef cr1, cr2;
 algorithm
   SimCode.EXTOBJINFO(vars=vars, aliases=aliases) := info;
-    dumpVarLst(vars,"external object info\n-----------------------\n");
+  dumpVarLst(vars,"external object info");
+  if not listEmpty(aliases) then
+    print("external object aliase ("+intString(listLength(aliases))+")");
+    for tpl in aliases loop
+    (cr1,cr2) := tpl;
+      print(ComponentReference.crefStr(cr1)+" = "+ComponentReference.crefStr(cr2));
+    end for;
+    print("\n");
+  end if;
 end extObjInfoString;
 
 protected function dumpClockPartition

@@ -308,6 +308,9 @@ algorithm
     print("markarr: " + stringDelimitList(List.map(arrayList(markarr), intString), ",") + "\n");
   end if;
 
+  // replace evaluated parameter in external objects
+  shared.externalObjects := BackendVariable.listVar1(List.map1(BackendVariable.varList(shared.externalObjects),BackendVarTransform.replaceBindingExp,repl));
+
   shared.globalKnownVars := globalKnownVars;
   shared.aliasVars := aliasVars;
   shared.initialEqs := initialEqs;

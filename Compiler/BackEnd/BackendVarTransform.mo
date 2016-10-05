@@ -2588,6 +2588,7 @@ algorithm
   case(BackendDAE.VAR(bindExp=SOME(exp)),_)
     equation
     exp = replaceExp(exp,repl,NONE());
+    (exp,_) = ExpressionSimplify.simplify(exp);
   then BackendVariable.setBindExp(varIn,SOME(exp));
   case(BackendDAE.VAR(bindExp=NONE()),_)
     then varIn;
