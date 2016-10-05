@@ -1000,14 +1000,17 @@ void UpdateCoOrdinateSystemCommand::redo()
     pGraphicsView->fitInViewInternal();
     pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(pGraphicsView);
   }
-  // version
   OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
-  QString versionAnnotation = QString("annotate=version(\"%1\")").arg(mNewVersion);
-  if (pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), versionAnnotation)) {
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version = mNewVersion;
+  // only add version and uses annotation to top level class.
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTopLevel()) {
+    // version
+    QString versionAnnotation = QString("annotate=version(\"%1\")").arg(mNewVersion);
+    if (pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), versionAnnotation)) {
+      mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version = mNewVersion;
+    }
+    // uses annotation
+    pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mNewUsesAnnotationString);
   }
-  // uses annotation
-  pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mNewUsesAnnotationString);
   // omc flags
   QString flagsAnnotation = QString("annotate=__OpenModelica_commandLineOptions(\"%1\")").arg(mNewOMCFlags);
   pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), flagsAnnotation);
@@ -1051,14 +1054,17 @@ void UpdateCoOrdinateSystemCommand::undo()
     pGraphicsView->fitInViewInternal();
     pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(pGraphicsView);
   }
-  // version
   OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
-  QString versionAnnotation = QString("annotate=version(\"%1\")").arg(mOldVersion);
-  if (pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), versionAnnotation)) {
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version = mOldVersion;
+  // only add version and uses annotation to top level class.
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTopLevel()) {
+    // version
+    QString versionAnnotation = QString("annotate=version(\"%1\")").arg(mOldVersion);
+    if (pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), versionAnnotation)) {
+      mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version = mOldVersion;
+    }
+    // uses annotation
+    pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mOldUsesAnnotationString);
   }
-  // uses annotation
-  pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mOldUsesAnnotationString);
   // omc flags
   QString flagsAnnotation = QString("annotate=__OpenModelica_commandLineOptions(\"%1\")").arg(mOldOMCFlags);
   pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), flagsAnnotation);

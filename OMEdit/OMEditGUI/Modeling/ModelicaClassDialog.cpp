@@ -1136,6 +1136,9 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   pVersionGridLayout->addWidget(mpUsesGroupBox, 1, 0, 1, 2);
   pVersionWidget->setLayout(pVersionGridLayout);
   mpTabWidget->addTab(pVersionWidget, Helper::version);
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTopLevel()) {
+    mpTabWidget->setTabEnabled(1, false);
+  }
   // OMC Flags tab
   QWidget *pOMCFlagsWidget = new QWidget;
   mpOMCFlagsLabel = new Label(Helper::OMCFlagsTip);

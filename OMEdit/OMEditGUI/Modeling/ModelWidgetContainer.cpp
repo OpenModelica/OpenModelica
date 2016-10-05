@@ -391,11 +391,16 @@ void GraphicsView::addComponentToClass(Component *pComponent)
     }
     pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), className, mpModelWidget->getLibraryTreeItem()->getNameStructure(),
                                              pComponent->getPlacementAnnotation());
-    // get uses annotation of the class
+    LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
+    // get the toplevel class of dragged component
     QString packageName = StringHandler::getFirstWordBeforeDot(pComponent->getLibraryTreeItem()->getNameStructure());
-    LibraryTreeItem *pPackageLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(packageName);
-    if (pPackageLibraryTreeItem) {
-      QList<QList<QString > > usesAnnotation = pMainWindow->getOMCProxy()->getUses(mpModelWidget->getLibraryTreeItem()->getNameStructure());
+    LibraryTreeItem *pPackageLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(packageName);
+    // get the top level class of current class
+    QString topLevelClassName = StringHandler::getFirstWordBeforeDot(mpModelWidget->getLibraryTreeItem()->getNameStructure());
+    LibraryTreeItem *pTopLevelLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(topLevelClassName);
+    if (pPackageLibraryTreeItem && pTopLevelLibraryTreeItem) {
+      // get uses annotation of the toplevel class
+      QList<QList<QString > > usesAnnotation = pMainWindow->getOMCProxy()->getUses(pTopLevelLibraryTreeItem->getNameStructure());
       QStringList newUsesAnnotation;
       for (int i = 0 ; i < usesAnnotation.size() ; i++) {
         if (usesAnnotation.at(i).at(0).compare(packageName) == 0) {
@@ -408,7 +413,8 @@ void GraphicsView::addComponentToClass(Component *pComponent)
       if (!pPackageLibraryTreeItem->mClassInformation.version.isEmpty()) {
         newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(packageName).arg(pPackageLibraryTreeItem->mClassInformation.version));
         QString usesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(newUsesAnnotation.join(","));
-        pMainWindow->getOMCProxy()->addClassAnnotation(mpModelWidget->getLibraryTreeItem()->getNameStructure(), usesAnnotationString);
+        pMainWindow->getOMCProxy()->addClassAnnotation(pTopLevelLibraryTreeItem->getNameStructure(), usesAnnotationString);
+        pLibraryTreeModel->updateLibraryTreeItemClassText(pTopLevelLibraryTreeItem);
       }
     }
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
