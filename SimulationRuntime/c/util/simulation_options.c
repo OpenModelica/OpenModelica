@@ -162,7 +162,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NEWTON_STRATEGY */       "value specifies the damping strategy for the newton solver",
   /* FLAG_NLS */                   "value specifies the nonlinear solver",
   /* FLAG_NLS_INFO */              "outputs detailed information about solving process of non-linear systems into csv files.",
-  /* FLAG_NLS_LS */                "value specifies the linear solver used by the non-linear solver\m nlsLS=[totalpivot|lapack|klu]",
+  /* FLAG_NLS_LS */                "value specifies the linear solver used by the non-linear solver",
   /* FLAG_NOEMIT */                "do not emit any results to the result file",
   /* FLAG_NOEQUIDISTANT_GRID */    "stores results not in equidistant time grid as given by stepSize or numberOfIntervals, instead the variable step size of dassl is used.",
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/ "value controls the output frequency in noEquidistantTimeGrid mode",
@@ -331,7 +331,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_NLS_INFO */
   "  Outputs detailed information about solving process of non-linear systems into csv files.",
   /* FLAG_NLS_LS */
-  "value specifies the linear solver used by the non-linear solver\m nlsLS=[totalpivot|lapack|klu]",
+  "  Value specifies the linear solver used by the non-linear solver:\n  * totalpivot\n  * lapack (default)\n  * klu",
   /* FLAG_NOEMIT */
   "  Do not emit any results to the result file.",
   /* FLAG_NOEQUIDISTANT_GRID */
