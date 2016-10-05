@@ -4379,6 +4379,21 @@ algorithm
       then
         (cache,env,ih,sets_1,dae,graph);
 
+    // Connection of ExternalObject!
+    case (cache,env,ih,sets,pre,
+        c1,f1,DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(), varLst = {}),_,
+        c2,f2,DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(), varLst = {}),_,ct,_,_,graph,_)
+      equation
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
+
+        // set the source of this element
+        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre, (c1_1,c2_1));
+
+        sets_1 = ConnectUtil.addConnection(sets, c1, f1, c2, f2, inConnectorType, source);
+      then
+        (cache,env,ih,sets_1,DAE.emptyDae,graph);
+
     // Connection of complex connector, e.g. Pin
     case (cache,env,ih,sets,pre,c1,f1,DAE.T_COMPLEX(varLst = l1),_,c2,f2,DAE.T_COMPLEX(varLst = l2),_,ct,_,_,graph,_)
       equation
