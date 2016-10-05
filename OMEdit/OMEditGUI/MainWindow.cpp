@@ -2932,23 +2932,6 @@ void MainWindow::autoSaveHelper(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
- * \brief MainWindow::storePlotWindowsStateAndGeometry
- * Stores the window states and geometry of all Plot Windows.\n
- * The application window title and window icon gets corrupted when we switch between modeling & plotting perspective.
- * To solve this we tile the plot windows when we switch to modeling and welcome perspective. But before calling tileSubWindows() we save all
- * the plot windows states & geometry and then restore it when switching back to plotting view.
- */
-void MainWindow::storePlotWindowsStateAndGeometry()
-{
-  if (mPlotWindowsStatesList.isEmpty() && mPlotWindowsGeometriesList.isEmpty()) {
-    foreach (QMdiSubWindow *pWindow, mpPlotWindowContainer->subWindowList()) {
-      mPlotWindowsStatesList.append(pWindow->windowState());
-      mPlotWindowsGeometriesList.append(pWindow->saveGeometry());
-    }
-  }
-}
-
-/*!
  * \brief MainWindow::switchToWelcomePerspective
  * Switches to Welcome perspective.
  */
@@ -2964,8 +2947,6 @@ void MainWindow::switchToWelcomePerspective()
       return;
     }
   }
-  storePlotWindowsStateAndGeometry();
-  mpPlotWindowContainer->tileSubWindows();
   mpCentralStackedWidget->setCurrentWidget(mpWelcomePageWidget);
   mpModelWidgetContainer->currentModelWidgetChanged(0);
   mpUndoAction->setEnabled(false);
@@ -2986,8 +2967,6 @@ void MainWindow::switchToWelcomePerspective()
  */
 void MainWindow::switchToModelingPerspective()
 {
-  storePlotWindowsStateAndGeometry();
-  mpPlotWindowContainer->tileSubWindows();
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpVariablesDockWidget->hide();
@@ -3022,17 +3001,6 @@ void MainWindow::switchToPlottingPerspective()
     }
   }
   mpCentralStackedWidget->setCurrentWidget(mpPlotWindowContainer);
-  int i = 0;
-  foreach (QMdiSubWindow *pWindow, mpPlotWindowContainer->subWindowList()) {
-    // sanity check
-    if (mPlotWindowsStatesList.size() > i && mPlotWindowsGeometriesList.size() > i) {
-      pWindow->setWindowState(pWindow->windowState() & (mPlotWindowsStatesList[i]));
-      pWindow->restoreGeometry(mPlotWindowsGeometriesList[i]);
-    }
-    i++;
-  }
-  mPlotWindowsStatesList.clear();
-  mPlotWindowsGeometriesList.clear();
   mpModelWidgetContainer->currentModelWidgetChanged(0);
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
@@ -3062,8 +3030,6 @@ void MainWindow::switchToPlottingPerspective()
  */
 void MainWindow::switchToAlgorithmicDebuggingPerspective()
 {
-  storePlotWindowsStateAndGeometry();
-  mpPlotWindowContainer->tileSubWindows();
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpVariablesDockWidget->hide();

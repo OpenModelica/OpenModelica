@@ -235,8 +235,6 @@ private:
   SimulationDialog *mpSimulationDialog;
   TLMCoSimulationDialog *mpTLMCoSimulationDialog;
   PlotWindowContainer *mpPlotWindowContainer;
-  QList<Qt::WindowStates> mPlotWindowsStatesList;
-  QList<QByteArray> mPlotWindowsGeometriesList;
   ModelWidgetContainer *mpModelWidgetContainer;
   WelcomePageWidget *mpWelcomePageWidget;
   AboutOMEditWidget *mpAboutOMEditDialog;
@@ -447,7 +445,6 @@ private:
   void createToolbars();
   void createMenus();
   void autoSaveHelper(LibraryTreeItem *pLibraryTreeItem);
-  void storePlotWindowsStateAndGeometry();
   void switchToWelcomePerspective();
   void switchToModelingPerspective();
   void switchToPlottingPerspective();

@@ -1400,7 +1400,7 @@ void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
   }
   mpLastActiveSubWindow = pSubWindow;
   //check if its an animation window
-  if (!pSubWindow->widget()->objectName().compare(QString("animationWidget"))) {
+  if (pSubWindow && !pSubWindow->widget()->objectName().compare(QString("animationWidget"))) {
     // we could distinguish with dynamic_cast as well, but objectString is probably better
     //if (dynamic_cast<const AnimationWindowContainer*>(pSubWindow->widget()) != 0)
     //  std::cout<<"its an animation widget"<<std::endl;

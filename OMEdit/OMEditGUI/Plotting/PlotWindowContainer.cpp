@@ -53,8 +53,6 @@ PlotWindowContainer::PlotWindowContainer(MainWindow *pParent)
   } else {
     setViewMode(QMdiArea::TabbedView);
   }
-  // dont show this widget at startup
-  setVisible(false);
 }
 
 /*!
@@ -66,7 +64,6 @@ PlotWindowContainer::PlotWindowContainer(MainWindow *pParent)
  */
 QString PlotWindowContainer::getUniqueName(QString name, int number)
 {
-
   QString newName;
   newName = name + QString::number(number);
 
@@ -88,14 +85,13 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
 {
   if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
-  }
-  else {
-  bool isPlotWidget = (0 != subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
-  //std::cout<<"isPlotWidget "<<isPlotWidget<<std::endl;
-  if (isPlotWidget)
+  } else {
+    bool isPlotWidget = (0 != subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
+    if (isPlotWidget) {
       return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
-  else
-    return 0;
+    } else {
+      return 0;
+    }
   }
 }
 
@@ -299,6 +295,7 @@ void PlotWindowContainer::updatePlotWindows(QString variable)
  */
 void PlotWindowContainer::addAnimationWindow(){
   AnimationWindow *pAnimation = new AnimationWindow(this);
+  pAnimation->setWindowTitle(getUniqueName("Animation : "));
   QMdiSubWindow *pSubWindow = addSubWindow(pAnimation);
   pSubWindow->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
   pAnimation->show();
