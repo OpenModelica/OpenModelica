@@ -1127,6 +1127,9 @@ void UnitParser::initSIUnits() {
   addDerived("power, radiant flux", "milliwatt", "mW", "J/s", Rational(0), Rational(1, 1000), Rational(0), true);
   addDerived("power, radiant flux", "megawatt", "MW", "J/s", Rational(0), Rational(1000000), Rational(0), true);
 
+  addDerived("electric potential difference, electromotive force", "kilovolt", "kV", "W/A", Rational(0), Rational(1000), Rational(0), true);
+  addDerived("electric potential difference, electromotive force", "millivolt", "mV", "W/A", Rational(0), Rational(1, 1000), Rational(0), true);
+
   addDerived("pressure", "bar", "bar", "Pa", Rational(0), Rational(100000), Rational(0), true);
 
   addDerived("time", "millisecond", "ms", "s", Rational(0), Rational(1, 1000), Rational(0), true);
