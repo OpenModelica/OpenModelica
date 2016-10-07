@@ -264,14 +264,29 @@ QString Parameter::getModifierValueFromDerivedClass(Component *pComponent, QStri
 {
   MainWindow *pMainWindow = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   OMCProxy *pOMCProxy = pMainWindow->getOMCProxy();
+  QString modifierValue = "";
   if (!pComponent->getLibraryTreeItem()->getModelWidget()) {
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pComponent->getLibraryTreeItem(), false);
   }
   foreach (Component *pInheritedComponent, pComponent->getInheritedComponentsList()) {
-    if (!pOMCProxy->isBuiltinType(pInheritedComponent->getComponentInfo()->getClassName())) {
-      return pOMCProxy->getDerivedClassModifierValue(pInheritedComponent->getComponentInfo()->getClassName(), modifierName);
+    /* Ticket #4031
+     * Since we use the parent ComponentInfo for inherited classes so we should not use
+     * pInheritedComponent->getComponentInfo()->getClassName() to get the name instead we should use
+     * pInheritedComponent->getLibraryTreeItem()->getNameStructure() to get the correct name of inherited class.
+     * Also don't just return after reading from first inherited class. Check recursively.
+     */
+//    if (!pOMCProxy->isBuiltinType(pInheritedComponent->getComponentInfo()->getClassName())) {
+//      return pOMCProxy->getDerivedClassModifierValue(pInheritedComponent->getComponentInfo()->getClassName(), modifierName);
+//    }
+//    return getModifierValueFromDerivedClass(pInheritedComponent, modifierName);
+    if (pInheritedComponent->getLibraryTreeItem() &&
+        !pOMCProxy->isBuiltinType(pInheritedComponent->getLibraryTreeItem()->getNameStructure())) {
+      modifierValue = pOMCProxy->getDerivedClassModifierValue(pInheritedComponent->getLibraryTreeItem()->getNameStructure(),
+                                                              modifierName);
+      if (!modifierValue.isEmpty()) {
+        return modifierValue;
+      }
     }
-    return getModifierValueFromDerivedClass(pInheritedComponent, modifierName);
   }
   return "";
 }
