@@ -1320,13 +1320,10 @@ constant ConfigFlag TOTAL_TEARING = CONFIG_FLAG(102, "totalTearing",
 constant ConfigFlag IGNORE_SIMULATION_FLAGS_ANNOTATION = CONFIG_FLAG(103, "ignoreSimulationFlagsAnnotation",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Ignores the simulation flags specified as annotation in the class."));
-constant ConfigFlag EVAL_CONST_ARGS_ONLY = CONFIG_FLAG(104, "evalConstArgsOnly",
-  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
-  Util.gettext("Only evaluate parameter function-bindings if the arguments could be evaluated to constants."));
-constant ConfigFlag DYNAMIC_TEARING_FOR_INITIALIZATION = CONFIG_FLAG(105, "dynamicTearingForInitialization",
+constant ConfigFlag DYNAMIC_TEARING_FOR_INITIALIZATION = CONFIG_FLAG(104, "dynamicTearingForInitialization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Enable Dynamic Tearing also for the initialization system."));
-constant ConfigFlag PREFER_TVARS_WITH_START_VALUE = CONFIG_FLAG(106, "preferTVarsWithStartValue",
+constant ConfigFlag PREFER_TVARS_WITH_START_VALUE = CONFIG_FLAG(105, "preferTVarsWithStartValue",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Util.gettext("Prefer tearing variables with start value for initialization."));
 
@@ -1438,7 +1435,6 @@ constant list<ConfigFlag> allConfigFlags = {
   ALARM,
   TOTAL_TEARING,
   IGNORE_SIMULATION_FLAGS_ANNOTATION,
-  EVAL_CONST_ARGS_ONLY,
   DYNAMIC_TEARING_FOR_INITIALIZATION,
   PREFER_TVARS_WITH_START_VALUE
 };

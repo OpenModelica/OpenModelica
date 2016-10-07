@@ -862,16 +862,32 @@ algorithm
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       DAE.Exp e;
+      list<DAE.Exp> exps;
       Option<DAE.VariableAttributes> attr;
       BackendVarTransform.VariableReplacements repl, repleval;
       BackendDAE.Variables globalKnownVars;
+      Values.Value value;
 
     // Parameter with bind expression
     case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindExp=SOME(e), values=attr) equation
       // apply replacements
       (e, true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
       (e, _) = ExpressionSimplify.simplify(e);
-      e = EvaluateFunctions.evaluateConstantFunctionCallExp(e, FCore.getFunctionTree(iCache), Flags.getConfigBool(Flags.EVAL_CONST_ARGS_ONLY));
+      // If call with constant arguments then evaluate
+      e = match(e)
+        local DAE.Exp e1;
+        case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
+          equation
+           (_,value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+           e1 = ValuesUtil.valueExp(value);
+         then e1;
+        case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
+          equation
+           (_,value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+           e1 = ValuesUtil.valueExp(value);
+         then e1;
+        else e;
+      end match;
       v = BackendVariable.setBindExp(var, SOME(e));
       (repl, repleval) = addConstExpReplacement(e, cr, iRepl, iReplEvaluate);
       (attr, (repleval, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (repleval, false));
@@ -892,7 +908,21 @@ algorithm
       // apply replacements
       (e, true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
       (e, _) = ExpressionSimplify.simplify(e);
-      e = EvaluateFunctions.evaluateConstantFunctionCallExp(e, FCore.getFunctionTree(iCache), Flags.getConfigBool(Flags.EVAL_CONST_ARGS_ONLY));
+      // If call with constant arguments then evaluate
+      e = match(e)
+        local DAE.Exp e1;
+        case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
+          equation
+           (_,value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+           e1 = ValuesUtil.valueExp(value);
+         then e1;
+        case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
+          equation
+           (_,value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+           e1 = ValuesUtil.valueExp(value);
+         then e1;
+        else e;
+      end match;
       v = BackendVariable.setVarStartValue(var, e);
       (repl, repleval) = addConstExpReplacement(e, cr, iRepl, iReplEvaluate);
       (attr, (repleval, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (repleval, false));
@@ -912,7 +942,21 @@ algorithm
       // apply replacements
       (e, true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
       (e, _) = ExpressionSimplify.simplify(e);
-      e = EvaluateFunctions.evaluateConstantFunctionCallExp(e, FCore.getFunctionTree(iCache), Flags.getConfigBool(Flags.EVAL_CONST_ARGS_ONLY));
+      // If call with constant arguments then evaluate
+      e = match(e)
+        local DAE.Exp e1;
+        case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
+          equation
+           (_,value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+           e1 = ValuesUtil.valueExp(value);
+         then e1;
+        case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
+          equation
+           (_,value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+           e1 = ValuesUtil.valueExp(value);
+         then e1;
+        else e;
+      end match;
       v = BackendVariable.setBindExp(var, SOME(e));
       (attr, (repleval, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (iReplEvaluate, false));
       v = BackendVariable.setVarAttributes(v, attr);

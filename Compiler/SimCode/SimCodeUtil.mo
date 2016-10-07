@@ -6567,21 +6567,42 @@ end createVarInfo;
 
 protected function evaluateStartValues"evaluates functions in the start values in the variableAttributes"
   input BackendDAE.Var inVar;
-  input DAE.FunctionTree funcTreeIn;
+  input BackendDAE.Shared inShared;
   output BackendDAE.Var outVar;
-  output DAE.FunctionTree funcTreeOut;
+  output BackendDAE.Shared outShared;
 algorithm
-  (outVar,funcTreeOut) := matchcontinue(inVar,funcTreeIn)
+  (outVar,outShared) := matchcontinue(inVar,inShared)
     local
       Option<DAE.Exp> o1;
       Option<DAE.VariableAttributes> o2;
       DAE.Exp startValue, startValue_;
+      list<DAE.Exp> exps;
       DAE.VariableAttributes attr, attr_;
-  case(BackendDAE.VAR(bindExp = o1, values = o2), _)
+      Values.Value value;
+      FCore.Cache cache;
+      FCore.Graph graph;
+
+  case(BackendDAE.VAR(bindExp = o1, values = o2), BackendDAE.SHARED(cache=cache, graph=graph))
     equation
       if isSome(o1) then
         startValue = Util.getOption(o1);
-        startValue_ = EvaluateFunctions.evaluateConstantFunctionCallExp(startValue, funcTreeIn, Flags.getConfigBool(Flags.EVAL_CONST_ARGS_ONLY));
+
+        // If call with constant arguments then evaluate
+        startValue_ = match(startValue)
+          local DAE.Exp startValue1;
+          case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
+            equation
+             (_,value,_) = Ceval.ceval(cache, graph, startValue, false, NONE(), Absyn.NO_MSG(),0);
+             startValue1 = ValuesUtil.valueExp(value);
+           then startValue1;
+          case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
+            equation
+             (_,value,_) = Ceval.ceval(cache, graph, startValue, false, NONE(), Absyn.NO_MSG(),0);
+             startValue1 = ValuesUtil.valueExp(value);
+           then startValue1;
+          else startValue;
+        end match;
+
         if not referenceEq(startValue, startValue_) then
           inVar.bindExp = SOME(startValue_);
         end if;
@@ -6589,29 +6610,49 @@ algorithm
 
       if isSome(o2) then
         attr = Util.getOption(o2);
-        attr_ = evaluateVariableAttributes(attr,funcTreeIn);
+        attr_ = evaluateVariableAttributes(attr, inShared);
         if not referenceEq(attr, attr_) then
           inVar.values = SOME(attr_);
         end if;
       end if;
-    then (inVar,funcTreeIn);
+    then (inVar,inShared);
 
     else
-      then (inVar,funcTreeIn);
+      then (inVar,inShared);
   end matchcontinue;
 end evaluateStartValues;
 
 protected function evaluateVariableAttributes"evaluates functions in the start values, if necessary"
   input DAE.VariableAttributes attrIn;
-  input DAE.FunctionTree funcTree;
+  input BackendDAE.Shared shared;
   output DAE.VariableAttributes attrOut;
 algorithm
-  attrOut := matchcontinue(attrIn, funcTree)
+  attrOut := matchcontinue(attrIn, shared)
     local
       DAE.Exp exp, exp_;
-  case(DAE.VAR_ATTR_REAL(start=SOME(exp)),_)
+      list<DAE.Exp> exps;
+      Values.Value value;
+      FCore.Cache cache;
+      FCore.Graph graph;
+
+  case(DAE.VAR_ATTR_REAL(start=SOME(exp)), BackendDAE.SHARED(cache=cache, graph=graph))
     equation
-      exp_ = EvaluateFunctions.evaluateConstantFunctionCallExp(exp, funcTree, Flags.getConfigBool(Flags.EVAL_CONST_ARGS_ONLY));
+      // If call with constant arguments then evaluate
+      exp_ = match(exp)
+        local DAE.Exp exp1;
+        case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
+          equation
+           (_,value,_) = Ceval.ceval(cache, graph, exp, false, NONE(), Absyn.NO_MSG(),0);
+           exp1 = ValuesUtil.valueExp(value);
+         then exp1;
+        case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
+          equation
+           (_,value,_) = Ceval.ceval(cache, graph, exp, false, NONE(), Absyn.NO_MSG(),0);
+           exp1 = ValuesUtil.valueExp(value);
+         then exp1;
+        else exp;
+      end match;
+
       if not referenceEq(exp, exp_) then
         attrIn.start = SOME(exp);
       end if;
@@ -6628,7 +6669,7 @@ If the var is a torn var, there is no way to compute the proper start value befo
 author:Waurich TUD 2015-01"
   input BackendDAE.EqSystem systIn;
   input BackendDAE.Variables globalKnownVars;
-  input DAE.FunctionTree funcTree;
+  input BackendDAE.Shared shared;
   output BackendDAE.EqSystem systOut;
 protected
   list<Integer> varMap;
@@ -6680,7 +6721,7 @@ algorithm
   vars := List.threadFold(stateIdcs, stateKinds,BackendVariable.setVarKindForVar, vars);
 
   //evaluate function calls in variable attributes (start-value)
-  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,evaluateStartValues,funcTree);
+  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,evaluateStartValues,shared);
     //BackendDump.dumpVariables(vars,"VAR AFTER");
   systOut := BackendDAEUtil.setEqSystVars(systIn, vars);
 end preCalculateStartValues;
@@ -6985,16 +7026,16 @@ protected
   BackendDAE.Variables extvars1, extvars2;
   BackendDAE.Variables aliasVars1, aliasVars2;
   BackendDAE.EqSystems systs1, systs2;
-  DAE.FunctionTree funcTree;
+  BackendDAE.Shared shared;
   array<HashSet.HashSet> hs = arrayCreate(1, HashSet.emptyHashSetSized(Util.nextPrime(BackendDAEUtil.daeSize(inSimDAE)+BackendDAEUtil.daeSize(inInitDAE))));
   array<list<SimCodeVar.SimVar>> simVars = arrayCreate(size(SimVarsIndex,1), {});
 algorithm
-  BackendDAE.DAE(eqs=systs1, shared=BackendDAE.SHARED(globalKnownVars=globalKnownVars1, localKnownVars=localKnownVars1, externalObjects=extvars1, aliasVars=aliasVars1, functionTree=funcTree)) := inSimDAE;
+  BackendDAE.DAE(eqs=systs1, shared=shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars1, localKnownVars=localKnownVars1, externalObjects=extvars1, aliasVars=aliasVars1)) := inSimDAE;
   BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(globalKnownVars=globalKnownVars2, localKnownVars=localKnownVars2, externalObjects=extvars2, aliasVars=aliasVars2)) := inInitDAE;
 
   if not Flags.isSet(Flags.NO_START_CALC) then
-    (systs1) := List.map2(systs1, preCalculateStartValues, globalKnownVars1, funcTree);
-    (globalKnownVars1, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars1, evaluateStartValues, funcTree);
+    (systs1) := List.map2(systs1, preCalculateStartValues, globalKnownVars1, shared);
+    (globalKnownVars1, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars1, evaluateStartValues, shared);
     //systs2 := List.map1(systs2, preCalculateStartValues, globalKnownVars2);
   end if;
 
