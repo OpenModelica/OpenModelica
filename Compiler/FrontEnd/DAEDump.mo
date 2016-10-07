@@ -3695,5 +3695,216 @@ algorithm
   end match;
 end clockKindString;
 
+
+public function dumpDebugElementStr "Dump equation to a string.For debug purposes."
+  input DAE.Element inElement;
+  output String outString;
+algorithm
+  outString := matchcontinue (inElement)
+    local
+      Absyn.Path path;
+      String s1,s2,s3,s4,s5,str,sourceStr;
+      DAE.Exp e1,e2,e;
+      DAE.ComponentRef c,cr1,cr2;
+      list<DAE.Exp> es;
+      list<DAE.Element> elst;
+      Absyn.Path path;
+      DAE.ElementSource src;
+      list<SCode.Comment> cmt;
+
+    case (DAE.VAR(componentRef = c))
+      equation
+        s1 = ComponentReference.printComponentRefStr(c);
+        str = stringAppendList({"VAR:  ", s1,";\n"});
+      then
+        str;
+
+    case (DAE.DEFINE(componentRef = c,exp = e,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ComponentReference.printComponentRefStr(c);
+        str = stringAppend(s1, sourceStr + ";\n");
+      then
+        str;
+
+    case (DAE.INITIALDEFINE(componentRef = c,exp = e,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ComponentReference.printComponentRefStr(c);
+        str = stringAppend(s1, sourceStr + ";\n");
+      then
+        str;
+
+    case (DAE.EQUATION(exp = e1,scalar = e2,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        str = stringAppendList({"  ", s1, " = ", s2, sourceStr, ";\n"});
+      then
+        str;
+
+     case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ComponentReference.printComponentRefStr(cr1);
+        s2 = ComponentReference.printComponentRefStr(cr2);
+        str = stringAppendList({"EQUEQUATION  ", s1, " = ", s2, sourceStr, ";\n"});
+      then
+        str;
+
+    case(DAE.ARRAY_EQUATION(exp=e1,array=e2,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        str = "ARRAY_EQUATION  " + s1 + " = " + s2 + sourceStr + ";\n";
+      then
+        str;
+
+    case(DAE.INITIAL_ARRAY_EQUATION(exp=e1,array=e2,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        str = "INITIAL_ARRAY_EQUATION  " + s1 + " = " + s2 + sourceStr + ";\n";
+      then
+        str;
+
+    case(DAE.COMPLEX_EQUATION(lhs=e1,rhs=e2,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        str = "COMPLEX_EQUATION  " + s1 + " = " + s2 + sourceStr + ";\n";
+      then
+        str;
+
+    case(DAE.INITIAL_COMPLEX_EQUATION(lhs=e1,rhs=e2,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        str = "INITIAL_COMPLEX_EQUATION  " + s1 + " = " + s2 + sourceStr + ";\n";
+      then
+        str;
+
+    case (DAE.WHEN_EQUATION(condition = e1,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        str = stringAppendList({"WHEN_EQUATION:  ", s1, sourceStr, ";\n"});
+      then
+        str;
+
+    case (DAE.IF_EQUATION(source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        str = stringAppendList({"IF_EQUATION:  ", sourceStr, ";\n"});
+      then
+        str;
+
+    case (DAE.INITIAL_IF_EQUATION(source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        str = stringAppendList({"INITIAL_IF_EQUATION:  ", sourceStr, ";\n"});
+      then
+        str;
+
+    case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        str = stringAppendList({"INITIALEQUATION  ", s1, " = ", s2, sourceStr, ";\n"});
+      then
+        str;
+
+    case (DAE.ALGORITHM(source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        str = stringAppendList({"ALGO  ", sourceStr, ";\n"});
+      then
+        str;
+
+    case (DAE.INITIALALGORITHM(source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        str = stringAppendList({"INITIALALGORITHM  ", sourceStr, ";\n"});
+      then
+        str;
+
+    case (DAE.COMP(source = src, dAElist = elst))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = stringDelimitList(List.map(elst,DAEDump.dumpDebugElementStr),"\n");
+        str = stringAppendList({"COMP  ",s1, sourceStr, ";\n"});
+      then
+        str;
+
+    case (DAE.EXTOBJECTCLASS(path = path, source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = Absyn.pathString(path);
+        str = stringAppendList({"EXTOBJ  ",s1,"  ", sourceStr, ";\n"});
+      then
+        str;
+
+    case (DAE.ASSERT(condition=e1,message = e2,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        str = stringAppendList({"  assert(",s1, ",",s2,") ", sourceStr, ";\n"});
+      then
+        str;
+
+    case (DAE.TERMINATE(message=e1,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        str = stringAppendList({"  terminate(",s1,") ", sourceStr, ";\n"});
+      then
+        str;
+
+    case (DAE.REINIT(source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        str = stringAppendList({"  reinit(",") ", sourceStr, ";\n"});
+      then
+        str;
+
+    case (DAE.NORETCALL(exp=e1,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        str = stringAppendList({"  ", s1, sourceStr, ";\n"});
+      then
+        str;
+    else "#UNKNOWN_EQUATION#";
+  end matchcontinue;
+end dumpDebugElementStr;
+
+
 annotation(__OpenModelica_Interface="frontend");
 end DAEDump;

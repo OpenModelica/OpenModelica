@@ -99,7 +99,7 @@ public function lower "This function translates a DAE, which is the result from 
   output BackendDAE.BackendDAE outBackendDAE;
 protected
   list<BackendDAE.Var> varlst, globalKnownVarLst, extvarlst;
-  BackendDAE.Variables vars, globalKnownVars, localKnownVars, vars_1, extVars, aliasVars;
+  BackendDAE.Variables vars, globalKnownVars, localKnownVars, vars_1, extVars, aliasVars, extAliasVars;
   list<BackendDAE.Equation> eqns, reqns, ieqns, algeqns, algeqns1, ialgeqns, multidimeqns, imultidimeqns, eqns_1, ceeqns, iceeqns;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;
@@ -134,6 +134,9 @@ algorithm
   end if;
   // handle alias equations
   (vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns);
+  (eqns,extAliasVars,extVars) := getExternalObjectAlias(eqns, extVars);
+  aliasVars := BackendVariable.addVariables(extAliasVars,aliasVars);
+
   vars_1 := detectImplicitDiscrete(vars, globalKnownVars, eqns);
   eqnarr := BackendEquation.listEquation(eqns);
   reqnarr := BackendEquation.listEquation(reqns);
@@ -171,6 +174,106 @@ algorithm
   Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.DUMP_BACKENDDAE_INFO),Error.BACKENDDAEINFO_LOWER,{neqStr,nvarStr},Absyn.dummyInfo);
   execStat("Generate backend data structure");
 end lower;
+
+protected function getExternalObjectAlias"Checks equations if there is an alias assignment between external objects. If yes, assign alias var, replce equations, remove alia equation.
+author: waurich TUD 2016-10"
+  input list<BackendDAE.Equation> inEqs;
+  input BackendDAE.Variables extVars;
+  output list<BackendDAE.Equation> oEqs;
+  output BackendDAE.Variables extAliasVars;
+  output BackendDAE.Variables extVarsOut;
+protected
+  list<DAE.ComponentRef> extCrefs;
+  list<BackendDAE.Equation> aliasEqs;
+  list<BackendDAE.Var> aliasVarLst;
+  BackendVarTransform.VariableReplacements repl;
+algorithm
+  //get the crefs of the external vars
+  extCrefs := BackendVariable.getAllCrefFromVariables(extVars);
+
+  // get alias equations for external objects
+  (oEqs,aliasEqs) := List.fold1(inEqs,getExternalObjectAlias2,extCrefs,({},{}));
+
+  //assign aliasVariables and set new binding
+  repl := BackendVarTransform.emptyReplacements();
+  (aliasVarLst,repl) := List.fold1(aliasEqs,getExternalObjectAlias3,extVars,({},repl));
+  extAliasVars := BackendVariable.listVar1(aliasVarLst);
+
+  //remove alias from extVarArray
+  extVarsOut := BackendVariable.deleteVars(extAliasVars,extVars);
+
+  //replace in equations
+  (oEqs,_) := BackendVarTransform.replaceEquations(oEqs,repl,NONE());
+  oEqs := listReverse(oEqs);
+end getExternalObjectAlias;
+
+protected function getExternalObjectAlias3"Gets the alias var and sim var for the given alias equation and adds a replacement rule
+author: waurich TUD 2016-10"
+  input BackendDAE.Equation eqIn;
+  input BackendDAE.Variables extVars;
+  input tuple<list<BackendDAE.Var>,BackendVarTransform.VariableReplacements> tplIn;
+  output tuple<list<BackendDAE.Var>,BackendVarTransform.VariableReplacements> tplOut;
+protected
+  BackendDAE.Var v1,v2,simVar,aliasVar;
+  list<DAE.ComponentRef> crefs;
+  list<BackendDAE.Var> extAliasVars;
+  BackendVarTransform.VariableReplacements repl;
+algorithm
+  (extAliasVars,repl) := tplIn;
+  try
+    //get alias and sim var
+    crefs := BackendEquation.equationCrefs(eqIn);
+    ({v1,v2},_) := BackendVariable.getVarLst(crefs,extVars);
+    (simVar,aliasVar) := chooseExternalAlias(v1,v2);
+    extAliasVars := aliasVar::extAliasVars;
+
+    //build replacement rule
+    repl := BackendVarTransform.addReplacement(repl,BackendVariable.varCref(aliasVar), Expression.crefExp(BackendVariable.varCref(simVar)), NONE());
+    tplOut := (extAliasVars,repl);
+  else
+    Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAECreate.getExternalObjectAlias3 failed for " + BackendDump.equationString(eqIn)});
+  end try;
+end getExternalObjectAlias3;
+
+protected function chooseExternalAlias"Chooses a alias variable depending on which variable has a binding
+author: waurich TUD 2016-10"
+  input BackendDAE.Var var1;
+  input BackendDAE.Var var2;
+  output BackendDAE.Var simVar = var1;
+  output BackendDAE.Var aliasVar = var2;
+algorithm
+  if BackendVariable.varHasBindExp(var1) and not BackendVariable.varHasBindExp(var2)then
+    simVar := var1;
+    aliasVar := BackendVariable.setBindExp(var2, SOME(Expression.crefExp(BackendVariable.varCref(simVar))));
+  elseif BackendVariable.varHasBindExp(var2) and not BackendVariable.varHasBindExp(var1)then
+    simVar := var2;
+    aliasVar := BackendVariable.setBindExp(var1, SOME(Expression.crefExp(BackendVariable.varCref(simVar))));
+  else
+    Error.addCompilerWarning("No heuristic to choose the alias variable of external objects: " + BackendDump.varString(var1)+" = "+ BackendDump.varString(var2));
+  end if;
+end chooseExternalAlias;
+
+protected function getExternalObjectAlias2"Traverser for equations to check if an external alias assignment an be made
+author: waurich TUD 2016-10"
+  input BackendDAE.Equation eqIn;
+  input list<DAE.ComponentRef> extCrefs;
+  input tuple<list<BackendDAE.Equation>, list<BackendDAE.Equation>> eqTplIn; //nonAlias and aliasEqs
+  output tuple<list<BackendDAE.Equation>, list<BackendDAE.Equation>> eqTplOut;
+algorithm
+  eqTplOut := matchcontinue(eqIn,extCrefs,eqTplIn)
+    local
+      list<BackendDAE.Equation> noAliasEqs, aliasEqs;
+      DAE.ComponentRef cr1,cr2;
+  case(BackendDAE.COMPLEX_EQUATION(left = DAE.CREF(componentRef=cr1), right = DAE.CREF(componentRef=cr2)),_,(noAliasEqs,aliasEqs))
+    algorithm
+      true := List.exist1(extCrefs,ComponentReference.crefEqual,cr1) and List.exist1(extCrefs,ComponentReference.crefEqual,cr2);
+     then (noAliasEqs,eqIn::aliasEqs);
+  else
+    algorithm
+      (noAliasEqs,aliasEqs) := eqTplIn;
+    then (eqIn::noAliasEqs,aliasEqs);
+  end matchcontinue;
+end getExternalObjectAlias2;
 
 protected function lower2
   input list<DAE.Element> inElements;

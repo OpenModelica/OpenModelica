@@ -10607,6 +10607,9 @@ algorithm
       Absyn.Path p1,p2;
       list<DAE.Exp> exps;
     case (DAE.CAST(exp=exp),_) then splitRecord(exp,ty);
+     case (DAE.CREF(componentRef=cr),DAE.T_COMPLEX(varLst = vs as {}))
+       //This might be an external object
+      then fail();
     case (DAE.CREF(componentRef=cr),DAE.T_COMPLEX(varLst = vs))
       then List.map1(vs,splitRecord2,cr);
     case (DAE.CALL(path=p1,expLst=exps,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),_)
