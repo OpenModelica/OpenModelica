@@ -106,12 +106,9 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   mpUnitComboBox = new QComboBox;
   if (!mUnit.isEmpty()) {
     mpUnitComboBox->addItem(mUnit);
-    mpUnitComboBox->addItems(pOMCProxy->getDerivedUnits(mUnit));
-  }
-  if (mUnit.compare(mDisplayUnit) != 0) {
-    int index = mpUnitComboBox->findText(mDisplayUnit, Qt::MatchExactly);
-    if (index > -1) {
-      mpUnitComboBox->setCurrentIndex(index);
+    if (mDisplayUnit.compare(mUnit) != 0) {
+      mpUnitComboBox->addItem(mDisplayUnit);
+      mpUnitComboBox->setCurrentIndex(1);
     }
   }
   connect(mpUnitComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(unitComboBoxChanged(QString)));
