@@ -1150,6 +1150,23 @@ void UnitParser::initSIUnits() {
   addDerived("time", "hour", "h", "s", Rational(0), Rational(60 * 60), Rational(0), true);
   addDerived("time", "day", "d", "s", Rational(0), Rational(60 * 60 * 24), Rational(0), true);
 
+  // Imperial units
+  addDerived("length", "inch", "in", "m", Rational(0),
+      Rational(254, 10000), Rational(0), true);
+  addDerived("length", "foot", "ft", "m", Rational(0),
+      Rational(3048, 10000), Rational(0), true);
+
+  addDerived("velocity", "miles per hour", "mph", "m/s", Rational(0),
+      Rational(44704, 100000), Rational(0), true);
+
+  addDerived("mass", "pound", "lb", "kg", Rational(0),
+      Rational(45359237, 100000000), Rational(0), true);
+
+  addDerived("pressure", "pound per square inch", "psi", "Pa", Rational(0),
+      Rational(689475729, 100000), Rational(0), true);
+  addDerived("pressure", "inch water gauge", "inWG", "Pa", Rational(0),
+      Rational(249088908333, 1000000000), Rational(0), true);
+
   commit();
 }
 
