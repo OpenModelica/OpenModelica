@@ -1117,24 +1117,10 @@ void UnitParser::initSIUnits() {
       Rational(1), Rational(0), true);
 
   // More derived units
-  addDerived("length", "kilometre", "km", "m", Rational(0), Rational(1000), Rational(0), true);
-  addDerived("length", "millimetre", "mm", "m", Rational(0), Rational(1, 1000), Rational(0), true);
-
-  addDerived("electric current", "kiloampere", "kA", "A", Rational(0), Rational(1000), Rational(0), true);
-  addDerived("electric current", "milliampere", "mA", "A", Rational(0), Rational(1, 1000), Rational(0), true);
-
-  addDerived("power, radiant flux", "kilowatt", "kW", "J/s", Rational(0), Rational(1000), Rational(0), true);
-  addDerived("power, radiant flux", "milliwatt", "mW", "J/s", Rational(0), Rational(1, 1000), Rational(0), true);
-  addDerived("power, radiant flux", "megawatt", "MW", "J/s", Rational(0), Rational(1000000), Rational(0), true);
-
-  addDerived("electric potential difference, electromotive force", "kilovolt", "kV", "W/A", Rational(0), Rational(1000), Rational(0), true);
-  addDerived("electric potential difference, electromotive force", "millivolt", "mV", "W/A", Rational(0), Rational(1, 1000), Rational(0), true);
-
   addDerived("plane angle", "degree", "deg", "rad", Rational(0), Rational(3141592653589793, 180000000000000000), Rational(0), true);
 
   addDerived("pressure", "bar", "bar", "Pa", Rational(0), Rational(100000), Rational(0), true);
 
-  addDerived("time", "millisecond", "ms", "s", Rational(0), Rational(1, 1000), Rational(0), true);
   addDerived("time", "minute", "min", "s", Rational(0), Rational(60), Rational(0), true);
   addDerived("time", "hour", "h", "s", Rational(0), Rational(60 * 60), Rational(0), true);
   addDerived("time", "day", "d", "s", Rational(0), Rational(60 * 60 * 24), Rational(0), true);
