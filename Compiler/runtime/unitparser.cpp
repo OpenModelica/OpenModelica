@@ -1099,7 +1099,7 @@ void UnitParser::initSIUnits() {
       Rational(1), Rational(0), true);
   addDerived("inductance", "henry", "H", "Wb/A", Rational(0), Rational(1),
       Rational(0), true);
-  addDerived("Celsius temperature", "degree Celsius", "degC", "K",
+  addDerived("thermodynamic temperature", "degree Celsius", "degC", "K",
       Rational(0), Rational(1), Rational(27315, 100), true);
   addDerived("luminous flux", "lumen", "lm", "cd.sr", Rational(0),
       Rational(1), Rational(0), true);
@@ -1117,7 +1117,32 @@ void UnitParser::initSIUnits() {
       Rational(1), Rational(0), true);
 
   // More derived units
-  addDerived("plane angle", "degree", "deg", "rad", Rational(0), Rational(3141592653589793, 180000000000000000), Rational(0), true);
+  addDerived("plane angle", "degree", "deg", "rad", Rational(0),
+      Rational(31415926535897932, 1800000000000000000), Rational(0), true);
+  addDerived("plane angle", "revolutions", "rev", "rad", Rational(0),
+      Rational(31415926535897932, 5000000000000000), Rational(0), true);
+
+  addDerived("angular velocity", "revolutions per minute", "rpm", "rad/s", Rational(0),
+      Rational(31415926535897932, 300000000000000000), Rational(0), true);
+
+  addDerived("velocity", "knot", "kn", "m/s", Rational(0),
+      Rational(1852, 3600), Rational(0), true);
+
+  addDerived("mass", "metric ton", "t", "kg", Rational(3),
+      Rational(1), Rational(0), true);
+
+  addDerived("volume", "litre", "l", "m3", Rational(0),
+      Rational(1, 1000), Rational(0), true);
+
+  addDerived("apparent power", "volt-ampere", "VA", "J/s", Rational(0),
+      Rational(1), Rational(0), true);
+  addDerived("reactive power", "volt-ampere reactive", "var", "J/s", Rational(0),
+      Rational(1), Rational(0), true);
+
+  addDerived("thermodynamic temperature", "degree Fahrenheit", "degF", "K",
+      Rational(0), Rational(5, 9), Rational(27315*9-3200*5, 900), true);
+  addDerived("thermodynamic temperature", "degree Rankine", "degRk", "K",
+      Rational(0), Rational(5, 9), Rational(0), true);
 
   addDerived("pressure", "bar", "bar", "Pa", Rational(0), Rational(100000), Rational(0), true);
 
