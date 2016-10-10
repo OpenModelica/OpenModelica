@@ -123,9 +123,8 @@ AnimationWindow* PlotWindowContainer::getCurrentAnimationWindow()
 bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
 {
   bool isPlotWidget = (0 != pObject->objectName().compare(QString("animationWidget")));
-  if (isPlotWidget){
-    PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pObject);
-    if (pPlotWindow && pEvent->type() == QEvent::Paint) {
+  PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pObject);
+  if (pPlotWindow && isPlotWidget && pEvent->type() == QEvent::Paint) {
     QPainter painter (pPlotWindow);
     painter.setPen(Qt::gray);
     QRect rectangle = pPlotWindow->rect();
@@ -133,7 +132,6 @@ bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
     rectangle.setHeight(pPlotWindow->rect().height() - 1);
     painter.drawRect(rectangle);
     return true;
-    }
   }
   return QMdiArea::eventFilter(pObject, pEvent);
 }
