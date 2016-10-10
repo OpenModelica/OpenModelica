@@ -51,17 +51,47 @@ Legend::Legend(Plot *pParent)
 
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(legendMenu(QPoint)));
+  /* Ticket #3984
+   * In order to show tooltip for each legend item we need to install event filter for contentsWidget()
+   * contentsWidget() contains a list of legend item
+   * Since the tooltip is shown on mouse over so we need to enable mouse tracking for it.
+   */
+  contentsWidget()->installEventFilter(this);
+  contentsWidget()->setMouseTracking(true);
 }
 
-Legend::~Legend()
+/*!
+ * \brief Legend::eventFilter
+ * Handles the mousemove event for contentsWidget().
+ * \param object
+ * \param event
+ * \return
+ */
+bool Legend::eventFilter(QObject *object, QEvent *event)
 {
-
+  QWidget *pContentsWidget = qobject_cast<QWidget*>(object);
+  if (pContentsWidget == contentsWidget() && event->type() == QEvent::MouseMove) {
+    QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(event);
+    PlotCurve *pPlotCurve;
+#if QWT_VERSION >= 0x060100
+    QwtPlotItem *pQwtPlotItem = qvariant_cast<QwtPlotItem*>(itemInfo(childAt(pMouseEvent->pos())));
+    pPlotCurve = dynamic_cast<PlotCurve*>(pQwtPlotItem);
+#else
+    pPlotCurve = dynamic_cast<PlotCurve*>(find(childAt(pMouseEvent->pos())));
+#endif
+    if (pPlotCurve) {
+      QString toolTip = tr("Name: %1\nFilename: %2").arg(pPlotCurve->getName()).arg(pPlotCurve->getFileName());
+      QToolTip::showText(pMouseEvent->globalPos(), toolTip, this);
+    } else {
+      QToolTip::hideText();
+    }
+  }
+  return QwtLegend::eventFilter(object, event);
 }
 
 void Legend::showSetupDialog()
 {
-  if (mpPlotCurve)
-  {
+  if (mpPlotCurve) {
     mpPlot->getParentPlotWindow()->showSetupDialog(mpPlotCurve->getNameStructure());
     mpPlotCurve = 0;
   }
@@ -75,11 +105,25 @@ void Legend::legendMenu(const QPoint& pos)
 #else
   mpPlotCurve = dynamic_cast<PlotCurve*>(find(childAt(pos)));
 #endif
-  if (mpPlotCurve)
-  {
+  if (mpPlotCurve) {
     /* context menu */
     QMenu menu(mpPlot);
     menu.addAction(mpSetupAction);
     menu.exec(mapToGlobal(pos));
   }
+}
+
+/*!
+ * \brief Legend::createWidget
+ * Reimplementation of QwtLegend::createWidget()
+ * We need to setMouseTracking on each legend item so that we can show tooltip on hover.
+ * \sa Legend::eventFilter
+ * \param data
+ * \return
+ */
+QWidget* Legend::createWidget(const QwtLegendData &data) const
+{
+  QWidget *pWidget = QwtLegend::createWidget(data);
+  pWidget->setMouseTracking(true);
+  return pWidget;
 }

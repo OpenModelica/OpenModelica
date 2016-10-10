@@ -46,7 +46,7 @@ class Legend : public QwtLegend
   Q_OBJECT
 public:
   Legend(Plot *pParent);
-  ~Legend();
+  bool eventFilter(QObject *object, QEvent *event);
 public slots:
   void showSetupDialog();
   void legendMenu(const QPoint&);
@@ -54,6 +54,8 @@ private:
   Plot *mpPlot;
   PlotCurve *mpPlotCurve;
   QAction *mpSetupAction;
+protected:
+  virtual QWidget *createWidget(const QwtLegendData &data) const;
 };
 }
 
