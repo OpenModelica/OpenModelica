@@ -834,6 +834,7 @@ VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
   mpVariablesTreeView->setModel(mpVariableTreeProxyModel);
   mpVariablesTreeView->setColumnWidth(0, 150);
   mpVariablesTreeView->setColumnWidth(2, 50);
+  mpVariablesTreeView->setColumnHidden(2, true); // hide Unit column
   mpLastActiveSubWindow = 0;
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
