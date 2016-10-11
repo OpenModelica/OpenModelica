@@ -1820,7 +1820,7 @@ algorithm
 
   // dump results with local indexes
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    dumpTearingSetLocalIndexes(OutTVars,residual_coll,order,ass2,size,mapEqnIncRow," - STRICT SET");
+    dumpTearingSetLocalIndexes(OutTVars,residual_coll,order,ass2,size,mapEqnIncRow,vars," - STRICT SET");
   end if;
 
   if debug then execStat("Tearing.CellierTearing -> 4"); end if;
@@ -1901,7 +1901,7 @@ algorithm
 
       // dump results with local indexes
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        dumpTearingSetLocalIndexes(OutTVars,residual_coll,order,ass2,size,mapEqnIncRow," - CASUAL SET");
+        dumpTearingSetLocalIndexes(OutTVars,residual_coll,order,ass2,size,mapEqnIncRow,vars," - CASUAL SET");
       end if;
 
       // Convert indexes
@@ -4037,14 +4037,18 @@ protected function dumpTearingSetLocalIndexes
   input array<Integer> ass2;
   input Integer size;
   input array<list<Integer>> mapEqnIncRow;
+  input BackendDAE.Variables vars;
   input String setString;
 protected
-  list<Integer> vars;
   list<String> s;
 algorithm
   print("\n" + BORDER + "\n* TEARING RESULTS" + setString + ":\n* (Local Indexes)\n*\n* No of equations in strong component: "+intString(size)+"\n");
   print("* No of tVars: "+intString(listLength(tVars))+"\n");
   print("*\n* tVars: "+ stringDelimitList(List.map(listReverse(tVars),intString),",") + "\n");
+  if Flags.isSet(Flags.ITERATION_VARS) then
+    s := list("* " + intString(tVar) + ": " + BackendDump.varString(BackendVariable.getVarAt(vars,tVar)) for tVar in tVars);
+    print(stringDelimitList(s, "\n") + "\n");
+  end if;
   print("*\n* resEq: "+ stringDelimitList(List.map(residuals,intString),",") + "\n");
   s := list("{" + intString(e) + ":" + stringDelimitList(List.map(List.map1r(mapEqnIncRow[e],arrayGet,ass2),intString),",") + "}" for e in order);
   print("*\n* innerEquations ({eqn,vars}):\n* " + stringDelimitList(s,", ") + "\n*\n*" + BORDER + "\n\n");
@@ -4606,7 +4610,7 @@ algorithm
 
     // dump results with local indexes
     if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-      dumpTearingSetLocalIndexes(userTVars,userResiduals,order,ass2,size,mapEqnIncRow,"");
+      dumpTearingSetLocalIndexes(userTVars,userResiduals,order,ass2,size,mapEqnIncRow,vars,"");
     end if;
 
     // dump results with global indexes
