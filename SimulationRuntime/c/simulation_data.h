@@ -108,6 +108,7 @@ typedef struct CALL_STATISTICS
   long functionZeroCrossingsEquations;
   long functionZeroCrossings;
   long functionEvalDAE;
+  long functionAlgebraics;
 } CALL_STATISTICS;
 
 typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;

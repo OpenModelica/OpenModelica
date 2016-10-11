@@ -1002,6 +1002,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->callStatistics.updateDiscreteSystem = 0;
   data->simulationInfo->callStatistics.functionZeroCrossingsEquations = 0;
   data->simulationInfo->callStatistics.functionZeroCrossings = 0;
+  data->simulationInfo->callStatistics.functionAlgebraics = 0;
 
   data->simulationInfo->lambda = 1.0;
 
