@@ -20,11 +20,12 @@ else
 endif
 
 OMC_OBJ_BOOT = Dynload_omc$(OBJEXT) Error_omc$(OBJEXT) FMI_omc$(OBJEXT) \
-  GraphStreamExt_omc$(OBJEXT) HpcOmSchedulerExt_omc$(OBJEXT) HpcOmBenchmarkExt_omc$(OBJEXT) \
+  GraphStreamExt_omc$(OBJEXT) \
   ptolemyio_omc$(OBJEXT) SimulationResults_omc$(OBJEXT) System_omc$(OBJEXT) \
-  TaskGraphResults_omc$(OBJEXT) Settings_omc$(OBJEXT)
+  Settings_omc$(OBJEXT)
 
 OMC_OBJ = $(OMC_OBJ_BOOT) Print_omc.o serializer.o \
+   HpcOmSchedulerExt_omc$(OBJEXT) HpcOmBenchmarkExt_omc$(OBJEXT) TaskGraphResults_omc$(OBJEXT) \
   IOStreamExt_omc.o ErrorMessage.o systemimplmisc.o \
   UnitParserExt_omc.o unitparser.o BackendDAEEXT_omc.o Socket_omc.o matching.o matching_cheap.o \
   Lapack_omc.o getMemorySize.o  $(OMCCORBASRC)
