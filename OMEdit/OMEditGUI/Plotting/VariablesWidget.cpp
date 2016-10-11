@@ -568,9 +568,26 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       variableData << StringHandler::unparse(QString("\"").append(displayUnit).append("\""));
       /* set the variable displayUnits */
       if (!variableData[5].toString().isEmpty()) {
-        QStringList displayUnits;
+        QStringList displayUnits, displayUnitOptions;
         displayUnits << variableData[5].toString();
-        displayUnits << mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getOMCProxy()->getDerivedUnits(variableData[5].toString());
+        if (!variableData[6].toString().isEmpty()) {
+          displayUnitOptions << variableData[6].toString();
+          /* convert value to displayUnit */
+          OMCInterface::convertUnits_res convertUnit = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getOMCProxy()->convertUnits(variableData[5].toString(), variableData[6].toString());
+          if (convertUnit.unitsCompatible) {
+            bool ok = true;
+            qreal realValue = variableData[4].toDouble(&ok);
+            if (ok) {
+              realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
+              variableData[4] = QString::number(realValue);
+            }
+          }
+        }
+        else {
+          /* use unit as displayUnit */
+          variableData[6] = variableData[5];
+        }
+        displayUnits << displayUnitOptions;
         variableData << displayUnits;
       } else {
         variableData << QStringList();
@@ -824,6 +841,7 @@ VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
   mpVariablesTreeView->setModel(mpVariableTreeProxyModel);
   mpVariablesTreeView->setColumnWidth(0, 150);
   mpVariablesTreeView->setColumnWidth(2, 50);
+  mpVariablesTreeView->setColumnHidden(2, true); // hide Unit column
   mpLastActiveSubWindow = 0;
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
@@ -1332,6 +1350,15 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
     OMCInterface::convertUnits_res convertUnit = mpMainWindow->getOMCProxy()->convertUnits(pVariablesTreeItem->getPreviousUnit(),
                                                                                            pVariablesTreeItem->getDisplayUnit());
     if (convertUnit.unitsCompatible) {
+      /* update value */
+      QVariant stringValue = pVariablesTreeItem->data(1, Qt::EditRole);
+      bool ok = true;
+      qreal realValue = stringValue.toDouble(&ok);
+      if (ok) {
+        realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
+        pVariablesTreeItem->setData(1, QString::number(realValue), Qt::EditRole);
+      }
+      /* update plots */
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
         QString curveTitle = pPlotCurve->getNameStructure();
         if (curveTitle.compare(pVariablesTreeItem->getVariableName()) == 0) {
