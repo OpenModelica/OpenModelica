@@ -814,14 +814,12 @@ algorithm
         (u1,scaleFactor1,offset1) = UnitAbsynBuilder.str2unitWithScaleFactor(str1,NONE());
         (u2,scaleFactor2,offset2) = UnitAbsynBuilder.str2unitWithScaleFactor(str2,NONE());
         b = valueEq(u1,u2);
-        /* How to calculate the final scale factor and offset?
-        ºF = (ºK - 273.15)* 1.8000 + 32.00 = (ºK - 255.37)* 1.8000
-        ºC = (ºK - 273.15)
-
-        ºF = (ºC - (255.37 - 273.15))*(1.8/1.0)
+        /* How to calculate the final scale factor and offset:
+        F = C*1.8 + 32
+        C = (F - 32)/1.8 = F/1.8 - 32/1.8
         */
         scaleFactor = realDiv(scaleFactor2, scaleFactor1);
-        offset = realSub(offset2,offset1);
+        offset = realSub(offset2, realDiv(offset1, scaleFactor1));
       then
         (cache,Values.TUPLE({Values.BOOL(b),Values.REAL(scaleFactor),Values.REAL(offset)}),st);
 
