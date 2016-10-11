@@ -184,6 +184,16 @@ public function varUnreplaceable "author: lochel
   output Boolean outUnreplaceable = inVar.unreplaceable;
 end varUnreplaceable;
 
+
+public function setUnreplaceable "
+  set the unreplaceable attribute of a variable."
+  input output BackendDAE.Var var;
+  input Boolean unreplaceable;
+  algorithm
+    var.unreplaceable := unreplaceable;
+end setUnreplaceable;
+
+
 public function varStartValueFail "author: Frenkel TUD
   Returns the DAE.StartValue of a variable if there is one.
   Otherwise fail"
