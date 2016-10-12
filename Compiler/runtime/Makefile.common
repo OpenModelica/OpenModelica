@@ -19,16 +19,22 @@ else
 	configUnix =
 endif
 
-OMC_OBJ_BOOT = Dynload_omc$(OBJEXT) Error_omc$(OBJEXT) FMI_omc$(OBJEXT) \
-  GraphStreamExt_omc$(OBJEXT) \
-  ptolemyio_omc$(OBJEXT) SimulationResults_omc$(OBJEXT) System_omc$(OBJEXT) \
-  Settings_omc$(OBJEXT)
+OMC_OBJ_SHARED = Dynload_omc$(OBJEXT) Error_omc$(OBJEXT) \
+  Print_omc.o GraphStreamExt_omc$(OBJEXT) \
+  ErrorMessage$(OBJEXT) systemimplmisc.o System_omc$(OBJEXT) \
+  Lapack_omc.o Settings_omc$(OBJEXT) \
+  UnitParserExt_omc.o unitparser.o \
+  IOStreamExt_omc.o Socket_omc.o getMemorySize.o
 
-OMC_OBJ = $(OMC_OBJ_BOOT) Print_omc.o serializer.o \
-   HpcOmSchedulerExt_omc$(OBJEXT) HpcOmBenchmarkExt_omc$(OBJEXT) TaskGraphResults_omc$(OBJEXT) \
-  IOStreamExt_omc.o ErrorMessage.o systemimplmisc.o \
-  UnitParserExt_omc.o unitparser.o BackendDAEEXT_omc.o Socket_omc.o matching.o matching_cheap.o \
-  Lapack_omc.o getMemorySize.o  $(OMCCORBASRC)
+OMC_OBJ_STUBS = corbaimpl_stub_omc.o
+
+OMC_OBJ_BOOT = $(OMC_OBJ_SHARED) $(OMC_OBJ_STUBS)
+
+OMC_OBJ = $(OMC_OBJ_SHARED) serializer.o \
+  HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o TaskGraphResults_omc.o \
+  ptolemyio_omc.o SimulationResults_omc.o \
+  BackendDAEEXT_omc.o matching.o matching_cheap.o \
+  FMI_omc.o $(OMCCORBASRC)
 
 # Database_omc.o
 
@@ -54,25 +60,25 @@ libomcruntime.a : $(OMC_OBJ)
 	rm -f $@
 	$(AR) -s -r $@ $(OMC_OBJ)
 
-libomcruntime-boot.a : $(OMC_OBJ)
+libomcruntime-boot.a : $(OMC_OBJ_BOOT)
 	rm -f $@
-	$(AR) -s -r $@ $(OMC_OBJ)
+	$(AR) -s -r $@ $(OMC_OBJ_BOOT)
 
 libomcruntime.dylib : $(OMC_OBJ)
 	rm -f $@
 	$(CXX) -shared $(RPATH) -install_name @rpath/$@ -o $@ $(OMC_OBJ) $(LDFLAGS) $(CXXFLAGS)
 
-libomcruntime-boot.dylib : $(OMC_OBJ)
+libomcruntime-boot.dylib : $(OMC_OBJ_BOOT)
 	rm -f $@
-	$(CXX) -shared $(RPATH) -install_name `pwd`/$@ -o $@ $(OMC_OBJ) $(LDFLAGS) $(CXXFLAGS)
+	$(CXX) -shared $(RPATH) -install_name `pwd`/$@ -o $@ $(OMC_OBJ_BOOT) $(LDFLAGS) $(CXXFLAGS)
 
 libomcruntime.so : $(OMC_OBJ)
 	rm -f $@
 	$(CXX) -shared $(RPATH) -o $@ $(OMC_OBJ) $(LDFLAGS)
 
-libomcruntime-boot.so : $(OMC_OBJ)
+libomcruntime-boot.so : $(OMC_OBJ_BOOT)
 	rm -f $@
-	$(CXX) -shared $(RPATH) -o $@ $(OMC_OBJ) $(LDFLAGS)
+	$(CXX) -shared $(RPATH) -o $@ $(OMC_OBJ_BOOT) $(LDFLAGS)
 
 libomcruntime-boot.dll : $(OMC_OBJ)
 	rm -f $@

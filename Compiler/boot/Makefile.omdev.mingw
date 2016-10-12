@@ -15,7 +15,7 @@ LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -lOpenModelicaRuntimeC \
 -lModelicaExternalC -lm \
 -lomantlr3 -lregex -lwsock32 -llpsolve55 -luuid -lole32 $(GSLIB) -lws2_32 \
--lRpcrt4 -lopenblas -fopenmp -lomcgc -lpthread $(FMILIB) -lshlwapi -liconv -lintl -lmetis \
+-lRpcrt4 -lopenblas -fopenmp -lomcgc -lpthread $(FMILIB_OR_BOOT) -lshlwapi -liconv -lintl -lmetis \
 -Wl,--enable-stdcall-fixup -lstdc++ -static-libgcc \
 -L../../3rdParty/lpsolve/build/lib \
 -lgfortran -ltre -lomniORB420_rt -lomnithread40_rt \
