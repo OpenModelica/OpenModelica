@@ -322,6 +322,7 @@ algorithm
   _ := match cls
     case Instance.INSTANCED_CLASS()
       algorithm
+        tree := InstanceTree.setCurrentScope(tree, InstNode.index(classNode));
         //tree := InstanceTree.pushHierarchy(classNode, tree);
         (eq, tree) := typeEquations(cls.equations, tree);
         (ieq, tree) := typeEquations(cls.initialEquations, tree);

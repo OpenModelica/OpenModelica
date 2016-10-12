@@ -311,8 +311,10 @@ algorithm
 
     case Equation.EQUALITY()
       algorithm
-        lhs := Prefix.prefixExp(eq.lhs, prefix);
-        rhs := Prefix.prefixExp(eq.rhs, prefix);
+        //lhs := Prefix.prefixExp(eq.lhs, prefix);
+        lhs := eq.lhs;
+        //rhs := Prefix.prefixExp(eq.rhs, prefix);
+        rhs := eq.rhs;
       then
         DAE.EQUATION(lhs, rhs, DAE.emptyElementSource) :: elements;
 
