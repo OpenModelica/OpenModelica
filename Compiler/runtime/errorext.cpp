@@ -238,7 +238,7 @@ extern void ErrorImpl__deleteNumCheckpoints(threadData_t *threadData, int n)
   pair<int,string> cp;
   // fprintf(stderr, "delCheckpoint(%s)\n",id); fflush(stderr);
   if (members->checkPoints->size() < n) {
-    fprintf(stderr, "ERROREXT: calling ErrorImpl__rollbackNumCheckpoints with n: %d > %d\n", n, members->checkPoints->size());
+    std::cerr << "ERROREXT: calling ErrorImpl__deleteNumCheckpoints with n: " << n << " > " << members->checkPoints->size() << std::endl;
     exit(1);
   }
   while (--n >= 0) {
@@ -296,7 +296,7 @@ extern void ErrorImpl__rollbackNumCheckpoints(threadData_t *threadData, int n)
 {
   errorext_members *members = getMembers(threadData);
   if (members->checkPoints->size() < n) {
-    fprintf(stderr, "ERROREXT: calling ErrorImpl__rollbackNumCheckpoints with n: %d > %d\n", n, members->checkPoints->size());
+    std::cerr << "ERROREXT: calling ErrorImpl__rollbackNumCheckpoints with n: " << n << " > " << members->checkPoints->size() << std::endl;
     exit(1);
   }
   while (--n >= 0) {

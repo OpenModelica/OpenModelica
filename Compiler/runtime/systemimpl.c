@@ -1200,7 +1200,7 @@ static const char* SystemImpl__getUUIDStr(void)
   RpcStringFree(&tmp);
 #elif defined(WITH_LIBUUID)
   uuid_t uu;
-  uuid_generate(&uu);
+  uuid_generate(uu);
   uuid_unparse_lower(uu, uuidStr);
 #endif
   return uuidStr;

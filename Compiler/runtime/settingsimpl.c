@@ -218,7 +218,7 @@ char* Settings_getHomeDir(int runningTestsuite)
   return "%APPDATA%";
 #endif
   if (homePath == NULL || runningTestsuite) {
-    return "";
+    return omc_alloc_interface.malloc_strdup("");
   }
   return omc_alloc_interface.malloc_strdup(homePath);
 }
