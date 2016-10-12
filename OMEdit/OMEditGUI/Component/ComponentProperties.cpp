@@ -135,7 +135,7 @@ void Parameter::updateNameLabel()
 void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified)
 {
   // convert the value to display unit
-  if (!fromUnit.isEmpty()) {
+  if (!fromUnit.isEmpty() && mpUnitComboBox->currentText().compare(fromUnit) != 0) {
     bool ok = true;
     qreal realValue = value.toDouble(&ok);
     if (ok) {
