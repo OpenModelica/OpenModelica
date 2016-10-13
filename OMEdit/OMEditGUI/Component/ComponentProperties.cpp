@@ -74,7 +74,7 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
    * A derived class can be inherited, so look recursively.
    */
   QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  QString unit = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className).value("unit");
+  QString unit = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className, mpComponent).value("unit");
   if (unit.isEmpty()) {
     if (!pOMCProxy->isBuiltinType(mpComponent->getComponentInfo()->getClassName())) {
       unit = pOMCProxy->getDerivedClassModifierValue(mpComponent->getComponentInfo()->getClassName(), "unit");
@@ -89,7 +89,7 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
    * If no displayUnit is found then check it in the derived class modifier value.
    * A derived class can be inherited, so look recursively.
    */
-  QString displayUnit = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className).value("displayUnit");
+  QString displayUnit = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className, mpComponent).value("displayUnit");
   if (displayUnit.isEmpty()) {
     if (!pOMCProxy->isBuiltinType(mpComponent->getComponentInfo()->getClassName())) {
       displayUnit = pOMCProxy->getDerivedClassModifierValue(mpComponent->getComponentInfo()->getClassName(), "displayUnit");
@@ -774,7 +774,7 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     if (!isParameter) {
       OMCProxy *pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
       QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-      QMap<QString, QString> modifiers = pComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className);
+      QMap<QString, QString> modifiers = pComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className, pComponent);
       QMap<QString, QString>::iterator modifiersIterator;
       for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
         if (modifiersIterator.key().compare("start") == 0) {
@@ -864,7 +864,7 @@ void ComponentParameters::fetchComponentModifiers()
   }
   OMCProxy *pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  QMap<QString, QString> modifiers = pComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className);
+  QMap<QString, QString> modifiers = pComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className, mpComponent);
   QMap<QString, QString>::iterator modifiersIterator;
   for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
     QString parameterName = StringHandler::getFirstWordBeforeDot(modifiersIterator.key());
@@ -1019,9 +1019,9 @@ void ComponentParameters::updateComponentParameters()
   QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   bool valueChanged = false;
   // save the Component modifiers
-  QMap<QString, QString> oldComponentModifiersMap = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className);
+  QMap<QString, QString> oldComponentModifiersMap = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className, mpComponent);
   // new Component modifiers
-  QMap<QString, QString> newComponentModifiersMap = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className);
+  QMap<QString, QString> newComponentModifiersMap = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className, mpComponent);
   QMap<QString, QString> newComponentExtendsModifiersMap;
   // any parameter changed
   foreach (Parameter *pParameter, mParametersList) {

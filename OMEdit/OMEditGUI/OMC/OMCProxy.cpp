@@ -958,15 +958,15 @@ QStringList OMCProxy::getComponentModifierNames(QString className, QString name)
 }
 
 /*!
-  Gets the component modifier value.
-  \param className - is the name of the class whose modifier value is retrieved.
-  \param name - is the name of the component.
-  \return the value of modifier.
-  */
+ * \brief OMCProxy::getComponentModifierValue
+ * Gets the component modifier value excluding the submodifiers. Only returns the binding.
+ * \param className - is the name of the class whose modifier value is retrieved.
+ * \param name - is the name of the component.
+ * \return the value of modifier.
+ */
 QString OMCProxy::getComponentModifierValue(QString className, QString name)
 {
-  sendCommand("getComponentModifierValue(" + className + "," + name + ")");
-  return getResult().trimmed();
+  return mpOMCInterface->getComponentModifierValue(className, name);
 }
 
 /*!
@@ -1007,6 +1007,18 @@ bool OMCProxy::setComponentModifierValue(QString className, QString modifierName
 bool OMCProxy::removeComponentModifiers(QString className, QString name)
 {
   return mpOMCInterface->removeComponentModifiers(className, name, true);
+}
+
+/*!
+ * \brief OMCProxy::getComponentModifierValues
+ * Gets the component modifier value including the submodifiers. Used to get the modifier values of record.
+ * \param className - is the name of the class whose modifier value is retrieved.
+ * \param name - is the name of the component.
+ * \return the value of modifier.
+ */
+QString OMCProxy::getComponentModifierValues(QString className, QString name)
+{
+  return mpOMCInterface->getComponentModifierValues(className, name);
 }
 
 QStringList OMCProxy::getExtendsModifierNames(QString className, QString extendsClassName)

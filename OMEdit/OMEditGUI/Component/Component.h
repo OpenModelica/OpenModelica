@@ -65,7 +65,7 @@ public:
   ComponentInfo(ComponentInfo *pComponentInfo, QObject *pParent = 0);
   void updateComponentInfo(const ComponentInfo *pComponentInfo);
   void parseComponentInfoString(QString value);
-  void fetchModifiers(OMCProxy *pOMCProxy, QString className);
+  void fetchModifiers(OMCProxy *pOMCProxy, QString className, Component *pComponent);
   void fetchParameterValue(OMCProxy *pOMCProxy, QString className);
   void applyDefaultPrefixes(QString defaultPrefixes);
   void setClassName(QString className) {mClassName = className;}
@@ -98,7 +98,7 @@ public:
   bool isModifiersLoaded() const {return mModifiersLoaded;}
   void setModifiersMap(QMap<QString, QString> modifiersMap) {mModifiersMap = modifiersMap;}
   QMap<QString, QString> getModifiersMapWithoutFetching() const {return mModifiersMap;}
-  QMap<QString, QString> getModifiersMap(OMCProxy *pOMCProxy, QString className);
+  QMap<QString, QString> getModifiersMap(OMCProxy *pOMCProxy, QString className, Component *pComponent);
   bool isParameterValueLoaded() const {return mParameterValueLoaded;}
   void setParameterValue(QString parameterValue) {mParameterValue = parameterValue;}
   QString getParameterValueWithoutFetching() const {return mParameterValue;}
@@ -144,6 +144,8 @@ private:
   QString mModelFile;
   QString mPosition;
   QString mAngle321;
+
+  bool isModiferClassRecord(QString modifierName, Component *pComponent);
 };
 
 class Component : public QObject, public QGraphicsItem

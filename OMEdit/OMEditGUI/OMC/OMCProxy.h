@@ -129,6 +129,7 @@ public:
   QString getComponentModifierValue(QString className, QString name);
   bool setComponentModifierValue(QString className, QString name, QString modifierValue);
   bool removeComponentModifiers(QString className, QString name);
+  QString getComponentModifierValues(QString className, QString name);
   QStringList getExtendsModifierNames(QString className, QString extendsClassName);
   QString getExtendsModifierValue(QString className, QString extendsClassName, QString modifierName);
   bool setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue);

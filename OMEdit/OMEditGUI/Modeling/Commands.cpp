@@ -614,7 +614,7 @@ void UpdateComponentParametersCommand::redo()
       QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
       pOMCProxy->setComponentModifierValue(className, modifierKey, modifierValue);
     }
-    mpComponent->getComponentInfo()->fetchModifiers(pOMCProxy, className);
+    mpComponent->getComponentInfo()->fetchModifiers(pOMCProxy, className, mpComponent);
   } else {
     QString inheritedClassName;
     inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
@@ -647,7 +647,7 @@ void UpdateComponentParametersCommand::undo()
       QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
       pOMCProxy->setComponentModifierValue(className, modifierKey, modifierValue);
     }
-    mpComponent->getComponentInfo()->fetchModifiers(pOMCProxy, className);
+    mpComponent->getComponentInfo()->fetchModifiers(pOMCProxy, className, mpComponent);
   } else {
     QString inheritedClassName;
     inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();

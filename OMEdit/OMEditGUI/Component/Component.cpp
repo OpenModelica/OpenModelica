@@ -222,15 +222,31 @@ void ComponentInfo::parseComponentInfoString(QString value)
  * Fetches the Component modifiers if any.
  * \param pOMCProxy
  * \param className
+ * \param pComponent
  */
-void ComponentInfo::fetchModifiers(OMCProxy *pOMCProxy, QString className)
+void ComponentInfo::fetchModifiers(OMCProxy *pOMCProxy, QString className, Component *pComponent)
 {
   mModifiersMap.clear();
   QStringList componentModifiersList = pOMCProxy->getComponentModifierNames(className, mName);
   foreach (QString componentModifier, componentModifiersList) {
-    QString originalModifierName = QString(mName).append(".").append(componentModifier);
-    QString componentModifierValue = pOMCProxy->getComponentModifierValue(className, originalModifierName);
-    mModifiersMap.insert(componentModifier, componentModifierValue);
+    QString modifierName = StringHandler::getFirstWordBeforeDot(componentModifier);
+    // if we have already read the record modifier then continue
+    if (mModifiersMap.contains(modifierName)) {
+      continue;
+    }
+    /* Ticket:3626
+     * If a modifier class is a record we read the modifer value with submodifiers using OMCProxy::getComponentModifierValues()
+     * Otherwise read the binding value using OMCProxy::getComponentModifierValue()
+     */
+    if (isModiferClassRecord(modifierName, pComponent)) {
+      QString originalModifierName = QString(mName).append(".").append(modifierName);
+      QString componentModifierValue = pOMCProxy->getComponentModifierValues(className, originalModifierName);
+      mModifiersMap.insert(modifierName, componentModifierValue);
+    } else {
+      QString originalModifierName = QString(mName).append(".").append(componentModifier);
+      QString componentModifierValue = pOMCProxy->getComponentModifierValue(className, originalModifierName);
+      mModifiersMap.insert(componentModifier, componentModifierValue);
+    }
   }
 }
 
@@ -292,12 +308,13 @@ void ComponentInfo::setArrayIndex(QString arrayIndex)
  * Fetches the Component modifiers if needed and return them.
  * \param pOMCProxy
  * \param className
+ * \param pComponent
  * \return
  */
-QMap<QString, QString> ComponentInfo::getModifiersMap(OMCProxy *pOMCProxy, QString className)
+QMap<QString, QString> ComponentInfo::getModifiersMap(OMCProxy *pOMCProxy, QString className, Component *pComponent)
 {
   if (!mModifiersLoaded) {
-    fetchModifiers(pOMCProxy, className);
+    fetchModifiers(pOMCProxy, className, pComponent);
     mModifiersLoaded = true;
   }
   return mModifiersMap;
@@ -350,6 +367,43 @@ bool ComponentInfo::operator==(const ComponentInfo &componentInfo) const
 bool ComponentInfo::operator!=(const ComponentInfo &componentInfo) const
 {
   return !operator==(componentInfo);
+}
+
+/*!
+ * \brief ComponentInfo::isModiferClassRecord
+ * Returns true if a modifier class is a record.
+ * \param modifierName
+ * \param pComponent
+ * \return
+ */
+bool ComponentInfo::isModiferClassRecord(QString modifierName, Component *pComponent)
+{
+  bool result = false;
+  foreach (Component *pInheritedComponent, pComponent->getInheritedComponentsList()) {
+    /* Since we use the parent ComponentInfo for inherited classes so we should not use
+     * pInheritedComponent->getComponentInfo()->getClassName() to get the name instead we should use
+     * pInheritedComponent->getLibraryTreeItem()->getNameStructure() to get the correct name of inherited class.
+     */
+    if (pInheritedComponent->getLibraryTreeItem() && pInheritedComponent->getLibraryTreeItem()->getName().compare(modifierName) == 0 &&
+        pInheritedComponent->getLibraryTreeItem()->getRestriction() == StringHandler::Record) {
+      return true;
+    }
+    result = isModiferClassRecord(modifierName, pInheritedComponent);
+    if (result) {
+      return result;
+    }
+  }
+  foreach (Component *pNestedComponent, pComponent->getComponentsList()) {
+    if (pNestedComponent->getName().compare(modifierName) == 0 && pNestedComponent->getLibraryTreeItem() &&
+        pNestedComponent->getLibraryTreeItem()->getRestriction() == StringHandler::Record) {
+      return true;
+    }
+    result = isModiferClassRecord(modifierName, pNestedComponent);
+    if (result) {
+      return result;
+    }
+  }
+  return result;
 }
 
 Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformation, QPointF position, QStringList dialogAnnotation,
@@ -975,7 +1029,7 @@ QString Component::getParameterDisplayString(QString parameterName)
   QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   QString displayString = "";
   /* case 1 */
-  displayString = mpComponentInfo->getModifiersMap(pOMCProxy, className).value(parameterName, "");
+  displayString = mpComponentInfo->getModifiersMap(pOMCProxy, className, this).value(parameterName, "");
   /* case 2 */
   if (displayString.isEmpty()) {
     if (mpLibraryTreeItem) {
