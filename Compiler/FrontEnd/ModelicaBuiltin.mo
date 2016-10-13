@@ -2879,6 +2879,43 @@ annotation(
   preferredView="text");
 end getComponentModifierNames;
 
+function getComponentModifierValue
+  input TypeName class_;
+  input TypeName modifier;
+  output String value;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the modifier value (only the binding exculding submodifiers) of component.
+    For instance,
+      model A
+        B b1(a1(p1=5,p2=4));
+      end A;
+      getComponentModifierValue(A,b1.a1.p1) => 5
+      getComponentModifierValue(A,b1.a1.p2) => 4
+    See also <a href=\"modelica://OpenModelica.Scripting.getComponentModifierValues\">getComponentModifierValues()</a>.</p>
+</html>"),
+  preferredView="text");
+end getComponentModifierValue;
+
+function getComponentModifierValues
+  input TypeName class_;
+  input TypeName modifier;
+  output String value;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the modifier value (including the submodfiers) of component.
+    For instance,
+      model A
+        B b1(a1(p1=5,p2=4));
+      end A;
+      getComponentModifierValues(A,b1.a1) => (p1 = 5, p2 = 4)
+    See also <a href=\"modelica://OpenModelica.Scripting.getComponentModifierValue\">getComponentModifierValue()</a>.</p>
+</html>"),
+  preferredView="text");
+end getComponentModifierValues;
+
 function removeComponentModifiers
   input TypeName class_;
   input String componentName;

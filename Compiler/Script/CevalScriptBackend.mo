@@ -2244,6 +2244,34 @@ algorithm
       then
         (cache,v,st);
 
+    case (cache,_,"getComponentModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      equation
+        cr = Absyn.pathToCref(path);
+        if Absyn.crefIsIdent(cr) then
+          Absyn.CREF_IDENT(name = s1) = cr;
+          str = Interactive.getComponentBinding(classpath, s1, p);
+        else
+          s1 = Absyn.crefFirstIdent(cr);
+          cr_1 = Absyn.crefStripFirst(cr);
+          str = Interactive.getComponentModifierValue(Absyn.pathToCref(classpath), Absyn.CREF_IDENT(s1, {}), cr_1, p);
+        end if;
+      then
+        (cache,Values.STRING(str),st);
+
+    case (cache,_,"getComponentModifierValues",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      equation
+        cr = Absyn.pathToCref(path);
+        if Absyn.crefIsIdent(cr) then
+          Absyn.CREF_IDENT(name = s1) = cr;
+          str = Interactive.getComponentBinding(classpath, s1, p);
+        else
+          s1 = Absyn.crefFirstIdent(cr);
+          cr_1 = Absyn.crefStripFirst(cr);
+          str = Interactive.getComponentModifierValues(Absyn.pathToCref(classpath), Absyn.CREF_IDENT(s1, {}), cr_1, p);
+        end if;
+      then
+        (cache,Values.STRING(str),st);
+
     case (cache,_,"removeComponentModifiers",
         Values.CODE(Absyn.C_TYPENAME(path))::
       Values.STRING(str1)::

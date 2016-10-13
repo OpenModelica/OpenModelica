@@ -1498,23 +1498,6 @@ algorithm
       then
         getDefaultComponentPrefixes(Absyn.crefToPath(class_), p);
 
-    case "getComponentModifierValue"
-      algorithm
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = cr)} := args;
-
-        if Absyn.crefIsIdent(cr) then
-          Absyn.CREF_IDENT(name = name) := cr;
-          outResult := getComponentBinding(Absyn.crefToPath(class_), name, p);
-        else
-          name := Absyn.crefFirstIdent(cr);
-          subident := Absyn.crefStripFirst(cr);
-          outResult := getComponentModifierValue(class_,
-            Absyn.CREF_IDENT(name, {}), subident, p);
-        end if;
-      then
-        outResult;
-
     case "getComponentComment"
       algorithm
         {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef = cr)} := args;
@@ -6151,19 +6134,7 @@ algorithm
   end match;
 end findPathModification;
 
-protected function getComponentModifierValue
-"function: getComponentModifierValue(class,ident,subident,p) => resstr
-   Returns the modifier value of component ident for modifier subident.
-   For instance,
-     model A
-      B b1(a1(p1=0,p2=0));
-     end A;
-     getComponentModifierValues(A,b1,a1) => Code((p1=0,p2=0))
-   inputs:  (Absyn.ComponentRef, /* class */
-               Absyn.ComponentRef, /* variable name */
-               Absyn.ComponentRef, /* submodifier name */
-               Absyn.Program)
-   outputs: string"
+public function getComponentModifierValue
   input Absyn.ComponentRef classRef;
   input Absyn.ComponentRef varRef;
   input Absyn.ComponentRef subModRef;
@@ -6221,6 +6192,77 @@ algorithm
     end match;
   end while;
 end getModificationValue;
+
+public function getComponentModifierValues
+  input Absyn.ComponentRef inComponentRef1;
+  input Absyn.ComponentRef inComponentRef2;
+  input Absyn.ComponentRef inComponentRef3;
+  input Absyn.Program inProgram4;
+  output String outString;
+algorithm
+  outString := matchcontinue (inComponentRef1,inComponentRef2,inComponentRef3,inProgram4)
+    local
+      Absyn.Path p_class;
+      String name,res;
+      Absyn.Class cdef;
+      list<Absyn.Element> comps;
+      list<list<Absyn.ComponentItem>> compelts;
+      list<Absyn.ComponentItem> compelts_1;
+      Absyn.Modification mod;
+      Absyn.ComponentRef class_,ident,subident;
+      Absyn.Program p;
+      list<Absyn.ElementArg> elementArgLst;
+
+    case (class_,ident,subident,p)
+      equation
+        p_class = Absyn.crefToPath(class_);
+        Absyn.IDENT(name) = Absyn.crefToPath(ident);
+        cdef = getPathedClassInProgram(p_class, p);
+        comps = getComponentsInClass(cdef);
+        compelts = List.map(comps, getComponentitemsInElement);
+        compelts_1 = List.flatten(compelts);
+        {Absyn.COMPONENTITEM(component=Absyn.COMPONENT(modification=SOME(Absyn.CLASSMOD(elementArgLst=elementArgLst))))} = List.select1(compelts_1, componentitemNamed, name);
+        mod = getModificationValues(elementArgLst, Absyn.crefToPath(subident));
+        res = Dump.unparseModificationStr(mod);
+      then
+        res;
+    else "Error";
+  end matchcontinue;
+end getComponentModifierValues;
+
+protected function getModificationValues
+  "Helper function to getComponentModifierValues
+   Investigates modifications to find submodifier."
+  input list<Absyn.ElementArg> inAbsynElementArgLst;
+  input Absyn.Path inPath;
+  output Absyn.Modification outModification;
+algorithm
+  outModification:=
+  match (inAbsynElementArgLst,inPath)
+    local
+      Boolean f;
+      Absyn.Each each_;
+      Absyn.Path p1,p2;
+      Absyn.Modification mod,res;
+      Option<String> cmt;
+      list<Absyn.ElementArg> rest,args;
+      String name1,name2;
+    case ((Absyn.MODIFICATION(path = p1,modification = SOME(mod)) :: _),p2) guard Absyn.pathEqual(p1, p2)
+      then
+        mod;
+    case ((Absyn.MODIFICATION(path = Absyn.IDENT(name = name1),modification = SOME(Absyn.CLASSMOD(elementArgLst=args))) :: _),Absyn.QUALIFIED(name = name2,path = p2))
+      guard stringEq(name1, name2)
+      equation
+        res = getModificationValues(args, p2);
+      then
+        res;
+    case ((_ :: rest),_)
+      equation
+        mod = getModificationValues(rest, inPath);
+      then
+        mod;
+  end match;
+end getModificationValues;
 
 public function getComponentModifierNames
  "Return the modifiernames of a component"
