@@ -8537,10 +8537,11 @@ algorithm
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
         numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
+        isValueChangeable = match caus case SimCodeVar.INPUT() then true; else false; end match;
         // print("name: " + ComponentReference.printComponentRefStr(cr) + "indx: " + intString(indx) + "\n");
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, false, isProtected, hideResult, NONE());
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE());
   end match;
 end dlowvarToSimvar;
 
