@@ -62,7 +62,6 @@ OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
   mpLineStylePage = new LineStylePage(this);
   mpFillStylePage = new FillStylePage(this);
   mpPlottingPage = new PlottingPage(this);
-  mpAnimationPage = new AnimationPage(this);
   mpFigaroPage = new FigaroPage(this);
   mpDebuggerPage = new DebuggerPage(this);
   mpFMIPage = new FMIPage(this);
@@ -588,16 +587,6 @@ void OptionsDialog::readPlottingSettings()
     mpPlottingPage->setCurveThickness(mpSettings->value("curvestyle/thickness").toFloat());
   }
 }
-
-//! Reads the Animation section settings from omedit.ini
-void OptionsDialog::readAnimationSettings()
-{
-  // read the auto scale
-  if (mpSettings->contains("animation/autoScale")) {
-    mpPlottingPage->getAutoScaleCheckBox()->setChecked(mpSettings->value("animation/autoScale").toBool());
-  }
-}
-
 
 //! Reads the Fiagro section settings from omedit.ini
 void OptionsDialog::readFigaroSettings()
@@ -1232,7 +1221,6 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpLineStylePage);
   mpPagesWidget->addWidget(mpFillStylePage);
   mpPagesWidget->addWidget(mpPlottingPage);
-  mpPagesWidget->addWidget(mpAnimationPage);
   mpPagesWidget->addWidget(mpFigaroPage);
   mpPagesWidget->addWidget(mpDebuggerPage);
   mpPagesWidget->addWidget(mpFMIPage);
@@ -3696,104 +3684,6 @@ void PlottingPage::setCurveThickness(qreal thickness)
 qreal PlottingPage::getCurveThickness()
 {
   return mpCurveThicknessSpinBox->value();
-}
-
-//! @class AnimationPage
-//! @brief Creates an interface for animation settings
-
-//! Constructor
-//! @param pOptionsDialog is the pointer to OptionsDialog
-AnimationPage::AnimationPage(OptionsDialog *pOptionsDialog)
-  : QWidget(pOptionsDialog)
-{
-  mpOptionsDialog = pOptionsDialog;
-  // general groupbox
-  mpGeneralGroupBox = new QGroupBox(Helper::general);
-  // auto scale
-  mpAutoScaleCheckBox = new QCheckBox(tr("Auto Scale"));
-  mpAutoScaleCheckBox->setToolTip(tr("Auto scale the plot to fit in view when variable is plotted."));
-  // set general groupbox layout
-  QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
-  pGeneralGroupBoxLayout->addWidget(mpAutoScaleCheckBox, 0, 0);
-  mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
-  // Plotting View Mode
-  mpPlottingViewModeGroupBox = new QGroupBox(tr("Plotting View Mode"));
-  mpPlottingTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
-  mpPlottingTabbedViewRadioButton->setChecked(true);
-  mpPlottingSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
-  QButtonGroup *pPlottingViewModeButtonGroup = new QButtonGroup;
-  pPlottingViewModeButtonGroup->addButton(mpPlottingTabbedViewRadioButton);
-  pPlottingViewModeButtonGroup->addButton(mpPlottingSubWindowViewRadioButton);
-  // plotting view radio buttons layout
-  QHBoxLayout *pPlottingRadioButtonsLayout = new QHBoxLayout;
-  pPlottingRadioButtonsLayout->addWidget(mpPlottingTabbedViewRadioButton);
-  pPlottingRadioButtonsLayout->addWidget(mpPlottingSubWindowViewRadioButton);
-  // set the layout of plotting view mode group
-  QGridLayout *pPlottingViewModeLayout = new QGridLayout;
-  pPlottingViewModeLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pPlottingViewModeLayout->addLayout(pPlottingRadioButtonsLayout, 0, 0);
-  mpPlottingViewModeGroupBox->setLayout(pPlottingViewModeLayout);
-  mpCurveStyleGroupBox = new QGroupBox(Helper::curveStyle);
-  // Curve Pattern
-  mpCurvePatternLabel = new Label(Helper::pattern);
-  mpCurvePatternComboBox = new QComboBox;
-  mpCurvePatternComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  mpCurvePatternComboBox->addItem("SolidLine", 1);
-  mpCurvePatternComboBox->addItem("DashLine", 2);
-  mpCurvePatternComboBox->addItem("DotLine", 3);
-  mpCurvePatternComboBox->addItem("DashDotLine", 4);
-  mpCurvePatternComboBox->addItem("DashDotDotLine", 5);
-  mpCurvePatternComboBox->addItem("Sticks", 6);
-  mpCurvePatternComboBox->addItem("Steps", 7);
-  // Curve Thickness
-  mpCurveThicknessLabel = new Label(Helper::thickness);
-  mpCurveThicknessSpinBox = new DoubleSpinBox;
-  mpCurveThicknessSpinBox->setRange(0, std::numeric_limits<double>::max());
-  mpCurveThicknessSpinBox->setValue(1);
-  mpCurveThicknessSpinBox->setSingleStep(1);
-  // set the layout
-  QGridLayout *pCurveStyleLayout = new QGridLayout;
-  pCurveStyleLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pCurveStyleLayout->addWidget(mpCurvePatternLabel, 0, 0);
-  pCurveStyleLayout->addWidget(mpCurvePatternComboBox, 0, 1);
-  pCurveStyleLayout->addWidget(mpCurveThicknessLabel, 1, 0);
-  pCurveStyleLayout->addWidget(mpCurveThicknessSpinBox, 1, 1);
-  mpCurveStyleGroupBox->setLayout(pCurveStyleLayout);
-  QVBoxLayout *pMainLayout = new QVBoxLayout;
-  pMainLayout->setAlignment(Qt::AlignTop);
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(mpGeneralGroupBox);
-  pMainLayout->addWidget(mpPlottingViewModeGroupBox);
-  pMainLayout->addWidget(mpCurveStyleGroupBox);
-  setLayout(pMainLayout);
-}
-
-/*!
- * \brief AnimationPage::setAnimationViewMode
- * Sets the animation view mode.
- * \param value
- */
-void AnimationPage::setAnimationViewMode(QString value)
-{
-  if (value.compare(Helper::subWindow) == 0) {
-    mpPlottingSubWindowViewRadioButton->setChecked(true);
-  } else {
-    mpPlottingTabbedViewRadioButton->setChecked(true);
-  }
-}
-
-/*!
- * \brief AnimationPage::getAnimationViewMode
- * Gets the plotting view mode.
- * \return
- */
-QString AnimationPage::getAnimationViewMode()
-{
-  if (mpPlottingSubWindowViewRadioButton->isChecked()) {
-    return Helper::subWindow;
-  } else {
-    return Helper::tabbed;
-  }
 }
 
 
