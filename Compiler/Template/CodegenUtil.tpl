@@ -100,6 +100,12 @@ template modelNamePrefix(SimCode simCode)
   // underscorePath(mi.name)
 end modelNamePrefix;
 
+template fileNamePrefix(SimCode simCode)
+::=
+  match simCode
+  case simCode as SIMCODE(__) then fileNamePrefix
+end fileNamePrefix;
+
 template crefStr(ComponentRef cr)
  "Generates the name of a variable for variable name array. Uses underscores for qualified names.
  a._b not a.b"

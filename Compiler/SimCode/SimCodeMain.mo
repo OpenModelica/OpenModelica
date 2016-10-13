@@ -526,13 +526,15 @@ protected
   Tpl.Text txt;
 
   function runTplWriteFile
-    extends PartialRunTpl(res=false);
+    extends PartialRunTpl;
     input FuncText func;
     input String file;
   protected
     Integer nErr;
   algorithm
+    res := (false,{});
     try
+      SimCodeUtil.resetFunctionIndex();
       if Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
         Tpl.textFileConvertLines(Tpl.tplCallWithFailErrorNoArg(func), file);
       else
@@ -540,34 +542,38 @@ protected
         Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(func,Tpl.redirectToFile(Tpl.emptyTxt, file)));
         Tpl.failIfTrue(Error.getNumErrorMessages() > nErr);
       end if;
-      res := true;
+      res := (true,SimCodeUtil.getFunctionIndex());
     else
       ErrorExt.moveMessagesToParentThread();
     end try;
   end runTplWriteFile;
 
   function runTpl
-    extends PartialRunTpl(res=false);
+    extends PartialRunTpl;
     input FuncText func;
   algorithm
+    res := (false,{});
     try
+      SimCodeUtil.resetFunctionIndex();
       Tpl.tplCallWithFailErrorNoArg(func);
-      res := true;
+      res := (true,SimCodeUtil.getFunctionIndex());
     else
       ErrorExt.moveMessagesToParentThread();
     end try;
   end runTpl;
 
   function runToStr
-    extends PartialRunTpl(res=false);
+    extends PartialRunTpl;
     input Func func;
     partial function Func
       output String str;
     end Func;
   algorithm
+    res := (false,{});
     try
+      SimCodeUtil.resetFunctionIndex();
       func();
-      res := true;
+      res := (true,SimCodeUtil.getFunctionIndex());
     else
       ErrorExt.moveMessagesToParentThread();
     end try;
@@ -575,16 +581,29 @@ protected
 
   function runCodegenFunc
     input PartialRunTpl func;
-    output Boolean res;
+    output tuple<Boolean,list<String>> res;
+  protected
+    Boolean b;
   algorithm
-    res := func();
-    if not res then
+    (res as (b,_)) := func();
+    if not b then
       print(System.dladdr(func) + " failed\n");
     end if;
   end runCodegenFunc;
 
+  function runToBoolean
+    input Func func;
+    output tuple<Boolean,list<String>> res;
+  protected
+    partial function Func
+      output Boolean b;
+    end Func;
+  algorithm
+    res := (func(),{});
+  end runToBoolean;
+
   partial function PartialRunTpl
-    output Boolean res;
+    output tuple<Boolean,list<String>> res;
   end PartialRunTpl;
 algorithm
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
@@ -593,6 +612,8 @@ algorithm
       String str, guid;
       list<PartialRunTpl> codegenFuncs;
       Integer numThreads;
+      list<tuple<Boolean,list<String>>> res;
+      list<String> strs, tmp;
 
     case "CSharp" equation
       Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
@@ -616,7 +637,7 @@ algorithm
 
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};
-        codegenFuncs := (function SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid)) :: codegenFuncs;
+        codegenFuncs := (function runToBoolean(func=function SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid))) :: codegenFuncs;
         dumpTaskSystemIfFlag(simCode);
         codegenFuncs := (function runTpl(func=function CodegenC.translateModel(in_a_simCode=simCode))) :: codegenFuncs;
         for f in {
@@ -653,11 +674,18 @@ algorithm
         // Test the parallel code generator in the test suite. Should give decent results given that the task is disk-intensive.
         numThreads := max(1, if Config.getRunningTestsuite() then min(2, System.numProcessors()) else Config.noProc());
         if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 then
-          true := max(func() for func in codegenFuncs);
+          res := list(func() for func in codegenFuncs);
         else
-          true := max(l for l in System.launchParallelTasks(numThreads, codegenFuncs, runCodegenFunc));
+          res := System.launchParallelTasks(numThreads, codegenFuncs, runCodegenFunc);
         end if;
-
+        strs := {};
+        for tpl in res loop
+          (true,tmp) := tpl;
+          strs := List.append_reverse(tmp, strs);
+        end for;
+        strs := listReverse(strs);
+        // write the makefile last!
+        Tpl.closeFile(Tpl.tplCallWithFailError3(CodegenC.simulationMakefile,Config.simulationCodeTarget(),simCode,strs,txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".makefile")));
       then ();
 
     case "JavaScript" equation
@@ -736,7 +764,9 @@ algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {"System.covertTextFileToCLiteral failed. Could not write "+str+"_info.c\n"});
           fail();
         end if;
+        SimCodeUtil.resetFunctionIndex();
         Tpl.tplNoret3(CodegenFMU.translateModel, simCode, FMUVersion, FMUType);
+        Tpl.closeFile(Tpl.tplCallWithFailError4(CodegenFMU.fmuMakefile,Config.simulationCodeTarget(),simCode,FMUVersion,SimCodeUtil.getFunctionIndex(),txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/Makefile.in")));
       then ();
     case (_,"Cpp")
       equation

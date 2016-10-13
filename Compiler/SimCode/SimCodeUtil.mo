@@ -92,6 +92,7 @@ import ExpressionSolve;
 import Flags;
 import FMI;
 import GC;
+import Global;
 import Graph;
 import HashSet;
 import HashTableStringToUnit;
@@ -449,7 +450,7 @@ algorithm
 
       residualVars := rewriteIndex(residualVars, 0);
       crefToSimVarHT:= List.fold(residualVars,addSimVarToHashTable,crefToSimVarHT);
-	  algebraicVars := sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
+    algebraicVars := sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
       daeModeConf := match Flags.getConfigEnum(Flags.DAE_MODE) case 2 then SimCode.ALL_EQUATIONS(); case 3 then SimCode.DYNAMIC_EQUATIONS(); end match;
       daeModeData := SOME(SimCode.DAEMODEDATA(daeEquations, daeModeSP, residualVars, algebraicVars, daeModeConf));
     else
@@ -519,6 +520,7 @@ algorithm
                               SymbolicJacs,
                               simSettingsOpt,
                               filenamePrefix,
+                              if isFMU then (filenamePrefix+".fmutmp/sources/") else "",
                               HpcOmSimCode.emptyHpcomData,
                               varToArrayIndexMapping,
                               varToIndexMapping,
@@ -12911,6 +12913,31 @@ algorithm
     else -1;
   end match;
 end getInputIndex;
+
+public function resetFunctionIndex
+algorithm
+  setGlobalRoot(Global.codegenFunctionList, DoubleEndedList.fromList({}));
+end resetFunctionIndex;
+
+public function addFunctionIndex
+  input String prefix, suffix;
+  output String newName;
+protected
+  DoubleEndedList<String> delst;
+algorithm
+  delst := getGlobalRoot(Global.codegenFunctionList);
+  newName := prefix + String(DoubleEndedList.length(delst)) + suffix;
+  DoubleEndedList.push_back(delst, newName);
+end addFunctionIndex;
+
+public function getFunctionIndex
+  output list<String> files;
+protected
+  DoubleEndedList<String> delst;
+algorithm
+  delst := getGlobalRoot(Global.codegenFunctionList);
+  files := DoubleEndedList.toListAndClear(delst);
+end getFunctionIndex;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

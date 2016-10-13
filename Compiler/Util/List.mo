@@ -1389,11 +1389,20 @@ public function partition<T>
   output list<list<T>> outPartitions = {};
 protected
   list<T> lst = inList, part;
+  Integer length;
 algorithm
   true := inPartitionLength > 0;
+  length := listLength(inList);
+
+  if length == 0 then
+    return;
+  elseif inPartitionLength >= length then
+    outPartitions := {inList};
+    return;
+  end if;
 
   // Split the list into partitions.
-  for i in 1:div(listLength(inList), inPartitionLength) loop
+  for i in 1:div(length, inPartitionLength) loop
     (part, lst) := split(lst, inPartitionLength);
     outPartitions := part :: outPartitions;
   end for;
@@ -1405,6 +1414,28 @@ algorithm
 
   outPartitions := listReverseInPlace(outPartitions);
 end partition;
+
+public function balancedPartition<T>
+  "Partitions a list of elements into even sublists of maximum length n.
+     Example: partition({1, 2, 3, 4, 5}, 2) => {{1, 2}, {3, 4}, {5}}
+   The number of partitions is the same as partition(), but chosen to be
+   as balanced in length as possible.
+  "
+  input list<T> lst;
+  input Integer maxLength;
+  output list<list<T>> outPartitions;
+protected
+  Integer length, n;
+algorithm
+  true := maxLength > 0;
+  if listEmpty(lst) then
+    outPartitions := {};
+    return;
+  end if;
+  length := listLength(lst);
+  n := intDiv(length-1, maxLength)+1;
+  outPartitions := partition(lst, intDiv(length-1, n)+1);
+end balancedPartition;
 
 public function sublist<T>
   "Returns a sublist determined by an offset and length.

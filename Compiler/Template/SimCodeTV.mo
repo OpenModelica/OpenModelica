@@ -74,6 +74,12 @@ package builtin
     output Integer c;
   end intDiv;
 
+  function intMod
+    input Integer a;
+    input Integer b;
+    output Integer c;
+  end intMod;
+
   function intEq
     input Integer a;
     input Integer b;
@@ -311,6 +317,7 @@ package SimCode
       list<JacobianMatrix> jacobianMatrixes;
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
+      String fullPathPrefix; // Used for FMI where code is not generated in the same directory
       HpcOmSimCode.HpcOmData hpcomData;
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       Option<FmiModelStructure> modelStructure;
@@ -906,6 +913,15 @@ package SimCodeUtil
     input SimCodeVar.SimVar var;
     output Integer inputIndex;
   end getInputIndex;
+
+  function resetFunctionIndex
+  end resetFunctionIndex;
+
+  function addFunctionIndex
+    input String prefix;
+    input String suffix;
+    output String newName;
+  end addFunctionIndex;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
@@ -1095,7 +1111,7 @@ package BackendDAE
     record ALG_STATE "algebraic state"
       VarKind oldKind;
     end ALG_STATE;
-	record DAE_RESIDUAL_VAR end DAE_RESIDUAL_VAR; // variable kind used for DAEmode
+  record DAE_RESIDUAL_VAR end DAE_RESIDUAL_VAR; // variable kind used for DAEmode
   end VarKind;
 
   uniontype SubClock
@@ -2989,6 +3005,13 @@ package List
     output list<list<ElementType>> outPartitions;
   end partition;
 
+  function balancedPartition
+    replaceable type ElementType subtypeof Any;
+    input list<ElementType> inList;
+    input Integer inPartitionLength;
+    output list<list<ElementType>> outPartitions;
+  end balancedPartition;
+
   function unzipSecond
     replaceable type Type_b subtypeof Any;
     input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
@@ -3001,6 +3024,13 @@ package List
     input list<ElementType> inList;
     output ElementType val;
   end last;
+
+  function partition
+    replaceable type T subtypeof Any;
+    input list<T> inList;
+    input Integer inPartitionLength;
+    output list<list<T>> outPartitions;
+  end partition;
 end List;
 
 package ComponentReference
@@ -3307,6 +3337,7 @@ package Flags
   constant DebugFlag FMU_EXPERIMENTAL;
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;
+  constant ConfigFlag EQUATIONS_PER_FILE;
 
   function isSet
     input DebugFlag inFlag;

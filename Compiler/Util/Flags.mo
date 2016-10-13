@@ -1326,6 +1326,9 @@ constant ConfigFlag DYNAMIC_TEARING_FOR_INITIALIZATION = CONFIG_FLAG(104, "dynam
 constant ConfigFlag PREFER_TVARS_WITH_START_VALUE = CONFIG_FLAG(105, "preferTVarsWithStartValue",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Util.gettext("Prefer tearing variables with start value for initialization."));
+constant ConfigFlag EQUATIONS_PER_FILE = CONFIG_FLAG(106, "equationsPerFile",
+  NONE(), EXTERNAL(), INT_FLAG(2000), NONE(),
+  Util.gettext("Generate code for at most this many equations per C-file (partially implemented in the compiler)."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1436,7 +1439,8 @@ constant list<ConfigFlag> allConfigFlags = {
   TOTAL_TEARING,
   IGNORE_SIMULATION_FLAGS_ANNOTATION,
   DYNAMIC_TEARING_FOR_INITIALIZATION,
-  PREFER_TVARS_WITH_START_VALUE
+  PREFER_TVARS_WITH_START_VALUE,
+  EQUATIONS_PER_FILE
 };
 
 public function new

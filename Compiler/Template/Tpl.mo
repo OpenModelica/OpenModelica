@@ -2073,12 +2073,12 @@ algorithm
   end matchcontinue;
 end tplCallWithFailError2;
 
-protected function tplCallWithFailError3
+function tplCallWithFailError3
   input Tpl_Fun inFun;
   input ArgType1 inArgA;
   input ArgType2 inArgB;
   input ArgType3 inArgC;
-  output Text outTxt;
+  input output Text txt = emptyTxt;
 
   partial function Tpl_Fun
     input Text in_txt;
@@ -2087,31 +2087,22 @@ protected function tplCallWithFailError3
     input ArgType3 inArgC;
     output Text out_txt;
   end Tpl_Fun;
-protected
-  ArgType1 argA;
-  ArgType2 argB;
-  ArgType3 argC;
-  Text txt;
 algorithm
-  outTxt := matchcontinue(inFun, inArgA, inArgB, inArgC)
-    case(_, argA, argB, argC)
-      equation
-        txt = inFun(emptyTxt, argA, argB, argC);
-      then txt;
-    else
-      equation
-        addTemplateErrorFunc(3, inFun);
-      then fail();
-  end matchcontinue;
+  try
+    txt := inFun(txt, inArgA, inArgB, inArgC);
+  else
+    addTemplateErrorFunc(3, inFun);
+    fail();
+  end try;
 end tplCallWithFailError3;
 
-protected function tplCallWithFailError4
+function tplCallWithFailError4
   input Tpl_Fun func;
   input ArgType1 argA;
   input ArgType2 argB;
   input ArgType3 argC;
   input ArgType4 argD;
-  output Text txt;
+  input output Text txt = emptyTxt;
 
   partial function Tpl_Fun
     input Text in_txt;
@@ -2123,7 +2114,7 @@ protected function tplCallWithFailError4
   end Tpl_Fun;
 algorithm
   try
-    txt := func(emptyTxt, argA, argB, argC, argD);
+    txt := func(txt, argA, argB, argC, argD);
   else
     addTemplateErrorFunc(4, func);
     fail();
@@ -2473,6 +2464,9 @@ public function redirectToFile
 protected
   File.File file = File.File();
 algorithm
+  if Config.getRunningTestsuite() then
+    System.appendFile(Config.getRunningTestsuiteFile(), fileName + "\n");
+  end if;
   File.open(file, fileName, File.Mode.Write);
   text := writeText(FILE_TEXT(File.getReference(file), arrayCreate(1, 0), arrayCreate(1, 0), arrayCreate(1, true), arrayCreate(1, {})), text);
 end redirectToFile;
