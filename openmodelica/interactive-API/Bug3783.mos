@@ -35,7 +35,7 @@ list(Bug3783); getErrorString();
 // ""
 // {"p"}
 // ""
-// 10e5
+// "10e5"
 // ""
 // "model Bug3783
 //   replaceable package liquid = Modelica.Media.Water.StandardWater;

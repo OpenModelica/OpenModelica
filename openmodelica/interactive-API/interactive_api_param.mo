@@ -120,3 +120,16 @@ end D2;
 model E
   A a(p1=1,p2=2);
 end E;
+
+record R
+  parameter Real a=1;
+  parameter Real b=2;
+end R;
+
+model F
+  R r;
+end F;
+
+model G
+  F f(r(a=3,b=4));
+end G;

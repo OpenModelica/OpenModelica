@@ -8187,7 +8187,7 @@ getDocumentationAnnotation(Modelica.UsersGuide.Contact); getErrorString();
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentModifierValue(Modelica.Electrical.Analog.Basic.Resistor, R.start)
-// 1
+// "1"
 // Evaluating: getErrorString()
 // ""
 // Evaluating: removeComponentModifiers(Modelica.Electrical.Analog.Basic.Resistor, "R")

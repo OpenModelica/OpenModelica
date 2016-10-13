@@ -547,15 +547,15 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentModifierValue(TestPack.MyModel, r1)
-// Resistor(R = 2)
+// "Resistor(R = 2)"
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentModifierValue(TestPack.MyModel, r1.start)
-// 2
+// "2"
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentModifierValue(TestPack.MyModel, r1.min)
-// 10
+// "10"
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(TestPack.MyModel)
