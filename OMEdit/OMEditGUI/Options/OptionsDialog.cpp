@@ -1047,9 +1047,7 @@ void OptionsDialog::saveFMISettings()
   // save platforms
   QStringList platforms;
   QString linking = mpFMIPage->getLinkingComboBox()->itemData(mpFMIPage->getLinkingComboBox()->currentIndex()).toString();
-  if (linking.compare("none") != 0) {
-    platforms.append(linking);
-  }
+  platforms.append(linking);
   int i = 0;
   while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
     if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
