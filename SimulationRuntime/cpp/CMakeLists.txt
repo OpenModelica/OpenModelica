@@ -98,6 +98,9 @@ SET(OMCFactoryName ${LIBPREFIX}OMCFactory${LIBSUFFIX})
 SET(MathName ${LIBPREFIX}Math${LIBSUFFIX})
 SET(ModelicaExternalName ModelicaExternalC) # only static version
 SET(ModelicaTablesName ModelicaStandardTables) # only static version
+SET(LibZName zlib) # only static version
+SET(ModelicaMatIOName ModelicaMatIO) # only static version
+
 SET(SimulationSettings ${LIBPREFIX}SimulationSettings${LIBSUFFIX})
 SET(SimControllerName ${LIBPREFIX}SimController${LIBSUFFIX})
 SET(CVodeName ${LIBPREFIX}CVode${LIBSUFFIX})
