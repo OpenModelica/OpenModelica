@@ -715,6 +715,9 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   QString FMUName = mpOptionsDialog->getFMIPage()->getFMUNameTextBox()->text();
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QString> platforms = pSettings->value("FMIExport/Platforms").toStringList();
+  int index = platforms.indexOf("none");
+  if (index > -1)
+    platforms.removeAt(index);
   if (mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms)) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
                                                 .arg(FMUName.isEmpty() ? pLibraryTreeItem->getNameStructure() : FMUName)
