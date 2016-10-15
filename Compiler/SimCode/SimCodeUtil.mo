@@ -12569,7 +12569,7 @@ end getVariableIndex;
 public function getValueReference
   "returns the value reference of a variable for direct memory access
    considering aliases and array storage order
-   author: rfranke"
+   author: rfranke and mwalther and vwaurich and sjoelund"
   input SimCodeVar.SimVar inSimVar;
   input SimCode.SimCode inSimCode;
   input Boolean inElimNegAliases;
@@ -12577,18 +12577,18 @@ public function getValueReference
 protected
   DAE.ComponentRef cref;
 algorithm
-  if Config.simCodeTarget()=="Cpp" then
-    valueReference := getVarIndexByMapping(inSimCode.varToArrayIndexMapping, inSimVar.name, false, "-1");
+  if Config.simCodeTarget() == "Cpp" then
+    valueReference := getVarIndexByMapping(inSimCode.varToArrayIndexMapping, inSimVar.name, true, "-1");
     if stringEqual(valueReference, "-1") then
       Error.addInternalError("invalid return value from getVarIndexByMapping for "+simVarString(inSimVar), sourceInfo());
     end if;
-    return;
+  else
+    valueReference := match inSimVar
+      case SimCodeVar.SIMVAR(aliasvar = SimCodeVar.ALIAS(varName = cref))
+        then getDefaultValueReference(SimCodeFunctionUtil.cref2simvar(cref, inSimCode), inSimCode.modelInfo.varInfo);
+      else getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
+    end match;
   end if;
-  valueReference := match inSimVar
-    case SimCodeVar.SIMVAR(aliasvar = SimCodeVar.ALIAS(varName = cref))
-      then getDefaultValueReference(SimCodeFunctionUtil.cref2simvar(cref, inSimCode), inSimCode.modelInfo.varInfo);
-    else getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
-  end match;
 end getValueReference;
 
 protected function getDefaultValueReference
