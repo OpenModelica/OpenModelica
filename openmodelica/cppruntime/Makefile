@@ -13,8 +13,8 @@ externalArrayInputTest.mos \
 mathFunctionsTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
-solveTest.mos
-
+solveTest.mos \
+testMatrixIO.mos
 
 FAILINGTESTFILES= \
 ClockInterval.mos \

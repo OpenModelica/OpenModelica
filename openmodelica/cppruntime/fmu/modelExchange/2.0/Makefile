@@ -3,6 +3,7 @@ TEST = ../../../../../rtest -v
 
 TESTFILES = \
 DIC_FMU2_CPP.mos \
+testFMU2MatrixIO.mos \
 testModelDescription.mos \
 testModelDescription2.mos
 
