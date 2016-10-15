@@ -255,7 +255,7 @@ IF(MSVC)
 			ENDIF(_source MATCHES \\.\(cc|cxx|cpp\)$)
 		ENDFOREACH()
 					
-    ENDIF(CMAKE_BUILD_TYPE MATCHES "Release")
+    ENDIF(CMAKE_BUILD_TYPE MATCHES "Release" AND PLATFORM MATCHES "dynamic")
 	
 ENDIF(MSVC)
 

@@ -89,8 +89,6 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define trunc(a) ((double)((int)(a)))
 #endif
 
-#define snprintf sprintf_s
-
 #define PATH_MAX _MAX_PATH
 #include <stdarg.h>
 char *realpath(const char *path, char *resolved_path);
@@ -104,8 +102,12 @@ unsigned int alarm (unsigned int seconds);
 #define isnan _isnan
 #define fpu_error(x) (isinf(x) || isnan(x))
 
+
+#if _MSC_VER < 1900 /* VS 2015 */
+#define snprintf sprintf_s
 #if !defined(snprintf)
 #define snprintf snprintf_s
+#endif
 #endif
 
 #else /* not msvc */

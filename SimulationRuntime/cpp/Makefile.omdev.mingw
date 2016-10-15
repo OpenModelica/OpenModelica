@@ -12,10 +12,6 @@ builddir_build=$(OMBUILDDIR)
 builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
-ifeq ($(VSVERSION),)
-VSVERSION = 2010
-endif
-VSCOMNTOOLS = $(VS140COMNTOOLS)
 
 OMDEVMSYS=$(shell cygpath $$OMDEV)
 
@@ -92,22 +88,27 @@ else
 endif
 
 getMSVCversion:
+	echo "Check for given VSVERSION (2010|2012|2013|2015) version: [VSVERSION=$(VSVERSION)]"
 ifeq ("$(VSVERSION)","")
-	ifeq ("$(VS140COMNTOOLS)", "") #check VS 2015
-		ifeq ("$(VS120COMNTOOLS)", "") #check VS 2013
-			ifeq ("$(VS110COMNTOOLS)", "") #check VS 2012
-				ifeq ("$(VS100COMNTOOLS)", "") #check VS 2010
-					echo "Could not identify Visual Studio version"
-				else
-					$(eval VSCOMNTOOLS=$(VS100COMNTOOLS))
-				endif
-			else
-				$(eval VSCOMNTOOLS=$(VS110COMNTOOLS))
-			endif
-		else
-			$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
-		endif
-	endif
+ifeq ("$(VS140COMNTOOLS)", "") #check VS 2015
+ifeq ("$(VS120COMNTOOLS)", "") #check VS 2013
+ifeq ("$(VS110COMNTOOLS)", "") #check VS 2012
+ifeq ("$(VS100COMNTOOLS)", "") #check VS 2010
+	echo "Could not identify Visual Studio version, setting it to VSVERSION=2010"
+	VSVERSION=2010
+	$(eval VSCOMNTOOLS=$(VS100COMNTOOLS))
+else
+	$(eval VSCOMNTOOLS=$(VS100COMNTOOLS))
+endif
+else
+	$(eval VSCOMNTOOLS=$(VS110COMNTOOLS))
+endif
+else
+	$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
+endif
+else
+	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
+endif
 else
 ifeq ($(VSVERSION),2010)
 	$(eval VSCOMNTOOLS=$(VS100COMNTOOLS))

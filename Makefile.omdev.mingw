@@ -10,10 +10,6 @@ endif
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=Debug
 endif
-ifeq ($(VSVERSION),)
-VSVERSION = 2010
-endif
-VSCOMNTOOLS = $(VS140COMNTOOLS)
 
 OMDEVMSYS=$(shell cygpath $$OMDEV)
 
@@ -85,22 +81,28 @@ CMINPACKLIB_SHARED = OFF
 CONFIG_REVISION = $(shell git describe --match "v*.*" --always)
 
 getMSVCversion:
+	echo "Check for given VSVERSION (2010|2012|2013|2015) version: [VSVERSION=$(VSVERSION)]"
 ifeq ("$(VSVERSION)","")
-	ifeq ("$(VS140COMNTOOLS)", "") #check VS 2015
-		ifeq ("$(VS120COMNTOOLS)", "") #check VS 2013
-			ifeq ("$(VS110COMNTOOLS)", "") #check VS 2012
-				ifeq ("$(VS100COMNTOOLS)", "") #check VS 2010
-					echo "Could not identify Visual Studio version"
-				else
-					$(eval VSCOMNTOOLS=$(VS100COMNTOOLS))
-				endif
-			else
-				$(eval VSCOMNTOOLS=$(VS110COMNTOOLS))
-			endif
-		else
-			$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
-		endif
-	endif
+ifeq ("$(VS140COMNTOOLS)", "") #check VS 2015
+ifeq ("$(VS120COMNTOOLS)", "") #check VS 2013
+ifeq ("$(VS110COMNTOOLS)", "") #check VS 2012
+ifeq ("$(VS100COMNTOOLS)", "") #check VS 2010
+	echo "Could not identify Visual Studio version, setting it to VSVERSION=2010"
+	VSVERSION=2010
+	$(eval VSCOMNTOOLS=$(VS100COMNTOOLS))
+else
+	$(eval VSCOMNTOOLS=$(VS100COMNTOOLS))
+endif
+else
+	$(eval VSCOMNTOOLS=$(VS110COMNTOOLS))
+endif
+else
+	$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
+endif
+else
+	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
+	$(eval BOOST_PATH_MSVC=$(OMDEVMSYS)/lib/3rdParty/boost-1_59/)
+endif
 else
 ifeq ($(VSVERSION),2010)
 	$(eval VSCOMNTOOLS=$(VS100COMNTOOLS))
@@ -113,6 +115,7 @@ ifeq ($(VSVERSION),2013)
 else
 ifeq ($(VSVERSION),2015)
 	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
+	$(eval BOOST_PATH_MSVC=$(OMDEVMSYS)/lib/3rdParty/boost-1_59/)
 endif
 endif
 endif
@@ -279,7 +282,7 @@ copycppheader:
 	(cp -pufr $(BOOST_PATH)/boost/property_tree     $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/gcc/boost)
 	(cp -pufr $(BOOST_PATH)/boost/multi_index       $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/gcc/boost)
 
-copycppmsvcheader:
+copycppmsvcheader: getMSVCversion
 	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/cpp/ directory
 	(mkdir -p $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
 	(cp -puf $(BOOST_PATH_MSVC)/boost/*.hpp              $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
