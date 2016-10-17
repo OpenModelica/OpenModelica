@@ -48,6 +48,7 @@ import NFInstance.ClassTree;
 import NFInstance.Instance;
 import NFInstanceTree.InstanceTree;
 import NFInstNode.InstNode;
+import NFInstNode.InstParent;
 import NFMod.Modifier;
 import NFMod.ModifierScope;
 import NFEquation.Equation;
@@ -76,7 +77,7 @@ algorithm
   inst_tree := makeTree(program);
 
   (cls, inst_tree) := Lookup.lookupClassName(classPath, inst_tree, Absyn.dummyInfo);
-  (cls, inst_tree) := instantiate(cls, Modifier.NOMOD(), inst_tree);
+  (cls, inst_tree) := instantiate(cls, Modifier.NOMOD(), InstParent.NO_PARENT(), inst_tree);
 
   // TODO: Why is this a separate phase? Could be done in instComponent?
   (cls, inst_tree) := instBindings(cls, inst_tree);
@@ -92,19 +93,21 @@ end instClassInProgram;
 function instantiate
   input output InstNode node;
   input Modifier modifier;
+  input InstParent parent;
   input output InstanceTree tree;
 algorithm
   (node, tree) := partialInstClass(node, tree);
-  (node, tree) := expandClass(node, tree);
+  (node, tree) := expandClass(node, parent, tree);
   (node, tree) := instClass(node, modifier, tree);
 end instantiate;
 
 function expand
   input output InstNode node;
+  input InstParent parent;
   input output InstanceTree tree;
 algorithm
   (node, tree) := partialInstClass(node, tree);
-  (node, tree) := expandClass(node, tree);
+  (node, tree) := expandClass(node, parent, tree);
 end expand;
 
 function makeTree
@@ -148,7 +151,7 @@ algorithm
       case SCode.CLASS()
         algorithm
           idx := idx + 1;
-          node := InstNode.new(e.name, e, idx, scope_id);
+          node := InstNode.new(e.name, e, idx, scope_id, InstParent.NO_PARENT());
           il := node :: il;
           scope := addElementIdToScope(e.name, ClassTree.Entry.CLASS(idx), e.info, scope);
         then
@@ -236,7 +239,7 @@ algorithm
     end match;
   end for;
 
-  tree := InstanceTree.setCurrentScope(tree, scope_idx);
+  tree := InstanceTree.setCurrentScopeIndex(tree, scope_idx);
 end addImportsToScope;
 
 function partialInstClass
@@ -250,7 +253,7 @@ algorithm
 
     case InstNode.INST_NODE(instance = Instance.NOT_INSTANTIATED(), definition = SOME(def))
       algorithm
-        tree := InstanceTree.setCurrentScope(tree, InstNode.index(node));
+        tree := InstanceTree.setCurrentScope(tree, node);
         (instance, tree) := partialInstClass2(def, tree);
         node.instance := instance;
         tree := InstanceTree.updateNode(node, tree);
@@ -283,6 +286,7 @@ end partialInstClass2;
 
 function expandClass
   input output InstNode node;
+  input InstParent parent;
   input output InstanceTree tree;
 algorithm
   _ := match node
@@ -291,19 +295,20 @@ algorithm
 
     case InstNode.INST_NODE(instance = Instance.PARTIAL_CLASS(), definition = SOME(def))
       algorithm
-        (node, tree) := expandClass2(node, def, tree);
+        (node, tree) := expandClass2(node, def, parent, tree);
       then
         ();
 
     else ();
   end match;
 
-  tree := InstanceTree.setCurrentScope(tree, InstNode.index(node));
+  tree := InstanceTree.setCurrentScope(tree, node);
 end expandClass;
 
 function expandClass2
   input InstNode node;
   input SCode.Element definition;
+  input InstParent parent;
         output InstNode expandedNode = node;
   input output InstanceTree tree;
 algorithm
@@ -333,7 +338,7 @@ algorithm
         def.classDef := SCode.PARTS({ext}, {}, {}, {}, {}, {}, {}, NONE());
         i := Instance.PARTIAL_CLASS(ClassTree.new(), {ext});
         inode := InstNode.setInstance(node, i);
-        (expandedNode, tree) := expandClass2(inode, def, tree);
+        (expandedNode, tree) := expandClass2(inode, def, parent, tree);
       then
         ();
 //    case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ty, modifications = der_mod))
@@ -344,7 +349,7 @@ algorithm
 //
 //        // Derived classes have no scope of their own, use the parent scope.
 //        scope_id := InstNode.parent(expandedNode);
-//        tree := InstanceTree.setCurrentScope(tree, scope_id);
+//        tree := InstanceTree.setCurrentScopeIndex(tree, scope_id);
 //
 //        // Lookup and expand the derived class.
 //        Absyn.TPATH(path = ty_path) := ty;
@@ -372,13 +377,14 @@ algorithm
       algorithm
         Instance.PARTIAL_CLASS(classes = scope, elements = elements) :=
           InstNode.instance(expandedNode);
-        tree := InstanceTree.setCurrentScope(tree, InstNode.index(expandedNode));
+        tree := InstanceTree.setCurrentScope(tree, expandedNode);
         i := Instance.initExpandedClass(scope);
         expandedNode := InstNode.setInstance(expandedNode, i);
         tree := InstanceTree.updateNode(expandedNode, tree);
 
         // Expand all extends clauses.
-        (components, scope, tree) := expandExtends(elements, definition.name, scope, tree);
+        (components, scope, tree) := expandExtends(elements, definition.name,
+          scope, parent, tree);
 
         // Add component ids to the scope.
         idx := 1;
@@ -402,6 +408,7 @@ algorithm
 
         // Update the instance in the tree.
         expandedNode := InstNode.setInstance(expandedNode, i);
+        expandedNode := InstNode.setInstParent(expandedNode, parent);
         tree := InstanceTree.updateNode(expandedNode, tree);
       then
         ();
@@ -421,6 +428,7 @@ function expandExtends
   input String className;
         output list<Component> components = {};
   input output ClassTree.Tree scope;
+  input InstParent parent;
   input output InstanceTree tree;
 protected
   InstNode ext_node;
@@ -440,7 +448,7 @@ algorithm
           ext_node := InstNode.setIndex(ext_node, InstanceTree.instanceCount(tree) + 1);
           ext_node := InstNode.rename(ext_node, className);
           tree := InstanceTree.addInstances({ext_node}, tree);
-          (ext_node, tree) := expand(ext_node, tree);
+          (ext_node, tree) := expand(ext_node, parent, tree);
 
           // Initialize the modifier from the extends clause.
           mod_scope := ModifierScope.EXTENDS_SCOPE(e.baseClassPath);
@@ -597,7 +605,7 @@ algorithm
     case InstNode.INST_NODE(instance = i as Instance.EXPANDED_CLASS(elements = scope))
       algorithm
         comp_count := arrayLength(i.components);
-        tree := InstanceTree.setCurrentScope(tree, InstNode.index(node));
+        tree := InstanceTree.setCurrentScope(tree, node);
 
         if comp_count > 0 then
           components := Dangerous.arrayCreateNoInit(comp_count,
@@ -679,17 +687,18 @@ algorithm
     case Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT())
       algorithm
         scope := InstanceTree.currentScopeIndex(tree);
-        tree := InstanceTree.setCurrentScope(tree, component.scope);
+        tree := InstanceTree.setCurrentScopeIndex(tree, component.scope);
         comp_mod := Modifier.create(comp.modifications, comp.name,
           ModifierScope.COMPONENT_SCOPE(comp.name), component.scope);
         comp_mod := Modifier.merge(component.modifier, comp_mod);
         comp_mod := Modifier.propagate(comp_mod, listLength(comp.attributes.arrayDims));
-        (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod, comp.info, tree);
+        (cls, tree) := instTypeSpec(comp.typeSpec, comp_mod,
+          InstParent.COMPONENT(component), comp.info, tree);
         (dims, tree) := instDimensions(comp.attributes.arrayDims, tree);
         Modifier.checkEach(comp_mod, listEmpty(dims), comp.name);
         attr := instComponentAttributes(comp.attributes, comp.prefixes);
         binding := Modifier.binding(comp_mod);
-        tree := InstanceTree.setCurrentScope(tree, scope);
+        tree := InstanceTree.setCurrentScopeIndex(tree, scope);
       then
         (Component.UNTYPED_COMPONENT(comp.name, cls, listArray(dims), binding, attr, comp.info), tree);
 
@@ -724,6 +733,7 @@ end instComponentAttributes;
 function instTypeSpec
   input Absyn.TypeSpec typeSpec;
   input Modifier modifier;
+  input InstParent parent;
   input SourceInfo info;
         output InstNode node;
   input output InstanceTree tree;
@@ -732,7 +742,7 @@ algorithm
     case Absyn.TPATH()
       algorithm
         (node, tree) := Lookup.lookupClassName(typeSpec.path, tree, info);
-        (node, tree) := instantiate(node, modifier, tree);
+        (node, tree) := instantiate(node, modifier, parent, tree);
       then
         (node, tree);
 

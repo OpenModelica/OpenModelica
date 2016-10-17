@@ -31,8 +31,31 @@
 
 encapsulated package NFInstNode
 
+import NFComponent.Component;
 import NFInst.Instance;
 import SCode;
+
+uniontype InstParent
+  record CLASS
+    InstNode node;
+  end CLASS;
+
+  record COMPONENT
+    Component component;
+  end COMPONENT;
+
+  record NO_PARENT end NO_PARENT;
+
+  function isEmpty
+    input InstParent parent;
+    output Boolean empty;
+  algorithm
+    empty := match parent
+      case NO_PARENT() then true;
+      else false;
+    end match;
+  end isEmpty;
+end InstParent;
 
 uniontype InstNode
   record INST_NODE
@@ -40,17 +63,20 @@ uniontype InstNode
     Option<SCode.Element> definition;
     Instance instance;
     Integer index;
-    Integer parent;
+    Integer scopeParent;
+    InstParent instParent;
   end INST_NODE;
 
   function new
     input String name;
     input SCode.Element definition;
     input Integer index;
-    input Integer parent;
+    input Integer scopeParent;
+    input InstParent instParent;
     output InstNode node;
   algorithm
-    node := INST_NODE(name, SOME(definition), Instance.NOT_INSTANTIATED(), index, parent);
+    node := INST_NODE(name, SOME(definition), Instance.NOT_INSTANTIATED(), index,
+      scopeParent, instParent);
   end new;
 
   function name
@@ -81,17 +107,29 @@ uniontype InstNode
     node.index := index;
   end setIndex;
 
-  function parent
+  function scopeParent
     input InstNode node;
-    output Integer parent = node.parent;
-  end parent;
+    output Integer scopeParent = node.scopeParent;
+  end scopeParent;
 
-  function setParent
+  function setScopeParent
     input output InstNode node;
-    input Integer parent;
+    input Integer scopeParent;
   algorithm
-    node.parent := parent;
-  end setParent;
+    node.scopeParent := scopeParent;
+  end setScopeParent;
+
+  function instParent
+    input InstNode node;
+    output InstParent instParent = node.instParent;
+  end instParent;
+
+  function setInstParent
+    input output InstNode node;
+    input InstParent instParent;
+  algorithm
+    node.instParent := instParent;
+  end setInstParent;
 
   function instance
     input InstNode node;

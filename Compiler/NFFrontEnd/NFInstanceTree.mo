@@ -33,6 +33,7 @@ encapsulated package NFInstanceTree
 
 import BasePVector;
 import NFInstNode.InstNode;
+import NFInstNode.InstParent;
 import NFInstance.Instance;
 import NFComponent.Component;
 import NFPrefix.Prefix;
@@ -49,7 +50,7 @@ constant Integer TOP_SCOPE = 1;
 
 uniontype InstanceTree
   record INST_TREE
-    Integer currentScope;
+    InstNode currentScope;
     InstVector.Vector instances;
     list<Component> hierarchy;
   end INST_TREE;
@@ -60,10 +61,11 @@ uniontype InstanceTree
     InstNode top;
     InstVector.Vector instances;
   algorithm
-    top := InstNode.INST_NODE("<top>", NONE(), Instance.emptyInstancedClass(), TOP_SCOPE, NO_SCOPE);
+    top := InstNode.INST_NODE("<top>", NONE(), Instance.emptyInstancedClass(),
+      TOP_SCOPE, NO_SCOPE, InstParent.NO_PARENT());
     instances := InstVector.new();
     instances := InstVector.add(instances, top);
-    tree := INST_TREE(TOP_SCOPE, instances, {});
+    tree := INST_TREE(top, instances, {});
   end new;
 
   function instanceCount
@@ -94,37 +96,47 @@ uniontype InstanceTree
   function updateNode
     input InstNode node;
     input output InstanceTree tree;
+  protected
+    Integer idx = InstNode.index(node);
   algorithm
-    tree.instances := InstVector.set(tree.instances, InstNode.index(node), node);
+    tree.instances := InstVector.set(tree.instances, idx, node);
+
+    if idx == InstNode.index(tree.currentScope) then
+      tree.currentScope := node;
+    end if;
   end updateNode;
 
-  function setCurrentScope
+  function setCurrentScopeIndex
     input output InstanceTree tree;
     input Integer scope;
   algorithm
-    tree.currentScope := scope;
-  end setCurrentScope;
+    tree.currentScope := InstVector.get(tree.instances, scope);
+  end setCurrentScopeIndex;
 
   function currentScopeIndex
     input InstanceTree tree;
-    output Integer index = tree.currentScope;
+    output Integer index = InstNode.index(tree.currentScope);
   end currentScopeIndex;
+
+  function setCurrentScope
+    input output InstanceTree tree;
+    input InstNode scope;
+  algorithm
+    tree.currentScope := scope;
+  end setCurrentScope;
 
   function currentScope
     input InstanceTree tree;
     output InstNode scope;
   algorithm
-    scope := InstVector.get(tree.instances, tree.currentScope);
+    scope := tree.currentScope;
   end currentScope;
 
   function enterParentScope
     input output InstanceTree tree;
-  protected
-    InstNode cur_scope;
   algorithm
-    false := tree.currentScope == TOP_SCOPE;
-    cur_scope := InstVector.get(tree.instances, tree.currentScope);
-    tree.currentScope := InstNode.parent(cur_scope);
+    tree.currentScope :=
+      InstVector.get(tree.instances, InstNode.scopeParent(tree.currentScope));
   end enterParentScope;
 
   function pushHierarchy
@@ -193,7 +205,7 @@ uniontype InstanceTree
   algorithm
     while parent <> TOP_SCOPE loop
       nodes := node :: nodes;
-      parent := InstNode.parent(node);
+      parent := InstNode.scopeParent(node);
       node := InstVector.get(tree.instances, parent);
     end while;
 
@@ -201,6 +213,51 @@ uniontype InstanceTree
       prefix := Prefix.add(InstNode.name(n), {}, DAE.T_UNKNOWN_DEFAULT, prefix);
     end for;
   end scopePrefix;
+
+  function prefix
+    input InstNode node;
+    output Prefix prefix;
+  protected
+    InstParent ip;
+  algorithm
+    ip := InstNode.instParent(node);
+
+    prefix := match ip
+      case InstParent.CLASS()
+        then prefix2(node);
+      //case InstParent.COMPONENT() then hierarchyPrefix(node);
+      case InstParent.NO_PARENT() then Prefix.NO_PREFIX();
+      else Prefix.NO_PREFIX();
+    end match;
+  end prefix;
+
+  function prefix2
+    input InstNode node;
+    output Prefix prefix;
+  protected
+    InstParent ip = InstNode.instParent(node);
+    InstNode n;
+    list<InstNode> nodes = {};
+  algorithm
+    while not InstParent.isEmpty(ip) loop
+      ip := match ip
+        case InstParent.CLASS()
+          algorithm
+            nodes := ip.node :: nodes;
+          then
+            InstNode.instParent(ip.node);
+
+        else InstParent.NO_PARENT();
+      end match;
+    end while;
+
+    prefix := Prefix.addClass(InstNode.name(node), Prefix.NO_PREFIX());
+
+    while listLength(nodes) > 1 loop
+      n :: nodes := nodes;
+      prefix := Prefix.addClass(InstNode.name(n), prefix);
+    end while;
+  end prefix2;
 end InstanceTree;
 
 annotation(__OpenModelica_Interface="frontend");

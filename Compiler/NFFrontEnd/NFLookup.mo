@@ -45,17 +45,22 @@ import NFInstance.Instance;
 import NFInstanceTree.InstanceTree;
 import NFInstanceTree.InstVector;
 import NFInstNode.InstNode;
+import NFInstNode.InstParent;
 import NFMod.Modifier;
 import NFPrefix.Prefix;
 
 constant NFInst.InstNode REAL_TYPE = NFInstNode.INST_NODE("Real",
-  SOME(NFBuiltin.BUILTIN_REAL), NFInstance.PARTIAL_BUILTIN(Modifier.NOMOD()), 0, 0);
+  SOME(NFBuiltin.BUILTIN_REAL), NFInstance.PARTIAL_BUILTIN(Modifier.NOMOD()),
+  0, 0, InstParent.NO_PARENT());
 constant NFInst.InstNode INT_TYPE = NFInstNode.INST_NODE("Integer",
-  SOME(NFBuiltin.BUILTIN_INTEGER), NFInstance.PARTIAL_BUILTIN(Modifier.NOMOD()), 0, 0);
+  SOME(NFBuiltin.BUILTIN_INTEGER), NFInstance.PARTIAL_BUILTIN(Modifier.NOMOD()),
+  0, 0, InstParent.NO_PARENT());
 constant NFInst.InstNode BOOL_TYPE = NFInstNode.INST_NODE("Boolean",
-  SOME(NFBuiltin.BUILTIN_BOOLEAN), NFInstance.PARTIAL_BUILTIN(Modifier.NOMOD()), 0, 0);
+  SOME(NFBuiltin.BUILTIN_BOOLEAN), NFInstance.PARTIAL_BUILTIN(Modifier.NOMOD()),
+  0, 0, InstParent.NO_PARENT());
 constant NFInst.InstNode STRING_TYPE = NFInstNode.INST_NODE("String",
-  SOME(NFBuiltin.BUILTIN_STRING), NFInstance.PARTIAL_BUILTIN(Modifier.NOMOD()), 0, 0);
+  SOME(NFBuiltin.BUILTIN_STRING), NFInstance.PARTIAL_BUILTIN(Modifier.NOMOD()),
+  0, 0, InstParent.NO_PARENT());
 
 function lookupClassName
   input Absyn.Path name;
@@ -96,42 +101,51 @@ end lookupFunctionName;
 function lookupCref
   input Absyn.ComponentRef cref;
         output Component component "The component the cref refers to.";
-        output Instance instance "The instance the component was found in.";
         output Prefix prefix;
   input output InstanceTree tree;
 protected
   Component current_inst;
-  InstNode current_scope;
+  InstNode current_scope, scope;
   Instance.ElementId element;
+  InstParent parent = InstParent.NO_PARENT();
+  Integer parent_idx;
 algorithm
-  (component, instance, prefix) := matchcontinue cref
+  (component, prefix) := matchcontinue cref
     case _
       algorithm
         current_inst := InstanceTree.currentInstance(tree);
-        (element, instance, tree) := lookupCrefInComponent(cref, current_inst, tree);
-        component := Instance.lookupComponentById(element, instance);
+        (element, scope, tree) := lookupCrefInComponent(cref, current_inst, tree);
+        component := Instance.lookupComponentById(element, InstNode.instance(scope));
         prefix := InstanceTree.hierarchyPrefix(tree);
       then
-        (component, instance, prefix);
+        (component, prefix);
 
     case _
       algorithm
         tree := InstanceTree.enterParentScope(tree);
+        current_scope := InstanceTree.currentScope(tree);
 
         while true loop
           try
             // TODO: Stop if the first part of the cref is found in any scope,
             // regardless of if the rest of the name can be found or not.
-            (element, instance, tree) := lookupCrefInNode(cref, InstanceTree.currentScope(tree), tree);
-            component := Instance.lookupComponentById(element, instance);
-            prefix := InstanceTree.scopePrefix(tree);
+            parent_idx := InstNode.scopeParent(current_scope);
+            parent := if parent_idx == NFInstanceTree.NO_SCOPE then
+                InstParent.NO_PARENT()
+              else
+                InstParent.CLASS(InstanceTree.lookupNode(parent_idx, tree));
+
+            (element, scope, tree) := lookupCrefInNode(cref, current_scope, parent, tree);
+            component := Instance.lookupComponentById(element, InstNode.instance(scope));
+            prefix := InstanceTree.prefix(current_scope);
             return;
           else
-            tree := InstanceTree.enterParentScope(tree);
+            InstParent.CLASS(node = current_scope) := parent;
+            tree := InstanceTree.setCurrentScope(tree, current_scope);
           end try;
         end while;
       then
-        (component, instance, Prefix.NO_PREFIX());
+        (component, prefix);
 
     else
       algorithm
@@ -148,24 +162,19 @@ function lookupElementId
         output InstNode scope;
   input output InstanceTree tree;
 protected
-  Integer scope_idx;
   InstVector.Vector iv;
 algorithm
-  InstanceTree.INST_TREE(currentScope = scope_idx, instances = iv) := tree;
+  InstanceTree.INST_TREE(currentScope = scope, instances = iv) := tree;
 
-  while scope_idx <> NFInstanceTree.NO_SCOPE loop
-    scope := InstVector.get(iv, scope_idx);
-
+  while true loop
     try
       id := Instance.lookupElementId(name, InstNode.instance(scope));
-      tree := InstanceTree.setCurrentScope(tree, InstNode.index(scope));
+      tree := InstanceTree.setCurrentScope(tree, scope);
       return;
     else
-      scope_idx := InstNode.parent(scope);
+      scope := InstVector.get(iv, InstNode.scopeParent(scope));
     end try;
   end while;
-
-  fail();
 end lookupElementId;
 
 protected
@@ -220,14 +229,15 @@ algorithm
     case Absyn.QUALIFIED()
       algorithm
         (instance, tree) := lookupSimpleName(name.name, tree);
-        (instance, tree) := Inst.expand(instance, tree);
+        (instance, tree) := Inst.expand(instance,
+          InstParent.CLASS(InstanceTree.currentScope(tree)), tree);
       then
-        lookupLocalName(name.path, tree);
+        lookupLocalName(name.path, InstParent.CLASS(instance), tree);
 
     // Fully qualified path, start from top scope.
     case Absyn.FULLYQUALIFIED()
       algorithm
-        tree := InstanceTree.setCurrentScope(tree, NFInstanceTree.TOP_SCOPE);
+        tree := InstanceTree.setCurrentScopeIndex(tree, NFInstanceTree.TOP_SCOPE);
       then
         lookupName(name.path, tree);
 
@@ -243,16 +253,13 @@ protected
   InstVector.Vector iv;
   Integer idx;
 algorithm
-  // Look up the current scope.
-  InstanceTree.INST_TREE(currentScope = idx, instances = iv) := tree;
-  instance := InstVector.get(iv, idx);
-  // Look up the name in that scope.
-  idx := Instance.lookupClassId(name, InstNode.instance(instance));
-  instance := InstVector.get(iv, idx);
+  idx := Instance.lookupClassId(name, InstNode.instance(tree.currentScope));
+  instance := InstVector.get(tree.instances, idx);
 end lookupLocalSimpleName;
 
 function lookupLocalName
   input Absyn.Path name;
+  input InstParent parent;
         output InstNode instance;
   input output InstanceTree tree;
 algorithm
@@ -266,9 +273,9 @@ algorithm
     case Absyn.QUALIFIED()
       algorithm
         i := lookupLocalSimpleName(name.name, tree);
-        (i, tree) := Inst.expand(i, tree);
+        (i, tree) := Inst.expand(i, parent, tree);
       then
-        lookupLocalName(name.path, tree);
+        lookupLocalName(name.path, InstParent.CLASS(i), tree);
 
   end match;
 end lookupLocalName;
@@ -289,25 +296,27 @@ function lookupCrefInComponent
   input Absyn.ComponentRef cref;
   input Component component;
         output Instance.ElementId element;
-        output Instance instance;
+        output InstNode scope;
   input output InstanceTree tree;
 algorithm
-  (element, instance, tree) :=
-    lookupCrefInNode(cref, Component.classInstance(component), tree);
+  (element, scope, tree) :=
+    lookupCrefInNode(cref, Component.classInstance(component), InstParent.COMPONENT(component), tree);
 end lookupCrefInComponent;
 
 function lookupCrefInNode
   input Absyn.ComponentRef cref;
   input InstNode node;
+  input InstParent parent;
         output Instance.ElementId element;
-        output Instance instance;
+        output InstNode scope;
   input output InstanceTree tree;
 protected
   Component c;
-  InstNode cls;
+  InstNode next_cls;
+  Instance instance;
 algorithm
-  (cls, tree) := Inst.instantiate(node, Modifier.NOMOD(), tree);
-  instance := InstNode.instance(cls);
+  (scope, tree) := Inst.instantiate(node, Modifier.NOMOD(), parent, tree);
+  instance := InstNode.instance(scope);
 
   element := match cref
     case Absyn.ComponentRef.CREF_IDENT()
@@ -317,7 +326,7 @@ algorithm
       algorithm
         element := Instance.lookupElementId(cref.name, instance);
 
-        (element, instance, tree) := match element
+        (element, scope, tree) := match element
           case Instance.ElementId.COMPONENT()
             algorithm
               c := Instance.lookupComponentById(element, instance);
@@ -326,9 +335,9 @@ algorithm
 
           case Instance.ElementId.CLASS()
             algorithm
-              cls := InstanceTree.lookupNode(element.id, tree);
+              next_cls := InstanceTree.lookupNode(element.id, tree);
             then
-              lookupCrefInNode(cref.componentRef, cls, tree);
+              lookupCrefInNode(cref.componentRef, next_cls, InstParent.CLASS(scope), tree);
 
         end match;
       then

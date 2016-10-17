@@ -289,7 +289,7 @@ algorithm
 
     case Binding.UNTYPED_BINDING(bindingExp = aexp)
       algorithm
-        it := InstanceTree.setCurrentScope(tree, binding.scope);
+        it := InstanceTree.setCurrentScopeIndex(tree, binding.scope);
         (dexp, _, ty) := typeExp(aexp, it, binding.info);
       then
         Binding.TYPED_BINDING(dexp, ty, binding.propagatedDims, binding.info);
@@ -322,7 +322,7 @@ algorithm
   _ := match cls
     case Instance.INSTANCED_CLASS()
       algorithm
-        tree := InstanceTree.setCurrentScope(tree, InstNode.index(classNode));
+        tree := InstanceTree.setCurrentScope(tree, classNode);
         //tree := InstanceTree.pushHierarchy(classNode, tree);
         (eq, tree) := typeEquations(cls.equations, tree);
         (ieq, tree) := typeEquations(cls.initialEquations, tree);
@@ -605,7 +605,6 @@ function typeCref
         output DAE.Const variability;
   input SourceInfo info;
 protected
-  Instance instance;
   Component component;
   Prefix prefix;
   InstanceTree it;
@@ -616,19 +615,20 @@ algorithm
   // This checks that inherited crefs can be found in the scope they're
   // inherited from, as well as checking if the cref refers to a name in the
   // local scope or in an enclosing scope (i.e. an enclosing package).
-  (_, _, it) := Lookup.lookupElementId(ComponentReference.crefFirstIdent(typedCref), tree);
+  //(_, _, it) := Lookup.lookupElementId(ComponentReference.crefFirstIdent(typedCref), tree);
+  //typedCref := Prefix.prefixCref(typedCref, InstanceTree.prefix(it));
 
-  if InstanceTree.currentScopeIndex(it) <> InstanceTree.currentScopeIndex(tree) then
-    // The name was found in an enclosing scope, prefix it with the scope.
-    typedCref := Prefix.prefixCref(typedCref, InstanceTree.scopePrefix(it));
-  else
-    // The name was found in the local scope, prefix it with the instance hierarchy.
-    typedCref := Prefix.prefixCref(typedCref, InstanceTree.hierarchyPrefix(tree));
-  end if;
+  //if InstanceTree.currentScopeIndex(it) <> InstanceTree.currentScopeIndex(tree) then
+  //  // The name was found in an enclosing scope, prefix it with the scope.
+  //  typedCref := Prefix.prefixCref(typedCref, InstanceTree.scopePrefix(it));
+  //else
+  //  // The name was found in the local scope, prefix it with the instance hierarchy.
+  //  typedCref := Prefix.prefixCref(typedCref, InstanceTree.hierarchyPrefix(tree));
+  //end if;
 
   // Look up the whole cref, and type the found component.
-  (component, instance, _, tree) := Lookup.lookupCref(untypedCref, tree);
-  //(component, tree) := Inst.instComponent(component, tree);
+  (component, prefix, tree) := Lookup.lookupCref(untypedCref, tree);
+  typedCref := Prefix.prefixCref(typedCref, prefix);
   (component, tree) := typeComponent(component, tree);
   Component.TYPED_COMPONENT(ty = ty) := component;
 

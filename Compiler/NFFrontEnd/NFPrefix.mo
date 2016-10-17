@@ -61,6 +61,13 @@ uniontype Prefix
     prefix := PREFIX(name, subscripts, ty, prefix);
   end add;
 
+  function addClass
+    input String name;
+    input output Prefix prefix;
+  algorithm
+    prefix := add(name, {}, DAE.T_UNKNOWN_DEFAULT, prefix);
+  end addClass;
+
   function setSubscripts
     input list<DAE.Subscript> subscripts;
     input output Prefix prefix;

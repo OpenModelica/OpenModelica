@@ -100,10 +100,10 @@ algorithm
           elements := flattenComponent(c, prefix, elements);
         end for;
 
-        elements := flattenEquations(instance.equations, prefix, elements);
-        elements := flattenInitialEquations(instance.initialEquations, prefix, elements);
-        elements := flattenAlgorithms(instance.algorithms, prefix, elements);
-        elements := flattenInitialAlgorithms(instance.initialAlgorithms, prefix, elements);
+        elements := flattenEquations(instance.equations, elements);
+        elements := flattenInitialEquations(instance.initialEquations, elements);
+        elements := flattenAlgorithms(instance.algorithms, elements);
+        elements := flattenInitialAlgorithms(instance.initialAlgorithms, elements);
       then
         ();
 
@@ -242,7 +242,7 @@ algorithm
         attributes = attr as Component.Attributes.ATTRIBUTES())
       algorithm
         cref := Prefix.toCref(prefix);
-        binding_exp := flattenBinding(component.binding, prefix);
+        binding_exp := flattenBinding(component.binding);
 
         var := DAE.VAR(
           cref,
@@ -270,7 +270,6 @@ end flattenScalar;
 
 function flattenBinding
   input Binding binding;
-  input Prefix prefix;
   output Option<DAE.Exp> bindingExp;
 algorithm
   bindingExp := match binding
@@ -285,10 +284,11 @@ algorithm
     case Binding.TYPED_BINDING()
       algorithm
         // TODO: Implement this in a saner way.
-        subs := List.lastN(List.flatten(Prefix.allSubscripts(prefix)),
-          binding.propagatedDims);
-      then
-        SOME(Expression.subscriptExp(binding.bindingExp, subs));
+        //subs := List.lastN(List.flatten(Prefix.allSubscripts(prefix)),
+        //  binding.propagatedDims);
+      //then
+      //  SOME(Expression.subscriptExp(binding.bindingExp, subs));
+      then SOME(binding.bindingExp);
 
     else
       algorithm
@@ -302,7 +302,6 @@ end flattenBinding;
 
 function flattenEquation
   input Equation eq;
-  input Prefix prefix;
   input output list<DAE.Element> elements = {};
 algorithm
   elements := match eq
@@ -310,16 +309,10 @@ algorithm
       DAE.Exp lhs, rhs;
 
     case Equation.EQUALITY()
-      algorithm
-        //lhs := Prefix.prefixExp(eq.lhs, prefix);
-        lhs := eq.lhs;
-        //rhs := Prefix.prefixExp(eq.rhs, prefix);
-        rhs := eq.rhs;
-      then
-        DAE.EQUATION(lhs, rhs, DAE.emptyElementSource) :: elements;
+      then DAE.EQUATION(eq.lhs, eq.rhs, DAE.emptyElementSource) :: elements;
 
     case Equation.IF()
-      then flattenIfEquation(eq.branches, false, prefix) :: elements;
+      then flattenIfEquation(eq.branches, false) :: elements;
 
     else elements;
   end match;
@@ -327,15 +320,13 @@ end flattenEquation;
 
 function flattenEquations
   input list<Equation> equations;
-  input Prefix prefix;
   input output list<DAE.Element> elements = {};
 algorithm
-  elements := List.fold1(equations, flattenEquation, prefix, elements);
+  elements := List.fold(equations, flattenEquation, elements);
 end flattenEquations;
 
 function flattenInitialEquation
   input Equation eq;
-  input Prefix prefix;
   input output list<DAE.Element> elements;
 algorithm
   elements := match eq
@@ -343,14 +334,10 @@ algorithm
       DAE.Exp lhs, rhs;
 
     case Equation.EQUALITY()
-      algorithm
-        lhs := Prefix.prefixExp(eq.lhs, prefix);
-        rhs := Prefix.prefixExp(eq.rhs, prefix);
-      then
-        DAE.INITIALEQUATION(lhs, rhs, DAE.emptyElementSource) :: elements;
+      then DAE.INITIALEQUATION(eq.lhs, eq.rhs, DAE.emptyElementSource) :: elements;
 
     case Equation.IF()
-      then flattenIfEquation(eq.branches, true, prefix) :: elements;
+      then flattenIfEquation(eq.branches, true) :: elements;
 
     else elements;
   end match;
@@ -358,16 +345,14 @@ end flattenInitialEquation;
 
 function flattenInitialEquations
   input list<Equation> equations;
-  input Prefix prefix;
   input output list<DAE.Element> elements = {};
 algorithm
-  elements := List.fold1(equations, flattenInitialEquation, prefix, elements);
+  elements := List.fold(equations, flattenInitialEquation, elements);
 end flattenInitialEquations;
 
 function flattenIfEquation
   input list<tuple<DAE.Exp, list<Equation>>> ifBranches;
   input Boolean isInitial;
-  input Prefix prefix;
   output DAE.Element ifEquation;
 protected
   list<DAE.Exp> conditions = {};
@@ -376,7 +361,7 @@ protected
 algorithm
   for b in ifBranches loop
     conditions := Util.tuple21(b) :: conditions;
-    branches := flattenEquations(Util.tuple22(b), prefix) :: branches;
+    branches := flattenEquations(Util.tuple22(b)) :: branches;
   end for;
 
   // Transform the last branch to an else-branch if its condition is true.
@@ -402,7 +387,6 @@ end flattenIfEquation;
 
 function flattenAlgorithm
   input list<Statement> algSection;
-  input Prefix prefix;
   input output list<DAE.Element> elements;
 algorithm
 
@@ -410,15 +394,13 @@ end flattenAlgorithm;
 
 function flattenAlgorithms
   input list<list<Statement>> algorithms;
-  input Prefix prefix;
   input output list<DAE.Element> elements = {};
 algorithm
-  elements := List.fold1(algorithms, flattenAlgorithm, prefix, elements);
+  elements := List.fold(algorithms, flattenAlgorithm, elements);
 end flattenAlgorithms;
 
 function flattenInitialAlgorithm
   input list<Statement> algSection;
-  input Prefix prefix;
   input output list<DAE.Element> elements;
 algorithm
 
@@ -426,10 +408,9 @@ end flattenInitialAlgorithm;
 
 function flattenInitialAlgorithms
   input list<list<Statement>> algorithms;
-  input Prefix prefix;
   input output list<DAE.Element> elements = {};
 algorithm
-  elements := List.fold1(algorithms, flattenInitialAlgorithm, prefix, elements);
+  elements := List.fold(algorithms, flattenInitialAlgorithm, elements);
 end flattenInitialAlgorithms;
 
 annotation(__OpenModelica_Interface="frontend");
