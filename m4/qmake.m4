@@ -1,6 +1,7 @@
 dnl Check for Qt
 
 AC_SUBST(QMAKE)
+AC_SUBST(LRELEASE)
 
 AC_MSG_CHECKING([for qmake in env.vars QMAKE and QTDIR])
 if test ! -z "$QMAKE"; then
