@@ -116,6 +116,11 @@ algorithm
   assert(listLength(elementLst) == 1, "Internal compiler error: Handling of elementLst != 1 not supported\n");
   DAE.COMP(ident, dAElist, source, comment) := listHead(elementLst);
 
+  if not List.exist(dAElist, isFlatSm) then
+    outDAElist := inDAElist;
+    return;
+  end if;
+
   (flatSmLst, otherLst) := List.extractOnTrue(dAElist, isFlatSm);
   elementLst2 := List.fold2(flatSmLst, flatSmToDataFlow, NONE(), NONE(), {});
 
