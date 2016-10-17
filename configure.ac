@@ -56,17 +56,6 @@ if test ! -z "$OMLIBRARY_TARGET"; then
   fi
 fi
 
-AC_SUBST(MODELICA3D_TARGET)
-AC_MSG_CHECKING([if the user wants Modelica3D])
-MODELICA3D_TARGET="yes"
-AC_ARG_ENABLE(modelica3d, [  --disable-modelica3d          Modelica3D library (dependencies checked by cmake later on; enabled by default)],[test "xno" = x"$enableval" && MODELICA3D_TARGET=""],[])
-if test -z "$MODELICA3D_TARGET" ; then
-AC_MSG_RESULT([no])
-else
-AC_MSG_RESULT([yes])
-MODELICA3D_TARGET="omlibrary-modelica3d"
-fi
-
 AC_SUBST(CMAKE_LDFLAGS)
 if echo $host | grep -i darwin; then
   CMAKE_LDFLAGS="-Wl,-undefined -Wl,dynamic_lookup"

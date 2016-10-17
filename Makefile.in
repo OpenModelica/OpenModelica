@@ -5,9 +5,9 @@ all: @ALL_TARGETS@ @OMLIBRARY_TARGET@
 omc:
 	$(MAKE) -C OMCompiler @OMC_TARGET@
 omlibrary-core:
-	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary "host_short=@host_short@" "RPATH_QMAKE=@RPATH_QMAKE@ @CMAKE_LDFLAGS@" "SHREXT=@SHREXT@" "MODELICA3D_TARGET=@MODELICA3D_TARGET@" core
+	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary "host_short=@host_short@" "RPATH_QMAKE=@RPATH_QMAKE@ @CMAKE_LDFLAGS@" "SHREXT=@SHREXT@" core
 omlibrary-all:
-	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary "host_short=@host_short@" "RPATH_QMAKE=@RPATH_QMAKE@ @CMAKE_LDFLAGS@" "SHREXT=@SHREXT@" "MODELICA3D_TARGET=@MODELICA3D_TARGET@" all
+	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary "host_short=@host_short@" "RPATH_QMAKE=@RPATH_QMAKE@ @CMAKE_LDFLAGS@" "SHREXT=@SHREXT@" all
 omplot: omc
 	$(MAKE) -C OMPlot
 omedit: omc omplot

@@ -29,7 +29,7 @@ ifeq ($(BUILDTYPE),)
 BUILDTYPE=Debug
 endif
 
-.PHONY: omc omc-diff omlibrary-core omplot omedit omnotebook omshell omoptim modelica3d
+.PHONY: omc omc-diff omlibrary-core omplot omedit omnotebook omshell omoptim
 
 all: omc omc-diff omlibrary-core
 
@@ -41,11 +41,11 @@ omc-diff: omc
 
 omlibrary-core:
 	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary core
-	$(MAKE) -f $(defaultMakefileTarget) modelica3d
+	$(MAKE) -f $(defaultMakefileTarget)
 
 omlibrary-all:
 	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary all
-	$(MAKE) -f $(defaultMakefileTarget) modelica3d
+	$(MAKE) -f $(defaultMakefileTarget)
 
 omplot: omc qtclientsDLLs
 	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
@@ -253,39 +253,6 @@ mkbuilddirs-python:
 	# create directories
 	mkdir -p $(builddir_lib)/python/omniORB
 	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/OMPython/OMParser
-
-modelica3d:
-	cd libraries/git/Modelica3D && mkdir -p build
-	cd libraries/git/Modelica3D/build && $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 -DDBUS_INCLUDE_DIR=$(DBUS_INCLUDE_DIR) -DDBUS_INCLUDE_LIB_DIR=$(DBUS_INCLUDE_LIB_DIR) -DDBUS_LIBRARY=$(DBUS_PATH) -DBOOST_ROOT=$(BOOST_PATH) -DCMAKE_PREFIX_PATH=$(OSG_PATH) -DCMAKE_PROGRAM_PATH=$(PKG_CONFIG_BIN) -DPKG_CONFIG_PATH=$(PKG_CONFIG_PATH) -DUSE_OMC=0 .. -G $(CMAKE_TARGET)
-	$(MAKE) -C libraries/git/Modelica3D/build
-	mkdir -p $(OMBUILDDIR)/lib/omlibrary-modelica3d/blender2.59 $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/dbus-python/etc
-	cp -p libraries/git/Modelica3D/build/lib/modcount/libmodcount.a libraries/git/Modelica3D/build/lib/modbus/libmodbus.a $(OMBUILDDIR)/lib/omc/
-	cp -p libraries/git/Modelica3D/examples/multibody/src/modelica/*.mo $(OMBUILDDIR)/lib/omlibrary-modelica3d/
-	cp -p libraries/git/Modelica3D/backends/blender2.59/dbus-server.py $(OMBUILDDIR)/lib/omlibrary-modelica3d/blender2.59/
-	cp -p libraries/git/Modelica3D/backends/osg-gtk/python/dbus-server.py $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
-	# copy the dbus-python bindings binaries required by osg-gtk python script
-	cp -rp $(OMDEVMSYS)/lib/dbus-python-1.1.1/lib/site-packages/* $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/dbus-python/
-	cp -rp $(OMDEVMSYS)/lib/dbus-python-1.1.1/bin/* $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/dbus-python/
-	cp -rp $(OMDEVMSYS)/lib/dbus-python-1.1.1/etc/* $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/dbus-python/etc
-	# copy the required gtk binaries
-	cp -p -u $(OMDEVMSYS)/lib/gtk+-2.24.10/bin/*.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
-	# copy the required modelica3D binaries
-	cp -p libraries/git/Modelica3D/build/backends/osg-gtk/libm3d-osg-gtk.* libraries/git/Modelica3D/build/lib/proc3d/libproc3d.* $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
-	# copy the required osg binaries
-	mkdir -p  $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/osgPlugins-3.5.1
-ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	# copy the dbus static lib required during the simulation
-	cp -rp $(OMDEVMSYS)/tools/msys/mingw32/lib/libdbus-1.a $(OMBUILDDIR)/lib/omc/
-	cp -p -u $(OMDEVMSYS)/tools/msys/mingw32/bin/libOpenThreads.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
-	cp -p -u $(OMDEVMSYS)/tools/msys/mingw32/bin/libosg*.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
-	cp -p -u $(OMDEVMSYS)/tools/msys/mingw32/bin/osgPlugins-3.5.1/*.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/osgPlugins-3.5.1/
-else # mingw64
-	# copy the dbus static lib required during the simulation
-	cp -rp $(OMDEVMSYS)/tools/msys/mingw64/lib/libdbus-1.a $(OMBUILDDIR)/lib/omc/
-	cp -p -u $(OMDEVMSYS)/tools/msys/mingw64/bin/libOpenThreads.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
-	cp -p -u $(OMDEVMSYS)/tools/msys/mingw64/bin/libosg*.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
-	cp -p -u $(OMDEVMSYS)/tools/msys/mingw64/bin/osgPlugins-3.5.1/*.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/osgPlugins-3.5.1/
-endif
 
 clean-python:
 	rm -rf $(builddir_share)/omc/scripts/PythonInterface $(builddir_lib)/python
