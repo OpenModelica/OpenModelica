@@ -35,8 +35,7 @@ xmlFiles.log \
 resolveLoops.log \
 evalConstFuncs.log \
 flatteningBuildings.log \
-buildings.log \
-modelica3d.log
+buildings.log
 
 SIMULATIONLOGS = \
 linearization.log \
@@ -550,9 +549,6 @@ gitlibraries.log: omc-diff
 	@echo $@ done
 cse.log: omc-diff
 	$(MAKE) -C simulation/modelica/commonSubExp -f Makefile test > $@
-	@echo $@ done
-modelica3d.log: omc-diff
-	$(MAKE) -C simulation/libraries/3rdParty/Modelica3D -f Makefile test > $@
 	@echo $@ done
 hummod.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/HumMod -f Makefile test > $@
