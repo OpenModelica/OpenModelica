@@ -24,7 +24,7 @@ OpenModelica User's Guide
   mdt
   mdtdebugger
   profiler
-  modelica3d
+  3dvisualization
   emscripten
   interop_c_python
   ompython
