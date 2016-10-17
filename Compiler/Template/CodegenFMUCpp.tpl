@@ -556,7 +556,11 @@ template accessVarsFunctionFMU2(SimCode simCode, String direction, String modelS
         >>%>
       // convert negated aliases
       else switch (*vr) {
-        <%aliasVars |> var => accessVarFMU2(simCode, direction, var, offset); separator="\n"%>
+        <%aliasVars |> var => match var
+          case SIMVAR(aliasvar=NEGATEDALIAS()) then
+            accessVarFMU2(simCode, direction, var, offset)
+          else ''
+          end match; separator="\n"%>
         default:
           throw std::invalid_argument("<%direction%><%typeName%> with wrong value reference " + omcpp::to_string(*vr));
       }

@@ -47,8 +47,12 @@ void SimVars::create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t di
 	if (_dim_real + _dim_int + _dim_bool > _dim_pre_vars)
 		throw std::runtime_error("Wrong pre variable size");
 	//allocate memory for all model variables
-	if (dim_string > 0)
+	if (dim_string > 0) {
 		_string_vars = new string[dim_string];
+	}
+	else {
+		_string_vars = NULL;
+	}
 	if (dim_bool > 0) {
 		_bool_vars = (bool*)alignedMalloc(sizeof(bool) * dim_bool, 64);
 		_pre_bool_vars = (bool*)alignedMalloc(sizeof(bool) * dim_bool, 64);

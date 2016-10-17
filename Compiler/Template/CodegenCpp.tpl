@@ -8961,9 +8961,8 @@ template numRealvars(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
-//the index 0 is reserved for undefined references
 <<
-<%intAdd(1, intAdd(varInfo.numOptimizeFinalConstraints, intAdd(varInfo.numOptimizeConstraints, intAdd(varInfo.numOutVars, intAdd(varInfo.numInVars ,intAdd(intMul(2,varInfo.numStateVars),intAdd(varInfo.numAlgVars,intAdd(varInfo.numParams,varInfo.numDiscreteReal))))))))
+<%intAdd(intMul(2,varInfo.numStateVars),intAdd(varInfo.numAlgVars,intAdd(varInfo.numParams,varInfo.numDiscreteReal)))
 %>
 >>
 end numRealvars;
@@ -8983,9 +8982,8 @@ template numIntvars(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
-//the index 0 is reserved for undefined references
 <<
-<%intAdd(1, intAdd(varInfo.numIntAlgVars,varInfo.numIntParams))%>
+<%intAdd(varInfo.numIntAlgVars,varInfo.numIntParams)%>
 >>
 end numIntvars;
 
@@ -8993,9 +8991,8 @@ template numBoolvars(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
-//the index 0 is reserved for undefined references
 <<
-<%intAdd(1, intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams))%>
+<%intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)%>
 >>
 end numBoolvars;
 
@@ -9003,9 +9000,8 @@ template numStringvars(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
-//the index 0 is reserved for undefined references
 <<
-<%intAdd(1, intAdd(varInfo.numStringAlgVars,varInfo.numStringParamVars))%>
+<%intAdd(varInfo.numStringAlgVars,varInfo.numStringParamVars)%>
 >>
 end numStringvars;
 
