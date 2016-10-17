@@ -54,8 +54,7 @@ if test -n "$QMAKE"; then
   AC_MSG_RESULT([$QMAKE])
 
   AC_MSG_CHECKING([for lrelease])
-  QTDIR=`$QMAKE -query QT_INSTALL_ARCHDATA`
-  LRELEASE=$QTDIR/bin/lrelease
+  LRELEASE=`$QMAKE -query QT_INSTALL_BINS`/lrelease
   if test -f "$LRELEASE"; then
     AC_MSG_RESULT([$LRELEASE])
   else
