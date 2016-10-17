@@ -473,62 +473,62 @@ algorithm
   try
     // Handle case with LHS component reference
     DAE.CREF(componentRef=crefLHS, ty=tyLHS) := exp;
-	  // Search whether the RHS of an equation 'x=exp' contains a subexpression 'previous(x)', if so, substitute them by 'x_previous'
-	  (scalarNew, (_, found)) := Expression.traverseExpTopDown(scalar, traversingSubsPreviousCref, (crefLHS, false));
+    // Search whether the RHS of an equation 'x=exp' contains a subexpression 'previous(x)', if so, substitute them by 'x_previous'
+    (scalarNew, (_, found)) := Expression.traverseExpTopDown(scalar, traversingSubsPreviousCref, (crefLHS, false));
     // Search whether the RHS of an equation 'x=exp' contains a subexpression  'pre' or 'previous(x)', if so, substitute them by 'x_previous'
     //(scalarNew, (_, found)) := Expression.traverseExpTopDown(scalar, traversingSubsPreAndPreviousCref, (crefLHS, false)); // BTH useful to keep?
-	  eqn := DAE.EQUATION(exp, scalarNew, source);
+    eqn := DAE.EQUATION(exp, scalarNew, source);
 
-	  if found then
-	    // Transform equation 'a.x = e' to 'a.x = if a.active then e else a.x_previous'
-	    eqn1 := wrapInStateActivationConditional(eqn, enclosingStateRef, true);
+    if found then
+      // Transform equation 'a.x = e' to 'a.x = if a.active then e else a.x_previous'
+      eqn1 := wrapInStateActivationConditional(eqn, enclosingStateRef, true);
 
-	    // Create fresh variable 'a.x_previous'
-	    var2 := createVarWithDefaults(ComponentReference.appendStringLastIdent("_previous", crefLHS), DAE.DISCRETE(), tyLHS, {});
-	    // Create fresh reset equation: 'a.x_previous = if a.active and (smOf.a.activeReset or smOf.fsm_of_a.activeResetStates[i] then x_start else previous(a.x)'
-	    eqn2 := createResetEquation(crefLHS, tyLHS, enclosingStateRef, inEnclosingFlatSmSemantics, crToExpOpt);
+      // Create fresh variable 'a.x_previous'
+      var2 := createVarWithDefaults(ComponentReference.appendStringLastIdent("_previous", crefLHS), DAE.DISCRETE(), tyLHS, {});
+      // Create fresh reset equation: 'a.x_previous = if a.active and (smOf.a.activeReset or smOf.fsm_of_a.activeResetStates[i] then x_start else previous(a.x)'
+      eqn2 := createResetEquation(crefLHS, tyLHS, enclosingStateRef, inEnclosingFlatSmSemantics, crToExpOpt);
 
-	    outEqns := eqn1 :: var2 :: eqn2 :: accEqns;
-	  else
-	    outEqns := wrapInStateActivationConditional(eqn, enclosingStateRef, false)::accEqns;
-	  end if;
+      outEqns := eqn1 :: var2 :: eqn2 :: accEqns;
+    else
+      outEqns := wrapInStateActivationConditional(eqn, enclosingStateRef, false)::accEqns;
+    end if;
   else
-	  try
+    try
       // Handle case with LHS derivative (der(a.x))
-	    if Flags.getConfigBool(Flags.CT_STATE_MACHINES) then
-	      DAE.CALL(Absyn.IDENT("der"), {DAE.CREF(componentRef=crefLHS, ty=tyLHS)}, attr) := exp;
+      if Flags.getConfigBool(Flags.CT_STATE_MACHINES) then
+        DAE.CALL(Absyn.IDENT("der"), {DAE.CREF(componentRef=crefLHS, ty=tyLHS)}, attr) := exp;
 
-	      // Find variable declaration that corresponds to crefLHS
-	      try
-	        varDecl := List.find1(dAElist, isCrefInVar, crefLHS);
-	      else
-	        Error.addCompilerError("Couldn't find variable declaration matching to cref " + ComponentReference.crefStr(crefLHS) + "\n");
-	        fail();
-	      end try;
+        // Find variable declaration that corresponds to crefLHS
+        try
+          varDecl := List.find1(dAElist, isCrefInVar, crefLHS);
+        else
+          Error.addCompilerError("Couldn't find variable declaration matching to cref " + ComponentReference.crefStr(crefLHS) + "\n");
+          fail();
+        end try;
 
-	      isOuterVar := DAEUtil.isOuterVar(varDecl);
+        isOuterVar := DAEUtil.isOuterVar(varDecl);
 
-	      if isOuterVar then
-	        // Create fresh variable 'a.x_der$'
-	        cref2 := ComponentReference.appendStringLastIdent("_der$", crefLHS);
-	        var2 := createVarWithDefaults(cref2, DAE.VARIABLE(), tyLHS, {});
+        if isOuterVar then
+          // Create fresh variable 'a.x_der$'
+          cref2 := ComponentReference.appendStringLastIdent("_der$", crefLHS);
+          var2 := createVarWithDefaults(cref2, DAE.VARIABLE(), tyLHS, {});
 
-	        // Change equation 'der(a.x) = e' to 'a.x_der$ = e'
-	        eqn1 := DAE.EQUATION(DAE.CREF(cref2, tyLHS), scalar, source);
+          // Change equation 'der(a.x) = e' to 'a.x_der$ = e'
+          eqn1 := DAE.EQUATION(DAE.CREF(cref2, tyLHS), scalar, source);
 
-	        outEqns := eqn1 :: var2 :: accEqns;
-	      else
-	        // Transform equation 'der(a.x) = e' to 'der(a.x) = if a.active then e else 0'
-	        eqn1 := wrapInStateActivationConditionalCT(inEqn, enclosingStateRef);
+          outEqns := eqn1 :: var2 :: accEqns;
+        else
+          // Transform equation 'der(a.x) = e' to 'der(a.x) = if a.active then e else 0'
+          eqn1 := wrapInStateActivationConditionalCT(inEqn, enclosingStateRef);
 
-	        // Create fresh reinit equation: 'when a.active and (smOf.a.activeReset or smOf.fsm_of_a.activeResetStates[i]) then reinit(a.x, a.x_start) end when'
-	        eqn2 := createResetEquationCT(crefLHS, tyLHS, enclosingStateRef, inEnclosingFlatSmSemantics, crToExpOpt);
+          // Create fresh reinit equation: 'when a.active and (smOf.a.activeReset or smOf.fsm_of_a.activeResetStates[i]) then reinit(a.x, a.x_start) end when'
+          eqn2 := createResetEquationCT(crefLHS, tyLHS, enclosingStateRef, inEnclosingFlatSmSemantics, crToExpOpt);
 
-	        outEqns := eqn1 :: eqn2 :: accEqns;
-	      end if;
-		  else
-		    fail();
-	    end if;
+          outEqns := eqn1 :: eqn2 :: accEqns;
+        end if;
+      else
+        fail();
+      end if;
     else
       if Flags.getConfigBool(Flags.CT_STATE_MACHINES) then
         Error.addCompilerError("Currently, only equations in state machines with a LHS component reference, e.g., x=.., or its derivative, e.g., der(x)=.., are supported");
@@ -1812,10 +1812,10 @@ algorithm
   tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
 
   if Flags.getConfigBool(Flags.CT_STATE_MACHINES) then
-	  // Extract transition conditions
-	  condLst := List.filterMap1(inElementLst, extractSmOfExps, "cImmediate");
-	  (eqnLst, otherLst) := List.extractOnTrue(inElementLst, isPreOrPreviousEquation);
-	  condition := DAE.ARRAY(tArrayBool, true, cond1 :: condLst);
+    // Extract transition conditions
+    condLst := List.filterMap1(inElementLst, extractSmOfExps, "cImmediate");
+    (eqnLst, otherLst) := List.extractOnTrue(inElementLst, isPreOrPreviousEquation);
+    condition := DAE.ARRAY(tArrayBool, true, cond1 :: condLst);
   else
     (eqnLst, otherLst) := List.extractOnTrue(inElementLst, isEquation);
     condition := DAE.ARRAY(tArrayBool, true, {cond1, cond2});
