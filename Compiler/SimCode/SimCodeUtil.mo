@@ -12572,23 +12572,26 @@ public function getValueReference
    author: rfranke and mwalther and vwaurich and sjoelund"
   input SimCodeVar.SimVar inSimVar;
   input SimCode.SimCode inSimCode;
-  input Boolean inElimNegAliases;
-  output String valueReference;
-protected
-  DAE.ComponentRef cref;
+  input Boolean inElimNegAliases "=false to keep negative alias references";
+  output String outValueReference;
 algorithm
-  if Config.simCodeTarget() == "Cpp" then
-    valueReference := getVarIndexByMapping(inSimCode.varToArrayIndexMapping, inSimVar.name, true, "-1");
-    if stringEqual(valueReference, "-1") then
-      Error.addInternalError("invalid return value from getVarIndexByMapping for "+simVarString(inSimVar), sourceInfo());
-    end if;
-  else
-    valueReference := match inSimVar
-      case SimCodeVar.SIMVAR(aliasvar = SimCodeVar.ALIAS(varName = cref))
-        then getDefaultValueReference(SimCodeFunctionUtil.cref2simvar(cref, inSimCode), inSimCode.modelInfo.varInfo);
-      else getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
-    end match;
-  end if;
+  outValueReference := match (inSimVar, inElimNegAliases, Config.simCodeTarget())
+    local
+      DAE.ComponentRef cref;
+      String valueReference;
+    case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.NEGATEDALIAS(_)), false, _) then
+      getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
+    case (_, _, "Cpp") algorithm
+      valueReference := getVarIndexByMapping(inSimCode.varToArrayIndexMapping, inSimVar.name, true, "-1");
+      if stringEqual(valueReference, "-1") then
+        Error.addInternalError("invalid return value from getVarIndexByMapping for "+simVarString(inSimVar), sourceInfo());
+      end if;
+      then valueReference;
+    case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.ALIAS(varName = cref)), _, _) then
+      getDefaultValueReference(SimCodeFunctionUtil.cref2simvar(cref, inSimCode), inSimCode.modelInfo.varInfo);
+    else
+      getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
+  end match;
 end getValueReference;
 
 protected function getDefaultValueReference
