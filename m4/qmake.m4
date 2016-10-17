@@ -18,13 +18,15 @@ if test -n "$QMAKE"; then
 
   if "$QMAKE" -qt5 -v > /dev/null 2>&1; then
     QMAKE="$QMAKE -qt5"
+    QT4BUILD="-DQT4_BUILD:Boolean=OFF"
   elif "$QMAKE" -qt4 -v > /dev/null 2>&1; then
     QMAKE="$QMAKE -qt4"
-    QT4BUILD="-DQT4_BUILD:Boolean=OFF"
+    QT4BUILD="-DQT4_BUILD:Boolean=ON"
   elif "$QMAKE" -v 2>&1 | grep "Qt version 5"; then
     true
-  elif "$QMAKE" -v 2>&1 | grep "Qt version 4"; then
     QT4BUILD="-DQT4_BUILD:Boolean=OFF"
+  elif "$QMAKE" -v 2>&1 | grep "Qt version 4"; then
+    QT4BUILD="-DQT4_BUILD:Boolean=ON"
   else
     QMAKE_VERSION=`"$QMAKE" -v`
     AC_MSG_ERROR([qmake does not report qt version 4 or 5: $QMAKE_VERSION])
