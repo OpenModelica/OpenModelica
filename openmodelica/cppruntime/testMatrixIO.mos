@@ -13,6 +13,8 @@ model MatrixIOTest
   output Real a12 = A[1,2];
   output Real b12 = B[1,2];
   output Real c12 = C[1,2];
+  Real nc12 = -c12; // no output as local alias is treated differently
+  output Real ync12 = nc12;
   annotation(experiment(StopTime = 0));
 end MatrixIOTest;
 ");
@@ -25,6 +27,8 @@ val(C[1,2], 0);
 val(a12, 0);
 val(b12, 0);
 val(c12, 0);
+val(nc12, 0);
+val(ync12, 0);
 
 // Result:
 // true
@@ -41,4 +45,6 @@ val(c12, 0);
 // 12.0
 // 12.0
 // 12.0
+// -12.0
+// -12.0
 // endResult
