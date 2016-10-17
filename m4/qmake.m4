@@ -13,17 +13,6 @@ else
   AC_CHECK_PROGS(QMAKE,qmake qmake-mac qmake-qt4,"")
 fi
 
-AC_MSG_CHECKING([for lrelease in env.vars LRELEASE and QTDIR])
-if test ! -z "$LRELEASE"; then
-  AC_MSG_RESULT([$LRELEASE])
-elif test -f $QTDIR/bin/lrelease; then
-  LRELEASE=$QTDIR/bin/lrelease
-  AC_MSG_RESULT([$LRELEASE])
-else
-  AC_MSG_RESULT([no])
-  AC_CHECK_PROGS(LRELEASE,lrelease-qt4 lrelease,"")
-fi
-
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qmake arguments])
 
@@ -60,4 +49,13 @@ if test -n "$QMAKE"; then
     QMAKE="$QMAKE -spec linux-g++ QMAKE_CXX=\"$CXX\" QMAKE_CC=\"$CC\" QMAKE_LINK=\"$CXX\" QMAKE_LIBDIR_QT=\"$QMAKE_LIBDIR_QT\""
   fi
   AC_MSG_RESULT([$QMAKE])
+
+  AC_MSG_CHECKING([for lrelease])
+  QTDIR=`$QMAKE -query QT_INSTALL_ARCHDATA`
+  LRELEASE=$QTDIR/bin/lrelease
+  if test -f "$LRELEASE"; then
+    AC_MSG_RESULT([$LRELEASE])
+  else
+    AC_MSG_ERROR([$LRELEASE does not exist])
+  fi
 fi
