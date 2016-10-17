@@ -122,18 +122,18 @@ template scalarVariableXML(SimCode simCode, SimVar simVar, HashTableCrIListArray
       let variableCode = if generateFMUModelDescription then CodegenFMUCommon.ScalarVariableType(simVar) else
                                                              ScalarVariableType(simCode, name, aliasvar, unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_, complexStartExpressions, stateDerVectorName)
       <<
-      <ScalarVariable <%scalarVariableAttributeXML(simVar, varToArrayIndexMapping, indexForUndefinedReferences, generateFMUModelDescription)%>>
+      <ScalarVariable <%scalarVariableAttributeXML(simVar, simCode, indexForUndefinedReferences, generateFMUModelDescription)%>>
         <%variableCode%>
       </ScalarVariable>
       >>
 end scalarVariableXML;
 
-template scalarVariableAttributeXML(SimVar simVar, HashTableCrIListArray.HashTable varToArrayIndexMapping, String indexForUndefinedReferences, Boolean generateFMUModelDescription)
+template scalarVariableAttributeXML(SimVar simVar, SimCode simCode, String indexForUndefinedReferences, Boolean generateFMUModelDescription)
  "Generates code for ScalarVariable Attribute file for FMU target."
 ::=
   match simVar
     case SIMVAR(source = SOURCE(info = info)) then
-      let valueReference = SimCodeUtil.getVarIndexByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+      let valueReference = SimCodeUtil.getValueReference(simVar, simCode, true)
       let alias = getAliasAttribute(aliasvar)
       let causalityAtt = CodegenFMUCommon.getCausality(causality)
       let variability = getVariablity(varKind)

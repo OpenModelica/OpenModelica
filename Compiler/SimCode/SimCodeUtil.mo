@@ -12577,14 +12577,24 @@ public function getValueReference
 algorithm
   outValueReference := match (inSimVar, inElimNegAliases, Config.simCodeTarget())
     local
+      SimCodeVar.SimVar simVar;
       DAE.ComponentRef cref;
       String valueReference;
     case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.NEGATEDALIAS(_)), false, _) then
       getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
     case (_, _, "Cpp") algorithm
-      valueReference := getVarIndexByMapping(inSimCode.varToArrayIndexMapping, inSimVar.name, true, "-1");
+      // resolve aliases to get multi-dimensional arrays right
+      // (this should possibly be done in getVarIndexByMapping?)
+      simVar := match inSimVar
+        case SimCodeVar.SIMVAR(aliasvar = SimCodeVar.ALIAS(varName = cref))
+          then SimCodeFunctionUtil.cref2simvar(cref, inSimCode);
+        case SimCodeVar.SIMVAR(aliasvar = SimCodeVar.NEGATEDALIAS(varName = cref))
+          then SimCodeFunctionUtil.cref2simvar(cref, inSimCode);
+        else inSimVar;
+      end match;
+      valueReference := getVarIndexByMapping(inSimCode.varToArrayIndexMapping, simVar.name, true, "-1");
       if stringEqual(valueReference, "-1") then
-        Error.addInternalError("invalid return value from getVarIndexByMapping for "+simVarString(inSimVar), sourceInfo());
+        Error.addInternalError("invalid return value from getVarIndexByMapping for " + simVarString(simVar), sourceInfo());
       end if;
       then valueReference;
     case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.ALIAS(varName = cref)), _, _) then
