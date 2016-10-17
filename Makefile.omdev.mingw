@@ -41,11 +41,9 @@ omc-diff: omc
 
 omlibrary-core:
 	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary core
-	$(MAKE) -f $(defaultMakefileTarget)
 
 omlibrary-all:
 	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary all
-	$(MAKE) -f $(defaultMakefileTarget)
 
 omplot: omc qtclientsDLLs
 	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
