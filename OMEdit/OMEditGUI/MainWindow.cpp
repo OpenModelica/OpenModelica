@@ -225,7 +225,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpVariablesDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   addDockWidget(Qt::RightDockWidgetArea, mpVariablesDockWidget);
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
-  mShowVariablesWithModel = false;
+  mShowVariablesWithModel = true;
   mPreviousPerspective = -1;
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
