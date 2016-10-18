@@ -35,8 +35,8 @@ if test -n "$QMAKE"; then
 
   if echo $host | grep darwin; then
     echo "#!/bin/sh -x" > ./qmake.sh
-    echo "$QMAKE \$*" >> ./qmake.sh
-    echo 'MAKEFILE=`echo -- $* | grep -o "Makefile@<:@A-Z.a-z@:>@*"`' >> ./qmake.sh
+    echo "$QMAKE \"\$@\"" >> ./qmake.sh
+    echo 'MAKEFILE=`echo -- \"$*\" | grep -o "Makefile@<:@A-Z.a-z@:>@*"`' >> ./qmake.sh
     echo 'if test -z "$MAKEFILE"; then MAKEFILE=Makefile; fi' >> ./qmake.sh
     # echo 'echo $MAKEFILE' >> ./qmake.sh
     echo 'cat $MAKEFILE | \
