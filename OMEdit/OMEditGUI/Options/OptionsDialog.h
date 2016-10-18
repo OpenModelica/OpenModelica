@@ -182,6 +182,7 @@ public:
   QString getTerminalCommand() {return mpTerminalCommandTextBox->text();}
   void setTerminalCommandArguments(QString value) {mpTerminalCommandArgumentsTextBox->setText(value);}
   QString getTerminalCommandArguments() {return mpTerminalCommandArgumentsTextBox->text();}
+  QCheckBox* getHideVariablesBrowserCheckBox() {return mpHideVariablesBrowserCheckBox;}
   QSpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
   void setShowProtectedClasses(bool value);
   bool getShowProtectedClasses();
@@ -210,6 +211,7 @@ private:
   QPushButton *mpTerminalCommandBrowseButton;
   Label *mpTerminalCommandArgumentsLabel;
   QLineEdit *mpTerminalCommandArgumentsTextBox;
+  QCheckBox *mpHideVariablesBrowserCheckBox;
   QGroupBox *mpLibrariesBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   QSpinBox *mpLibraryIconSizeSpinBox;
@@ -519,6 +521,7 @@ public:
   QCheckBox* getIgnoreCommandLineOptionsAnnotationCheckBox() {return mpIgnoreCommandLineOptionsAnnotationCheckBox;}
   QCheckBox* getIgnoreSimulationFlagsAnnotationCheckBox() {return mpIgnoreSimulationFlagsAnnotationCheckBox;}
   QCheckBox* getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
+  QCheckBox* getSwitchToPlottingPerspectiveCheckBox() {return mpSwitchToPlottingPerspectiveCheckBox;}
   void setOutputMode(QString value);
   QString getOutputMode();
 private:
@@ -538,6 +541,7 @@ private:
   QCheckBox *mpIgnoreCommandLineOptionsAnnotationCheckBox;
   QCheckBox *mpIgnoreSimulationFlagsAnnotationCheckBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
+  QCheckBox *mpSwitchToPlottingPerspectiveCheckBox;
   QGroupBox *mpOutputGroupBox;
   QRadioButton *mpStructuredRadioButton;
   QRadioButton *mpFormattedTextRadioButton;

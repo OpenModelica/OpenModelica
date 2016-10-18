@@ -137,6 +137,10 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("terminalCommandArgs")) {
     mpGeneralSettingsPage->setTerminalCommandArguments(mpSettings->value("terminalCommandArgs").toString());
   }
+  // read hide variables browser
+  if (mpSettings->contains("hideVariablesBrowser")) {
+    mpGeneralSettingsPage->getHideVariablesBrowserCheckBox()->setChecked(mpSettings->value("hideVariablesBrowser").toBool());
+  }
   // read library icon size
   if (mpSettings->contains("libraryIconSize")) {
     mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->setValue(mpSettings->value("libraryIconSize").toInt());
@@ -453,6 +457,9 @@ void OptionsDialog::readSimulationSettings()
   if (mpSettings->contains("simulation/saveClassBeforeSimulation")) {
     mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->setChecked(mpSettings->value("simulation/saveClassBeforeSimulation").toBool());
   }
+  if (mpSettings->contains("simulation/switchToPlottingPerspectiveAfterSimulation")) {
+    mpSimulationPage->getSwitchToPlottingPerspectiveCheckBox()->setChecked(mpSettings->value("simulation/switchToPlottingPerspectiveAfterSimulation").toBool());
+  }
   if (mpSettings->contains("simulation/outputMode")) {
     mpSimulationPage->setOutputMode(mpSettings->value("simulation/outputMode").toString());
   }
@@ -716,6 +723,8 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("terminalCommand", mpGeneralSettingsPage->getTerminalCommand());
   // save terminal command arguments
   mpSettings->setValue("terminalCommandArgs", mpGeneralSettingsPage->getTerminalCommandArguments());
+  // save hide variables browser
+  mpSettings->setValue("hideVariablesBrowser", mpGeneralSettingsPage->getHideVariablesBrowserCheckBox()->isChecked());
   // save library icon size
   mpSettings->setValue("libraryIconSize", mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value());
   // save show protected classes
@@ -928,6 +937,7 @@ void OptionsDialog::saveSimulationSettings()
   }
   // save class before simulation.
   mpSettings->setValue("simulation/saveClassBeforeSimulation", mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->isChecked());
+  mpSettings->setValue("simulation/switchToPlottingPerspectiveAfterSimulation", mpSimulationPage->getSwitchToPlottingPerspectiveCheckBox()->isChecked());
   mpSettings->setValue("simulation/outputMode", mpSimulationPage->getOutputMode());
 }
 
@@ -1379,6 +1389,10 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // terminal command args
   mpTerminalCommandArgumentsLabel = new Label(tr("Terminal Command Arguments:"));
   mpTerminalCommandArgumentsTextBox = new QLineEdit;
+  // hide variables browser checkbox
+  mpHideVariablesBrowserCheckBox = new QCheckBox(tr("Hide Variables Browser"));
+  mpHideVariablesBrowserCheckBox->setToolTip(tr("Hides the variable browser when switching away from plotting perspective."));
+  mpHideVariablesBrowserCheckBox->setChecked(true);
   // set the layout of general settings group
   QGridLayout *generalSettingsLayout = new QGridLayout;
   generalSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -1395,6 +1409,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   generalSettingsLayout->addWidget(mpTerminalCommandBrowseButton, 4, 2);
   generalSettingsLayout->addWidget(mpTerminalCommandArgumentsLabel, 5, 0);
   generalSettingsLayout->addWidget(mpTerminalCommandArgumentsTextBox, 5, 1, 1, 2);
+  generalSettingsLayout->addWidget(mpHideVariablesBrowserCheckBox, 6, 0, 1, 3);
   mpGeneralSettingsGroupBox->setLayout(generalSettingsLayout);
   // Libraries Browser group box
   mpLibrariesBrowserGroupBox = new QGroupBox(tr("Libraries Browser"));
@@ -3013,6 +3028,9 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
   mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
   mpSaveClassBeforeSimulationCheckBox->setChecked(true);
+  /* switch to plotting perspective after simulation checkbox */
+  mpSwitchToPlottingPerspectiveCheckBox = new QCheckBox(tr("Switch to plotting perspective after simulation"));
+  mpSwitchToPlottingPerspectiveCheckBox->setChecked(true);
   // simulation output format
   mpOutputGroupBox = new QGroupBox(Helper::output);
   mpStructuredRadioButton = new QRadioButton(tr("Structured"));
@@ -3049,7 +3067,8 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, 5, 0, 1, 3);
   pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, 6, 0, 1, 3);
   pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 7, 0, 1, 3);
-  pSimulationLayout->addWidget(mpOutputGroupBox, 8, 0, 1, 3);
+  pSimulationLayout->addWidget(mpSwitchToPlottingPerspectiveCheckBox, 8, 0, 1, 3);
+  pSimulationLayout->addWidget(mpOutputGroupBox, 9, 0, 1, 3);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;

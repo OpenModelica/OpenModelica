@@ -211,8 +211,6 @@ private:
   bool mDebug;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
-  bool mShowVariablesWithModel;
-  int mPreviousPerspective;
   OptionsDialog *mpOptionsDialog;
   MessagesWidget *mpMessagesWidget;
   QDockWidget *mpMessagesDockWidget;
@@ -364,6 +362,7 @@ private:
   QToolBar *mpModelSwitcherToolBar;
   QToolButton *mpModelSwitcherToolButton;
   QMenu *mpModelSwitcherMenu;
+  QToolBar *mpReSimulationToolBar;
   QToolBar *mpPlotToolBar;
   QToolBar *mpTLMSimulationToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;

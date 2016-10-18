@@ -1256,6 +1256,13 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
   }
 }
 
+/*!
+ * \brief SimulationDialog::simulationProcessFinished
+ * \param simulationOptions
+ * \param resultFileLastModifiedDateTime
+ * Handles what should be done after the simulation process has finished.\n
+ * Reads the result variables and inserts them into the variables browser.\n
+ */
 void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime)
 {
   QString workingDirectory = simulationOptions.getWorkingDirectory();
@@ -1270,22 +1277,19 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     // close the simulation result file.
     pOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
-      if (mpMainWindow->getVariablesDockWidget()->isVisible()
-          && !mpLaunchAnimationCheckBox->isChecked()) {
-        // stay in current perspective and enable re-simulation
-        mpMainWindow->getPlotToolBar()->setEnabled(true);
-      }
-      else {
-        // switch to plotting perspective
+      if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
         mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
-      }
-      // if simulated with animation then open the animation directly.
-      if (mpLaunchAnimationCheckBox->isChecked()) {
-        mpMainWindow->getPlotWindowContainer()->addAnimationWindow();
-        AnimationWindow *pAnimationWindow = mpMainWindow->getPlotWindowContainer()->getCurrentAnimationWindow();
-        if (pAnimationWindow) {
-          pAnimationWindow->openAnimationFile(simulationOptions.getResultFileName());
+        // if simulated with animation then open the animation directly.
+        if (mpLaunchAnimationCheckBox->isChecked()) {
+          mpMainWindow->getPlotWindowContainer()->addAnimationWindow();
+          AnimationWindow *pAnimationWindow = mpMainWindow->getPlotWindowContainer()->getCurrentAnimationWindow();
+          if (pAnimationWindow) {
+            pAnimationWindow->openAnimationFile(simulationOptions.getResultFileName());
+          }
         }
+      } else {
+        // stay in current perspective and show variables browser
+        mpMainWindow->getVariablesDockWidget()->show();
       }
       pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getResultFileName(), workingDirectory, list, simulationOptions);
     }

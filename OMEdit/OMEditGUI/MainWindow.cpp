@@ -225,8 +225,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpVariablesDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   addDockWidget(Qt::RightDockWidgetArea, mpVariablesDockWidget);
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
-  mShowVariablesWithModel = true;
-  mPreviousPerspective = -1;
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
   setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
@@ -238,6 +236,8 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   createActions();
   createToolbars();
   createMenus();
+  // enable/disable re-simulation toolbar based on variables browser visibiltiy.
+  connect(mpVariablesDockWidget, SIGNAL(visibilityChanged(bool)), mpReSimulationToolBar, SLOT(setEnabled(bool)));
   // Create simulation dialog when needed
   mpSimulationDialog = 0;
   // Create TLM co-simulation dialog when needed
@@ -536,7 +536,6 @@ void MainWindow::openResultFiles(QStringList fileNames)
     if (list.size() > 0) {
       mpPerspectiveTabbar->setCurrentIndex(2);
       mpVariablesWidget->insertVariablesItemsToTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
-      mpVariablesDockWidget->show();
     }
   }
 }
@@ -2809,6 +2808,7 @@ void MainWindow::createMenus()
   pViewToolbarsMenu->addAction(mpViewToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpShapesToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpSimulationToolBar->toggleViewAction());
+  pViewToolbarsMenu->addAction(mpReSimulationToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpPlotToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpModelSwitcherToolBar->toggleViewAction());
   // Add Actions to Windows View Sub Menu
@@ -2957,17 +2957,15 @@ void MainWindow::switchToWelcomePerspective()
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
   mpModelSwitcherToolButton->setEnabled(false);
-  if (mPreviousPerspective == 1) {
-    mShowVariablesWithModel =  mpVariablesDockWidget->isVisible();
+  if (mpOptionsDialog->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
+    mpVariablesDockWidget->hide();
   }
-  mpVariablesDockWidget->hide();
   mpStackFramesDockWidget->hide();
   mpBreakpointsDockWidget->hide();
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
-  mPreviousPerspective = 0;
 }
 
 /*!
@@ -2978,14 +2976,10 @@ void MainWindow::switchToModelingPerspective()
 {
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-  if (mShowVariablesWithModel) {
-    mpVariablesDockWidget->show();
-    mpPlotToolBar->setEnabled(true);
-  }
-  else {
+  if (mpOptionsDialog->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
-    mpPlotToolBar->setEnabled(false);
   }
+  mpPlotToolBar->setEnabled(false);
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -2996,7 +2990,6 @@ void MainWindow::switchToModelingPerspective()
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
-  mPreviousPerspective = 1;
 }
 
 /*!
@@ -3024,9 +3017,6 @@ void MainWindow::switchToPlottingPerspective()
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
     mpPlotWindowContainer->addPlotWindow(true);
   }
-  if (mPreviousPerspective == 1) {
-    mShowVariablesWithModel = mpVariablesDockWidget->isVisible();
-  }
   mpVariablesDockWidget->show();
   mpPlotToolBar->setEnabled(true);
   // In case user has tabbed the dock widgets then make VariablesWidget active.
@@ -3039,7 +3029,6 @@ void MainWindow::switchToPlottingPerspective()
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
-  mPreviousPerspective = 2;
 }
 
 /*!
@@ -3050,10 +3039,9 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
 {
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-  if (mPreviousPerspective == 1) {
-    mShowVariablesWithModel = mpVariablesDockWidget->isVisible();
+  if (mpOptionsDialog->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
+    mpVariablesDockWidget->hide();
   }
-  mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
@@ -3065,7 +3053,6 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpLocalsDockWidget->show();
   mpTargetOutputDockWidget->show();
   mpGDBLoggerDockWidget->show();
-  mPreviousPerspective = 3;
 }
 
 /*!
@@ -3216,14 +3203,18 @@ void MainWindow::createToolbars()
   mpModelSwitcherToolButton->setIcon(QIcon(":/Resources/icons/switch.svg"));
   connect(mpModelSwitcherToolButton, SIGNAL(clicked()), this, SLOT(openRecentModelWidget()));
   mpModelSwitcherToolBar->addWidget(mpModelSwitcherToolButton);
+  // Re-simulation Toolbar
+  mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
+  mpReSimulationToolBar->setObjectName("Re-simulation Toolbar");
+  mpReSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
+  // add actions to Re-simulation Toolbar
+  mpReSimulationToolBar->addAction(mpReSimulateModelAction);
+  mpReSimulationToolBar->addAction(mpReSimulateSetupAction);
   // Plot Toolbar
   mpPlotToolBar = addToolBar(tr("Plot Toolbar"));
   mpPlotToolBar->setObjectName("Plot Toolbar");
   mpPlotToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to Plot Toolbar
-  mpPlotToolBar->addAction(mpReSimulateModelAction);
-  mpPlotToolBar->addAction(mpReSimulateSetupAction);
-  mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpNewPlotWindowAction);
   mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);
   mpPlotToolBar->addAction(mpNewAnimationWindowAction);
