@@ -1,7 +1,7 @@
 // name:     DIC_FMU1_CPP
 // keywords: double integrator FMI-Export FMI-Import
 // status:   correct
-// teardown_command: rm -rf binaries sources modelDescription.xml DIC.fmu *DIC*.so OMCppDIC*.cpp OMCppDIC*.h OMCppDIC*.o DIC*.json DIC_me_FMU.mo
+// teardown_command: rm -rf binaries sources modelDescription.xml DIC.fmu *DIC*.so OMCppDIC*.cpp OMCppDIC*.h OMCppDIC*.o DIC*.json *DIC_me*
 // Real variables, Real input variable, continuous-time states, state events, event iteration
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();

@@ -1,26 +1,44 @@
-// name:  testModelDescription2
-// keywords: FMI 2.0 export #3763
+// name:  testDrumBoiler
+// keywords: FMI export #3763 import #4027
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml *DrumBoiler* output.log
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml *DrumBoilerModel*
 //
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
-loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(Modelica); getErrorString();
 loadString("
-model DrumBoiler
+model DrumBoilerModel
   extends Modelica.Fluid.Examples.DrumBoiler.DrumBoiler(use_inputs = true);
   Modelica.Blocks.Interfaces.RealOutput sigma_D(unit = \"N/mm2\");
 equation
   sigma_D = (-1e3 * der(evaporator.T_D)) + 1e-5 * evaporator.p;
-end DrumBoiler;
+end DrumBoilerModel;
 ");
 getErrorString();
 
-translateModelFMU(DrumBoiler, version="2.0"); getErrorString();
+translateModelFMU(DrumBoilerModel, version="2.0"); getErrorString();
 
 // unzip to console, quiet, extra quiet
-system("unzip -cqq DrumBoiler.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
+system("unzip -cqq DrumBoilerModel.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
 readFile("modelDescription.tmp.xml");
+
+importFMU("DrumBoilerModel.fmu"); getErrorString();
+loadFile("DrumBoilerModel_me_FMU.mo"); getErrorString();
+
+setCommandLineOptions("+simCodeTarget=C"); getErrorString();
+simulate(DrumBoilerModel_me_FMU, stopTime=100.0, simflags="-override=q_F=10,Y_Valve=1"); getErrorString();
+
+// inputs
+val(q_F, 100);
+val(Y_Valve, 100);
+// outputs
+val(p_S, 100);
+val(qm_S, 100);
+val(sigma_D, 100);
+val(T_S, 100);
+val(V_l, 100);
+// negated alias
+val(evaporator_qm_S, 100);
 
 // Result:
 // true
@@ -29,18 +47,18 @@ readFile("modelDescription.tmp.xml");
 // ""
 // true
 // ""
-// "SimCode: The model DrumBoiler has been translated to FMU"
+// "SimCode: The model DrumBoilerModel has been translated to FMU"
 // ""
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <fmiModelDescription
 //   fmiVersion=\"2.0\"
-//   modelName=\"DrumBoiler\"
+//   modelName=\"DrumBoilerModel\"
 //   description=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"3\">
 //   <ModelExchange
-//     modelIdentifier=\"DrumBoiler\">
+//     modelIdentifier=\"DrumBoilerModel\">
 //   </ModelExchange>
 //   <TypeDefinitions>
 //     <SimpleType name=\"Modelica.Blocks.Types.Init\">
@@ -2229,7 +2247,7 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"limiter.limitsAtInit\"
 //     valueReference=\"10\"
-//     description=\"= false, if limits are ignored during initialization (i.e., y=u)\"
+//     description=\"Has no longer an effect and is only kept for backwards compatibility (the implementation uses now the homotopy operator)\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
@@ -2432,4 +2450,24 @@ readFile("modelDescription.tmp.xml");
 //   </ModelStructure>
 // </fmiModelDescription>
 // "
+// "DrumBoilerModel_me_FMU.mo"
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrumBoilerModel_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrumBoilerModel_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=q_F=10,Y_Valve=1'",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 10.0
+// 1.0
+// 1.066186930067683
+// 1.132373860135367
+// -16.62186190266736
+// 101.4102120346306
+// 66.98717532203301
+// -1.132373860135367
 // endResult

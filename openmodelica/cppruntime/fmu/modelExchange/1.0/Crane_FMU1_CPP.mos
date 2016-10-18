@@ -1,9 +1,10 @@
 // name:     Crane_FMI_1_0_CPP
 // keywords: Crane FMI-Export FMI-Import
 // status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml *cranes_crane*
 // Real variables, Real input variable, continuous-time states, state events, event iteration
 
-loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(Modelica); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 loadFile("cranes.mo"); getErrorString();
 translateModelFMU(cranes.crane, version="1.0"); getErrorString();
