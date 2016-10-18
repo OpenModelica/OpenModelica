@@ -1270,7 +1270,15 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     // close the simulation result file.
     pOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
-      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
+      if (mpMainWindow->getVariablesDockWidget()->isVisible()
+          && !mpLaunchAnimationCheckBox->isChecked()) {
+        // stay in current perspective and enable re-simulation
+        mpMainWindow->getPlotToolBar()->setEnabled(true);
+      }
+      else {
+        // switch to plotting perspective
+        mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
+      }
       // if simulated with animation then open the animation directly.
       if (mpLaunchAnimationCheckBox->isChecked()) {
         mpMainWindow->getPlotWindowContainer()->addAnimationWindow();

@@ -134,6 +134,7 @@ public:
   Label* getPointerXPositionLabel() {return mpPointerXPositionLabel;}
   Label* getPointerYPositionLabel() {return mpPointerYPositionLabel;}
   QTabBar* getPerspectiveTabBar() {return mpPerspectiveTabbar;}
+  QToolBar* getPlotToolBar() {return mpPlotToolBar;}
   QTimer* getAutoSaveTimer() {return mpAutoSaveTimer;}
   QAction* getSaveAction() {return mpSaveAction;}
   QAction* getSaveAsAction() {return mpSaveAsAction;}
@@ -210,6 +211,8 @@ private:
   bool mDebug;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
+  bool mShowVariablesWithModel;
+  int mPreviousPerspective;
   OptionsDialog *mpOptionsDialog;
   MessagesWidget *mpMessagesWidget;
   QDockWidget *mpMessagesDockWidget;

@@ -225,6 +225,8 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpVariablesDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   addDockWidget(Qt::RightDockWidgetArea, mpVariablesDockWidget);
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
+  mShowVariablesWithModel = true;
+  mPreviousPerspective = -1;
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
   setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
@@ -2955,6 +2957,9 @@ void MainWindow::switchToWelcomePerspective()
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
   mpModelSwitcherToolButton->setEnabled(false);
+  if (mPreviousPerspective == 1) {
+    mShowVariablesWithModel =  mpVariablesDockWidget->isVisible();
+  }
   mpVariablesDockWidget->hide();
   mpStackFramesDockWidget->hide();
   mpBreakpointsDockWidget->hide();
@@ -2962,6 +2967,7 @@ void MainWindow::switchToWelcomePerspective()
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
+  mPreviousPerspective = 0;
 }
 
 /*!
@@ -2972,19 +2978,25 @@ void MainWindow::switchToModelingPerspective()
 {
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-  mpVariablesDockWidget->hide();
-  mpPlotToolBar->setEnabled(false);
+  if (mShowVariablesWithModel) {
+    mpVariablesDockWidget->show();
+    mpPlotToolBar->setEnabled(true);
+  }
+  else {
+    mpVariablesDockWidget->hide();
+    mpPlotToolBar->setEnabled(false);
+  }
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpLibraryDockWidget);
   }
-  mpVariablesDockWidget->hide();
   mpStackFramesDockWidget->hide();
   mpBreakpointsDockWidget->hide();
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
+  mPreviousPerspective = 1;
 }
 
 /*!
@@ -3012,6 +3024,9 @@ void MainWindow::switchToPlottingPerspective()
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
     mpPlotWindowContainer->addPlotWindow(true);
   }
+  if (mPreviousPerspective == 1) {
+    mShowVariablesWithModel = mpVariablesDockWidget->isVisible();
+  }
   mpVariablesDockWidget->show();
   mpPlotToolBar->setEnabled(true);
   // In case user has tabbed the dock widgets then make VariablesWidget active.
@@ -3019,12 +3034,12 @@ void MainWindow::switchToPlottingPerspective()
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpVariablesDockWidget);
   }
-  mpVariablesDockWidget->show();
   mpStackFramesDockWidget->hide();
   mpBreakpointsDockWidget->hide();
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
+  mPreviousPerspective = 2;
 }
 
 /*!
@@ -3035,6 +3050,9 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
 {
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
+  if (mPreviousPerspective == 1) {
+    mShowVariablesWithModel = mpVariablesDockWidget->isVisible();
+  }
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
   // In case user has tabbed the dock widgets then make LibraryWidget active.
@@ -3047,6 +3065,7 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpLocalsDockWidget->show();
   mpTargetOutputDockWidget->show();
   mpGDBLoggerDockWidget->show();
+  mPreviousPerspective = 3;
 }
 
 /*!
