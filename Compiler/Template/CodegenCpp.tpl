@@ -5871,32 +5871,13 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    let initialequations  = functionInitialEquations(initialEquations,"initEquation",simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false, true, false)
    let boundparameterequations  = functionInitialEquations(parameterEquations,"initParameterEquation",simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false, true, true)
    <<
+   // convenience function for full initialization
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
       initializeMemory();
-
-      #if !defined(FMU_BUILD)
-        #if defined(__vxworks)
-        _reader  = shared_ptr<IPropertyReader>(new XmlPropertyReader("/SYSTEM/bundles/com.boschrexroth.<%modelname%>/<%fileNamePrefix%>_init.xml"));
-        #else
-        _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader("<%makefileParams.compileDir%>/<%fileNamePrefix%>_init.xml"));
-        #endif
-        _reader->readInitialValues(*this, getSimVars());
-      #endif
       initializeFreeVariables();
-      /*Start complex expressions */
-      <%complexStartExpressions%>
-      /* End complex expression */
-      <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then 'checkParameters();' else '//checkParameters();'%>
-      initParameterEquations();
       initializeBoundVariables();
-      <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then 'checkVariables();' else '//checkVariables();'%>
       saveAll();
-
-      <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize();
-      <%lastIdentOfPath(modelInfo.name)%>Jacobian::initialize();
-      <%lastIdentOfPath(modelInfo.name)%>Jacobian::initializeColoredJacobianA();
-      //delete reader;
    }
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeMemory()
@@ -5910,6 +5891,10 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       initializeAlgloopSolverVariables();
       //init alg loop vars
       <%initAlgloopvars%>
+
+      <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize();
+      <%lastIdentOfPath(modelInfo.name)%>Jacobian::initialize();
+      <%lastIdentOfPath(modelInfo.name)%>Jacobian::initializeColoredJacobianA();
    }
    <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
      <<
@@ -5940,6 +5925,15 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    %>
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeFreeVariables()
    {
+      #if !defined(FMU_BUILD)
+        #if defined(__vxworks)
+        _reader  = shared_ptr<IPropertyReader>(new XmlPropertyReader("/SYSTEM/bundles/com.boschrexroth.<%modelname%>/<%fileNamePrefix%>_init.xml"));
+        #else
+        _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader("<%makefileParams.compileDir%>/<%fileNamePrefix%>_init.xml"));
+        #endif
+        _reader->readInitialValues(*this, getSimVars());
+      #endif
+
       _simTime = 0.0;
       _state_var_reinitialized = false;
 
@@ -5968,12 +5962,20 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       //init inputs
       stepStarted(0.0);
    #endif
+
+      /*Start complex expressions */
+      <%complexStartExpressions%>
+      /* End complex expression */
+      <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then 'checkParameters();' else '//checkParameters();'%>
+                                                                                      //delete reader;
    }
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoundVariables()
    {
       //variable decls
       <%varDecls%>
+
+      initParameterEquations();
 
       //construct external objects once
       if (!_constructedExternalObjects)
@@ -5993,7 +5995,7 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       //init alg loop solvers
       <%initAlgloopSolvers%>
 
-      for(int i=0;i<_dimZeroFunc;i++)
+      for(int i = 0; i < _dimZeroFunc; i++)
       {
          getCondition(i);
       }
@@ -6001,6 +6003,8 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       //initialAnalyticJacobian();
 
       <%functionInitDelay(delayedExps,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+
+      <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then 'checkVariables();' else '//checkVariables();'%>
    }
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initEquations()

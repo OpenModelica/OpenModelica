@@ -3339,6 +3339,12 @@ package Flags
   constant ConfigFlag DAE_MODE;
   constant ConfigFlag EQUATIONS_PER_FILE;
 
+  function set
+    input DebugFlag inFlag;
+    input Boolean inValue;
+    output Boolean outOldValue;
+  end set;
+
   function isSet
     input DebugFlag inFlag;
     output Boolean outValue;

@@ -75,6 +75,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let numBoolVars = numBoolvars(modelInfo)
   let numStringVars = numStringvars(modelInfo)
 
+  let flag = Flags.set(Flags.HARDCODED_START_VALUES, true)
   let cpp = CodegenCpp.translateModel(simCode)
   let()= textFile(fmuWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')

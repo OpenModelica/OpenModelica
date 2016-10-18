@@ -64,7 +64,8 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
   _GUID = GUID;
   _logCategories = loggingOn? 0xFFFF: 0x0000;
   _model = createSystemFMU(&_global_settings);
-  _model->initialize();
+  _model->initializeMemory();
+  _model->initializeFreeVariables();
   _string_buffer.resize(_model->getDimString());
   _clock_buffer = new bool[_model->getDimClock()];
   std::fill(_clock_buffer, _clock_buffer + _model->getDimClock(), false);
@@ -153,8 +154,10 @@ fmi2Status FMU2Wrapper::reset()
 
 void FMU2Wrapper::updateModel()
 {
-  if (_model->initial())
+  if (_model->initial()) {
     _model->initializeBoundVariables();
+    _model->saveAll();
+  }
   _model->evaluateAll();     // derivatives and algebraic variables
   _need_update = false;
 }

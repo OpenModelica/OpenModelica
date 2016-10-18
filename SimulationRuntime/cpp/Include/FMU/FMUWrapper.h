@@ -151,10 +151,12 @@ public:
     virtual fmiStatus initialize(fmiBoolean toleranceControlled, fmiReal relativeTolerance, fmiEventInfo& eventInfo)
     {
       //LOGGER_WRITE("Initialize",LC_OTHER,LL_DEBUG);
-      // TODO: here is some code duplication to SimulationRuntime/cpp/Core/Solver/Initailization.cpp
-      Logger::write("Initializing memory and variables",LC_MOD,LL_DEBUG);
-      _model->initialize();
+      Logger::write("Initializing memory and variables", LC_MOD, LL_DEBUG);
+      _model->initializeMemory();
+      _model->initializeFreeVariables();
       _model->initializeBoundVariables();
+      _model->saveAll();
+
       _model->setInitial(true);
 
       bool restart=true;
