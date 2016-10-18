@@ -45,8 +45,6 @@
 
 package CodegenFMUCpp
 
-
-
 import interface SimCodeTV;
 import interface SimCodeBackendTV;
 import CodegenUtil.*;
@@ -75,7 +73,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let numBoolVars = numBoolvars(modelInfo)
   let numStringVars = numStringvars(modelInfo)
 
-  let flag = Flags.set(Flags.HARDCODED_START_VALUES, true)
+  let _ = Flags.set(Flags.HARDCODED_START_VALUES, true)
   let cpp = CodegenCpp.translateModel(simCode)
   let()= textFile(fmuWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')
@@ -126,7 +124,6 @@ template fmuCalcHelperMainfile(SimCode simCode)
     <<
     #include "OMCpp<%fileNamePrefix%>InitializeParameter.cpp"
     #include "OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp"
-    #include "OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp"
     >>
     %>
     #include "OMCpp<%fileNamePrefix%>InitializeExtVars.cpp"

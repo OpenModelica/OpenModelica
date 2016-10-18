@@ -60,7 +60,6 @@ template translateModel(SimCode simCode)
         let _ = match boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
           case true then
             let()= textFile(simulationInitParameterCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
-            let()= textFile(simulationInitAliasVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
             let()= textFile(simulationInitAlgVarsCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
             ""
           else
@@ -368,14 +367,11 @@ template getPreVarsCount(ModelInfo modelInfo)
   match modelInfo
     case MODELINFO(varInfo=VARINFO(__)) then
       let allVarCount = intAdd(stringInt(numRealvars(modelInfo)), intAdd(stringInt(numIntvars(modelInfo)), stringInt(numBoolvars(modelInfo))))
-      //let allVarCount = intAdd(intAdd(intAdd(varInfo.numAlgAliasVars,varInfo.numAlgVars),varInfo.numDiscreteReal ), intAdd(intAdd(varInfo.numIntAliasVars,varInfo.numIntAlgVars), intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolAliasVars, intMul(2,varInfo.numStateVars)))))
       <<
       <%allVarCount%>
       >>
     end match
 end getPreVarsCount;
-
-
 
 
 template simulationMixedSystemHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
@@ -537,11 +533,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      //This is necessary to prevent linker errors that occur with GCC 4.4 if a complex type is not used in the code and contains arrays
      <%dummyTypeElemCreation%>
    }
+
    IMixedSystem* <%lastIdentOfPath(modelInfo.name)%>Initialize::clone()
    {
      return new <%lastIdentOfPath(modelInfo.name)%>Initialize(*this);
    }
+
    <%getIntialStatus(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
+
    <%setIntialStatus(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
 
    <%init(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, complexStartExpressions)%>
@@ -573,52 +572,6 @@ match simCode
         <%init13%>
         >>
 end simulationInitParameterCppFile;
-
-template simulationInitAliasVarsCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates code for main cpp file for simulation target."
-::=
-match simCode
-  case SIMCODE(__) then
-    match modelInfo
-      case modelInfo as MODELINFO(vars=SIMVARS(__))  then
-        let &varDecls8 = buffer "" /*BUFD*/
-        let &varDecls9 = buffer "" /*BUFD*/
-        let &varDecls10 = buffer "" /*BUFD*/
-        let functionPrefix = if Flags.isSet(Flags.HARDCODED_START_VALUES) then "initialize" else "check"
-        let init7   = ""//initAliasValstWithSplit("Real", '<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAliasVars', vars.aliasVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
-        let init8   = ""//initAliasValst(varDecls8, "Int", vars.intAliasVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
-        let init9   = ""//initValst(varDecls9, "Bool",vars.boolAliasVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
-        let init10   = ""//initStringAliasValstWithSplit("String", '<%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>StringAliasVars', vars.stringAliasVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
-
-        <<
-        <%init7%>
-        /*string alias*/
-        <%init10%>
-
-        void <%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>AliasVars()
-        {
-        }
-
-        void <%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>IntAliasVars()
-        {
-          <%varDecls8%>
-          <%init8%>
-        }
-
-        void <%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>BoolAliasVars()
-        {
-          <%varDecls9%>
-          <%init9%>
-        }
-
-        void <%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>StringAliasVars()
-        {
-          <%varDecls10%>
-          <%init10%>
-        }
-        >>
-end simulationInitAliasVarsCppFile;
-
 
 template simulationInitAlgVarsCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
@@ -2790,7 +2743,6 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     <<
     #include "OMCpp<%fileNamePrefix%>InitializeParameter.cpp"
     #include "OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp"
-    #include "OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp"
     >>
     %>
     #include "OMCpp<%fileNamePrefix%>InitializeExtVars.cpp"
@@ -5891,11 +5843,11 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       initializeAlgloopSolverVariables();
       //init alg loop vars
       <%initAlgloopvars%>
-
       <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize();
       <%lastIdentOfPath(modelInfo.name)%>Jacobian::initialize();
       <%lastIdentOfPath(modelInfo.name)%>Jacobian::initializeColoredJacobianA();
    }
+
    <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
      <<
      void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkParameters()
@@ -5914,15 +5866,12 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
         checkIntAlgVars();
         checkBoolAlgVars();
         checkStringAlgVars();
-        checkAliasVars();
-        checkIntAliasVars();
-        checkBoolAliasVars();
-        checkStringAliasVars();
         //checkStateVars();
         //checkDerVars();
      }
      >>
    %>
+
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeFreeVariables()
    {
       #if !defined(FMU_BUILD)
@@ -5948,7 +5897,6 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       initializeDiscreteAlgVars();
       initializeIntAlgVars();
       initializeBoolAlgVars();
-      initializeStringAliasVars();
       initializeStateVars();
       initializeDerVars();
       >>
@@ -9558,60 +9506,6 @@ match c
 end isOutput;
 
 
-template initAliasValstWithSplit(Text type, Text funcNamePrefix, list<SimVar> varsLst, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
-                                 Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
-  let &funcCalls = buffer "" /*BUFD*/
-  let funcs = List.partition(varsLst, 100) |> ls hasindex idx =>
-    let &varDecls = buffer "" /*BUFD*/
-    let &funcCalls += '<%funcNamePrefix%>_<%idx%>();'
-    let init = initAliasValst(varDecls, type, ls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
-    <<
-    void <%funcNamePrefix%>_<%idx%>()
-    {
-
-       <%varDecls%>
-       <%init%>
-    }
-    >>
-    ;separator="\n"
-
-  <<
-  <%funcs%>
-
-  void <%funcNamePrefix%>()
-  {
-    <%funcCalls%>
-  }
-  >>
-end initAliasValstWithSplit;
-
-
-template initStringAliasValstWithSplit(Text type, Text funcNamePrefix, list<SimVar> varsLst, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
-                                 Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
-  let &funcCalls = buffer "" /*BUFD*/
-  let funcs = List.partition(varsLst, 100) |> ls hasindex idx =>
-    let &varDecls = buffer "" /*BUFD*/
-    let &funcCalls += '<%funcNamePrefix%>_<%idx%>();'
-    let init = initStringAliasValst(varDecls, type, ls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
-    <<
-    void <%funcNamePrefix%>_<%idx%>()
-    {
-       <%varDecls%>
-       <%init%>
-    }
-    >>
-    ;separator="\n"
-
-  <<
-  <%funcs%>
-
-  void <%funcNamePrefix%>()
-  {
-    <%funcCalls%>
-  }
-  >>
-end initStringAliasValstWithSplit;
-
 template initValstWithSplit(Text &varDecls, Text type, Text funcNamePrefix, list<SimVar> varsLst, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                             Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
@@ -9685,75 +9579,6 @@ template initValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode simC
      checkStr;separator="\n")
 end initValst;
 
-
-template initAliasValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
-                        Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
-  varsLst |> sv as SIMVAR(__) =>
-       let &preExp = buffer ""
-       let &varDeclsCref = buffer ""
-       let initval = getAliasInitVal(sv.aliasvar, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-       <<
-       <%preExp%>
-       SystemDefaultImplementation::set<%type%>StartValue(<%getAliasCRef(sv.aliasvar, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>, <%initval%>);
-       >>
-    ;separator="\n"
-end initAliasValst;
-
-
-template initStringAliasValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
-                        Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
-::=
-  varsLst |> sv as SIMVAR(__) =>
-       let &preExp = buffer ""
-       let initval = getAliasInitVal(sv.aliasvar, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-        '<%preExp%>
-         SystemDefaultImplementation::set<%type%>StartValue(<%cref1(sv.name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDecls, stateDerVectorName, useFlatArrayNotation)%>,<%initval%>);'
-    ;separator="\n"
-end initStringAliasValst;
-
-
-template getAliasInitVal(AliasVariable aliasvar, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
-                         Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Returns the alias Attribute of ScalarVariable."
-::=
-   match aliasvar
-    case ALIAS(__)
-    case NEGATEDALIAS(__) then getAliasInitVal2(varName, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    else 'noAlias'
-
-end getAliasInitVal;
-
-template getAliasInitVal2(ComponentRef aliascref, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
-                          Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Returns the alias Attribute of ScalarVariable."
-::=
-cref2simvar(aliascref, simCode ) |> var  as SIMVAR(__)=>
- match initialValue
-   case SOME(v) then
-       daeExp(v, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-   else
-       startValue(var.type_)
-end getAliasInitVal2;
-
-
-template getVarFromAliasName(ComponentRef varname, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
-                         Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Returns the alias Attribute of ScalarVariable."
-::=
- cref2simvar(varname, simCode ) |> var  as SIMVAR(__)=>
- getVarFromAliasName2(var.aliasvar,varname,context, &preExp, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName,useFlatArrayNotation)
-end getVarFromAliasName;
-
-
-template getVarFromAliasName2(AliasVariable aliasvar,ComponentRef origvarname, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
-                         Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Returns the alias Attribute of ScalarVariable."
-::=
- match aliasvar
-    case NOALIAS(__) then '<%cref1(origvarname, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
-    case ALIAS(__)
-    case NEGATEDALIAS(__) then '<%cref1(varName, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
-end getVarFromAliasName2;
 
 template startValue(DAE.Type ty)
 ::=
