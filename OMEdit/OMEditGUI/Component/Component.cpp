@@ -232,7 +232,12 @@ void ComponentInfo::fetchModifiers(OMCProxy *pOMCProxy, QString className, Compo
     QString modifierName = StringHandler::getFirstWordBeforeDot(componentModifier);
     // if we have already read the record modifier then continue
     if (mModifiersMap.contains(modifierName)) {
-      continue;
+      /* Ticket:4081
+       * If modifier is record then we can jump over otherwise read the modifier value.
+       */
+      if (pOMCProxy->isWhat(StringHandler::Record, modifierName)) {
+        continue;
+      }
     }
     /* Ticket:3626
      * If a modifier class is a record we read the modifer value with submodifiers using OMCProxy::getComponentModifierValues()
