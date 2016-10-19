@@ -1420,7 +1420,6 @@ algorithm
 
         b = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
-
         (cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
         Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
         executableSuffixedExe = stringAppend(executable, System.getExeExt());

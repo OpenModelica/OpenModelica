@@ -5379,7 +5379,7 @@ protected
   FCore.StructuralParameters structuralParameters;
   array<DAE.FunctionTree> functionTree;
 algorithm
-  structuralParameters := (HashSet.emptyHashSetSized(BaseHashSet.lowBucketSize),{});
+  structuralParameters := (AvlSetCR.EMPTY(),{});
   functionTree := arrayCreate(1,functions);
   cache := FCore.CACHE(NONE(), functionTree, structuralParameters, Absyn.IDENT(""), Absyn.dummyProgram);
   (_,val,_) := ceval(cache, FGraph.empty(), exp, false, NONE(), Absyn.NO_MSG(),0);

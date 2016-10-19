@@ -5303,7 +5303,7 @@ public function transformationsBeforeBackend
 protected
   DAE.DAElist dAElist;
   list<DAE.Element> elts;
-  HashSet.HashSet ht;
+  AvlSetCR.Tree ht;
 algorithm
   // Transform Modelica state machines to flat data-flow equations
   dAElist := StateMachineFlatten.stateMachineToDataFlow(cache, env, inDAElist);
@@ -5322,29 +5322,24 @@ algorithm
 end transformationsBeforeBackend;
 
 protected function transformationsBeforeBackendNotification
-  input HashSet.HashSet ht;
+  input AvlSetCR.Tree ht;
+protected
+  list<DAE.ComponentRef> crs;
+  list<String> strs;
+  String str;
 algorithm
-  _ := matchcontinue ht
-    local
-      list<DAE.ComponentRef> crs;
-      list<String> strs;
-      String str;
-    case _
-      equation
-        (crs as _::_) = BaseHashSet.hashSetList(ht);
-        strs = List.map(crs, ComponentReference.printComponentRefStr);
-        strs = List.sort(strs, Util.strcmpBool);
-        str = stringDelimitList(strs, ", ");
-        Error.addMessage(Error.NOTIFY_FRONTEND_STRUCTURAL_PARAMETERS, {str});
-      then ();
-    else ();
-  end matchcontinue;
+  crs := AvlSetCR.listKeys(ht);
+  if not listEmpty(crs) then
+    strs := List.map(crs, ComponentReference.printComponentRefStr);
+    str := stringDelimitList(strs, ", ");
+    Error.addMessage(Error.NOTIFY_FRONTEND_STRUCTURAL_PARAMETERS, {str});
+  end if;
 end transformationsBeforeBackendNotification;
 
 protected function makeEvaluatedParamFinal "
   This function makes all evaluated parameters final."
   input DAE.Element inElement;
-  input HashSet.HashSet ht "evaluated parameters";
+  input AvlSetCR.Tree ht "evaluated parameters";
   output DAE.Element outElement;
 algorithm
   outElement := match (inElement, ht)
@@ -5358,7 +5353,7 @@ algorithm
       DAE.Element elt;
 
     case (DAE.VAR(componentRef=cr, kind=DAE.PARAM(), variableAttributesOption=varOpt), _) equation
-      elt = if BaseHashSet.has(cr, ht) then setVariableAttributes(inElement, setFinalAttr(varOpt, true)) else inElement;
+      elt = if AvlSetCR.hasKey(ht, cr) then setVariableAttributes(inElement, setFinalAttr(varOpt, true)) else inElement;
     then elt;
 
     case (DAE.COMP(id, elts, source, cmt), _) equation

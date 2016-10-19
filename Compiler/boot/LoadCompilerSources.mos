@@ -154,6 +154,7 @@ if true then /* Suppress output */
 
   // "Util";
     "../Util/Array.mo",
+    "../Util/AvlSetCR.mo",
     "../Util/AvlSetString.mo",
     "../Util/BaseAvlTree.mo",
     "../Util/BaseAvlSet.mo",

@@ -680,7 +680,7 @@ end crefFirstIdentEqual;
 
 protected
 
-type CompareWithSubsType = enumeration(WithoutSubscripts, WithGenericSubscript, WithIntSubscript);
+type CompareWithSubsType = enumeration(WithoutSubscripts, WithGenericSubscript, WithGenericSubscriptNotAlphabetic, WithIntSubscript);
 
 package CompareWithGenericSubscript "Package that can be modified to do different kinds of comparisons"
   constant CompareWithSubsType compareSubscript=CompareWithSubsType.WithGenericSubscript;
@@ -756,6 +756,10 @@ package CompareWithGenericSubscript "Package that can be modified to do differen
         e1 := Expression.getSubscriptExp(s1);
         e2 := Expression.getSubscriptExp(s2);
         res := stringCompare(ExpressionDump.printExpStr(e1),ExpressionDump.printExpStr(e2));
+      elseif compareSubscript == CompareWithSubsType.WithGenericSubscriptNotAlphabetic then
+        e1 := Expression.getSubscriptExp(s1);
+        e2 := Expression.getSubscriptExp(s2);
+        res := Expression.compare(e1, e2);
       else
         i1 := Expression.subscriptInt(s1);
         i2 := Expression.subscriptInt(s2);
@@ -771,6 +775,9 @@ package CompareWithGenericSubscript "Package that can be modified to do differen
   end compareSubs;
 end CompareWithGenericSubscript;
 
+package CompareWithGenericSubscriptNotAlphabetic
+  extends CompareWithGenericSubscript(compareSubscript=CompareWithSubsType.WithGenericSubscriptNotAlphabetic);
+end CompareWithGenericSubscriptNotAlphabetic;
 package CompareWithoutSubscripts
   extends CompareWithGenericSubscript(compareSubscript=CompareWithSubsType.WithoutSubscripts);
 end CompareWithoutSubscripts;
@@ -793,6 +800,14 @@ public function crefCompareGeneric "A sorting function for crefs"
 algorithm
   comp := CompareWithGenericSubscript.compare(cr1,cr2);
 end crefCompareGeneric;
+
+public function crefCompareGenericNotAlphabetic "A sorting function for crefs"
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  output Integer comp;
+algorithm
+  comp := CompareWithGenericSubscriptNotAlphabetic.compare(cr1,cr2);
+end crefCompareGenericNotAlphabetic;
 
 public function crefLexicalGreaterSubsAtEnd
 "mahge:
@@ -3278,18 +3293,18 @@ public function makeCrefsFromSubScriptLst
 algorithm
   for subScript in inSubscriptLst loop
     outCref := match(subScript)
-	    local
-	      DAE.ComponentRef cr;
-	      DAE.Exp e;
-	      String str;
-	    case DAE.INDEX(exp = e) equation
-	      cr = makeCrefsFromSubScriptExp(e);
-	    then
-	      joinCrefs(outCref, cr);
+      local
+        DAE.ComponentRef cr;
+        DAE.Exp e;
+        String str;
+      case DAE.INDEX(exp = e) equation
+        cr = makeCrefsFromSubScriptExp(e);
+      then
+        joinCrefs(outCref, cr);
 
-	    // all other should probably fails or evaluated before
-	    else equation
-	      str = ExpressionDump.printSubscriptStr(subScript);
+      // all other should probably fails or evaluated before
+      else equation
+        str = ExpressionDump.printSubscriptStr(subScript);
         Error.addInternalError("function ComponentReference.makeCrefsFromSubScriptLst for:" + str + "\n", sourceInfo());
       then
         fail();

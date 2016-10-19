@@ -7721,7 +7721,7 @@ algorithm
     local
       Option<FCore.Graph> ie;
       array<DAE.FunctionTree> f;
-      HashSet.HashSet ht;
+      AvlSetCR.Tree ht;
       list<list<DAE.ComponentRef>> crs;
       Absyn.Path p;
       Absyn.Program program;
@@ -7740,7 +7740,7 @@ algorithm
     local
       Option<FCore.Graph> ie;
       array<DAE.FunctionTree> f;
-      HashSet.HashSet ht;
+      AvlSetCR.Tree ht;
       list<DAE.ComponentRef> crs;
       list<list<DAE.ComponentRef>> crss;
       Absyn.Path p;
@@ -7756,13 +7756,13 @@ end popStructuralParameters;
 protected function prefixAndAddCrefsToHt
   "Cannot be part of Env due to RML issues"
   input FCore.Cache cache;
-  input output HashSet.HashSet set;
+  input output AvlSetCR.Tree set;
   input Prefix.Prefix pre;
   input list<DAE.ComponentRef> icrs;
 algorithm
   for cr in icrs loop
     (_,cr) := PrefixUtil.prefixCref(cache, FGraph.empty(), InnerOuter.emptyInstHierarchy, pre, cr);
-    set := BaseHashSet.add(cr,set);
+    set := AvlSetCR.add(set,cr);
   end for;
 end prefixAndAddCrefsToHt;
 

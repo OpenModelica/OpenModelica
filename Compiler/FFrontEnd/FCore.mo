@@ -41,14 +41,12 @@ encapsulated package FCore
 
 public
 import Absyn;
-import BaseAvlTree;
+import AvlSetCR;
 import DAE;
 import SCode;
 import Prefix;
-import HashSet;
 
 protected
-import BaseHashSet;
 import DAEUtil;
 import Config;
 
@@ -406,7 +404,7 @@ public constant Id firstId = 0;
 // ************************ Cache structures ***************************
 // ************************ Cache structures ***************************
 
-public type StructuralParameters = tuple<HashSet.HashSet,list<list<DAE.ComponentRef>>>;
+public type StructuralParameters = tuple<AvlSetCR.Tree,list<list<DAE.ComponentRef>>>;
 public uniontype Cache
   record CACHE
     Option<Graph> initialGraph "and the initial environment";
@@ -443,7 +441,7 @@ protected
   StructuralParameters ht;
 algorithm
   instFuncs := arrayCreate(1, DAE.AvlTreePathFunction.Tree.EMPTY());
-  ht := (HashSet.emptyHashSetSized(BaseHashSet.lowBucketSize),{});
+  ht := (AvlSetCR.EMPTY(),{});
   cache := CACHE(NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"),Absyn.dummyProgram);
 end emptyCache;
 
@@ -464,7 +462,7 @@ algorithm
     local
       Option<Graph> initialGraph;
       array<DAE.FunctionTree> functions;
-      HashSet.HashSet ht;
+      AvlSetCR.Tree ht;
       list<list<DAE.ComponentRef>> st;
       list<DAE.ComponentRef> crs;
       Absyn.Path p;
@@ -480,7 +478,7 @@ end addEvaluatedCref;
 
 public function getEvaluatedParams
   input Cache cache;
-  output HashSet.HashSet ht;
+  output AvlSetCR.Tree ht;
 algorithm
   CACHE(evaluatedParams=(ht,_)) := cache;
 end getEvaluatedParams;
