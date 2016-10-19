@@ -640,6 +640,8 @@ General
 
   -  *Terminal Command Arguments* – Sets the terminal command arguments.
 
+  -  *Hide Variables Browser* – Hides the variable browser when switching away from plotting perspective.
+
 -  Libraries Browser
 
   -  *Library Icon Size* – Sets the size for library icons.
@@ -684,6 +686,9 @@ Libraries
        and ModelicaReference will always load even if user has removed
        them from the list of system libraries.
 
+-  *Load OpenModelica library on startup* – If true then OpenModelica
+       package will be loaded when OMEdit is started.
+
 -  *User Libraries* – The list of user libraries/files that should be
        loaded every time OMEdit starts.
 
@@ -723,6 +728,39 @@ Modelica Editor
 ~~~~~~~~~~~~~~~
 
 -  *Preserve Text Indentation* – If true then uses *diffModelicaFileListings* API call otherwise uses the OMC pretty-printing.
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
+MetaModelica Editor
+~~~~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
+MetaModel Editor
+~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
+C/C++ Editor
+~~~~~~~~~~~~
 
 -  Colors
 
@@ -777,8 +815,17 @@ Simulation
 
   -  *OMC Flags* – sets the omc flags for simulation.
 
+  -  *Ignore __OpenModelica_commandLineOptions annotation* – if ture then ignores the __OpenModelica_commandLineOptions
+     annotation while running the simulation.
+
+  -  *Ignore __OpenModelica_simulationFlags annotation* – if ture then ignores the __OpenModelica_simulationFlags
+     annotation while running the simulation.
+
   -  *Save class before simulation* – if ture then always saves the class
      before running the simulation.
+
+  -  *Switch to plotting perspective after simulation* – if ture then GUI always switches to plotting
+     perspective after the simulation.
 
   -  Output
 
@@ -836,6 +883,10 @@ Notifications
   -  *Show save model for bitmap insertion message* – If true then a
      message will pop-up when user tries to insert a bitmap from a local
      directory to an unsaved class.
+
+  -  *Always ask for the dragged component name* – If true then a
+     message will pop-up when user drag & drop the component on the
+     graphical view.
 
 Line Style
 ~~~~~~~~~~
@@ -948,6 +999,19 @@ FMI
     -  *Model Exchange and Co-Simulation* – Sets the FMI export type to Model Exchange and Co-Simulation.
 
   -  *FMU Name* – Sets a prefix for generated FMU file.
+
+  -  Platforms - list of platforms to generate FMU binaries.
+
+TLM
+~~~
+
+-  General
+
+  -  TLM Plugin Path - path to TLM plugin bin directory.
+
+  -  TLM Manager Process - path to TLM managar process.
+
+  -  TLM Monitor Process - path to TLM monitor process.
 
 Debugger
 --------
