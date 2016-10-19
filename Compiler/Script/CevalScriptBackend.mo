@@ -1431,25 +1431,37 @@ algorithm
         sim_call = stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ","-l=",strlinearizeTime," ",simflags});
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-        0 = System.systemCall(sim_call,logFile);
 
-        result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-        timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-        timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        simValue = createSimulationResult(
-           result_file,
-           simOptionsAsString(vals),
-           System.readFile(logFile),
-           ("timeTotal", Values.REAL(timeTotal)) ::
-           ("timeSimulation", Values.REAL(timeSimulation)) ::
-          resultValues);
-        newst = GlobalScriptUtil.addVarToSymboltable(
-          DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
-          Values.STRING(result_file), FGraph.empty(), st);
+        if 0 == System.systemCall(sim_call,logFile) then
+          result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+          timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+          timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+          simValue = createSimulationResult(
+             result_file,
+             simOptionsAsString(vals),
+             System.readFile(logFile),
+             ("timeTotal", Values.REAL(timeTotal)) ::
+             ("timeSimulation", Values.REAL(timeSimulation)) ::
+            resultValues);
+          newst = GlobalScriptUtil.addVarToSymboltable(
+            DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
+            Values.STRING(result_file), FGraph.empty(), st);
+        else
+          res = "Succeeding building the linearized executable, but failed to run the linearize command: " + sim_call + "\n" + System.readFile(logFile);
+          simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
+          newst = st;
+        end if;
         //reset config flag
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, b);
       then
         (cache,simValue,newst);
+
+    case (cache,_,"linearize",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
+      equation
+        str = Absyn.pathString(className);
+        res = "Failed to run the linearize command: " + str;
+        simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
+     then (cache,simValue,st);
 
    case (cache,env,"optimize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_),st_1,_)
       equation
@@ -1482,6 +1494,13 @@ algorithm
         (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
       then
         (cache,simValue,newst);
+
+    case (cache,_,"optimize",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
+      equation
+        str = Absyn.pathString(className);
+        res = "Failed to run the optimize command: " + str;
+        simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
+     then (cache,simValue,st);
 
     case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st,_)
       equation
