@@ -39,6 +39,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_CPU */                   "cpu",
   /* FLAG_CSV_OSTEP */             "csvOstep",
   /* FLAG_DAE_MODE */              "daeMode",
+  /* FLAG_DELTA_X */               "deltaX",
   /* FLAG_EMBEDDED_SERVER */       "embeddedServer",
   /* FLAG_EMIT_PROTECTED */        "emit_protected",
   /* FLAG_F */                     "f",
@@ -118,6 +119,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_CPU */                   "dumps the cpu-time into the result file",
   /* FLAG_CSV_OSTEP */             "value specifies csv-files for debuge values for optimizer step",
   /* FLAG_DAE_MODE */              "flag to let the integrator use daeResiduals",
+  /* FLAG_DELTA_X */               "value specifies the delta x value for numerical differentiation, used by linearization or integrator",
   /* FLAG_EMBEDDED_SERVER */       "enables an embedded server. Valid values: none, opc-da [broken], opc-ua [experimental], or the path to a shared object.",
   /* FLAG_EMIT_PROTECTED */        "emits protected variables to the result-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
@@ -205,6 +207,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies csv-files for debuge values for optimizer step",
   /* FLAG_DAE_MODE */
   "  Enables daeMode simulation if the model was compiled with the omc flag --daeMode and the IDA integrator is used.",
+  /* FLAG_DELTA_X */
+  "value specifies the delta x value for numerical differentiation, used by linearization or integrator",
   /* FLAG_EMBEDDED_SERVER */
   "  Enables an embedded server. Valid values:\n\n"
   "  * none - default, run without embedded server\n"
@@ -403,6 +407,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_CPU */                   FLAG_TYPE_FLAG,
   /* FLAG_CSV_OSTEP */             FLAG_TYPE_OPTION,
   /* FLAG_DAE_SOLVING */           FLAG_TYPE_FLAG,
+  /* FLAG_DELTA_X */               FLAG_TYPE_OPTION,
   /* FLAG_EMBEDDED_SERVER */       FLAG_TYPE_OPTION,
   /* FLAG_EMIT_PROTECTED */        FLAG_TYPE_FLAG,
   /* FLAG_F */                     FLAG_TYPE_OPTION,

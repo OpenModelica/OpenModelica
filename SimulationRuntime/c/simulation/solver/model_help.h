@@ -81,6 +81,7 @@ extern double newtonXTol;
 extern double newtonFTol;
 extern const size_t SIZERINGBUFFER;
 extern int compiledInDAEMode;
+extern double numericalDifferentiationDeltaX;
 
 void initializeDataStruc(DATA *data, threadData_t *threadData);
 
