@@ -39,8 +39,8 @@ OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path
         : _shapes(),
           _modelFile(modelFile),
           _path(path),
-      _xmlFileName(assembleXMLFileName(modelFile, path)),
-      _xmlDoc()
+          _xmlFileName(assembleXMLFileName(modelFile, path)),
+          _xmlDoc()
 {
 }
 
@@ -76,14 +76,6 @@ void OMVisualBase::initVisObjects()
   ShapeObject shape;
   rapidxml::xml_node<>* expNode;
 
-  //Begin std::vector<T>::reserve()
-  //int i = 0;
-  //for (rapidxml::xml_node<>* shapeNode = rootNode->first_node("shape"); shapeNode; shapeNode = shapeNode->next_sibling())
-  //    ++i;
-  //LOGGER_WRITE(std::string("============Number of iterations1 ") + std::to_string(i), LC_LOADER, LL_DEBUG);
-  //_shapes.reserve(i);
-  // End std::vector<T>::reserve()
-
   for (rapidxml::xml_node<>* shapeNode = rootNode->first_node("shape"); shapeNode; shapeNode = shapeNode->next_sibling())
   {
     expNode = shapeNode->first_node((const char*) "ident")->first_node();
@@ -97,9 +89,27 @@ void OMVisualBase::initVisObjects()
     }
     else
     {
-      //std::cout<<"shape._id "<<shape._id;
-
       shape._type = std::string(expNode->value());
+      if (isCADType(shape._type))
+      {
+        shape._fileName = extractCADFilename(shape._type);
+
+        if (dxfFileType(shape._fileName))
+        {
+          shape._type = "dxf";
+        }
+        else if (stlFileType(shape._fileName))
+        {
+          shape._type = "stl";
+        }
+
+        if (!fileExists(shape._fileName))
+        {
+          std::cout<<"Could not find the file "<<shape._fileName<<std::endl;
+        }
+      }
+      //std::cout<<"type "<<shape._id<<std::endl;
+      //std::cout<<"type "<<shape._type<<std::endl;
 
       expNode = shapeNode->first_node((const char*) "length")->first_node();
       shape._length = getObjectAttributeForNode(expNode);
@@ -350,84 +360,65 @@ int OSGScene::setUpScene(std::vector<ShapeObject> allShapes)
     int isOk(0);
   for (std::vector<ShapeObject>::size_type i = 0; i != allShapes.size(); i++)
     {
+      ShapeObject shape = allShapes[i];
+      osg::ref_ptr<osg::Geode> geode;
+      osg::ref_ptr<osg::StateSet> ss;
 
-    ShapeObject shape = allShapes[i];
+      //color
+      osg::ref_ptr<osg::Material> material = new osg::Material();
+      material->setDiffuse(osg::Material::FRONT, osg::Vec4f(0.0, 0.0, 0.0, 0.0));
 
-    osg::ref_ptr<osg::Geode> geode;
-    osg::ref_ptr<osg::StateSet> ss;
+      //matrix transformation
+      osg::ref_ptr<osg::MatrixTransform> transf = new osg::MatrixTransform();
 
-        std::string type = shape._type;
-
-    //color
-    osg::ref_ptr<osg::Material> material = new osg::Material();
-    material->setDiffuse(osg::Material::FRONT, osg::Vec4f(0.0, 0.0, 0.0, 0.0));
-
-    //matrix transformation
-    osg::ref_ptr<osg::MatrixTransform> transf = new osg::MatrixTransform();
-
-    //stl node
-    if (isCADType(type))
-    {
-
-      std::string filename = extractCADFilename(type);
-      filename = _path + filename;
-
-      std::cout<<"Its a STL and the filename is "<<filename<<std::endl;
-      // \todo What do we do at this point?
-      if (!fileExists(filename))
+      //cad node
+      if ((shape._type.compare("dxf") == 0) or (shape._type.compare("stl") == 0))
       {
-        std::cout<<"Could not find the file "<< filename<<std::endl;
-        isOk = 1;
-        return isOk;
-            }
+        //std::cout<<"Its a CAD and the filename is "<<shape._fileName<<std::endl;
+        osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName);
+        osg::ref_ptr<osg::StateSet> ss = node->getOrCreateStateSet();
 
-            osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(filename);
-            osg::ref_ptr<osg::StateSet> ss = node->getOrCreateStateSet();
-
-            ss->setAttribute(material.get());
-            node->setStateSet(ss);
-            transf->addChild(node.get());
-        }
-        //geode with shape drawable
-        else
-        {
-            osg::ref_ptr<osg::ShapeDrawable> shapeDraw = new osg::ShapeDrawable();
-            shapeDraw->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
-            geode = new osg::Geode();
-            geode->addDrawable(shapeDraw.get());
-            osg::ref_ptr<osg::StateSet> ss = geode->getOrCreateStateSet();
-            ss->setAttribute(material.get());
-            geode->setStateSet(ss);
-            transf->addChild(geode.get());
-        }
-
-        _rootNode->addChild(transf.get());
-
+        ss->setAttribute(material.get());
+        node->setStateSet(ss);
+        transf->addChild(node.get());
+      }
+      //geode with shape drawable
+      else
+      {
+        osg::ref_ptr<osg::ShapeDrawable> shapeDraw = new osg::ShapeDrawable();
+        shapeDraw->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+        geode = new osg::Geode();
+        geode->addDrawable(shapeDraw.get());
+        osg::ref_ptr<osg::StateSet> ss = geode->getOrCreateStateSet();
+        ss->setAttribute(material.get());
+        geode->setStateSet(ss);
+        transf->addChild(geode.get());
+      }
+      _rootNode->addChild(transf.get());
     }
-
     return isOk;
 }
 
 osg::ref_ptr<osg::Group> OSGScene::getRootNode()
 {
-    return _rootNode;
+  return _rootNode;
 }
 
 std::string OSGScene::getPath() const
 {
-    return _path;
+  return _path;
 }
 
 void OSGScene::setPath(const std::string path)
 {
-    _path = path;
+  _path = path;
 }
 
 
 UpdateVisitor::UpdateVisitor()
         : _shape()
 {
-    setTraversalMode(NodeVisitor::TRAVERSE_ALL_CHILDREN);
+  setTraversalMode(NodeVisitor::TRAVERSE_ALL_CHILDREN);
 }
 
 /**
@@ -435,9 +426,9 @@ UpdateVisitor::UpdateVisitor()
  */
 void UpdateVisitor::apply(osg::MatrixTransform& node)
 {
-    //std::cout<<"MT "<<node.className()<<"  "<<node.getName()<<std::endl;
-    node.setMatrix(_shape._mat);
-    traverse(node);
+  //std::cout<<"MT "<<node.className()<<"  "<<node.getName()<<std::endl;
+  node.setMatrix(_shape._mat);
+  traverse(node);
 }
 
 /**
@@ -448,21 +439,13 @@ void UpdateVisitor::apply(osg::Geode& node)
     //std::cout<<"GEODE "<< _shape._id<<" "<<std::endl;
     osg::ref_ptr<osg::StateSet> ss = node.getOrCreateStateSet();
 
-    //its a stl-file
-    if (isCADType(_shape._type))
+    //its a drawable and not a cad file so we have to create a new drawable
+    if (_shape._type.compare("dxf") != 0 and (_shape._type.compare("stl") != 0))
     {
-        std::string filename = extractCADFilename(_shape._type);
-        osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(filename);
-
-    }
-    //its a drawable
-    else
-    {
-        osg::ref_ptr<osg::Drawable> draw = node.getDrawable(0);
-        draw->dirtyDisplayList();
-        //osg::ref_ptr<osg::ShapeDrawable> shapeDraw = dynamic_cast<osg::ShapeDrawable*>(draw.get());
-        //shapeDraw->setColor(osg::Vec4(visAttr.color,1.0));
-
+      osg::ref_ptr<osg::Drawable> draw = node.getDrawable(0);
+      draw->dirtyDisplayList();
+      //osg::ref_ptr<osg::ShapeDrawable> shapeDraw = dynamic_cast<osg::ShapeDrawable*>(draw.get());
+      //shapeDraw->setColor(osg::Vec4(visAttr.color,1.0));
       if (_shape._type == "pipe")
       {
         node.removeDrawable(draw);
@@ -503,11 +486,14 @@ void UpdateVisitor::apply(osg::Geode& node)
     //std::cout<<"SHAPE "<<draw->getShape()->className()<<std::endl;
     node.addDrawable(draw.get());
     }
-    //osg::Material *material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
-    osg::ref_ptr<osg::Material> material = new osg::Material;
-    material->setDiffuse(osg::Material::FRONT, osg::Vec4f(_shape._color[0].exp / 255, _shape._color[1].exp / 255, _shape._color[2].exp / 255, 1.0));
-    ss->setAttribute(material);
-    node.setStateSet(ss);
+    if (_shape._type.compare("dxf") != 0)
+    {
+      //osg::Material *material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
+      osg::ref_ptr<osg::Material> material = new osg::Material;
+      material->setDiffuse(osg::Material::FRONT, osg::Vec4f(_shape._color[0].exp / 255, _shape._color[1].exp / 255, _shape._color[2].exp / 255, 1.0));
+      ss->setAttribute(material);
+      node.setStateSet(ss);
+    }
     traverse(node);
 }
 
@@ -683,7 +669,14 @@ rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::
     res._r = res._r + r;
     res._T = Mat3mulMat3(T0, T);
   }
-  else if (isCADType(type))
+  else if (type == "stl")
+  {
+    r = r + r_shape;
+    res._T = T;
+    res._r = r;
+    //r_offset = dirs.lDir*length/2.0;
+  }
+  else if (type == "dxf")
   {
     r = r + r_shape;
     res._T = T;

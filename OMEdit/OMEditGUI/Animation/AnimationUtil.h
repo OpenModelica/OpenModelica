@@ -44,11 +44,11 @@
 
 enum class VisType
 {
-	NONE = 0,
-	FMU = 1,
-	FMU_REMOTE = 2,
-	MAT = 3,
-	MAT_REMOTE = 4
+  NONE = 0,
+  FMU = 1,
+  FMU_REMOTE = 2,
+  MAT = 3,
+  MAT_REMOTE = 4
 };
 
 /*!
@@ -56,8 +56,8 @@ enum class VisType
  * checks of the file is of type FMU
  */
 inline bool isFMU(const std::string& fileIn){
-	std::size_t fmu = fileIn.find(".fmu");
-	return (fmu != std::string::npos);
+  std::size_t fmu = fileIn.find(".fmu");
+  return (fmu != std::string::npos);
 }
 
 /*!
@@ -65,8 +65,8 @@ inline bool isFMU(const std::string& fileIn){
  * checks of the file is of type mat
  */
 inline bool isMAT(const std::string& fileIn){
-	std::size_t mat = fileIn.find(".mat");
-	return (mat != std::string::npos);
+  std::size_t mat = fileIn.find(".mat");
+  return (mat != std::string::npos);
 }
 
 /*!
@@ -76,11 +76,11 @@ inline bool isMAT(const std::string& fileIn){
 inline std::string assembleXMLFileName(const std::string& modelFile, const std::string& path){
   int signsOff(0);
   if (isFMU(modelFile))
-	  signsOff = 4;
+    signsOff = 4;
   else if (isMAT(modelFile))
-		signsOff = 8;
+    signsOff = 8;
   else{
-		// todo: Handle this case.
+    // todo: Handle this case.
   }
   // Cut off prefix [fmu|mat]
   std::string fileName = modelFile.substr(0, modelFile.length() - signsOff);
@@ -92,8 +92,8 @@ inline std::string assembleXMLFileName(const std::string& modelFile, const std::
 /*! \brief Checks if the file is accessible. */
 inline bool fileExists(const std::string& file)
 {
-	struct stat buffer;
-	return (stat(file.c_str(), &buffer) == 0);
+  struct stat buffer;
+  return (stat(file.c_str(), &buffer) == 0);
 }
 
 /*!
@@ -101,27 +101,38 @@ inline bool fileExists(const std::string& file)
  * checks if the xml file is available
  */
 inline bool checkForXMLFile(const std::string& modelFile, const std::string& path){
-	// Cut off prefix [fmu|mat]
-	std::string xmlFileName = assembleXMLFileName(modelFile, path);
-	return fileExists(xmlFileName);
+  // Cut off prefix [fmu|mat]
+  std::string xmlFileName = assembleXMLFileName(modelFile, path);
+  return fileExists(xmlFileName);
 }
 
 /*! \brief Checks if the type is a cad file
  */
 inline bool isCADType(const std::string& typeName)
 {
-	return (typeName.size() >= 12 && std::string(typeName.begin(), typeName.begin() + 11) == "modelica://");
+  return (typeName.size() >= 12 && std::string(typeName.begin(), typeName.begin() + 11) == "modelica://");
 }
+
+
+inline bool dxfFileType(const std::string& typeName)
+{
+  return typeName.substr(typeName.size()-3) == std::string("dxf");
+}
+
+
+inline bool stlFileType(const std::string& typeName)
+{
+  return typeName.substr(typeName.size()-3) == std::string("stl");
+}
+
 
 /*! \brief Get file name of the cad file
  */
 inline std::string extractCADFilename(const std::string& s)
 {
-	std::string fileKey = "modelica://";
-	std::string s2 = s.substr(fileKey.length(), s.length());
-	int pos = s2.find("/");
-	return s2.substr(pos + 1, s.length());
+  std::string fileKey = "modelica://";
+  std::string s2 = s.substr(fileKey.length(), s.length());
+  return s2;
 }
-
 
 #endif //ANIMATIONUTIL_H
