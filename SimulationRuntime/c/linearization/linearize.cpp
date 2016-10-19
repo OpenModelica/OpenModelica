@@ -71,7 +71,8 @@ int functionODE_residual(DATA* data, threadData_t *threadData, double *dx, doubl
 
     long i;
 
-//    printCurrentStatesVector(LOG_DASSL_STATES, y, data, data->localData[0]->timeValue);
+    /* debug */
+    /* printCurrentStatesVector(LOG_JAC, y, data, data->localData[0]->timeValue); */
 
     /* read input vars */
     externalInputUpdate(data);
@@ -81,16 +82,15 @@ int functionODE_residual(DATA* data, threadData_t *threadData, double *dx, doubl
     data->callback->functionODE(data, threadData);
 
     /* eval algebraic vars */
-    data->callback->functionAlgebraics(data, threadData); //yes, this is necessary
+    data->callback->functionAlgebraics(data, threadData);
 
     /* eval output vars */
-    data->callback->output_function(data, threadData); //yes, this is necessary
+    data->callback->output_function(data, threadData);
 
     /* get the difference between the temp_xd(=localData->statesDerivatives)
      and xd(=statesDerivativesBackup) */
     for(i=0; i < data->modelData->nStates; i++)
     {
-        //        delta[i] = data->localData[0]->realVars[data->modelData.nStates + i] - yd[i];
         dx[i] = data->localData[0]->realVars[data->modelData->nStates + i];
     }
     for(i=0; i < data->modelData->nOutputVars; i++)
@@ -115,27 +115,32 @@ int functionJacAC_num(DATA* data, threadData_t *threadData, double *matrixA, dou
     double delta_hh;
     double xsave;
 
+    double* x;
+
     int i,j,k;
 
     int do_data_recovery = 0;
-    if(matrixCz){
-        do_data_recovery = 1;
-    }
 
     int size_A = data->modelData->nStates;
     int size_C = data->modelData->nOutputVars;
     int size_z = data->modelData->nVariablesReal - 2*data->modelData->nStates;
+
     double* x0 = (double*)calloc(size_A,sizeof(double));
     double* y0 = (double*)calloc(size_C,sizeof(double));
     double* x1 = (double*)calloc(size_A,sizeof(double));
     double* y1 = (double*)calloc(size_C,sizeof(double));
     double* z0 = 0;
     double* z1 = 0;
+    double *xScaling = (double*)calloc(size_A,sizeof(double));
 
     assertStreamPrint(threadData,0!=x0,"calloc failed");
     assertStreamPrint(threadData,0!=y0,"calloc failed");
     assertStreamPrint(threadData,0!=x1,"calloc failed");
     assertStreamPrint(threadData,0!=y1,"calloc failed");
+
+    if(matrixCz){
+        do_data_recovery = 1;
+    }
 
     if(do_data_recovery > 0){
         z0 = (double*)calloc(size_z,sizeof(double));
@@ -144,14 +149,14 @@ int functionJacAC_num(DATA* data, threadData_t *threadData, double *matrixA, dou
         assertStreamPrint(threadData,0!=z1,"calloc failed");
     }
 
-    double* xScaling = (double*)calloc(size_A,sizeof(double));
-    for (i=0;i<size_A;i++){
-        xScaling[i] = fmax(data->modelData->realVarsData[i].attribute.nominal,fabs(data->modelData->realVarsData[i].attribute.start));
-    }
-
     functionODE_residual(data, threadData, x0, y0, z0);
 
-    double* x = data->localData[0]->realVars;
+    x = data->localData[0]->realVars;
+
+    /* use actually value for xScaling */
+    for (i=0;i<size_A;i++){
+        xScaling[i] = fmax(data->modelData->realVarsData[i].attribute.nominal,fabs(x[i]));
+    }
 
     /* solverData->f1 must be set outside this function based on x */
     for(i = 0; i < size_A; i++) {
@@ -200,6 +205,7 @@ int functionJacBD_num(DATA* data, threadData_t *threadData, double *matrixB, dou
     const double delta_h = sqrt(DBL_EPSILON*2e1);
     double delta_hh;
     double usave;
+    double* u;
 
     int i,j,k;
 
@@ -233,7 +239,7 @@ int functionJacBD_num(DATA* data, threadData_t *threadData, double *matrixB, dou
 
     functionODE_residual(data, threadData, x0, y0, z0);
 
-    double* u = data->simulationInfo->inputVars;
+    u = data->simulationInfo->inputVars;
 
     /* solverData->f1 must be set outside this function based on x */
     for(i = 0; i < size_u; i++) {
