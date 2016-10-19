@@ -306,19 +306,35 @@ The OMEdit Simulation Dialog can be launched by,
 General Tab
 ~~~~~~~~~~~
 
--  *Start Time* – the simulation start time.
+-  Simulation Interval
 
--  *Stop Time* – the simulation stop time.
+  -  *Start Time* – the simulation start time.
 
--  *Number of Intervals* – the simulation number of intervals.
+  -  *Stop Time* – the simulation stop time.
 
--  *Interval* – the length of one interval (i.e., stepsize)
+  -  *Number of Intervals* – the simulation number of intervals.
 
--  *Method* – the simulation solver. See section :ref:`cruntime-integration-methods` for solver details.
+  -  *Interval* – the length of one interval (i.e., stepsize)
 
--  *Tolerance* – the simulation tolerance.
+-  Integration
 
-- *DASSL Options*
+  -  *Method* – the simulation solver. See section :ref:`cruntime-integration-methods` for solver details.
+
+  -  *Tolerance* – the simulation tolerance.
+
+  -  *Jacobian* - the jacobain method to use.
+
+  -  DASSL Options
+
+    -  *Root Finding* - Activates the internal root finding procedure of dassl.
+
+    -  *Restart After Event* - Activates the restart of dassl after an event is performed.
+
+    -  *Initial Step Size*
+
+    -  *Maximum Step Size*
+
+    -  *Maximum Integration Order*
 
 -  *Compiler Flags (Optional)* – the optional C compiler flags.
 
@@ -330,14 +346,18 @@ General Tab
 
 -  *Launch Algorithmic Debugger* – launches the algorithmic debugger.
 
+-  *Launch Animation* – launches the 3d animation window.
+
 Output Tab
 ~~~~~~~~~~
 
 -  *Output Format* – the simulation result file output format.
 
--  *File Name (Optional)* – the simulation result file name.
+-  *File Name Prefix (Optional)* – the name is used as a prefix for the output files.
 
--  *Variable Filter (Optional).*
+-  *Result File (Optional)* - the simulation result file name.
+
+-  *Variable Filter (Optional)*
 
 -  *Protected Variables –* adds the protected variables in result file.
 
@@ -380,49 +400,40 @@ Simulation Flags Tab
 
 -  *Logging (Optional)*
 
--  *DASSL Solver Information* – prints additional information about
-   dassl solver.
-
--  *Debug* – prints additional debug information.
-
--  *Dynamic State Selection Information* – outputs information about
-   dynamic state selection.
-
--  *Jacobians Dynamic State Selection Information* – outputs jacobain of
-   the dynamic state selection.
-
--  *Event Iteration* – additional information during event iteration.
-
--  *Verbose Event System* – verbose logging of event system.
-
--  *Initialization* – prints additional information during
-   initialization.
-
--  *Jacobians Matrix* – outputs the jacobian matrix used by dassl.
-
--  *Non Linear Systems* – logging for nonlinear systems.
-
--  *Verbose Non Linear Systems* – verbose logging of nonlinear systems.
-
--  *Jacobians Non Linear Systems* – outputs the jacobian of nonlinear
-   systems.
-
--  *Initialization Residuals* – outputs residuals of the initialization.
-
--  *Simulation Process* – additional information about simulation
-   process.
-
--  *Solver Process* – additional information about solver process.
-
--  *Final Initialization Solution* – final solution of the
-   initialization.
-
--  *Timer/Event/Solver Statistics* – additional statistics about
-   timer/events/solver.
-
--  *Util*.
-
--  *Zero Crossings* – additional information about the zerocrossings.
+  -  *LOG_DASSL* - additional information about dassl solver.
+  -  *LOG_DASSL_STATES* - outputs the states at every dassl call.
+  -  *LOG_DEBUG* - additional debug information.
+  -  *LOG_DSS* - outputs information about dynamic state selection.
+  -  *LOG_DSS_JAC* - outputs jacobian of the dynamic state selection.
+  -  *LOG_DT* - additional information about dynamic tearing.
+  -  *LOG_EVENTS* - additional information during event iteration.
+  -  *LOG_EVENTS_V* - verbose logging of event system.
+  -  *LOG_INIT* - additional information during initialization.
+  -  *LOG_IPOPT* - information from Ipopt.
+  -  *LOG_IPOPT_FULL* - more information from Ipopt.
+  -  *LOG_IPOPT_JAC* - check jacobian matrix with Ipopt.
+  -  *LOG_IPOPT_HESSE* - check hessian matrix with Ipopt.
+  -  *LOG_IPOPT_ERROR* - print max error in the optimization.
+  -  *LOG_JAC* - outputs the jacobian matrix used by dassl.
+  -  *LOG_LS* - logging for linear systems.
+  -  *LOG_LS_V* - verbose logging of linear systems.
+  -  *LOG_NLS* - logging for nonlinear systems.
+  -  *LOG_NLS_V* - verbose logging of nonlinear systems.
+  -  *LOG_NLS_HOMOTOPY* - logging of homotopy solver for nonlinear systems.
+  -  *LOG_NLS_JAC* - outputs the jacobian of nonlinear systems.
+  -  *LOG_NLS_JAC_TEST* - tests the analytical jacobian of nonlinear systems.
+  -  *LOG_NLS_RES* - outputs every evaluation of the residual function.
+  -  *LOG_NLS_EXTRAPOLATE* - outputs debug information about extrapolate process.
+  -  *LOG_RES_INIT* - outputs residuals of the initialization.
+  -  *LOG_RT* - additional information regarding real-time processes.
+  -  *LOG_SIMULATION* - additional information about simulation process.
+  -  *LOG_SOLVER* - additional information about solver process.
+  -  *LOG_SOLVER_CONTEXT* - context information during the solver process.
+  -  *LOG_SOTI* - final solution of the initialization.
+  -  *LOG_STATS* - additional statistics about timer/events/solver.
+  -  *LOG_STATS_V* - additional statistics for LOG_STATS.
+  -  *LOG_UTIL*.
+  -  *LOG_ZEROCROSSINGS* - additional information about the zerocrossings.
 
 -  *Additional Simulation Flags (Optional)* – specify any other
        simulation flag.
