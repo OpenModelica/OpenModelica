@@ -333,15 +333,6 @@ algorithm
   end if;
 end getFullCADFilePath;
 
-protected function packagePathEqual "find function for getFullCADFilePath
-author: vwaurich TUD 2016-10"
-  input tuple<String,String> tpl;
-  input String name;
-  output Boolean b = false;
-algorithm
-  b := stringEqual(name,Util.tuple21(tpl));
-end packagePathEqual;
-
 protected function fillShapeObject"sets the visualization info in the visualization object
 author:Waurich TUD 2015-04"
   input DAE.ComponentRef cref;
