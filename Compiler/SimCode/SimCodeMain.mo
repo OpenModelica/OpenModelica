@@ -144,14 +144,15 @@ protected
   Absyn.ComponentRef a_cref;
   list<String> libPaths;
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
+  list<tuple<String, String>> packagePaths;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
-  (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
+  (libs,libPaths,includes, includeDirs, recordDecls, functions, literals, packagePaths) :=
     SimCodeUtil.createFunctions(p, inBackendDAE);
   simCode := createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, SOME(simSettings), recordDecls, literals, Absyn.FUNCTIONARGS({},{}), isFMU=true, FMUVersion=FMUVersion);
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths,packagePaths, SOME(simSettings), recordDecls, literals, Absyn.FUNCTIONARGS({},{}), isFMU=true, FMUVersion=FMUVersion);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
@@ -189,14 +190,15 @@ protected
   list<String> libPaths;
   Absyn.ComponentRef a_cref;
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
+  list<tuple<String, String>> packagePaths;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
-  (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) :=
+  (libs, libPaths, includes, includeDirs, recordDecls, functions, literals, packagePaths) :=
     SimCodeUtil.createFunctions(p, inBackendDAE);
   (simCode,_) := SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths,packagePaths, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
@@ -412,6 +414,7 @@ protected
   list<SimCode.RecordDeclaration> recordDecls;
   Absyn.ComponentRef a_cref;
   tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  list<tuple<String, String>> packagePaths;
 algorithm
   if Flags.isSet(Flags.GRAPHML) then
     HpcOmTaskGraph.dumpTaskGraph(inBackendDAE, filenamePrefix);
@@ -420,8 +423,8 @@ algorithm
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
 
-  (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE);
-  simCode := createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
+  (libs, libPaths, includes, includeDirs, recordDecls, functions, literals, packagePaths) := SimCodeUtil.createFunctions(p, inBackendDAE);
+  simCode := createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths,packagePaths, simSettingsOpt, recordDecls, literals, args);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
@@ -453,6 +456,7 @@ protected function createSimCode "
   input list<String> includeDirs;
   input list<String> libs;
   input list<String> libPaths;
+  input list<tuple<String,String>> packagePaths;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input list<SimCode.RecordDeclaration> recordDecls;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
@@ -461,17 +465,17 @@ protected function createSimCode "
   input String FMUVersion="";
   output SimCode.SimCode simCode;
 algorithm
-  simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals, args)
+  simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths, packagePaths,simSettingsOpt, recordDecls, literals, args)
     local
       Integer numProc;
       SimCode.SimCode tmpSimCode;
 
-    case(_, _, _, _, _, _, _, _, _, _,_, _, _) equation
+    case(_, _, _, _, _, _, _, _, _, _,_, _, _, _) equation
       // MULTI_RATE PARTITIONINIG
       true = Flags.isSet(Flags.MULTIRATE_PARTITION);
-    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
+    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,packagePaths, simSettingsOpt, recordDecls, literals, args);
 
-    case(_, _, _, _, _, _, _, _, _, _,_, _, _) equation
+    case(_, _, _, _, _, _, _, _, _, _,_, _, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation
@@ -482,9 +486,9 @@ algorithm
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = numProc == 0;
       print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_ \n");
-    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
+    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,packagePaths, simSettingsOpt, recordDecls, literals, args);
 
-    case(_, _, _, _, _, _, _, _, _,_, _, _, _) equation
+    case(_, _, _, _, _, _, _, _, _,_, _, _, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation
@@ -494,10 +498,10 @@ algorithm
 
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = (numProc > 0);
-    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals, args);
+    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,packagePaths,simSettingsOpt, recordDecls, literals, args);
 
     else equation
-      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args, isFMU=isFMU, FMUVersion=FMUVersion);
+      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,packagePaths, simSettingsOpt, recordDecls, literals, args, isFMU=isFMU, FMUVersion=FMUVersion);
     then tmpSimCode;
   end matchcontinue;
 end createSimCode;

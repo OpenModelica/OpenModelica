@@ -77,5 +77,82 @@ algorithm
   end match;
 end printIstmtStr;
 
+protected function loadedFileString
+"author: vwaurich TUD 10-2016"
+  input GlobalScript.LoadedFile file;
+  output String s = "";
+protected
+  Absyn.Path p;
+  list<Absyn.Path> paths;
+algorithm
+  GlobalScript.FILE(classNamesQualified = paths) := file;
+  for p in paths loop
+    s := s +"\n"+ Absyn.pathString(p);
+  end for;
+end loadedFileString;
+
+public function printAST
+"author: vwaurich TUD 10-2016"
+  input Absyn.Program pr;
+protected
+  String s="";
+  Absyn.Class class_;
+  list<Absyn.Class> classes;
+  Absyn.Within within_ ;
+algorithm
+  Absyn.PROGRAM(classes, within_) := pr;
+  for class_ in classes loop
+    s := s+classString(class_)+"\n";
+  end for;
+  print(s);
+end printAST;
+
+protected function classString
+"author: vwaurich TUD 10-2016"
+  input Absyn.Class cl;
+  output String s;
+protected
+  Absyn.Ident id;
+algorithm
+  Absyn.CLASS(name = id) := cl;
+  s := id +": "+ Absyn.classFilename(cl);
+end classString;
+
+protected function InstantiatedClassString
+"author: vwaurich TUD 10-2016"
+  input GlobalScript.InstantiatedClass file;
+  output String s="CLASS:";
+protected
+  Absyn.Path p;
+  list<Absyn.Path> paths;
+algorithm
+  GlobalScript.INSTCLASS(qualName = p) := file;
+  s := Absyn.pathString(p);
+end InstantiatedClassString;
+
+public function printGlobalScript
+"author: vwaurich TUD 10-2016"
+  input GlobalScript.SymbolTable st;
+protected
+  list<GlobalScript.LoadedFile> loadedFiles;
+  list<GlobalScript.InstantiatedClass> instClsLst;
+  GlobalScript.InstantiatedClass cls;
+  GlobalScript.LoadedFile file;
+  Absyn.Program ast;
+algorithm
+  loadedFiles := st.loadedFiles;
+  instClsLst := st.instClsLst;
+  ast := st.ast;
+  print("Loaded Files"+intString(listLength(loadedFiles))+" InstantiatedClasses:"+intString(listLength(instClsLst))+"\n");
+  for file in loadedFiles loop
+    print(loadedFileString(file)+"\n");
+  end for;
+  for cls in instClsLst loop
+    print(InstantiatedClassString(cls)+"\n");
+  end for;
+  print("AST\n");
+  printAST(ast);
+end printGlobalScript;
+
 annotation(__OpenModelica_Interface="frontend");
 end GlobalScriptDump;

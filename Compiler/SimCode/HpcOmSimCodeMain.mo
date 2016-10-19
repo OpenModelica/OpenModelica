@@ -82,13 +82,14 @@ public function createSimCode "
   input list<String> includeDirs;
   input list<String> libs;
   input list<String> libPaths;
+  input list<tuple<String,String>> packagePaths;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input list<SimCode.RecordDeclaration> recordDecls;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   output SimCode.SimCode simCode;
 algorithm
-  simCode := matchcontinue (inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals, args)
+  simCode := matchcontinue (inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,packagePaths,simSettingsOpt, recordDecls, literals, args)
     local
       Integer lastEqMappingIdx;
       BackendDAE.EqSystems eqs;
@@ -127,7 +128,7 @@ algorithm
       list<list<Integer>> partitions, activatorsForPartitions;
       list<Integer> stateToActivators;
 
-    case (BackendDAE.DAE(eqs=_), _, _, _, _,_, _, _, _, _, _, _, _) equation
+    case (BackendDAE.DAE(eqs=_), _, _, _, _,_, _, _, _, _, _, _, _, _) equation
       // DO MULTI-RATE-PARTITIONING
       true =  Flags.isSet(Flags.MULTIRATE_PARTITION);
       print("DO MULTIRATE\n");
@@ -136,7 +137,7 @@ algorithm
       //-----
       (simCode,(lastEqMappingIdx,equationSccMapping)) =
           SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions,
-                                     externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args );
+                                     externalFunctionIncludes, includeDirs, libs,libPaths,packagePaths, simSettingsOpt, recordDecls, literals, args );
 
       //get simCode-backendDAE mappings
       //----------------------------
@@ -178,7 +179,7 @@ algorithm
     then
       simCode;
 
-    case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
+    case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _, _) equation
       // DO HPCOM PARALLELIZATION
       true =  Flags.isSet(Flags.HPCOM);
 
@@ -191,7 +192,7 @@ algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       (simCode,(lastEqMappingIdx,equationSccMapping)) =
           SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions,
-                                     externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args );
+                                     externalFunctionIncludes, includeDirs, libs,libPaths,packagePaths, simSettingsOpt, recordDecls, literals, args );
 
       //get simCode-backendDAE mappings
       //----------------------------

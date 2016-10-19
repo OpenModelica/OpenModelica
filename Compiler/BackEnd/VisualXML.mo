@@ -56,6 +56,7 @@ import List;
 import Util;
 import Tpl;
 import VisualXMLTpl;
+import System;
 
 //----------------------------
 //  Visualization types
@@ -87,6 +88,7 @@ public function visualizationInfoXML"dumps an xml containing information about v
 author:Waurich TUD 2015-04"
   input BackendDAE.BackendDAE daeIn;
   input String fileName;
+  input list<tuple<String,String>> packagePaths;
   output BackendDAE.BackendDAE daeOut;
 protected
   BackendDAE.EqSystems eqs, eqs0;
@@ -115,7 +117,7 @@ algorithm
 
   //fill theses visualization objects with information
   allVarLst := listAppend(globalKnownVarLst,listAppend(allVarLst,aliasVarLst));
-  (visuals,_) := List.mapFold(allVisuals, fillVisualizationObjects,allVarLst);
+  (visuals,_,_) := List.mapFold2(allVisuals, fillVisualizationObjects,allVarLst, packagePaths);
     //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
 
   //dump xml file
@@ -206,16 +208,18 @@ protected function fillVisualizationObjects"gets the identifier of a visualizati
 author:Waurich TUD 2015-04"
   input DAE.ComponentRef crefIn;
   input list<BackendDAE.Var> allVarsIn;
+  input list<tuple<String,String>> packagePathsIn;
   output Visualization visOut;
   output list<BackendDAE.Var> allVarsOut;
+  output list<tuple<String,String>> packagePathsOut;
 algorithm
-  (visOut,allVarsOut) := matchcontinue(crefIn,allVarsIn)
+  (visOut,allVarsOut,packagePathsOut) := matchcontinue(crefIn,allVarsIn,packagePathsIn)
     local
       String name;
       list<String> nameChars,prefix;
       Visualization vis;
       list<BackendDAE.Var> allVars;
-  case(_,_)
+  case(_,_,_)
     algorithm
       //nameChars := stringListStringChar(nameIn);
       //(prefix,nameChars) := List.split(nameChars,6);
@@ -226,8 +230,8 @@ algorithm
       vis := SHAPE(crefIn,"",arrayCreate(3,{DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1)}),
                            arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)),arrayCreate(3,DAE.RCONST(-1)),
                            DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1), arrayCreate(3,DAE.RCONST(-1)), DAE.RCONST(-1));
-      (_,vis) := List.fold1(allVarsIn,fillVisualizationObjects1,true,({},vis));
-    then (vis,allVarsIn);
+      (_,vis) := List.fold2(allVarsIn,fillVisualizationObjects1,true,packagePathsIn,({},vis));
+    then (vis,allVarsIn,packagePathsIn);
   else
     algorithm
     print("fillVisualizationObjects failed! - not yet supported type");
@@ -289,6 +293,7 @@ protected function fillVisualizationObjects1"checks if a variable belongs to a c
 author:Waurich TUD 2015-04"
   input BackendDAE.Var varIn; //check this var
   input Boolean storeProtectedCrefs; // if you want to store the protected crefs instead of the bidning expression
+  input list<tuple<String,String>> packagePaths;
   input tuple<list<BackendDAE.Var>,Visualization> tplIn; // fold <vars for other visualization objects, the current visualization >
   output tuple<list<BackendDAE.Var>,Visualization> tplOut;
 algorithm
@@ -303,7 +308,7 @@ algorithm
       //this var belongs to the visualization object
       //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the shape ident
       (cref1,true) := splitCrefAfter(cref,ident); // check if this occures in the qualified var cref
-      vis := fillShapeObject(cref1,varIn,storeProtectedCrefs,vis);
+      vis := fillShapeObject(cref1,varIn,storeProtectedCrefs,packagePaths,vis);
     then (vars, vis);
   else
     algorithm
@@ -312,15 +317,48 @@ algorithm
   end matchcontinue;
 end fillVisualizationObjects1;
 
+protected function getFullCADFilePath "Get the absolute path for the given modelica uri.
+author: vwaurich TUD 2016-10"
+  input String sIn;
+  input list<tuple<String,String>> packagePaths;
+  output String sOut = sIn;
+protected
+  String head,packName,file, path;
+  list<String> hierarchy, chars;
+algorithm
+  chars := stringListStringChar(sIn);
+  if listLength(chars) > 11 and stringEqual(stringDelimitList(List.firstN(chars,11),""),"modelica://") then
+    (head,packName,file) := System.uriToClassAndPath(sIn);
+    //Check if its a file reference and create absolute path
+    if stringEqual(head,"modelica://") then
+      (_,path) := List.find1(packagePaths,packagePathEqual,packName);
+      hierarchy := System.strtok(path, "/");
+      hierarchy := List.firstN(hierarchy,listLength(hierarchy)-1);
+        //print("hierarchy: "+stringDelimitList(hierarchy,"   ")+"\n");
+      sOut := head+stringDelimitList(hierarchy,"/")+file;
+    end if;
+  end if;
+end getFullCADFilePath;
+
+protected function packagePathEqual "find function for getFullCADFilePath
+author: vwaurich TUD 2016-10"
+  input tuple<String,String> tpl;
+  input String name;
+  output Boolean b = false;
+algorithm
+  b := stringEqual(name,Util.tuple21(tpl));
+end packagePathEqual;
+
 protected function fillShapeObject"sets the visualization info in the visualization object
 author:Waurich TUD 2015-04"
   input DAE.ComponentRef cref;
   input BackendDAE.Var var;
   input Boolean storeProtectedCrefs;
+  input list<tuple<String,String>> packagePaths;
   input Visualization visIn;
   output Visualization visOut;
 algorithm
-  visOut := matchcontinue(cref,var,storeProtectedCrefs,visIn)
+  visOut := matchcontinue(cref,var,storeProtectedCrefs,packagePaths,visIn)
     local
       Option<DAE.Exp> bind;
       DAE.ComponentRef ident;
@@ -331,10 +369,12 @@ algorithm
       array<DAE.Exp> color, r, lengthDir, widthDir, r_shape ;
       list<DAE.Exp> T0;
       array<list<DAE.Exp>> T;
-  case(DAE.CREF_IDENT(ident="shapeType"),BackendDAE.VAR(bindExp=SOME(DAE.SCONST(svalue))),_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+  case(DAE.CREF_IDENT(ident="shapeType"),BackendDAE.VAR(bindExp=SOME(DAE.SCONST(svalue))),_ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+    algorithm
+      svalue := getFullCADFilePath(svalue,packagePaths);
     then (SHAPE(ident, svalue, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
 
-  case(DAE.CREF_QUAL(ident="R",componentRef=DAE.CREF_IDENT(ident="T", subscriptLst = {DAE.INDEX(DAE.ICONST(pos)),DAE.INDEX(DAE.ICONST(pos1))})),BackendDAE.VAR(bindExp=bind),_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+  case(DAE.CREF_QUAL(ident="R",componentRef=DAE.CREF_IDENT(ident="T", subscriptLst = {DAE.INDEX(DAE.ICONST(pos)),DAE.INDEX(DAE.ICONST(pos1))})),BackendDAE.VAR(bindExp=bind),_ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if isSome(bind) then
         exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
@@ -345,7 +385,7 @@ algorithm
       T := arrayUpdate(T,pos,T0);
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
 
-  case(DAE.CREF_IDENT(ident="r", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+  case(DAE.CREF_IDENT(ident="r", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if isSome(bind) then
         exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
@@ -354,7 +394,7 @@ algorithm
       r := arrayUpdate(r,pos,exp);
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
 
-  case(DAE.CREF_IDENT(ident="r_shape", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+  case(DAE.CREF_IDENT(ident="r_shape", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if isSome(bind) then
         exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
@@ -363,7 +403,7 @@ algorithm
       r_shape := arrayUpdate(r_shape,pos,exp);
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
 
-  case(DAE.CREF_IDENT(ident="lengthDirection", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+  case(DAE.CREF_IDENT(ident="lengthDirection", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if isSome(bind) then
         exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
@@ -372,7 +412,7 @@ algorithm
       lengthDir := arrayUpdate(lengthDir,pos,exp);
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
 
-  case(DAE.CREF_IDENT(ident="widthDirection", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+  case(DAE.CREF_IDENT(ident="widthDirection", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if isSome(bind) then
         exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
@@ -381,7 +421,7 @@ algorithm
       widthDir := arrayUpdate(widthDir,pos,exp);
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
 
-  case(DAE.CREF_IDENT(ident="length"),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+  case(DAE.CREF_IDENT(ident="length"),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if isSome(bind) then
         exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
@@ -389,7 +429,7 @@ algorithm
       end if;
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, exp, width, height, extra, color, specularCoeff));
 
-  case(DAE.CREF_IDENT(ident="width"),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+  case(DAE.CREF_IDENT(ident="width"),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if isSome(bind) then
         exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
@@ -397,7 +437,7 @@ algorithm
       end if;
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, exp, height, extra, color, specularCoeff));
 
-  case(DAE.CREF_IDENT(ident="height"),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+  case(DAE.CREF_IDENT(ident="height"),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if isSome(bind) then
         exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
@@ -405,7 +445,7 @@ algorithm
       end if;
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, exp, extra, color, specularCoeff));
 
-   case(DAE.CREF_IDENT(ident="extra"),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+   case(DAE.CREF_IDENT(ident="extra"),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if isSome(bind) then
         exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
@@ -413,7 +453,7 @@ algorithm
       end if;
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, exp, color, specularCoeff));
 
-  case(DAE.CREF_IDENT(ident="color", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+  case(DAE.CREF_IDENT(ident="color", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if isSome(bind) then
         exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
@@ -422,7 +462,7 @@ algorithm
       color := arrayUpdate(color,pos,exp);
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
 
-   case(DAE.CREF_IDENT(ident="specularCoefficient"),BackendDAE.VAR(bindExp=bind), _ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color))
+   case(DAE.CREF_IDENT(ident="specularCoefficient"),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color))
     algorithm
       if isSome(bind) then
         exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
