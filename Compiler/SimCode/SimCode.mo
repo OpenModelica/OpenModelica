@@ -54,6 +54,7 @@ encapsulated package SimCode
 import Absyn;
 import BackendDAE;
 import DAE;
+import HashTable;
 import HashTableCrILst;
 import HashTableCrIListArray;
 import HashTableCrefSimVar;

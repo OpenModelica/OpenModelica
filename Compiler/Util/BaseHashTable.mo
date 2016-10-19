@@ -539,9 +539,9 @@ algorithm
       then
         ((n, size, arr));
 
-    case ((_, size, _), _, _)
+    case ((_, size, arr), _, _)
       equation
-        Error.addInternalError("HashTable.valueArraySet(pos="+String(pos)+") size="+String(size)+" failed\n", sourceInfo());
+        Error.addInternalError("HashTable.valueArraySet(pos="+String(pos)+") size="+String(size)+" arrSize="+String(arrayLength(arr))+" failed\n", sourceInfo());
       then
         fail();
 

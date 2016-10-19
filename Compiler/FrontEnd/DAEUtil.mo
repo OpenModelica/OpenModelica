@@ -5303,7 +5303,7 @@ public function transformationsBeforeBackend
 protected
   DAE.DAElist dAElist;
   list<DAE.Element> elts;
-  HashTable.HashTable ht;
+  HashSet.HashSet ht;
 algorithm
   // Transform Modelica state machines to flat data-flow equations
   dAElist := StateMachineFlatten.stateMachineToDataFlow(cache, env, inDAElist);
@@ -5322,7 +5322,7 @@ algorithm
 end transformationsBeforeBackend;
 
 protected function transformationsBeforeBackendNotification
-  input HashTable.HashTable ht;
+  input HashSet.HashSet ht;
 algorithm
   _ := matchcontinue ht
     local
@@ -5331,7 +5331,7 @@ algorithm
       String str;
     case _
       equation
-        (crs as _::_) = BaseHashTable.hashTableKeyList(ht);
+        (crs as _::_) = BaseHashSet.hashSetList(ht);
         strs = List.map(crs, ComponentReference.printComponentRefStr);
         strs = List.sort(strs, Util.strcmpBool);
         str = stringDelimitList(strs, ", ");
@@ -5344,10 +5344,10 @@ end transformationsBeforeBackendNotification;
 protected function makeEvaluatedParamFinal "
   This function makes all evaluated parameters final."
   input DAE.Element inElement;
-  input HashTable.HashTable ht "evaluated parameters";
+  input HashSet.HashSet ht "evaluated parameters";
   output DAE.Element outElement;
 algorithm
-  outElement := matchcontinue(inElement, ht)
+  outElement := match (inElement, ht)
     local
       DAE.ComponentRef cr;
       Option<DAE.VariableAttributes> varOpt;
@@ -5358,9 +5358,7 @@ algorithm
       DAE.Element elt;
 
     case (DAE.VAR(componentRef=cr, kind=DAE.PARAM(), variableAttributesOption=varOpt), _) equation
-      _ = BaseHashTable.get(cr, ht);
-      // print("Make cr final " + ComponentReference.printComponentRefStr(cr) + "\n");
-      elt = setVariableAttributes(inElement, setFinalAttr(varOpt, true));
+      elt = if BaseHashSet.has(cr, ht) then setVariableAttributes(inElement, setFinalAttr(varOpt, true)) else inElement;
     then elt;
 
     case (DAE.COMP(id, elts, source, cmt), _) equation
@@ -5368,7 +5366,7 @@ algorithm
     then DAE.COMP(id, elts, source, cmt);
 
     else inElement;
-  end matchcontinue;
+  end match;
 end makeEvaluatedParamFinal;
 
 public function setBindingSource "author: adrpo
