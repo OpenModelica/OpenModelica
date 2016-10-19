@@ -46,6 +46,7 @@ import BackendDAE;
 import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
+import CevalScript;
 import ComponentReference;
 import DAE;
 import DAEUtil;
@@ -88,7 +89,7 @@ public function visualizationInfoXML"dumps an xml containing information about v
 author:Waurich TUD 2015-04"
   input BackendDAE.BackendDAE daeIn;
   input String fileName;
-  input list<tuple<String,String>> packagePaths;
+  input Absyn.Program program;
   output BackendDAE.BackendDAE daeOut;
 protected
   BackendDAE.EqSystems eqs, eqs0;
@@ -117,7 +118,7 @@ algorithm
 
   //fill theses visualization objects with information
   allVarLst := listAppend(globalKnownVarLst,listAppend(allVarLst,aliasVarLst));
-  (visuals,_,_) := List.mapFold2(allVisuals, fillVisualizationObjects,allVarLst, packagePaths);
+  (visuals,_,_) := List.mapFold2(allVisuals, fillVisualizationObjects,allVarLst, program);
     //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
 
   //dump xml file
@@ -208,12 +209,12 @@ protected function fillVisualizationObjects"gets the identifier of a visualizati
 author:Waurich TUD 2015-04"
   input DAE.ComponentRef crefIn;
   input list<BackendDAE.Var> allVarsIn;
-  input list<tuple<String,String>> packagePathsIn;
+  input Absyn.Program programIn;
   output Visualization visOut;
   output list<BackendDAE.Var> allVarsOut;
-  output list<tuple<String,String>> packagePathsOut;
+  output Absyn.Program programOut;
 algorithm
-  (visOut,allVarsOut,packagePathsOut) := matchcontinue(crefIn,allVarsIn,packagePathsIn)
+  (visOut,allVarsOut,programOut) := matchcontinue(crefIn,allVarsIn,programIn)
     local
       String name;
       list<String> nameChars,prefix;
@@ -230,8 +231,8 @@ algorithm
       vis := SHAPE(crefIn,"",arrayCreate(3,{DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1)}),
                            arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)),arrayCreate(3,DAE.RCONST(-1)),
                            DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1), arrayCreate(3,DAE.RCONST(-1)), DAE.RCONST(-1));
-      (_,vis) := List.fold2(allVarsIn,fillVisualizationObjects1,true,packagePathsIn,({},vis));
-    then (vis,allVarsIn,packagePathsIn);
+      (_,vis) := List.fold2(allVarsIn,fillVisualizationObjects1,true,programIn,({},vis));
+    then (vis,allVarsIn,programIn);
   else
     algorithm
     print("fillVisualizationObjects failed! - not yet supported type");
@@ -293,7 +294,7 @@ protected function fillVisualizationObjects1"checks if a variable belongs to a c
 author:Waurich TUD 2015-04"
   input BackendDAE.Var varIn; //check this var
   input Boolean storeProtectedCrefs; // if you want to store the protected crefs instead of the bidning expression
-  input list<tuple<String,String>> packagePaths;
+  input Absyn.Program program;
   input tuple<list<BackendDAE.Var>,Visualization> tplIn; // fold <vars for other visualization objects, the current visualization >
   output tuple<list<BackendDAE.Var>,Visualization> tplOut;
 algorithm
@@ -308,7 +309,7 @@ algorithm
       //this var belongs to the visualization object
       //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the shape ident
       (cref1,true) := splitCrefAfter(cref,ident); // check if this occures in the qualified var cref
-      vis := fillShapeObject(cref1,varIn,storeProtectedCrefs,packagePaths,vis);
+      vis := fillShapeObject(cref1,varIn,storeProtectedCrefs,program,vis);
     then (vars, vis);
   else
     algorithm
@@ -320,7 +321,7 @@ end fillVisualizationObjects1;
 protected function getFullCADFilePath "Get the absolute path for the given modelica uri.
 author: vwaurich TUD 2016-10"
   input String sIn;
-  input list<tuple<String,String>> packagePaths;
+  input Absyn.Program program;
   output String sOut = sIn;
 protected
   String head,packName,file, path;
@@ -328,15 +329,7 @@ protected
 algorithm
   chars := stringListStringChar(sIn);
   if listLength(chars) > 11 and stringEqual(stringDelimitList(List.firstN(chars,11),""),"modelica://") then
-    (head,packName,file) := System.uriToClassAndPath(sIn);
-    //Check if its a file reference and create absolute path
-    if stringEqual(head,"modelica://") then
-      (_,path) := List.find1(packagePaths,packagePathEqual,packName);
-      hierarchy := System.strtok(path, "/");
-      hierarchy := List.firstN(hierarchy,listLength(hierarchy)-1);
-        //print("hierarchy: "+stringDelimitList(hierarchy,"   ")+"\n");
-      sOut := head+stringDelimitList(hierarchy,"/")+file;
-    end if;
+    sOut := "modelica://"+CevalScript.getFullPathFromUri(program,sIn,true);
   end if;
 end getFullCADFilePath;
 
@@ -354,11 +347,11 @@ author:Waurich TUD 2015-04"
   input DAE.ComponentRef cref;
   input BackendDAE.Var var;
   input Boolean storeProtectedCrefs;
-  input list<tuple<String,String>> packagePaths;
+  input Absyn.Program program;
   input Visualization visIn;
   output Visualization visOut;
 algorithm
-  visOut := matchcontinue(cref,var,storeProtectedCrefs,packagePaths,visIn)
+  visOut := matchcontinue(cref,var,storeProtectedCrefs,program,visIn)
     local
       Option<DAE.Exp> bind;
       DAE.ComponentRef ident;
@@ -371,7 +364,7 @@ algorithm
       array<list<DAE.Exp>> T;
   case(DAE.CREF_IDENT(ident="shapeType"),BackendDAE.VAR(bindExp=SOME(DAE.SCONST(svalue))),_ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
-      svalue := getFullCADFilePath(svalue,packagePaths);
+      svalue := getFullCADFilePath(svalue,program);
     then (SHAPE(ident, svalue, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
 
   case(DAE.CREF_QUAL(ident="R",componentRef=DAE.CREF_IDENT(ident="T", subscriptLst = {DAE.INDEX(DAE.ICONST(pos)),DAE.INDEX(DAE.ICONST(pos1))})),BackendDAE.VAR(bindExp=bind),_ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))

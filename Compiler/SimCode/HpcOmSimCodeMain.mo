@@ -82,14 +82,14 @@ public function createSimCode "
   input list<String> includeDirs;
   input list<String> libs;
   input list<String> libPaths;
-  input list<tuple<String,String>> packagePaths;
+  input Absyn.Program program;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input list<SimCode.RecordDeclaration> recordDecls;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   output SimCode.SimCode simCode;
 algorithm
-  simCode := matchcontinue (inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,packagePaths,simSettingsOpt, recordDecls, literals, args)
+  simCode := matchcontinue (inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,program,simSettingsOpt, recordDecls, literals, args)
     local
       Integer lastEqMappingIdx;
       BackendDAE.EqSystems eqs;
@@ -137,7 +137,7 @@ algorithm
       //-----
       (simCode,(lastEqMappingIdx,equationSccMapping)) =
           SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions,
-                                     externalFunctionIncludes, includeDirs, libs,libPaths,packagePaths, simSettingsOpt, recordDecls, literals, args );
+                                     externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args );
 
       //get simCode-backendDAE mappings
       //----------------------------
@@ -192,7 +192,7 @@ algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       (simCode,(lastEqMappingIdx,equationSccMapping)) =
           SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions,
-                                     externalFunctionIncludes, includeDirs, libs,libPaths,packagePaths, simSettingsOpt, recordDecls, literals, args );
+                                     externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args );
 
       //get simCode-backendDAE mappings
       //----------------------------

@@ -175,7 +175,7 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   input list<String> includeDirs;
   input list<String> libs;
   input list<String> libPaths;
-  input list<tuple<String,String>> packagePaths;
+  input Absyn.Program program;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input list<SimCode.RecordDeclaration> recordDecls;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
@@ -263,7 +263,7 @@ algorithm
 
     backendMapping := setUpBackendMapping(inBackendDAE);
     if Flags.isSet(Flags.VISUAL_XML) then
-      dlow := VisualXML.visualizationInfoXML(dlow, filenamePrefix, packagePaths);
+      dlow := VisualXML.visualizationInfoXML(dlow, filenamePrefix, program);
     end if;
 
     if Flags.isSet(Flags.ITERATION_VARS) then
@@ -563,7 +563,6 @@ public function createFunctions
   output list<SimCode.RecordDeclaration> outRecordDecls;
   output list<SimCode.Function> outFunctions;
   output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outLiterals;
-  output list<tuple<String, String>> packagePaths;
 protected
   list<DAE.Function> funcelems;
   DAE.FunctionTree functionTree;
@@ -576,31 +575,11 @@ algorithm
     funcelems := Inline.inlineCallsInFunctions(funcelems, (NONE(), {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}), {});
     (funcelems, outLiterals as (_, _, lits)) := simulationFindLiterals(inBackendDAE, funcelems);
     (outFunctions, outRecordDecls, outIncludes, outIncludeDirs, outLibs, outLibPaths) := SimCodeFunctionUtil.elaborateFunctions(inProgram, funcelems, {}, lits, {}); // Do we need metarecords here as well?
-    packagePaths := getPackagePathInfo(inProgram);
-      //GlobalScriptDump.dumpAST(inProgram);
   else
     Error.addInternalError("Creation of Modelica functions failed.", sourceInfo());
     fail();
   end try;
 end createFunctions;
-
-protected function getPackagePathInfo " Create a list of tuples which store the loaded files and their absolute paths on the system.
-This is used to get the paths for resource files which are needed e.g. for animation of CAD-files.
-author: vwaurich TUD 2016-10"
-  input Absyn.Program inProgram;
-  output list<tuple<String,String>> packagePaths = {}; //(packageName, absolute path)
-protected
-  String pack, path;
-  Absyn.Class class_;
-  list<Absyn.Class> classes;
-algorithm
-  Absyn.PROGRAM(classes) := inProgram;
-  for class_ in classes loop
-    Absyn.CLASS(name = pack, info = SOURCEINFO(fileName = path)) := class_;
-    packagePaths := (pack,path)::packagePaths;
-      //print("getPackagePathInfo "+pack+" :"+path+"\n");
-  end for;
-end getPackagePathInfo;
 
 protected function getParamAsserts"splits the equationArray in variable-dependent and parameter-dependent equations.
 author: Waurich  TUD-2015-04"
