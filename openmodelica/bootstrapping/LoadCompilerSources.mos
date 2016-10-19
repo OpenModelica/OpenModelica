@@ -217,6 +217,7 @@ if true then /* Suppress output */
   // "Util";
     prefixPath + "Util/Array.mo",
     prefixPath + "Util/AvlTreeString.mo",
+    prefixPath + "Util/AvlSetCR.mo",
     prefixPath + "Util/BaseHashTable.mo",
     prefixPath + "Util/BaseHashSet.mo",
     prefixPath + "Util/BaseAvlTree.mo",
