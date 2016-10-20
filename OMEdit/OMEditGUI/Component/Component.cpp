@@ -1055,6 +1055,15 @@ QString Component::getParameterDisplayString(QString parameterName)
   if (displayString.isEmpty()) {
     displayString = getParameterDisplayStringFromExtendsParameters(parameterName);
   }
+  /* Short enumeration value, ModelicaSpec 3.3, section 18.6.5.5, ticket:4084 */
+  /* Note: for now just look for dots in non-numbers to avoid lookup of type */
+  bool ok = false;
+  displayString.toDouble(&ok);
+  if (!ok) {
+    int lastDot = displayString.lastIndexOf(".");
+    if (lastDot >= 0)
+      displayString = displayString.right(displayString.length() - lastDot - 1);
+  }
   return displayString;
 }
 
