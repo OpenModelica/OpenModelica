@@ -4978,6 +4978,14 @@ algorithm
         (e,_) = Expression.traverseExpBottomUp(e, replaceVartraverser, vars);
       then (e, vars);
 
+    case (DAE.CREF(componentRef=cr),vars)
+      equation
+        (v::_,_) = BackendVariable.getVar(cr,vars);
+        true = BackendVariable.varFixed(v);
+        e = BackendVariable.varBindExpStartValue(v);
+        (e,_) = Expression.traverseExpBottomUp(e, replaceVartraverser, vars);
+      then (e, vars);
+
     else (inExp,inVars);
 
   end matchcontinue;
@@ -7252,14 +7260,7 @@ protected function allPreOptimizationModules
     (UnitCheck.unitChecking, "unitChecking"),
     (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
     (BackendInline.normalInlineFunction, "normalInlineFunction"),
-    (EvaluateParameter.evaluateEvaluateParameters, "evaluateEvaluateParameters"),
-    (EvaluateParameter.evaluateFinalEvaluateParameters, "evaluateFinalEvaluateParameters"),
-    (EvaluateParameter.evaluateFinalParameters, "evaluateFinalParameters"),
-    (EvaluateParameter.evaluateReplaceFinalEvaluateParameters, "evaluateReplaceFinalEvaluateParameters"),
-    (EvaluateParameter.evaluateReplaceFinalParameters, "evaluateReplaceFinalParameters"),
-   	(EvaluateParameter.evaluateAllParameters, "evaluateAllParameters"),
-    (EvaluateParameter.evaluateReplaceEvaluateParameters, "evaluateReplaceEvaluateParameters"),
-    (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters"),
+    (EvaluateParameter.evaluateParameters, "evaluateParameters"),
     (RemoveSimpleEquations.removeVerySimpleEquations, "removeVerySimpleEquations"),
     (StateMachineFeatures.stateMachineElab, "stateMachineElab"),
     (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations"),
@@ -7402,7 +7403,6 @@ algorithm
 
     enabledModules := deprecatedDebugFlag(Flags.SORT_EQNS_AND_VARS, enabledModules, "sortEqnsVars", "preOptModules+");
     enabledModules := deprecatedDebugFlag(Flags.RESOLVE_LOOPS, enabledModules, "resolveLoops", "preOptModules+");
-    enabledModules := deprecatedDebugFlag(Flags.EVAL_ALL_PARAMS, enabledModules, "evaluateAllParameters", "preOptModules+");
     enabledModules := deprecatedDebugFlag(Flags.ADD_DER_ALIASES, enabledModules, "introduceDerAlias", "preOptModules+");
     if Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
       enabledModules := "inputDerivativesForDynOpt"::enabledModules;

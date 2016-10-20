@@ -32,31 +32,23 @@
 encapsulated package EvaluateParameter
 " file:        EvaluateParameter.mo
   package:     EvaluateParameter
-  description: EvaluateParameter contains functions to evaluated the bindexp of parameters with final=true or
-               annotation(Evaluate=true) and parameters which depent only on evaluated parameters
+  description: EvaluateParameter contains functions to evaluate the bindexp of parameters with
+               annotation(Evaluate=true) and parameters which depent only on evaluated parameters.
+               Additionally, parameters with final=true or protected=true can be evaluated, as well.
 
                Concept:
 
-               traverse all parameter and get the parameters which must be evaluated O(N)
+               - Traverse all parameter and get the parameters which must be evaluated O(N).
 
-               traverse the list and evaluate each parameter with a DFS  O(N)
-               -> replacements for evaluated parameter
+               - Traverse the list and evaluate each parameter with a DFS  O(N).
+                 -> Replacements for evaluated parameter.
 
-               sort the parameters with tarjans algorithm O(N)
+               - Sort the parameters with tarjans algorithm O(N).
 
-               traverse the sorted parameters and replace in the bindexp the evaluated parameters
-               if a parameter have before a nonconstant bindexp and now a constant add it to the replacements
+               - Traverse the sorted parameters and replace in the bindexp the evaluated parameters.
+                 If a parameter has a nonconstant bindexp before and now a constant one add it to the replacements.
 
-              there are  main function
-
-              - evaluate and replace parameters with final=true in variables and parameters
-              - evaluate and replace parameters with annotation(Evaluate=true) in variables and parameters
-              - evaluate and replace parameters with final=true or annotation(Evaluate=true) in variables and parameters
-
-              - evaluate and replace parameters with final=true in equations, variables and parameters
-              - evaluate and replace parameters with annotation(Evaluate=true) in equations, variables and parameters
-              - evaluate and replace parameters with final=true or annotation(Evaluate=true) in equations, variables and parameters"
-
+               - Replace the parameters in the variables and the DAE."
 
 
 public import Absyn;
@@ -88,141 +80,28 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 
-/*
- * type section
- *
- */
+
+protected constant String BORDER    = "********************************************************************************";
+protected constant String UNDERLINE = "================================================================================";
+
 
 partial function selectParameterFunc
   input BackendDAE.Var inVar;
   output Boolean select;
 end selectParameterFunc;
 
-/*
- * public section
- *
- */
 
-
-public function evaluateFinalParameters
-"author Frenkel TUD
-  evaluate and replace parameters with final=true in variables and parameters"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  (outDAE,_ ) := evaluateParameters(inDAE,BackendVariable.isFinalOrProtectedVar);
-end evaluateFinalParameters;
-
-public function evaluateEvaluateParameters
-"author Frenkel TUD
-  evaluate and replace parameters with annotation(Evaluate=true) in variables and parameters"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  (outDAE,_ ) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotation);
-end evaluateEvaluateParameters;
-
-public function evaluateFinalEvaluateParameters
-"author Frenkel TUD
-  evaluate and replace parameters with final=true in variables and parameters"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  (outDAE,_ ) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotationOrFinal);
-end evaluateFinalEvaluateParameters;
-
-public function evaluateReplaceFinalParameters
-"author Frenkel TUD
-  evaluate and replace parameters with final=true in variables and parameters"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-protected
-  BackendVarTransform.VariableReplacements repl;
-algorithm
-  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.isFinalOrProtectedVar);
-
-  if not BackendVarTransform.isReplacementEmpty(repl) then
-    outDAE := replaceEvaluatedParametersEqns(outDAE, repl);
-  end if;
-end evaluateReplaceFinalParameters;
-
-public function evaluateReplaceEvaluateParameters
-"author Frenkel TUD
-  evaluate and replace parameters with annotation(Evaluate=true) in variables and parameters"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-protected
-  BackendVarTransform.VariableReplacements repl;
-algorithm
-  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotation);
-
-  if not BackendVarTransform.isReplacementEmpty(repl) then
-    outDAE := replaceEvaluatedParametersEqns(outDAE, repl);
-  end if;
-end evaluateReplaceEvaluateParameters;
-
-public function evaluateReplaceFinalEvaluateParameters "author: Frenkel TUD
-  Evaluates and replaces parameters with final=true in variables and parameters."
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-protected
-  BackendVarTransform.VariableReplacements repl;
-algorithm
-  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotationOrFinal);
-
-  if not BackendVarTransform.isReplacementEmpty(repl) then
-    outDAE := replaceEvaluatedParametersEqns(outDAE, repl);
-  end if;
-end evaluateReplaceFinalEvaluateParameters;
-
-public function evaluateReplaceProtectedFinalEvaluateParameters "author: Frenkel TUD
-  Evaluates and replaces parameters with final=true in variables and parameters."
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-protected
-  BackendVarTransform.VariableReplacements repl;
-algorithm
-  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotationOrFinalOrProtected);
-
-  if not BackendVarTransform.isReplacementEmpty(repl) then
-    outDAE := replaceEvaluatedParametersEqns(outDAE, repl);
-  end if;
-  if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
-    BackendDump.dumpBackendDAE(outDAE,"DAE after replacing parameters");
-  end if;
-end evaluateReplaceProtectedFinalEvaluateParameters;
-
-public function evaluateAllParameters "author: waurich
-Evaluates all parameters and replaces them with their value, if possible."
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-protected
-  BackendVarTransform.VariableReplacements repl;
-algorithm
-  (outDAE, repl) := evaluateParameters(inDAE, BackendVariable.isParam);
-  if not BackendVarTransform.isReplacementEmpty(repl) then
-    //BackendVarTransform.dumpReplacements(repl);
-    outDAE := replaceEvaluatedParametersEqns(outDAE, repl);
-  end if;
-end evaluateAllParameters;
-
-/*
- * protected section
- *
- */
-
-protected function evaluateParameters "author Frenkel TUD
+public function evaluateParameters "author Frenkel TUD
   Evaluate and replace parameters with annotation(Evaluate=true) in variables and parameters."
-  input BackendDAE.BackendDAE inDAE;
-  input selectParameterFunc selectParameterfunc;
-  output BackendDAE.BackendDAE outDAE;
-  output BackendVarTransform.VariableReplacements oRepl;
+  input output BackendDAE.BackendDAE DAE;
 protected
+  selectParameterFunc selectParameterfunc;
   BackendDAE.Variables globalKnownVars, aliasVars;
   BackendDAE.EquationArray initialEqs;
   FCore.Cache cache;
   FCore.Graph graph;
   BackendVarTransform.VariableReplacements repl;
+  BackendVarTransform.VariableReplacements oRepl;
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
   list<list<Integer>> comps;
@@ -230,149 +109,227 @@ protected
   Integer size, mark, nselect;
   BackendDAE.IncidenceMatrixT m;
   BackendDAE.IncidenceMatrixT mt;
-  list<Integer> selectedParameter;
+  list<Integer> selectedParameters;
+  AvlSetCR.Tree ht;
 algorithm
   if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
-    BackendDump.dumpBackendDAE(inDAE,"DAE before evaluating parameters");
-  end if;
-  BackendDAE.DAE(systs, shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars, aliasVars=aliasVars, initialEqs=initialEqs, cache=cache, graph=graph)) := inDAE;
-
-  // get parameters with annotation(Evaluate=true)
-  size := BackendVariable.varsSize(globalKnownVars);
-  m := arrayCreate(size, {});
-  mt := arrayCreate(size, {});
-  ass2 := arrayCreate(size, -1);
-  ((_, _, _, selectedParameter, nselect, ass2, m, mt)) := BackendVariable.traverseBackendDAEVars(globalKnownVars, getParameterIncidenceMatrix, (globalKnownVars, 1, selectParameterfunc, {}, 0, ass2, m, mt));
-  if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
-    print("\nsize: " + intString(size) + "\n");
-    print("\nselectedParameter: " + stringDelimitList(List.map(selectedParameter, intString), ",") + "\n");
-    print("nselect: " + intString(nselect) + "\n");
-    print("ass2: " + stringDelimitList(List.map(arrayList(ass2), intString), ",") + "\n");
-    BackendDump.dumpIncidenceMatrix(m);
-    BackendDump.dumpIncidenceMatrixT(mt);
+    print("\nBEGINNING of preOptModule 'evaluateParameters'\n" + BORDER + "\n\n");
+    BackendDump.dumpBackendDAE(DAE,"DAE before evaluating parameters");
   end if;
 
-  // evaluate selected parameters
-  markarr := arrayCreate(size, -1);
-  size := intMax(BaseHashTable.defaultBucketSize, realInt(realMul(intReal(size), 0.7)));
-  nselect := intMax(BaseHashTable.defaultBucketSize, nselect*2);
-  repl := BackendVarTransform.emptyReplacementsSized(size);
-  oRepl := BackendVarTransform.emptyReplacementsSized(nselect);
-  (globalKnownVars, cache, repl, oRepl, mark) := evaluateSelectedParameters(selectedParameter, globalKnownVars, m, initialEqs, cache, graph, markarr, repl, oRepl, 1);
-  if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
-    print("\nAfter evaluate selected parameters\n");
-    print("\nsize: " + intString(size) + "\n");
-    print("nselect: " + intString(nselect) + "\n");
-    print("repl:");
-    BackendVarTransform.dumpReplacements(repl);
-    print("\noRepl:");
-    BackendVarTransform.dumpReplacements(oRepl);
-    BackendDump.dumpVariables(globalKnownVars, "globalKnownVars");
-    print("\nmark: " + intString(mark) + "\n");
-    print("markarr: " + stringDelimitList(List.map(arrayList(markarr), intString), ",") + "\n");
+  // Check if the parameters are not already evaluated
+  if not Flags.isSet(Flags.EVAL_PARAM) then
+
+    // Choose the parameters to evaluate
+    selectParameterfunc := match(Flags.getConfigBool(Flags.EVALUATE_FINAL_PARAMS), Flags.getConfigBool(Flags.EVALUATE_PROTECTED_PARAMS))
+      case(false, false)
+        equation
+          if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+            print("\nStructural parameters and parameters with annotation(Evaluate=true) will be evaluated.\n");
+          end if;
+         then BackendVariable.hasVarEvaluateAnnotation;
+      case(true, false)
+        equation
+          if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+            print("\nStructural parameters, final parameters and parameters with annotation(Evaluate=true) will be evaluated.\n");
+          end if;
+         then BackendVariable.hasVarEvaluateAnnotationOrFinal;
+      case(false, true)
+        equation
+          if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+            print("\nStructural parameters, protected parameters and parameters with annotation(Evaluate=true) will be evaluated.\n");
+          end if;
+         then BackendVariable.hasVarEvaluateAnnotationOrProtected;
+      case(true, true)
+        equation
+          if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+            print("\nStructural parameters, final parameters, protected parameters and parameters with annotation(Evaluate=true) will be evaluated.\n");
+          end if;
+         then BackendVariable.hasVarEvaluateAnnotationOrFinalOrProtected;
+    end match;
+
+    BackendDAE.DAE(systs, shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars, aliasVars=aliasVars, initialEqs=initialEqs, cache=cache, graph=graph)) := DAE;
+
+
+    // Get the adjacency matrix and the selected parameters
+    size := BackendVariable.varsSize(globalKnownVars);
+    m := arrayCreate(size, {});
+    mt := arrayCreate(size, {});
+    ass2 := Array.createIntRange(size);
+    ht := FCore.getEvaluatedParams(cache); // get structural parameters
+    ((_, _, _, selectedParameters, m, mt, _)) := BackendVariable.traverseBackendDAEVars(globalKnownVars, getParameterIncidenceMatrix, (globalKnownVars, 1, selectParameterfunc, {}, m, mt, ht));
+    nselect := listLength(selectedParameters);
+
+    if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+      print("\nSTART evaluating parameters:\n" + UNDERLINE + "\n");
+      print("Number of parameters: " + intString(size) + "\n");
+      print("Number of parameters selected for evaluation: " + intString(nselect) + "\n");
+      print("Selected parameters for evaluation:\n" + stringDelimitList(List.map(selectedParameters, intString), ",") + "\n");
+      BackendDump.dumpIncidenceMatrix(m);
+      BackendDump.dumpIncidenceMatrixT(mt);
+    end if;
+
+
+    // Evaluate the selected parameters and the ones you need for the calculation and save them in replacements
+    markarr := arrayCreate(size, -1);
+    size := intMax(BaseHashTable.defaultBucketSize, realInt(realMul(intReal(size), 0.7)));
+    nselect := intMax(BaseHashTable.defaultBucketSize, nselect*2);
+    repl := BackendVarTransform.emptyReplacementsSized(size);
+    oRepl := BackendVarTransform.emptyReplacementsSized(nselect);
+    (globalKnownVars, cache, repl, oRepl, mark) := evaluateSelectedParameters(selectedParameters, globalKnownVars, m, initialEqs, cache, graph, markarr, repl, oRepl, 1);
+
+    if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+      print("\n\nAfter evaluating the selected parameters:\n" + UNDERLINE + "\n");
+      print("\nAll replacements:");
+      BackendVarTransform.dumpReplacements(repl);
+      print("\nReplacements that will be replaced in the DAE:");
+      BackendVarTransform.dumpReplacements(oRepl);
+      BackendDump.dumpVariables(globalKnownVars, "globalKnownVars");
+      print("\nmark: " + intString(mark) + "\n");
+      print("markarr: " + stringDelimitList(List.map(arrayList(markarr), intString), ",") + "\n");
+    end if;
+
+
+    // Sort the parameters
+    comps := Sorting.TarjanTransposed(mt, ass2);
+
+    if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+      print("\n\nAfter sorting parameters:\n" + UNDERLINE + "\nOrder:\n");
+      for comp in comps loop
+        print(stringDelimitList(List.map(comp, intString), ",") + "\n");
+      end for;
+    end if;
+
+
+    // Replace the evaluated parameters in parameter bindings
+    (globalKnownVars, repl, oRepl, cache, mark) := traverseParameterSorted(comps, globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl);
+
+    if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+      print("\n\nAfter replacing the evaluated parameters in parameter bindings:\n" + UNDERLINE);
+      print("\nAll replacements:");
+      BackendVarTransform.dumpReplacements(repl);
+      print("\nReplacements that will be replaced in the DAE:");
+      BackendVarTransform.dumpReplacements(oRepl);
+      BackendDump.dumpVariables(globalKnownVars, "globalKnownVars");
+      print("\nmark: " + intString(mark) + "\n");
+      print("markarr: " + stringDelimitList(List.map(arrayList(markarr), intString), ",") + "\n");
+    end if;
+
+
+    // Replace the evaluated parameters in variable bindings and start attributes
+    (systs, (globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl)) := List.mapFold(systs, replaceEvaluatedParametersSystem, (globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl));
+    (aliasVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceEvaluatedParameterTraverser, (globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl));
+
+    if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+      print("\n\nAfter replacing the evaluated parameters in variable bindings and start attributes:\n" + UNDERLINE);
+      print("\nAll replacements:");
+      BackendVarTransform.dumpReplacements(repl);
+      print("\nReplacements that will be replaced in the DAE:");
+      BackendVarTransform.dumpReplacements(oRepl);
+      BackendDump.dumpVariables(globalKnownVars, "globalKnownVars");
+      print("\nmark: " + intString(mark) + "\n");
+      print("markarr: " + stringDelimitList(List.map(arrayList(markarr), intString), ",") + "\n\n");
+    end if;
+
+
+    // Replace evaluated parameters in external objects if flag is set
+    if Flags.getConfigBool(Flags.REPLACE_EVALUATED_PARAMS) then
+      shared.externalObjects := BackendVariable.listVar1(List.map1(BackendVariable.varList(shared.externalObjects),BackendVarTransform.replaceBindingExp,oRepl));
+    end if;
+
+    shared.globalKnownVars := globalKnownVars;
+    shared.aliasVars := aliasVars;
+    shared.initialEqs := initialEqs;
+    shared.graph := graph;
+    shared.cache := cache;
+
+    DAE := BackendDAE.DAE(systs, shared);
+
+    // Replace the evaluated parameters in the DAE if flag is set
+    if Flags.getConfigBool(Flags.REPLACE_EVALUATED_PARAMS) then
+      if not BackendVarTransform.isReplacementEmpty(oRepl) then
+        DAE := replaceEvaluatedParametersEqns(DAE, oRepl);
+        if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+          BackendDump.dumpBackendDAE(DAE,"DAE after replacing the evaluated parameters");
+        end if;
+      else
+        if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+          print("\nThere is no evaluated parameter.\n");
+        end if;
+      end if;
+    else
+      if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+        Error.addCompilerNotification("Evaluated parameters are not replaced in the DAE. Use --replaceEvaluatedParameters=true to replace them in the DAE.");
+      end if;
+    end if;
+
+
+  else
+    if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
+      print("\n" + UNDERLINE + "\nThere is nothing to do. All parameters are already evaluated.\n" + UNDERLINE + "\n\n");
+    end if;
   end if;
 
-  // replace evaluated parameter in parameters
-  comps := Sorting.TarjanTransposed(mt, ass2);
   if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
-    print("\ncomps:\n");
-    for comp in comps loop
-      print(stringDelimitList(List.map(comp, intString), ",") + "\n");
-    end for;
-  end if;
-
-  // evaluate vars with bind expression consists of evaluated vars
-  (globalKnownVars, repl, oRepl, cache, mark) := traverseParameterSorted(comps, globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl);
-  if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
-    print("\nAfter evaluate vars with bind expression consists of evaluated vars");
-    print("\nrepl:");
-    BackendVarTransform.dumpReplacements(repl);
-    print("\noRepl:");
-    BackendVarTransform.dumpReplacements(oRepl);
-    BackendDump.dumpVariables(globalKnownVars, "globalKnownVars");
-    print("\nmark: " + intString(mark) + "\n");
-    print("markarr: " + stringDelimitList(List.map(arrayList(markarr), intString), ",") + "\n");
-  end if;
-
-  // replace evaluated parameter in variables
-  (systs, (globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl)) := List.mapFold(systs, replaceEvaluatedParametersSystem, (globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl));
-  (aliasVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceEvaluatedParameterTraverser, (globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl));
-  if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
-    print("\nAfter replace evaluated parameter in variables");
-    print("\nrepl:");
-    BackendVarTransform.dumpReplacements(repl);
-    print("\noRepl:");
-    BackendVarTransform.dumpReplacements(oRepl);
-    BackendDump.dumpVariables(globalKnownVars, "globalKnownVars");
-    print("\nmark: " + intString(mark) + "\n");
-    print("markarr: " + stringDelimitList(List.map(arrayList(markarr), intString), ",") + "\n");
-  end if;
-
-  // replace evaluated parameter in external objects
-  shared.externalObjects := BackendVariable.listVar1(List.map1(BackendVariable.varList(shared.externalObjects),BackendVarTransform.replaceBindingExp,repl));
-
-  shared.globalKnownVars := globalKnownVars;
-  shared.aliasVars := aliasVars;
-  shared.initialEqs := initialEqs;
-  shared.graph := graph;
-  shared.cache := cache;
-
-  outDAE := BackendDAE.DAE(systs, shared);
-  if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
-    BackendDump.dumpBackendDAE(outDAE,"DAE after evaluating parameters");
+    print("\nEND of preOptModule 'evaluateParameters'\n" + BORDER +"\n\n");
   end if;
 end evaluateParameters;
 
 
 protected function getParameterIncidenceMatrix
+" This function calculates the incidence matrix for parameters and determines which parameters should be calculated
+  with the input function 'selectParameter'. Structural parameters are also marked to be calculated.
+  ptaeuber: Evaluating structural parameters (again) in this module is just a workaround since structural parameters
+  are already calculated in the Frontend but the value is lost."
   input BackendDAE.Var inVar;
-  input tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT> inTpl;
+  input tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,AvlSetCR.Tree> inTpl;
   output BackendDAE.Var outVar;
-  output tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT> outTpl;
+  output tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,AvlSetCR.Tree> outTpl;
 algorithm
   (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Variables globalKnownVars;
       BackendDAE.Var v;
       DAE.Exp e;
+      DAE.ComponentRef cref;
       Option<DAE.VariableAttributes> attr;
-      list<Integer> ilst,selectedParameter;
-      Integer index,nselect;
-      array<Integer> ass;
+      list<Integer> ilst,selectedParameters;
+      Integer index;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       selectParameterFunc selectParameter;
       Boolean select;
+      AvlSetCR.Tree ht;
 
-    case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),bindExp=SOME(e)),(globalKnownVars,index,selectParameter,selectedParameter,nselect,ass,m,mt))
+    case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),bindExp=SOME(e)),(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht))
       equation
         (_,(_,ilst)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,{}));
-        select = selectParameter(v);
-        selectedParameter = List.consOnTrue(select, index, selectedParameter);
-        ass = arrayUpdate(ass,index,index);
+        cref = BackendVariable.varCref(v);
+        select = selectParameter(v) or AvlSetCR.hasKey(ht, cref);
+        selectedParameters = List.consOnTrue(select, index, selectedParameters);
         m = arrayUpdate(m,index,ilst);
         mt = List.fold1(index::ilst,Array.consToElement,index,mt);
-      then (v,(globalKnownVars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt));
+      then (v,(globalKnownVars,index+1,selectParameter,selectedParameters,m,mt,ht));
 
-    case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=attr),(globalKnownVars,index,selectParameter,selectedParameter,nselect,ass,m,mt))
+    case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=attr),(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht))
       equation
         e = DAEUtil.getStartAttrFail(attr);
         (_,(_,ilst)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,{}));
-        select = selectParameter(v);
-        selectedParameter = List.consOnTrue(select, index, selectedParameter);
-        ass = arrayUpdate(ass,index,index);
+        cref = BackendVariable.varCref(v);
+        select = selectParameter(v) or AvlSetCR.hasKey(ht, cref);
+        selectedParameters = List.consOnTrue(select, index, selectedParameters);
         m = arrayUpdate(m,index,ilst);
         mt = List.fold1(index::ilst,Array.consToElement,index,mt);
-      then (v,(globalKnownVars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt));
+      then (v,(globalKnownVars,index+1,selectParameter,selectedParameters,m,mt,ht));
 
-    case (v,(globalKnownVars,index,selectParameter,selectedParameter,nselect,ass,m,mt))
+    case (v,(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht))
       equation
-        select = selectParameter(v);
-        selectedParameter = List.consOnTrue(select, index, selectedParameter);
-        ass = arrayUpdate(ass,index,index);
+        cref = BackendVariable.varCref(v);
+        select = selectParameter(v) or AvlSetCR.hasKey(ht, cref);
+        selectedParameters = List.consOnTrue(select, index, selectedParameters);
         ilst = {index};
         mt = arrayUpdate(mt,index,ilst);
-      then (v,(globalKnownVars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt));
+      then (v,(globalKnownVars,index+1,selectParameter,selectedParameters,m,mt,ht));
   end matchcontinue;
 end getParameterIncidenceMatrix;
 
@@ -395,6 +352,7 @@ algorithm
   end for;
 end evaluateSelectedParameters;
 
+
 protected function evaluateSelectedParameters0
 "author Frenkel TUD"
   input Integer i;
@@ -414,17 +372,18 @@ algorithm
     false := intGt(markarr[i],0) "not yet evaluated";
     arrayUpdate(markarr,i,mark);
     // evaluate needed parameters
-    (globalKnownVars,cache,mark,repl) := evaluateSelectedParameters1(m[i],globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl);
+    (globalKnownVars,cache,mark,repl,replEvaluate) := evaluateSelectedParameters1(m[i],globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl,replEvaluate);
     // evaluate parameter
     v := BackendVariable.getVarAt(globalKnownVars,i);
     (v,globalKnownVars,cache,mark,repl) := evaluateFixedAttribute(v,true,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl);
-    (globalKnownVars,cache,repl,replEvaluate) := evaluateSelectedParameter(v,i,globalKnownVars,inIEqns,repl,replEvaluate,cache,graph);
+    (globalKnownVars,repl,replEvaluate,cache) := evaluateSelectedParameter(v,i,globalKnownVars,inIEqns,repl,replEvaluate,cache,graph);
   else
     // evaluate parameter
     v := BackendVariable.getVarAt(globalKnownVars,i);
-    (globalKnownVars,cache,repl,replEvaluate) := evaluateSelectedParameter(v,i,globalKnownVars,inIEqns,repl,replEvaluate,cache,graph);
+    (globalKnownVars,repl,replEvaluate,cache) := evaluateSelectedParameter(v,i,globalKnownVars,inIEqns,repl,replEvaluate,cache,graph);
   end try;
 end evaluateSelectedParameters0;
+
 
 protected function evaluateSelectedParameters1
 "author Frenkel TUD"
@@ -437,29 +396,30 @@ protected function evaluateSelectedParameters1
   input output Integer mark;
   input array<Integer> markarr;
   input output BackendVarTransform.VariableReplacements repl;
+  input output BackendVarTransform.VariableReplacements replEvaluate = BackendVarTransform.emptyReplacements();
 algorithm
-  (globalKnownVars, cache, mark, repl) := matchcontinue(iUsed)
+  (globalKnownVars, cache, mark, repl, replEvaluate) := matchcontinue(iUsed)
     local
       Integer i;
       list<Integer> rest;
       BackendDAE.Var v;
 
     case {}
-    then (globalKnownVars, cache, mark, repl);
+    then (globalKnownVars, cache, mark, repl, replEvaluate);
 
     case i::rest equation
       false = intGt(markarr[i], 0) "not yet evaluated";
       arrayUpdate(markarr, i, mark);
-      (globalKnownVars, cache, mark, repl) = evaluateSelectedParameters1(m[i], globalKnownVars, m, inIEqns, cache, graph, mark, markarr, repl);
+      (globalKnownVars, cache, mark, repl, replEvaluate) = evaluateSelectedParameters1(m[i], globalKnownVars, m, inIEqns, cache, graph, mark, markarr, repl, replEvaluate);
       v = BackendVariable.getVarAt(globalKnownVars, i);
       (v, globalKnownVars, cache, mark, repl) = evaluateFixedAttribute(v, true, globalKnownVars, m, inIEqns, cache, graph, mark, markarr, repl);
-      (globalKnownVars, cache, repl) = evaluateParameter(v, globalKnownVars, inIEqns, cache, graph, repl);
-      (globalKnownVars, cache, mark, repl) = evaluateSelectedParameters1(rest, globalKnownVars, m, inIEqns, cache, graph, mark, markarr, repl);
-    then (globalKnownVars, cache, mark, repl);
+      (globalKnownVars, cache, repl, replEvaluate) = evaluateParameter(v, i, globalKnownVars, inIEqns, cache, graph, repl, replEvaluate);
+      (globalKnownVars, cache, mark, repl, replEvaluate) = evaluateSelectedParameters1(rest, globalKnownVars, m, inIEqns, cache, graph, mark, markarr, repl, replEvaluate);
+    then (globalKnownVars, cache, mark, repl, replEvaluate);
 
     case _::rest equation
-      (globalKnownVars, cache, mark, repl) = evaluateSelectedParameters1(rest, globalKnownVars, m, inIEqns, cache, graph, mark, markarr, repl);
-    then (globalKnownVars, cache, mark, repl);
+      (globalKnownVars, cache, mark, repl, replEvaluate) = evaluateSelectedParameters1(rest, globalKnownVars, m, inIEqns, cache, graph, mark, markarr, repl, replEvaluate);
+    then (globalKnownVars, cache, mark, repl, replEvaluate);
   end matchcontinue;
 end evaluateSelectedParameters1;
 
@@ -468,142 +428,152 @@ protected function evaluateSelectedParameter
 "author Frenkel TUD"
   input BackendDAE.Var var;
   input Integer index;
-  input BackendDAE.Variables inGlobalKnownVars;
+  input output BackendDAE.Variables globalKnownVars;
   input BackendDAE.EquationArray inIEqns;
-  input BackendVarTransform.VariableReplacements iRepl;
-  input BackendVarTransform.VariableReplacements iReplEvaluate;
-  input FCore.Cache iCache;
+  input output BackendVarTransform.VariableReplacements repl;
+  input output BackendVarTransform.VariableReplacements replEvaluate;
+  input output FCore.Cache cache;
   input FCore.Graph graph;
-  output BackendDAE.Variables oKnVars;
-  output FCore.Cache oCache;
-  output BackendVarTransform.VariableReplacements oRepl;
-  output BackendVarTransform.VariableReplacements oReplEvaluate;
 algorithm
-  (oKnVars, oCache, oRepl, oReplEvaluate) := matchcontinue(var)
+  _ := matchcontinue(var)
     local
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       DAE.Exp e, e1;
       Option<DAE.VariableAttributes> attr;
-      BackendVarTransform.VariableReplacements repl, repleval;
-      FCore.Cache cache;
       Values.Value value;
-      BackendDAE.Variables globalKnownVars;
       SourceInfo info;
 
-    // Parameter with evaluate=true
-    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.CONST(), bindExp=SOME(e)) equation
-      true = Expression.isConst(e);
-      // save replacement
-      repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
-      repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e , NONE());
-      //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
-    then (inGlobalKnownVars, iCache, repl, repleval);
+    // Constant with constant bindExp
+    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.CONST(), bindExp=SOME(e))
+      equation
+        true = Expression.isConst(e);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(repl, cr, e, NONE());
+        replEvaluate = BackendVarTransform.addReplacement(replEvaluate, cr, e , NONE());
+        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
+     then ();
 
-    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.CONST(), bindExp=SOME(e)) equation
-      // apply replacements
-      (e1, _) = BackendVarTransform.replaceExp(e, iRepl, NONE());
-      // evaluate expression
-      (cache, value, _) = Ceval.ceval(iCache, graph, e1, false, NONE(), Absyn.NO_MSG(), 0);
-      e1 = ValuesUtil.valueExp(value);
-      // set bind value
-      v = BackendVariable.setBindExp(var, SOME(e1));
-      // update Vararray
-      globalKnownVars = BackendVariable.setVarAt(inGlobalKnownVars, index, v);
-      // save replacement
-      repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
-      repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1 , NONE());
-      //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
-    then (globalKnownVars, cache, repl, repleval);
+    // Constant with bindExp
+    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.CONST(), bindExp=SOME(e))
+      equation
+        // apply replacements
+        (e1, _) = BackendVarTransform.replaceExp(e, repl, NONE());
+        // evaluate expression
+        (cache, value, _) = Ceval.ceval(cache, graph, e1, false, NONE(), Absyn.NO_MSG(), 0);
+        e1 = ValuesUtil.valueExp(value);
+        // set bind value
+        v = BackendVariable.setBindExp(var, SOME(e1));
+        // update Vararray
+        globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(repl, cr, e1, NONE());
+        replEvaluate = BackendVarTransform.addReplacement(replEvaluate, cr, e1 , NONE());
+        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
+     then ();
 
-    // Parameter with evaluate=true
-    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindExp=SOME(e)) equation
-      true = Expression.isConst(e);
-      v = BackendVariable.setVarFinal(var, true);
-      // update Vararray
-      globalKnownVars = BackendVariable.setVarAt(inGlobalKnownVars, index, v);
-      // save replacement
-      repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
-      repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e , NONE());
-      //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
-    then (globalKnownVars, iCache, repl, repleval);
+    // Parameter with constant bindExp
+    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindExp=SOME(e))
+      equation
+        true = Expression.isConst(e);
+        v = BackendVariable.setVarFinal(var, true);
+        // update Vararray
+        globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
+        // save replacement
+        if BackendVariable.varFixed(v) then
+          repl = BackendVarTransform.addReplacement(repl, cr, e, NONE());
+          replEvaluate = BackendVarTransform.addReplacement(replEvaluate, cr, e , NONE());
+        end if;
+        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
+     then ();
 
-    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindExp=SOME(e)) equation
-      // apply replacements
-      (e1, _) = BackendVarTransform.replaceExp(e, iRepl, NONE());
-      // evaluate expression
-      (cache, value, _) = Ceval.ceval(iCache, graph, e1, false, NONE(), Absyn.NO_MSG(), 0);
-      e1 = ValuesUtil.valueExp(value);
-      // set bind value
-      v = BackendVariable.setBindExp(var, SOME(e1));
-      v = BackendVariable.setVarFinal(v, true);
-      // update Vararray
-      globalKnownVars = BackendVariable.setVarAt(inGlobalKnownVars, index, v);
-      // save replacement
-      repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
-      repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1 , NONE());
-      //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
-    then (globalKnownVars, cache, repl, repleval);
+    // Parameter with bindExp
+    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindExp=SOME(e))
+      equation
+        // apply replacements
+        (e1, _) = BackendVarTransform.replaceExp(e, repl, NONE());
+        // evaluate expression
+        (cache, value, _) = Ceval.ceval(cache, graph, e1, false, NONE(), Absyn.NO_MSG(), 0);
+        e1 = ValuesUtil.valueExp(value);
+        // set bind value
+        v = BackendVariable.setBindExp(var, SOME(e1));
+        v = BackendVariable.setVarFinal(v, true);
+        // update Vararray
+        globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(repl, cr, e1, NONE());
+        replEvaluate = BackendVarTransform.addReplacement(replEvaluate, cr, e1 , NONE());
+        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
+     then ();
 
-    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindValue=SOME(value)) equation
-      true = BackendVariable.varFixed(var);
-      e = ValuesUtil.valueExp(value);
-      v = BackendVariable.setVarFinal(var, true);
-      // update Vararray
-      globalKnownVars = BackendVariable.setVarAt(inGlobalKnownVars, index, v);
-      // save replacement
-      repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
-      repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e, NONE());
-      //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
-    then (globalKnownVars, iCache, repl, repleval);
+    // Parameter with bindValue and fixed
+    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindValue=SOME(value))
+      equation
+        true = BackendVariable.varFixed(var);
+        e = ValuesUtil.valueExp(value);
+        v = BackendVariable.setVarFinal(var, true);
+        // update Vararray
+        globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(repl, cr, e, NONE());
+        replEvaluate = BackendVarTransform.addReplacement(replEvaluate, cr, e, NONE());
+        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
+     then ();
 
+    // Parameter without bindExp but with start attribute and fixed
     //waurich: if there is unevaluated binding, dont take the start value as a binding replacement. compute the unevaluated binding!
-    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), values=attr) equation
-      true = BackendVariable.varFixed(var);
-      false = BackendVariable.varHasBindExp(var);
-      e = DAEUtil.getStartAttrFail(attr);
-      // apply replacements
-      (e1, _) = BackendVarTransform.replaceExp(e, iRepl, NONE());
-      // evaluate expression
-      (cache, value, _) = Ceval.ceval(iCache, graph, e1, false, NONE(), Absyn.NO_MSG(), 0);
-      e1 = ValuesUtil.valueExp(value);
-      // set bind value
-      v = BackendVariable.setVarStartValue(var, e1);
-      v = BackendVariable.setVarFinal(v, true);
-      // update Vararray
-      globalKnownVars = BackendVariable.setVarAt(inGlobalKnownVars, index, v);
-      // save replacement
-      repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
-      repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1, NONE());
-      //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
-    then (globalKnownVars, cache, repl, repleval);
-    // try to evaluate with initial equations
+    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), values=attr)
+      equation
+        true = BackendVariable.varFixed(var);
+        false = BackendVariable.varHasBindExp(var);
+        e = DAEUtil.getStartAttrFail(attr);
+        // apply replacements
+        (e1, _) = BackendVarTransform.replaceExp(e, repl, NONE());
+        // evaluate expression
+        (cache, value, _) = Ceval.ceval(cache, graph, e1, false, NONE(), Absyn.NO_MSG(), 0);
+        e1 = ValuesUtil.valueExp(value);
+        // set bind value
+        v = BackendVariable.setVarStartValue(var, e1);
+        v = BackendVariable.setVarFinal(v, true);
+        // update Vararray
+        globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
+        // save replacement
+        repl = BackendVarTransform.addReplacement(repl, cr, e1, NONE());
+        replEvaluate = BackendVarTransform.addReplacement(replEvaluate, cr, e1, NONE());
+        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
+     then ();
 
     // report warning
     else algorithm
-      if Flags.isSet(Flags.PEDANTIC) then
+      if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
         info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
         Error.addSourceMessage(Error.COMPILER_WARNING, {"Cannot evaluate Variable \"" + BackendDump.varString(var) + "\""}, info);
       end if;
-    then (inGlobalKnownVars, iCache, iRepl, iReplEvaluate);
+    then ();
+
   end matchcontinue;
 end evaluateSelectedParameter;
+
 
 protected function evaluateParameter
 "author Frenkel TUD"
   input BackendDAE.Var var;
+  input Integer index;
   input output BackendDAE.Variables globalKnownVars;
   input BackendDAE.EquationArray inIEqns;
   input output FCore.Cache cache;
   input FCore.Graph graph;
   input output BackendVarTransform.VariableReplacements repl;
+  input output BackendVarTransform.VariableReplacements replEvaluate;
 algorithm
-  (globalKnownVars,cache,repl) := matchcontinue var
+  _ := match var
     local
+      BackendDAE.Var v;
       DAE.ComponentRef cr;
       DAE.Exp e,e1;
       Option<DAE.VariableAttributes> attr;
       Values.Value value;
+
     case BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindExp=SOME(e))
       equation
         // applay replacements
@@ -611,39 +581,52 @@ algorithm
         // evaluate expression
         (cache, value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(), 0);
         e1 = ValuesUtil.valueExp(value);
+        // also set this var final because it is used for the calculation of another variable
+        v = BackendVariable.setVarFinal(var, true);
+        // update Vararray
+        globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
         // save replacement
         repl = BackendVarTransform.addReplacement(repl, cr, e1, NONE());
+        replEvaluate = BackendVarTransform.addReplacement(replEvaluate, cr, e1, NONE());
         //  print("Evaluate " + BackendDump.varString(var) + "\n->    " + ExpressionDump.printExpStr(e1) + "\n");
-      then
-        (globalKnownVars,cache,repl);
+      then ();
+
     case BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindValue=SOME(value))
+      guard
+        BackendVariable.varFixed(var)
       equation
-        true = BackendVariable.varFixed(var);
         e = ValuesUtil.valueExp(value);
+        // also set this var final because it is used for the calculation of another variable
+        v = BackendVariable.setVarFinal(var, true);
+        // update Vararray
+        globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
         // save replacement
         repl = BackendVarTransform.addReplacement(repl, cr, e, NONE());
+        replEvaluate = BackendVarTransform.addReplacement(replEvaluate, cr, e, NONE());
         //  print("Evaluate " + BackendDump.varString(var) + "\n->    " + ExpressionDump.printExpStr(e) + "\n");
-      then
-        (globalKnownVars,cache,repl);
+      then ();
+
     case BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),values=attr)
+      guard
+        BackendVariable.varFixed(var)
       equation
-        true = BackendVariable.varFixed(var);
         e = DAEUtil.getStartAttrFail(attr);
-        // applay replacements
+        // apply replacements
         (e,_) = BackendVarTransform.replaceExp(e, repl, NONE());
         // evaluate expression
         (cache, value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
         e1 = ValuesUtil.valueExp(value);
+        // also set this var final because it is used for the calculation of another variable
+        v = BackendVariable.setVarFinal(var, true);
+        // update vararray
+        globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
         // save replacement
         repl = BackendVarTransform.addReplacement(repl, cr, e1, NONE());
+        replEvaluate = BackendVarTransform.addReplacement(replEvaluate, cr, e1, NONE());
         //  print("Evaluate " + BackendDump.varString(var) + "\n->    " + ExpressionDump.printExpStr(e1) + "\n");
-      then
-        (globalKnownVars,cache,repl);
-    // try to evaluate with initial equations
+      then ();
 
-    // not evaluated
-    else (globalKnownVars,cache,repl);
-  end matchcontinue;
+  end match;
 end evaluateParameter;
 
 
@@ -705,6 +688,7 @@ algorithm
   end match;
 end evaluateFixedAttribute;
 
+
 protected function evaluateFixedAttribute1
   input DAE.ComponentRef cr;
   input DAE.Exp e;
@@ -739,6 +723,7 @@ algorithm
    globalKnownVars := if addVar then BackendVariable.addVar(var, globalKnownVars) else globalKnownVars;
 end evaluateFixedAttribute1;
 
+
 protected function evaluateFixedAttributeReportWarning
   input Boolean b;
   input DAE.ComponentRef cr;
@@ -760,6 +745,7 @@ algorithm
     Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);
   end if;
 end evaluateFixedAttributeReportWarning;
+
 
 protected function replaceCrefWithBindStartExp
   input DAE.Exp inExp;
@@ -791,6 +777,7 @@ algorithm
     else (inExp,inTuple);
   end matchcontinue;
 end replaceCrefWithBindStartExp;
+
 
 protected function traverseParameterSorted
   input list<list<Integer>> inComps;
@@ -825,7 +812,7 @@ algorithm
     case {i}::rest equation
       v = BackendVariable.getVarAt(inGlobalKnownVars,i);
       (v,globalKnownVars,cache,mark,repl1) = evaluateFixedAttribute(v,true,inGlobalKnownVars,m,inIEqns,iCache,graph,iMark,markarr,repl);
-      (globalKnownVars,repl1,evrepl,cache,mark) = evaluateParameterBindings(v,i,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl1,replEvaluate);
+      (globalKnownVars,repl1,evrepl) = evaluateParameterBindings(v,i,globalKnownVars,cache,graph,repl1,replEvaluate);
       (globalKnownVars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl1,evrepl);
     then (globalKnownVars,repl1,evrepl,cache,mark);
 
@@ -839,157 +826,140 @@ algorithm
   end match;
 end traverseParameterSorted;
 
+
 protected function evaluateParameterBindings
   input BackendDAE.Var var;
   input Integer index;
-  input BackendDAE.Variables inGlobalKnownVars;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.EquationArray inIEqns;
-  input FCore.Cache iCache;
+  input output BackendDAE.Variables globalKnownVars;
+  input FCore.Cache cache;
   input FCore.Graph graph;
-  input Integer iMark;
-  input array<Integer> markarr;
-  input BackendVarTransform.VariableReplacements iRepl;
-  input BackendVarTransform.VariableReplacements iReplEvaluate;
-  output BackendDAE.Variables oKnVars;
-  output BackendVarTransform.VariableReplacements oRepl;
-  output BackendVarTransform.VariableReplacements oReplEvaluate;
-  output FCore.Cache oCache;
-  output Integer oMark;
+  input output BackendVarTransform.VariableReplacements repl;
+  input output BackendVarTransform.VariableReplacements replEvaluate;
 algorithm
-  (oKnVars, oRepl, oReplEvaluate, oCache, oMark) := matchcontinue(var)
+  _ := matchcontinue(var)
     local
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       DAE.Exp e;
       list<DAE.Exp> exps;
       Option<DAE.VariableAttributes> attr;
-      BackendVarTransform.VariableReplacements repl, repleval;
-      BackendDAE.Variables globalKnownVars;
       Values.Value value;
 
     // Parameter with bind expression
-    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindExp=SOME(e), values=attr) equation
-      // apply replacements
-      (e, true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
-      (e, _) = ExpressionSimplify.simplify(e);
-      // If call with constant arguments then evaluate
-      e = match(e)
-        local DAE.Exp e1;
-        case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
-          equation
-           (_,value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
-           e1 = ValuesUtil.valueExp(value);
-         then e1;
-        case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
-          equation
-           (_,value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
-           e1 = ValuesUtil.valueExp(value);
-         then e1;
-        else e;
-      end match;
-      v = BackendVariable.setBindExp(var, SOME(e));
-      (repl, repleval) = addConstExpReplacement(e, cr, iRepl, iReplEvaluate);
-      (attr, (repleval, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (repleval, false));
+    case v as BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindExp=SOME(e)) equation
+      // save constant bindings of parameters if parameters are final and fixed
+      if Expression.isConst(e) and BackendVariable.isFinalVar(v) and BackendVariable.varFixed(v) then
+        // Save all constant bindings of final parameters in replacements
+        (repl, replEvaluate) = addConstExpReplacement(e, cr, repl, replEvaluate);
+      else
+        // apply replacements
+        (e, true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
+        (e, _) = ExpressionSimplify.simplify(e);
+        // If call with constant arguments then evaluate
+        e = match(e)
+          local DAE.Exp e1;
+          case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
+            equation
+             (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+             e1 = ValuesUtil.valueExp(value);
+           then e1;
+          case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
+            equation
+             (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+             e1 = ValuesUtil.valueExp(value);
+           then e1;
+          else e;
+        end match;
+        v = BackendVariable.setBindExp(v, SOME(e));
+        (repl, replEvaluate) = addConstExpReplacement(e, cr, repl, replEvaluate);
+        v = if Expression.isConst(e) then BackendVariable.setVarFinal(v, true) else v;
+      end if;
+      (attr, (replEvaluate, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(v.values, traverseExpVisitorWrapper, (replEvaluate, false));
       v = BackendVariable.setVarAttributes(v, attr);
-      //false = Expression.expHasCrefs(e);
-      // evaluate expression
-      //(cache, value, _) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG());
-      //e1 = ValuesUtil.valueExp(value);
-      // set bind value
-      //v = BackendVariable.setBindExp(var, SOME(e1));
-      v = if Expression.isConst(e) then BackendVariable.setVarFinal(v, true) else v;
-      globalKnownVars = BackendVariable.setVarAt(inGlobalKnownVars, index, v);
-    then (globalKnownVars, repl, repleval, iCache, iMark);
+      globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
+    then ();
 
+    // Parameter without bind expression but with start attribute
     case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindValue=NONE(), values=attr) equation
       true = BackendVariable.varFixed(var);
       e = DAEUtil.getStartAttrFail(attr);
       // apply replacements
-      (e, true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
+      (e, true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
       (e, _) = ExpressionSimplify.simplify(e);
       // If call with constant arguments then evaluate
       e = match(e)
         local DAE.Exp e1;
         case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
           equation
-           (_,value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+           (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
            e1 = ValuesUtil.valueExp(value);
          then e1;
         case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
           equation
-           (_,value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+           (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
            e1 = ValuesUtil.valueExp(value);
          then e1;
         else e;
       end match;
       v = BackendVariable.setVarStartValue(var, e);
-      (repl, repleval) = addConstExpReplacement(e, cr, iRepl, iReplEvaluate);
-      (attr, (repleval, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (repleval, false));
+      (repl, replEvaluate) = addConstExpReplacement(e, cr, repl, replEvaluate);
+      (attr, (replEvaluate, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (replEvaluate, false));
       v = BackendVariable.setVarAttributes(v, attr);
-      //false = Expression.expHasCrefs(e);
-      // evaluate expression
-      //(cache, value, _) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG());
-      //e1 = ValuesUtil.valueExp(value);
-      // set bind value
-      //v = BackendVariable.setBindExp(var, SOME(e1));
       v = if Expression.isConst(e) then BackendVariable.setVarFinal(v, true) else v;
-      globalKnownVars = BackendVariable.setVarAt(inGlobalKnownVars, index, v);
-    then (globalKnownVars, repl, repleval, iCache, iMark);
+      globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
+    then ();
 
     // other vars
-    case BackendDAE.VAR(bindExp=SOME(e), values=attr) equation
+    case BackendDAE.VAR(bindExp=SOME(e)) equation
       // apply replacements
-      (e, true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
+      (e, true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
       (e, _) = ExpressionSimplify.simplify(e);
       // If call with constant arguments then evaluate
       e = match(e)
         local DAE.Exp e1;
         case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
           equation
-           (_,value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+           (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
            e1 = ValuesUtil.valueExp(value);
          then e1;
         case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
           equation
-           (_,value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+           (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
            e1 = ValuesUtil.valueExp(value);
          then e1;
         else e;
       end match;
       v = BackendVariable.setBindExp(var, SOME(e));
-      (attr, (repleval, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (iReplEvaluate, false));
+      (attr, (replEvaluate, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(v.values, traverseExpVisitorWrapper, (replEvaluate, false));
       v = BackendVariable.setVarAttributes(v, attr);
-      globalKnownVars = BackendVariable.setVarAt(inGlobalKnownVars, index, v);
-    then (globalKnownVars, iRepl, repleval, iCache, iMark);
+      globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
+    then ();
 
     case BackendDAE.VAR(values=attr) equation
       // apply replacements
-      (attr, (repleval, true)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (iReplEvaluate, false));
+      (attr, (replEvaluate, true)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (replEvaluate, false));
       v = BackendVariable.setVarAttributes(var, attr);
-      globalKnownVars = BackendVariable.setVarAt(inGlobalKnownVars, index, v);
-    then (globalKnownVars, iRepl, repleval, iCache, iMark);
+      globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
+    then ();
 
-    else (inGlobalKnownVars, iRepl, iReplEvaluate, iCache, iMark);
+    else ();
+
   end matchcontinue;
 end evaluateParameterBindings;
+
 
 protected function addConstExpReplacement
   input DAE.Exp inExp;
   input DAE.ComponentRef cr;
-  input BackendVarTransform.VariableReplacements inRepl;
-  input BackendVarTransform.VariableReplacements iReplEvaluate;
-  output BackendVarTransform.VariableReplacements outRepl;
-  output BackendVarTransform.VariableReplacements oReplEvaluate;
+  input output BackendVarTransform.VariableReplacements repl;
+  input output BackendVarTransform.VariableReplacements replEvaluate;
 algorithm
   if Expression.isConst(inExp) then
-    outRepl := BackendVarTransform.addReplacement(inRepl, cr, inExp, NONE());
-    oReplEvaluate := BackendVarTransform.addReplacement(iReplEvaluate, cr, inExp, NONE());
-  else
-    outRepl := inRepl;
-    oReplEvaluate := iReplEvaluate;
+    repl := BackendVarTransform.addReplacement(repl, cr, inExp, NONE());
+    replEvaluate := BackendVarTransform.addReplacement(replEvaluate, cr, inExp, NONE());
   end if;
 end addConstExpReplacement;
+
 
 protected function traverseExpVisitorWrapper "help function to replaceFinalVarTraverser"
   input DAE.Exp inExp;
@@ -1074,6 +1044,7 @@ algorithm
   end matchcontinue;
 end replaceEvaluatedParameterTraverser;
 
+
 protected function replaceEvaluatedParametersEqns "author Frenkel TUD"
   input BackendDAE.BackendDAE inDAE;
   input BackendVarTransform.VariableReplacements inRepl;
@@ -1096,7 +1067,7 @@ algorithm
   lsteqns := BackendEquation.equationList(shared.removedEqs);
   (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, inRepl, NONE());
   if b then
-    shared.initialEqs :=  BackendEquation.listEquation(lsteqns);
+    shared.removedEqs :=  BackendEquation.listEquation(lsteqns);
   end if;
 
   // do replacements in systems
@@ -1104,6 +1075,7 @@ algorithm
 
   outDAE := BackendDAE.DAE(systs, shared);
 end replaceEvaluatedParametersEqns;
+
 
 protected function replaceEvaluatedParametersSystemEqns
 "author Frenkel TUD
@@ -1130,178 +1102,6 @@ algorithm
   end if;
 end replaceEvaluatedParametersSystemEqns;
 
-
-
-/*
-//------------------------------------------
-// evaluate all parameters
-//------------------------------------------
-
-public function evaluateAllParameters_obsolete
-"author Waurich TUD
-  evaluates and replaces all parameters"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-protected
-  Boolean evaluatedSomething;
-  Integer nVars,nEqs;
-  BackendDAE.Variables globalKnownVars, vars, extVars, aliasVars;
-  BackendDAE.EquationArray eqArr,initEqs,remEqs, remEqsSys;
-  BackendDAE.EqSystem sys;
-  BackendDAE.EqSystems systs, systs2;
-  BackendDAE.IncidenceMatrix m,mT;
-  BackendDAE.Shared shared;
-  BackendDAE.EventInfo eventInfo;
-  DAE.FunctionTree functionTree;
-  list<DAE.Exp> bindExps;
-  list<BackendDAE.Equation> eqs, initEqLst, initEqLst2;
-  list<BackendDAE.Var> knVarsLst, unknownVars, varLst;
-  BackendVarTransform.VariableReplacements repl;
-  array<Integer> ass1, ass2;
-  list<Integer> order;
-  list<list<Integer>> comps;
-algorithm
-  if Flags.isSet(Flags.EVAL_ALL_PARAMS) then
-    print("the old evalAllParams\n");
-    BackendDAE.DAE (systs, shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars, initialEqs=initEqs, functionTree=functionTree)) := inDAE;
-    knVarsLst := BackendVariable.varList(globalKnownVars);
-      //BackendDump.dumpVarList(knVarsLst,"knVarsLst");
-    initEqLst := BackendEquation.equationList(initEqs);
-    initEqLst := List.filter1OnTrue(initEqLst, isParameterEquation, globalKnownVars);
-    repl := BackendVarTransform.emptyReplacements();
-    (repl,unknownVars, evaluatedSomething) := getParameterBindingReplacements(knVarsLst, functionTree, repl);
-
-    while evaluatedSomething and not listEmpty(unknownVars) loop
-      //use the evaluated parameters to evaluate more
-      (repl,unknownVars, evaluatedSomething) := getParameterBindingReplacements(unknownVars, functionTree, repl);
-            //BackendDump.dumpVarList(unknownVars,"UNKNOWNS2");
-    end while;
-
-    //Continue work from here...
-    repl := BackendVarTransform.getConstantReplacements(repl);
-    (initEqLst,_) := BackendVarTransform.replaceEquations(initEqLst,repl,NONE());
-    unknownVars := List.filter1OnTrue(knVarsLst,BackendVarTransform.varHasNoReplacement,repl);
-    unknownVars := List.map1(unknownVars,BackendVarTransform.replaceBindingExp,repl);
-      //BackendDump.dumpEquationList(initEqLst,"initEqLst");
-      if not listEmpty(unknownVars) then BackendDump.dumpVarList(unknownVars,"Could not evaluate following parameters. Ask a Developer for further support."); end if;
-      //BackendVarTransform.dumpReplacements(repl);
-    //...to here and extend the function evaluation (in simplifyReplacements) and evaluation of parameters (e.g. Modelica.Blocks.Examples.Filter.mo)
-
-    systs2 := {};
-    // replace all equations and all bindExps of the vars
-    for sys in systs loop
-      vars := sys.orderedVars;
-      varLst := BackendVariable.varList(vars);
-      varLst := List.map1(varLst,BackendVarTransform.replaceBindingExp,repl);
-      varLst := List.map1(varLst,BackendVarTransform.replaceVariableAttributesInVar,repl);
-      sys.orderedVars := BackendVariable.listVar1(varLst);
-      eqArr := sys.orderedEqs;
-      remEqsSys := sys.removedEqs;
-      (eqArr,_) := BackendVarTransform.replaceEquationsArr(eqArr,repl,NONE());
-      (remEqsSys,_) := BackendVarTransform.replaceEquationsArr(remEqsSys,repl,NONE());
-      sys.orderedEqs := eqArr;
-      sys.removedEqs := remEqsSys;
-      systs2 := sys::systs2;
-    end for;
-    systs2 := MetaModelica.Dangerous.listReverseInPlace(systs2);
-
-    // replace all init eqs, removed eqs, external var-bindings and alias var bindings, event-infos
-    initEqs := shared.initialEqs;
-    remEqs := shared.removedEqs;
-    extVars := shared.externalObjects;
-    aliasVars := shared.aliasVars;
-    eventInfo := shared.eventInfo;
-    (initEqs,_) := BackendVarTransform.replaceEquationsArr(initEqs,repl,NONE());
-    (remEqs,_) := BackendVarTransform.replaceEquationsArr(remEqs,repl,NONE());
-    extVars := BackendVariable.listVar1(List.map1(BackendVariable.varList(extVars),BackendVarTransform.replaceBindingExp,repl));
-    aliasVars := BackendVariable.listVar1(List.map1(BackendVariable.varList(aliasVars),BackendVarTransform.replaceBindingExp,repl));
-    eventInfo := BackendVarTransform.replaceEventInfo(eventInfo,repl,NONE());
-    shared.initialEqs := initEqs;
-    shared.removedEqs := remEqs;
-    shared.externalObjects := extVars;
-    shared.aliasVars := aliasVars;
-    shared.eventInfo := eventInfo;
-    // set remaining, not evaluated params
-    shared.globalKnownVars := BackendVariable.listVar(unknownVars);
-    outDAE := BackendDAE.DAE(systs2,shared);
-  else
-    outDAE := inDAE;
-  end if;
-end evaluateAllParameters_obsolete;
-
-
-protected function getParameterBindingReplacements "gathers replacements for the vars with binding"
-  input list<BackendDAE.Var> varsIn;
-  input DAE.FunctionTree functionTree;
-  input BackendVarTransform.VariableReplacements replIn;
-  output BackendVarTransform.VariableReplacements replOut;
-  output list<BackendDAE.Var> unKnowns = {};
-  output Boolean evaluatedSomething = false;
-protected
-  BackendVarTransform.VariableReplacements repl;
-  DAE.ComponentRef cref;
-  BackendDAE.Var var;
-  DAE.Exp bindExp;
-algorithm
-  repl := replIn;
-  for var in varsIn loop
-    if BackendVariable.varHasBindExp(var) then
-      bindExp := BackendVariable.varBindExp(var);
-      (bindExp,_) := BackendVarTransform.replaceExp(bindExp,repl,NONE());
-      bindExp := EvaluateFunctions.evaluateConstantFunctionCallExp(bindExp,functionTree);
-      bindExp := ExpressionSimplify.simplify(bindExp);
-      if Expression.isEvaluatedConst(bindExp) and not ComponentReference.isArrayElement(var.varName) then
-        //print("BIND "+ExpressionDump.printExpStr(bindExp)+"\n");
-        //print("BIND "+ExpressionDump.dumpExpStr(bindExp,1)+"\n");
-        cref := BackendVariable.varCref(var);
-        repl := BackendVarTransform.addReplacement(repl,cref,bindExp,NONE());
-        evaluatedSomething := true;
-      else
-        unKnowns := var::unKnowns;
-      end if;
-    else
-      unKnowns := var::unKnowns;
-    end if;
-  end for;
-  replOut := BackendVarTransform.simplifyReplacements(repl,functionTree);
-end getParameterBindingReplacements;
-
-protected function getParameterBindingEquations "gathers equations for the vars with binding"
-  input list<BackendDAE.Var> varsIn;
-  input DAE.FunctionTree functionTree;
-  output list<BackendDAE.Equation> eqs;
-  output list<BackendDAE.Var> unKnowns = {};
-protected
-  DAE.ComponentRef cref;
-  BackendDAE.Var var;
-  DAE.Exp bindExp;
-algorithm
-  eqs := {};
-  for var in varsIn loop
-    if BackendVariable.varHasBindExp(var) then
-      bindExp := BackendVariable.varBindExp(var);
-      bindExp := EvaluateFunctions.evaluateConstantFunctionCallExp(bindExp,functionTree);
-      bindExp := ExpressionSimplify.simplify(bindExp);
-      //print("BIND "+ExpressionDump.dumpExpStr(bindExp,1)+"\n");
-      cref := BackendVariable.varCref(var);
-      eqs := BackendEquation.generateEquation(Expression.crefExp(cref), bindExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::eqs;
-    else
-      unKnowns := var::unKnowns;
-    end if;
-  end for;
-end getParameterBindingEquations;
-
-protected function isParameterEquation"outputs true if the equation is only dependent on parameters"
-  input BackendDAE.Equation eq;
-  input BackendDAE.Variables globalKnownVars;
-  output Boolean b;
-protected
-  list<DAE.ComponentRef> crefs;
-algorithm
-  crefs := BackendEquation.equationCrefs(eq);
-  b := List.fold(List.map2(crefs,BackendVariable.existsVar,globalKnownVars,false),boolAnd,true);
-end isParameterEquation;
-*/
 
 annotation(__OpenModelica_Interface="backend");
 end EvaluateParameter;

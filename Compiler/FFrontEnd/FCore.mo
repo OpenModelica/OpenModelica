@@ -471,6 +471,9 @@ algorithm
     case (CACHE(initialGraph,functions,(ht,crs::st),p,program),SCode.PARAM(),_)
       then CACHE(initialGraph,functions,(ht,(cr::crs)::st),p,program);
 
+    case (CACHE(initialGraph,functions,(ht,{}),p,program),SCode.PARAM(),_)
+      then CACHE(initialGraph,functions,(ht,{cr}::{}),p,program);
+
     else cache;
 
   end match;

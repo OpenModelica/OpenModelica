@@ -6329,17 +6329,22 @@ algorithm
     BackendDump.dumpVarList(inPrimaryParameters, "parameters in order");
   end if;
 
+  // get min/max and nominal asserts
+  varasserts := {};
+  for p in inAllPrimaryParameters loop
+    if BackendVariable.isFinalOrProtectedVar(p) and Expression.isConst(BackendVariable.varBindExpStartValue(p)) then
+      (simEq, outUniqueEqIndex) := makeSolved_SES_SIMPLE_ASSIGN_fromStartValue(p, outUniqueEqIndex);
+      outParameterEquations := simEq::outParameterEquations;
+    end if;
+    varasserts2 := createVarAsserts(p);
+    varasserts := List.append_reverse(varasserts2, varasserts);
+  end for;
+
   for p in inPrimaryParameters loop
     (simEq, outUniqueEqIndex) := makeSolved_SES_SIMPLE_ASSIGN_fromStartValue(p, outUniqueEqIndex);
     outParameterEquations := simEq::outParameterEquations;
   end for;
 
-  // get min/max and nominal asserts
-  varasserts := {};
-  for p in inAllPrimaryParameters loop
-    varasserts2 := createVarAsserts(p);
-    varasserts := List.append_reverse(varasserts2, varasserts);
-  end for;
   varasserts := MetaModelica.Dangerous.listReverseInPlace(varasserts);
   (simvarasserts, outUniqueEqIndex) := List.mapFold(varasserts, dlowAlgToSimEqSystem, outUniqueEqIndex);
 
@@ -8478,9 +8483,8 @@ algorithm
         // print("name: " + ComponentReference.printComponentRefStr(cr) + "indx: " + intString(indx) + "\n");
         // check if the variable has changeable value
         // parameter which has final = true or evaluate annotation are not changeable
-        isValueChangeable = ((not BackendVariable.hasVarEvaluateAnnotationOrFinal(dlowVar)
-                            and BackendVariable.varHasConstantBindExp(dlowVar))
-                            or not BackendVariable.varHasBindExp(dlowVar))
+        isValueChangeable = ((not BackendVariable.hasVarEvaluateAnnotationOrFinalOrProtected(dlowVar)
+                            and (BackendVariable.varHasConstantBindExp(dlowVar) or not BackendVariable.varHasBindExp(dlowVar))))
                             and isFixed;
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,

@@ -68,6 +68,7 @@ protected import Inst;
 protected import InstDAE;
 protected import InstFunction;
 protected import InstTypes;
+protected import InstUtil;
 protected import NFInstUtil;
 protected import List;
 protected import Lookup;
@@ -395,6 +396,9 @@ algorithm
 
             rest_branches := listRest(rest_branches);
           end for;
+
+          // Add evaluated parameter condition to the structural parameter list to mark it final later
+          outCache := InstUtil.popStructuralParameters(outCache,inPrefix);
 
           // A branch was selected, instantiate it.
           (outCache, outEnv, outIH, outDae, outSets, outState, outGraph) :=

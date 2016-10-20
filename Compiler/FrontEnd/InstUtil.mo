@@ -7749,6 +7749,7 @@ algorithm
       equation
         ht = prefixAndAddCrefsToHt(cache,ht,pre,crs);
       then FCore.CACHE(ie,f,(ht,crss),p,program);
+    case (FCore.CACHE(ie,f,(ht,{}),p,program),_) then cache;
     case (FCore.NO_CACHE(),_) then cache;
   end match;
 end popStructuralParameters;

@@ -1302,6 +1302,13 @@ algorithm
   select := isFinalVar(inVar) or hasVarEvaluateAnnotation(inVar);
 end hasVarEvaluateAnnotationOrFinal;
 
+public function hasVarEvaluateAnnotationOrProtected
+  input BackendDAE.Var inVar;
+  output Boolean select;
+algorithm
+  select := isProtectedVar(inVar) or hasVarEvaluateAnnotation(inVar);
+end hasVarEvaluateAnnotationOrProtected;
+
 public function hasVarEvaluateAnnotationOrFinalOrProtected
   input BackendDAE.Var inVar;
   output Boolean select;
